@@ -1,6 +1,9 @@
 // Included by the native implementation so the existing effect owner can
 // observe dispatch without substituting a second queue or requiring a GL context
 #include <iostream>
+extern "C" {
+#include "rng_shared.h"
+}
 extern "C" void xl_transparency_test_controls(int active)
 {
 	const auto check = [](bool value, const char *message) {
@@ -115,10 +118,10 @@ extern "C" void xl_transparency_test_controls(int active)
 	const ParticlePoint object_position{ center[0] + 10 * 65536, center[1], center[2] };
 	const auto enqueue_particle = [&](int id) {
 		Particle value{};
-		value.position = particle_position;
-		value.radius = 1;
-		value.quad.blend = ParticleBlend::weak_additive;
-		value.quad.vertices[0].color[0] = float(id);
+		value.scene.position = particle_position;
+		value.scene.radius = 1;
+		value.scene.quad.blend = ParticleBlend::weak_additive;
+		value.scene.quad.vertices[0].color[0] = float(id);
 		add(value, particle_position, 10 * 65536);
 	};
 	enqueue_particle(2);
@@ -136,6 +139,70 @@ extern "C" void xl_transparency_test_controls(int active)
 		else check(buffered_receipt.empty(), "Pre-item flush hook ran after buffered particle drawing"); });
 	check(buffered_receipt == std::vector<int>({ 0, 1, 9 }) && items.empty(), "Production buffered dispatch crossed an object boundary or drew a singleton");
 	check(particle_visits == 3 && rendered_objects.empty(), "Particle visitation skipped a singleton or retained owner visibility");
+	{
+		unsigned random_state = 0;
+		check(d_rand_get_stream_state(D_RNG_FX, &random_state), "Deferred bubble control requires restorable effects RNG");
+		const auto random_calls = d_rand_get_stream_call_count(D_RNG_FX);
+		struct RandomRestore {
+			unsigned state, calls;
+			~RandomRestore()
+			{
+				d_rand_set_stream_state(D_RNG_FX, state);
+				d_rand_set_stream_call_count(D_RNG_FX, calls);
+			}
+		} random_restore{ random_state, random_calls };
+		const int denominators[]{ 10 + d_rand_fx() % 6, 10 + d_rand_fx() % 6 };
+		check(d_rand_set_stream_state(D_RNG_FX, random_state), "Cannot rewind bubble control RNG");
+		d_rand_set_stream_call_count(D_RNG_FX, random_calls);
+		std::array<BubbleParticle, 3> bubbles{};
+		for (unsigned i = 0; i < bubbles.size(); ++i) {
+			bubbles[i].motion.position = particle_position;
+			bubbles[i].motion.width = bubbles[i].motion.height = 1;
+			bubbles[i].motion.frame = int(10 + i);
+			bubbles[i].color = { float(i), .9f, 1, .5f };
+		}
+		xl_transparency_begin(&segment, 1);
+		maximum_depth = 1000 * 65536;
+		const auto enqueue_bubble = [&](unsigned index) {
+			Particle value{};
+			value.scene.position = particle_position;
+			value.scene.radius = 1;
+			value.scene.subtype = 2;
+			value.scene.quad.blend = ParticleBlend::alpha;
+			BubbleSceneDraw draw{ &bubbles[index], int(index * 2 + 1), 64, 64, { { 0, 65536, 0 }, { 0, 0, 65536 } } };
+			draw.eye = center;
+			draw.camera = { { { 0, 65536, 0 }, { 0, 0, 65536 }, { 65536, 0, 0 } } };
+			draw.camera_space = true;
+			value.scene.bubble = draw;
+			add(value, particle_position, 10 * 65536);
+		};
+		enqueue_bubble(2);
+		add(QueuedObject{ 1, obj.signature, {} }, object_position);
+		enqueue_bubble(1);
+		Particle smoke{};
+		smoke.scene.position = particle_position;
+		smoke.scene.radius = 1;
+		smoke.scene.subtype = 0;
+		smoke.scene.quad.blend = ParticleBlend::alpha;
+		add(smoke, particle_position, 10 * 65536);
+		enqueue_bubble(0);
+		check(d_rand_get_stream_call_count(D_RNG_FX) == random_calls, "Bubble queue insertion consumed wiggle randomness");
+		unsigned batches = 0, boundaries = 0;
+		drain_buffered([&](ParticleTexture *, const std::vector<ParticleQuad> &quads) {
+			++batches;
+			check(quads.size() == 3 && quads[0].image == 2 && quads[1].image == 1 && quads[2].image == 2, "Mixed bubble/smoke buffer lost source submission order or texture selectors");
+			for (unsigned i = 0; i < 2; ++i) {
+				const auto &quad = quads[i * 2];
+				const float wiggle = float(std::sin(double(float(i * 2 + 1) / 4.f) * 3.141592653589793240)) / denominators[i];
+				const float expected_z = -((float(particle_position[0]) / 65536.f + wiggle) - float(center[0]) / 65536.f);
+				check(quad.vertices[0].color[0] == float(i) && quad.vertices[0].position[2] == expected_z, "Bubble wiggle used traversal RNG, live frame or camera X instead of queued frame/world X");
+				check(quad.vertices[0].uv[0] == float((10 + i) % 4) * .25f && quad.vertices[0].uv[1] == float((10 + i) / 4) * .25f, "Bubble atlas UV ignored its live animated frame");
+			} }, [&](Item &item) {
+			check(std::holds_alternative<QueuedObject>(item) && batches == 1, "Bubble batch crossed a native object boundary");
+			++boundaries; });
+		check(batches == 1 && boundaries == 1 && d_rand_get_stream_call_count(D_RNG_FX) == random_calls + 2, "Suppressed bubble singleton consumed wiggle RNG or escaped its buffer");
+		std::cout << "XL bubble deferred queue: mixed source order, queued-frame world-X wiggle, live atlas, boundary flush and singleton RNG suppression passed\n";
+	}
 	xl_transparency_begin(&segment, 1);
 	check(xl_transparency_object(1), "Recycled-object control did not enqueue");
 	++obj.signature;

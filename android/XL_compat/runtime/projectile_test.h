@@ -1,4 +1,5 @@
 #include "projectile.h"
+#include "object_birth.h"
 extern "C" {
 void maybe_kill_weapon(object *, object *);
 void collide_weapon_and_controlcen(object *, object *, vms_vector *);
@@ -76,6 +77,8 @@ static int projectile_robot()
 	init_ai_object(victim, AIB_NORMAL, -1);
 	return victim;
 }
+
+#include "camera_weapon_test.h"
 
 static void projectile_combat(bool xl)
 {
@@ -185,7 +188,11 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 	const xl_compat::Bytes encoded{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
 	const auto before = projectile_capture();
 	require(before.size() >= 2, "Need multiple projectile owners for malformed-state controls");
-	for (int variant = 0; variant < 14; ++variant) {
+	const auto hits_before = xl_camera_hit_snapshot();
+	std::vector<xl_compat::CameraHitState> live_hits(hits_before.size());
+	std::vector<bool> had_hits;
+	for (std::size_t i = 0; i < hits_before.size(); ++i) had_hits.push_back(xl_camera_hit_state_get(hits_before[i].owner, live_hits[i]));
+	for (int variant = 0; variant < 25; ++variant) {
 		auto block = nlohmann::json::parse(encoded.begin() + 16, encoded.end());
 		auto &rows = block["projectiles"];
 		if (variant == 0) rows[0][0] = MAX_OBJECTS;
@@ -199,9 +206,21 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 		if (variant == 8) rows.erase(rows.begin());
 		if (variant == 9) rows[0][0] = ConsoleObject - Objects;
 		if (variant == 10) rows[0][1] = UINT64_MAX;
-		if (variant == 11) rows[0][2][0] = true;
+		if (variant == 11) rows[0][2][0] = nlohmann::json::boolean_t(1);
 		if (variant == 12) rows[0][2][19] = MAX_OBJECTS - 1;
 		if (variant == 13) block.erase("projectiles");
+		auto &hit_rows = block["camera_hits"];
+		if (variant == 14) block.erase("camera_hits");
+		if (variant == 15) hit_rows[0][0] = MAX_OBJECTS;
+		if (variant == 16) hit_rows[0][1] = hits_before[0].signature + 1;
+		if (variant == 17) hit_rows[0][2] = OBJ_ROBOT;
+		if (variant == 18) hit_rows[0][3] = INT32_MIN;
+		if (variant == 19) hit_rows[0][3] = UINT64_MAX;
+		if (variant == 20) hit_rows[0][3] = nlohmann::json::boolean_t(1);
+		if (variant == 21) hit_rows.erase(hit_rows.begin());
+		if (variant == 22) hit_rows.push_back(hit_rows[0]);
+		if (variant == 23) hit_rows[0].push_back(0);
+		if (variant == 24) hit_rows = nullptr;
 		const auto text = block.dump();
 		xl_compat::Bytes bad(encoded.begin(), encoded.begin() + 16);
 		bad.insert(bad.end(), text.begin(), text.end());
@@ -214,11 +233,49 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 		write_bytes((user / "projectile-bad.bin").string().c_str(), bad);
 		file = PHYSFS_openRead("projectile-bad.bin");
 		require(file && !xl_wall_trigger_read(file) && PHYSFS_close(file) && projectile_same(before, projectile_capture()), "Malformed projectile trailer was accepted or changed live history");
+		for (std::size_t i = 0; i < hits_before.size(); ++i) {
+			xl_compat::CameraHitState current;
+			require(xl_camera_hit_state_get(hits_before[i].owner, current) == had_hits[i] &&
+			            current.repaired == live_hits[i].repaired && current.next == live_hits[i].next &&
+			            current.critical_time == live_hits[i].critical_time && current.shield_time == live_hits[i].shield_time &&
+			            current.points == live_hits[i].points && current.times == live_hits[i].times,
+			        "Malformed trailer published camera hit state");
+		}
 	}
 	xl_projectile_clear();
 	file = PHYSFS_openRead("projectile-state.bin");
 	require(file && xl_wall_trigger_read(file) && PHYSFS_close(file) && projectile_same(before, projectile_capture()), "Valid projectile trailer did not recover");
-	std::cout << "Fourteen malformed projectile trailers rejected before table publication; valid recovery passed\n";
+	std::cout << "Twenty-five malformed projectile/camera hit trailers rejected before table publication; valid recovery passed\n";
+}
+
+static void camera_hit_disk_controls()
+{
+	const int owner = int(ConsoleObject - Objects);
+	xl_compat::CameraHitState earned;
+	require(xl_camera_hit_state_get(owner, earned) && earned.repaired > 0, "Full camera hit save requires earned physical state");
+	SDL_Delay(2);
+	xl_camera_controller_begin_frame();
+	const auto saved_ticks = int32_t(xl_camera_controller_ticks());
+	const int32_t elapsed = earned.repaired_elapsed(saved_ticks);
+	require(elapsed > 0, "Camera hit disk save did not exercise elapsed repair time");
+	char save[] = "camera-hits.sav", description[] = "XL camera hit state", error[256]{};
+	stop_time();
+	require(state_save_all_sub(save, description), "Cannot save earned camera hit state");
+	require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active() &&
+	            xl_camera_hit_snapshot().empty() && !xl_camera_hit_state_get(owner, earned),
+	        "Camera hit state leaked into stock");
+	SDL_Delay(2);
+	xl_camera_controller_begin_frame();
+	const auto restored_ticks = int32_t(xl_camera_controller_ticks());
+	require(restored_ticks > saved_ticks, "Camera hit disk restore did not exercise clock rebasing");
+	require(state_restore_all_sub(save, 0), "Cannot restore camera hit save through stock");
+	xl_compat::CameraHitState restored;
+	require(xl_camera_hit_state_get(owner, restored) && restored.repaired == int64_t(restored_ticks) - elapsed &&
+	            !restored.next && !restored.shield_time && !restored.critical_time &&
+	            restored.points == decltype(restored.points){} && restored.times == decltype(restored.times){},
+	        "Full camera hit restore lost elapsed repair time or retained omitted hit history");
+	require(!game_is_time_paused(), "Camera hit disk restore left simulation paused");
+	std::cout << "Physics-earned camera hit state disk restore through stock passed\n";
 }
 
 static int projectile_test(int argc, char **argv)
@@ -235,11 +292,16 @@ static int projectile_test(int argc, char **argv)
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
 		Game_suspended = SUSP_ROBOTS;
+		camera_weapon_controls(root);
+		camera_hit_disk_controls();
+		StartNewGame(1);
+		Game_suspended = SUSP_ROBOTS;
 		projectile_impacts(root);
 		projectile_combat(true);
 		projectile_physics();
 		StartNewGame(1);
 		Game_suspended = SUSP_ROBOTS;
+		GameTime64 = 7 * F1_0;
 		const int first = projectile_test_shot(ConsoleObject - Objects);
 		const int second = projectile_test_shot(ConsoleObject - Objects);
 		std::vector<int> victims;
@@ -261,6 +323,14 @@ static int projectile_test(int argc, char **argv)
 		require(Objects[evicted].shields == i2f(20), "Evicted victim was incorrectly suppressed");
 		collide_robot_and_weapon(&Objects[retained], &Objects[second], &Objects[retained].pos);
 		require(Objects[retained].shields == i2f(20), "Separate projectile inherited another owner's hit history");
+		require(xl_object_birth_time(first) == 7 * F1_0 && xl_object_birth_time(retained) == 7 * F1_0, "Dynamic object births did not use creation time");
+		auto *saved_effect = object_create_explosion(ConsoleObject->segnum, &ConsoleObject->pos, 65536, VCLIP_SMALL_EXPLOSION);
+		require(saved_effect != nullptr, "Cannot create saved explosion motion control");
+		xl_explosion_motion_begin(saved_effect);
+		const int effect_slot = int(saved_effect - Objects);
+		saved_effect->lifeleft /= 2;
+		do_explosion_sequence(saved_effect);
+		const auto effect_position = saved_effect->pos;
 		const auto saved = projectile_capture();
 		char save[] = "projectiles.sav", description[] = "XL projectile history";
 		stop_time();
@@ -269,6 +339,16 @@ static int projectile_test(int argc, char **argv)
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active() && projectile_capture().empty(), "Projectile state leaked into stock");
 		projectile_combat(false);
 		require(state_restore_all_sub(save, 0) && projectile_same(saved, projectile_capture()), "Disk through stock lost full projectile histories");
+		require(xl_object_birth_time(first) == 0 && xl_object_birth_time(retained) == 0, "Disk restore did not reset private creation times like source level reload");
+		auto *saved_viewer = Viewer;
+		auto restore_viewer = *ConsoleObject;
+		restore_viewer.pos.x += 10 * F1_0;
+		Viewer = &restore_viewer;
+		do_explosion_sequence(&Objects[effect_slot]);
+		Viewer = saved_viewer;
+		require(Objects[effect_slot].type == OBJ_FIREBALL && !std::memcmp(&effect_position, &Objects[effect_slot].pos, sizeof(effect_position)),
+		        "Restored explosion inherited unsaved source motion state");
+		std::cout << "XL object birth and explosion motion disk reset passed\n";
 		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		const auto shields = Objects[retained].shields;
 		collide_robot_and_weapon(&Objects[retained], &Objects[first], &Objects[retained].pos);

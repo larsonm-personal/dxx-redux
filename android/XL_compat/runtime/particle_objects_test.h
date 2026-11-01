@@ -97,6 +97,71 @@ static void particle_saved_state_case()
 	std::cout << "XL particle saved state: full-trailer activation round trip, 12 atomic rejection controls, fresh clouds, deleted owners and RNG isolation passed\n";
 }
 
+static void bubble_objects_native_case(xl_compat::Inventory source)
+{
+	using namespace xl_compat;
+	const auto sim = d_rand_get_stream_call_count(D_RNG_SIM);
+	const auto saved_orientation = Objects[1].orient;
+	struct RestoreOrientation {
+		vms_matrix value;
+		~RestoreOrientation()
+		{
+			Objects[1].orient = value;
+		}
+	} restore_orientation{ saved_orientation };
+	const ParticleOrientation orientation{ { { 0, 65536, 0 }, { 0, 0, 65536 }, { 65536, 0, 0 } } };
+	Objects[1].orient.rvec = { 0, 65536, 0 };
+	Objects[1].orient.uvec = { 0, 0, 65536 };
+	Objects[1].orient.fvec = { 65536, 0, 0 };
+	source.objects[1].orientation = { 0, 65536, 0, 0, 0, 65536, 65536, 0, 0 };
+	// Original pmlev3 object-316 payload on isolated Neptune geometry
+	source.objects[1].render_data = { 2, 2, 4, 2, 2, 9, 0, 0, 0, 100, 0, 2, 1 };
+	source.objects[2].render_data[12] = 0;
+	for (bool wet : { true, false }) {
+		for (auto &segment : source.segments)
+			segment.properties = (segment.properties & ~segment_water) | (wet ? segment_water : 0);
+		bind_particle_objects(source);
+		const auto before = d_rand_get_stream_call_count(D_RNG_FX);
+		particle_objects_frame(0);
+		require(particle_systems().size() == 1 && std::holds_alternative<BubbleEmitter>(particle_systems().front().emitter), "Native bubble selected a different particle emitter");
+		const auto &emitter = std::get<BubbleEmitter>(particle_systems().front().emitter);
+		require(emitter.orientation == orientation && !emitter.count && d_rand_get_stream_call_count(D_RNG_FX) == before + 12, "Native bubble lost full orientation, cadence or point jitter");
+		particle_objects_frame(100);
+		require(emitter.count > 0 && emitter.definition.image == 2 && emitter.definition.fade == -1, "Native bubble failed to emit its source profile");
+		for (int i = 0; i < emitter.count; ++i) {
+			const auto &bubble = emitter.slots[std::size_t((emitter.first + i) % int(emitter.slots.size()))];
+			require(bubble.motion.decay == 1 && !bubble.motion.rotates && bubble.color[3] == .5f, "Native bubble acquired fire/smoke lifetime or appearance");
+		}
+		const auto saved = particle_objects_snapshot();
+		require(xl_particle_object_set_enabled(1, 0), "Cannot disable native bubble owner");
+		particle_objects_frame(101);
+		require(emitter.life == 0 && emitter.count > 0, "Bubble disable removed its live cloud instead of draining");
+		const auto paused_calls = d_rand_get_stream_call_count(D_RNG_FX);
+		stop_time();
+		particle_objects_frame(1000);
+		start_time();
+		require(emitter.moved == 100 && d_rand_get_stream_call_count(D_RNG_FX) == paused_calls, "Paused bubble advanced its clock or FX stream");
+		for (int time = 125; time <= 600; time += 25) particle_objects_frame(time);
+		if (wet) require(!particle_systems().empty() && particle_systems().front().count() > 0, "Wet native geometry retired every bubble prematurely");
+		else require(particle_systems().empty(), "Dry native geometry retained bubbles after water lookup and retirement");
+		const auto restore_calls = d_rand_get_stream_call_count(D_RNG_FX);
+		require(restore_particle_objects(saved, true) && particle_systems().empty() && particle_objects_snapshot() == saved, "Bubble activation restore retained transient particles or lost state");
+		require(d_rand_get_stream_call_count(D_RNG_FX) == restore_calls, "Bubble restore consumed FX RNG");
+		particle_objects_frame(0);
+		particle_objects_frame(100);
+		require(particle_systems().size() == 1 && particle_systems().front().count() > 0 && std::get<BubbleEmitter>(particle_systems().front().emitter).orientation == orientation, "Restored bubble owner did not create a fresh correctly oriented cloud");
+		++Objects[1].signature;
+		particle_objects_frame(125);
+		require(!xl_particle_object_set_enabled(1, 1), "Bubble owner followed a recycled signature");
+		for (int time = 150; time <= 20000; time += 25) particle_objects_frame(time);
+		require(particle_systems().empty(), "Deleted bubble owner failed to retire");
+		--Objects[1].signature;
+	}
+	xl_particle_objects_clear();
+	require(d_rand_get_stream_call_count(D_RNG_SIM) == sim, "Bubble lifecycle consumed simulation RNG");
+	std::cout << "XL bubble native ownership: original payload, full orientation, point jitter, wet/dry retirement, pause, activation restore, fresh clouds and recycled signatures passed\n";
+}
+
 static void particle_objects_native_case(bool active)
 {
 	using namespace xl_compat;
@@ -258,7 +323,7 @@ static void particle_objects_native_case(bool active)
 	require(particle_systems().size() == 1 && d_rand_get_stream_call_count(D_RNG_FX) == jitter_calls + 12, "Native point emitter lost one of the source's two jitter visits");
 	const auto *preserved = &particle_systems().front();
 	auto malformed = source;
-	malformed.objects[1].render_data[11] = 2;
+	malformed.objects[1].render_data[11] = 4;
 	bool rejected = false;
 	try {
 		bind_particle_objects(malformed);
@@ -299,6 +364,7 @@ static void particle_objects_native_case(bool active)
 		particle_objects_frame(50);
 		require(particle_systems().size() == 2 && particle_systems().back().count() > 0, "Mixed activation restore did not resume smoke emission");
 	}
+	bubble_objects_native_case(source);
 	xl_particle_objects_clear();
 	require(particle_systems().empty() && !xl_particle_object_set_enabled(1, 1), "Particle clear left a system or activation binding");
 	require(d_rand_get_stream_call_count(D_RNG_SIM) == sim_before, "Particle lifecycle or activation consumed simulation RNG");

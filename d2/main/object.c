@@ -2,6 +2,9 @@
 #include "preview.h"
 #include "transparency_scene.h"
 #include "projectile.h"
+#include "object_birth.h"
+#include "explosion_motion.h"
+#include "camera_controller.h"
 #include "object_pool.h"
 #include "fluids.h"
 #include "blocked.h"
@@ -1121,6 +1124,9 @@ void init_player_object()
 void init_objects()
 {
 #ifdef DXX_XL_RUNTIME
+	xl_object_birth_clear();
+	xl_explosion_motion_clear();
+	xl_camera_controller_clear();
 	xl_projectile_clear();
 #endif
 	render_reset_gameplay_view_objects();
@@ -1726,6 +1732,9 @@ int obj_create(enum object_type_t type,ubyte id,int segnum,const vms_vector *pos
 	if (obj->type == OBJ_DEBRIS)
 		Debris_object_count++;
 
+	#ifdef DXX_XL_RUNTIME
+	xl_object_birth_created(objnum);
+	#endif
 	input_demo_log_allocator_event("create", objnum, obj, obj->type,
 		obj->id, obj->signature, obj->segnum, obj->flags);
 
@@ -2525,6 +2534,9 @@ void object_move_one( object * obj )
 		case CT_REMOTE: break;		//doesn't do anything
 
 		case CT_CNTRLCEN: do_controlcen_frame(obj); break;
+#ifdef DXX_XL_RUNTIME
+		case 18: xl_camera_controller_frame(obj - Objects); break; // XL CT_CAMERA
+#endif
 
 		default:
 
@@ -2703,6 +2715,9 @@ void object_move_one( object * obj )
 //move all objects for the current frame
 void object_move_all()
 {
+#ifdef DXX_XL_RUNTIME
+	xl_camera_controller_begin_frame();
+#endif
 	int i;
 	object *objp;
 	const int frame_level = Current_level_num;

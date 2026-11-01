@@ -25,6 +25,11 @@
 #include "../runtime/particle_border_texture.h"
 #include "../transparency_order.h"
 #include "../transparency.h"
+#include "../camera_hit_render.h"
+#include "../shield_sphere.h"
+#include "../runtime/shield_gpu.h"
+#include "../runtime/shield_renderer.h"
+#include "../runtime/camera_target_gpu.h"
 #ifdef XL_POG_SHADER_REFERENCE
 #include "xl_reference_pog_shaders.h"
 #endif
@@ -45,6 +50,20 @@ struct Arg GameArg{};
 struct Cfg GameCfg{};
 struct netgame_info Netgame{};
 int Game_mode = 0, gl_initialized = 0;
+int Canvas_width = 0, Canvas_height = 0, linedotscale = 1;
+int xl_preview_pilot_active(void)
+{
+	return 0;
+}
+int xl_particle_depth_projection(void)
+{
+	return 0;
+}
+int xl_fog_active(void)
+{
+	return 0;
+}
+void ogl_prepare_framebuffer_readback(void);
 extern int r_texcount, GL_TEXTURE_2D_enabled;
 ubyte gr_palette[768]{}, gr_current_pal[768]{};
 grs_canvas *grd_curcanv = nullptr;
@@ -102,6 +121,10 @@ void Error(const char *format, ...)
 	va_end(args);
 	throw std::runtime_error(text);
 }
+}
+const xl_compat::ParticleImageResource *xl_prepared_particle_image(int)
+{
+	throw std::runtime_error("Asset-free GPU owner unexpectedly requested a mission-prepared particle image");
 }
 namespace
 {
@@ -461,6 +484,13 @@ void original(const char *path)
 #include "sprite_bitmap_gpu_controls.h"
 #ifdef XL_POG_SHADER_REFERENCE
 #include "sprite_glare_gpu_controls.h"
+#include "camera_hit_gpu_controls.h"
+#include "shield_sphere_gpu_controls.h"
+#include "../runtime/shield_gpu_probe.h"
+#include "../runtime/camera_target_gpu_probe.h"
+#include "../runtime/camera_native_pass_probe.h"
+#include "camera_target_gpu_controls.h"
+#include "../runtime/shield_original_gpu_probe.h"
 #endif
 } // namespace
 int main(int argc, char **argv)
@@ -497,30 +527,70 @@ int main(int argc, char **argv)
 		ogl_init_texture_list_internal();
 		ogl_init_pixel_buffers(32, 32);
 		ogl_init_prog();
+		const auto recreate = [&] {
+			ogl_done_prog();
+			ogl_close_pixel_buffers();
+			check(eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT), "Cannot release old particle context");
+			check(eglDestroyContext(display, context), "Cannot destroy old particle context");
+			context = eglCreateContext(display, config, EGL_NO_CONTEXT, nullptr);
+			check(context != EGL_NO_CONTEXT && eglMakeCurrent(display, surface, surface, context), "Cannot replace particle context");
+			ogl_init_texture_list_internal();
+			ogl_init_pixel_buffers(32, 32);
+			ogl_init_prog();
+		};
 		if (argc == 1) {
 			controls();
 #ifdef XL_POG_SHADER_REFERENCE
 			additive_wall_source_controls();
+			camera_hit_shader_controls();
+			camera_target_source_controls();
+			std::vector<unsigned char> camera_pixels;
+			check(camera_target_device_controls(camera_pixels) == 48, "Camera target controls failed");
+			check(camera_native_pass_controls(camera_pixels) == 4, "Native camera pass controls failed");
+			std::vector<unsigned char> shield_pixels;
+			check(shield_device_controls(shield_pixels) == 72, "Shared analytical shield controls failed");
 #endif
 			particle_gpu_controls();
 			sprite_bitmap_gpu_controls();
-			const auto recreate = [&] {
-				ogl_done_prog();
-				ogl_close_pixel_buffers();
-				check(eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT), "Cannot release old particle context");
-				check(eglDestroyContext(display, context), "Cannot destroy old particle context");
-				context = eglCreateContext(display, config, EGL_NO_CONTEXT, nullptr);
-				check(context != EGL_NO_CONTEXT && eglMakeCurrent(display, surface, surface, context), "Cannot replace particle context");
-				ogl_init_texture_list_internal();
-				ogl_init_pixel_buffers(32, 32);
-				ogl_init_prog();
-			};
+
 			particle_context_controls(recreate);
 			lightning_scene_context_controls(recreate);
+#ifdef XL_POG_SHADER_REFERENCE
+			std::vector<unsigned char> restored_cameras;
+			check(camera_target_device_controls(restored_cameras) == 48 && camera_native_pass_controls(restored_cameras) == 4 && restored_cameras == camera_pixels, "Camera target pixels changed across actual context recreation");
+			std::cout << "Camera target: 48 analytical and 4 native frame-boundary cases before/after actual context recreation passed\n";
+			std::vector<unsigned char> restored_shields;
+			check(shield_device_controls(restored_shields) == 72 && restored_shields == shield_pixels, "Shield pixels changed across actual context recreation");
+			std::cout << "Production shield: 72 analytical cases before/after actual context recreation passed\n";
+#endif
 		}
 #ifdef XL_POG_SHADER_REFERENCE
 		else if (argc == 3 && std::string(argv[1]) == "--sprite-glare")
 			sprite_glare_gpu_controls(argv[2]);
+		else if (argc == 3 && std::string(argv[1]) == "--shield-addons") {
+			std::array<std::shared_ptr<const xl_compat::ShieldImageResource>, 3> images;
+			std::array<std::unique_ptr<xl_compat::ShieldAddon>, 3> addons;
+			const char *names[] = { "forcefield", "forcefield2", "forcefield3" };
+			for (unsigned i = 0; i < images.size(); ++i) {
+				std::ifstream input(std::string(argv[2]) + "/" + names[i] + ".tga", std::ios::binary);
+				check(bool(input), "Cannot open original shield addon");
+				std::vector<unsigned char> bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
+				auto image = std::make_shared<xl_compat::ShieldImageResource>();
+				image->bitmap = xl_compat::read_particle_image(bytes.data(), bytes.size());
+				image->texture = std::make_unique<xl_compat::ShieldTexture>(image->bitmap);
+				images[i] = image;
+				addons[i] = std::make_unique<xl_compat::ShieldAddon>(i);
+				addons[i]->replace_image(image);
+			}
+			std::vector<unsigned char> before, after;
+			check(shield_original_device_controls(images, addons, 10000, before) == 612, "Original shield draw controls failed");
+			xl_particle_images_discard_context(1);
+			recreate();
+			check(shield_original_device_controls(images, addons, 11000, after) == 612 && before == after, "Original shield pixels changed across actual context recreation");
+			xl_compat::discard_shield_context(false);
+			std::cout << "Original shield addons: 612 cases before/after real context recreation, full decoded pixel hashes, animation, replacement and unload clocks passed\n";
+		} else if (argc == 3 && std::string(argv[1]) == "--shield-sphere")
+			shield_sphere_gpu_controls(argv[2]);
 #endif
 		else if (argc == 2 && std::string(argv[1]) == "--sprite-bitmaps") sprite_bitmap_gpu_controls();
 		else if (argc == 2 && std::string(argv[1]) == "--sprite-bitmap-triangles") sprite_bitmap_gpu_controls(false);

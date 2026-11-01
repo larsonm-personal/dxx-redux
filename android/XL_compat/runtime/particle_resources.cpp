@@ -1,5 +1,6 @@
 #include "particle_resources.h"
 #include "particle_renderer.h"
+#include "shield_renderer.h"
 #include "resource_validation.h"
 #include "../inventory.h"
 #include "../particle_image.h"
@@ -17,6 +18,8 @@ namespace xl_compat
 {
 ParticleImageResource::ParticleImageResource() = default;
 ParticleImageResource::~ParticleImageResource() = default;
+ShieldImageResource::ShieldImageResource() = default;
+ShieldImageResource::~ShieldImageResource() = default;
 namespace
 {
 bool locate(std::string &path, bool installation, const std::string &kind)
@@ -38,7 +41,8 @@ bool locate(std::string &path, bool installation, const std::string &kind)
 		throw std::runtime_error("XL " + kind + " image is not a regular file: " + path);
 	return true;
 }
-std::shared_ptr<const ParticleImageResource> prepare_addon_image(const char *name, const std::string &kind, unsigned atlas_side, bool optional = false)
+template <typename Resource>
+std::shared_ptr<Resource> read_addon_image(const char *name, const std::string &kind, bool optional)
 {
 	auto mission = addon_mission_texture_path(mission_resource_archive(), name);
 	if (mission.empty()) throw std::runtime_error("XL " + kind + " images require a selected mission HOG identity");
@@ -57,9 +61,15 @@ std::shared_ptr<const ParticleImageResource> prepare_addon_image(const char *nam
 	Bytes bytes(static_cast<std::size_t>(length));
 	if (PHYSFS_readBytes(file.get(), bytes.data(), bytes.size()) != length)
 		throw std::runtime_error("Cannot read complete XL " + kind + " image: " + selected);
-	auto image = std::make_shared<ParticleImageResource>();
+	auto image = std::make_shared<Resource>();
 	image->path = std::move(selected);
 	image->bitmap = read_particle_image(bytes.data(), bytes.size());
+	return image;
+}
+std::shared_ptr<const ParticleImageResource> prepare_addon_image(const char *name, const std::string &kind, unsigned atlas_side, bool optional = false)
+{
+	auto image = read_addon_image<ParticleImageResource>(name, kind, optional);
+	if (!image) return {};
 	const unsigned width = image->bitmap.width;
 	if (atlas_side && (width < 2 * atlas_side || image->bitmap.height != width || (width & (width - 1))))
 		throw std::runtime_error("XL particle image requires a square power-of-two " + std::to_string(atlas_side) + "-by-" + std::to_string(atlas_side) + " atlas with room for its one-pixel cell borders: " + image->path);
@@ -68,18 +78,30 @@ std::shared_ptr<const ParticleImageResource> prepare_addon_image(const char *nam
 }
 } // namespace
 
+std::shared_ptr<const ShieldImageResource> prepare_shield_image(unsigned index)
+{
+	if (index > 2) throw std::runtime_error("Unsupported XL shield image index");
+	const char *names[] = { "forcefield", "forcefield2", "forcefield3" };
+	auto image = read_addon_image<ShieldImageResource>(names[index], "shield", false);
+	image->texture = std::make_unique<ShieldTexture>(image->bitmap);
+	return image;
+}
+
 std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Inventory &level, int subtype)
 {
-	if (subtype != 0 && subtype != 3) throw std::runtime_error("Unsupported XL particle image subtype");
+	if (subtype != 0 && subtype != 2 && subtype != 3) throw std::runtime_error("Unsupported XL particle image subtype");
 	bool required = false;
 	for (const auto &object : level.objects) {
 		if (object.render != 11) continue;
-		if (object.render_data.size() != 13 || (object.render_data[11] != 3 && object.render_data[11] != 0 && object.render_data[11] != 1))
-			throw std::runtime_error("XL particle image preparation requires a supported authored fire, smoke or spray payload");
+		if (object.render_data.size() != 13 || object.render_data[11] < 0 || object.render_data[11] > 3)
+			throw std::runtime_error("XL particle image preparation requires a supported authored fire, smoke, spray or bubble payload");
 		// Source spray uses the smoke particle image and fade profile
 		required |= (object.render_data[11] == 1 ? 0 : object.render_data[11]) == subtype;
+		// The non-array bubble shader also binds the active smoke/spark images
+		required |= subtype == 0 && object.render_data[11] == 2;
 	}
 	if (!required) return {};
+	if (subtype == 2) return prepare_addon_image(bubble_image_name, "bubble", bubble_image_atlas_side);
 	return prepare_addon_image(subtype == 3 ? fire_image_name : smoke_image_name, subtype == 3 ? "fire" : "smoke", subtype == 3 ? fire_image_atlas_side : smoke_image_atlas_side);
 }
 

@@ -3,6 +3,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+// Nonzero only inside a camera-owned GL capture callback
+int xl_camera_target_active_dimensions(int *width, int *height);
 void xl_particle_images_discard_context(int abandoned);
 void xl_particle_soft_begin_scene(void);
 void xl_particle_soft_end_scene(void);
@@ -38,6 +40,7 @@ class ParticleTexture
 };
 // Vertices use the current renderer's camera coordinates and projection
 void draw_particle_quads(_grs_bitmap &image, const ParticleQuad *quads, std::size_t count);
+void draw_multi_particle_quads(ParticleTexture &smoke, ParticleTexture &bubble, const ParticleQuad *quads, std::size_t count, bool soft = true);
 void draw_bitmap_sprite(_grs_bitmap &image, ParticleQuad quad);
 } // namespace xl_compat
 #ifdef _MSC_VER

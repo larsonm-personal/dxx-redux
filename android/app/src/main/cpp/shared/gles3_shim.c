@@ -824,6 +824,16 @@ const float *gles3_shim_get_projection(void)
 	return proj_stack.m[proj_stack.top];
 }
 
+const float *gles3_shim_get_modelview(void)
+{
+	return mv_stack.m[mv_stack.top];
+}
+
+GLenum gles3_shim_get_matrix_mode(void)
+{
+	return cur_stack == &proj_stack ? GL_PROJECTION : GL_MODELVIEW;
+}
+
 GLuint gles3_shim_get_stream_vbo(void)
 {
 	return shim_vbo;

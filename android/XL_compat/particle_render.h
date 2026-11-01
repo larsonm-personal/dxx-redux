@@ -48,6 +48,8 @@ enum class ParticleBlend { weak_additive,
 struct ParticleQuad {
 	std::array<ParticleVertex, 4> vertices;
 	ParticleBlend blend;
+	// Non-array source particle shader selector, or -1 for legacy fire/sprites
+	int image = -1;
 };
 
 inline bool prepare_fire_particle_draw(FireParticle &particle, bool animate)

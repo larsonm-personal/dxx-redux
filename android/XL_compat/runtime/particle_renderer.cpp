@@ -5,7 +5,10 @@
 #include <winsock2.h>
 #endif
 #include "particle_renderer.h"
+#include "particle_resources.h"
+#include "resource_validation.h"
 #include "lightning_renderer.h"
+#include "shield_renderer.h"
 #include "pog_renderer.h"
 #include "../particle_render.h"
 extern "C" {
@@ -16,8 +19,10 @@ void ogl_bindbmtex(grs_bitmap *);
 }
 #if !defined(OGLES) || defined(ANDROID)
 #include "particle_soft_renderer.h"
+#include "particle_multi_renderer.h"
 #include "particle_border_texture.h"
 #include "sprite_bitmap_renderer.h"
+#include "camera_target_gpu.h"
 #endif
 
 namespace xl_compat
@@ -70,6 +75,7 @@ void ParticleTexture::discard_context(bool abandoned)
 {
 #if !defined(OGLES) || defined(ANDROID)
 	particle_soft.discard(abandoned);
+	particle_multi.discard(abandoned);
 	sprite_bitmap_gpu.discard(abandoned);
 #endif
 	for (auto *texture = State::head; texture; texture = texture->next) texture->release(abandoned);
@@ -104,12 +110,28 @@ unsigned ParticleTexture::border_handle()
 void ParticleTexture::draw(const ParticleQuad *quads, std::size_t count)
 {
 	if (!count) return;
+	if (quads[0].image >= 0) {
+		const auto *smoke = xl_prepared_particle_image(0), *bubble = xl_prepared_particle_image(2);
+		if (!smoke || !bubble || !smoke->texture || !bubble->texture) throw std::runtime_error("XL multi-image particles lost their prepared source textures");
+		draw_multi_particle_quads(*smoke->texture, *bubble->texture, quads, count);
+		return;
+	}
 	(void) handle();
 #if !defined(OGLES) || defined(ANDROID)
 	if (particle_soft.active) draw_soft_particles(state->bitmap.gltexture->handle, quads, count);
 	else
 #endif
 		draw_particle_quads(state->bitmap, quads, count);
+}
+
+void draw_multi_particle_quads(ParticleTexture &smoke, ParticleTexture &bubble, const ParticleQuad *quads, std::size_t count, bool soft)
+{
+	if (!count) return;
+#if defined(OGLES) && !defined(ANDROID)
+	throw std::runtime_error("XL multi-image particles require OpenGL 3 or OpenGL ES 3");
+#else
+	draw_particle_multi(smoke.handle(), bubble.handle(), quads, count, soft);
+#endif
 }
 
 void ParticleTexture::draw_soft_sprite(const ParticleQuad &quad, bool soft)
@@ -251,9 +273,27 @@ static void draw_particle_texture(GLuint image, const ParticleQuad *quads, std::
 #endif
 }
 } // namespace xl_compat
+extern "C" int xl_camera_target_active_dimensions(int *width, int *height)
+{
+#if !defined(OGLES) || defined(ANDROID)
+	int w = 0, h = 0;
+	if (!xl_compat::CameraTargetGpu::active_dimensions(w, h)) return 0;
+	if (width) *width = w;
+	if (height) *height = h;
+	return 1;
+#else
+	(void) width;
+	(void) height;
+	return 0;
+#endif
+}
 extern "C" void xl_particle_images_discard_context(int abandoned)
 {
+#if !defined(OGLES) || defined(ANDROID)
+	xl_compat::CameraTargetGpu::discard_context(abandoned != 0);
+#endif
 	xl_compat::discard_lightning_context(abandoned != 0);
+	xl_compat::discard_shield_context(abandoned != 0);
 	xl_compat::ParticleTexture::discard_context(abandoned != 0);
 }
 

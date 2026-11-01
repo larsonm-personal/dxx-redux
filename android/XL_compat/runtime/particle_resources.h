@@ -10,6 +10,15 @@ namespace xl_compat
 {
 struct Inventory;
 class ParticleTexture;
+class ShieldTexture;
+struct ShieldImageResource {
+	std::string path;
+	PogBitmap bitmap;
+	std::unique_ptr<ShieldTexture> texture;
+	ShieldImageResource();
+	~ShieldImageResource();
+};
+std::shared_ptr<const ShieldImageResource> prepare_shield_image(unsigned index);
 struct ParticleImageResource {
 	std::string path;
 	PogBitmap bitmap;

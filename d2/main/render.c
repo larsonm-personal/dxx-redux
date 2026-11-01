@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "camera_scene.h"
 #include "transparency_scene.h"
 #include "skybox_render.h"
 #include "fog.h"
@@ -877,6 +878,9 @@ void do_render_object(int objnum, int window_num)
 #if defined(ANDROID) || defined(__ANDROID__)
 		!Android_visual_only_render_pass &&
 #endif
+#ifdef DXX_XL_RUNTIME
+		!xl_camera_scene_active() &&
+#endif
 		((Objects[objnum].type == OBJ_ROBOT) || (Objects[objnum].type == OBJ_PLAYER))) {
 		//Assert(Window_rendered_data[window_num].rendered_objects < MAX_RENDERED_OBJECTS);
 		//	This peculiar piece of code makes us keep track of the most recently rendered objects, which
@@ -891,6 +895,9 @@ void do_render_object(int objnum, int window_num)
 	if (
 #if defined(ANDROID) || defined(__ANDROID__)
 		!Android_visual_only_render_pass &&
+#endif
+#ifdef DXX_XL_RUNTIME
+		!xl_camera_scene_active() &&
 #endif
 		obj->type == OBJ_ROBOT)
 		input_demo_render_probe_note_drawn_robot(objnum);
@@ -1046,6 +1053,9 @@ void render_segment(int segnum, int window_num)
 	if (! cc.uand) {		//all off screen?
 
 		if (Viewer->type!=OBJ_ROBOT
+#ifdef DXX_XL_RUNTIME
+		    && !xl_camera_scene_active()
+#endif
 #if defined(ANDROID) || defined(__ANDROID__)
 		    && !Android_visual_only_render_pass
 #endif
@@ -1866,6 +1876,12 @@ int render_setup_view(fix eye_offset)
 	int start_seg_num;
 
 	Viewer_eye = Viewer->pos;
+#ifdef DXX_XL_RUNTIME
+	if (xl_camera_scene_active()) {
+		g3_set_view_matrix(&Viewer_eye, &Viewer->orient, Render_zoom);
+		return Viewer->segnum;
+	}
+#endif
 
 //	if (Viewer->type == OBJ_PLAYER && (PlayerCfg.CurrentCockpitMode!=CM_REAR_VIEW))
 //		vm_vec_scale_add2(&Viewer_eye,&Viewer->orient.fvec,(Viewer->size*3)/4);
@@ -1957,7 +1973,11 @@ void render_frame(fix eye_offset, int window_num)
 	start_seg_num = render_setup_view(eye_offset);
 
 #if defined(ANDROID) && defined(INTROSPECT_ON)
-	if (window_num == 0)
+	if (window_num == 0
+#ifdef DXX_XL_RUNTIME
+	    && !xl_camera_scene_active()
+#endif
+	    )
 		game_introspect_record_main_view(start_seg_num);
 #endif
 
@@ -2255,6 +2275,9 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 #if defined(ANDROID) || defined(__ANDROID__)
 	if (!Android_visual_only_render_pass)
 #endif
+#ifdef DXX_XL_RUNTIME
+	if (!xl_camera_scene_active())
+#endif
 		Window_rendered_data[window_num].num_objects = 0;
 
 	#ifndef NDEBUG
@@ -2455,6 +2478,9 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 				    ) {		//all off screen?
 
 				  if (Viewer->type!=OBJ_ROBOT
+#ifdef DXX_XL_RUNTIME
+		    && !xl_camera_scene_active()
+#endif
 #if defined(ANDROID) || defined(__ANDROID__)
 					  && !Android_visual_only_render_pass
 #endif
@@ -2596,6 +2622,9 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 				    ) {		//all off screen?
 
 				  if (Viewer->type!=OBJ_ROBOT
+#ifdef DXX_XL_RUNTIME
+		    && !xl_camera_scene_active()
+#endif
 #if defined(ANDROID) || defined(__ANDROID__)
 					  && !Android_visual_only_render_pass
 #endif

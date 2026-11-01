@@ -13,6 +13,9 @@
 
 namespace xl_compat
 {
+struct ModelHitboxBounds {
+	std::array<int32_t, 3> low{}, high{}, offset{}, half_size{};
+};
 // Bounded equivalent of the POF path in GetPolyModelMinMax / CPolyModel::Size
 // Read the original little-endian payload before native alignment/endian fixups
 class ModelGeometry
@@ -21,11 +24,14 @@ class ModelGeometry
 		std::array<int64_t, 3> low{ INT32_MAX, INT32_MAX, INT32_MAX };
 		std::array<int64_t, 3> high{ INT32_MIN, INT32_MIN, INT32_MIN };
 		std::array<int64_t, 3> offset{};
+		std::array<int64_t, 3> source_low{ INT32_MAX, INT32_MAX, INT32_MAX };
+		std::array<int64_t, 3> source_high{ -INT32_MAX, -INT32_MAX, -INT32_MAX };
 		bool points = false;
 	};
 	const uint8_t *data;
 	std::size_t length, budget;
 	unsigned submodel_count;
+	bool reverse_sort;
 	std::vector<Box> boxes{ 1 };
 	std::set<std::size_t> active;
 
@@ -66,6 +72,9 @@ class ModelGeometry
 							// Independent updates also define a one-point or monotone cloud
 							bounds.low[axis] = std::min(bounds.low[axis], value);
 							bounds.high[axis] = std::max(bounds.high[axis], value);
+							// Collision boxes preserve the source's ordered else-if updates
+							if (bounds.source_low[axis] > value) bounds.source_low[axis] = value;
+							else if (bounds.source_high[axis] < value) bounds.source_high[axis] = value;
 						}
 					bounds.points |= count != 0;
 					at = first + std::size_t(count) * 12;
@@ -81,8 +90,8 @@ class ModelGeometry
 				}
 				case 4:
 					need(at, 32);
-					walk(at + word(at + 28), box, depth + 1);
-					walk(at + word(at + 30), box, depth + 1);
+					walk(at + word(at + (reverse_sort ? 30 : 28)), box, depth + 1);
+					walk(at + word(at + (reverse_sort ? 28 : 30)), box, depth + 1);
 					at += 32;
 					break;
 				case 5:
@@ -118,10 +127,41 @@ class ModelGeometry
 
   public:
 	// Capacity matches the native MAX_SUBMODELS; the production caller passes its header count
-	ModelGeometry(const uint8_t *bytes, std::size_t size, unsigned count = 10) : data(bytes), length(size), budget(size * 32), submodel_count(count)
+	ModelGeometry(const uint8_t *bytes, std::size_t size, unsigned count = 10, bool reversed_sort = false) : data(bytes), length(size), budget(size * 32), submodel_count(count), reverse_sort(reversed_sort)
 	{
 		if (!bytes || size > 64 * 1024 * 1024 || !count || count > 10) throw std::runtime_error("HXM model geometry size/count is invalid");
 		walk(0, 0, 0);
+	}
+	// Source index0 is the combined model box; indices1..N retain local bounds
+	// and accumulated offsets for the individual submodel hitboxes
+	std::vector<ModelHitboxBounds> hitbox_bounds() const
+	{
+		std::vector<ModelHitboxBounds> result(1);
+		result[0].low.fill(INT32_MAX);
+		result[0].high.fill(INT32_MIN);
+		for (const auto &box : boxes) {
+			if (!box.points) throw std::runtime_error("HXM hitbox has no vertices");
+			ModelHitboxBounds item;
+			for (unsigned axis = 0; axis < 3; ++axis) {
+				const auto low = box.source_low[axis] + box.offset[axis], high = box.source_high[axis] + box.offset[axis];
+				const auto span = box.source_high[axis] - box.source_low[axis];
+				if (low < INT32_MIN || high > INT32_MAX || span < 0 || span > INT32_MAX)
+					throw std::runtime_error("HXM hitbox bounds overflow");
+				item.low[axis] = int32_t(box.source_low[axis]);
+				item.high[axis] = int32_t(box.source_high[axis]);
+				item.offset[axis] = int32_t(box.offset[axis]);
+				item.half_size[axis] = int32_t(span / 2);
+				result[0].low[axis] = std::min(result[0].low[axis], int32_t(low));
+				result[0].high[axis] = std::max(result[0].high[axis], int32_t(high));
+			}
+			result.push_back(item);
+		}
+		for (unsigned axis = 0; axis < 3; ++axis) {
+			const auto span = int64_t(result[0].high[axis]) - result[0].low[axis];
+			if (span > INT32_MAX) throw std::runtime_error("HXM combined hitbox extent overflows");
+			result[0].half_size[axis] = int32_t(span / 2);
+		}
+		return result;
 	}
 	int32_t custom_radius() const
 	{

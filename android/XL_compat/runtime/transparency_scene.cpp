@@ -5,6 +5,7 @@
 #include <winsock2.h>
 #endif
 #include "transparency_scene.h"
+#include "camera_scene.h"
 #include "../transparency.h"
 #include "../transparency_order.h"
 #include "../particle_buffer.h"
@@ -86,10 +87,8 @@ struct QueuedObject {
 	Window window;
 };
 struct Particle {
-	ParticleQuad quad;
+	ParticleSceneItem scene;
 	ParticleTexture *texture;
-	ParticlePoint position{};
-	float radius = 0;
 };
 struct Sprite {
 	ParticleQuad quad;
@@ -194,24 +193,30 @@ void drain_buffered(DrawParticles draw_particles, DrawOther draw_other, Before b
 	const auto submit = [&](const std::vector<std::size_t> &indices) {
 		std::vector<ParticleQuad> quads;
 		ParticleTexture *texture = nullptr;
+		const bool multi = std::any_of(indices.begin(), indices.end(), [](std::size_t index) { const auto &scene = std::get<Particle>(items[index]).scene; return scene.subtype == 2 || scene.quad.image >= 0; });
 		for (auto index : indices) {
 			const auto &particle = std::get<Particle>(items[index]);
-			if (texture != particle.texture && !quads.empty()) {
+			if (!multi && texture != particle.texture && !quads.empty()) {
 				draw_particles(texture, quads);
 				quads.clear();
 			}
 			texture = particle.texture;
-			quads.push_back(particle.quad);
+			auto quad = particle_scene_quad(particle.scene);
+			if (multi) {
+				if (particle.scene.subtype != 0 && particle.scene.subtype != 2) throw std::runtime_error("XL mixed particle buffer contains an incompatible image");
+				quad.image = particle.scene.subtype == 2 ? 2 : 1;
+			}
+			quads.push_back(std::move(quad));
 		}
 		if (!quads.empty()) draw_particles(texture, quads);
 	};
 	drain([&](Item &item) {
 		before(item);
 		if (const auto *particle = std::get_if<Particle>(&item)) {
-			const auto &p = particle->position;
-			const bool smoke = particle->quad.blend == ParticleBlend::multiply;
-			const bool alpha = particle->quad.blend == ParticleBlend::alpha;
-			buffers.add_kind(std::size_t(&item - items.data()), { float(p[0]) / 65536.f, float(p[1]) / 65536.f, float(p[2]) / 65536.f }, particle->radius, alpha ? 1 : smoke ? 16 : 5, !smoke && !alpha, submit);
+			const auto &p = particle->scene.position;
+			const bool smoke = particle->scene.quad.blend == ParticleBlend::multiply;
+			const bool alpha = particle->scene.quad.blend == ParticleBlend::alpha;
+			buffers.add_kind(std::size_t(&item - items.data()), { float(p[0]) / 65536.f, float(p[1]) / 65536.f, float(p[2]) / 65536.f }, particle->scene.radius, particle->scene.subtype == 2 ? 2 : alpha ? 1 : smoke ? 16 : 5, !smoke && !alpha, submit);
 		} else {
 			buffers.flush(submit);
 			draw_other(item);
@@ -223,6 +228,11 @@ void drain_buffered(DrawParticles draw_particles, DrawOther draw_other)
 	drain_buffered(draw_particles, draw_other, [](Item &) {});
 }
 } // namespace
+
+extern "C" int xl_transparency_collecting(void)
+{
+	return collecting;
+}
 
 extern "C" void xl_transparency_clear(void)
 {
@@ -340,7 +350,7 @@ extern "C" int xl_transparency_object(int index)
 void xl_compat::transparency_particle(const ParticleSceneItem &item, ParticleTexture *texture)
 {
 	if (!collecting || !texture) throw std::runtime_error("XL particle submitted outside its transparency frame");
-	add(Particle{ item.quad, texture, item.position, item.radius }, item.position, 10 * 65536);
+	add(Particle{ item, texture }, item.position, 10 * 65536);
 }
 
 extern "C" int xl_transparency_water(int segment, int side, const int32_t points[4][3], const float colors[4][4])
@@ -364,11 +374,12 @@ extern "C" void xl_transparency_flush(void)
 {
 	if (!collecting) return;
 	try {
-		xl_particle_render_scene(visible.data(), int(visible.size()));
-		for (auto &lightning : lightning_scene_items(std::vector<int>(visible.begin(), visible.end()), std::vector<int>(rendered_objects.begin(), rendered_objects.end()), eye, maximum_depth)) {
-			const auto position = lightning.position;
-			add(std::move(lightning), position, 0, true);
-		}
+		if (xl_camera_scene_particles()) xl_particle_render_scene(visible.data(), int(visible.size()));
+		if (xl_camera_scene_lightning())
+			for (auto &lightning : lightning_scene_items(std::vector<int>(visible.begin(), visible.end()), std::vector<int>(rendered_objects.begin(), rendered_objects.end()), eye, maximum_depth)) {
+				const auto position = lightning.position;
+				add(std::move(lightning), position, 0, true);
+			}
 		struct ParticleSoftScope {
 			ParticleSoftScope()
 			{

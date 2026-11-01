@@ -5,5 +5,6 @@ namespace xl_compat
 {
 nlohmann::json particle_objects_snapshot();
 bool restore_particle_objects(const nlohmann::json &state, bool apply);
+bool particle_audio_matches(const nlohmann::json &audio);
 } // namespace xl_compat
 #endif

@@ -26,6 +26,7 @@ inline void asset_require(bool condition, const char *message)
 }
 struct ObjectDependencies {
 	bool xl_boss_spawning = false;
+	int robot_count = N_robot_types, joint_count = N_robot_joints, model_count = N_polygon_models;
 	// Read-only views permit validating staged HXM definitions before installation
 	const robot_info *robot_data = Robot_info;
 	const jointpos *joint_data = Robot_joints;
@@ -104,7 +105,7 @@ struct ObjectDependencies {
 	void model(int id)
 	{
 		if (id == -1) return;
-		asset_require(id >= 0 && id < N_polygon_models, "object dependency references missing model");
+		asset_require(id >= 0 && id < model_count, "object dependency references missing model");
 		if (!models.insert(id).second) return;
 		const auto &p = model_data[id];
 		asset_require(p.model_data && p.model_data_size > 0 && p.n_models > 0 && p.n_models <= MAX_SUBMODELS, "object dependency model has no valid payload");
@@ -165,8 +166,8 @@ struct ObjectDependencies {
 	}
 	void robot(int id)
 	{
-		asset_require(id >= 0 && id < N_robot_types && robot_data[id].model_num >= 0 &&
-		                  robot_data[id].model_num < N_polygon_models,
+		asset_require(id >= 0 && id < robot_count && robot_data[id].model_num >= 0 &&
+		                  robot_data[id].model_num < model_count,
 		              "object dependency references unusable robot");
 		if (!robots.insert(id).second) return;
 		const auto &r = robot_data[id];
@@ -186,7 +187,7 @@ struct ObjectDependencies {
 		for (int gun = 0; gun <= r.n_guns; ++gun)
 			for (int state = 0; state < N_ANIM_STATES; ++state) {
 				const auto &j = r.anim_states[gun][state];
-				asset_require(j.n_joints >= 0 && (!j.n_joints || (j.offset >= 0 && j.offset + j.n_joints <= N_robot_joints)), "robot joint range invalid");
+				asset_require(j.n_joints >= 0 && (!j.n_joints || (j.offset >= 0 && j.offset + j.n_joints <= joint_count)), "robot joint range invalid");
 				for (int i = 0; i < j.n_joints; ++i)
 					asset_require(joint_data[j.offset + i].jointnum >= 0 && joint_data[j.offset + i].jointnum < model_data[r.model_num].n_models, "robot joint references missing submodel");
 			}

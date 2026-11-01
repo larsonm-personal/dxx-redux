@@ -15,6 +15,7 @@
 #include "../ambient_sound.h"
 #include "../lightning_audio.h"
 #include "../lightning_effect.h"
+#include "../particle_admission.h"
 #include "../named_sound.h"
 #include "../inventory.h"
 #include "../level_text.h"
@@ -259,6 +260,8 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 			name = sound.filename + ".wav";
 		} else if (object.render == 12 && lightning_definition(object, 2).sound)
 			name = lightning_sound_name;
+		else if (object.render == 11 && prepare_authored_particle(inventory, object).effect.kind == ParticleKind::bubbles)
+			name = bubble_sound_name;
 		else continue;
 #ifndef USE_SDLMIXER
 		throw std::runtime_error("XL object sounds require the SDL_mixer backend");

@@ -227,6 +227,14 @@ static void android_cache_profile_count(int *counter)
 
 void ogl_android_viewport(int x, int y, int w, int h)
 {
+#ifdef DXX_XL_RUNTIME
+	int target_width, target_height;
+	if (xl_camera_target_active_dimensions(&target_width, &target_height)) {
+		glViewport(x, target_height - y - h, w, h);
+		android_ogl_viewport_invalidate(&ogl_android_viewport_state);
+		return;
+	}
+#endif
 	int logical_screen_w = grd_curscreen ? grd_curscreen->sc_w : w;
 	int logical_screen_h = grd_curscreen ? grd_curscreen->sc_h : h;
 	int canvas_h = grd_curscreen ? grd_curscreen->sc_canvas.cv_bitmap.bm_h : logical_screen_h;
@@ -2288,6 +2296,10 @@ int ogl_use_classic_depth(void)
 }
 
 void ogl_start_frame(void){
+	int camera_target = 0, camera_width = 0, camera_height = 0;
+#ifdef DXX_XL_RUNTIME
+	camera_target = xl_camera_target_active_dimensions(&camera_width, &camera_height);
+#endif
 	double z_near = 0.1;
 #ifdef DXX_XL_RUNTIME
 	if (xl_fog_active() || xl_particle_depth_projection()) z_near = 1.0;
@@ -2301,7 +2313,7 @@ void ogl_start_frame(void){
 	r_water_faces=0;
 	r_mwall_cache_hits=0;r_mwall_cache_misses=0;
 	g_ogl_render_context = 1; /* 3D world */
-	ogl_android_apply_pending_runtime_options("start_frame");
+	if (!camera_target) ogl_android_apply_pending_runtime_options("start_frame");
 	/* Bind MSAA FBO if enabled; create/resize as needed.
 	 * Only the outermost active 3D pass binds here. ogl_end_frame balances
 	 * the depth counter, so later cockpit subviews in the same game frame can
@@ -2310,13 +2322,13 @@ void ogl_start_frame(void){
 		int w, h;
 		android_ogl_viewport_get_drawable_size(grd_curscreen->sc_w,
 			grd_curscreen->sc_h, &w, &h);
-		msaa_color_clear = android_ogl_msaa_begin_frame(
+		if (!camera_target) msaa_color_clear = android_ogl_msaa_begin_frame(
 			&ogl_msaa_state, &g_msaa_fbo_bound, &g_msaa_frame_depth,
 			ogl_msaa_max_samples, ogl_msaa_samples, w, h,
 			ogl_msaa_log_message, NULL);
 	}
 	/* GPU timer: read oldest completed query, begin new query */
-	if (ogl_gpu_timer_available) {
+	if (ogl_gpu_timer_available && !camera_target) {
 		struct android_ogl_gpu_timer_state gpu_timer_state = {
 			ogl_gpu_queries,
 			GPU_QUERY_COUNT,
@@ -2330,7 +2342,10 @@ void ogl_start_frame(void){
 	}
 #endif
 
-	OGL_VIEWPORT(grd_curcanv->cv_bitmap.bm_x,grd_curcanv->cv_bitmap.bm_y,Canvas_width,Canvas_height);
+	if (camera_target)
+		glViewport(grd_curcanv->cv_bitmap.bm_x, camera_height - grd_curcanv->cv_bitmap.bm_y - Canvas_height, Canvas_width, Canvas_height);
+	else
+		OGL_VIEWPORT(grd_curcanv->cv_bitmap.bm_x,grd_curcanv->cv_bitmap.bm_y,Canvas_width,Canvas_height);
 #ifdef ANDROID
 	/* Android compositor uses framebuffer alpha for surface blending;
 	 * clear to alpha=1 to prevent the activity background showing through */
@@ -2359,10 +2374,10 @@ void ogl_start_frame(void){
 	 * first MSAA-backed pass of the frame so cockpit missile / rear-view
 	 * subrenders do not wipe the already-rendered main scene in the shared FBO. */
 #ifdef ANDROID
-	android_ogl_msaa_trace_stage(&ogl_msaa_state, msaa_color_clear ? "first_color_clear" : "pass_depth_clear",
+	if (!camera_target) android_ogl_msaa_trace_stage(&ogl_msaa_state, msaa_color_clear ? "first_color_clear" : "pass_depth_clear",
 	                             g_msaa_fbo_bound, g_msaa_frame_depth);
 	glClear(GL_DEPTH_BUFFER_BIT |
-	        (msaa_color_clear ? GL_COLOR_BUFFER_BIT : 0));
+	        ((msaa_color_clear || camera_target) ? GL_COLOR_BUFFER_BIT : 0));
 #else
 	/* A cockpit camera clears only its own canvas, preserving the main view */
 	{
@@ -2371,7 +2386,7 @@ void ogl_start_frame(void){
 		glGetIntegerv(GL_SCISSOR_BOX, scissor);
 		glEnable(GL_SCISSOR_TEST);
 		glScissor(grd_curcanv->cv_bitmap.bm_x,
-			grd_curscreen->sc_h - grd_curcanv->cv_bitmap.bm_y - Canvas_height,
+			(camera_target ? camera_height : grd_curscreen->sc_h) - grd_curcanv->cv_bitmap.bm_y - Canvas_height,
 			Canvas_width, Canvas_height);
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		glScissor(scissor[0], scissor[1], scissor[2], scissor[3]);
@@ -2417,16 +2432,22 @@ void ogl_start_frame(void){
 }
 
 void ogl_end_frame(void){
-#if defined(ANDROID) && defined(INTROSPECT_ON)
-	android_ogl_scene_probe_after_pass(g_msaa_frame_depth);
+	int camera_target = 0, camera_width = 0, camera_height = 0;
+#ifdef DXX_XL_RUNTIME
+	camera_target = xl_camera_target_active_dimensions(&camera_width, &camera_height);
 #endif
-	OGL_VIEWPORT(0,0,grd_curscreen->sc_w,grd_curscreen->sc_h);
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (!camera_target) android_ogl_scene_probe_after_pass(g_msaa_frame_depth);
+#endif
+	if (camera_target) glViewport(0, 0, camera_width, camera_height);
+	else OGL_VIEWPORT(0,0,grd_curscreen->sc_w,grd_curscreen->sc_h);
 #ifdef ANDROID
-	android_ogl_msaa_trace_stage(&ogl_msaa_state, "scene_pass_complete", g_msaa_fbo_bound, g_msaa_frame_depth);
-	android_ogl_msaa_end_frame(&g_msaa_frame_depth);
+	if (!camera_target) android_ogl_msaa_trace_stage(&ogl_msaa_state, "scene_pass_complete", g_msaa_fbo_bound, g_msaa_frame_depth);
+	if (!camera_target) android_ogl_msaa_end_frame(&g_msaa_frame_depth);
+	else android_ogl_viewport_invalidate(&ogl_android_viewport_state);
 	{
 		extern volatile int g_blit_y_offset;
-		g_blit_y_offset = last_kb_off;
+		if (!camera_target) g_blit_y_offset = last_kb_off;
 	}
 #endif
 	glMatrixMode(GL_PROJECTION);
@@ -2446,7 +2467,7 @@ void ogl_end_frame(void){
 #endif
 #ifdef ANDROID
 	/* Drain GL errors from GLES 1/2 API mixing on Android */
-	{
+	if (!camera_target) {
 		struct timespec err_start, err_end;
 		android_perf_clock_now(&err_start);
 		android_ogl_msaa_capture_scene_errors(&ogl_msaa_state);
@@ -2458,6 +2479,9 @@ void ogl_end_frame(void){
 
 void ogl_prepare_framebuffer_readback(void)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_camera_target_active_dimensions(NULL, NULL)) return;
+#endif
 #ifdef ANDROID
 	{
 		int w, h;

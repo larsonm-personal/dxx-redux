@@ -30,6 +30,8 @@
 #include "reactor_countdown.h"
 #include "seismic_gameplay.h"
 #include "robot_disarm_state.h"
+#include "camera_controller.h"
+#include "camera_collision.h"
 extern "C" {
 #include "inferno.h"
 #include "switch.h"
@@ -127,7 +129,7 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 28;
+		block["schema"] = 29;
 		block["mission_progress"] = xl_compat::mission_progress_snapshot();
 		block["seismic"] = xl_compat::seismic_gameplay_snapshot();
 		require(xl_compat::restore_seismic_gameplay(block["seismic"], false), "Cannot capture XL seismic state");
@@ -171,6 +173,10 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["projectiles"].push_back({ state.owner, state.signature, std::move(hits) });
 		}
 		require(xl_projectile_restore(projectile_states.data(), static_cast<int>(projectile_states.size()), 0), "Cannot capture complete XL projectile histories");
+		const auto camera_hits = xl_camera_hit_snapshot();
+		require(xl_camera_hit_restore(camera_hits, false), "Cannot capture complete XL camera hit state");
+		block["camera_hits"] = json::array();
+		for (const auto &state : camera_hits) block["camera_hits"].push_back({ state.owner, state.signature, state.type, state.elapsed });
 		block["fluid_scrape_elapsed"] = xl_fluid_scrape_elapsed();
 		block["repair_elapsed"] = xl_repair_elapsed();
 		block["spawns"] = json::array();
@@ -225,7 +231,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 20u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 28 &&
+		require(saved.is_object() && saved.size() == 21u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 29 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
 		require(xl_compat::restore_mission_progress(saved.at("mission_progress"), false), "Invalid XL mission progression state");
@@ -233,6 +239,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		require(xl_compat::restore_seismic_gameplay(saved.at("seismic"), false), "Invalid XL seismic state");
 		require(xl_compat::ambient_audio_matches(saved.at("audio")), "Saved ambient audio differs from the authored object resource");
 		require(xl_compat::lightning_audio_matches(saved.at("audio")), "Saved lightning audio differs from the authored object resource");
+		require(xl_compat::particle_audio_matches(saved.at("audio")), "Saved particle audio differs from the authored object resource");
 		require(xl_compat::restore_ambient_objects(saved.at("ambient_objects"), false), "Invalid XL ambient sound object lifetime or enabled state");
 		require(xl_compat::restore_particle_objects(saved.at("particle_objects"), false), "Invalid XL particle object lifetime or enabled state");
 		require(xl_compat::restore_lightning_objects(saved.at("lightning_objects"), false), "Invalid XL lightning object lifetime or enabled state");
@@ -295,6 +302,18 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 			projectiles.push_back(state);
 		}
 		require(xl_projectile_restore(projectiles.data(), static_cast<int>(projectiles.size()), 0), "Invalid XL projectile owner or hit history");
+		std::vector<XlCameraHitSave> camera_hits;
+		const auto &hit_rows = saved.at("camera_hits");
+		require(hit_rows.is_array() && hit_rows.size() <= MAX_OBJECTS, "Invalid XL camera hit owner count");
+		for (const auto &row : hit_rows) {
+			require(row.is_array() && row.size() == 4, "Invalid XL camera hit row");
+			for (const auto &value : row)
+				require(value.is_number_integer() && (!value.is_number_unsigned() || value.get<std::uint64_t>() <= INT32_MAX) &&
+				            value.get<std::int64_t>() >= INT32_MIN && value.get<std::int64_t>() <= INT32_MAX,
+				        "Invalid XL camera hit field");
+			camera_hits.push_back({ row[0].get<int>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int32_t>() });
+		}
+		require(xl_camera_hit_restore(camera_hits, false), "Invalid XL camera hit identity or repair time");
 		const auto &fluid = saved.at("fluid_scrape_elapsed");
 		require(fluid.is_number_integer() && (!fluid.is_number_unsigned() || fluid.get<std::uint64_t>() <= INT64_MAX) && xl_fluid_restore(fluid.get<std::int64_t>(), 0), "Invalid XL fluid scrape clock");
 		const auto &repair = saved.at("repair_elapsed");
@@ -410,6 +429,9 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		}
 		require(xl_robot_generator_validate(), "Invalid XL generator assignment or robot selection in save");
 		require(xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 0) && xl_speed_boost_restore(boosts.data(), static_cast<int>(boosts.size()), boost_speed, 0) && xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0) && xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 0) && xl_compat::restore_boss_routes(boss_routes, 0) && xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 0), "Invalid XL event state");
+		require(xl_camera_controller_restore(0), "Invalid XL camera restore identity");
+		xl_camera_controller_restore(1);
+		xl_camera_hit_restore(camera_hits, true);
 		xl_projectile_restore(projectiles.data(), static_cast<int>(projectiles.size()), 1);
 		xl_light_segment_restore(light_states.data(), static_cast<int>(light_states.size()), 1);
 		xl_flicker_restore(flicker_states.data(), static_cast<int>(flicker_states.size()), 1);

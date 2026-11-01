@@ -5,6 +5,7 @@
 #include "doorway.h"
 #include "speed_boost.h"
 #include "skybox_collision.h"
+#include "camera_collision.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -770,6 +771,12 @@ void do_physics_sim(object *obj)
 				//	Calculcate the hit point between the two objects.
 				{	vms_vector	*ppos0, *ppos1;
 					fix			size0, size1;
+#ifdef DXX_XL_RUNTIME
+					if (Objects[hit_info.hit_object].type == 16)
+						pos_hit = hit_info.hit_pnt;
+					else
+#endif
+					{
 					ppos0 = &Objects[hit_info.hit_object].pos;
 					ppos1 = &obj->pos;
 					size0 = Objects[hit_info.hit_object].size;
@@ -779,6 +786,7 @@ void do_physics_sim(object *obj)
 					//vm_vec_add2(&pos_hit, ppos0);
 					vm_vec_sub(&pos_hit, ppos1, ppos0);
 					vm_vec_scale_add(&pos_hit,ppos0,&pos_hit,fixdiv(size0, size0 + size1));
+					}
 
 					old_vel = obj->mtype.phys_info.velocity;
 					input_demo_log_player_robot_hit_object_probe("hit_object_pre_collide", obj, hit_info.hit_object, &pos_hit, &old_vel, n_ignore_objs, 0, 0);
@@ -821,6 +829,8 @@ void do_physics_sim(object *obj)
 					*/
 					collide_two_objects( obj, &Objects[hit_info.hit_object], &pos_hit);
 #ifdef DXX_XL_RUNTIME
+					if (Objects[hit_info.hit_object].type == 16)
+						xl_camera_physics_unstick(obj, &Objects[hit_info.hit_object], &save_pos, &new_pos, &frame_vec, &old_vel);
 					if (obj == ConsoleObject && speed_boost)
 						obj->mtype.phys_info.velocity = old_vel;
 #endif
@@ -901,6 +911,9 @@ void do_physics_sim(object *obj)
 		((fate == HIT_WALL) || (fate == HIT_OBJECT) || (fate == HIT_BAD_P0));
 #ifdef DXX_XL_RUNTIME
 	if (speed_boost) reconstruct_velocity = 0;
+	// Source FixPosition reconstructs wall/bad-start velocity, not camera object responses
+	if (fate == HIT_OBJECT && hit_info.hit_object >= 0 && Objects[hit_info.hit_object].type == 16)
+		reconstruct_velocity = 0;
 	// XL's fluid profile reconstructs all object types after wall/bad-start hits
 	if (!speed_boost && (xl_preview_water_segment(orig_segnum) || xl_lava_segment(orig_segnum)))
 		reconstruct_velocity = (fate == HIT_WALL) || (fate == HIT_BAD_P0);

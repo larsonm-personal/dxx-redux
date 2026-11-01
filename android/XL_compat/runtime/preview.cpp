@@ -6,6 +6,9 @@
 #include "geometry.h"
 #include "../producer_layout.h"
 #include "projectile.h"
+#include "object_birth.h"
+#include "explosion_motion.h"
+#include "camera_controller.h"
 #include "speed_boost.h"
 #include "spawn_points.h"
 #include "fluids.h"
@@ -597,6 +600,9 @@ extern "C" void xl_preview_clear_mission(void)
 	xl_message_clear();
 	xl_fog_bind(nullptr);
 	xl_projectile_clear();
+	xl_object_birth_clear();
+	xl_explosion_motion_clear();
+	xl_camera_controller_clear();
 	xl_wall_trigger_reset();
 	xl_speed_boost_clear();
 	xl_spawn_clear();
@@ -1011,6 +1017,19 @@ extern "C" int xl_runtime_active(void)
 {
 	// Loaded XL extensions, not a particular mission or build capability
 	return (source || classic_ambient) && Game_wind && !(Game_mode & GM_MULTI);
+}
+
+extern "C" void xl_camera_controller_bind_level(void)
+{
+	if (!source) {
+		xl_camera_controller_clear();
+		return;
+	}
+	try {
+		xl_camera_controller_load(*source);
+	} catch (const std::exception &error) {
+		Error("Cannot bind XL camera controller: %s", error.what());
+	}
 }
 
 extern "C" int xl_level_extensions_active(void)

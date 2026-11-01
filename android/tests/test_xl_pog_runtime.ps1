@@ -12,8 +12,14 @@ param(
     [switch]$SmokeFixture,
     [switch]$OriginalHub,
     [switch]$LightningGpu,
+    [switch]$BubbleGpu,
+    [switch]$BubbleFixture,
+    [switch]$BubbleDry,
+    [string]$BubbleImage = '',
+    [string]$BubbleWave = '',
     [string]$CoronaImage = '',
     [string]$GlareImage = '',
+    [string]$ShieldImageDirectory = '',
     [string]$LightningWave = '',
     [switch]$MissionFlow,
     [switch]$CampaignEnd,
@@ -26,7 +32,22 @@ param(
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
-if ($LightningGpu -and (!$OriginalHub -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or $FlyoutFixture -or !$CoronaImage -or !$GlareImage)) { throw 'LightningGpu requires OriginalHub, original CoronaImage/GlareImage and its own mode' }
+if ($BubbleDry -and !$BubbleFixture) { throw 'BubbleDry requires BubbleFixture' }
+if ($BubbleFixture -and ($OriginalHub -or $BubbleGpu -or $LightningGpu -or $SmokeFixture -or $SkyboxFixture -or $SecretFixture -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or $FlyoutFixture -or !$PumoMods -or !$SmokeImage -or !$BubbleImage -or !$BubbleWave)) { throw 'BubbleFixture requires original mod assets, smoke/bubble atlases, bubble wave and its own derived mode' }
+if ($BubbleFixture -and (Get-FileHash -LiteralPath $BubbleWave -Algorithm SHA256).Hash -ne '539b434ca912a17442017e4f68aad21953c285ba2d816bb5bb7c2d6678f0e5cc') { throw 'Requires the original XL bubble waveform' }
+if ($BubbleGpu -and (!$OriginalHub -or $LightningGpu -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or $FlyoutFixture -or !$BubbleImage)) { throw 'BubbleGpu requires OriginalHub, original BubbleImage and its own mode' }
+if (($BubbleGpu -or $BubbleFixture) -and (Get-FileHash -LiteralPath $BubbleImage -Algorithm SHA256).Hash -ne 'b664f81229b47e08274e9b5b41811fe91fdb25949893a4e28c2f202a1080b28b') { throw 'Requires the original XL bubble atlas' }
+if ($LightningGpu -and (!$OriginalHub -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or $FlyoutFixture -or !$CoronaImage -or !$GlareImage -or !$ShieldImageDirectory)) { throw 'LightningGpu requires OriginalHub, original CoronaImage/GlareImage/ShieldImageDirectory and its own mode' }
+if ($LightningGpu) {
+    $shieldHashes = @{
+        forcefield = 'cd1be56194881034068dfe1e8fdf6bba27c4a4216012304faad2b3e8efc17ca9'
+        forcefield2 = '991e03bfa634036aff2e98a999043cbd78891f420653c09ed3d61154b06ed146'
+        forcefield3 = '84482a72b3892911dfd90b36966d29225dc72ee42016ce3a56703395bd157047'
+    }
+    foreach ($name in 'forcefield', 'forcefield2', 'forcefield3') {
+        if ((Get-FileHash -LiteralPath (Join-Path $ShieldImageDirectory "$name.tga") -Algorithm SHA256).Hash -ne $shieldHashes[$name]) { throw "Requires original XL $name image" }
+    }
+}
 if ($MissionFlow -and (!$CoronaImage -or !$GlareImage -or !$LightningWave)) { throw 'MissionFlow through original level nine requires CoronaImage, GlareImage and LightningWave' }
 if (($LightningGpu -or $MissionFlow) -and (Get-FileHash -LiteralPath $CoronaImage -Algorithm SHA256).Hash -ne 'aaf4a8ca34879ef0ab79fdbca295ee2a426755aa97be05bf538900e77ed81f57') { throw 'Requires the original XL corona image' }
 if (($LightningGpu -or $MissionFlow) -and (Get-FileHash -LiteralPath $GlareImage -Algorithm SHA256).Hash -ne '25bb9c5b4679ab8b26d37e05f536fc98a74f8f451b8057a00364847a487bc123') { throw 'Requires the original XL glare image' }
@@ -64,7 +85,12 @@ if ($SmokeFixture) {
     $hogHash = '9584308a740140b81950812e00779b5c5e92c35dac4b431852bf7e4ba811c326'
     $descriptorHash = 'd7a34f614d094e5f288f3b648b8da30aab6847fb87af47a1a11c50e2b5d77eea'
 }
-if (($SmokeFixture -or $OriginalHub) -and (Get-FileHash -LiteralPath $SmokeImage -Algorithm SHA256).Hash -ne '6fe8b321ff2cf6e3bc6edd1c1cf8d692b2ba7796325bdb64254a2556e4d1e6ac') { throw 'Requires original XL smoke atlas' }
+if ($BubbleFixture) {
+    $mission = if ($BubbleDry) { 'pbubdry' } else { 'pbubble' }
+    $hogHash = if ($BubbleDry) { '0817d2396f68bad8b1851ba18bfc7e873428e0736b807fd185ae4767c8d41cc0' } else { 'b738f6ad5de4a601efb4d9102a6a5268acebbb43a8be1d2a37a0ed22050697bf' }
+    $descriptorHash = if ($BubbleDry) { '7bf4d7ba5f4b734ba9c17756b886218c6905236319a68bcbec0f24fb36519a93' } else { 'a4c724eaf38695192ee19b6dd2a0d2ec07903a4d11355e826ed5946509c9e9a2' }
+}
+if (($SmokeFixture -or $OriginalHub -or $BubbleFixture) -and (Get-FileHash -LiteralPath $SmokeImage -Algorithm SHA256).Hash -ne '6fe8b321ff2cf6e3bc6edd1c1cf8d692b2ba7796325bdb64254a2556e4d1e6ac') { throw 'Requires original XL smoke atlas' }
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $hogHash -or
     (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne $descriptorHash) {
     throw "Requires the unchanged original $mission HOG and descriptor"
@@ -80,6 +106,7 @@ $output = Join-Path $PSScriptRoot $(if ($SceneOnly) { '../../temp/xl-pumo-partic
 if ($SecretFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-particle-secret-android' }
 if ($SkyboxFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-skybox-authored-android' }
 if ($SmokeFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-smoke-authored-android' }
+if ($BubbleFixture) { $output = Join-Path $PSScriptRoot "../../temp/xl-$mission-android" }
 if ($OriginalHub) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-android' }
 if ($OriginalHub -and $SceneOnly) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-scene' }
 if ($MissionFlow) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-flow-android' }
@@ -87,6 +114,7 @@ if ($CampaignEnd) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-en
 if ($RevisitFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-revisit-android' }
 if ($FlyoutFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-flyout-cache-android' }
 if ($LightningGpu) { $output = Join-Path $PSScriptRoot '../../temp/xl-lightning-gpu-android' }
+if ($BubbleGpu) { $output = Join-Path $PSScriptRoot '../../temp/xl-bubble-gpu-android' }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 foreach ($name in @('result.json', 'state.json', 'steps.jsonl', 'logcat.txt', 'render.png')) {
@@ -172,16 +200,30 @@ try {
         Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission && tar -xf /data/local/tmp/xl-pog-mods.tar -C files/d2x-redux/mods/$mission" | Out-Null
     }
     Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission/textures/d2x-xl && cp /data/local/tmp/xl-pog-fire.tga files/d2x-redux/mods/$mission/textures/d2x-xl/smokingfire.tga" | Out-Null
-    if ($SmokeFixture -or $OriginalHub) {
+    if ($SmokeFixture -or $OriginalHub -or $BubbleFixture) {
         Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $SmokeImage).Path, '/data/local/tmp/xl-pog-smoke.tga') | Out-Null
         Invoke-PogPrivate "cp /data/local/tmp/xl-pog-smoke.tga files/d2x-redux/mods/$mission/textures/d2x-xl/smoke.tga" | Out-Null
     }
     Invoke-PogAdb -Arguments @('logcat', '-c') | Out-Null
+    if ($BubbleGpu -or $BubbleFixture) {
+        Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $BubbleImage).Path, '/data/local/tmp/xl-pog-bubble.tga') | Out-Null
+        Invoke-PogPrivate "cp /data/local/tmp/xl-pog-bubble.tga files/d2x-redux/mods/$mission/textures/d2x-xl/bubble.tga" | Out-Null
+    }
+    if ($BubbleFixture) {
+        Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $BubbleWave).Path, '/data/local/tmp/xl-pog-bubble.wav') | Out-Null
+        Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission/sounds/d2x-xl && cp /data/local/tmp/xl-pog-bubble.wav files/d2x-redux/mods/$mission/sounds/d2x-xl/airbubbles.wav" | Out-Null
+    }
     if ($LightningGpu -or $MissionFlow) {
         Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $CoronaImage).Path, '/data/local/tmp/xl-pog-corona.tga') | Out-Null
         Invoke-PogPrivate "cp /data/local/tmp/xl-pog-corona.tga files/d2x-redux/mods/$mission/textures/d2x-xl/corona.tga" | Out-Null
         Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $GlareImage).Path, '/data/local/tmp/xl-pog-glare.tga') | Out-Null
         Invoke-PogPrivate "cp /data/local/tmp/xl-pog-glare.tga files/d2x-redux/mods/$mission/textures/d2x-xl/glare.tga" | Out-Null
+    }
+    if ($LightningGpu) {
+        foreach ($name in 'forcefield', 'forcefield2', 'forcefield3') {
+            Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath (Join-Path $ShieldImageDirectory "$name.tga")).Path, "/data/local/tmp/xl-pog-$name.tga") | Out-Null
+            Invoke-PogPrivate "cp /data/local/tmp/xl-pog-$name.tga files/d2x-redux/mods/$mission/textures/d2x-xl/$name.tga" | Out-Null
+        }
     }
     if ($MissionFlow) {
         Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $LightningWave).Path, '/data/local/tmp/xl-pog-lightning.wav') | Out-Null
@@ -191,7 +233,8 @@ try {
     if ($SecretFixture) { $scriptName = 'test_xl_particle_secret.jsonc' }
     if ($SkyboxFixture) { $scriptName = 'test_xl_skybox_authored.jsonc' }
     if ($SmokeFixture) { $scriptName = 'test_xl_smoke_authored.jsonc' }
-    if ($OriginalHub -and !$LightningGpu) {
+    if ($BubbleFixture) { $scriptName = if ($BubbleDry) { 'test_xl_bubble_dry.jsonc' } else { 'test_xl_bubble_authored.jsonc' } }
+    if ($OriginalHub -and !$LightningGpu -and !$BubbleGpu) {
         $steps = Get-Content "$PSScriptRoot/../game_scripts/test_xl_smoke_authored.jsonc" -Raw | ConvertFrom-Json -AsHashtable
         $starts = @($steps | Where-Object { $_.action -eq 'set_debug' -and $_.field -eq 'xl_pog_probe' -and $_.value -eq 'skybox_start_smoke' })
         if ($starts.Count -ne 1) { throw 'Smoke lifecycle no longer has exactly one startup operation' }
@@ -204,6 +247,7 @@ try {
     if ($RevisitFixture) { $scriptName = 'test_xl_mission_revisit.jsonc' }
     if ($FlyoutFixture) { $scriptName = 'test_xl_flyout_cache.jsonc' }
     if ($LightningGpu) { $scriptName = 'test_xl_lightning_gpu.jsonc' }
+    if ($BubbleGpu) { $scriptName = 'test_xl_bubble_gpu.jsonc' }
     if ($SceneOnly) {
         # Reuse the original owner's startup and first scene assertion
         $sourcePath = if ([IO.Path]::IsPathRooted($scriptName)) { $scriptName } else { "$PSScriptRoot/../game_scripts/$scriptName" }
@@ -238,7 +282,9 @@ try {
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete POG runtime result' }
     Invoke-PogAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-pog.png') | Out-Null
     Invoke-PogAdb -Arguments @('pull', '/data/local/tmp/xl-pog.png', "$output/render.png") | Out-Null
-    if ($LightningGpu) { Write-Host "PASS: Original corona/glare, mixed lightning/sprite GPU and context recreation ($($result.total_steps) steps); renderer control only" }
+    if ($BubbleGpu) { Write-Host "PASS: Original bubble/smoke multi-image pixels, soft depth, GL state and context recreation ($($result.total_steps) steps); renderer control only" }
+    elseif ($BubbleFixture) { Write-Host "PASS: Derived $mission original-payload bubble lifecycle ($($result.total_steps) steps); original pmlev3 remains independently blocked" }
+    elseif ($LightningGpu) { Write-Host "PASS: Original corona/glare/shields, mixed lightning/sprite GPU and context recreation ($($result.total_steps) steps); renderer control only" }
     elseif ($FlyoutFixture) { Write-Host "PASS: Derived intact rendered flyout and disk-cache revisit ($($result.total_steps) steps)" }
     elseif ($RevisitFixture) { Write-Host "PASS: Derived Android disk revisits, mission timeline, player/world and GPU resource restoration ($($result.total_steps) steps)" }
     elseif ($CampaignEnd) { Write-Host "PASS: Original Pumo destination29 ending and menu return ($($result.total_steps) steps); controlled dispatch" }
@@ -262,7 +308,8 @@ try {
             if (Compare-Object $before $after) { throw "POG test state restoration differs; backup retained at $backup" }
             Invoke-PogPrivate "rm $backup/state.tar && rmdir $backup" | Out-Null
             if ($FlyoutFixture) { Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog-d1.pig') | Out-Null }
-            Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog.hog', '/data/local/tmp/xl-pog.mn2', '/data/local/tmp/xl-pog.png', '/data/local/tmp/xl-pog-fire.tga', '/data/local/tmp/xl-pog-smoke.tga', '/data/local/tmp/xl-pog-corona.tga', '/data/local/tmp/xl-pog-glare.tga', '/data/local/tmp/xl-pog-mods.tar') | Out-Null
+            if ($BubbleGpu -or $BubbleFixture) { Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog-bubble.tga', '/data/local/tmp/xl-pog-bubble.wav') | Out-Null }
+            Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog.hog', '/data/local/tmp/xl-pog.mn2', '/data/local/tmp/xl-pog.png', '/data/local/tmp/xl-pog-fire.tga', '/data/local/tmp/xl-pog-smoke.tga', '/data/local/tmp/xl-pog-corona.tga', '/data/local/tmp/xl-pog-glare.tga', '/data/local/tmp/xl-pog-forcefield.tga', '/data/local/tmp/xl-pog-forcefield2.tga', '/data/local/tmp/xl-pog-forcefield3.tga', '/data/local/tmp/xl-pog-mods.tar') | Out-Null
         }
     } finally {
         if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }

@@ -1,3 +1,6 @@
+#ifdef DXX_XL_RUNTIME
+#include "explosion_motion.h"
+#endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -1484,6 +1487,10 @@ void do_explosion_sequence(object *obj)
 		obj->flags |= OF_SHOULD_BE_DEAD;
 		obj->lifeleft = 0;
 	}
+
+#ifdef DXX_XL_RUNTIME
+	xl_explosion_motion_frame(obj);
+#endif
 
 	//See if we should create a secondary explosion
 	if (obj->lifeleft <= obj->ctype.expl_info.spawn_time) {

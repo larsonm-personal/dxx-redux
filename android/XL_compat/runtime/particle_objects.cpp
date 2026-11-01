@@ -3,10 +3,13 @@
 #include "particle_world.h"
 #include "particle_resources.h"
 #include "particle_renderer.h"
+#include "linked_audio.h"
+#include "shared_audio_internal.h"
 #include "../particle_admission.h"
 #include "resource_validation.h"
 #include "../transparency_order.h"
 #include "../particle_visibility.h"
+#include "../particle_buffer.h"
 #include "preview.h"
 #include "transparency_scene.h"
 #include <map>
@@ -127,6 +130,24 @@ nlohmann::json xl_compat::particle_objects_snapshot()
 	return state;
 }
 
+bool xl_compat::particle_audio_matches(const nlohmann::json &audio)
+{
+	try {
+		for (const auto &owner : audio.at("linked").at("owners")) {
+			const int index = owner.at("object").get<int>();
+			const auto found = entries.find(index);
+			if (found == entries.end() || !native_particle(index) || owner.at("signature") != Objects[index].signature) continue;
+			if (found->second.effect.kind != ParticleKind::bubbles || !owner.at("external").get<bool>() ||
+			    owner.at("sample") != audio_runtime::external_sample(bubble_sound_name) || owner.at("class") != 0 ||
+			    owner.at("max_volume") != F1_0 / 2 || owner.at("max_distance") != 256 * F1_0 ||
+			    owner.at("loop_start") != -1 || owner.at("loop_end") != -1 || owner.at("custom").get<bool>()) return false;
+		}
+		return true;
+	} catch (const std::exception &) {
+		return false;
+	}
+}
+
 bool xl_compat::restore_particle_objects(const nlohmann::json &state, bool apply)
 {
 	try {
@@ -149,6 +170,7 @@ bool xl_compat::restore_particle_objects(const nlohmann::json &state, bool apply
 		if (apply) {
 			// Source saves authored enable bytes, then rebuilds the level and its
 			// particle manager on restore. Live clouds are transient visual state
+			xl_transparency_clear();
 			systems.clear();
 			entries = std::move(prepared);
 			epoch = SDL_GetTicks();
@@ -161,7 +183,7 @@ bool xl_compat::restore_particle_objects(const nlohmann::json &state, bool apply
 	}
 }
 
-std::vector<xl_compat::ParticleSceneItem> xl_compat::particle_scene_items(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height, unsigned smoke_width, unsigned smoke_height)
+std::vector<xl_compat::ParticleSceneItem> xl_compat::particle_scene_items(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height, unsigned smoke_width, unsigned smoke_height, unsigned bubble_width, unsigned bubble_height)
 {
 	std::vector<ParticleSceneItem> quads;
 	if (!xl_level_extensions_active() || systems.empty()) return quads;
@@ -182,7 +204,15 @@ std::vector<xl_compat::ParticleSceneItem> xl_compat::particle_scene_items(const 
 				auto &particle = emitter.motion(slot);
 				const bool shown = emitter_visible || particle_visible(particle, world.segments, visible_flags, [](const ParticlePoint &point, bool skybox, int segment) { return world.locate(point, skybox, segment); });
 				if (!shown || !transparency_bucket({ particle.position, 10 * 65536 }, eye, maximum_depth)) continue;
-				if constexpr (smoke) {
+				if constexpr (std::is_same_v<Emitter, BubbleEmitter>) {
+					const int frame = particle.frame;
+					if (prepare_bubble_particle_draw(slot, animate)) {
+						ParticleSceneItem item{ particle.position, {}, float(std::hypot(double(particle.width), double(particle.height))), 2 };
+						item.quad.blend = ParticleBlend::alpha;
+						item.bubble = BubbleSceneDraw{ &slot, frame, bubble_width ? bubble_width : image_width, bubble_height ? bubble_height : image_height, basis };
+						quads.push_back(std::move(item));
+					}
+				} else if constexpr (smoke) {
 					if (prepare_smoke_particle_draw(slot, animate) && particle.decay > 0)
 						quads.push_back({ particle.position, smoke_particle_quad(slot, camera, smoke_width ? smoke_width : image_width, smoke_height ? smoke_height : image_height), float(std::hypot(double(particle.width), double(particle.height))), 0 });
 				} else if (prepare_fire_particle_draw(particle, animate))
@@ -191,7 +221,25 @@ std::vector<xl_compat::ParticleSceneItem> xl_compat::particle_scene_items(const 
 		},
 		           system.emitter);
 	}
+	if (bubble_width && bubble_height)
+		for (auto &item : quads)
+			if (item.subtype == 0) item.quad.image = 1;
 	return quads;
+}
+
+xl_compat::ParticleQuad xl_compat::particle_scene_quad(const ParticleSceneItem &item)
+{
+	if (!item.bubble) return item.quad;
+	const auto &draw = *item.bubble;
+	if (!draw.particle) throw std::runtime_error("XL deferred bubble lost its particle");
+	EffectsRandom random;
+	// Source bubble creation disables rotation, so only the unrotated basis is
+	// needed. Wiggle is applied in world X before the camera transformation
+	const ParticleView view{ draw.basis, {}, false };
+	auto quad = bubble_particle_quad(*draw.particle, view, draw.width, draw.height, draw.frame, random);
+	quad.image = 2;
+	if (draw.camera_space) particle_camera_quad(quad, draw.eye, draw.camera);
+	return quad;
 }
 
 std::vector<xl_compat::ParticleQuad> xl_compat::particle_scene(const std::vector<int> &visible, const ParticlePoint &eye, const ParticleBasis &basis, int milliseconds, unsigned image_width, unsigned image_height)
@@ -201,7 +249,25 @@ std::vector<xl_compat::ParticleQuad> xl_compat::particle_scene(const std::vector
 	std::vector<TransparencyPosition> positions;
 	for (const auto &item : items) positions.push_back({ item.position, 10 * 65536 });
 	std::vector<ParticleQuad> quads;
-	for (auto index : transparency_draw_order(positions, eye, particle_depth_limit(world.segments, visible, eye))) quads.push_back(items[index].quad);
+	FireParticleBuffers buffers({ float(eye[0]) / 65536.f, float(eye[1]) / 65536.f, float(eye[2]) / 65536.f });
+	const auto submit = [&](const std::vector<std::size_t> &indices) {
+		const bool multi = std::any_of(indices.begin(), indices.end(), [&](std::size_t index) { return items[index].subtype == 2; });
+		for (auto index : indices) {
+			auto quad = particle_scene_quad(items[index]);
+			if (multi) quad.image = items[index].subtype == 2 ? 2 : 1;
+			quads.push_back(std::move(quad));
+		}
+	};
+	for (auto index : transparency_draw_order(positions, eye, particle_depth_limit(world.segments, visible, eye))) {
+		const auto &item = items[index];
+		const bool multiply = item.quad.blend == ParticleBlend::multiply;
+		const bool alpha = item.quad.blend == ParticleBlend::alpha;
+		buffers.add_kind(index, { float(item.position[0]) / 65536.f, float(item.position[1]) / 65536.f, float(item.position[2]) / 65536.f }, item.radius, item.subtype == 2 ? 2 : alpha  ? 1
+		                                                                                                                                                                      : multiply ? 16
+		                                                                                                                                                                                 : 5,
+		                 !multiply && !alpha, submit);
+	}
+	buffers.flush(submit);
 	return quads;
 }
 
@@ -209,8 +275,9 @@ extern "C" void xl_particle_render_scene(const short *segments, int count)
 {
 	if (!xl_level_extensions_active() || systems.empty()) return;
 	try {
-		const auto *fire = xl_prepared_particle_image(), *smoke = xl_prepared_particle_image(0);
-		const auto *image = fire ? fire : smoke;
+		const auto *fire = xl_prepared_particle_image(), *smoke = xl_prepared_particle_image(0), *bubble = xl_prepared_particle_image(2);
+		const auto *image = fire ? fire : smoke ? smoke
+		                                        : bubble;
 		if (!image || !image->texture) throw std::runtime_error("XL particle renderer has no prepared image");
 		const Uint32 elapsed = SDL_GetTicks() - epoch;
 		if (elapsed > INT32_MAX) throw std::runtime_error("XL particle render session exceeds the source clock range");
@@ -219,12 +286,17 @@ extern "C" void xl_particle_render_scene(const short *segments, int count)
 		for (int i = 0; i < count; ++i)
 			if (segments[i] >= 0) visible.push_back(segments[i]);
 		const auto eye = point(View_position);
-		auto items = xl_compat::particle_scene_items(visible, eye, { point(Unscaled_matrix.rvec), point(Unscaled_matrix.uvec) }, int(elapsed), image->bitmap.width, image->bitmap.height, smoke ? smoke->bitmap.width : 0, smoke ? smoke->bitmap.height : 0);
+		auto items = xl_compat::particle_scene_items(visible, eye, { point(Unscaled_matrix.rvec), point(Unscaled_matrix.uvec) }, int(elapsed), image->bitmap.width, image->bitmap.height, smoke ? smoke->bitmap.width : 0, smoke ? smoke->bitmap.height : 0, bubble ? bubble->bitmap.width : 0, bubble ? bubble->bitmap.height : 0);
 		const std::array<xl_compat::ParticlePoint, 3> view{ point(View_matrix.rvec), point(View_matrix.uvec), point(View_matrix.fvec) };
 		for (auto &item : items) {
-			const auto *selected = item.subtype == 0 ? smoke : fire;
+			const auto *selected = item.subtype == 2 ? bubble : item.subtype == 0 ? smoke
+			                                                                      : fire;
 			if (!selected || !selected->texture) throw std::runtime_error("XL particle scene lost its subtype image");
-			xl_compat::particle_camera_quad(item.quad, eye, view);
+			if (item.bubble) {
+				item.bubble->eye = eye;
+				item.bubble->camera = view;
+				item.bubble->camera_space = true;
+			} else xl_compat::particle_camera_quad(item.quad, eye, view);
 			xl_compat::transparency_particle(item, selected->texture.get());
 		}
 	} catch (const std::exception &error) {
@@ -255,13 +327,23 @@ void xl_compat::particle_objects_frame(int time)
 			if (!entry.system && entry.definition.count && systems.size() < particle_system_limit) {
 				const int segment = object.segnum;
 				if (segment < 0 || std::size_t(segment) >= world.segments.size()) throw std::runtime_error("XL particle owner moved outside its loaded mine");
-				if (entry.effect.kind == ParticleKind::smoke || entry.effect.kind == ParticleKind::spray) systems.push_front({ index, entry.signature, SmokeEmitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time) });
+				if (entry.effect.kind == ParticleKind::bubbles) {
+					BubbleEmitter emitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time);
+					const auto point = [](const vms_vector &v) { return ParticlePoint{ v.x, v.y, v.z }; };
+					// Source Create retains all three axes; later point-jitter SetPos
+					// calls pass a null orientation and leave this basis unchanged
+					emitter.orientation = { point(object.orient.rvec), point(object.orient.uvec), point(object.orient.fvec) };
+					systems.push_front({ index, entry.signature, std::move(emitter) });
+					// Release source leaves this generic linked owner alive on disable
+					xl_audio_link_external(bubble_sound_name, 0, index, 1, F1_0 / 2, 256 * F1_0, -1, -1, 0, 0);
+				} else if (entry.effect.kind == ParticleKind::smoke || entry.effect.kind == ParticleKind::spray) systems.push_front({ index, entry.signature, SmokeEmitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time) });
 				else systems.push_front({ index, entry.signature, FireEmitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time) });
 				entry.system = &systems.front();
 			}
 			if (entry.system && !entry.face) {
+				const auto &effect = entry.effect;
 				std::visit([&](auto &emitter) {
-					emitter.position = particle_emitter_position(entry.effect, { object.pos.x, object.pos.y, object.pos.z }, random);
+					emitter.position = particle_emitter_position(effect, { object.pos.x, object.pos.y, object.pos.z }, random);
 					emitter.segment = object.segnum;
 				},
 				           entry.system->emitter);

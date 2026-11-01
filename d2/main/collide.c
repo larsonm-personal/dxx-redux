@@ -8,6 +8,7 @@
 #include "robot_generator.h"
 #include "boss_spawn.h"
 #include "resource_validation.h"
+#include "camera_collision.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -3314,6 +3315,10 @@ void collide_two_objects( object * A, object * B, vms_vector *collision_point )
 	if (object_is_observer(A) || object_is_observer(B)) {
 		return;
 	}
+#ifdef DXX_XL_RUNTIME
+	if (xl_camera_player_contact(A, B, collision_point)) return;
+	if (xl_camera_weapon_contact(A, B, collision_point)) return;
+#endif
 
 	if (input_demo_replay_collision_probe_active() &&
 		(A == ConsoleObject || B == ConsoleObject))

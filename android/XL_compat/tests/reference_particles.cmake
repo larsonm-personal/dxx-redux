@@ -5,6 +5,9 @@ foreach(
         "include/object.h|ed546edd2bbda56a84e9fef8543706707d47a08b48e36616852346b5a2f96127"
         "include/particles.h|307e9edca466924df459b6ba5e6f0ec9d405967b38ed07021a9e561dfc29f70d"
         "include/objsmoke.h|c803d2adb2e3470d593a2095f34935e4033f13f433e5b4639bfda7193f64573a"
+        "include/audio.h|7a0977cfefbc5de6c4805665d9b251264732179b99eb5ccd8b908b192bf3779f"
+        "include/piggy.h|4ecf8941d1c81166051e74c38de877f45557d163ad0c4f92d9bcdeee21033a34"
+        "gameio/loadsounds.cpp|997970aafdfbea0b8cba5c248ce9f8cfd559f0d94f329d2b3b7e4ea2c39b28e2"
         "effects/objsmoke.cpp|ce39fc41866b703f0978af4ec0af6b4b98e30071b6c8015eaa60b719f8d32b80"
         "include/maths.h|43adf417dd1c282a39c8fed02bdad9d05a7f3ad5850a39a87897fd533eb857cd"
         "include/segment.h|4f43198ba394971128c81373940b5a58283cbbbc2851ca6a6e4187e78382a667"
@@ -133,6 +136,8 @@ foreach(
           "include/particles.h|FIRE_PARTICLES"
           "include/particles.h|WATERFALL_PARTICLES"
           "include/objsmoke.h|STATIC_SMOKE_PART_LIFE"
+          "include/audio.h|SOUNDCLASS_GENERIC"
+          "include/piggy.h|SND_ADDON_AIRBUBBLES"
           "effects/objsmoke.cpp|FIRE_PART_LIFE")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
@@ -150,6 +155,17 @@ set(extracted "// Actual pinned DoStaticParticles implementation\n")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/objsmoke.cpp"
                       "void DoStaticParticles (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_emitter.h"
+     CONTENT "${extracted}")
+set(extracted "// Actual pinned release KillObjectSmoke implementation\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/objsmoke.cpp"
+                      "static inline void KillObjectSmoke (")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadsounds.cpp" sound_table)
+string(REGEX MATCH "\"[0-9]+:airbubbles\\.wav\"" bubble_sound "${sound_table}")
+if(NOT bubble_sound)
+    message(FATAL_ERROR "Missing source bubble sound table entry")
+endif()
+string(APPEND extracted "inline constexpr char source_bubble_sound[] = ${bubble_sound};\n")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_kill.h"
      CONTENT "${extracted}")
 set(extracted "// Actual pinned density cap and authored size scaling\n")
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/particles.h" header)
