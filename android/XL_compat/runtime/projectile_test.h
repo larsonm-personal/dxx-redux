@@ -257,6 +257,13 @@ static void camera_hit_disk_controls()
 	xl_camera_controller_begin_frame();
 	const auto saved_ticks = int32_t(xl_camera_controller_ticks());
 	const int32_t elapsed = earned.repaired_elapsed(saved_ticks);
+	const auto saved_hits = xl_camera_hit_snapshot();
+	unsigned robots = 0;
+	for (const auto &entry : saved_hits) {
+		xl_compat::CameraHitState robot_hit;
+		if (entry.type == OBJ_ROBOT && xl_camera_hit_state_get(entry.owner, robot_hit) && robot_hit.repaired > 0) ++robots;
+	}
+	require(robots > 0, "Full camera disk save requires a physics-earned robot hit");
 	require(elapsed > 0, "Camera hit disk save did not exercise elapsed repair time");
 	char save[] = "camera-hits.sav", description[] = "XL camera hit state", error[256]{};
 	stop_time();
@@ -274,8 +281,15 @@ static void camera_hit_disk_controls()
 	            !restored.next && !restored.shield_time && !restored.critical_time &&
 	            restored.points == decltype(restored.points){} && restored.times == decltype(restored.times){},
 	        "Full camera hit restore lost elapsed repair time or retained omitted hit history");
+	const auto restored_hits = xl_camera_hit_snapshot();
+	require(restored_hits.size() == saved_hits.size(), "Camera disk restore changed tracked actor count");
+	for (std::size_t i = 0; i < saved_hits.size(); ++i) {
+		const auto &before = saved_hits[i], &after = restored_hits[i];
+		require(before.owner == after.owner && before.signature == after.signature && before.type == after.type && before.elapsed == after.elapsed,
+		        "Camera disk restore changed an actor identity or elapsed repair time");
+	}
 	require(!game_is_time_paused(), "Camera hit disk restore left simulation paused");
-	std::cout << "Physics-earned camera hit state disk restore through stock passed\n";
+	std::cout << "Physics-earned player/robot camera hit state disk restore through stock passed\n";
 }
 
 static int projectile_test(int argc, char **argv)

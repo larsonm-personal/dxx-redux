@@ -3316,6 +3316,7 @@ void collide_two_objects( object * A, object * B, vms_vector *collision_point )
 		return;
 	}
 #ifdef DXX_XL_RUNTIME
+	if (xl_camera_passive_contact(A, B)) return;
 	if (xl_camera_player_contact(A, B, collision_point)) return;
 	if (xl_camera_weapon_contact(A, B, collision_point)) return;
 #endif

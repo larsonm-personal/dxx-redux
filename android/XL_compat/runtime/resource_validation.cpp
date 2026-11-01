@@ -642,14 +642,14 @@ void XlPreparedResources::validate_camera_query(const object &camera, const obje
 	    camera.id != state->camera_robot || camera.render_type != RT_POLYOBJ || camera.rtype.pobj_info.model_num != state->camera_model ||
 	    (camera.ctype.ai_info.behavior != 128 && camera.ctype.ai_info.behavior != 129 && camera.ctype.ai_info.behavior != 135))
 		throw std::runtime_error("Camera query exceeds installed camera profile");
-	if (moving.type != OBJ_PLAYER && moving.type != OBJ_WEAPON) throw std::runtime_error("Camera query actor is not qualified");
+	if (moving.type != OBJ_PLAYER && moving.type != OBJ_WEAPON && moving.type != OBJ_ROBOT && moving.type != OBJ_FIREBALL) throw std::runtime_error("Camera query actor is not qualified");
 }
 int XlPreparedResources::camera_query(const object &camera, const object &moving, const vms_vector &start, const vms_vector &end, int radius, vms_vector &hit, vms_vector &normal)
 {
 	if (installed_resources != this) throw std::runtime_error("Camera query resource owner is no longer installed");
 	validate_camera_query(camera, moving);
 	if (Game_mode & GM_MULTI) throw std::runtime_error("Camera query requires the single-player source profile");
-	// Default player profile nHitboxes=2 makes source UseHitbox false for both actors
+	// Default player profile nHitboxes=2 makes source UseHitbox false for every actor
 	// The camera RegisterHit returns unchanged for OBJ_CAMBOT, without hit-state writes
 	const auto point = [](const vms_vector &v) { return xl_compat::FixedLightPoint{ v.x, v.y, v.z }; };
 	xl_compat::FixedLightPoint intersection{};
@@ -674,6 +674,7 @@ extern "C" int xl_camera_query(const object *camera, const object *moving, const
 int XlPreparedResources::camera_hitbox_query(const object &camera, const object &moving, const vms_vector &start, const vms_vector &end, int frame, vms_vector &hit, vms_vector &normal)
 {
 	validate_camera_query(camera, moving);
+	if (moving.type != OBJ_PLAYER && moving.type != OBJ_WEAPON) throw std::runtime_error("Forced camera hitbox profile requires a player or weapon");
 	if (moving.type == OBJ_WEAPON && (moving.id == PROXIMITY_ID || moving.id == SUPERPROX_ID || moving.id == PMINE_ID || moving.id == ROBOT_SUPERPROX_ID)) throw std::runtime_error("Camera mine query requires source sphere routing");
 	const auto point = [](const vms_vector &v) { return xl_compat::FixedLightPoint{ v.x, v.y, v.z }; };
 	const auto matrix = [&](const vms_matrix &m) { return std::array<xl_compat::FixedLightPoint, 3>{ point(m.rvec), point(m.uvec), point(m.fvec) }; };

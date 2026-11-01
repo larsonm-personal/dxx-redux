@@ -103,7 +103,7 @@ std::vector<XlCameraHitSave> xl_camera_hit_snapshot()
 	if (ticks > INT32_MAX) throw std::runtime_error("Camera hit save clock exceeds qualified signed range");
 	for (int owner = 0; owner <= Highest_object_index; ++owner) {
 		const auto &actor = Objects[owner];
-		if (actor.type != OBJ_PLAYER && actor.type != OBJ_WEAPON) continue;
+		if (actor.type != OBJ_PLAYER && actor.type != OBJ_WEAPON && actor.type != OBJ_ROBOT) continue;
 		xl_compat::CameraHitState state;
 		xl_camera_hit_state_get(owner, state);
 		result.push_back({ owner, actor.signature, actor.type, state.repaired_elapsed(int32_t(ticks)) });
@@ -118,7 +118,7 @@ bool xl_camera_hit_restore(const std::vector<XlCameraHitSave> &saved, bool apply
 		std::size_t row = 0;
 		for (int owner = 0; owner <= Highest_object_index; ++owner) {
 			const auto &actor = Objects[owner];
-			if (actor.type != OBJ_PLAYER && actor.type != OBJ_WEAPON) continue;
+			if (actor.type != OBJ_PLAYER && actor.type != OBJ_WEAPON && actor.type != OBJ_ROBOT) continue;
 			if (row == saved.size()) return false;
 			const auto &entry = saved[row++];
 			if (entry.owner != owner || entry.signature < 0 || entry.signature != actor.signature || entry.type != actor.type) return false;
@@ -140,7 +140,7 @@ extern "C" void xl_camera_physics_unstick(object *actor, const object *camera,
 {
 	try {
 		if (!xl_level_extensions_active() || !actor || !camera || !old_position || !attempted_position || !offset || !old_velocity ||
-		    (actor->type != OBJ_PLAYER && actor->type != OBJ_WEAPON) || actor->movement_type != MT_PHYSICS || camera->type != 16)
+		    (actor->type != OBJ_PLAYER && actor->type != OBJ_WEAPON && actor->type != OBJ_ROBOT && actor->type != OBJ_FIREBALL) || actor->movement_type != MT_PHYSICS || camera->type != 16)
 			throw std::runtime_error("Camera unstick exceeds the qualified physical actor profile");
 		camera_definition(*camera);
 		const int owner = int(actor - Objects);
@@ -164,6 +164,19 @@ extern "C" int xl_camera_pair_collision(int a, int b)
 	if (a != 16 && b != 16) return -1;
 	const int other = a == 16 ? b : a;
 	return other == OBJ_PLAYER || other == OBJ_WEAPON || other == OBJ_ROBOT || other == OBJ_FIREBALL;
+}
+
+extern "C" int xl_camera_passive_contact(object *a, object *b)
+{
+	object *camera = a->type == 16 ? a : b->type == 16 ? b
+	                                                   : nullptr;
+	if (!camera) return 0;
+	const object *actor = camera == a ? b : a;
+	if (actor->type != OBJ_ROBOT && actor->type != OBJ_FIREBALL) return 0;
+	camera_definition(*camera);
+	// Source enables both pairs but its dispatcher applies no response
+	// The caller still performs reverse-query unsticking and movement retry
+	return 1;
 }
 
 extern "C" int xl_camera_player_contact(object *a, object *b, vms_vector *point)
