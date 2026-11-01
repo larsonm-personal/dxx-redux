@@ -7,8 +7,10 @@
 #include "lightning_renderer.h"
 #include "lightning_scene.h"
 #include "particle_renderer.h"
+#include "../lightning_outline.h"
 extern "C" {
 #include "3d.h"
+#include "object.h"
 #include "ogl_init.h"
 #include "internal.h"
 #include "rng_shared.h"
@@ -69,7 +71,7 @@ void xl_compat::finish_lightning_batch()
 	compositor.end();
 #endif
 }
-void xl_compat::draw_lightning_scene_item(const LightningSceneItem &item, ParticleTexture &image)
+void xl_compat::draw_lightning_scene_item(const LightningSceneItem &item, ParticleTexture *image)
 {
 #if defined(OGLES) && !defined(ANDROID)
 	throw std::runtime_error("XL lightning requires OpenGL 3 or OpenGL ES 3");
@@ -79,6 +81,16 @@ void xl_compat::draw_lightning_scene_item(const LightningSceneItem &item, Partic
 	for (auto &vertex : core.vertices) vertex = camera_vertex(vertex);
 	for (auto &vertex : glow.vertices) vertex = camera_vertex(vertex);
 	const auto matrix = scene_matrix();
+	EffectsRandom random;
+	if (glow.vertices.empty()) {
+		if (!Viewer || !grd_curcanv) throw std::runtime_error("XL lightning outline requires a viewer and canvas");
+		const LightningVertex eye{ float(Viewer->pos.x) / 65536.f, float(Viewer->pos.y) / 65536.f, float(Viewer->pos.z) / 65536.f };
+		const auto width = lightning_outline_width(item.frame.core, item.random_nodes, eye, float(Viewer->size) / 65536.f, grd_curcanv->cv_bitmap.bm_w);
+		const auto color = lightning_draw_color(item.color, false, random);
+		compositor.draw_unblurred(core, glow, item.random_nodes, color, width, matrix);
+		return;
+	}
+	if (!image) throw std::runtime_error("XL lightning scene lost its corona image");
 	std::array<float, 16> projection;
 #ifdef ANDROID
 	std::copy_n(gles3_shim_get_projection(), 16, projection.begin());
@@ -101,7 +113,6 @@ void xl_compat::draw_lightning_scene_item(const LightningSceneItem &item, Partic
 			extent[axis + 2] = std::max(extent[axis + 2], projected[axis]);
 		}
 	}
-	EffectsRandom random;
 	const auto color = lightning_draw_color(item.color, true, random);
 	if (glow.distance_scale == 0) {
 		compositor.draw_direct(core, glow, item.random_nodes, color, item.width, matrix, extent);
@@ -113,7 +124,7 @@ void xl_compat::draw_lightning_scene_item(const LightningSceneItem &item, Partic
 		depth.capture();
 		glViewport(view[0], view[1], view[2], view[3]);
 	}
-	const auto corona = image.border_handle();
+	const auto corona = image->border_handle();
 	compositor.begin(target, depth.texture, depth.stencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT, depth.width, depth.height, view);
 	compositor.draw(core, glow, item.random_nodes, color, item.width, matrix, corona, extent, { .25f, .25f });
 #endif

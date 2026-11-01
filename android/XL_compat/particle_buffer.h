@@ -23,10 +23,13 @@ class FireParticleBuffers
 	};
 	std::array<Buffer, 3> buffers;
 	Point eye;
-	static bool compatible(const Buffer &buffer, int kind, bool emissive)
+	bool shaders;
+	bool compatible(const Buffer &buffer, int kind, bool emissive) const
 	{
-		// Of the admitted image types, source shader compatibility includes smoke
-		return buffer.kind == kind && (buffer.emissive == emissive || kind == 1);
+		// Source shader compatibility includes smoke and bubbles, even across
+		// image types. Other source types remain outside this authored profile
+		return (buffer.kind == kind && buffer.emissive == emissive) ||
+		       (shaders && (buffer.kind == 1 || buffer.kind == 2) && (kind == 1 || kind == 2));
 	}
 	static float distance(const Point &a, const Point &b)
 	{
@@ -77,7 +80,7 @@ class FireParticleBuffers
 	}
 
   public:
-	explicit FireParticleBuffers(const Point &viewer) : eye(viewer) {}
+	explicit FireParticleBuffers(const Point &viewer, bool use_shaders = true) : eye(viewer), shaders(use_shaders) {}
 	template <class Draw>
 	void add(std::size_t index, const Point &position, float radius, bool smoke, bool emissive, Draw draw)
 	{

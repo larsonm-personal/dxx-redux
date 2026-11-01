@@ -57,6 +57,7 @@ void xl_preview_record_water_draw(int depth_enabled);
 uint64_t xl_preview_water_draws(void);
 uint64_t xl_preview_water_depth_failures(void);
 float xl_preview_alpha(float stock_alpha);
+int xl_preview_additive_face(void);
 int xl_preview_begin_cloak_face(int segment, int side);
 void xl_preview_record_cloak_draw(float alpha);
 uint64_t xl_preview_cloak_draws(void);

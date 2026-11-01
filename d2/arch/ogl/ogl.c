@@ -1473,7 +1473,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 
 #if defined(ANDROID) && defined(DXX_XL_RUNTIME)
 	if (!bmovl->gltexture->scoped_static && xl_soft_overlay_base_opaque(bmbot) &&
-	    grd_curcanv->cv_blend_func == GR_BLEND_NORMAL && grd_curcanv->cv_fade_level >= GR_FADE_OFF && XL_FACE_ALPHA(1.0f) == 1.0f) {
+	    grd_curcanv->cv_blend_func == GR_BLEND_NORMAL && !xl_preview_additive_face() && grd_curcanv->cv_fade_level >= GR_FADE_OFF && XL_FACE_ALPHA(1.0f) == 1.0f) {
 		grs_bitmap *selected = xl_wall_animation_bitmap(bmovl, 1, 1);
 		bmovl = selected;
 		/* Selection can upload before rejecting a frame mapping or budget.
@@ -2245,14 +2245,24 @@ static int ogl_last_blend_mode = -1; /* blend func cache; reset in ogl_start_fra
 #endif
 void ogl_set_blending()
 {
+	int cur = grd_curcanv->cv_blend_func;
+#ifdef DXX_XL_RUNTIME
+	/* Source WALL_RENDER_ADDITIVE uses weak additive, independent of stock options */
+	enum { XL_WEAK_ADDITIVE = 256 };
+	if (xl_preview_additive_face()) cur = XL_WEAK_ADDITIVE;
+#endif
 #ifdef ANDROID
 	/* android port: skip redundant glBlendFunc calls */
-	int cur = grd_curcanv->cv_blend_func;
 	if (cur == ogl_last_blend_mode) return;
 	ogl_last_blend_mode = cur;
 #endif
-	switch ( grd_curcanv->cv_blend_func )
+	switch (cur)
 	{
+#ifdef DXX_XL_RUNTIME
+		case XL_WEAK_ADDITIVE:
+			glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
+			break;
+#endif
 		case GR_BLEND_ADDITIVE_A:
 			glBlendFunc( GL_SRC_ALPHA, GL_ONE );
 			break;

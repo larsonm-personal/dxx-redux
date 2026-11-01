@@ -197,3 +197,80 @@ endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_light.h"
      CONTENT "${extracted}")
 target_sources(xl_lightning_test PRIVATE tests/reference_lightning_light.cpp)
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/render/transprender.cpp" sprite_hash)
+if(NOT sprite_hash STREQUAL "123dfee9f26410304377e18776668faeb74f8c0f0d78428d13d30a4a55467ea2")
+    message(FATAL_ERROR "Sprite dispatch source changed")
+endif()
+set(extracted "// Pinned sprite blend, glow and soft-depth dispatch\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/transprender.cpp"
+                      "void CTranspSprite::Render (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_sprite.h" CONTENT "${extracted}")
+target_sources(xl_lightning_test PRIVATE tests/reference_sprite.cpp)
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/render/lighttrails.cpp" corona_hash)
+if(NOT corona_hash STREQUAL "70419ce91b61ec49afaebe07735c8e7d493bb039557d12099c7f95767b517196")
+    message(FATAL_ERROR "Powerup corona source changed")
+endif()
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/include/powerup.h" powerup_hash)
+if(NOT powerup_hash STREQUAL "b786e1bc642a7ad867c52e8df06a6c49a3c89d744513e22f9da91de04c77fd6d")
+    message(FATAL_ERROR "Powerup classification source changed")
+endif()
+set(extracted "// Pinned powerup corona inputs and eligibility\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/powerup.h"
+                      "static inline int32_t IsEnergyPowerup (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/lighttrails.cpp"
+                      "void RenderPowerupCorona (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_powerup_corona.h"
+     CONTENT "${extracted}")
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/2d/bitmap.cpp" sprite_bitmap_hash)
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/2d/palette.cpp" sprite_palette_hash)
+if(NOT sprite_bitmap_hash STREQUAL
+   "542b40e7af08883e88884408da811bf346c7d46c26c18c25e909b9efa12e4c21"
+   OR NOT sprite_palette_hash STREQUAL
+      "7965378da2b783848c5f068416c3b4650a15dc902340ea0af1da4791f3f79419")
+    message(FATAL_ERROR "Sprite bitmap color source changed")
+endif()
+set(extracted "// Pinned indexed bitmap average and palette matching\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/2d/palette.cpp"
+                      "static inline int32_t ColorDelta (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/2d/palette.cpp"
+                      "int32_t CPalette::ClosestColor (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/2d/bitmap.cpp"
+                      "int32_t CBitmap::AvgColorIndex (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/2d/bitmap.cpp"
+                      "CFloatVector *CBitmap::GetAvgColor (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_sprite_bitmap.h"
+     CONTENT "${extracted}")
+target_sources(xl_lightning_test PRIVATE tests/reference_sprite_bitmap.cpp)
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/main/gamestates.cpp" outline_state_hash)
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/include/descent.h" outline_distance_hash)
+if(NOT outline_state_hash STREQUAL
+   "34aeb804a0e1b428781d355b69f7b9aae357ff39a9c584ccfaaf5b0357d69744"
+   OR NOT outline_distance_hash STREQUAL
+      "f8c34f569c51541dc4d1e69ae3ac04972401b4c6cad99ac450bbc57a245f83e4")
+    message(FATAL_ERROR "Lightning outline source changed")
+endif()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/descent.h" source)
+string(FIND "${source}" "static inline int32_t DistToScale (" start)
+if(start LESS 0)
+    message(FATAL_ERROR "Missing lightning outline distance function")
+endif()
+string(SUBSTRING "${source}" ${start} -1 tail)
+string(FIND "${tail}" "}" end)
+math(EXPR length "${end} + 1")
+string(SUBSTRING "${tail}" 0 ${length} distance_function)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_distance.h"
+     CONTENT "${distance_function}\n")
+set(extracted "// Pinned non-glowing lightning width consumer\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/gamestates.cpp"
+                      "float CRenderStates::OutlineWidth (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning.cpp"
+                      "void CLightning::RenderCore (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning.cpp"
+                      "int32_t CLightning::SetupGlow (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_outline.h"
+     CONTENT "${extracted}")
+target_sources(xl_lightning_test PRIVATE tests/reference_lightning_outline.cpp)

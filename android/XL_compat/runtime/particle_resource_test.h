@@ -45,6 +45,11 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 		throw std::runtime_error("Particle image preparation unexpectedly accepted a bad resource");
 	};
 	failure(missing);
+	if (lightning) {
+		auto nonglow = level;
+		nonglow.objects[0].render_data[17] = 0;
+		require(!prepare(nonglow), "Non-glowing lightning required an absent corona image");
+	}
 	const auto image = [extent](unsigned char red) {
 		Bytes bytes(18 + extent * extent * 3, 0);
 		bytes[2] = 2;

@@ -541,3 +541,156 @@ color/size helpers and their unfinished diagnostics are excluded from113. The
 normal transparency queue and level admission retain branch112 behavior. This
 PR qualifies a renderer capability and its owned original asset, not normal
 Pumo level9 gameplay or campaign traversal.
+
+## 114: native powerup sprites and portable bitmap borders
+
+Energy powerups now submit copied bitmap-body and optional original-glare
+sprites to the normal transparency queue. Bodies retain source opacity2/3,
+bitmap aspect ratio and camera/window scale. Reverse equal-depth ordering
+draws the body before its corona. Negative-additive coronas retain a pending
+lightning batch; ordinary bodies end it. Non-energy powerup bodies remain
+immediate, matching the selected source profile with weapon coronas disabled.
+The resource transaction retains the optional glare image and its ownership.
+
+Pinned source controls cover640 sprite dispatch combinations,4800 powerup
+corona/color/size cases and320 bitmap average/palette/stride cases. Native
+integration checks copied inputs, batch transitions, indexed and small/big RLE
+bitmaps, all256 truecolor average-byte values and asymmetric view scaling.
+
+Bitmap bodies emulate legacy GL_CLAMP with transparent border texels at every
+mip, including rectangular mip tails, using original texture storage. The
+portable shader uses accurate log2 for LOD and restores shader, buffer,
+texture, depth and blend state. Context abandonment discards its GPU handles.
+
+The EGL owner compares900 shape/size/filter/position cases against GL_QUADS.
+The ordinary channel limit remains1. Nearest magnification discontinuities
+qualify only when both outputs match an independently blended adjacent texel
+within1 and its coordinate lies within32 float-epsilon-scaled texel units of
+the boundary. This accounts for108 pixels; their raw difference reaches66.
+Mipmap exceptions require raw difference at most2, with each output within1
+of an independent double-precision sampler using respectively Mesa's measured
+piecewise LOD or the portable exact logarithm. These account for126 pixels.
+No other discrepancies qualify. Substituting Mesa's LOD in a temporary
+same-triangle experiment removed the mipmap differences; that production
+experiment was reverted. A deliberately incorrect edge-clamped border was
+rejected in382 cases. This is a bounded numerical contract, not a claim of
+bit-identical output at discontinuities or across GPU implementations.
+
+The shared analytical body control covers108 RGBA border, rectangular mip,
+opacity, depth-rejection and scissor cases. It passes on desktop and Android.
+The existing protected Android lightning owner requires bitmap_cases108 on
+both sides of actual context recreation, alongside the original glare and
+pending-lightning checks. Run533ca2b6ec924ce7910ab1803538b15f passed28/28 in
+54.033seconds with identical protected before/after hashes on the temporary
+host-GPU emulator. Windows native integration, Android x86_64 build, both
+automation catalogs and scoped formatting passed. Full EGL passed12.40seconds
+after the new desktop control restored its fixed-function texture state and
+engine cache before the existing retained-particle context test.
+
+This qualifies normal powerup sprite submission and the tested renderer
+behavior. Original Pumo level9 scene/audio/gameplay and campaign traversal
+remain unqualified; normal lightning admission is unchanged.
+
+## 115: original level-nine admission and scene lifecycle
+
+Normal admission now validates stationary singleplayer lightning with random
+endpoints, style0, positive glow, bounded lifetime/node/bolt arithmetic, and no
+waypoint, children, clamp or fixed plane. Admission and native binding share
+the same validator. Other styles, targeted paths, non-glowing outline rendering
+and negative single-layer glow remain blocked with per-object diagnostics.
+Independent unknown features and resource requirements still reject a level.
+
+The original Pumo level9 is tulev4.rl2. Its only lightning owner is object307
+in segment362: three bolts, eight authored nodes, two interpolation frames,
+width20, positive glow and sound enabled. The original HOG and descriptor are
+unchanged; the protected runner pins them and the original corona, glare and
+lightning waveform. The waveform SHA-256 is
+149382490dfec4517e2594921c8dcb71518c372846b73ee3c157a0f9ca3efd30.
+
+The first original load exposed a translation defect: the stock shadow retained
+the lightning payload, displacing the following native object records. The
+translation now emits an inert79-byte native header and retains the complete
+payload in the owned XL inventory. A regression checks the exact following
+object boundary across all five audited serialization versions. Classic-only
+probes reject lightning without the source-owned runtime.
+
+The existing MissionFlow owner now dispatches original authored exits through
+1->2->3->4->14->5->6->7->8->9. It checks native player controls and mission state,
+then captures and disturbs lightning activation, restores a real checkpoint,
+and checks the three live bolt frames, owned corona pixels and linked audio
+ownership against the active bolt population. It recreates the actual Android
+graphics context and repeats the live checks before restoring the original hub
+save and validating its campaign, particle and bitmap state.
+
+At the fixed view in segment362, side0, distance8, an Android-only diagnostic
+reads scene color immediately around actual lightning batch composition. It
+does not compare whole frames containing unrelated animation. Run
+72489d8c6c7d4f128eb1e0747e311c0c passed100/100 steps in408.242seconds on the
+temporary host-GPU emulator. Lightning changed406394 pixels before context
+recreation and197824 afterward; both observations located positive light in
+two segments. The observed framebuffer sample count was0. One context
+recreation was confirmed, the final level was the original hub, and protected
+before/after app-data hashes were identical.
+
+Final inventory/effect contracts passed2/2, including malformed-owner/profile
+rejections and the translation regression. Windows native lifecycle controls,
+Android x86_64 build, both automation catalogs and scoped formatting passed.
+The unchanged renderer arithmetic reuses114's source/GPU qualification.
+
+This establishes controlled original level-nine loading and the tested
+lightning scene/lifecycle. It is not an earned playthrough or full-campaign
+qualification. Later Pumo chapters still require other lightning profiles,
+camera objects/actions, additive walls and particle behavior. Optional3D
+powerup/model presentation is not established by these sprite controls.
+
+## 116: non-glowing random lightning outlines
+
+Random style-0 lightning now supports authored zero glow in addition to
+positive glow. Negative single-layer glow, other styles, targeted paths,
+children, clamp and fixed-plane profiles remain rejected. Admission and native
+binding continue to share the same bounded validator.
+
+The non-glowing core uses the pinned RenderCore distance rule: take the nearer
+visible endpoint's distance from the viewer object, subtract its radius, apply
+DistToScale, then apply OutlineWidth using the current canvas width. Random
+endpoint tails and the four stored cap vertices do not participate. The source
+gameplay default is 3 * max(1, canvasWidth / 640), divided by twice the distance
+scale when nonzero and clamped to 1..10 in the qualified portable profile.
+Actual extracted RenderCore, OutlineWidth and DistToScale functions pass 2304
+endpoint, radius, canvas and viewer-offset comparisons. The additional source
+files are hash-pinned in reference_lightning.cmake.
+
+Non-glowing drawing consumes three effects RNG samples and uses direct additive
+color without the glowing path's quartering. It requires no corona texture.
+The frame still retains the source glow-distance factor: Draw invokes SetupGlow
+only when that factor is positive, and non-glowing SetupGlow ends a pending glow
+batch. At zero factor the direct core retains that batch. Extracted SetupGlow
+and the existing Draw controls establish this ordering; compositor controls
+check both pending-batch states and the resulting composed pixels. Android
+scene readback follows the same direct-versus-pending distinction.
+
+Desktop source/GPU validation passed 2/2 in 41.77 seconds, including 36288
+primitive comparisons after adding fractional outline widths, the existing
+source composite controls, and native no-corona/canvas-width checks across
+actual context recreation and explicit resource release. Existing pixel
+acceptance limits were retained. The protected Android renderer owner passed
+28/28 steps in 50.789 seconds, run 12ed6e34bae04e1782ff2c5b3f12a205. It checks
+28 analytical line cases, four no-corona outline cases, 108 bitmap cases and
+the retained glare/lightning case before and after context recreation.
+Protected before/after app-data hashes were identical.
+
+Final inventory/effect contracts passed 2/2 in 5.87 seconds. Windows native
+controls passed both glowing and non-glowing ownership, clock, activation,
+illumination, queue snapshots, atomic restore and signature lifetime cases.
+The resource owner verifies that non-glowing lightning needs no absent corona.
+The two native profiles use successive absolute test epochs; reusing the first
+epoch correctly triggered the production backward-clock guard during test
+development. Both automation catalogs, scoped formatting and the final Android
+x86_64 build passed. The final admission-only edits reuse the completed renderer
+checks; the Android rebuild passed in two minutes.
+
+Inspection of the unchanged original 14-level Pumo HOG now reports no lightning
+blocker for pmlev3 objects318/319. Objects320/321/322 remain blocked, as do the
+camera and particle requirements in that level. Original level-nine admission
+remains clear. This qualifies the bounded non-glowing profile and its tested
+runtime paths, not original later-level gameplay or a complete campaign.

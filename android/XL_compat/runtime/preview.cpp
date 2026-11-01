@@ -109,6 +109,7 @@ uint64_t water_draws = 0, water_depth_failures = 0;
 uint64_t corona_depth_failures = 0;
 uint64_t corona_classic_requested_draws = 0;
 float face_alpha = -1;
+bool face_additive = false;
 bool face_water_material = false;
 std::vector<xl_compat::DynamicVertexLight> dynamic_vertices;
 std::vector<float> brightness;
@@ -622,6 +623,7 @@ extern "C" void xl_preview_clear_mission(void)
 	corona_depth_failures = 0;
 	corona_classic_requested_draws = 0;
 	face_alpha = -1;
+	face_additive = false;
 	face_water_material = false;
 	active_cloak_wall = drawn_cloak_wall = -1;
 	drawn_cloak_value = 0;
@@ -1572,6 +1574,7 @@ extern "C" int xl_preview_wall_is_doorway(int segment_index, int side)
 extern "C" void xl_preview_begin_face(int segment_number, int side)
 {
 	face_alpha = -1;
+	face_additive = false;
 	face_water_material = false;
 	if (!source || option("-xl-preview-stock-materials") || segment_number < 0 || segment_number >= Num_segments || side < 0 || side >= 6) return;
 	const int index = Segments[segment_number].sides[side].wall_num;
@@ -1597,6 +1600,7 @@ extern "C" void xl_preview_begin_face(int segment_number, int side)
 	const wall &w = Walls[index];
 	// Cloaked flat walls are handled before the textured-face hook
 	if (w.type == WALL_CLOAKED) return;
+	face_additive = (w.flags & xl_compat::wall_render_additive) != 0;
 	const int c = w.cloak_value;
 	face_alpha = c > 0 && c < xl_fade_levels ? float(xl_fade_levels - c) / xl_fade_levels : 1.0f;
 }
@@ -1604,6 +1608,7 @@ extern "C" void xl_preview_begin_face(int segment_number, int side)
 extern "C" void xl_preview_end_face(void)
 {
 	face_alpha = -1;
+	face_additive = false;
 	face_water_material = false;
 	active_cloak_wall = -1;
 }
@@ -1671,13 +1676,20 @@ extern "C" float xl_preview_alpha(float stock_alpha)
 	return face_alpha < 0 ? stock_alpha : face_alpha;
 }
 
+extern "C" int xl_preview_additive_face(void)
+{
+	return face_additive;
+}
+
 extern "C" int xl_preview_begin_cloak_face(int segment_number, int side)
 {
+	face_additive = false;
 	if (!xl_level_extensions_active() || segment_number < 0 || segment_number >= Num_segments || side < 0 || side >= 6) return 0;
 	const int index = Segments[segment_number].sides[side].wall_num;
 	if (index < 0 || index >= Num_walls) return 0;
 	const auto &wall = Walls[index];
 	if (wall.type != WALL_CLOAKED && wall.state != WALL_DOOR_CLOAKING && wall.state != WALL_DOOR_DECLOAKING) return 0;
+	face_additive = !option("-xl-preview-stock-materials") && (wall.flags & xl_compat::wall_render_additive);
 	// Method-0 WallAlpha uses a flat face throughout both transition halves
 	const int cloak = wall.cloak_value;
 	face_alpha = cloak >= xl_fade_levels ? 0.0f : 1.0f - float(cloak) / xl_fade_levels;

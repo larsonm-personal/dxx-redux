@@ -1496,6 +1496,61 @@ int main(int argc, char **argv)
 		check(probe.source.vertex_colors.size() == 8 && probe.source.texture_colors.size() == 910, "probe must retain lighting evidence");
 		check(xl_compat::runtime_blockers(probe.source).empty(), "implemented XL features rejected");
 		{
+			auto additive = probe.source;
+			additive.walls.push_back({ 0, 0, 0, -1, 5, 20, 0, 255, -1, 1, 0, 6 });
+			const int index = int(additive.walls.size()) - 1;
+			additive.unsupported.push_back({ "additive_wall_rendering", index, "20" });
+			check(xl_compat::runtime_blockers(additive).empty(), "Qualified Pumo closed additive wall rejected");
+			additive.walls.back().flags = 28;
+			check(xl_compat::runtime_blockers(additive).empty(), "Locked Pumo closed additive wall rejected");
+			for (int type : { 0, 1, 2, 3, 4, 6, 7, 8 }) {
+				additive.walls.back().type = type;
+				check(!xl_compat::runtime_blockers(additive).empty(), "Unqualified additive wall type admitted");
+			}
+			additive.walls.back().type = 5;
+			additive.unsupported.push_back({ "unknown_wall_dependency", index, "independent" });
+			check(!xl_compat::runtime_blockers(additive).empty(), "Additive wall admission erased an independent blocker");
+		}
+		{
+			auto lightning = probe.source;
+			xl_compat::Object owner{};
+			owner.type = 20;
+			owner.reader_id = 1;
+			owner.render = owner.reader_render = 12;
+			owner.segment = 0;
+			// Original tulev4 object 307, with only its segment relocated into this fixture
+			owner.render_data = { 300, 50, 18, 5, 1, -1, 3, 0, 0, 8, 0, 2, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, 1 };
+			lightning.objects.push_back(owner);
+			lightning.unsupported.push_back({ "effect_lightning", -1, "decoded payload" });
+			lightning.unsupported.push_back({ "effect_object_types", -1, "20" });
+			check(xl_compat::runtime_blockers(lightning).empty(), "Implemented original random lightning profile rejected");
+			auto nonglow = lightning;
+			// Original pmlev3 object 318, with only its segment relocated into this fixture
+			nonglow.objects.back().render_data = { 300, 50, 15, 5, 1, -1, 3, 0, 0, 6, 0, 2, 20, 0, 0, 0, 0, 0, 0, 1, 0, 160, 160, 0, 128, 1 };
+			check(xl_compat::runtime_blockers(nonglow).empty(), "Implemented original non-glowing lightning profile rejected");
+			for (const auto &change : std::vector<std::pair<unsigned, int>>{ { 0, 0 }, { 2, 0 }, { 5, 0 }, { 6, 0 }, { 9, 4 }, { 9, 640 }, { 10, 1 }, { 11, 0 }, { 13, 1 }, { 14, 1 }, { 16, 1 }, { 19, 0 }, { 20, 1 }, { 21, 256 } }) {
+				auto invalid = lightning;
+				invalid.objects.back().render_data[change.first] = change.second;
+				check(xl_compat::blocker_message(xl_compat::runtime_blockers(invalid)).find("effect_lightning at record") != std::string::npos,
+				      "Unsupported lightning profile lost its per-object rejection");
+			}
+			for (int mutation = 0; mutation < 8; ++mutation) {
+				auto invalid = lightning;
+				auto &object = invalid.objects.back();
+				if (mutation == 0) object.control = 1;
+				if (mutation == 1) object.movement = 1;
+				if (mutation == 2) object.multiplayer = 1;
+				if (mutation == 3) object.reader_id = 0;
+				if (mutation == 4) object.reader_render = 11;
+				if (mutation == 5) object.segment = -1;
+				if (mutation == 6) object.render_data.pop_back();
+				if (mutation == 7) object.render_data[17] = 255;
+				check(!xl_compat::runtime_blockers(invalid).empty(), "Malformed lightning owner admitted");
+			}
+			lightning.unsupported.push_back({ "unimplemented_lightning_dependency", 0, "independent feature" });
+			check(!xl_compat::runtime_blockers(lightning).empty(), "Lightning admission erased an independent blocker");
+		}
+		{
 			const auto translated_skybox = xl_compat::prepare_gameplay_probe(fixture(23, 0, 1, 10));
 			auto skybox = translated_skybox.source;
 			check(skybox.segments[0].function == 10 && xl_compat::runtime_blockers(skybox).empty(), "Textured skybox metadata lost during normal translation");

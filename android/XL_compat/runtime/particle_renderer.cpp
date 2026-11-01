@@ -17,6 +17,7 @@ void ogl_bindbmtex(grs_bitmap *);
 #if !defined(OGLES) || defined(ANDROID)
 #include "particle_soft_renderer.h"
 #include "particle_border_texture.h"
+#include "sprite_bitmap_renderer.h"
 #endif
 
 namespace xl_compat
@@ -69,6 +70,7 @@ void ParticleTexture::discard_context(bool abandoned)
 {
 #if !defined(OGLES) || defined(ANDROID)
 	particle_soft.discard(abandoned);
+	sprite_bitmap_gpu.discard(abandoned);
 #endif
 	for (auto *texture = State::head; texture; texture = texture->next) texture->release(abandoned);
 }
@@ -140,6 +142,26 @@ void ParticleTexture::draw_soft_sprite(const ParticleQuad &quad, bool soft)
 		particle_program(0);
 		draw_particle_texture(image, &mapped, 1);
 	}
+#endif
+}
+
+void draw_bitmap_sprite(grs_bitmap &image, ParticleQuad quad)
+{
+	GLint active, binding;
+	glGetIntegerv(GL_ACTIVE_TEXTURE, &active);
+	glActiveTexture(GL_TEXTURE0);
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &binding);
+	ogl_bindbmtex(&image);
+	for (auto &vertex : quad.vertices) {
+		vertex.uv[0] *= image.gltexture->u;
+		vertex.uv[1] *= image.gltexture->v;
+	}
+	glBindTexture(GL_TEXTURE_2D, binding);
+	glActiveTexture(active);
+#if defined(OGLES) && !defined(ANDROID)
+	throw std::runtime_error("XL sprite bitmaps require OpenGL 3 or OpenGL ES 3");
+#else
+	draw_sprite_bitmap_gpu(image.gltexture->handle, quad);
 #endif
 }
 

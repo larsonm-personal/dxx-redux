@@ -44,6 +44,7 @@ ParticleWorld compile_particle_world(const Inventory &source)
 		auto &segment = result.segments[index];
 		segment.bounds = { ParticlePoint{ INT32_MAX, INT32_MAX, INT32_MAX }, ParticlePoint{ INT32_MIN, INT32_MIN, INT32_MIN } };
 		segment.skybox = source.segments[index].function == 10;
+		segment.water = (source.segments[index].properties & segment_water) != 0;
 		segment.inner_radius = INT32_MAX;
 		for (unsigned side = 0; side < 6; ++side) {
 			if (source.segments[index].children[side] != native.children[side])

@@ -376,7 +376,7 @@ Inventory inspect_level(const Bytes &bytes)
 			require(w.trigger == 255 || w.trigger < section(out, "triggers").count, "invalid wall trigger " + std::to_string(i));
 			if (w.flags > 255) issue(out.unsupported, "wall_flags", i, std::to_string(w.flags));
 			if (w.type > 7) issue(out.unsupported, "wall_type", i, std::to_string(w.type));
-			if (w.flags & 4) issue(out.unsupported, "additive_wall_rendering", i, std::to_string(w.flags));
+			if (w.flags & wall_render_additive) issue(out.unsupported, "additive_wall_rendering", i, std::to_string(w.flags));
 			if (w.state > 6) issue(out.unsupported, "wall_state", i, std::to_string(w.state));
 			// XL keeps an unsigned byte; exact color checks and robot masks differ
 			if (w.keys & ~15) issue(out.observations, "nonstandard_wall_keys", i, std::to_string(w.keys));

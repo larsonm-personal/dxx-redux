@@ -67,7 +67,7 @@ static void lightning_primitive_gpu_controls()
 	cameras[11][7] = -.4f;
 	cameras[13] = cameras[11];
 	for (const auto &camera : cameras)
-		for (float width : { .2f, 1.0f, 3.0f, 20.0f, 40.0f })
+		for (float width : { .2f, 1.0f, 1.5f, 2.25f, 2.53125f, 3.0f, 3.2f, 4.8f, 5.0625f, 10.f, 20.0f, 40.0f })
 			for (bool blur : { false, true })
 				for (float scene_depth : { .25f, .75f })
 					for (unsigned sampling = 0; sampling < 3; ++sampling)

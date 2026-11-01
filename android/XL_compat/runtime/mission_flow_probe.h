@@ -4,6 +4,9 @@ std::vector<int> flow_spray_owners;
 std::vector<unsigned char> flow_spray_pixels;
 nlohmann::json flow_spray_activation;
 unsigned flow_exits = 0;
+nlohmann::json flow_lightning_activation;
+std::vector<unsigned char> flow_lightning_pixels;
+nlohmann::json flow_interlude_activation, flow_interlude_progress;
 void mission_flow_probe(const char *operation)
 {
 	using namespace xl_compat;
@@ -22,6 +25,73 @@ void mission_flow_probe(const char *operation)
 	} else if (!std::strcmp(operation, "restored")) {
 		require(Current_level_num == 1 && mission_progress_snapshot() == flow_hub_progress && particle_objects_snapshot() == flow_hub_particles,
 		        "Original hub checkpoint lost its campaign or particle state");
+	} else if (!std::strncmp(operation, "interlude_", 10)) {
+		require(Current_level_num == 10 && Num_segments == 19 && Num_walls == 5 && Num_triggers == 1 &&
+		            Highest_object_index >= 1 && Objects[1].type == 20 && Objects[1].id == 2 && Objects[1].segnum == 3,
+		        "Original interlude lost its geometry or ambient-fan owner");
+		require(Triggers[0].type == 29 && Triggers[0].value == F1_0 && Triggers[0].time == 5 &&
+		            !std::strcmp(xl_message_identity(), "32e49a35fd856a74c5f5c334f18f2b0305b81de2d49b7f80c8b80165b14aa440"),
+		        "Original interlude lost its authored message table or action");
+		if (!std::strcmp(operation, "interlude_message")) {
+			require(!game_is_time_paused() && xl_message_draws() > 0 && xl_message_drawn_id() == 1 &&
+			            !std::strcmp(xl_message_text(), "Thanks for playing Mineral Valley!\nYou can now exit to the main menu."),
+			        "Original interlude did not automatically display its completion message");
+		} else if (!std::strcmp(operation, "interlude_capture")) {
+			require(game_is_time_paused() && xl_ambient_object_enabled(1), "Interlude capture requires its paused authored sound owner");
+			flow_interlude_activation = ambient_objects_snapshot();
+			flow_interlude_progress = mission_progress_snapshot();
+			Players[Player_num].energy = 77 * F1_0;
+		} else if (!std::strcmp(operation, "interlude_disturb")) {
+			require(xl_ambient_object_set_enabled(1, 0), "Cannot disturb original ambient fan activation");
+			Players[Player_num].energy = 19 * F1_0;
+		} else {
+			require(!flow_interlude_activation.empty() && ambient_objects_snapshot() == flow_interlude_activation &&
+			            mission_progress_snapshot() == flow_interlude_progress && Players[Player_num].energy == 77 * F1_0,
+			        "Interlude checkpoint lost ambient activation, progression or player state");
+			if (!std::strcmp(operation, "interlude_live")) {
+				const auto audio = named_audio_snapshot();
+				require(ambient_audio_matches(audio), "Interlude ambient audio differs from its authored resource");
+				unsigned owners = 0;
+				for (const auto &owner : audio.at("linked").at("owners"))
+					if (owner.at("object") == 1 && owner.at("signature") == Objects[1].signature && owner.at("external") == true) ++owners;
+				require(owners == 1, "Interlude did not retain exactly one ambient fan owner");
+			} else require(!std::strcmp(operation, "interlude_verify"), "Unknown original interlude control");
+		}
+	} else if (!std::strncmp(operation, "lightning_", 10)) {
+		require(Current_level_num == 9 && Highest_object_index >= 307 && Objects[307].type == 20 && Objects[307].id == 1 && Objects[307].segnum == 362,
+		        "Original lightning control requires tulev4 owner 307 in segment 362");
+		const auto *image = xl_prepared_lightning_image();
+		require(image && image->bitmap.width == 256 && image->bitmap.height == 256, "Original lightning lost its owned corona");
+		const auto activation = lightning_objects_snapshot();
+		require(activation.size() == 1 && activation[0][0] == 307 && activation[0][3] == true, "Original lightning owner population changed");
+		if (!std::strcmp(operation, "lightning_capture")) {
+			require(game_is_time_paused() && activation[0][2] == true, "Lightning capture requires paused authored activation");
+			flow_lightning_activation = activation;
+			flow_lightning_pixels = image->bitmap.pixels;
+		} else if (!std::strcmp(operation, "lightning_disturb")) {
+			require(xl_lightning_object_set_enabled(307, 0), "Cannot disturb original lightning activation");
+		} else {
+			require(!flow_lightning_activation.empty() && activation == flow_lightning_activation && image->bitmap.pixels == flow_lightning_pixels,
+			        "Original lightning lifecycle lost activation or owned corona pixels");
+			if (!std::strcmp(operation, "lightning_live")) {
+				const auto *emitter = lightning_object_emitter(307);
+				require(emitter && emitter->enabled && emitter->bolts.size() == 3, "Original lightning did not create its three authored bolts");
+				for (unsigned i = 0; i < emitter->bolts.size(); ++i) {
+					const auto *frame = lightning_object_render_frame(307, i);
+					require(frame && !frame->core.vertices.empty() && !frame->glow.vertices.empty(), "Original lightning did not retain animated core/glow geometry");
+				}
+				const auto audio = named_audio_snapshot();
+				require(lightning_audio_matches(audio), "Original lightning audio ownership differs from its source profile");
+				unsigned sounds = 0;
+				for (const auto &owner : audio.at("linked").at("owners"))
+					if (owner.at("object") == 307 && owner.at("signature") == Objects[307].signature) ++sounds;
+				const bool active = std::any_of(emitter->bolts.begin(), emitter->bolts.end(), [](const auto &bolt) { return bolt.lifetime.nodes > 0; });
+				require(sounds == unsigned(active), "Original lightning loop ownership does not follow its active bolt population");
+			} else if (!std::strcmp(operation, "lightning_scene")) {
+				require(ConsoleObject && ConsoleObject->segnum == 362, "Original lightning scene requires the owner-segment fixed view");
+				xl_lightning_scene_probe_request(307);
+			} else require(!std::strcmp(operation, "lightning_verify"), "Unknown original lightning control");
+		}
 	} else if (!std::strncmp(operation, "spray_", 6)) {
 		require(Current_level_num == 8, "Spray control requires original Pumo level 8");
 		const auto *image = xl_prepared_particle_image(0);
@@ -105,6 +175,14 @@ void mission_flow_probe(const char *operation)
 		if (!std::strcmp(operation, "exit8")) {
 			from = 7;
 			destination = 8;
+		}
+		if (!std::strcmp(operation, "exit9")) {
+			from = 8;
+			destination = 9;
+		}
+		if (!std::strcmp(operation, "exit10")) {
+			from = 9;
+			destination = 10;
 		}
 		require(from && Current_level_num == from && !game_is_time_paused() && !GameArg.SysInputDemoNoRender,
 		        "Authored route dispatch started in the wrong level or pause state");

@@ -207,6 +207,13 @@ class LightningGlowGpu
 		has_extent = true;
 		visible = !(bounds[2] < 0 || bounds[0] >= view[2] || bounds[3] < 0 || bounds[1] >= view[3]);
 	}
+	void draw_unblurred(const LightningCore &core, const LightningGlow &glow, int random_nodes, const std::array<float, 4> &color,
+	                    float line_width, const std::array<float, 16> &matrix)
+	{
+		// Source SetupGlow ends the previous batch only at positive distance scale
+		if (glow.distance_scale > 0) end();
+		primitive.draw(core, LightningGlow{}, random_nodes, color, line_width, matrix, 0, false);
+	}
 	void draw_direct(const LightningCore &core, const LightningGlow &glow, int random_nodes, const std::array<float, 4> &color,
 	                 float line_width, const std::array<float, 16> &matrix, const std::array<int, 4> &extent)
 	{

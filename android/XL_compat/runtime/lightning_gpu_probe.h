@@ -1,3 +1,5 @@
+#include "sprite_bitmap_gpu_probe.h"
+#include "additive_wall_gpu_probe.h"
 // Android renderer control: retains an owned corona without admitting a level
 unsigned lightning_line_device_controls()
 {
@@ -16,7 +18,7 @@ unsigned lightning_line_device_controls()
 	const LightningGlow glow{};
 	const std::array<float, 4> color{ 0, .25f, .5f, .75f };
 	unsigned cases = 0;
-	for (float width : { 3.f, 20.f, 40.f })
+	for (float width : { 1.5f, 2.53125f, 3.f, 5.0625f, 10.f, 20.f, 40.f })
 		for (bool occluded : { false, true })
 			for (bool scissored : { false, true }) {
 				glViewport(0, 0, 64, 64);
@@ -85,7 +87,7 @@ void lightning_gpu_probe(const char *operation)
 	require(glGetError() == GL_NO_ERROR, "Lightning GPU control requires a clean context");
 	std::vector<unsigned char> pixels(64 * 64 * 4);
 	unsigned changed = 0;
-	unsigned line_cases = 0;
+	unsigned line_cases = 0, bitmap_cases = 0, outline_cases = 0, wall_cases = 0;
 	GLfloat line_range[2];
 	glGetFloatv(GL_ALIASED_LINE_WIDTH_RANGE, line_range);
 	{
@@ -99,6 +101,10 @@ void lightning_gpu_probe(const char *operation)
 			vms_matrix view = View_matrix;
 			grs_screen *screen = grd_curscreen;
 			grs_screen probe = *screen;
+			object *viewer = Viewer;
+			object probe_viewer{};
+			grs_canvas *canvas = grd_curcanv;
+			grs_canvas probe_canvas = *canvas;
 			GLuint depth = 0;
 			unsigned random_state = 0, random_calls = d_rand_get_stream_call_count(D_RNG_FX);
 			NativeState()
@@ -106,6 +112,10 @@ void lightning_gpu_probe(const char *operation)
 				require(d_rand_get_stream_state(D_RNG_FX, &random_state) != 0, "Lightning control cannot preserve effects RNG");
 				probe.sc_w = probe.sc_h = 64;
 				grd_curscreen = &probe;
+				probe_viewer.size = 65536;
+				Viewer = &probe_viewer;
+				probe_canvas.cv_bitmap.bm_w = 640;
+				grd_curcanv = &probe_canvas;
 				View_position = {};
 				View_matrix = { { 65536, 0, 0 }, { 0, 65536, 0 }, { 0, 0, 65536 } };
 				glGenRenderbuffers(1, &depth);
@@ -119,6 +129,8 @@ void lightning_gpu_probe(const char *operation)
 				View_position = eye;
 				View_matrix = view;
 				grd_curscreen = screen;
+				Viewer = viewer;
+				grd_curcanv = canvas;
 				d_rand_set_stream_state(D_RNG_FX, random_state);
 				d_rand_set_stream_call_count(D_RNG_FX, random_calls);
 				glDeleteRenderbuffers(1, &depth);
@@ -126,6 +138,8 @@ void lightning_gpu_probe(const char *operation)
 		} native;
 		require(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Lightning GPU control target is incomplete");
 		line_cases = lightning_line_device_controls();
+		bitmap_cases = sprite_bitmap_device_controls();
+		wall_cases = additive_wall_device_controls();
 		glViewport(3, 5, 48, 43);
 		const GLfloat projection[16] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -5001.f / 4999.f, -1, 0, 0, -10000.f / 4999.f, 0 };
 		glMatrixMode(GL_PROJECTION);
@@ -143,7 +157,7 @@ void lightning_gpu_probe(const char *operation)
 		item.width = .7f;
 		item.color = { 0, 52.f / 255.f, 149.f / 255.f, 128.f / 255.f };
 		const auto calls = d_rand_get_stream_call_count(D_RNG_FX);
-		draw_lightning_scene_item(item, *lightning_probe_image->texture);
+		draw_lightning_scene_item(item, lightning_probe_image->texture.get());
 		ParticleQuad quad{};
 		quad.blend = ParticleBlend::additive;
 		const std::array<std::array<float, 2>, 4> corners{ { { -1, 1 }, { 1, 1 }, { 1, -1 }, { -1, -1 } } };
@@ -158,7 +172,7 @@ void lightning_gpu_probe(const char *operation)
 		std::vector<unsigned char> sprite_scene(pixels.size()), pending(pixels.size());
 		glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, sprite_scene.data());
 		require(std::any_of(sprite_scene.begin(), sprite_scene.end(), [](unsigned char value) { return value != 0; }), "Original glare did not draw into the scene");
-		draw_lightning_scene_item(item, *lightning_probe_image->texture);
+		draw_lightning_scene_item(item, lightning_probe_image->texture.get());
 		glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pending.data());
 		require(sprite_scene == pending, "Original glare prematurely flushed pending lightning");
 		finish_lightning_batch();
@@ -172,10 +186,40 @@ void lightning_gpu_probe(const char *operation)
 		require(glGetError() == GL_NO_ERROR, "Lightning draw/readback raised a GPU error");
 		for (unsigned p = 0; p < 64 * 64; ++p) changed += pixels[p * 4 + 2] != 0;
 		require(changed > 0 && changed < 64 * 64, "Lightning GPU control produced no bounded visible glow");
+		item.frame.glow.vertices.clear();
+		item.frame.glow.uv.clear();
+		std::vector<unsigned char> narrow_outline;
+		for (int canvas_width : { 640, 4096 }) {
+			std::vector<unsigned char> scaled_outline;
+			for (float scale : { 0.f, 1.f }) {
+				native.probe_canvas.cv_bitmap.bm_w = canvas_width;
+				item.frame.glow.distance_scale = scale;
+				glDepthMask(GL_TRUE);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				d_srand_stream(D_RNG_FX, 12345);
+				const auto outline_calls = d_rand_get_stream_call_count(D_RNG_FX);
+				draw_lightning_scene_item(item, nullptr);
+				std::vector<unsigned char> immediate(64 * 64 * 4), finished(immediate.size());
+				glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, immediate.data());
+				finish_lightning_batch();
+				glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, finished.data());
+				require(immediate == finished, "Non-glowing lightning deferred its direct device draw");
+				require(d_rand_get_stream_call_count(D_RNG_FX) == outline_calls + 3, "Non-glowing lightning consumed the wrong effects RNG count");
+				unsigned visible = 0;
+				for (unsigned p = 0; p < 64 * 64; ++p) visible += finished[p * 4 + 2] != 0;
+				require(visible > 0 && visible < 64 * 64, "Non-glowing lightning produced no bounded device outline");
+				if (!scaled_outline.empty()) require(scaled_outline == finished, "Non-glowing device width depended on glow distance scale");
+				scaled_outline = finished;
+				pixels.insert(pixels.end(), finished.begin(), finished.end());
+				++outline_cases;
+			}
+			if (!narrow_outline.empty()) require(narrow_outline != scaled_outline, "Non-glowing device width ignored canvas size");
+			narrow_outline = std::move(scaled_outline);
+		}
 	}
 	require(glGetError() == GL_NO_ERROR, "Lightning GPU control restoration raised a GPU error");
 	if (!lightning_probe_pixels.empty()) require(pixels == lightning_probe_pixels, "Lightning pixels changed across graphics context recreation");
 	lightning_probe_pixels = std::move(pixels);
 	++checks;
-	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "line_cases", line_cases }, { "sprite_cases", 1 }, { "glare_width", lightning_probe_glare->bitmap.width }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
+	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "wall_cases", wall_cases }, { "outline_cases", outline_cases }, { "line_cases", line_cases }, { "sprite_cases", 1 }, { "bitmap_cases", bitmap_cases }, { "glare_width", lightning_probe_glare->bitmap.width }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
 }

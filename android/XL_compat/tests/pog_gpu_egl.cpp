@@ -30,6 +30,7 @@
 #endif
 extern "C" {
 #include "3d.h"
+#include "object.h"
 #include "ogl_init.h"
 #include "oglprog.h"
 #include "args.h"
@@ -44,9 +45,10 @@ struct Arg GameArg{};
 struct Cfg GameCfg{};
 struct netgame_info Netgame{};
 int Game_mode = 0, gl_initialized = 0;
-extern int r_texcount;
+extern int r_texcount, GL_TEXTURE_2D_enabled;
 ubyte gr_palette[768]{}, gr_current_pal[768]{};
 grs_canvas *grd_curcanv = nullptr;
+object *Viewer = nullptr;
 grs_screen *grd_curscreen = nullptr;
 vms_vector View_position{};
 vms_matrix View_matrix{};
@@ -84,6 +86,11 @@ int gr_find_closest_color(int, int, int)
 float xl_preview_alpha(float value)
 {
 	return value;
+}
+static bool additive_wall_control = false;
+int xl_preview_additive_face(void)
+{
+	return additive_wall_control;
 }
 void con_printf(int, const char *, ...) {}
 void Error(const char *format, ...)
@@ -163,7 +170,7 @@ void upload(Bitmap &image, int filter)
 	++cases;
 	pixels += unsigned(image.bitmap.bm_w * image.bitmap.bm_h);
 }
-std::array<unsigned char, 8 * 8 * 4> draw(Bitmap &base, Bitmap &overlay, int orientation, bool blend)
+std::array<unsigned char, 8 * 8 * 4> draw(Bitmap &base, Bitmap &overlay, int orientation, bool blend, bool weak = false)
 {
 	g3s_point vertices[4]{};
 	const g3s_point *points[4]{};
@@ -184,7 +191,8 @@ std::array<unsigned char, 8 * 8 * 4> draw(Bitmap &base, Bitmap &overlay, int ori
 	glAlphaFunc(GL_GEQUAL, .02f);
 	if (blend) glEnable(GL_BLEND);
 	else glDisable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	additive_wall_control = weak;
+	ogl_set_blending();
 	glClearColor(19.f / 255, 27.f / 255, 43.f / 255, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 	const GLfloat identity[16] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
@@ -192,12 +200,14 @@ std::array<unsigned char, 8 * 8 * 4> draw(Bitmap &base, Bitmap &overlay, int ori
 	g3_draw_tmap_2(4, points, uv, light, &base.bitmap, &overlay.bitmap, orientation);
 	std::array<unsigned char, 8 * 8 * 4> result{};
 	glReadPixels(0, 0, 8, 8, GL_RGBA, GL_UNSIGNED_BYTE, result.data());
+	additive_wall_control = false;
+	ogl_set_blending();
 	check(glGetError() == GL_NO_ERROR, "Production merged RGBA draw raised a GL error");
 	return result;
 }
-void composition(Bitmap &base, Bitmap &overlay, int orientation, bool blend)
+void composition(Bitmap &base, Bitmap &overlay, int orientation, bool blend, bool weak = false)
 {
-	const auto actual = draw(base, overlay, orientation, blend);
+	const auto actual = draw(base, overlay, orientation, blend, weak);
 	const std::array<double, 4> background{ 19 / 255., 27 / 255., 43 / 255., 1 };
 	const bool xl = base.bitmap.bm_type == BM_RGBA || overlay.bitmap.bm_type == BM_RGBA;
 	for (int y = 0; y < 8; ++y)
@@ -214,7 +224,9 @@ void composition(Bitmap &base, Bitmap &overlay, int orientation, bool blend)
 			for (int c = 0; c < 3; ++c) expected[c] = bottom[c] * (1 - top[3]) + top[c] * top[3];
 			// The 8-bit compatibility framebuffer quantizes its alpha reference
 			if (overlay.key(tx, ty) || expected[3] < (xl ? 1. / 255 : .02)) expected = background;
-			else if (blend) {
+			else if (weak) {
+				for (int c = 0; c < 4; ++c) expected[c] += background[c] * (1 - expected[c]);
+			} else if (blend) {
 				const auto alpha = expected[3];
 				for (int c = 0; c < 4; ++c) expected[c] = expected[c] * alpha + background[c] * (1 - alpha);
 			}
@@ -362,11 +374,11 @@ void controls()
 		upload(base, 0);
 		upload(overlay, 0);
 		for (int orientation = 0; orientation < 4; ++orientation)
-			for (int blend = 0; blend < 2; ++blend) {
-				composition(base, overlay, orientation, blend != 0);
-				composition(stock_base, overlay, orientation, blend != 0);
-				composition(base, stock_overlay, orientation, blend != 0);
-				composition(stock_base, stock_overlay, orientation, blend != 0);
+			for (int blend = 0; blend < 3; ++blend) {
+				composition(base, overlay, orientation, blend != 0, blend == 2);
+				composition(stock_base, overlay, orientation, blend != 0, blend == 2);
+				composition(base, stock_overlay, orientation, blend != 0, blend == 2);
+				composition(stock_base, stock_overlay, orientation, blend != 0, blend == 2);
 			}
 		check(draw(stock_base, stock_overlay, 0, false) == stock_before, "RGBA drawing changed subsequent Redux pixels");
 #ifdef XL_POG_SHADER_REFERENCE
@@ -444,7 +456,9 @@ void original(const char *path)
 	std::cout << "Original GPU resources: " << resources << " POG files, " << count << " complete uploads/mipmaps and source shader comparisons\n";
 }
 #include "particle_gpu_controls.h"
+#include "additive_wall_gpu_controls.h"
 #include "lightning_scene_gpu_controls.h"
+#include "sprite_bitmap_gpu_controls.h"
 #ifdef XL_POG_SHADER_REFERENCE
 #include "sprite_glare_gpu_controls.h"
 #endif
@@ -485,7 +499,11 @@ int main(int argc, char **argv)
 		ogl_init_prog();
 		if (argc == 1) {
 			controls();
+#ifdef XL_POG_SHADER_REFERENCE
+			additive_wall_source_controls();
+#endif
 			particle_gpu_controls();
+			sprite_bitmap_gpu_controls();
 			const auto recreate = [&] {
 				ogl_done_prog();
 				ogl_close_pixel_buffers();
@@ -504,6 +522,8 @@ int main(int argc, char **argv)
 		else if (argc == 3 && std::string(argv[1]) == "--sprite-glare")
 			sprite_glare_gpu_controls(argv[2]);
 #endif
+		else if (argc == 2 && std::string(argv[1]) == "--sprite-bitmaps") sprite_bitmap_gpu_controls();
+		else if (argc == 2 && std::string(argv[1]) == "--sprite-bitmap-triangles") sprite_bitmap_gpu_controls(false);
 		else
 			for (int i = 1; i < argc; ++i) original(argv[i]);
 		ogl_done_prog();

@@ -182,6 +182,39 @@ void effect_layout_contract(const char *directory = nullptr)
 						}
 					}
 				}
+				if (render == 12 && profile == 0) {
+					auto lightning = bytes;
+					lightning.resize(start + header);
+					for (int value : { 300, 50, 18, 5, 1 }) put(lightning, value, 4);
+					if (version > 22) put(lightning, static_cast<unsigned>(-1), 4);
+					for (int value : { 3, 0, 0, 8, 0, 2 }) put(lightning, value, 2);
+					if (version > 21) put(lightning, 20, 1);
+					for (int value : { 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128 }) put(lightning, value, 1);
+					if (version >= 19) put(lightning, 1, 1);
+					Bytes follower(object.begin(), object.begin() + header);
+					follower[0] = 3;
+					follower[1] = follower[4] = 0;
+					lightning.insert(lightning.end(), follower.begin(), follower.end());
+					patch(lightning, base.game_offset + 39, 2);
+					rejects([&] { xl_compat::prepare_gameplay_probe(lightning); });
+					const auto translated = xl_compat::prepare_source_runtime_probe(lightning);
+					check(translated.source.objects.size() == 2 && translated.source.objects[0].render_data.size() == 26 && translated.source.objects[0].reader_render == 12,
+					      "Lightning translation lost its owned source payload");
+					const auto read32 = [&](std::size_t at) {
+						unsigned value = 0;
+						for (unsigned b = 0; b < 4; ++b) value |= unsigned(translated.stock_level.at(at + b)) << (b * 8);
+						return value;
+					};
+					const auto object_at = read32(read32(12) + 35);
+					Bytes expected(lightning.begin() + start, lightning.begin() + start + 6);
+					expected.insert(expected.end(), lightning.begin() + start + 6 + shift, lightning.begin() + start + header);
+					expected[4] = 0;
+					expected.insert(expected.end(), follower.begin(), follower.begin() + 6);
+					expected.insert(expected.end(), follower.begin() + 6 + shift, follower.end());
+					check(expected.size() == 158 && object_at + expected.size() <= translated.stock_level.size() &&
+					          std::equal(expected.begin(), expected.end(), translated.stock_level.begin() + object_at),
+					      "Lightning payload leaked into the native object stream or displaced the following object");
+				}
 				const auto report = xl_compat::compatibility_json("effect.rl2", bytes);
 				check(feature_row(report, "effect_objects").find(sound_supported ? "\"status\": \"partial\"" : "\"status\": \"blocked\"") != std::string::npos && report.find("\"playable\": false") != std::string::npos, "effect metadata implied complete gameplay support");
 				for (std::size_t cut = header; cut < object.size(); ++cut) {

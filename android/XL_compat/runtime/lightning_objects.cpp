@@ -4,6 +4,7 @@
 #include "linked_audio.h"
 #include "shared_audio_internal.h"
 #include "../lightning_audio.h"
+#include "../lightning_admission.h"
 #include "../lightning_visibility.h"
 #include "../transparency_order.h"
 #include <map>
@@ -98,11 +99,7 @@ void xl_compat::bind_lightning_objects(const Inventory &level)
 			throw std::runtime_error("XL lightning object identity changed during native loading");
 		if (object.segment < 0 || std::size_t(object.segment) >= level.segments.size() || Objects[index].segnum != object.segment)
 			throw std::runtime_error("XL lightning object segment changed during native loading");
-		const auto definition = lightning_definition(object, 2);
-		if (object.render_data[5] != -1 || !definition.random_end || definition.angle || definition.in_plane || definition.children || definition.clamp ||
-		    definition.style || definition.frames <= 0 || definition.nodes > 32767 || definition.bolts <= 0 || definition.bolts > 32767)
-			throw std::runtime_error("XL lightning owner requires the implemented random style-0 profile");
-		(void) lightning_lifetime(definition, false, false);
+		const auto definition = prepare_authored_lightning(level, object);
 		prepared.emplace(int(index), Entry{ definition, Objects[index].signature });
 	}
 	auto geometry = prepared.empty() ? ParticleWorld{} : compile_particle_world(level);
@@ -240,6 +237,7 @@ void xl_compat::lightning_objects_frame()
 				return (vertex[0] - eye[0]) * forward[0] + (vertex[1] - eye[1]) * forward[1] + (vertex[2] - eye[2]) * forward[2];
 			});
 			// Both the pinned XL default and Redux perspective use zFar=5000
+			frame.glow.distance_scale = lightning_distance_scale(frame.core.average_depth, 4999.0f);
 			if (bolt.definition.glow)
 				frame.glow = lightning_glow_geometry(bolt.draw_positions, bolt.lifetime.random_nodes, bolt.definition.width, bolt.definition.glow > 0, eye, frame.core.average_depth, 4999.0f);
 			entry.render_frames[std::size_t(&bolt - entry.emitter->bolts.data())] = std::move(frame);

@@ -2,6 +2,21 @@ template <class Recreate>
 static void lightning_scene_context_controls(Recreate recreate)
 {
 	using namespace xl_compat;
+	object viewer{};
+	viewer.size = 65536;
+	grs_canvas canvas{};
+	canvas.cv_bitmap.bm_w = 640;
+	struct RestoreViewer {
+		object *viewer = Viewer;
+		grs_canvas *canvas = grd_curcanv;
+		~RestoreViewer()
+		{
+			Viewer = viewer;
+			grd_curcanv = canvas;
+		}
+	} restore_viewer;
+	Viewer = &viewer;
+	grd_curcanv = &canvas;
 	ParticleImageResource image;
 	image.bitmap.width = image.bitmap.height = 16;
 	image.bitmap.truecolor = true;
@@ -19,7 +34,7 @@ static void lightning_scene_context_controls(Recreate recreate)
 	item.random_nodes = 1;
 	item.width = .7f;
 	item.color = { .1f, .3f, .5f, .5f };
-	const auto draw = [&](bool direct = false, bool sprite = false) {
+	const auto draw = [&](bool direct = false, bool sprite = false, bool outline = false) {
 		GLuint target, color, scene_depth;
 		glGenFramebuffers(1, &target);
 		glGenTextures(1, &color);
@@ -46,11 +61,15 @@ static void lightning_scene_context_controls(Recreate recreate)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		const auto random_before = lightning_random_calls;
 		auto rendered = item;
+		if (outline) {
+			rendered.frame.glow.vertices.clear();
+			rendered.frame.glow.uv.clear();
+		}
 		if (direct) {
 			rendered.frame.glow.distance_scale = 0;
 			rendered.width = 3;
 		}
-		draw_lightning_scene_item(rendered, *image.texture);
+		draw_lightning_scene_item(rendered, outline ? nullptr : image.texture.get());
 		std::array<unsigned char, 64 * 64 * 4> sprite_scene{};
 		if (sprite) {
 			ParticleQuad quad{};
@@ -67,14 +86,14 @@ static void lightning_scene_context_controls(Recreate recreate)
 			glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, sprite_scene.data());
 			check(std::any_of(sprite_scene.begin(), sprite_scene.end(), [](unsigned char value) { return value != 0; }), "Negative corona failed to draw directly into the scene");
 		}
-		draw_lightning_scene_item(rendered, *image.texture);
+		draw_lightning_scene_item(rendered, outline ? nullptr : image.texture.get());
 		if (sprite) {
 			std::array<unsigned char, 64 * 64 * 4> pending{};
 			glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pending.data());
 			check(pending == sprite_scene, "Interleaved negative corona prematurely flushed the lightning batch");
 		}
 		std::array<unsigned char, 64 * 64 * 4> immediate{};
-		if (direct) glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, immediate.data());
+		if (direct || outline) glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, immediate.data());
 		finish_lightning_batch();
 		check(lightning_random_calls == random_before + 6, "Native lightning did not consume three effects samples per ordered draw");
 		GLint actual_target, view[4];
@@ -83,7 +102,7 @@ static void lightning_scene_context_controls(Recreate recreate)
 		check(GLuint(actual_target) == target && view[0] == 3 && view[1] == 5 && view[2] == 48 && view[3] == 43, "Native lightning lost the caller framebuffer or offset canvas");
 		std::array<unsigned char, 64 * 64 * 4> pixels;
 		glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-		if (direct) check(immediate == pixels, "Zero-scale native lightning deferred its direct core into a glow batch");
+		if (direct || outline) check(immediate == pixels, "Direct native lightning deferred its core into a glow batch");
 		if (sprite) check(sprite_scene != pixels, "Retained lightning did not composite over the intervening corona");
 		unsigned changed = 0;
 		for (unsigned p = 0; p < 64 * 64; ++p) changed += pixels[p * 4 + 2] != 0;
@@ -102,13 +121,25 @@ static void lightning_scene_context_controls(Recreate recreate)
 	const auto expected = draw();
 	const auto direct_expected = draw(true);
 	const auto sprite_expected = draw(false, true);
+	const auto outline_expected = draw(false, false, true);
+	check(outline_expected != expected && outline_expected != direct_expected, "Non-glowing lightning did not distinguish additive source color and outline width");
+	check(draw(true, false, true) == outline_expected, "Non-glowing outline changed with glow distance scale");
+	canvas.cv_bitmap.bm_w = 4096;
+	const auto wide_outline = draw(false, false, true);
+	check(wide_outline != outline_expected, "Non-glowing lightning ignored source canvas width");
+	canvas.cv_bitmap.bm_w = 640;
 	check(sprite_expected != expected, "Mixed corona/lightning scene did not distinguish the corona");
 	check(direct_expected != expected, "Zero-scale native lightning did not distinguish core-only drawing");
 	recreate();
+	check(draw(false, false, true) == outline_expected, "Non-glowing lightning changed across context recreation");
+	canvas.cv_bitmap.bm_w = 4096;
+	check(draw(false, false, true) == wide_outline, "Wide non-glowing lightning changed across context recreation");
+	canvas.cv_bitmap.bm_w = 640;
 	check(draw() == expected, "Native lightning pixels changed across real context recreation");
 	check(draw(true) == direct_expected, "Zero-scale native lightning pixels changed across real context recreation");
 	check(draw(false, true) == sprite_expected, "Mixed corona/lightning pixels changed across real context recreation");
 	discard_lightning_context(false);
+	check(draw(false, false, true) == outline_expected, "Non-glowing lightning changed after GPU resource release");
 	check(draw() == expected, "Native lightning pixels changed after explicit GPU resource release");
 	check(draw(true) == direct_expected, "Zero-scale native lightning pixels changed after explicit GPU resource release");
 	check(draw(false, true) == sprite_expected, "Mixed corona/lightning pixels changed after explicit GPU resource release");

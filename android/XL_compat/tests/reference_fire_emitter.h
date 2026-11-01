@@ -52,7 +52,7 @@ struct CParticleEmitter {
 	float Brightness()
 	{
 		if (m_nType == 1) return float(m_nDefBrightness) / 100.0f;
-		if (m_nType != 5) throw std::runtime_error("Emitter adapter requires authored fire/smoke brightness");
+		if (m_nType != 5 && m_nType != 2) throw std::runtime_error("Emitter adapter requires authored fire/smoke/bubble brightness");
 		return 1;
 	}
 	int32_t Create(CFixVector *, CFixVector *, CFixMatrix *, int16_t, int32_t, int32_t, float, int32_t, int32_t, char, CFloatVector *, int32_t, int32_t, CFixVector *);
@@ -62,8 +62,8 @@ struct CParticleEmitter {
 };
 #include "xl_reference_fire_emitter.h"
 
-template <bool Smoke>
-void compare_emitter(const xl_compat::AuthoredParticleEmitter<Smoke> &actual, CParticleEmitter &source, const RandomInput &random, const WorldInput &world)
+template <bool Smoke, bool Bubble>
+void compare_emitter(const xl_compat::AuthoredParticleEmitter<Smoke, Bubble> &actual, CParticleEmitter &source, const RandomInput &random, const WorldInput &world)
 {
 	if (actual.count != source.m_nParts || actual.first != source.m_nFirstPart || actual.ticks != source.m_nTicks || actual.moved != source.m_nMoved || actual.life != source.m_nLife || actual.rate != source.m_fPartsPerTick || actual.demand != source.m_nPartsPerPos || actual.previous != point(source.m_vPrevPos))
 		throw std::runtime_error("Pinned authored fire emitter scheduling differs");
@@ -73,6 +73,11 @@ void compare_emitter(const xl_compat::AuthoredParticleEmitter<Smoke> &actual, CP
 		const int slot = (actual.first + i) % int(actual.slots.size());
 		const auto &a = actual.motion(actual.slots[std::size_t(slot)]);
 		const auto &b = source.m_particles[slot];
+		if constexpr (Bubble) {
+			const auto &particle = actual.slots[std::size_t(slot)];
+			for (unsigned c = 0; c < 4; ++c)
+				if (particle.color[c] != b.m_color[0].v.vec[c] || particle.target[c] != b.m_color[1].v.vec[c] || particle.color[c] != b.m_renderColor.v.vec[c]) throw std::runtime_error("Bubble emitter retained color differs");
+		}
 		if constexpr (Smoke) {
 			const auto &color = actual.slots[std::size_t(slot)].appearance;
 			if (color.fade_time != b.m_nFadeTime || color.bright != bool(b.m_bBright) || color.emissive != bool(b.m_bEmissive)) throw std::runtime_error("Smoke emitter color state differs");
@@ -85,7 +90,7 @@ void compare_emitter(const xl_compat::AuthoredParticleEmitter<Smoke> &actual, CP
 }
 } // namespace particle_geometry_reference
 
-template <bool Smoke>
+template <bool Smoke, bool Bubble = false>
 static void particle_emitter_controls(const xl_compat::Inventory *level, const xl_compat::ParticleWorld *compiled)
 {
 	using namespace particle_geometry_reference;
@@ -101,7 +106,9 @@ static void particle_emitter_controls(const xl_compat::Inventory *level, const x
 				const auto face = level ? xl_compat::particle_face(*level, segment, int(seed % 6), false) : supplied_face;
 				xl_compat::Object authored{};
 				authored.render = 11;
-				authored.render_data = { 1, 1, 1, 1, 1, 10, 255, 128, 0, 128, surface ? 1 : 0, Smoke ? 0 : 3, 1 };
+				authored.render_data = { 1, 1, 1, 1, 1, 10, 255, 128, 0, 128, surface ? 1 : 0, Bubble ? 2 : Smoke ? 0
+					                                                                                              : 3,
+					                     1 };
 				auto definition = xl_compat::particle_emitter_definition(xl_compat::decode_particle_effect(authored, 27), { 0, 0, 65536 }, true);
 				definition.count = capacity;
 				const xl_compat::ParticlePoint position = compiled ? compiled->segments[segment].center : xl_compat::ParticlePoint{ 112233, -445566, 778899 };
@@ -110,15 +117,22 @@ static void particle_emitter_controls(const xl_compat::Inventory *level, const x
 				CParticleEmitter source;
 				auto origin = point(position), direction = point(definition.direction);
 				CFixMatrix orientation;
+				if constexpr (Bubble) {
+					orientation.m.dir.r.Set(65536, 0, 0);
+					orientation.m.dir.u.Set(0, 65536, 0);
+					orientation.m.dir.f.Set(0, 0, 65536);
+				}
 				CFloatVector color;
 				for (unsigned i = 0; i < 4; ++i) color.v.vec[i] = definition.color[i];
 				CFixVector corners[4];
 				for (unsigned i = 0; i < 4; ++i) corners[i] = point(face.corners[i]);
-				const bool created = source.Create(&origin, &direction, &orientation, int16_t(segment), 17, capacity, definition.scale, definition.life, definition.speed, Smoke ? 1 : 5, &color, 123, Smoke ? 1 : 0, surface ? corners : nullptr) != 0;
+				const bool created = source.Create(&origin, &direction, &orientation, int16_t(segment), 17, capacity, definition.scale, definition.life, definition.speed, Bubble ? 2 : Smoke ? 1
+				                                                                                                                                                                              : 5,
+				                                   &color, 123, (Smoke || Bubble) ? 1 : 0, surface ? corners : nullptr) != 0;
 				if (!capacity) {
 					bool rejected = false;
 					try {
-						xl_compat::AuthoredParticleEmitter<Smoke> invalid(definition, position, surface ? &face : nullptr, segment, skybox, 123);
+						xl_compat::AuthoredParticleEmitter<Smoke, Bubble> invalid(definition, position, surface ? &face : nullptr, segment, skybox, 123);
 					} catch (const std::runtime_error &) {
 						rejected = true;
 					}
@@ -127,8 +141,9 @@ static void particle_emitter_controls(const xl_compat::Inventory *level, const x
 					continue;
 				}
 				if (!created) throw std::runtime_error("Source fire emitter allocation failed");
-				xl_compat::AuthoredParticleEmitter<Smoke> actual(definition, position, surface ? &face : nullptr, segment, skybox, 123);
-				source.m_nFadeType = Smoke ? 1 : 3;
+				xl_compat::AuthoredParticleEmitter<Smoke, Bubble> actual(definition, position, surface ? &face : nullptr, segment, skybox, 123);
+				source.m_nFadeType = Bubble ? -1 : Smoke ? 1
+				                                         : 3;
 				source.m_nDefBrightness = definition.brightness;
 				RandomInput random;
 				random.generated = true;
@@ -136,6 +151,7 @@ static void particle_emitter_controls(const xl_compat::Inventory *level, const x
 				random.state = seed;
 				source_random = random;
 				WorldInput world;
+				world.wet = particle_segment.water = Bubble;
 				world.compiled = compiled;
 				source_world = world;
 				gameOpts->render.particles.bCollisions = 1;
@@ -165,6 +181,8 @@ static void particle_emitter_controls(const xl_compat::Inventory *level, const x
 						world.located = step == 24 ? -1 : 0;
 						source_world.located = world.located;
 					}
+					if constexpr (Bubble)
+						if (step == 54 || step == 59) world.wet = particle_segment.water = step == 59;
 					if (actual.update(time, random, world, true) != source.Update(time, 0)) throw std::runtime_error("Source fire emitter count differs");
 					compare_emitter(actual, source, random, world);
 					++updates;
@@ -174,8 +192,10 @@ static void particle_emitter_controls(const xl_compat::Inventory *level, const x
 				collisions += unsigned(world.collisions);
 				++drained;
 			}
-	if (compiled && (!lookups || !collisions)) throw std::runtime_error("Loaded emitter controls did not exercise world consumers");
-	std::cout << (Smoke ? "Pinned smoke emitter: " : compiled ? "Pinned loaded-world fire emitter: "
+	if (compiled && (!lookups || (!Bubble && !collisions))) throw std::runtime_error("Loaded emitter controls did not exercise world consumers");
+	particle_segment.water = false;
+	std::cout << (Bubble ? "Pinned bubble emitter: " : Smoke  ? "Pinned smoke emitter: "
+	                                               : compiled ? "Pinned loaded-world fire emitter: "
 	                                                          : "Pinned fire emitter: ")
 	          << updates << " frame comparisons, " << drained << " drained rings, " << empty << " zero-capacity rejections, " << lookups << " lookups, " << collisions << " collisions, irregular timing, movement, disable/re-enable and full particle/RNG state passed\n";
 }
@@ -184,6 +204,7 @@ void particle_emitter_source_controls()
 {
 	particle_emitter_controls<false>(nullptr, nullptr);
 	particle_emitter_controls<true>(nullptr, nullptr);
+	particle_emitter_controls<false, true>(nullptr, nullptr);
 }
 
 void particle_emitter_loaded_controls(const xl_compat::Inventory &level, const xl_compat::ParticleWorld &world)
@@ -191,4 +212,5 @@ void particle_emitter_loaded_controls(const xl_compat::Inventory &level, const x
 	// Source geometry was independently compiled from this inventory by the caller
 	particle_emitter_controls<false>(&level, &world);
 	particle_emitter_controls<true>(&level, &world);
+	particle_emitter_controls<false, true>(&level, &world);
 }

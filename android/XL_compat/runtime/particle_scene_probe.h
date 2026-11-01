@@ -7,11 +7,12 @@ bool particle_probe_requested = false;
 bool particle_probe_reading = false;
 std::vector<unsigned char> particle_probe_pixels;
 
-struct ParticleSceneReadback {
+struct SceneReadback {
 	GLint read, draw, renderbuffer, pack, alignment, row, skip_rows, skip_pixels;
 	GLboolean scissor;
 	GLuint fbo = 0, color = 0;
-	ParticleSceneReadback()
+	GLint samples = 0;
+	SceneReadback()
 	{
 		glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &read);
 		glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &draw);
@@ -28,7 +29,7 @@ struct ParticleSceneReadback {
 		glPixelStorei(GL_PACK_SKIP_ROWS, 0);
 		glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
 	}
-	~ParticleSceneReadback()
+	~SceneReadback()
 	{
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, read);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw);
@@ -44,13 +45,12 @@ struct ParticleSceneReadback {
 	}
 	std::vector<unsigned char> pixels()
 	{
-		GLint view[4], samples = 0, red = 0, alpha = 0;
+		GLint view[4], red = 0, alpha = 0;
 		glGetIntegerv(GL_VIEWPORT, view);
 		if (view[0] < 0 || view[1] < 0 || view[2] <= 0 || view[3] <= 0 || view[0] + view[2] > 4096 || view[1] + view[3] > 4096)
 			throw std::runtime_error("Particle scene readback exceeds its bounded viewport");
 		glBindFramebuffer(GL_FRAMEBUFFER, draw);
 		glGetIntegerv(GL_SAMPLES, &samples);
-		particle_probe_result.samples = unsigned(samples);
 		if (samples) {
 			glGetIntegerv(GL_RED_BITS, &red);
 			glGetIntegerv(GL_ALPHA_BITS, &alpha);
@@ -102,8 +102,9 @@ void particle_probe_before(const std::vector<xl_compat::ParticleQuad> &quads)
 	// A quad wholly beyond any common clip plane cannot affect framebuffer RGB
 	if (!visible) return;
 	try {
-		ParticleSceneReadback read;
+		SceneReadback read;
 		particle_probe_pixels = read.pixels();
+		particle_probe_result.samples = unsigned(read.samples);
 		particle_probe_reading = true;
 	} catch (const std::exception &error) {
 		particle_probe_failure = error.what();
@@ -117,7 +118,7 @@ void particle_probe_after(unsigned quads)
 	try {
 		std::vector<unsigned char> after;
 		{
-			ParticleSceneReadback read;
+			SceneReadback read;
 			after = read.pixels();
 		}
 		if (after.size() != particle_probe_pixels.size()) throw std::runtime_error("Particle batch changed its viewport during readback");

@@ -135,11 +135,17 @@ struct ImageInfo {
 } image_info;
 ImageInfo &ParticleImageInfo(int type)
 {
-	if (type != FIRE_PARTICLES && type != SMOKE_PARTICLES) throw std::runtime_error("Unexpected particle image");
+	if (type != FIRE_PARTICLES && type != SMOKE_PARTICLES && type != BUBBLE_PARTICLES) throw std::runtime_error("Unexpected particle image");
 	return image_info;
 }
-int Rand(int)
+int bubble_random = -1;
+unsigned bubble_random_calls = 0;
+int Rand(int bound)
 {
+	if (bubble_random >= 0 && bound == 6) {
+		++bubble_random_calls;
+		return bubble_random;
+	}
 	throw std::runtime_error("Fire Setup consumed random input");
 }
 struct CParticle;
@@ -195,6 +201,80 @@ CFixMatrix CParticle::mRot[2][64]{};
 #define PROF_END(a)
 #include "xl_reference_particle_render.h"
 } // namespace particle_render_reference
+
+void particle_bubble_render_controls()
+{
+	using namespace particle_render_reference;
+	struct Random {
+		int value;
+		unsigned calls = 0;
+		int bounded(int bound)
+		{
+			if (bound != 6) throw std::runtime_error("Bubble wiggle changed its random range");
+			++calls;
+			return value;
+		}
+	};
+	unsigned cases = 0;
+	gameOpts->render.particles.bWiggleBubbles = gameOpts->render.particles.bWobbleBubbles = true;
+	image_info = { 0, 0 };
+	for (int frame = 0; frame < 16; ++frame)
+		for (bool animate : { false, true })
+			for (int life : { -1, 0, 1 })
+				for (int random_value = 0; random_value < 6; ++random_value)
+					for (float extent : { 0.125f, 1.3125f, 4.0f }) {
+						xl_compat::BubbleParticle actual;
+						actual.motion.position = { -281117, 723003, 1759911 };
+						actual.motion.life = life;
+						actual.motion.frame = frame;
+						actual.motion.rotates = false;
+						actual.motion.decay = 1;
+						actual.motion.width = extent;
+						actual.motion.height = extent * 2;
+						actual.color = { .8f, .9f, 1, .5f };
+						const xl_compat::ParticleBasis basis{ { 60491, 9001, -23411 }, { -12017, 64003, 3501 } };
+						gameData.renderData.mine.viewer.mOrient.m.dir.r.values = basis.right;
+						gameData.renderData.mine.viewer.mOrient.m.dir.u.values = basis.up;
+						const auto view = xl_compat::particle_view(basis);
+						CParticle source;
+						source.m_nType = BUBBLE_PARTICLES;
+						source.m_nFrames = 4;
+						source.m_iFrame = frame;
+						source.m_nLife = life;
+						source.m_bAnimate = 1;
+						source.m_bEmissive = 0;
+						source.m_nFadeType = -1;
+						source.m_deltaUV = .25f;
+						source.m_decay = 1;
+						source.m_vPos.values = actual.motion.position;
+						source.m_nWidth = actual.motion.width;
+						source.m_nHeight = actual.motion.height;
+						source.m_renderColor.values = actual.color;
+						source.UpdateTexCoord();
+						particleManager.m_bAnimate = animate;
+						const auto queued = particleManager.queued;
+						source.Render(.9f);
+						const bool draw = xl_compat::prepare_bubble_particle_draw(actual, animate);
+						if (draw != (particleManager.queued > queued) || actual.motion.frame != source.m_iFrame) throw std::runtime_error("Bubble lazy animation differs");
+						if (!draw) continue;
+						bubble_random = random_value;
+						bubble_random_calls = 0;
+						tParticleVertex expected[4];
+						source.Setup(false, .9f, char(frame), 0, expected, 0);
+						Random random{ random_value };
+						const auto quad = xl_compat::bubble_particle_quad(actual, view, 256, 256, frame, random);
+						if (random.calls != 1 || bubble_random_calls != 1 || quad.blend != xl_compat::ParticleBlend::alpha || source.RenderType() != BUBBLE_PARTICLES) throw std::runtime_error("Bubble render class or wiggle random consumption differs");
+						for (unsigned i = 0; i < 4; ++i) {
+							for (unsigned axis = 0; axis < 3; ++axis)
+								if (quad.vertices[i].position[axis] != expected[i].vertex.v.values[axis]) throw std::runtime_error("Bubble world-space wiggle or billboard differs");
+							if (quad.vertices[i].color != expected[i].color.values || quad.vertices[i].uv[0] != expected[i].texCoord.v.u || quad.vertices[i].uv[1] != expected[i].texCoord.v.v) throw std::runtime_error("Bubble live atlas or color differs");
+						}
+						++cases;
+					}
+	bubble_random = -1;
+	gameOpts->render.particles.bWiggleBubbles = gameOpts->render.particles.bWobbleBubbles = false;
+	std::cout << "Pinned bubble rendering: " << cases << " queued-frame wiggle, live atlas, lifetime, animation, color and world billboard comparisons passed\n";
+}
 
 void particle_smoke_render_controls()
 {

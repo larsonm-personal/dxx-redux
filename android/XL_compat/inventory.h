@@ -87,6 +87,7 @@ struct ObjectTrigger {
 	int previous = -1, next = -1;
 };
 
+constexpr unsigned wall_render_additive = 4;
 struct Wall {
 	int segment, side, hitpoints, linked_wall;
 	int type, flags, state, trigger, clip, keys, controlling_trigger, cloak;

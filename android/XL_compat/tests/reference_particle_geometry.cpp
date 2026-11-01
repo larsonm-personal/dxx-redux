@@ -1,6 +1,7 @@
 #include "particle_geometry.h"
 #include "particle_fire.h"
 #include "particle_smoke.h"
+#include "particle_bubble.h"
 #include "fire_emitter.h"
 #include "particle_world.h"
 #include <cstring>
@@ -8,6 +9,7 @@
 #include <optional>
 
 int particle_source_locate(const xl_compat::ParticlePoint &, bool, int);
+bool particle_source_water(int);
 std::optional<xl_compat::ParticlePoint> particle_source_collide(const xl_compat::ParticlePoint &, int &);
 
 template <typename T>
@@ -255,8 +257,10 @@ int unavailable_size(int, float, int)
 	throw std::runtime_error("Unexpected non-authored fire size");
 }
 #define PARTICLE_SIZE(a, b, c) unavailable_size(a, b, c)
+bool source_water(int, bool);
 struct ParticleSegment {
-	int function = 0;
+	int function = 0, index = 0;
+	bool water = false;
 	int Function() const
 	{
 		return function;
@@ -267,15 +271,16 @@ struct ParticleSegment {
 	}
 	bool HasWaterProp() const
 	{
-		return false;
+		return source_water(index, water);
 	}
 	bool HasLavaProp() const
 	{
 		return false;
 	}
 } particle_segment;
-ParticleSegment *SEGMENT(int)
+ParticleSegment *SEGMENT(int index)
 {
+	particle_segment.index = index;
 	return &particle_segment;
 }
 struct {
@@ -288,9 +293,11 @@ struct ImageInfo {
 	int nFrames = 2;
 } image_info;
 ImageInfo smoke_image_info{ 8 };
+ImageInfo bubble_image_info{ 4 };
 ImageInfo &ParticleImageInfo(int type)
 {
 	if (type == 1) return smoke_image_info;
+	if (type == 2) return bubble_image_info;
 	if (type != 5) throw std::runtime_error("Unexpected fire image");
 	return image_info;
 }
@@ -324,6 +331,11 @@ struct WorldInput {
 	const xl_compat::ParticleWorld *compiled = nullptr;
 	int located = 0, portal = -1, lookups = 0, collisions = 0;
 	std::optional<xl_compat::ParticlePoint> normal;
+	bool wet = false;
+	bool water(int segment) const
+	{
+		return compiled ? compiled->water(segment) : wet;
+	}
 	int locate(const xl_compat::ParticlePoint &position, bool skybox, int start)
 	{
 		++lookups;
@@ -342,6 +354,10 @@ struct WorldInput {
 		return normal;
 	}
 } source_world;
+bool source_water(int segment, bool supplied)
+{
+	return source_world.compiled ? particle_source_water(segment) : supplied;
+}
 int FindSegByPosExhaustive(const CFixVector &position, int skybox, int start)
 {
 	++source_world.lookups;
@@ -630,6 +646,7 @@ void particle_smoke_source_controls()
 }
 
 #include "reference_smoke_creation.h"
+#include "reference_bubble_creation.h"
 
 void particle_original_geometry_controls(const xl_compat::Inventory &level)
 {
