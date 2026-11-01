@@ -2,6 +2,7 @@
 #define DXX_XL_FIRE_EMITTER_H
 #include "particle_fire.h"
 #include "particle_smoke.h"
+#include "particle_bubble.h"
 #include <optional>
 #include <type_traits>
 
@@ -12,10 +13,12 @@ namespace xl_compat
 {
 inline constexpr unsigned particle_system_limit = 10000;
 // Source retirement order is significant for FX RNG for both authored kinds
-template <bool Smoke>
+template <bool Smoke, bool Bubble = false>
 struct AuthoredParticleEmitter {
-	using Particle = std::conditional_t<Smoke, SmokeParticle, FireParticle>;
+	static_assert(!(Smoke && Bubble));
+	using Particle = std::conditional_t<Bubble, BubbleParticle, std::conditional_t<Smoke, SmokeParticle, FireParticle>>;
 	ParticleEmitterDefinition definition;
+	ParticleOrientation orientation{ { { 65536, 0, 0 }, { 0, 65536, 0 }, { 0, 0, 65536 } } };
 	ParticlePoint position{}, previous{};
 	std::optional<ParticleFace> face;
 	std::vector<Particle> slots;
@@ -26,7 +29,9 @@ struct AuthoredParticleEmitter {
 	AuthoredParticleEmitter(const ParticleEmitterDefinition &input, const ParticlePoint &origin, const ParticleFace *surface, int location, bool sky, int time)
 	    : definition(input), position(origin), previous(origin), segment(location), moved(time), skybox(sky)
 	{
-		if (input.image != (Smoke ? 1 : 5) || input.count <= 0 || input.count > 100000 || input.life >= 0 || input.life == INT32_MIN)
+		if (input.image != (Bubble ? 2 : Smoke ? 1
+		                                       : 5) ||
+		    input.count <= 0 || input.count > 100000 || input.life >= 0 || input.life == INT32_MIN)
 			throw std::runtime_error("Invalid XL authored particle emitter");
 		if (surface) face = *surface;
 		slots.resize(std::size_t(input.count));
@@ -44,12 +49,12 @@ struct AuthoredParticleEmitter {
 	}
 	static const FireParticle &motion(const Particle &particle)
 	{
-		if constexpr (Smoke) return particle.motion;
+		if constexpr (Smoke || Bubble) return particle.motion;
 		else return particle;
 	}
 	static FireParticle &motion(Particle &particle)
 	{
-		if constexpr (Smoke) return particle.motion;
+		if constexpr (Smoke || Bubble) return particle.motion;
 		else return particle;
 	}
 
@@ -63,7 +68,8 @@ struct AuthoredParticleEmitter {
 		const int limit = int(slots.size());
 		for (int i = 0; i < count; ++i) {
 			auto &slot = slots[std::size_t((first + i) % limit)];
-			if constexpr (Smoke) (void) advance_smoke_particle(slot, time, float(definition.brightness) / 100.0f, random, world, collisions);
+			if constexpr (Bubble) (void) advance_bubble_particle(slot, time, world, collisions);
+			else if constexpr (Smoke) (void) advance_smoke_particle(slot, time, float(definition.brightness) / 100.0f, random, world, collisions);
 			else (void) advance_fire_particle(slot, time, random, world, collisions);
 		}
 		// XL shrinks the loop bound while retiring; preserve deferred dead entries
@@ -78,6 +84,7 @@ struct AuthoredParticleEmitter {
 		if (!std::isfinite(requested) || double(requested) > INT32_MAX) throw std::runtime_error("XL emitter demand exceeds the source arithmetic range");
 		demand = int(requested);
 		if (demand >= 1) {
+			if constexpr (Bubble) demand = random.bounded(demand) + 1;
 			ticks = 0;
 			if (life < 0) {
 				const int created = std::min(demand, definition.count - count);
@@ -92,7 +99,8 @@ struct AuthoredParticleEmitter {
 						ParticlePoint at;
 						for (unsigned axis = 0; axis < 3; ++axis) at[axis] = signed_checked(std::int64_t((origin[axis] + step[axis] * float(i)) * 65536.0f));
 						auto &slot = slots[std::size_t((next + i) % limit)];
-						if constexpr (Smoke) slot = create_smoke_particle(definition, at, face ? &*face : nullptr, segment, skybox, time, float(definition.brightness) / 100.0f, random);
+						if constexpr (Bubble) slot = create_bubble_particle(definition, at, orientation, face ? &*face : nullptr, segment, skybox, time, random);
+						else if constexpr (Smoke) slot = create_smoke_particle(definition, at, face ? &*face : nullptr, segment, skybox, time, float(definition.brightness) / 100.0f, random);
 						else slot = create_fire_particle(definition, at, face ? &*face : nullptr, segment, skybox, time, random, &slot);
 					}
 					count += created;
@@ -106,6 +114,7 @@ struct AuthoredParticleEmitter {
 };
 using FireEmitter = AuthoredParticleEmitter<false>;
 using SmokeEmitter = AuthoredParticleEmitter<true>;
+using BubbleEmitter = AuthoredParticleEmitter<false, true>;
 } // namespace xl_compat
 #ifdef _MSC_VER
 #pragma pack(pop)

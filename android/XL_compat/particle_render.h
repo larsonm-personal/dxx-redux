@@ -3,6 +3,7 @@
 #include "particle_fire.h"
 #include "particle_image.h"
 #include "particle_smoke.h"
+#include "particle_bubble.h"
 
 #ifdef _MSC_VER
 #pragma pack(push, 8)
@@ -87,7 +88,7 @@ struct ParticleAnimationClock {
 
 // The active source Setup body builds world-space vertices from fixed camera
 // axes. Keep the source's operation order, atlas border and UV orientation
-inline ParticleQuad particle_billboard_quad(const FireParticle &particle, const ParticleView &view, unsigned image_width, unsigned image_height, unsigned atlas_side, float scale, const std::array<float, 4> &color, ParticleBlend blend, bool inset = true)
+inline ParticleQuad particle_billboard_quad(const FireParticle &particle, const ParticleView &view, unsigned image_width, unsigned image_height, unsigned atlas_side, float scale, const std::array<float, 4> &color, ParticleBlend blend, bool inset = true, float center_x_offset = 0)
 {
 	if (!atlas_side || particle.frame < 0 || unsigned(particle.frame) >= atlas_side * atlas_side || particle.orientation < 0 || particle.orientation >= 4 || particle.rotation < 0 || particle.rotation >= 64 || !image_width || !image_height)
 		throw std::runtime_error("Invalid XL particle billboard state");
@@ -96,7 +97,8 @@ inline ParticleQuad particle_billboard_quad(const FireParticle &particle, const 
 	const auto &basis = particle.rotates && view.rotate ? view.rotated[std::size_t(particle.orientation & 1 ? 63 - particle.rotation : particle.rotation)] : view.basis;
 	const float width = particle.width * scale, height = particle.height * scale;
 	for (unsigned axis = 0; axis < 3; ++axis) {
-		const float center = float(particle.position[axis]) / 65536.0f;
+		float center = float(particle.position[axis]) / 65536.0f;
+		if (!axis) center += center_x_offset;
 		const float right = float(basis.right[axis]) / 65536.0f * width;
 		const float up = float(basis.up[axis]) / 65536.0f * height;
 		quad.vertices[0].position[axis] = (center - right) - up;
@@ -128,6 +130,24 @@ inline ParticleQuad smoke_particle_quad(const SmokeParticle &particle, const Par
 	float scale = particle.blow_up ? 1.0f / float(std::sqrt(decay)) : 1.0f;
 	if (decay > 0.9f) scale *= std::sqrt((1.0f - decay) / 0.1f);
 	return particle_billboard_quad(particle.motion, view, image_width, image_height, smoke_image_atlas_side, scale, particle.appearance.rendered, ParticleBlend::alpha, false);
+}
+
+inline bool prepare_bubble_particle_draw(BubbleParticle &particle, bool animate)
+{
+	if (particle.motion.life < 0) return false;
+	if (animate) particle.motion.frame = (particle.motion.frame + 1) % 16;
+	return true;
+}
+
+template <typename Random>
+ParticleQuad bubble_particle_quad(const BubbleParticle &particle, const ParticleView &view, unsigned image_width, unsigned image_height, int queued_frame, Random &random)
+{
+	if (queued_frame < 0 || queued_frame >= 16) throw std::runtime_error("Invalid queued XL bubble frame");
+	constexpr double pi = 3.141592653589793240;
+	// Pinned lazy Setup uses the queued frame for wiggle, but the live UV member
+	// after animation. Call at buffer flush to preserve source FX random order
+	const float wiggle = float(std::sin(double(float(queued_frame) / 4.0f) * pi)) / (10 + random.bounded(6));
+	return particle_billboard_quad(particle.motion, view, image_width, image_height, bubble_image_atlas_side, 1, particle.color, ParticleBlend::alpha, false, wiggle);
 }
 
 inline void particle_camera_quad(ParticleQuad &quad, const ParticlePoint &eye, const std::array<ParticlePoint, 3> &view)

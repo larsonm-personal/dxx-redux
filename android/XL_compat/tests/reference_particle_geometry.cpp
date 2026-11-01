@@ -1,6 +1,7 @@
 #include "particle_geometry.h"
 #include "particle_fire.h"
 #include "particle_smoke.h"
+#include "particle_bubble.h"
 #include "fire_emitter.h"
 #include "particle_world.h"
 #include <cstring>
@@ -257,6 +258,7 @@ int unavailable_size(int, float, int)
 #define PARTICLE_SIZE(a, b, c) unavailable_size(a, b, c)
 struct ParticleSegment {
 	int function = 0;
+	bool water = false;
 	int Function() const
 	{
 		return function;
@@ -267,7 +269,7 @@ struct ParticleSegment {
 	}
 	bool HasWaterProp() const
 	{
-		return false;
+		return water;
 	}
 	bool HasLavaProp() const
 	{
@@ -288,9 +290,11 @@ struct ImageInfo {
 	int nFrames = 2;
 } image_info;
 ImageInfo smoke_image_info{ 8 };
+ImageInfo bubble_image_info{ 4 };
 ImageInfo &ParticleImageInfo(int type)
 {
 	if (type == 1) return smoke_image_info;
+	if (type == 2) return bubble_image_info;
 	if (type != 5) throw std::runtime_error("Unexpected fire image");
 	return image_info;
 }
@@ -324,6 +328,11 @@ struct WorldInput {
 	const xl_compat::ParticleWorld *compiled = nullptr;
 	int located = 0, portal = -1, lookups = 0, collisions = 0;
 	std::optional<xl_compat::ParticlePoint> normal;
+	bool wet = false;
+	bool water(int) const
+	{
+		return wet;
+	}
 	int locate(const xl_compat::ParticlePoint &position, bool skybox, int start)
 	{
 		++lookups;
@@ -630,6 +639,7 @@ void particle_smoke_source_controls()
 }
 
 #include "reference_smoke_creation.h"
+#include "reference_bubble_creation.h"
 
 void particle_original_geometry_controls(const xl_compat::Inventory &level)
 {
