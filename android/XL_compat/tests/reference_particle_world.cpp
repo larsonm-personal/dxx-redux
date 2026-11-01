@@ -149,7 +149,8 @@ struct CSide {
 	}
 };
 struct CSegment {
-	int m_nShape = 0, m_function = 0;
+	int m_nShape = 0, m_function = 0, m_props = 0;
+#include "xl_reference_particle_water.h"
 	fix m_rads[2]{};
 	CFixVector m_vCenter, m_extents[2];
 	uint16_t m_vertices[8]{};
@@ -355,6 +356,7 @@ void compile(const xl_compat::Inventory &source)
 		auto &segment = segments[i];
 		const auto &input = source.segments[i];
 		segment.m_function = input.function;
+		segment.m_props = input.properties;
 		if (input.function == SEGMENT_FUNC_SKYBOX) gameData.segData.skybox.indices.push_back(int16_t(i));
 		for (unsigned j = 0; j < 8; ++j) {
 			if (input.vertices[j] >= source.vertices.size()) throw std::runtime_error("Source particle-world vertex out of range");
@@ -408,6 +410,7 @@ void compare_compiled(const xl_particle_world_receipt::Case &receipt)
 		for (unsigned bound = 0; bound < 2; ++bound)
 			if (actual.bounds[bound] != expected.m_extents[bound].point()) fail("grid bounds");
 		if (actual.skybox != (expected.m_function == SEGMENT_FUNC_SKYBOX)) fail("skybox");
+		if (receipt.world.water(int(i)) != bool(expected.HasWaterProp())) fail("water property");
 		for (unsigned j = 0; j < 6; ++j) {
 			auto &side = expected.m_sides[j];
 			const auto &native = actual.sides[j];
@@ -436,6 +439,10 @@ int particle_source_locate(const xl_compat::ParticlePoint &position, bool skybox
 {
 	return particle_world_reference::FindSegByPosExhaustive({ position }, skybox, start);
 }
+bool particle_source_water(int segment)
+{
+	return particle_world_reference::segments.at(std::size_t(segment)).HasWaterProp() != 0;
+}
 std::optional<xl_compat::ParticlePoint> particle_source_collide(const xl_compat::ParticlePoint &position, int &segment)
 {
 	using namespace particle_world_reference;
@@ -457,11 +464,11 @@ void compare_particle_world_receipt(const char *path)
 	std::string token;
 	unsigned version = 0;
 	input >> token >> version;
-	if (token != "XL_PARTICLE_WORLD" || version != 1) throw std::runtime_error("Invalid particle world receipt header");
+	if (token != "XL_PARTICLE_WORLD" || version != 2) throw std::runtime_error("Invalid particle world receipt header");
 	unsigned cases = 0, segments = 0, queries = 0;
 	while (input >> token >> version) {
 		if (token == "end") {
-			if (version != cases || cases != 2) throw std::runtime_error("Incomplete stock/XL particle world receipt");
+			if (version != cases || cases != 4) throw std::runtime_error("Incomplete stock/XL/water-control particle world receipt");
 			input >> std::ws;
 			if (!input.eof()) throw std::runtime_error("Trailing particle world receipt data");
 			std::cout << "Pinned loaded particle world: " << cases << " stock/XL cases, " << segments << " compiled segments and " << queries << " native lookup/collision queries passed\n";

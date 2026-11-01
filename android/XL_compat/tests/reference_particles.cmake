@@ -538,6 +538,22 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/particles.cpp"
                       "int32_t CParticle::CollideWithWall (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_world.h"
      CONTENT "${extracted}")
+
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/segment.h" segment_header)
+string(REGEX MATCH "#define SEGMENT_PROP_WATER[^\n]+" water_define "${segment_header}")
+if(NOT water_define)
+    message(FATAL_ERROR "Missing source segment water property")
+endif()
+set(extracted "${water_define}\n")
+foreach(predicate IN ITEMS HasProp HasWaterProp)
+    string(REGEX MATCH "inline int32_t ${predicate} \\([^\n]+" body "${segment_header}")
+    if(NOT body MATCHES "}[ \t]*$")
+        message(FATAL_ERROR "Missing complete source water predicate: ${predicate}")
+    endif()
+    string(APPEND extracted "${body}\n")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_water.h"
+     CONTENT "${extracted}")
 target_sources(xl_effect_reference PRIVATE tests/reference_particle_world.cpp)
 
 set(extracted "// Pinned non-exhaustive connected lookup for lightning lights\n")

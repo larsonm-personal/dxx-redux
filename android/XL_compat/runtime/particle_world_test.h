@@ -35,7 +35,19 @@ static void particle_world_native_case(std::ostream &out, const char *filename, 
 			}
 		}
 	}
+	// Derived property controls retain loaded vertices/connectivity and do not
+	// mutate native state or original mission bytes. Together they cover all 128
+	// combinations of the seven decoded property bits, including wet/dry worlds
+	if (ordinal >= 2)
+		for (std::size_t i = 0; i < receipt.source.segments.size(); ++i)
+			receipt.source.segments[i].properties = int(i % 64) * 2 + (ordinal == 2 ? 1 : 0);
 	receipt.world = xl_compat::compile_particle_world(receipt.source);
+	unsigned water_segments = 0;
+	for (std::size_t i = 0; i < receipt.source.segments.size(); ++i) {
+		const bool water = (receipt.source.segments[i].properties & xl_compat::segment_water) != 0;
+		require(receipt.world.water(int(i)) == water, "Particle world lost the authored water property");
+		water_segments += water;
+	}
 	{
 		auto stale = receipt.source;
 		stale.vertices[0][0] ^= 1;
@@ -75,5 +87,5 @@ static void particle_world_native_case(std::ostream &out, const char *filename, 
 	out << "case " << ordinal << '\n';
 	xl_particle_world_receipt::write(out, receipt);
 	require(bool(out), "Particle world receipt write failed");
-	std::cout << "Particle world native case " << ordinal << ": " << receipt.world.segments.size() << " segments, " << receipt.queries.size() << " queries, live state unchanged\n";
+	std::cout << "Particle world native case " << ordinal << ": " << receipt.world.segments.size() << " segments, " << water_segments << " water segments, " << receipt.queries.size() << " queries, live state unchanged\n";
 }

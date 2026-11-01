@@ -48,3 +48,54 @@ Early development comparisons exposed a missing post-collision bounce branch
 and an incorrect sequential evaluation of the point-spread random expressions.
 Both were corrected before the final source runs. No admission or runtime
 fallback was loosened to make these tests pass.
+
+## Loaded water and mixed-buffer controls
+
+Tranche 120 carries decoded segment water properties into the compiled particle
+world. Its receipt includes those properties and the compiled water flag, and
+compares them with the actual pinned HasProp/HasWaterProp bodies. The native owner
+exports unchanged stock and XL geometry plus two explicitly derived property
+controls covering all 128 combinations of the seven decoded bits. Original
+mission bytes and live native state remain unchanged.
+
+Both GCC and MSVC pass four loaded-world cases: 507 compiled segments and 9633
+native lookup/collision queries. The wet control has 93 wet segments; the other
+three have none. Each case also runs 720 bubble emitter frames against actual
+source creation/update/emission using independently compiled source geometry and
+water predicates. The wet case performs 475 lookups and 464 collisions, while the
+dry stock case performs 70 lookups and no collisions because water retirement
+precedes collision testing. Fire and smoke loaded-world controls also pass.
+
+The generic buffer scheduler now supports source smoke/bubble shader
+compatibility and an explicit no-shader mode. Actual source comparisons pass
+523 profiles and 287172 inputs, checking every intermediate/final dispatch,
+mixed image types, overlap, replacement, singleton suppression, boundary flush,
+zero distance and capacity. Existing runtime callers still submit only the
+previously supported particle kinds; this does not enable mixed-image drawing.
+
+Linux source/GPU regressions passed 3/3 in 43.87 seconds. After adding the positive
+water controls, final source-only runs passed on GCC (2.20 seconds) and MSVC
+(8.56 seconds), and both compilers passed the regenerated native receipts.
+The Android x86_64 build passed in 4m10s. Both automation catalogs passed.
+
+The first device attempt passed its initial GPU controls but lost the host adb
+daemon connection during the background/resume phase, leaving no automation
+result file. The captured log contains no application crash. The runner restored
+identical protected app-data hashes; adb and emulator 5556 were responsive when
+checked afterward. This attempt is recorded as failed, not as device validation.
+The unchanged retry passed 28/28 steps in 60579 ms, run
+ae001d0b57c34e54a784231caad81cfc, including context recreation. Its protected
+app-data hashes were identical after restoration. It remains regression coverage
+of the existing renderer rather than a bubble presentation qualification.
+
+The first source build exposed that the extraction helper expects multiline
+function delimiters. The inline water predicates now use checked complete-line
+extraction. The initial two native worlds were both dry, so the positive/negative
+property controls were added before claiming water integration coverage.
+
+Bubble image loading, ownership, deferred wiggle and the source particleFS
+shader remain separate runtime work. The active non-array source shader binds
+smoke, spark and bubble textures, carries an image selector in the third texture
+coordinate, uses alpha-controlled blending, and selects per-type soft-depth
+intervals. Substituting the existing single-image glare shader would not qualify
+that path. Bubble admission remains closed.

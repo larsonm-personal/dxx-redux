@@ -55,7 +55,7 @@ static int effect_inspection_test(int argc, char **argv)
 		if (const auto *path = find_arg_value(argc, argv, "-particle-world-export")) {
 			particle_receipt.open(path);
 			require(bool(particle_receipt), "Cannot open particle world receipt");
-			particle_receipt << "XL_PARTICLE_WORLD 1\n";
+			particle_receipt << "XL_PARTICLE_WORLD 2\n";
 		}
 		for (int version : { 23, 25, 27 }) {
 			const auto effect_name = "badefx" + std::to_string(version) + ".rl2";
@@ -64,7 +64,13 @@ static int effect_inspection_test(int argc, char **argv)
 				StartNewGame(1);
 				const int active = xl_level_extensions_active();
 				require(!!active == (level == 2), "stock/XL positive source did not load before rejection control");
-				if (version == 23 && particle_receipt.is_open()) particle_world_native_case(particle_receipt, level == 1 ? "stock.rl2" : "neptunxl.rl2", unsigned(level - 1));
+				if (version == 23 && particle_receipt.is_open()) {
+					particle_world_native_case(particle_receipt, level == 1 ? "stock.rl2" : "neptunxl.rl2", unsigned(level - 1));
+					if (level == 2) {
+						particle_world_native_case(particle_receipt, "neptunxl.rl2", 2);
+						particle_world_native_case(particle_receipt, "neptunxl.rl2", 3);
+					}
+				}
 				if (version == 23) particle_objects_native_case(level == 2);
 				if (version == 23) lightning_objects_native_case(level == 2);
 				if (version == 23) additive_wall_binding_controls(level == 2);
@@ -85,7 +91,7 @@ static int effect_inspection_test(int argc, char **argv)
 			require(xl_level_supported("neptunxl.rl2", 0) && load_level("neptunxl.rl2") == 0, "effect rejection prevented supported-source recovery");
 			std::cout << "XL effect inspection version " << version << ": stock/XL rejection and supported recovery passed\n";
 		}
-		if (particle_receipt.is_open()) particle_receipt << "end 2\n";
+		if (particle_receipt.is_open()) particle_receipt << "end 4\n";
 		particle_secret_native_case(archive, root, find_arg_value(argc, argv, "-particle-installation-fixture"));
 		additive_wall_lifecycle_case(archive, root);
 		if (const auto *package = find_arg_value(argc, argv, "-pumo-package"))

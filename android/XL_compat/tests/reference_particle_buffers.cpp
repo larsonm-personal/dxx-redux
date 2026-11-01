@@ -11,8 +11,9 @@
 namespace particle_buffer_reference
 {
 #define ENTER(a, b)
-#define RETVAL(value)       return value;
-#define USE_PARTICLE_SHADER 1
+#define RETVAL(value) return value;
+bool shaders = true;
+#define USE_PARTICLE_SHADER shaders
 struct CFloatVector {
 	std::array<float, 3> v{};
 	CFloatVector operator-(const CFloatVector &other) const
@@ -143,7 +144,7 @@ void particle_buffer_source_controls()
 	unsigned cases = 0, submitted = 0;
 	const auto run = [&](std::vector<CParticle> particles, const std::vector<int> &expected, int boundary = -1, bool golden = true) {
 		CParticleManager source;
-		xl_compat::FireParticleBuffers actual(transformation.m_info.posf[0].v);
+		xl_compat::FireParticleBuffers actual(transformation.m_info.posf[0].v, shaders);
 		std::vector<int> actual_drawn;
 		const auto draw = [&](const std::vector<std::size_t> &indices) {
 			for (auto index : indices) actual_drawn.push_back(particles[index].id);
@@ -184,6 +185,11 @@ void particle_buffer_source_controls()
 	run({ particle(0, 5, 10), particle(1, 5, 11) }, {}, 1);
 	run({ particle(0, 5, 0), particle(1, 5, 0) }, {});
 	run({ particle(0, 1, 10), particle(1, 1, 11) }, { 0, 1 });
+	run({ particle(0, 2, 10), particle(1, 2, 11) }, { 0, 1 });
+	run({ particle(0, 1, 10), particle(1, 2, 10), particle(2, 1, 10), particle(3, 2, 10) }, { 0, 1, 2, 3 });
+	shaders = false;
+	run({ particle(0, 1, 10), particle(1, 2, 10), particle(2, 1, 10), particle(3, 2, 10) }, { 0, 2 });
+	shaders = true;
 	std::vector<CParticle> capacity;
 	std::vector<int> expected;
 	capacity.reserve(25001);
@@ -194,22 +200,24 @@ void particle_buffer_source_controls()
 	run(std::move(capacity), expected);
 	std::uint32_t seed = 0x672f13u;
 	const auto random = [&] { seed = seed * 1664525u + 1013904223u; return seed; };
-	for (unsigned profile = 0; profile < 256; ++profile) {
+	for (unsigned profile = 0; profile < 512; ++profile) {
+		shaders = profile < 256;
 		transformation.m_info.posf[0].v = { float(int(profile % 9) - 4), float(profile % 7), 0 };
 		std::vector<CParticle> inputs;
 		for (unsigned i = 0; i < 512; ++i) {
 			const auto choice = random();
-			const int kinds[] = { 1, 5, 16 };
-			auto p = particle(int(i), kinds[choice % 3], float(int(random() % 601) - 300));
+			const int kinds[] = { 1, 2, 5, 16 };
+			auto p = particle(int(i), kinds[(choice >> 16) % 4], float(int(random() % 601) - 300));
 			p.m_vPos.v[1] = float(int(random() % 31) - 15);
 			p.m_vPos.v[2] = float(int(random() % 31) - 15);
 			p.radius = float(random() % 20) * float(profile % 4);
-			// Include all four type/emissive pairs to exercise third-buffer replacement
+			// Exercise cross-image shader compatibility and third-buffer replacement
 			p.m_bEmissive = (choice & 2) != 0;
 			inputs.push_back(p);
 		}
-		run(std::move(inputs), {}, int(profile * 2), false);
+		run(std::move(inputs), {}, int((profile % 256) * 2), false);
 	}
+	shaders = true;
 	transformation.m_info.posf[0] = {};
 	std::cout << "Pinned particle buffering: " << cases << " profiles, " << submitted << " inputs; every intermediate/final dispatch, singleton suppression, overlapping/disjoint variants, replacement, boundary flush, zero distance and capacity passed\n";
 }

@@ -37,12 +37,12 @@ inline void write(std::ostream &out, const Case &value)
 	for (std::size_t i = 0; i < value.source.segments.size(); ++i) {
 		const auto &source = value.source.segments[i];
 		const auto &compiled = value.world.segments.at(i);
-		out << source.function << '\n';
+		out << source.function << ' ' << source.properties << '\n';
 		write_row(out, source.vertices);
 		write_row(out, source.children);
 		write_row(out, compiled.center);
 		for (const auto &bound : compiled.bounds) write_row(out, bound);
-		out << compiled.inner_radius << ' ' << compiled.outer_radius << ' ' << compiled.skybox << '\n';
+		out << compiled.inner_radius << ' ' << compiled.outer_radius << ' ' << compiled.skybox << ' ' << compiled.water << '\n';
 		for (const auto &side : compiled.sides) {
 			out << side.faces << ' ' << side.child << ' ' << side.pokes_out << '\n';
 			write_row(out, side.anchor);
@@ -69,13 +69,13 @@ inline Case read(std::istream &in)
 	for (unsigned i = 0; i < segments; ++i) {
 		auto &source = value.source.segments[i];
 		auto &compiled = value.world.segments[i];
-		in >> source.function;
+		in >> source.function >> source.properties;
 		read_row(in, source.vertices);
 		read_row(in, source.children);
 		for (unsigned side = 0; side < 6; ++side) source.sides[side].corners = xl_compat::classic_side_corners[side];
 		read_row(in, compiled.center);
 		for (auto &bound : compiled.bounds) read_row(in, bound);
-		in >> compiled.inner_radius >> compiled.outer_radius >> compiled.skybox;
+		in >> compiled.inner_radius >> compiled.outer_radius >> compiled.skybox >> compiled.water;
 		for (auto &side : compiled.sides) {
 			in >> side.faces >> side.child >> side.pokes_out;
 			read_row(in, side.anchor);

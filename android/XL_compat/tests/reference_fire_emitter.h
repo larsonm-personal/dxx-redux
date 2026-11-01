@@ -192,7 +192,7 @@ static void particle_emitter_controls(const xl_compat::Inventory *level, const x
 				collisions += unsigned(world.collisions);
 				++drained;
 			}
-	if (compiled && (!lookups || !collisions)) throw std::runtime_error("Loaded emitter controls did not exercise world consumers");
+	if (compiled && (!lookups || (!Bubble && !collisions))) throw std::runtime_error("Loaded emitter controls did not exercise world consumers");
 	particle_segment.water = false;
 	std::cout << (Bubble ? "Pinned bubble emitter: " : Smoke  ? "Pinned smoke emitter: "
 	                                               : compiled ? "Pinned loaded-world fire emitter: "
@@ -212,4 +212,5 @@ void particle_emitter_loaded_controls(const xl_compat::Inventory &level, const x
 	// Source geometry was independently compiled from this inventory by the caller
 	particle_emitter_controls<false>(&level, &world);
 	particle_emitter_controls<true>(&level, &world);
+	particle_emitter_controls<false, true>(&level, &world);
 }
