@@ -49,6 +49,8 @@ static void lightning_objects_native_case(bool active)
 		authored.segment = 0;
 		authored.position = { native.pos.x, native.pos.y, native.pos.z };
 		authored.render_data = { 300, 50, 18, 5, 1, -1, 3, 0, 0, 8, 0, 2, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, index == 1 };
+		// Geometry/lifetime owner runs without an audio bank; playback has its own owner
+		authored.render_data[18] = 0;
 	}
 	bind_lightning_objects(source);
 	require(!lightning_object_emitter(1) && !lightning_object_emitter(2) && d_rand_get_stream_call_count(D_RNG_FX) == fx, "Lightning bind allocated transient bolts or consumed RNG");

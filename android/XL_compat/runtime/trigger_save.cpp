@@ -232,6 +232,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		require(xl_compat::restore_named_audio(saved.at("audio"), false), "Invalid XL named-audio resource or playback state");
 		require(xl_compat::restore_seismic_gameplay(saved.at("seismic"), false), "Invalid XL seismic state");
 		require(xl_compat::ambient_audio_matches(saved.at("audio")), "Saved ambient audio differs from the authored object resource");
+		require(xl_compat::lightning_audio_matches(saved.at("audio")), "Saved lightning audio differs from the authored object resource");
 		require(xl_compat::restore_ambient_objects(saved.at("ambient_objects"), false), "Invalid XL ambient sound object lifetime or enabled state");
 		require(xl_compat::restore_particle_objects(saved.at("particle_objects"), false), "Invalid XL particle object lifetime or enabled state");
 		require(xl_compat::restore_lightning_objects(saved.at("lightning_objects"), false), "Invalid XL lightning object lifetime or enabled state");

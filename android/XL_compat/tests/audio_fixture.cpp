@@ -375,6 +375,9 @@ void fixture(const char *original, const std::filesystem::path &directory)
 		xl_test::hog_member(*archive_out, "broken.wav", text("not a RIFF WAVE"), false);
 	}
 	std::filesystem::create_directories(directory);
+	// Labeled synthetic audio for portable lightning lifecycle controls
+	std::filesystem::create_directories(directory.parent_path() / "sounds/d2x-xl");
+	write(directory.parent_path() / "sounds/d2x-xl/lightning.wav", wave(44100, 2, 22050));
 	write(directory / "xsound.hog", output);
 	write(directory / "xsound.mn2", text("d2x-name = Derived XL sounds\nnum_levels = 4\naudio23.rl2\naudio27.rl2\namb23.rl2\namb27.rl2\n"));
 	write(directory / "xschange.hog", changed);

@@ -15,10 +15,12 @@ std::vector<LightningSceneItem> lightning_scene_items(const std::vector<int> &vi
 bool lightning_scene_item_valid(const LightningSceneItem &item);
 nlohmann::json lightning_objects_snapshot();
 bool restore_lightning_objects(const nlohmann::json &state, bool apply);
+bool lightning_audio_matches(const nlohmann::json &audio);
 } // namespace xl_compat
 extern "C" {
 #endif
 void xl_lightning_objects_clear(void);
+void xl_lightning_objects_mute(void);
 void xl_lightning_objects_clock(void);
 void xl_lightning_objects_frame(void);
 int xl_lightning_object_set_enabled(int object, int enabled);

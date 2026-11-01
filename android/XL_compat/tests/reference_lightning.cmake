@@ -106,6 +106,15 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_emitter
      CONTENT "${extracted}")
 target_sources(xl_lightning_test PRIVATE tests/reference_lightning_path.cpp)
 
+set(extracted "// Actual pinned emitter sound update and mute\n")
+foreach(signature IN ITEMS "void CLightningEmitter::UpdateSound (" "void CLightningEmitter::Mute (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning_emitter.cpp"
+                          "${signature}")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_audio.h"
+     CONTENT "${extracted}")
+target_sources(xl_lightning_test PRIVATE tests/reference_lightning_audio.cpp)
+
 set(extracted "// Actual pinned glow geometry and float vector operations\n")
 foreach(
     signature IN
