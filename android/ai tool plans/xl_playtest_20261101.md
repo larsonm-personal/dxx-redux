@@ -182,3 +182,17 @@ G validation: scoped quality passes; Windows/Linux source controls pass
 pass. Existing effect/resource/save owner passes. Original camera admission stays
 blocked pending earthquake glass exact-distance/trigger behavior and PMC tests.
 Android build and protected opening regression are next. D CI fully green.
+
+### H - Earthquake glass gameplay (in progress)
+
+- Child xl_playtest_130_camera_glass of G31bcf2a82d305173e7758e32277702398ac52993, PR284
+- Preserve source bidirectional uncached blast routes, exact-distance gates, glass effects and linked trigger operation
+- Keep original PMC admission blocked until source/native controls and actual original camera lifecycle checks pass
+- G Android build passed in5m1s; protected opening regression is running on owned5556
+
+H controls: 66384 actual-source route cases pass Windows8.59s/Linux2.84s.
+Nine native glass cases/four real shield-trigger effects and full save owner pass.
+Permanent switches retain texture/light, animation flags/time and UV rotation
+survive destruction. Glass-trigger level changes stop old traversal/children.
+Final scoped quality passes. A header-order compile issue was fixed by using the
+existing preview API header for the transition generation; Android rebuild pending.

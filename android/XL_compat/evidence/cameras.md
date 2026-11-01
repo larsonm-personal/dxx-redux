@@ -2828,3 +2828,35 @@ and glass-linked trigger activation require further work. Static behavior135,
 original PMC save/restart/transition, and actual camera resource/device coverage
 also remain prerequisites. These controlled fixtures are not a completed PMC
 playthrough.
+
+## Earthquake glass gameplay
+
+Stack H replaces the camera earthquake's stock glass helper with the pinned
+blast behavior. It retains exact side-center distance, the six-level recursive
+walk, current flyable/transparent doorway flags, and uncached bidirectional
+routes. Source cache=-1 intentionally disables same-room and adjacent shortcuts;
+those cases must still pass through the source route algorithm. Door topology is
+read again for each candidate because an earlier glass trigger can change it.
+
+The source comparison compiles the actual simple heap/router classes and methods
+from hash-pinned findpath.h/cpp. Across 66,384 routes it includes directed and
+asymmetric passages, side-order ties, depth limits, 31,506 blocked paths, and
+3,216 same-room cases. Geometry distance and centers reuse the previously
+qualified source math. The glass traversal and destruction branches were audited
+against wall.cpp/segment.cpp; their hashes are also checked, but those branches
+are not compiled into this route oracle.
+
+Destruction retains the source parent gate, overlay orientation, light removal,
+explosion and audio, animation transition flags, and attached trigger operation.
+Permanent switches emit their effect and operate while retaining texture/light.
+Native default textures use their stored eclip frame time: alternate high-detail
+animation frame counts and slow motion are outside this profile. A trigger that
+starts a synchronous level transition terminates the old blast traversal and
+child/contact work before they can touch the new world's object slots.
+
+Native controls exercise nine destruction/gate/permanent/animation cases and
+four actual shield-trigger operations, alongside the existing real camera missile
+impacts and full save owner. They use an explicitly opaque loaded texture for
+the closed-route fixture; closing a transparent wall is not sufficient to block
+the source transparent route query. Original camera admission remains a separate
+milestone requiring actual PMC resource, play, restart, and save checks.

@@ -1,4 +1,5 @@
 #include "camera_children.h"
+#include "camera_glass.h"
 #include <algorithm>
 #include "../camera_children.h"
 #include "preview.h"
@@ -12,7 +13,6 @@ extern "C" {
 #include "robot.h"
 #include "fvi.h"
 #include "rng_shared.h"
-void blast_nearby_glass(object *, fix);
 }
 void xl_camera_smart_children(object &weapon)
 {
@@ -21,7 +21,11 @@ void xl_camera_smart_children(object &weapon)
 	const auto &definition = Weapon_info[weapon.id];
 	if (definition.children < 1) return;
 	if (definition.children >= N_weapon_types) throw std::runtime_error("Invalid camera child weapon definition");
-	if (weapon.id == EARTHSHAKER_ID) blast_nearby_glass(&weapon, definition.strength[Difficulty_level]);
+	if (weapon.id == EARTHSHAKER_ID) {
+		const auto generation = xl_wall_trigger_generation();
+		xl_camera_blast_glass(weapon, definition.strength[Difficulty_level]);
+		if (xl_wall_trigger_generation() != generation) return;
+	}
 	const auto point = [](const vms_vector &v) { return xl_compat::FixedLightPoint{ v.x, v.y, v.z }; };
 	std::vector<xl_compat::CameraSmartTarget> candidates;
 	for (int i = 0; i <= Highest_object_index; ++i) {
