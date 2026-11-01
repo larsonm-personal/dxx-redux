@@ -104,7 +104,8 @@ struct Water {
 using Item = std::variant<Face, QueuedObject, Particle, Water, LightningSceneItem, Sprite>;
 bool ends_lightning_batch(const Item &item)
 {
-	if (std::holds_alternative<LightningSceneItem>(item)) return false;
+	if (const auto *lightning = std::get_if<LightningSceneItem>(&item))
+		return lightning->frame.glow.vertices.empty() && lightning->frame.glow.distance_scale > 0;
 	if (const auto *sprite = std::get_if<Sprite>(&item))
 		return sprite_batch_plan(sprite->bitmap < 0 ? -1 : 0, true).action == SpriteBatchAction::end;
 	return true;
@@ -427,12 +428,11 @@ extern "C" void xl_transparency_flush(void)
 				               ogl_draw_xl_water_portal(water->points, water->colors);
 			               } else if (const auto *lightning = std::get_if<LightningSceneItem>(&item)) {
 				               const auto *image = xl_prepared_lightning_image();
-				               if (!image || !image->texture) throw std::runtime_error("XL lightning scene lost its corona image");
 #ifdef ANDROID
-				               const bool direct_probe = lightning->object == lightning_probe_owner && lightning->frame.glow.distance_scale == 0;
+				               const bool direct_probe = lightning->object == lightning_probe_owner && (lightning->frame.glow.vertices.empty() || lightning->frame.glow.distance_scale == 0);
 				               if (direct_probe) lightning_probe_before();
 #endif
-				               draw_lightning_scene_item(*lightning, *image->texture);
+				               draw_lightning_scene_item(*lightning, image ? image->texture.get() : nullptr);
 #ifdef ANDROID
 				               lightning_probe_item(*lightning);
 				               if (direct_probe) lightning_probe_after(1);

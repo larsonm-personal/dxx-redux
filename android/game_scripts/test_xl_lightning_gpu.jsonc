@@ -15,7 +15,8 @@
         "action": "assert",
         "expect": {
             "xl_pog.passed": true,
-            "xl_pog.line_cases": 12,
+            "xl_pog.line_cases": 28,
+            "xl_pog.outline_cases": 4,
             "xl_pog.sprite_cases": 1,
             "xl_pog.bitmap_cases": 108,
             "xl_pog.glare_width": 512,
@@ -48,7 +49,8 @@
         "action": "assert",
         "expect": {
             "xl_pog.passed": true,
-            "xl_pog.line_cases": 12,
+            "xl_pog.line_cases": 28,
+            "xl_pog.outline_cases": 4,
             "xl_pog.sprite_cases": 1,
             "xl_pog.bitmap_cases": 108,
             "xl_pog.glare_width": 512,

@@ -642,3 +642,55 @@ lightning scene/lifecycle. It is not an earned playthrough or full-campaign
 qualification. Later Pumo chapters still require other lightning profiles,
 camera objects/actions, additive walls and particle behavior. Optional3D
 powerup/model presentation is not established by these sprite controls.
+
+## 116: non-glowing random lightning outlines
+
+Random style-0 lightning now supports authored zero glow in addition to
+positive glow. Negative single-layer glow, other styles, targeted paths,
+children, clamp and fixed-plane profiles remain rejected. Admission and native
+binding continue to share the same bounded validator.
+
+The non-glowing core uses the pinned RenderCore distance rule: take the nearer
+visible endpoint's distance from the viewer object, subtract its radius, apply
+DistToScale, then apply OutlineWidth using the current canvas width. Random
+endpoint tails and the four stored cap vertices do not participate. The source
+gameplay default is 3 * max(1, canvasWidth / 640), divided by twice the distance
+scale when nonzero and clamped to 1..10 in the qualified portable profile.
+Actual extracted RenderCore, OutlineWidth and DistToScale functions pass 2304
+endpoint, radius, canvas and viewer-offset comparisons. The additional source
+files are hash-pinned in reference_lightning.cmake.
+
+Non-glowing drawing consumes three effects RNG samples and uses direct additive
+color without the glowing path's quartering. It requires no corona texture.
+The frame still retains the source glow-distance factor: Draw invokes SetupGlow
+only when that factor is positive, and non-glowing SetupGlow ends a pending glow
+batch. At zero factor the direct core retains that batch. Extracted SetupGlow
+and the existing Draw controls establish this ordering; compositor controls
+check both pending-batch states and the resulting composed pixels. Android
+scene readback follows the same direct-versus-pending distinction.
+
+Desktop source/GPU validation passed 2/2 in 41.77 seconds, including 36288
+primitive comparisons after adding fractional outline widths, the existing
+source composite controls, and native no-corona/canvas-width checks across
+actual context recreation and explicit resource release. Existing pixel
+acceptance limits were retained. The protected Android renderer owner passed
+28/28 steps in 50.789 seconds, run 12ed6e34bae04e1782ff2c5b3f12a205. It checks
+28 analytical line cases, four no-corona outline cases, 108 bitmap cases and
+the retained glare/lightning case before and after context recreation.
+Protected before/after app-data hashes were identical.
+
+Final inventory/effect contracts passed 2/2 in 5.87 seconds. Windows native
+controls passed both glowing and non-glowing ownership, clock, activation,
+illumination, queue snapshots, atomic restore and signature lifetime cases.
+The resource owner verifies that non-glowing lightning needs no absent corona.
+The two native profiles use successive absolute test epochs; reusing the first
+epoch correctly triggered the production backward-clock guard during test
+development. Both automation catalogs, scoped formatting and the final Android
+x86_64 build passed. The final admission-only edits reuse the completed renderer
+checks; the Android rebuild passed in two minutes.
+
+Inspection of the unchanged original 14-level Pumo HOG now reports no lightning
+blocker for pmlev3 objects318/319. Objects320/321/322 remain blocked, as do the
+camera and particle requirements in that level. Original level-nine admission
+remains clear. This qualifies the bounded non-glowing profile and its tested
+runtime paths, not original later-level gameplay or a complete campaign.

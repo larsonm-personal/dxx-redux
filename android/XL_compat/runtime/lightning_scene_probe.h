@@ -50,7 +50,7 @@ void lightning_probe_item(const xl_compat::LightningSceneItem &item)
 	for (const auto &[segment, light] : lights)
 		if (segment >= 0 && segment <= Highest_segment_index && light.samples && light.brightness > 0) ++lit;
 	lightning_probe_result.light_segments = std::max(lightning_probe_result.light_segments, lit);
-	if (item.frame.glow.distance_scale != 0) ++lightning_probe_pending;
+	if (!item.frame.glow.vertices.empty() && item.frame.glow.distance_scale != 0) ++lightning_probe_pending;
 }
 void finish_scene_lightning_batch()
 {

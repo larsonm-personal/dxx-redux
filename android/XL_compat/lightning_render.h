@@ -124,6 +124,13 @@ LightningCore lightning_core_geometry(const std::vector<LightningPoint> &nodes, 
 	return result;
 }
 
+inline float lightning_distance_scale(float average_depth, float depth_range)
+{
+	if (!std::isfinite(average_depth) || !std::isfinite(depth_range) || depth_range <= 0)
+		throw std::runtime_error("XL lightning has invalid depth inputs");
+	return std::pow(1.0f - average_depth / depth_range, 50.0f);
+}
+
 inline LightningGlow lightning_glow_geometry(const std::vector<LightningPoint> &nodes, int random_nodes, float width, bool outer_glow,
                                              const LightningVertex &eye, float average_depth, float depth_range)
 {
@@ -132,7 +139,7 @@ inline LightningGlow lightning_glow_geometry(const std::vector<LightningPoint> &
 		throw std::runtime_error("XL lightning glow has invalid geometry inputs");
 	const auto count = nodes.size() - 1 - random_nodes;
 	LightningGlow result;
-	result.distance_scale = std::pow(1.0f - average_depth / depth_range, 50.0f);
+	result.distance_scale = lightning_distance_scale(average_depth, depth_range);
 	const float radius = width * result.distance_scale * 0.25f;
 	result.vertices.reserve(count * (outer_glow ? 8 : 4));
 	result.uv.reserve(count * (outer_glow ? 8 : 4));

@@ -237,6 +237,7 @@ void xl_compat::lightning_objects_frame()
 				return (vertex[0] - eye[0]) * forward[0] + (vertex[1] - eye[1]) * forward[1] + (vertex[2] - eye[2]) * forward[2];
 			});
 			// Both the pinned XL default and Redux perspective use zFar=5000
+			frame.glow.distance_scale = lightning_distance_scale(frame.core.average_depth, 4999.0f);
 			if (bolt.definition.glow)
 				frame.glow = lightning_glow_geometry(bolt.draw_positions, bolt.lifetime.random_nodes, bolt.definition.width, bolt.definition.glow > 0, eye, frame.core.average_depth, 4999.0f);
 			entry.render_frames[std::size_t(&bolt - entry.emitter->bolts.data())] = std::move(frame);

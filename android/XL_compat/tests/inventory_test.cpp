@@ -1508,13 +1508,17 @@ int main(int argc, char **argv)
 			lightning.unsupported.push_back({ "effect_lightning", -1, "decoded payload" });
 			lightning.unsupported.push_back({ "effect_object_types", -1, "20" });
 			check(xl_compat::runtime_blockers(lightning).empty(), "Implemented original random lightning profile rejected");
+			auto nonglow = lightning;
+			// Original pmlev3 object 318, with only its segment relocated into this fixture
+			nonglow.objects.back().render_data = { 300, 50, 15, 5, 1, -1, 3, 0, 0, 6, 0, 2, 20, 0, 0, 0, 0, 0, 0, 1, 0, 160, 160, 0, 128, 1 };
+			check(xl_compat::runtime_blockers(nonglow).empty(), "Implemented original non-glowing lightning profile rejected");
 			for (const auto &change : std::vector<std::pair<unsigned, int>>{ { 0, 0 }, { 2, 0 }, { 5, 0 }, { 6, 0 }, { 9, 4 }, { 9, 640 }, { 10, 1 }, { 11, 0 }, { 13, 1 }, { 14, 1 }, { 16, 1 }, { 19, 0 }, { 20, 1 }, { 21, 256 } }) {
 				auto invalid = lightning;
 				invalid.objects.back().render_data[change.first] = change.second;
 				check(xl_compat::blocker_message(xl_compat::runtime_blockers(invalid)).find("effect_lightning at record") != std::string::npos,
 				      "Unsupported lightning profile lost its per-object rejection");
 			}
-			for (int mutation = 0; mutation < 9; ++mutation) {
+			for (int mutation = 0; mutation < 8; ++mutation) {
 				auto invalid = lightning;
 				auto &object = invalid.objects.back();
 				if (mutation == 0) object.control = 1;
@@ -1524,8 +1528,7 @@ int main(int argc, char **argv)
 				if (mutation == 4) object.reader_render = 11;
 				if (mutation == 5) object.segment = -1;
 				if (mutation == 6) object.render_data.pop_back();
-				if (mutation == 7) object.render_data[17] = 0;
-				if (mutation == 8) object.render_data[17] = 255;
+				if (mutation == 7) object.render_data[17] = 255;
 				check(!xl_compat::runtime_blockers(invalid).empty(), "Malformed lightning owner admitted");
 			}
 			lightning.unsupported.push_back({ "unimplemented_lightning_dependency", 0, "independent feature" });

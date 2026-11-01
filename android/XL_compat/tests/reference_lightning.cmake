@@ -244,3 +244,33 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/2d/bitmap.cpp"
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_sprite_bitmap.h"
      CONTENT "${extracted}")
 target_sources(xl_lightning_test PRIVATE tests/reference_sprite_bitmap.cpp)
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/main/gamestates.cpp" outline_state_hash)
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/include/descent.h" outline_distance_hash)
+if(NOT outline_state_hash STREQUAL
+   "34aeb804a0e1b428781d355b69f7b9aae357ff39a9c584ccfaaf5b0357d69744"
+   OR NOT outline_distance_hash STREQUAL
+      "f8c34f569c51541dc4d1e69ae3ac04972401b4c6cad99ac450bbc57a245f83e4")
+    message(FATAL_ERROR "Lightning outline source changed")
+endif()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/descent.h" source)
+string(FIND "${source}" "static inline int32_t DistToScale (" start)
+if(start LESS 0)
+    message(FATAL_ERROR "Missing lightning outline distance function")
+endif()
+string(SUBSTRING "${source}" ${start} -1 tail)
+string(FIND "${tail}" "}" end)
+math(EXPR length "${end} + 1")
+string(SUBSTRING "${tail}" 0 ${length} distance_function)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_distance.h"
+     CONTENT "${distance_function}\n")
+set(extracted "// Pinned non-glowing lightning width consumer\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/gamestates.cpp"
+                      "float CRenderStates::OutlineWidth (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning.cpp"
+                      "void CLightning::RenderCore (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning.cpp"
+                      "int32_t CLightning::SetupGlow (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_lightning_outline.h"
+     CONTENT "${extracted}")
+target_sources(xl_lightning_test PRIVATE tests/reference_lightning_outline.cpp)

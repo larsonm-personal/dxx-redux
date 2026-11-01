@@ -159,6 +159,35 @@ static void lightning_composite_gpu_controls()
 						if (worst > 1) throw std::runtime_error("Lightning composition differs from pinned End/Render case=" + std::to_string(cases) + " index=" + std::to_string(index) + " expected=" + std::to_string(pixels[0][index]) + " actual=" + std::to_string(pixels[1][index]));
 						++cases;
 					}
+	for (float scale : { 0.f, 1.f }) {
+		std::array<std::array<unsigned char, 64 * 64 * 4>, 2> pixels{};
+		for (unsigned profile = 0; profile < 2; ++profile) {
+			glBindFramebuffer(GL_FRAMEBUFFER, scene);
+			glViewport(0, 0, 64, 64);
+			glDisable(GL_SCISSOR_TEST);
+			glDisable(GL_STENCIL_TEST);
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			glDepthMask(GL_TRUE);
+			glClearDepth(1);
+			glClearColor(0, 0, 0, 0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			snapshot.capture();
+			compositor.begin(scene, snapshot.texture, GL_DEPTH_ATTACHMENT, 64, 64, { 0, 0, 64, 64 });
+			compositor.draw(core, glow, 1, { .025f, .07f, .11f, .2f }, .7f, identity, corona, { 0, 0, 63, 63 });
+			LightningGlow nonglow{};
+			nonglow.distance_scale = scale;
+			if (profile) compositor.draw_unblurred(core, nonglow, 1, { .1f, .3f, .5f, .4f }, 2.53125f, identity);
+			else {
+				// Pinned Draw skips SetupGlow at zero scale; nonglow SetupGlow calls End
+				if (scale > 0) compositor.end();
+				primitive.draw(core, LightningGlow{}, 1, { .1f, .3f, .5f, .4f }, 2.53125f, identity, 0, false);
+			}
+			check(compositor.batch_active() == (scale == 0), "Non-glowing lightning changed the source pending-batch lifetime");
+			compositor.end();
+			glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pixels[profile].data());
+		}
+		check(pixels[0] == pixels[1], "Non-glowing lightning changed source batch/core composition ordering");
+	}
 	// Verify each public operation restores a deliberately different caller state
 	GLuint sentinel_vao, sentinel_buffer;
 	glGenVertexArrays(1, &sentinel_vao);

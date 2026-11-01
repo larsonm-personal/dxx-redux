@@ -30,6 +30,7 @@
 #endif
 extern "C" {
 #include "3d.h"
+#include "object.h"
 #include "ogl_init.h"
 #include "oglprog.h"
 #include "args.h"
@@ -47,6 +48,7 @@ int Game_mode = 0, gl_initialized = 0;
 extern int r_texcount, GL_TEXTURE_2D_enabled;
 ubyte gr_palette[768]{}, gr_current_pal[768]{};
 grs_canvas *grd_curcanv = nullptr;
+object *Viewer = nullptr;
 grs_screen *grd_curscreen = nullptr;
 vms_vector View_position{};
 vms_matrix View_matrix{};
