@@ -32,9 +32,16 @@ target_link_libraries(xl_lightning_test PRIVATE xl_inventory)
 add_test(NAME xl_lightning_source COMMAND xl_lightning_test)
 
 set(extracted "// Actual pinned vector operations and style-0 path\n")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning.cpp" style_source)
+string(REGEX MATCH "#define[ \t]+STYLE[^\n]*\n[^\n]*" style_macro "${style_source}")
+if(NOT style_macro)
+    message(FATAL_ERROR "Missing source lightning STYLE selection")
+endif()
+string(APPEND extracted "${style_macro}\n")
 foreach(
     signature IN
     ITEMS "inline const CFixVector& CFixVector::operator+= (const CFixVector&"
+          "inline const CFixVector& CFixVector::operator-= (const CFixVector&"
           "inline const CFixVector& CFixVector::operator*= (const fix"
           "inline const CFixVector CFixVector::operator+ (const CFixVector&"
           "inline const CFixVector CFixVector::operator- (const CFixVector&"
@@ -60,7 +67,8 @@ foreach(
           "void CLightningNode::Setup ("
           "void CLightningNode::Animate ("
           "void CLightningNode::ComputeOffset ("
-          "CFixVector CLightningNode::CreateErratic (")
+          "CFixVector CLightningNode::CreateErratic ("
+          "int32_t CLightningNode::Clamp (")
     extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/effects/lightning_node.cpp" "${signature}")
 endforeach()
 foreach(

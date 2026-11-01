@@ -72,8 +72,9 @@ static void lightning_native_light_case()
 	std::cout << "Native lightning illumination passed: located segment aggregation, exact rendered-vertex contributions, activation, visibility and no collection RNG\n";
 }
 
-static void lightning_objects_native_case(bool active, bool nonglow = false)
+static void lightning_objects_native_case(bool active, int profile = 0)
 {
+	const bool nonglow = profile != 0;
 	using namespace xl_compat;
 	const auto sim = d_rand_get_stream_call_count(D_RNG_SIM);
 	const auto fx = d_rand_get_stream_call_count(D_RNG_FX);
@@ -125,6 +126,8 @@ static void lightning_objects_native_case(bool active, bool nonglow = false)
 		authored.render_data[18] = 0;
 		if (nonglow)
 			authored.render_data = { 300, 50, 15, 5, 1, -1, 3, 0, 0, 6, 0, 2, 20, 0, 0, 0, 0, 0, 0, 1, 0, 160, 160, 0, 128, index == 1 };
+		if (profile == 2)
+			authored.render_data = { 2000, 0, 30, 5, 1, -1, 50, 0, 0, 50, 5, 3, 3, 0, 1, 1, 1, 0, 0, 1, 0, 32, 64, 255, 100, index == 1 };
 	}
 	bind_lightning_objects(source);
 	require(!lightning_object_emitter(1) && !lightning_object_emitter(2) && d_rand_get_stream_call_count(D_RNG_FX) == fx, "Lightning bind allocated transient bolts or consumed RNG");
@@ -139,13 +142,19 @@ static void lightning_objects_native_case(bool active, bool nonglow = false)
 	}
 	require(rejected && lightning_objects_snapshot() == saved, "Failed lightning bind replaced valid ownership");
 	// A controlled absolute clock uses the same global 40-Hz accumulation as production
-	const int epoch = nonglow ? 2000000 : 1000000;
+	const int epoch = (profile + 1) * 1000000;
 	lightning_objects_clock(epoch);
 	lightning_objects_frame();
 	require(lightning_object_emitter(1) && lightning_object_emitter(2) && !lightning_object_emitter(2)->enabled, "Source creates disabled lightning systems too");
 	require(lightning_object_emitter(1)->updated == -1 && lightning_object_emitter(1)->bolts[0].draw_positions.empty(), "New lightning owner animated in its creation frame");
 	require(!lightning_object_render_frame(1, 0) && !lightning_object_render_frame(2, 0), "New lightning owner created render geometry before animation");
 	const int disabled_ttl = lightning_object_emitter(2)->bolts[0].lifetime.ttl;
+	if (profile == 2) {
+		const auto &bolt = lightning_object_emitter(1)->bolts[0];
+		require(bolt.definition.style == 1 && bolt.definition.children == 5 && bolt.definition.clamp == 1 &&
+		            !bolt.lifetime.children && lightning_active_style(bolt.definition) == 0 && lightning_object_emitter(1)->bolts.size() == 50,
+		        "PMC lightning lost authored metadata or the selected source presentation profile");
+	}
 	lightning_objects_clock(epoch + 7);
 	lightning_objects_frame();
 	require(lightning_object_emitter(1)->updated == epoch + 7 && !lightning_object_emitter(1)->bolts[0].draw_positions.empty(), "Absolute-clock first lightning update was delayed by a relative epoch");
@@ -254,5 +263,7 @@ static void lightning_objects_native_case(bool active, bool nonglow = false)
 	lightning_objects_frame();
 	require(!lightning_object_emitter(2), "Deleted object retained lightning");
 	require(d_rand_get_stream_call_count(D_RNG_SIM) == sim, "Lightning used simulation RNG");
-	std::cout << "XL lightning native ownership (" << (nonglow ? "non-glowing" : "glowing") << "): creation, clock, movement, activation, atomic restore and signature lifetime passed\n";
+	std::cout << "XL lightning native ownership (" << (profile == 2 ? "PMC parent-bolt" : nonglow ? "non-glowing"
+	                                                                                              : "glowing")
+	          << "): creation, clock, movement, activation, atomic restore and signature lifetime passed\n";
 }

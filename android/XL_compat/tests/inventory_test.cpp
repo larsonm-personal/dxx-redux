@@ -1528,11 +1528,25 @@ int main(int argc, char **argv)
 			// Original pmlev3 object 318, with only its segment relocated into this fixture
 			nonglow.objects.back().render_data = { 300, 50, 15, 5, 1, -1, 3, 0, 0, 6, 0, 2, 20, 0, 0, 0, 0, 0, 0, 1, 0, 160, 160, 0, 128, 1 };
 			check(xl_compat::runtime_blockers(nonglow).empty(), "Implemented original non-glowing lightning profile rejected");
-			for (const auto &change : std::vector<std::pair<unsigned, int>>{ { 0, 0 }, { 2, 0 }, { 5, 0 }, { 6, 0 }, { 9, 4 }, { 9, 640 }, { 10, 1 }, { 11, 0 }, { 13, 1 }, { 14, 1 }, { 16, 1 }, { 19, 0 }, { 20, 1 }, { 21, 256 } }) {
+			for (const auto &change : std::vector<std::pair<unsigned, int>>{ { 0, 0 }, { 2, 0 }, { 5, 0 }, { 6, 0 }, { 9, 4 }, { 9, 640 }, { 11, 0 }, { 13, 1 }, { 14, 3 }, { 19, 0 }, { 20, 1 }, { 21, 256 } }) {
 				auto invalid = lightning;
 				invalid.objects.back().render_data[change.first] = change.second;
 				check(xl_compat::blocker_message(xl_compat::runtime_blockers(invalid)).find("effect_lightning at record") != std::string::npos,
 				      "Unsupported lightning profile lost its per-object rejection");
+			}
+			for (const auto &payload : std::vector<std::vector<int>>{
+			         { 2000, 0, 30, 5, 1, -1, 50, 0, 0, 50, 5, 3, 3, 0, 1, 1, 1, 0, 0, 1, 0, 32, 64, 255, 100, 1 },
+			         { 300, 50, 15, 5, 1, -1, 3, 4, 4, 6, 1, 2, 20, 0, 0, 0, 0, 0, 0, 1, 0, 129, 0, 215, 128, 1 } }) {
+				auto original = lightning;
+				original.objects.back().render_data = payload;
+				check(xl_compat::runtime_blockers(original).empty() && original.objects.back().render_data == payload,
+				      "Original PMC lightning was changed or rejected under the source presentation profile");
+			}
+			{
+				auto invalid = lightning;
+				invalid.objects.back().render_data[3] = 0;
+				invalid.objects.back().render_data[16] = 1;
+				check(!xl_compat::runtime_blockers(invalid).empty(), "Zero-amplitude clamp reached source division by zero");
 			}
 			for (int mutation = 0; mutation < 8; ++mutation) {
 				auto invalid = lightning;
