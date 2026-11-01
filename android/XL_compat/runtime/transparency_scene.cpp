@@ -34,6 +34,7 @@ extern "C" {
 #include "render.h"
 #include "texmap.h"
 #include "ogl_init.h"
+#include "rle.h"
 #include "dxxerror.h"
 #include "../../../d2/3d/globvars.h"
 #ifdef ANDROID
@@ -43,6 +44,7 @@ void render_face(int, int, int, int *, int, int, uvl *, int);
 }
 #undef min
 #undef max
+#include "powerup_sprite.h"
 
 #ifdef ANDROID
 #include "particle_scene_probe.h"
@@ -80,11 +82,24 @@ struct Particle {
 	ParticlePoint position{};
 	float radius = 0;
 };
+struct Sprite {
+	ParticleQuad quad;
+	// A negative bitmap selects the prepared original glare texture
+	int bitmap = -1;
+	Window window;
+};
 struct Water {
 	int32_t points[4][3];
 	float colors[4][4];
 };
-using Item = std::variant<Face, QueuedObject, Particle, Water, LightningSceneItem>;
+using Item = std::variant<Face, QueuedObject, Particle, Water, LightningSceneItem, Sprite>;
+bool ends_lightning_batch(const Item &item)
+{
+	if (std::holds_alternative<LightningSceneItem>(item)) return false;
+	if (const auto *sprite = std::get_if<Sprite>(&item))
+		return sprite_batch_plan(sprite->bitmap < 0 ? -1 : 0, true).action == SpriteBatchAction::end;
+	return true;
+}
 struct Bounds {
 	ParticlePoint center;
 	int radius = 0;
@@ -146,6 +161,7 @@ void drain(Draw draw, Finish finish)
 	for (auto index : transparency_draw_order(positions, eye, maximum_depth)) {
 		auto &item = items[index];
 		if (const auto *face = std::get_if<Face>(&item)) face->window.restore();
+		else if (const auto *sprite = std::get_if<Sprite>(&item)) sprite->window.restore();
 		else if (const auto *object = std::get_if<QueuedObject>(&item)) {
 			if (object->index > Highest_object_index || Objects[object->index].signature != object->signature || Objects[object->index].type == OBJ_NONE) continue;
 			object->window.restore();
@@ -282,6 +298,26 @@ extern "C" int xl_transparency_object(int index)
 		rendered_objects.insert(index);
 		if (!transparent_object(Objects[index])) return 0;
 		const auto &obj = Objects[index];
+		if (obj.type == OBJ_POWERUP && obj.render_type == RT_POWERUP) {
+			// Source ordinary powerups draw immediately; energy bodies are sprites
+			if (!energy_powerup(obj.id)) return 0;
+			const auto &clip = obj.rtype.vclip_info;
+			if (clip.vclip_num < 0 || clip.vclip_num >= VCLIP_MAXNUM || clip.framenum < 0 || clip.framenum >= Vclip[clip.vclip_num].num_frames)
+				throw std::runtime_error("XL powerup sprite has an invalid animation frame");
+			const auto bitmap_index = Vclip[clip.vclip_num].frames[clip.framenum];
+			if (bitmap_index.index >= Num_bitmap_files) throw std::runtime_error("XL powerup sprite bitmap is out of range");
+			PIGGY_PAGE_IN(bitmap_index);
+			auto &bitmap = GameBitmaps[bitmap_index.index];
+			if (const auto *glare = xl_prepared_powerup_glare_image(); glare && glare->texture) {
+				const auto corona = powerup_corona(obj.id, obj.size, powerup_bitmap_color(bitmap));
+				add(Sprite{ powerup_billboard(obj.pos, corona.size, corona.size, corona.color, ParticleBlend::additive) }, point(obj.pos));
+			}
+			if (bitmap.bm_w <= 0 || bitmap.bm_h <= 0) throw std::runtime_error("XL powerup sprite bitmap dimensions are invalid");
+			const fix width = bitmap.bm_w > bitmap.bm_h ? obj.size : fixmuldiv(obj.size, bitmap.bm_w, bitmap.bm_h);
+			const fix height = bitmap.bm_w > bitmap.bm_h ? fixmuldiv(obj.size, bitmap.bm_h, bitmap.bm_w) : obj.size;
+			add(Sprite{ powerup_billboard(obj.pos, width, height, { 1, 1, 1, 2.f / 3.f }, ParticleBlend::alpha), bitmap_index.index }, point(obj.pos));
+			return 1;
+		}
 		add(QueuedObject{ index, obj.signature }, point(obj.pos));
 		return 1;
 	} catch (const std::exception &error) {
@@ -371,6 +407,13 @@ extern "C" void xl_transparency_flush(void)
 				               render_face(face->segment, face->side, face->count, face->vertices.data(), face->base, face->overlay, face->uvls.data(), face->doorway);
 			               } else if (const auto *object = std::get_if<QueuedObject>(&item)) {
 				               render_object(&Objects[object->index]);
+			               } else if (const auto *sprite = std::get_if<Sprite>(&item)) {
+				               if (sprite->bitmap >= 0) draw_bitmap_sprite(GameBitmaps[sprite->bitmap], sprite->quad);
+				               else {
+					               const auto *glare = xl_prepared_powerup_glare_image();
+					               if (!glare || !glare->texture) throw std::runtime_error("XL powerup sprite lost its glare image");
+					               glare->texture->draw_soft_sprite(sprite->quad);
+				               }
 			               } else if (auto *water = std::get_if<Water>(&item)) {
 				               ogl_draw_xl_water_portal(water->points, water->colors);
 			               } else if (const auto *lightning = std::get_if<LightningSceneItem>(&item)) {
@@ -382,7 +425,7 @@ extern "C" void xl_transparency_flush(void)
 		               [](Item &item) {
 			               // Native objects either end glow or begin an incompatible sprite batch
 			               // Flush at particle visitation, before its delayed buffer submission
-			               if (!std::holds_alternative<LightningSceneItem>(item)) finish_lightning_batch();
+			               if (ends_lightning_batch(item)) finish_lightning_batch();
 		               });
 		finish_lightning_batch();
 	} catch (const std::exception &error) {

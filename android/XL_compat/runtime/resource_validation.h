@@ -51,6 +51,7 @@ class XlPreparedResources
 	int custom_model_radius(int model, int fallback) const;
 	const xl_compat::ParticleImageResource *particle_image(int subtype = 3) const;
 	const xl_compat::ParticleImageResource *lightning_image() const;
+	const xl_compat::ParticleImageResource *powerup_glare_image() const;
 
   private:
 	struct State;
@@ -59,6 +60,7 @@ class XlPreparedResources
 void xl_set_prepared_resources(const char *level_filename, std::unique_ptr<XlPreparedResources> resources);
 const xl_compat::ParticleImageResource *xl_prepared_particle_image(int subtype = 3);
 const xl_compat::ParticleImageResource *xl_prepared_lightning_image();
+const xl_compat::ParticleImageResource *xl_prepared_powerup_glare_image();
 #endif
 
 #endif

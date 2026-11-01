@@ -19,11 +19,15 @@ extern "C" void xl_transparency_test_controls(int active)
 	struct Guard {
 		object saved = Objects[1];
 		vms_vector view = View_position;
+		vms_vector scale = Matrix_scale;
+		vms_matrix matrix = View_matrix;
 		Window window;
 		~Guard()
 		{
 			Objects[1] = saved;
 			View_position = view;
+			Matrix_scale = scale;
+			View_matrix = matrix;
 			window.restore();
 			xl_transparency_clear();
 		}
@@ -115,7 +119,88 @@ extern "C" void xl_transparency_test_controls(int active)
 		caught = true;
 	}
 	check(caught && !collecting && items.empty() && Window_clip_left == 59, "Interrupted transparency dispatch leaked frame state");
+	int powerup_clip = -1;
+	for (int i = 0; i < VCLIP_MAXNUM; ++i)
+		if (Vclip[i].num_frames > 0 && Vclip[i].frames[0].index < Num_bitmap_files) {
+			powerup_clip = i;
+			break;
+		}
+	check(powerup_clip >= 0, "Powerup sprite controls require a native vclip");
+	obj.type = OBJ_POWERUP;
+	obj.render_type = RT_POWERUP;
+	obj.id = 1;
+	obj.rtype.vclip_info.vclip_num = powerup_clip;
+	obj.rtype.vclip_info.framenum = 0;
+	obj.size = 65536;
+	obj.pos = View_position;
+	xl_transparency_begin(&segment, 1);
+	check(xl_transparency_object(1), "Energy powerup did not enter native sprite queue");
+	const auto *body = std::get_if<Sprite>(&items.back());
+	check(body && body->bitmap == Vclip[powerup_clip].frames[0].index && body->quad.blend == ParticleBlend::alpha && body->quad.vertices[0].color[3] == 2.f / 3.f,
+	      "Energy powerup lost source body bitmap or opacity");
+	const auto copied = body->quad.vertices[0].position;
+	obj.pos.x += 65536;
+	++obj.signature;
+	visited = 0;
+	drain([&](Item &item) {
+		const auto *sprite = std::get_if<Sprite>(&item);
+		check(sprite != nullptr, "Powerup dispatch retained a live native object");
+		if (!visited) check(sprite->bitmap >= 0 && sprite->quad.vertices[0].position == copied && ends_lightning_batch(item), "Powerup body lost copied position or reverse tie order");
+		else check(sprite->bitmap < 0 && !ends_lightning_batch(item), "Negative corona ended pending lightning");
+		++visited;
+	});
+	check(visited >= 1 && visited <= 2, "Powerup queue emitted unexpected sprites");
+	xl_transparency_begin(&segment, 1);
+	obj.id = 10;
+	check(!xl_transparency_object(1) && items.empty(), "Ordinary powerup body was incorrectly deferred");
+	check(!ends_lightning_batch(Sprite{}) && ends_lightning_batch(Sprite{ {}, 0 }), "Native sprite flush rule differs from source negative/zero blend dispatch");
+	add(Sprite{}, point(View_position));
+	add(Sprite{ {}, 0 }, point(View_position));
+	visited = 0;
+	drain([&](Item &item) {
+		const auto &sprite = std::get<Sprite>(item);
+		check((sprite.bitmap >= 0) == (visited == 0) && ends_lightning_batch(item) == (visited == 0), "Explicit corona/body pair lost source order or flush behavior");
+		++visited;
+	});
+	check(visited == 2, "Explicit corona/body pair was not drawn");
+	Matrix_scale = { 2 * 65536, 32768, 65536 };
+	View_matrix = { { 2 * 65536, 0, 0 }, { 0, 32768, 0 }, { 0, 0, 65536 } };
+	View_position = {};
+	const auto billboard = powerup_billboard({ 3 * 65536, 4 * 65536, 5 * 65536 }, 65536, 65536, { 1, 1, 1, 1 }, ParticleBlend::alpha);
+	check(billboard.vertices[0].position == std::array<float, 3>{ 4, 2.5f, -5 } &&
+	          billboard.vertices[2].position == std::array<float, 3>{ 8, 1.5f, -5 } &&
+	          billboard.vertices[0].uv == std::array<float, 2>{ 0, 0 } && billboard.vertices[2].uv == std::array<float, 2>{ 1, 1 },
+	      "Native billboard lost window/zoom scaling or source corner/UV orientation");
+	// Exercise the native bitmap bridge independently of which fixture has glare
+	std::array<unsigned char, 4> indexed{ 5, 5, 8, 8 };
+	const auto expected_color = sprite_bitmap_color(0, indexed.data(), 2, 2, 2, gr_current_pal);
+	grs_bitmap bitmap{};
+	bitmap.bm_w = bitmap.bm_h = bitmap.bm_rowsize = 2;
+	bitmap.bm_type = BM_LINEAR;
+	bitmap.bm_data = indexed.data();
+	check(powerup_bitmap_color(bitmap) == expected_color, "Native indexed sprite color differs from source-qualified average");
+	std::array<unsigned char, 12> small_rle{ 12, 0, 0, 0, 3, 3, 0xe2, 5, 0xe0, 0xe2, 8, 0xe0 };
+	std::array<unsigned char, 14> big_rle{ 14, 0, 0, 0, 3, 0, 3, 0, 0xe2, 5, 0xe0, 0xe2, 8, 0xe0 };
+	bitmap.bm_flags = BM_FLAG_RLE;
+	bitmap.bm_data = small_rle.data();
+	check(powerup_bitmap_color(bitmap) == expected_color, "Native small-RLE sprite average changed");
+	bitmap.bm_flags |= BM_FLAG_RLE_BIG;
+	bitmap.bm_data = big_rle.data();
+	check(powerup_bitmap_color(bitmap) == expected_color, "Native big-RLE sprite average changed");
+	bitmap.bm_type = BM_RGBA;
+	bitmap.bm_flags = 0;
+	for (unsigned value = 0; value < 256; ++value) {
+		std::array<float, 3> expected{};
+		for (unsigned axis = 0; axis < 3; ++axis) {
+			const unsigned byte = (value + axis * 71) % 256;
+			bitmap.avg_color_rgb[axis] = fix(byte * 65536 / 255);
+			expected[axis] = float(byte) / 255.f;
+		}
+		check(powerup_bitmap_color(bitmap) == expected, "Native truecolor sprite lost original average bytes");
+	}
 	xl_transparency_clear();
 	check(bounds.empty() && !collecting, "Level cleanup retained transparency geometry");
 	std::cout << "XL transparency native frame: classic isolation, mixed tie/bias order, duplicate faces, copied inputs, render context, recycled owners, view replacement and interrupted cleanup passed\n";
+	std::cout << "XL powerup sprite queue: ordinary immediate body, copied energy body/alpha, reverse corona tie order and pending lightning retention passed\n";
+	std::cout << "XL sprite bitmap bridge: indexed, small/big RLE and256 truecolor byte averages passed\n";
 }

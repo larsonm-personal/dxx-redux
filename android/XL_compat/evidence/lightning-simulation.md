@@ -541,3 +541,52 @@ color/size helpers and their unfinished diagnostics are excluded from113. The
 normal transparency queue and level admission retain branch112 behavior. This
 PR qualifies a renderer capability and its owned original asset, not normal
 Pumo level9 gameplay or campaign traversal.
+
+## 114: native powerup sprites and portable bitmap borders
+
+Energy powerups now submit copied bitmap-body and optional original-glare
+sprites to the normal transparency queue. Bodies retain source opacity2/3,
+bitmap aspect ratio and camera/window scale. Reverse equal-depth ordering
+draws the body before its corona. Negative-additive coronas retain a pending
+lightning batch; ordinary bodies end it. Non-energy powerup bodies remain
+immediate, matching the selected source profile with weapon coronas disabled.
+The resource transaction retains the optional glare image and its ownership.
+
+Pinned source controls cover640 sprite dispatch combinations,4800 powerup
+corona/color/size cases and320 bitmap average/palette/stride cases. Native
+integration checks copied inputs, batch transitions, indexed and small/big RLE
+bitmaps, all256 truecolor average-byte values and asymmetric view scaling.
+
+Bitmap bodies emulate legacy GL_CLAMP with transparent border texels at every
+mip, including rectangular mip tails, using original texture storage. The
+portable shader uses accurate log2 for LOD and restores shader, buffer,
+texture, depth and blend state. Context abandonment discards its GPU handles.
+
+The EGL owner compares900 shape/size/filter/position cases against GL_QUADS.
+The ordinary channel limit remains1. Nearest magnification discontinuities
+qualify only when both outputs match an independently blended adjacent texel
+within1 and its coordinate lies within32 float-epsilon-scaled texel units of
+the boundary. This accounts for108 pixels; their raw difference reaches66.
+Mipmap exceptions require raw difference at most2, with each output within1
+of an independent double-precision sampler using respectively Mesa's measured
+piecewise LOD or the portable exact logarithm. These account for126 pixels.
+No other discrepancies qualify. Substituting Mesa's LOD in a temporary
+same-triangle experiment removed the mipmap differences; that production
+experiment was reverted. A deliberately incorrect edge-clamped border was
+rejected in382 cases. This is a bounded numerical contract, not a claim of
+bit-identical output at discontinuities or across GPU implementations.
+
+The shared analytical body control covers108 RGBA border, rectangular mip,
+opacity, depth-rejection and scissor cases. It passes on desktop and Android.
+The existing protected Android lightning owner requires bitmap_cases108 on
+both sides of actual context recreation, alongside the original glare and
+pending-lightning checks. Run533ca2b6ec924ce7910ab1803538b15f passed28/28 in
+54.033seconds with identical protected before/after hashes on the temporary
+host-GPU emulator. Windows native integration, Android x86_64 build, both
+automation catalogs and scoped formatting passed. Full EGL passed12.40seconds
+after the new desktop control restored its fixed-function texture state and
+engine cache before the existing retained-particle context test.
+
+This qualifies normal powerup sprite submission and the tested renderer
+behavior. Original Pumo level9 scene/audio/gameplay and campaign traversal
+remain unqualified; normal lightning admission is unchanged.

@@ -171,6 +171,7 @@ void lightning_render_controls();
 void lightning_projection_controls();
 void lightning_audio_controls();
 void lightning_light_controls();
+void sprite_render_controls();
 
 int main()
 {
@@ -182,6 +183,7 @@ int main()
 		lightning_projection_controls();
 		lightning_audio_controls();
 		lightning_light_controls();
+		sprite_render_controls();
 		xl_compat::Object original{};
 		original.render = 12;
 		original.render_data = { 300, 50, 18, 5, 1, -1, 3, 0, 0, 8, 0, 2, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, 1 };

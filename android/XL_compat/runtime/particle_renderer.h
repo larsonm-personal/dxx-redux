@@ -38,6 +38,7 @@ class ParticleTexture
 };
 // Vertices use the current renderer's camera coordinates and projection
 void draw_particle_quads(_grs_bitmap &image, const ParticleQuad *quads, std::size_t count);
+void draw_bitmap_sprite(_grs_bitmap &image, ParticleQuad quad);
 } // namespace xl_compat
 #ifdef _MSC_VER
 #pragma pack(pop)

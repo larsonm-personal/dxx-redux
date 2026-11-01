@@ -44,7 +44,7 @@ struct Arg GameArg{};
 struct Cfg GameCfg{};
 struct netgame_info Netgame{};
 int Game_mode = 0, gl_initialized = 0;
-extern int r_texcount;
+extern int r_texcount, GL_TEXTURE_2D_enabled;
 ubyte gr_palette[768]{}, gr_current_pal[768]{};
 grs_canvas *grd_curcanv = nullptr;
 grs_screen *grd_curscreen = nullptr;
@@ -445,6 +445,7 @@ void original(const char *path)
 }
 #include "particle_gpu_controls.h"
 #include "lightning_scene_gpu_controls.h"
+#include "sprite_bitmap_gpu_controls.h"
 #ifdef XL_POG_SHADER_REFERENCE
 #include "sprite_glare_gpu_controls.h"
 #endif
@@ -486,6 +487,7 @@ int main(int argc, char **argv)
 		if (argc == 1) {
 			controls();
 			particle_gpu_controls();
+			sprite_bitmap_gpu_controls();
 			const auto recreate = [&] {
 				ogl_done_prog();
 				ogl_close_pixel_buffers();
@@ -504,6 +506,8 @@ int main(int argc, char **argv)
 		else if (argc == 3 && std::string(argv[1]) == "--sprite-glare")
 			sprite_glare_gpu_controls(argv[2]);
 #endif
+		else if (argc == 2 && std::string(argv[1]) == "--sprite-bitmaps") sprite_bitmap_gpu_controls();
+		else if (argc == 2 && std::string(argv[1]) == "--sprite-bitmap-triangles") sprite_bitmap_gpu_controls(false);
 		else
 			for (int i = 1; i < argc; ++i) original(argv[i]);
 		ogl_done_prog();
