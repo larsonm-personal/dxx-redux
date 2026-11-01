@@ -540,6 +540,14 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_world.h"
      CONTENT "${extracted}")
 target_sources(xl_effect_reference PRIVATE tests/reference_particle_world.cpp)
 
+set(extracted "// Pinned non-exhaustive connected lookup for lightning lights\n")
+foreach(signature IN ITEMS "uint8_t CSegment::GetSideDists (" "static int32_t TraceSegs ("
+                           "int32_t FindSegByPos (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/findsegment.cpp" "${signature}")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_connected.h"
+     CONTENT "${extracted}")
+
 file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/main/segmath.cpp" sort_hash)
 if(NOT sort_hash STREQUAL "65949a1ce9a0a001ccb4a474b7b009d41e9cf0ea6975376350418d85ed1b6f4c")
     message(FATAL_ERROR "Particle normal ordering source changed")

@@ -203,6 +203,19 @@ std::vector<xl_compat::LightningSceneItem> xl_compat::lightning_scene_items(cons
 	return result;
 }
 
+std::map<int, xl_compat::LightningSegmentLight> xl_compat::lightning_object_lights()
+{
+	LightningLightAccumulator accumulator;
+	if (!xl_level_extensions_active()) return {};
+	for (auto it = entries.rbegin(); it != entries.rend(); ++it) {
+		const auto &[index, entry] = *it;
+		if (!bound(index, entry) || !entry.emitter || !entry.emitter->enabled) continue;
+		for (const auto &bolt : entry.emitter->bolts)
+			lightning_bolt_lights(bolt, [&](const LightningPoint &position, int segment) { return world.locate_connected(position, segment); }, [&](int segment, const LightningPoint &position, const auto &color) { accumulator.add(segment, position, color); });
+	}
+	return accumulator.finish();
+}
+
 void xl_compat::lightning_objects_frame()
 {
 	if (!xl_level_extensions_active() || game_is_time_paused()) return;

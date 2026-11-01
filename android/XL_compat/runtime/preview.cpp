@@ -1741,6 +1741,16 @@ extern "C" void xl_preview_muzzle_snapshot(int64_t current_time)
 	}
 }
 
+extern "C" int xl_preview_dynamic_vertex(int vertex, int32_t *intensity, float rgb[3], int *has_color)
+{
+	if ((!source && !classic_ambient) || vertex < 0 || std::size_t(vertex) >= dynamic_vertices.size() || !intensity || !rgb || !has_color) return 0;
+	const auto &light = dynamic_vertices[vertex];
+	*intensity = light.intensity;
+	std::copy(light.color.begin(), light.color.end(), rgb);
+	*has_color = light.has_color;
+	return 1;
+}
+
 extern "C" void xl_preview_dynamic_frame(void)
 {
 	if ((!source && !classic_ambient) || (classic_ambient && (Game_mode & GM_MULTI))) return;
@@ -1762,6 +1772,23 @@ extern "C" void xl_preview_dynamic_frame(void)
 				if (distance >= int64_t(flash.intensity) * 64) continue;
 				const fix bounded = (std::max) (distance, fix(MIN_LIGHT_DIST));
 				dynamic_vertices[vertex].add(int32_t(int64_t(flash.intensity) * F1_0 / bounded), nullptr, false);
+			}
+		}
+		const auto lightning = xl_compat::lightning_object_lights();
+		for (int i = 0; i < N_render_segs; ++i) {
+			const auto found = lightning.find(Render_list[i]);
+			if (found == lightning.end() || !found->second.brightness) continue;
+			const auto &light = found->second;
+			const xl_compat::Rgb color{ light.color[0], light.color[1], light.color[2] };
+			const auto radius = std::int64_t(light.brightness) * 64;
+			if (radius > INT32_MAX) throw std::runtime_error("Lightning light radius exceeds the defined source range");
+			for (int vertex = 0; vertex < Num_vertices; ++vertex) {
+				if (!visible[vertex]) continue;
+				const xl_compat::FixedLightPoint position{ Vertices[vertex].x, Vertices[vertex].y, Vertices[vertex].z };
+				const fix distance = xl_compat::geometry_default_magnitude(xl_compat::lightning_detail::subtract(light.position, position));
+				if (distance >= radius) continue;
+				const fix bounded = (std::max) (distance, fix(MIN_LIGHT_DIST));
+				dynamic_vertices[vertex].add(int32_t(std::int64_t(light.brightness) * F1_0 / bounded), &color, false);
 			}
 		}
 		// First live emitter slice; unresolved sources remain explicit, never certified

@@ -64,6 +64,8 @@ int xl_preview_cloak_draw_wall(void);
 int xl_preview_cloak_draw_value(void);
 float xl_preview_cloak_draw_alpha(void);
 void xl_preview_dynamic_frame(void);
+// Read the collected lighting contribution without changing frame state
+int xl_preview_dynamic_vertex(int vertex, int32_t *intensity, float rgb[3], int *has_color);
 void xl_preview_muzzle_snapshot(int64_t current_time);
 void xl_preview_player_thrust(int player, int32_t x, int32_t y, int32_t z);
 void xl_preview_reset_player_thrust(void);

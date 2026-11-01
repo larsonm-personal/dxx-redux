@@ -414,3 +414,45 @@ Receipts: temp/xl-evening-20261031/audio-source.log, named-audio/runtime.log,
 audio-android.log; temp/xl-skybox-20261031/native-runtime/controls.log. Android
 device playback and the actual level9 scene remain unqualified. Existing audio
 pause/rate-conversion and unchanged automation catalogs are reused.
+
+## Method-0 lightning illumination
+
+Lightning node sampling and per-segment aggregation now feed the existing native
+colored vertex-light path. The collector visits newest emitters first, ascending
+bolts and sampled nodes. It uses live node positions, omits disabled/stale owners,
+and stops a bolt at its first failed connected segment lookup. It does not use
+the renderer's earlier camera geometry or consume effects RNG.
+
+The connected lookup is compared with actual pinned GetSideDists, TraceSegs and
+FindSegByPos: 78,342 cases cover plane tolerances, triangulated sides, branch/cycle
+ordering, disconnected destinations, skybox history and visited-flag rollover.
+290 cases distinguish it from exhaustive lookup. A specific overlapping-room
+case verifies the preceding visited stamp used by the source skybox pass. Native
+traversal uses an explicit stack and per-thread stamps. Nonzero lookup tolerance
+is outside this lightning profile. Existing exhaustive/collision controls pass.
+
+The existing lightning reference owner now extracts SetLight from bolt, node and
+emitter classes, plus SetSegmentLight, ResetLights and SetLights from the manager.
+3,360 comparisons cover node/length rounding boundaries, dormant/disabled/missing
+owners, excluded powerups, first-lookup failure, multiple colors/segments and
+exact lookup order. Native fixed-position means, float RGB means, summed alpha
+and resulting fixed brightness match the actual source. Undefined overflow and
+nonfinite brightness reject instead of relying on an invalid cast.
+
+Method-0 application follows rendered-segment order after muzzle flashes and
+before object lights, with source default-math distance, brightness*64 radius,
+minimum-distance clamp and unforced dynamic color. These are non-object sources;
+the dim-object local-segment shortcut does not apply. A read-only vertex-light
+diagnostic exposes the collected values for integration controls.
+
+The existing native effect owner passes exact rendered-vertex contribution,
+activation/visibility and RNG-isolation checks on its loaded geometry, alongside
+the earlier effect lifetime/restore controls. This is component integration,
+not an original Pumo level9 image comparison. Android compilation is recorded in
+the evening handoff. Wide/smooth line fidelity, remaining sprite batch transitions
+and the actual mission scene still block normal lightning admission.
+
+Receipts: temp/xl-evening-20261031/connected-source.log and light-native-build.log;
+temp/xl-particles-20261030/contracts-windows64/effect-decode/reference.log;
+the existing xl_lightning_source CTest output; and
+temp/xl-skybox-20261031/native-runtime/controls.log.
