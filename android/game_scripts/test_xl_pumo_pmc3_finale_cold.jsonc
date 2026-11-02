@@ -1,0 +1,166 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_pog_runtime",
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Load Game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "[quick] level 13",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "game_window_is_front": true,
+            "current_level_num": 13,
+            "position.segment": 4077,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "xl_pilot.wall_triggers.17.operated": true,
+            "xl_pilot.wall_triggers.19.operated": true,
+            "xl_pilot.doorways.230.type": 4,
+            "xl_pilot.remaining_objectives": 0,
+            "reactor_countdown.active": true,
+            "reactor_countdown.total_seconds": 90,
+            "xl_pilot.doorways.233.state": 0,
+            "player.invulnerable": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1.0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.x": {
+                "gt": 1200,
+            },
+            "position.y": {
+                "gt": 1800,
+            },
+            "position.fvec_z": {
+                "gt": 0.95,
+            },
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.z": {
+                "gt": 1030,
+            },
+            "xl_pilot.doorways.233.state": {
+                "gt": 0,
+            },
+            "player_dead": false,
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0.0,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1.0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "menu.subtitle": {
+                "contains": "Level 13 Complete",
+            },
+        },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0.0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.wall_triggers.38.operated": true,
+            "xl_pilot.wall_triggers.38.actor": 0,
+            "xl_pilot.wall_triggers.38.shot": 0,
+            "xl_pilot.wall_triggers.38.value": 983040,
+            "xl_pilot.remaining_objectives": 0,
+            "reactor_countdown.active": true,
+            "player_dead": false,
+            "player.invulnerable": false,
+            "cheats_enabled": false,
+        },
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "action": "request_screen_advance",
+        "generation": "current",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "screen_advance_kind": "briefing",
+            "time_paused": true,
+        },
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 300,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "levelcomplete_active": true,
+            "screen_advance_can_activate": true,
+        },
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "request_screen_advance",
+        "generation": "current",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": false,
+            "menu.items[0].text": "New game",
+        },
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "introspect",
+    },
+]

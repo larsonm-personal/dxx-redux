@@ -84,6 +84,12 @@ Additional tests on the same 28810 APK qualify the [normal PMC2 escape](evidence
 four-boost flight, normal advance to PMC3 and destination save/load. These receipts
 are supplementary; the published bundle remains unchanged.
 
+The same APK also passed the [PMC3 finale](evidence/pmc3-finale.md), with 215
+warm steps and 22 fresh-process steps. Normal grate-switch fire, outward and
+return portals, reactor combat, countdown save/load and continuous final flight
+through the corridor door reach the authored ending and main menu. Local fixed
+approaches leave earlier access gates and connected level traversal unqualified.
+
 The [rendered GuideBot pilot](evidence/rendered-guidebot.md) confirms a bounded
 hub route with an assisted, physics-driven companion. Companion activation of
 the XL exit is unsupported. Normal-player probes fill that specific gap without
@@ -93,7 +99,8 @@ relaxing actor rules or dispatching exits directly.
 
 - Fixed local approaches and bounded escape flights do not qualify full human
   navigation, surviving every boss encounter or earned campaign completion
-- Normal PMC3 progression remains outside this bundle's packaged qualification
+- PMC3 finale receipts supplement the bundle; its earlier access and key routes
+  remain unqualified
 - Physical ARM, touch ergonomics, controller acceptance and device performance
   need user feedback; device tests here use an owned x86_64 emulator with host GPU
 - Large levels and save restores can take tens of seconds on the emulator
