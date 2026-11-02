@@ -79,3 +79,27 @@ door through a safe room approach, then audit the authored master-switch links.
 A prepared disposable-device probe uses the engine-exported door plane and
 normal laser/thrust input. It has not run yet. Continue to avoid exit dispatch
 as a substitute for earned traversal, and preserve the failed combat probes.
+
+## M: Qualify original inner switches and the red-key forcefields
+
+The safe-room switch-10 probe passes its locked-door negative control, normal
+unlock shot and physical flight beyond the door plane. Original master switch
+11 opens walls 124/125 but locks doors 16/97, while dispatching the authored
+texture, message and audio children. Master 12 opens forcefield faces 84-87 and
+dispatches the disable action targeting ambient hum objects 140/141. Normal
+shots activate both masters, with player actor 0 / shot 1 and linked children
+shot 0. No direct trigger dispatch is used.
+
+Next, prove physical crossings and the adjacent blastable wall, then run a fresh
+scenario with no red key so normal flight through the opened fields earns the
+pickup. Preserve warm/cold gate and key states with the protected owner. Keep
+fixed-pose local interactions distinct from connecting-route traversal. Treat
+linked ambient-disable dispatch as dispatch evidence; audible stop persistence
+is not exposed by the current introspection and must not be claimed from it.
+
+The fresh protected inner-gate scenario now passes 88 warm and 23 cold steps
+on the published f1e73 APK. It earns the red key through normal field crossing,
+retains seven objectives, and preserves gate/key state across warm and cold
+loads. Both backup hash lists match and the cold frame was inspected. This is
+additional same-APK coverage; the combat ZIP remains immutable. No engine or
+original-mission changes were needed for these interactions.

@@ -1,0 +1,177 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_pog_runtime",
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Load Game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "[quick] level 11",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "game_window_is_front": true,
+            "current_level_num": 11,
+            "position.segment": 534,
+            "xl_pilot.wall_triggers.10.operated": true,
+            "xl_pilot.wall_triggers.11.operated": true,
+            "xl_pilot.wall_triggers.12.operated": true,
+            "xl_pilot.doorways.97.flags": 24,
+            "xl_pilot.doorways.122.flags": 17,
+            "xl_pilot.doorways.123.flags": 17,
+            "xl_pilot.doorways.124.type": 4,
+            "xl_pilot.doorways.125.type": 4,
+            "xl_pilot.doorways.84.type": 4,
+            "xl_pilot.doorways.85.type": 4,
+            "xl_pilot.doorways.86.type": 4,
+            "xl_pilot.doorways.87.type": 4,
+            "player.has_red_key": true,
+            "xl_pilot.remaining_objectives": 7,
+            "reactor_countdown.active": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "pose_view",
+        "segment": 1532,
+        "position_fixed": [10424779, -67511354, 55753],
+        "heading": 32768,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1.0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.z": {
+                "lt": -21,
+            },
+            "player_dead": false,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0.0,
+    },
+    {
+        "action": "face_view",
+        "segment": 585,
+        "side": 0,
+        "distance": 12,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1.0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.x": {
+                "lt": -195,
+            },
+            "player_dead": false,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0.0,
+    },
+    {
+        "action": "face_view",
+        "segment": 534,
+        "side": 4,
+        "distance": 12,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1.0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.z": {
+                "gt": 550,
+            },
+            "player_dead": false,
+            "player.has_red_key": true,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0.0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.wall_triggers.10.operated": true,
+            "xl_pilot.wall_triggers.11.operated": true,
+            "xl_pilot.wall_triggers.12.operated": true,
+            "xl_pilot.doorways.97.flags": 24,
+            "xl_pilot.doorways.122.flags": 17,
+            "xl_pilot.doorways.123.flags": 17,
+            "xl_pilot.doorways.124.type": 4,
+            "xl_pilot.doorways.125.type": 4,
+            "xl_pilot.doorways.84.type": 4,
+            "xl_pilot.doorways.85.type": 4,
+            "xl_pilot.doorways.86.type": 4,
+            "xl_pilot.doorways.87.type": 4,
+            "player.has_red_key": true,
+            "xl_pilot.remaining_objectives": 7,
+            "reactor_countdown.active": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+        },
+    },
+    {
+        "action": "introspect",
+    },
+]
