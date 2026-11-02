@@ -1,0 +1,53 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_pog_runtime",
+        },
+    },
+    {
+        "action": "pose_view",
+        "segment": 1565,
+        "position_fixed": [-2621440, -33313305, -59441152],
+        "pitch": 0,
+        "heading": 16384,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "level_scene.powerups": {
+                "contains_object": {
+                    "object": 27,
+                    "id": 2,
+                },
+            },
+            "player_dead": false,
+        },
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "level_scene.powerups": {
+                "not_contains": "\"object\":27,",
+            },
+            "player_dead": false,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+    },
+]

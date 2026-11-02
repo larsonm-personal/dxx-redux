@@ -1,0 +1,265 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_pog_runtime",
+        },
+    },
+    {
+        "action": "pose_view",
+        "segment": 718,
+        "position_fixed": [6553600, -25448985, 9830400],
+        "pitch": 0,
+        "heading": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "level_scene.powerups": {
+                "contains_object": {
+                    "object": 15,
+                    "id": 2,
+                },
+            },
+            "player_dead": false,
+        },
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "level_scene.powerups": {
+                "not_contains": "\"object\":15,",
+            },
+            "player_dead": false,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+    },
+    {
+        "action": "pose_view",
+        "segment": 1190,
+        "position_fixed": [-5242880, -38556185, 2359296],
+        "pitch": 0,
+        "heading": 0,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player.has_gold_key": false,
+            "position.z": {
+                "lt": 46,
+            },
+            "player_dead": false,
+        },
+    },
+    {
+        "action": "pose_view",
+        "segment": 761,
+        "position_fixed": [-1310720, -25711129, 19791872],
+        "pitch": 0,
+        "heading": 49152,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.has_gold_key": true,
+            "player_dead": false,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+    },
+    {
+        "action": "pose_view",
+        "segment": 1190,
+        "position_fixed": [-5242880, -38556185, 2359296],
+        "pitch": 0,
+        "heading": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "pose_view",
+        "segment": 752,
+        "position_fixed": [-1310720, -25448985, 19005440],
+        "pitch": 0,
+        "heading": 49152,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "current_level_num": 13,
+            "position.segment": 1190,
+            "player.has_blue_key": true,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player_dead": false,
+            "player.invulnerable": false,
+            "cheats_enabled": false,
+            "xl_pilot.remaining_objectives": 1,
+            "reactor_countdown.active": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "level_scene.powerups": {
+                "not_contains": "\"object\":15,",
+            },
+        },
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "level_scene.powerups": {
+                "not_contains": "\"object\":27,",
+            },
+        },
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.z": {
+                "gt": 55,
+            },
+            "player.has_gold_key": true,
+            "player_dead": false,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "introspect",
+    },
+]

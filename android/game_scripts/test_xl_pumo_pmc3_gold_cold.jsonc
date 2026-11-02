@@ -1,0 +1,110 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_pog_runtime",
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Load Game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "[quick] level 13",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "current_level_num": 13,
+            "position.segment": 1190,
+            "player.has_blue_key": true,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player_dead": false,
+            "player.invulnerable": false,
+            "cheats_enabled": false,
+            "xl_pilot.remaining_objectives": 1,
+            "reactor_countdown.active": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "level_scene.powerups": {
+                "not_contains": "\"object\":15,",
+            },
+        },
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "level_scene.powerups": {
+                "not_contains": "\"object\":27,",
+            },
+        },
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.z": {
+                "gt": 55,
+            },
+            "player.has_gold_key": true,
+            "player_dead": false,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "introspect",
+    },
+]
