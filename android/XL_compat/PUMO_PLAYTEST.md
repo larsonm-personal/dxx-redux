@@ -21,7 +21,7 @@ immunity, rear starter-laser damage and exact saved boss-health persistence.
 
 It retains the [final-definition boss binding fix](evidence/hxm-gameplay.md) and
 [reactor/objective correction](evidence/reactor-objectives.md). Original PMC1's
-reactor remains present alongside its six required bosses; destroying it does
+reactor remains present alongside its six countdown bosses; destroying it does
 not start the final countdown while bosses remain. PMC3 uses the final HXM
 robot roles instead of retaining stale base-game boss entries. Fixed poses
 select local interactions; no objectives, weapons, keys or health are granted.
@@ -59,7 +59,7 @@ Normal Load Game can resume a checkpoint after closing the app.
 | Scenario on this exact APK       | Result          | Scope                                                                                                                                                           |
 | -------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Normal hub and PMC1 local combat | 99/99, 214.396s | Hub laser/thrust entry, locked-door control, switch shot, red-key collision, keyed flight, reactor combat, boss frontal immunity/rear damage and warm save/load |
-| Fresh-process PMC1 load          | 17/17, 32.429s  | Saved switch/key/reactor state, exact boss health, six objectives still required, no countdown and normal flight through the opened gate                        |
+| Fresh-process PMC1 load          | 17/17, 32.429s  | Saved switch/key/reactor state, exact boss health, six countdown objectives remain, no countdown and normal flight through the opened gate                      |
 
 Boss 95 retains exactly 1112.387451171875 shields across the cold load. Game PIDs
 9264 and 10597 differ. All 24 backed-up pilot/save/settings files match after
@@ -86,7 +86,12 @@ crossings (76 / 15). Those unchanged scenarios were not repeated on this APK;
 their results belong to c638 and its retained bundle. PMC3 continuity uses
 controlled exits and does not prove earned progression.
 
-The current normal-input scenario does not dispatch exits. Fixed poses do not
+Normal-input scenarios never dispatch exits directly. See the additional
+[normal escape route evidence](evidence/pmc-escape.md) for the authored boost
+flight and PMC2 transition: 105 warm and 24 cold-replay/destination-save steps
+pass on this same APK, with matching protected hashes. Remaining bosses control
+final countdown accounting;
+they are not a universal exit lock in the XL source. Fixed poses do not
 qualify connecting gates or full traversal. A longer exploratory normal-fire
 probe killed one boss and reduced objectives from six to five, but the player
 died. Full surviving boss combat and earned campaign completion remain

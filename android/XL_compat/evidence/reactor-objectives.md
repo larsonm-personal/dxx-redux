@@ -30,7 +30,10 @@ required bosses remain. Stock level initialization retains its prior behavior.
 
 The earlier probe expectation that destroying PMC1's reactor alone must start
 countdown was incorrect. The replacement expects seven objectives before firing,
-six afterward, and no final countdown. It does not dispatch or qualify an exit.
+six afterward, and no final countdown. That reactor scenario does not dispatch
+or qualify an exit. The later [normal escape probe](pmc-escape.md) separately
+qualifies the authored boost exit. XL DoExit does not require this countdown
+objective count to reach zero; these are separate semantics.
 
 ## Validation and boundaries
 
