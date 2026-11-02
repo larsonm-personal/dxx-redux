@@ -80,6 +80,7 @@ static int projectile_robot()
 }
 
 #include "camera_weapon_test.h"
+#include "static_contact_test.h"
 
 static void projectile_sound_dependency_controls()
 {
@@ -404,14 +405,18 @@ static int projectile_test(int argc, char **argv)
 			static_graph.xl_boss_spawning = true;
 			static_graph.robot_behavior(68, 135);
 			static_graph.robot_behavior(76, AIB_NORMAL);
+			static_graph.robot_behavior(76, 135);
+			std::vector<robot_info> staged_static(Robot_info, Robot_info + N_robot_types);
+			staged_static[76].companion = 1;
+			static_graph.robot_data = staged_static.data();
 			bool rejected = false;
 			try {
 				static_graph.robot_behavior(76, 135);
 			} catch (const std::runtime_error &error) {
-				rejected = std::strstr(error.what(), "static robot contact") != nullptr;
+				rejected = std::strstr(error.what(), "static companion/thief") != nullptr;
 			}
-			require(rejected, "Original non-melee static robot bypassed contact qualification");
-			std::cout << "Original static robot behavior normalization and contact admission gate passed\n";
+			require(rejected, "Static companion bypassed contact qualification");
+			std::cout << "Original static robot behavior profiles and companion rejection passed\n";
 			// Android separately mounts the selected HOG's parent after descriptor lookup
 			const auto parent = root / "missions";
 			const auto sibling = parent / "d2x.ham";
@@ -455,6 +460,10 @@ static int projectile_test(int argc, char **argv)
 		StartNewGame(1);
 		Game_suspended = SUSP_ROBOTS;
 		projectile_sound_dependency_controls();
+		static_robot_native_controls(root, vertigo);
+		require(load_base_mission("neptunxl", error, sizeof(error)), error);
+		StartNewGame(1);
+		Game_suspended = SUSP_ROBOTS;
 		camera_weapon_controls(root);
 		projectile_static_robot_controls(true);
 		camera_hit_disk_controls();

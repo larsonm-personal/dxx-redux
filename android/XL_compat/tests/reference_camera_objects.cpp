@@ -100,6 +100,7 @@ namespace camera_gauss_reference
 void controls();
 }
 void camera_splash_source_controls();
+void static_contact_source_controls();
 
 void camera_object_source_controls()
 {
@@ -108,6 +109,7 @@ void camera_object_source_controls()
 	camera_force_reference::controls();
 	camera_gauss_reference::controls();
 	camera_splash_source_controls();
+	static_contact_source_controls();
 	unsigned cases = 0;
 	for (int original_model : { 0, 1, 60 })
 		for (int render : { 0, 1 })

@@ -36,6 +36,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "trigger_state.h"
 #include "preview.h"
+#include "camera_collision.h"
 #include "doors.h"
 #include "cloak.h"
 #endif
@@ -3581,6 +3582,9 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	Do_appearance_effect = 0;			// Don't do this for middle o' game stuff.
 
 	//Clear out all the objects from the lvl file
+#ifdef DXX_XL_RUNTIME
+	xl_static_robot_restore_prepare();
+#endif
 	for (segnum=0; segnum <= Highest_segment_index; segnum++)
 		Segments[segnum].objects = -1;
 	reset_objects(1);

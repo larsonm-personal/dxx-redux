@@ -241,3 +241,25 @@ static contact response requires additional qualification. The PMC2 universal
 candidate passed117/117 but is held from release. Address this on I and propagate
 through J/K before publishing a new expanded playtest. Prior PMC1 package is
 provisional; stable opening bundle remains the recommended playtest.
+### Static robot contact correction (November 1)
+
+Original PMC displays include behavior135 robots with zero authored velocity.
+Initialization alone was insufficient: source static player contact suppresses
+impact effects/AI, static energy hits suppress smart blobs, and static bump uses
+CBumpForces rather than Redux impulse handling. The qualified default sphere
+query also records target and reverse-query hit state. Gauss uses source signed
+random thrust. Static companions/thieves and nonzero authored velocity remain
+blocked.
+
+5040 full pinned-source BumpTwoObjects cases match force/rotation/velocity on
+Windows and Linux, including zero masses, player/weapon, normals, persistence
+and boost. Native original Vertigo controls pass ordinary versus static energy
+hits, player contact, FVI, reverse repair and full disk save/load. The derived
+authored test fixture does not modify Pumo assets.
+
+Source objects/objectio.cpp LoadState omits MT_NONE physics and CT_NONE AI
+payloads, retaining freshly initialized level-slot data. Redux clears those
+slots, so restore now preserves the original static baseline before that clear
+and reapplies only omitted payloads to matching robot slots. No save-format
+extension was added. Android PMC probes now compare behavior, mass, velocity
+and position after restore. Device rerun and a replacement playtest are pending.

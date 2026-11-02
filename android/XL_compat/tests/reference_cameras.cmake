@@ -92,8 +92,18 @@ foreach(
 endforeach()
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/maths.h" math_source)
 set(camera_math
-    "#undef FixMul\n#undef FixDiv\n#undef FixMulDiv\n#undef XRound\n#undef I2X\n#undef X2I\n")
-foreach(name IN ITEMS XRound FixMul FixDiv FixMulDiv I2X X2I)
+    "#undef FixMul\n#undef FixDiv\n#undef FixMulDiv\n#undef XRound\n#undef I2X\n#undef X2I\n#undef F2X\n#undef X2F\n"
+)
+foreach(
+    name IN
+    ITEMS XRound
+          FixMul
+          FixDiv
+          FixMulDiv
+          I2X
+          X2I
+          F2X
+          X2F)
     string(REGEX MATCH "#[ \t]*define ${name}\\([^\n]+" math_macro "${math_source}")
     if(NOT math_macro)
         message(FATAL_ERROR "Missing pinned camera math macro: ${name}")
@@ -243,6 +253,8 @@ string(
     extracted
     "\nvoid flash_robot(CObject *pObj, CObject *pExplObj, CFixVector vForce, int flash) {\n${flash_body}\n}\n"
 )
+string(REPLACE "void CObject::ApplyRotForce (" "void CObject::ApplyRotForceSource (" extracted
+               "${extracted}")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_camera_splash.h"
      CONTENT "${extracted}")
 target_sources(xl_effect_reference PRIVATE tests/reference_camera_splash.cpp)
@@ -391,3 +403,34 @@ target_sources(xl_effect_reference PRIVATE tests/reference_camera_flash.cpp)
 
 include(${CMAKE_CURRENT_LIST_DIR}/reference_camera_children.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/reference_camera_glass.cmake)
+
+# Full static bump implementation uses the already pinned collision and vector sources
+set(extracted "// Actual pinned static contact and force composition\n")
+foreach(
+    signature IN
+    ITEMS "inline const CFixVector CFixVector::operator* (const fix s) const"
+          "inline const CFixVector CFixVector::operator/ (const fix d) const"
+          "inline const fix CFixVector::Dot (const CFixVector&"
+          "inline CFixVector& CFixVector::Neg (void)"
+          "inline const CFixVector& CFixVector::operator*= (const float s)")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h" "${signature}")
+endforeach()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/physics/collide.cpp" static_source)
+string(FIND "${static_source}" "class CBumpForces {" static_class_start)
+string(SUBSTRING "${static_source}" ${static_class_start} -1 static_tail)
+string(FIND "${static_tail}" "\n};" static_class_end)
+if(static_class_start LESS 0 OR static_class_end LESS 0)
+    message(FATAL_ERROR "Missing pinned bump force class")
+endif()
+math(EXPR static_class_end "${static_class_end} + 3")
+string(SUBSTRING "${static_tail}" 0 ${static_class_end} static_class)
+string(APPEND extracted "\n${static_class}\n")
+foreach(
+    signature IN
+    ITEMS "void CObject::Bump (CObject* pOtherObj, CFixVector vForce, CFixVector vRotForce"
+          "inline void CBumpForces::Compute (" "inline void CBumpForces::Bump ("
+          "int32_t BumpTwoObjects (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/collide.cpp" "${signature}")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_static_contact.h"
+     CONTENT "${extracted}")

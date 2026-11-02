@@ -434,6 +434,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		require(xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 0) && xl_speed_boost_restore(boosts.data(), static_cast<int>(boosts.size()), boost_speed, 0) && xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0) && xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 0) && xl_compat::restore_boss_routes(boss_routes, 0) && xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 0), "Invalid XL event state");
 		require(xl_camera_controller_restore(0), "Invalid XL camera restore identity");
 		xl_camera_controller_restore(1);
+		xl_static_robot_restore_payloads();
 		xl_camera_hit_restore(camera_hits, true);
 		xl_camera_flash_restore(saved.at("camera_flash"), true);
 		xl_projectile_restore(projectiles.data(), static_cast<int>(projectiles.size()), 1);
