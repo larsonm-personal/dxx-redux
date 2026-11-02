@@ -155,6 +155,15 @@ function Invoke-PogPrivate {
     param([string]$Command)
     Invoke-PogAdb -Arguments @('shell', 'run-as', $script:PACKAGE, 'sh', '-c', "'$Command'")
 }
+function Get-PogAvdName {
+    param([string]$Expected = '')
+    $names = @(([string](Invoke-PogAdb -Arguments @('emu', 'avd', 'name'))) -split '[\r\n]+' |
+            ForEach-Object { $_.Trim() } | Where-Object { $_ -and $_ -ne 'OK' })
+    if ($names.Count -ne 1 -or $names[0] -notmatch '^[A-Za-z0-9_.-]+$') { throw 'Cannot verify POG emulator identity' }
+    if ($Expected -and $names[0] -cne $Expected) { throw "POG emulator changed from $Expected to $($names[0]); refusing app mutation and restoration on a different profile" }
+    return $names[0]
+}
+$expectedAvdName = if ($Serial -match '^emulator-') { Get-PogAvdName } else { '' }
 $backup = 'files/xl-pog-runtime-backup'
 $paths = @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d2x-redux/d2x.ini',
     'files/d2x-redux/mod_usage.json', 'files/descent.cfg', 'files/file_sets.json', 'shared_prefs',
@@ -320,7 +329,7 @@ try {
     }
     # The full original route includes two large checkpoint restores and context loss
     $timeout = if ($MissionFlow) { 1200 } elseif ($OpeningPlaytest) { 900 } else { 480 }
-    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scriptName -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds $timeout
+    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scriptName -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -TimeoutSeconds $timeout
     $testExit = $LASTEXITCODE
     Invoke-PogAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/logcat.txt" -Encoding utf8
     Invoke-PogPrivate 'cat files/automation_result.json' | Set-Content "$output/result.json" -Encoding utf8
@@ -340,7 +349,7 @@ try {
         if (!$oldPid) { throw 'PMC cold preparation has no live game process' }
         Invoke-PogAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
         $coldScript = if ($PmcSwitchPlaytest) { 'test_xl_pumo_switches_cold.jsonc' } else { 'test_xl_pumo_pmc_cold.jsonc' }
-        & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $coldScript -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 300
+        & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $coldScript -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -TimeoutSeconds 300
         $coldExit = $LASTEXITCODE
         Invoke-PogAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/cold-logcat.txt" -Encoding utf8
         Invoke-PogPrivate 'cat files/automation_result.json' | Set-Content "$output/cold-result.json" -Encoding utf8
@@ -389,6 +398,7 @@ try {
     else { Write-Host "PASS: Original $mission GPU resources, disk/rewind, context loss and stock transition ($($result.total_steps) steps)" }
 } finally {
     try {
+        if ($expectedAvdName) { Get-PogAvdName -Expected $expectedAvdName | Out-Null }
         Invoke-PogAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
         if ($ready) {
             # Fixed app-private test paths; preserve unrelated missions and caches

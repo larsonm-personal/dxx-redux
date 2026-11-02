@@ -27,6 +27,11 @@
 . (Join-Path $PSScriptRoot "powershell_compat.ps1")
 . (Join-Path $PSScriptRoot "test_target.ps1")
 
+# Direct helper callers may use strict mode without the run_test parameter
+if (-not (Get-Variable -Name NoEmulatorRecovery -Scope Script -ErrorAction SilentlyContinue)) {
+    $script:NoEmulatorRecovery = $false
+}
+
 $script:ANDROID_ROOT = Split-Path $PSScriptRoot
 $script:REPO_ROOT = Split-Path $script:ANDROID_ROOT
 $_depBaseFile = Join-Path $script:REPO_ROOT "dependency_base.txt"
@@ -301,6 +306,9 @@ function Ensure-EmulatorHealthy {
         Write-Status "Emulator healthy" "Green"
         return $true
     }
+    if ($script:NoEmulatorRecovery) {
+        throw "Android test target $env:ANDROID_SERIAL is unavailable; caller-owned emulator recovery is disabled"
+    }
     Write-Status "Emulator unhealthy -- attempting restart..." "Yellow"
     $forceRestart = $false
     if (Test-EmulatorHealthy -and (Test-AppPackageInstalled)) {
@@ -372,6 +380,9 @@ function Invoke-LauncherStartupRecovery {
     }
     if ($env:DXX_ANDROID_SOFTWARE_EMULATOR -eq "1" -and -not $PSBoundParameters.ContainsKey("TimeoutSeconds")) {
         $TimeoutSeconds = 1200
+    }
+    if ($script:NoEmulatorRecovery) {
+        throw "$Reason; caller-owned emulator recovery is disabled for $env:ANDROID_SERIAL"
     }
     Write-Status "$Reason -- restarting emulator for launcher recovery" "Yellow"
     Reconnect-AdbDevice

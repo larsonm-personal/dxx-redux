@@ -1,7 +1,10 @@
 #!/usr/bin/env pwsh
 # Target selection, child inheritance and physical-device recovery boundaries
 $ErrorActionPreference = 'Stop'
+$script:NoEmulatorRecovery = $true
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
+if (-not $script:NoEmulatorRecovery) { throw 'Helper initialization overwrote the caller recovery policy' }
+$script:NoEmulatorRecovery = $false
 . "$PSScriptRoot/../helpers/run_all_tests_profile_menu.ps1"
 
 function Assert-Equal($Expected, $Actual, [string]$Context) {
@@ -64,6 +67,43 @@ try {
     Assert-Equal 'FixturePrimary' $configured.PrimaryAvd 'Configured primary AVD'
     Assert-Equal 'FixtureSecondary' $configured.SecondaryAvd 'Configured secondary AVD'
     foreach ($key in $emulatorEnvironment.Keys) { [Environment]::SetEnvironmentVariable($key, $emulatorEnvironment[$key]) }
+    # A protected fixture must not replace its profile if that emulator disappears
+    $script:NoEmulatorRecovery = $true
+    $script:fixtureEmulatorReady = $true
+    function Test-EmulatorReadyForTests { return $script:fixtureEmulatorReady }
+    function Test-EmulatorHealthy { throw 'Unexpected recovery health probe' }
+    function Reconnect-AdbDevice { throw 'Unexpected recovery transport mutation' }
+    Assert-Equal $true (Ensure-EmulatorHealthy) 'Owned healthy emulator remains usable'
+    $script:fixtureEmulatorReady = $false
+    $refused = $false
+    try { Ensure-EmulatorHealthy | Out-Null } catch { $refused = $_ -match 'caller-owned emulator recovery is disabled' }
+    Assert-Equal $true $refused 'Unavailable owned emulator fails before recovery'
+    $refused = $false
+    try { Invoke-LauncherStartupRecovery | Out-Null } catch { $refused = $_ -match 'caller-owned emulator recovery is disabled' }
+    Assert-Equal $true $refused 'Owned launcher failure cannot restart an emulator'
+    $script:NoEmulatorRecovery = $false
+    $defaultRecovery = $false
+    try { Invoke-LauncherStartupRecovery | Out-Null } catch { $defaultRecovery = $_ -match 'Unexpected recovery transport mutation' }
+    Assert-Equal $true $defaultRecovery 'Disposable runner recovery remains available without the option'
+
+    $ownerAst = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'test_xl_pog_runtime.ps1'), [ref]$null, [ref]$null)
+    $identityFunction = $ownerAst.Find({ param($node)
+            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-PogAvdName'
+        }, $true)
+    . ([scriptblock]::Create($identityFunction.Extent.Text))
+    $script:avdReply = "OwnedFixture`r`nOK`r`n"
+    function Invoke-PogAdb { param($Arguments); return $script:avdReply }
+    Assert-Equal 'OwnedFixture' (Get-PogAvdName) 'Capture caller-owned emulator name'
+    Assert-Equal 'OwnedFixture' (Get-PogAvdName -Expected OwnedFixture) 'Allow restoration on the same profile'
+    $script:avdReply = "OtherFixture`r`nOK`r`n"
+    $refused = $false
+    try { Get-PogAvdName -Expected OwnedFixture | Out-Null } catch { $refused = $_ -match 'refusing app mutation and restoration' }
+    Assert-Equal $true $refused 'Refuse restoration onto a replacement profile'
+    $script:avdReply = 'OK'
+    $refused = $false
+    try { Get-PogAvdName | Out-Null } catch { $refused = $_ -match 'Cannot verify' }
+    Assert-Equal $true $refused 'Missing emulator name is not an identity'
+
     function Get-FakeAdbDevices {
         'List of devices attached'
         'retroid device product:RP4Pro model:Retroid_Pocket_4_Pro transport_id:1'
