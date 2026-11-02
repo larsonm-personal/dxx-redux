@@ -144,6 +144,14 @@ void mission_flow_probe(const char *operation)
 		        "Directed destination lost headed rendering, visited state or player controls");
 	} else {
 		int from = 0, destination = 0;
+		if (!std::strcmp(operation, "exit11")) {
+			from = 1;
+			destination = 11;
+		}
+		if (!std::strcmp(operation, "exit12")) {
+			from = 11;
+			destination = 12;
+		}
 		if (!std::strcmp(operation, "exit2")) {
 			from = 1;
 			destination = 2;

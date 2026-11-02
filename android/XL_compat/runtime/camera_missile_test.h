@@ -1,6 +1,24 @@
 #include "seismic_gameplay.h"
 static void camera_missile_native_controls(object &camera)
 {
+	xl_camera_validate_weapon_definitions();
+	const auto original_definition = Weapon_info[SMART_ID];
+	for (int mode = 0; mode < 3; ++mode) {
+		Weapon_info[SMART_ID] = original_definition;
+		if (mode == 0) Weapon_info[SMART_ID].strength[4] = 32000 * F1_0;
+		if (mode == 1) Weapon_info[SMART_ID].children = EARTHSHAKER_MEGA_ID;
+		if (mode == 2) Weapon_info[SMART_ID].flash = 16;
+		bool rejected = false;
+		try {
+			XlPreparedResources rejected_resources("__camera_bad_weapons__.rl2");
+			rejected_resources.prepare_camera_model();
+		} catch (const std::runtime_error &) {
+			rejected = true;
+		}
+		require(rejected, "Camera resource preflight accepted unsupported weapon gameplay");
+	}
+	Weapon_info[SMART_ID] = original_definition;
+	xl_camera_validate_weapon_definitions();
 	const auto saved_camera = camera;
 	const auto saved_player = *ConsoleObject;
 	const auto saved_pilot = Players[Player_num];

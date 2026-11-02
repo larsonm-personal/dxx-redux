@@ -1,5 +1,6 @@
 #include "projectile.h"
 #include "object_birth.h"
+#include "../tests/hog_fixture.h"
 extern "C" {
 void maybe_kill_weapon(object *, object *);
 void collide_weapon_and_controlcen(object *, object *, vms_vector *);
@@ -79,6 +80,25 @@ static int projectile_robot()
 }
 
 #include "camera_weapon_test.h"
+#include "static_contact_test.h"
+
+static void projectile_static_robot_controls(bool xl)
+{
+	for (int behavior : { AIB_STILL, AIB_NORMAL, 135 }) {
+		const int owner = projectile_robot();
+		auto &robot = Objects[owner];
+		init_ai_object(owner, behavior, -1);
+		const bool stationary = xl && behavior == 135;
+		require(robot.control_type == (stationary ? CT_NONE : CT_AI) && robot.movement_type == (stationary ? MT_NONE : MT_PHYSICS),
+		        "Static robot initialization changed ordinary or stock controls");
+		const int shot = projectile_test_shot(ConsoleObject - Objects);
+		collide_robot_and_weapon(&robot, &Objects[shot], &robot.pos);
+		require(robot.shields == 60 * F1_0, "Static robot lost ordinary projectile damage");
+		obj_delete(shot);
+		obj_delete(owner);
+	}
+	std::cout << "Static robot controls and ordinary damage passed; XL=" << xl << "\n";
+}
 
 static void projectile_combat(bool xl)
 {
@@ -323,12 +343,74 @@ static int projectile_test(int argc, char **argv)
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir"));
 		require(load_base_mission("neptunxl", error, sizeof(error)), error);
+		const bool vertigo = std::filesystem::exists(root / "data/d2x.ham");
+		if (vertigo) require(N_robot_types == 78 && Robot_info[68].model_num == 168 && Robot_info[76].model_num >= 0,
+			                 "Original Vertigo extension did not populate its authored robot slots");
+		if (vertigo) {
+			xl_assets::ObjectDependencies static_graph;
+			static_graph.xl_boss_spawning = true;
+			static_graph.robot_behavior(68, 135);
+			static_graph.robot_behavior(76, AIB_NORMAL);
+			static_graph.robot_behavior(76, 135);
+			std::vector<robot_info> staged_static(Robot_info, Robot_info + N_robot_types);
+			staged_static[76].companion = 1;
+			static_graph.robot_data = staged_static.data();
+			bool rejected = false;
+			try {
+				static_graph.robot_behavior(76, 135);
+			} catch (const std::runtime_error &error) {
+				rejected = std::strstr(error.what(), "static companion/thief") != nullptr;
+			}
+			require(rejected, "Static companion bypassed contact qualification");
+			std::cout << "Original static robot behavior profiles and companion rejection passed\n";
+			// Android separately mounts the selected HOG's parent after descriptor lookup
+			const auto parent = root / "missions";
+			const auto sibling = parent / "d2x.ham";
+			require(!std::filesystem::exists(sibling), "Vertigo sibling fixture is already occupied");
+			std::filesystem::copy_file(root / "data/d2x.ham", sibling);
+			require(PHYSFS_addToSearchPath(parent.string().c_str(), 0), "Cannot mount selected mission parent control");
+			xl_resource_baseline_clear();
+			require(xl_resource_load_vertigo() == 1 && N_robot_types == 78, "Selected mission parent lost original Vertigo ownership");
+			xl_resource_baseline_capture();
+			require(PHYSFS_removeFromSearchPath(parent.string().c_str()), "Cannot unmount selected mission parent control");
+			std::filesystem::remove(sibling);
+			const auto loose = root / "data/d2x.ham", hidden = root / "data/vertigo-control.ham", archive = root / "data/d2x.hog";
+			require(!std::filesystem::exists(hidden) && !std::filesystem::exists(archive), "Vertigo archive fixture is already occupied");
+			std::ifstream input(loose, std::ios::binary);
+			xl_compat::Bytes original{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() }, packed{ 'D', 'H', 'F' };
+			input.close();
+			xl_test::hog_member(packed, "d2x.ham", original, false);
+			write_bytes(archive.string().c_str(), packed);
+			std::filesystem::rename(loose, hidden);
+			xl_resource_baseline_clear();
+			require(xl_resource_load_vertigo() == 1 && N_robot_types == 78 && !PHYSFS_getMountPoint("__xl_vertigo_resources__.hog"),
+			        "Original Vertigo private archive load failed or retained its mount");
+			xl_resource_baseline_capture();
+			std::filesystem::rename(hidden, loose);
+			std::filesystem::remove(archive);
+		}
+		const auto before_extension = gameplay_definitions();
+		const auto bad_extension = root / "d2x.ham";
+		require(!std::filesystem::exists(bad_extension), "Vertigo rejection fixture path is already occupied");
+		write_bytes(bad_extension.string().c_str(), xl_compat::Bytes{ 'X', 'H', 'A', 'M', 1, 0, 0, 0 });
+		require(xl_resource_load_vertigo() == -1 && std::strstr(xl_resource_base_rejection(), "original Vertigo") &&
+		            gameplay_definitions() == before_extension && !PHYSFS_getMountPoint("__xl_vertigo_resources__.hog"),
+		        "Unqualified Vertigo extension changed definitions or escaped preflight");
+		std::filesystem::remove(bad_extension);
+		require(load_base_mission("neptunxl", error, sizeof(error)), error);
+		require(!*xl_resource_base_rejection() && gameplay_definitions() == before_extension, "Vertigo rejection did not recover on mission reload");
+		std::cout << "XL Vertigo extension rejection and mission reload passed; original=" << vertigo << "\n";
 		require(xl_level_supported("neptunxl.rl2", 0), xl_level_rejection());
 		std::strcpy(Players[Player_num].callsign, "XLTest");
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
 		Game_suspended = SUSP_ROBOTS;
+		static_robot_native_controls(root, vertigo);
+		require(load_base_mission("neptunxl", error, sizeof(error)), error);
+		StartNewGame(1);
+		Game_suspended = SUSP_ROBOTS;
 		camera_weapon_controls(root);
+		projectile_static_robot_controls(true);
 		camera_hit_disk_controls();
 		StartNewGame(1);
 		Game_suspended = SUSP_ROBOTS;
@@ -344,6 +426,7 @@ static int projectile_test(int argc, char **argv)
 		for (int i = 0; i < 22; ++i) {
 			const int victim = projectile_robot();
 			victims.push_back(victim);
+			if (!i) init_ai_object(victim, 135, -1);
 			Objects[first].shields = i2f(40);
 			collide_robot_and_weapon(&Objects[victim], &Objects[first], &Objects[victim].pos);
 			require(Objects[victim].shields == i2f(60), "Distinct victim did not take fusion damage");
@@ -374,7 +457,10 @@ static int projectile_test(int argc, char **argv)
 		projectile_corrupt_controls(root);
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active() && projectile_capture().empty(), "Projectile state leaked into stock");
 		projectile_combat(false);
+		projectile_static_robot_controls(false);
 		require(state_restore_all_sub(save, 0) && projectile_same(saved, projectile_capture()), "Disk through stock lost full projectile histories");
+		require(Objects[evicted].control_type == CT_NONE && Objects[evicted].movement_type == MT_NONE,
+		        "Full save through stock reactivated a static robot");
 		require(xl_object_birth_time(first) == 0 && xl_object_birth_time(retained) == 0, "Disk restore did not reset private creation times like source level reload");
 		auto *saved_viewer = Viewer;
 		auto restore_viewer = *ConsoleObject;

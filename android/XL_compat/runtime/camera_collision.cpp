@@ -1,5 +1,7 @@
 #include "camera_collision.h"
 #include "../camera_contact.h"
+#include "../static_contact.h"
+#include <map>
 #include "speed_boost.h"
 #include "projectile.h"
 #include "preview.h"
@@ -33,6 +35,8 @@ struct ActorHitState {
 	xl_compat::CameraHitState hits;
 };
 std::array<ActorHitState, MAX_OBJECTS> actor_hits{};
+unsigned player_weapon_contacts = 0;
+std::map<int, object> static_restore_slots;
 const robot_info &camera_definition(const object &camera)
 {
 	if (camera.control_type != 18 || camera.movement_type != MT_NONE ||
@@ -46,7 +50,8 @@ const robot_info &camera_definition(const object &camera)
 }
 void reflect_actor(object &actor)
 {
-	if (actor.movement_type != MT_PHYSICS) Error("Camera contact actor is not physical");
+	// Source ApplyForce leaves nonphysical Omega blobs unchanged
+	if (actor.movement_type != MT_PHYSICS) return;
 	const auto &velocity = actor.mtype.phys_info.velocity;
 	const bool blocked = object_is_observer(&actor) ||
 	                     (&actor == ConsoleObject && (Automap_active || xl_speed_boost_player_locked()));
@@ -90,9 +95,24 @@ bool contact_projectile(int id)
 }
 } // namespace
 
+void xl_camera_validate_weapon_definitions()
+{
+	for (int id = 0; id < N_weapon_types; ++id) {
+		if (!contact_projectile(id)) continue;
+		const auto &definition = Weapon_info[id];
+		if (definition.damage_radius ? !xl_camera_splash_profile(id) : definition.children != -1 || definition.flash)
+			throw std::runtime_error("Camera weapon definition exceeds the qualified gameplay profile: " + std::to_string(id));
+	}
+}
+
 extern "C" void xl_camera_hit_state_clear(void)
 {
 	actor_hits.fill({});
+	player_weapon_contacts = 0;
+}
+extern "C" unsigned xl_camera_player_weapon_contacts(void)
+{
+	return player_weapon_contacts;
 }
 extern "C" void xl_camera_hit_state_created(int owner)
 {
@@ -151,9 +171,9 @@ extern "C" void xl_camera_physics_unstick(object *actor, const object *camera,
 {
 	try {
 		if (!xl_level_extensions_active() || !actor || !camera || !old_position || !attempted_position || !offset || !old_velocity ||
-		    (actor->type != OBJ_PLAYER && actor->type != OBJ_WEAPON && actor->type != OBJ_ROBOT && actor->type != OBJ_FIREBALL) || actor->movement_type != MT_PHYSICS || camera->type != 16)
+		    (actor->type != OBJ_PLAYER && actor->type != OBJ_WEAPON && actor->type != OBJ_ROBOT && actor->type != OBJ_FIREBALL) || actor->movement_type != MT_PHYSICS || (camera->type != 16 && !xl_static_robot(camera)))
 			throw std::runtime_error("Camera unstick exceeds the qualified physical actor profile");
-		camera_definition(*camera);
+		if (camera->type == 16) camera_definition(*camera);
 		const int owner = int(actor - Objects);
 		if (owner < 0 || owner > Highest_object_index) throw std::runtime_error("Camera unstick actor is not installed");
 		auto &entry = actor_hits[owner];
@@ -239,6 +259,7 @@ extern "C" int xl_camera_weapon_contact(object *a, object *b, vms_vector *point)
 	// Single-player Omega passes the source distance gate
 	if ((weapon->mtype.phys_info.flags & PF_PERSISTENT) && xl_projectile_add_hit(int(weapon - Objects), int(camera - Objects)) < 0) return 1;
 	if (weapon->ctype.laser_info.parent_signature == camera->signature) return 1;
+	if (weapon->ctype.laser_info.parent_type == OBJ_PLAYER && weapon->ctype.laser_info.parent_num == Players[Player_num].objnum) ++player_weapon_contacts;
 	if (definition.damage_radius) {
 		const auto generation = xl_wall_trigger_generation();
 		xl_camera_splash(*weapon, *camera, *point);
@@ -273,4 +294,116 @@ extern "C" int xl_camera_weapon_contact(object *a, object *b, vms_vector *point)
 	}
 	xl_projectile_impact(int(weapon - Objects), int(camera - Objects));
 	return 1;
+}
+
+extern "C" int xl_static_robot(const object *actor)
+{
+	return xl_level_extensions_active() && actor && actor->type == OBJ_ROBOT && actor->ctype.ai_info.behavior == 135;
+}
+extern "C" int xl_static_robot_bump(object *a, object *b)
+{
+	object *fixed = xl_static_robot(a) ? a : xl_static_robot(b) ? b
+	                                                            : nullptr;
+	if (!fixed) return 0;
+	object *actor = fixed == a ? b : a;
+	if (xl_static_robot(actor)) return 1;
+	try {
+		if (fixed->movement_type != MT_NONE || fixed->control_type != CT_NONE ||
+		    fixed->mtype.phys_info.velocity.x || fixed->mtype.phys_info.velocity.y || fixed->mtype.phys_info.velocity.z)
+			throw std::runtime_error("Static contact exceeds the stationary authored profile");
+		// Source nonphysical-other branch computes force from the zero-velocity static owner
+		if (actor->movement_type != MT_PHYSICS) return 1;
+		const auto point = [](const vms_vector &v) { return xl_compat::FixedLightPoint{ v.x, v.y, v.z }; };
+		const bool player = actor->type == OBJ_PLAYER;
+		// Default sphere physics passes a zero normal to player contact; weapon bump passes null
+		const auto normal = player ? std::optional<xl_compat::FixedLightPoint>({ 0, 0, 0 }) : std::nullopt;
+		const auto result = xl_compat::static_contact(point(fixed->pos), fixed->mtype.phys_info.mass,
+		                                              point(actor->pos), point(actor->mtype.phys_info.velocity), actor->mtype.phys_info.mass,
+		                                              player, actor->mtype.phys_info.flags & PF_PERSISTENT,
+		                                              player && actor == ConsoleObject && xl_speed_boost_player_locked(), normal);
+		if (result.apply) {
+			actor->mtype.phys_info.velocity = { result.velocity[0], result.velocity[1], result.velocity[2] };
+			const vms_vector force{ result.rotation_force[0], result.rotation_force[1], result.rotation_force[2] };
+			xl_camera_splash_rotation(*actor, force);
+		}
+	} catch (const std::exception &error) {
+		Error("Cannot apply static object contact: %s", error.what());
+	}
+	return 1;
+}
+extern "C" int xl_static_robot_player_contact(object *robot, object *player)
+{
+	if (!xl_static_robot(robot)) return 0;
+	// Source static player contact skips impact effects, sound, awareness and attack AI
+	return xl_static_robot_bump(robot, player);
+}
+extern "C" int xl_static_robot_gauss(object *robot)
+{
+	if (!xl_static_robot(robot)) return 0;
+	try {
+		int skip = robot->ctype.ai_info.SKIP_AI_COUNT;
+		std::array<std::int32_t, 3> thrust{};
+		if (xl_compat::camera_gauss_spin(skip, FrameTime, thrust, [] { return d_rand(); })) {
+			robot->ctype.ai_info.SKIP_AI_COUNT = skip;
+			robot->mtype.phys_info.rotthrust = { thrust[0], thrust[1], thrust[2] };
+			robot->mtype.phys_info.flags |= PF_USES_THRUST;
+		}
+	} catch (const std::exception &error) {
+		Error("Cannot apply static Gauss contact: %s", error.what());
+	}
+	return 1;
+}
+extern "C" int xl_static_robot_query(const object *target, const object *moving,
+                                     const vms_vector *start, const vms_vector *end, int radius,
+                                     vms_vector *hit, vms_vector *normal)
+{
+	try {
+		if (!xl_static_robot(target) || !moving || !start || !end || !hit || !normal)
+			throw std::runtime_error("Static query has no qualified owner");
+		const int owner = int(target - Objects);
+		if (owner < 0 || owner > Highest_object_index) throw std::runtime_error("Static query owner is not installed");
+		const auto point = [](const vms_vector &v) { return xl_compat::FixedLightPoint{ v.x, v.y, v.z }; };
+		xl_compat::FixedLightPoint intersection{};
+		const int size = radius < 0 ? 0 : target->size;
+		const int result = xl_compat::model_sphere_query(intersection, point(*start), point(*end), point(target->pos), xl_compat::hitbox_fixed(double(size) + radius));
+		if (result < 0) return 0;
+		*hit = { intersection[0], intersection[1], intersection[2] };
+		*normal = {};
+		if (moving->type != OBJ_POWERUP) {
+			auto &entry = actor_hits[owner];
+			if (entry.signature != target->signature || entry.type != target->type) entry = { target->signature, target->type, {} };
+			entry.hits.register_hit(intersection, point(target->pos), target->size, target->type, int32_t(xl_camera_controller_ticks()), 2000);
+		}
+		return result;
+	} catch (const std::exception &error) {
+		Error("Cannot query static robot geometry: %s", error.what());
+	}
+	return 0;
+}
+
+extern "C" void xl_static_robot_restore_clear(void)
+{
+	static_restore_slots.clear();
+}
+extern "C" void xl_static_robot_restore_prepare(void)
+{
+	static_restore_slots.clear();
+	if (!xl_level_extensions_active()) return;
+	// Source LoadState leaves omitted unions in freshly initialized level slots
+	for (int i = 0; i <= Highest_object_index; ++i) {
+		const auto &actor = Objects[i];
+		if (actor.type == OBJ_ROBOT && actor.control_type == CT_NONE && actor.movement_type == MT_NONE)
+			static_restore_slots.emplace(i, actor);
+	}
+}
+extern "C" void xl_static_robot_restore_payloads(void)
+{
+	if (!xl_level_extensions_active()) return;
+	for (const auto &[owner, initial] : static_restore_slots) {
+		if (owner > Highest_object_index) continue;
+		auto &actor = Objects[owner];
+		if (actor.type != OBJ_ROBOT || actor.id != initial.id) continue;
+		if (actor.movement_type == MT_NONE) actor.mtype = initial.mtype;
+		if (actor.control_type == CT_NONE) actor.ctype = initial.ctype;
+	}
 }

@@ -7,6 +7,7 @@ extern "C" {
 #endif
 void xl_resource_baseline_clear(void);
 void xl_resource_baseline_capture(void);
+int xl_resource_load_vertigo(void);
 void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file);
 void xl_resource_select_mission(int requires_xl);
 void xl_resource_commit_mission(void);

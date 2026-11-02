@@ -89,22 +89,31 @@ void xl_camera_splash_rotation(object &actor, const vms_vector &input)
 	rotation = { turn(goal.p, current.p, rotation.x), turn(goal.h, current.h, rotation.y), 0 };
 }
 
+bool xl_camera_splash_profile(int id)
+{
+	if (id < 0 || id >= N_weapon_types) return false;
+	const auto &definition = Weapon_info[id];
+	// High-force custom profiles that can detonate other mines remain gated
+	const bool qualified = id == GAUSS_ID || id == CONCUSSION_ID || id == HOMING_ID ||
+	                       id == GUIDEDMISS_ID || id == MERCURY_ID || id == FLASH_ID || id == PROXIMITY_ID ||
+	                       id == SMART_ID || id == MEGA_ID || id == SUPERPROX_ID || id == EARTHSHAKER_ID ||
+	                       id == EARTHSHAKER_MEGA_ID || id == PMINE_ID;
+	const int children = id == SMART_ID ? PLAYER_SMART_HOMING_ID : id == SUPERPROX_ID ? SMART_MINE_HOMING_ID
+	                                                           : id == EARTHSHAKER_ID ? EARTHSHAKER_MEGA_ID
+	                                                                                  : -1;
+	if (!qualified || (definition.flash && id != FLASH_ID) || definition.children != children) return false;
+	const int radius = definition.damage_radius;
+	for (int difficulty = 0; difficulty < NDL; ++difficulty) {
+		const int strength = definition.strength[difficulty];
+		if (strength <= 0 || radius <= 0 || double(strength) / F1_0 * double(radius) / F1_0 / 4.0 + double(radius) / F1_0 / F1_0 >= 8000.0) return false;
+	}
+	return true;
+}
 void xl_camera_splash(object &weapon, object &camera, vms_vector &impact)
 {
 	const auto &definition = Weapon_info[weapon.id];
-	// High-force custom profiles that can detonate other mines remain gated
-	const bool qualified = weapon.id == GAUSS_ID || weapon.id == CONCUSSION_ID || weapon.id == HOMING_ID ||
-	                       weapon.id == GUIDEDMISS_ID || weapon.id == MERCURY_ID || weapon.id == FLASH_ID || weapon.id == PROXIMITY_ID ||
-	                       weapon.id == SMART_ID || weapon.id == MEGA_ID || weapon.id == SUPERPROX_ID || weapon.id == EARTHSHAKER_ID ||
-	                       weapon.id == EARTHSHAKER_MEGA_ID || weapon.id == PMINE_ID;
-	const int children = weapon.id == SMART_ID ? PLAYER_SMART_HOMING_ID : weapon.id == SUPERPROX_ID ? SMART_MINE_HOMING_ID
-	                                                                  : weapon.id == EARTHSHAKER_ID ? EARTHSHAKER_MEGA_ID
-	                                                                                                : -1;
-	if (!qualified || (definition.flash && weapon.id != FLASH_ID) || definition.children != children)
-		Error("Camera splash weapon profile requires further qualification");
+	if (!xl_camera_splash_profile(weapon.id)) Error("Camera splash weapon profile requires further qualification");
 	const int strength = definition.strength[Difficulty_level], radius = definition.damage_radius;
-	if (strength <= 0 || radius <= 0 || double(strength) / F1_0 * double(radius) / F1_0 / 4.0 + double(radius) / F1_0 / F1_0 >= 8000.0)
-		Error("Camera splash mine detonation threshold exceeds qualified profile");
 	try {
 		impact = native(xl_compat::camera_splash_impact(point(impact), point(camera.pos), camera.size, weapon.size));
 		if (weapon.id == EARTHSHAKER_ID) xl_seismic_detonation(&impact);

@@ -100,6 +100,7 @@ namespace camera_gauss_reference
 void controls();
 }
 void camera_splash_source_controls();
+void static_contact_source_controls();
 
 void camera_object_source_controls()
 {
@@ -108,6 +109,7 @@ void camera_object_source_controls()
 	camera_force_reference::controls();
 	camera_gauss_reference::controls();
 	camera_splash_source_controls();
+	static_contact_source_controls();
 	unsigned cases = 0;
 	for (int original_model : { 0, 1, 60 })
 		for (int render : { 0, 1 })
@@ -342,29 +344,31 @@ struct {
 void controls()
 {
 	unsigned cases = 0, rounding = 0;
-	for (fix mass : { 0, 1, 3, 32768, 65536, 98317, 262144 })
-		for (fix velocity : { -100001, -65536, -17, -1, 0, 1, 17, 65536, 100001 })
-			for (bool console : { false, true })
-				for (bool map : { false, true })
-					for (bool spectator : { false, true })
-						for (int boosted : { 0, 1 }) {
-							CObject object;
-							object.spectator = spectator;
-							object.mType.physInfo.mass = mass;
-							object.mType.physInfo.velocity.v.coord = { velocity, velocity / 3, -velocity };
-							const auto force = object.Velocity() * (-2 * mass);
-							automap.active = map;
-							gameData.objData.pConsole = console ? &object : nullptr;
-							gameData.objData.speedBoost[0].bBoosted = boosted;
-							const auto result = xl_compat::camera_reflect_velocity({ velocity, velocity / 3, -velocity }, mass,
-							                                                       spectator || (console && (map || boosted)));
-							object.ApplyForce(force);
-							const auto &actual = object.Velocity().v.coord;
-							if (actual.x != result[0] || actual.y != result[1] || actual.z != result[2])
-								throw std::runtime_error("Camera reflection differs from release source ApplyForce");
-							if (mass && !spectator && !(console && (map || boosted)) && result[0] != -velocity) ++rounding;
-							++cases;
-						}
+	for (int motion : { 0, 1 })
+		for (fix mass : { 0, 1, 3, 32768, 65536, 98317, 262144 })
+			for (fix velocity : { -100001, -65536, -17, -1, 0, 1, 17, 65536, 100001 })
+				for (bool console : { false, true })
+					for (bool map : { false, true })
+						for (bool spectator : { false, true })
+							for (int boosted : { 0, 1 }) {
+								CObject object;
+								object.info.movementType = motion;
+								object.spectator = spectator;
+								object.mType.physInfo.mass = mass;
+								object.mType.physInfo.velocity.v.coord = { velocity, velocity / 3, -velocity };
+								const auto force = object.Velocity() * (-2 * mass);
+								automap.active = map;
+								gameData.objData.pConsole = console ? &object : nullptr;
+								gameData.objData.speedBoost[0].bBoosted = boosted;
+								const auto result = xl_compat::camera_reflect_velocity({ velocity, velocity / 3, -velocity }, mass,
+								                                                       !motion || spectator || (console && (map || boosted)));
+								object.ApplyForce(force);
+								const auto &actual = object.Velocity().v.coord;
+								if (actual.x != result[0] || actual.y != result[1] || actual.z != result[2])
+									throw std::runtime_error("Camera reflection differs from release source ApplyForce");
+								if (mass && !spectator && !(console && (map || boosted)) && result[0] != -velocity) ++rounding;
+								++cases;
+							}
 	if (!rounding) throw std::runtime_error("Camera force control did not exercise fixed/float rounding");
 	std::cout << "Pinned camera force: " << cases << " release ApplyForce states, " << rounding
 	          << " non-exact reflection cases; zero mass, spectator, automap and console speed boost passed\n";

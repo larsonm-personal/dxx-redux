@@ -10,6 +10,8 @@
 #include "particle_admission.h"
 #include "lightning_admission.h"
 #include "skybox_render.h"
+#include "camera_admission.h"
+#include "camera_bindings.h"
 #include <algorithm>
 #include <cstdint>
 #include <sstream>
@@ -42,6 +44,8 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 {
 	std::vector<Issue> result;
 	for (const auto &issue : level.unsupported) {
+		if (modern_runtime_layout(level) && issue.feature == "object_type" && issue.record >= 0 && std::size_t(issue.record) < level.objects.size() && qualified_camera_object(level.objects[issue.record])) continue;
+		if (issue.feature == "object_trigger_type" && issue.record >= 0 && std::size_t(issue.record) < level.object_trigger_records.size() && qualified_camera_binding(level, level.object_trigger_records[issue.record])) continue;
 		// Wide flags stay source-owned; modern doors consume bit 8, higher bits are reserved
 		if (modern_runtime_layout(level) && issue.feature == "wall_flags") continue;
 		if (issue.feature == "effect_particles") continue;
@@ -115,6 +119,13 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 			result.push_back({ "static_explosion", int(index), "requires a stationary single-player object with powerup control and vclip rendering (control 13, movement 0, render 5)" });
 		if ((object.type == 18 || object.type == 20) && !ambient_sound_shape(object) && !authored_particle_shape(object) && !authored_lightning_shape(object))
 			result.push_back({ "effect_object_types", int(index), "object type " + std::to_string(object.type) + " requires unsupported effect behavior" });
+	}
+	if (std::any_of(level.objects.begin(), level.objects.end(), [](const Object &object) { return object.type == 16; })) {
+		try {
+			(void) camera_bindings(level);
+		} catch (const std::exception &error) {
+			result.push_back({ "camera bindings", -1, error.what() });
+		}
 	}
 	auto limit = [&](bool exceeded, const char *feature, const char *detail) {
 		if (exceeded) result.push_back({ feature, -1, detail });
@@ -202,7 +213,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 			}
 		if (record.object >= 0 && static_cast<std::size_t>(record.object) < level.objects.size()) {
 			const int type = level.objects[record.object].type;
-			block(type != 2 && type != 3 && type != 7 && type != 8 && type != 9, "owner type has no qualified singleplayer event lifecycle");
+			block(type != 2 && type != 3 && type != 7 && type != 8 && type != 9 && !qualified_camera_binding(level, record), "owner type has no qualified singleplayer event lifecycle");
 		}
 		if (action.type == 14 && action.targets.size() > 1) {
 			block(std::all_of(action.targets.begin(), action.targets.end(), [&](const auto &target) { return target[0] == action.targets[0][0]; }), "multiple teleport links require distinct destination segments to avoid reference retry deadlock");

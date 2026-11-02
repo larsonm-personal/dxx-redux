@@ -23,6 +23,9 @@ param(
     [string]$LightningWave = '',
     [switch]$MissionFlow,
     [switch]$OpeningPlaytest,
+    [switch]$PmcPlaytest,
+    [string]$CameraHog = '',
+    [string]$VertigoHam = '',
     [switch]$CampaignEnd,
     [switch]$RevisitFixture,
     [switch]$FlyoutFixture,
@@ -33,6 +36,9 @@ param(
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
+if ($PmcPlaytest -and (!$OriginalHub -or !$MissionFlow -or $OpeningPlaytest -or $SceneOnly -or $LightningGpu -or $BubbleGpu -or $CampaignEnd -or !$CameraHog -or !$VertigoHam)) { throw 'PmcPlaytest requires OriginalHub, MissionFlow assets, CameraHog and VertigoHam in its own mode' }
+if ($PmcPlaytest -and (Get-FileHash -LiteralPath $CameraHog -Algorithm SHA256).Hash -ne 'df69c62aad949f2d92bc1bbea4b597623cd29d0a0f594cdcc3d66568d6ce482a') { throw 'Requires the original XL camera addon archive' }
+if ($PmcPlaytest -and (Get-FileHash -LiteralPath $VertigoHam -Algorithm SHA256).Hash -ne 'faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f') { throw 'Requires the original Vertigo robot extension' }
 if ($OpeningPlaytest -and (!$OriginalHub -or $MissionFlow -or $SceneOnly -or $LightningGpu -or $BubbleGpu -or $CampaignEnd -or $FlyoutFixture)) { throw 'OpeningPlaytest requires OriginalHub and its own mode' }
 if ($BubbleDry -and !$BubbleFixture) { throw 'BubbleDry requires BubbleFixture' }
 if ($BubbleFixture -and ($OriginalHub -or $BubbleGpu -or $LightningGpu -or $SmokeFixture -or $SkyboxFixture -or $SecretFixture -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or $FlyoutFixture -or !$PumoMods -or !$SmokeImage -or !$BubbleImage -or !$BubbleWave)) { throw 'BubbleFixture requires original mod assets, smoke/bubble atlases, bubble wave and its own derived mode' }
@@ -113,6 +119,7 @@ if ($OriginalHub) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hu
 if ($OriginalHub -and $SceneOnly) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-scene' }
 if ($MissionFlow) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-flow-android' }
 if ($OpeningPlaytest) { $output = Join-Path $PSScriptRoot '../../temp/xl-opening-playtest-android' }
+if ($PmcPlaytest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-android' }
 if ($CampaignEnd) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-end-android' }
 if ($RevisitFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-revisit-android' }
 if ($FlyoutFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-flyout-cache-android' }
@@ -142,6 +149,7 @@ $paths = @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d2x-
     "files/d2x-redux/mods/$mission")
 if ($SecretFixture) { $paths += @('files/d2x-redux/secret.sgb', 'files/d2x-redux/secret.sgc') }
 if ($FlyoutFixture) { $paths += 'files/d2x-redux/descent.pig' }
+if ($PmcPlaytest) { $paths += @('files/d2x-redux/missions/d2x-xl.hog', 'files/d2x-redux/missions/d2x.ham') }
 $ready = $false
 try {
     Invoke-PogAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
@@ -203,6 +211,12 @@ try {
         Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission && tar -xf /data/local/tmp/xl-pog-mods.tar -C files/d2x-redux/mods/$mission" | Out-Null
     }
     Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission/textures/d2x-xl && cp /data/local/tmp/xl-pog-fire.tga files/d2x-redux/mods/$mission/textures/d2x-xl/smokingfire.tga" | Out-Null
+    if ($PmcPlaytest) {
+        Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $CameraHog).Path, '/data/local/tmp/xl-pmc-camera.hog') | Out-Null
+        Invoke-PogPrivate 'mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-pmc-camera.hog files/d2x-redux/missions/d2x-xl.hog' | Out-Null
+        Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $VertigoHam).Path, '/data/local/tmp/xl-pmc-d2x.ham') | Out-Null
+        Invoke-PogPrivate 'cp /data/local/tmp/xl-pmc-d2x.ham files/d2x-redux/missions/d2x.ham' | Out-Null
+    }
     if ($SmokeFixture -or $OriginalHub -or $BubbleFixture) {
         Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $SmokeImage).Path, '/data/local/tmp/xl-pog-smoke.tga') | Out-Null
         Invoke-PogPrivate "cp /data/local/tmp/xl-pog-smoke.tga files/d2x-redux/mods/$mission/textures/d2x-xl/smoke.tga" | Out-Null
@@ -247,6 +261,7 @@ try {
     }
     if ($MissionFlow) { $scriptName = 'test_xl_pumo_flow.jsonc' }
     if ($OpeningPlaytest) { $scriptName = 'test_xl_pumo_opening.jsonc' }
+    if ($PmcPlaytest) { $scriptName = 'test_xl_pumo_pmc.jsonc' }
     if ($CampaignEnd) { $scriptName = 'test_xl_pumo_end.jsonc' }
     if ($RevisitFixture) { $scriptName = 'test_xl_mission_revisit.jsonc' }
     if ($FlyoutFixture) { $scriptName = 'test_xl_flyout_cache.jsonc' }
@@ -293,6 +308,7 @@ try {
     elseif ($RevisitFixture) { Write-Host "PASS: Derived Android disk revisits, mission timeline, player/world and GPU resource restoration ($($result.total_steps) steps)" }
     elseif ($CampaignEnd) { Write-Host "PASS: Original Pumo destination29 ending and menu return ($($result.total_steps) steps); controlled dispatch" }
     elseif ($OpeningPlaytest) { Write-Host "PASS: Original Pumo opening input, damage, death/restart and checkpoint smoke ($($result.total_steps) steps); no human traversal" }
+    elseif ($PmcPlaytest) { Write-Host "PASS: Original PMC1/2 cameras, controls, laser contacts, monitors, restart/save and context lifecycle ($($result.total_steps) steps); controlled exits and fixed firing poses, no human traversal" }
     elseif ($MissionFlow) { Write-Host "PASS: Original Pumo controlled authored exits and hub checkpoint recovery ($($result.total_steps) steps); no earned traversal" }
     elseif ($OriginalHub -and $SceneOnly) { Write-Host "PASS: Unchanged original Pumo hub fixed-view live smoke scene ($($result.total_steps) steps)" }
     elseif ($OriginalHub) { Write-Host "PASS: Unchanged original Pumo hub, smoke/skybox/GPU/resources/save/context/stock lifecycle ($($result.total_steps) steps)" }
@@ -313,6 +329,7 @@ try {
             if (Compare-Object $before $after) { throw "POG test state restoration differs; backup retained at $backup" }
             Invoke-PogPrivate "rm $backup/state.tar && rmdir $backup" | Out-Null
             if ($FlyoutFixture) { Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog-d1.pig') | Out-Null }
+            if ($PmcPlaytest) { Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pmc-camera.hog', '/data/local/tmp/xl-pmc-d2x.ham') | Out-Null }
             if ($BubbleGpu -or $BubbleFixture) { Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog-bubble.tga', '/data/local/tmp/xl-pog-bubble.wav') | Out-Null }
             Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog.hog', '/data/local/tmp/xl-pog.mn2', '/data/local/tmp/xl-pog.png', '/data/local/tmp/xl-pog-fire.tga', '/data/local/tmp/xl-pog-smoke.tga', '/data/local/tmp/xl-pog-corona.tga', '/data/local/tmp/xl-pog-glare.tga', '/data/local/tmp/xl-pog-forcefield.tga', '/data/local/tmp/xl-pog-forcefield2.tga', '/data/local/tmp/xl-pog-forcefield3.tga', '/data/local/tmp/xl-pog-mods.tar') | Out-Null
         }

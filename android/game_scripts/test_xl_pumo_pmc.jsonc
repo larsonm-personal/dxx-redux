@@ -1,0 +1,613 @@
+// Original PMC controls; unchanged mission, controlled exits and fixed firing poses
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_pog_runtime",
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Pumo Mines",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": { "menu_interaction.active": false },
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "game_window_is_front": true,
+            "current_level_num": 1,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_exit11",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "current_level_num": 11,
+            "xl_pilot.runtime_active": true,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_live",
+    },
+    {
+        "action": "send_axis",
+        "axis": 2,
+        "axis_value": 0.25,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 250,
+    },
+    {
+        "action": "send_axis",
+        "axis": 2,
+        "axis_value": 0,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -0.25,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 250,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_monitor",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "capture",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_capture",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "disk_save",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_aim_camera",
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 700,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_fired_camera",
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "damage_player",
+        "value": "1000",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player_dead": true,
+            "player_exploded": true,
+            "screen_advance_can_activate": true,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "send_button",
+        "button": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player_dead": false,
+            "current_level_num": 11,
+        },
+        "timeout_ms": 120000,
+    },
+    { "action": "set_debug", "field": "xl_pog_probe", "value": "pmc_restarted" },
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_live",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_monitor",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "disk_load",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "verify_saved",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_verify",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_monitor",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_live",
+    },
+    // Fixed adjacent room, ordinary aim/fire at original active robot 89
+    { "action": "pose_view", "segment": 420, "position_fixed": [6777750, -72754234, -19736120] },
+    { "action": "attack_object", "object": 89, "distance": 80, "timeout_ms": 60000 },
+    {
+        "action": "assert",
+        "expect": { "player.robots_killed_level": { "gte": 1 }, "cheats_enabled": false, "player_dead": false },
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "flow_exit12",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "current_level_num": 12,
+            "xl_pilot.runtime_active": true,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_live",
+    },
+    {
+        "action": "send_axis",
+        "axis": 2,
+        "axis_value": 0.25,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 250,
+    },
+    {
+        "action": "send_axis",
+        "axis": 2,
+        "axis_value": 0,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -0.25,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 250,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0,
+        "post_delay_ms": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_monitor",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "capture",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_capture",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "disk_save",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_aim_camera",
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 700,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_fired_camera",
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
+    },
+    {
+        "action": "set_debug",
+        "field": "damage_player",
+        "value": "1000",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player_dead": true,
+            "player_exploded": true,
+            "screen_advance_can_activate": true,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "send_button",
+        "button": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player_dead": false,
+            "current_level_num": 12,
+        },
+        "timeout_ms": 120000,
+    },
+    { "action": "set_debug", "field": "xl_pog_probe", "value": "pmc_restarted" },
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_live",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_monitor",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "disk_load",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "verify_saved",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_verify",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_monitor",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_live",
+    },
+    {
+        "action": "key",
+        "key": "escape",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "menu.subtitle": "Game Menu",
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "graphics_context_loss_once",
+        "value": "1",
+    },
+    {
+        "action": "log",
+        "message": "SCRIPT_BACKGROUND: xl-pmc-context duration_s=3",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "egl_recreate_count": {
+                "gte": 1,
+            },
+            "android_lifecycle.observed_visibility": "foreground",
+            "android_lifecycle.suspend_state": "running",
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "menu.subtitle": "Game Menu",
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+            "game_window_is_front": true,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_monitor",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_next_gate",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "introspect",
+    },
+]

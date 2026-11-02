@@ -1,4 +1,5 @@
 #include "resource_validation.h"
+#include "camera_collision.h"
 #include "level_messages.h"
 #include "../model_geometry.h"
 #include "../model_hitbox.h"
@@ -14,6 +15,7 @@
 #include <vector>
 #include <array>
 #include <map>
+#include <filesystem>
 #include "picosha2.h"
 #include "asset_dependencies.h"
 #include "pog_resources.h"
@@ -38,7 +40,9 @@ extern "C" {
 #include "gauges.h"
 #include "ai.h"
 #include "weapon.h"
+#include "console.h"
 extern int Robot_replacements_loaded;
+void bm_read_extra_robots(const char *name, int type);
 }
 
 namespace
@@ -46,6 +50,7 @@ namespace
 static_assert(MAX_SUBMODELS == 10, "Update the bounded XL model geometry capacity with native submodels");
 using File = std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)>;
 std::string startup_ham_name, startup_ham_hash, startup_origin, base_rejection;
+std::string vertigo_rejection;
 const std::array<const char *, 2> sound_banks{ "descent2.s11", "descent2.s22" };
 std::array<std::string, 2> startup_sound_hashes;
 std::map<std::string, std::string> startup_graphics_hashes;
@@ -305,7 +310,16 @@ struct CameraAddonFile {
 	{
 		if (PHYSFSEXT_locateCorrectCase(path.data()) != 0) return false;
 		const char *origin = PHYSFS_getRealDir(path.c_str());
-		if (!mission_owns_resource_directory(origin) && !mission_owns_resource_archive(origin) && !xl_resource_owns_installation(origin))
+		// Android mounts the selected mission's parent directory separately after
+		// recording the descriptor search root, so these two owned roots can differ
+		const auto directory = [](const std::filesystem::path &value) {
+			auto result = value.lexically_normal().generic_string();
+			while (result.size() > 1 && result.back() == '/') result.pop_back();
+			return result;
+		};
+		const bool selected_parent = origin && *mission_resource_archive() &&
+		                             directory(origin) == directory(std::filesystem::path(mission_resource_archive()).parent_path());
+		if (!selected_parent && !mission_owns_resource_directory(origin) && !mission_owns_resource_archive(origin) && !xl_resource_owns_installation(origin))
 			throw std::runtime_error("Camera addon is shadowed outside the selected mission or base installation: " + path);
 		return true;
 	}
@@ -373,6 +387,57 @@ extern "C" void xl_resource_select_mission(int requires_xl)
 {
 	mission_requires_xl = requires_xl != 0;
 	base_rejection.clear();
+	vertigo_rejection.clear();
+}
+
+// Pinned LoadModData stage zero tries the original Vertigo extension for D2
+// Use the existing validated decoder, without admitting arbitrary custom HAMs
+extern "C" int xl_resource_load_vertigo(void)
+{
+	if (!mission_requires_xl || !Current_mission || Current_mission->descent_version != 2) return 0;
+	vertigo_rejection.clear();
+	constexpr const char *mount = "__xl_vertigo_resources__.hog";
+	bool mounted = false;
+	try {
+		std::string path;
+		for (const char *candidate : { "d2x.ham", "data/d2x.ham" }) {
+			std::string name = candidate;
+			if (CameraAddonFile::owned(name)) {
+				path = name;
+				break;
+			}
+		}
+		if (path.empty()) {
+			for (const char *candidate : { "d2x.hog", "missions/d2x.hog", "data/d2x.hog" }) {
+				std::string name = candidate;
+				if (!CameraAddonFile::owned(name)) continue;
+				if (PHYSFS_getMountPoint(mount)) throw std::runtime_error("Vertigo private mount is already active");
+				File archive(PHYSFS_openRead(name.c_str()), PHYSFS_close);
+				if (!archive || !PHYSFS_mountHandle(archive.get(), mount, "__xl_vertigo_resources__", 0))
+					throw std::runtime_error("Cannot mount owned Vertigo archive");
+				archive.release();
+				mounted = true;
+				path = "__xl_vertigo_resources__/d2x.ham";
+				break;
+			}
+		}
+		if (path.empty()) return 0;
+		{
+			File file(PHYSFSX_openReadBuffered(path.c_str()), PHYSFS_close);
+			if (!file || resource_hash(file.get(), path) != "faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f")
+				throw std::runtime_error("XL requires the qualified original Vertigo d2x.ham");
+		}
+		bm_read_extra_robots(path.c_str(), 2);
+		if (N_robot_types != 78 || Robot_info[68].model_num < 0 || Robot_info[76].model_num < 0)
+			throw std::runtime_error("Original Vertigo robot extension failed validated loading");
+		if (mounted) PHYSFS_unmount(mount);
+		return 1;
+	} catch (const std::exception &error) {
+		if (mounted) PHYSFS_unmount(mount);
+		vertigo_rejection = error.what();
+		con_printf(CON_URGENT, "XL Vertigo resources rejected: %s\n", error.what());
+		return -1;
+	}
 }
 
 extern "C" void xl_resource_commit_mission(void)
@@ -397,6 +462,7 @@ extern "C" const char *xl_resource_base_rejection(void)
 	try {
 		// The browser flag is only a hint; mounted level headers remain authoritative
 		if (!mission_requires_xl && !mounted_mission_requires_xl()) return base_rejection.c_str();
+		if (!vertigo_rejection.empty()) throw std::runtime_error(vertigo_rejection);
 		if (startup_ham_hash.empty()) throw std::runtime_error("trusted startup base HAM is unavailable for XL resource admission");
 		File file(PHYSFSX_openReadBuffered(startup_ham_name.c_str()), PHYSFS_close);
 		if (!file) throw std::runtime_error("required base HAM is missing: " + startup_ham_name);
@@ -581,6 +647,7 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 
 void XlPreparedResources::prepare_camera_model()
 {
+	xl_camera_validate_weapon_definitions();
 	if (state->camera_model >= 0) return;
 	if (state->installed) throw std::runtime_error("Camera resources must be prepared before installation");
 	CameraAddonFile addon;

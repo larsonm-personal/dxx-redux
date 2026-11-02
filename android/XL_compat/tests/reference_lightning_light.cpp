@@ -213,4 +213,20 @@ void lightning_light_controls()
 					++cases;
 				}
 	std::cout << cases << " lightning node sampling/segment aggregation cases match pinned source\n";
+	// Deliberate widening regression, outside the source's defined signed-sum range
+	for (int sign : { -1, 1 }) {
+		LightningLightAccumulator accumulator;
+		const LightningPoint center{ sign * 24646091, sign * -68691002, sign * -6759991 };
+		const std::array<float, 4> color{ 32.0f / 255, 64.0f / 255, 1, 100.0f / 255 };
+		for (int i = 0; i < 100; ++i) {
+			auto position = center;
+			for (auto &axis : position) axis += i % 2 ? 65536 : -65536;
+			accumulator.add(677, position, color);
+		}
+		const auto first = accumulator.finish().at(677);
+		const auto second = accumulator.finish().at(677);
+		if (first.position != center || first.samples != 100 || first.brightness <= 0 || second.position != center)
+			throw std::runtime_error("Original PMC lightning light average overflowed or mutated on read");
+	}
+	std::cout << "Original PMC lightning wide coordinate accumulation passed\n";
 }

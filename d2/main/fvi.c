@@ -883,8 +883,8 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 				int fudged_rad = rad;
 #ifdef DXX_XL_RUNTIME
 				vms_vector object_normal = ZERO_VECTOR;
-				if (thisobjnum < 0 && Objects[objnum].type == 16)
-					Error("Camera traversal requires a qualified moving actor");
+				if (thisobjnum < 0 && (Objects[objnum].type == 16 || xl_static_robot(&Objects[objnum])))
+					Error("XL object traversal requires a qualified moving actor");
 #endif
 
 				//	If this is a powerup, don't do collision if flag FQ_IGNORE_POWERUPS is set
@@ -914,6 +914,8 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 					Error("Moving camera traversal is not qualified");
 				if (Objects[objnum].type == 16)
 					d = xl_camera_query(&Objects[objnum], &Objects[thisobjnum], p0, p1, fudged_rad, &hit_point, &object_normal);
+				else if (xl_static_robot(&Objects[objnum]))
+					d = xl_static_robot_query(&Objects[objnum], &Objects[thisobjnum], p0, p1, fudged_rad, &hit_point, &object_normal);
 				else
 #endif
 					d = check_vector_to_object(&hit_point,p0,p1,fudged_rad,&Objects[objnum],&Objects[thisobjnum]);

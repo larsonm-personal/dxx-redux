@@ -4,6 +4,14 @@ The November 1, 2026 development build is ready for initial Android feedback on
 Temporal Hub and Crauphel Scilab, the first Mineral Valley level. This is a fixed
 probe smoke test, not a completed human playthrough or full-campaign qualification.
 
+## Expanded PMC candidate status
+
+The earlier `temp/pumo-pmc-playtest-20261101.zip` candidate is provisional.
+A follow-up source audit found unqualified behavior135 static-robot contact
+response in PMC1/PMC2. Passing lifecycle tests did not exercise that path.
+Admission is now gated until the response is qualified. Use the stable opening
+bundle below for feedback; keep existing saves and candidate artifacts.
+
 ## Build and install
 
 Local bundle: `temp/pumo-playtest-20261101`. Runtime source:

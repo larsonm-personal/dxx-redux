@@ -9,6 +9,7 @@
 #include "object_birth.h"
 #include "explosion_motion.h"
 #include "camera_controller.h"
+#include "camera_collision.h"
 #include "camera_flash.h"
 #include "camera_renderer.h"
 #include "speed_boost.h"
@@ -366,7 +367,11 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 		if (obj.type == OBJ_NONE || obj.type == OBJ_COOP) continue;
 		try {
 			if (obj.type == OBJ_ROBOT) {
-				graph.robot(obj.id);
+				graph.robot_behavior(obj.id, obj.control_data.empty() ? 0 : obj.control_data[0]);
+				if (!obj.control_data.empty() && obj.control_data[0] == 135 && !graph.robot_data[obj.id].attack_type)
+					xl_assets::asset_require(obj.movement_data.empty() || (obj.movement_data.size() >= 3 &&
+					                                                       !obj.movement_data[0] && !obj.movement_data[1] && !obj.movement_data[2]),
+					                         "static robot with authored velocity requires source qualification");
 				if (graph.robot_data[obj.id].boss_flag) {
 					const bool authored_spawn = std::any_of(level.object_trigger_records.begin(), level.object_trigger_records.end(), [&](const xl_compat::ObjectTrigger &entry) { return entry.object == static_cast<int>(i) && entry.action.type == 26; });
 					if (!authored_spawn)
@@ -397,7 +402,10 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 			if (obj.contains_count > 0) graph.contents(obj.contains_type, obj.contains_id);
 			if (obj.render == RT_POLYOBJ || obj.render == RT_MORPH) {
 				const int saved = obj.render_data.at(0);
-				if (saved < 0 || std::size_t(saved) >= level.model_names.size()) throw std::runtime_error("model index outside level model table");
+				// Both source Verify and Redux verify_robot_object replace polygon robot
+				// models from the validated definition before any saved-name lookup
+				if (!(obj.type == OBJ_ROBOT && obj.render == RT_POLYOBJ) &&
+				    (saved < 0 || std::size_t(saved) >= level.model_names.size())) throw std::runtime_error("model index outside level model table");
 				int resolved = -1;
 				if (obj.type == OBJ_PLAYER) resolved = Player_ship->model_num;
 				else if (obj.type == OBJ_ROBOT) resolved = graph.robot_data[obj.id].model_num;
@@ -411,6 +419,9 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 						resolved = model;
 						break;
 					}
+				// Verify retains the serialized camera model when no name matches;
+				// InitCamBots reads that model's radius before installing the addon
+				if (resolved < 0 && obj.type == 16) resolved = saved;
 				if (resolved < 0) throw std::runtime_error("required model is missing: " + level.model_names[saved]);
 				graph.model(resolved);
 				const int texture = obj.render_data.back();
@@ -605,6 +616,7 @@ extern "C" void xl_preview_clear_mission(void)
 	xl_object_birth_clear();
 	xl_explosion_motion_clear();
 	xl_camera_controller_clear();
+	xl_static_robot_restore_clear();
 	xl_camera_flash_clear();
 	xl_camera_renderer_clear();
 	xl_wall_trigger_reset();
@@ -1040,6 +1052,15 @@ extern "C" void xl_camera_controller_bind_level(void)
 extern "C" int xl_level_extensions_active(void)
 {
 	return source && !(Game_mode & GM_MULTI);
+}
+
+extern "C" void xl_initialize_static_robot(int object_number, int behavior)
+{
+	if (!xl_level_extensions_active() || source->level_version < 21 || behavior != 135 ||
+	    object_number < 0 || object_number > Highest_object_index || Objects[object_number].type != OBJ_ROBOT) return;
+	// Pinned InitAIObject handles AIB_STATIC before ordinary AI initialization
+	Objects[object_number].control_type = CT_NONE;
+	Objects[object_number].movement_type = MT_NONE;
 }
 
 extern "C" int xl_speed_boost_destination_valid(const int32_t point[3])

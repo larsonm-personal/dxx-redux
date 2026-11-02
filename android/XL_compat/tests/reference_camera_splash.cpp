@@ -1,6 +1,7 @@
 #include "camera_splash.h"
 #include "camera_flash.h"
 #include "robot_damage.h"
+#include "static_contact.h"
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -34,6 +35,24 @@ struct CFixVector {
 		} coord;
 	} v;
 	fix Mag() const;
+	static const fix Dot(const CFixVector &, const CFixVector &);
+	const CFixVector operator*(fix) const;
+	const CFixVector operator/(fix) const;
+	const CFixVector &operator*=(float);
+	CFixVector &Neg();
+	void Set(fix x, fix y, fix z)
+	{
+		v.coord = { x, y, z };
+	}
+	void SetZero()
+	{
+		Set(0, 0, 0);
+	}
+	CFixVector &operator-=(const CFixVector &other)
+	{
+		*this = *this - other;
+		return *this;
+	}
 	static const fix Dist(const CFixVector &, const CFixVector &);
 	static const fix Normalize(CFixVector &);
 	static const fix NormalizedDir(CFixVector &, const CFixVector &, const CFixVector &);
@@ -90,7 +109,7 @@ struct CObject {
 	struct {
 		struct {
 			fix mass = 65536;
-			CFixVector rotVel, rotThrust;
+			CFixVector rotVel, rotThrust, velocity;
 			int flags = 0;
 		} physInfo;
 	} mType;
@@ -126,6 +145,26 @@ struct CObject {
 	}
 	void Die();
 	void MoveExplosion();
+	bool stationary = false;
+	CFixVector applied_rotation;
+	bool bump_applied = false;
+	bool IsStatic() const
+	{
+		return stationary;
+	}
+	void Bump(CObject *, CFixVector, CFixVector, int32_t);
+	void Bump(CObject *, CFixVector, int32_t)
+	{
+		throw std::runtime_error("Unexpected nonstatic bump branch");
+	}
+	void ApplyForce(CFixVector)
+	{
+		throw std::runtime_error("Unexpected nonstatic force branch");
+	}
+	void RelinkToSeg(int)
+	{
+		throw std::runtime_error("Unexpected sphere separation branch");
+	}
 	fix created = 0;
 	bool attacks = false, guide = false, boss = false;
 	bool IsBoss() const
@@ -148,14 +187,26 @@ struct CObject {
 	int32_t ApplyDamageToRobot(fix, int32_t);
 	CObject *ExplodeSplashDamageWeapon(CFixVector &, CObject *);
 	void TurnTowardsVector(CFixVector, fix);
-	void ApplyRotForce(CFixVector);
+	void ApplyRotForceSource(CFixVector);
+	void ApplyRotForce(CFixVector force)
+	{
+		applied_rotation = force;
+		bump_applied = true;
+		ApplyRotForceSource(force);
+	}
 };
 struct {
 	struct {
 		fix xTime = 1092;
 	} physicsData;
 	struct {
+		int nLastHitter = -1;
+	} hoardData;
+	struct {
 		CObject *pConsole = nullptr, *pViewer = nullptr;
+		struct {
+			int bBoosted = 0;
+		} speedBoost[1];
 	} objData;
 	struct {
 		fix xGame = 0, xFrame = 1092;
@@ -260,6 +311,28 @@ bool ObjectToObjectVisibility(CObject *, CObject *, int, float)
 using tAIStaticInfo = decltype(CObject::cType.aiInfo);
 constexpr int PF_USES_THRUST = 0x40, SHORT_RAND_MAX = 32767;
 #include "xl_reference_camera_splash.h"
+constexpr int OBJ_WEAPON = 5, OBJ_REACTOR = 9, OBJ_MONSTERBALL = 17, PF_PERSISTENT = 0x20;
+#define DBG                  0
+#define EGI_FLAG(a, b, c, d) 1
+unsigned static_assertions = 0;
+// The release source does not stop on debug assertions; record branch diagnostics
+#define Assert(v)                      \
+	do {                               \
+		if (!(v)) ++static_assertions; \
+	} while (0)
+int CollisionModel()
+{
+	return 2;
+}
+int FindSegByPos(CFixVector, int, int, int)
+{
+	throw std::runtime_error("Unexpected static segment repair");
+}
+int nMonsterballForces[64]{}, nMonsterballPyroForce = 1;
+#include "xl_reference_static_contact.h"
+#undef Assert
+#undef EGI_FLAG
+#undef DBG
 void CObject::Die()
 {
 	info.nFlags |= OF_SHOULD_BE_DEAD;
@@ -442,4 +515,62 @@ void camera_flash_robot_source_controls()
 								++cases;
 							}
 	std::cout << "Camera flash robot source stun: " << cases << " passed\n";
+}
+
+void static_contact_source_controls()
+{
+	using namespace camera_splash_reference;
+	unsigned cases = 0;
+	for (int type : { OBJ_PLAYER, OBJ_WEAPON })
+		for (int mass : { 0, 1, 3, 32768, 65536, 11 * 65536, 400 * 65536 })
+			for (int actor_mass : { 0, 1, 3, 32768, 65536, 11 * 65536 })
+				for (int speed : { -100003, -1, 0, 1, 100003 })
+					for (int profile = 0; profile < 3; ++profile)
+						for (bool persistent : { false, true })
+							for (bool boosted : { false, true }) {
+								CObject fixed, actor;
+								fixed.stationary = true;
+								fixed.info.nType = OBJ_ROBOT;
+								fixed.info.movementType = 0;
+								fixed.info.position.vPos = vector({ 12345, -67890, 13579 });
+								fixed.mType.physInfo.mass = mass;
+								actor.info.nType = type;
+								actor.info.position.vPos = vector({ -156789, 3357, 13579 });
+								actor.info.position.mOrient.m.dir.f = vector({ 0, 0, 65536 });
+								actor.mType.physInfo.mass = actor_mass;
+								actor.mType.physInfo.velocity = vector({ speed, speed / 3, -speed / 5 });
+								actor.mType.physInfo.flags = persistent ? PF_PERSISTENT : 0;
+								gameData.objData.pConsole = &actor;
+								gameData.objData.speedBoost[0].bBoosted = boosted;
+								gameData.physicsData.xTime = 1092;
+								automap.active = false;
+								const std::optional<xl_compat::FixedLightPoint> normal = profile ? std::optional<xl_compat::FixedLightPoint>(profile == 1 ? xl_compat::FixedLightPoint{} : xl_compat::FixedLightPoint{ 65536, 0, 0 }) : std::nullopt;
+								CFixVector source_normal = normal ? vector(*normal) : CFixVector{}, hit;
+								const auto result = xl_compat::static_contact(point(fixed.Position()), mass, point(actor.Position()), point(actor.mType.physInfo.velocity), actor_mass,
+								                                              type == OBJ_PLAYER, persistent, type == OBJ_PLAYER && boosted, normal);
+								BumpTwoObjects(&fixed, &actor, 0, hit, normal ? &source_normal : nullptr);
+								if (result.apply != actor.bump_applied || result.velocity != point(actor.mType.physInfo.velocity) ||
+								    (result.apply && result.rotation_force != point(actor.applied_rotation)) || fixed.bump_applied || !fixed.mType.physInfo.velocity.IsZero())
+									throw std::runtime_error("Static bump differs from full pinned BumpTwoObjects at case " + std::to_string(cases));
+								++cases;
+							}
+	gameData.objData.pConsole = nullptr;
+	gameData.objData.speedBoost[0].bBoosted = 0;
+	if (static_assertions) throw std::runtime_error("Physical static contacts reached an unexpected source assertion");
+	for (bool stationary : { false, true }) {
+		CObject fixed, actor;
+		fixed.stationary = stationary;
+		fixed.info.movementType = actor.info.movementType = 0;
+		actor.info.nType = OBJ_WEAPON;
+		actor.mType.physInfo.mass = 0;
+		actor.mType.physInfo.velocity = vector({ 100001, -65537, 17 });
+		const auto before = point(actor.mType.physInfo.velocity);
+		CFixVector hit;
+		if (BumpTwoObjects(&fixed, &actor, 0, hit) != 1 || actor.bump_applied || fixed.bump_applied ||
+		    point(actor.mType.physInfo.velocity) != before || !fixed.mType.physInfo.velocity.IsZero())
+			throw std::runtime_error("Source nonphysical Omega contact changed motion");
+	}
+	if (static_assertions != 2) throw std::runtime_error("Missing source release nonphysical contact branch");
+	std::cout << "Pinned nonphysical Omega: ordinary/static zero-force branches passed\n";
+	std::cout << "Pinned static contacts: " << cases << " full bump calls, zero/unequal masses, persistent/boost gates and raw rotation forces passed\n";
 }

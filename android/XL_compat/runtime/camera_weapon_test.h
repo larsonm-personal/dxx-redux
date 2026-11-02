@@ -897,6 +897,23 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 					++cases;
 				}
 	// Source stores persistent identity before testing parent signature
+	{
+		std::map<int, int> original;
+		for (int i = 0; i <= Highest_object_index; ++i)
+			if (Objects[i].type != OBJ_NONE) original.emplace(i, Objects[i].signature);
+		const int beam = projectile_test_shot(int(ConsoleObject - Objects), OMEGA_ID);
+		auto &omega = Objects[beam];
+		require(omega.movement_type == MT_NONE && !omega.mtype.phys_info.mass, "Production camera Omega fixture is physical");
+		camera.flags = 0;
+		omega.mtype.phys_info.velocity = { 100001, -65537, 17 };
+		collide_two_objects(&camera, &omega, &camera.pos);
+		require(omega.mtype.phys_info.velocity.x == 100001 && omega.mtype.phys_info.velocity.y == -65537 &&
+		            omega.mtype.phys_info.velocity.z == 17 && camera.control_type == 18 && camera.movement_type == MT_NONE,
+		        "Nonphysical Omega changed ordinary camera contact motion");
+		for (int i = Highest_object_index; i >= 0; --i)
+			if (Objects[i].type != OBJ_NONE && (!original.count(i) || original.at(i) != Objects[i].signature)) obj_delete(i);
+		std::cout << "Native original Omega nonphysical camera contact passed\n";
+	}
 	const int shot = projectile_test_shot(ConsoleObject - Objects);
 	auto &weapon = Objects[shot];
 	weapon.ctype.laser_info.parent_signature = camera.signature;

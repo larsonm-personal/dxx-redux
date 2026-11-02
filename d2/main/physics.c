@@ -772,7 +772,7 @@ void do_physics_sim(object *obj)
 				{	vms_vector	*ppos0, *ppos1;
 					fix			size0, size1;
 #ifdef DXX_XL_RUNTIME
-					if (Objects[hit_info.hit_object].type == 16)
+					if (Objects[hit_info.hit_object].type == 16 || xl_static_robot(&Objects[hit_info.hit_object]))
 						pos_hit = hit_info.hit_pnt;
 					else
 #endif
@@ -829,7 +829,7 @@ void do_physics_sim(object *obj)
 					*/
 					collide_two_objects( obj, &Objects[hit_info.hit_object], &pos_hit);
 #ifdef DXX_XL_RUNTIME
-					if (Objects[hit_info.hit_object].type == 16)
+					if (Objects[hit_info.hit_object].type == 16 || xl_static_robot(&Objects[hit_info.hit_object]))
 						xl_camera_physics_unstick(obj, &Objects[hit_info.hit_object], &save_pos, &new_pos, &frame_vec, &old_vel);
 					if (obj == ConsoleObject && speed_boost)
 						obj->mtype.phys_info.velocity = old_vel;

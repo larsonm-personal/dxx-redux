@@ -808,6 +808,10 @@ int load_mission_ham()
 #endif
 	bm_reset_mission_compatibility_warnings();
 	piggy_load_mission_data();
+#ifdef DXX_XL_RUNTIME
+	extra_robots = xl_resource_load_vertigo();
+	if (extra_robots < 0) return 0;
+#endif
 
 	if (Current_mission->enhanced == 3 && Current_mission->alternate_ham_file) {
 		/*

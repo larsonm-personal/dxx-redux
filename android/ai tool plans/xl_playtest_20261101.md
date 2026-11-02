@@ -167,7 +167,6 @@ A/B CI fully green; C Linux jobs all succeeded at21:45; D headed replay pending;
 E Engine/Linux pending, other checks green. The delivered universal opening ZIP
 is unchanged. F APK output is a test x86_64 build, not a replacement bundle.
 
-
 ### G - Smart child missiles and camera splash chains (in progress)
 
 - Child xl_playtest_129_smart_children of F f0512165c412682278797c171a4f6aa130c24f81, PR283
@@ -196,3 +195,34 @@ Permanent switches retain texture/light, animation flags/time and UV rotation
 survive destruction. Glass-trigger level changes stop old traversal/children.
 Final scoped quality passes. A header-order compile issue was fixed by using the
 existing preview API header for the transition generation; Android rebuild pending.
+
+### I - Original PMC camera playtest (in progress)
+
+- Child xl_playtest_131_original_pmc of H fec2bdbfd3667d7c000aa1a3b1014e418bf80e89, PR286
+- Narrow admission to stationary authored behavior128/129 camera objects and their ordinary monitor bindings; keep static135 and fixed-end lightning gated
+- Reject unsupported custom splash/child/flash definitions during camera resource preflight
+- Qualify unchanged pmlev1/2 through actual original hub exits, controls, combat, monitors, full save/load and death/restart on Android
+- Deliver an expanded universal bundle after these checks, with original addon resources and preserved opening instructions
+
+### Static robot contact correction (November 1)
+
+Original PMC displays include behavior135 robots with zero authored velocity.
+Initialization alone was insufficient: source static player contact suppresses
+impact effects/AI, static energy hits suppress smart blobs, and static bump uses
+CBumpForces rather than Redux impulse handling. The qualified default sphere
+query also records target and reverse-query hit state. Gauss uses source signed
+random thrust. Static companions/thieves and nonzero authored velocity remain
+blocked.
+
+5040 full pinned-source BumpTwoObjects cases match force/rotation/velocity on
+Windows and Linux, including zero masses, player/weapon, normals, persistence
+and boost. Native original Vertigo controls pass ordinary versus static energy
+hits, player contact, FVI, reverse repair and full disk save/load. The derived
+authored test fixture does not modify Pumo assets.
+
+Source objects/objectio.cpp LoadState omits MT_NONE physics and CT_NONE AI
+payloads, retaining freshly initialized level-slot data. Redux clears those
+slots, so restore now preserves the original static baseline before that clear
+and reapplies only omitted payloads to matching robot slots. No save-format
+extension was added. Android PMC probes now compare behavior, mass, velocity
+and position after restore. Device rerun and a replacement playtest are pending.
