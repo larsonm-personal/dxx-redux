@@ -1,0 +1,31 @@
+[
+    { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_xl_pog_runtime" } },
+    { "action": "enter_game", "game": "d2" },
+    { "action": "skip_intro", "timeout_ms": 30000 },
+    { "action": "select", "text": "player", "timeout_ms": 15000 },
+    { "action": "select", "text": "Load Game", "timeout_ms": 15000 },
+    { "action": "select", "text": "[quick] level 11", "timeout_ms": 15000 },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "current_level_num": 11,
+            "game_window_is_front": true,
+            "xl_pilot.wall_triggers.5.operated": true,
+            "xl_pilot.doorways.35.state": 4,
+            "xl_pilot.doorways.36.state": 4,
+        },
+        "timeout_ms": 120000,
+    },
+    { "action": "face_view", "segment": 1864, "side": 4, "distance": 12 },
+    { "action": "assert", "expect": { "position.x": { "lt": -141 }, "current_level_num": 11 } },
+    // The original gate is at x=-140.93; checking its far side avoids missing a thin segment
+    { "action": "send_axis", "axis": 1, "axis_value": -1.0 },
+    { "action": "wait_for", "expect": { "position.x": { "gt": -135 } }, "timeout_ms": 10000 },
+    { "action": "send_axis", "axis": 1, "axis_value": 0.0 },
+    {
+        "action": "assert",
+        "expect": { "cheats_enabled": false, "player_dead": false, "xl_pilot.wall_triggers.5.operated": true },
+    },
+    { "action": "introspect" },
+]
