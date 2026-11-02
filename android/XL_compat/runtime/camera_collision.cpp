@@ -40,7 +40,7 @@ std::map<int, object> static_restore_slots;
 const robot_info &camera_definition(const object &camera)
 {
 	if (camera.control_type != 18 || camera.movement_type != MT_NONE ||
-	    (camera.ctype.ai_info.behavior != 128 && camera.ctype.ai_info.behavior != 129) ||
+	    (camera.ctype.ai_info.behavior != 128 && camera.ctype.ai_info.behavior != 129 && camera.ctype.ai_info.behavior != 135) ||
 	    camera.id >= N_robot_types || (Game_mode & GM_MULTI))
 		Error("Camera contact exceeds qualified object profile");
 	const auto &definition = Robot_info[camera.id];
@@ -217,8 +217,9 @@ extern "C" int xl_camera_player_contact(object *a, object *b, vms_vector *point)
 	if (!camera) return 0;
 	object *player = camera == a ? b : a;
 	if (player->type != OBJ_PLAYER) return 0;
-	// Static behavior uses XL's separate geometry collision model, still unqualified
+	// Static contact skips impact effects and uses source bump forces
 	const auto &definition = camera_definition(*camera);
+	if (camera->ctype.ai_info.behavior == 135) return xl_static_robot_bump(camera, player);
 	if (camera->flags & OF_EXPLODING) return 1;
 	const int segment = find_point_seg(point, player->segnum);
 	if (segment != -1)
@@ -278,7 +279,10 @@ extern "C" int xl_camera_weapon_contact(object *a, object *b, vms_vector *point)
 		}
 		try {
 			// Source damage returns immediately for the normalized strength -1 definition
-			if (!(weapon->flags & OF_HARMLESS)) reflect_actor(*weapon);
+			if (!(weapon->flags & OF_HARMLESS)) {
+				if (camera->ctype.ai_info.behavior == 135) xl_static_robot_bump(camera, weapon);
+				else reflect_actor(*weapon);
+			}
 			if (weapon->id == GAUSS_ID) {
 				int skip = camera->ctype.ai_info.SKIP_AI_COUNT;
 				std::array<std::int32_t, 3> thrust{};
@@ -302,17 +306,22 @@ extern "C" int xl_static_robot(const object *actor)
 }
 extern "C" int xl_static_robot_bump(object *a, object *b)
 {
-	object *fixed = xl_static_robot(a) ? a : xl_static_robot(b) ? b
-	                                                            : nullptr;
+	const auto stationary = [](const object *actor) {
+		return xl_static_robot(actor) || (xl_level_extensions_active() && actor && actor->type == 16 && actor->ctype.ai_info.behavior == 135);
+	};
+	object *fixed = stationary(a) ? a : stationary(b) ? b
+	                                                  : nullptr;
 	if (!fixed) return 0;
 	object *actor = fixed == a ? b : a;
-	if (xl_static_robot(actor)) return 1;
+	if (stationary(actor)) return 1;
+	if (fixed->type == 16) camera_definition(*fixed);
 	try {
-		if (fixed->movement_type != MT_NONE || fixed->control_type != CT_NONE ||
+		if (fixed->movement_type != MT_NONE || fixed->control_type != (fixed->type == 16 ? 18 : CT_NONE) ||
 		    fixed->mtype.phys_info.velocity.x || fixed->mtype.phys_info.velocity.y || fixed->mtype.phys_info.velocity.z)
 			throw std::runtime_error("Static contact exceeds the stationary authored profile");
 		// Source nonphysical-other branch computes force from the zero-velocity static owner
 		if (actor->movement_type != MT_PHYSICS) return 1;
+
 		const auto point = [](const vms_vector &v) { return xl_compat::FixedLightPoint{ v.x, v.y, v.z }; };
 		const bool player = actor->type == OBJ_PLAYER;
 		// Default sphere physics passes a zero normal to player contact; weapon bump passes null

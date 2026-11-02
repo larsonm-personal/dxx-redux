@@ -1397,9 +1397,14 @@ int main(int argc, char **argv)
 			camera.object_trigger_records = { { { 16, 0, 327680, -1, { { 0, 0 } } }, 0 } };
 			camera.unsupported = { { "object_type", 0, "16" }, { "object_trigger_type", 0, "16" } };
 			check(xl_compat::runtime_blockers(camera).empty(), "Qualified object-bound camera remained blocked");
+			for (int behavior : { 128, 129, 135 }) {
+				auto qualified = camera;
+				qualified.objects[0].control_data[0] = behavior;
+				check(xl_compat::runtime_blockers(qualified).empty(), "Qualified still, rotating or static camera remained blocked");
+			}
 			for (int mode = 0; mode < 10; ++mode) {
 				auto bad = camera;
-				if (mode == 0) bad.objects[0].control_data[0] = 135;
+				if (mode == 0) bad.objects[0].control_data[0] = 136;
 				if (mode == 1) bad.objects[0].movement = 1;
 				if (mode == 2) bad.objects[0].render = 0;
 				if (mode == 3) bad.objects[0].flags = 1;

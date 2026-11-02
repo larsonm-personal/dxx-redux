@@ -25,6 +25,7 @@ static void camera_missile_native_controls(object &camera)
 	const auto saved_time = GameTime64;
 	const auto saved_difficulty = Difficulty_level;
 	const auto saved_seismic = xl_compat::seismic_gameplay_snapshot();
+	const auto saved_highest = Highest_object_index;
 	GameTime64 = 10 * F1_0;
 	std::vector<std::pair<int, int>> hidden;
 	for (int i = 0; i <= Highest_object_index; ++i)
@@ -97,6 +98,7 @@ static void camera_missile_native_controls(object &camera)
 	require(detonations == 1 && !(Objects[shot].flags & OF_SHOULD_BE_DEAD), "Camera earthquake parent gate reordered or detonated the weapon");
 	obj_delete(shot);
 	for (const auto &entry : hidden) Objects[entry.first].type = entry.second;
+	Highest_object_index = std::max(Highest_object_index, saved_highest);
 	camera = saved_camera;
 	*ConsoleObject = saved_player;
 	Players[Player_num] = saved_pilot;

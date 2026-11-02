@@ -264,3 +264,23 @@ slots, so restore now preserves the original static baseline before that clear
 and reapplies only omitted payloads to matching robot slots. No save-format
 extension was added. Android PMC probes now compare behavior, mass, velocity
 and position after restore. Device rerun and a replacement playtest are pending.
+
+## Verified expanded delivery and original PMC3 qualification
+
+The exact universal b5c36637 APK passed 64 opening and 117 original PMC1/PMC2
+checks; protected hashes match. Delivered `temp/pumo-pmc2-playtest-20261101.zip`
+with README, manifest and installer. Original mission bytes are unchanged.
+
+Branch L qualifies behavior135 camera contact through the existing pinned-source
+static force model. Native integration covers 8 player gates, 44 primary contacts,
+90 missile contacts, 24 passive frames, reverse player hits and existing controller
+record restores. The expanded test exposed a hidden-object fixture bound leak;
+restoring Highest_object_index fixes isolation, and the full native suite passes.
+Windows/Linux inventory contracts accept 128/129/135 while rejecting unsupported
+profiles. Both automation catalogs pass.
+
+The original PMC3 device owner follows authored PMC1/2 exits, checks five cameras,
+80 source static robots, fixed lightning, ordinary controls/fire, death/restart,
+full disk restore, context recovery and the authored level15 ending destination.
+Fixed poses and exit dispatch are controlled evidence, not human traversal.
+Android universal rebuild/device verification remain pending.
