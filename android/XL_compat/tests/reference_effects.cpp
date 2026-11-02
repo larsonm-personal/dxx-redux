@@ -381,6 +381,7 @@ void skybox_objects_source_controls();
 void skybox_coronas_source_controls();
 void camera_splash_rotation_runtime_controls(const char *);
 void camera_explosion_motion_runtime_controls(const char *);
+void camera_children_source_controls();
 void camera_flash_robot_source_controls();
 void camera_flash_palette_source_controls();
 void camera_schedule_source_controls();
@@ -446,6 +447,7 @@ int main(int argc, char **argv)
 		skybox_visibility_source_controls();
 		skybox_objects_source_controls();
 		skybox_coronas_source_controls();
+		camera_children_source_controls();
 		camera_flash_robot_source_controls();
 		camera_flash_palette_source_controls();
 		camera_schedule_source_controls();

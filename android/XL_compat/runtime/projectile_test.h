@@ -273,6 +273,9 @@ static void camera_hit_disk_controls()
 	const int32_t elapsed = earned.repaired_elapsed(saved_ticks);
 	const auto saved_hits = xl_camera_hit_snapshot();
 	const auto saved_flash = xl_camera_flash_snapshot();
+	const auto saved_children = camera_children_capture();
+	require(saved_children.size() == 6, "Camera save requires six smart child weapons");
+	for (const auto &child : saved_children) require(xl_object_birth_order(child[0]) > 0, "New smart child lacks source append order");
 	require(!saved_flash.is_null(), "Full camera save requires impact-earned flash state");
 	unsigned robots = 0;
 	for (const auto &entry : saved_hits) {
@@ -293,6 +296,8 @@ static void camera_hit_disk_controls()
 	require(restored_ticks > saved_ticks, "Camera hit disk restore did not exercise clock rebasing");
 	require(state_restore_all_sub(save, 0), "Cannot restore camera hit save through stock");
 	require(xl_camera_flash_snapshot() == saved_flash, "Full disk restore lost impact-earned flash delay/color");
+	require(camera_children_capture() == saved_children, "Full disk restore lost smart child ownership, target or motion");
+	for (const auto &child : saved_children) require(!xl_object_birth_order(child[0]), "Restored smart child retained omitted source creation order");
 	xl_compat::CameraHitState restored;
 	require(xl_camera_hit_state_get(owner, restored) && restored.repaired == int64_t(restored_ticks) - elapsed &&
 	            !restored.next && !restored.shield_time && !restored.critical_time &&

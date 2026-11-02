@@ -1,5 +1,7 @@
 #include "camera_splash.h"
 #include "camera_flash.h"
+#include "camera_children.h"
+#include "seismic_gameplay.h"
 #include "../camera_flash.h"
 #include "../camera_splash.h"
 #include "../camera_contact.h"
@@ -90,23 +92,33 @@ void xl_camera_splash_rotation(object &actor, const vms_vector &input)
 void xl_camera_splash(object &weapon, object &camera, vms_vector &impact)
 {
 	const auto &definition = Weapon_info[weapon.id];
-	// These profiles have no child projectiles, seismic or missile lightning
+	// High-force custom profiles that can detonate other mines remain gated
 	const bool qualified = weapon.id == GAUSS_ID || weapon.id == CONCUSSION_ID || weapon.id == HOMING_ID ||
-	                       weapon.id == GUIDEDMISS_ID || weapon.id == MERCURY_ID || weapon.id == FLASH_ID;
-	if (!qualified || (definition.flash && weapon.id != FLASH_ID) || definition.children != -1)
+	                       weapon.id == GUIDEDMISS_ID || weapon.id == MERCURY_ID || weapon.id == FLASH_ID || weapon.id == PROXIMITY_ID ||
+	                       weapon.id == SMART_ID || weapon.id == MEGA_ID || weapon.id == SUPERPROX_ID || weapon.id == EARTHSHAKER_ID ||
+	                       weapon.id == EARTHSHAKER_MEGA_ID || weapon.id == PMINE_ID;
+	const int children = weapon.id == SMART_ID ? PLAYER_SMART_HOMING_ID : weapon.id == SUPERPROX_ID ? SMART_MINE_HOMING_ID
+	                                                                  : weapon.id == EARTHSHAKER_ID ? EARTHSHAKER_MEGA_ID
+	                                                                                                : -1;
+	if (!qualified || (definition.flash && weapon.id != FLASH_ID) || definition.children != children)
 		Error("Camera splash weapon profile requires further qualification");
 	const int strength = definition.strength[Difficulty_level], radius = definition.damage_radius;
-	if (strength <= 0 || radius <= 0 || double(strength) / F1_0 * double(radius) / F1_0 / 4.0 > 8000.0)
+	if (strength <= 0 || radius <= 0 || double(strength) / F1_0 * double(radius) / F1_0 / 4.0 + double(radius) / F1_0 / F1_0 >= 8000.0)
 		Error("Camera splash mine detonation threshold exceeds qualified profile");
 	try {
 		impact = native(xl_compat::camera_splash_impact(point(impact), point(camera.pos), camera.size, weapon.size));
+		if (weapon.id == EARTHSHAKER_ID) xl_seismic_detonation(&impact);
 		xl_gameplay_weapon_explosion(int(&weapon - Objects), 0);
 		auto *explosion = object_create_explosion(weapon.segnum, &impact, definition.impact_size, definition.robot_hit_vclip);
 		if (!explosion) return;
 		xl_explosion_motion_begin(explosion);
 		const int parent = weapon.ctype.laser_info.parent_num;
 		object *killer = parent >= 0 && parent <= Highest_object_index ? &Objects[parent] : nullptr;
-		for (int index = 0; index <= Highest_object_index; ++index) {
+		std::vector<int> order;
+		for (int index = 0; index <= Highest_object_index; ++index)
+			if (Objects[index].type != OBJ_NONE) order.push_back(index);
+		std::stable_sort(order.begin(), order.end(), [](int a, int b) { return xl_object_birth_order(a) < xl_object_birth_order(b); });
+		for (int index : order) {
 			auto &actor = Objects[index];
 			if (&actor == &weapon || actor.flags & OF_SHOULD_BE_DEAD) continue;
 			if (actor.type == OBJ_WEAPON) {
@@ -163,7 +175,7 @@ void xl_camera_splash(object &weapon, object &camera, vms_vector &impact)
 				if (actor.shields >= 0) apply_damage_to_player(&actor, killer, damage, 0);
 			}
 		}
-		create_smart_children(&weapon, NUM_SMART_CHILDREN);
+		xl_camera_smart_children(weapon);
 	} catch (const std::exception &error) {
 		Error("Cannot apply camera splash: %s", error.what());
 	}

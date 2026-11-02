@@ -2784,3 +2784,47 @@ unchanged and remains the stable feedback target until the expanded slice is rea
 Child projectiles, high-force mine chains, seismic contact and static camera
 behavior135 remain gated. Original PMC camera admission is not enabled by this
 flash change alone.
+
+## November 1, 2026: smart children and expanded missile contacts
+
+Stack G ports smart-child target filtering, exact distance/direction, modulo
+selection with repeated targets, three-axis random direction, and six native
+child births. The comparison compiles the pinned CreateSmartChildren,
+CreateHomingWeapon, vector random/direction helpers, and actual object Link and
+CObjectIterator methods. Source object iteration follows append order, including
+when new objects reuse low slots. An XL-only birth serial preserves that order
+for target selection and camera radial damage. Loading resets it to the source
+serialized object order; it adds no save field.
+
+The oracle compares 1400 profiles and 5040 directions, including reversed linked
+order. Native controls check 36 profiles, 216 births, repeated targets, root
+shooter credit, native launch velocity/RNG consumption, and real child damage.
+Six real smart children survive full disk save, a stock mission, and XL restore.
+The source adapter captures child creation inputs; it does not claim to compile
+the complete source weapon constructor. Runtime uses the existing native weapon
+constructor and its established projectile physics.
+
+Expanded real contact controls cover original proximity, placed mine, smart,
+mega, superprox, earthquake and child missiles in both dispatcher orders at all
+five difficulties. Earthquake queues its first seismic event before the parent
+signature gate, and its second at the corrected splash point. Source-switchable
+missile lightning rods use the lower graphics profile
+`gameOpts->render.lightning.bExplosions=false`; primary explosions, audio, force,
+damage, children and seismic events remain enabled. Authored lightning cues are
+unaffected by this presentation choice.
+
+Generic high-force custom mine chains remain rejected. The source chain trigger
+requires distance times radial force greater than 8000. For the linear radial
+falloff, the maximum is strength times radius divided by four; the runtime guard
+also includes a conservative fixed-rounding margin. The original definitions
+remain below 4401 across all five difficulties. Pumo and the native Neptune
+fixture HOGs contain no HAM/HXM replacement, and Pumo's descriptor names no
+alternate HAM. This bound excludes the chain branch for those definitions,
+without dropping a reachable original gameplay effect.
+
+Original camera admission still remains blocked. The earthquake glass helper
+currently uses the existing native path; source audit found that exact distance
+and glass-linked trigger activation require further work. Static behavior135,
+original PMC save/restart/transition, and actual camera resource/device coverage
+also remain prerequisites. These controlled fixtures are not a completed PMC
+playthrough.

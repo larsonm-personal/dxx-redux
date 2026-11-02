@@ -96,6 +96,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/camera_collision.cpp"
                 "${xl_runtime_dir}/camera_splash.cpp"
                 "${xl_runtime_dir}/camera_flash.cpp"
+                "${xl_runtime_dir}/camera_children.cpp"
                 "${xl_runtime_dir}/pog_resources.cpp"
                 "${xl_runtime_dir}/texture_pixels.cpp"
                 "${xl_runtime_dir}/../../app/src/main/cpp/shared/d1_custom_validation.c")

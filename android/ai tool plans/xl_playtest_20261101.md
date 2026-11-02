@@ -166,3 +166,19 @@ Receipts: temp/xl-playtest-20261101/camera-flash-*.
 A/B CI fully green; C Linux jobs all succeeded at21:45; D headed replay pending;
 E Engine/Linux pending, other checks green. The delivered universal opening ZIP
 is unchanged. F APK output is a test x86_64 build, not a replacement bundle.
+
+
+### G - Smart child missiles and camera splash chains (in progress)
+
+- Child xl_playtest_129_smart_children of F f0512165c412682278797c171a4f6aa130c24f81, PR283
+- Port source target filters, exact distance/direction math, modulo target selection with repeats, random direction and six-child creation
+- Qualify real child ownership, target/direction, retained projectile gameplay, mine-chain ordering and seismic consumers before camera admission
+- Missile lightning rods are separately source-switchable decoration (lightning.bExplosions=false); retain primary explosion information and all damage/force/audio/glass/seismic behavior
+- Original PMC camera save/restart/transition/device checks remain the next admission milestone
+
+G validation: scoped quality passes; Windows/Linux source controls pass
+(1400 profiles, 5040 directions). Native 90 ordered missile impacts/180 children,
+36 targeting profiles/216 children, real child damage and full save through stock
+pass. Existing effect/resource/save owner passes. Original camera admission stays
+blocked pending earthquake glass exact-distance/trigger behavior and PMC tests.
+Android build and protected opening regression are next. D CI fully green.
