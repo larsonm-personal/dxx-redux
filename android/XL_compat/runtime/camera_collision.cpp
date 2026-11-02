@@ -50,7 +50,8 @@ const robot_info &camera_definition(const object &camera)
 }
 void reflect_actor(object &actor)
 {
-	if (actor.movement_type != MT_PHYSICS) Error("Camera contact actor is not physical");
+	// Source ApplyForce leaves nonphysical Omega blobs unchanged
+	if (actor.movement_type != MT_PHYSICS) return;
 	const auto &velocity = actor.mtype.phys_info.velocity;
 	const bool blocked = object_is_observer(&actor) ||
 	                     (&actor == ConsoleObject && (Automap_active || xl_speed_boost_player_locked()));
@@ -307,9 +308,11 @@ extern "C" int xl_static_robot_bump(object *a, object *b)
 	object *actor = fixed == a ? b : a;
 	if (xl_static_robot(actor)) return 1;
 	try {
-		if (fixed->movement_type != MT_NONE || fixed->control_type != CT_NONE || actor->movement_type != MT_PHYSICS ||
+		if (fixed->movement_type != MT_NONE || fixed->control_type != CT_NONE ||
 		    fixed->mtype.phys_info.velocity.x || fixed->mtype.phys_info.velocity.y || fixed->mtype.phys_info.velocity.z)
 			throw std::runtime_error("Static contact exceeds the stationary authored profile");
+		// Source nonphysical-other branch computes force from the zero-velocity static owner
+		if (actor->movement_type != MT_PHYSICS) return 1;
 		const auto point = [](const vms_vector &v) { return xl_compat::FixedLightPoint{ v.x, v.y, v.z }; };
 		const bool player = actor->type == OBJ_PLAYER;
 		// Default sphere physics passes a zero normal to player contact; weapon bump passes null

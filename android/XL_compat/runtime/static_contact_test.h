@@ -51,6 +51,16 @@ static void static_robot_native_controls(const std::filesystem::path &root, bool
 		        "Static energy-blob suppression changed the normal robot control");
 		require(robot.shields == 900 * F1_0 && robot.movement_type == (stationary ? MT_NONE : MT_PHYSICS),
 		        "Static energy contact lost ordinary damage or owner immobility");
+		if (stationary) {
+			const int beam = projectile_test_shot(int(ConsoleObject - Objects), OMEGA_ID);
+			auto &omega = Objects[beam];
+			require(omega.movement_type == MT_NONE && !omega.mtype.phys_info.mass, "Production Omega fixture is physical");
+			omega.mtype.phys_info.velocity = { 100001, -65537, 17 };
+			collide_two_objects(&robot, &omega, &robot.pos);
+			require(omega.mtype.phys_info.velocity.x == 100001 && omega.mtype.phys_info.velocity.y == -65537 &&
+			            omega.mtype.phys_info.velocity.z == 17 && robot.movement_type == MT_NONE,
+			        "Nonphysical Omega changed static contact motion");
+		}
 		for (int i = Highest_object_index; i >= 0; --i)
 			if (Objects[i].type != OBJ_NONE && (!original.count(i) || original.at(i) != Objects[i].signature)) obj_delete(i);
 	}

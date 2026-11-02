@@ -314,9 +314,11 @@ constexpr int PF_USES_THRUST = 0x40, SHORT_RAND_MAX = 32767;
 constexpr int OBJ_WEAPON = 5, OBJ_REACTOR = 9, OBJ_MONSTERBALL = 17, PF_PERSISTENT = 0x20;
 #define DBG                  0
 #define EGI_FLAG(a, b, c, d) 1
-#define Assert(v)                                                      \
-	do {                                                               \
-		if (!(v)) throw std::runtime_error("Source static assertion"); \
+unsigned static_assertions = 0;
+// The release source does not stop on debug assertions; record branch diagnostics
+#define Assert(v)                      \
+	do {                               \
+		if (!(v)) ++static_assertions; \
 	} while (0)
 int CollisionModel()
 {
@@ -554,5 +556,21 @@ void static_contact_source_controls()
 							}
 	gameData.objData.pConsole = nullptr;
 	gameData.objData.speedBoost[0].bBoosted = 0;
+	if (static_assertions) throw std::runtime_error("Physical static contacts reached an unexpected source assertion");
+	for (bool stationary : { false, true }) {
+		CObject fixed, actor;
+		fixed.stationary = stationary;
+		fixed.info.movementType = actor.info.movementType = 0;
+		actor.info.nType = OBJ_WEAPON;
+		actor.mType.physInfo.mass = 0;
+		actor.mType.physInfo.velocity = vector({ 100001, -65537, 17 });
+		const auto before = point(actor.mType.physInfo.velocity);
+		CFixVector hit;
+		if (BumpTwoObjects(&fixed, &actor, 0, hit) != 1 || actor.bump_applied || fixed.bump_applied ||
+		    point(actor.mType.physInfo.velocity) != before || !fixed.mType.physInfo.velocity.IsZero())
+			throw std::runtime_error("Source nonphysical Omega contact changed motion");
+	}
+	if (static_assertions != 2) throw std::runtime_error("Missing source release nonphysical contact branch");
+	std::cout << "Pinned nonphysical Omega: ordinary/static zero-force branches passed\n";
 	std::cout << "Pinned static contacts: " << cases << " full bump calls, zero/unequal masses, persistent/boost gates and raw rotation forces passed\n";
 }
