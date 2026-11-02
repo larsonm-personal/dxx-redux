@@ -230,6 +230,9 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
           printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
+          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then
+            printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > control/dependency_base.txt
+          fi
       - name: Export authoritative master catalog
         shell: pwsh
         run: |
@@ -362,6 +365,9 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
           printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
+          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then
+            printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > control/dependency_base.txt
+          fi
       - name: Prepare verified public fixture runtime
         id: public_prerequisites
         timeout-minutes: 8
