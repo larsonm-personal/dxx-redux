@@ -19,6 +19,11 @@ The [PMC1 switch gate probe](evidence/pmc-switches.md) also verifies ordinary
 laser activation, rejection at the locked door, and flight through the opened
 gate after warm and fresh-process save loading.
 
+A normal reactor probe found that this published APK hides PMC1's reactor when
+bosses coexist and can start countdown after only one boss dies. The
+[reactor/objective correction](evidence/reactor-objectives.md) is under validation;
+the bounded playtest results above do not qualify reactor or full boss progression.
+
 ## Install and start playing
 
 Use your existing retail Descent 2 data. Launch the app and create a pilot once,

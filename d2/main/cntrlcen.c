@@ -49,6 +49,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "reactor_countdown.h"
+#include "boss_spawn.h"
 #endif
 #include "d1_in_d2/d1_in_d2_semantics.h"
 #ifdef __ANDROID__
@@ -308,6 +309,17 @@ void do_controlcen_destroyed_stuff(object *objp)
 	if ((Game_mode & GM_MULTI_ROBOTS) && Control_center_destroyed)
 		return; // Don't allow resetting if control center and boss on same level
 
+#ifdef DXX_XL_RUNTIME
+	// XL keeps reactors and required bosses as independent completion objectives
+	if (xl_level_extensions_active() && xl_level_objectives_remaining()) {
+		if (objp && objp->type == OBJ_CNTRLCEN) {
+			xl_object_trigger_event(objp-Objects, 0);
+			Dead_controlcen_object_num = objp-Objects;
+		}
+		return;
+	}
+#endif
+
 	// Must toggle walls whether it is a boss or control center.
 	if (control_center_triggers_are_valid(&ControlCenterTriggers, Highest_segment_index))
 		for (i=0;i<ControlCenterTriggers.num_links;i++)
@@ -542,7 +554,11 @@ void init_controlcen_for_level(void)
 	}
 #endif
 
-	if ( (boss_objnum != -1) && !((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_ROBOTS)) ) {
+	if ( (boss_objnum != -1) && !((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_ROBOTS))
+#ifdef DXX_XL_RUNTIME
+		&& !xl_level_extensions_active()
+#endif
+	) {
 		if (cntrlcen_objnum != -1) {
 			Objects[cntrlcen_objnum].type = OBJ_GHOST;
 			Objects[cntrlcen_objnum].render_type = RT_NONE;

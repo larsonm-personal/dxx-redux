@@ -240,6 +240,21 @@ extern "C" int xl_boss_spawn_count(void)
 {
 	return xl_level_extensions_active() ? static_cast<int>(bosses.size()) : 0;
 }
+extern "C" int xl_level_objectives_remaining(void)
+{
+	if (!xl_level_extensions_active()) return 0;
+	int remaining = 0;
+	// The admitted positive XL boss flags all carry the source bEndsLevel bit
+	// Count through the death roll, until xl_boss_deaths_frame retires the owner
+	for (const auto &boss : bosses)
+		if (bound(boss) && boss.dying != 2 && Robot_info[boss.id].boss_flag > 0) ++remaining;
+	for (int i = 0; i <= Highest_object_index; ++i) {
+		const auto &object = Objects[i];
+		if (object.type == OBJ_CNTRLCEN && object.shields >= 0 &&
+		    !(object.flags & (OF_EXPLODING | OF_DESTROYED | OF_SHOULD_BE_DEAD))) ++remaining;
+	}
+	return remaining;
+}
 extern "C" int xl_boss_spawn_state_get(int index, xl_boss_spawn_state *state)
 {
 	if (!state || index < 0 || index >= xl_boss_spawn_count()) return 0;

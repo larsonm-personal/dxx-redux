@@ -25,6 +25,7 @@ param(
     [switch]$OpeningPlaytest,
     [switch]$PmcPlaytest,
     [switch]$PmcSwitchPlaytest,
+    [switch]$PmcReactorPlaytest,
     [switch]$HubActivation,
     [switch]$Pmc3Playtest,
     [switch]$PmcColdResume,
@@ -41,6 +42,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 if ($PmcSwitchPlaytest -and (!$PmcPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcSwitchPlaytest requires PmcPlaytest in its own mode' }
+if ($PmcReactorPlaytest -and !$PmcSwitchPlaytest) { throw 'PmcReactorPlaytest requires PmcSwitchPlaytest' }
 if ($HubActivation -and (!$PmcPlaytest -or $Pmc3Playtest -or $PmcColdResume)) { throw 'HubActivation requires PmcPlaytest in its own mode' }
 if ($PmcColdResume -and !$Pmc3Playtest) { throw 'PmcColdResume requires Pmc3Playtest' }
 if ($Pmc3Playtest -and !$PmcPlaytest) { throw 'Pmc3Playtest requires PmcPlaytest' }
@@ -131,6 +133,7 @@ if ($MissionFlow) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-fl
 if ($OpeningPlaytest) { $output = Join-Path $PSScriptRoot '../../temp/xl-opening-playtest-android' }
 if ($PmcPlaytest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-android' }
 if ($PmcSwitchPlaytest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-switches' }
+if ($PmcReactorPlaytest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-reactor' }
 if ($HubActivation) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-activation' }
 if ($Pmc3Playtest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-android' }
 if ($PmcColdResume) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-cold-android' }
@@ -286,6 +289,13 @@ try {
     if ($OpeningPlaytest) { $scriptName = 'test_xl_pumo_opening.jsonc' }
     if ($PmcPlaytest) { $scriptName = 'test_xl_pumo_pmc.jsonc' }
     if ($PmcSwitchPlaytest) { $scriptName = 'test_xl_pumo_switches.jsonc' }
+    if ($PmcReactorPlaytest) {
+        $steps = @(Get-Content "$PSScriptRoot/../game_scripts/$scriptName" -Raw | ConvertFrom-Json -AsHashtable)
+        $reactorSteps = @(Get-Content "$PSScriptRoot/../game_scripts/test_xl_pumo_reactor.jsonc" -Raw | ConvertFrom-Json -AsHashtable)
+        $steps += @($reactorSteps | Select-Object -Skip 1)
+        $scriptName = [IO.Path]::GetFullPath((Join-Path $output 'reactor-warm.jsonc'))
+        ConvertTo-Json -InputObject $steps -Depth 20 | Set-Content -LiteralPath $scriptName -Encoding utf8
+    }
     if ($HubActivation) { $scriptName = 'test_xl_pumo_hub_activation.jsonc' }
     if ($Pmc3Playtest) { $scriptName = 'test_xl_pumo_pmc3.jsonc' }
     if ($PmcColdResume) {
@@ -349,6 +359,15 @@ try {
         if (!$oldPid) { throw 'PMC cold preparation has no live game process' }
         Invoke-PogAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
         $coldScript = if ($PmcSwitchPlaytest) { 'test_xl_pumo_switches_cold.jsonc' } else { 'test_xl_pumo_pmc_cold.jsonc' }
+        if ($PmcReactorPlaytest) {
+            $steps = @(Get-Content "$PSScriptRoot/../game_scripts/$coldScript" -Raw | ConvertFrom-Json -AsHashtable)
+            $steps += @(
+                @{ action = 'assert'; expect = @{ 'xl_pilot.remaining_objectives' = 6; 'reactor_countdown.active' = $false; 'xl_pilot.wall_triggers.14.operated' = $true } },
+                @{ action = 'introspect' }
+            )
+            $coldScript = [IO.Path]::GetFullPath((Join-Path $output 'reactor-cold.jsonc'))
+            ConvertTo-Json -InputObject $steps -Depth 20 | Set-Content -LiteralPath $coldScript -Encoding utf8
+        }
         & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $coldScript -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -TimeoutSeconds 300
         $coldExit = $LASTEXITCODE
         Invoke-PogAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/cold-logcat.txt" -Encoding utf8
@@ -386,6 +405,7 @@ try {
     elseif ($OpeningPlaytest) { Write-Host "PASS: Original Pumo opening input, damage, death/restart and checkpoint smoke ($($result.total_steps) steps); no human traversal" }
     elseif ($Pmc3Playtest) { Write-Host "PASS: Original PMC3 via PMC1/2 exits: cameras, fixed lightning, combat, restart/save, authored ending and stock-mission return ($($result.total_steps) steps); controlled exits and fixed poses, no human traversal" }
     elseif ($HubActivation) { Write-Host "PASS: Original hub door and PMC exit through laser/thrust, repeated after hub save restore ($($result.total_steps) steps); fixed initial pose, no human traversal" }
+    elseif ($PmcReactorPlaytest) { Write-Host "PASS: Original PMC1 normal switches/key gate/reactor combat and warm/cold persistence; six bosses remain required, no exit qualification" }
     elseif ($PmcSwitchPlaytest) { Write-Host "PASS: Original PMC1 locked-door control, normal switch shot and warm/cold persistence; fixed poses, no human traversal" }
     elseif ($PmcPlaytest) { Write-Host "PASS: Original PMC1/2 cameras, controls, laser contacts, monitors, restart/save and context lifecycle ($($result.total_steps) steps); controlled exits and fixed firing poses, no human traversal" }
     elseif ($MissionFlow) { Write-Host "PASS: Original Pumo controlled authored exits and hub checkpoint recovery ($($result.total_steps) steps); no earned traversal" }

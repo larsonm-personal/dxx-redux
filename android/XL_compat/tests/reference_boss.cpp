@@ -4,9 +4,11 @@
 #include <cmath>
 #include <cstdint>
 #include <fstream>
+#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+void check_reactor_objectives(const std::filesystem::path &path);
 #define ENTER(...)
 #define RETVAL(value)          return (value);
 #define DBG                    0
@@ -322,6 +324,7 @@ int main(int argc, char **argv)
 			++cases;
 		}
 		check(file.eof() && cases == 50, "Boss reference cases omitted");
+		check_reactor_objectives(std::filesystem::path(argv[1]).parent_path() / "boss-reactor-samples.txt");
 		std::cout << "Pinned XL boss spawning: " << cases << " selection/timing/caps/placement/failure/motion/RNG cases matched\n";
 		return 0;
 	} catch (const std::exception &error) {

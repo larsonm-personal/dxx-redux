@@ -20,6 +20,8 @@ typedef struct xl_boss_spawn_state {
 void xl_boss_spawn_load(void);
 void xl_boss_spawn_clear(void);
 int xl_boss_spawn_count(void);
+/* Live required bosses include their death roll; destroyed reactors do not */
+int xl_level_objectives_remaining(void);
 int xl_boss_spawn_state_get(int index, xl_boss_spawn_state *state);
 int xl_boss_spawn_restore(const xl_boss_spawn_state *states, int count, int apply);
 int xl_boss_spawn_robot(int owner, int type, const struct vms_vector *position, int attached);
