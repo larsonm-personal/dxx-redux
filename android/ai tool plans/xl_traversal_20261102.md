@@ -40,3 +40,19 @@ with reasons, and a copyable continuation prompt referencing that handoff.
 Carry all objective constraints and this repeating requirement into the prompt.
 Use an explicit user-filled cutoff placeholder if the next cutoff is unknown.
 Do not automatically start the following goal
+
+## K: PMC boss combat and difficulty-dependent vulnerability
+
+Normal starter-laser probes confirm front-hit rejection, rear damage, and a boss
+retiring from six required objectives to five without starting the countdown.
+The successful kill probe lost the player; sustained-fire and early-retreat
+attempts also lost aim under combat. Preserve those limits rather than calling
+this a surviving encounter or earned progression.
+
+A separate source audit found that pinned XL ai/aiinit.cpp::InitRobotsForLevel
+sets the vulnerable-spot dot threshold to 1/4 - difficulty/8. Our D2 variable
+remains zero at every difficulty. Add a native collision-decision regression
+across all difficulties, demonstrate the mismatch, then initialize the XL
+threshold while retaining stock behavior. Check save/load and stock isolation.
+Continue the original normal-input boss probe on the exact resulting APK; no
+mission edits, granted weapons/health, forced damage or controlled exit dispatch.
