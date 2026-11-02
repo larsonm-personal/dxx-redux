@@ -16,13 +16,13 @@ inline LightningDefinition prepare_authored_lightning(const Inventory &level, co
 		throw std::runtime_error("XL lightning requires a stationary uncontrolled single-player lightning object");
 	if (object.segment < 0 || std::size_t(object.segment) >= level.segments.size())
 		throw std::runtime_error("XL lightning object references an invalid segment");
-	const auto definition = lightning_definition(object, 2);
+	const auto definition = lightning_definition(object, authored_lightning_global_style);
 	if (definition.glow < 0)
 		throw std::runtime_error("XL lightning single-layer glow remains unsupported");
-	if (object.render_data[5] != -1 || !definition.random_end || definition.angle || definition.in_plane || definition.children || definition.clamp ||
-	    definition.style || definition.frames <= 0 || definition.nodes > 32767 || definition.bolts <= 0 || definition.bolts > 32767)
+	if (object.render_data[5] != -1 || !definition.random_end || definition.angle || definition.in_plane || (definition.clamp && definition.amplitude <= 0) ||
+	    definition.style < -1 || definition.style > 2 || lightning_active_style(definition) || definition.frames <= 0 || definition.nodes > 32767 || definition.bolts <= 0 || definition.bolts > 32767)
 		throw std::runtime_error("XL lightning owner requires the implemented random style-0 profile");
-	(void) lightning_lifetime(definition, false, false);
+	(void) lightning_lifetime(definition, false, authored_lightning_children);
 	return definition;
 }
 } // namespace xl_compat

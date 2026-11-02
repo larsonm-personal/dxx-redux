@@ -117,11 +117,11 @@ void lightning_bolt_setup(LightningBolt &bolt, Random &random)
 template <class Random>
 LightningBolt create_lightning_bolt(const LightningDefinition &definition, const LightningPoint &position, Random &random)
 {
-	// Complete original Pumo profile; unsupported geometry must never enter this owner
-	if (!definition.random_end || definition.angle || definition.in_plane || definition.children || definition.clamp ||
-	    definition.style != 0 || definition.frames <= 0 || definition.nodes > 32767)
+	// Source STYLE caps authored detail; bUseLightning=1 retains parent bolts only
+	if (!definition.random_end || definition.angle || definition.in_plane || (definition.clamp && definition.amplitude <= 0) ||
+	    definition.style < -1 || definition.style > 2 || lightning_active_style(definition) != 0 || definition.frames <= 0 || definition.nodes > 32767)
 		throw std::runtime_error("XL lightning bolt requires the implemented random style-0 profile");
-	LightningBolt bolt{ definition, lightning_lifetime(definition, false, false) };
+	LightningBolt bolt{ definition, lightning_lifetime(definition, false, authored_lightning_children) };
 	bolt.base = position;
 	bolt.nodes.resize(bolt.lifetime.nodes);
 	auto &state = bolt.lifetime;

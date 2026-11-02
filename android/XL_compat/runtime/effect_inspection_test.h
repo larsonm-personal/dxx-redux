@@ -74,7 +74,10 @@ static int effect_inspection_test(int argc, char **argv)
 				if (version == 23) particle_objects_native_case(level == 2);
 				if (version == 23) lightning_objects_native_case(level == 2);
 				if (version == 23) additive_wall_binding_controls(level == 2);
-				if (version == 23 && level == 2) lightning_objects_native_case(true, true);
+				if (version == 23 && level == 2) {
+					lightning_objects_native_case(true, 1);
+					lightning_objects_native_case(true, 2);
+				}
 				if (version == 23 && level == 2) {
 					const auto *installation = find_arg_value(argc, argv, "-particle-installation-fixture");
 					require(installation && *installation, "Particle resource controls require an isolated installation fixture");

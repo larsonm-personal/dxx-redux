@@ -131,3 +131,18 @@ static camera behavior and authored lightning dependencies still block PMC level
   opening regression passes 64/64 steps in 111717 ms with protected data unchanged
 - Continue source qualification of flash/child-projectile/static-camera behavior
   without relaxing admission
+
+### Stack E: source-supported lightning presentation profile
+
+- Audit original PMC effect owners and their source consumers before treating
+  their visual-detail flags as gameplay blockers
+- Select source global style 0 and parent-only lightning; preserve original
+  metadata, visible cues, dynamic lighting, activation, audio and saved state
+- Qualify the source's baseline-cursor clamp behavior, including original PMC
+  life/node/population parameters, rather than replacing authored mission data
+- Keep fixed endpoints, planes, moving waypoints and unknown gameplay guarded
+- Windows/Linux source and admission controls pass, including 17,280 bolt ticks
+- Native effect lifecycle passes; Android build passes in 4m15s and protected GPU
+  regression passes 33/33 in 62123 ms with protected data unchanged
+- Resume camera flash/child-projectile qualification after this smaller blocker
+  is resolved; do not spend the session on higher-detail lightning appearance

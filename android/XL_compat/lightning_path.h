@@ -48,7 +48,8 @@ inline void lightning_node_offset(LightningNode &node, int frames)
 	node.offset = lightning_detail::multiply(lightning_detail::subtract(node.next, node.position), 65536 / frames);
 }
 
-// Style-0 displacement without clamp; caller admission must enforce that profile
+// Style-0 displacement: source Clamp receives the unchanged baseline cursor,
+// not m_vNewPos, so a positive-amplitude clamp leaves this path unchanged
 template <class Random>
 void lightning_node_erratic(LightningNode &node, int frames, int amplitude, bool in_plane, bool from_end, bool random_bolt, int index, Random &&random)
 {

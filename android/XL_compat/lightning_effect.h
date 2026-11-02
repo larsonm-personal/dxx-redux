@@ -40,6 +40,14 @@ struct LightningDefinition {
 	bool enabled, random_end, in_plane, light;
 };
 
+// Source-supported gameplay presentation profile: erratic paths without child branches
+constexpr int authored_lightning_global_style = 0;
+constexpr bool authored_lightning_children = false;
+inline int lightning_active_style(const LightningDefinition &definition)
+{
+	return definition.style < 0 || authored_lightning_global_style < definition.style ? authored_lightning_global_style : definition.style;
+}
+
 // Endpoint selection supplies the fixed-point distance when authored length is absent
 inline LightningDefinition lightning_definition(const Object &object, int global_style, std::optional<int> endpoint_distance = {})
 {

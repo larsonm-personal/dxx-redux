@@ -11,12 +11,12 @@ interpolation and persistent active/delay/restart scheduling. It preserves
 displacement history across restarts and stages drawn positions before lifetime
 reset, matching the source order. Its caller supplies effects randomness.
 
-`create_lightning_bolt` accepts the implemented random, angle-zero, style-0,
-unclamped profile without children or a fixed plane. It rejects other geometry
-profiles. This is not a runtime admission change: lightning levels remain gated
-until rendering, glow/blur, audio and lighting consumers are implemented and
-qualified. Native ownership and activation/save integration now use the existing
-effect lifecycle owner.
+The current gameplay presentation profile selects the original engine's global
+style 0 and `bUseLightning=1`: erratic parent bolts without child branches.
+Authored metadata is preserved. Random, angle-zero effects can retain authored
+style 1/2, child counts and positive-amplitude clamp flags under that selection.
+Fixed endpoints/planes, moving waypoints and single-layer glow remain guarded.
+See the November 1 audit below for the original PMC content and source evidence.
 
 ## Source comparisons
 
@@ -694,3 +694,57 @@ blocker for pmlev3 objects318/319. Objects320/321/322 remain blocked, as do the
 camera and particle requirements in that level. Original level-nine admission
 remains clear. This qualifies the bounded non-glowing profile and its tested
 runtime paths, not original later-level gameplay or a complete campaign.
+
+## November 1: original PMC gameplay audit and source detail selection
+
+The pinned `CLightningManager::StaticFrame` visits inert effect objects and
+creates renderer/light/audio emitters. These are separate from Omega weapon
+lightning. `OBJ_EFFECT` is not an enabled collision pair in `CollideInit`, and
+static lightning does not create projectiles or apply damage. Object activation,
+identity, deletion, audio and saved state still require their existing consumers.
+
+Original `pmlev1.rl2` object 105 is uncontrolled, stationary type 20/id 1 in
+segment 677, with no object trigger or wall trigger targeting its segment. The
+segment has reactor function 3 and zero authored damage, as do its five connected
+neighbors. Its blue lightning remains a visible reactor-area cue; it is not
+removed. Original `pmlev3.rl2` object 321 is likewise inert, in ordinary segment
+4241 with zero damage and no targeting trigger; its six neighbors also have zero
+authored damage. Its random endpoint makes the authored target ID irrelevant in
+source `StaticFrame`. Other PMC lightning with fixed endpoints remains guarded.
+This audit does not treat reactor behavior or nearby textures as harmless; those
+independent gameplay consumers are unchanged.
+
+Source `lightning.cpp::STYLE` caps authored style with the global renderer option.
+Source `CLightning::Init` sets zero children when `bUseLightning=1`. The development
+profile now selects global style 0 and that parent-only setting. The original
+style, child count, clamp, colors, position, population, lifetime, activation and
+other mission bytes remain intact; the existing core renderer and dynamic lights
+stay active. Higher-detail jagged paths and child branches are explicitly deferred.
+
+The style-0 `CreateErratic` clamp is unusual: it passes the unchanged baseline
+cursor to `Clamp`, not its displaced node. That cursor starts on the bolt's own
+baseline, so a positive-amplitude clamp has no observable effect. The independent
+harness now executes the actual extracted `Clamp`, vector subtraction and source
+`STYLE` expression while comparing complete original-PMC-sized bolts,
+restarts, staged coordinates and RNG visits. Zero-amplitude clamps remain rejected
+because the source otherwise reaches a zero divisor.
+
+The native effect owner adds the exact pmlev1 object-105 payload in its isolated
+fixture (only owner placement and the second control's activation differ). It
+checks all 50 parent bolts, retained style/child/clamp metadata, visible core and
+segment lighting, activation, pause, save-trailer restore, signature reuse and
+simulation-RNG isolation. The public admission test also covers pmlev3 object
+321's unchanged payload and retains malformed/independent blocker checks.
+
+Fresh original-package inspection leaves the existing eleven clean levels
+unchanged. pmlev1 blockers fall from four to three, pmlev2 stays at nine, and
+pmlev3 falls from eighteen to seventeen. These are overlapping findings, not a
+playability claim: camera gameplay still gates all three original PMC levels.
+
+Validation: Windows and Linux each pass the source, inventory and effect-payload
+contracts, including 17,280 complete bolt ticks. The full native effect/resource/
+save/mission lifecycle owner passes with the explicit PMC parent-bolt witness.
+Android x86_64 builds in 4m15s; the protected original-hub GPU regression passes
+33/33 steps in 62123 ms, with identical protected-data manifests. This is renderer
+regression evidence, not original PMC traversal. Receipts are `lightning-profile-*`
+under `temp/xl-playtest-20261101`.

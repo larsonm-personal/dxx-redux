@@ -28,6 +28,7 @@ struct CFixVector {
 		return result;
 	}
 	const CFixVector &operator+=(const CFixVector &);
+	const CFixVector &operator-=(const CFixVector &);
 	const CFixVector &operator*=(fix);
 	const CFixVector operator+(const CFixVector &) const;
 	const CFixVector operator-(const CFixVector &) const;
@@ -79,10 +80,7 @@ struct CLightningNode {
 	void Animate(bool, int16_t, int32_t, int32_t);
 	void ComputeOffset(int32_t);
 	CFixVector CreateErratic(CFixVector *, CFixVector *, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
-	int Clamp(CFixVector *, CFixVector *, int)
-	{
-		unsupported();
-	}
+	int Clamp(CFixVector *, CFixVector *, int);
 	void CreatePerlin(double, double, int)
 	{
 		unsupported();
@@ -180,6 +178,7 @@ struct {
 		int nMathFormat = 2;
 		struct {
 			bool bGlow = true;
+			int nStyle = 0;
 		} lightning;
 	} render;
 } options;
@@ -253,7 +252,6 @@ double DRound(double value)
 #define ENTER(...)
 #define RETVAL(value)         return (value);
 #define RETURN                return;
-#define STYLE                 0
 #define I2X(value)            ((value) * 65536)
 #define X2D(value)            (double(value) / 65536.0)
 #define X2F(value)            (float(value) / 65536.0f)
@@ -387,60 +385,68 @@ void lightning_bolt_controls()
 	using namespace xl_compat;
 	unsigned ticks = 0;
 	for (unsigned seed : { 0u, 17u, 991u })
-		for (int frames : { 2, 7 })
+		for (int frames : { 2, 3, 7 })
 			for (int delay : { 0, 50, -50 })
-				for (int offset : { 0, 1 }) {
-					Object object{};
-					object.render = 12;
-					object.render_data = { 300, delay, 18, 5, offset, -1, 3, 0, 0, 8, 0, frames, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, 1 };
-					const auto definition = lightning_definition(object, 2);
-					const LightningPoint origin{ -12345678, 456789, -8912345 };
-					struct Random {
-						unsigned index;
-						double unit()
-						{
-							return sample(index++);
-						}
-						int bounded(int limit)
-						{
-							return int(sample(index++) * 32768) % limit;
-						}
-					} random{ seed };
-					// Initial fields have their separate extracted Init comparison
-					CLightning source;
-					source.m_nNodes = 9;
-					source.m_nFrames = -frames;
-					source.m_nAmplitude = definition.amplitude;
-					source.m_nLength = definition.length * 9 / 8;
-					source.m_nDelay = std::abs(delay) * 10;
-					source.m_nOffset = definition.offset;
-					source.m_vBase = vector(origin);
-					random_index = seed;
-					if (!source.Create(0, 0)) throw std::runtime_error("Pinned bolt creation failed");
-					auto bolt = create_lightning_bolt(definition, origin, random);
-					const auto verify_bolt = [&] {
-						const auto &s = bolt.lifetime;
-						if (s.ttl != source.m_nTTL || s.nodes != source.m_nNodes || s.length != source.m_nLength || s.frames != source.m_nFrames || s.step != source.m_iStep ||
-						    bolt.position != point(source.m_vPos) || bolt.end != point(source.m_vEnd) || bolt.direction != point(source.m_vDir) || random.index != random_index)
-							throw std::runtime_error("Lightning bolt placement, lifetime or random visits differ from pinned source");
-						for (unsigned i = 0; i < bolt.nodes.size(); ++i) {
-							verify(bolt.nodes[i], source.m_nodes[i]);
-							for (unsigned axis = 0; axis < 2; ++axis)
-								if (bolt.nodes[i].plane[axis] != point(source.m_nodes[i].m_vDelta[axis])) throw std::runtime_error("Lightning bolt plane differs");
-						}
-						if (bolt.draw_positions.size() != source.drawn.size()) throw std::runtime_error("Lightning render staging differs");
-						for (unsigned i = 0; i < bolt.draw_positions.size(); ++i)
-							if (bolt.draw_positions[i] != point(source.drawn[i])) throw std::runtime_error("Lightning staged draw coordinates differ");
-					};
-					verify_bolt();
-					for (int frame = 0; frame < 160; ++frame) {
-						gameStates.app.tick40fps.nTime = frame % 3 == 0 ? 31 : 25;
-						source.Animate(0, 0);
-						if (!source.SetLife() || !lightning_bolt_frame(bolt, gameStates.app.tick40fps.nTime, random)) throw std::runtime_error("Persistent lightning expired");
+				for (int offset : { 0, 1 })
+					for (int profile : { 0, 1 }) {
+						Object object{};
+						object.render = 12;
+						object.render_data = { 300, delay, 18, 5, offset, -1, 3, 0, 0, 8, 0, frames, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, 1 };
+						if (profile) object.render_data = { 2000, delay, 30, 5, offset, -1, 50, 0, 0, 50, 5, frames, 3, 0, 1, 1, 1, 0, 0, 1, 0, 32, 64, 255, 100, 1 };
+						const auto definition = lightning_definition(object, authored_lightning_global_style);
+						const LightningPoint origin{ -12345678, 456789, -8912345 };
+						struct Random {
+							unsigned index;
+							double unit()
+							{
+								return sample(index++);
+							}
+							int bounded(int limit)
+							{
+								return int(sample(index++) * 32768) % limit;
+							}
+						} random{ seed };
+						// Initial fields have their separate extracted Init comparison
+						CLightning source;
+						source.m_nNodes = definition.nodes + definition.nodes / 5;
+						source.m_bRandom = definition.nodes / 5;
+						source.m_nLife = definition.life;
+						source.m_nTTL = std::abs(definition.life);
+						source.m_nStyle = definition.style;
+						source.m_nSmoothe = definition.smooth;
+						source.m_bClamp = definition.clamp;
+						source.m_nFrames = -frames;
+						source.m_nAmplitude = definition.amplitude;
+						source.m_nLength = definition.length * source.m_nNodes / definition.nodes;
+						source.m_nDelay = std::abs(delay) * 10;
+						source.m_nOffset = definition.offset;
+						source.m_vBase = vector(origin);
+						random_index = seed;
+						if (!source.Create(0, 0)) throw std::runtime_error("Pinned bolt creation failed");
+						auto bolt = create_lightning_bolt(definition, origin, random);
+						const auto verify_bolt = [&] {
+							const auto &s = bolt.lifetime;
+							if (s.ttl != source.m_nTTL || s.nodes != source.m_nNodes || s.length != source.m_nLength || s.frames != source.m_nFrames || s.step != source.m_iStep ||
+							    bolt.position != point(source.m_vPos) || bolt.end != point(source.m_vEnd) || bolt.direction != point(source.m_vDir) || random.index != random_index)
+								throw std::runtime_error("Lightning bolt placement, lifetime or random visits differ from pinned source");
+							for (unsigned i = 0; i < bolt.nodes.size(); ++i) {
+								verify(bolt.nodes[i], source.m_nodes[i]);
+								for (unsigned axis = 0; axis < 2; ++axis)
+									if (bolt.nodes[i].plane[axis] != point(source.m_nodes[i].m_vDelta[axis])) throw std::runtime_error("Lightning bolt plane differs");
+							}
+							if (bolt.draw_positions.size() != source.drawn.size()) throw std::runtime_error("Lightning render staging differs");
+							for (unsigned i = 0; i < bolt.draw_positions.size(); ++i)
+								if (bolt.draw_positions[i] != point(source.drawn[i])) throw std::runtime_error("Lightning staged draw coordinates differ");
+						};
 						verify_bolt();
-						++ticks;
+						for (int frame = 0; frame < 160; ++frame) {
+							gameStates.app.tick40fps.nTime = frame % 3 == 0 ? 31 : 25;
+							source.Animate(0, 0);
+							if (!source.SetLife() || !lightning_bolt_frame(bolt, gameStates.app.tick40fps.nTime, random)) throw std::runtime_error("Persistent lightning expired");
+							verify_bolt();
+							++ticks;
+						}
 					}
-				}
 	std::cout << "Pinned lightning bolts: " << ticks << " complete create/frame/restart ticks passed\n";
 }
 
