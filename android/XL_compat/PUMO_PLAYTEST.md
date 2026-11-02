@@ -11,6 +11,11 @@ All three native ABI build IDs match this commit. APK SHA256:
 `eca76d97e4e886bbdf251a78690f1c371314ef14c208b5ba4899f89bff6f771a`.
 The APK contains ARM64, ARMv7 and x86_64; device validation uses x86_64.
 
+The same APK also passed the [normal hub activation and restore probe](evidence/hub-activation.md):
+ordinary laser/thrust through the PMC route, repeated after restoring a hub save.
+This uses a fixed approach pose, with no exit dispatch or objective grants.
+It does not establish human traversal or physical-device validation.
+
 ## Install and start playing
 
 Use your existing retail Descent 2 data. Launch the app and create a pilot once,

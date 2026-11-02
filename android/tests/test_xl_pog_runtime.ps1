@@ -24,6 +24,7 @@ param(
     [switch]$MissionFlow,
     [switch]$OpeningPlaytest,
     [switch]$PmcPlaytest,
+    [switch]$HubActivation,
     [switch]$Pmc3Playtest,
     [switch]$PmcColdResume,
     [string]$CameraHog = '',
@@ -38,6 +39,7 @@ param(
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
+if ($HubActivation -and (!$PmcPlaytest -or $Pmc3Playtest -or $PmcColdResume)) { throw 'HubActivation requires PmcPlaytest in its own mode' }
 if ($PmcColdResume -and !$Pmc3Playtest) { throw 'PmcColdResume requires Pmc3Playtest' }
 if ($Pmc3Playtest -and !$PmcPlaytest) { throw 'Pmc3Playtest requires PmcPlaytest' }
 # PMC2 also preflights the authored PMC3 exit, so its resources must be explicit
@@ -126,6 +128,7 @@ if ($OriginalHub -and $SceneOnly) { $output = Join-Path $PSScriptRoot '../../tem
 if ($MissionFlow) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-flow-android' }
 if ($OpeningPlaytest) { $output = Join-Path $PSScriptRoot '../../temp/xl-opening-playtest-android' }
 if ($PmcPlaytest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-android' }
+if ($HubActivation) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-activation' }
 if ($Pmc3Playtest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-android' }
 if ($PmcColdResume) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-cold-android' }
 if ($CampaignEnd) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-end-android' }
@@ -270,6 +273,7 @@ try {
     if ($MissionFlow) { $scriptName = 'test_xl_pumo_flow.jsonc' }
     if ($OpeningPlaytest) { $scriptName = 'test_xl_pumo_opening.jsonc' }
     if ($PmcPlaytest) { $scriptName = 'test_xl_pumo_pmc.jsonc' }
+    if ($HubActivation) { $scriptName = 'test_xl_pumo_hub_activation.jsonc' }
     if ($Pmc3Playtest) { $scriptName = 'test_xl_pumo_pmc3.jsonc' }
     if ($PmcColdResume) {
         $steps = @(Get-Content "$PSScriptRoot/../game_scripts/$scriptName" -Raw | ConvertFrom-Json -AsHashtable)
@@ -358,6 +362,7 @@ try {
     elseif ($CampaignEnd) { Write-Host "PASS: Original Pumo destination29 ending and menu return ($($result.total_steps) steps); controlled dispatch" }
     elseif ($OpeningPlaytest) { Write-Host "PASS: Original Pumo opening input, damage, death/restart and checkpoint smoke ($($result.total_steps) steps); no human traversal" }
     elseif ($Pmc3Playtest) { Write-Host "PASS: Original PMC3 via PMC1/2 exits: cameras, fixed lightning, combat, restart/save, authored ending and stock-mission return ($($result.total_steps) steps); controlled exits and fixed poses, no human traversal" }
+    elseif ($HubActivation) { Write-Host "PASS: Original hub door and PMC exit through laser/thrust, repeated after hub save restore ($($result.total_steps) steps); fixed initial pose, no human traversal" }
     elseif ($PmcPlaytest) { Write-Host "PASS: Original PMC1/2 cameras, controls, laser contacts, monitors, restart/save and context lifecycle ($($result.total_steps) steps); controlled exits and fixed firing poses, no human traversal" }
     elseif ($MissionFlow) { Write-Host "PASS: Original Pumo controlled authored exits and hub checkpoint recovery ($($result.total_steps) steps); no earned traversal" }
     elseif ($OriginalHub -and $SceneOnly) { Write-Host "PASS: Unchanged original Pumo hub fixed-view live smoke scene ($($result.total_steps) steps)" }
