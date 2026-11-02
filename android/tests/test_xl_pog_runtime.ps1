@@ -25,6 +25,7 @@ param(
     [switch]$OpeningPlaytest,
     [switch]$PmcPlaytest,
     [switch]$Pmc3Playtest,
+    [switch]$PmcColdResume,
     [string]$CameraHog = '',
     [string]$VertigoHam = '',
     [switch]$CampaignEnd,
@@ -37,6 +38,7 @@ param(
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
+if ($PmcColdResume -and !$Pmc3Playtest) { throw 'PmcColdResume requires Pmc3Playtest' }
 if ($Pmc3Playtest -and !$PmcPlaytest) { throw 'Pmc3Playtest requires PmcPlaytest' }
 # PMC2 also preflights the authored PMC3 exit, so its resources must be explicit
 if ($PmcPlaytest -and (!$BubbleImage -or !$BubbleWave)) { throw 'PmcPlaytest requires original BubbleImage and BubbleWave for PMC3 readiness' }
@@ -125,6 +127,7 @@ if ($MissionFlow) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-fl
 if ($OpeningPlaytest) { $output = Join-Path $PSScriptRoot '../../temp/xl-opening-playtest-android' }
 if ($PmcPlaytest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-android' }
 if ($Pmc3Playtest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-android' }
+if ($PmcColdResume) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-cold-android' }
 if ($CampaignEnd) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-end-android' }
 if ($RevisitFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-revisit-android' }
 if ($FlyoutFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-flyout-cache-android' }
@@ -268,6 +271,19 @@ try {
     if ($OpeningPlaytest) { $scriptName = 'test_xl_pumo_opening.jsonc' }
     if ($PmcPlaytest) { $scriptName = 'test_xl_pumo_pmc.jsonc' }
     if ($Pmc3Playtest) { $scriptName = 'test_xl_pumo_pmc3.jsonc' }
+    if ($PmcColdResume) {
+        $steps = @(Get-Content "$PSScriptRoot/../game_scripts/$scriptName" -Raw | ConvertFrom-Json -AsHashtable)
+        if ($steps[-1].action -ne 'introspect') { throw 'PMC continuity scenario must end with introspection' }
+        $steps = @($steps[0..($steps.Count - 2)]) + @(
+            @{ action = 'set_debug'; field = 'android_game_request'; value = 'quick_save'; post_delay_ms = 1000 },
+            @{ action = 'set_debug'; field = 'android_game_request'; value = 'overlay_pause' },
+            @{ action = 'wait_for'; expect = @{ time_paused = $true }; timeout_ms = 20000 },
+            @{ action = 'set_debug'; field = 'xl_pog_probe'; value = 'pmc_checkpoint' },
+            @{ action = 'introspect' }
+        )
+        $scriptName = [IO.Path]::GetFullPath((Join-Path $output 'cold-prepare.jsonc'))
+        ConvertTo-Json -InputObject $steps -Depth 20 | Set-Content -LiteralPath $scriptName -Encoding utf8
+    }
     if ($CampaignEnd) { $scriptName = 'test_xl_pumo_end.jsonc' }
     if ($RevisitFixture) { $scriptName = 'test_xl_mission_revisit.jsonc' }
     if ($FlyoutFixture) { $scriptName = 'test_xl_flyout_cache.jsonc' }
@@ -305,8 +321,35 @@ try {
     if ($testExit -ne 0) { throw "POG runtime failed ($testExit); see $output" }
     $result = Get-Content "$output/result.json" -Raw | ConvertFrom-Json
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete POG runtime result' }
+    if ($PmcColdResume) {
+        $initialState = Get-Content "$output/state.json" -Raw | ConvertFrom-Json
+        $initialCheckpoint = $initialState.xl_pog.pmc_checkpoint
+        if (!$initialCheckpoint -or $initialCheckpoint.actors.Count -ne 85) { throw 'PMC cold preparation lacks the five camera and 80 static robot states' }
+        $gameProcess = '{0}:game' -f $script:PACKAGE
+        $oldPid = ([string](Invoke-PogAdb -Arguments @('shell', 'pidof', $gameProcess))).Trim()
+        if (!$oldPid) { throw 'PMC cold preparation has no live game process' }
+        Invoke-PogAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
+        & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName 'test_xl_pumo_pmc_cold.jsonc' -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 300
+        $coldExit = $LASTEXITCODE
+        Invoke-PogAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/cold-logcat.txt" -Encoding utf8
+        Invoke-PogPrivate 'cat files/automation_result.json' | Set-Content "$output/cold-result.json" -Encoding utf8
+        Invoke-PogPrivate 'cat files/automation_log.jsonl' | Set-Content "$output/cold-steps.jsonl" -Encoding utf8
+        Invoke-PogPrivate 'cat files/introspect.json' | Set-Content "$output/cold-state.json" -Encoding utf8
+        if ($coldExit -ne 0) { throw "PMC cold restore failed ($coldExit); see $output" }
+        $coldResult = Get-Content "$output/cold-result.json" -Raw | ConvertFrom-Json
+        $coldState = Get-Content "$output/cold-state.json" -Raw | ConvertFrom-Json
+        $newPid = ([string](Invoke-PogAdb -Arguments @('shell', 'pidof', $gameProcess))).Trim()
+        if (!$newPid -or $newPid -eq $oldPid) { throw 'PMC cold restore did not use a fresh game process' }
+        if ($coldResult.result -ne 'PASS' -or $coldResult.steps_completed -ne $coldResult.total_steps) { throw 'Incomplete PMC cold restore result' }
+        $beforeCheckpoint = ConvertTo-Json -InputObject $initialCheckpoint -Depth 30 -Compress
+        $afterCheckpoint = ConvertTo-Json -InputObject $coldState.xl_pog.pmc_checkpoint -Depth 30 -Compress
+        if ($beforeCheckpoint -cne $afterCheckpoint) { throw 'PMC cold restore changed persistent player or camera/static robot state' }
+        @{ initial_game_pid = $oldPid; restored_game_pid = $newPid; checkpoint_matches = $true } | ConvertTo-Json | Set-Content "$output/cold-proof.json" -Encoding utf8
+        Write-Host "PASS: Fresh-process PMC3 menu load ($($coldResult.total_steps) steps), 85 actors and player checkpoint match"
+    }
     Invoke-PogAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-pog.png') | Out-Null
-    Invoke-PogAdb -Arguments @('pull', '/data/local/tmp/xl-pog.png', "$output/render.png") | Out-Null
+    $renderPath = if ($PmcColdResume) { "$output/cold-render.png" } else { "$output/render.png" }
+    Invoke-PogAdb -Arguments @('pull', '/data/local/tmp/xl-pog.png', $renderPath) | Out-Null
     if ($BubbleGpu) { Write-Host "PASS: Original bubble/smoke multi-image pixels, soft depth, GL state and context recreation ($($result.total_steps) steps); renderer control only" }
     elseif ($BubbleFixture) { Write-Host "PASS: Derived $mission original-payload bubble lifecycle ($($result.total_steps) steps); see the original PMC scenario for campaign qualification" }
     elseif ($LightningGpu) { Write-Host "PASS: Original corona/glare/shields, mixed lightning/sprite GPU and context recreation ($($result.total_steps) steps); renderer control only" }

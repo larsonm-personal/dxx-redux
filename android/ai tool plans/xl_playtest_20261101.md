@@ -299,3 +299,18 @@ to the saved PMC3 state. Explicit stock checks cover camera actors/controllers,
 monitor bindings and fixed-lightning owner cleanup; the return verifies the
 saved population, all monitors and ordinary laser contact. Native orchestration
 now also requires the static-camera integration receipt. Device validation pending.
+
+## Fresh-process original PMC3 checkpoint
+
+Child N adds an opt-in PmcColdResume mode to the protected original owner. It
+uses normal Quick Save, captures stable player/85-actor state, force-stops only
+the selected test app, then uses ordinary Load Game in a new game process.
+The second script verifies monitors, live controllers/lightning and laser contact.
+Host comparison checks persistent player fields and camera/static robot identity,
+geometry and static payloads. Rotating orientation is excluded from this cross-
+process comparison because a menu restore may advance a frame before pause; the
+existing paused disk tests already compare saved orientation exactly.
+
+Both phase results, states, logs and distinct process IDs are retained inside the
+protected owner output. Its master timeout increases to cover both phases.
+No save format or gameplay behavior is changed. Build/device verification pending.

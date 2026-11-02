@@ -1,6 +1,7 @@
 // Protected original PMC owner; fixed poses and direct authored exits are not human traversal
 nlohmann::json pmc_saved_cameras;
 nlohmann::json pmc_saved_lightning;
+nlohmann::json pmc_checkpoint_state;
 unsigned pmc_contact_baseline = 0;
 int pmc_saved_lives = 0;
 std::vector<int> pmc_static_owners()
@@ -83,7 +84,15 @@ void pmc_playtest_probe(const char *operation)
 	}
 	const auto owners = pmc_camera_owners();
 	unsigned monitor_count = 0;
-	if (!std::strcmp(operation, "capture")) {
+	if (!std::strcmp(operation, "checkpoint")) {
+		require(Current_level_num == 13 && game_is_time_paused(), "PMC cold checkpoint capture requires paused original PMC3");
+		auto rows = pmc_camera_snapshot();
+		// Menu restore may advance a frame before pause; rotating orientation is checked separately
+		for (std::size_t i = 0; i < owners.size(); ++i)
+			if (Objects[owners[i]].ctype.ai_info.behavior == 129) rows[i].erase(rows[i].begin() + 10, rows[i].end());
+		const auto &pilot = Players[Player_num];
+		pmc_checkpoint_state = { { "mission", std::string(Current_mission_filename) }, { "level", Current_level_num }, { "energy", pilot.energy }, { "shields", pilot.shields }, { "lives", pilot.lives }, { "score", pilot.score }, { "flags", pilot.flags }, { "laser_level", pilot.laser_level }, { "primary_weapons", pilot.primary_weapon_flags }, { "secondary_weapons", pilot.secondary_weapon_flags }, { "actors", rows } };
+	} else if (!std::strcmp(operation, "capture")) {
 		require(game_is_time_paused(), "PMC capture requires pause");
 		pmc_saved_cameras = pmc_camera_snapshot();
 		pmc_saved_lightning = xl_compat::lightning_objects_snapshot();
@@ -178,5 +187,7 @@ void pmc_playtest_probe(const char *operation)
 		}
 	} else throw std::runtime_error("Unknown original PMC operation");
 	++checks;
-	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "pmc_level", Current_level_num }, { "pmc_cameras", owners.size() }, { "pmc_monitors", monitor_count }, { "pmc_contacts", xl_camera_player_weapon_contacts() } }.dump();
+	auto state = nlohmann::json{ { "passed", true }, { "checks", checks }, { "pmc_level", Current_level_num }, { "pmc_cameras", owners.size() }, { "pmc_monitors", monitor_count }, { "pmc_contacts", xl_camera_player_weapon_contacts() } };
+	if (!pmc_checkpoint_state.is_null()) state["pmc_checkpoint"] = pmc_checkpoint_state;
+	report = state.dump();
 }
