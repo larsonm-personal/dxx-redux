@@ -61,7 +61,29 @@ Ambient object enable/disable child dispatch is separate from audible playback
 acceptance. The scenario does not establish connected human navigation, full
 boss combat, a PMC2 exit or physical-device controls.
 
-Android qualification of the committed fixed APK is pending. Previously
-serialized broken panels remain broken in old saves; start a new game or use an
+## Exact fixed APK qualification
+
+Build `8b80ef220dbda2d9481c21611084ef21f5413808`, version 28810, has six matching
+D1/D2 library markers. APK SHA-256:
+`89df3369e09897fbce528d6ae4825c7d9c58d02e30ca55741e99c3347fc49069`.
+The installed APK matches, and all 25 backed-up pilot/save/settings files match
+after installation.
+
+The adjoining-room normal selector replay passes 60/60 steps in 43.599 seconds;
+the same sequence failed at its fourth selection before the fix. The fresh
+protected scenario passes 175/175 warm steps in 263.665 seconds and 59/59 cold
+steps in 43.410 seconds, with PIDs 19103 and 20708. The warm checkpoint retains
+all selected states in segment 2071. After cold loading, further normal shots
+change the settings again, and the player flies through the newly unlocked
+door to segment 189, z=588.4249, alive with 80.6474 shields. No cheats or
+invulnerability are active. The rendered endpoint was inspected.
+
+Both protected hash lists have SHA-256
+`a469457aa471b05f7919c6ade5a3f8f00fc037b56ad7dd6b31024ba573e4bf10`.
+Receipts are in `temp/xl-original-pmc2-selectors` and the immutable selector
+bundle, including traces and exact scripts. The ZIP SHA-256 is
+`e4b1b6d698131956664a9d96fe3fffbdaeaf4a6e7cdb91a36b6447dd18c1094b`.
+
+Previously serialized broken panels remain broken in old saves; start a new game or use an
 unfired checkpoint on the new build. Existing saves and published bundles are
 preserved rather than rewritten.
