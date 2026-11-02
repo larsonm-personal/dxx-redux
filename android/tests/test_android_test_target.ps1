@@ -16,6 +16,22 @@ foreach ($key in @('DXX_TEST_PRIMARY_SERIAL', 'DXX_TEST_SECONDARY_SERIAL', 'DXX_
     $emulatorEnvironment[$key] = [Environment]::GetEnvironmentVariable($key)
 }
 try {
+    # Execute the actual game prelaunch callback without launching a device
+    $runnerAst = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot '../helpers/run_test.ps1'), [ref]$null, [ref]$null)
+    $callback = $runnerAst.Find({ param($node)
+            $node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left.Extent.Text -eq '$preLaunch'
+        }, $true)
+    if (-not $callback) { throw 'Missing game prelaunch callback' }
+    . ([scriptblock]::Create($callback.Extent.Text))
+    $script:resetCalls = 0
+    function Reset-GameState { $script:resetCalls++ }
+    $PreserveState = $true
+    & $preLaunch
+    Assert-Equal 0 $script:resetCalls 'Preserved game launch does not reset settings'
+    $PreserveState = $false
+    & $preLaunch
+    Assert-Equal 1 $script:resetCalls 'Ordinary game launch resets settings'
+
     # Gradle can leave a stale outputs APK beside a newer intermediates APK
     $fixture = Join-Path $priorAndroidRoot ('temp/test_apk_resolution/run_' + [guid]::NewGuid().ToString('N'))
     & (Join-Path $priorAndroidRoot 'helpers/retain-recent-artifacts.ps1') -Artifacts $fixture -DirectoryPrefix run_

@@ -403,7 +403,7 @@ try {
             }
 
             $preLaunch = {
-                Reset-GameState
+                if (-not $PreserveState) { Reset-GameState }
             }
 
             $launchParams = @{
