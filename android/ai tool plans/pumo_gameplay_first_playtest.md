@@ -134,3 +134,74 @@ only improves appearance belongs in P3 unless its gameplay need is demonstrated.
 Record actual elapsed time after P0, then update the estimate for the expanded
 demo. The earlier 20-40 hour estimate covered a broader representative demo and
 is not a reason to delay an already viable starting slice.
+
+## Next overnight tranche: rendered GuideBot traversal pilot
+
+User follow-up, November 1: try the existing rendered route-confirmation machinery
+against original Pumo. The opening/PMC release is already delivered; this next
+step supplements the earlier controlled-exit checks rather than restarting P0.
+
+### Why and existing machinery
+
+A rendered flight can expose navigation, clearance, door and objective-ordering
+failures that fixed firing poses and direct exit dispatch cannot. Reuse:
+
+- `android/helpers/regenerate_all_guidebot_simulations.ps1`: `-Mode Headed` for
+  Android rendered confirmation, `-Mode Desktop` for native rendered confirmation,
+  and `-Mode Headless` for non-rendered diagnostics
+- `android/helpers/watch_guidebot_simulation.ps1`: interactive route browser
+- `android/app/src/main/cpp/shared/route_confirmation.cpp` and `.h`: live planner,
+  physics-driven companion actor, objective execution and terminal status
+- `android/tests/test_guidebot_simulation_headed_headless_parity.ps1`: existing
+  Counterstrike parity owner; evidence of the mechanism, not Pumo/XL qualification
+
+The headed engine sets Viewer to the companion actor and follows the route in
+rendered gameplay. It is not an ordinary player-input combat playthrough: the
+player is immobilized/invulnerable, and some objectives use test-assisted damage
+or pickup actions. Audit those assists and report them explicitly. A confirmed
+route is supplementary traversal evidence, not proof of combat survival or full
+player equivalence. The auto-level demo tests are a different feature.
+
+### Bounded trial and acceptance
+
+1. Spend the first coherent branch on feasibility and one original Pumo route,
+   after urgent user feedback and existing CI failures. Time-box the initial
+   investigation to roughly 1-2 hours; do not turn an unsupported planner into an
+   unbounded overnight navigation rewrite
+2. Audit mission metadata, target identity and runtime staging for the original
+   fourteen-level `pmines` package, not the separate three-level demo. Confirm XL
+   admission and required camera/Vertigo/effect resources survive staging. The
+   generic Headed script currently calls reset_state, clear_mods and
+   clear_save_files: use an owned disposable device/profile or a protected adapter
+   with verified restoration. Do not aim it unchanged at user app data or assume
+   the current Pumo protected runner automatically wraps this separate helper
+3. Confirm what the planner understands about XL triggers, teleports, multiple
+   authored exits and cross-level state. Begin at the authored hub start and
+   choose an explicit intended exit/route so a different valid hub ending is not
+   mistaken for the desired campaign path. Use a simple original level next if
+   the hub's branching semantics prevent a meaningful first trial
+4. Run a bounded rendered attempt with explicit device ownership, mission/level
+   selection and output directory; keep Android tests serial. Retain the exact
+   build/asset identity, objective sequence, last actor position/segment, route
+   diagnostics, wall/trigger state, terminal status and screenshots or a short
+   recording where supported. Use headless results as diagnostics, not a substitute
+   for the requested rendered run. Do not overwrite canonical regressions merely
+   to accept a changed result
+5. Classify each outcome: confirmed route, partial coverage, timeout/stall, planner
+   unsupported, staging/harness failure, or reproduced engine gameplay defect.
+   A planner failure alone does not mean Pumo is unplayable. Reproduce suspected
+   gameplay defects with normal player interactions before changing the engine
+6. For XL objectives the planner cannot express, use targeted normal-activation
+   probes and document the gap. Do not teleport past a blockage, grant a key,
+   invoke an exit directly or use assisted objective completion as evidence that
+   the missing ordinary progression works. Keep the harness's existing assists
+   distinguishable from normal player checks
+7. If the pilot is useful, expand across original levels/branches with per-level
+   budgets and a tested/untested matrix. Pair important door/switch/exit results
+   with ordinary-player activation and save/load checks. Fix evidenced defects;
+   preserve original mission content and all independent gameplay admission gates
+
+The next handoff must include the exact invocation or protected adapter, actor/
+assist semantics, level/exit selection, coverage and retained failure evidence,
+plus whether further GuideBot work is worthwhile. Carry this trial and its limits
+into the fresh-context continuation prompt until resolved.

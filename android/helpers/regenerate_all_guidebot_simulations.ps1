@@ -28,11 +28,17 @@ param(
     [switch]$DryRun,
     [string]$DryRunJsonOut,
     [string]$HeadlessExecutable,
+    [string]$DesktopExecutable,
+    # Explicit single-level authored exit, without changing canonical regressions
+    [ValidateRange(-1, 32766)][int]$ExitTrigger = -1,
     [switch]$LeaveHeadedRunning
 )
 
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
+if ($ExitTrigger -ge 0 -and ($Mode -ne 'Desktop' -or $WriteRegression)) {
+    throw 'ExitTrigger requires Desktop mode without WriteRegression'
+}
 if ($TestSpeedPercent -ne 160 -and ($WriteRegression -or $Mode -eq 'Headed')) {
     throw 'Noncanonical test speed requires native Headless/Desktop mode without WriteRegression'
 }
@@ -69,7 +75,11 @@ $exe = if ($HeadlessExecutable) {
 } else {
     Join-RegressionPath $repoRoot 'buildd2' 'main' (Get-RegressionHostExecutableNames -BaseName 'dxx-redux-d2-headless-route')[0]
 }
-$desktopExe = Join-RegressionPath $repoRoot 'buildd2' 'main' (Get-RegressionHostExecutableNames -BaseName 'd2x-redux')[0]
+$desktopExe = if ($DesktopExecutable) {
+    $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($DesktopExecutable)
+} else {
+    Join-RegressionPath $repoRoot 'buildd2' 'main' (Get-RegressionHostExecutableNames -BaseName 'd2x-redux')[0]
+}
 $batchStart = [DateTime]::UtcNow
 . (Join-Path $scriptDir 'guidebot_simulation_regression.ps1')
 . (Join-Path $scriptDir 'mission_archive_variants.ps1')
@@ -365,6 +375,7 @@ function Invoke-GuidebotDesktopLevel {
     $arguments = @(
         '-window', '-nomovies', '-nosound', '-nomusic',
         '-hogdir', $workItemHogDir,
+        '-route-confirm-user-dir', $sandbox,
         '-mission', $missionName,
         '-level', [string]$WorkItem.EngineLevelNumber,
         '-route-confirm-timeout-seconds', [string]$WorkItem.SimulationTimeLimitSeconds,
@@ -372,6 +383,7 @@ function Invoke-GuidebotDesktopLevel {
         '-route-confirm-json-out', $output
     )
     if ($Stage.ExtraDir) { $arguments += @('-extra-dir', $Stage.ExtraDir) }
+    if ($ExitTrigger -ge 0) { $arguments += @('-route-confirm-exit-trigger', [string]$ExitTrigger, '-route-confirm-capture') }
     $processArguments = @($arguments | ForEach-Object {
             $argument = [string]$_
             if ($argument -match '[\s"]') { '"' + $argument.Replace('"', '\"') + '"' } else { $argument }
@@ -395,6 +407,7 @@ function Invoke-GuidebotDesktopLevel {
         throw "Desktop route infrastructure failure for $($WorkItem.Identity), exit $exitCode, log=$log"
     }
     $engineResult = Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
+    if ($ExitTrigger -ge 0) { return $engineResult }
     return ConvertTo-GuidebotLevelSimulationResult -Mission $WorkItem.Mission -Level $WorkItem.Level `
         -EngineResult $engineResult
 }
@@ -672,11 +685,14 @@ if ($SampleFraction -lt 1.0) {
 }
 
 if ($PreparedMissionStage) {
-    if ($Mode -ne 'Headless' -or -not $ExactMissionJson -or $WriteRegression -or
+    if ($Mode -notin @('Headless', 'Desktop') -or -not $ExactMissionJson -or $WriteRegression -or
         $allItems.Count -ne 1 -or $selectedItems.Count -ne 1 -or
         -not (Test-Path -LiteralPath (Join-Path $PreparedMissionStage 'missions') -PathType Container)) {
-        throw 'Prepared mission staging requires exactly one headless owner without regression writes'
+        throw 'Prepared mission staging requires exactly one native owner without regression writes'
     }
+}
+if ($ExitTrigger -ge 0 -and $selectedItems.Count -ne 1) {
+    throw 'ExitTrigger requires exactly one selected level'
 }
 
 Write-GuidebotStatus "GuideBot simulation work: $($selectedItems.Count)/$($allItems.Count) levels, mode $Mode"
@@ -749,6 +765,24 @@ try {
     if ($Mode -eq 'Headless' -and -not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw "Route executable not found: $exe" }
     if ($Mode -eq 'Desktop' -and -not (Test-Path -LiteralPath $desktopExe -PathType Leaf)) { throw "Desktop route executable not found: $desktopExe" }
     New-Item -ItemType Directory -Path $runRoot, $rawRoot, $stageRoot, $logRoot, $resultRoot -Force | Out-Null
+
+    if ($ExitTrigger -ge 0) {
+        # Objective-only evidence must never enter the completed-mine regression format
+        $item = $selectedItems[0]
+        $stage = Initialize-GuidebotMissionStage -MetadataFile $item.MetadataFile
+        $result = Invoke-GuidebotDesktopLevel -WorkItem $item -Stage $stage
+        Write-GuidebotSimulationJson -Path (Join-Path $runRoot 'exit-scenario.json') -Value ([ordered]@{
+                schema = 'dxx-guidebot-rendered-exit-scenario-v1'
+                identity = $item.Identity
+                exit_trigger = $ExitTrigger
+                executable = $desktopExe
+                executable_sha256 = (Get-FileHash -LiteralPath $desktopExe -Algorithm SHA256).Hash.ToLowerInvariant()
+                stage = $stage.ExtraDir
+                result = $result
+            })
+        Write-GuidebotStatus "Exit scenario recorded: $($result.status), $($item.Identity)"
+        exit 0
+    }
 
     $selectedByIdentity = @{}
     foreach ($item in $selectedItems) { $selectedByIdentity[$item.Identity] = $item }

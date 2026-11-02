@@ -79,6 +79,22 @@ try {
     if (($desktop.identity -join ',') -cne ($expectedDesktop.identity -join ',')) {
         throw 'Desktop dry-run discovery differs from the canonical runner'
     }
+    foreach ($invalid in @(
+            @{ Mode = 'Headless'; Level = @(1) },
+            @{ Mode = 'Headed'; Level = @(1) },
+            @{ Mode = 'Desktop'; Level = @(1); WriteRegression = $true },
+            @{ Mode = 'Desktop'; Level = @(1, 2) }
+        )) {
+        $rejected = $false
+        try {
+            & $runner @invalid -MissionJson Counterstrike.json -ExitTrigger 0 -DryRun -NoBuild | Out-Null
+        } catch {
+            if ($_.Exception.Message -notlike 'ExitTrigger requires *') { throw }
+            $rejected = $true
+        }
+        if (-not $rejected) { throw 'Explicit exits must remain single-level desktop scenarios without regression writes' }
+    }
+    & $runner -Mode Desktop -MissionJson Counterstrike.json -Level 1 -ExitTrigger 0 -DryRun -NoBuild | Out-Null
     $multiDescriptor = @(Invoke-DryRun -Name multi -MissionJson '-MOON-.json')
     if ($multiDescriptor.Count -ne 14 -or @($multiDescriptor.identity | Select-Object -Unique).Count -ne 14) {
         throw 'Multi-descriptor mission work item expansion is incorrect'

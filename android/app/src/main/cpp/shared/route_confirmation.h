@@ -75,6 +75,8 @@ typedef struct route_confirmation_summary {
 	int start_segment;
 	int start_key_flags;
 	int start_position[3];
+	int actor_segment;
+	int actor_position[3];
 	char problem[256];
 	route_confirmation_objective_result objectives[ROUTE_CONFIRMATION_MAX_OBJECTIVES];
 } route_confirmation_summary;

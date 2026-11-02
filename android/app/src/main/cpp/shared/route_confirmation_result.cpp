@@ -42,8 +42,13 @@ nlohmann::ordered_json serialize_result(const route_confirmation_summary &summar
 			{ "initial_key_flags", summary.start_key_flags }
 		};
 	}
-	if (summary.requested_exit_trigger >= 0)
+	if (summary.requested_exit_trigger >= 0) {
 		result["verification_goal"] = { { "kind", "exit_trigger" }, { "trigger", summary.requested_exit_trigger } };
+		result["last_actor_state"] = {
+			{ "segment", summary.actor_segment },
+			{ "position_fixed", { summary.actor_position[0], summary.actor_position[1], summary.actor_position[2] } }
+		};
+	}
 	if (summary.transitioned_level)
 		result["native_transition"] = { { "from_level", level }, { "to_level", summary.transitioned_level }, { "key_flags", summary.transitioned_key_flags } };
 	if (summary.starts_from_current_state) {

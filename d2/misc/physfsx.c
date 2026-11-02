@@ -37,6 +37,8 @@ void PHYSFSX_init(int argc, char *argv[])
 	char *appimage;
 #endif
 	char *base_dir;
+	const char *route_user_dir = NULL;
+	int route_arg;
 #ifdef macintosh	// Mac OS 9
 	int bundle = 0;
 #endif
@@ -50,6 +52,15 @@ void PHYSFSX_init(int argc, char *argv[])
 		Error("Cannot register XL HOG reader: %s", PHYSFS_getLastError());
 	PHYSFS_permitSymbolicLinks(1);
 	base_dir = strdup(PHYSFS_getBaseDir());
+	/* Rendered route workers use an explicit disposable profile, as headless workers do */
+	for (route_arg = 1; route_arg < argc; ++route_arg) {
+		if (strcmp(argv[route_arg], "-route-confirm-user-dir")) continue;
+		if (route_arg + 1 >= argc || !argv[route_arg + 1][0])
+			Error("Route user directory requires an existing path");
+		route_user_dir = argv[++route_arg];
+		if (!PHYSFS_setWriteDir(route_user_dir) || !PHYSFS_addToSearchPath(route_user_dir, 0))
+			Error("Cannot open route user directory: %s", PHYSFS_getLastError());
+	}
 	
 #ifdef __unix__
 	if ((appimage = getenv("APPIMAGE")))
@@ -80,6 +91,7 @@ void PHYSFSX_init(int argc, char *argv[])
 #endif
 	
 #if defined(__unix__)
+	if (!route_user_dir) {
 # if !(defined(__APPLE__) && defined(__MACH__))
 	path = "~/.d2x-redux/";
 # else
@@ -128,6 +140,7 @@ void PHYSFSX_init(int argc, char *argv[])
 	}
 	
 	PHYSFS_addToSearchPath(PHYSFS_getWriteDir(), 1);
+	}
 #endif
 	
 	PHYSFS_addToSearchPath(base_dir, 1);
