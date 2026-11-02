@@ -340,6 +340,9 @@ void bump_this_object(object *objp, object *other_objp, vms_vector *force, int d
 //the collision.
 void bump_two_objects(object *obj0,object *obj1,int damage_flag)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_static_robot_bump(obj0, obj1)) return;
+#endif
 	vms_vector	force;
 	object		*t=NULL;
 	fix scale_num = 0;
@@ -1141,6 +1144,9 @@ fix64 Last_thief_hit_time;
 
 void collide_robot_and_player( object * robot, object * playerobj, vms_vector *collision_point )
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_static_robot_player_contact(robot, playerobj)) return;
+#endif
 	int	steal_attempt = 0;
 	input_demo_log_replay_collision_pair("collide_robot_player_entry", robot,
 		playerobj, collision_point);
@@ -1923,7 +1929,11 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 
 	//	Changed, 10/04/95, put out blobs based on skill level and power of weapon doing damage.
 	//	Also, only a weapon hit from a player weapon causes smart blobs.
-	if ((weapon->ctype.laser_info.parent_type == OBJ_PLAYER) && (Robot_info[robot->id].energy_blobs))
+	if ((weapon->ctype.laser_info.parent_type == OBJ_PLAYER) && (Robot_info[robot->id].energy_blobs)
+#ifdef DXX_XL_RUNTIME
+	    && !xl_static_robot(robot)
+#endif
+	)
 		if ((robot->shields > 0) && Weapon_is_energy[weapon->id]) {
 			fix	probval;
 			int	num_blobs;
@@ -2057,7 +2067,11 @@ input_demo_debug_log_weapon_robot_reason_probe("accept", (void *)weapon, (void *
 
 
 		//	If Gauss Cannon, spin robot.
-		if ((robot != NULL) && (!Robot_info[robot->id].companion) && (!Robot_info[robot->id].boss_flag) && (weapon->id == GAUSS_ID)) {
+		if ((robot != NULL) && (!Robot_info[robot->id].companion) && (!Robot_info[robot->id].boss_flag) && (weapon->id == GAUSS_ID)
+#ifdef DXX_XL_RUNTIME
+		    && !xl_static_robot_gauss(robot)
+#endif
+		) {
 			ai_static	*aip = &robot->ctype.ai_info;
 
 			if (aip->SKIP_AI_COUNT * FrameTime < F1_0) {

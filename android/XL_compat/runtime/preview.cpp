@@ -9,6 +9,7 @@
 #include "object_birth.h"
 #include "explosion_motion.h"
 #include "camera_controller.h"
+#include "camera_collision.h"
 #include "camera_flash.h"
 #include "camera_renderer.h"
 #include "speed_boost.h"
@@ -367,6 +368,10 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 		try {
 			if (obj.type == OBJ_ROBOT) {
 				graph.robot_behavior(obj.id, obj.control_data.empty() ? 0 : obj.control_data[0]);
+				if (!obj.control_data.empty() && obj.control_data[0] == 135 && !graph.robot_data[obj.id].attack_type)
+					xl_assets::asset_require(obj.movement_data.empty() || (obj.movement_data.size() >= 3 &&
+					                                                       !obj.movement_data[0] && !obj.movement_data[1] && !obj.movement_data[2]),
+					                         "static robot with authored velocity requires source qualification");
 				if (graph.robot_data[obj.id].boss_flag) {
 					const bool authored_spawn = std::any_of(level.object_trigger_records.begin(), level.object_trigger_records.end(), [&](const xl_compat::ObjectTrigger &entry) { return entry.object == static_cast<int>(i) && entry.action.type == 26; });
 					if (!authored_spawn)
@@ -611,6 +616,7 @@ extern "C" void xl_preview_clear_mission(void)
 	xl_object_birth_clear();
 	xl_explosion_motion_clear();
 	xl_camera_controller_clear();
+	xl_static_robot_restore_clear();
 	xl_camera_flash_clear();
 	xl_camera_renderer_clear();
 	xl_wall_trigger_reset();
