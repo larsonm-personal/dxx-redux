@@ -103,3 +103,31 @@ retains seven objectives, and preserves gate/key state across warm and cold
 loads. Both backup hash lists match and the cold frame was inspected. This is
 additional same-APK coverage; the combat ZIP remains immutable. No engine or
 original-mission changes were needed for these interactions.
+
+## N: Normal PMC1 escape boost and destination persistence
+
+M is committed as fd28ff0d930c77520b2b409168049770c880dc9c in PR306,
+targeting L/PR305. N starts from M. PR303 now has 14 successful checks and one
+skip; PR304-306 have no observed failures and still have running checks.
+
+The authored escape is a useful next gap because the rendered companion could
+reach an XL exit but could not activate it. Pinned XL DoExit has no universal
+boss/reactor-clear condition. The remaining objective count controls countdown,
+not whether the local player may contact this enabled destination-12 exit.
+
+An owned checkpoint probe now confirms normal thrust from segment 585 through
+the opened/blasted passage and all 12 boosts to exit 46. The player remains
+alive and reaches the rendered completion menu; normal Enter/briefing advances
+to PMC2. Forward input is released after the first boost; no later pose changes steer
+the flight.
+The protected fresh scenario will earn the reactor and master/blast gates,
+record the exit trace/frame, cold-load the preflight checkpoint and repeat the
+flight before checking PMC2 save/load. This remains bounded local traversal,
+not full mission navigation or all-boss combat. Published APK/assets stay exact.
+
+N's fresh protected escape passes 105 warm / 24 cold steps in 200.475 / 94.078
+seconds, using PIDs 14984 and 16296. Both protected hash lists have SHA-256
+35982d56014782fa8fc80fd92beb4867971d9ddc3257f3eff71edbcd886f8477.
+The completion and restored PMC2 frames were inspected. Dedicated receipts are
+in xl-original-pmc-escape after correcting the initial output precedence. No
+engine change was needed.
