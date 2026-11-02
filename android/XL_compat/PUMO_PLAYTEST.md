@@ -62,6 +62,10 @@ Normal Load Game can resume a checkpoint after closing the app.
 | Fresh-process PMC3 load        | 21/21   | Matching player/85-actor checkpoint, empty boss registry, one reactor, monitors/lightning and ordinary fire                     |
 
 Protected pilot/save/settings hashes match after installation and every scenario.
+Additional [opening-gate coverage](evidence/pmc-opening-gates.md) on this same APK
+passes 76 warm and 15 fresh-process steps for switches 0/1/4, three local gate
+crossings and saved lock/open states. Those later receipts are separate from the
+unchanged published bundle.
 Fresh-process game PIDs differ; the checkpoint comparison passes. Rotating camera
 orientation is excluded only from that cross-process comparison because restore
 can advance before pause. Paused disk-restore tests compare orientation exactly.
