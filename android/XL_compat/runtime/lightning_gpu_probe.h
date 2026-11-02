@@ -4,6 +4,7 @@
 #include "camera_target_gpu_probe.h"
 #include "camera_native_pass_probe.h"
 #include "camera_scene_probe.h"
+#include "camera_monitor_probe.h"
 #include "shield_original_gpu_probe.h"
 // Android renderer control: retains an owned corona without admitting a level
 unsigned lightning_line_device_controls()
@@ -103,6 +104,7 @@ void lightning_gpu_probe(const char *operation)
 	require(!std::strcmp(operation, "gpu") && lightning_probe_image && lightning_probe_glare && gl_initialized, "Lightning GPU control lacks its original corona/glare");
 	require(glGetError() == GL_NO_ERROR, "Lightning GPU control requires a clean context");
 	const unsigned camera_scene_cases = camera_scene_device_controls();
+	const unsigned camera_monitor_cases = camera_monitor_device_controls();
 	std::vector<unsigned char> pixels(64 * 64 * 4);
 	unsigned changed = 0;
 	unsigned line_cases = 0, bitmap_cases = 0, outline_cases = 0, wall_cases = 0, shield_cases = 0, original_shield_cases = 0, camera_target_cases = 0, camera_native_pass_cases = 0;
@@ -247,5 +249,5 @@ void lightning_gpu_probe(const char *operation)
 	if (!lightning_probe_pixels.empty()) require(pixels == lightning_probe_pixels, "Lightning/shield pixels changed across graphics context recreation");
 	lightning_probe_pixels = std::move(pixels);
 	++checks;
-	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "shield_cases", shield_cases }, { "original_shield_cases", original_shield_cases }, { "camera_target_cases", camera_target_cases }, { "camera_native_pass_cases", camera_native_pass_cases }, { "camera_scene_cases", camera_scene_cases }, { "shield_overlap_rounding", shield_overlap_rounding }, { "wall_cases", wall_cases }, { "outline_cases", outline_cases }, { "line_cases", line_cases }, { "sprite_cases", 1 }, { "bitmap_cases", bitmap_cases }, { "glare_width", lightning_probe_glare->bitmap.width }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
+	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "shield_cases", shield_cases }, { "original_shield_cases", original_shield_cases }, { "camera_target_cases", camera_target_cases }, { "camera_native_pass_cases", camera_native_pass_cases }, { "camera_scene_cases", camera_scene_cases }, { "camera_monitor_cases", camera_monitor_cases }, { "shield_overlap_rounding", shield_overlap_rounding }, { "wall_cases", wall_cases }, { "outline_cases", outline_cases }, { "line_cases", line_cases }, { "sprite_cases", 1 }, { "bitmap_cases", bitmap_cases }, { "glare_width", lightning_probe_glare->bitmap.width }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
 }

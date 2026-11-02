@@ -76,6 +76,9 @@ extern ubyte object_rendered[MAX_OBJECTS];
 #include "particle_border_texture.h"
 #include "camera_target_gpu.h"
 #include "camera_scene.h"
+#include "camera_renderer.h"
+#include "camera_controller.h"
+#include "../camera_alignment.h"
 
 namespace
 {

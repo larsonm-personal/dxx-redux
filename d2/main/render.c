@@ -1,6 +1,7 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "camera_scene.h"
+#include "camera_renderer.h"
 #include "transparency_scene.h"
 #include "skybox_render.h"
 #include "fog.h"
@@ -306,7 +307,7 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 #ifdef DXX_XL_RUNTIME
 	if (xl_level_extensions_active() && !(tmap2 & 0x3fff)) tmap2 = 0;
 	if (xl_skybox_segment(segnum) && !xl_skybox_rendering()) return;
-	if (!xl_skybox_rendering() && xl_transparency_face(segnum, sidenum, nv, vp, tmap1, tmap2, uvlp, wid_flags)) return;
+	if (!xl_skybox_rendering() && !xl_camera_monitor_face(segnum, sidenum) && xl_transparency_face(segnum, sidenum, nv, vp, tmap1, tmap2, uvlp, wid_flags)) return;
 #endif
 	grs_bitmap  *bm;
 #ifdef OGL
@@ -377,6 +378,9 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 #ifdef OGL
 	int use_alt_texmerge = GameArg.DbgAltTexMerge || GameBitmaps[Textures[tmap1].index].bm_type == BM_RGBA ||
 		(tmap2 && GameBitmaps[Textures[tmap2 & 0x3fff].index].bm_type == BM_RGBA);
+#ifdef DXX_XL_RUNTIME
+	use_alt_texmerge |= xl_camera_monitor_face(segnum, sidenum);
+#endif
 	if (use_alt_texmerge){
 		PIGGY_PAGE_IN(Textures[tmap1]);
 		bm = &GameBitmaps[Textures[tmap1].index];
@@ -460,6 +464,11 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 	if ( PlayerCfg.AlphaEffects && ( TmapInfo[tmap1].eclip_num == ECLIP_NUM_FUELCEN || TmapInfo[tmap1].eclip_num == ECLIP_NUM_FORCE_FIELD ) ) // set nice transparency/blending for some special effects (if we do more, we should maybe use switch here)
 		gr_settransblend(GR_FADE_OFF, GR_BLEND_ADDITIVE_C);
 
+#if defined(OGL) && defined(DXX_XL_RUNTIME)
+	xl_camera_monitor_begin(segnum, sidenum, nv, vp, tmap2);
+	bm = xl_camera_monitor_bitmap(0, bm);
+	if (bm2) bm2 = xl_camera_monitor_bitmap(1, bm2);
+#endif
 #ifdef EDITOR
 	if ((Render_only_bottom) && (sidenum == WBOTTOM))
 		g3_draw_tmap(nv,pointlist,uvl_copy,dyn_light,&GameBitmaps[Textures[Bottom_bitmap_num].index]);
@@ -481,6 +490,7 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 #endif
 
 #ifdef DXX_XL_RUNTIME
+	xl_camera_monitor_end();
 	xl_preview_end_face();
 #endif
 	gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL); // revert any transparency/blending setting back to normal
@@ -1946,6 +1956,9 @@ int render_setup_view(fix eye_offset)
 void render_frame(fix eye_offset, int window_num)
 {
 	int start_seg_num;
+#ifdef DXX_XL_RUNTIME
+	if (window_num == 0 && eye_offset == 0) xl_camera_renderer_frame();
+#endif
 
 	if (Endlevel_sequence) {
 		render_endlevel_frame(eye_offset);

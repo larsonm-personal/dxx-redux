@@ -2674,3 +2674,36 @@ five faces. These are authored information surfaces, so monitor rendering cannot
 be treated as optional decoration. Pmlev1 lightning owner 105 and pmlev3 owners
 320-322 also retain explicit unsupported-profile blockers. No original bytes or
 admission policy changed in this increment.
+
+## November 1 authored monitor runtime
+
+The native camera renderer now binds the qualified object-camera topology,
+visibility scheduler, retained target and scene capture to ordinary wall drawing.
+It uses the pinned unrestricted FPS and half-resolution profile, captures one
+ready visible monitor per main frame, and disables monitors during camera views.
+Wall-based camera placement remains explicitly guarded; original Pumo uses attached
+objects. Level changes, disk restores, resolution changes and graphics target loss
+invalidate the retained images rather than exposing stale handles.
+
+SetupMonitorFace chooses the base image when no overlay exists, otherwise the
+overlay. SetupMonitor selects the matching coordinate unit independently. Native
+single/merged face paths retain their lighting and shader selection, substitute
+only that image/UV stream, and keep monitor faces out of the ordinary transparency
+queue. Quad-corner mappings also handle both native triangle diagonals. Camera
+RGB targets remain opaque and use the source FBO nearest sampling; Android's
+ordinary user texture-filter override does not turn them into stale mipmapped
+images. SetupTMU still sets repeat wrapping, as in the pinned source.
+
+Source texture implementation SHA256:
+97ceec7d0c05661f5945bd198eab8b482cd69ee2cd8899ab09ddd055619e58ec.
+The source RENDER2TEXTURE=2 BindRenderBuffer only binds the FBO color handle;
+the linear-filter code above that branch belongs to the unused PBO path.
+
+Protected Android GPU owner passes 33/33 with 52 monitor checks on each side of
+actual context recreation. Tests capture real original-hub geometry, compare
+single/overlay native pixels at full/half light for four UV rotations and both
+triangle diagonals, preserve the other UV stream, and invalidate/rebuild a live
+camera target. Run 7839675773be4a0db3f6bf3eb3c54d99, 55929 ms; protected manifests
+match. The earlier 48-check pass was 27a7116ad286447c86fbb522e2b487c5, 55450 ms.
+Windows native build and projectile/save owner pass; automation catalogs pass.
+These controlled monitor fixtures do not admit or claim traversal of pmlev1/2/3.
