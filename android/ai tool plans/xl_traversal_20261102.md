@@ -284,3 +284,35 @@ now 646452d8239c0f101b317c939951ea5a2a7fb431. The combined reload check passed
 Historical S/T protected receipts retain their original counts. The next gap is
 switch 3 behind a bent grated shaft: audit and try the original guided-missile
 pickup and normal steering, never place the player beyond the grates to pass it.
+
+## V: bounded normal guided-missile flight
+
+Start from U/PR314 at c79dcb506304accbbfde71a25c239c9c3713d37c. Original switch 3
+is beyond a bent grated shaft and is not player-accessible in the verified key
+state. Original guided item 80 is reachable from adjoining room 2126; its ID40
+is a single missile, not a four-pack. Corrected normal pickup/selection passed
+16/16 (44.957s). An earlier incorrect four-missile expectation is retained as a
+test error, not a gameplay defect. Local staging and a closed-grate flight check
+passed 13/13 (4.566s); normal movement also consumed original shield16 in1048.
+The saved launch approach is1049, with one missile selected and switch3 unfired.
+
+Current introspection follows the ship and cannot observe the guided projectile.
+Add a read-only D2-only guided_missile object with validated live object/signature,
+position, velocity, forward direction and ownership. No steering shortcuts or
+gameplay rules change. Compile all six Android engine/ABI libraries, commit before
+building, verify embedded IDs and the installed APK hash, and preserve all26 owned
+profile files. Then exercise ordinary missile fire, steering and release/impact
+with rendered evidence. Try the authored bent route for roughly one hour; retain
+partial/unsupported observations separately from validated gameplay defects.
+No player placement beyond the grate, equipment grants or forced switch dispatch.
+
+Build28820 from fbabcf01fbb24b737896eea354bc1147f44b3ac5 passed all six engine/ABI
+builds and embedded-ID checks; installed APK SHA-256
+6e29ef901f2a510a8e6eeec6f85cc3954690b33162b6ab9a034fe9aeabf4188d matched and all26
+profile files were unchanged. The original cloak and nearby threats were handled
+through ordinary pickups and bounded laser bursts. Cleared first-grate flight
+passed8/8 (2.591s), with active missile position/velocity and a rendered GUIDED
+view. The bend, clean release and switch3 remain partial/unqualified. Corridor
+steering was observed, but shield-stability guards failed; do not count those
+scripts as passes. See evidence/pmc3-guided-pilot.md for exact boundaries and the
+preserved cleared checkpoint. PR315 remains draft for follow-up qualification.

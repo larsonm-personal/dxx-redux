@@ -114,6 +114,12 @@ hub route with an assisted, physics-driven companion. Companion activation of
 the XL exit is unsupported. Normal-player probes fill that specific gap without
 relaxing actor rules or dispatching exits directly.
 
+A separate [normal guided-missile pilot](evidence/pmc3-guided-pilot.md) uses debug
+candidate28820 to observe the active projectile. Original ammo, local combat and
+flight through the first grate were exercised; switch3, clean release and the
+red-key route remain unqualified. This candidate does not replace the recommended
+published28810 bundle.
+
 ## Boundaries and feedback
 
 - Fixed local approaches and bounded escape flights do not qualify full human
