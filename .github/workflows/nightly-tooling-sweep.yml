@@ -406,11 +406,8 @@ jobs:
         id: retail_gate
         env:
           GH_TOKEN: ${{ github.token }}
-          RETAIL_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
         if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
         run: |
-          [[ -n "$RETAIL_READ_TOKEN" ]] || { echo "Retail read-only environment secret is missing" >&2; exit 1; }
-          unset RETAIL_READ_TOKEN
           [[ "$RETAIL_CHECKOUT_COMMIT" == "$RETAIL_ASSETS_COMMIT" ]]
           python3 control/android/tests/nightly_tooling_sweep.py retail-check \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json --lane host

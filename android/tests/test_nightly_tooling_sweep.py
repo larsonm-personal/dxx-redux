@@ -123,6 +123,40 @@ class CandidateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.candidate.verify(SHA, self.env, unavailable)
 
+    def test_retail_gate_revalidates_pinned_target_on_partial_rerun(self):
+        verify = self.candidate.verify
+        identity = {"commit": "c" * 40}
+
+        def check(target):
+            return verify(target, self.env, self.responses.__getitem__)
+
+        for scenario in ("allowed", "head-moved", "other-rerunner"):
+            with self.subTest(scenario=scenario):
+                self.setUp()
+                if scenario == "head-moved":
+                    self.responses["pulls/319"]["head"]["sha"] = "b" * 40
+                elif scenario == "other-rerunner":
+                    self.responses["actions/runs/123"]["triggering_actor"]["id"] = 99
+                with (
+                    patch.object(
+                        sys,
+                        "argv",
+                        ["sweep", "retail-check", "--plan", "plan.json", "--policy", "policy.json", "--lane", "host"],
+                    ),
+                    patch.object(sweep, "read", side_effect=[{"target_sha": SHA, "retail_assets": identity}, {}]),
+                    patch.object(sweep, "validate_plan"),
+                    patch.object(sweep.retail, "lane_requires_retail", return_value=True),
+                    patch.object(sweep.retail, "trusted_context", return_value=True),
+                    patch.object(sweep.retail, "configured_identity", return_value=identity),
+                    patch.object(self.candidate, "verify", side_effect=check) as gate,
+                ):
+                    if scenario == "allowed":
+                        self.assertEqual(sweep.main(), 0)
+                    else:
+                        with self.assertRaises(ValueError):
+                            sweep.main()
+                    gate.assert_called_once_with(SHA)
+
     def test_workflow_uses_trusted_setup_and_catalog(self):
         workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
         self.assertIn('candidate="$(python3 control/android/tests/nightly_candidate.py)"', workflow)
@@ -130,6 +164,15 @@ class CandidateTests(unittest.TestCase):
         self.assertIn('bash "$setup/android/get_deps/helpers/get_bounded_python.sh"', workflow)
         self.assertIn('npm ci --prefix "$setup/android/tools/code-quality" --ignore-scripts', workflow)
         self.assertIn("python3 control/android/tests/nightly_tooling_sweep.py retail-check", workflow)
+        host = workflow.split("  host:", 1)[1].split("\n  android", 1)[0]
+        gate = host.index("      - name: Verify trusted retail checkout boundary")
+        checkout = host.index("      - name: Check out immutable private retail inputs")
+        execute = host.index("      - name: Execute admitted host owners")
+        self.assertLess(gate, checkout)
+        self.assertLess(checkout, execute)
+        self.assertNotIn("secrets.", host[:checkout])
+        self.assertIn("ref: ${{ needs.plan.outputs.target_sha }}", host[:gate])
+        self.assertIn("persist-credentials: false", host[checkout:execute])
 
 
 class SweepTests(unittest.TestCase):
