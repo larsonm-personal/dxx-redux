@@ -186,3 +186,26 @@ Before/after profile and resource hash lists match, SHA-256
 Receipts and inspected completion/destination frames are in
 `temp/xl-original-pmc2-escape`. These supplement the immutable selector bundle;
 that published folder and ZIP were not changed.
+
+## R: PMC3 teleport access, reactor and authored ending
+
+Start from Q/PR310 at 0f1df9069edbfe2ba22d27ae10ef90570afaadbd. Preserve the
+original earned PMC3 checkpoint before exploring. First qualify master 17's
+normal shot through its grate, the closed/open portal wall and outward/return
+teleport contacts. Then cover the ordinary exit-corridor door, reactor combat,
+countdown persistence and explicit ending screens. This fills access and terminal
+progression gaps left by fixed reactor/exit approaches. Keep local positioning
+separate from full navigation, and do not alter content or grant objectives.
+
+Exploratory exact 28810 results already establish normal reactor destruction
+(14 steps), warm countdown restore/physical exit (11 steps) and a fresh-process
+countdown restore/physical exit/normal ending-menu return (18 steps). The final
+ending must use explicit screen advances: generic skip_briefing continues past
+the main menu and cleanly exits the engine. Build a reusable protected scenario
+from verified actions, retaining original resources and the user's other devices.
+
+Protected qualification passed 215/215 warm steps (403.278s) and 22/22 cold
+steps (51.892s), PIDs 5025/7369. Completion and main-menu frames were inspected.
+Before/after profile and resource hashes match:
+1e41ad8c1791a2978e26bea22293902736c40331439a8949a9cf2ec1e5403129.
+Receipts: temp/xl-original-pmc3-finale. No content/runtime changes or new APK.
