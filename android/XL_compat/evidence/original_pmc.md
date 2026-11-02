@@ -90,5 +90,31 @@ controls run with and without the original extension.
 The protected Android PMC scenario uses the unchanged original mission, authored
 exit dispatch, fixed firing positions, ordinary input, death/restart, disk saves,
 monitor pixel sampling and graphics context recreation. These controls do not
-establish human traversal through every door, objective or secret. Device
-qualification and expanded artifact delivery are still in progress.
+establish human traversal through every door, objective or secret. The original
+PMC1 bundle was delivered from ea25a8586a95aacee34382ba9be1e7adad72c444; PMC2
+device qualification below covers the subsequent silent-mapping fix.
+
+## Original PMC2 silent sound mapping
+
+PMC2's original HXM replaces robot 65 (model 92, 100 shields) and sets its see,
+attack and taunt cues to logical sound zero. The HXM SHA256 is
+`5c803307f6af290f86eac47ae90ba233f2ca73a38e42e3f94ed4d98de724c4e8`.
+The trusted original sound table maps that entry to 255. Pinned
+`CAudio::XlatSound` explicitly returns -1 for
+255 in either the alternate or main mapping table, so this is a silent cue, not a
+missing sample. Resource admission now recognizes that sentinel before checking
+the resolved sample. Invalid logical/table indices and mapped sounds with absent
+sample data remain rejected. No HXM bytes or runtime sound mappings are changed.
+
+Audited `audio/objectaudio.cpp` SHA256:
+`e44484af297ce0c20c92feb00bfb2795316980434e3f1e1d85194c1d46b992e3`.
+Native controls exercise ordinary/low-memory silence, alternate silence, a real
+mapped sample, and missing-sample/invalid-index rejection. The 114-step lifecycle
+run `7790e5cf218c4acbb74ac37d082c8fc1` passed in 221309 ms. The expanded 117-step
+run `1886847229b64b34a0e74a480f10918e` passed in 229829 ms, including ordinary
+combat against original active PMC1 robot 89 and PMC2 HXM robot 174. Both levels
+passed camera contacts, monitor sampling, static-display preservation, exact
+death/restart life consumption and full disk restoration. PMC2 additionally
+passed background/context recreation and retained the PMC3 admission gate.
+Protected before/after app-data hashes matched in both runs. Only x86_64 was
+device-tested; universal packaging and CI are recorded separately.

@@ -1,5 +1,10 @@
 # Original Pumo opening playtest
 
+A newer [PMC1 playtest bundle](../../temp/pumo-pmc-playtest-20261101/README.md)
+adds original PMC Data Storage Center with camera, combat, restart and save
+checks. The opening-only bundle documented below remains available unchanged.
+The newer bundle requires a new game and records its own boundaries in its README.
+
 The November 1, 2026 development build is ready for initial Android feedback on
 Temporal Hub and Crauphel Scilab, the first Mineral Valley level. This is a fixed
 probe smoke test, not a completed human playthrough or full-campaign qualification.
@@ -66,7 +71,7 @@ controlled progression evidence, not a full combat or traversal qualification.
 - This local gameplay bundle includes original HOG/descriptor/sounds and required
   original effect atlases. Optional high-resolution models/textures and the custom
   soundtrack are not bundled. Existing gameplay/hazard rendering remains active
-- Build CI for this test-delivery branch is pending until its PR is published
+- Opening delivery PR 278 passed CI
 - Full campaign, all weapons, all doors, secret routes, touch ergonomics, physical
   controllers and Android suspend/resume still need broader playtesting
 

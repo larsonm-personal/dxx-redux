@@ -17,6 +17,7 @@ extern "C" {
 #include "piggy.h"
 #include "wall.h"
 #include "digi.h"
+#include "args.h"
 }
 namespace xl_assets
 {
@@ -39,6 +40,11 @@ struct ObjectDependencies {
 	{
 		if (id == -1 || id == 255) return;
 		asset_require(id >= 0 && id < MAX_SOUNDS, "dependency references invalid sound ID");
+		// Pinned XlatSound treats the original table's 255 entries as silence
+		const int logical = GameArg.SysLowMem ? AltSounds[id] : id;
+		if (logical == 255) return;
+		asset_require(logical >= 0 && logical < MAX_SOUNDS, "dependency references invalid alternate sound ID");
+		if (Sounds[logical] == 255) return;
 		const int resolved = digi_xlat_sound(id);
 		if (resolved < 0 || resolved >= MAX_SOUND_FILES)
 			throw std::runtime_error("dependency references unmapped sound " + std::to_string(id));

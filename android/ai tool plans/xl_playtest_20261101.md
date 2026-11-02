@@ -203,3 +203,27 @@ existing preview API header for the transition generation; Android rebuild pendi
 - Reject unsupported custom splash/child/flash definitions during camera resource preflight
 - Qualify unchanged pmlev1/2 through actual original hub exits, controls, combat, monitors, full save/load and death/restart on Android
 - Deliver an expanded universal bundle after these checks, with original addon resources and preserved opening instructions
+
+I is draft PR287 at ea25a8586a95aacee34382ba9be1e7adad72c444, targeting H.
+Original PMC1 completed controls, camera contacts/monitors, exact life decrement,
+static displays, disk restoration and active robot89 combat through step56 of
+run6d9a9c7160204d56bb58fe8fd1b8ec7e. The complete114-step run failed at PMC2 HXM
+sound dependency admission. Universal build3m34 passed. Installer and opening
+qualification of the PMC1 bundle are running; no full PMC2 claim.
+
+### J - Original PMC2 resource semantics (in progress)
+
+- Child xl_playtest_132_original_pmc2 of I ea25a8586a95aacee34382ba9be1e7adad72c444, PR287
+- Preserve source silent-sound table semantics for the original pmlev2.HXM
+- Retain invalid-index and missing-mapped-sample rejection
+- Finish original PMC2 gameplay, save/restart, monitor and context-loss qualification
+- Continue source qualification of PMC3 only after delivering verified expanded slices
+
+J validation: native silent/mapped/missing/invalid sound controls and full
+combat/save-through-stock pass. Original PMC1/2 lifecycle114/114 passes in221309ms,
+run7790e5cf218c4acbb74ac37d082c8fc1. Expanded117/117 passes in229829ms,
+run1886847229b64b34a0e74a480f10918e, adding ordinary combat against original
+PMC2 HXM robot174. Both protected manifests match. Scoped quality and catalogs
+pass. The dedicated lightning source suite also passes Windows1.97s/Linux0.43s,
+including the original-coordinate accumulation regression; the earlier effect
+suite is separate coverage. Universal PMC2 packaging is next.
