@@ -47,8 +47,38 @@ The protected Android mode is `test_xl_pog_runtime.ps1 -PmcReactorPlaytest
 resource arguments as the switch/key probe. It appends a normal switch-14 shot
 and reactor laser attack to the earned hub/key/switch route, then checks warm and
 fresh-process persistence. Fixed poses select bounded interactions; no weapons,
-keys, shields or completion state are granted. Android qualification is pending
-on a committed replacement APK; do not describe the new scenario as passing yet.
+keys, shields or completion state are granted.
+
+The exact universal APK from `c94341f823c0c498ae3dc824cf4663f8fddf4d8d`, version
+28780, passed 81/81 warm steps in 187.759 seconds and 15/15 cold steps in 34.769
+seconds. Normal starter laser fire destroyed the reactor in 10.972 seconds.
+The player survived with 42 shields; all six original bosses remained alive,
+and countdown stayed inactive. Warm load restored the saved segment 664.
+Fresh-process PIDs were 15671 then 16886; the restored ship also flew through
+the previously opened switch gate. The cold rendered frame was inspected.
+
+All six D1/D2 libraries across ARM64, ARMv7 and x86_64 embed the source ID above.
+APK SHA256: `3221c31bac49e9dfa1a9ada6af63888858854c1f1f09c0790cc207f4ab8c5117`.
+The installed APK hash matches. Installer checks preserved all 20 backed-up
+pilot/save/settings files, and the protected scenario restored identical
+resource/player hash lists. Device evidence uses the owned x86_64 host-GPU
+emulator `DxxTraversal20261102`, not physical ARM hardware.
+
+The same APK passed the existing PMC3 continuity scenario (115/115 in 233.938
+seconds) and fresh-process scenario (21/21 in 47.561 seconds). Native PIDs changed
+from 18056 to 19526; the player/85-actor checkpoint matched and restoration hashes
+were identical. Its rendered frame was inspected. These broader scenarios use
+controlled exits and fixed poses, so they do not establish earned campaign
+completion. Previous-APK receipts remain in
+`temp/xl-traversal-20261102/baseline-pmc3-cold`.
+
+Follow-up audit: PMC3 retains eleven boss-state entries originating from base
+definitions, but its current definitions exclude them from required objectives;
+the final snapshot correctly reports the remaining reactor only. Registration
+currently precedes `load_level_robots`, which applies per-level replacements.
+Audit newly introduced HXM bosses and the registration order before claiming
+general custom-boss lifecycle coverage. PMC1's six active required bosses are
+explicitly verified above.
 
 All 14 supplied original Pumo levels have zero or one reactor. Multiple-reactor
 firing state, non-ending negative boss flags, full six-boss PMC combat, the normal
