@@ -34,3 +34,13 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_boss.h" CONTENT "
 add_executable(xl_boss_reference tests/reference_boss.cpp)
 target_compile_features(xl_boss_reference PRIVATE cxx_std_17)
 target_include_directories(xl_boss_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/objects/reactor.cpp" reactor_hash)
+if(NOT reactor_hash STREQUAL "9e011a86ff48f745fd2d6e0fb2beb0e539014a75894fbac93a7a114ea86b7b2c")
+    message(FATAL_ERROR "Reactor objective reference differs from audited revision")
+endif()
+set(extracted "// Actual pinned reactor completion function\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/objects/reactor.cpp"
+                      "void DoReactorDestroyedStuff (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_reactor_objectives.h"
+     CONTENT "${extracted}")
+target_sources(xl_boss_reference PRIVATE tests/reference_reactor_objectives.cpp)

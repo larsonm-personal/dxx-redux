@@ -10,6 +10,9 @@ int create_gated_robot(int segment, int type, vms_vector *position);
 
 static void boss_lifecycle_controls(const std::vector<int> &owners)
 {
+	// This derived control isolates the two bosses; mixed objectives run below
+	for (int i = 0; i <= Highest_object_index; ++i)
+		if (Objects[i].type == OBJ_CNTRLCEN) obj_delete(i);
 	const auto state = [](int index) { xl_boss_spawn_state result; require(xl_boss_spawn_state_get(index, &result), "missing lifecycle boss"); return result; };
 	const int first = owners[0], second = owners[1];
 	const auto stock_start = Boss_cloak_start_time, stock_end = Boss_cloak_end_time, stock_hit = Boss_hit_time, stock_teleport = Last_teleport_time;
@@ -48,12 +51,60 @@ static void boss_lifecycle_controls(const std::vector<int> &owners)
 	const auto rolling = state(0);
 	GameTime64 += i2f(10);
 	do_ai_frame_all();
-	require(state(0).owner == -1 && state(0).dying == 2 && state(1).owner == second && !state(1).dying && Control_center_destroyed, "boss completion did not retire only the dead owner");
+	require(state(0).owner == -1 && state(0).dying == 2 && state(1).owner == second && !state(1).dying && !Control_center_destroyed, "first boss completion retired another owner or started the final countdown");
 	require(state_restore_all_sub(dying, 0) && state(0).owner == first && state(0).dying == 1 && state(0).death_elapsed == rolling.death_elapsed && !state(1).dying, "rolling boss death did not restore independently");
 	GameTime64 += BOSS_DEATH_DURATION;
 	do_ai_frame_all();
 	require(state(0).owner == -1 && state(1).owner == second && xl_object_trigger_has_spawn(second), "restored death consumed another boss's actions");
+	require(!Control_center_destroyed && xl_level_objectives_remaining() == 1, "restored first boss death lost the remaining objective");
+	require(apply_damage_to_robot(&Objects[second], Objects[second].shields + F1_0, ConsoleObject - Objects), "second boss did not enter death roll");
+	require(!Control_center_destroyed && xl_level_objectives_remaining() == 1, "countdown started before the final boss death roll completed");
+	GameTime64 += BOSS_DEATH_DURATION + 1;
+	do_ai_frame_all();
+	require(Control_center_destroyed && !xl_level_objectives_remaining(), "final boss death did not start the countdown");
 	std::cout << "XL boss lifecycle passed: independent cloak/render times, teleport, lethal combat, rolling-death save/restore and owner retirement\n";
+}
+
+static void boss_reactor_controls(const std::vector<int> &owners, char *baseline, const std::filesystem::path &output)
+{
+	std::ofstream samples(output / "boss-reactor-samples.txt");
+	const auto sample = [&](int reactor) { samples << reactor << ' ' << xl_level_objectives_remaining() << ' ' << Control_center_destroyed << '\n'; };
+	for (int reactor_first = 0; reactor_first < 2; ++reactor_first) {
+		require(state_restore_all_sub(baseline, 0), "reactor/boss baseline restore failed");
+		int reactor = -1;
+		for (int i = 0; i <= Highest_object_index; ++i)
+			if (Objects[i].type == OBJ_CNTRLCEN) reactor = i;
+		require(reactor >= 0, "authored reactor missing from mixed objective fixture");
+		require(Objects[reactor].type == OBJ_CNTRLCEN && Objects[reactor].render_type == RT_POLYOBJ && Control_center_present &&
+		            Objects[reactor].shields > 0 && xl_level_objectives_remaining() == 3,
+		        "XL reactor hidden or missing beside bosses");
+		const auto destroy_reactor = [&] {
+			apply_damage_to_controlcen(&Objects[reactor], Objects[reactor].shields + F1_0, ConsoleObject - Objects);
+			sample(1);
+			require(Objects[reactor].shields < 0 && Dead_controlcen_object_num == reactor, "reactor combat did not record destruction");
+		};
+		if (reactor_first) destroy_reactor();
+		for (int owner : owners) {
+			require(apply_damage_to_robot(&Objects[owner], Objects[owner].shields + F1_0, ConsoleObject - Objects), "mixed objective boss combat failed");
+			require(!Control_center_destroyed, "mixed objectives started countdown before completion");
+			GameTime64 += BOSS_DEATH_DURATION + 1;
+			do_ai_frame_all();
+			sample(0);
+			if (owner == owners.front()) {
+				require(!Control_center_destroyed && xl_level_objectives_remaining() == (reactor_first ? 1 : 2), "mixed objective accounting failed");
+				char save[] = "boss-reactor.sav", description[] = "Mixed objectives";
+				stop_time();
+				require(state_save_all_sub(save, description) && state_restore_all_sub(save, 0), "mixed objective disk roundtrip failed");
+				require(!Control_center_destroyed && xl_level_objectives_remaining() == (reactor_first ? 1 : 2), "mixed objective state lost across disk restore");
+			}
+		}
+		if (!reactor_first) {
+			require(!Control_center_destroyed && xl_level_objectives_remaining() == 1, "boss deaths skipped the live reactor");
+			destroy_reactor();
+		}
+		require(Control_center_destroyed && !xl_level_objectives_remaining(), "mixed objectives did not start final countdown");
+	}
+	std::cout << "XL mixed objective controls passed: reactor retained, both destruction orders, no early countdown and disk restore\n";
 }
 
 static void boss_reference_samples(const std::filesystem::path &output, char *baseline, int owner)
@@ -421,6 +472,7 @@ static int boss_spawn_test(int argc, char **argv)
 			require(!xl_boss_spawn_restore(corrupt, 2, 1) && state(0).elapsed == restored[0].elapsed, "malformed boss state accepted or partially published");
 		}
 		boss_lifecycle_controls(owners);
+		boss_reactor_controls(owners, snapshot, root.parent_path());
 		require(state_restore_all_sub(snapshot, 0), "boss source reset after lifecycle controls failed");
 		boss_restore_guards(root.parent_path());
 		boss_reference_samples(root.parent_path(), snapshot, owners[0]);

@@ -2390,6 +2390,7 @@ extern "C" char *game_introspect_get_state(void)
 				spawned.push_back({ { "object", index }, { "id", object.id }, { "signature", object.signature }, { "segment", object.segnum }, { "lifeleft", object.lifeleft }, { "control", object.control_type }, { "shields", f2fl(object.shields) } });
 		}
 		j["xl_pilot"]["bosses"] = std::move(bosses);
+		j["xl_pilot"]["remaining_objectives"] = xl_level_objectives_remaining();
 		j["xl_pilot"]["boss_spawned"] = std::move(spawned);
 		j["xl_pilot"]["boss_spawned_count"] = j["xl_pilot"]["boss_spawned"].size();
 	}

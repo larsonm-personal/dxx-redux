@@ -1,0 +1,48 @@
+[
+    { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_xl_pog_runtime" } },
+    // Appended by the protected owner after the earned PMC switch/key-gate route
+    { "action": "face_view", "segment": 664, "side": 0, "distance": 12 },
+    { "action": "send_button", "button": 100, "held": 1 },
+    { "action": "wait_ms", "ms": 1000 },
+    { "action": "send_button", "button": 100, "pressed": 0 },
+    { "action": "wait_for", "expect": { "xl_pilot.wall_triggers.14.operated": true }, "timeout_ms": 5000 },
+    { "action": "pose_view", "segment": 674, "position_fixed": [23335371, -68822074, -6759991], "heading": 16384 },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.remaining_objectives": 7,
+            "reactor_countdown.active": false,
+            "cheats_enabled": false,
+            "player_dead": false,
+        },
+    },
+    { "action": "send_button", "button": 100, "held": 1 },
+    { "action": "wait_for", "expect": { "xl_pilot.remaining_objectives": 6 }, "timeout_ms": 45000 },
+    { "action": "send_button", "button": 100, "pressed": 0 },
+    {
+        "action": "assert",
+        "expect": {
+            "reactor_countdown.active": false,
+            "cheats_enabled": false,
+            "player_dead": false,
+            "current_level_num": 11,
+        },
+    },
+    // Retreat through a fixed pose before save/load; no exit is dispatched
+    { "action": "face_view", "segment": 664, "side": 0, "distance": 12 },
+    { "action": "set_debug", "field": "android_game_request", "value": "quick_save" },
+    { "action": "wait_ms", "ms": 1000 },
+    { "action": "pose_view", "segment": 674, "position_fixed": [23335371, -68822074, -6759991], "heading": 16384 },
+    { "action": "set_debug", "field": "android_game_request", "value": "quick_load" },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 664,
+            "xl_pilot.remaining_objectives": 6,
+            "reactor_countdown.active": false,
+            "player_dead": false,
+        },
+        "timeout_ms": 120000,
+    },
+    { "action": "introspect" },
+]
