@@ -33,6 +33,7 @@ struct ActorHitState {
 	xl_compat::CameraHitState hits;
 };
 std::array<ActorHitState, MAX_OBJECTS> actor_hits{};
+unsigned player_weapon_contacts = 0;
 const robot_info &camera_definition(const object &camera)
 {
 	if (camera.control_type != 18 || camera.movement_type != MT_NONE ||
@@ -90,9 +91,24 @@ bool contact_projectile(int id)
 }
 } // namespace
 
+void xl_camera_validate_weapon_definitions()
+{
+	for (int id = 0; id < N_weapon_types; ++id) {
+		if (!contact_projectile(id)) continue;
+		const auto &definition = Weapon_info[id];
+		if (definition.damage_radius ? !xl_camera_splash_profile(id) : definition.children != -1 || definition.flash)
+			throw std::runtime_error("Camera weapon definition exceeds the qualified gameplay profile: " + std::to_string(id));
+	}
+}
+
 extern "C" void xl_camera_hit_state_clear(void)
 {
 	actor_hits.fill({});
+	player_weapon_contacts = 0;
+}
+extern "C" unsigned xl_camera_player_weapon_contacts(void)
+{
+	return player_weapon_contacts;
 }
 extern "C" void xl_camera_hit_state_created(int owner)
 {
@@ -239,6 +255,7 @@ extern "C" int xl_camera_weapon_contact(object *a, object *b, vms_vector *point)
 	// Single-player Omega passes the source distance gate
 	if ((weapon->mtype.phys_info.flags & PF_PERSISTENT) && xl_projectile_add_hit(int(weapon - Objects), int(camera - Objects)) < 0) return 1;
 	if (weapon->ctype.laser_info.parent_signature == camera->signature) return 1;
+	if (weapon->ctype.laser_info.parent_type == OBJ_PLAYER && weapon->ctype.laser_info.parent_num == Players[Player_num].objnum) ++player_weapon_contacts;
 	if (definition.damage_radius) {
 		const auto generation = xl_wall_trigger_generation();
 		xl_camera_splash(*weapon, *camera, *point);

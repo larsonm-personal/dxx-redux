@@ -140,6 +140,9 @@ void init_ai_object(int objnum, int behavior, int hide_segment)
 	ai_local		*ailp = &Ai_local_info[objnum];
 	robot_info	*robptr = &Robot_info[objp->id];
 
+#ifdef DXX_XL_RUNTIME
+	xl_initialize_static_robot(objnum, behavior);
+#endif
 	memset(ailp, 0, sizeof(ai_local));
 
 	if (!d1_in_d2_ai_initialize_behavior(objp, ailp, behavior, hide_segment)) {

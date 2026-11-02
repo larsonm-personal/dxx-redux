@@ -11,6 +11,7 @@ int xl_camera_passive_contact(struct object *a, struct object *b);
 int xl_camera_player_contact(struct object *a, struct object *b, struct vms_vector *point);
 int xl_camera_weapon_contact(struct object *a, struct object *b, struct vms_vector *point);
 void xl_camera_hit_state_clear(void);
+unsigned xl_camera_player_weapon_contacts(void);
 void xl_camera_hit_state_created(int owner);
 void xl_camera_physics_unstick(struct object *actor, const struct object *camera,
                                const struct vms_vector *old_position, const struct vms_vector *attempted_position,
@@ -19,6 +20,7 @@ void xl_camera_physics_unstick(struct object *actor, const struct object *camera
 }
 #include <cstdint>
 #include <vector>
+void xl_camera_validate_weapon_definitions();
 namespace xl_compat
 {
 struct CameraHitState;

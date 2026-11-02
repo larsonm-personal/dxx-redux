@@ -20,6 +20,7 @@
 #include "particle_state.h"
 #include "transparency_scene.h"
 #include "resource_validation.h"
+#include "camera_collision.h"
 #include "mission_progress.h"
 #include "../inventory.h"
 #include "../particle_render.h"
@@ -166,6 +167,7 @@ struct Readback {
 #include "mission_flow_probe.h"
 #include "mission_revisit_probe.h"
 #include "mission_flyout_probe.h"
+#include "pmc_playtest_probe.h"
 
 void gpu()
 {
@@ -197,6 +199,10 @@ void gpu()
 const char *xl_pog_probe(const char *operation)
 {
 	try {
+		if (!std::strncmp(operation, "pmc_", 4)) {
+			pmc_playtest_probe(operation + 4);
+			return nullptr;
+		}
 		if (!std::strncmp(operation, "bubscene_", 9)) {
 			bubble_lifecycle_probe(operation + 9);
 			return nullptr;

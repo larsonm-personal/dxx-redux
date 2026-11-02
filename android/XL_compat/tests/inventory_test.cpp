@@ -1383,6 +1383,35 @@ int main(int argc, char **argv)
 			generator_assignment_contract(argv[2]);
 			return 0;
 		}
+		{
+			auto camera = xl_compat::inspect_level(fixture(23));
+			xl_compat::Object object{};
+			object.type = 16;
+			object.control = 1;
+			object.render = 1;
+			object.control_data.resize(16);
+			object.control_data[0] = 128;
+			object.render_data.resize(33);
+			camera.objects = { object };
+			camera.object_triggers = 1;
+			camera.object_trigger_records = { { { 16, 0, 327680, -1, { { 0, 0 } } }, 0 } };
+			camera.unsupported = { { "object_type", 0, "16" }, { "object_trigger_type", 0, "16" } };
+			check(xl_compat::runtime_blockers(camera).empty(), "Qualified object-bound camera remained blocked");
+			for (int mode = 0; mode < 10; ++mode) {
+				auto bad = camera;
+				if (mode == 0) bad.objects[0].control_data[0] = 135;
+				if (mode == 1) bad.objects[0].movement = 1;
+				if (mode == 2) bad.objects[0].render = 0;
+				if (mode == 3) bad.objects[0].flags = 1;
+				if (mode == 4) bad.objects[0].multiplayer = 1;
+				if (mode == 5) bad.objects[0].contains_count = 1;
+				if (mode == 6) bad.object_trigger_records[0].action.flags = 128;
+				if (mode == 7) bad.object_trigger_records[0].action.time = 100;
+				if (mode == 8) bad.object_trigger_records[0].action.targets[0][1] = 6;
+				if (mode == 9) bad.object_trigger_records[0].object = -1;
+				check(!xl_compat::runtime_blockers(bad).empty(), "Camera admission accepted an unsupported actor or binding");
+			}
+		}
 		generator_assignment_contract();
 		object_capacity_contract();
 		wide_wall_contract();

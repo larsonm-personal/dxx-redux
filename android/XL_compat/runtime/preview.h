@@ -81,6 +81,7 @@ unsigned xl_preview_unresolved_emitters(void);
 int xl_preview_pilot_active(void);
 int xl_runtime_active(void);
 int xl_level_extensions_active(void);
+void xl_initialize_static_robot(int object_number, int behavior);
 int xl_wall_teleport_action(int trigger_index, int object_index, int shot);
 void xl_wall_teleport_crossings(int object_index, const int *segments, int count);
 int xl_wall_teleport_actor(int object_index);

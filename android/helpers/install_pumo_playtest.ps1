@@ -35,10 +35,11 @@ try {
 $stamp = [DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
 $backup = "files/pumo-playtest-backup-$stamp"
 # Back up existing mission resources only; saves, pilots and settings are untouched
-Invoke-PlaytestPrivate "mkdir $backup && for p in files/d2x-redux/missions/pmines.hog files/d2x-redux/missions/pmines.mn2 files/d2x-redux/mods/pmines; do if test -e `$p; then echo `$p; fi; done > $backup/paths.txt && if test -s $backup/paths.txt; then tar -cf $backup/resources.tar -T $backup/paths.txt; else touch $backup/no-existing-resources; fi" | Out-Null
+Invoke-PlaytestPrivate "mkdir $backup && for p in files/d2x-redux/missions/pmines.hog files/d2x-redux/missions/pmines.mn2 files/d2x-redux/mods/pmines files/d2x-redux/missions/d2x-xl.hog files/d2x-redux/missions/d2x.ham; do if test -e `$p; then echo `$p; fi; done > $backup/paths.txt && if test -s $backup/paths.txt; then tar -cf $backup/resources.tar -T $backup/paths.txt; else touch $backup/no-existing-resources; fi" | Out-Null
 Invoke-PlaytestAdb @('push', (Join-Path $Bundle 'pumo-runtime.tar'), '/data/local/tmp/pumo-playtest-runtime.tar') | Out-Null
 Invoke-PlaytestPrivate 'tar -xf /data/local/tmp/pumo-playtest-runtime.tar' | Out-Null
 Invoke-PlaytestAdb @('shell', 'rm', '/data/local/tmp/pumo-playtest-runtime.tar') | Out-Null
 Write-Output "Installed build $($manifest.build). Existing mission resource backup or absence marker: $backup"
 Write-Output 'Launch Descent 2, select New Game, XL: [-Pumo Mines-], level 1, and your preferred difficulty'
-Write-Output 'Choose the Mineral Valley route in Temporal Hub; PMC Data Storage Center remains unsupported'
+if ($manifest.launch_notes) { Write-Output $manifest.launch_notes }
+else { Write-Output 'Choose the Mineral Valley route in Temporal Hub; PMC Data Storage Center remains unsupported' }

@@ -15,17 +15,23 @@ struct LightningSegmentLight {
 
 class LightningLightAccumulator
 {
-	std::map<int, LightningSegmentLight> lights;
+	struct AccumulatedLight {
+		LightningSegmentLight light;
+		std::array<std::int64_t, 3> position{};
+	};
+	std::map<int, AccumulatedLight> lights;
 
   public:
 	void add(int segment, const LightningPoint &position, const std::array<float, 4> &color)
 	{
 		if (segment < 0) throw std::runtime_error("Lightning light has an invalid segment");
-		auto &light = lights[segment];
+		auto &sum = lights[segment];
+		auto &light = sum.light;
 		light.segment = segment;
 		light.samples = lightning_detail::checked(std::int64_t(light.samples) + 1);
 		for (unsigned axis = 0; axis < 3; ++axis)
-			light.position[axis] = lightning_detail::checked(std::int64_t(light.position[axis]) + position[axis]);
+			// Original PMC coordinates overflow the source's 32-bit sum before averaging
+			sum.position[axis] += position[axis];
 		for (unsigned channel = 0; channel < 4; ++channel) {
 			light.color[channel] += color[channel];
 			if (!std::isfinite(light.color[channel])) throw std::runtime_error("Lightning light color is not finite");
@@ -33,10 +39,11 @@ class LightningLightAccumulator
 	}
 	std::map<int, LightningSegmentLight> finish() const
 	{
-		auto result = lights;
-		for (auto &[segment, light] : result) {
+		std::map<int, LightningSegmentLight> result;
+		for (const auto &[segment, sum] : lights) {
+			auto &light = result[segment] = sum.light;
 			for (unsigned axis = 0; axis < 3; ++axis) {
-				light.position[axis] /= light.samples;
+				light.position[axis] = lightning_detail::checked(sum.position[axis] / light.samples);
 				light.color[axis] /= light.samples;
 			}
 			// Source averages RGB but retains summed alpha when computing brightness
