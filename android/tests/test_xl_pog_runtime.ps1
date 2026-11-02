@@ -37,16 +37,18 @@ param(
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
-if ($Pmc3Playtest -and (!$PmcPlaytest -or !$BubbleImage -or !$BubbleWave)) { throw 'Pmc3Playtest requires PmcPlaytest plus original bubble assets' }
+if ($Pmc3Playtest -and !$PmcPlaytest) { throw 'Pmc3Playtest requires PmcPlaytest' }
+# PMC2 also preflights the authored PMC3 exit, so its resources must be explicit
+if ($PmcPlaytest -and (!$BubbleImage -or !$BubbleWave)) { throw 'PmcPlaytest requires original BubbleImage and BubbleWave for PMC3 readiness' }
 if ($PmcPlaytest -and (!$OriginalHub -or !$MissionFlow -or $OpeningPlaytest -or $SceneOnly -or $LightningGpu -or $BubbleGpu -or $CampaignEnd -or !$CameraHog -or !$VertigoHam)) { throw 'PmcPlaytest requires OriginalHub, MissionFlow assets, CameraHog and VertigoHam in its own mode' }
 if ($PmcPlaytest -and (Get-FileHash -LiteralPath $CameraHog -Algorithm SHA256).Hash -ne 'df69c62aad949f2d92bc1bbea4b597623cd29d0a0f594cdcc3d66568d6ce482a') { throw 'Requires the original XL camera addon archive' }
 if ($PmcPlaytest -and (Get-FileHash -LiteralPath $VertigoHam -Algorithm SHA256).Hash -ne 'faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f') { throw 'Requires the original Vertigo robot extension' }
 if ($OpeningPlaytest -and (!$OriginalHub -or $MissionFlow -or $SceneOnly -or $LightningGpu -or $BubbleGpu -or $CampaignEnd -or $FlyoutFixture)) { throw 'OpeningPlaytest requires OriginalHub and its own mode' }
 if ($BubbleDry -and !$BubbleFixture) { throw 'BubbleDry requires BubbleFixture' }
 if ($BubbleFixture -and ($OriginalHub -or $BubbleGpu -or $LightningGpu -or $SmokeFixture -or $SkyboxFixture -or $SecretFixture -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or $FlyoutFixture -or !$PumoMods -or !$SmokeImage -or !$BubbleImage -or !$BubbleWave)) { throw 'BubbleFixture requires original mod assets, smoke/bubble atlases, bubble wave and its own derived mode' }
-if (($BubbleFixture -or $Pmc3Playtest) -and (Get-FileHash -LiteralPath $BubbleWave -Algorithm SHA256).Hash -ne '539b434ca912a17442017e4f68aad21953c285ba2d816bb5bb7c2d6678f0e5cc') { throw 'Requires the original XL bubble waveform' }
+if (($BubbleFixture -or $PmcPlaytest) -and (Get-FileHash -LiteralPath $BubbleWave -Algorithm SHA256).Hash -ne '539b434ca912a17442017e4f68aad21953c285ba2d816bb5bb7c2d6678f0e5cc') { throw 'Requires the original XL bubble waveform' }
 if ($BubbleGpu -and (!$OriginalHub -or $LightningGpu -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or $FlyoutFixture -or !$BubbleImage)) { throw 'BubbleGpu requires OriginalHub, original BubbleImage and its own mode' }
-if (($BubbleGpu -or $BubbleFixture -or $Pmc3Playtest) -and (Get-FileHash -LiteralPath $BubbleImage -Algorithm SHA256).Hash -ne 'b664f81229b47e08274e9b5b41811fe91fdb25949893a4e28c2f202a1080b28b') { throw 'Requires the original XL bubble atlas' }
+if (($BubbleGpu -or $BubbleFixture -or $PmcPlaytest) -and (Get-FileHash -LiteralPath $BubbleImage -Algorithm SHA256).Hash -ne 'b664f81229b47e08274e9b5b41811fe91fdb25949893a4e28c2f202a1080b28b') { throw 'Requires the original XL bubble atlas' }
 if ($LightningGpu -and (!$OriginalHub -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or $FlyoutFixture -or !$CoronaImage -or !$GlareImage -or !$ShieldImageDirectory)) { throw 'LightningGpu requires OriginalHub, original CoronaImage/GlareImage/ShieldImageDirectory and its own mode' }
 if ($LightningGpu) {
     $shieldHashes = @{
@@ -225,11 +227,11 @@ try {
         Invoke-PogPrivate "cp /data/local/tmp/xl-pog-smoke.tga files/d2x-redux/mods/$mission/textures/d2x-xl/smoke.tga" | Out-Null
     }
     Invoke-PogAdb -Arguments @('logcat', '-c') | Out-Null
-    if ($BubbleGpu -or $BubbleFixture -or $Pmc3Playtest) {
+    if ($BubbleGpu -or $BubbleFixture -or $PmcPlaytest) {
         Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $BubbleImage).Path, '/data/local/tmp/xl-pog-bubble.tga') | Out-Null
         Invoke-PogPrivate "cp /data/local/tmp/xl-pog-bubble.tga files/d2x-redux/mods/$mission/textures/d2x-xl/bubble.tga" | Out-Null
     }
-    if ($BubbleFixture -or $Pmc3Playtest) {
+    if ($BubbleFixture -or $PmcPlaytest) {
         Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $BubbleWave).Path, '/data/local/tmp/xl-pog-bubble.wav') | Out-Null
         Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission/sounds/d2x-xl && cp /data/local/tmp/xl-pog-bubble.wav files/d2x-redux/mods/$mission/sounds/d2x-xl/airbubbles.wav" | Out-Null
     }

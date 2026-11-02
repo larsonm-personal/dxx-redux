@@ -1,5 +1,17 @@
 # Original Pumo opening playtest
 
+The latest [PMC3 playtest bundle](../../temp/pumo-pmc3-playtest-20261101/README.md)
+is `temp/pumo-pmc3-playtest-20261101.zip`. Its exact universal APK passed **64
+opening, 117 PMC1/PMC2 and 86 PMC3 checks**, with protected hashes matching.
+The original PMC route now reaches Cybernetic Menaces Research Lab and its
+authored ending. Five camera monitors, 80 static robot restore states, fixed
+lightning, ordinary combat, death/restart and background recovery were checked.
+Start a new game and follow the PMC route from Temporal Hub. Fixed poses and
+exit dispatch do not establish complete human traversal; see the bundle README
+for install instructions, slow-load observations and remaining feedback needs.
+
+Earlier bundles below remain available for existing checkpoints.
+
 The verified [expanded PMC1/PMC2 bundle](../../temp/pumo-pmc2-playtest-20261101/README.md)
 is ready for feedback: `temp/pumo-pmc2-playtest-20261101.zip`. Its exact universal
 APK passed 64 opening checks and 117 PMC1/PMC2 checks, including ordinary controls,

@@ -284,3 +284,18 @@ The original PMC3 device owner follows authored PMC1/2 exits, checks five camera
 full disk restore, context recovery and the authored level15 ending destination.
 Fixed poses and exit dispatch are controlled evidence, not human traversal.
 Android universal rebuild/device verification remain pending.
+
+## Original PMC3 device pass and continuity follow-up
+
+PR290 head c0e8d39d23d48210e5ed478710f8d805cef0b539 passed the universal
+Android build and original PMC3 86-step scenario, run
+93a8accc6a8649d5b6dd7c2490e1d09f in 379795ms. Protected hashes match.
+The PMC1/PMC2 and opening scenarios are being rerun on the same APK before
+publication. Camera monitors, 80 static robot restore states, fixed lightning,
+combat, death/restart, context recovery and the authored ending passed.
+
+Child branch M extends that original scenario through Counterstrike and back
+to the saved PMC3 state. Explicit stock checks cover camera actors/controllers,
+monitor bindings and fixed-lightning owner cleanup; the return verifies the
+saved population, all monitors and ordinary laser contact. Native orchestration
+now also requires the static-camera integration receipt. Device validation pending.

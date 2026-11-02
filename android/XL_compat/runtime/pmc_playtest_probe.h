@@ -64,6 +64,23 @@ nlohmann::json pmc_camera_snapshot()
 }
 void pmc_playtest_probe(const char *operation)
 {
+	if (!std::strcmp(operation, "stock")) {
+		require(Current_mission && !xl_level_extensions_active(), "PMC stock isolation needs an ordinary mission");
+		for (int owner = 295; owner <= 299; ++owner) {
+			XlCameraControllerState state;
+			require(!xl_camera_controller_get(owner, state), "PMC camera controller leaked into the stock mission");
+		}
+		for (int i = 0; i <= Highest_object_index; ++i)
+			require(Objects[i].type != 16, "PMC camera actor leaked into the stock mission");
+		for (int owner : { 320, 322 })
+			require(!xl_compat::lightning_object_emitter(owner), "PMC fixed lightning leaked into the stock mission");
+		for (int segment = 0; segment < Num_segments; ++segment)
+			for (int side = 0; side < 6; ++side)
+				require(!xl_camera_monitor_face(segment, side), "PMC camera monitor binding leaked into the stock mission");
+		++checks;
+		report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "pmc_stock_isolated", true } }.dump();
+		return;
+	}
 	const auto owners = pmc_camera_owners();
 	unsigned monitor_count = 0;
 	if (!std::strcmp(operation, "capture")) {
