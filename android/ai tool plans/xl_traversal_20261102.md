@@ -234,3 +234,24 @@ profile/resource hashes match:
 9985ea381758a99808306501eb7e312511cdf735588016dd1cc2b9ef921c4c40.
 Receipts: temp/xl-original-pmc3-opening. The original profile was restored.
 Scoped quality and both catalogs pass (427 top-level, 524 support scripts).
+
+## T: PMC3 blue-key access
+
+Start from S/PR312 at 2b841f0f498a6ecc321f8b65dadec7c7820fd877.
+The minimal exported-graph sequence after the opening checks is switch 6,
+switch 7, contact door 0, then switch 1. Qualify the corresponding locked-door
+controls and normal flights before collecting the original blue key from its
+adjoining passage. Test the contact-trigger/remote-door corridor as continuous
+flight, since independently placing the player beyond each door would miss its
+timing condition. Keep fixed local approaches separate from connected navigation.
+Preserve the opening checkpoint and qualify key/door state after warm and cold
+loads if this probe succeeds. No runtime change is presumed.
+
+The exploratory chain passed 89/89 (74.804s), with a separate 15/15 warm key
+restore and keyed-door flight (42.086s). Protected qualification passed 325/325
+warm (429.243s) and 14/14 cold (46.895s), PIDs 16488/18861. Both endpoint frames
+were inspected. The protected ship survived with only 0.714 shields; do not
+claim robust combat or extend the encounter without ordinary resource planning.
+Before/after profile and resource hashes match:
+671dd638ec9ed2de34f0949bdc7d8307636a1dcd04bb63abebf6d31e9eec296c.
+Receipts: temp/xl-original-pmc3-blue. Quality and catalogs pass (427/526).

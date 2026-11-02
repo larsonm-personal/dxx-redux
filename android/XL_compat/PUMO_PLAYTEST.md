@@ -87,14 +87,20 @@ are supplementary; the published bundle remains unchanged.
 The same APK also passed the [PMC3 finale](evidence/pmc3-finale.md), with 215
 warm steps and 22 fresh-process steps. Normal grate-switch fire, outward and
 return portals, reactor combat, countdown save/load and continuous final flight
-through the corridor door reach the authored ending and main menu. Local fixed
-approaches leave earlier access gates and connected level traversal unqualified.
+through the corridor door reach the authored ending and main menu. Those finale
+checks use local fixed approaches; the opening checks below cover earlier gates.
 
 Supplementary [PMC3 opening checks](evidence/pmc3-opening.md) passed 226 warm
 steps and 26 fresh-process steps on the same APK. They cover normal shots through
 the two shaft grates, closed/open flight controls, the connecting switch and door
 unlock, and persistence of all 36 grate faces. Later key-access routes and full
 connected traversal remain unqualified.
+
+The [PMC3 blue-key chain](evidence/pmc3-blue-key.md) adds 325 warm and 14
+fresh-process steps: two higher unlocks, continuous contact-trigger/remote-door
+flight, the key-access switch, original key pickup and saved keyed-door flight.
+The protected endpoint was alive with only 0.714 shields. This qualifies the
+bounded activation and persistence checks, not robust combat or full traversal.
 
 The [rendered GuideBot pilot](evidence/rendered-guidebot.md) confirms a bounded
 hub route with an assisted, physics-driven companion. Companion activation of
@@ -105,7 +111,7 @@ relaxing actor rules or dispatching exits directly.
 
 - Fixed local approaches and bounded escape flights do not qualify full human
   navigation, surviving every boss encounter or earned campaign completion
-- PMC3 opening and finale receipts supplement the bundle; its later key-access
+- PMC3 opening, blue-key and finale receipts supplement the bundle; gold/red-key
   routes remain unqualified
 - Physical ARM, touch ergonomics, controller acceptance and device performance
   need user feedback; device tests here use an owned x86_64 emulator with host GPU
