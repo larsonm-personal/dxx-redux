@@ -241,6 +241,7 @@ static contact response requires additional qualification. The PMC2 universal
 candidate passed117/117 but is held from release. Address this on I and propagate
 through J/K before publishing a new expanded playtest. Prior PMC1 package is
 provisional; stable opening bundle remains the recommended playtest.
+
 ### Static robot contact correction (November 1)
 
 Original PMC displays include behavior135 robots with zero authored velocity.
