@@ -146,3 +146,23 @@ static camera behavior and authored lightning dependencies still block PMC level
   regression passes 33/33 in 62123 ms with protected data unchanged
 - Resume camera flash/child-projectile qualification after this smaller blocker
   is resolved; do not spend the session on higher-detail lightning appearance
+
+### F - Camera flash missile gameplay (in progress)
+
+- Child `xl_playtest_128_camera_missiles` of E `9579fd86b6296bf0303f98e2281fa3602d2c14c2`, PR282 targets PR281
+- Preserve source flash robot stun, player pulse, fade delay, compositing, and saved faded color through an XL-only palette owner
+- Source-extracted comparisons cover robot signed-byte skip behavior and palette clocks, random draws, self pulses, and save/restart fade semantics; Windows comparison passed
+- Validate real camera impact, ordinary damage palette composition, pause, full save through stock, and malformed-state atomicity before publishing
+- Other child/seismic/missile-lightning profiles and original camera admission remain gated
+
+F validation checkpoint, 21:46 UTC: Windows and Linux source comparisons passed
+(10800 robot stun cases, 140 player pulses, 166400 palette/save-composition ticks).
+Native real camera impacts, active palette clock/FX isolation, full save through
+stock and 34 malformed-state controls passed. Existing full effect/resource/save
+owner also passed. Scoped mixed-language quality and diff whitespace checks pass.
+Android x86_64 build passed in4m43s; original opening passed64/64 in146811ms,
+run26fb405d9b0f475a93117b2bfc225584. Protected before/after manifests match.
+Receipts: temp/xl-playtest-20261101/camera-flash-*.
+A/B CI fully green; C Linux jobs all succeeded at21:45; D headed replay pending;
+E Engine/Linux pending, other checks green. The delivered universal opening ZIP
+is unchanged. F APK output is a test x86_64 build, not a replacement bundle.

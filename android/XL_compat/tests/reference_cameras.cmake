@@ -228,6 +228,21 @@ string(
     extracted
     "\nvoid initialize_motion(CObject *pExplObj, int nVClip) {\n${motion_init}\n}\nvoid CObject::MoveExplosion() {\n${motion_frame}\n}\n"
 )
+# Flash robot stun is extracted verbatim, including the explosion-object skip counter
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/maths.h"
+                      "static inline int32_t SRandShort (")
+string(FIND "${splash_source}" "if (flash && !pObj->IsBoss ())" flash_start)
+string(SUBSTRING "${splash_source}" ${flash_start} -1 flash_tail)
+string(FIND "${flash_tail}" "#if 1" flash_end)
+if(flash_start LESS 0 OR flash_end LESS 0)
+    message(FATAL_ERROR "Missing source flash stun block")
+endif()
+string(SUBSTRING "${flash_tail}" 0 ${flash_end} flash_body)
+string(
+    APPEND
+    extracted
+    "\nvoid flash_robot(CObject *pObj, CObject *pExplObj, CFixVector vForce, int flash) {\n${flash_body}\n}\n"
+)
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_camera_splash.h"
      CONTENT "${extracted}")
 target_sources(xl_effect_reference PRIVATE tests/reference_camera_splash.cpp)
@@ -326,3 +341,50 @@ string(
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_camera_view.h"
      CONTENT "${extracted}")
 target_sources(xl_effect_reference PRIVATE tests/reference_camera_view.cpp)
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/2d/palette.cpp" palette_hash)
+if(NOT palette_hash STREQUAL "7965378da2b783848c5f068416c3b4650a15dc902340ea0af1da4791f3f79419")
+    message(FATAL_ERROR "Camera flash palette source changed")
+endif()
+set(extracted "// Actual source flash palette timing and compositing\n${camera_math}\n")
+foreach(
+    signature IN
+    ITEMS "void CPaletteManager::StartEffect (float"
+          "void CPaletteManager::StartEffect (int32_t"
+          "void CPaletteManager::StopEffect (void)"
+          "void CPaletteManager::BumpEffect (int32_t"
+          "void CPaletteManager::BumpEffect (float"
+          "void CPaletteManager::UpdateEffect ("
+          "void CPaletteManager::FadeEffect (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/2d/palette.cpp" "${signature}")
+endforeach()
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/include/palette.h" palette_header_hash)
+if(NOT palette_header_hash STREQUAL
+   "3394f7accb1e7e53679fe94ad54256134acdf7a5a374d03756cab7c3f1f6d7e9")
+    message(FATAL_ERROR "Camera flash palette header changed")
+endif()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/palette.h" palette_header)
+foreach(method IN ITEMS FadeScale SetFadeDuration RedEffect GreenEffect BlueEffect SetFadeDelay)
+    string(REGEX MATCH "inline [a-zA-Z0-9_]+ ${method} [(][^\n]+" fragment "${palette_header}")
+    if(NOT fragment)
+        message(FATAL_ERROR "Missing source palette method ${method}")
+    endif()
+    string(REPLACE "${method} (" "CPaletteManager::${method} (" fragment "${fragment}")
+    string(REPLACE "bool bFade = false" "bool bFade" fragment "${fragment}")
+    string(APPEND extracted "\n${fragment}\n")
+endforeach()
+string(FIND "${splash_source}" "if (flash && (pObj->info.nId == N_LOCALPLAYER))" pulse_start)
+string(SUBSTRING "${splash_source}" ${pulse_start} -1 pulse_tail)
+string(FIND "${pulse_tail}" "if (pParent && IsMultiGame" pulse_end)
+if(pulse_start LESS 0 OR pulse_end LESS 0)
+    message(FATAL_ERROR "Missing source player flash pulse")
+endif()
+string(SUBSTRING "${pulse_tail}" 0 ${pulse_end} pulse_body)
+string(
+    APPEND
+    extracted
+    "\nvoid player_pulse(CObject *pObj, CObject *pParent, int force, int flash) {\n${pulse_body}\n}\n"
+)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_camera_flash.h"
+     CONTENT "${extracted}")
+target_sources(xl_effect_reference PRIVATE tests/reference_camera_flash.cpp)

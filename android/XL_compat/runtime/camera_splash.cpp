@@ -1,4 +1,6 @@
 #include "camera_splash.h"
+#include "camera_flash.h"
+#include "../camera_flash.h"
 #include "../camera_splash.h"
 #include "../camera_contact.h"
 #include "../robot_damage.h"
@@ -88,10 +90,10 @@ void xl_camera_splash_rotation(object &actor, const vms_vector &input)
 void xl_camera_splash(object &weapon, object &camera, vms_vector &impact)
 {
 	const auto &definition = Weapon_info[weapon.id];
-	// These profiles have no flash stun, child projectiles, seismic or missile lightning
+	// These profiles have no child projectiles, seismic or missile lightning
 	const bool qualified = weapon.id == GAUSS_ID || weapon.id == CONCUSSION_ID || weapon.id == HOMING_ID ||
-	                       weapon.id == GUIDEDMISS_ID || weapon.id == MERCURY_ID;
-	if (!qualified || definition.flash || definition.children != -1)
+	                       weapon.id == GUIDEDMISS_ID || weapon.id == MERCURY_ID || weapon.id == FLASH_ID;
+	if (!qualified || (definition.flash && weapon.id != FLASH_ID) || definition.children != -1)
 		Error("Camera splash weapon profile requires further qualification");
 	const int strength = definition.strength[Difficulty_level], radius = definition.damage_radius;
 	if (strength <= 0 || radius <= 0 || double(strength) / F1_0 * double(radius) / F1_0 / 4.0 > 8000.0)
@@ -119,6 +121,14 @@ void xl_camera_splash(object &weapon, object &camera, vms_vector &impact)
 				apply_force(actor, sample.impulse);
 			} else if (actor.type == OBJ_ROBOT) {
 				apply_force(actor, sample.impulse);
+				int skip = actor.ctype.ai_info.SKIP_AI_COUNT;
+				auto thrust = point(actor.mtype.phys_info.rotthrust);
+				if (xl_compat::camera_flash_robot(skip, thrust, sample.impulse, definition.flash,
+				                                  Robot_info[actor.id].boss_flag != 0, explosion->ctype.ai_info.SKIP_AI_COUNT, FrameTime, [] { return d_rand(); })) {
+					actor.mtype.phys_info.rotthrust = native(thrust);
+					actor.mtype.phys_info.flags |= PF_USES_THRUST;
+				}
+				actor.ctype.ai_info.SKIP_AI_COUNT = skip;
 				auto rotation = sample.impulse;
 				for (auto &axis : rotation) axis = splash_multiply(axis, -2 * F1_0 * (7 - Difficulty_level) / 8);
 				xl_camera_splash_rotation(actor, native(rotation));
@@ -132,7 +142,7 @@ void xl_camera_splash(object &weapon, object &camera, vms_vector &impact)
 				    apply_damage_to_robot(&actor, damage, parent) &&
 				    !(Game_suspended & SUSP_ROBOTS) && parent == Players[Player_num].objnum)
 					add_points_to_score(robot.score_value);
-				if (robot.companion) {
+				if (!definition.flash && robot.companion) {
 					char message[27]{};
 					const int count = std::max(1, std::min(4, damage / 8 / F1_0));
 					for (int i = 0; i < count; ++i) std::strcat(message, "ouch! ");
@@ -141,6 +151,8 @@ void xl_camera_splash(object &weapon, object &camera, vms_vector &impact)
 			} else if (actor.type == OBJ_CNTRLCEN) {
 				if (actor.shields >= 0) apply_damage_to_controlcen(&actor, damage, parent);
 			} else {
+				if (definition.flash && actor.id == Player_num)
+					xl_camera_flash_blast(sample.force, definition.flash, weapon.ctype.laser_info.parent_signature == ConsoleObject->signature);
 				auto rotation = sample.impulse;
 				if (parent >= 0 && killer != ConsoleObject)
 					for (auto &axis : rotation) axis /= 2;

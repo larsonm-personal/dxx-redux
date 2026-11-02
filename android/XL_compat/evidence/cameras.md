@@ -2743,3 +2743,44 @@ Stack C's first Linux public run exposed a missing camera UV hook stub in the
 isolated POG GPU owner. The stub is confined to that asset-free owner, which has
 no level-bound monitors. The corrected Linux GPU test passed locally in 29.61 s;
 CI is being checked against C's updated head rather than its failed first head.
+
+## November 1, 2026: flash missile contact
+
+The camera collision profile now also handles the original FLASH_ID missile.
+The retail definition has flash strength16 and radius80. Camera splash preserves
+robot stun before rotational force and damage. In particular, the source tests
+the explosion object's signed skip counter, updates the robot's signed byte,
+and consumes three signed random values for rotational thrust. Bosses are exempt.
+The source self-blast rule compares the weapon parent's signature with the local
+player signature and halves flash delay and scalar intensity, not physical force.
+
+The new XL camera flash palette owner keeps source blindness delay, the separate
+half-second fade, cloak-off sound cadence, damage color composition and demo
+record selection. The existing renderer consumes quantized palette RGB. This
+retains the gameplay obstruction and timing while deferring float-color precision.
+Ordinary stock palette processing remains in charge without an active camera
+flash. Mission teardown clears the owner; pause stops its clock. Explicit palette
+sets and damage additions compose with the active owner. Visual random draws use
+the existing FX stream; robot stun uses the simulation stream.
+
+Source controls compile the actual flash robot/player branches from hash-pinned
+fireball.cpp and actual StartEffect/BumpEffect/FadeEffect/UpdateEffect methods from
+palette.cpp, plus inline accessors from palette.h. Comparisons exercise signed
+skip wrapping, boss exemptions, zero frame time, source random call counts, self
+blasts, zero and positive pulses, fade expiration, overlapping colors, rewound
+sound clocks and source faded-integer save/restart semantics. Native controls use
+real camera collisions in both dispatcher orders, the original weapon definition,
+robot stun, player blindness, pause and snapshot restore. Full disk restore passes
+through a stock mission and checks that no custom palette owner leaks into it.
+
+The disposable XL save trailer advances to schema30 and fixed field count22.
+It stores delay, an epoch-relative last-sound time and the source faded integer
+RGB. Restore validates before publishing, then restarts the source half-second
+fade. Thirty-four malformed projectile/camera-hit/flash variants include missing
+state, wrong shape, bounds, unsigned overflow and real JSON boolean values.
+Earlier pre-release XL saves are not migrated. The distributed opening build is
+unchanged and remains the stable feedback target until the expanded slice is ready.
+
+Child projectiles, high-force mine chains, seismic contact and static camera
+behavior135 remain gated. Original PMC camera admission is not enabled by this
+flash change alone.

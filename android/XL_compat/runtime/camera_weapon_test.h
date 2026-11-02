@@ -574,6 +574,7 @@ static void camera_projectile_physics_controls(object &camera)
 	std::cout << "Native camera projectile physics: " << cases << " frames, " << dead << " deaths, " << retries << " retries, " << duplicates << " repeated-contact frames, Vulcan awareness " << vulcan_aware << " accepted/" << vulcan_filtered << " filtered passed\n";
 }
 #include "camera_passive_test.h"
+#include "camera_flash_test.h"
 static void camera_weapon_controls(const std::filesystem::path &root)
 {
 	if (!std::filesystem::exists(root / "data/d2x-xl.hog")) return;
@@ -906,6 +907,7 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 	require(bool(motion_output), "Cannot write camera motion receipt");
 	std::cout << "Native camera explosion motion samples: " << motion_cases << "\n";
 	camera_radial_robot_controls(root, camera);
+	camera_flash_native_controls(camera);
 	// Earn the state used by the caller's full disk restore through real physics
 	const auto hit_player = *ConsoleObject;
 	camera.ctype.ai_info.behavior = 128;

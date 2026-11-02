@@ -32,6 +32,7 @@
 #include "robot_disarm_state.h"
 #include "camera_controller.h"
 #include "camera_collision.h"
+#include "camera_flash.h"
 extern "C" {
 #include "inferno.h"
 #include "switch.h"
@@ -129,7 +130,7 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 29;
+		block["schema"] = 30;
 		block["mission_progress"] = xl_compat::mission_progress_snapshot();
 		block["seismic"] = xl_compat::seismic_gameplay_snapshot();
 		require(xl_compat::restore_seismic_gameplay(block["seismic"], false), "Cannot capture XL seismic state");
@@ -177,6 +178,7 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 		require(xl_camera_hit_restore(camera_hits, false), "Cannot capture complete XL camera hit state");
 		block["camera_hits"] = json::array();
 		for (const auto &state : camera_hits) block["camera_hits"].push_back({ state.owner, state.signature, state.type, state.elapsed });
+		block["camera_flash"] = xl_camera_flash_snapshot();
 		block["fluid_scrape_elapsed"] = xl_fluid_scrape_elapsed();
 		block["repair_elapsed"] = xl_repair_elapsed();
 		block["spawns"] = json::array();
@@ -231,7 +233,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 21u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 29 &&
+		require(saved.is_object() && saved.size() == 22u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 30 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
 		require(xl_compat::restore_mission_progress(saved.at("mission_progress"), false), "Invalid XL mission progression state");
@@ -314,6 +316,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 			camera_hits.push_back({ row[0].get<int>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int32_t>() });
 		}
 		require(xl_camera_hit_restore(camera_hits, false), "Invalid XL camera hit identity or repair time");
+		require(xl_camera_flash_restore(saved.at("camera_flash"), false), "Invalid XL camera flash state");
 		const auto &fluid = saved.at("fluid_scrape_elapsed");
 		require(fluid.is_number_integer() && (!fluid.is_number_unsigned() || fluid.get<std::uint64_t>() <= INT64_MAX) && xl_fluid_restore(fluid.get<std::int64_t>(), 0), "Invalid XL fluid scrape clock");
 		const auto &repair = saved.at("repair_elapsed");
@@ -432,6 +435,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		require(xl_camera_controller_restore(0), "Invalid XL camera restore identity");
 		xl_camera_controller_restore(1);
 		xl_camera_hit_restore(camera_hits, true);
+		xl_camera_flash_restore(saved.at("camera_flash"), true);
 		xl_projectile_restore(projectiles.data(), static_cast<int>(projectiles.size()), 1);
 		xl_light_segment_restore(light_states.data(), static_cast<int>(light_states.size()), 1);
 		xl_flicker_restore(flicker_states.data(), static_cast<int>(flicker_states.size()), 1);

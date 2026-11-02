@@ -181,6 +181,8 @@ static void projectile_physics()
 
 static void projectile_corrupt_controls(const std::filesystem::path &root)
 {
+	xl_camera_flash_blast(16 * F1_0, 4, false);
+	const auto flash_before = xl_camera_flash_snapshot();
 	auto *file = PHYSFS_openWrite("projectile-state.bin");
 	require(file && xl_wall_trigger_write(file) && PHYSFS_close(file), "Cannot write projectile trailer");
 	const auto user = root / "preview-user";
@@ -192,7 +194,7 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 	std::vector<xl_compat::CameraHitState> live_hits(hits_before.size());
 	std::vector<bool> had_hits;
 	for (std::size_t i = 0; i < hits_before.size(); ++i) had_hits.push_back(xl_camera_hit_state_get(hits_before[i].owner, live_hits[i]));
-	for (int variant = 0; variant < 25; ++variant) {
+	for (int variant = 0; variant < 34; ++variant) {
 		auto block = nlohmann::json::parse(encoded.begin() + 16, encoded.end());
 		auto &rows = block["projectiles"];
 		if (variant == 0) rows[0][0] = MAX_OBJECTS;
@@ -221,6 +223,15 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 		if (variant == 22) hit_rows.push_back(hit_rows[0]);
 		if (variant == 23) hit_rows[0].push_back(0);
 		if (variant == 24) hit_rows = nullptr;
+		if (variant == 25) block.erase("camera_flash");
+		if (variant == 26) block["camera_flash"] = 1;
+		if (variant == 27) block["camera_flash"][0] = -1;
+		if (variant == 28) block["camera_flash"][0] = 4 * F1_0 + 1;
+		if (variant == 29) block["camera_flash"][1] = UINT64_MAX;
+		if (variant == 30) block["camera_flash"][2][0] = -1;
+		if (variant == 31) block["camera_flash"][2][0] = 65;
+		if (variant == 32) block["camera_flash"][2][0] = nlohmann::json::boolean_t(1);
+		if (variant == 33) block["camera_flash"].push_back(0);
 		const auto text = block.dump();
 		xl_compat::Bytes bad(encoded.begin(), encoded.begin() + 16);
 		bad.insert(bad.end(), text.begin(), text.end());
@@ -232,7 +243,10 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 		}
 		write_bytes((user / "projectile-bad.bin").string().c_str(), bad);
 		file = PHYSFS_openRead("projectile-bad.bin");
-		require(file && !xl_wall_trigger_read(file) && PHYSFS_close(file) && projectile_same(before, projectile_capture()), "Malformed projectile trailer was accepted or changed live history");
+		const bool rejected = file && !xl_wall_trigger_read(file) && PHYSFS_close(file) && projectile_same(before, projectile_capture());
+		if (!rejected) std::cerr << "Malformed projectile variant=" << variant << "\n";
+		require(rejected, "Malformed projectile trailer was accepted or changed live history");
+		require(xl_camera_flash_snapshot() == flash_before, "Malformed trailer published flash state");
 		for (std::size_t i = 0; i < hits_before.size(); ++i) {
 			xl_compat::CameraHitState current;
 			require(xl_camera_hit_state_get(hits_before[i].owner, current) == had_hits[i] &&
@@ -245,7 +259,7 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 	xl_projectile_clear();
 	file = PHYSFS_openRead("projectile-state.bin");
 	require(file && xl_wall_trigger_read(file) && PHYSFS_close(file) && projectile_same(before, projectile_capture()), "Valid projectile trailer did not recover");
-	std::cout << "Twenty-five malformed projectile/camera hit trailers rejected before table publication; valid recovery passed\n";
+	std::cout << "Thirty-four malformed projectile/camera hit/flash trailers rejected before table publication; valid recovery passed\n";
 }
 
 static void camera_hit_disk_controls()
@@ -258,6 +272,8 @@ static void camera_hit_disk_controls()
 	const auto saved_ticks = int32_t(xl_camera_controller_ticks());
 	const int32_t elapsed = earned.repaired_elapsed(saved_ticks);
 	const auto saved_hits = xl_camera_hit_snapshot();
+	const auto saved_flash = xl_camera_flash_snapshot();
+	require(!saved_flash.is_null(), "Full camera save requires impact-earned flash state");
 	unsigned robots = 0;
 	for (const auto &entry : saved_hits) {
 		xl_compat::CameraHitState robot_hit;
@@ -269,13 +285,14 @@ static void camera_hit_disk_controls()
 	stop_time();
 	require(state_save_all_sub(save, description), "Cannot save earned camera hit state");
 	require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active() &&
-	            xl_camera_hit_snapshot().empty() && !xl_camera_hit_state_get(owner, earned),
+	            xl_camera_hit_snapshot().empty() && !xl_camera_hit_state_get(owner, earned) && xl_camera_flash_snapshot().is_null() && !xl_camera_flash_frame(),
 	        "Camera hit state leaked into stock");
 	SDL_Delay(2);
 	xl_camera_controller_begin_frame();
 	const auto restored_ticks = int32_t(xl_camera_controller_ticks());
 	require(restored_ticks > saved_ticks, "Camera hit disk restore did not exercise clock rebasing");
 	require(state_restore_all_sub(save, 0), "Cannot restore camera hit save through stock");
+	require(xl_camera_flash_snapshot() == saved_flash, "Full disk restore lost impact-earned flash delay/color");
 	xl_compat::CameraHitState restored;
 	require(xl_camera_hit_state_get(owner, restored) && restored.repaired == int64_t(restored_ticks) - elapsed &&
 	            !restored.next && !restored.shield_time && !restored.critical_time &&

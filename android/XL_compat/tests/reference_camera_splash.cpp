@@ -1,4 +1,5 @@
 #include "camera_splash.h"
+#include "camera_flash.h"
 #include "robot_damage.h"
 #include <cmath>
 #include <iostream>
@@ -78,7 +79,7 @@ struct CObject {
 	} info;
 	struct {
 		struct {
-			int SKIP_AI_COUNT = 0;
+			std::int8_t SKIP_AI_COUNT = 0;
 		} aiInfo;
 		struct {
 			struct {
@@ -89,7 +90,8 @@ struct CObject {
 	struct {
 		struct {
 			fix mass = 65536;
-			CFixVector rotVel;
+			CFixVector rotVel, rotThrust;
+			int flags = 0;
 		} physInfo;
 	} mType;
 	fix Size() const
@@ -125,7 +127,11 @@ struct CObject {
 	void Die();
 	void MoveExplosion();
 	fix created = 0;
-	bool attacks = false, guide = false;
+	bool attacks = false, guide = false, boss = false;
+	bool IsBoss() const
+	{
+		return boss;
+	}
 	fix CreationTime() const
 	{
 		return created;
@@ -152,7 +158,7 @@ struct {
 		CObject *pConsole = nullptr, *pViewer = nullptr;
 	} objData;
 	struct {
-		fix xGame = 0;
+		fix xGame = 0, xFrame = 1092;
 	} timeData;
 } gameData;
 struct {
@@ -251,6 +257,8 @@ bool ObjectToObjectVisibility(CObject *, CObject *, int, float)
 {
 	return visible;
 }
+using tAIStaticInfo = decltype(CObject::cType.aiInfo);
+constexpr int PF_USES_THRUST = 0x40, SHORT_RAND_MAX = 32767;
 #include "xl_reference_camera_splash.h"
 void CObject::Die()
 {
@@ -402,4 +410,36 @@ void camera_explosion_motion_runtime_controls(const char *path)
 	}
 	if (!input.eof() || count < 100) throw std::runtime_error("Incomplete explosion motion receipt");
 	std::cout << "Native camera explosion motion: " << count << " source comparisons passed\n";
+}
+
+void camera_flash_robot_source_controls()
+{
+	using namespace camera_splash_reference;
+	unsigned cases = 0;
+	for (int frame : { 0, 546, 1092, 2184, 32768, 65536 })
+		for (int flash : { 0, 1, 4, 8, 16 })
+			for (bool boss : { false, true })
+				for (int skip : { -128, -1, 0, 60, 127 })
+					for (int explosion_skip : { -1, 0, 60, 127 })
+						for (int sample : { 0, 16383, 32767 })
+							for (const auto force : { xl_compat::FixedLightPoint{}, xl_compat::FixedLightPoint{ 65536, 0, 0 }, xl_compat::FixedLightPoint{ -983041, 65537, 131071 } }) {
+								CObject actor, explosion;
+								actor.boss = boss;
+								actor.cType.aiInfo.SKIP_AI_COUNT = std::int8_t(skip);
+								explosion.cType.aiInfo.SKIP_AI_COUNT = std::int8_t(explosion_skip);
+								actor.mType.physInfo.rotThrust = vector({ 7, -8, 9 });
+								gameData.timeData.xFrame = frame;
+								random_value = sample;
+								random_calls = 0;
+								flash_robot(&actor, &explosion, vector(force), flash);
+								int actual_skip = skip, calls = 0;
+								xl_compat::FixedLightPoint thrust{ 7, -8, 9 };
+								bool applied = xl_compat::camera_flash_robot(actual_skip, thrust, force, flash, boss, explosion_skip, frame,
+								                                             [&] { ++calls; return sample; });
+								if (actual_skip != actor.cType.aiInfo.SKIP_AI_COUNT || thrust != point(actor.mType.physInfo.rotThrust) ||
+								    applied != bool(actor.mType.physInfo.flags & PF_USES_THRUST) || calls != random_calls)
+									throw std::runtime_error("Camera flash robot stun differs from pinned source");
+								++cases;
+							}
+	std::cout << "Camera flash robot source stun: " << cases << " passed\n";
 }
