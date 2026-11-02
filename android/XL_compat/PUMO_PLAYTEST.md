@@ -15,6 +15,9 @@ The same APK also passed the [normal hub activation and restore probe](evidence/
 ordinary laser/thrust through the PMC route, repeated after restoring a hub save.
 This uses a fixed approach pose, with no exit dispatch or objective grants.
 It does not establish human traversal or physical-device validation.
+The [PMC1 switch gate probe](evidence/pmc-switches.md) also verifies ordinary
+laser activation, rejection at the locked door, and flight through the opened
+gate after warm and fresh-process save loading.
 
 ## Install and start playing
 
