@@ -21,6 +21,7 @@ param(
     [switch]$Install,
     [switch]$LeaveRunning,
     [switch]$PreserveState,
+    [switch]$NoEmulatorRecovery,
     [int]$TimeoutSeconds = 300,
     [ValidateSet("d1", "d2")]
     [string]$Game,
