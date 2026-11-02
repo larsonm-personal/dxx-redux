@@ -821,7 +821,6 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		xl_flicker_bind(source.get());
 		xl_object_trigger_load(*source);
 		xl_robot_generator_load();
-		xl_boss_spawn_load();
 		xl_equipment_load(*source);
 		admitted_water_arena = arena && source->level_version < 21;
 		admitted_pilot = original && !admitted_water_arena;

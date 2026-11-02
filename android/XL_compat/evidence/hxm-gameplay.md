@@ -80,6 +80,33 @@ it does not establish full graphical equivalence or autonomous traversal
 
 ## Reproduction and remaining scope
 
+### Final-definition boss binding
+
+Boss registration formerly ran during geometry loading, before the normal HXM
+replacement hook. This omitted newly defined bosses and retained obsolete base
+boss roles. Original PMC3 exposed eleven stale registrations even though its
+final definitions contain no required bosses. Registration now follows robot
+replacement installation and object verification in `load_level_robots_file`.
+Pinned XL revision `2576a98b5de310e3ac7c9777df2677d1627b8bae` likewise installs
+replacements in `gameio/loadgame.cpp` before final robot setup and
+`InitReactorForLevel` registers bosses.
+
+The native HXM test makes separate, explicitly derived companions from the
+hash-pinned original Apocalyptic Factor XL archive. One adds boss role 21 to
+robot 3; the other removes the base boss role from robot 31 and uses that ID for
+the controlled actor. Original mission bytes are never modified. The added-role
+case failed before the fix with `Boss bindings do not match final HXM definitions`.
+Afterward both cases pass normal startup, combat dispatch, death-roll objective
+accounting, disk restoration through stock, and repeated loading. Existing boss
+spawn, transport and segment-group controls also pass.
+
+The original PMC3 Android scenarios now require an empty boss registry and one
+remaining reactor objective, including after warm and fresh-process restoration.
+Exact-APK results are recorded separately when available. Old development saves
+can retain the prior registry shape and fail validation; preserve their files
+and corresponding older APK, and start a new game for the corrected state.
+No save migration or full original-mission boss encounter is claimed.
+
 - `xl_hxm_geometry_reference`: extracted source and malformed geometry controls
 - `xl_hxm_native`: original actor and derived projectile lifecycle controls
 - `xl_format34_native`: existing geometry/light regression, still using its

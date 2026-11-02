@@ -12,6 +12,8 @@
             "in_game": true,
             "current_level_num": 13,
             "xl_pilot.runtime_active": true,
+            "xl_pilot.bosses": {},
+            "xl_pilot.remaining_objectives": 1,
             "game_window_is_front": true,
         },
         "timeout_ms": 120000,
