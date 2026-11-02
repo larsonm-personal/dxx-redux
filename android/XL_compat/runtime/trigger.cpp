@@ -343,6 +343,10 @@ extern "C" int xl_wall_trigger(int index, int object_index, int shot)
 {
 	return operate_wall(index, object_index, shot, false);
 }
+extern "C" uint64_t xl_wall_trigger_generation(void)
+{
+	return exit_generation;
+}
 
 extern "C" int xl_object_master_action(const trigger *action, int object_index)
 {

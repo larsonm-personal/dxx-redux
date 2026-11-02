@@ -577,6 +577,7 @@ static void camera_projectile_physics_controls(object &camera)
 #include "camera_flash_test.h"
 #include "camera_children_test.h"
 #include "camera_missile_test.h"
+#include "camera_glass_test.h"
 static void camera_weapon_controls(const std::filesystem::path &root)
 {
 	if (!std::filesystem::exists(root / "data/d2x-xl.hog")) return;
@@ -910,6 +911,7 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 	std::cout << "Native camera explosion motion samples: " << motion_cases << "\n";
 	camera_radial_robot_controls(root, camera);
 	camera_missile_native_controls(camera);
+	camera_glass_native_controls(camera);
 	camera_flash_native_controls(camera);
 	// Earn the state used by the caller's full disk restore through real physics
 	const auto hit_player = *ConsoleObject;

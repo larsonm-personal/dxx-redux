@@ -85,6 +85,7 @@ int xl_wall_teleport_action(int trigger_index, int object_index, int shot);
 void xl_wall_teleport_crossings(int object_index, const int *segments, int count);
 int xl_wall_teleport_actor(int object_index);
 int xl_wall_trigger(int trigger_index, int object_index, int shot);
+uint64_t xl_wall_trigger_generation(void);
 void xl_wall_trigger_reset(void);
 void xl_wall_trigger_exit(void);
 void xl_wall_trigger_frame(void);

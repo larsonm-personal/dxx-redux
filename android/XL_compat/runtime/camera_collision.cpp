@@ -239,7 +239,11 @@ extern "C" int xl_camera_weapon_contact(object *a, object *b, vms_vector *point)
 	// Single-player Omega passes the source distance gate
 	if ((weapon->mtype.phys_info.flags & PF_PERSISTENT) && xl_projectile_add_hit(int(weapon - Objects), int(camera - Objects)) < 0) return 1;
 	if (weapon->ctype.laser_info.parent_signature == camera->signature) return 1;
-	if (definition.damage_radius) xl_camera_splash(*weapon, *camera, *point);
+	if (definition.damage_radius) {
+		const auto generation = xl_wall_trigger_generation();
+		xl_camera_splash(*weapon, *camera, *point);
+		if (xl_wall_trigger_generation() != generation) return 1;
+	}
 	if (weapon->ctype.laser_info.parent_type == OBJ_PLAYER && !(camera->flags & OF_EXPLODING)) {
 		if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum)
 			create_awareness_event(weapon, PA_WEAPON_ROBOT_COLLISION);
