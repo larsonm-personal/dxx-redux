@@ -1,0 +1,462 @@
+// Original PMC1 local gate activation, flight and warm save restoration
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_pog_runtime",
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Pumo Mines",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "game_window_is_front": true,
+            "xl_pilot.runtime_active": true,
+            "current_level_num": 1,
+        },
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "cheats_enabled": false,
+            "player.primary_weapon_flags": 1,
+            "player.laser_level": 0,
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 65,
+        "side": 2,
+        "distance": 12,
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1.0,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 6000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0.0,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "game_window_is_front": true,
+            "current_level_num": 11,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "pose_view",
+        "segment": 240,
+        "position_fixed": [-8089141, -67511354, -20522551],
+        "heading": 16384,
+    },
+    {
+        "expect": {
+            "xl_pilot.doorways.20.state": 0,
+            "xl_pilot.wall_triggers.0.operated": false,
+            "xl_pilot.doorways.20.flags": 24,
+        },
+        "action": "assert",
+    },
+    {
+        "held": 1,
+        "button": 100,
+        "action": "send_button",
+    },
+    {
+        "ms": 1000,
+        "action": "wait_ms",
+    },
+    {
+        "button": 100,
+        "action": "send_button",
+        "pressed": 0,
+    },
+    {
+        "expect": {
+            "xl_pilot.doorways.20.state": 0,
+            "xl_pilot.doorways.20.flags": 24,
+        },
+        "action": "assert",
+    },
+    {
+        "segment": 331,
+        "distance": 12,
+        "side": 5,
+        "action": "face_view",
+    },
+    {
+        "held": 1,
+        "button": 100,
+        "action": "send_button",
+    },
+    {
+        "ms": 1000,
+        "action": "wait_ms",
+    },
+    {
+        "button": 100,
+        "action": "send_button",
+        "pressed": 0,
+    },
+    {
+        "expect": {
+            "xl_pilot.wall_triggers.0.operated": true,
+            "xl_pilot.doorways.21.flags": 16,
+            "xl_pilot.doorways.20.flags": 16,
+            "xl_pilot.wall_triggers.0.actor": 0,
+            "xl_pilot.wall_triggers.0.shot": 1,
+        },
+        "timeout_ms": 10000,
+        "action": "wait_for",
+    },
+    {
+        "action": "pose_view",
+        "segment": 240,
+        "position_fixed": [-8089141, -67511354, -20522551],
+        "heading": 16384,
+    },
+    {
+        "held": 1,
+        "button": 100,
+        "action": "send_button",
+    },
+    {
+        "ms": 1000,
+        "action": "wait_ms",
+    },
+    {
+        "button": 100,
+        "action": "send_button",
+        "pressed": 0,
+    },
+    {
+        "axis": 1,
+        "action": "send_axis",
+        "axis_value": -1.0,
+    },
+    {
+        "expect": {
+            "position.x": {
+                "gt": -103,
+            },
+        },
+        "timeout_ms": 10000,
+        "action": "wait_for",
+    },
+    {
+        "axis": 1,
+        "action": "send_axis",
+        "axis_value": 0.0,
+    },
+    {
+        "expect": {
+            "xl_pilot.doorways.7.type": 5,
+            "xl_pilot.doorways.4.type": 5,
+            "xl_pilot.doorways.5.type": 5,
+            "xl_pilot.wall_triggers.1.operated": false,
+            "xl_pilot.doorways.6.type": 5,
+        },
+        "action": "assert",
+    },
+    {
+        "segment": 326,
+        "distance": 12,
+        "side": 4,
+        "action": "face_view",
+    },
+    {
+        "held": 1,
+        "button": 100,
+        "action": "send_button",
+    },
+    {
+        "ms": 1000,
+        "action": "wait_ms",
+    },
+    {
+        "button": 100,
+        "action": "send_button",
+        "pressed": 0,
+    },
+    {
+        "expect": {
+            "xl_pilot.doorways.7.type": 4,
+            "xl_pilot.doorways.4.type": 4,
+            "xl_pilot.doorways.5.type": 4,
+            "xl_pilot.wall_triggers.1.operated": true,
+            "xl_pilot.doorways.6.type": 4,
+            "xl_pilot.wall_triggers.1.actor": 0,
+            "xl_pilot.wall_triggers.1.shot": 1,
+        },
+        "timeout_ms": 10000,
+        "action": "wait_for",
+    },
+    {
+        "segment": 253,
+        "distance": 12,
+        "side": 3,
+        "action": "face_view",
+    },
+    {
+        "axis": 1,
+        "action": "send_axis",
+        "axis_value": -1.0,
+    },
+    {
+        "expect": {
+            "position.segment": 262,
+        },
+        "timeout_ms": 10000,
+        "action": "wait_for",
+    },
+    {
+        "axis": 1,
+        "action": "send_axis",
+        "axis_value": 0.0,
+    },
+    {
+        "expect": {
+            "player.invulnerable": false,
+            "cheats_enabled": false,
+            "player_dead": false,
+            "current_level_num": 11,
+        },
+        "action": "assert",
+    },
+    {
+        "action": "pose_view",
+        "segment": 339,
+        "position_fixed": [-19263029, -67511354, -20522551],
+        "heading": 49152,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.doorways.93.flags": 24,
+            "xl_pilot.doorways.93.state": 0,
+            "xl_pilot.wall_triggers.4.operated": false,
+        },
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.doorways.93.flags": 24,
+            "xl_pilot.doorways.93.state": 0,
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 235,
+        "side": 4,
+        "distance": 12,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.wall_triggers.4.operated": true,
+            "xl_pilot.wall_triggers.4.actor": 0,
+            "xl_pilot.wall_triggers.4.shot": 1,
+            "xl_pilot.doorways.93.flags": 16,
+        },
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "pose_view",
+        "segment": 339,
+        "position_fixed": [-19263029, -67511354, -20522551],
+        "heading": 49152,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1.0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.x": {
+                "lt": -315,
+            },
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0.0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player_dead": false,
+            "cheats_enabled": false,
+            "current_level_num": 11,
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 331,
+        "side": 5,
+        "distance": 12,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "pose_view",
+        "segment": 339,
+        "position_fixed": [-19263029, -67511354, -20522551],
+        "heading": 49152,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 331,
+            "xl_pilot.wall_triggers.0.operated": true,
+            "xl_pilot.wall_triggers.1.operated": true,
+            "xl_pilot.wall_triggers.4.operated": true,
+            "xl_pilot.doorways.4.type": 4,
+            "xl_pilot.doorways.7.type": 4,
+            "xl_pilot.doorways.93.flags": {
+                "range": [16, 18],
+            },
+            "xl_pilot.doorways.92.flags": {
+                "range": [24, 26],
+            },
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player_dead": false,
+            "cheats_enabled": false,
+            "current_level_num": 11,
+        },
+    },
+    {
+        "action": "introspect",
+    },
+]
