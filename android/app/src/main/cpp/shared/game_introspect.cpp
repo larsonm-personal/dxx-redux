@@ -766,6 +766,39 @@ static json serialize_scene_point(const vms_vector &point)
 	return { { "x", f2fl(point.x) }, { "y", f2fl(point.y) }, { "z", f2fl(point.z) } };
 }
 
+#ifdef DXX_BUILD_DESCENT_II
+/* Read-only Android debug evidence for normal guided-missile steering */
+static json serialize_guided_missile()
+{
+	json inactive = { { "active", false } };
+	if (Player_num < 0 || Player_num >= MAX_PLAYERS || !Guided_missile[Player_num])
+		return inactive;
+
+	for (int index = 0; index <= Highest_object_index && index < MAX_OBJECTS; ++index) {
+		const object &missile = Objects[index];
+		if (Guided_missile[Player_num] != &missile)
+			continue;
+		if (missile.type != OBJ_WEAPON || missile.id != GUIDEDMISS_ID ||
+		    missile.signature != Guided_missile_sig[Player_num] ||
+		    (missile.flags & OF_SHOULD_BE_DEAD))
+			return inactive;
+		return { { "active", true },
+			     { "object", index },
+			     { "signature", missile.signature },
+			     { "weapon", missile.id },
+			     { "owner_player", Player_num },
+			     { "parent", missile.ctype.laser_info.parent_num },
+			     { "parent_signature", missile.ctype.laser_info.parent_signature },
+			     { "segment", missile.segnum },
+			     { "position", serialize_scene_point(missile.pos) },
+			     { "velocity", serialize_scene_point(missile.mtype.phys_info.velocity) },
+			     { "forward", serialize_scene_point(missile.orient.fvec) },
+			     { "life_left", f2fl(missile.lifeleft) } };
+	}
+	return inactive;
+}
+#endif
+
 /* Read-only scene evidence for ordinary weapon, door and destruction tests */
 static json serialize_surface_asset(int texture)
 {
@@ -3485,6 +3518,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["level_scene"] = serialize_level_scene();
 		j["secret_areas"] = serialize_secret_areas();
 #ifdef DXX_BUILD_DESCENT_II
+		j["guided_missile"] = serialize_guided_missile();
 		j["guidebot"] = serialize_guidebot();
 		j["thief"] = serialize_thief();
 #endif
