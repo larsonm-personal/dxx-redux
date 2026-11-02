@@ -90,6 +90,12 @@ return portals, reactor combat, countdown save/load and continuous final flight
 through the corridor door reach the authored ending and main menu. Local fixed
 approaches leave earlier access gates and connected level traversal unqualified.
 
+Supplementary [PMC3 opening checks](evidence/pmc3-opening.md) passed 226 warm
+steps and 26 fresh-process steps on the same APK. They cover normal shots through
+the two shaft grates, closed/open flight controls, the connecting switch and door
+unlock, and persistence of all 36 grate faces. Later key-access routes and full
+connected traversal remain unqualified.
+
 The [rendered GuideBot pilot](evidence/rendered-guidebot.md) confirms a bounded
 hub route with an assisted, physics-driven companion. Companion activation of
 the XL exit is unsupported. Normal-player probes fill that specific gap without
@@ -99,8 +105,8 @@ relaxing actor rules or dispatching exits directly.
 
 - Fixed local approaches and bounded escape flights do not qualify full human
   navigation, surviving every boss encounter or earned campaign completion
-- PMC3 finale receipts supplement the bundle; its earlier access and key routes
-  remain unqualified
+- PMC3 opening and finale receipts supplement the bundle; its later key-access
+  routes remain unqualified
 - Physical ARM, touch ergonomics, controller acceptance and device performance
   need user feedback; device tests here use an owned x86_64 emulator with host GPU
 - Large levels and save restores can take tens of seconds on the emulator
