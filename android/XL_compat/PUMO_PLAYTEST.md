@@ -102,6 +102,13 @@ flight, the key-access switch, original key pickup and saved keyed-door flight.
 The protected endpoint was alive with only 0.714 shields. This qualifies the
 bounded activation and persistence checks, not robust combat or full traversal.
 
+The [PMC3 gold-key extension](evidence/pmc3-gold-key.md) adds normal collection of
+two original shield resources, the gold key and keyed-door flight, including
+consumed-item persistence. It passed 380 warm and 16 fresh-process steps on the
+same APK, ending with about 75 shields. This extended chain also covers the
+corrected bounded firing sweeps at both opening shafts. Fixed local approaches
+remain explicit; the published bundle is unchanged.
+
 The [rendered GuideBot pilot](evidence/rendered-guidebot.md) confirms a bounded
 hub route with an assisted, physics-driven companion. Companion activation of
 the XL exit is unsupported. Normal-player probes fill that specific gap without
@@ -111,8 +118,8 @@ relaxing actor rules or dispatching exits directly.
 
 - Fixed local approaches and bounded escape flights do not qualify full human
   navigation, surviving every boss encounter or earned campaign completion
-- PMC3 opening, blue-key and finale receipts supplement the bundle; gold/red-key
-  routes remain unqualified
+- PMC3 opening, blue/gold-key and finale receipts supplement the bundle; the
+  red-key route remains unqualified
 - Physical ARM, touch ergonomics, controller acceptance and device performance
   need user feedback; device tests here use an owned x86_64 emulator with host GPU
 - Large levels and save restores can take tens of seconds on the emulator

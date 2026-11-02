@@ -255,3 +255,32 @@ claim robust combat or extend the encounter without ordinary resource planning.
 Before/after profile and resource hashes match:
 671dd638ec9ed2de34f0949bdc7d8307636a1dcd04bb63abebf6d31e9eec296c.
 Receipts: temp/xl-original-pmc3-blue. Quality and catalogs pass (427/526).
+
+## U: PMC3 resources and gold-key access
+
+Start from T/PR313 at 665f237e54fcec5833d2e05153e0efd75c2ce4bd.
+The protected blue chain's narrow survival margin makes ordinary resource
+planning necessary before extending it. Check original shield pickups 27 and 15
+from adjoining rooms 1565 and 718, with normal flight and consumed-item checks.
+Both are in the already accessible area; do not grant shields or reset pickups.
+An initial selection of objects 10/14 used the wrong item ID: they are energy,
+not shields. That normal pickup trace is retained separately; the corrected
+selection follows powerup.h (energy 1, shields 2).
+Then probe the original gold-key alcove from its exterior passage, test the
+gold door without/with its key, and qualify save/load if successful. Preserve
+the earned blue checkpoint and keep all fixed approaches explicit.
+
+Protected qualification passed 380/380 warm (500.105s) and 16/16 fresh-process
+steps (44.977s), PIDs 27449/30186, on published 28810. Both rendered endpoints
+were inspected, with 74.643/75.630 shields. Profile/resource hash lists match
+540570408b017dfe61d079cd48019843665bfb4ceb4993d5ea59242e5ed571dc.
+Receipts: temp/xl-original-pmc3-gold; starting profile restored. No runtime or
+mission-content change was needed. Catalogs passed 427/529.
+
+Two earlier extended runs missed opening switches before reaching gold work.
+Their normal firing sweeps were fixed on ancestor S and propagated through T,
+now 646452d8239c0f101b317c939951ea5a2a7fb431. The combined reload check passed
+23/23 (53.164s), and the complete 380-step run covers both corrected approaches.
+Historical S/T protected receipts retain their original counts. The next gap is
+switch 3 behind a bent grated shaft: audit and try the original guided-missile
+pickup and normal steering, never place the player beyond the grates to pass it.
