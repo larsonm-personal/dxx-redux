@@ -221,6 +221,154 @@
         },
     },
     {
+        "action": "assert",
+        "expect": {
+            "player.has_red_key": false,
+            "xl_pilot.doorways.134.state": 0,
+        },
+    },
+    {
+        "action": "pose_view",
+        "segment": 1553,
+        "position_fixed": [17076683, -67511354, -6759991],
+        "heading": 16384,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.doorways.134.state": 0,
+            "xl_pilot.wall_triggers.13.operated": false,
+        },
+    },
+    {
+        "action": "pose_view",
+        "segment": 541,
+        "position_fixed": [1438509, -55663317, 34350333],
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player.has_red_key": true,
+        },
+        "timeout_ms": 5000,
+    },
+    {
+        "value": "quick_save",
+        "field": "android_game_request",
+        "action": "set_debug",
+    },
+    {
+        "ms": 1000,
+        "action": "wait_ms",
+    },
+    {
+        "position_fixed": [17076683, -67511354, -6759991],
+        "heading": 16384,
+        "segment": 1553,
+        "action": "pose_view",
+    },
+    {
+        "value": "quick_load",
+        "field": "android_game_request",
+        "action": "set_debug",
+    },
+    {
+        "expect": {
+            "player.has_red_key": true,
+            "in_game": true,
+            "game_window_is_front": true,
+            "position.segment": 541,
+        },
+        "timeout_ms": 120000,
+        "action": "wait_for",
+    },
+    {
+        "action": "pose_view",
+        "segment": 1553,
+        "position_fixed": [17076683, -67511354, -6759991],
+        "heading": 16384,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.doorways.134.state": 4,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1.0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.x": {
+                "gt": 270,
+            },
+            "xl_pilot.wall_triggers.13.operated": true,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0.0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "cheats_enabled": false,
+            "player_dead": false,
+        },
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.doorways.112.state": 4,
+            "xl_pilot.wall_triggers.13.shot": 0,
+            "xl_pilot.wall_triggers.13.actor": 0,
+            "xl_pilot.doorways.98.state": 4,
+        },
+    },
+    {
+        "value": "quick_save",
+        "field": "android_game_request",
+        "action": "set_debug",
+    },
+    {
+        "ms": 1000,
+        "action": "wait_ms",
+    },
+    {
         "action": "introspect",
     },
 ]
