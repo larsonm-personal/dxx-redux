@@ -102,10 +102,20 @@ spawn, transport and segment-group controls also pass.
 
 The original PMC3 Android scenarios now require an empty boss registry and one
 remaining reactor objective, including after warm and fresh-process restoration.
-Exact-APK results are recorded separately when available. Old development saves
-can retain the prior registry shape and fail validation; preserve their files
-and corresponding older APK, and start a new game for the corrected state.
-No save migration or full original-mission boss encounter is claimed.
+APK `c63885a409055938330680fc63bf6bdabea1cbdd`, version 28790, passes 115 warm
+steps (244.564 seconds) and 21 fresh-process steps (50.044 seconds). Game PIDs
+25840 and 27427 differ; the player/85-actor checkpoint matches, as do protected
+before/after file hashes. The rendered cold-load frame was inspected. This uses
+the owned x86_64 emulator, fixed poses and controlled exits, not a physical ARM
+device or earned campaign completion.
+
+The first candidate's new assertion used an empty object instead of an explicit
+equality operator. It timed out despite live state containing the correct empty
+registry and one objective. The corrected script uses `{"eq": {}}`; this is a
+test-format failure, not a gameplay failure. Old development saves can retain
+the prior registry shape and fail validation; preserve their files and
+corresponding older APK, and start a new game for the corrected state. No save
+migration or full original-mission boss encounter is claimed.
 
 - `xl_hxm_geometry_reference`: extracted source and malformed geometry controls
 - `xl_hxm_native`: original actor and derived projectile lifecycle controls
