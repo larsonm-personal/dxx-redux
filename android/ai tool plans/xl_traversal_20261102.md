@@ -168,3 +168,21 @@ Trigger 38 is an open portal contact at 2158/2, not a shot switch. It opens
 locked door 152 at 2159/2, which also starts boost 67. Boosts 68/69/70 lead to
 exit 71, destination 13. Use normal contact from before the portal and preserve
 that distinction from fixed local setup or full mission traversal.
+
+## Q: Normal PMC2 escape and PMC3 destination persistence
+
+Extend the normal PMC1 escape with PMC2's necessary field selector,
+contact-operated escape door, ordinary doors and four-boost exit. This closes the gap between working selector
+controls and reaching the next level through authored player contact. Preserve
+local-positioning limits and compare cold replay against the preflight save.
+The exploratory exact 28810 APK passes 44 flight steps and nine normal advance
+steps. PMC3 reactor/ending exploration is separate pending reusable qualification.
+
+The focused protected scenario passes 155/155 warm steps in 259.425 seconds and
+23/23 cold steps in 110.810 seconds. Game PIDs 31506 and 1101 differ.
+The final restored destination is PMC3 (level 13), alive with one reactor objective.
+Before/after profile and resource hash lists match, SHA-256
+`26697009f39fe779bf7c98c8fd4f93060dd0c6ebfb8bdaa8c5481ed1ac3dd17b`.
+Receipts and inspected completion/destination frames are in
+`temp/xl-original-pmc2-escape`. These supplement the immutable selector bundle;
+that published folder and ZIP were not changed.
