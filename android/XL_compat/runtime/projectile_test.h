@@ -400,6 +400,18 @@ static int projectile_test(int argc, char **argv)
 		if (vertigo) require(N_robot_types == 78 && Robot_info[68].model_num == 168 && Robot_info[76].model_num >= 0,
 			                 "Original Vertigo extension did not populate its authored robot slots");
 		if (vertigo) {
+			xl_assets::ObjectDependencies static_graph;
+			static_graph.xl_boss_spawning = true;
+			static_graph.robot_behavior(68, 135);
+			static_graph.robot_behavior(76, AIB_NORMAL);
+			bool rejected = false;
+			try {
+				static_graph.robot_behavior(76, 135);
+			} catch (const std::runtime_error &error) {
+				rejected = std::strstr(error.what(), "static robot contact") != nullptr;
+			}
+			require(rejected, "Original non-melee static robot bypassed contact qualification");
+			std::cout << "Original static robot behavior normalization and contact admission gate passed\n";
 			// Android separately mounts the selected HOG's parent after descriptor lookup
 			const auto parent = root / "missions";
 			const auto sibling = parent / "d2x.ham";
