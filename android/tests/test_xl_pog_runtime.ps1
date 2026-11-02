@@ -22,6 +22,7 @@ param(
     [string]$ShieldImageDirectory = '',
     [string]$LightningWave = '',
     [switch]$MissionFlow,
+    [switch]$OpeningPlaytest,
     [switch]$CampaignEnd,
     [switch]$RevisitFixture,
     [switch]$FlyoutFixture,
@@ -32,6 +33,7 @@ param(
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
+if ($OpeningPlaytest -and (!$OriginalHub -or $MissionFlow -or $SceneOnly -or $LightningGpu -or $BubbleGpu -or $CampaignEnd -or $FlyoutFixture)) { throw 'OpeningPlaytest requires OriginalHub and its own mode' }
 if ($BubbleDry -and !$BubbleFixture) { throw 'BubbleDry requires BubbleFixture' }
 if ($BubbleFixture -and ($OriginalHub -or $BubbleGpu -or $LightningGpu -or $SmokeFixture -or $SkyboxFixture -or $SecretFixture -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or $FlyoutFixture -or !$PumoMods -or !$SmokeImage -or !$BubbleImage -or !$BubbleWave)) { throw 'BubbleFixture requires original mod assets, smoke/bubble atlases, bubble wave and its own derived mode' }
 if ($BubbleFixture -and (Get-FileHash -LiteralPath $BubbleWave -Algorithm SHA256).Hash -ne '539b434ca912a17442017e4f68aad21953c285ba2d816bb5bb7c2d6678f0e5cc') { throw 'Requires the original XL bubble waveform' }
@@ -110,6 +112,7 @@ if ($BubbleFixture) { $output = Join-Path $PSScriptRoot "../../temp/xl-$mission-
 if ($OriginalHub) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-android' }
 if ($OriginalHub -and $SceneOnly) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-scene' }
 if ($MissionFlow) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-flow-android' }
+if ($OpeningPlaytest) { $output = Join-Path $PSScriptRoot '../../temp/xl-opening-playtest-android' }
 if ($CampaignEnd) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-end-android' }
 if ($RevisitFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-revisit-android' }
 if ($FlyoutFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-flyout-cache-android' }
@@ -243,6 +246,7 @@ try {
         ConvertTo-Json -InputObject $steps -Depth 16 | Set-Content -LiteralPath $scriptName -Encoding utf8
     }
     if ($MissionFlow) { $scriptName = 'test_xl_pumo_flow.jsonc' }
+    if ($OpeningPlaytest) { $scriptName = 'test_xl_pumo_opening.jsonc' }
     if ($CampaignEnd) { $scriptName = 'test_xl_pumo_end.jsonc' }
     if ($RevisitFixture) { $scriptName = 'test_xl_mission_revisit.jsonc' }
     if ($FlyoutFixture) { $scriptName = 'test_xl_flyout_cache.jsonc' }
@@ -270,7 +274,7 @@ try {
         ConvertTo-Json -InputObject @($sceneSteps.ToArray()) -Depth 16 | Set-Content -LiteralPath $scriptName -Encoding utf8
     }
     # The full original route includes two large checkpoint restores and context loss
-    $timeout = if ($MissionFlow) { 1200 } else { 480 }
+    $timeout = if ($MissionFlow) { 1200 } elseif ($OpeningPlaytest) { 900 } else { 480 }
     & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scriptName -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds $timeout
     $testExit = $LASTEXITCODE
     Invoke-PogAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/logcat.txt" -Encoding utf8
@@ -288,6 +292,7 @@ try {
     elseif ($FlyoutFixture) { Write-Host "PASS: Derived intact rendered flyout and disk-cache revisit ($($result.total_steps) steps)" }
     elseif ($RevisitFixture) { Write-Host "PASS: Derived Android disk revisits, mission timeline, player/world and GPU resource restoration ($($result.total_steps) steps)" }
     elseif ($CampaignEnd) { Write-Host "PASS: Original Pumo destination29 ending and menu return ($($result.total_steps) steps); controlled dispatch" }
+    elseif ($OpeningPlaytest) { Write-Host "PASS: Original Pumo opening input, damage, death/restart and checkpoint smoke ($($result.total_steps) steps); no human traversal" }
     elseif ($MissionFlow) { Write-Host "PASS: Original Pumo controlled authored exits and hub checkpoint recovery ($($result.total_steps) steps); no earned traversal" }
     elseif ($OriginalHub -and $SceneOnly) { Write-Host "PASS: Unchanged original Pumo hub fixed-view live smoke scene ($($result.total_steps) steps)" }
     elseif ($OriginalHub) { Write-Host "PASS: Unchanged original Pumo hub, smoke/skybox/GPU/resources/save/context/stock lifecycle ($($result.total_steps) steps)" }

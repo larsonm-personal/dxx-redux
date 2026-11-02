@@ -1,0 +1,66 @@
+# Original Pumo playtest - November 1, 2026
+
+Cutoff: November 1, 2026 21:00 America/Los_Angeles (November 2 05:00 UTC).
+Reserve the final 20 minutes for terminal tests, resource cleanup and handoff.
+
+## Baseline
+
+- Local and remote cmake: ea3e6f320fb513464dd45d1459401ee944b58583
+- PR 277 is merged; its required work is present in cmake
+- Preserve the existing untracked pumo_gameplay_first_playtest.md
+- First branch: xl_playtest_123_opening, targeting cmake
+- Only fork larsonm-personal/dxx-redux publication is authorized; no PR merges
+- Existing emulator-5554 belongs to the user; this run owns emulator-5556
+- Scratch receipts: temp/xl-playtest-20261101
+
+## Work order
+
+1. Verify original opening launch, ordinary input, combat, progression,
+   damage/death/restart and save/load using protected fixed probes
+2. Fix opening blockers and deliver an installable build with exact identifier,
+   launch steps, verified boundaries and feedback instructions
+3. Audit original pmlev1/2/3 gameplay consumers and unblock additional levels
+   without changing mission content or bypassing unsupported gameplay
+4. Use coherent approximately hourly stacked PRs; monitor ancestors, repair
+   failures on their branches and propagate fixes to descendants
+5. Leave graphics-only work until gameplay delivery; preserve hazard/information
+   visuals and all working existing features
+6. Record stack heads, validation, current-head CI and artifacts in fresh handoff
+
+## Evidence limits
+
+The earlier controlled original route covers hub and Mineral Valley through
+the level-ten interlude. It does not establish ordinary combat or human traversal.
+New fixed probes must retain that distinction. Device tests remain serial.
+
+## Opening delivery checkpoint - 11:56 PST
+
+Delivered local `temp/pumo-playtest-20261101.zip` (269 MiB), universal debug APK
+and original HOG/descriptor/sound resources plus required effect images. Source
+runtime is the merged baseline; this branch adds reusable verification, installer
+and playtest notes. User-facing instructions: `android/XL_compat/PUMO_PLAYTEST.md`.
+
+- Universal Android build passed in 10m48s; ARM64, ARMv7, x86_64 included
+- Original opening owner passed 64/64 in 170021 ms on the universal APK
+- Run ID: 63841fd3124044538b1e191493b754e7
+- Normal menu start, ordinary equipment/input/fire, damage/death/restart,
+  checkpoint and menu save/load, authored exit, physics pickup and robot kill
+- Protected manifests match before/after; installer also preserves pilot hashes
+- Fresh and already-present mission installation paths both pass
+- Original package import test passed, 1 test, 0 failures, preserving 205 HOG
+  members, 14 levels and 303 playable music entries; not device-import coverage
+- Automation catalog: 99 standalone JSON, 502 support, 314 PowerShell tests
+- Master catalog: 427 top-level entries; first attempt timed out under universal
+  compilation, retry passed after compilation completed
+- Scoped quality and diff whitespace checks pass
+
+The first two opening attempts stopped on test assumptions (starting-level dialog
+and numeric 100.0 comparisons), not gameplay defects. A 41-step intermediate pass
+preceded the final 64-step pass. Installer probes corrected the retail-data path
+assumption and empty-backup tar handling before delivery. No production gameplay
+or admission code changed. First delivery took approximately 22 minutes.
+
+Next: publish A, continue B from A, audit pmlev1's single camera and original
+object-trigger binding before choosing the smallest gameplay-support increment.
+All device/native processes from the opening checks are terminal. Owned emulator
+5556 remains available and now has the local playtest resources installed.
