@@ -67,6 +67,13 @@ installation; the protected test's before/after hash lists also match. The cold
 rendered endpoint was inspected. Receipts are in the bundle and in
 `temp/xl-original-pmc-boss-combat`.
 
+Additional [inner-gate coverage](evidence/pmc-inner-gates.md) on this same APK
+passes 88 warm and 23 fresh-process steps: normal unlock/master shots, blocked
+field controls, physical crossings, red-key pickup through opened fields and
+blastable-wall combat. All gate/key states persist, seven objectives remain,
+and protected hashes match. These later receipts are separate from the unchanged
+published combat bundle.
+
 Native controls reproduce the pre-fix collision failure, then pass ten side-hit
 decisions across five difficulties, disk restoration and stock isolation.
 Existing boss lifecycle, death-roll persistence, mixed reactor/boss ordering,
