@@ -343,6 +343,13 @@ extern "C" int xl_wall_trigger(int index, int object_index, int shot)
 {
 	return operate_wall(index, object_index, shot, false);
 }
+extern "C" int xl_wall_has_permanent_trigger(int wall_index)
+{
+	if (!xl_level_extensions_active() || wall_index < 0 || wall_index >= Num_walls) return 0;
+	const int index = wall_trigger_index(Walls[wall_index].trigger);
+	// Pinned XL TF_PERMANENT preserves a shootable panel and its light
+	return index >= 0 && index < Num_triggers && (Triggers[index].flags & 8);
+}
 extern "C" uint64_t xl_wall_trigger_generation(void)
 {
 	return exit_generation;

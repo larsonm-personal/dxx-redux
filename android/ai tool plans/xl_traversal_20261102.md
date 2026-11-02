@@ -131,3 +131,19 @@ seconds, using PIDs 14984 and 16296. Both protected hash lists have SHA-256
 The completion and restored PMC2 frames were inspected. Dedicated receipts are
 in xl-original-pmc-escape after correcting the initial output precedence. No
 engine change was needed.
+
+## O: Repair repeatable original PMC2 selectors
+
+N is 7c29fb85abd7d597a36d0953e0562269e74b721f, PR307 targeting M/PR306.
+O starts from N on xl_playtest_152_pmc2_selectors. Normal shots exposed a real
+progression issue: selecting 13, 14, 15, then 13 again leaves door 122 locked.
+The collision path destroys permanent switch panels on their first hit. Pinned
+XL preserves those textures and their lights, while still accepting the hit.
+
+The focused native regression fails before the fix and passes afterward across
+static/animated/destruction-animation panels and four orientations, on both XL
+layouts. Existing texture/save controls also pass. Next, commit the minimal
+runtime fix with a protected original selector scenario, build version 28810,
+verify all embedded IDs, install without removing pilot/save/settings files,
+then validate the exact APK. Publish a new immutable bundle promptly after that
+meaningful progression improvement is verified. Keep the current combat bundle.

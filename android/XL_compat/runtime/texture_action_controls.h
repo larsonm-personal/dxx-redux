@@ -25,6 +25,7 @@ extern "C" {
 #include "fvi.h"
 #include "collide.h"
 #include "laser.h"
+#include "effects.h"
 void obj_delete_all_that_should_be_dead(void);
 void flush_fcd_cache(void);
 }
@@ -209,6 +210,66 @@ inline void material_contacts()
 		throw;
 	}
 }
+inline void permanent_switch_impacts()
+{
+	const auto &front = Walls[Num_walls - 2];
+	const int index = wall_trigger_index(front.trigger);
+	require(index >= 0, "Permanent switch control has no trigger");
+	const auto original_flags = Triggers[index].flags;
+	const auto material = TmapInfo[2];
+	const auto effect = Effects[0], destination = Effects[1];
+	const std::vector<segment> geometry(Segments, Segments + Num_segments);
+	const std::vector<ubyte> lights(Light_subtracted, Light_subtracted + Num_segments);
+	std::vector<int> signatures(MAX_OBJECTS);
+	for (int i = 0; i < MAX_OBJECTS; ++i) signatures[i] = Objects[i].signature;
+	const auto restore = [&] {
+		Triggers[index].flags = original_flags;
+		TmapInfo[2] = material;
+		Effects[0] = effect;
+		Effects[1] = destination;
+		std::copy(geometry.begin(), geometry.end(), Segments);
+		std::copy(lights.begin(), lights.end(), Light_subtracted);
+		for (int i = 0; i <= Highest_object_index; ++i)
+			if (Objects[i].type != OBJ_NONE && signatures[i] != Objects[i].signature) Objects[i].flags |= OF_SHOULD_BE_DEAD;
+		obj_delete_all_that_should_be_dead();
+	};
+	try {
+		for (int animation : { 0, 1, 2 })
+			for (int orientation = 0; orientation < 4; ++orientation)
+				for (int permanent : { 8, 0 }) {
+					restore();
+					Triggers[index].flags = permanent;
+					face().tmap_num2 = short((orientation << 14) | 2);
+					TmapInfo[2].eclip_num = animation ? 0 : -1;
+					TmapInfo[2].destroyed = 4;
+					TmapInfo[2].lighting = F1_0;
+					Effects[0].flags = 0;
+					Effects[0].dest_bm_num = 4;
+					Effects[0].dest_eclip = animation == 2 ? 1 : -1;
+					Effects[0].dest_vclip = 3;
+					Effects[0].dest_size = F1_0;
+					Effects[0].sound_num = -1;
+					Effects[1].segnum = -1;
+					Effects[1].changing_wall_texture = 4;
+					const auto before = snapshot();
+					object blower{};
+					blower.ctype.laser_info.parent_type = OBJ_PLAYER;
+					vms_vector point;
+					compute_center_point_on_side(&point, &Segments[front.segnum], front.sidenum);
+					for (int hit = 0; hit < (permanent ? 2 : 1); ++hit) {
+						require(check_effect_blowup(&Segments[front.segnum], front.sidenum, &point, &blower, 1), "Repeatable switch impact was rejected");
+						if (permanent)
+							require(snapshot() == before && std::equal(lights.begin(), lights.end(), Light_subtracted) && Effects[1].segnum == -1,
+							        "Permanent switch impact destroyed its panel or lighting");
+						else require((face().tmap_num2 & 0x3fff) == 4, "Ordinary destructible panel stopped breaking");
+					}
+				}
+		restore();
+	} catch (...) {
+		restore();
+		throw;
+	}
+}
 inline void events()
 {
 	fixture();
@@ -290,6 +351,7 @@ inline void events()
 	require(uvs() == before_uvs, "Texture actions changed UVs or authored light records");
 	sound_route();
 	material_contacts();
+	permanent_switch_impacts();
 }
 inline xl_trigger_state prepare()
 {
