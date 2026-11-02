@@ -639,9 +639,11 @@ void scrape_player_on_wall(object *obj, short hitseg, short hitside, vms_vector 
 int check_effect_blowup(segment *seg,int side,vms_vector *pnt, object *blower, int force_blowup_flag)
 {
 	int tm,tmf,ec,db;
+	int permanent_trigger = 0;
 
 #ifdef DXX_XL_RUNTIME
 	if (xl_level_extensions_active() && !(seg->sides[side].tmap_num2 & 0x3fff)) return 0;
+	permanent_trigger = xl_wall_has_permanent_trigger(seg->sides[side].wall_num);
 #endif
 
 	db=0;
@@ -723,7 +725,7 @@ int check_effect_blowup(segment *seg,int side,vms_vector *pnt, object *blower, i
 				//note: this must get called before the texture changes,
 				//because we use the light value of the texture to change
 				//the static light in the segment
-				subtract_light(seg-Segments,side);
+				if (!permanent_trigger) subtract_light(seg-Segments,side);
 
 				if (Newdemo_state == ND_STATE_RECORDING)
 					newdemo_record_effect_blowup( seg-Segments, side, pnt);
@@ -746,7 +748,7 @@ int check_effect_blowup(segment *seg,int side,vms_vector *pnt, object *blower, i
 					if ((sound_num=Effects[ec].sound_num)!=-1)		//kill sound
 						digi_kill_sound_linked_to_segment(seg-Segments,side,sound_num);
 
-					if (Effects[ec].dest_eclip!=-1 && Effects[Effects[ec].dest_eclip].segnum==-1) {
+					if (!permanent_trigger && Effects[ec].dest_eclip!=-1 && Effects[Effects[ec].dest_eclip].segnum==-1) {
 						int bm_num;
 						eclip *new_ec;
 
@@ -764,13 +766,13 @@ int check_effect_blowup(segment *seg,int side,vms_vector *pnt, object *blower, i
 						seg->sides[side].tmap_num2 = bm_num | tmf;		//replace with destoyed
 
 					}
-					else {
+					else if (!permanent_trigger) {
 						Assert(db!=0 && seg->sides[side].tmap_num2!=0);
 						seg->sides[side].tmap_num2 = db | tmf;		//replace with destoyed
 					}
 				}
 				else {
-					seg->sides[side].tmap_num2 = TmapInfo[tm].destroyed | tmf;
+					if (!permanent_trigger) seg->sides[side].tmap_num2 = TmapInfo[tm].destroyed | tmf;
 
 					//assume this is a light, and play light sound
 		  			digi_link_sound_to_pos( SOUND_LIGHT_BLOWNUP, seg-Segments, 0, pnt,  0, F1_0 );
