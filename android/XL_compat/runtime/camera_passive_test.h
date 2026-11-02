@@ -1,5 +1,5 @@
 // Real physics must retain the enabled source pairs even without a contact response
-static void camera_passive_physics_controls(object &camera)
+static void camera_passive_physics_controls(object &camera, bool stationary = false)
 {
 	using Point = xl_compat::FixedLightPoint;
 	const auto point = [](const vms_vector &v) { return Point{ v.x, v.y, v.z }; };
@@ -8,7 +8,7 @@ static void camera_passive_physics_controls(object &camera)
 	const int owner = int(ConsoleObject - Objects), saved_awareness = Num_awareness_events;
 	unsigned cases = 0;
 	for (int type : { OBJ_ROBOT, OBJ_FIREBALL })
-		for (int behavior : { 128, 129 })
+		for (int behavior : stationary ? std::vector<int>{ 135 } : std::vector<int>{ 128, 129 })
 			for (int axis = 0; axis < 3; ++axis)
 				for (int direction : { -1, 1 })
 					for (int duration : { F1_0 / 16, F1_0 / 8 }) {

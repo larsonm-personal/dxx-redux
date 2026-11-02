@@ -1,21 +1,19 @@
 # Original Pumo opening playtest
 
-A newer [PMC1 playtest bundle](../../temp/pumo-pmc-playtest-20261101/README.md)
-adds original PMC Data Storage Center with camera, combat, restart and save
-checks. The opening-only bundle documented below remains available unchanged.
-The newer bundle requires a new game and records its own boundaries in its README.
+The verified [expanded PMC1/PMC2 bundle](../../temp/pumo-pmc2-playtest-20261101/README.md)
+is ready for feedback: `temp/pumo-pmc2-playtest-20261101.zip`. Its exact universal
+APK passed 64 opening checks and 117 PMC1/PMC2 checks, including ordinary controls,
+combat, death/restart, disk save/load, camera monitors and background recovery.
+Protected app-data hashes matched. Start a new game; PMC3 remains gated.
 
-The November 1, 2026 development build is ready for initial Android feedback on
-Temporal Hub and Crauphel Scilab, the first Mineral Valley level. This is a fixed
-probe smoke test, not a completed human playthrough or full-campaign qualification.
+Static robot contact and omitted save payloads are now source-qualified. This
+supersedes the provisional PMC1 bundle. Automated fixed poses and authored exit
+dispatch do not establish full human traversal. Physical ARM devices and control
+ergonomics still need feedback. See the expanded README for install instructions,
+known issues and exact build/validation records.
 
-## Expanded PMC candidate status
-
-The earlier `temp/pumo-pmc-playtest-20261101.zip` candidate is provisional.
-A follow-up source audit found unqualified behavior135 static-robot contact
-response in PMC1/PMC2. Passing lifecycle tests did not exercise that path.
-Admission is now gated until the response is qualified. Use the stable opening
-bundle below for feedback; keep existing saves and candidate artifacts.
+The original opening-only bundle below remains available unchanged for existing
+checkpoints. Its boundaries describe that older build.
 
 ## Build and install
 

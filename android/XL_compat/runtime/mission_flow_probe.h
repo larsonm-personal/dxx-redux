@@ -152,6 +152,10 @@ void mission_flow_probe(const char *operation)
 			from = 11;
 			destination = 12;
 		}
+		if (!std::strcmp(operation, "exit13")) {
+			from = 12;
+			destination = 13;
+		}
 		if (!std::strcmp(operation, "exit2")) {
 			from = 1;
 			destination = 2;

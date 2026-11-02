@@ -1,13 +1,30 @@
 // Protected original PMC owner; fixed poses and direct authored exits are not human traversal
 nlohmann::json pmc_saved_cameras;
+nlohmann::json pmc_saved_lightning;
 unsigned pmc_contact_baseline = 0;
 int pmc_saved_lives = 0;
+std::vector<int> pmc_static_owners()
+{
+	std::vector<int> owners;
+	// Fixed owners from the unchanged original level inventories, including melee normalization
+	if (Current_level_num == 13) {
+		for (int i = 149; i <= 158; ++i) owners.push_back(i);
+		owners.push_back(212);
+		for (int i = 225; i <= 293; ++i) owners.push_back(i);
+	} else {
+		const int first = Current_level_num == 11 ? 90 : 181;
+		const int last = Current_level_num == 11 ? 100 : 205;
+		for (int i = first; i <= last; ++i) owners.push_back(i);
+	}
+	return owners;
+}
 std::vector<int> pmc_camera_owners()
 {
 	require(Current_mission && !std::strcmp(Current_mission_filename, "pmines") && xl_level_extensions_active() &&
-	            (Current_level_num == 11 || Current_level_num == 12),
+	            (Current_level_num == 11 || Current_level_num == 12 || Current_level_num == 13),
 	        "PMC control requires an unchanged original PMC level");
-	const std::vector<int> expected = Current_level_num == 11 ? std::vector<int>{ 102 } : std::vector<int>{ 206, 207, 208 };
+	const std::vector<int> expected = Current_level_num == 11 ? std::vector<int>{ 102 } : Current_level_num == 12 ? std::vector<int>{ 206, 207, 208 }
+	                                                                                                              : std::vector<int>{ 295, 296, 297, 298, 299 };
 	std::vector<int> actual;
 	for (int i = 0; i <= Highest_object_index; ++i)
 		if (Objects[i].type == 16) actual.push_back(i);
@@ -16,13 +33,13 @@ std::vector<int> pmc_camera_owners()
 		const auto &camera = Objects[owner];
 		XlCameraControllerState state;
 		require(camera.control_type == 18 && camera.movement_type == MT_NONE && camera.render_type == RT_POLYOBJ &&
-		            camera.ctype.ai_info.behavior == 128 && camera.lifeleft == IMMORTAL_TIME && Robot_info[camera.id].strength == -1 &&
+		            camera.ctype.ai_info.behavior == (owner == 298 ? 129 : owner == 299 ? 135
+		                                                                                : 128) &&
+		            camera.lifeleft == IMMORTAL_TIME && Robot_info[camera.id].strength == -1 &&
 		            xl_camera_controller_get(owner, state),
 		        "Original PMC camera lost normalized model, controller or indestructibility");
 	}
-	const int first = Current_level_num == 11 ? 90 : 181;
-	const int last = Current_level_num == 11 ? 100 : 205;
-	for (int owner = first; owner <= last; ++owner)
+	for (int owner : pmc_static_owners())
 		require(Objects[owner].type == OBJ_ROBOT && Objects[owner].control_type == CT_NONE && Objects[owner].movement_type == MT_NONE &&
 		            Objects[owner].ctype.ai_info.behavior == (Robot_info[Objects[owner].id].attack_type ? AIB_NORMAL : 135),
 		        "Original PMC static robot lost normalized behavior or acquired movement");
@@ -37,9 +54,7 @@ nlohmann::json pmc_camera_snapshot()
 		rows.push_back({ owner, camera.signature, camera.id, camera.rtype.pobj_info.model_num, camera.size, camera.shields, camera.segnum,
 		                 camera.pos.x, camera.pos.y, camera.pos.z, m.rvec.x, m.rvec.y, m.rvec.z, m.uvec.x, m.uvec.y, m.uvec.z, m.fvec.x, m.fvec.y, m.fvec.z });
 	}
-	const int first = Current_level_num == 11 ? 90 : 181;
-	const int last = Current_level_num == 11 ? 100 : 205;
-	for (int owner = first; owner <= last; ++owner) {
+	for (int owner : pmc_static_owners()) {
 		const auto &robot = Objects[owner];
 		rows.push_back({ owner, robot.signature, robot.id, robot.ctype.ai_info.behavior, robot.mtype.phys_info.mass,
 		                 robot.pos.x, robot.pos.y, robot.pos.z, robot.mtype.phys_info.velocity.x,
@@ -54,10 +69,12 @@ void pmc_playtest_probe(const char *operation)
 	if (!std::strcmp(operation, "capture")) {
 		require(game_is_time_paused(), "PMC capture requires pause");
 		pmc_saved_cameras = pmc_camera_snapshot();
+		pmc_saved_lightning = xl_compat::lightning_objects_snapshot();
 		pmc_saved_lives = Players[Player_num].lives;
 	} else if (!std::strcmp(operation, "verify")) {
 		require(game_is_time_paused() && !pmc_saved_cameras.empty() && pmc_camera_snapshot() == pmc_saved_cameras, "PMC disk restore changed original camera or static robot state");
 		require(Players[Player_num].lives == pmc_saved_lives, "PMC disk restore changed the saved life count");
+		require(xl_compat::lightning_objects_snapshot() == pmc_saved_lightning, "PMC disk restore changed lightning activation or identity");
 	} else if (!std::strcmp(operation, "restarted")) {
 		require(!Player_is_dead && pmc_saved_lives > 1 && Players[Player_num].lives == pmc_saved_lives - 1,
 		        "Original PMC restart did not consume exactly one life");
@@ -65,6 +82,10 @@ void pmc_playtest_probe(const char *operation)
 		require(!game_is_time_paused(), "PMC live control requires gameplay");
 		for (int owner : owners) {
 			XlCameraControllerState state;
+			if (Objects[owner].ctype.ai_info.behavior == 129) {
+				require(xl_camera_controller_get(owner, state) && state.rotation.delta != 0, "Original rotating PMC camera did not advance");
+				continue;
+			}
 			require(xl_camera_controller_get(owner, state) && state.rotation.angle == 0 && state.rotation.delta == 0,
 			        "Original still PMC camera acquired a rotating controller");
 			const auto &orientation = Objects[owner].orient;
@@ -78,7 +99,8 @@ void pmc_playtest_probe(const char *operation)
 		xl_compat::LightningGlowState restore_gl;
 		Readback readback;
 		CameraTargetPattern sampler;
-		const std::vector<std::array<int, 2>> faces = Current_level_num == 11 ? std::vector<std::array<int, 2>>{ { 719, 4 } } : std::vector<std::array<int, 2>>{ { 73, 0 }, { 65, 2 }, { 167, 0 }, { 159, 2 }, { 261, 0 }, { 253, 2 } };
+		const std::vector<std::array<int, 2>> faces = Current_level_num == 11 ? std::vector<std::array<int, 2>>{ { 719, 4 } } : Current_level_num == 12 ? std::vector<std::array<int, 2>>{ { 73, 0 }, { 65, 2 }, { 167, 0 }, { 159, 2 }, { 261, 0 }, { 253, 2 } }
+		                                                                                                                                                : std::vector<std::array<int, 2>>{ { 3179, 2 }, { 3177, 2 }, { 3126, 2 }, { 3178, 2 }, { 3132, 0 } };
 		for (const auto &face : faces) {
 			require(xl_camera_monitor_face(face[0], face[1]), "Original PMC monitor binding missing");
 			int vertices[4];
@@ -107,7 +129,7 @@ void pmc_playtest_probe(const char *operation)
 		require(glGetError() == GL_NO_ERROR, "Original PMC monitor raised a GL error");
 	} else if (!std::strcmp(operation, "aim_camera")) {
 		require(!game_is_time_paused(), "Camera firing pose requires live gameplay");
-		const auto &camera = Objects[owners.front()];
+		const auto &camera = Objects[Current_level_num == 13 ? owners.back() : owners.front()];
 		vms_vector position, direction = camera.orient.fvec;
 		vm_vec_scale_add(&position, &camera.pos, &direction, camera.size + ConsoleObject->size + 4 * F1_0);
 		const int room = find_point_seg(&position, camera.segnum);
@@ -121,7 +143,22 @@ void pmc_playtest_probe(const char *operation)
 	} else if (!std::strcmp(operation, "fired_camera")) {
 		require(xl_camera_player_weapon_contacts() > pmc_contact_baseline, "Ordinary player laser input did not reach the original camera");
 	} else if (!std::strcmp(operation, "next_gate")) {
-		require(Current_level_num == 12 && !xl_level_supported_at("pmlev3.rl2", 0, 13), "Unqualified PMC3 must remain blocked");
+		require(Current_level_num == 12 && xl_level_supported_at("pmlev3.rl2", 0, 13), "Qualified original PMC3 is not ready for the authored exit");
+	} else if (!std::strcmp(operation, "end_ready")) {
+		require(Current_level_num == 13 && Last_level == 14 && Num_triggers > 38 && Triggers[38].type == TT_EXIT &&
+		            Triggers[38].value == 15 * F1_0 && !(Triggers[38].flags & TF_DISABLED),
+		        "Original PMC ending destination changed");
+	} else if (!std::strcmp(operation, "lightning")) {
+		require(Current_level_num == 13 && !game_is_time_paused(), "Fixed lightning needs live original PMC3");
+		for (int owner : { 320, 322 }) {
+			const auto *emitter = xl_compat::lightning_object_emitter(owner);
+			require(emitter && emitter->enabled && emitter->bolts.size() == 5, "Original fixed lightning lost its five parent bolts");
+			for (unsigned i = 0; i < emitter->bolts.size(); ++i) {
+				const auto *frame = xl_compat::lightning_object_render_frame(owner, i);
+				require(emitter->bolts[i].definition.length == 75 * F1_0 && frame && !frame->core.vertices.empty(),
+				        "Original fixed lightning lost target distance or visible geometry");
+			}
+		}
 	} else throw std::runtime_error("Unknown original PMC operation");
 	++checks;
 	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "pmc_level", Current_level_num }, { "pmc_cameras", owners.size() }, { "pmc_monitors", monitor_count }, { "pmc_contacts", xl_camera_player_weapon_contacts() } }.dump();

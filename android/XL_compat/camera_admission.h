@@ -7,7 +7,7 @@ inline bool qualified_camera_object(const Object &object)
 {
 	return object.type == 16 && object.control == 1 && object.movement == 0 && object.render == 1 && object.flags == 0 &&
 	       !object.multiplayer && !object.contains_count && object.control_data.size() == 16 && object.render_data.size() == 33 &&
-	       (object.control_data[0] == 128 || object.control_data[0] == 129);
+	       (object.control_data[0] == 128 || object.control_data[0] == 129 || object.control_data[0] == 135);
 }
 inline bool qualified_camera_binding(const Inventory &level, const ObjectTrigger &record)
 {
