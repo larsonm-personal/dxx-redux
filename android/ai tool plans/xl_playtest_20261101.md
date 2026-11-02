@@ -227,3 +227,17 @@ PMC2 HXM robot174. Both protected manifests match. Scoped quality and catalogs
 pass. The dedicated lightning source suite also passes Windows1.97s/Linux0.43s,
 including the original-coordinate accumulation regression; the earlier effect
 suite is separate coverage. Universal PMC2 packaging is next.
+
+### K - Fixed-end original lightning
+
+- Child xl_playtest_133_fixed_lightning of J
+- Port fixed endpoint Setup/path/restart and original target length selection
+- Verify source comparisons on Windows/Linux and native owner restoration
+- Keep PMC3 camera135 gated until static response qualification
+
+Follow-up audit: I's static robot initialization leaves original robot76 in PMC1
+and robot69 in PMC2 with behavior135. Source default spheres still apply, but
+static contact response requires additional qualification. The PMC2 universal
+candidate passed117/117 but is held from release. Address this on I and propagate
+through J/K before publishing a new expanded playtest. Prior PMC1 package is
+provisional; stable opening bundle remains the recommended playtest.

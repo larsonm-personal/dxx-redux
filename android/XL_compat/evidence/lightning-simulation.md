@@ -748,3 +748,28 @@ Android x86_64 builds in 4m15s; the protected original-hub GPU regression passes
 33/33 steps in 62123 ms, with identical protected-data manifests. This is renderer
 regression evidence, not original PMC traversal. Receipts are `lightning-profile-*`
 under `temp/xl-playtest-20261101`.
+
+## Fixed target parent bolts (2026-11-01)
+
+Original PMC3 owners320/322 link IDs1/2 across75 units despite an authored length60.
+The pinned StaticFrame selects the target and replaces length with integer-unit
+endpoint distance; sub-unit distances retain the source Create fallback distance.
+Admission requires a unique stationary target. Missing/ambiguous targets, waypoint
+motion, angled and in-plane profiles remain gated. Global style0 and disabled
+child branches retain the previously qualified source presentation profile.
+
+Fixed Setup normalizes the retained endpoint, applies offsets to both ends, and
+preserves the source endpoint drift across restarts. It does not consume random
+TTL/length jitter. Style0 alternates interior cursors from both ends, preserves
+source displacement history and fixed endpoint interpolation, and stages drawing
+before lifetime updates. Native creation/restore resolves current target positions
+through bound owner identities; transient geometry is rebuilt rather than saved.
+
+The existing pinned-source bolt owner now compares both endpoint directions,
+multiple seeds, delays, offsets and interpolation counts for400 ticks, including
+restarts. Multi-bolt source comparisons run800 ticks with movement and disabling.
+Windows and Linux lightning source suites pass. Native integration covers live
+length replacement, activation, illumination, render staging, atomic rejection,
+trailer restore, changed live target coordinates and identity retirement. PMC3
+remains gated for its static camera response; these tests do not claim original
+PMC3 traversal or final device qualification.

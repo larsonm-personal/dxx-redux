@@ -13,14 +13,14 @@ struct LightningEmitter {
 };
 
 template <class Random>
-LightningEmitter create_lightning_emitter(const LightningDefinition &definition, const LightningPoint &position, Random &random, int segment = -1)
+LightningEmitter create_lightning_emitter(const LightningDefinition &definition, const LightningPoint &position, Random &random, int segment = -1, std::optional<LightningPoint> endpoint = {})
 {
 	if (definition.bolts <= 0 || definition.bolts > 32767)
 		throw std::runtime_error("XL lightning emitter has an invalid bolt count");
 	LightningEmitter emitter{ {}, definition.enabled };
 	emitter.bolts.reserve(definition.bolts);
 	for (int i = 0; i < definition.bolts; ++i) {
-		emitter.bolts.push_back(create_lightning_bolt(definition, position, random));
+		emitter.bolts.push_back(create_lightning_bolt(definition, position, random, endpoint));
 		emitter.bolts.back().segment = segment;
 	}
 	return emitter;

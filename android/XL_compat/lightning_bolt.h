@@ -85,8 +85,12 @@ void lightning_bolt_setup(LightningBolt &bolt, Random &random)
 	using namespace lightning_detail;
 	auto &state = bolt.lifetime;
 	bolt.position = bolt.base;
-	bolt.direction = lightning_random_direction(random);
-	bolt.end = add(bolt.position, multiply(bolt.direction, state.length));
+	if (state.random_nodes) {
+		bolt.direction = lightning_random_direction(random);
+		bolt.end = add(bolt.position, multiply(bolt.direction, state.length));
+	} else {
+		bolt.direction = geometry_default_direction(subtract(bolt.end, bolt.position));
+	}
 	if (bolt.definition.offset) {
 		const int offset = checked(std::int64_t(bolt.definition.offset / 2) + int(random.unit() * bolt.definition.offset / 2));
 		const auto delta = multiply(bolt.direction, offset);
@@ -115,18 +119,21 @@ void lightning_bolt_setup(LightningBolt &bolt, Random &random)
 }
 
 template <class Random>
-LightningBolt create_lightning_bolt(const LightningDefinition &definition, const LightningPoint &position, Random &random)
+LightningBolt create_lightning_bolt(const LightningDefinition &definition, const LightningPoint &position, Random &random, std::optional<LightningPoint> endpoint = {})
 {
 	// Source STYLE caps authored detail; bUseLightning=1 retains parent bolts only
-	if (!definition.random_end || definition.angle || definition.in_plane || (definition.clamp && definition.amplitude <= 0) ||
+	if (definition.random_end == endpoint.has_value() || definition.angle || definition.in_plane || (definition.clamp && definition.amplitude <= 0) ||
 	    definition.style < -1 || definition.style > 2 || lightning_active_style(definition) != 0 || definition.frames <= 0 || definition.nodes > 32767)
-		throw std::runtime_error("XL lightning bolt requires the implemented random style-0 profile");
-	LightningBolt bolt{ definition, lightning_lifetime(definition, false, authored_lightning_children) };
+		throw std::runtime_error("XL lightning bolt requires the implemented style-0 endpoint profile");
+	LightningBolt bolt{ definition, lightning_lifetime(definition, endpoint.has_value(), authored_lightning_children) };
 	bolt.base = position;
+	if (endpoint) bolt.end = *endpoint;
 	bolt.nodes.resize(bolt.lifetime.nodes);
 	auto &state = bolt.lifetime;
-	state.ttl = lightning_detail::checked(std::int64_t(3) * state.ttl) / 4 + int(random.unit() * state.ttl / 2);
-	state.length = lightning_detail::checked(std::int64_t(3) * state.length) / 4 + int(random.unit() * state.length / 2);
+	if (state.random_nodes) {
+		state.ttl = lightning_detail::checked(std::int64_t(3) * state.ttl) / 4 + int(random.unit() * state.ttl / 2);
+		state.length = lightning_detail::checked(std::int64_t(3) * state.length) / 4 + int(random.unit() * state.length / 2);
+	}
 	lightning_bolt_setup(bolt, random);
 	return bolt;
 }
@@ -141,10 +148,11 @@ void lightning_bolt_animate(LightningBolt &bolt, int elapsed, Random &random)
 		const bool initial = state.frames < 0;
 		if (initial) state.frames = -state.frames;
 		if (!state.step) {
-			lightning_random_erratic_path(bolt.nodes, state.frames, bolt.definition.amplitude, false, [&] { return random.unit(); });
+			if (state.random_nodes) lightning_random_erratic_path(bolt.nodes, state.frames, bolt.definition.amplitude, false, [&] { return random.unit(); });
+			else lightning_fixed_erratic_path(bolt.nodes, state.frames, bolt.definition.amplitude, [&] { return random.unit(); });
 			state.step = state.frames;
 		}
-		lightning_animate_nodes(bolt.nodes, initial, true);
+		lightning_animate_nodes(bolt.nodes, initial, state.random_nodes != 0);
 		// Source RenderSetup precedes lifetime restart and owns the drawn coordinates
 		bolt.draw_positions.clear();
 		for (const auto &node : bolt.nodes) bolt.draw_positions.push_back(node.position);
