@@ -209,3 +209,28 @@ steps (51.892s), PIDs 5025/7369. Completion and main-menu frames were inspected.
 Before/after profile and resource hashes match:
 1e41ad8c1791a2978e26bea22293902736c40331439a8949a9cf2ec1e5403129.
 Receipts: temp/xl-original-pmc3-finale. No content/runtime changes or new APK.
+
+## S: PMC3 opening access
+
+Start from R/PR311 at 3c7ea117a3470873f4132710edb5ceaffd8e42f7.
+The exported original level graph places masters 10/11 below grates adjoining
+initially accessible rooms 355/617. Probe ordinary laser activation from above
+those grates before considering later switches 9 and 8. The graph is setup
+guidance, not physical traversal evidence. Never position inside an inaccessible
+switch chamber to claim earned access. Preserve the original earned level-13
+checkpoint and use only the owned disposable profile.
+
+The one-unit grate segment 355 cannot contain the ship. Corrected firing poses
+use full-sized rooms 205/467; normal shots activate masters 10/11 and open the
+shaft grates. The combined exploratory sequence passed 74/74 (113.137s), covering
+both closed-wall controls, connecting switch 9, unlock switch 8 and warm load.
+The first protected run missed master 11 through a grate bar. A two-unit offset
+in room 467 passed a fresh shot and a checkpoint reload repeat. The protected
+run is being repeated because its longer setup exposed this aiming sensitivity.
+
+The corrected protected run passed 226/226 warm (363.149s) and 26/26 cold
+(48.283s), PIDs 12742/14786. Both endpoint frames were inspected. Before/after
+profile/resource hashes match:
+9985ea381758a99808306501eb7e312511cdf735588016dd1cc2b9ef921c4c40.
+Receipts: temp/xl-original-pmc3-opening. The original profile was restored.
+Scoped quality and both catalogs pass (427 top-level, 524 support scripts).
