@@ -1,4 +1,4 @@
-// Original PMC3 via authored PMC1/2 exits; fixed firing poses, no human traversal
+// Original PMC3, authored ending, stock isolation and saved return; fixed poses, no human traversal
 [
     {
         "_info": {
@@ -489,6 +489,140 @@
             "menu.items[0].text": "New game",
         },
         "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Counterstrike",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "xl_pilot.runtime_active": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "stock",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_stock",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "overlay_pause",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": true,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "disk_load",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "current_level_num": 13,
+            "time_paused": true,
+            "xl_pilot.runtime_active": true,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "verify_saved",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_verify",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_monitor",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "resume",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "time_paused": false,
+            "game_window_is_front": true,
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_live",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_lightning",
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_aim_camera",
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 700,
+    },
+    {
+        "action": "set_debug",
+        "field": "xl_pog_probe",
+        "value": "pmc_fired_camera",
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
     },
     {
         "action": "introspect",
