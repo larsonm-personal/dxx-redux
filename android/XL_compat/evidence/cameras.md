@@ -2707,3 +2707,39 @@ camera target. Run 7839675773be4a0db3f6bf3eb3c54d99, 55929 ms; protected manifes
 match. The earlier 48-check pass was 27a7116ad286447c86fbb522e2b487c5, 55450 ms.
 Windows native build and projectile/save owner pass; automation catalogs pass.
 These controlled monitor fixtures do not admit or claim traversal of pmlev1/2/3.
+
+## Passive robot and fireball contact (November 1, stack D)
+
+Pinned `physics/collide.cpp` enables robot/camera and fireball/camera pairs.
+The fireball dispatcher is explicitly `NO_COLLISION`; the robot pair reaches
+the default debug trap and returns without a response. Neither pair damages,
+reflects, emits an impact effect, or raises awareness. Release behavior is
+preserved with an explicit passive dispatcher in the Redux hook.
+
+The default profile's `nHitboxes=2` makes `UseHitbox` false for every actor,
+including robots and fireballs. `include/network.h::CollisionModel()` still
+returns 2, so `ProcessObjectCollision` performs `UnstickFromObject` and retries
+movement when velocity is unchanged. The installed camera sphere query now
+accepts those two actors; the separately forced hitbox profile remains restricted
+to its previously qualified player/weapon inputs. Static camera contact remains
+guarded.
+
+The reverse query registers robot repair/hit state but leaves fireball hit state
+empty. Save snapshots now include all robot identities alongside players and
+weapons. Restore validates the complete ordered identity set before publishing;
+only the source-persisted elapsed repair time survives, not transient hit points.
+
+The existing native projectile owner exercises 48 real robot/fireball physics
+frames across two camera behaviors, three axes, both directions and two frame
+lengths. It checks both dispatch orders, exact unsticking/retry positions,
+unchanged velocity/health/flags, no new effects or gameplay RNG, actor-specific
+hit state, and rejection of a changed robot type on restore. Its full disk save
+now includes a separately created robot that earned repair state through physics,
+switches to stock, restores into XL, and compares every saved actor identity and
+elapsed repair time. Existing projectile and malformed-trailer controls remain
+part of that same owner.
+
+Stack C's first Linux public run exposed a missing camera UV hook stub in the
+isolated POG GPU owner. The stub is confined to that asset-free owner, which has
+no level-bound monitors. The corrected Linux GPU test passed locally in 29.61 s;
+CI is being checked against C's updated head rather than its failed first head.

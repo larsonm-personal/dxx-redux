@@ -7,6 +7,7 @@ struct object;
 struct vms_vector;
 /* -1 delegates non-camera pairs to the stock collision table */
 int xl_camera_pair_collision(int a, int b);
+int xl_camera_passive_contact(struct object *a, struct object *b);
 int xl_camera_player_contact(struct object *a, struct object *b, struct vms_vector *point);
 int xl_camera_weapon_contact(struct object *a, struct object *b, struct vms_vector *point);
 void xl_camera_hit_state_clear(void);

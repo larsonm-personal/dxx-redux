@@ -573,6 +573,7 @@ static void camera_projectile_physics_controls(object &camera)
 	require(vulcan_aware && vulcan_filtered, "Projectile physics controls missed a source Vulcan awareness branch");
 	std::cout << "Native camera projectile physics: " << cases << " frames, " << dead << " deaths, " << retries << " retries, " << duplicates << " repeated-contact frames, Vulcan awareness " << vulcan_aware << " accepted/" << vulcan_filtered << " filtered passed\n";
 }
+#include "camera_passive_test.h"
 static void camera_weapon_controls(const std::filesystem::path &root)
 {
 	if (!std::filesystem::exists(root / "data/d2x-xl.hog")) return;
@@ -779,6 +780,7 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 	}
 	camera_physics_native_controls(camera);
 	camera_projectile_physics_controls(camera);
+	camera_passive_physics_controls(camera);
 	camera_player_contact_controls(camera);
 	const auto saved_frame = FrameTime;
 	FrameTime = 1092;
@@ -925,6 +927,20 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 	            earned_hit.shield_time > 0 && earned_hit.times != decltype(earned_hit.times){},
 	        "Cannot earn camera hit state for full disk restore");
 	*ConsoleObject = hit_player;
+	const int robot_owner = projectile_robot();
+	auto &hit_robot = Objects[robot_owner];
+	hit_robot.pos = camera.pos;
+	hit_robot.pos.x -= F1_0;
+	hit_robot.last_pos = hit_robot.pos;
+	hit_robot.mtype.phys_info = {};
+	hit_robot.mtype.phys_info.mass = F1_0;
+	hit_robot.mtype.phys_info.velocity.x = 32 * F1_0;
+	ConsoleObject->type = OBJ_NONE; // Isolate the robot/camera contact from the test player
+	do_physics_sim(&hit_robot);
+	*ConsoleObject = hit_player;
+	require(xl_camera_hit_state_get(robot_owner, earned_hit) && earned_hit.repaired == int32_t(xl_camera_controller_ticks()) &&
+	            earned_hit.shield_time > 0,
+	        "Cannot earn robot camera hit state for full disk restore");
 	obj_delete(victim);
 	FrameTime = saved_frame;
 	std::cout << "Native camera projectile contacts: " << cases

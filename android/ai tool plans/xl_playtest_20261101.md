@@ -115,3 +115,19 @@ correct test-only APK passed 48 checks after installing with -t. Final rebuild u
 the repository-supported -PciTestAbi=x86_64 and the normal outputs APK, passing52.
 No original mission bytes or admission gates changed. Remaining camera gameplay,
 static camera behavior and authored lightning dependencies still block PMC levels.
+
+### Stack D: passive camera contact and robot save state
+
+- Preserve source-enabled robot/fireball collision pairs without introducing a
+  damage, bounce or impact-effect response
+- Reuse the qualified default sphere query and reverse-query unsticking, with
+  unchanged-velocity retry through real physics
+- Include robot repair state in complete identity-validated save snapshots
+- Native projectile owner passes 48 passive frames and full player/robot disk
+  restore through a stock mission; existing malformed-save checks also pass
+- C's Linux isolated GPU harness link failure was fixed on C, locally tested,
+  pushed, and fast-forwarded into D before restoring D's working changes
+- Scoped quality and Android x86_64 compilation pass (3m7s); the combined-stack
+  opening regression passes 64/64 steps in 111717 ms with protected data unchanged
+- Continue source qualification of flash/child-projectile/static-camera behavior
+  without relaxing admission
