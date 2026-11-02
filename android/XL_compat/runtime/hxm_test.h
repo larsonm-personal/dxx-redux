@@ -151,6 +151,7 @@ static void hxm_projectile_controls(const std::filesystem::path &root)
 }
 
 #include "camera_resource_test.h"
+#include "hxm_boss_test.h"
 
 static int hxm_test(int argc, char **argv)
 {
@@ -238,6 +239,7 @@ static int hxm_test(int argc, char **argv)
 		check_actor();
 		require(Objects[actor].shields == i2f(750) && hxm_model_receipt(6) == custom_model, "Repeated HXM game retained old combat state or stale model/texture resources");
 		hxm_dependency_controls(root);
+		hxm_boss_binding_controls(root);
 		hxm_projectile_controls(root);
 		camera_resource_controls(root);
 		std::cout << "Original HXM normal startup, custom model/guns/projectiles/combat, disk through stock and repeated load passed\n";

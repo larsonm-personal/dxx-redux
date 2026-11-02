@@ -82,6 +82,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "boss_spawn.h"
 #include "camera_controller.h"
 #include "mission_progress.h"
 #include "linked_audio.h"
@@ -928,6 +929,8 @@ int load_level_robots_file(const char *level_name)
 #ifdef DXX_XL_RUNTIME
 	xl_initialize_camera_objects();
 	xl_camera_controller_bind_level();
+	// Boss roles and collision radii must use the final per-level definitions
+	if (xl_level_extensions_active()) xl_boss_spawn_load();
 #endif
 	return base_player_ship_radius;
 }
