@@ -37,7 +37,7 @@
     {
         "action": "wait_for",
         "expect": {
-            "position.segnum": 664,
+            "position.segment": 664,
             "xl_pilot.remaining_objectives": 6,
             "reactor_countdown.active": false,
             "player_dead": false,
