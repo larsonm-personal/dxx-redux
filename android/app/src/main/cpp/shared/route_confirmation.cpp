@@ -1,4 +1,7 @@
 #include "route_confirmation.h"
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1881,6 +1884,14 @@ void apply_objective_action(object *actor)
 				State.action_applied = 1;
 				check_trigger(&Segments[segnum], (short) sidenum,
 				              (short) State.actor_objnum, 0);
+				/* XL player-only exits reject the companion before the normal route
+				 * callback. Reaching the side is not proof of accepted activation */
+#ifdef DXX_XL_RUNTIME
+				if (State.summary.status == ROUTE_CONFIRMATION_RUNNING && xl_level_extensions_active()) {
+					fail(ROUTE_CONFIRMATION_UNSUPPORTED, "XL exit reached but companion activation was not accepted");
+					break;
+				}
+#endif
 				if (State.summary.status == ROUTE_CONFIRMATION_RUNNING)
 					record_objective_and_replan();
 			}
@@ -2455,6 +2466,14 @@ extern "C" int route_confirmation_handle_final_boss_endlevel(void)
 
 extern "C" const route_confirmation_summary *route_confirmation_get_summary(void)
 {
+	State.summary.actor_segment = -1;
+	if (valid_object(State.actor_objnum)) {
+		const object *actor = &Objects[State.actor_objnum];
+		State.summary.actor_segment = actor->segnum;
+		State.summary.actor_position[0] = actor->pos.x;
+		State.summary.actor_position[1] = actor->pos.y;
+		State.summary.actor_position[2] = actor->pos.z;
+	}
 	return &State.summary;
 }
 

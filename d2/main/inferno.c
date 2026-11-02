@@ -439,8 +439,11 @@ int main(int argc, char *argv[])
 
 	setbuf(stdout, NULL); // unbuffered output via printf
 #ifdef _WIN32
-	freopen( "CON", "w", stdout );
-	freopen( "CON", "w", stderr );
+	/* Preserve redirected diagnostics for the isolated rendered route runner */
+	if (!startup_find_cmd_arg("-route-confirm-json-out")) {
+		freopen( "CON", "w", stdout );
+		freopen( "CON", "w", stderr );
+	}
 #endif
 
 	if (GameArg.SysShowCmdHelp) {

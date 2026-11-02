@@ -101,6 +101,10 @@ void finish_if_terminal()
 	if (!State.active || !route_confirmation_is_terminal())
 		return;
 	State.active = 0;
+	if (startup_find_cmd_arg("-route-confirm-capture")) {
+		game_render_frame_mono(0);
+		save_screen_shot(0);
+	}
 	summary = route_confirmation_get_summary();
 	if (!route_confirmation_write_json(State.output, State.mission, State.level,
 	                                   error, sizeof(error)))
@@ -119,19 +123,24 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	const char *output = argument_value("-route-confirm-json-out");
 	const char *level_text;
 	const char *time_limit_text;
+	const char *exit_goal;
 	const char *extra_dir;
 	std::string mission;
 	if (!output)
 		return -1;
 	level_text = argument_value("-level");
 	time_limit_text = argument_value("-route-confirm-timeout-seconds");
+	exit_goal = argument_value("-route-confirm-exit-trigger");
 	if (!parse_level(level_text, &State.level) ||
+	    (startup_find_cmd_arg("-route-confirm-exit-trigger") && !exit_goal) ||
+	    !route_confirmation_configure_exit_goal(exit_goal) ||
 	    !route_confirmation_configure_speed(argument_value("-route-confirm-speed-percent")) ||
 	    (time_limit_text && !configure_time_limit(time_limit_text))) {
 		fprintf(stderr,
 		        "usage: -route-confirm-json-out <path> -level <number> "
 		        "[-mission <name>] [-extra-dir <path>] "
 		        "[-route-confirm-timeout-seconds <1..3600>] "
+		        "[-route-confirm-exit-trigger <number>] "
 		        "[-route-confirm-speed-percent <100..200>]\n");
 		return 1;
 	}
@@ -157,6 +166,8 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	}
 	snprintf(Players[Player_num].callsign,
 	         sizeof(Players[Player_num].callsign), "%s", "RouteBot");
+	/* Match headless workers instead of inheriting an absent or interactive pilot */
+	new_player_config();
 	GameArg.SysUseNiceFPS = 1;
 	GameArg.SysMaxFPS = ROUTE_CONFIRMATION_FIXED_HZ;
 	PlayerCfg.maxFps = ROUTE_CONFIRMATION_FIXED_HZ;
