@@ -388,13 +388,15 @@ void lightning_bolt_controls()
 		for (int frames : { 2, 3, 7 })
 			for (int delay : { 0, 50, -50 })
 				for (int offset : { 0, 1 })
-					for (int profile : { 0, 1 }) {
+					for (int profile : { 0, 1, 2, 3 }) {
 						Object object{};
 						object.render = 12;
 						object.render_data = { 300, delay, 18, 5, offset, -1, 3, 0, 0, 8, 0, frames, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, 1 };
-						if (profile) object.render_data = { 2000, delay, 30, 5, offset, -1, 50, 0, 0, 50, 5, frames, 3, 0, 1, 1, 1, 0, 0, 1, 0, 32, 64, 255, 100, 1 };
+						if (profile == 1) object.render_data = { 2000, delay, 30, 5, offset, -1, 50, 0, 0, 50, 5, frames, 3, 0, 1, 1, 1, 0, 0, 1, 0, 32, 64, 255, 100, 1 };
+						if (profile >= 2) object.render_data = { 4500, delay, 75, 13, offset, -1, 5, 1, 2, 30, 2, frames, 3, 0, 2, 1, 1, 1, 0, 0, 0, 255, 38, 76, 100, 1 };
 						const auto definition = lightning_definition(object, authored_lightning_global_style);
-						const LightningPoint origin{ -12345678, 456789, -8912345 };
+						const LightningPoint origin{ -2621440, -33182233, 6619136 };
+						const std::optional<LightningPoint> endpoint = profile >= 2 ? std::optional<LightningPoint>({ origin[0], origin[1] + (profile == 2 ? 75 : -75) * 65536, origin[2] }) : std::nullopt;
 						struct Random {
 							unsigned index;
 							double unit()
@@ -408,8 +410,8 @@ void lightning_bolt_controls()
 						} random{ seed };
 						// Initial fields have their separate extracted Init comparison
 						CLightning source;
-						source.m_nNodes = definition.nodes + definition.nodes / 5;
-						source.m_bRandom = definition.nodes / 5;
+						source.m_bRandom = endpoint ? 0 : definition.nodes / 5;
+						source.m_nNodes = definition.nodes + source.m_bRandom;
 						source.m_nLife = definition.life;
 						source.m_nTTL = std::abs(definition.life);
 						source.m_nStyle = definition.style;
@@ -421,9 +423,10 @@ void lightning_bolt_controls()
 						source.m_nDelay = std::abs(delay) * 10;
 						source.m_nOffset = definition.offset;
 						source.m_vBase = vector(origin);
+						if (endpoint) source.m_vEnd = vector(*endpoint);
 						random_index = seed;
 						if (!source.Create(0, 0)) throw std::runtime_error("Pinned bolt creation failed");
-						auto bolt = create_lightning_bolt(definition, origin, random);
+						auto bolt = create_lightning_bolt(definition, origin, random, endpoint);
 						const auto verify_bolt = [&] {
 							const auto &s = bolt.lifetime;
 							if (s.ttl != source.m_nTTL || s.nodes != source.m_nNodes || s.length != source.m_nLength || s.frames != source.m_nFrames || s.step != source.m_iStep ||
@@ -439,7 +442,7 @@ void lightning_bolt_controls()
 								if (bolt.draw_positions[i] != point(source.drawn[i])) throw std::runtime_error("Lightning staged draw coordinates differ");
 						};
 						verify_bolt();
-						for (int frame = 0; frame < 160; ++frame) {
+						for (int frame = 0; frame < (profile >= 2 ? 400 : 160); ++frame) {
 							gameStates.app.tick40fps.nTime = frame % 3 == 0 ? 31 : 25;
 							source.Animate(0, 0);
 							if (!source.SetLife() || !lightning_bolt_frame(bolt, gameStates.app.tick40fps.nTime, random)) throw std::runtime_error("Persistent lightning expired");
@@ -456,73 +459,84 @@ void lightning_emitter_controls()
 	using namespace xl_compat;
 	unsigned ticks = 0;
 	for (unsigned seed : { 0u, 17u, 991u })
-		for (int count : { 1, 3, 7 }) {
-			Object authored{};
-			authored.render = 12;
-			authored.render_data = { 300, 50, 18, 5, 1, -1, count, 0, 0, 8, 0, 2, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, 1 };
-			const auto definition = lightning_definition(authored, 2);
-			const LightningPoint origin{ -12345678, 456789, -8912345 };
-			struct Random {
-				unsigned index;
-				double unit()
-				{
-					return sample(index++);
+		for (int count : { 1, 3, 7 })
+			for (bool fixed : { false, true }) {
+				Object authored{};
+				authored.render = 12;
+				authored.render_data = { 300, 50, 18, 5, 1, -1, count, 0, 0, 8, 0, 2, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, 1 };
+				if (fixed) authored.render_data = { 4500, 0, 75, 13, 1, -1, count, 1, 2, 30, 2, 7, 3, 0, 2, 1, 1, 1, 0, 0, 0, 255, 38, 76, 100, 1 };
+				const auto definition = lightning_definition(authored, 2);
+				const LightningPoint origin{ -2621440, -33182233, 6619136 };
+				const std::optional<LightningPoint> endpoint = fixed ? std::optional<LightningPoint>({ origin[0], origin[1] + 75 * 65536, origin[2] }) : std::nullopt;
+				struct Random {
+					unsigned index;
+					double unit()
+					{
+						return sample(index++);
+					}
+					int bounded(int limit)
+					{
+						return int(sample(index++) * 32768) % limit;
+					}
+				} random{ seed };
+				random_index = seed;
+				CLightningEmitter source;
+				source.m_nBolts = count;
+				source.m_lightning.values.resize(count);
+				for (auto &bolt : source.m_lightning.values) {
+					bolt.m_bRandom = fixed ? 0 : 1;
+					bolt.m_nNodes = definition.nodes + bolt.m_bRandom;
+					bolt.m_nFrames = -definition.frames;
+					bolt.m_nLife = definition.life;
+					bolt.m_nTTL = -definition.life;
+					bolt.m_nDelay = std::abs(definition.delay) * 10;
+					bolt.m_nStyle = definition.style;
+					bolt.m_nSmoothe = definition.smooth;
+					bolt.m_bClamp = definition.clamp;
+					bolt.m_nAmplitude = definition.amplitude;
+					bolt.m_nLength = definition.length * bolt.m_nNodes / definition.nodes;
+					bolt.m_nOffset = definition.offset;
+					bolt.m_vBase = vector(origin);
+					if (endpoint) bolt.m_vEnd = vector(*endpoint);
+					if (!bolt.Create(0, 0)) throw std::runtime_error("Pinned emitter bolt creation failed");
 				}
-				int bounded(int limit)
-				{
-					return int(sample(index++) * 32768) % limit;
+				object.position.vPos = vector(origin);
+				object.info.nSegment = 362;
+				auto emitter = create_lightning_emitter(definition, origin, random, 362, endpoint);
+				int time = 1000, last_tick = 1000;
+				unsigned updates = 0;
+				for (int frame = 0; frame < (fixed ? 800 : 240); ++frame) {
+					if (frame % 13 == 0) {
+						object.position.vPos.v.coord.x += 17231;
+						object.position.vPos.v.coord.y -= 3127;
+						object.info.nSegment = 362 + frame % 3;
+					}
+					time += std::array<int, 3>{ 7, 11, 31 }[frame % 3];
+					gameStates.app.nSDLTicks[0] = time;
+					gameStates.app.tick40fps.nTime = time - last_tick;
+					if (time - last_tick >= 25) last_tick = time;
+					emitter.enabled = !(frame >= 40 && frame < 60) && !(frame >= 100 && frame < 110);
+					source.m_bValid = emitter.enabled ? 1 : -1;
+					if (source.Update(0) != count) throw std::runtime_error("Pinned emitter lost a persistent bolt");
+					if (lightning_emitter_frame(emitter, time, gameStates.app.tick40fps.nTime, random)) {
+						++updates;
+						lightning_emitter_move(emitter, point(object.position.vPos), object.info.nSegment);
+					}
+					if (emitter.updated != source.m_tUpdate || random.index != random_index || source.sounds != updates)
+						throw std::runtime_error("Lightning emitter gate, two-pass random ordering or post-update scheduling differs");
+					for (int i = 0; i < count; ++i) {
+						const auto &bolt = emitter.bolts[i];
+						const auto &expected = source.m_lightning[i];
+						const auto &s = bolt.lifetime;
+						if (s.ttl != expected.m_nTTL || s.nodes != expected.m_nNodes || s.length != expected.m_nLength || s.frames != expected.m_nFrames || s.step != expected.m_iStep ||
+						    bolt.segment != expected.m_nSegment || bolt.base != point(expected.m_vBase) || bolt.position != point(expected.m_vPos) || bolt.end != point(expected.m_vEnd) || bolt.direction != point(expected.m_vDir) || bolt.draw_positions.size() != expected.drawn.size())
+							throw std::runtime_error("Lightning emitter bolt state differs");
+						for (unsigned n = 0; n < bolt.nodes.size(); ++n) verify(bolt.nodes[n], expected.m_nodes.values[n]);
+						for (unsigned n = 0; n < bolt.draw_positions.size(); ++n)
+							if (bolt.draw_positions[n] != point(expected.drawn[n])) throw std::runtime_error("Lightning emitter drawing state differs");
+					}
+					++ticks;
 				}
-			} random{ seed };
-			random_index = seed;
-			CLightningEmitter source;
-			source.m_nBolts = count;
-			source.m_lightning.values.resize(count);
-			for (auto &bolt : source.m_lightning.values) {
-				bolt.m_nNodes = 9;
-				bolt.m_nFrames = -2;
-				bolt.m_nAmplitude = definition.amplitude;
-				bolt.m_nLength = definition.length * 9 / 8;
-				bolt.m_nOffset = definition.offset;
-				bolt.m_vBase = vector(origin);
-				if (!bolt.Create(0, 0)) throw std::runtime_error("Pinned emitter bolt creation failed");
 			}
-			object.position.vPos = vector(origin);
-			object.info.nSegment = 362;
-			auto emitter = create_lightning_emitter(definition, origin, random, 362);
-			int time = 1000, last_tick = 1000;
-			unsigned updates = 0;
-			for (int frame = 0; frame < 240; ++frame) {
-				if (frame % 13 == 0) {
-					object.position.vPos.v.coord.x += 17231;
-					object.position.vPos.v.coord.y -= 3127;
-					object.info.nSegment = 362 + frame % 3;
-				}
-				time += std::array<int, 3>{ 7, 11, 31 }[frame % 3];
-				gameStates.app.nSDLTicks[0] = time;
-				gameStates.app.tick40fps.nTime = time - last_tick;
-				if (time - last_tick >= 25) last_tick = time;
-				emitter.enabled = !(frame >= 40 && frame < 60) && !(frame >= 100 && frame < 110);
-				source.m_bValid = emitter.enabled ? 1 : -1;
-				if (source.Update(0) != count) throw std::runtime_error("Pinned emitter lost a persistent bolt");
-				if (lightning_emitter_frame(emitter, time, gameStates.app.tick40fps.nTime, random)) {
-					++updates;
-					lightning_emitter_move(emitter, point(object.position.vPos), object.info.nSegment);
-				}
-				if (emitter.updated != source.m_tUpdate || random.index != random_index || source.sounds != updates)
-					throw std::runtime_error("Lightning emitter gate, two-pass random ordering or post-update scheduling differs");
-				for (int i = 0; i < count; ++i) {
-					const auto &bolt = emitter.bolts[i];
-					const auto &expected = source.m_lightning[i];
-					const auto &s = bolt.lifetime;
-					if (s.ttl != expected.m_nTTL || s.nodes != expected.m_nNodes || s.length != expected.m_nLength || s.frames != expected.m_nFrames || s.step != expected.m_iStep ||
-					    bolt.segment != expected.m_nSegment || bolt.base != point(expected.m_vBase) || bolt.position != point(expected.m_vPos) || bolt.end != point(expected.m_vEnd) || bolt.direction != point(expected.m_vDir) || bolt.draw_positions.size() != expected.drawn.size())
-						throw std::runtime_error("Lightning emitter bolt state differs");
-					for (unsigned n = 0; n < bolt.nodes.size(); ++n) verify(bolt.nodes[n], expected.m_nodes.values[n]);
-					for (unsigned n = 0; n < bolt.draw_positions.size(); ++n)
-						if (bolt.draw_positions[n] != point(expected.drawn[n])) throw std::runtime_error("Lightning emitter drawing state differs");
-				}
-				++ticks;
-			}
-		}
 	std::cout << "Pinned lightning emitters: " << ticks << " multi-bolt update/disable/re-enable ticks passed\n";
 }

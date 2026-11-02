@@ -103,6 +103,25 @@ void lightning_random_erratic_path(std::vector<LightningNode> &nodes, int frames
 	lightning_smooth_nodes(nodes);
 	lightning_compute_offsets(nodes, frames, true);
 }
+template <class Random>
+void lightning_fixed_erratic_path(std::vector<LightningNode> &nodes, int frames, int amplitude, Random &&random)
+{
+	if (nodes.size() < 2) throw std::runtime_error("XL lightning path has too few nodes");
+	for (auto *node : { &nodes.front(), &nodes.back() }) {
+		node->next = node->position;
+		node->offset = {};
+	}
+	amplitude = lightning_detail::checked(std::int64_t(amplitude) * 3);
+	std::size_t cursors[2]{ 1, nodes.size() - 2 };
+	for (unsigned i = 0, end = 0; i < nodes.size() - 1; ++i, end = !end) {
+		lightning_node_erratic(nodes[cursors[end]], frames, amplitude, false, end != 0, false, int(i), random);
+		if (cursors[1] <= cursors[0]) break;
+		if (end) --cursors[1];
+		else ++cursors[0];
+	}
+	lightning_smooth_nodes(nodes);
+	lightning_compute_offsets(nodes, frames, false);
+}
 } // namespace xl_compat
 #ifdef _MSC_VER
 #pragma pack(pop)
