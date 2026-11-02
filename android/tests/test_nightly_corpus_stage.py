@@ -203,9 +203,17 @@ class CorpusStageTests(unittest.TestCase):
         ]
         rejected = subprocess.run(command, capture_output=True, text=True, timeout=30)
         self.assertNotEqual(rejected.returncode, 0)
-        self.assertIn("exactly one headless owner", rejected.stderr)
+        self.assertIn("exactly one native owner", rejected.stderr)
         accepted = subprocess.run(command + ["-Level", "1"], capture_output=True, text=True, timeout=30)
         self.assertEqual(accepted.returncode, 0, accepted.stderr)
+        accepted = subprocess.run(
+            command + ["-Mode", "Desktop", "-Level", "1"], capture_output=True, text=True, timeout=30
+        )
+        self.assertEqual(accepted.returncode, 0, accepted.stderr)
+        rejected = subprocess.run(
+            command + ["-Mode", "Headed", "-Level", "1"], capture_output=True, text=True, timeout=30
+        )
+        self.assertNotEqual(rejected.returncode, 0)
         rejected = subprocess.run(
             command + ["-Level", "1", "-WriteRegression"], capture_output=True, text=True, timeout=30
         )
