@@ -523,6 +523,13 @@
         "field": "xl_pog_probe",
         "value": "pmc_live",
     },
+    // Original HXM robot 174 uses logical sound zero; ordinary combat stays active
+    { "action": "pose_view", "segment": 676, "position_fixed": [2177825, -55100517, -7210207] },
+    { "action": "attack_object", "object": 174, "distance": 80, "timeout_ms": 60000 },
+    {
+        "action": "assert",
+        "expect": { "player.robots_killed_level": { "gte": 1 }, "cheats_enabled": false, "player_dead": false },
+    },
     {
         "action": "key",
         "key": "escape",

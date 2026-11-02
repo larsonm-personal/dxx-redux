@@ -82,6 +82,60 @@ static int projectile_robot()
 #include "camera_weapon_test.h"
 #include "static_contact_test.h"
 
+static void projectile_sound_dependency_controls()
+{
+	int sample = -1;
+	for (int id = 0; id < MAX_SOUNDS && sample < 0; ++id) {
+		const int resolved = digi_xlat_sound(id);
+		if (resolved >= 0 && resolved < MAX_SOUND_FILES && GameSounds[resolved].data && GameSounds[resolved].length > 0) sample = resolved;
+	}
+	require(sample >= 0, "Sound dependency controls require a loaded original sample");
+	struct Restore {
+		int sample, low_memory = GameArg.SysLowMem;
+		ubyte sound = Sounds[0], alternate = AltSounds[0];
+		ubyte *data;
+		~Restore()
+		{
+			Sounds[0] = sound;
+			AltSounds[0] = alternate;
+			GameArg.SysLowMem = low_memory;
+			GameSounds[sample].data = data;
+		}
+	} restore{ sample, GameArg.SysLowMem, Sounds[0], AltSounds[0], GameSounds[sample].data };
+	const auto rejects = [](int id) {
+		try {
+			xl_assets::ObjectDependencies graph;
+			graph.sound(id);
+			return false;
+		} catch (const std::exception &) {
+			return true;
+		}
+	};
+	for (int low_memory : { 0, 1 }) {
+		GameArg.SysLowMem = low_memory;
+		AltSounds[0] = 0;
+		Sounds[0] = 255;
+		xl_assets::ObjectDependencies silent;
+		silent.sound(0);
+		require(silent.sounds.empty() && digi_xlat_sound(0) == -1, "Original silent mapping acquired a sample dependency");
+	}
+	AltSounds[0] = 255;
+	xl_assets::ObjectDependencies alternate_silent;
+	alternate_silent.sound(0);
+	require(alternate_silent.sounds.empty(), "Silent alternate mapping acquired a sample dependency");
+	GameArg.SysLowMem = 0;
+	Sounds[0] = static_cast<ubyte>(sample);
+	xl_assets::ObjectDependencies mapped;
+	mapped.sound(0);
+	require(mapped.sounds.count(sample) == 1, "Mapped sound lost its original sample dependency");
+	GameSounds[sample].data = nullptr;
+	require(rejects(0), "Mapped sound with a missing sample was admitted");
+	GameSounds[sample].data = restore.data;
+	Sounds[0] = MAX_SOUND_FILES;
+	require(rejects(0) && rejects(MAX_SOUNDS) && rejects(-2), "Invalid sound mapping or logical ID was admitted");
+	std::cout << "Original silent sound mappings and missing-sample rejection passed\n";
+}
+
 static void projectile_static_robot_controls(bool xl)
 {
 	for (int behavior : { AIB_STILL, AIB_NORMAL, 135 }) {
@@ -405,6 +459,7 @@ static int projectile_test(int argc, char **argv)
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
 		Game_suspended = SUSP_ROBOTS;
+		projectile_sound_dependency_controls();
 		static_robot_native_controls(root, vertigo);
 		require(load_base_mission("neptunxl", error, sizeof(error)), error);
 		StartNewGame(1);
