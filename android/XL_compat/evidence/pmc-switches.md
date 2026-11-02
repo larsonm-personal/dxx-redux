@@ -35,3 +35,22 @@ Full protected receipts are in `temp/xl-original-pmc-switches`.
 Receipts are under `temp/xl-traversal-20261102/pmc-switch5-*`. This is bounded
 normal activation and persistence evidence, not human traversal, full PMC combat,
 reactor/exit progression, hub return, or physical-device validation.
+
+## Red-key gate extension
+
+The next phase uses original red-key object 27 in segment 541. It first shoots
+door 134 without a key and requires the door to remain closed. Fixed positioning
+at the authored key allows normal collision to collect it. A checkpoint restore
+must recover both the key and its saved position after the player moves away.
+The player then returns to the original approach in segment 1553, fires normally,
+and flies across the door. Trigger 13 must record player actor 0 and shot 0,
+and open its linked doors 98/112. The final checkpoint is also checked by the
+existing fresh-process load phase.
+
+The direct pickup/door probe passed 40/40 in 77.087 seconds on the same APK.
+The extended protected scenario passed 63/63 warm steps in 144.663 seconds and
+13/13 cold steps in 34.567 seconds, with native PIDs 10872 then 11823. Resource,
+pilot and settings hash lists matched after restoration, and the final frame was
+visually inspected. Prior switch-only receipts are preserved in
+`temp/xl-traversal-20261102/protected-switches-C`; the current protected output is
+`temp/xl-original-pmc-switches`.
