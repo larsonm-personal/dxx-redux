@@ -79,6 +79,11 @@ laser damage and exact health persistence (99 warm / 17 cold). Additional f1e73
 covered opening gates (76 / 15) and PMC3 continuity (115 / 21, controlled exits).
 Those results belong to their stated builds; they are not new exact-APK claims.
 
+Additional tests on the same 28810 APK qualify the [normal PMC2 escape](evidence/pmc2-escape.md):
+155 warm steps and 23 fresh-process steps, including its contact-operated door,
+four-boost flight, normal advance to PMC3 and destination save/load. These receipts
+are supplementary; the published bundle remains unchanged.
+
 The [rendered GuideBot pilot](evidence/rendered-guidebot.md) confirms a bounded
 hub route with an assisted, physics-driven companion. Companion activation of
 the XL exit is unsupported. Normal-player probes fill that specific gap without
@@ -88,12 +93,13 @@ relaxing actor rules or dispatching exits directly.
 
 - Fixed local approaches and bounded escape flights do not qualify full human
   navigation, surviving every boss encounter or earned campaign completion
-- Later PMC2 exits and normal PMC3 progression remain unqualified by this bundle
+- Normal PMC3 progression remains outside this bundle's packaged qualification
 - Physical ARM, touch ergonomics, controller acceptance and device performance
   need user feedback; device tests here use an owned x86_64 emulator with host GPU
 - Large levels and save restores can take tens of seconds on the emulator
-- An earlier intermediate build had a launcher ANR; later clean scenarios passed,
-  but the retained delayed trace does not establish its original cause
+- One 28810 launch stalled during graphics initialization with an automation
+  broadcast ANR; four later menu launches and three clean quit/relaunch cycles
+  passed. The original cause remains unconfirmed
 - Gameplay and hazard visuals remain active. Optional high-resolution replacements,
   custom soundtrack and graphics-only parity work are deferred
 - Existing broken-panel saves are preserved rather than rewritten; older saves
