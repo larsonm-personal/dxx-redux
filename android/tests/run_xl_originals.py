@@ -221,7 +221,14 @@ def validate_summary(receipt, fast=False):
         or (fast and receipt.get("navigation_smoke_passed") != 1)
     ):
         raise ValueError("Invalid original XL acceptance receipt")
+    navigation = {}
+    if fast:
+        elapsed = receipt.get("navigation_smoke_milliseconds")
+        if type(elapsed) is not int or not 0 <= elapsed <= 30000:
+            raise ValueError("Invalid XL navigation smoke timing")
+        navigation = {"navigation_smoke_passed": 1, "navigation_smoke_milliseconds": elapsed}
     return {
+        **navigation,
         "required_passed": len(required),
         "format_witnesses": receipt["format_witnesses"],
         "modern_source_levels": receipt["modern_source_levels"],
@@ -515,7 +522,7 @@ def main():
             stock / "main/dxx-redux-d2-headless-route", stage, retail_data, work / "navigation-smoke", seed
         )
         receipt["navigation_smoke_passed"] = navigation["passed"]
-        receipt["navigation_smoke_seconds"] = navigation["seconds"]
+        receipt["navigation_smoke_milliseconds"] = round(navigation["seconds"] * 1000)
     verify(stage, modern=args.fast)
     receipt.update(
         required_tests=sorted(required),

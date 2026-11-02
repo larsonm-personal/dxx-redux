@@ -1059,6 +1059,7 @@ class RetailProfileTests(unittest.TestCase):
                 "format_witnesses": 16 if fast else 9,
                 "modern_source_levels": 3 if fast else 0,
                 "navigation_smoke_passed": 1 if fast else 0,
+                "navigation_smoke_milliseconds": 800,
             }
             code, receipt, calls, _ = self.run_profile(profile, xl_receipt=summary)
             self.assertEqual(code, 0)

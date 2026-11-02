@@ -309,6 +309,17 @@ def public_diagnostics(value):
             clean["xl_checks"] = {
                 key: counts[key] for key in ("required_passed", "format_witnesses", "modern_source_levels")
             }
+            if (
+                value.get("id") == "host-profile:retail-xl-fast"
+                and type(counts.get("navigation_smoke_passed")) is int
+                and counts["navigation_smoke_passed"] == 1
+                and type(counts.get("navigation_smoke_milliseconds")) is int
+                and 0 <= counts["navigation_smoke_milliseconds"] <= 30000
+            ):
+                clean["xl_checks"].update(
+                    navigation_smoke_passed=1,
+                    navigation_smoke_milliseconds=counts["navigation_smoke_milliseconds"],
+                )
     return clean
 
 

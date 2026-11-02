@@ -194,6 +194,7 @@ class XlPrivateTests(unittest.TestCase):
                 format_witnesses=16,
                 modern_source_levels=3,
                 navigation_smoke_passed=1,
+                navigation_smoke_milliseconds=800,
             )
             self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 107)
             for mode in ("omitted", "duplicate", "disabled", "skipped", "failed", "experimental"):
@@ -219,6 +220,9 @@ class XlPrivateTests(unittest.TestCase):
                 ("format_witnesses", 9),
                 ("modern_source_levels", 2),
                 ("navigation_smoke_passed", 0),
+                ("navigation_smoke_milliseconds", -1),
+                ("navigation_smoke_milliseconds", 30001),
+                ("navigation_smoke_milliseconds", "private"),
             ):
                 with self.subTest(field=key), self.assertRaises(ValueError):
                     runner.validate_summary({**receipt, key: value}, fast=True)
@@ -550,6 +554,11 @@ class XlPrivateTests(unittest.TestCase):
         clean = retail.public_diagnostics(row)
         self.assertEqual(clean["xl_checks"], {"required_passed": 96, "format_witnesses": 16, "modern_source_levels": 3})
         self.assertNotIn("raw input", json.dumps(clean))
+        row["xl_checks"].update(navigation_smoke_passed=1, navigation_smoke_milliseconds=800)
+        self.assertEqual(retail.public_diagnostics(row)["xl_checks"]["navigation_smoke_milliseconds"], 800)
+        for invalid in ("private", -1, 30001, True):
+            row["xl_checks"]["navigation_smoke_milliseconds"] = invalid
+            self.assertNotIn("navigation_smoke_milliseconds", retail.public_diagnostics(row)["xl_checks"])
         for invalid in (True, -1, 1001, "private text"):
             changed = copy.deepcopy(row)
             changed["xl_checks"]["required_passed"] = invalid
