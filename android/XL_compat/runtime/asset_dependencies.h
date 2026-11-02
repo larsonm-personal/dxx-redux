@@ -164,6 +164,13 @@ struct ObjectDependencies {
 		} else if (type == OBJ_POWERUP) powerup(id);
 		else asset_require(false, "unknown contained object dependency");
 	}
+	void robot_behavior(int id, int behavior)
+	{
+		robot(id);
+		// Source melee initialization changes static behavior to NORMAL before contact
+		asset_require(behavior != 135 || robot_data[id].attack_type,
+		              "static robot contact response requires source qualification");
+	}
 	void robot(int id)
 	{
 		asset_require(id >= 0 && id < robot_count && robot_data[id].model_num >= 0 &&

@@ -366,7 +366,7 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 		if (obj.type == OBJ_NONE || obj.type == OBJ_COOP) continue;
 		try {
 			if (obj.type == OBJ_ROBOT) {
-				graph.robot(obj.id);
+				graph.robot_behavior(obj.id, obj.control_data.empty() ? 0 : obj.control_data[0]);
 				if (graph.robot_data[obj.id].boss_flag) {
 					const bool authored_spawn = std::any_of(level.object_trigger_records.begin(), level.object_trigger_records.end(), [&](const xl_compat::ObjectTrigger &entry) { return entry.object == static_cast<int>(i) && entry.action.type == 26; });
 					if (!authored_spawn)
