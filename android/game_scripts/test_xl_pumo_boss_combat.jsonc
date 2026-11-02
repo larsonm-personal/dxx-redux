@@ -1,0 +1,61 @@
+[
+    { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_xl_pog_runtime" } },
+    // Appended after the normal reactor probe; fixed poses isolate local combat
+    { "action": "face_view", "segment": 63, "side": 4, "distance": 12 },
+    {
+        "action": "assert",
+        "expect": {
+            "xl_pilot.remaining_objectives": 6,
+            "player_dead": false,
+            "player.invulnerable": false,
+            "cheats_enabled": false,
+            "difficulty": 0,
+            "level_scene.robots": { "contains_object": { "object": 95, "id": 76, "shields": { "gte": 1375 } } },
+        },
+    },
+    { "action": "send_button", "button": 100, "held": 1 },
+    { "action": "wait_ms", "ms": 500 },
+    { "action": "send_button", "button": 100, "pressed": 0 },
+    {
+        "action": "assert",
+        "expect": {
+            "level_scene.robots": { "contains_object": { "object": 95, "shields": { "gte": 1375 } } },
+            "xl_pilot.bosses.0.hit_delta": { "range": [-65536, 0] },
+        },
+    },
+    { "action": "face_view", "segment": 65, "side": 5, "distance": 12 },
+    { "action": "send_button", "button": 100, "held": 1 },
+    { "action": "wait_ms", "ms": 3000 },
+    { "action": "send_button", "button": 100, "pressed": 0 },
+    { "action": "face_view", "segment": 664, "side": 0, "distance": 12 },
+    {
+        "action": "assert",
+        "expect": {
+            "level_scene.robots": {
+                "contains_object": { "object": 95, "alive": true, "shields": { "lt": 1375 } },
+            },
+            "xl_pilot.remaining_objectives": 6,
+            "xl_pilot.bosses.0.dying": 0,
+            "reactor_countdown.active": false,
+            "player_dead": false,
+        },
+    },
+    { "action": "set_debug", "field": "android_game_request", "value": "quick_save" },
+    { "action": "wait_ms", "ms": 1000 },
+    { "action": "pose_view", "segment": 674, "position_fixed": [23335371, -68822074, -6759991], "heading": 16384 },
+    { "action": "set_debug", "field": "android_game_request", "value": "quick_load" },
+    {
+        "action": "wait_for",
+        "expect": {
+            "position.segment": 664,
+            "level_scene.robots": {
+                "contains_object": { "object": 95, "alive": true, "shields": { "lt": 1375 } },
+            },
+            "xl_pilot.remaining_objectives": 6,
+            "reactor_countdown.active": false,
+            "player_dead": false,
+        },
+        "timeout_ms": 120000,
+    },
+    { "action": "introspect" },
+]

@@ -6,6 +6,46 @@ int boss_spew_robot(object *object, vms_vector *position);
 void do_boss_stuff(object *object, int visible);
 void teleport_boss(object *object);
 int create_gated_robot(int segment, int type, vms_vector *position);
+int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *position);
+extern fix Boss_invulnerable_dot;
+}
+
+static void boss_vulnerability_controls(int owner)
+{
+	const int difficulty = Difficulty_level;
+	auto &boss = Objects[owner];
+	const auto orientation = boss.orient;
+	const auto role = Robot_info[boss.id].boss_flag;
+	boss.orient = vmd_identity_matrix;
+	Robot_info[boss.id].boss_flag = BOSS_D2 + 7;
+	const int shot = obj_create(OBJ_WEAPON, VULCAN_ID, boss.segnum, &boss.pos, &boss.orient, F1_0, CT_WEAPON, MT_NONE, RT_NONE);
+	require(shot >= 0, "Cannot create boss vulnerability collision control");
+	Objects[shot].ctype.laser_info.parent_type = OBJ_PLAYER;
+	for (int level = 0; level < NDL; ++level) {
+		Difficulty_level = level;
+		init_robots_for_level();
+		for (int side : { -1, 1 }) {
+			auto hit = boss.pos;
+			hit.x += F1_0;
+			hit.z += side * (F1_0 / 16);
+			const bool allowed = side > 0 ? level < 2 : level < 3;
+			require(bool(do_boss_weapon_collision(&boss, &Objects[shot], &hit)) == allowed,
+			        "XL boss side-hit vulnerability does not follow difficulty");
+		}
+	}
+	obj_delete(shot);
+	Robot_info[boss.id].boss_flag = role;
+	boss.orient = orientation;
+	char save[] = "boss-vulnerability.sav", description[] = "Boss vulnerability";
+	stop_time();
+	require(state_save_all_sub(save, description), "Boss vulnerability save failed");
+	Difficulty_level = 0;
+	init_robots_for_level();
+	require(state_restore_all_sub(save, 0) && Difficulty_level == 4 && Boss_invulnerable_dot == -F1_0 / 4,
+	        "Boss vulnerability difficulty was not restored from disk");
+	Difficulty_level = difficulty;
+	init_robots_for_level();
+	std::cout << "XL boss vulnerability controls passed: ten side-hit decisions across five difficulties and disk restore\n";
 }
 
 static void boss_lifecycle_controls(const std::vector<int> &owners)
@@ -396,6 +436,7 @@ static int boss_spawn_test(int argc, char **argv)
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
 		require(xl_level_extensions_active() && xl_boss_spawn_count() == 2, "two authored bosses did not load");
+		boss_vulnerability_controls(owners[0]);
 		const auto identity = xl_level_trigger_identity();
 		require(!xl_level_supported("badowner.rl2", 0) && std::strstr(xl_level_rejection(), "robot boss owner"), "nonboss spawn owner admitted or missing useful rejection");
 		require(!xl_level_supported("badmaker.rl2", 0) && std::strstr(xl_level_rejection(), "robotmaker segment"), "invalid spawn selection target admitted or missing useful rejection");
@@ -478,6 +519,8 @@ static int boss_spawn_test(int argc, char **argv)
 		boss_reference_samples(root.parent_path(), snapshot, owners[0]);
 		Difficulty_level = (Difficulty_level + 1) % NDL;
 		require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0 && !xl_boss_spawn_count(), "boss state leaked into stock mission");
+		init_robots_for_level();
+		require(Boss_invulnerable_dot == 0, "XL boss vulnerability leaked into stock mission");
 		for (int i = 0; i <= Highest_object_index; ++i)
 			if (Objects[i].type == OBJ_ROBOT) Objects[i].matcen_creator = 0;
 		int empty = 0;

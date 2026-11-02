@@ -27,6 +27,7 @@ param(
     [switch]$PmcSwitchPlaytest,
     [switch]$PmcOpeningGates,
     [switch]$PmcReactorPlaytest,
+    [switch]$PmcBossCombat,
     [switch]$HubActivation,
     [switch]$Pmc3Playtest,
     [switch]$PmcColdResume,
@@ -45,6 +46,7 @@ $ErrorActionPreference = 'Stop'
 if ($PmcOpeningGates -and (!$PmcPlaytest -or $PmcSwitchPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcOpeningGates requires PmcPlaytest in its own mode' }
 if ($PmcSwitchPlaytest -and (!$PmcPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcSwitchPlaytest requires PmcPlaytest in its own mode' }
 if ($PmcReactorPlaytest -and !$PmcSwitchPlaytest) { throw 'PmcReactorPlaytest requires PmcSwitchPlaytest' }
+if ($PmcBossCombat -and !$PmcReactorPlaytest) { throw 'PmcBossCombat requires PmcReactorPlaytest' }
 if ($HubActivation -and (!$PmcPlaytest -or $Pmc3Playtest -or $PmcColdResume)) { throw 'HubActivation requires PmcPlaytest in its own mode' }
 if ($PmcColdResume -and !$Pmc3Playtest) { throw 'PmcColdResume requires Pmc3Playtest' }
 if ($Pmc3Playtest -and !$PmcPlaytest) { throw 'Pmc3Playtest requires PmcPlaytest' }
@@ -137,6 +139,7 @@ if ($PmcPlaytest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pm
 if ($PmcSwitchPlaytest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-switches' }
 if ($PmcOpeningGates) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-opening-gates' }
 if ($PmcReactorPlaytest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-reactor' }
+if ($PmcBossCombat) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-boss-combat' }
 if ($HubActivation) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-activation' }
 if ($Pmc3Playtest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-android' }
 if ($PmcColdResume) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-cold-android' }
@@ -297,6 +300,10 @@ try {
         $steps = @(Get-Content "$PSScriptRoot/../game_scripts/$scriptName" -Raw | ConvertFrom-Json -AsHashtable)
         $reactorSteps = @(Get-Content "$PSScriptRoot/../game_scripts/test_xl_pumo_reactor.jsonc" -Raw | ConvertFrom-Json -AsHashtable)
         $steps += @($reactorSteps | Select-Object -Skip 1)
+        if ($PmcBossCombat) {
+            $bossSteps = @(Get-Content "$PSScriptRoot/../game_scripts/test_xl_pumo_boss_combat.jsonc" -Raw | ConvertFrom-Json -AsHashtable)
+            $steps += @($bossSteps | Select-Object -Skip 1)
+        }
         $scriptName = [IO.Path]::GetFullPath((Join-Path $output 'reactor-warm.jsonc'))
         ConvertTo-Json -InputObject $steps -Depth 20 | Set-Content -LiteralPath $scriptName -Encoding utf8
     }
@@ -353,6 +360,11 @@ try {
     $result = Get-Content "$output/result.json" -Raw | ConvertFrom-Json
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete POG runtime result' }
     if ($PmcColdResume -or $PmcSwitchPlaytest -or $PmcOpeningGates) {
+        if ($PmcBossCombat) {
+            $initialState = Get-Content "$output/state.json" -Raw | ConvertFrom-Json
+            $initialBoss = @($initialState.level_scene.robots | Where-Object { $_.object -eq 95 -and $_.id -eq 76 })
+            if ($initialBoss.Count -ne 1 -or $initialBoss[0].shields -le 0 -or $initialBoss[0].shields -ge 1375) { throw 'PMC boss preparation lacks normal weapon damage' }
+        }
         if ($PmcColdResume) {
             $initialState = Get-Content "$output/state.json" -Raw | ConvertFrom-Json
             $initialCheckpoint = $initialState.xl_pog.pmc_checkpoint
@@ -370,6 +382,12 @@ try {
                 @{ action = 'assert'; expect = @{ 'xl_pilot.remaining_objectives' = 6; 'reactor_countdown.active' = $false; 'xl_pilot.wall_triggers.14.operated' = $true } },
                 @{ action = 'introspect' }
             )
+            if ($PmcBossCombat) {
+                $steps += @(
+                    @{ action = 'assert'; expect = @{ 'xl_pilot.bosses.0.dying' = 0; 'level_scene.robots' = @{ contains_object = @{ object = 95; id = 76; alive = $true; shields = @{ lt = 1375 } } } } },
+                    @{ action = 'introspect' }
+                )
+            }
             $coldScript = [IO.Path]::GetFullPath((Join-Path $output 'reactor-cold.jsonc'))
             ConvertTo-Json -InputObject $steps -Depth 20 | Set-Content -LiteralPath $coldScript -Encoding utf8
         }
@@ -386,6 +404,13 @@ try {
         if (!$newPid -or $newPid -eq $oldPid) { throw 'PMC cold restore did not use a fresh game process' }
         if ($coldResult.result -ne 'PASS' -or $coldResult.steps_completed -ne $coldResult.total_steps) { throw 'Incomplete PMC cold restore result' }
         $coldProof = @{ initial_game_pid = $oldPid; restored_game_pid = $newPid }
+        if ($PmcBossCombat) {
+            $restoredBoss = @($coldState.level_scene.robots | Where-Object { $_.object -eq 95 -and $_.id -eq 76 })
+            if ($restoredBoss.Count -ne 1 -or $restoredBoss[0].shields -ne $initialBoss[0].shields) { throw 'PMC cold restore changed exact saved boss health' }
+            $coldProof.boss_owner = 95
+            $coldProof.boss_shields = $initialBoss[0].shields
+            $coldProof.boss_damage_matches = $true
+        }
         if ($PmcColdResume) {
             $beforeCheckpoint = ConvertTo-Json -InputObject $initialCheckpoint -Depth 30 -Compress
             $afterCheckpoint = ConvertTo-Json -InputObject $coldState.xl_pog.pmc_checkpoint -Depth 30 -Compress
@@ -411,6 +436,7 @@ try {
     elseif ($Pmc3Playtest) { Write-Host "PASS: Original PMC3 via PMC1/2 exits: cameras, fixed lightning, combat, restart/save, authored ending and stock-mission return ($($result.total_steps) steps); controlled exits and fixed poses, no human traversal" }
     elseif ($HubActivation) { Write-Host "PASS: Original hub door and PMC exit through laser/thrust, repeated after hub save restore ($($result.total_steps) steps); fixed initial pose, no human traversal" }
     elseif ($PmcOpeningGates) { Write-Host "PASS: Original PMC1 opening unlock/open-wall shots, three gate crossings and warm/cold persistence; fixed poses, no full traversal" }
+    elseif ($PmcBossCombat) { Write-Host "PASS: Original PMC1 frontal immunity, rear laser damage and warm/cold persistence; six bosses remain required, fixed poses and no surviving full boss encounter" }
     elseif ($PmcReactorPlaytest) { Write-Host "PASS: Original PMC1 normal switches/key gate/reactor combat and warm/cold persistence; six bosses remain required, no exit qualification" }
     elseif ($PmcSwitchPlaytest) { Write-Host "PASS: Original PMC1 locked-door control, normal switch shot and warm/cold persistence; fixed poses, no human traversal" }
     elseif ($PmcPlaytest) { Write-Host "PASS: Original PMC1/2 cameras, controls, laser contacts, monitors, restart/save and context lifecycle ($($result.total_steps) steps); controlled exits and fixed firing poses, no human traversal" }

@@ -1944,6 +1944,10 @@ void init_robots_for_level(void)
 {
 	Overall_agitation = 0;
 	Final_boss_is_dead=0;
+#ifdef DXX_XL_RUNTIME
+	// XL widens the vulnerable spot on easier difficulties and narrows it on harder ones
+	Boss_invulnerable_dot = xl_level_extensions_active() ? F1_0 / 4 - i2f(Difficulty_level) / 8 : 0;
+#endif
 
 	Buddy_objnum = 0;
 	Buddy_allowed_to_talk = 0;
