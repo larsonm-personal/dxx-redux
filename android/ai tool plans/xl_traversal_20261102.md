@@ -56,3 +56,26 @@ across all difficulties, demonstrate the mismatch, then initialize the XL
 threshold while retaining stock behavior. Check save/load and stock isolation.
 Continue the original normal-input boss probe on the exact resulting APK; no
 mission edits, granted weapons/health, forced damage or controlled exit dispatch.
+
+## L: Deliver the difficulty-corrected combat build
+
+Published `temp/pumo-combat-playtest-20261102.zip` from committed source
+`f1e73f5fd38a836515bf98ea369dbe1c2a788d7d`, version 28800. The six embedded
+D1/D2 ABI IDs and installed APK hash match. APK SHA256 is
+`762670c549ded1050e107701d4b938f32d9b6a288b07790790d0ab4ad2c65118`;
+ZIP SHA256 is `c02f5ca373f823669468e55629f9c88ba1e3054b65f0f2a22ffec51f02e47dd1`.
+
+The exact APK passes 99 warm steps and 17 fresh-process steps. Boss health is
+1112.387451171875 before/after the cold restore; the player survives and all six
+boss objectives remain without countdown. All 24 backed-up profile files match
+after installation, and the protected test restores identical hashes. Cold
+frame inspected. The README and manifest distinguish this local normal-input
+coverage from earlier c638 PMC3/opening-gate receipts, controlled native tests,
+GuideBot assistance, human traversal and physical-device testing.
+
+Retain the final, reactor and boss-definition bundles unchanged. The next
+independent original-mission probe should exercise switch 10 and its locked
+door through a safe room approach, then audit the authored master-switch links.
+A prepared disposable-device probe uses the engine-exported door plane and
+normal laser/thrust input. It has not run yet. Continue to avoid exit dispatch
+as a substitute for earned traversal, and preserve the failed combat probes.

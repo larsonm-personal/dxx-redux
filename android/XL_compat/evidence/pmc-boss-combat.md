@@ -90,3 +90,20 @@ same c638 APK. After warm save/load it is alive at segment 664, with boss 95
 still at exactly 1123 shields, six remaining objectives and no countdown. Its
 paused frame was inspected. This is the corrected local restore endpoint;
 the full protected scenario still needs exact new-APK validation.
+
+## Exact corrected APK
+
+Source `f1e73f5fd38a836515bf98ea369dbe1c2a788d7d`, version 28800,
+APK SHA256 `762670c549ded1050e107701d4b938f32d9b6a288b07790790d0ab4ad2c65118`:
+
+- Protected warm scenario: 99/99 steps in 214.396 seconds
+- Fresh-process Load Game: 17/17 steps in 32.429 seconds; PIDs 9264 and 10597
+- Boss 95 health matches exactly at 1112.387451171875 shields after cold load
+- Player survives; six objectives remain and reactor countdown is inactive
+- All 24 profile files match after installation; protected before/after hash
+  lists both hash to `aaed8691f56a09dce3482515e198d942366da11ed57b6c38f38e46438f542748`
+- Cold rendered frame inspected; physical devices and human controls untested
+
+The immutable combat bundle contains lightweight receipts. Full logs and states
+are in `temp/xl-original-pmc-boss-combat`. The existing c638 opening-gate and
+PMC3 results remain attributed to that earlier APK, not this one.
