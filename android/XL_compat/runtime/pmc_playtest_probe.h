@@ -23,8 +23,9 @@ std::vector<int> pmc_camera_owners()
 	const int first = Current_level_num == 11 ? 90 : 181;
 	const int last = Current_level_num == 11 ? 100 : 205;
 	for (int owner = first; owner <= last; ++owner)
-		require(Objects[owner].type == OBJ_ROBOT && Objects[owner].control_type == CT_NONE && Objects[owner].movement_type == MT_NONE,
-		        "Original PMC static robot acquired AI or physics movement");
+		require(Objects[owner].type == OBJ_ROBOT && Objects[owner].control_type == CT_NONE && Objects[owner].movement_type == MT_NONE &&
+		            Objects[owner].ctype.ai_info.behavior == (Robot_info[Objects[owner].id].attack_type ? AIB_NORMAL : 135),
+		        "Original PMC static robot lost normalized behavior or acquired movement");
 	return actual;
 }
 nlohmann::json pmc_camera_snapshot()
@@ -35,6 +36,14 @@ nlohmann::json pmc_camera_snapshot()
 		const auto &m = camera.orient;
 		rows.push_back({ owner, camera.signature, camera.id, camera.rtype.pobj_info.model_num, camera.size, camera.shields, camera.segnum,
 		                 camera.pos.x, camera.pos.y, camera.pos.z, m.rvec.x, m.rvec.y, m.rvec.z, m.uvec.x, m.uvec.y, m.uvec.z, m.fvec.x, m.fvec.y, m.fvec.z });
+	}
+	const int first = Current_level_num == 11 ? 90 : 181;
+	const int last = Current_level_num == 11 ? 100 : 205;
+	for (int owner = first; owner <= last; ++owner) {
+		const auto &robot = Objects[owner];
+		rows.push_back({ owner, robot.signature, robot.id, robot.ctype.ai_info.behavior, robot.mtype.phys_info.mass,
+		                 robot.pos.x, robot.pos.y, robot.pos.z, robot.mtype.phys_info.velocity.x,
+		                 robot.mtype.phys_info.velocity.y, robot.mtype.phys_info.velocity.z });
 	}
 	return rows;
 }
@@ -47,7 +56,7 @@ void pmc_playtest_probe(const char *operation)
 		pmc_saved_cameras = pmc_camera_snapshot();
 		pmc_saved_lives = Players[Player_num].lives;
 	} else if (!std::strcmp(operation, "verify")) {
-		require(game_is_time_paused() && !pmc_saved_cameras.empty() && pmc_camera_snapshot() == pmc_saved_cameras, "PMC disk restore changed original camera identities, geometry or orientation");
+		require(game_is_time_paused() && !pmc_saved_cameras.empty() && pmc_camera_snapshot() == pmc_saved_cameras, "PMC disk restore changed original camera or static robot state");
 		require(Players[Player_num].lives == pmc_saved_lives, "PMC disk restore changed the saved life count");
 	} else if (!std::strcmp(operation, "restarted")) {
 		require(!Player_is_dead && pmc_saved_lives > 1 && Players[Player_num].lives == pmc_saved_lives - 1,

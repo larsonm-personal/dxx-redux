@@ -168,8 +168,8 @@ struct ObjectDependencies {
 	{
 		robot(id);
 		// Source melee initialization changes static behavior to NORMAL before contact
-		asset_require(behavior != 135 || robot_data[id].attack_type,
-		              "static robot contact response requires source qualification");
+		asset_require(behavior != 135 || robot_data[id].attack_type || (!robot_data[id].companion && !robot_data[id].thief),
+		              "static companion/thief contact response requires source qualification");
 	}
 	void robot(int id)
 	{
