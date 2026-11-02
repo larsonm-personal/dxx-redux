@@ -1,30 +1,31 @@
 # Original Pumo gameplay playtest
 
-The latest verified bundle is [pumo-combat-playtest-20261102.zip](../../temp/pumo-combat-playtest-20261102.zip).
-Its [README](../../temp/pumo-combat-playtest-20261102/README.md) and
-[manifest](../../temp/pumo-combat-playtest-20261102/manifest.json) record installation,
+The latest verified bundle is [pumo-selector-playtest-20261102.zip](../../temp/pumo-selector-playtest-20261102.zip).
+Its [README](../../temp/pumo-selector-playtest-20261102/README.md) and
+[manifest](../../temp/pumo-selector-playtest-20261102/manifest.json) record installation,
 exact hashes and validation. Original mission content is unchanged.
 
-Source: `f1e73f5fd38a836515bf98ea369dbe1c2a788d7d`, stacked through
-[PR304](https://github.com/larsonm-personal/dxx-redux/pull/304).
-All six D1/D2 libraries across ARM64, ARMv7 and x86_64 match this commit and
-version code 28800, which updates 28790 normally. APK SHA256:
-`762670c549ded1050e107701d4b938f32d9b6a288b07790790d0ab4ad2c65118`.
-Device validation uses x86_64; physical ARM remains untested.
+Source: `8b80ef220dbda2d9481c21611084ef21f5413808`, stacked through
+[PR308](https://github.com/larsonm-personal/dxx-redux/pull/308). All six D1/D2
+libraries across ARM64, ARMv7 and x86_64 match this commit and version code 28810,
+which updates 28800 normally. APK SHA-256:
+`89df3369e09897fbce528d6ae4825c7d9c58d02e30ca55741e99c3347fc49069`.
+ZIP SHA-256:
+`e4b1b6d698131956664a9d96fe3fffbdaeaf4a6e7cdb91a36b6447dd18c1094b`.
 
-This build corrects [boss weak-spot angles by difficulty](evidence/pmc-boss-combat.md).
-Pinned XL widens the accepted hit area on Trainee/Rookie and narrows it on
-Ace/Insane; this runtime had kept the Hotshot threshold at every difficulty.
-The fix applies on XL level startup and save restoration, while stock behavior
-remains unchanged. The protected original-mission test also proves frontal
-immunity, rear starter-laser damage and exact saved boss-health persistence.
+This build repairs [repeatable PMC2 selectors](evidence/pmc2-selectors.md).
+Previously, a first laser hit destroyed a permanent control panel. Changing a
+setting and trying to select the earlier choice again could therefore leave
+its route locked. The panel and its light now remain intact, as in the pinned
+XL source, while normal impact and trigger activation still occur. Ordinary
+destructible panels retain their behavior.
 
-It retains the [final-definition boss binding fix](evidence/hxm-gameplay.md) and
-[reactor/objective correction](evidence/reactor-objectives.md). Original PMC1's
-reactor remains present alongside its six countdown bosses; destroying it does
-not start the final countdown while bosses remain. PMC3 uses the final HXM
-robot roles instead of retaining stale base-game boss entries. Fixed poses
-select local interactions; no objectives, weapons, keys or health are granted.
+It retains [difficulty-dependent boss weak spots](evidence/pmc-boss-combat.md),
+[final-HXM boss binding](evidence/hxm-gameplay.md) and the
+[reactor/objective correction](evidence/reactor-objectives.md). The original PMC1
+reactor remains alongside its six countdown bosses; destroying it does not start
+the final countdown while bosses remain. XL's enabled authored exit has no
+universal boss-clear lock. No objectives, weapons, keys or health are granted.
 
 ## Install and start playing
 
@@ -34,118 +35,70 @@ From the repository root:
 
 ```powershell
 pwsh -NoProfile -File android/helpers/install_pumo_playtest.ps1 `
-  -Serial YOUR_DEVICE_SERIAL -Bundle temp/pumo-combat-playtest-20261102
+  -Serial YOUR_DEVICE_SERIAL -Bundle temp/pumo-selector-playtest-20261102
 ```
 
 From an extracted ZIP, run `pwsh -NoProfile -File ./install_pumo_playtest.ps1
--Serial YOUR_DEVICE_SERIAL -Bundle .` in the extracted directory. The installer
-checks hashes, updates the APK and backs up mission resources. It preserves
-pilots, saves, settings and control mappings. Do not uninstall to resolve a
-signature mismatch; uninstalling removes app data.
+-Serial YOUR_DEVICE_SERIAL -Bundle .`. The installer verifies hashes, updates
+the APK and backs up mission resources. It preserves pilots, saves, settings and
+control mappings. Do not uninstall to resolve a signing mismatch.
 
 Choose **Descent 2 > New Game > XL: [-Pumo Mines-] > level 1**, then a difficulty.
-Start a new game on this build: old saves retain their serialized world, including
-any previously hidden reactor or stale boss registry. Old development saves may
-fail validation; preserve them with their earlier bundle and use a separate new
-save slot. From **Temporal Hub**, the **PMC route** reaches
-**PMC Data Storage Center**, **PMC Transmission Control Station**, then
-**Cybernetic Menaces Research Lab** and the authored ending. The **Mineral Valley**
-route leads to **Crauphel Scilab**. Existing touch/controller bindings apply.
-Use the pause menu for Quick Save/Load or named Save Game/Load Game slots.
-Normal Load Game can resume a checkpoint after closing the app.
+Start a new game or use an unfired checkpoint: old saves retain already-broken
+panels, hidden reactors or stale boss registries from their earlier build.
+Preserve those files with their previous bundle and use a separate new save slot.
+The Temporal Hub's PMC route reaches PMC Data Storage Center, PMC Transmission
+Control Station and Cybernetic Menaces Research Lab. Existing touch/controller
+bindings apply. Use the pause menu for Quick Save/Load or named save slots;
+normal Load Game resumes after closing the app.
 
 ## Verified scope
 
-| Scenario on this exact APK       | Result          | Scope                                                                                                                                                           |
-| -------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Normal hub and PMC1 local combat | 99/99, 214.396s | Hub laser/thrust entry, locked-door control, switch shot, red-key collision, keyed flight, reactor combat, boss frontal immunity/rear damage and warm save/load |
-| Fresh-process PMC1 load          | 17/17, 32.429s  | Saved switch/key/reactor state, exact boss health, six countdown objectives remain, no countdown and normal flight through the opened gate                      |
+| Scenario on this exact APK       | Result            | Scope                                                                                                                                                                            |
+| -------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repeated selector replay         | 60/60, 43.599s    | All seven controls, including returning to earlier settings; the same fourth selection failed before the fix                                                                     |
+| Fresh protected original mission | 175/175, 263.665s | Normal hub entry, local PMC1 switch/key/reactor actions, continuous local boost escape, PMC2 selector changes, blocked-field control, physical field crossing and warm save/load |
+| Fresh-process PMC2 load          | 59/59, 43.410s    | Saved gate settings, further selector changes, locked-door control and normal flight through the subsequently unlocked door                                                      |
 
-Boss 95 retains exactly 1112.387451171875 shields across the cold load. Game PIDs
-9264 and 10597 differ. All 24 backed-up pilot/save/settings files match after
-installation; the protected test's before/after hash lists also match. The cold
-rendered endpoint was inspected. Receipts are in the bundle and in
-`temp/xl-original-pmc-boss-combat`.
+PIDs 19103 and 20708 differ. All 25 backed-up profile files match after
+installation, and protected before/after hashes match. The cold endpoint is
+alive in segment 189, z=588.4249, with 80.6474 shields, no cheats and no
+invulnerability. The rendered endpoint was inspected. Receipts, traces and
+scripts are included in the bundle and `temp/xl-original-pmc2-selectors`.
 
-Additional [inner-gate coverage](evidence/pmc-inner-gates.md) on this same APK
-passes 88 warm and 23 fresh-process steps: normal unlock/master shots, blocked
-field controls, physical crossings, red-key pickup through opened fields and
-blastable-wall combat. All gate/key states persist, seven objectives remain,
-and protected hashes match. These later receipts are separate from the unchanged
-published combat bundle.
+Native production-collision controls fail before the fix and pass afterward for
+static/animated panels, destruction animations and all four orientations. They
+preserve permanent-panel textures and lights across repeated impacts while
+ordinary panels break. Existing texture collision and disk-through-stock
+restoration pass on both admitted XL layouts. These are controlled native checks.
 
-Native controls reproduce the pre-fix collision failure, then pass ten side-hit
-decisions across five difficulties, disk restoration and stock isolation.
-Existing boss lifecycle, death-roll persistence, mixed reactor/boss ordering,
-save guards and the pinned source oracle also pass. These are controlled native
-checks, not human combat.
-
-The previous c638 APK passed PMC3 continuity (115 warm / 21 cold steps) and
-[opening switches 0/1/4](evidence/pmc-opening-gates.md) with three local gate
-crossings (76 / 15). Those unchanged scenarios were not repeated on this APK;
-their results belong to c638 and its retained bundle. PMC3 continuity uses
-controlled exits and does not prove earned progression.
-
-Normal-input scenarios never dispatch exits directly. See the additional
-[normal escape route evidence](evidence/pmc-escape.md) for the authored boost
-flight and PMC2 transition: 105 warm and 24 cold-replay/destination-save steps
-pass on this same APK, with matching protected hashes. Remaining bosses control
-final countdown accounting;
-they are not a universal exit lock in the XL source. Fixed poses do not
-qualify connecting gates or full traversal. A longer exploratory normal-fire
-probe killed one boss and reduced objectives from six to five, but the player
-died. Full surviving boss combat and earned campaign completion remain
-unqualified. Other long attacks lost aim and timed out; those failures are
-retained rather than counted as passes.
+The retained f1e73 combat bundle separately passed boss frontal immunity/rear
+laser damage and exact health persistence (99 warm / 17 cold). Additional f1e73
+[inner gates](evidence/pmc-inner-gates.md) passed 88 / 23, and its
+[normal PMC1 escape](evidence/pmc-escape.md) passed 105 / 24. Earlier c638 checks
+covered opening gates (76 / 15) and PMC3 continuity (115 / 21, controlled exits).
+Those results belong to their stated builds; they are not new exact-APK claims.
 
 The [rendered GuideBot pilot](evidence/rendered-guidebot.md) confirms a bounded
-hub route with an assisted, physics-driven companion. Its authored PMC exit
-activation is unsupported. It does not establish normal-player combat or
-progression. Other original routes and physical-device input still need playtest
-feedback.
+hub route with an assisted, physics-driven companion. Companion activation of
+the XL exit is unsupported. Normal-player probes fill that specific gap without
+relaxing actor rules or dispatching exits directly.
 
-## Known limits and feedback
+## Boundaries and feedback
 
-- Physical ARM devices, touch ergonomics and controllers need user feedback
-- Large-level loading/restoration took roughly 30-90 seconds on the emulator
-- An earlier intermediate build had a launcher ANR; later clean scenarios passed
-  recovery. The retained delayed trace does not establish its original cause
-- Gameplay/hazard visuals remain active. Optional high-resolution replacements,
-  the custom soundtrack and cosmetic parity work are deferred
-- Older development saves are preserved but can fail asset-identity checks; keep
-  the corresponding older bundle when resuming those saves
-- Multiple-reactor firing and negative non-ending boss flags remain unqualified
-- [PR304 checks](https://github.com/larsonm-personal/dxx-redux/pull/304/checks)
-  refer to the exact APK source head; pending CI is not a pass
+- Fixed local approaches and bounded escape flights do not qualify full human
+  navigation, surviving every boss encounter or earned campaign completion
+- Later PMC2 exits and normal PMC3 progression remain unqualified by this bundle
+- Physical ARM, touch ergonomics, controller acceptance and device performance
+  need user feedback; device tests here use an owned x86_64 emulator with host GPU
+- Large levels and save restores can take tens of seconds on the emulator
+- An earlier intermediate build had a launcher ANR; later clean scenarios passed,
+  but the retained delayed trace does not establish its original cause
+- Gameplay and hazard visuals remain active. Optional high-resolution replacements,
+  custom soundtrack and graphics-only parity work are deferred
+- Existing broken-panel saves are preserved rather than rewritten; older saves
+  can also fail asset-identity checks, so keep their previous builds
 
-For feedback, record the level, actions, expected/actual behavior, device/control
-type and nearest save. Export launcher Advanced logs for crashes or progression
-blocks. Prioritize crashes/data loss, progression, controls/combat and save/load.
-
-## Earlier bundles
-
-Published ZIPs remain unchanged for existing checkpoints:
-
-- [Boss-definition bundle](../../temp/pumo-boss-playtest-20261102/README.md), source
-  `c63885a409055938330680fc63bf6bdabea1cbdd`, version 28790: 81/15 PMC1 and
-  115/21 PMC3 checks, plus later 76/15 opening-gate checks. It predates the
-  difficulty-dependent vulnerable-angle fix
-
-- [Reactor bundle](../../temp/pumo-reactor-playtest-20261102/README.md), source
-  `c94341f823c0c498ae3dc824cf4663f8fddf4d8d`, version 28780: the preceding
-  81/15 PMC1 and 115/21 PMC3 checks; predates final-definition boss binding
-
-- [Previous final bundle](../../temp/pumo-final-playtest-20261101/README.md), source
-  `888ded31795e2074c46566c688ac813902a60cce`: 64 opening, 117 PMC1/PMC2,
-  115 PMC3 and 21 fresh-process checks. It also passed the
-  [hub restore](evidence/hub-activation.md) and [switch/key probes](evidence/pmc-switches.md).
-  These earlier results belong to that APK; it retains the reactor/boss defect
-- [PMC3](../../temp/pumo-pmc3-playtest-20261101/README.md): 64 opening, 117 PMC1/PMC2
-  and 86 PMC3 checks; predates the stock-switch/fresh-process additions
-- [PMC1/PMC2](../../temp/pumo-pmc2-playtest-20261101/README.md): PMC3 still gated
-- [Opening](../../temp/pumo-playtest-20261101/README.md): original starting slice;
-  PMC camera levels still gated
-
-The older PMC3 APK was built from the later source checkpoint while its embedded
-build label still named its parent. Its APK hash identifies that published
-artifact. The latest bundle above has matching source and embedded commit IDs.
+Report the build ID, mission/level, last ordinary action and whether the problem
+survives a normal save/load. Prioritize crashes or lost data, progression,
+controls/combat, save/load, then performance that prevents play.

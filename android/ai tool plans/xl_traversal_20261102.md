@@ -147,3 +147,24 @@ runtime fix with a protected original selector scenario, build version 28810,
 verify all embedded IDs, install without removing pilot/save/settings files,
 then validate the exact APK. Publish a new immutable bundle promptly after that
 meaningful progression improvement is verified. Keep the current combat bundle.
+
+## P: Deliver the verified selector build
+
+O/PR308 is 8b80ef220dbda2d9481c21611084ef21f5413808. Version 28810 was built
+from that commit, all six embedded library IDs match, and the installed APK hash
+matches 89df3369e09897fbce528d6ae4825c7d9c58d02e30ca55741e99c3347fc49069.
+All 25 backed-up pilot/save/settings files survived installation unchanged.
+
+The original selector replay now passes 60/60 steps. The fresh protected scenario
+passes 175 warm and 59 cold steps, including physical field/door crossings and
+further setting changes after loading. Both protected hash lists match, and the
+cold frame was inspected. The immutable pumo-selector-playtest-20261102.zip is
+published, SHA-256 e4b1b6d698131956664a9d96fe3fffbdaeaf4a6e7cdb91a36b6447dd18c1094b.
+Previous bundles remain intact. Old serialized broken panels are not migrated;
+start a new game or use an unfired checkpoint on this build.
+
+Next, qualify PMC2's normal contact-operated escape door and four-boost route.
+Trigger 38 is an open portal contact at 2158/2, not a shot switch. It opens
+locked door 152 at 2159/2, which also starts boost 67. Boosts 68/69/70 lead to
+exit 71, destination 13. Use normal contact from before the portal and preserve
+that distinction from fixed local setup or full mission traversal.
