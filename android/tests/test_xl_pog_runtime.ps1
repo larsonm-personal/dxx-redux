@@ -308,13 +308,13 @@ try {
     Invoke-PogAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-pog.png') | Out-Null
     Invoke-PogAdb -Arguments @('pull', '/data/local/tmp/xl-pog.png', "$output/render.png") | Out-Null
     if ($BubbleGpu) { Write-Host "PASS: Original bubble/smoke multi-image pixels, soft depth, GL state and context recreation ($($result.total_steps) steps); renderer control only" }
-    elseif ($BubbleFixture) { Write-Host "PASS: Derived $mission original-payload bubble lifecycle ($($result.total_steps) steps); original pmlev3 remains independently blocked" }
+    elseif ($BubbleFixture) { Write-Host "PASS: Derived $mission original-payload bubble lifecycle ($($result.total_steps) steps); see the original PMC scenario for campaign qualification" }
     elseif ($LightningGpu) { Write-Host "PASS: Original corona/glare/shields, mixed lightning/sprite GPU and context recreation ($($result.total_steps) steps); renderer control only" }
     elseif ($FlyoutFixture) { Write-Host "PASS: Derived intact rendered flyout and disk-cache revisit ($($result.total_steps) steps)" }
     elseif ($RevisitFixture) { Write-Host "PASS: Derived Android disk revisits, mission timeline, player/world and GPU resource restoration ($($result.total_steps) steps)" }
     elseif ($CampaignEnd) { Write-Host "PASS: Original Pumo destination29 ending and menu return ($($result.total_steps) steps); controlled dispatch" }
     elseif ($OpeningPlaytest) { Write-Host "PASS: Original Pumo opening input, damage, death/restart and checkpoint smoke ($($result.total_steps) steps); no human traversal" }
-    elseif ($Pmc3Playtest) { Write-Host "PASS: Original PMC3 via PMC1/2 exits: cameras, fixed lightning, combat, restart/save and authored ending ($($result.total_steps) steps); controlled exits and fixed poses, no human traversal" }
+    elseif ($Pmc3Playtest) { Write-Host "PASS: Original PMC3 via PMC1/2 exits: cameras, fixed lightning, combat, restart/save, authored ending and stock-mission return ($($result.total_steps) steps); controlled exits and fixed poses, no human traversal" }
     elseif ($PmcPlaytest) { Write-Host "PASS: Original PMC1/2 cameras, controls, laser contacts, monitors, restart/save and context lifecycle ($($result.total_steps) steps); controlled exits and fixed firing poses, no human traversal" }
     elseif ($MissionFlow) { Write-Host "PASS: Original Pumo controlled authored exits and hub checkpoint recovery ($($result.total_steps) steps); no earned traversal" }
     elseif ($OriginalHub -and $SceneOnly) { Write-Host "PASS: Unchanged original Pumo hub fixed-view live smoke scene ($($result.total_steps) steps)" }
@@ -337,7 +337,7 @@ try {
             Invoke-PogPrivate "rm $backup/state.tar && rmdir $backup" | Out-Null
             if ($FlyoutFixture) { Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog-d1.pig') | Out-Null }
             if ($PmcPlaytest) { Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pmc-camera.hog', '/data/local/tmp/xl-pmc-d2x.ham') | Out-Null }
-            if ($BubbleGpu -or $BubbleFixture) { Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog-bubble.tga', '/data/local/tmp/xl-pog-bubble.wav') | Out-Null }
+            if ($BubbleGpu -or $BubbleFixture -or $PmcPlaytest) { Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog-bubble.tga', '/data/local/tmp/xl-pog-bubble.wav') | Out-Null }
             Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog.hog', '/data/local/tmp/xl-pog.mn2', '/data/local/tmp/xl-pog.png', '/data/local/tmp/xl-pog-fire.tga', '/data/local/tmp/xl-pog-smoke.tga', '/data/local/tmp/xl-pog-corona.tga', '/data/local/tmp/xl-pog-glare.tga', '/data/local/tmp/xl-pog-forcefield.tga', '/data/local/tmp/xl-pog-forcefield2.tga', '/data/local/tmp/xl-pog-forcefield3.tga', '/data/local/tmp/xl-pog-mods.tar') | Out-Null
         }
     } finally {
