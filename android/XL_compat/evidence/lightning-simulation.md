@@ -15,7 +15,8 @@ The current gameplay presentation profile selects the original engine's global
 style 0 and `bUseLightning=1`: erratic parent bolts without child branches.
 Authored metadata is preserved. Random, angle-zero effects can retain authored
 style 1/2, child counts and positive-amplitude clamp flags under that selection.
-Fixed endpoints/planes, moving waypoints and single-layer glow remain guarded.
+Unique stationary fixed endpoints are also qualified as described below. Fixed
+planes, moving waypoints and single-layer glow remain guarded.
 See the November 1 audit below for the original PMC content and source evidence.
 
 ## Source comparisons
@@ -773,3 +774,14 @@ length replacement, activation, illumination, render staging, atomic rejection,
 trailer restore, changed live target coordinates and identity retirement. PMC3
 remains gated for its static camera response; these tests do not claim original
 PMC3 traversal or final device qualification.
+
+## Original PMC3 device qualification (November 1)
+
+The static camera gate was subsequently qualified. The released original PMC3
+scenario passes all 86 steps with owners320/322 active, five parent bolts per
+owner, resolved length75 and visible core geometry. The final APK verifies
+stock-mission isolation, return to the saved original level and a fresh-process
+normal-menu restore. Fixed-lightning activation and live geometry pass after
+restore; original Pumo assets remain unchanged. Exact-APK delivery and controlled-
+test boundaries are recorded in [PUMO_PLAYTEST.md](../PUMO_PLAYTEST.md). These
+checks do not establish full human traversal or cosmetic shader parity.

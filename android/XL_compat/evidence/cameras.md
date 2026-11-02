@@ -1,6 +1,31 @@
 # Authored camera foundations
 
-## Current status - completed through tranche 183
+## Current gameplay status - November 1, 2026
+
+Original Pumo PMC1/PMC2/PMC3 single-player camera gameplay is admitted with
+original addon resources and behavior128/129/135. Static camera contact now uses the qualified
+source static-force path. Native integration covers 8 player gates, 44 primary
+contacts, 90 missile contacts, passive frames and controller/save restoration.
+Original mission bytes are unchanged. Unqualified independent profiles remain
+gated; this is not blanket camera admission.
+
+The released PMC3 APK passed 64 opening, 117 PMC1/PMC2 and 86 PMC3 device checks.
+The subsequent continuity owner passed 111 checks through a stock mission and
+back to PMC3. The final APK passed 115 preparation and 21 fresh-process
+menu-load checks: all five camera records, 80 static robot records and persistent
+player fields match. Rotating camera orientation is excluded only from the fresh-
+process comparison because restore can advance before pause; paused disk checks
+retain exact orientation comparison. Monitors, live lightning and normal firing
+also pass after the cold restore. The same final APK passes 64 opening and 117
+PMC1/PMC2 checks. Protected pilot/save/settings hashes match.
+
+These owners use controlled firing positions and authored exit dispatch, not
+complete human traversal. See [Pumo playtest delivery](../PUMO_PLAYTEST.md) for the
+latest exact-APK scope, installation and remaining feedback needs. Cosmetic
+profile/glow parity remains deferred. Historical entries below record their
+scope at the time; their old original-camera admission gates are superseded.
+
+## Historical status - completed through tranche 183
 
 Native camera queries use the source-selected floating sphere for the default
 singleplayer nHitboxes=2 profile. Checkpoints 158-159 supersede earlier claims

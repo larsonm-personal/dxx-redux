@@ -314,3 +314,28 @@ existing paused disk tests already compare saved orientation exactly.
 Both phase results, states, logs and distinct process IDs are retained inside the
 protected owner output. Its master timeout increases to cover both phases.
 No save format or gameplay behavior is changed. Build/device verification pending.
+
+## Final verified delivery checkpoint
+
+The final universal APK is built from committed head
+888ded31795e2074c46566c688ac813902a60cce. All three ABI embedded IDs match.
+Opening64/64, PMC1/PMC2 117/117, PMC3 continuity/preparation115/115 and
+fresh-process menu load21/21 pass on this exact APK. The cold restore changes
+game PID9514 to11922 while matching persistent player and85 actor checkpoint
+records. Rotating orientation is excluded only from the cross-process comparison;
+paused disk checks retain orientation equality. Installer and scenario protected
+pilot/save/settings hashes match after cleanup.
+
+Deliverable: temp/pumo-final-playtest-20261101.zip, with README, manifest and
+protected installer. PUMO_PLAYTEST.md is the current launch/readiness matrix.
+This supersedes earlier pending build/device statements in this chronological
+plan. Original mission content is unchanged; checks use controlled poses and
+exit dispatch and do not claim full human traversal. Physical ARM and controls
+remain feedback priorities. An additional same-APK Mineral Valley route check
+is planned before the cleanup reserve; its result belongs in the final handoff.
+
+Child O reconciles delivery and camera/lightning evidence documentation. N's
+first broad CI sample exhausted hosted-runner disk during APK compilation; failed
+jobs were retried and compilation passed on retry. Do not treat pending CI as a
+pass. Finish active local work and resource cleanup before21:00 Los Angeles,
+record exact heads/current CI and leave pending remote runs documented.
