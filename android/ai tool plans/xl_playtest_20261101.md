@@ -64,3 +64,32 @@ Next: publish A, continue B from A, audit pmlev1's single camera and original
 object-trigger binding before choosing the smallest gameplay-support increment.
 All device/native processes from the opening checks are terminal. Owned emulator
 5556 remains available and now has the local playtest resources installed.
+
+## Camera gameplay increment B
+
+Branch xl_playtest_124_camera_gameplay, based on A 9bc9dbac9a213cb8d5cf8db6956d9b25824382bd.
+Extend existing camera contact/radial gameplay to concussion, homing, guided and
+mercury missiles. Preserve source damage, force, visibility, sound, impact motion,
+projectile retirement, camera indestructibility and persistent-hit ordering.
+Keep flash, child-projectile, mine-chain, seismic and lightning profiles guarded.
+Optional missile blast decoration is deferred under the gameplay-first priority;
+ordinary explosion and impact visuals remain active. Original admission stays
+closed until all required camera consumers and authored monitor information work.
+
+Fresh current inspector confirms pmlev1 camera 102 binds monitor segment 719 side 4;
+pmlev2 has cameras 206-208 and six monitor faces; pmlev3 has five cameras/monitors.
+Pmlev1 also needs its authored lightning profile, and pmlev3 has three unsupported
+lightning owners. These remain explicit next dependencies, not bypasses.
+
+B native verification: 56 ordered contacts, 256 actual physics frames, 4800 radial
+robot cases, 2160 source-compared explosion-motion samples and 32448 rotation
+samples pass. Windows pinned-reference CTest passes. Fresh rebuild required the
+MSVC environment (x86 runtime, x64 contracts); no new compiler warnings. Initial
+scoped formatter could not launch clang-format in the sandbox; authorized retry
+with the installed formatter completed successfully. No original admission change.
+
+B final checks: Linux pinned-reference CTest also passes. Universal Android build
+passes in 2m27s. Opening regression passes 64/64 in 116707 ms on emulator-5556;
+protected before/after manifests match. Final native owner includes source motion,
+rotation, controller and hitbox comparisons. Scoped quality passes; diff whitespace
+check passes. The delivered ZIP remains the verified baseline opening artifact.

@@ -2641,3 +2641,36 @@ The source's camera-UV-pointer-minus-global-face-index idiom must not be copied 
 out-of-bounds C++ pointer arithmetic into the native local-vertex renderer.
 Keep static behavior 135, remaining actor/weapon responses, full profile/glow and
 original camera save consumers gated. Reserve 17:50 UTC onward for audit/handoff.
+
+## November 1 gameplay increment: ordinary missile contacts
+
+Concussion (8), homing (15), guided (37) and mercury (39) now use the qualified
+camera contact and radial path. The original definition must have no flash or
+children, and the strength/radius bound still excludes mine chain detonation.
+Other secondary profiles remain guarded. This does not admit original cameras.
+
+The pinned physics/collide.cpp CreateWeaponEffects invokes optional missile blast
+and shockwave decoration before persistent-hit/parent checks. Its missile-lightning
+request applies only to mega/earthshaker families, not these four weapons.
+In effects/fireball.cpp, CreateShockwave rejects weapon objects. CreateExplBlast
+creates a display fireball when the optional effect setting is enabled; it does
+not apply damage or force. That additional decoration is deferred for gameplay-first
+work. The ordinary impact flash, attached flash, explosion motion, spatial sound,
+visibility-filtered radial damage/force and normal projectile retirement stay active.
+This is an explicit reduced visual profile, not a claim of identical object allocation
+when the source's optional blast decoration is enabled.
+
+The original Neptune integration with the untouched camera addon passes 56 ordered
+primary/missile contacts and 256 real physics frames (240 deaths, 16 persistent
+retries). It also covers 4800 radial robot cases across all five difficulties and
+compares 32448 native rotation samples and 2160 explosion-motion samples against
+extracted pinned source. Source impact tests now execute all five qualified splash
+weapon IDs. Camera health, RNG order, hit-history persistence and malformed-save
+rejection remain checked by the same owner.
+
+Current original Pumo inspection confirms camera 102 in pmlev1 binds segment 719
+side 4, cameras 206-208 in pmlev2 bind six faces, and cameras 295-299 in pmlev3 bind
+five faces. These are authored information surfaces, so monitor rendering cannot
+be treated as optional decoration. Pmlev1 lightning owner 105 and pmlev3 owners
+320-322 also retain explicit unsupported-profile blockers. No original bytes or
+admission policy changed in this increment.

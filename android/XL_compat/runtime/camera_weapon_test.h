@@ -107,59 +107,61 @@ static void camera_radial_robot_controls(const std::filesystem::path &root, obje
 	require(profiles[0] >= 0 && profiles[1] >= 0 && profiles[2] >= 0, "Camera radial controls need three original robot profiles");
 	std::ofstream output(root / "camera-rotation.txt", std::ios::app);
 	unsigned count = 0;
-	for (int age : { 0, F1_0 - 1, F1_0, 2 * F1_0 })
-		for (int profile : profiles)
-			for (int difficulty = 0; difficulty < 5; ++difficulty)
-				for (int distance : { 0, 1, 3 * F1_0, 10 * F1_0 })
-					for (int state = 0; state < 4; ++state) {
-						GameTime64 = 5 * F1_0 + age;
-						Difficulty_level = difficulty;
-						const auto &definition = Robot_info[profile];
-						actor.id = profile;
-						actor.flags = state == 1 ? OF_EXPLODING : state == 3 ? OF_SHOULD_BE_DEAD
-						                                                     : 0;
-						actor.shields = state == 2 ? -1 : 1000 * F1_0;
-						actor.mtype.phys_info.mass = definition.mass;
-						actor.mtype.phys_info.velocity = actor.mtype.phys_info.rotvel = {};
-						actor.ctype.ai_info.SKIP_AI_COUNT = 0;
-						actor.orient = vmd_identity_matrix;
-						auto impact = camera.pos;
-						const auto expected_impact = xl_compat::camera_splash_impact({ impact.x, impact.y, impact.z }, { camera.pos.x, camera.pos.y, camera.pos.z }, camera.size, weapon.size);
-						actor.pos = { expected_impact[0] + distance, expected_impact[1], expected_impact[2] };
-						require(find_point_seg(&actor.pos, camera.segnum) == camera.segnum, "Radial actor escaped original isolated room");
-						const auto sample = xl_compat::camera_splash_sample({ actor.pos.x, actor.pos.y, actor.pos.z }, expected_impact,
-						                                                    Weapon_info[GAUSS_ID].strength[difficulty], Weapon_info[GAUSS_ID].damage_radius, Weapon_info[GAUSS_ID].strength[difficulty]);
-						const bool affected = sample.inside && state != 3;
-						const auto impulse = affected ? sample.impulse : xl_compat::FixedLightPoint{};
-						const auto expected_velocity = xl_compat::camera_force_velocity({}, impulse, definition.mass, false);
-						auto rotation = impulse;
-						for (auto &axis : rotation) axis = xl_compat::splash_multiply(axis, -2 * F1_0 * (7 - difficulty) / 8);
-						const int shields = actor.shields;
-						ConsoleObject->shields = Players[Player_num].shields = 1000 * F1_0;
-						ConsoleObject->mtype.phys_info.velocity = ConsoleObject->mtype.phys_info.rotvel = {};
-						std::array<int, MAX_OBJECTS> signatures{};
-						const int highest = Highest_object_index;
-						for (int i = 0; i <= highest; ++i) signatures[i] = Objects[i].type == OBJ_NONE ? -1 : Objects[i].signature;
-						d_srand(5432);
-						const int roll = d_rand();
-						d_srand(5432);
-						const auto calls = d_rand_get_call_count();
-						xl_camera_splash(weapon, camera, impact);
-						require(actor.shields == shields - (affected && state == 0 && age >= F1_0 ? sample.damage : 0), "Camera radial robot damage or dead/exploding gate differs");
-						require(actor.mtype.phys_info.velocity.x == expected_velocity[0] && actor.mtype.phys_info.velocity.y == expected_velocity[1] &&
-						            actor.mtype.phys_info.velocity.z == expected_velocity[2],
-						        "Camera radial robot force or radius gate differs");
-						output << "1 1 0 " << definition.mass << ' ' << FrameTime << " 0 " << bool(definition.thief) << ' ' << bool(definition.attack_type)
-						       << " 0 0 " << roll << ' ' << rotation[0] << ' ' << rotation[1] << ' ' << rotation[2] << " 0 0 65536 0 0 0 "
-						       << actor.mtype.phys_info.rotvel.x << ' ' << actor.mtype.phys_info.rotvel.y << ' ' << actor.mtype.phys_info.rotvel.z << ' '
-						       << int(actor.ctype.ai_info.SKIP_AI_COUNT) << ' ' << d_rand_get_call_count() - calls << '\n';
-						for (int i = 0; i <= Highest_object_index; ++i)
-							if (Objects[i].type != OBJ_NONE && (i > highest || Objects[i].signature != signatures[i])) {
-								require(Objects[i].type == OBJ_FIREBALL, "Camera radial robot test created unexpected object");
-								obj_delete(i);
-							}
-						++count;
-					}
+	for (int weapon_id : { GAUSS_ID, CONCUSSION_ID, HOMING_ID, GUIDEDMISS_ID, MERCURY_ID })
+		for (int age : { 0, F1_0 - 1, F1_0, 2 * F1_0 })
+			for (int profile : profiles)
+				for (int difficulty = 0; difficulty < 5; ++difficulty)
+					for (int distance : { 0, 1, 3 * F1_0, 10 * F1_0 })
+						for (int state = 0; state < 4; ++state) {
+							weapon.id = weapon_id;
+							GameTime64 = 5 * F1_0 + age;
+							Difficulty_level = difficulty;
+							const auto &definition = Robot_info[profile];
+							actor.id = profile;
+							actor.flags = state == 1 ? OF_EXPLODING : state == 3 ? OF_SHOULD_BE_DEAD
+							                                                     : 0;
+							actor.shields = state == 2 ? -1 : 1000 * F1_0;
+							actor.mtype.phys_info.mass = definition.mass;
+							actor.mtype.phys_info.velocity = actor.mtype.phys_info.rotvel = {};
+							actor.ctype.ai_info.SKIP_AI_COUNT = 0;
+							actor.orient = vmd_identity_matrix;
+							auto impact = camera.pos;
+							const auto expected_impact = xl_compat::camera_splash_impact({ impact.x, impact.y, impact.z }, { camera.pos.x, camera.pos.y, camera.pos.z }, camera.size, weapon.size);
+							actor.pos = { expected_impact[0] + distance, expected_impact[1], expected_impact[2] };
+							require(find_point_seg(&actor.pos, camera.segnum) == camera.segnum, "Radial actor escaped original isolated room");
+							const auto sample = xl_compat::camera_splash_sample({ actor.pos.x, actor.pos.y, actor.pos.z }, expected_impact,
+							                                                    Weapon_info[weapon_id].strength[difficulty], Weapon_info[weapon_id].damage_radius, Weapon_info[weapon_id].strength[difficulty]);
+							const bool affected = sample.inside && state != 3;
+							const auto impulse = affected ? sample.impulse : xl_compat::FixedLightPoint{};
+							const auto expected_velocity = xl_compat::camera_force_velocity({}, impulse, definition.mass, false);
+							auto rotation = impulse;
+							for (auto &axis : rotation) axis = xl_compat::splash_multiply(axis, -2 * F1_0 * (7 - difficulty) / 8);
+							const int shields = actor.shields;
+							ConsoleObject->shields = Players[Player_num].shields = 1000 * F1_0;
+							ConsoleObject->mtype.phys_info.velocity = ConsoleObject->mtype.phys_info.rotvel = {};
+							std::array<int, MAX_OBJECTS> signatures{};
+							const int highest = Highest_object_index;
+							for (int i = 0; i <= highest; ++i) signatures[i] = Objects[i].type == OBJ_NONE ? -1 : Objects[i].signature;
+							d_srand(5432);
+							const int roll = d_rand();
+							d_srand(5432);
+							const auto calls = d_rand_get_call_count();
+							xl_camera_splash(weapon, camera, impact);
+							require(actor.shields == shields - (affected && state == 0 && age >= F1_0 ? sample.damage : 0), "Camera radial robot damage or dead/exploding gate differs");
+							require(actor.mtype.phys_info.velocity.x == expected_velocity[0] && actor.mtype.phys_info.velocity.y == expected_velocity[1] &&
+							            actor.mtype.phys_info.velocity.z == expected_velocity[2],
+							        "Camera radial robot force or radius gate differs");
+							output << "1 1 0 " << definition.mass << ' ' << FrameTime << " 0 " << bool(definition.thief) << ' ' << bool(definition.attack_type)
+							       << " 0 0 " << roll << ' ' << rotation[0] << ' ' << rotation[1] << ' ' << rotation[2] << " 0 0 65536 0 0 0 "
+							       << actor.mtype.phys_info.rotvel.x << ' ' << actor.mtype.phys_info.rotvel.y << ' ' << actor.mtype.phys_info.rotvel.z << ' '
+							       << int(actor.ctype.ai_info.SKIP_AI_COUNT) << ' ' << d_rand_get_call_count() - calls << '\n';
+							for (int i = 0; i <= Highest_object_index; ++i)
+								if (Objects[i].type != OBJ_NONE && (i > highest || Objects[i].signature != signatures[i])) {
+									require(Objects[i].type == OBJ_FIREBALL, "Camera radial robot test created unexpected object");
+									obj_delete(i);
+								}
+							++count;
+						}
 	output.close();
 	require(bool(output), "Cannot append camera radial rotation receipt");
 	actor = original_actor;
@@ -459,7 +461,7 @@ static void camera_projectile_physics_controls(object &camera)
 	require(seeds[0] >= 0 && seeds[1] >= 0, "Cannot seed both source Vulcan awareness branches");
 	FrameTime = F1_0 / 8;
 	for (int behavior : { 128, 129 })
-		for (int id : { LASER_ID_L1, FUSION_ID, GAUSS_ID, VULCAN_ID })
+		for (int id : { LASER_ID_L1, FUSION_ID, GAUSS_ID, VULCAN_ID, CONCUSSION_ID, HOMING_ID, GUIDEDMISS_ID, MERCURY_ID })
 			for (bool harmless : { false, true })
 				for (int strength : { 10, 40 })
 					for (int seed : seeds)
@@ -531,7 +533,8 @@ static void camera_projectile_physics_controls(object &camera)
 							require(!persistent || (xl_projectile_has_hit(shot, victim) && weapon.shields == (killed ? 0 : 15 * F1_0)), "Native projectile physics lost persistent hit identity or strength");
 							xl_compat::CameraHitState actual_hits;
 							require(xl_camera_hit_state_get(shot, actual_hits) && !actual_hits.repaired && !actual_hits.shield_time && !actual_hits.next, "Weapon reverse query recorded player hit state");
-							const auto impact = id == GAUSS_ID ? xl_compat::camera_splash_impact(point(hit), point(camera.pos), camera.size, weapon.size) : point(hit);
+							const bool splash = Weapon_info[id].damage_radius != 0;
+							const auto impact = splash ? xl_compat::camera_splash_impact(point(hit), point(camera.pos), camera.size, weapon.size) : point(hit);
 							unsigned flashes = 0;
 							for (int i = 0; i <= Highest_object_index; ++i) {
 								if (Objects[i].type == OBJ_NONE || (i <= old_highest && signatures[i] == Objects[i].signature)) continue;
@@ -539,7 +542,7 @@ static void camera_projectile_physics_controls(object &camera)
 								++flashes;
 								obj_delete(i);
 							}
-							require(flashes == unsigned(Weapon_info[id].robot_hit_vclip >= 0) + unsigned(id == GAUSS_ID), "Native projectile retry duplicated or omitted an impact flash");
+							require(flashes == unsigned(Weapon_info[id].robot_hit_vclip >= 0) + unsigned(splash), "Native projectile retry duplicated or omitted an impact flash");
 							if (!killed) {
 								weapon.pos = start;
 								weapon.mtype.phys_info.velocity = { velocity[0], 0, 0 };
@@ -799,7 +802,7 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 		obj_delete(slot);
 	}
 	unsigned cases = 0;
-	for (int id : { LASER_ID_L1, FUSION_ID, GAUSS_ID })
+	for (int id : { LASER_ID_L1, FUSION_ID, GAUSS_ID, CONCUSSION_ID, HOMING_ID, GUIDEDMISS_ID, MERCURY_ID })
 		for (bool reverse : { false, true })
 			for (bool harmless : { false, true })
 				for (bool exploding : { false, true }) {
@@ -818,9 +821,10 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 					ConsoleObject->shields = Players[Player_num].shields = 1000 * F1_0;
 					Players[Player_num].flags &= ~PLAYER_FLAGS_INVULNERABLE;
 					auto impact = camera.pos;
-					const auto expected_impact = id == GAUSS_ID ? xl_compat::camera_splash_impact(
-					                                                  { impact.x, impact.y, impact.z }, { camera.pos.x, camera.pos.y, camera.pos.z }, camera.size, weapon.size)
-					                                            : xl_compat::FixedLightPoint{ impact.x, impact.y, impact.z };
+					const bool splash = Weapon_info[id].damage_radius != 0;
+					const auto expected_impact = splash ? xl_compat::camera_splash_impact(
+					                                          { impact.x, impact.y, impact.z }, { camera.pos.x, camera.pos.y, camera.pos.z }, camera.size, weapon.size)
+					                                    : xl_compat::FixedLightPoint{ impact.x, impact.y, impact.z };
 					const auto reflected = xl_compat::camera_reflect_velocity({ 100001, -65537, 17 }, weapon.mtype.phys_info.mass, harmless || exploding);
 					std::array<int, MAX_OBJECTS> signatures{};
 					const int old_highest = Highest_object_index;
@@ -856,17 +860,17 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 						motion_cases += camera_motion_native_controls(motion_output, Objects[i]);
 						obj_delete(i);
 					}
-					require(flashes == unsigned(!exploding) + unsigned(id == GAUSS_ID) && attached == unsigned(!exploding) &&
+					require(flashes == unsigned(!exploding) + unsigned(splash) && attached == unsigned(!exploding) &&
 					            Num_awareness_events == int(!exploding),
 					        "Camera weapon effect gates differ");
-					if (id == GAUSS_ID) {
+					if (splash) {
 						const int strength = Weapon_info[id].strength[Difficulty_level];
 						const auto sample = xl_compat::camera_splash_sample({ center.x, center.y, center.z }, expected_impact, strength, Weapon_info[id].damage_radius, strength);
 						const auto velocity = xl_compat::camera_force_velocity({}, sample.impulse, ConsoleObject->mtype.phys_info.mass, false);
 						const int damage = Difficulty_level ? sample.damage : sample.damage / 4;
 						require(Players[Player_num].shields == 1000 * F1_0 - damage && ConsoleObject->mtype.phys_info.velocity.x == velocity[0] &&
 						            ConsoleObject->mtype.phys_info.velocity.y == velocity[1] && ConsoleObject->mtype.phys_info.velocity.z == velocity[2],
-						        "Camera Gauss splash lost source radial player damage or force");
+						        "Camera weapon splash lost source radial player damage or force");
 					}
 					require(camera.shields == 100 * F1_0 && camera.ctype.ai_info.SKIP_AI_COUNT == expected_skip &&
 					            camera.mtype.phys_info.rotthrust.x == expected_thrust[0] && camera.mtype.phys_info.rotthrust.y == expected_thrust[1] &&
@@ -924,5 +928,5 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 	obj_delete(victim);
 	FrameTime = saved_frame;
 	std::cout << "Native camera projectile contacts: " << cases
-	          << " laser/fusion/Gauss cases, real XL history, duplicate and parent-signature ordering, attached weapon effects, signed RNG and health passed\n";
+	          << " primary/missile cases, real XL history, duplicate and parent-signature ordering, attached weapon effects, signed RNG and health passed\n";
 }

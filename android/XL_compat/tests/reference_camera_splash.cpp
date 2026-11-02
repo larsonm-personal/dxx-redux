@@ -300,22 +300,24 @@ void camera_splash_source_controls()
 	damage_killer = nullptr;
 	std::cout << "Robot damage source preconditions: " << guards << " passed\n";
 	unsigned positions = 0, samples = 0;
-	for (int radius : { 0, 1, 65536, 399147 })
-		for (int size : { 1, 16384, 65536, 91751 })
-			for (const auto relative : { xl_compat::FixedLightPoint{}, xl_compat::FixedLightPoint{ 1, -1, 1 }, xl_compat::FixedLightPoint{ 65536, 0, 0 },
-			                             xl_compat::FixedLightPoint{ -72163, 49177, 655359 }, xl_compat::FixedLightPoint{ 399147, 0, 0 } }) {
-				CObject weapon, camera;
-				camera.info.xSize = radius;
-				camera.Position() = vector({ 300001, -200003, 100007 });
-				weapon.info.xSize = size;
-				auto impact = camera.Position() + vector(relative);
-				const auto initial = point(impact);
-				weapon.ExplodeSplashDamageWeapon(impact, &camera);
-				const auto result = xl_compat::camera_splash_impact(initial, point(camera.Position()), radius, size);
-				if (result != point(impact) || result != point(explosion_position) || result != point(explosion_impact) || audio.sound != 11)
-					throw std::runtime_error("Camera splash impact differs from pinned full weapon explosion function");
-				++positions;
-			}
+	for (int weapon_id : { 32, 8, 15, 37, 39 })
+		for (int radius : { 0, 1, 65536, 399147 })
+			for (int size : { 1, 16384, 65536, 91751 })
+				for (const auto relative : { xl_compat::FixedLightPoint{}, xl_compat::FixedLightPoint{ 1, -1, 1 }, xl_compat::FixedLightPoint{ 65536, 0, 0 },
+				                             xl_compat::FixedLightPoint{ -72163, 49177, 655359 }, xl_compat::FixedLightPoint{ 399147, 0, 0 } }) {
+					CObject weapon, camera;
+					weapon.info.nId = weapon_id;
+					camera.info.xSize = radius;
+					camera.Position() = vector({ 300001, -200003, 100007 });
+					weapon.info.xSize = size;
+					auto impact = camera.Position() + vector(relative);
+					const auto initial = point(impact);
+					weapon.ExplodeSplashDamageWeapon(impact, &camera);
+					const auto result = xl_compat::camera_splash_impact(initial, point(camera.Position()), radius, size);
+					if (result != point(impact) || result != point(explosion_position) || result != point(explosion_impact) || audio.sound != 11)
+						throw std::runtime_error("Camera splash impact differs from pinned full weapon explosion function");
+					++positions;
+				}
 	for (int radius : { 1, 65536, 655360, 3276800 })
 		for (int strength : { 1, 65536, 2621440, 9175040 })
 			for (int x : { -655360, -65535, -1, 0, 1, 65535, 655360 })

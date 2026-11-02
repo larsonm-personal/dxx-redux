@@ -25,14 +25,17 @@ if(NOT result EQUAL 0 OR NOT stdout MATCHES "XL projectile native controls passe
     message(FATAL_ERROR "Projectile controls failed (${result}): ${stdout}${stderr}")
 endif()
 if(CAMERA_HOG)
-    if(NOT stdout MATCHES "Native camera projectile contacts: 24")
+    if(NOT stdout MATCHES "Native camera projectile contacts: 56")
         message(FATAL_ERROR "Camera weapon controls were not exercised")
     endif()
-    if(NOT stdout MATCHES "Native camera radial robot contacts: 960 passed")
+    if(NOT stdout MATCHES "Native camera projectile physics: 256 frames, 240 deaths, 16 retries")
+        message(FATAL_ERROR "Camera primary and missile physics controls were not exercised")
+    endif()
+    if(NOT stdout MATCHES "Native camera radial robot contacts: 4800 passed")
         message(FATAL_ERROR "Camera radial robot controls were not exercised")
     endif()
     if(NOT stdout MATCHES "xl_motion=1" OR NOT stdout MATCHES
-                                           "Native camera explosion motion samples: 720")
+                                           "Native camera explosion motion samples: 2160")
         message(
             FATAL_ERROR
                 "Active camera player contact or explosion motion controls were not exercised")
