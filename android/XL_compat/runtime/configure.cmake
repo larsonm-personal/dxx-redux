@@ -156,7 +156,8 @@ if(DXX_XL_DEVELOPER_TESTS AND TARGET dxx-redux-d2-headless-metadata)
     target_sources(dxx-redux-d2-headless-metadata PRIVATE ${xl_checkpoint_sources})
     target_sources(
         dxx-redux-d2-headless-metadata
-        PRIVATE "${xl_runtime_dir}/../../app/src/main/cpp/shared/android_mission_assets.cpp")
+        PRIVATE "${xl_runtime_dir}/../../app/src/main/cpp/shared/android_mission_assets.cpp"
+                "${xl_runtime_dir}/../../app/src/main/cpp/shared/android_loading_progress.c")
     target_compile_definitions(
         dxx-redux-d2-headless-metadata PRIVATE DXX_XL_CHECKPOINT_EXPORT DXX_XL_DESCRIPTOR_TEST
                                                DXX_XL_DEVELOPER_PROBE)
