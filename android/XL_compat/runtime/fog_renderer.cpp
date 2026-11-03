@@ -305,9 +305,6 @@ void texture(GLuint *name, int width, int height, GLenum internal, GLenum format
 void resize(int width, int height, int bits, int stencil)
 {
 	if (buffers.width == width && buffers.height == height && buffers.bits == bits && buffers.stencil == stencil) return;
-#ifdef __ANDROID__
-	debug_log_force(DLOG_GRAPHICS, "[XL-FOG] resize active=%d old=%dx%d/%d/%d new=%dx%d/%d/%d", direct_scene_active, buffers.width, buffers.height, buffers.bits, buffers.stencil, width, height, bits, stencil);
-#endif
 	require(width > 0 && height > 0 && bits >= 16, "Fog requires a valid scene viewport and depth buffer");
 	release_buffers(false);
 	for (int pair = 0; pair < 2; ++pair) {
@@ -357,36 +354,7 @@ void use(GLuint name, const GLfloat *matrix)
 }
 void depth_snapshot(GLuint scene, const GLint view[4])
 {
-	if (direct_depth && scene == buffers.depth_fbo) {
-#ifdef __ANDROID__
-		static int reports = 0;
-		if (reports++ < 8 || reports % 60 == 0) {
-			SavedState saved;
-			ReadbackState pack;
-			GLint attachment = 0;
-			glBindFramebuffer(GL_FRAMEBUFFER, scene);
-			glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &attachment);
-			const GLuint probe = compile("uniform sampler2D depthTex; void main() { float lo=1.0,hi=0.0; for(int y=0;y<5;++y) for(int x=0;x<5;++x) { float d=texture2D(depthTex,vec2(float(x)+.5,float(y)+.5)/5.0).r; lo=min(lo,d);hi=max(hi,d); } gl_FragColor=vec4(texture2D(depthTex,vec2(.5)).r,lo,hi,1.0); }");
-			glBindFramebuffer(GL_FRAMEBUFFER, buffers.fbo[0]);
-			glViewport(0, 0, 1, 1);
-			glDisable(GL_BLEND);
-			glDisable(GL_DEPTH_TEST);
-			glDisable(GL_CULL_FACE);
-			glDisable(GL_SCISSOR_TEST);
-			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-			use(probe, identity);
-			glUniform1i(glGetUniformLocation(probe, "depthTex"), 0);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, buffers.depth);
-			draw(quad, 6);
-			float pixel[4]{};
-			glReadPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, pixel);
-			debug_log_force(DLOG_GRAPHICS, "[XL-FOG] direct snapshot #%d scene=%u depth=%u attachment=%d value=%.9g min=%.9g max=%.9g test=%d write=%d func=%x", reports, scene, buffers.depth, attachment, pixel[0], pixel[1], pixel[2], saved.depth, saved.depth_write, saved.depth_func);
-			glDeleteProgram(probe);
-		}
-#endif
-		return;
-	}
+	if (direct_depth && scene == buffers.depth_fbo) return;
 	glDisable(GL_SCISSOR_TEST);
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, scene);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, buffers.depth_fbo);
@@ -638,13 +606,6 @@ extern "C" void ogl_xl_fog_begin_scene(void)
 			errors("Direct fog scene color preservation");
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, buffers.depth_fbo);
-		if (diagnostics.direct_scenes < 4) {
-#ifdef __ANDROID__
-			GLint name = 0;
-			glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &name);
-			debug_log_force(DLOG_GRAPHICS, "[XL-FOG] begin scene=%u depth=%u attached=%d bits=%d stencil=%d", buffers.depth_fbo, buffers.depth, name, buffers.bits, buffers.stencil);
-#endif
-		}
 		direct_scene_active = true;
 		++diagnostics.direct_scenes;
 	} catch (const std::exception &error) {

@@ -74,6 +74,20 @@ int xl_pog_install(struct xl_pog_resources *resources)
 			for (c = 0; c < 3; ++c) bitmap->avg_color_rgb[c] = (fix) ((unsigned) entry->average_rgb[c] * F1_0 / 255);
 		}
 		gr_set_bitmap_flags(bitmap, entry->flags);
+		if (!entry->rgba) {
+			/* XL LoadReplacementBitmaps expands indexed pixels then SetPalette
+			 * recounts key colors. A stale transparent header must not queue an
+			 * opaque wall into the depth-write-disabled transparency pass. */
+			unsigned mask = BM_FLAG_TRANSPARENT;
+			int texture;
+			for (texture = 0; texture < NumTextures; ++texture)
+				if (Textures[texture].index == entry->index) {
+					/* Source SetSuperTransparent changes only wall texture bitmaps. */
+					mask |= BM_FLAG_SUPER_TRANSPARENT;
+					break;
+				}
+			gr_set_bitmap_flags(bitmap, (entry->flags & ~mask) | (entry->palette_flags & mask));
+		}
 		GameBitmapOffset[entry->index] = 0;
 	}
 	last_palette_loaded_pig[0] = 0;

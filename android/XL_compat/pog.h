@@ -15,6 +15,8 @@ inline constexpr std::size_t pog_file_limit = 64u * 1024u * 1024u;
 struct PogBitmap {
 	unsigned index = 0, width = 0, height = 0, frames = 1;
 	unsigned flags = 0, source_flags = 0, average_index = 0;
+	// Indexed palette keys observed in decoded pixels, independently of header flags.
+	unsigned palette_flags = 0;
 	std::array<std::uint32_t, 4> transparent_frames{}, super_frames{};
 	std::array<unsigned char, 3> average_rgb{};
 	bool truecolor = false;

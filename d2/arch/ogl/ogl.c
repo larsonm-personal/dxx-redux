@@ -676,38 +676,11 @@ void ogl_bindbmtex(grs_bitmap *bm){
 
 static void ogl_draw_bitmap_arrays(GLenum mode, int first, int count, const grs_bitmap *base, const grs_bitmap *overlay)
 {
-#if defined(ANDROID) && defined(DXX_XL_RUNTIME)
-	static int fog_draw_reports = 0;
-	if (xl_fog_active() && g_ogl_render_context == 1 && fog_draw_reports++ < 12) {
-		GLint draw_target = 0;
-		GLfloat range[2];
-		GLboolean write;
-		glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &draw_target);
-		glGetFloatv(GL_DEPTH_RANGE, range);
-		glGetBooleanv(GL_DEPTH_WRITEMASK, &write);
-		const float *matrix = gles3_shim_get_mvp();
-		debug_log_force(DLOG_GRAPHICS, "[XL-FOG] wall draw fbo=%d test=%d write=%d range=%.6g/%.6g projection=%.9g/%.9g/%.9g/%.9g", draw_target, glIsEnabled(GL_DEPTH_TEST), write, range[0], range[1], matrix[10], matrix[11], matrix[14], matrix[15]);
-	}
-#endif
 #ifdef DXX_XL_RUNTIME
 	struct xl_rgba_alpha_state alpha;
 	ogl_xl_rgba_alpha_begin((base && base->bm_type == BM_RGBA) || (overlay && overlay->bm_type == BM_RGBA), &alpha);
 #endif
 	glDrawArrays(mode, first, count);
-#if defined(ANDROID) && defined(DXX_XL_RUNTIME)
-	static int fog_post_reports = 0;
-	if (xl_fog_active() && g_ogl_render_context == 1 && fog_post_reports++ < 16) {
-		GLint bits = 0, attachment = 0, prog = 0;
-		glGetIntegerv(GL_DEPTH_BITS, &bits);
-		glGetIntegerv(GL_CURRENT_PROGRAM, &prog);
-		glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &attachment);
-		GLint location = glGetUniformLocation(prog, "uMVP");
-		if (location < 0) location = glGetUniformLocation(prog, "umat");
-		GLfloat matrix[16] = {0};
-		if (location >= 0) glGetUniformfv(prog, location, matrix);
-		debug_log_force(DLOG_GRAPHICS, "[XL-FOG] after wall bits=%d attachment=%d program=%d uniform=%d projection=%.9g/%.9g/%.9g/%.9g error=%x", bits, attachment, prog, location, matrix[10], matrix[11], matrix[14], matrix[15], glGetError());
-	}
-#endif
 #ifdef DXX_XL_RUNTIME
 	ogl_xl_rgba_alpha_end(&alpha);
 #endif

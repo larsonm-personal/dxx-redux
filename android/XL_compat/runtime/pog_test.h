@@ -276,7 +276,7 @@ static int pog_test(int argc, char **argv)
 			require(xl_pog_install(mixed.get()), "Cannot reinstall owned mixed POG");
 			const auto &a = GameBitmaps[rgba.index], &b = GameBitmaps[indexed.index];
 			require(a.bm_type == BM_RGBA && a.bm_data[0] == 11 && a.bm_data[3] == 255 &&
-			            b.bm_type == BM_LINEAR && b.bm_data[0] == 254 && b.bm_flags == 3,
+			            b.bm_type == BM_LINEAR && b.bm_data[0] == 254 && b.bm_flags == BM_FLAG_SUPER_TRANSPARENT,
 			        "Mixed formats, duplicate ordering or immutable preparation failed");
 		}
 		require(xl_pog_install(arena_resources.get()), "Cannot recover original resources after mixed POG");
