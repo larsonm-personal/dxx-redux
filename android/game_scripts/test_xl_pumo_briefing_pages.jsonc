@@ -9,13 +9,28 @@
     { "action": "select", "text": "Trainee", "timeout_ms": 15000 },
     { "action": "wait_for", "expect": { "briefing_text.active": true }, "timeout_ms": 30000 },
     { "action": "wait_for", "expect": { "briefing_text.page_ready": true }, "timeout_ms": 60000 },
-    { "action": "assert", "expect": { "briefing_text.printing_sound": false, "briefing_text.overlaps": 0 } },
+    {
+        "action": "assert",
+        "expect": {
+            "briefing_text.printing_sound": false,
+            "briefing_text.overflow_page": true,
+            "briefing_text.fits_height": true,
+            "briefing_text.overlaps": 0,
+        },
+    },
     { "action": "introspect" },
-    { "action": "wait_ms", "ms": 1000 },
+    { "action": "wait_ms", "ms": 5000 },
     { "action": "assert", "expect": { "briefing_text.printing_sound": false } },
     { "action": "key", "key": "enter", "post_delay_ms": 100 },
     { "action": "wait_for", "expect": { "briefing_text.printing_sound": true }, "timeout_ms": 5000 },
     { "action": "wait_for", "expect": { "briefing_text.page_ready": true }, "timeout_ms": 60000 },
-    { "action": "assert", "expect": { "briefing_text.printing_sound": false, "briefing_text.overlaps": 0 } },
+    {
+        "action": "assert",
+        "expect": {
+            "briefing_text.printing_sound": false,
+            "briefing_text.fits_height": true,
+            "briefing_text.overlaps": 0,
+        },
+    },
     { "action": "introspect" },
 ]

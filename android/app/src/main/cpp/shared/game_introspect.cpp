@@ -2046,7 +2046,7 @@ extern "C" char *game_introspect_get_state(void)
 		android_briefing_text_state text;
 		android_briefing_text_snapshot(&text);
 		j["briefing_text"] = {
-			{ "active", text.active != 0 }, { "page_ready", text.page_ready != 0 }, { "printing_sound", text.printing_sound != 0 }, { "overflow_page", text.overflow_page != 0 }, { "overlaps", text.overlaps }, { "background", text.background }, { "text", text.text }
+			{ "active", text.active != 0 }, { "page_ready", text.page_ready != 0 }, { "printing_sound", text.printing_sound != 0 }, { "overflow_page", text.overflow_page != 0 }, { "fits_height", text.fits_height != 0 }, { "overlaps", text.overlaps }, { "background", text.background }, { "text", text.text }
 		};
 	}
 	j["game_mode"] = Game_mode;
