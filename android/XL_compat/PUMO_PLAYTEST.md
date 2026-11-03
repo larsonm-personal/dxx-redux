@@ -9,8 +9,10 @@ and verified direct scene depth for fog, soft particles and lightning.
 **Samsung SM-S931U / Adreno 830 rejects the previous version 29080.** Phone
 logs show D24 copying passes while D16 copying/direct sampling is inaccurate.
 This candidate qualifies the D24 direct scene texture actually used whenever
-either source copy format fails. The numeric guard remains strict. A live phone
-session on this new build is requested; no alternative phone level is verified.
+either source copy format fails. The numeric guard remains strict. The phone now passes
+D24 admission but version 29160 fails at first-scene color preservation (error
+1282): its 4x RGB8 source does not match the RGBA8 capture. A color-format fix
+is in progress. No alternative phone level is verified.
 See [depth evidence](evidence/fog-direct-depth.md).
 
 Source: `18d06ec392adf8a3c1b00a8694907904bb4b3e6e`, version code **29160**.
@@ -145,7 +147,7 @@ A separate [normal guided-missile pilot](evidence/pmc3-guided-pilot.md) uses deb
 candidate28820 to observe the active projectile. Original ammo, local combat and
 flight through the first grate were exercised; switch3, clean release and the
 red-key route remain unqualified. That historical diagnostic candidate is separate
-from the current version29080 phone fog candidate described above.
+from the current version 29160 phone fog candidate described above.
 
 ## Boundaries and feedback
 
@@ -155,7 +157,7 @@ from the current version29080 phone fog candidate described above.
   red-key route remains unqualified
 - Physical ARM, touch ergonomics, controller acceptance and device performance
   need user feedback; historical route tests used an owned x86_64 host-GPU emulator.
-  The version29080 depth candidate uses an owned x86_64 SwiftShader emulator
+  The version 29160 depth candidate uses an owned x86_64 SwiftShader emulator
 - Large levels and save restores can take tens of seconds on the emulator
 - One 28810 launch stalled during graphics initialization with an automation
   broadcast ANR; four later menu launches and three clean quit/relaunch cycles

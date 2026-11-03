@@ -90,3 +90,30 @@ receipts remain preserved. The owned persistent Gradle daemon 32548 and worker
 34636 from the first diagnostic build were identified by parent and creation time
 and stopped after completion; the next build used a single-use daemon. No user
 process or physical phone was operated during this pilot.
+
+## Wall-contact qualification on delivered version 29160
+
+After D24 candidate delivery, the same owned emulator loaded the preserved
+three-threat-cleared checkpoint on exact 18d06ec3/version 29160: 9/9 PASS in
+18923ms. A fresh profile backup preceded staging; only Players was replaced.
+
+The ordinary flight diagnostic passes 12/12 in 19754ms. The guided missile
+clears the first grate and hits authored segment1061 side5 wall97, base texture49
+and animated fan overlay354, at (-35.1921,-641.2290,-428.4727). Guidance is active
+at contact; last_player_damage is null and shields remain 89.0431976. The contact
+identity agrees with the unchanged original pmlev3.rl2 wall record (type5).
+
+Two bounded steering observations also hit wall97: approximately
+(-35.6640,-648.3489,-428.4727) and (-35.5061,-652.9714,-428.4727). The first
+steering expectation timed out before seeing its requested direction; the second
+collision-observation probe passes 13/13 in 18642ms. These are diagnostic results,
+not route passes. Switch3 remains unfired; no red-route access is earned. Coarse
+emulator frame/input observation and animated aperture timing remain limits.
+Do not classify this evidence as a gameplay defect or force the trigger.
+
+All 15 protected profile/settings files restore exactly from
+pre-guided-contact-profile.tar. Evidence is retained as guided-depth24-load,
+guided-contact-observe, guided-fan-turn622, guided-fan-turn618 and
+guided-contact-validation.json under temp/xl-phone-fog-20261102. The current
+phone candidate and earlier bundles are unchanged. The wall-contact diagnostic
+itself is now exercised; the guided progression route remains partial.

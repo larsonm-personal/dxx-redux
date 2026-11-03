@@ -91,3 +91,34 @@ verify all six embedded IDs, protect/restore the owned emulator profile, and tes
 the exact APK before publishing a new retained bundle. The physical phone is
 read-only authorized; installation and a live play session remain with the user.
 Candidate 29080 is a historical emulator-qualified, phone-rejected baseline.
+
+## Bounded wall-contact validation after D24 delivery
+
+Candidate 18d06ec3/version 29160 is delivered with exact hub/fog checks. While
+Samsung feedback is pending, use the owned emulator and a fresh protected backup
+to qualify the diagnostic wall-contact snapshot included in that APK. Restore the
+three-threat-cleared earned checkpoint, preserve original ammo/health/grates, and
+try one ordinary guided flight. Bound this follow-up to about 20-30 minutes;
+classify collision/partial route without forcing switch3 or progression. Restore
+and hash-check the profile afterward. Phone feedback takes priority immediately.
+
+## Samsung color resolve failure after successful D24 admission
+
+The user tried 18d06ec3/version 29160. Briefings open, but first scene rendering
+returns to the launcher with error 1282 at direct fog scene color preservation.
+Read-only phone logs prove both D24 numeric checks pass (0.625 and 0.5), then
+show a 4x MSAA RGB8 target (8/8/8/0, format0x8051, 640x480). The direct capture
+incorrectly chose RGBA8 using only the red channel width. ES multisample resolves
+require matching color formats. Reuse the existing exact four-channel format
+policy from Android MSAA allocation and add RGB8 alongside RGBA8 in the real
+production GPU controls, including a captured-format assertion. Preserve strict
+fog admission, scene color, original MSAA settings and all mission content.
+
+The wall-contact pilot completed as partial and its diagnostic is qualified;
+all 15 protected files restored. Save Explorer probe created Pumo/stock saves
+normally, but its ad-hoc empty run ID was rejected at launcher handoff. This is
+harness evidence, not a launcher gameplay failure. A corrected official-runner
+launcher-only probe is prepared but unrun. The new phone failure takes priority;
+all 15 pre-explorer files were restored exactly. Earlier rejected candidates
+remain retained. Next: commit, universal build/IDs, exact-APK RGB8 GPU/fog and
+normal hub checks, protected installer, new bundle, then user phone session.
