@@ -18,8 +18,8 @@ static void camera_mine_chain_controls(object &camera)
 		Weapon_info[PROXIMITY_ID].damage_radius = 16 * F1_0;
 		Weapon_info[PROXIMITY_ID].children = -1;
 		Weapon_info[PROXIMITY_ID].flash = 0;
-		for (auto &value : Weapon_info[GAUSS_ID].strength) value = strength * F1_0;
-		for (auto &value : Weapon_info[PROXIMITY_ID].strength) value = 2500 * F1_0;
+		for (int difficulty = 0; difficulty < NDL; ++difficulty) Weapon_info[GAUSS_ID].strength[difficulty] = strength * F1_0;
+		for (int difficulty = 0; difficulty < NDL; ++difficulty) Weapon_info[PROXIMITY_ID].strength[difficulty] = 2500 * F1_0;
 		xl_camera_validate_weapon_definitions();
 		std::array<int, MAX_OBJECTS> signatures{};
 		const int highest = Highest_object_index;

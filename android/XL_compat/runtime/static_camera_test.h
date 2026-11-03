@@ -41,7 +41,7 @@ static void static_camera_native_controls(object &camera)
 				camera.flags = 0;
 				std::map<int, int> original;
 				for (int i = 0; i <= Highest_object_index; ++i)
-					if (Objects[i].type != OBJ_NONE) original.emplace(i, Objects[i].signature);
+					if (Objects[i].type != OBJ_NONE) original.emplace(i, int{ Objects[i].signature });
 				const int shot = projectile_test_shot(int(ConsoleObject - Objects), id);
 				auto &weapon = Objects[shot];
 				weapon.pos = camera.pos;
