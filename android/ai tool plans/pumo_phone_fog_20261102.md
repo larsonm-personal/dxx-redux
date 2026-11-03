@@ -153,3 +153,21 @@ save restored Temporal Hub with its reduced energy and fog (5/5). Stock row
 selection restored Ahayweh Gate with XL/fog inactive in captured state, but the
 ad-hoc assertion collector timed out; this is not a full automated stock PASS.
 All 15 protected profile files restored and hash-verified before phone follow-up.
+
+The 1768c86 diagnostic passes missing-addon dialog checks at large and compact
+output sizes (21 and 22 steps); exact native IDs and APK hash are retained. It is
+not delivered: the imported-context test exposed a second real ownership gap.
+Launcher reconciliation moves installed loose addons into its file-set content
+projection, whose origin differs from the startup retail HAM root. The original
+Vertigo hash is present but rejected as an unrelated owner.
+
+Publish exact enabled non-mission file-set mounts in the launcher/native catalog
+(schema 2), and admit only those currently mounted origins as installation
+resources. Do not admit arbitrary global mods, sibling missions, descendant
+paths or detached roots. Keep existing payload/hash qualification. Extend the
+publication test and real D1/D2 scoped-resource fixture with positive ownership,
+unpublished-global, detached-root and mission-context controls. Rebuild before
+retesting imported Pumo and delivering. The interrupted import attempt restored
+20 explicitly backed-up files; its newly installed loose addons were migrated by
+the launcher outside that backup scope, so reinstall them and protect content
+state/projections and the loose addon directory in the next test generation.

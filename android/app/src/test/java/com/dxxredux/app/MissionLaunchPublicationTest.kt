@@ -69,5 +69,17 @@ class MissionLaunchPublicationTest {
         assertNotEquals(publication.discoveryDir, changed.discoveryDir)
         assertTrue(publication.discoveryDir.isDirectory)
         assertTrue(catalog.resourcesFor(null).isEmpty())
+        val installation = temporary.newFolder("installation").absolutePath
+        val withAddon = catalog.publish(game, "global-v2", installationMounts = listOf(installation))
+        val manifest = JSONObject(withAddon.manifest)
+        assertEquals(2, manifest.getInt("schema"))
+        assertEquals(
+            listOf(installation),
+            manifest.getJSONArray("installation_mounts").let { paths ->
+                (0 until paths.length()).map { paths.getString(it) }
+            },
+        )
+        assertNotEquals(changed.discoveryDir, withAddon.discoveryDir)
+        assertEquals(withAddon, catalog.publish(game, "global-v2", installationMounts = listOf(installation)))
     }
 }

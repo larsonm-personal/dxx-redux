@@ -6,7 +6,7 @@ import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
 
-/** Native contract: android_mission_assets.cpp reads schema 1 and these exact field names */
+/** Native contract: android_mission_assets.cpp reads schema 2 and these exact field names */
 internal data class MissionLaunchPublication(
     val discoveryDir: File,
     val manifest: String,
@@ -22,6 +22,7 @@ internal fun MissionLaunchCatalog.publish(
     gameDir: File,
     globalRevision: String,
     activationErrors: Map<MissionLaunchKey, String> = emptyMap(),
+    installationMounts: List<String> = emptyList(),
     generateOverrides: (MissionLaunchKey, File) -> Unit = { _, _ -> },
 ): MissionLaunchPublication {
     fun activationError(mission: MissionLaunchEntry): String =
@@ -46,7 +47,8 @@ internal fun MissionLaunchCatalog.publish(
                 ),
         )
     }
-    val generation = missionLaunchHash(globalRevision + "\n" + identity.toString())
+    val installation = JSONArray(installationMounts.distinct())
+    val generation = missionLaunchHash(globalRevision + "\n" + installation + "\n" + identity.toString())
     val destination = File(gameDir, ".mission_assets/$generation")
     val discovery = File(destination, "discovery")
     val entries = JSONArray()
@@ -77,7 +79,8 @@ internal fun MissionLaunchCatalog.publish(
     }
     val manifest =
         JSONObject()
-            .put("schema", 1)
+            .put("schema", 2)
+            .put("installation_mounts", installation)
             .put("generation", generation)
             .put("entries", entries)
             .toString(2) + "\n"

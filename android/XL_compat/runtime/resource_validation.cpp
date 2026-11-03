@@ -26,6 +26,9 @@
 #include "preview.h"
 #include "particle_resources.h"
 #include <utility>
+#ifdef __ANDROID__
+#include "../../app/src/main/cpp/shared/android_mission_assets.h"
+#endif
 extern "C" {
 #include "inferno.h"
 #include "bm.h"
@@ -453,6 +456,10 @@ extern "C" int xl_resource_texture_scope_enabled(void)
 
 extern "C" int xl_resource_owns_installation(const char *source)
 {
+#ifdef __ANDROID__
+	// Launcher-owned file-set projections carry installed addons separately from retail HAM
+	if (android_mission_assets_owns_installation(source)) return 1;
+#endif
 	return source && !startup_origin.empty() && startup_origin == source;
 }
 
