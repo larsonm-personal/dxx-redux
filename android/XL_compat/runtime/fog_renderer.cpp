@@ -580,7 +580,7 @@ extern "C" const char *ogl_xl_fog_prepare(void)
 		glGetIntegerv(GL_DEPTH_BITS, &bits);
 		glGetIntegerv(GL_STENCIL_BITS, &stencil);
 		require(saved.viewport[0] >= 0 && saved.viewport[1] >= 0, "Fog requires a nonnegative scene viewport");
-		resize(saved.viewport[0] + saved.viewport[2], saved.viewport[1] + saved.viewport[3], bits, stencil);
+		resize(saved.viewport[0] + saved.viewport[2], saved.viewport[1] + saved.viewport[3], direct_depth ? 24 : bits, direct_depth ? 0 : stencil);
 		if (!direct_depth) depth_snapshot(saved.draw, saved.viewport);
 		++diagnostics.preparations;
 		return nullptr;
@@ -612,7 +612,8 @@ extern "C" void ogl_xl_fog_begin_scene(void)
 			glGetIntegerv(GL_RED_BITS, &red);
 			glGetIntegerv(GL_DEPTH_BITS, &bits);
 			glGetIntegerv(GL_STENCIL_BITS, &stencil);
-			resize(saved.viewport[0] + saved.viewport[2], saved.viewport[1] + saved.viewport[3], bits, stencil);
+			require(!glIsEnabled(GL_STENCIL_TEST), "Direct fog scene requires stencil-free scene rendering");
+			resize(saved.viewport[0] + saved.viewport[2], saved.viewport[1] + saved.viewport[3], 24, 0);
 			// Match the source format for color resolves from an MSAA target
 			const GLenum format = red == 5 ? GL_RGB565 : red == 10 ? GL_RGB10_A2
 			                                                       : GL_RGBA8;
@@ -693,7 +694,9 @@ extern "C" void ogl_xl_fog_volumes(const short *segments, int count)
 		glGetIntegerv(GL_DEPTH_BITS, &bits);
 		glGetIntegerv(GL_STENCIL_BITS, &stencil);
 		require(saved.viewport[0] >= 0 && saved.viewport[1] >= 0, "Fog requires a nonnegative scene viewport");
-		resize(saved.viewport[0] + saved.viewport[2], saved.viewport[1] + saved.viewport[3], bits, stencil);
+		if (direct_scene_active) {
+			require(saved.draw == static_cast<GLint>(buffers.depth_fbo) && std::equal(saved.viewport, saved.viewport + 4, direct_view), "Direct fog scene target changed during geometry");
+		} else resize(saved.viewport[0] + saved.viewport[2], saved.viewport[1] + saved.viewport[3], bits, stencil);
 		depth_snapshot(saved.draw, saved.viewport);
 		glDisable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
