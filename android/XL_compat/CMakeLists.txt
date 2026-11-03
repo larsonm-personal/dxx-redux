@@ -93,6 +93,7 @@ if(BUILD_TESTING)
             tests/pog_gpu_egl.cpp
             runtime/pog_renderer.cpp
             runtime/particle_renderer.cpp
+            runtime/fog_renderer.cpp
             runtime/lightning_renderer.cpp
             runtime/shield_renderer.cpp
             runtime/particle_resources.cpp
