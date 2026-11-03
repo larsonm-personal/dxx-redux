@@ -11,6 +11,7 @@ from retail_ci_assets import baseline_identity
 REPOSITORY = "larsonm-personal/dxx-redux"
 ASSET_REPOSITORY = "larsonm-personal/dxx-redux-test-assets"
 WORKFLOW = REPOSITORY + "/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake"
+PR_WORKFLOW = REPOSITORY + "/.github/workflows/xl-pr-assets.yml@refs/heads/cmake"
 
 
 def trusted_context(env=None):
@@ -18,8 +19,13 @@ def trusted_context(env=None):
     return (
         env.get("GITHUB_REPOSITORY") == REPOSITORY
         and env.get("GITHUB_REF") == "refs/heads/cmake"
-        and env.get("GITHUB_WORKFLOW_REF") == WORKFLOW
-        and env.get("GITHUB_EVENT_NAME") in ("schedule", "workflow_dispatch")
+        and (
+            (
+                env.get("GITHUB_WORKFLOW_REF") == WORKFLOW
+                and env.get("GITHUB_EVENT_NAME") in ("schedule", "workflow_dispatch")
+            )
+            or (env.get("GITHUB_WORKFLOW_REF") == PR_WORKFLOW and env.get("GITHUB_EVENT_NAME") == "workflow_run")
+        )
     )
 
 

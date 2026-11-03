@@ -60,6 +60,19 @@ on:
         options: [online, jvm-relay]
         default: online
   workflow_call:
+    inputs:
+      campaign:
+        type: string
+        default: ""
+      candidate_pr:
+        type: string
+        default: ""
+      candidate_sha:
+        type: string
+        default: ""
+      source_run_id:
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -68,9 +81,10 @@ env:
   CANDIDATE_PR: ${{ inputs.candidate_pr }}
   CANDIDATE_SHA: ${{ inputs.candidate_sha }}
   CANDIDATE_CAMPAIGN: ${{ inputs.campaign }}
+  XL_SOURCE_RUN_ID: ${{ inputs.source_run_id }}
 
 concurrency:
-  group: ${{ inputs.evidence_run_id && format('online-evidence-{0}', inputs.evidence_run_id) || github.event_name == 'pull_request' && format('nightly-tooling-pr-{0}', github.event.pull_request.number) || (inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports') && format('online-preview-{0}', github.ref) || 'nightly-cmake-tooling-sweep' }}
+  group: ${{ inputs.evidence_run_id && format('online-evidence-{0}', inputs.evidence_run_id) || github.event_name == 'pull_request' && format('nightly-tooling-pr-{0}', github.event.pull_request.number) || (inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports') && format('online-preview-{0}', github.ref) || github.event_name == 'workflow_run' && format('xl-pr-assets-{0}', inputs.candidate_pr) || 'nightly-cmake-tooling-sweep' }}
   cancel-in-progress: false
 
 jobs:
@@ -253,7 +267,7 @@ jobs:
           BASIC_USE: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'basic-use' }}
           XL_BROWSER: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'xl-browser' }}
           XL_ORIGINALS: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'xl-originals' }}
-          XL_FAST: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'xl-fast' }}
+          XL_FAST: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run') && inputs.campaign == 'xl-fast' }}
           XL_TEXTURES: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'xl-textures' }}
           GRAPHICS_CAPABILITIES: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'graphics-capabilities' }}
           RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
@@ -320,8 +334,8 @@ jobs:
       pull-requests: read
     # Keep deployment tracking for trusted retail jobs only
     environment:
-      name: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), 'host') && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'retail-ci' || 'asset-free' }}
-      deployment: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), 'host') && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+      name: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), 'host') && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && ((github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) || (github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/xl-pr-assets.yml@refs/heads/cmake' && github.event_name == 'workflow_run')) && 'retail-ci' || 'asset-free' }}
+      deployment: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), 'host') && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && ((github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) || (github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/xl-pr-assets.yml@refs/heads/cmake' && github.event_name == 'workflow_run')) }}
     env:
       RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
       RETAIL_CHECKOUT_COMMIT: ${{ needs.plan.outputs.retail_commit }}
@@ -557,7 +571,7 @@ jobs:
   publish:
     name: Save nightly progress (scheduled/manual only)
     needs: [plan, finish]
-    if: always() && needs.finish.result == 'success' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'xl-browser' && inputs.campaign != 'xl-textures' && inputs.campaign != 'xl-originals' && inputs.campaign != 'xl-fast' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && inputs.campaign != 'online-transports' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
+    if: always() && needs.finish.result == 'success' && github.event_name != 'workflow_run' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'xl-browser' && inputs.campaign != 'xl-textures' && inputs.campaign != 'xl-originals' && inputs.campaign != 'xl-fast' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && inputs.campaign != 'online-transports' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
