@@ -192,3 +192,14 @@ Full original-archive import/normal hub replay is now running on the owned AVD.
 All prior incomplete staging generations are classified and preserved locally;
 verified duplicate resource backups were removed only from the owned emulator
 to make room, keeping host profile archives and all published bundles.
+
+The complete original import passes 38/38 on 604ecde/version29210; the exact APK
+also passes the 22-step readable missing-camera rejection. All 297 outer files
+restore with matching hashes. Bundle/ZIP identities are retained in the evidence.
+The user rejects command-line installation: the next deliverable must work by
+normal tap-to-install APK and ordinary launcher UI. Add an optional, build-owned
+compatibility asset payload, stage it atomically into a separate app-owned cache,
+and publish its exact installation mount at launch. Keep user content untouched,
+retain strict engine ownership/payload checks, and qualify upgrade/launch with no
+external resource installer. Include only the local candidate's original camera
+HOG and Vertigo HAM; do not commit these binary assets or change general releases.
