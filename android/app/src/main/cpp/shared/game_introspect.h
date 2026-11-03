@@ -18,6 +18,10 @@ extern "C" {
 
 #ifdef INTROSPECT_ON
 
+struct object;
+/* Read-only D2 damage evidence for guided-flight diagnosis */
+void game_introspect_record_player_damage(int damage, int shields_before, const struct object *killer);
+
 /*
  * Returns a heap-allocated JSON string describing the current game state.
  * The caller must free() the returned pointer.
@@ -62,6 +66,13 @@ void game_introspect_check_and_dump(void);
 #else /* !INTROSPECT_ON */
 
 /* Stubs -- compile to nothing on non-introspection builds. */
+struct object;
+static inline void game_introspect_record_player_damage(int damage, int shields_before, const struct object *killer)
+{
+	(void) damage;
+	(void) shields_before;
+	(void) killer;
+}
 static inline char *game_introspect_get_state(void)
 {
 	return (char *) 0;

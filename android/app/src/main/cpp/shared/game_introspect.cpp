@@ -802,6 +802,30 @@ static json serialize_guided_missile()
 }
 #endif
 
+/* Updated only after damage admission; diagnostics never change player state */
+static json last_player_damage = nullptr;
+static unsigned int player_damage_sequence = 0;
+extern "C" void game_introspect_record_player_damage(int damage, int shields_before, const object *killer)
+{
+	last_player_damage = {
+		{ "sequence", ++player_damage_sequence },
+		{ "game_time_raw", GameTime64 },
+		{ "level", Current_level_num },
+		{ "damage", f2fl(damage) },
+		{ "shields_before", f2fl(shields_before) },
+		{ "shields_after", f2fl(shields_before - damage) },
+		{ "killer_type", killer ? killer->type : -1 },
+		{ "killer_id", killer ? killer->id : -1 },
+		{ "killer_signature", killer ? killer->signature : -1 },
+		{ "killer_segment", killer ? killer->segnum : -1 },
+		{ "killer_position", killer ? serialize_scene_point(killer->pos) : json(nullptr) },
+		{ "player_position", ConsoleObject ? serialize_scene_point(ConsoleObject->pos) : json(nullptr) }
+	};
+#ifdef DXX_BUILD_DESCENT_II
+	last_player_damage["guided_missile"] = serialize_guided_missile();
+#endif
+}
+
 /* Read-only scene evidence for ordinary weapon, door and destruction tests */
 static json serialize_surface_asset(int texture)
 {
@@ -3526,6 +3550,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["secret_areas"] = serialize_secret_areas();
 #ifdef DXX_BUILD_DESCENT_II
 		j["guided_missile"] = serialize_guided_missile();
+		j["last_player_damage"] = last_player_damage;
 		j["guidebot"] = serialize_guidebot();
 		j["thief"] = serialize_thief();
 #endif

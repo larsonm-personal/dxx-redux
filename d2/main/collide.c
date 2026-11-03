@@ -94,6 +94,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "d1_in_d2/d1_in_d2_ai.h"
 #include "d1_in_d2/d1_in_d2_weapons.h"
 #include "input_demo_hooks.h"
+#ifdef __ANDROID__
+#include "game_introspect.h"
+#endif
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 #include "input_demo_debug_logging.h"
@@ -2677,6 +2680,9 @@ void apply_damage_to_player(object *playerobj, object *killer, fix damage, ubyte
 		int killer_sig = killer ? killer->signature : -1;
 		int killer_seg = killer ? killer->segnum : -1;
 		Players[Player_num].shields -= damage;
+#ifdef __ANDROID__
+		game_introspect_record_player_damage(damage, old_shields, killer);
+#endif
 		{
 			char extra_json[224];
 			char extra_log[224];
