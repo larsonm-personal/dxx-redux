@@ -1,20 +1,27 @@
 # Original Pumo gameplay playtest
 
-The new [phone fog candidate](../../temp/pumo-phone-color-playtest-20261102/README.md)
+The new [phone candidate](../../temp/pumo-phone-readable-playtest-20261102/README.md)
 includes ARM64, ARMv7 and x86_64, the preserved loading/save and metadata fixes,
 and verified direct scene depth for fog, soft particles and lightning.
-[Manifest](../../temp/pumo-phone-color-playtest-20261102/manifest.json) and
-[ZIP](../../temp/pumo-phone-color-playtest-20261102.zip) retain exact identities and evidence.
+[Manifest](../../temp/pumo-phone-readable-playtest-20261102/manifest.json) and
+[ZIP](../../temp/pumo-phone-readable-playtest-20261102.zip) retain exact identities and evidence.
 
-**Samsung validation of version 29180 is pending.** Version 29080 failed D16
+**The Samsung hub worked on version 29180.** Its next transition reported a
+missing camera addon; authorized read-only inventory confirmed it was absent.
+Version 29210 includes explicit installation-resource ownership and readable
+wrapped errors. Use the bundle installer with `-ImportedMission` to add the
+original camera/Vertigo resources. New phone transition/save acceptance is pending.
+See [resource and dialog evidence](evidence/phone-readable-errors.md).
+
+Version 29080 failed D16
 numeric admission; version 29160 passed D24 admission but failed the first scene
 because its 4x RGB8 source did not match RGBA8 capture. This candidate matches
 the exact color format while retaining strict depth qualification. No alternative
 phone level is verified. See [depth evidence](evidence/fog-direct-depth.md).
 
-Source: `5455715e62b74fdd85ef38110514f758accf7674`, version code **29180**.
+Source: `604ecde157de87e0717b1b651cc0d78ac792d08b`, version code **29210**.
 All six native library IDs match. APK SHA-256:
-`9fd0bb3fd6e3132093a1424ead465bbd27d5a9a2f9c536d693253a743dbf5c75`.
+`cf37935cfffb017d1f51c6b64579c597e860a0d838db43629369e883d09531da`.
 Runtime archive SHA-256:
 `f54be3a7f2b6a6755a85b22d52bcb947379f5d54ecde8df8d329230217db4bbd`.
 Stack: [PR318](https://github.com/larsonm-personal/dxx-redux/pull/318) ->
@@ -23,7 +30,8 @@ Stack: [PR318](https://github.com/larsonm-personal/dxx-redux/pull/318) ->
 [PR322](https://github.com/larsonm-personal/dxx-redux/pull/322) ->
 [draft PR323](https://github.com/larsonm-personal/dxx-redux/pull/323) ->
 [PR324](https://github.com/larsonm-personal/dxx-redux/pull/324) ->
-[PR326](https://github.com/larsonm-personal/dxx-redux/pull/326).
+[PR326](https://github.com/larsonm-personal/dxx-redux/pull/326) ->
+[PR327](https://github.com/larsonm-personal/dxx-redux/pull/327).
 Earlier bundles remain unchanged historical baselines.
 
 Why: depth blits can report success while returning unchanged depth. The new
@@ -35,7 +43,16 @@ No mission rewrite, GPU-name exception or admission bypass is used. Direct scene
 capture is single sampled even with 2x/4x presentation; equivalent scene MSAA is
 not claimed.
 
-Exact-APK qualification on owned Android 14 x86_64 SwiftShader:
+Exact 29210 qualification on owned Android 14 x86_64 SwiftShader:
+
+- Complete original archive imported through launcher: 38/38 PASS, 110.484s.
+  Normal hub door/PMC exit, save/restore and repeated transition reached level 11.
+- Missing-camera rejection and full onscreen dialog: 22/22 PASS, 70.775s.
+- Imported-only installer preserves 15 files; full test baseline restores 297.
+  D1/D2 production resource ownership tests pass. Universal APK assembly passes;
+  JVM suites pass 61/62, with an unresolved Enemy Within archive-import failure.
+
+Prior 29180 qualification on the same owned emulator (not rerun unchanged):
 
 | Check                                                                            | Result                                                   | Boundary                                                              |
 | -------------------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------- |
@@ -63,13 +80,16 @@ From the repository root:
 
 ```powershell
 pwsh -NoProfile -File android/helpers/install_pumo_playtest.ps1 `
-  -Serial YOUR_DEVICE_SERIAL -Bundle temp/pumo-phone-color-playtest-20261102
+  -Serial YOUR_DEVICE_SERIAL -Bundle temp/pumo-phone-readable-playtest-20261102 -ImportedMission
 ```
 
 From an extracted ZIP, run `pwsh -NoProfile -File ./install_pumo_playtest.ps1
--Serial YOUR_DEVICE_SERIAL -Bundle .`. The installer verifies hashes, updates
+-Serial YOUR_DEVICE_SERIAL -Bundle . -ImportedMission`. The installer verifies hashes, updates
 the APK and backs up mission resources. It preserves pilots, saves, settings and
 control mappings. Do not uninstall to resolve a signing mismatch.
+The imported-only mode uses your existing Pumo archive and adds required original
+camera/Vertigo resources. APK-only installation is insufficient. Omit the switch
+only when intentionally installing the historical loose runtime staging.
 
 Choose **Descent 2 > New Game > XL: [-Pumo Mines-] > level 1**, then a difficulty.
 Start a new game or use an unfired checkpoint: old saves retain already-broken
