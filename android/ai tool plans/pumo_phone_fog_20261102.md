@@ -171,3 +171,24 @@ retesting imported Pumo and delivering. The interrupted import attempt restored
 20 explicitly backed-up files; its newly installed loose addons were migrated by
 the launcher outside that backup scope, so reinstall them and protect content
 state/projections and the loose addon directory in the next test generation.
+
+The complete original archive is available locally at
+`game_data/mission_files/d2xxl_downloads/pmines_v11.7z` (SHA-256
+82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf).
+Its HOG and descriptor match the pinned original hashes. The first imported
+control incorrectly repacked the older reduced staging directory, omitting the
+archive's particle textures; its smoke-shadow rejection is a fixture limitation,
+not a phone regression. The root-addon layout clears the Vertigo ownership
+rejection. Keep addon-only `-ImportedMission` mode so the user's already imported
+archive remains authoritative; full loose staging remains explicit without that
+switch. Native D1/D2 scoped controls pass 8 cases each against 604ecde libraries.
+Publication/catalog/file-set JVM suites pass 28 tests; the broader import suite
+passes 33/34, with the real local Enemy Within archive import returning null before
+the changed publication path. Preserve and investigate that separate failure.
+
+The native lifecycle catalog fixture also needs schema 2, without installation
+mounts. This is test-only and does not change the 604ecde/version29210 APK.
+Full original-archive import/normal hub replay is now running on the owned AVD.
+All prior incomplete staging generations are classified and preserved locally;
+verified duplicate resource backups were removed only from the owned emulator
+to make room, keeping host profile archives and all published bundles.
