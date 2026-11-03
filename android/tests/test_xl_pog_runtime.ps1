@@ -24,6 +24,7 @@ param(
     [switch]$MissionFlow,
     [switch]$OpeningPlaytest,
     [switch]$PmcPlaytest,
+    [switch]$SaveIsolation,
     [switch]$PmcSwitchPlaytest,
     [switch]$PmcOpeningGates,
     [switch]$PmcInnerGates,
@@ -51,6 +52,7 @@ param(
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
+if ($SaveIsolation -and (!$PmcPlaytest -or $HubActivation -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates -or $Pmc3Playtest -or $PmcColdResume)) { throw 'SaveIsolation requires PmcPlaytest in its own mode' }
 if ($PmcInnerGates -and (!$PmcPlaytest -or $PmcOpeningGates -or $PmcSwitchPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcInnerGates requires PmcPlaytest in its own mode' }
 if ($PmcOpeningGates -and (!$PmcPlaytest -or $PmcSwitchPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcOpeningGates requires PmcPlaytest in its own mode' }
 if ($PmcSwitchPlaytest -and (!$PmcPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcSwitchPlaytest requires PmcPlaytest in its own mode' }
@@ -165,6 +167,7 @@ if ($Pmc3Opening) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pm
 if ($Pmc3Blue) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-blue' }
 if ($Pmc3Gold) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-gold' }
 if ($HubActivation) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-activation' }
+if ($SaveIsolation) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-save-isolation' }
 if ($Pmc3Playtest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-android' }
 if ($PmcColdResume) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-cold-android' }
 if ($CampaignEnd) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-end-android' }
@@ -405,6 +408,7 @@ try {
         $scriptName = [IO.Path]::GetFullPath((Join-Path $output 'scene.jsonc'))
         ConvertTo-Json -InputObject @($sceneSteps.ToArray()) -Depth 16 | Set-Content -LiteralPath $scriptName -Encoding utf8
     }
+    if ($SaveIsolation) { $scriptName = 'test_xl_pumo_save_isolation.jsonc' }
     # The full original route includes two large checkpoint restores and context loss
     $timeout = if ($MissionFlow) { 1200 } elseif ($OpeningPlaytest) { 900 } else { 480 }
     & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scriptName -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -TimeoutSeconds $timeout
@@ -416,7 +420,7 @@ try {
     if ($testExit -ne 0) { throw "POG runtime failed ($testExit); see $output" }
     $result = Get-Content "$output/result.json" -Raw | ConvertFrom-Json
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete POG runtime result' }
-    if ($PmcColdResume -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates) {
+    if ($SaveIsolation -or $PmcColdResume -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates) {
         if ($PmcBossCombat) {
             $initialState = Get-Content "$output/state.json" -Raw | ConvertFrom-Json
             $initialBoss = @($initialState.level_scene.robots | Where-Object { $_.object -eq 95 -and $_.id -eq 76 })
@@ -436,6 +440,7 @@ try {
         if (!$oldPid) { throw 'PMC cold preparation has no live game process' }
         Invoke-PogAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
         $coldScript = if ($PmcSwitchPlaytest) { 'test_xl_pumo_switches_cold.jsonc' } else { 'test_xl_pumo_pmc_cold.jsonc' }
+        if ($SaveIsolation) { $coldScript = 'test_xl_pumo_save_isolation_cold.jsonc' }
         if ($PmcOpeningGates) { $coldScript = 'test_xl_pumo_opening_gates_cold.jsonc' }
         if ($PmcInnerGates) { $coldScript = 'test_xl_pumo_inner_gates_cold.jsonc' }
         if ($PmcEscape) { $coldScript = 'test_xl_pumo_escape_cold.jsonc' }
@@ -481,7 +486,10 @@ try {
             $coldProof.boss_shields = $initialBoss[0].shields
             $coldProof.boss_damage_matches = $true
         }
-        if ($PmcColdResume) {
+        if ($SaveIsolation) {
+            $coldProof.stock_and_xl_menu_saves_restored = $true
+            Write-Host "PASS: Fresh-process Pumo and stock save menus restore their own runtime and player state ($($coldResult.total_steps) steps)"
+        } elseif ($PmcColdResume) {
             $beforeCheckpoint = ConvertTo-Json -InputObject $initialCheckpoint -Depth 30 -Compress
             $afterCheckpoint = ConvertTo-Json -InputObject $coldState.xl_pog.pmc_checkpoint -Depth 30 -Compress
             if ($beforeCheckpoint -cne $afterCheckpoint) { throw 'PMC cold restore changed persistent player or camera/static robot state' }
@@ -519,7 +527,7 @@ try {
         $coldProof | ConvertTo-Json | Set-Content "$output/cold-proof.json" -Encoding utf8
     }
     Invoke-PogAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-pog.png') | Out-Null
-    $renderPath = if ($PmcColdResume -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates) { "$output/cold-render.png" } else { "$output/render.png" }
+    $renderPath = if ($SaveIsolation -or $PmcColdResume -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates) { "$output/cold-render.png" } else { "$output/render.png" }
     Invoke-PogAdb -Arguments @('pull', '/data/local/tmp/xl-pog.png', $renderPath) | Out-Null
     if ($BubbleGpu) { Write-Host "PASS: Original bubble/smoke multi-image pixels, soft depth, GL state and context recreation ($($result.total_steps) steps); renderer control only" }
     elseif ($BubbleFixture) { Write-Host "PASS: Derived $mission original-payload bubble lifecycle ($($result.total_steps) steps); see the original PMC scenario for campaign qualification" }
@@ -529,6 +537,7 @@ try {
     elseif ($CampaignEnd) { Write-Host "PASS: Original Pumo destination29 ending and menu return ($($result.total_steps) steps); controlled dispatch" }
     elseif ($OpeningPlaytest) { Write-Host "PASS: Original Pumo opening input, damage, death/restart and checkpoint smoke ($($result.total_steps) steps); no human traversal" }
     elseif ($Pmc3Playtest) { Write-Host "PASS: Original PMC3 via PMC1/2 exits: cameras, fixed lightning, combat, restart/save, authored ending and stock-mission return ($($result.total_steps) steps); controlled exits and fixed poses, no human traversal" }
+    elseif ($SaveIsolation) { Write-Host "PASS: Original Pumo and stock save-menu isolation, warm and fresh process; no progression bypass" }
     elseif ($HubActivation) { Write-Host "PASS: Original hub door and PMC exit through laser/thrust, repeated after hub save restore ($($result.total_steps) steps); fixed initial pose, no human traversal" }
     elseif ($PmcOpeningGates) { Write-Host "PASS: Original PMC1 opening unlock/open-wall shots, three gate crossings and warm/cold persistence; fixed poses, no full traversal" }
     elseif ($PmcInnerGates) { Write-Host "PASS: Original PMC1 unlock/master shots, forcefield flight and red-key pickup, blastable wall and warm/cold persistence; fixed poses, no full traversal" }
