@@ -114,6 +114,7 @@ struct newmenu
 	void			*userdata;		// For whatever - like with window system
 #ifdef ANDROID
 	int touch_start_x, touch_start_y;
+	char *android_wrapped_title, *android_wrapped_subtitle;
 	newmenu_item	*android_original_items;
 	int				android_original_nitems;
 	int				android_readable_tiny;
@@ -149,6 +150,16 @@ static int android_newmenu_text_width(const char *text)
 	int w, h, aw;
 	gr_get_string_size(text, &w, &h, &aw);
 	return w;
+}
+
+static const char *newmenu_display_title(newmenu *menu)
+{
+	return menu->android_wrapped_title ? menu->android_wrapped_title : menu->title;
+}
+
+static const char *newmenu_display_subtitle(newmenu *menu)
+{
+	return menu->android_wrapped_subtitle ? menu->android_wrapped_subtitle : menu->subtitle;
 }
 
 static int android_newmenu_uses_readable_tiny(newmenu *menu)
@@ -210,6 +221,8 @@ static void android_newmenu_prepare_fullscreen_contents(newmenu *menu)
 	gr_palette_load(gr_palette);
 }
 #else
+static const char *newmenu_display_title(newmenu *menu) { return menu->title; }
+static const char *newmenu_display_subtitle(newmenu *menu) { return menu->subtitle; }
 static int android_newmenu_uses_readable_tiny(newmenu *menu)
 {
 	(void)menu;
@@ -785,6 +798,12 @@ void game_menu_introspect_read(newmenu *menu, game_menu_introspect_snapshot *sna
 {
 	snapshot->title = menu->title;
 	snapshot->subtitle = menu->subtitle;
+	snapshot->display_title = newmenu_display_title(menu);
+	snapshot->display_subtitle = newmenu_display_subtitle(menu);
+	snapshot->x = menu->x;
+	snapshot->y = menu->y;
+	snapshot->width = menu->w;
+	snapshot->height = menu->h;
 	snapshot->scroll_offset = menu->scroll_offset;
 	snapshot->is_scroll_box = menu->is_scroll_box;
 #ifdef ANDROID
@@ -1728,13 +1747,23 @@ void newmenu_create_structure( newmenu *menu )
 
 	if ( menu->title )	{
 		gr_set_curfont(HUGE_FONT);
-		gr_get_string_size(menu->title,&string_width,&string_height,&average_width );
+#ifdef ANDROID
+		d_free(menu->android_wrapped_title);
+		menu->android_wrapped_title = android_newmenu_wrap_heading(menu->title,
+			(GWIDTH * 9) / 10 - BORDERX * 2, android_newmenu_text_width);
+#endif
+		gr_get_string_size(newmenu_display_title(menu),&string_width,&string_height,&average_width );
 		tw = string_width;
 		th = string_height;
 	}
 	if ( menu->subtitle )	{
 		gr_set_curfont(MEDIUM3_FONT);
-		gr_get_string_size(menu->subtitle,&string_width,&string_height,&average_width );
+#ifdef ANDROID
+		d_free(menu->android_wrapped_subtitle);
+		menu->android_wrapped_subtitle = android_newmenu_wrap_heading(menu->subtitle,
+			(GWIDTH * 9) / 10 - BORDERX * 2, android_newmenu_text_width);
+#endif
+		gr_get_string_size(newmenu_display_subtitle(menu),&string_width,&string_height,&average_width );
 		if (string_width > tw )
 			tw = string_width;
 		th += string_height;
@@ -1957,16 +1986,16 @@ static void newmenu_draw_contents(newmenu *menu)
 	if ( menu->title )	{
 		gr_set_curfont(HUGE_FONT);
 		gr_set_fontcolor( BM_XRGB(31,31,31), -1 );
-		gr_get_string_size(menu->title,&string_width,&string_height,&average_width );
+		gr_get_string_size(newmenu_display_title(menu),&string_width,&string_height,&average_width );
 		th = string_height;
-		gr_string( 0x8000, ty, menu->title );
+		gr_string( 0x8000, ty, newmenu_display_title(menu) );
 	}
 
 	if ( menu->subtitle )	{
 		gr_set_curfont(MEDIUM3_FONT);
 		gr_set_fontcolor( BM_XRGB(21,21,21), -1 );
-		gr_get_string_size(menu->subtitle,&string_width,&string_height,&average_width );
-		gr_string( 0x8000, ty+th, menu->subtitle );
+		gr_get_string_size(newmenu_display_subtitle(menu),&string_width,&string_height,&average_width );
+		gr_string( 0x8000, ty+th, newmenu_display_subtitle(menu) );
 	}
 
 	gr_set_curfont(newmenu_get_body_font(menu));
@@ -2482,6 +2511,8 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 				android_menu_scale_clear();
 				android_menu_interaction_clear();
 				android_newmenu_free_wrapped_items(menu);
+				d_free(menu->android_wrapped_title);
+				d_free(menu->android_wrapped_subtitle);
 			}
 #endif
 			d_free(menu);
@@ -2555,6 +2586,8 @@ newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * 
 	{
 #ifdef ANDROID
 		android_newmenu_free_wrapped_items(menu);
+		d_free(menu->android_wrapped_title);
+		d_free(menu->android_wrapped_subtitle);
 #endif
 		d_free(menu);
 

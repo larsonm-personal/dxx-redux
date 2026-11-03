@@ -9,6 +9,10 @@ extern "C" {
 
 typedef int (*android_newmenu_measure_text)(const char *text);
 
+// Caller owns the returned text; existing newlines and long words are preserved
+char *android_newmenu_wrap_heading(const char *text, int wrap_width,
+                                   android_newmenu_measure_text measure_text);
+
 int android_newmenu_wrap_text_items(const newmenu_item *source, int source_count,
                                     int wrap_width, android_newmenu_measure_text measure_text,
                                     newmenu_item **wrapped, int *wrapped_count);

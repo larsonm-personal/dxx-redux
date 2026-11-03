@@ -122,3 +122,34 @@ launcher-only probe is prepared but unrun. The new phone failure takes priority;
 all 15 pre-explorer files were restored exactly. Earlier rejected candidates
 remain retained. Next: commit, universal build/IDs, exact-APK RGB8 GPU/fog and
 normal hub checks, protected installer, new bundle, then user phone session.
+
+
+## Launcher save-selection validation after RGB8 delivery
+
+The new 5455715/version29180 bundle passes exact RGB8/RGBA8 fog and normal hub
+checks. While awaiting Samsung feedback, repeat the mixed-save setup using the
+official launcher-first runner so game/launcher handoffs share one run ID. Use a
+fresh protected owned-emulator profile backup. Check Save Explorer's selection
+of Pumo and stock saves, preserving distinct player state and mission resources;
+do not infer this from native menu isolation alone. Restore all files afterward.
+
+## Samsung hub accepted; missing addon and clipped dialogs
+
+User reports 5455715/version29180 renders the hub and plays decently, then a warp
+fails with a clipped missing-camera-addon message. Read-only authorized phone
+log/resource inspection confirms original imported pmines_v11.7z is selected,
+D24 checks pass, RGB8 capture works, and neither cambot.hxm nor d2x-xl.hog exists
+under app files. The APK alone cannot supply the external runtime addon. Preserve
+this as bounded human hub acceptance, not save/load or destination qualification.
+
+Next: cap and wrap Android native title/body text using measured font widths in
+both engines, preserve full messages and explicit line breaks, and verify actual
+rendered error bounds on the owned emulator. Deliver with explicit resource
+installation and validate the selected imported-mission route with the addon.
+Do not weaken camera resource ownership/admission or modify original content.
+
+Launcher Save Explorer: official UI discovery passed 5/5; selected Pumo quick
+save restored Temporal Hub with its reduced energy and fog (5/5). Stock row
+selection restored Ahayweh Gate with XL/fog inactive in captured state, but the
+ad-hoc assertion collector timed out; this is not a full automated stock PASS.
+All 15 protected profile files restored and hash-verified before phone follow-up.

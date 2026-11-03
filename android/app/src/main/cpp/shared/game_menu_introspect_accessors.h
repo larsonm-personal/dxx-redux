@@ -5,6 +5,9 @@
 typedef struct game_menu_introspect_snapshot {
 	const char *title;
 	const char *subtitle;
+	const char *display_title;
+	const char *display_subtitle;
+	int x, y, width, height;
 	int scroll_offset;
 	int is_scroll_box;
 	int android_wrapped_text;
