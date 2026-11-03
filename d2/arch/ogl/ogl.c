@@ -694,6 +694,20 @@ static void ogl_draw_bitmap_arrays(GLenum mode, int first, int count, const grs_
 	ogl_xl_rgba_alpha_begin((base && base->bm_type == BM_RGBA) || (overlay && overlay->bm_type == BM_RGBA), &alpha);
 #endif
 	glDrawArrays(mode, first, count);
+#if defined(ANDROID) && defined(DXX_XL_RUNTIME)
+	static int fog_post_reports = 0;
+	if (xl_fog_active() && g_ogl_render_context == 1 && fog_post_reports++ < 16) {
+		GLint bits = 0, attachment = 0, prog = 0;
+		glGetIntegerv(GL_DEPTH_BITS, &bits);
+		glGetIntegerv(GL_CURRENT_PROGRAM, &prog);
+		glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &attachment);
+		GLint location = glGetUniformLocation(prog, "uMVP");
+		if (location < 0) location = glGetUniformLocation(prog, "umat");
+		GLfloat matrix[16] = {0};
+		if (location >= 0) glGetUniformfv(prog, location, matrix);
+		debug_log_force(DLOG_GRAPHICS, "[XL-FOG] after wall bits=%d attachment=%d program=%d uniform=%d projection=%.9g/%.9g/%.9g/%.9g error=%x", bits, attachment, prog, location, matrix[10], matrix[11], matrix[14], matrix[15], glGetError());
+	}
+#endif
 #ifdef DXX_XL_RUNTIME
 	ogl_xl_rgba_alpha_end(&alpha);
 #endif
