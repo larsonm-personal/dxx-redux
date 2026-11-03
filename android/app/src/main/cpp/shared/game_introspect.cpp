@@ -535,6 +535,8 @@ static json serialize_newmenu(void *data)
 	int citem = newmenu_get_citem(menu);
 	const char *title = newmenu_get_title(menu);
 	const char *subtitle = newmenu_get_subtitle(menu);
+	game_menu_introspect_snapshot layout = {};
+	game_menu_introspect_read(menu, &layout);
 
 	/* Get canvas offset so we can report absolute screen positions */
 	window *wind = newmenu_get_window(menu);
@@ -566,6 +568,10 @@ static json serialize_newmenu(void *data)
 		{ "type", "newmenu" },
 		{ "title", title ? title : "" },
 		{ "subtitle", subtitle ? subtitle : "" },
+		{ "display_title", layout.display_title ? layout.display_title : "" },
+		{ "display_subtitle", layout.display_subtitle ? layout.display_subtitle : "" },
+		{ "bounds", { { "x", layout.x }, { "y", layout.y }, { "w", layout.width }, { "h", layout.height } } },
+		{ "fits_screen", layout.x >= 0 && layout.y >= 0 && layout.x + layout.width <= SWIDTH && layout.y + layout.height <= SHEIGHT },
 		{ "selected_index", citem },
 		{ "num_items", nitems },
 		{ "android_readable_tiny", (bool) newmenu_get_android_wrapped_text(menu) },

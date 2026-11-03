@@ -7,6 +7,53 @@
 #include "strutil.h"
 #include "u_mem.h"
 
+char *android_newmenu_wrap_heading(const char *text, int wrap_width,
+                                   android_newmenu_measure_text measure_text)
+{
+	const char *start;
+	char *result, *out, *line;
+	size_t length;
+	if (!text || !measure_text || wrap_width <= 0)
+		return NULL;
+	length = strlen(text);
+	result = (char *) d_malloc(length * 2 + 1);
+	line = (char *) d_malloc(length + 1);
+	if (!result || !line) {
+		d_free(result);
+		d_free(line);
+		return NULL;
+	}
+	out = result;
+	start = text;
+	while (*start) {
+		size_t count = 0, space = 0;
+		while (start[count] && start[count] != '\n') {
+			line[count] = start[count];
+			line[count + 1] = 0;
+			if (measure_text(line) > wrap_width && count > 0)
+				break;
+			if (start[count] == ' ' || start[count] == '\t')
+				space = count;
+			count++;
+		}
+		if (start[count] && start[count] != '\n' && space > 0)
+			count = space;
+		memcpy(out, start, count);
+		out += count;
+		start += count;
+		if (*start == '\n') {
+			*out++ = *start++;
+		} else if (*start) {
+			*out++ = '\n';
+			while (*start == ' ' || *start == '\t')
+				start++;
+		}
+	}
+	*out = 0;
+	d_free(line);
+	return result;
+}
+
 static void trim_copy(char *dst, size_t dst_size, const char *src, size_t src_len)
 {
 	while (src_len > 0 && isspace((unsigned char) *src)) {

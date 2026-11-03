@@ -38,6 +38,7 @@ param(
     [switch]$Pmc3Blue,
     [switch]$Pmc3Gold,
     [switch]$HubActivation,
+    [switch]$MissingCamera,
     [switch]$Pmc3Playtest,
     [switch]$PmcColdResume,
     [string]$CameraHog = '',
@@ -52,6 +53,7 @@ param(
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
+if ($MissingCamera -and (!$HubActivation -or !$PmcPlaytest -or $SaveIsolation)) { throw 'MissingCamera requires the protected HubActivation mode' }
 if ($SaveIsolation -and (!$PmcPlaytest -or $HubActivation -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates -or $Pmc3Playtest -or $PmcColdResume)) { throw 'SaveIsolation requires PmcPlaytest in its own mode' }
 if ($PmcInnerGates -and (!$PmcPlaytest -or $PmcOpeningGates -or $PmcSwitchPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcInnerGates requires PmcPlaytest in its own mode' }
 if ($PmcOpeningGates -and (!$PmcPlaytest -or $PmcSwitchPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcOpeningGates requires PmcPlaytest in its own mode' }
@@ -175,6 +177,7 @@ if ($RevisitFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-revisit-
 if ($FlyoutFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-flyout-cache-android' }
 if ($LightningGpu) { $output = Join-Path $PSScriptRoot '../../temp/xl-lightning-gpu-android' }
 if ($BubbleGpu) { $output = Join-Path $PSScriptRoot '../../temp/xl-bubble-gpu-android' }
+if ($MissingCamera) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-missing-camera' }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 foreach ($name in @('result.json', 'state.json', 'steps.jsonl', 'logcat.txt', 'render.png')) {
@@ -209,6 +212,7 @@ $paths = @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d2x-
 if ($SecretFixture) { $paths += @('files/d2x-redux/secret.sgb', 'files/d2x-redux/secret.sgc') }
 if ($FlyoutFixture) { $paths += 'files/d2x-redux/descent.pig' }
 if ($PmcPlaytest) { $paths += @('files/d2x-redux/missions/d2x-xl.hog', 'files/d2x-redux/missions/d2x.ham') }
+if ($MissingCamera) { $paths += @('files/imported/sets/default/data/d2x-xl.hog', 'files/imported/sets/default/d2x-xl.hog', 'files/imported/sets/default/cambot.hxm', 'files/d2x-redux/missions/cambot.hxm') }
 $ready = $false
 try {
     Invoke-PogAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
@@ -408,6 +412,11 @@ try {
         $scriptName = [IO.Path]::GetFullPath((Join-Path $output 'scene.jsonc'))
         ConvertTo-Json -InputObject @($sceneSteps.ToArray()) -Depth 16 | Set-Content -LiteralPath $scriptName -Encoding utf8
     }
+    if ($MissingCamera) {
+        # This fixed path is included in the protected backup above
+        Invoke-PogPrivate 'rm -f files/d2x-redux/missions/d2x-xl.hog files/imported/sets/default/data/d2x-xl.hog files/imported/sets/default/d2x-xl.hog files/imported/sets/default/cambot.hxm files/d2x-redux/missions/cambot.hxm' | Out-Null
+        $scriptName = 'test_xl_pumo_missing_camera.jsonc'
+    }
     if ($SaveIsolation) { $scriptName = 'test_xl_pumo_save_isolation.jsonc' }
     # The full original route includes two large checkpoint restores and context loss
     $timeout = if ($MissionFlow) { 1200 } elseif ($OpeningPlaytest) { 900 } else { 480 }
@@ -538,6 +547,7 @@ try {
     elseif ($OpeningPlaytest) { Write-Host "PASS: Original Pumo opening input, damage, death/restart and checkpoint smoke ($($result.total_steps) steps); no human traversal" }
     elseif ($Pmc3Playtest) { Write-Host "PASS: Original PMC3 via PMC1/2 exits: cameras, fixed lightning, combat, restart/save, authored ending and stock-mission return ($($result.total_steps) steps); controlled exits and fixed poses, no human traversal" }
     elseif ($SaveIsolation) { Write-Host "PASS: Original Pumo and stock save-menu isolation, warm and fresh process; no progression bypass" }
+    elseif ($MissingCamera) { Write-Host "PASS: Original hub exit rejects missing camera addon with a complete on-screen dialog; no progression granted" }
     elseif ($HubActivation) { Write-Host "PASS: Original hub door and PMC exit through laser/thrust, repeated after hub save restore ($($result.total_steps) steps); fixed initial pose, no human traversal" }
     elseif ($PmcOpeningGates) { Write-Host "PASS: Original PMC1 opening unlock/open-wall shots, three gate crossings and warm/cold persistence; fixed poses, no full traversal" }
     elseif ($PmcInnerGates) { Write-Host "PASS: Original PMC1 unlock/master shots, forcefield flight and red-key pickup, blastable wall and warm/cold persistence; fixed poses, no full traversal" }
