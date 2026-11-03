@@ -23,6 +23,8 @@ const char *android_mission_assets_key(void);
 const char *android_mission_assets_context_json(void);
 int android_mission_assets_resolve_key(const char *key, char *mission_path, size_t capacity);
 unsigned android_mission_assets_generation(void);
+/* Exact enabled file-set installation mounts, excluding mission contexts and mods */
+int android_mission_assets_owns_installation(const char *source);
 /* A file from this selected context only; never a global or sibling fallback */
 int android_mission_assets_find_owned_file(const char *path, char *resolved, size_t capacity);
 /* Static-name TGA lookup; caller supplies the selected HOG and validates decoded opacity */

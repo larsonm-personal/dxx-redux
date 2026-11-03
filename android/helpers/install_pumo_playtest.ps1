@@ -54,4 +54,4 @@ Write-Output "Verified camera/Vertigo addons in $RetailDataDirectory/data for im
 Write-Output 'The APK alone does not install these runtime assets; keep this bundle and its installer together'
 Write-Output 'Launch Descent 2, select New Game, XL: [-Pumo Mines-], level 1, and your preferred difficulty'
 if ($manifest.launch_notes) { Write-Output $manifest.launch_notes }
-else { Write-Output 'Choose the Mineral Valley route in Temporal Hub; PMC Data Storage Center remains unsupported' }
+else { Write-Output 'Start in Temporal Hub; see this bundle README for tested routes and remaining campaign limits' }

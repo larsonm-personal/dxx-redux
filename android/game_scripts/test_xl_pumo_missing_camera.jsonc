@@ -105,6 +105,11 @@
         "axis_value": 0.0,
     },
     {
+        "action": "key",
+        "post_delay_ms": 500,
+        "key": "enter",
+    },
+    {
         "timeout_ms": 20000,
         "action": "wait_for",
         "expect": {
