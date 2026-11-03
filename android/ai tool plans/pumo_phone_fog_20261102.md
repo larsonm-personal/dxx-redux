@@ -36,3 +36,26 @@ runner dismissed an early load warning, so resource staging must be checked.
 - Share the numerically qualified direct scene with soft particles only while loaded XL resources require it. Borrow texture depth during color-only draws, detach depth/stencil references to avoid feedback, then restore attachments and GL state. Preserve original shader fade equations and require known scene dimensions on ES 3.0.
 - Native production GPU controls pass, including 18 copied/direct depth and stencil cases. Both fog paths pass. Context restoration must reuse the pre-geometry qualification instead of resizing the live scene during a particle probe.
 - Next: commit, build all three Android ABIs, verify embedded identities, run original entry and normal fog tests on the exact APK, then package the ARM candidate with physical-device limits explicit.
+
+## Normal save-menu isolation
+
+After the delivered depth candidate and its exact-APK renderer checks, exercise
+ordinary user save/load across original Pumo and Counterstrike in a separate
+protected mode. Keep Pumo's quick slot and a distinct stock named slot; consume
+laser energy before the Pumo save so restoration can be distinguished from a
+fresh level. Verify the stock level name, inactive XL runtime/fog, unpaused input,
+and both slots again after killing only the owned game process. No keys, health,
+progression or exit dispatch are used. Retain warm/cold run IDs and profile hashes.
+The missing original player.sg8 remains unavailable, so this cannot establish
+recovery of that particular older save.
+
+The native load menu intentionally follows the last saved mission, not all mission
+slots. The first menu probe incorrectly expected Pumo's quick slot while the
+stock set was active. Preserve that failed receipt as a test assumption error.
+Reselect each mission through ordinary new-game/abort before opening its slots;
+this writes its abort autosave while preserving the quick and named manual saves.
+This does not cover the launcher's separate Save Explorer selection UI.
+
+Completed:68 warm and39 fresh-process steps pass on exact delivered4abb2b47.
+All286 protected files restored; see ../XL_compat/evidence/pumo-stock-save-isolation.md.
+No engine change was required for the mission-specific load menu behavior.

@@ -39,6 +39,11 @@ Exact-APK qualification on owned Android 14 x86_64 SwiftShader:
 | Bundled installer                                                                | 14 protected files unchanged; installed APK hash matches | Owned emulator, not a physical phone                                  |
 | Rendered GuideBot authored PMC exit                                              | Unsupported after 548 physics frames                     | Companion reached exit; XL rejected activation; no progression credit |
 
+Supplementary [Pumo/stock save isolation](evidence/pumo-stock-save-isolation.md)
+passes68 warm and39 fresh-process steps on that same APK. Both mission saves
+restore distinct player state; all286 protected files match after the run.
+The native load menu follows the last saved mission; it is not a combined list.
+
 The previous [selector bundle](../../temp/pumo-selector-playtest-20261102/README.md)
 and all older bundles remain historical baselines. This candidate retains
 [repeatable selectors](evidence/pmc2-selectors.md),
@@ -135,8 +140,8 @@ relaxing actor rules or dispatching exits directly.
 A separate [normal guided-missile pilot](evidence/pmc3-guided-pilot.md) uses debug
 candidate28820 to observe the active projectile. Original ammo, local combat and
 flight through the first grate were exercised; switch3, clean release and the
-red-key route remain unqualified. This candidate does not replace the recommended
-published28810 bundle.
+red-key route remain unqualified. That historical diagnostic candidate is separate
+from the current version29080 phone fog candidate described above.
 
 ## Boundaries and feedback
 
@@ -145,7 +150,8 @@ published28810 bundle.
 - PMC3 opening, blue/gold-key and finale receipts supplement the bundle; the
   red-key route remains unqualified
 - Physical ARM, touch ergonomics, controller acceptance and device performance
-  need user feedback; device tests here use an owned x86_64 emulator with host GPU
+  need user feedback; historical route tests used an owned x86_64 host-GPU emulator.
+  The version29080 depth candidate uses an owned x86_64 SwiftShader emulator
 - Large levels and save restores can take tens of seconds on the emulator
 - One 28810 launch stalled during graphics initialization with an automation
   broadcast ANR; four later menu launches and three clean quit/relaunch cycles
