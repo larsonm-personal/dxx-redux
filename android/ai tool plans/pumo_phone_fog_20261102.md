@@ -69,3 +69,25 @@ before changing gameplay. Initial investigation is bounded to about one hour.
 Require normal guided-missile contact with authored switch3 before reporting
 red-route access. Keep original ammunition, health, actor rules and mission data.
 A partial flight or timeout remains a probe limit, not a gameplay defect.
+
+## Renewed physical-phone rejection, November 2 at 15:10 PST
+
+The user confirms candidate 4abb2b47/version 29080 still rejects original pm-hub.rl2
+on Samsung SM-S931U / Adreno 830. The warning is too wide to read. With explicit
+read-only ADB authorization, two phone log captures show D24 transfer 0.625,
+D16 transfer 0.624511719, and D16 direct sampling 0.624511719 (expected 0.625).
+The guided pilot is paused; all 13 protected emulator profile files were restored.
+The earned checkpoint and partial-flight evidence remain in pmc3-guided-damage.md.
+
+The production EGL request uses 16-bit depth, so ignoring the D16 copy failure is
+unsafe. Instead, test both copy formats and, when either fails, qualify only the
+D24 direct texture actually used for scene rendering. Keep the strict 0.0001
+sampling/raster bounds, including non-finite rejection. Short diagnostic lines
+carry expected/observed values. Add a native D16-copy failure control, require a
+D24 direct qualification, and retain normal geometry/MSAA/GL-state checks.
+
+Next: run native GPU and Windows builds, commit before universal Android build,
+verify all six embedded IDs, protect/restore the owned emulator profile, and test
+the exact APK before publishing a new retained bundle. The physical phone is
+read-only authorized; installation and a live play session remain with the user.
+Candidate 29080 is a historical emulator-qualified, phone-rejected baseline.
