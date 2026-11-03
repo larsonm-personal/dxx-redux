@@ -83,7 +83,9 @@ if(BUILD_TESTING)
         target_compile_definitions(xl_fog_gpu_test PRIVATE OGL DXX_XL_DEVELOPER_PROBE)
         target_link_libraries(xl_fog_gpu_test PRIVATE OpenGL::OpenGL OpenGL::EGL GLEW::GLEW)
         add_test(NAME xl_fog_gpu COMMAND xl_fog_gpu_test)
+        add_test(NAME xl_fog_gpu_direct COMMAND xl_fog_gpu_test --direct)
         set_tests_properties(xl_fog_gpu PROPERTIES TIMEOUT 60)
+        set_tests_properties(xl_fog_gpu_direct PROPERTIES TIMEOUT 60)
         find_path(XL_GPU_SDL_INCLUDE SDL.h PATH_SUFFIXES SDL REQUIRED)
         find_path(XL_GPU_PHYSFS_INCLUDE physfs.h REQUIRED)
         add_executable(
@@ -91,6 +93,7 @@ if(BUILD_TESTING)
             tests/pog_gpu_egl.cpp
             runtime/pog_renderer.cpp
             runtime/particle_renderer.cpp
+            runtime/fog_renderer.cpp
             runtime/lightning_renderer.cpp
             runtime/shield_renderer.cpp
             runtime/particle_resources.cpp

@@ -91,9 +91,12 @@ void production_geometry()
 					glClearColor(.25f, .5f, .75f, 1.f);
 					glClearDepth((1.f + (5001.f - 10000.f / 300.f) / 4999.f) * .5f);
 					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+					ogl_xl_fog_begin_scene();
+					glClear(GL_DEPTH_BUFFER_BIT);
 					ogl_xl_fog_scene_request();
 					ogl_xl_fog_volumes(segments, 2);
 					ogl_xl_fog_composite();
+					ogl_xl_fog_end_scene();
 					xl_fog_scene_result scene{};
 					ogl_xl_fog_scene_result(&scene);
 					check(scene.completed && scene.passed && scene.pixels == 25 && scene.covered == 25 && scene.changed == (zero ? 0 : 25), "Production fog geometry/culling did not cover its control view");
@@ -119,13 +122,14 @@ void production_geometry()
 	std::cout << "Production volume geometry: " << cases << " projected/culling controls, max error " << max_error << '\n';
 }
 } // namespace
-int main()
+int main(int argc, char **argv)
 {
 	EGLDisplay display = EGL_NO_DISPLAY;
 	EGLContext context = EGL_NO_CONTEXT;
 	EGLSurface surface = EGL_NO_SURFACE;
 	int result = 1;
 	try {
+		if (argc == 2 && !std::strcmp(argv[1], "--direct")) ogl_xl_fog_force_direct_probe();
 		display = eglGetPlatformDisplay(EGL_PLATFORM_SURFACELESS_MESA, EGL_DEFAULT_DISPLAY, nullptr);
 		check(display != EGL_NO_DISPLAY && eglInitialize(display, nullptr, nullptr), "Cannot initialize surfaceless EGL");
 		check(eglBindAPI(EGL_OPENGL_API), "Cannot select desktop OpenGL");
@@ -167,13 +171,22 @@ int main()
 			std::cout << "Scene readback control: " << scene.pixels << " pixels, " << scene.covered << " covered, " << scene.changed << " changed, max error " << scene.max_error << '\n';
 		}
 		production_geometry();
+		xl_fog_diagnostics capture{};
+		ogl_xl_fog_diagnostics(&capture);
+		if (argc == 2) check(capture.direct_depth && capture.direct_scenes > 0, "Forced direct fog path was not exercised");
+		// Retiring renderer resources must rebuild before the next scene begins
+		ogl_xl_fog_destroy(0);
+		production_geometry();
 		active = false;
 		xl_fog_diagnostics before{}, after{};
 		ogl_xl_fog_diagnostics(&before);
+		ogl_xl_fog_begin_scene();
 		ogl_xl_fog_volumes(nullptr, 0);
 		ogl_xl_fog_composite();
+		ogl_xl_fog_end_scene();
 		ogl_xl_fog_diagnostics(&after);
 		check(before.volume_passes == after.volume_passes && before.composite_passes == after.composite_passes, "Inactive fog submitted GPU work");
+		check(before.direct_scenes == after.direct_scenes, "Inactive fog redirected a stock scene");
 		ogl_xl_fog_destroy(0);
 		result = 0;
 	} catch (const std::exception &error) {

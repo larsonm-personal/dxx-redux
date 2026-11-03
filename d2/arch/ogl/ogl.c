@@ -2359,6 +2359,9 @@ void ogl_start_frame(void){
 		glViewport(grd_curcanv->cv_bitmap.bm_x, camera_height - grd_curcanv->cv_bitmap.bm_y - Canvas_height, Canvas_width, Canvas_height);
 	else
 		OGL_VIEWPORT(grd_curcanv->cv_bitmap.bm_x,grd_curcanv->cv_bitmap.bm_y,Canvas_width,Canvas_height);
+#ifdef DXX_XL_RUNTIME
+	ogl_xl_fog_begin_scene();
+#endif
 #ifdef ANDROID
 	/* Android compositor uses framebuffer alpha for surface blending;
 	 * clear to alpha=1 to prevent the activity background showing through */
@@ -2445,6 +2448,9 @@ void ogl_start_frame(void){
 }
 
 void ogl_end_frame(void){
+#ifdef DXX_XL_RUNTIME
+	ogl_xl_fog_end_scene();
+#endif
 	int camera_target = 0, camera_width = 0, camera_height = 0;
 #ifdef DXX_XL_RUNTIME
 	camera_target = xl_camera_target_active_dimensions(&camera_width, &camera_height);

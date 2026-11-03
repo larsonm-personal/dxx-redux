@@ -72,6 +72,15 @@ try {
 	const auto plain = image(2, 2, 3, { 1, 254, 255, 7 });
 	const auto indexed = xl_compat::read_pog(plain.data(), plain.size(), 2620).at(0);
 	require(!indexed.truecolor && indexed.flags == 3 && indexed.pixels == std::vector<unsigned char>({ 1, 254, 255, 7 }), "indexed bytes changed");
+	require(indexed.palette_flags == 3, "indexed palette keys were not counted");
+	const auto stale = image(2, 2, 3, { 1, 2, 3, 7 });
+	require(xl_compat::read_pog(stale.data(), stale.size(), 2620).at(0).palette_flags == 0, "stale header flags created palette keys");
+	const auto missing = image(2, 1, 0, { 254, 255 });
+	require(xl_compat::read_pog(missing.data(), missing.size(), 2620).at(0).palette_flags == 3, "palette keys depended on header flags");
+	const auto keyed_rle = image(2, 1, 8, { 10, 0, 0, 0, 5, 0xe1, 254, 0xe1, 255, 0xe0 });
+	require(xl_compat::read_pog(keyed_rle.data(), keyed_rle.size(), 2620).at(0).palette_flags == 3, "RLE palette keys were not decoded");
+	const auto escaped_run = image(31, 1, 8, { 8, 0, 0, 0, 3, 255, 7, 0xe0 });
+	require(xl_compat::read_pog(escaped_run.data(), escaped_run.size(), 2620).at(0).palette_flags == 0, "RLE run control was counted as a transparent pixel");
 	const auto rle = image(2, 2, 8, { 12, 0, 0, 0, 3, 3, 0xe2, 5, 0xe0, 0xe2, 8, 0xe0 });
 	require(xl_compat::read_pog(rle.data(), rle.size(), 2620).at(0).pixels.size() == 12, "valid RLE rejected");
 	auto bad_rle = rle;

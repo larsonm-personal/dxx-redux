@@ -1,4 +1,6 @@
 // Controlled normal-frame pixels, GPU cases, persistence, MSAA and context recreation
+// Direct capture is single-sampled; presentation_samples checks the selected target.
+// The scene probe independently validates capture samples against the active path.
 [
     {
         "_info": {
@@ -363,7 +365,7 @@
                 "gte": 1,
             },
             "xl_fog.failures": 0,
-            "xl_fog.scene_probe.samples": 2,
+            "xl_fog.scene_probe.presentation_samples": 2,
         },
     },
     {
@@ -427,7 +429,7 @@
                 "gte": 1,
             },
             "xl_fog.failures": 0,
-            "xl_fog.scene_probe.samples": 4,
+            "xl_fog.scene_probe.presentation_samples": 4,
         },
     },
     {
@@ -473,7 +475,7 @@
                 "gte": 1,
             },
             "xl_fog.failures": 0,
-            "xl_fog.scene_probe.samples": 0,
+            "xl_fog.scene_probe.presentation_samples": 0,
         },
     },
     {
@@ -935,7 +937,7 @@
                 "gte": 1,
             },
             "xl_fog.failures": 0,
-            "xl_fog.scene_probe.samples": 2,
+            "xl_fog.scene_probe.presentation_samples": 2,
         },
     },
     {
@@ -1015,7 +1017,7 @@
                 "gte": 1,
             },
             "xl_fog.failures": 0,
-            "xl_fog.scene_probe.samples": 2,
+            "xl_fog.scene_probe.presentation_samples": 2,
         },
     },
     {
@@ -1067,7 +1069,7 @@
                 "gte": 1,
             },
             "xl_fog.failures": 0,
-            "xl_fog.scene_probe.samples": 0,
+            "xl_fog.scene_probe.presentation_samples": 0,
         },
     },
     {
