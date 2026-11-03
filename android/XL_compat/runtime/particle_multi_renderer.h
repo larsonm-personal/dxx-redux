@@ -57,11 +57,8 @@ void draw_particle_multi(GLuint smoke, GLuint bubble, const xl_compat::ParticleQ
 	if (soft) {
 		prepare_particle_soft();
 		verify_particle_soft_depth();
-		if (!particle_soft.captured) {
-			particle_soft.depth.capture();
-			particle_soft.captured = true;
-		}
 	}
+	ParticleDepthRead depth(particle_soft.depth, particle_soft.captured, soft);
 	GLfloat matrix[16]{};
 #ifdef ANDROID
 	std::copy_n(gles3_shim_get_mvp(), 16, matrix);
@@ -84,9 +81,9 @@ void draw_particle_multi(GLuint smoke, GLuint bubble, const xl_compat::ParticleQ
 	glUniform1i(glGetUniformLocation(program, "softDepth"), soft ? 1 : 0);
 	glUniform1i(glGetUniformLocation(program, "bSuspended"), 0);
 	glUniform3f(glGetUniformLocation(program, "dMax"), 5, 3, 5);
-	if (soft) glUniform2f(glGetUniformLocation(program, "windowScale"), 1.f / particle_soft.depth.width, 1.f / particle_soft.depth.height);
+	if (soft) glUniform2f(glGetUniformLocation(program, "windowScale"), 1.f / depth.width, 1.f / depth.height);
 	// The active source table uses smoke.tga for both smoke and spark samplers
-	const GLuint images[]{ smoke, smoke, bubble, soft ? particle_soft.depth.texture : smoke };
+	const GLuint images[]{ smoke, smoke, bubble, soft ? depth.texture : smoke };
 	for (unsigned unit = 0; unit < 4; ++unit) {
 		glActiveTexture(GL_TEXTURE0 + unit);
 		glBindTexture(GL_TEXTURE_2D, images[unit]);

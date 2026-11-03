@@ -146,10 +146,7 @@ void draw_soft_particles(GLuint image, const xl_compat::ParticleQuad *quads, std
 	ParticleSoftRestore restore;
 	prepare_particle_soft();
 	verify_particle_soft_depth();
-	if (!particle_soft.captured) {
-		particle_soft.depth.capture();
-		particle_soft.captured = true;
-	}
+	ParticleDepthRead depth(particle_soft.depth, particle_soft.captured);
 	GLfloat matrix[16]{};
 #ifdef ANDROID
 	std::copy_n(gles3_shim_get_mvp(), 16, matrix);
@@ -166,11 +163,11 @@ void draw_soft_particles(GLuint image, const xl_compat::ParticleQuad *quads, std
 	glUniformMatrix4fv(glGetUniformLocation(particle_soft.program, "mvp"), 1, GL_FALSE, matrix);
 	glUniform1i(glGetUniformLocation(particle_soft.program, "particleTex"), 0);
 	glUniform1i(glGetUniformLocation(particle_soft.program, "depthTex"), 1);
-	glUniform2f(glGetUniformLocation(particle_soft.program, "windowScale"), 1.f / particle_soft.depth.width, 1.f / particle_soft.depth.height);
+	glUniform2f(glGetUniformLocation(particle_soft.program, "windowScale"), 1.f / depth.width, 1.f / depth.height);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, image);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, particle_soft.depth.texture);
+	glBindTexture(GL_TEXTURE_2D, depth.texture);
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
 	glDisable(GL_CULL_FACE);

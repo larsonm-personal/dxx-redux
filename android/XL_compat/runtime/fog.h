@@ -12,6 +12,7 @@ int xl_fog_boundary_points(int segment, int side, int near_cap, int32_t points[4
 const char *ogl_xl_fog_prepare(void);
 void ogl_xl_fog_begin_scene(void);
 void ogl_xl_fog_end_scene(void);
+int ogl_xl_fog_direct_depth_dimensions(int *width, int *height);
 void ogl_xl_fog_volumes(const short *segments, int count);
 void ogl_xl_fog_composite(void);
 void ogl_xl_fog_destroy(int lost_context);
