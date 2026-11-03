@@ -66,7 +66,7 @@ payloads, mission content, unrelated flags, and resource ownership remain intact
 - Exact candidate fog suite: 208/208 PASS, run
   `706382a8d1f94666805525f14b44e116`, 160083ms. Both protected runs restore all
   14 files exactly. Bundled installer also preserves those 14 files and the
-  installed APK hash matches. Physical Samsung validation remains pending.
+  installed APK hash matches. The later Samsung test rejected this candidate; see below.
 - Native production GPU checks include 18 copied/direct depth and stencil cases
   with analytical soft fading, unchanged scene depth and restored attachments,
   plus existing lightning and camera controls. Windows rendered build passes.
@@ -82,3 +82,42 @@ laser contacts, monitor draws, restart/save and background/context restoration.
 This uses controlled exits and fixed firing poses; it is not earned campaign
 progression. Receipts are supplementary in
 `temp/xl-phone-fog-20261102/pmc-4abb2b4-pass`; the delivered ZIP remains unchanged.
+
+## Samsung D16 precision failure and D24 qualification correction
+
+The user confirms version 29080 rejects original pm-hub.rl2 on Samsung SM-S931U /
+Adreno 830. The warning is clipped. Explicitly authorized read-only ADB logs show,
+on two launches, D24 transfer = 0.625, D16 transfer = 0.624511719, and D16 direct
+sampling = 0.624511719, all against expected 0.625. The phone runs Android 17 SDK37,
+OpenGL ES 3.2 driver V@0800.64.8. This is a numeric format failure, not evidence
+that the phone shares SwiftShader's unchanged-copy behavior.
+
+The EGL surface requests 16-bit depth, so D24 copy success alone cannot qualify
+ordinary capture. Source 18d06ec392adf8a3c1b00a8694907904bb4b3e6e tests both copy
+formats, then qualifies the actual D24 direct texture if either source format
+fails. It no longer requires unused D16 direct rendering. Clear sampling at
+0.625 and actual raster sampling at 0.5 retain the strict 0.0001 tolerance and
+non-finite rejection. The diagnostic records direct_depth_bits, and failures
+use short lines with actual/expected values. Phone rendering remains unverified
+until the user tries this new candidate; there is no GPU-name exception.
+
+Windows D2 builds. All four native GPU tests pass, including simulated D16-copy
+failure with real D24 clear/raster checks and an explicit qualified-format
+assertion. Existing normal geometry, depth/stencil, state restoration, MSAA
+presentation and resource rebuild controls pass. Scoped quality and 19 CI
+receipt/inventory tests pass. The source was committed before the universal
+Android build. All six ARM64/ARMv7/x86_64 native IDs match version 29160; APK
+SHA-256 b9b85aa50fb6e4a2e00362772c05788746e6441b99ea2e4cb5789c21ecaa6d7c.
+Exact APK: hub 36/36 PASS, run 51d0725d353c42c0becbac338c6c21f6, 63518ms,
+287 protected files restored. Fog 208/208 PASS, run
+94eb94add1cb4579ac017195fec5a01b, 142842ms, 15 protected files restored.
+The exact bundled installer also preserves all 15 protected files and the
+installed APK hash matches. Rendered evidence was inspected. Universal build
+succeeds in 2m29s. Bundle: temp/pumo-phone-depth24-playtest-20261102,
+ZIP SHA-256 ee2de892f633cc4feaf1cc9ea9ffa085ac184d0c3df14b3528504925012a89d8.
+The runtime archive is unchanged from the previous bundle. The user has been
+asked for a short live session; no physical acceptance is implied.
+
+Phone log evidence: temp/xl-phone-fog-20261102/samsung-debuglog-150904.txt and
+samsung-debuglog-151108.txt. Physical phone access was read-only; no installation,
+force-stop, clearing or settings changes were performed on it.
