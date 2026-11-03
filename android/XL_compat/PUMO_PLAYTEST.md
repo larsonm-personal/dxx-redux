@@ -1,26 +1,30 @@
 # Original Pumo gameplay playtest
 
-The new [phone fog candidate](../../temp/pumo-phone-fog-playtest-20261102/README.md)
+The new [phone fog candidate](../../temp/pumo-phone-depth24-playtest-20261102/README.md)
 includes ARM64, ARMv7 and x86_64, the preserved loading/save and metadata fixes,
 and verified direct scene depth for fog, soft particles and lightning.
-[Manifest](../../temp/pumo-phone-fog-playtest-20261102/manifest.json) and
-[ZIP](../../temp/pumo-phone-fog-playtest-20261102.zip) retain exact identities and evidence.
+[Manifest](../../temp/pumo-phone-depth24-playtest-20261102/manifest.json) and
+[ZIP](../../temp/pumo-phone-depth24-playtest-20261102.zip) retain exact identities and evidence.
 
-**Physical Samsung SM-S931U / Adreno 830 remains untested.** The earlier phone
-build rejected required fog depth transfer. The owned SwiftShader emulator
-reproduced the broken transfer and now passes the new capture path. This ARM
-candidate is ready for a short live session; no alternative phone level is
-claimed verified. See [depth evidence](evidence/fog-direct-depth.md).
+**Samsung SM-S931U / Adreno 830 rejects the previous version 29080.** Phone
+logs show D24 copying passes while D16 copying/direct sampling is inaccurate.
+This candidate qualifies the D24 direct scene texture actually used whenever
+either source copy format fails. The numeric guard remains strict. A live phone
+session on this new build is requested; no alternative phone level is verified.
+See [depth evidence](evidence/fog-direct-depth.md).
 
-Source: `4abb2b47dab5915d898959089fed8b826d669372`, version code **29080**.
+Source: `18d06ec392adf8a3c1b00a8694907904bb4b3e6e`, version code **29160**.
 All six native library IDs match. APK SHA-256:
-`5d535b74c71de7a416a0f7f0555fb40e51215f59b69bd94796fce33f149f7788`.
+`b9b85aa50fb6e4a2e00362772c05788746e6441b99ea2e4cb5789c21ecaa6d7c`.
 Runtime archive SHA-256:
 `f54be3a7f2b6a6755a85b22d52bcb947379f5d54ecde8df8d329230217db4bbd`.
-Stack: [PR318](https://github.com/larsonm-personal/dxx-redux/pull/318),
-[PR320](https://github.com/larsonm-personal/dxx-redux/pull/320),
-[PR321](https://github.com/larsonm-personal/dxx-redux/pull/321).
-Later branch commits repair CI inventories only; the APK remains pinned above.
+Stack: [PR318](https://github.com/larsonm-personal/dxx-redux/pull/318) ->
+[PR320](https://github.com/larsonm-personal/dxx-redux/pull/320) ->
+[PR321](https://github.com/larsonm-personal/dxx-redux/pull/321) ->
+[PR322](https://github.com/larsonm-personal/dxx-redux/pull/322) ->
+[draft PR323](https://github.com/larsonm-personal/dxx-redux/pull/323) ->
+[PR324](https://github.com/larsonm-personal/dxx-redux/pull/324).
+Earlier bundles remain unchanged historical baselines.
 
 Why: depth blits can report success while returning unchanged depth. The new
 path qualifies direct clears and raster writes numerically, captures normal
@@ -34,14 +38,14 @@ Exact-APK qualification on owned Android 14 x86_64 SwiftShader:
 
 | Check                                                                            | Result                                                   | Boundary                                                              |
 | -------------------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------- |
-| Original hub door and PMC exit, repeated after hub save/load                     | 36/36 PASS, 83.164s                                      | Normal laser/thrust; fixed local approaches                           |
-| Fog geometry, save/rewind, stock transitions, MSAA presentation and context loss | 208/208 PASS, 160.083s                                   | Seven derived levels; controlled pixel/geometry checks                |
-| Bundled installer                                                                | 14 protected files unchanged; installed APK hash matches | Owned emulator, not a physical phone                                  |
-| Rendered GuideBot authored PMC exit                                              | Unsupported after 548 physics frames                     | Companion reached exit; XL rejected activation; no progression credit |
+| Original hub door and PMC exit, repeated after hub save/load                     | 36/36 PASS, 63.518s                                      | Normal laser/thrust; fixed local approaches                           |
+| Fog geometry, save/rewind, stock transitions, MSAA presentation and context loss | 208/208 PASS, 142.842s                                   | Seven derived levels; controlled pixel/geometry checks                |
+| Bundled installer                                                                | 15 protected files unchanged; installed APK hash matches | Owned emulator, not a physical phone                                  |
+| Rendered GuideBot authored PMC exit                                              | Prior 4abb2b47: unsupported after 548 physics frames     | Companion reached exit; XL rejected activation; no progression credit |
 
 Supplementary [Pumo/stock save isolation](evidence/pumo-stock-save-isolation.md)
-passes68 warm and39 fresh-process steps on that same APK. Both mission saves
-restore distinct player state; all286 protected files match after the run.
+passes 68 warm and 39 fresh-process steps on prior 4abb2b47/version 29080. Both mission saves
+restore distinct player state; all 286 protected files match after the run.
 The native load menu follows the last saved mission; it is not a combined list.
 
 The previous [selector bundle](../../temp/pumo-selector-playtest-20261102/README.md)
@@ -58,7 +62,7 @@ From the repository root:
 
 ```powershell
 pwsh -NoProfile -File android/helpers/install_pumo_playtest.ps1 `
-  -Serial YOUR_DEVICE_SERIAL -Bundle temp/pumo-phone-fog-playtest-20261102
+  -Serial YOUR_DEVICE_SERIAL -Bundle temp/pumo-phone-depth24-playtest-20261102
 ```
 
 From an extracted ZIP, run `pwsh -NoProfile -File ./install_pumo_playtest.ps1
