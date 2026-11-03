@@ -305,6 +305,9 @@ void texture(GLuint *name, int width, int height, GLenum internal, GLenum format
 void resize(int width, int height, int bits, int stencil)
 {
 	if (buffers.width == width && buffers.height == height && buffers.bits == bits && buffers.stencil == stencil) return;
+#ifdef __ANDROID__
+	debug_log_force(DLOG_GRAPHICS, "[XL-FOG] resize active=%d old=%dx%d/%d/%d new=%dx%d/%d/%d", direct_scene_active, buffers.width, buffers.height, buffers.bits, buffers.stencil, width, height, bits, stencil);
+#endif
 	require(width > 0 && height > 0 && bits >= 16, "Fog requires a valid scene viewport and depth buffer");
 	release_buffers(false);
 	for (int pair = 0; pair < 2; ++pair) {
@@ -634,6 +637,13 @@ extern "C" void ogl_xl_fog_begin_scene(void)
 			errors("Direct fog scene color preservation");
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, buffers.depth_fbo);
+		if (diagnostics.direct_scenes < 4) {
+#ifdef __ANDROID__
+			GLint name = 0;
+			glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &name);
+			debug_log_force(DLOG_GRAPHICS, "[XL-FOG] begin scene=%u depth=%u attached=%d bits=%d stencil=%d", buffers.depth_fbo, buffers.depth, name, buffers.bits, buffers.stencil);
+#endif
+		}
 		direct_scene_active = true;
 		++diagnostics.direct_scenes;
 	} catch (const std::exception &error) {
