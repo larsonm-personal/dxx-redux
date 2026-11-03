@@ -561,7 +561,25 @@ void init_extra_robot_movie(char *filename);
 //loads the specfied mission from the mission list.
 //build_mission_list() must have been called.
 //Returns true if mission loaded ok, else false.
+static int load_mission_internal(mle *mission);
+#ifdef __ANDROID__
+#include "android_loading_progress.h"
+#endif
 int load_mission(mle *mission)
+{
+#ifdef __ANDROID__
+	const int owns_progress = !android_loading_progress_is_active();
+	if (owns_progress) android_loading_progress_begin("Loading mission", 0);
+	android_loading_progress_update(mission->mission_name, 0, 0);
+#endif
+	const int loaded = load_mission_internal(mission);
+#ifdef __ANDROID__
+	if (owns_progress) android_loading_progress_end();
+#endif
+	return loaded;
+}
+
+static int load_mission_internal(mle *mission)
 {
 	PHYSFS_file *mfile;
 	char buf[PATH_MAX], *v;

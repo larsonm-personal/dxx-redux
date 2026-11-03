@@ -1,6 +1,7 @@
 /* Complete Android asset-context resets; do not retain filename/index-only caches */
 #include "android_mission_assets.h"
 #include "android_log.h"
+#include "android_loading_progress.h"
 #include "args.h"
 #include "bm.h"
 #include "digi.h"
@@ -68,6 +69,7 @@ void android_mission_asset_reset_before(void)
 
 void android_mission_asset_reset_baseline(void)
 {
+	android_loading_progress_update("Loading base game resources", 0, 0);
 #ifdef DXX_BUILD_DESCENT_II
 	debug_log_force(DLOG_GAME, "[ASSETS] baseline reset content=d%d mission='%s' native_d1=%d",
 	                d1_in_d2_use_d1_gameplay() ? 1 : 2,

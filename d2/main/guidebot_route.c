@@ -279,7 +279,13 @@ void escort_route_save_runtime(guidebot_save_stream *s)
 	GB_FIELD(s, Escort_nav_liveness_anchor.z, GB_SIGNED);
 	GB_FIELD(s, Escort_nav_liveness_signature, GB_SIGNED);
 	GB_FIELD(s, Escort_nav_liveness_last_progress_time, GB_CLOCK);
-	GB_ARRAY(s, Escort_route_activated_triggers, GB_BYTES);
+	{
+		const size_t count = s->trigger_capacity ? s->trigger_capacity : sizeof(Escort_route_activated_triggers);
+		if (count > sizeof(Escort_route_activated_triggers)) { s->ok = 0; return; }
+		guidebot_save_field(s, Escort_route_activated_triggers, 1, count, GB_BYTES);
+		if (!s->writing && s->apply && s->ok)
+			memset(Escort_route_activated_triggers + count, 0, sizeof(Escort_route_activated_triggers) - count);
+	}
 	GB_FIELD(s, Escort_route_avoid_from_seg, GB_SIGNED);
 	GB_FIELD(s, Escort_route_avoid_seg, GB_SIGNED);
 	GB_FIELD(s, Escort_route_avoid_from_seg2, GB_SIGNED);

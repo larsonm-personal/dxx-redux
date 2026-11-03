@@ -35,6 +35,30 @@ internal class PackageDocumentChecks(
     ) {
         val deadline = SystemClock.elapsedRealtime() + 15_000
         while (!condition()) {
+            if (SystemClock.elapsedRealtime() >= deadline) {
+                fun dump(
+                    current: AccessibilityNodeInfo,
+                    depth: Int,
+                ) {
+                    Log.i(
+                        "DXX-Documents",
+                        "${" ".repeat(
+                            depth,
+                        )}text=${current.text} description=${current.contentDescription} scrollable=${current.isScrollable}",
+                    )
+                    for (i in 0 until current.childCount) current.getChild(i)?.let { dump(it, depth + 1) }
+                }
+                instrumentation.uiAutomation.rootInActiveWindow?.let { dump(it, 0) }
+                instrumentation.uiAutomation.takeScreenshot()?.let { bitmap ->
+                    File(
+                        instrumentation.targetContext.getExternalFilesDir(null),
+                        "package-documents-failure.png",
+                    ).outputStream().use {
+                        bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+                    }
+                    bitmap.recycle()
+                }
+            }
             check(SystemClock.elapsedRealtime() < deadline) { message }
             Thread.sleep(40)
         }
@@ -69,6 +93,94 @@ internal class PackageDocumentChecks(
                 false
             }
         }
+    }
+
+    private fun runMissionFileList(
+        activity: SetupActivity,
+        root: File,
+    ) {
+        val fixtureRoot = File(root, "mission-files").apply { mkdirs() }
+        val archive = File(fixtureRoot, "mods/files.zip").apply { parentFile!!.mkdirs() }
+        ZipOutputStream(archive.outputStream()).use { zip ->
+            fun entry(
+                name: String,
+                bytes: ByteArray,
+            ) {
+                zip.putNextEntry(ZipEntry(name))
+                zip.write(bytes)
+                zip.closeEntry()
+            }
+            entry("files.mn2", "name = File browser fixture\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+            entry("files.hog", "DHF".toByteArray())
+            entry("level01.rl2", ByteArray(16))
+            for (index in 0..29) entry("00tone%02d.wav".format(index), ByteArray(16))
+        }
+        val scan = checkNotNull(MissionZip.inspect(archive))
+        MissionZipExtractionStore(fixtureRoot).ensureExtracted(archive.name, archive, scan)
+        val mod =
+            ModManager.ModInfo(
+                archive.name,
+                "File browser fixture",
+                false,
+                0,
+                archive.length(),
+                "d2",
+                0,
+                MissionZip.KIND,
+            )
+        val details = ModManager(fixtureRoot).getModDetails(mod, fixtureRoot)
+        check(details.missionZip != null)
+        instrumentation.runOnMainSync {
+            activity.setContent { MaterialTheme { ModDetailsDialog(mod, details, false, null, 0, fixtureRoot) {} } }
+        }
+        reveal("00tone00.wav")
+        var list = checkNotNull(node("00tone00.wav"))
+        while (!list.isScrollable) list = checkNotNull(list.parent)
+
+        fun hasArrow(
+            node: AccessibilityNodeInfo,
+            label: String,
+        ): Boolean {
+            node.refresh()
+            if (node.contentDescription?.toString() == label) return true
+            return (0 until node.childCount).any { node.getChild(it)?.let { child -> hasArrow(child, label) } == true }
+        }
+        waitFor("Files list has no independent down arrow") {
+            list.refresh()
+            val outer = checkNotNull(list.parent)
+            if (hasArrow(outer, "Scroll down")) {
+                true
+            } else {
+                outer.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+                instrumentation.waitForIdleSync()
+                Thread.sleep(200)
+                false
+            }
+        }
+        click("tone00.wav")
+        visible("No additional metadata for this file type")
+        check(node("Reading extracted file metadata") == null)
+        click("Close")
+        visible("File browser fixture")
+        reveal("tone00.wav")
+        list = checkNotNull(node("tone00.wav"))
+        while (!list.isScrollable) list = checkNotNull(list.parent)
+        check(list.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD))
+        instrumentation.waitForIdleSync()
+        waitFor("Files list has no independent up arrow") {
+            list.refresh()
+            hasArrow(checkNotNull(list.parent), "Scroll up")
+        }
+        val limitation =
+            runBlocking {
+                scanMissionMovies(
+                    instrumentation.targetContext,
+                    LevelMetadataTarget(displayName = "Pumo fixture", game = "d2", sourceType = "mission"),
+                    listOf(XlCompatibilityReport("pmines.hog", "eligible", "", emptyList(), true)),
+                )
+            }
+        check(limitation.status == "unsupported_format")
+        Log.i("DXX-Documents", "PASS: extracted media details, independent Files arrows and XL movie boundary")
     }
 
     fun run(verifyPublished: Boolean = false) {
@@ -261,6 +373,7 @@ internal class PackageDocumentChecks(
             check(loadCalls.get() == 4)
             click("Close")
             visible("Recommended mods")
+            runMissionFileList(activity, root)
         } finally {
             instrumentation.removeMonitor(external)
             instrumentation.runOnMainSync { activity.finish() }

@@ -986,74 +986,71 @@ internal fun ModDetailsDialog(
                                 details.missionZip.constituents
                                     .groupingBy { portableGameFilenameIdentity(it.name) }
                                     .eachCount()
-                            Column(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .heightIn(max = 260.dp)
-                                        .verticalScroll(fileListScrollState),
-                            ) {
-                                details.missionZip.constituents.forEach { constituent ->
-                                    val catalog = details.missionZipMusic
-                                    val songList =
-                                        catalog?.let {
-                                            MissionZipMusic.songListForPath(
-                                                it,
-                                                constituent.path,
-                                            )
-                                        }
-                                    OutlinedButton(
-                                        onClick = {
-                                            if (catalog != null && songList != null) {
-                                                musicDialogTarget = MissionZipMusicDialogTarget(catalog, songList)
-                                            } else {
-                                                constituentTarget = constituent
+                            Box(Modifier.fillMaxWidth().heightIn(max = 260.dp)) {
+                                Column(Modifier.fillMaxWidth().verticalScroll(fileListScrollState)) {
+                                    details.missionZip.constituents.forEach { constituent ->
+                                        val catalog = details.missionZipMusic
+                                        val songList =
+                                            catalog?.let {
+                                                MissionZipMusic.songListForPath(
+                                                    it,
+                                                    constituent.path,
+                                                )
                                             }
-                                        },
-                                        shape = MaterialTheme.shapes.small,
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(bottom = 4.dp),
-                                    ) {
-                                        Column(modifier = Modifier.fillMaxWidth()) {
-                                            Text(
-                                                if (
-                                                    (
-                                                        duplicateNames[
-                                                            portableGameFilenameIdentity(
-                                                                constituent.name,
-                                                            ),
-                                                        ] ?: 0
-                                                    ) >
-                                                    1
-                                                ) {
-                                                    constituent.path
+                                        OutlinedButton(
+                                            onClick = {
+                                                if (catalog != null && songList != null) {
+                                                    musicDialogTarget = MissionZipMusicDialogTarget(catalog, songList)
                                                 } else {
-                                                    constituent.name
-                                                },
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                            )
-                                            Text(
-                                                if (songList != null) {
-                                                    "Song list, ${songList.references.size} entries, ${
-                                                        setupSectionFormatSize(constituent.sizeBytes)
-                                                    }"
-                                                } else {
-                                                    "${missionZipRoleLabel(constituent.role)}, ${
-                                                        setupSectionFormatSize(constituent.sizeBytes)
-                                                    }"
-                                                },
-                                                fontSize = 11.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
+                                                    constituentTarget = constituent
+                                                }
+                                            },
+                                            shape = MaterialTheme.shapes.small,
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(bottom = 4.dp),
+                                        ) {
+                                            Column(modifier = Modifier.fillMaxWidth()) {
+                                                Text(
+                                                    if (
+                                                        (
+                                                            duplicateNames[
+                                                                portableGameFilenameIdentity(
+                                                                    constituent.name,
+                                                                ),
+                                                            ] ?: 0
+                                                        ) >
+                                                        1
+                                                    ) {
+                                                        constituent.path
+                                                    } else {
+                                                        constituent.name
+                                                    },
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                )
+                                                Text(
+                                                    if (songList != null) {
+                                                        "Song list, ${songList.references.size} entries, ${
+                                                            setupSectionFormatSize(constituent.sizeBytes)
+                                                        }"
+                                                    } else {
+                                                        "${missionZipRoleLabel(constituent.role)}, ${
+                                                            setupSectionFormatSize(constituent.sizeBytes)
+                                                        }"
+                                                    },
+                                                    fontSize = 11.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                )
+                                            }
                                         }
                                     }
                                 }
+                                SetupScrollArrows(fileListScrollState)
                             }
                         } else if (details.categories.isEmpty()) {
                             ModDetailLine("No readable archive entries")
@@ -1850,6 +1847,7 @@ private fun formatMissionZipMusicDuration(durationMs: Int): String {
 private data class MetadataDetailLoadResult(
     val metadata: GameFileMetadata.Summary?,
     val levelMetadataTarget: LevelMetadataTarget?,
+    val problem: String? = null,
 )
 
 @Composable
@@ -1891,21 +1889,32 @@ private fun MissionZipConstituentDialog(
                 1,
                 4,
             )
-        val metadata =
+        val readStarted = android.os.SystemClock.elapsedRealtime()
+        RouteMetadataDiagnostics.log("File metadata start path=${constituent.path} extracted=${extractedEntry != null}")
+        val readResult =
             withContext(kotlinx.coroutines.Dispatchers.IO) {
                 runCatching {
-                    extractedEntry
-                        ?.let { GameFileMetadata.summarizeLocalFile(it.file) }
-                        ?: GameFileMetadata.summarizeZipConstituent(File(archive), constituent.path, constituent.name)
-                }.getOrNull()
+                    GameFileMetadata.summarizeZipConstituent(
+                        File(archive),
+                        constituent.path,
+                        constituent.name,
+                        extractedEntry?.file,
+                    )
+                }
             }
+        val metadata = readResult.getOrNull()
+        RouteMetadataDiagnostics.log(
+            "File metadata complete path=${constituent.path} " +
+                "elapsed_ms=${android.os.SystemClock.elapsedRealtime() - readStarted} " +
+                "error=${readResult.exceptionOrNull()?.message.orEmpty()}",
+        )
         metadataProgress = MetadataLoadProgress("Preparing level metadata entry", 2, 4)
         val target =
             withContext(kotlinx.coroutines.Dispatchers.IO) {
                 runCatching { LevelMetadataTargets.zipConstituent(archive, setDir, constituent, metadata) }.getOrNull()
             }
         metadataProgress = MetadataLoadProgress("Preparing metadata view", 3, 4)
-        metadataResult = MetadataDetailLoadResult(metadata, target)
+        metadataResult = MetadataDetailLoadResult(metadata, target, readResult.exceptionOrNull()?.message)
         metadataProgress = MetadataLoadProgress("Metadata ready", 4, 4)
     }
 
@@ -1962,6 +1971,10 @@ private fun MissionZipConstituentDialog(
                                 onClick = { levelMetadataTarget = target },
                                 modifier = Modifier.padding(top = 4.dp, bottom = 6.dp),
                             )
+                        }
+                        loadedMetadata.problem?.let { ModDetailLine(it, color = MaterialTheme.colorScheme.error) }
+                        if (loadedMetadata.metadata == null && loadedMetadata.problem == null) {
+                            ModDetailLine("No additional metadata for this file type")
                         }
                         FileMetadataDetails(loadedMetadata.metadata)
                     }
@@ -3302,7 +3315,7 @@ private fun LevelMetadataDialog(
             )
         movieScanning = true
         xlReports = inspectXlCompatibilityTarget(target)
-        movieScan = scanMissionMovies(context, target)
+        movieScan = scanMissionMovies(context, target, xlReports)
         movieScanning = false
         result =
             LevelMetadataAnalyzer.analyze(context, target) { update ->
@@ -3373,7 +3386,7 @@ private fun LevelMetadataDialog(
                             scope.launch {
                                 movieScanning = true
                                 try {
-                                    movieScan = scanMissionMovies(context, target)
+                                    movieScan = scanMissionMovies(context, target, xlReports)
                                 } finally {
                                     movieScanning = false
                                 }

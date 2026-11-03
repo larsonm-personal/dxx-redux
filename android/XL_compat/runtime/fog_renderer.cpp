@@ -13,6 +13,9 @@ extern "C" {
 #include "3d.h"
 #include "ogl_init.h"
 #include "dxxerror.h"
+#ifdef __ANDROID__
+#include "android_log.h"
+#endif
 }
 #include "fog.h"
 #include "../fog_shader.h"
@@ -364,7 +367,7 @@ void verify_depth_transfer()
 		glGenRenderbuffers(1, &color);
 		glGenRenderbuffers(1, &depth);
 		const GLint view[4] = { 0, 0, 1, 1 };
-		for (int bits : { 16, 24 }) {
+		for (int bits : { 24, 16 }) {
 			diagnostics.depth_copy_bits = bits;
 			resize(1, 1, bits, 0);
 			glBindFramebuffer(GL_FRAMEBUFFER, scene);
@@ -394,8 +397,27 @@ void verify_depth_transfer()
 			GLfloat observed[4]{};
 			glReadPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, observed);
 			diagnostics.depth_copy_value = observed[0];
+#ifdef __ANDROID__
+			debug_log_force(DLOG_GRAPHICS, "[XL-FOG] depth transfer bits=%d expected=0.625 observed=%.9g", bits, observed[0]);
+#endif
 			errors("Fog scene-depth transfer check");
-			require(std::abs(observed[0] - .625f) < .0001f, "XL fog requires working scene-depth transfer; this graphics driver did not preserve depth");
+			if (!(std::abs(observed[0] - .625f) < .0001f)) {
+				// Separate a transfer failure from depth-texture sampling failure
+				glBindFramebuffer(GL_FRAMEBUFFER, buffers.depth_fbo);
+				glDepthMask(GL_TRUE);
+				clear_depth(.625f);
+				glClear(GL_DEPTH_BUFFER_BIT);
+				glBindFramebuffer(GL_FRAMEBUFFER, buffers.fbo[0]);
+				draw(quad, 6);
+				GLfloat direct[4]{};
+				glReadPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, direct);
+				errors("Fog direct-depth sampling check");
+#ifdef __ANDROID__
+				debug_log_force(DLOG_GRAPHICS, "[XL-FOG] direct depth sampling bits=%d expected=0.625 observed=%.9g", bits, direct[0]);
+#endif
+				throw std::runtime_error("XL fog scene-depth transfer failed.\nExpected 0.625, read " + std::to_string(observed[0]) +
+				                         " (" + std::to_string(bits) + " bit).\nRequired fog cannot be drawn safely.");
+			}
 		}
 	} catch (...) {
 		release();

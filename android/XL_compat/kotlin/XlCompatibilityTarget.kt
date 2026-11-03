@@ -12,7 +12,7 @@ internal suspend fun xlCompatibilityAnalysisFailure(target: LevelMetadataTarget)
         source = target.displayName,
         game = target.game,
         problem =
-            "Feature and movie inspection are available above. " +
+            "XL feature inspection is available above. " +
                 "Route simulation and classic-engine level statistics are not available for this XL format.",
         diagnostics = blockers.map { "${it.source}: ${it.summary}" },
         failureKind = "unsupported_format",
