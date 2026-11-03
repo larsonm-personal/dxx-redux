@@ -51,6 +51,7 @@ internal const val PREF_GUIDEBOT_HELPER_LINE = "guidebot_helper_line_enabled"
 internal const val PREF_PERSIST_GUIDEBOT_GOAL = "persist_guidebot_goal_message"
 internal const val PREF_NEAREST_PLAYER_LINE = "nearest_player_line_enabled"
 internal const val PREF_SKIP_INTRO_MOVIE = "skip_intro_movie"
+internal const val PREF_SHOW_PROGRESS_BARS = "show_progress_bars"
 internal const val PREF_REWIND_SUPPORT_ENABLED = "rewind_support_enabled"
 internal const val PREF_REWIND_TARGET_SECONDS = "rewind_target_seconds"
 internal const val PREF_HEADLIGHT_OFF_BY_DEFAULT = "headlight_off_by_default"
@@ -128,6 +129,8 @@ fun EnginePreferencesPage(
         mutableStateOf(prefs.getBoolean(PREF_SKIP_INTRO_MOVIE, false))
     }
     var savedSkipIntroMovie by remember { mutableStateOf(skipIntroMovie) }
+    var showProgressBars by remember { mutableStateOf(prefs.getBoolean(PREF_SHOW_PROGRESS_BARS, true)) }
+    var savedShowProgressBars by remember { mutableStateOf(showProgressBars) }
     var rewindSupportEnabled by remember {
         mutableStateOf(prefs.getBoolean(PREF_REWIND_SUPPORT_ENABLED, true))
     }
@@ -160,6 +163,7 @@ fun EnginePreferencesPage(
             originalHoming != savedOriginalHoming ||
             showGuidebotLine != savedShowGuidebotLine ||
             skipIntroMovie != savedSkipIntroMovie ||
+            showProgressBars != savedShowProgressBars ||
             rewindSupportEnabled != savedRewindSupportEnabled ||
             serverCoopQol != savedServerCoopQol
 
@@ -222,6 +226,7 @@ fun EnginePreferencesPage(
                     .putInt(PREF_GUIDEBOT_ROUTING_MODE, guidebotRoutingMode)
                     .putBoolean(PREF_REWIND_SUPPORT_ENABLED, rewindSupportEnabled)
                     .putBoolean(PREF_SKIP_INTRO_MOVIE, skipIntroMovie)
+                    .putBoolean(PREF_SHOW_PROGRESS_BARS, showProgressBars)
                     .putBoolean(HostGameDefaults.COOP_QOL_PREF, serverCoopQol)
                     .putLong(
                         PREF_GRAPHICS_SETTINGS_GENERATION,
@@ -230,6 +235,7 @@ fun EnginePreferencesPage(
                 savedServerCoopQol = serverCoopQol
                 savedRewindSupportEnabled = rewindSupportEnabled
                 savedSkipIntroMovie = skipIntroMovie
+                savedShowProgressBars = showProgressBars
                 savedShowGuidebotLine = showGuidebotLine
                 if (preset != null) MidiPreviewBridge.resetPreferences(context, preset)
             } catch (_: Exception) {
@@ -295,6 +301,7 @@ fun EnginePreferencesPage(
                     serverCoopQol = preset.serverCoopQol
                     rewindSupportEnabled = preset.rewindEnabled
                     skipIntroMovie = preset.skipIntroMovie
+                    showProgressBars = true
                     originalHoming = preset.originalHoming
                     if (preset == GameSettingsPreset.DEFAULTS) {
                         cockpitMode = CM_FULL_COCKPIT
@@ -636,6 +643,21 @@ fun EnginePreferencesPage(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
 
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Switch(
+                        checked = showProgressBars,
+                        onCheckedChange = {
+                            showProgressBars = it
+                            statusMessage =
+                                "Progress bars changed - press Save to apply"
+                        },
+                        modifier = Modifier.tvFocusBorder(),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Show progress bars", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                }
+                Text("Show loading progress in games and previews, including XL resource loading", fontSize = 9.sp)
+                Spacer(modifier = Modifier.height(8.dp))
                 Text("Gameplay", fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(

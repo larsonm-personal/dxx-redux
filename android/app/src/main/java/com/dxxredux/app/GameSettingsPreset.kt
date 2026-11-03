@@ -89,6 +89,7 @@ internal enum class GameSettingsPreset(
                 add(PresetSettingPreview("Show first boot graphics chooser", true))
                 add(PresetSettingPreview("HUD filtering", hudFiltering))
                 add(PresetSettingPreview("Skip intro movie on launch", skipIntroMovie))
+                add(PresetSettingPreview("Show progress bars", true))
                 add(PresetSettingPreview("Autoselect Only Once", false))
                 add(PresetSettingPreview("Original homing (Single/Coop)", originalHoming))
                 add(PresetSettingPreview("MIDI renderer", value = "MIDI soundfont"))

@@ -106,6 +106,15 @@ class LoadingProgressOverlayView(
         percent: Int,
     ) {
         hideHandler.removeCallbacks(hideRunnable)
+        if (!context
+                .getSharedPreferences(
+                    "dxx_prefs",
+                    Context.MODE_PRIVATE,
+                ).getBoolean(PREF_SHOW_PROGRESS_BARS, true)
+        ) {
+            visibility = GONE
+            return
+        }
         itemLabel = formatLoadingProgressText(item)
         progressPercent = percent.coerceIn(-1, 100)
         visibility = VISIBLE

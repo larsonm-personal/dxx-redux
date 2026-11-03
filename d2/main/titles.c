@@ -1374,6 +1374,13 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 						break;
 				}
 			check_text_pos(br);
+			// Overflow pages wait for input just like authored $P/$S pages
+			if (br->new_page || br->new_screen) {
+				if (br->printing_channel > -1)
+					digi_stop_sound(br->printing_channel);
+				br->printing_channel = -1;
+				br->chattering = 0;
+			}
 
 			if (br->background.bm_data)
 				show_fullscr(&br->background);
@@ -1428,6 +1435,8 @@ void android_briefing_text_snapshot(android_briefing_text_state *state)
 	br = (briefing *)window_get_data(front);
 	state->active = 1;
 	state->page_ready = br->new_page || br->new_screen;
+	state->printing_sound = br->chattering && br->printing_channel > -1;
+	state->overflow_page = br->new_page && !br->coop_authored_page_done;
 	snprintf(state->background, sizeof(state->background), "%s", br->background_name);
 	for (int i = 0; i < br->streamcount && i < 2048; ++i) {
 		state->text[i] = br->messagestream[i].ch;

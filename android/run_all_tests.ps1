@@ -546,6 +546,7 @@ $testTimeouts = @{
     "test_d2xxl_texture_animation" = 3600
     "test_demo_import" = 2400
     "test_enemy_within_import" = 1200
+    "test_xl_addon_import" = 240
     # Both retail save/load fixtures precede the live pause and presentation probes
     "test_android_pause_state" = 1200
     "test_audio_mix" = 900
