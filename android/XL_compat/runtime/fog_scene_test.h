@@ -66,6 +66,9 @@ void scene_before(GLuint scene, const GLint view[4])
 	try {
 		scene_result.types = prepared_types;
 		scene_result.depth_bits = buffers.bits;
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, direct_scene_active ? direct_target : scene);
+		glGetIntegerv(GL_SAMPLES, &scene_result.presentation_samples);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, saved.draw);
 		float settings[4][4]{};
 		require(xl_fog_colors(settings), "Normal frame lost authored fog settings");
 		{
@@ -78,6 +81,7 @@ void scene_before(GLuint scene, const GLint view[4])
 				for (int c = 0; c < 3; ++c) pixel.expected[c] = pixel.before[c] / 255.f;
 			}
 		}
+		require(scene_result.samples == (direct_scene_active ? 0 : scene_result.presentation_samples), "Fog scene sample count does not match its capture path");
 		probe = compile("uniform sampler2D depthTex; uniform vec2 sampleUV; void main() { gl_FragColor = vec4(texture2D(depthTex, sampleUV).r); }");
 		texture(&color, 1, 1, GL_RGBA32F, GL_RGBA, GL_FLOAT);
 		glGenFramebuffers(1, &target);

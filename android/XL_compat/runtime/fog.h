@@ -20,6 +20,7 @@ struct xl_fog_diagnostics {
 	int width, height, depth_bits, last_types, depth_copy_bits;
 	float depth_copy_value;
 	int direct_depth;
+	int alignment_reserved; /* Keep direct_scenes aligned under MSVC pack(1) too. */
 	uint64_t direct_scenes;
 };
 void ogl_xl_fog_diagnostics(struct xl_fog_diagnostics *out);
@@ -31,7 +32,7 @@ const char *ogl_xl_fog_gpu_probe(struct xl_fog_gpu_result *result);
 void ogl_xl_fog_force_direct_probe(void);
 #endif
 struct xl_fog_scene_result {
-	int completed, passed, pixels, covered, changed, types, samples, depth_bits, max_error;
+	int completed, passed, pixels, covered, changed, types, samples, presentation_samples, depth_bits, max_error;
 	float center_depth, center_caps[8], max_length;
 	int center_before[3], center_after[3], center_expected[3];
 };
