@@ -16,6 +16,7 @@
 
 extern "C" {
 #include "android_log.h"
+#include "android_loading_progress.h"
 #include "dxxerror.h"
 #include "ignorecase.h"
 }
@@ -31,6 +32,7 @@ std::vector<std::string> mounted;
 std::vector<std::string> acquired;
 int active = -1, pending = -1;
 bool enabled, transitioning;
+bool free_progress;
 unsigned generation;
 #if defined(__ANDROID__) && defined(INTROSPECT_ON) && defined(DXX_XL_RUNTIME)
 bool test_fail_second_acquisition;
@@ -253,7 +255,12 @@ int android_mission_assets_activate(void)
 
 void android_mission_assets_free_begin(void)
 {
-	if (enabled && !transitioning) android_mission_asset_reset_before();
+	if (enabled && !transitioning) {
+		free_progress = !android_loading_progress_is_active();
+		if (free_progress) android_loading_progress_begin("Restoring game assets", 0);
+		android_loading_progress_update("Releasing mission resources", 0, 0);
+		android_mission_asset_reset_before();
+	}
 }
 
 void android_mission_assets_free_end(void)
@@ -263,6 +270,8 @@ void android_mission_assets_free_end(void)
 	++generation;
 	android_mission_asset_reset_baseline();
 	debug_log_force(DLOG_GAME, "[ASSETS] restored base generation=%u", generation);
+	if (free_progress) android_loading_progress_end();
+	free_progress = false;
 }
 
 int android_mission_assets_discover(const char *descriptor)

@@ -217,13 +217,13 @@ static bool continuity_equal(json left, json right)
 	right.erase("rng_calls");
 	return left == right;
 }
-static bool continuity_payload_validation()
+static bool continuity_payload_validation_capacity(unsigned trigger_capacity)
 {
 
 	const json before = continuity_state();
 	PHYSFS_file *file = PHYSFS_openWrite("guidebot-runtime.bin");
 	if (!file) return false;
-	guidebot_save_stream stream = { file, 1, 0, 1, GameTime64, 0 };
+	guidebot_save_stream stream = { file, 1, 0, 1, GameTime64, 0, trigger_capacity };
 	const bool written = escort_save_runtime(&stream) && (PHYSFS_sint64) stream.bytes == PHYSFS_tell(file);
 
 	PHYSFS_close(file);
@@ -251,8 +251,18 @@ static bool continuity_payload_validation()
 		PHYSFS_close(file);
 		if (valid == (truncated != 0) || !continuity_equal(before, continuity_state())) return false;
 	}
+	file = PHYSFS_openRead("guidebot-runtime.bin");
+	if (!file) return false;
+	stream = { file, 0, 1, 1, GameTime64, 0 };
+	const bool applied = escort_save_runtime(&stream) && stream.bytes == bytes.size();
+	PHYSFS_close(file);
+	if (!applied || !continuity_equal(before, continuity_state())) return false;
 
 	return true;
+}
+static bool continuity_payload_validation()
+{
+	return continuity_payload_validation_capacity(0) && continuity_payload_validation_capacity(100);
 }
 static int audit_save_continuity(const char *output)
 {

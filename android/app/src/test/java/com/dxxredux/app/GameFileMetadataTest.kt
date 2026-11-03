@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.ByteArrayOutputStream
@@ -10,6 +11,29 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 class GameFileMetadataTest {
+    @Test
+    fun uninspectedMediaDoesNotReopenItsArchive() {
+        val archive =
+            File.createTempFile("unreadable-original", ".7z").apply {
+                deleteOnExit()
+                writeText("This archive must never be opened for media metadata")
+            }
+        for (extension in listOf("ogg", "wav", "tga", "txt")) {
+            val local = File.createTempFile("extracted-media", ".$extension").apply { deleteOnExit() }
+            assertNull(GameFileMetadata.summarizeZipConstituent(archive, "media/file.$extension", local.name, local))
+            assertNull(GameFileMetadata.summarizeZipConstituent(archive, "media/file.$extension", "file.$extension"))
+        }
+        val descriptor =
+            File.createTempFile("extracted-mission", ".mn2").apply {
+                deleteOnExit()
+                writeText("name = Extracted fixture\nnum_levels = 1\nlevel01.rl2\n")
+            }
+        assertEquals(
+            "Mission descriptor",
+            GameFileMetadata.summarizeZipConstituent(archive, "mission.mn2", descriptor.name, descriptor)?.format,
+        )
+    }
+
     @Test
     fun summarizesUneasyStyleHog() {
         val hog = File.createTempFile("Uneasy4", ".hog")

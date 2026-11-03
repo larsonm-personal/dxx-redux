@@ -16,6 +16,7 @@ internal data class MissionMovieScan(
         get() =
             when {
                 missing.isNotEmpty() -> "Missing movies (${missing.size}): ${missing.joinToString(", ")}"
+                status == "unsupported_format" -> "Movie inspection is not available for this XL format"
                 status == "not_applicable" -> "This mission uses in-engine presentation rather than movie files"
                 status != "ok" -> "Movie scan incomplete"
                 required.isEmpty() -> "No movie references found"
@@ -23,6 +24,19 @@ internal data class MissionMovieScan(
             }
 
     companion object {
+        fun compatibilityLimitation(reports: List<XlCompatibilityReport>): MissionMovieScan? =
+            if (reports.analysisBlockers().isEmpty()) {
+                null
+            } else {
+                MissionMovieScan(
+                    "unsupported_format",
+                    emptyList(),
+                    emptyList(),
+                    emptyList(),
+                    listOf("Movie references remain unverified. XL feature inspection is available separately."),
+                )
+            }
+
         fun fromJson(json: JSONObject): MissionMovieScan {
             fun strings(key: String): List<String> {
                 val values = json.optJSONArray(key) ?: return emptyList()
@@ -40,6 +54,15 @@ internal data class MissionMovieScan(
 }
 
 internal suspend fun scanMissionMovies(
+    context: Context,
+    target: LevelMetadataTarget,
+    compatibilityReports: List<XlCompatibilityReport>? = null,
+): MissionMovieScan =
+    // Movie-only analysis still loads a mission descriptor in the classic engine.
+    MissionMovieScan.compatibilityLimitation(compatibilityReports ?: inspectXlCompatibilityTarget(target))
+        ?: scanSupportedMissionMovies(context, target)
+
+private suspend fun scanSupportedMissionMovies(
     context: Context,
     target: LevelMetadataTarget,
 ): MissionMovieScan =

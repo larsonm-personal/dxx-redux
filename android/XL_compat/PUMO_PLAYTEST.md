@@ -1,5 +1,14 @@
 # Original Pumo gameplay playtest
 
+**November 2 phone limitation:** The reported Samsung SM-S931U / Adreno 830
+cannot enter Pumo because the required fog scene-depth transfer check fails.
+The emulator results below do not qualify that phone, and no alternative Pumo
+level is verified there. Do not downgrade to this bundle to repeat that failure.
+The latest loading/save fixes are local; a replacement phone APK and a working
+fog path are still needed before a useful gameplay session. Next-tranche work
+prioritizes that live-test prerequisite; see
+[phone follow-up](../ai%20tool%20plans/pumo_phone_loading_restore_followup.md).
+
 The latest verified bundle is [pumo-selector-playtest-20261102.zip](../../temp/pumo-selector-playtest-20261102.zip).
 Its [README](../../temp/pumo-selector-playtest-20261102/README.md) and
 [manifest](../../temp/pumo-selector-playtest-20261102/manifest.json) record installation,

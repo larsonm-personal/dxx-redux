@@ -66,6 +66,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_render_resolution.h"
 #include "coop_save.h"
 #include "android_log.h"
+#include "android_loading_progress.h"
 #endif
 #ifdef USE_SDLMIXER
 #include "jukebox.h" // for jukebox_exts
@@ -959,7 +960,15 @@ int do_new_game_menu()
 		return 0;
 
 #ifdef DXX_XL_RUNTIME
-	if (!xl_level_supported_at(Level_names[new_level_num - 1], 0, new_level_num)) {
+#ifdef __ANDROID__
+	android_loading_progress_begin("Preparing level", 0);
+	android_loading_progress_update("Checking level resources and graphics", 0, 0);
+#endif
+	const int xl_supported = xl_level_supported_at(Level_names[new_level_num - 1], 0, new_level_num);
+#ifdef __ANDROID__
+	android_loading_progress_end();
+#endif
+	if (!xl_supported) {
 		nm_messagebox("Cannot run XL level", 1, TXT_OK, "%s", xl_level_rejection());
 		return 0;
 	}

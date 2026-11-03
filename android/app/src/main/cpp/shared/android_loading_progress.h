@@ -10,6 +10,7 @@ void android_loading_progress_step(const char *item_label);
 void android_loading_progress_update(const char *item_label, int completed, int total_items);
 void android_loading_progress_end(void);
 int android_loading_progress_get_flush_count(void);
+int android_loading_progress_is_active(void);
 
 #ifdef __cplusplus
 }

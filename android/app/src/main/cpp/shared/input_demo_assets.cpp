@@ -14,6 +14,7 @@
 #include <time.h>
 extern "C" {
 #include "android_log.h"
+#include "android_loading_progress.h"
 }
 #endif
 extern "C" {
@@ -111,9 +112,17 @@ bool hash_archive(const std::string &path, std::string &digest, uint64_t &size)
 	picosha2::hash256_one_by_one hash;
 	unsigned char buffer[65536];
 	size = 0;
+#ifdef __ANDROID__
+	struct stat info{};
+	const auto total = fstat(fileno(file), &info) == 0 ? info.st_size : 0;
+#endif
 	for (size_t bytes; (bytes = std::fread(buffer, 1, sizeof(buffer), file)) != 0;) {
 		hash.process(buffer, buffer + bytes);
 		size += bytes;
+#ifdef __ANDROID__
+		// Completion belongs to the enclosing load, not just its archive hash
+		android_loading_progress_update("Verifying mission archive", total > 0 ? (size >= static_cast<uint64_t>(total) ? 99 : static_cast<int>(size * 100 / total)) : 0, total > 0 ? 100 : 0);
+#endif
 	}
 	const bool valid = !std::ferror(file);
 	const bool closed = std::fclose(file) == 0;

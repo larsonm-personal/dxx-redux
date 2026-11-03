@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef __ANDROID__
+#include "android_log.h"
+#endif
 
 #define GUIDEBOT_RUNTIME_SAVE_VERSION 41
 
@@ -20,6 +23,8 @@ typedef struct guidebot_save_stream {
 	int ok;
 	int64_t epoch;
 	size_t bytes;
+	/* Zero selects the current schema; framed legacy saves carried 100 triggers */
+	unsigned trigger_capacity;
 } guidebot_save_stream;
 #ifdef _MSC_VER
 #pragma pack(pop)
@@ -149,10 +154,27 @@ static inline void guidebot_save_text(guidebot_save_stream *s, char *text, size_
 	}
 	if (!s->writing && s->apply) memcpy(text, buffer, size);
 }
-#define GB_LIMIT(s, value, kind, minimum, maximum) guidebot_save_bounded(s, &(value), kind, minimum, maximum)
-#define GB_TEXT(s, value)                          guidebot_save_text(s, value, sizeof(value))
-#define GB_FIELD(s, value, kind)                   guidebot_save_field(s, &(value), sizeof(value), 1, kind)
-#define GB_ARRAY(s, value, kind)                   guidebot_save_field(s, value, sizeof((value)[0]), sizeof(value) / sizeof((value)[0]), kind)
+static inline void guidebot_save_failure(guidebot_save_stream *s, const char *field)
+{
+#ifdef __ANDROID__
+	debug_log_force(DLOG_GAME, "Guidebot save validation failed: field=%s writing=%d apply=%d bytes=%llu",
+	                field, s->writing, s->apply, (unsigned long long) s->bytes);
+#else
+	fprintf(stderr, "Guidebot save validation failed: field=%s writing=%d apply=%d bytes=%llu\n",
+	        field, s->writing, s->apply, (unsigned long long) s->bytes);
+#endif
+}
+#define GB_CHECK(s, value, operation)                       \
+	do {                                                    \
+		if ((s)->ok) {                                      \
+			operation;                                      \
+			if (!(s)->ok) guidebot_save_failure(s, #value); \
+		}                                                   \
+	} while (0)
+#define GB_LIMIT(s, value, kind, minimum, maximum) GB_CHECK(s, value, guidebot_save_bounded(s, &(value), kind, minimum, maximum))
+#define GB_TEXT(s, value)                          GB_CHECK(s, value, guidebot_save_text(s, value, sizeof(value)))
+#define GB_FIELD(s, value, kind)                   GB_CHECK(s, value, guidebot_save_field(s, &(value), sizeof(value), 1, kind))
+#define GB_ARRAY(s, value, kind)                   GB_CHECK(s, value, guidebot_save_field(s, value, sizeof((value)[0]), sizeof(value) / sizeof((value)[0]), kind))
 
 int escort_save_runtime(guidebot_save_stream *s);
 void escort_route_save_runtime(guidebot_save_stream *s);
