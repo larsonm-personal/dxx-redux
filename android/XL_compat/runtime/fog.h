@@ -10,6 +10,8 @@ int xl_fog_active(void);
 int xl_fog_colors(float colors[4][4]);
 int xl_fog_boundary_points(int segment, int side, int near_cap, int32_t points[4][3], int *reversed);
 const char *ogl_xl_fog_prepare(void);
+void ogl_xl_fog_begin_scene(void);
+void ogl_xl_fog_end_scene(void);
 void ogl_xl_fog_volumes(const short *segments, int count);
 void ogl_xl_fog_composite(void);
 void ogl_xl_fog_destroy(int lost_context);
@@ -17,6 +19,8 @@ struct xl_fog_diagnostics {
 	uint64_t preparations, volume_passes, composite_passes, boundaries, context_rebuilds, failures;
 	int width, height, depth_bits, last_types, depth_copy_bits;
 	float depth_copy_value;
+	int direct_depth;
+	uint64_t direct_scenes;
 };
 void ogl_xl_fog_diagnostics(struct xl_fog_diagnostics *out);
 struct xl_fog_gpu_result {

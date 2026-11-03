@@ -27,6 +27,8 @@ extern "C" const char *ogl_xl_fog_prepare(void)
 	return "XL fog requires OpenGL 3 or OpenGL ES 3; this renderer uses OpenGL ES 1";
 }
 extern "C" void ogl_xl_fog_volumes(const short *, int) {}
+extern "C" void ogl_xl_fog_begin_scene(void) {}
+extern "C" void ogl_xl_fog_end_scene(void) {}
 extern "C" void ogl_xl_fog_composite(void) {}
 extern "C" void ogl_xl_fog_destroy(int) {}
 extern "C" void ogl_xl_fog_diagnostics(struct xl_fog_diagnostics *out)
@@ -79,7 +81,7 @@ void clear_depth(float value)
 }
 struct SavedState {
 	GLint read, draw, renderbuffer, viewport[4], scissor_box[4], active_texture, textures[2], current_program, vao, buffer;
-	GLint blend_src_rgb, blend_dst_rgb, blend_src_alpha, blend_dst_alpha, blend_rgb, blend_alpha, cull_mode, front_face;
+	GLint blend_src_rgb, blend_dst_rgb, blend_src_alpha, blend_dst_alpha, blend_rgb, blend_alpha, cull_mode, front_face, depth_func;
 	GLfloat clear[4], depth_clear;
 	GLboolean blend, depth, depth_write, scissor, cull, color_mask[4];
 #ifndef ANDROID
@@ -109,6 +111,7 @@ struct SavedState {
 		glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &blend_alpha);
 		glGetIntegerv(GL_CULL_FACE_MODE, &cull_mode);
 		glGetIntegerv(GL_FRONT_FACE, &front_face);
+		glGetIntegerv(GL_DEPTH_FUNC, &depth_func);
 		glGetFloatv(GL_COLOR_CLEAR_VALUE, clear);
 		glGetFloatv(GL_DEPTH_CLEAR_VALUE, &depth_clear);
 		glGetBooleanv(GL_DEPTH_WRITEMASK, &depth_write);
@@ -140,6 +143,7 @@ struct SavedState {
 		glBlendEquationSeparate(blend_rgb, blend_alpha);
 		glCullFace(cull_mode);
 		glFrontFace(front_face);
+		glDepthFunc(depth_func);
 		glClearColor(clear[0], clear[1], clear[2], clear[3]);
 		clear_depth(depth_clear);
 		glDepthMask(depth_write);
@@ -157,7 +161,7 @@ struct SavedState {
 #ifndef ANDROID
 		if (alpha != other.alpha) return false;
 #endif
-		return read == other.read && draw == other.draw && renderbuffer == other.renderbuffer && depth_clear == other.depth_clear && active_texture == other.active_texture && current_program == other.current_program && vao == other.vao && buffer == other.buffer &&
+		return read == other.read && draw == other.draw && renderbuffer == other.renderbuffer && depth_func == other.depth_func && depth_clear == other.depth_clear && active_texture == other.active_texture && current_program == other.current_program && vao == other.vao && buffer == other.buffer &&
 		       blend_src_rgb == other.blend_src_rgb && blend_dst_rgb == other.blend_dst_rgb && blend_src_alpha == other.blend_src_alpha && blend_dst_alpha == other.blend_dst_alpha &&
 		       blend_rgb == other.blend_rgb && blend_alpha == other.blend_alpha && cull_mode == other.cull_mode && front_face == other.front_face &&
 		       blend == other.blend && depth == other.depth && depth_write == other.depth_write && scissor == other.scissor && cull == other.cull &&
@@ -190,10 +194,14 @@ struct ReadbackState {
 	}
 };
 struct Buffers {
-	GLuint volume[2]{}, fbo[2]{}, depth = 0, depth_fbo = 0;
+	GLuint volume[2]{}, fbo[2]{}, depth = 0, depth_fbo = 0, scene_color = 0;
 	int width = 0, height = 0, bits = 0, stencil = 0;
+	GLenum scene_format = 0;
 } buffers;
 GLuint volume_program = 0, composite_program = 0, vao = 0, vbo = 0;
+GLuint present_program = 0;
+bool direct_depth = false, direct_scene_active = false;
+GLint direct_target = 0, direct_read_target = 0, direct_view[4]{};
 // MIN/MAX accumulation is order-independent; batch by type, cap and culling
 std::array<std::vector<GLfloat>, 16> cap_batches;
 xl_fog_diagnostics diagnostics{};
@@ -277,6 +285,7 @@ void release_buffers(bool lost)
 		glDeleteFramebuffers(2, buffers.fbo);
 		if (buffers.depth) glDeleteTextures(1, &buffers.depth);
 		if (buffers.depth_fbo) glDeleteFramebuffers(1, &buffers.depth_fbo);
+		if (buffers.scene_color) glDeleteTextures(1, &buffers.scene_color);
 	}
 	buffers = {};
 	prepared_types = 0;
@@ -344,6 +353,7 @@ void use(GLuint name, const GLfloat *matrix)
 }
 void depth_snapshot(GLuint scene, const GLint view[4])
 {
+	if (direct_depth && scene == buffers.depth_fbo) return;
 	glDisable(GL_SCISSOR_TEST);
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, scene);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, buffers.depth_fbo);
@@ -415,8 +425,23 @@ void verify_depth_transfer()
 #ifdef __ANDROID__
 				debug_log_force(DLOG_GRAPHICS, "[XL-FOG] direct depth sampling bits=%d expected=0.625 observed=%.9g", bits, direct[0]);
 #endif
-				throw std::runtime_error("XL fog scene-depth transfer failed.\nExpected 0.625, read " + std::to_string(observed[0]) +
-				                         " (" + std::to_string(bits) + " bit).\nRequired fog cannot be drawn safely.");
+				require(std::abs(direct[0] - .625f) < .0001f, "XL fog scene-depth transfer and direct sampling failed.\nRequired fog cannot be drawn safely.");
+				// A failed copy is not permission to omit depth. Qualify actual raster
+				// writes into the same texture before selecting direct scene rendering
+				glBindFramebuffer(GL_FRAMEBUFFER, buffers.depth_fbo);
+				glBindTexture(GL_TEXTURE_2D, 0);
+				glEnable(GL_DEPTH_TEST);
+				glDepthFunc(GL_ALWAYS);
+				draw(quad, 6);
+				glDisable(GL_DEPTH_TEST);
+				glBindFramebuffer(GL_FRAMEBUFFER, buffers.fbo[0]);
+				glBindTexture(GL_TEXTURE_2D, buffers.depth);
+				draw(quad, 6);
+				glReadPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, direct);
+				errors("Fog direct raster depth check");
+				require(std::abs(direct[0] - .5f) < .0001f, "XL fog direct raster depth failed.\nRequired fog cannot be drawn safely.");
+				direct_depth = true;
+				diagnostics.direct_depth = 1;
 			}
 		}
 	} catch (...) {
@@ -465,6 +490,8 @@ void setup()
 	}
 	glDeleteProgram(probe);
 	verify_depth_transfer();
+	if (direct_depth && !present_program)
+		present_program = compile("uniform sampler2D sceneTex; uniform vec2 windowSize; void main() { gl_FragColor = texture2D(sceneTex, gl_FragCoord.xy / windowSize); }");
 	capable = true;
 	++diagnostics.context_rebuilds;
 }
@@ -521,13 +548,90 @@ extern "C" const char *ogl_xl_fog_prepare(void)
 		glGetIntegerv(GL_STENCIL_BITS, &stencil);
 		require(saved.viewport[0] >= 0 && saved.viewport[1] >= 0, "Fog requires a nonnegative scene viewport");
 		resize(saved.viewport[0] + saved.viewport[2], saved.viewport[1] + saved.viewport[3], bits, stencil);
-		depth_snapshot(saved.draw, saved.viewport);
+		if (!direct_depth) depth_snapshot(saved.draw, saved.viewport);
 		++diagnostics.preparations;
 		return nullptr;
 	} catch (const std::exception &error) {
 		failure = error.what();
 		++diagnostics.failures;
 		return failure.c_str();
+	}
+}
+
+extern "C" void ogl_xl_fog_begin_scene(void)
+{
+	if (!xl_fog_active() || !direct_depth) return;
+	try {
+		{
+			SavedState saved;
+			require(!direct_scene_active, "Nested direct fog scene is unsupported");
+			direct_target = saved.draw;
+			direct_read_target = saved.read;
+			std::copy(saved.viewport, saved.viewport + 4, direct_view);
+			GLint red = 0, bits = 0, stencil = 0;
+			glBindFramebuffer(GL_FRAMEBUFFER, saved.draw);
+			glGetIntegerv(GL_RED_BITS, &red);
+			glGetIntegerv(GL_DEPTH_BITS, &bits);
+			glGetIntegerv(GL_STENCIL_BITS, &stencil);
+			resize(saved.viewport[0] + saved.viewport[2], saved.viewport[1] + saved.viewport[3], bits, stencil);
+			// Match the source format for color resolves from an MSAA target
+			const GLenum format = red == 5 ? GL_RGB565 : red == 10 ? GL_RGB10_A2
+			                                                       : GL_RGBA8;
+			if (!buffers.scene_color || buffers.scene_format != format) {
+				if (buffers.scene_color) glDeleteTextures(1, &buffers.scene_color);
+				texture(&buffers.scene_color, buffers.width, buffers.height, format,
+				        red == 5 ? GL_RGB : GL_RGBA,
+				        red == 5 ? GL_UNSIGNED_SHORT_5_6_5 : red == 10 ? GL_UNSIGNED_INT_2_10_10_10_REV
+				                                                       : GL_UNSIGNED_BYTE);
+				buffers.scene_format = format;
+			}
+			glBindFramebuffer(GL_FRAMEBUFFER, buffers.depth_fbo);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffers.scene_color, 0);
+			const GLenum color = GL_COLOR_ATTACHMENT0;
+			glDrawBuffers(1, &color);
+			glReadBuffer(color);
+			require(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Cannot allocate direct fog scene");
+			glDisable(GL_SCISSOR_TEST);
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, saved.draw);
+			glBlitFramebuffer(direct_view[0], direct_view[1], buffers.width, buffers.height,
+			                  direct_view[0], direct_view[1], buffers.width, buffers.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			errors("Direct fog scene color preservation");
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, buffers.depth_fbo);
+		direct_scene_active = true;
+		++diagnostics.direct_scenes;
+	} catch (const std::exception &error) {
+		fail(error);
+	}
+}
+
+extern "C" void ogl_xl_fog_end_scene(void)
+{
+	if (!direct_scene_active) return;
+	try {
+		{
+			SavedState saved;
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, direct_target);
+			glViewport(direct_view[0], direct_view[1], direct_view[2], direct_view[3]);
+			glDisable(GL_SCISSOR_TEST);
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_CULL_FACE);
+			glDisable(GL_BLEND);
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			use(present_program, identity);
+			glUniform1i(glGetUniformLocation(present_program, "sceneTex"), 0);
+			glUniform2f(glGetUniformLocation(present_program, "windowSize"), static_cast<float>(buffers.width), static_cast<float>(buffers.height));
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, buffers.scene_color);
+			// Drawing also supports a multisampled destination, unlike an ES blit
+			draw(quad, 6);
+			errors("Direct fog scene presentation");
+		}
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, direct_read_target);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, direct_target);
+		direct_scene_active = false;
+	} catch (const std::exception &error) {
+		fail(error);
 	}
 }
 
@@ -610,6 +714,11 @@ extern "C" void ogl_xl_fog_composite(void)
 		scene_before(saved.draw, saved.viewport);
 #endif
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, saved.draw);
+		// Sampling an attached depth texture is a feedback loop even with depth
+		// writes disabled. Detach it only during the color-only composition pass
+		const bool detach = direct_depth && saved.draw == static_cast<GLint>(buffers.depth_fbo);
+		const GLenum attachment = buffers.stencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT;
+		if (detach) glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, attachment, GL_TEXTURE_2D, 0, 0);
 		glDisable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
 		glDisable(GL_CULL_FACE);
@@ -634,6 +743,7 @@ extern "C" void ogl_xl_fog_composite(void)
 			glUniform4fv(glGetUniformLocation(composite_program, "fogColor2"), 1, prepared_types & (2 << (pair * 2)) ? colors[pair * 2 + 1] : none);
 			draw(quad, 6);
 		}
+		if (detach) glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, attachment, GL_TEXTURE_2D, buffers.depth, 0);
 		errors("Fog composition");
 #if defined(INTROSPECT_ON) || defined(DXX_XL_DEVELOPER_PROBE)
 		scene_after(saved.draw, saved.viewport);
@@ -655,8 +765,12 @@ extern "C" void ogl_xl_fog_destroy(int lost_context)
 		if (composite_program) glDeleteProgram(composite_program);
 		if (vao) glDeleteVertexArrays(1, &vao);
 		if (vbo) glDeleteBuffers(1, &vbo);
+		if (present_program) glDeleteProgram(present_program);
 	}
 	volume_program = composite_program = vao = vbo = 0;
+	present_program = 0;
+	direct_depth = direct_scene_active = false;
+	diagnostics.direct_depth = 0;
 	capable = false;
 }
 extern "C" void ogl_xl_fog_diagnostics(struct xl_fog_diagnostics *out)

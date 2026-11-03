@@ -96,7 +96,12 @@ void gpu_cases(xl_fog_gpu_result &result)
 				glDepthMask(GL_TRUE);
 				clear_depth(test_depth(test.geometry));
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-				depth_snapshot(target.scene, view);
+				glViewport(view[0], view[1], view[2], view[3]);
+				ogl_xl_fog_begin_scene();
+				const GLuint scene = direct_scene_active ? buffers.depth_fbo : target.scene;
+				// The direct scene owns its depth from the first raster operation
+				if (direct_scene_active) glClear(GL_DEPTH_BUFFER_BIT);
+				depth_snapshot(scene, view);
 				glDisable(GL_DEPTH_TEST);
 				glDepthMask(GL_FALSE);
 				glDisable(GL_CULL_FACE);
@@ -127,13 +132,13 @@ void gpu_cases(xl_fog_gpu_result &result)
 						}
 					}
 				}
-				glBindFramebuffer(GL_FRAMEBUFFER, target.scene);
+				glBindFramebuffer(GL_FRAMEBUFFER, scene);
 				glViewport(view[0], view[1], view[2], view[3]);
 				glDepthMask(GL_TRUE);
 				clear_depth(test_depth(test.objects));
 				glClear(GL_DEPTH_BUFFER_BIT);
 				prepared_types = types;
-				prepared_target = target.scene;
+				prepared_target = scene;
 				std::copy(view, view + 4, prepared_view);
 				// Deliberately nondefault state around the actual production compositor
 				glEnable(GL_SCISSOR_TEST);
@@ -147,6 +152,7 @@ void gpu_cases(xl_fog_gpu_result &result)
 					SavedState after;
 					require(before.same(after), "Fog compositor leaked GL state");
 				}
+				ogl_xl_fog_end_scene();
 				glDisable(GL_SCISSOR_TEST);
 				glBindFramebuffer(GL_READ_FRAMEBUFFER, target.scene);
 				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target.resolved);
