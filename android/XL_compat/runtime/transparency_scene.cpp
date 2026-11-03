@@ -295,7 +295,7 @@ extern "C" int xl_transparency_face(int segment, int side, int count, const int 
 		const bool queued = transparent_face(flat ? std::nullopt : std::optional<unsigned>(GameBitmaps[Textures[base].index].bm_flags), top, flat || faded, additive, alpha);
 #ifdef ANDROID
 		static int reports = 0;
-		if (reports++ < 24) debug_log_force(DLOG_GRAPHICS, "[XL-FOG] classify seg=%d side=%d base=%d flags=%u top=%d flat=%d faded=%d additive=%d alpha=%.9g queued=%d", segment, side, base, unsigned(GameBitmaps[Textures[base].index].bm_flags), top ? int(*top) : -1, flat, faded, additive, alpha, queued);
+		if (reports++ < 24) debug_log_force(DLOG_GRAPHICS, "[XL-FOG] classify seg=%d side=%d base=%d flags=%u stored=%d name=%s type=%d index=%d top=%d flat=%d faded=%d additive=%d alpha=%.9g queued=%d", segment, side, base, unsigned(GameBitmaps[Textures[base].index].bm_flags), piggy_bitmap_get_flags(&GameBitmaps[Textures[base].index]), piggy_game_bitmap_name(&GameBitmaps[Textures[base].index]), int(GameBitmaps[Textures[base].index].bm_type), int(Textures[base].index), top ? int(*top) : -1, flat, faded, additive, alpha, queued);
 #endif
 		if (!queued) return 0;
 #ifdef ANDROID
