@@ -75,7 +75,10 @@ if ($Pmc3Playtest -and !$PmcPlaytest) { throw 'Pmc3Playtest requires PmcPlaytest
 # PMC2 also preflights the authored PMC3 exit, so its resources must be explicit
 if ($PmcPlaytest -and (!$BubbleImage -or !$BubbleWave)) { throw 'PmcPlaytest requires original BubbleImage and BubbleWave for PMC3 readiness' }
 if ($PmcPlaytest -and (!$OriginalHub -or !$MissionFlow -or $OpeningPlaytest -or $SceneOnly -or $LightningGpu -or $BubbleGpu -or $CampaignEnd -or !$CameraHog -or !$VertigoHam)) { throw 'PmcPlaytest requires OriginalHub, MissionFlow assets, CameraHog and VertigoHam in its own mode' }
-if ($PmcPlaytest -and (Get-FileHash -LiteralPath $CameraHog -Algorithm SHA256).Hash -ne 'df69c62aad949f2d92bc1bbea4b597623cd29d0a0f594cdcc3d66568d6ce482a') { throw 'Requires the original XL camera addon archive' }
+# Both original distributions contain the same byte-identical cambot.hxm
+$cameraHogHashes = @('df69c62aad949f2d92bc1bbea4b597623cd29d0a0f594cdcc3d66568d6ce482a',
+    'e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6')
+if ($PmcPlaytest -and (Get-FileHash -LiteralPath $CameraHog -Algorithm SHA256).Hash -notin $cameraHogHashes) { throw 'Requires a qualified original XL camera addon archive' }
 if ($PmcPlaytest -and (Get-FileHash -LiteralPath $VertigoHam -Algorithm SHA256).Hash -ne 'faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f') { throw 'Requires the original Vertigo robot extension' }
 if ($OpeningPlaytest -and (!$OriginalHub -or $MissionFlow -or $SceneOnly -or $LightningGpu -or $BubbleGpu -or $CampaignEnd -or $FlyoutFixture)) { throw 'OpeningPlaytest requires OriginalHub and its own mode' }
 if ($BubbleDry -and !$BubbleFixture) { throw 'BubbleDry requires BubbleFixture' }
