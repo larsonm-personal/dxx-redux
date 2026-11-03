@@ -65,7 +65,7 @@ static void asset_mount_test(int argc, char **argv)
 	entry("overlap", { second.string(), first.string() });
 	entry("conflict", { find_arg_value(argc, argv, "-extra-dir") }, "missions/obsrv-xl.mn2");
 	std::ofstream output(manifest);
-	output << nlohmann::json({ { "schema", 1 }, { "entries", entries } }).dump();
+	output << nlohmann::json({ { "schema", 2 }, { "installation_mounts", nlohmann::json::array() }, { "entries", entries } }).dump();
 	output.close();
 	require(bool(output), "cannot write private catalog fixture");
 	struct Cleanup {
