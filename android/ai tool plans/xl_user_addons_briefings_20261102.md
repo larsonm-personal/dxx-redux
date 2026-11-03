@@ -20,3 +20,24 @@ payload was built. Keep the already published bundles as historical baselines.
 5. Run focused JVM/import and native/Android integration checks on the owned
    disposable emulator, preserve its profile, and deliver an APK with no addons.
    Phone access stays read-only; normal user UI imports supply required assets.
+
+## Results (November 2)
+
+- General Import Files also recognizes addon-only distributions by catalog
+  contents, without a distribution-filename special case. Mixed retail imports
+  retain their broader selection. Explicit addon import always limits selection.
+- The supplied 1.5 GB distribution contains d2x-xl.hog but no d2x.ham. Direct
+  catalog/selected-entry extraction through the app's Commons Compress path took
+  about 0.45 seconds locally; streaming providers retain staged-copy fallback.
+- Optional grouped tracker, raw/ZIP/7z publication and loading visibility passed
+  instrumentation on owned DxxPhoneFog20261102. All 27 focused JVM tests passed.
+- Original Pumo uses automatic overflow pagination. Also fixed physical-height
+  clipping in both engines by including the full glyph height in the page check.
+  Exact normal APK 022a192/version 29330 passed 18/18 briefing steps: first page
+  overflow=true, fits_height=true, printing_sound=false; sound restarts and stops
+  on the next page. The captured first page was visually inspected.
+- Universal Android and Windows D2 builds, scoped quality and automation catalogs
+  passed. All six APK native IDs match; no HOG/HAM/HXM/archive addon assets exist
+  in the APK. Physical Samsung acceptance of this new candidate remains pending.
+- Delivery and continuation record: temp/pumo-user-addon-playtest-20261102/
+  final_handoff.md. The old timed goal remains paused at the user's request.
