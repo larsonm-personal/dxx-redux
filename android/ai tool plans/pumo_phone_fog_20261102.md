@@ -29,3 +29,10 @@ passes all 208 derived fog controls on the formerly rejecting SwiftShader path.
 See ../XL_compat/evidence/fog-direct-depth.md for exact tested identity and limits.
 Original Pumo entry and universal/ARM packaging remain in progress; the opening
 runner dismissed an early load warning, so resource staging must be checked.
+
+## Soft-particle follow-up
+
+- The original Pumo warning probe identifies the separate soft-particle depth-transfer guard as the next entry blocker. The interrupted opening test was restored with all 14 protected hashes matching; no original entry pass is claimed.
+- Share the numerically qualified direct scene with soft particles only while loaded XL resources require it. Borrow texture depth during color-only draws, detach depth/stencil references to avoid feedback, then restore attachments and GL state. Preserve original shader fade equations and require known scene dimensions on ES 3.0.
+- Native production GPU controls pass, including 18 copied/direct depth and stencil cases. Both fog paths pass. Context restoration must reuse the pre-geometry qualification instead of resizing the live scene during a particle probe.
+- Next: commit, build all three Android ABIs, verify embedded identities, run original entry and normal fog tests on the exact APK, then package the ARM candidate with physical-device limits explicit.

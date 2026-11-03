@@ -26,6 +26,14 @@ void check(bool valid, const char *message)
 } // namespace
 extern "C" {
 int gl_initialized = 0;
+int xl_level_extensions_active(void)
+{
+	return 0;
+}
+int xl_particle_soft_required(void)
+{
+	return 0;
+}
 int xl_fog_active(void)
 {
 	return active;

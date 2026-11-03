@@ -8,6 +8,7 @@ int xl_camera_target_active_dimensions(int *width, int *height);
 void xl_particle_images_discard_context(int abandoned);
 void xl_particle_soft_begin_scene(void);
 void xl_particle_soft_end_scene(void);
+int xl_particle_soft_required(void);
 #ifdef __cplusplus
 }
 #ifdef _MSC_VER
