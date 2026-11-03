@@ -59,3 +59,13 @@ This does not cover the launcher's separate Save Explorer selection UI.
 Completed:68 warm and39 fresh-process steps pass on exact delivered4abb2b47.
 All286 protected files restored; see ../XL_compat/evidence/pumo-stock-save-isolation.md.
 No engine change was required for the mission-specific load menu behavior.
+
+## Bounded PMC3 guided route follow-up
+
+Resume the preserved earned cleared-launch checkpoint under the delivered APK,
+using only the owned phone-fog emulator with a fresh backup and hash-verified
+restoration. Audit the bent shaft geometry, normal steering and remaining damage
+before changing gameplay. Initial investigation is bounded to about one hour.
+Require normal guided-missile contact with authored switch3 before reporting
+red-route access. Keep original ammunition, health, actor rules and mission data.
+A partial flight or timeout remains a probe limit, not a gameplay defect.
