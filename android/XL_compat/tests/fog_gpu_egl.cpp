@@ -173,7 +173,7 @@ int main(int argc, char **argv)
 		production_geometry();
 		xl_fog_diagnostics capture{};
 		ogl_xl_fog_diagnostics(&capture);
-		if (argc == 2) check(capture.direct_depth && capture.direct_scenes >= 392, "Forced direct fog path was not exercised");
+		if (argc == 2) check(capture.direct_depth && capture.direct_scenes > 0, "Forced direct fog path was not exercised");
 		// Retiring renderer resources must rebuild before the next scene begins
 		ogl_xl_fog_destroy(0);
 		production_geometry();

@@ -360,13 +360,13 @@ void depth_snapshot(GLuint scene, const GLint view[4])
 	if (direct_depth && scene == buffers.depth_fbo) {
 #ifdef __ANDROID__
 		static int reports = 0;
-		if (reports++ < 8) {
+		if (reports++ < 8 || reports % 60 == 0) {
 			SavedState saved;
 			ReadbackState pack;
 			GLint attachment = 0;
 			glBindFramebuffer(GL_FRAMEBUFFER, scene);
 			glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &attachment);
-			const GLuint probe = compile("uniform sampler2D depthTex; void main() { gl_FragColor = vec4(texture2D(depthTex, vec2(.5)).r); }");
+			const GLuint probe = compile("uniform sampler2D depthTex; void main() { float lo=1.0,hi=0.0; for(int y=0;y<5;++y) for(int x=0;x<5;++x) { float d=texture2D(depthTex,vec2(float(x)+.5,float(y)+.5)/5.0).r; lo=min(lo,d);hi=max(hi,d); } gl_FragColor=vec4(texture2D(depthTex,vec2(.5)).r,lo,hi,1.0); }");
 			glBindFramebuffer(GL_FRAMEBUFFER, buffers.fbo[0]);
 			glViewport(0, 0, 1, 1);
 			glDisable(GL_BLEND);
@@ -381,7 +381,7 @@ void depth_snapshot(GLuint scene, const GLint view[4])
 			draw(quad, 6);
 			float pixel[4]{};
 			glReadPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, pixel);
-			debug_log_force(DLOG_GRAPHICS, "[XL-FOG] direct snapshot #%d scene=%u depth=%u attachment=%d value=%.9g test=%d write=%d func=%x", reports, scene, buffers.depth, attachment, pixel[0], saved.depth, saved.depth_write, saved.depth_func);
+			debug_log_force(DLOG_GRAPHICS, "[XL-FOG] direct snapshot #%d scene=%u depth=%u attachment=%d value=%.9g min=%.9g max=%.9g test=%d write=%d func=%x", reports, scene, buffers.depth, attachment, pixel[0], pixel[1], pixel[2], saved.depth, saved.depth_write, saved.depth_func);
 			glDeleteProgram(probe);
 		}
 #endif
