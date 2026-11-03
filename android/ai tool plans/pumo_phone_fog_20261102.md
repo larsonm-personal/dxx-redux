@@ -23,3 +23,9 @@ the preexisting linked-persistence stash remains untouched. Base CI is pending.
 6. Deliver a new self-contained handoff with why, artifacts, scope, exact stack,
    validation/pending CI, resource cleanup, ranked next steps and a continuation
    prompt carrying all constraints and this repeating handoff requirement.
+
+Progress at 13:48 PST: direct depth plus indexed POG palette-key normalization
+passes all 208 derived fog controls on the formerly rejecting SwiftShader path.
+See ../XL_compat/evidence/fog-direct-depth.md for exact tested identity and limits.
+Original Pumo entry and universal/ARM packaging remain in progress; the opening
+runner dismissed an early load warning, so resource staging must be checked.

@@ -1,4 +1,4 @@
-// A driver that cannot transfer scene depth must reject fog and still run stock
+// A driver failing both supported depth paths must reject fog and still run stock
 [
     { "_info": { "_standalone": false, "_owner": "test_xl_fog_runtime", "games": ["d2"] } },
     { "action": "enter_game", "game": "d2" },
@@ -13,7 +13,7 @@
         "timeout_ms": 15000,
         "expect": {
             "menu.title": "Cannot run XL level",
-            "menu.subtitle": { "contains": "scene-depth transfer" },
+            "menu.subtitle": { "contains": "Required fog cannot be drawn safely" },
             "in_game": false,
             "xl_pilot.runtime_active": false,
             "xl_fog.active": false,

@@ -55,7 +55,8 @@ no mission-name or GPU-vendor exception is used. Headless and GLES1 renderers
 cannot establish this visibility profile. Runtime failures are reported rather
 than silently switching to a different effect.
 
-The local emulator's legacy Google SwiftShader backend failed scene-depth copy:
+Historical qualification before the [direct-depth fallback](fog-direct-depth.md):
+the local emulator's legacy Google SwiftShader backend failed scene-depth copy:
 a rasterized plane and direct depth-texture clear/sampling worked, while depth
 transfer did not. All 17 rejection/subsequent Counterstrike controls passed on
 that backend (final run f3d77fd39e484cdcb090bf4ec0cf127f, 23233 ms). Host NVIDIA ES3.1 and desktop
