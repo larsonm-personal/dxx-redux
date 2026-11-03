@@ -1347,7 +1347,7 @@
             "executables": ["cmake", "ctest"],
             "python_modules": [],
             "estimated_seconds": 900,
-            "coverage_scope": "Controlled native XL gameplay, saves and stock transitions; pinned source and GPU comparisons; nine legacy format witnesses and seven original modern outcomes, including three full 27/40 source-reader comparisons",
+            "coverage_scope": "Required seeded original-XL load and multi-segment assisted navigation smoke; controlled native XL gameplay, saves and stock transitions; pinned source and GPU comparisons; nine legacy format witnesses and seven original modern outcomes, including three full 27/40 source-reader comparisons",
             "constraints": [
                 "Trusted retail-ci only; exact XL asset revision and complete modern original HOG required",
                 "Independent test directories run two at a time; campaign searches remain in retail-xl-originals",

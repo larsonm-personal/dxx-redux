@@ -1,9 +1,9 @@
 #include "speed_boost.h"
 #include "preview.h"
-#include "motion_math.h"
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include "motion_math.h"
 extern "C" {
 #include "inferno.h"
 #include "object.h"
