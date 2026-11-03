@@ -274,10 +274,11 @@ try {
     if ($PumoMods) {
         $mods = (Resolve-Path -LiteralPath $PumoMods).Path
         if ((Split-Path -Leaf $mods) -ne 'pmines') { throw 'PumoMods must name the original mods/pmines directory' }
-        & tar -cf "$output/pumo-mods.tar" -C $mods .
+        # Full original models exceed a gigabyte; compress the protected transfer
+        & tar -czf "$output/pumo-mods.tar.gz" -C $mods .
         if ($LASTEXITCODE -ne 0) { throw 'Cannot stage original Pumo mod resources' }
-        Invoke-PogAdb -Arguments @('push', "$output/pumo-mods.tar", '/data/local/tmp/xl-pog-mods.tar') | Out-Null
-        Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission && tar -xf /data/local/tmp/xl-pog-mods.tar -C files/d2x-redux/mods/$mission" | Out-Null
+        Invoke-PogAdb -Arguments @('push', "$output/pumo-mods.tar.gz", '/data/local/tmp/xl-pog-mods.tar.gz') | Out-Null
+        Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission && tar -xzf /data/local/tmp/xl-pog-mods.tar.gz -C files/d2x-redux/mods/$mission" | Out-Null
     }
     Invoke-PogPrivate "mkdir -p files/d2x-redux/mods/$mission/textures/d2x-xl && cp /data/local/tmp/xl-pog-fire.tga files/d2x-redux/mods/$mission/textures/d2x-xl/smokingfire.tga" | Out-Null
     if ($PmcPlaytest) {
@@ -598,7 +599,7 @@ try {
             if ($FlyoutFixture) { Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog-d1.pig') | Out-Null }
             if ($PmcPlaytest) { Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pmc-camera.hog', '/data/local/tmp/xl-pmc-d2x.ham') | Out-Null }
             if ($BubbleGpu -or $BubbleFixture -or $PmcPlaytest) { Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog-bubble.tga', '/data/local/tmp/xl-pog-bubble.wav') | Out-Null }
-            Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog.hog', '/data/local/tmp/xl-pog.mn2', '/data/local/tmp/xl-pog.png', '/data/local/tmp/xl-pog-fire.tga', '/data/local/tmp/xl-pog-smoke.tga', '/data/local/tmp/xl-pog-corona.tga', '/data/local/tmp/xl-pog-glare.tga', '/data/local/tmp/xl-pog-forcefield.tga', '/data/local/tmp/xl-pog-forcefield2.tga', '/data/local/tmp/xl-pog-forcefield3.tga', '/data/local/tmp/xl-pog-mods.tar') | Out-Null
+            Invoke-PogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-pog.hog', '/data/local/tmp/xl-pog.mn2', '/data/local/tmp/xl-pog.png', '/data/local/tmp/xl-pog-fire.tga', '/data/local/tmp/xl-pog-smoke.tga', '/data/local/tmp/xl-pog-corona.tga', '/data/local/tmp/xl-pog-glare.tga', '/data/local/tmp/xl-pog-forcefield.tga', '/data/local/tmp/xl-pog-forcefield2.tga', '/data/local/tmp/xl-pog-forcefield3.tga', '/data/local/tmp/xl-pog-mods.tar.gz') | Out-Null
         }
     } finally {
         if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
