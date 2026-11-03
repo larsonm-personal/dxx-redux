@@ -63,31 +63,11 @@ internal fun ambiguousLogicalImportName(paths: Collection<String>): String? =
 internal fun archiveGameFilename(path: String): String =
     portableGameFilenameIdentity(path.substringAfterLast('/').substringAfterLast('\\'))
 
-internal fun selectArchiveGameFilenames(
-    paths: Iterable<String>,
-    requested: Set<String>,
-): Set<String> {
-    if (requested != ALL_GAME_FILENAMES) return requested
-    val names = paths.map(::archiveGameFilename).toSet()
-    val baseFiles =
-        (D1_FILES + D2_FILES + D2_DEMO_FILES + D2_PARTIAL_FILES)
-            .filter { it.required }
-            .flatMap { listOf(it.filename) + it.alternatives }
-            .toSet()
-    return if (names.any { it in XL_ADDON_FILENAMES } &&
-        names.none { it in baseFiles }
-    ) {
-        XL_ADDON_FILENAMES
-    } else {
-        requested
-    }
-}
-
 internal fun selectSevenZGameEntries(
     entries: Iterable<org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry>,
     wantedFiles: Set<String>,
 ): List<org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry> {
-    val scope = selectArchiveGameFilenames(entries.filterNot { it.isDirectory }.map { it.name }, wantedFiles)
+    val scope = wantedFiles
     val selected = entries.filter { !it.isDirectory && archiveGameFilename(it.name) in scope }
     val collision = ambiguousLogicalImportName(selected.map { it.name })
     require(collision == null) { "Archive has colliding game-file outputs for $collision" }
@@ -420,7 +400,7 @@ internal suspend fun extractZipContents(
                     Log.i("DXX-Setup", "Extracted from nested SOW: $lowerName (${file.length()} bytes, sha256=$sha256)")
                 }
             }
-            val selectedNames = selectArchiveGameFilenames(results.map { it.name }, wantedFiles)
+            val selectedNames = wantedFiles
             if (selectedNames != wantedFiles) {
                 results.filter { it.name !in selectedNames }.forEach { it.tmpFile.delete() }
                 results.removeAll { it.name !in selectedNames }
@@ -643,8 +623,7 @@ internal suspend fun extract7zContents(
                     ?: builder.setFile(tmpArchive).get()
             reader.use { szf ->
                 val entries = szf.entries.toList()
-                val scope =
-                    selectArchiveGameFilenames(entries.filterNot { it.isDirectory }.map { it.name }, wantedFiles)
+                val scope = wantedFiles
                 val selected = selectSevenZGameEntries(entries, scope).toSet()
                 for (entry in entries) {
                     val name = archiveGameFilename(entry.name)

@@ -3859,6 +3859,23 @@ private fun SetupScreen(
             for (uri in uris) {
                 val name = getDisplayName(context, uri)
                 if (name != null) {
+                    val resourceMod =
+                        importResourceMod(context, uri, name) { label, done, total ->
+                            withContext(Dispatchers.Main) {
+                                importStatus = label
+                                zipProgressFile = label
+                                zipProgressBytes = done
+                                zipProgressTotal = total
+                            }
+                        }
+                    if (resourceMod != null) {
+                        withContext(Dispatchers.Main) {
+                            importStatus = "Imported mod: ${resourceMod.displayName}"
+                            onContentImported()
+                            onRefresh()
+                        }
+                        continue
+                    }
                     val ext = GameFileFormats.extensionOf(name)
                     val demoPackage = matchDemoInstallerPackage(context, name, uri)
                     when {
@@ -4311,11 +4328,6 @@ private fun SetupScreen(
         ) { treeUri: Uri? ->
             if (treeUri == null) return@rememberLauncherForActivityResult
             startDirectoryImport(treeUri)
-        }
-
-    val xlAddonPickerLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-            startPickedUriImport(uris, XL_ADDON_FILENAMES)
         }
 
     // -- Initial focus for D-pad/keyboard navigation -----
@@ -5984,39 +5996,11 @@ private fun SetupScreen(
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         SectionHeader("Optional Files")
-                        d2Statuses.filter { !it.info.required && it.info.filename !in XL_ADDON_FILENAMES }.forEach {
+                        d2Statuses.filter { !it.info.required }.forEach {
                             FileStatusRow(it) {
                                 detailStatus = it
                                 detailIsD2 = true
                             }
-                        }
-                        var addonsExpanded by remember { mutableStateOf(false) }
-                        val addonStatuses = d2Statuses.filter { it.info.filename in XL_ADDON_FILENAMES }
-                        TextButton(onClick = { addonsExpanded = !addonsExpanded }) {
-                            Text(
-                                "XL addon files (optional): ${addonStatuses.count {
-                                    it.found
-                                }}/${XL_ADDON_FILENAMES.size}",
-                            )
-                        }
-                        if (addonsExpanded) {
-                            Text(
-                                "Required only by missions using these assets. Import your own files; they are not included with the app.",
-                                fontSize = 11.sp,
-                            )
-                            addonStatuses.forEach { status ->
-                                FileStatusRow(status) {
-                                    detailStatus = status
-                                    detailIsD2 = true
-                                }
-                            }
-                            OutlinedButton(onClick = { xlAddonPickerLauncher.launch(arrayOf("*/*")) }) {
-                                Text("Import XL addon files")
-                            }
-                            Text(
-                                "Select d2x-xl.hog, d2x.ham, or a ZIP/7z containing them. Only these addon files are extracted.",
-                                fontSize = 11.sp,
-                            )
                         }
                     }
 

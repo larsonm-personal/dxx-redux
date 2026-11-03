@@ -834,7 +834,7 @@ internal fun ModDetailsDialog(
             ) {
                 if (loading || details == null) {
                     MetadataLoadProgressView(
-                        loadProgress ?: MetadataLoadProgress("Reading mod archive", 0, 1),
+                        loadProgress ?: MetadataLoadProgress("Reading mod files", 0, 1),
                     )
                 } else {
                     Column(
@@ -851,7 +851,7 @@ internal fun ModDetailsDialog(
                             modifier = Modifier.padding(bottom = 4.dp),
                         )
                         DetailRow(
-                            "Archive",
+                            if (mod.kind == ModManager.MOD_KIND_RESOURCES) "Imported resources" else "Archive",
                             "${details.fileCount} files, ${setupSectionFormatSize(details.archiveSizeBytes)}",
                         )
                         DetailRow("Game", mod.game.uppercase(Locale.US))
