@@ -123,9 +123,15 @@ int main(int argc, char **argv)
 	std::ofstream("b/test.mn2") << "name = B\n";
 	nlohmann::json entries = nlohmann::json::array();
 	for (const char *owner : { "a", "b" }) entries.push_back({ { "alias", std::string("missions/_packs/") + owner + "/test.mn2" }, { "descriptor", "test.mn2" }, { "key", owner }, { "owner", owner }, { "revision", "synthetic" }, { "mounts", { std::filesystem::absolute(owner).string() } } });
-	std::ofstream(".mission_assets.json") << nlohmann::json({ { "schema", 1 }, { "entries", entries } });
+	image("installation/addon.tga", 20);
+	std::ofstream(".mission_assets.json") << nlohmann::json({ { "schema", 2 }, { "installation_mounts", { "installation" } }, { "entries", entries } });
 	require(PHYSFS_mount("global", nullptr, 1), "global control mount");
+	require(PHYSFS_mount("installation", nullptr, 1), "file-set installation mount");
 	android_mission_assets_init();
+	require(android_mission_assets_owns_installation("installation"), "published mounted installation admitted");
+	require(!android_mission_assets_owns_installation("global"), "unpublished global mod is not an installation");
+	require(PHYSFS_unmount("installation") && !android_mission_assets_owns_installation("installation"), "detached installation rejected");
+	require(PHYSFS_mount("installation", nullptr, 1), "restore installation control");
 	EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 	require(eglInitialize(display, nullptr, nullptr), "initialize EGL");
 	const EGLint attributes[] = { EGL_SURFACE_TYPE, EGL_PBUFFER_BIT, EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT, EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8, EGL_ALPHA_SIZE, 8, EGL_DEPTH_SIZE, 24, EGL_NONE };
@@ -171,6 +177,9 @@ int main(int argc, char **argv)
 			ogl_init_prog();
 #endif
 			require(resets > 0 && (!previous || !glIsTexture(previous)), "context change clears GPU replacement");
+			require(!android_mission_assets_owns_installation(std::filesystem::absolute("a").string().c_str()) &&
+			            !android_mission_assets_owns_installation(std::filesystem::absolute("b").string().c_str()),
+			        "mission contexts do not become installation owners");
 			grs_bitmap bitmap{};
 			const char *names[] = { nullptr, nullptr, "ceil002" };
 			const int slots[] = { 0, 1, 2 };

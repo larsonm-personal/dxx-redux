@@ -1,4 +1,4 @@
-/* Android mission-owned mounts. See MissionLaunchPublication.kt for schema 1 */
+/* Android mission-owned mounts. See MissionLaunchPublication.kt for schema 2 */
 #include "android_mission_assets.h"
 #include "../../../../../XL_compat/scoped_texture.h"
 #include <nlohmann/json.hpp>
@@ -30,6 +30,7 @@ struct context {
 std::vector<context> catalog;
 std::vector<std::string> mounted;
 std::vector<std::string> acquired;
+std::vector<std::string> installation_mounts;
 int active = -1, pending = -1;
 bool enabled, transitioning;
 bool free_progress;
@@ -86,6 +87,13 @@ bool probe_mounts(const context &candidate)
 void android_mission_assets_shutdown(void)
 {
 	enabled = false;
+	installation_mounts.clear();
+}
+
+int android_mission_assets_owns_installation(const char *source)
+{
+	return source && PHYSFS_getMountPoint(source) &&
+	       std::find(installation_mounts.begin(), installation_mounts.end(), source) != installation_mounts.end();
 }
 
 void android_mission_assets_init(void)
@@ -93,6 +101,7 @@ void android_mission_assets_init(void)
 	catalog.clear();
 	mounted.clear();
 	acquired.clear();
+	installation_mounts.clear();
 	active = pending = -1;
 	generation = 0;
 	transitioning = enabled = false;
@@ -104,7 +113,8 @@ void android_mission_assets_init(void)
 	if (!input) return;
 	try {
 		const auto document = nlohmann::json::parse(input);
-		if (document.at("schema") != 1) throw std::runtime_error("unsupported catalog schema");
+		if (document.at("schema") != 2) throw std::runtime_error("unsupported catalog schema");
+		installation_mounts = document.at("installation_mounts").get<std::vector<std::string>>();
 		for (const auto &item : document.at("entries")) {
 			context candidate;
 			candidate.alias = item.at("alias").get<std::string>();

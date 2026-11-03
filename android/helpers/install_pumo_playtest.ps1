@@ -4,6 +4,9 @@
 param(
     [Parameter(Mandatory)][ValidatePattern('^[A-Za-z0-9._:-]+$')][string]$Serial,
     [Parameter(Mandatory)][string]$Bundle,
+    [ValidatePattern('^files/[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*$')]
+    [string]$RetailDataDirectory = 'files/imported/sets/default',
+    [switch]$ImportedMission,
     [string]$Adb = 'C:/local/android-sdk/platform-tools/adb.exe'
 )
 $ErrorActionPreference = 'Stop'
@@ -28,6 +31,11 @@ function Invoke-PlaytestPrivate {
 Invoke-PlaytestAdb @('install', '-r', (Join-Path $Bundle 'app-debug.apk'))
 Invoke-PlaytestAdb @('shell', 'am', 'force-stop', 'com.dxxredux.app') | Out-Null
 try {
+    Invoke-PlaytestPrivate "test -f $RetailDataDirectory/descent2.ham" | Out-Null
+} catch {
+    throw "Retail Descent 2 HAM not found at $RetailDataDirectory. Pass -RetailDataDirectory for the selected app-private file set"
+}
+try {
     Invoke-PlaytestPrivate 'test -d files/d2x-redux/Players' | Out-Null
 } catch {
     throw 'Launch Descent 2 with your retail data and create a pilot before installing this bundle'
@@ -35,11 +43,29 @@ try {
 $stamp = [DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
 $backup = "files/pumo-playtest-backup-$stamp"
 # Back up existing mission resources only; saves, pilots and settings are untouched
-Invoke-PlaytestPrivate "mkdir $backup && for p in files/d2x-redux/missions/pmines.hog files/d2x-redux/missions/pmines.mn2 files/d2x-redux/mods/pmines files/d2x-redux/missions/d2x-xl.hog files/d2x-redux/missions/d2x.ham; do if test -e `$p; then echo `$p; fi; done > $backup/paths.txt && if test -s $backup/paths.txt; then tar -cf $backup/resources.tar -T $backup/paths.txt; else touch $backup/no-existing-resources; fi" | Out-Null
+$resourcePaths = "$RetailDataDirectory/d2x-xl.hog $RetailDataDirectory/d2x.ham"
+if (!$ImportedMission) {
+    $resourcePaths += ' files/d2x-redux/missions/pmines.hog files/d2x-redux/missions/pmines.mn2 files/d2x-redux/mods/pmines files/d2x-redux/missions/d2x-xl.hog files/d2x-redux/missions/d2x.ham'
+}
+Invoke-PlaytestPrivate "mkdir $backup && for p in $resourcePaths; do if test -e `$p; then echo `$p; fi; done > $backup/paths.txt && if test -s $backup/paths.txt; then tar -cf $backup/resources.tar -T $backup/paths.txt; else touch $backup/no-existing-resources; fi" | Out-Null
 Invoke-PlaytestAdb @('push', (Join-Path $Bundle 'pumo-runtime.tar'), '/data/local/tmp/pumo-playtest-runtime.tar') | Out-Null
-Invoke-PlaytestPrivate 'tar -xf /data/local/tmp/pumo-playtest-runtime.tar' | Out-Null
+if ($ImportedMission) {
+    # Keep the imported mission authoritative; do not create a competing loose mod tree
+    Invoke-PlaytestPrivate "mkdir $backup/staging && tar -xf /data/local/tmp/pumo-playtest-runtime.tar -C $backup/staging files/d2x-redux/missions/d2x-xl.hog files/d2x-redux/missions/d2x.ham" | Out-Null
+    $addonSource = "$backup/staging/files/d2x-redux/missions"
+} else {
+    Invoke-PlaytestPrivate 'tar -xf /data/local/tmp/pumo-playtest-runtime.tar' | Out-Null
+    $addonSource = 'files/d2x-redux/missions'
+}
+# Imported mission contexts cannot see the loose mission's sibling addons
+# Stage the originals in the selected retail installation, an admitted resource owner
+Invoke-PlaytestPrivate "cp $addonSource/d2x-xl.hog $RetailDataDirectory/d2x-xl.hog && cp $addonSource/d2x.ham $RetailDataDirectory/d2x.ham && cmp $addonSource/d2x-xl.hog $RetailDataDirectory/d2x-xl.hog && cmp $addonSource/d2x.ham $RetailDataDirectory/d2x.ham" | Out-Null
 Invoke-PlaytestAdb @('shell', 'rm', '/data/local/tmp/pumo-playtest-runtime.tar') | Out-Null
 Write-Output "Installed build $($manifest.build). Existing mission resource backup or absence marker: $backup"
+Write-Output "Verified camera/Vertigo addons in $RetailDataDirectory for imported and loose Pumo missions"
+Write-Output 'The APK alone does not install these runtime assets; keep this bundle and its installer together'
+if ($ImportedMission) { Write-Output 'Imported mission mode: existing mission archive, textures and sounds were not replaced' }
 Write-Output 'Launch Descent 2, select New Game, XL: [-Pumo Mines-], level 1, and your preferred difficulty'
 if ($manifest.launch_notes) { Write-Output $manifest.launch_notes }
-else { Write-Output 'Choose the Mineral Valley route in Temporal Hub; PMC Data Storage Center remains unsupported' }
+else { Write-Output 'Start in Temporal Hub; see this bundle README for tested routes and remaining campaign limits' }
+

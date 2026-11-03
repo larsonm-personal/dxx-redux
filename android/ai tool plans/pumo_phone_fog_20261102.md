@@ -122,3 +122,84 @@ launcher-only probe is prepared but unrun. The new phone failure takes priority;
 all 15 pre-explorer files were restored exactly. Earlier rejected candidates
 remain retained. Next: commit, universal build/IDs, exact-APK RGB8 GPU/fog and
 normal hub checks, protected installer, new bundle, then user phone session.
+
+
+## Launcher save-selection validation after RGB8 delivery
+
+The new 5455715/version29180 bundle passes exact RGB8/RGBA8 fog and normal hub
+checks. While awaiting Samsung feedback, repeat the mixed-save setup using the
+official launcher-first runner so game/launcher handoffs share one run ID. Use a
+fresh protected owned-emulator profile backup. Check Save Explorer's selection
+of Pumo and stock saves, preserving distinct player state and mission resources;
+do not infer this from native menu isolation alone. Restore all files afterward.
+
+## Samsung hub accepted; missing addon and clipped dialogs
+
+User reports 5455715/version29180 renders the hub and plays decently, then a warp
+fails with a clipped missing-camera-addon message. Read-only authorized phone
+log/resource inspection confirms original imported pmines_v11.7z is selected,
+D24 checks pass, RGB8 capture works, and neither cambot.hxm nor d2x-xl.hog exists
+under app files. The APK alone cannot supply the external runtime addon. Preserve
+this as bounded human hub acceptance, not save/load or destination qualification.
+
+Next: cap and wrap Android native title/body text using measured font widths in
+both engines, preserve full messages and explicit line breaks, and verify actual
+rendered error bounds on the owned emulator. Deliver with explicit resource
+installation and validate the selected imported-mission route with the addon.
+Do not weaken camera resource ownership/admission or modify original content.
+
+Launcher Save Explorer: official UI discovery passed 5/5; selected Pumo quick
+save restored Temporal Hub with its reduced energy and fog (5/5). Stock row
+selection restored Ahayweh Gate with XL/fog inactive in captured state, but the
+ad-hoc assertion collector timed out; this is not a full automated stock PASS.
+All 15 protected profile files restored and hash-verified before phone follow-up.
+
+The 1768c86 diagnostic passes missing-addon dialog checks at large and compact
+output sizes (21 and 22 steps); exact native IDs and APK hash are retained. It is
+not delivered: the imported-context test exposed a second real ownership gap.
+Launcher reconciliation moves installed loose addons into its file-set content
+projection, whose origin differs from the startup retail HAM root. The original
+Vertigo hash is present but rejected as an unrelated owner.
+
+Publish exact enabled non-mission file-set mounts in the launcher/native catalog
+(schema 2), and admit only those currently mounted origins as installation
+resources. Do not admit arbitrary global mods, sibling missions, descendant
+paths or detached roots. Keep existing payload/hash qualification. Extend the
+publication test and real D1/D2 scoped-resource fixture with positive ownership,
+unpublished-global, detached-root and mission-context controls. Rebuild before
+retesting imported Pumo and delivering. The interrupted import attempt restored
+20 explicitly backed-up files; its newly installed loose addons were migrated by
+the launcher outside that backup scope, so reinstall them and protect content
+state/projections and the loose addon directory in the next test generation.
+
+The complete original archive is available locally at
+`game_data/mission_files/d2xxl_downloads/pmines_v11.7z` (SHA-256
+82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf).
+Its HOG and descriptor match the pinned original hashes. The first imported
+control incorrectly repacked the older reduced staging directory, omitting the
+archive's particle textures; its smoke-shadow rejection is a fixture limitation,
+not a phone regression. The root-addon layout clears the Vertigo ownership
+rejection. Keep addon-only `-ImportedMission` mode so the user's already imported
+archive remains authoritative; full loose staging remains explicit without that
+switch. Native D1/D2 scoped controls pass 8 cases each against 604ecde libraries.
+Publication/catalog/file-set JVM suites pass 28 tests; the broader import suite
+passes 33/34, with the real local Enemy Within archive import returning null before
+the changed publication path. Preserve and investigate that separate failure.
+
+The native lifecycle catalog fixture also needs schema 2, without installation
+mounts. This is test-only and does not change the 604ecde/version29210 APK.
+Full original-archive import/normal hub replay is now running on the owned AVD.
+All prior incomplete staging generations are classified and preserved locally;
+verified duplicate resource backups were removed only from the owned emulator
+to make room, keeping host profile archives and all published bundles.
+
+The complete original import passes 38/38 on 604ecde/version29210; the exact APK
+also passes the 22-step readable missing-camera rejection. All 297 outer files
+restore with matching hashes. Bundle/ZIP identities are retained in the evidence.
+The user rejects command-line installation: the next deliverable must work by
+normal tap-to-install APK and ordinary launcher UI. Add an optional, build-owned
+compatibility asset payload, stage it atomically into a separate app-owned cache,
+and publish its exact installation mount at launch. Keep user content untouched,
+retain strict engine ownership/payload checks, and qualify upgrade/launch with no
+external resource installer. Include only the local candidate's original camera
+HOG and Vertigo HAM; do not commit these binary assets or change general releases.

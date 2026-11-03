@@ -882,7 +882,14 @@ class ModManager(
                     )
             }
         val publication =
-            catalog.publish(File(filesDir, gameDir), globalRevision, activationErrors) { selection, root ->
+            catalog.publish(
+                File(filesDir, gameDir),
+                globalRevision,
+                activationErrors,
+                contentPaths.filter {
+                    File(it).exists()
+                },
+            ) { selection, root ->
                 val selected = enabled.filter { selection.owner == "mod/${it.filename}" }
                 writeGeneratedPatchOverrides(game, globalMods + selected, root)
             }

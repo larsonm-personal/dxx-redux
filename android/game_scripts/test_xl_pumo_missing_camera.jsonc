@@ -1,0 +1,127 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_pog_runtime",
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Pumo Mines",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "game_window_is_front": true,
+            "xl_pilot.runtime_active": true,
+            "current_level_num": 1,
+        },
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "cheats_enabled": false,
+            "player.primary_weapon_flags": 1,
+            "player.laser_level": 0,
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 65,
+        "side": 2,
+        "distance": 12,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1.0,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 6000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0.0,
+    },
+    {
+        "action": "key",
+        "post_delay_ms": 500,
+        "key": "enter",
+    },
+    {
+        "timeout_ms": 20000,
+        "action": "wait_for",
+        "expect": {
+            "menu.title": "Cannot continue to XL level",
+            "menu.fits_screen": true,
+            "current_level_num": 1,
+            "menu.subtitle": {
+                "contains": "Missing owned cambot.hxm or data/d2x-xl.hog camera addon",
+            },
+        },
+    },
+    {
+        "action": "introspect",
+    },
+]
