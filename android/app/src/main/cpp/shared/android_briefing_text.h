@@ -5,6 +5,9 @@
 typedef struct android_briefing_text_state {
 	int active;
 	int page_ready;
+	int printing_sound;
+	int overflow_page;
+	int fits_height;
 	int overlaps;
 	char background[32];
 	char text[2049];

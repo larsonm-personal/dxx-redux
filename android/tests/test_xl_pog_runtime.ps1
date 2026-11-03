@@ -39,6 +39,7 @@ param(
     [switch]$Pmc3Gold,
     [switch]$HubActivation,
     [switch]$MissingCamera,
+    [switch]$BriefingPages,
     [switch]$Pmc3Playtest,
     [switch]$PmcColdResume,
     [string]$CameraHog = '',
@@ -54,6 +55,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 if ($MissingCamera -and (!$HubActivation -or !$PmcPlaytest -or $SaveIsolation)) { throw 'MissingCamera requires the protected HubActivation mode' }
+if ($BriefingPages -and (!$HubActivation -or $MissingCamera -or $SaveIsolation)) { throw 'BriefingPages requires its own protected HubActivation mode' }
 if ($SaveIsolation -and (!$PmcPlaytest -or $HubActivation -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates -or $Pmc3Playtest -or $PmcColdResume)) { throw 'SaveIsolation requires PmcPlaytest in its own mode' }
 if ($PmcInnerGates -and (!$PmcPlaytest -or $PmcOpeningGates -or $PmcSwitchPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcInnerGates requires PmcPlaytest in its own mode' }
 if ($PmcOpeningGates -and (!$PmcPlaytest -or $PmcSwitchPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcOpeningGates requires PmcPlaytest in its own mode' }
@@ -73,7 +75,10 @@ if ($Pmc3Playtest -and !$PmcPlaytest) { throw 'Pmc3Playtest requires PmcPlaytest
 # PMC2 also preflights the authored PMC3 exit, so its resources must be explicit
 if ($PmcPlaytest -and (!$BubbleImage -or !$BubbleWave)) { throw 'PmcPlaytest requires original BubbleImage and BubbleWave for PMC3 readiness' }
 if ($PmcPlaytest -and (!$OriginalHub -or !$MissionFlow -or $OpeningPlaytest -or $SceneOnly -or $LightningGpu -or $BubbleGpu -or $CampaignEnd -or !$CameraHog -or !$VertigoHam)) { throw 'PmcPlaytest requires OriginalHub, MissionFlow assets, CameraHog and VertigoHam in its own mode' }
-if ($PmcPlaytest -and (Get-FileHash -LiteralPath $CameraHog -Algorithm SHA256).Hash -ne 'df69c62aad949f2d92bc1bbea4b597623cd29d0a0f594cdcc3d66568d6ce482a') { throw 'Requires the original XL camera addon archive' }
+# Both original distributions contain the same byte-identical cambot.hxm
+$cameraHogHashes = @('df69c62aad949f2d92bc1bbea4b597623cd29d0a0f594cdcc3d66568d6ce482a',
+    'e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6')
+if ($PmcPlaytest -and (Get-FileHash -LiteralPath $CameraHog -Algorithm SHA256).Hash -notin $cameraHogHashes) { throw 'Requires a qualified original XL camera addon archive' }
 if ($PmcPlaytest -and (Get-FileHash -LiteralPath $VertigoHam -Algorithm SHA256).Hash -ne 'faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f') { throw 'Requires the original Vertigo robot extension' }
 if ($OpeningPlaytest -and (!$OriginalHub -or $MissionFlow -or $SceneOnly -or $LightningGpu -or $BubbleGpu -or $CampaignEnd -or $FlyoutFixture)) { throw 'OpeningPlaytest requires OriginalHub and its own mode' }
 if ($BubbleDry -and !$BubbleFixture) { throw 'BubbleDry requires BubbleFixture' }
@@ -178,6 +183,7 @@ if ($FlyoutFixture) { $output = Join-Path $PSScriptRoot '../../temp/xl-flyout-ca
 if ($LightningGpu) { $output = Join-Path $PSScriptRoot '../../temp/xl-lightning-gpu-android' }
 if ($BubbleGpu) { $output = Join-Path $PSScriptRoot '../../temp/xl-bubble-gpu-android' }
 if ($MissingCamera) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-missing-camera' }
+if ($BriefingPages) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-briefing-pages' }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 foreach ($name in @('result.json', 'state.json', 'steps.jsonl', 'logcat.txt', 'render.png')) {
@@ -372,6 +378,7 @@ try {
         ConvertTo-Json -InputObject $steps -Depth 20 | Set-Content -LiteralPath $scriptName -Encoding utf8
     }
     if ($HubActivation) { $scriptName = 'test_xl_pumo_hub_activation.jsonc' }
+    if ($BriefingPages) { $scriptName = 'test_xl_pumo_briefing_pages.jsonc' }
     if ($Pmc3Playtest) { $scriptName = 'test_xl_pumo_pmc3.jsonc' }
     if ($PmcColdResume) {
         $steps = @(Get-Content "$PSScriptRoot/../game_scripts/$scriptName" -Raw | ConvertFrom-Json -AsHashtable)
@@ -548,6 +555,7 @@ try {
     elseif ($Pmc3Playtest) { Write-Host "PASS: Original PMC3 via PMC1/2 exits: cameras, fixed lightning, combat, restart/save, authored ending and stock-mission return ($($result.total_steps) steps); controlled exits and fixed poses, no human traversal" }
     elseif ($SaveIsolation) { Write-Host "PASS: Original Pumo and stock save-menu isolation, warm and fresh process; no progression bypass" }
     elseif ($MissingCamera) { Write-Host "PASS: Original hub exit rejects missing camera addon with a complete on-screen dialog; no progression granted" }
+    elseif ($BriefingPages) { Write-Host "PASS: Original Pumo briefing pages stop printing audio while waiting and restart on the next page ($($result.total_steps) steps)" }
     elseif ($HubActivation) { Write-Host "PASS: Original hub door and PMC exit through laser/thrust, repeated after hub save restore ($($result.total_steps) steps); fixed initial pose, no human traversal" }
     elseif ($PmcOpeningGates) { Write-Host "PASS: Original PMC1 opening unlock/open-wall shots, three gate crossings and warm/cold persistence; fixed poses, no full traversal" }
     elseif ($PmcInnerGates) { Write-Host "PASS: Original PMC1 unlock/master shots, forcefield flight and red-key pickup, blastable wall and warm/cold persistence; fixed poses, no full traversal" }

@@ -1,16 +1,17 @@
 # Original Pumo gameplay playtest
 
-The new [phone candidate](../../temp/pumo-phone-readable-playtest-20261102/README.md)
+The new [phone candidate](../../temp/pumo-user-addon-playtest-20261102/README.md)
 includes ARM64, ARMv7 and x86_64, the preserved loading/save and metadata fixes,
 and verified direct scene depth for fog, soft particles and lightning.
-[Manifest](../../temp/pumo-phone-readable-playtest-20261102/manifest.json) and
-[ZIP](../../temp/pumo-phone-readable-playtest-20261102.zip) retain exact identities and evidence.
+[Manifest](../../temp/pumo-user-addon-playtest-20261102/manifest.json) and
+[handoff](../../temp/pumo-user-addon-playtest-20261102/final_handoff.md) retain exact identities and evidence.
 
 **The Samsung hub worked on version 29180.** Its next transition reported a
 missing camera addon; authorized read-only inventory confirmed it was absent.
-Version 29210 includes explicit installation-resource ownership and readable
-wrapped errors. Use the bundle installer with `-ImportedMission` to add the
-original camera/Vertigo resources. New phone transition/save acceptance is pending.
+Version 29330 retains installation-resource ownership and readable wrapped errors.
+Tap the APK to install, then supply addons through launcher Import Files or the
+grouped optional XL addon row. No proprietary addons are bundled. General import
+also recognizes addon-only distributions. New phone transition/save acceptance is pending.
 See [resource and dialog evidence](evidence/phone-readable-errors.md).
 
 Version 29080 failed D16
@@ -19,11 +20,10 @@ because its 4x RGB8 source did not match RGBA8 capture. This candidate matches
 the exact color format while retaining strict depth qualification. No alternative
 phone level is verified. See [depth evidence](evidence/fog-direct-depth.md).
 
-Source: `604ecde157de87e0717b1b651cc0d78ac792d08b`, version code **29210**.
+Source: `022a19202a996bbda75d33b0d366faec1388c4e4`, version code **29330**.
 All six native library IDs match. APK SHA-256:
-`cf37935cfffb017d1f51c6b64579c597e860a0d838db43629369e883d09531da`.
-Runtime archive SHA-256:
-`f54be3a7f2b6a6755a85b22d52bcb947379f5d54ecde8df8d329230217db4bbd`.
+`94a10a84aad528af8d9b3d1a83afaeb7fba060c4dc0c4fe436be5cdc233651af`.
+This delivery contains no runtime resource archive.
 Stack: [PR318](https://github.com/larsonm-personal/dxx-redux/pull/318) ->
 [PR320](https://github.com/larsonm-personal/dxx-redux/pull/320) ->
 [PR321](https://github.com/larsonm-personal/dxx-redux/pull/321) ->
@@ -31,7 +31,8 @@ Stack: [PR318](https://github.com/larsonm-personal/dxx-redux/pull/318) ->
 [draft PR323](https://github.com/larsonm-personal/dxx-redux/pull/323) ->
 [PR324](https://github.com/larsonm-personal/dxx-redux/pull/324) ->
 [PR326](https://github.com/larsonm-personal/dxx-redux/pull/326) ->
-[PR327](https://github.com/larsonm-personal/dxx-redux/pull/327).
+[PR327](https://github.com/larsonm-personal/dxx-redux/pull/327) ->
+[PR328](https://github.com/larsonm-personal/dxx-redux/pull/328).
 Earlier bundles remain unchanged historical baselines.
 
 Why: depth blits can report success while returning unchanged depth. The new
@@ -43,7 +44,18 @@ No mission rewrite, GPU-name exception or admission bypass is used. Direct scene
 capture is single sampled even with 2x/4x presentation; equivalent scene MSAA is
 not claimed.
 
-Exact 29210 qualification on owned Android 14 x86_64 SwiftShader:
+Exact 29330 qualification on owned Android 14 x86_64 SwiftShader:
+
+- Original hub door/PMC exit, save/restore/repeat: 36/36 PASS, 77.287s, using
+  the camera HOG from the user's supplied XL distribution and original Vertigo HAM.
+- Original briefing: 18/18 PASS, 33.486s. Automatic overflow fits the physical
+  canvas and printing audio stops at each page; next-page audio restarts.
+- Addon raw/ZIP/seekable and streaming 7z import, tracker and progress toggle pass
+  instrumentation. Fresh settings and both presets default progress bars on.
+- 27 focused JVM tests, universal Android and Windows D2 builds, scoped quality
+  and catalogs pass. All 13 protected install files and 297 restored profile files match.
+
+Historical 29210 qualification on the same emulator:
 
 - Complete original archive imported through launcher: 38/38 PASS, 110.484s.
   Normal hub door/PMC exit, save/restore and repeated transition reached level 11.
@@ -74,22 +86,13 @@ and [reactor/objective corrections](evidence/reactor-objectives.md).
 
 ## Install and start playing
 
-Use your existing retail Descent 2 data. Launch the app and create a pilot once,
-then enable USB debugging and select the device serial shown by `adb devices`.
-From the repository root:
-
-```powershell
-pwsh -NoProfile -File android/helpers/install_pumo_playtest.ps1 `
-  -Serial YOUR_DEVICE_SERIAL -Bundle temp/pumo-phone-readable-playtest-20261102 -ImportedMission
-```
-
-From an extracted ZIP, run `pwsh -NoProfile -File ./install_pumo_playtest.ps1
--Serial YOUR_DEVICE_SERIAL -Bundle . -ImportedMission`. The installer verifies hashes, updates
-the APK and backs up mission resources. It preserves pilots, saves, settings and
-control mappings. Do not uninstall to resolve a signing mismatch.
-The imported-only mode uses your existing Pumo archive and adds required original
-camera/Vertigo resources. APK-only installation is insufficient. Omit the switch
-only when intentionally installing the historical loose runtime staging.
+Tap the new APK to upgrade the existing app. Use your existing retail Descent 2
+data and complete original Pumo mission import. In the launcher, use Import Files
+or the D2 optional XL addon row to select user-owned d2x-xl.hog and d2x.ham, either
+as raw files or inside ZIP/7z archives. The supplied d2x-xl-2-1-8.7z contains the
+camera HOG but no Vertigo d2x.ham. Supply the latter separately when required.
+Use the same active file set as the mission. No command-line installer is needed.
+Do not uninstall to resolve a signing mismatch; preserve pilots and saves.
 
 Choose **Descent 2 > New Game > XL: [-Pumo Mines-] > level 1**, then a difficulty.
 Start a new game or use an unfired checkpoint: old saves retain already-broken

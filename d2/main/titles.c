@@ -491,6 +491,7 @@ typedef struct briefing
 	int		text_x, text_y;
 	msgstream messagestream[2048];
 	int		streamcount;
+	int rendered_line_height;
 	short	tab_stop;
 	ubyte	flashing_cursor;
 	ubyte	new_page;
@@ -519,6 +520,7 @@ void briefing_init(briefing *br, short level_num)
 	br->level_num = level_num;
 
 	br->cur_screen = 0;
+	br->rendered_line_height = 0;
 	br->screen = NULL;
 	gr_init_bitmap_data (&br->background);
 	strncpy(br->background_name, DEFAULT_BRIEFING_BKG, sizeof(br->background_name));
@@ -651,13 +653,19 @@ void init_char_pos(briefing *br, int x, int y)
 // 0 otherwise
 int check_text_pos(briefing *br)
 {
+	int width, height, average;
+	int bottom = br->screen->text_uly + br->screen->text_height;
+	gr_set_curfont(GAME_FONT);
+	gr_get_string_size("M", &width, &height, &average);
+	br->rendered_line_height = height;
+	if (bottom > grd_curcanv->cv_bitmap.bm_h) bottom = grd_curcanv->cv_bitmap.bm_h;
 	if (br->text_x > br->screen->text_ulx + br->screen->text_width)
 	{
 		br->text_x = br->screen->text_ulx;
 		br->text_y += FSPACY(5)+FSPACY(5)*3/5;
 	}
 
-	if (br->text_y > br->screen->text_uly + br->screen->text_height)
+	if (br->text_y + height > bottom)
 	{
 		br->new_page = 1;
 		return 1;
@@ -1374,6 +1382,13 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 						break;
 				}
 			check_text_pos(br);
+			// Overflow pages wait for input just like authored $P/$S pages
+			if (br->new_page || br->new_screen) {
+				if (br->printing_channel > -1)
+					digi_stop_sound(br->printing_channel);
+				br->printing_channel = -1;
+				br->chattering = 0;
+			}
 
 			if (br->background.bm_data)
 				show_fullscr(&br->background);
@@ -1428,8 +1443,13 @@ void android_briefing_text_snapshot(android_briefing_text_state *state)
 	br = (briefing *)window_get_data(front);
 	state->active = 1;
 	state->page_ready = br->new_page || br->new_screen;
+	state->printing_sound = br->chattering && br->printing_channel > -1;
+	state->overflow_page = br->new_page && !br->coop_authored_page_done;
+	state->fits_height = 1;
 	snprintf(state->background, sizeof(state->background), "%s", br->background_name);
 	for (int i = 0; i < br->streamcount && i < 2048; ++i) {
+		if (br->messagestream[i].y < 0 || br->messagestream[i].y + br->rendered_line_height > window_get_canvas(front)->cv_bitmap.bm_h)
+			state->fits_height = 0;
 		state->text[i] = br->messagestream[i].ch;
 		if (br->messagestream[i].ch == ' ') continue;
 		for (int j = 0; j < i; ++j)
