@@ -69,3 +69,24 @@ The existing input-demo recording attempt did not start in this checkpoint;
 its rejection is retained, without claiming a supported XL recording workflow.
 The rendered companion GuideBot pilot has separate sandbox/unsupported-exit
 limits and is not evidence for this ordinary guided-missile route.
+
+## Paused for renewed phone fog failure
+
+During this follow-up the user reported that the published version 29080 still rejects
+original hub fog on Samsung. Phone diagnosis takes priority; no further guided
+route attempts are implied.
+
+The wall-contact diagnostic was built from
+`5862a0230765c9072db032dc28df6ffa081eadd7`, version 29140, all six IDs matching,
+APK SHA-256 `91c7ad8cf07fab8e5c18471083e94f06ffd29d70d4835079ea550456a2f65d1b`.
+Universal build passed in 2m53s; Windows D2 and scoped quality passed. Installation
+preserved all 26 staged files. The earned save load passed 9/9 in 19301ms. The
+wall-contact snapshot itself has not yet been exercised; it remains unqualified.
+
+The owned emulator profile was restored from the pre-pilot archive with all 13
+protected files matching. Display size was reset to its original 1080x1920.
+The earned three-threat checkpoint, both diagnostic APKs and all failed turn
+receipts remain preserved. The owned persistent Gradle daemon 32548 and worker
+34636 from the first diagnostic build were identified by parent and creation time
+and stopped after completion; the next build used a single-use daemon. No user
+process or physical phone was operated during this pilot.
