@@ -121,3 +121,38 @@ asked for a short live session; no physical acceptance is implied.
 Phone log evidence: temp/xl-phone-fog-20261102/samsung-debuglog-150904.txt and
 samsung-debuglog-151108.txt. Physical phone access was read-only; no installation,
 force-stop, clearing or settings changes were performed on it.
+
+## RGB8 multisample color resolve on Samsung
+
+Version 29160 passes the phone's D24 clear/raster checks, 0.625 and 0.5, and
+opens the briefings. The first game scene then returns to the launcher with
+OpenGL error1282 at direct scene color preservation. Read-only DXX logs identify
+4x MSAA at 640x480 using RGB8 (8/8/8/0, 0x8051). The capture inferred RGBA8 from
+red bits alone. [Khronos ES3 blit rules](https://github.com/KhronosGroup/OpenGL-Refpages/blob/main/es3.0/glBlitFramebuffer.xml)
+require matching source/destination formats for multisample resolves.
+
+Source 5455715e62b74fdd85ef38110514f758accf7674 shares the exact four-channel
+format policy already used to allocate Android MSAA targets. Direct color now
+matches RGB8/RGBA8/RGB565/RGB10_A2 rather than dropping alpha-channel information.
+It logs the allocated format/dimensions. Original color, fog admission and MSAA
+settings are preserved. The production GPU control now covers both RGB8/RGBA8,
+both depth formats, and zero/2x/4x samples; it checks the actual capture format as
+well as analytical pixels. All four native GPU targets pass; fog paths each
+cover 360 authored and 360 zero-distance cases, 1080 pixels each, including 240
+multisample cases. Windows D2 and scoped quality pass.
+
+Universal APK version 29180 has six matching IDs, SHA-256
+9fd0bb3fd6e3132093a1424ead465bbd27d5a9a2f9c536d693253a743dbf5c75;
+build succeeds in 2m1s. Exact Android fog checks pass 208/208, run adeca555773b4bbaa4fe9f593fa8ae64,
+177377ms; all 15 protected files restore. The GLES GPU receipt confirms 360 cases,
+1080 pixels, 240 multisample cases and restored state. Normal hub passes 36/36,
+run 69802325837647f592798e3dd6c743ef, 78172ms; all 287 protected files restore.
+The exact installer preserves 15 files and its installed APK hash matches.
+Rendered evidence was inspected. Bundle: temp/pumo-phone-color-playtest-20261102;
+ZIP SHA-256 1413ba407d2e4fd0079c12c27aa85edca3d9df3d0c29c09e89056fb6f972a503.
+Phone acceptance of this candidate is requested and remains pending.
+
+Phone evidence: samsung-debuglog-153845.txt and samsung-depth24-msaa.txt under
+temp/xl-phone-fog-20261102. This launch measured archive fingerprinting at
+1.883804s and level initialization at 6.503040s; briefing dwell is excluded.
+Those timings do not establish responsiveness or a playable phone session.
