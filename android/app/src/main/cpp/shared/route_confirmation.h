@@ -69,6 +69,7 @@ typedef struct route_confirmation_summary {
 	int starts_from_current_state;
 	/* -1 verifies the whole level; 0/1/2 verify only blue/red/gold pickup */
 	int requested_key;
+	int requested_segment;
 	int requested_exit_trigger;
 	int transitioned_level;
 	int transitioned_key_flags;
@@ -84,6 +85,7 @@ typedef struct route_confirmation_summary {
 int route_confirmation_start(void);
 int route_confirmation_start_from_current_state(void);
 int route_confirmation_configure_key_goal(const char *key);
+int route_confirmation_configure_segment_goal(const char *segment);
 int route_confirmation_commit_player_position(void);
 int route_confirmation_configure_exit_goal(const char *trigger);
 int route_confirmation_handle_requested_exit_trigger(int objnum, int trigger);

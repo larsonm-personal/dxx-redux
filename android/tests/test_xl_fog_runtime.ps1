@@ -55,7 +55,7 @@ try {
     Invoke-FogAdb -Arguments @('push', (Resolve-Path -LiteralPath $Descriptor).Path, '/data/local/tmp/xl-fog.mn2') | Out-Null
     Invoke-FogPrivate 'mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-fog.hog files/d2x-redux/missions/fogctrl.hog && cp /data/local/tmp/xl-fog.mn2 files/d2x-redux/missions/fogctrl.mn2' | Out-Null
     Invoke-FogAdb -Arguments @('logcat', '-c') | Out-Null
-    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scriptName -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
+    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scriptName -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -TimeoutSeconds 480
     $testExit = $LASTEXITCODE
     Invoke-FogAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/logcat.txt" -Encoding utf8
     Invoke-FogPrivate 'cat files/automation_result.json' | Set-Content "$output/result.json" -Encoding utf8

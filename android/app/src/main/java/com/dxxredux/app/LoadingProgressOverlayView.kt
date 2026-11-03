@@ -107,7 +107,7 @@ class LoadingProgressOverlayView(
     ) {
         hideHandler.removeCallbacks(hideRunnable)
         itemLabel = formatLoadingProgressText(item)
-        progressPercent = percent.coerceIn(0, 100)
+        progressPercent = percent.coerceIn(-1, 100)
         visibility = VISIBLE
         invalidate()
         if (progressPercent >= 100) {
@@ -145,7 +145,18 @@ class LoadingProgressOverlayView(
 
         canvas.drawRoundRect(barRect, layout.cornerRadius, layout.cornerRadius, backgroundPaint)
 
-        if (layout.clampedPercent > 0) {
+        if (progressPercent < 0) {
+            val fraction = (android.os.SystemClock.uptimeMillis() % 1600L) / 1600f
+            val span = innerRect.width() * 0.25f
+            val left = innerRect.left + (innerRect.width() - span) * (1f - kotlin.math.abs(2f * fraction - 1f))
+            canvas.drawRoundRect(
+                RectF(left, innerRect.top, left + span, innerRect.bottom),
+                layout.cornerRadius,
+                layout.cornerRadius,
+                fillPaint,
+            )
+            postInvalidateOnAnimation()
+        } else if (layout.clampedPercent > 0) {
             val progressRight = innerRect.left + innerRect.width() * (layout.clampedPercent / 100f)
             if (progressRight > innerRect.left) {
                 val fillRect = RectF(innerRect.left, innerRect.top, progressRight, innerRect.bottom)

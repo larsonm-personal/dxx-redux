@@ -1,9 +1,9 @@
 #include "spawn_points.h"
 #include "preview.h"
-#include "motion_math.h"
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include "motion_math.h"
 extern "C" {
 #include "inferno.h"
 #include "object.h"

@@ -26,6 +26,9 @@
 #include "android_mod_bitmaps.h"
 #include "android_texture_usage.h"
 #include "input_demo_codec.h"
+#ifdef __ANDROID__
+#include "android_loading_progress.h"
+#endif
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "fog.h"
@@ -2814,6 +2817,10 @@ extern "C" char *game_introspect_get_state(void)
 		j["debug_flags"] = std::move(dbg);
 	}
 	j["merged_wall_last_draw_state"] = serialize_merged_wall_last_draw_state();
+#ifdef __ANDROID__
+	j["loading_progress"] = { { "active", android_loading_progress_is_active() != 0 },
+		                      { "updates", android_loading_progress_get_flush_count() } };
+#endif
 
 	/* -- Endlevel sequence --------------------------------------- */
 	{

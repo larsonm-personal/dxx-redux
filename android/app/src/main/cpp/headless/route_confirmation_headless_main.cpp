@@ -4,6 +4,13 @@
 #include <string.h>
 
 #include <string>
+#include <set>
+#include <fstream>
+#include <nlohmann/json.hpp>
+
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#endif
 
 #include <physfs.h>
 #include <SDL.h>
@@ -22,6 +29,9 @@ extern "C" {
 #include "dxxerror.h"
 #include "game.h"
 #include "gameseq.h"
+#include "gamesave.h"
+#include "escort.h"
+#include "segment.h"
 #include "gr.h"
 #include "inferno.h"
 #include "input_demo_start.h"
@@ -227,10 +237,12 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "ROUTE-CONFIRM phase=entry\n");
 	char error[256] = "";
 	const char *output = find_arg_value(argc, argv, "-route-confirm-json-out");
+	const char *load_proof = find_arg_value(argc, argv, "-route-confirm-load-proof");
 	const char *mission = find_arg_value(argc, argv, "-mission");
 	const char *extra_dir = find_arg_value(argc, argv, "-extra-dir");
 	const char *level_text = find_arg_value(argc, argv, "-level");
 	const char *checkpoint = find_arg_value(argc, argv, "-route-confirm-checkpoint");
+	const char *segment_goal = find_arg_value(argc, argv, "-route-confirm-segment");
 	const char *key_goal = find_arg_value(argc, argv, "-route-confirm-key");
 	const char *checkpoint_out = find_arg_value(argc, argv, "-route-confirm-checkpoint-out");
 	const char *exit_goal = find_arg_value(argc, argv, "-route-confirm-exit-trigger");
@@ -238,8 +250,10 @@ int main(int argc, char *argv[])
 	for (int index = 1; index < argc; ++index)
 		if (!strcmp(argv[index], "-route-confirm-native-transition")) native_transition = true;
 	for (int index = 1; index < argc; ++index)
-		if ((!strcmp(argv[index], "-route-confirm-checkpoint") && (!checkpoint || !*checkpoint)) ||
+		if ((!strcmp(argv[index], "-route-confirm-load-proof") && (!load_proof || !*load_proof)) ||
+		    (!strcmp(argv[index], "-route-confirm-checkpoint") && (!checkpoint || !*checkpoint)) ||
 		    (!strcmp(argv[index], "-route-confirm-checkpoint-out") && (!checkpoint_out || !*checkpoint_out)) ||
+		    (!strcmp(argv[index], "-route-confirm-segment") && (!segment_goal || !*segment_goal)) ||
 		    (!strcmp(argv[index], "-route-confirm-key") && (!key_goal || !*key_goal)) ||
 		    (!strcmp(argv[index], "-route-confirm-exit-trigger") && (!exit_goal || !*exit_goal))) {
 			fprintf(stderr, "ROUTE-CONFIRM FAIL value required for %s\n", argv[index]);
@@ -249,8 +263,9 @@ int main(int argc, char *argv[])
 	    find_arg_value(argc, argv, "-route-confirm-timeout-seconds");
 	int level = 0;
 	if (!output || !parse_level(level_text, &level) ||
-	    (key_goal && exit_goal) || (native_transition && !exit_goal) ||
+	    (key_goal && exit_goal) || (segment_goal && (key_goal || exit_goal)) || (native_transition && !exit_goal) ||
 	    !route_confirmation_configure_key_goal(key_goal) ||
+	    !route_confirmation_configure_segment_goal(segment_goal) ||
 	    !route_confirmation_configure_exit_goal(exit_goal) ||
 	    !route_confirmation_configure_speed(find_arg_value(argc, argv, "-route-confirm-speed-percent")) ||
 	    (time_limit_text && !configure_time_limit(time_limit_text))) {
@@ -259,7 +274,8 @@ int main(int argc, char *argv[])
 		        "[-mission <name>] [-hogdir <dir>] "
 		        "[-route-confirm-timeout-seconds <1..3600>] "
 		        "[-route-confirm-checkpoint <mounted save path>] "
-		        "[-route-confirm-key <blue|red|gold>] "
+		        "[-route-confirm-key <blue|red|gold> | -route-confirm-segment <number>] "
+		        "[-route-confirm-load-proof <path>] "
 		        "[-route-confirm-checkpoint-out <mounted save path>] "
 		        "[-route-confirm-exit-trigger <number>] [-route-confirm-native-transition] "
 		        "[-route-confirm-speed-percent <100..200>]\n",
@@ -305,6 +321,18 @@ int main(int argc, char *argv[])
 	StartNewGame(level);
 	if (level < 0)
 		Newdemo_state = ND_STATE_NORMAL;
+	nlohmann::ordered_json proof;
+	if (load_proof) {
+		proof = { { "mission", Current_mission_filename }, { "level", Current_level_num }, { "level_file", Gamesave_current_filename }, { "segments", Num_segments } };
+#ifdef DXX_XL_RUNTIME
+		proof["xl_active"] = xl_level_extensions_active() != 0;
+		proof["level_version"] = xl_source_level_version();
+		proof["game_version"] = xl_source_game_version();
+#else
+		proof["xl_active"] = false;
+#endif
+	}
+	std::set<int> visited_segments;
 	if (checkpoint) {
 		const std::string expected_mission = Current_mission_filename;
 		fprintf(stderr, "ROUTE-CONFIRM phase=checkpoint-restore\n");
@@ -331,6 +359,9 @@ int main(int argc, char *argv[])
 		route_confirmation_prepare_frame_time();
 		calc_game_time();
 		GameProcessFrame();
+		if (load_proof && Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index &&
+		    Objects[Buddy_objnum].segnum >= 0 && Objects[Buddy_objnum].segnum < Num_segments)
+			visited_segments.insert(Objects[Buddy_objnum].segnum);
 	}
 	{
 		const route_confirmation_summary *summary =
@@ -361,6 +392,13 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "ROUTE-CONFIRM FAIL could not save verified world\n");
 				return 1;
 			}
+		}
+		if (load_proof) {
+			proof["visited_segments"] = visited_segments.size();
+			std::ofstream stream(load_proof);
+			stream << proof.dump(2) << '\n';
+			stream.close();
+			if (!stream) return 1;
 		}
 		fprintf(stderr, "ROUTE-CONFIRM phase=shutdown\n");
 		args_exit();

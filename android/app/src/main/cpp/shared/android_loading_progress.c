@@ -121,7 +121,7 @@ static void loading_progress_flush_locked(int force)
 			g_loading_progress_done = g_loading_progress_total;
 		percent = (100 * g_loading_progress_done + g_loading_progress_total / 2) / g_loading_progress_total;
 	} else {
-		percent = 0;
+		percent = -1;
 	}
 	loading_progress_call_show(phase, label, percent);
 }
@@ -197,7 +197,21 @@ int android_loading_progress_get_flush_count(void)
 	return count;
 }
 
+int android_loading_progress_is_active(void)
+{
+	int active;
+	pthread_mutex_lock(&g_loading_progress_lock);
+	active = g_loading_progress_active;
+	pthread_mutex_unlock(&g_loading_progress_lock);
+	return active;
+}
+
 #else
+
+int android_loading_progress_is_active(void)
+{
+	return 0;
+}
 
 void android_loading_progress_begin(const char *phase_label, int total_items)
 {

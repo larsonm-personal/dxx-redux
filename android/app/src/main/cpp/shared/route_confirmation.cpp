@@ -93,6 +93,7 @@ struct controller_state {
 
 controller_state State = {};
 int Configured_key_goal = -1;
+int Configured_segment_goal = -1;
 int Configured_exit_goal = -1;
 unsigned int Configured_time_limit_seconds =
     ROUTE_CONFIRMATION_DEFAULT_TIME_LIMIT_SECONDS;
@@ -527,7 +528,13 @@ int prepare_next_goal(int restorer_trigger, int restorer_wall = -1)
 		return 0;
 	}
 	actor = &Objects[State.actor_objnum];
-	if (State.summary.requested_key >= 0) {
+	if (State.summary.requested_segment >= 0) {
+		if (State.summary.requested_segment >= Num_segments) {
+			fail(ROUTE_CONFIRMATION_FAILED, "requested segment is outside the loaded level");
+			return 0;
+		}
+		level_metadata_rescan_route_to_segment_from_object(State.actor_objnum, State.summary.requested_segment);
+	} else if (State.summary.requested_key >= 0) {
 		if (Players[Player_num].flags & key_player_flag(State.summary.requested_key)) {
 			capture_rng_boundary(&State.summary.rng_end);
 			State.summary.status = ROUTE_CONFIRMATION_CONFIRMED;
@@ -1082,7 +1089,9 @@ void record_objective_and_replan(void)
 	        result->route_step_index, result->completed_frame,
 	        (long long) result->completed_ticks, result->label);
 #endif
-	if (State.step.kind == LEVEL_METADATA_ROUTE_EXIT) {
+	if ((State.summary.requested_segment < 0 && State.step.kind == LEVEL_METADATA_ROUTE_EXIT) ||
+	    (State.summary.requested_segment >= 0 && State.step.kind == LEVEL_METADATA_ROUTE_UNEXPLORED &&
+	     valid_object(State.actor_objnum) && Objects[State.actor_objnum].segnum == State.summary.requested_segment)) {
 		capture_rng_boundary(&State.summary.rng_end);
 		State.summary.status = ROUTE_CONFIRMATION_CONFIRMED;
 		State.phase = PHASE_IDLE;
@@ -1898,7 +1907,11 @@ void apply_objective_action(object *actor)
 			break;
 
 		default:
-			if (actor_reached_target(actor))
+			if (State.summary.requested_segment >= 0 && State.step.kind == LEVEL_METADATA_ROUTE_UNEXPLORED &&
+			    State.target_seg == State.summary.requested_segment && actor->segnum == State.summary.requested_segment &&
+			    actor_reached_target(actor))
+				record_objective_and_replan();
+			else if (actor_reached_target(actor))
 				fail(ROUTE_CONFIRMATION_UNSUPPORTED,
 				     "route objective activation is not supported");
 			break;
@@ -1913,6 +1926,7 @@ static int start_confirmation(int from_current_state)
 	memset(&State, 0, sizeof(State));
 	State.summary.starts_from_current_state = from_current_state;
 	State.summary.requested_key = Configured_key_goal;
+	State.summary.requested_segment = Configured_segment_goal;
 	State.summary.requested_exit_trigger = Configured_exit_goal;
 	State.summary.status = ROUTE_CONFIRMATION_RUNNING;
 	State.summary.seed = ROUTE_CONFIRMATION_CANONICAL_SEED;
@@ -2293,6 +2307,17 @@ extern "C" int route_confirmation_configure_key_goal(const char *key)
 	return 1;
 }
 
+extern "C" int route_confirmation_configure_segment_goal(const char *segment)
+{
+	char *end = NULL;
+	const long value = segment ? strtol(segment, &end, 10) : -1;
+	if (State.summary.status == ROUTE_CONFIRMATION_RUNNING ||
+	    (segment && (!*segment || !end || *end || value < 0 || value >= MAX_SEGMENTS)))
+		return 0;
+	Configured_segment_goal = static_cast<int>(value);
+	return 1;
+}
+
 extern "C" int route_confirmation_configure_exit_goal(const char *trigger)
 {
 	char *end = NULL;
@@ -2497,6 +2522,10 @@ extern "C" int route_confirmation_start(void)
 	return 0;
 }
 extern "C" int route_confirmation_start_from_current_state(void)
+{
+	return 0;
+}
+extern "C" int route_confirmation_configure_segment_goal(const char *)
 {
 	return 0;
 }

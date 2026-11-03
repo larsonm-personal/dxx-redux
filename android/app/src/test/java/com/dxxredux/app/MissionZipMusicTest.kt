@@ -14,6 +14,43 @@ import java.util.zip.ZipOutputStream
 
 class MissionZipMusicTest {
     @Test
+    fun soundtrackUsesAuthoredMusicAndKeepsEffectsOutOfBrowser() {
+        val zip =
+            createZip("pumo-soundtrack") {
+                writeEntry("mods/pmines/music/title.ogg", byteArrayOf(1))
+                writeEntry("mods/pmines/music/level01.ogg", byteArrayOf(2))
+                writeEntry("mods/pmines/sounds/robot.wav", byteArrayOf(3))
+                writeEntry("mods/pmines/sounds/alarm.ogg", byteArrayOf(4))
+            }
+        val catalog = requireNotNull(MissionZipMusic.inspect(zip))
+        assertEquals(4, catalog.sources.sumOf { it.tracks.size })
+        assertEquals(
+            listOf("title.ogg", "level01.ogg").sorted(),
+            MissionZipMusic
+                .soundtrackSources(catalog)
+                .flatMap { it.tracks }
+                .map { it.displayName }
+                .sorted(),
+        )
+    }
+
+    @Test
+    fun explicitPlaylistCanSelectWavWithoutIncludingOtherEffects() {
+        val zip =
+            createZip("wav-playlist") {
+                writeEntry("descent.sng", "sounds/song.wav\n".toByteArray())
+                writeEntry("sounds/song.wav", byteArrayOf(1))
+                writeEntry("sounds/robot.wav", byteArrayOf(2))
+                writeEntry("unused.ogg", byteArrayOf(3))
+            }
+        val catalog = requireNotNull(MissionZipMusic.inspect(zip))
+        assertEquals(
+            listOf("sounds/song.wav"),
+            MissionZipMusic.soundtrackSources(catalog).flatMap { it.tracks }.map { it.sourceRelativeName },
+        )
+    }
+
+    @Test
     fun detectsTopLevelSongListReferences() {
         val zip =
             createZip("music-top-level") {

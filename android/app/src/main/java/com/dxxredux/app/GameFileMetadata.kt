@@ -85,7 +85,13 @@ internal object GameFileMetadata {
         zipFile: File,
         path: String,
         displayName: String,
+        extractedFile: File? = null,
     ): Summary? {
+        // A null local summary means no specialized metadata, not a missing source.
+        if (extractedFile != null) return summarizeLocalFile(extractedFile)
+        if (GameFileFormats.extensionOf(displayName) !in setOf("hog", "dxa", "pig", "pog", "rl2", "mn2", "msn")) {
+            return null
+        }
         if (!zipFile.isFile) return null
         ArchiveFiles.open(zipFile).use { zip ->
             val entry = zip.findEntry(path) ?: return null

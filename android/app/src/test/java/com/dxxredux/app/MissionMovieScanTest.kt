@@ -2,10 +2,23 @@ package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MissionMovieScanTest {
+    @Test
+    fun xlRuntimeEligibilityDoesNotImplyClassicMovieLoaderSupport() {
+        val xl = XlCompatibilityReport("pmines.hog", "eligible", "Runtime eligible", emptyList(), true)
+        val scan = requireNotNull(MissionMovieScan.compatibilityLimitation(listOf(xl)))
+        assertEquals("unsupported_format", scan.status)
+        assertEquals("Movie inspection is not available for this XL format", scan.summary)
+        assertTrue(scan.required.isEmpty() && scan.missing.isEmpty())
+        assertTrue(scan.problems.single().contains("unverified"))
+        assertNull(MissionMovieScan.compatibilityLimitation(listOf(xl.copy(blocksAnalysis = false))))
+        assertNull(MissionMovieScan.compatibilityLimitation(emptyList()))
+    }
+
     @Test
     fun parsesNativeScanWithoutRequiringLevelAnalysis() {
         val result =

@@ -283,7 +283,7 @@ internal class XlCompatibilityViewChecks(
                             "Supported fixture",
                             "2",
                             "Synthetic supported feature",
-                            "full",
+                            "supported",
                             "",
                             2,
                             true,
@@ -299,23 +299,23 @@ internal class XlCompatibilityViewChecks(
                     }
                 }
                 instrumentation.waitForIdleSync()
-                click("D2X-XL compatibility: cannot load")
+                click("D2X-XL feature support")
                 awaitText("D2X-XL extensions")
-                scrollTo("Wall teleports: 3")
+                scrollTo("Wall teleports")
                 instrumentation.waitForIdleSync()
                 SystemClock.sleep(300)
                 val theme = if (dark) "dark" else "light"
                 capture("xl-feature-browser-$theme.png").recycle()
                 assertColor("Unsupported", if (dark) 0xFFB4AB else 0xB3261E)
-                scrollTo("Water segments: 1")
+                scrollTo("Water segments")
                 assertColor("Experimental / partial", if (dark) 0xFFB86C else 0x8A4B00)
-                scrollTo("Eligible fixture: 1")
+                scrollTo("Eligible fixture")
                 assertColor("Eligible; runtime checks needed", if (dark) 0xFFB86C else 0x8A4B00)
-                scrollTo("Supported fixture: 2")
+                scrollTo("Supported fixture")
                 assertColor("Supported", if (dark) 0x81C995 else 0x216E39)
-                scrollTo("Water segments: 1", AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
-                val waterBounds = settledBounds("Water segments: 1")
-                click("Water segments: 1")
+                scrollTo("Water segments", AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
+                val waterBounds = settledBounds("Water segments")
+                click("Water segments")
                 awaitText("What XL does")
                 scrollTo("Current Redux support")
                 scrollTo("Feature support does not mean this level is playable.")
@@ -324,13 +324,13 @@ internal class XlCompatibilityViewChecks(
                 instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
                 instrumentation.waitForIdleSync()
                 awaitText("D2X-XL extensions")
-                val restoredBounds = settledBounds("Water segments: 1")
+                val restoredBounds = settledBounds("Water segments")
                 check(restoredBounds == waterBounds) {
                     "Explanation Back lost the feature-list position: before=$waterBounds after=$restoredBounds"
                 }
                 checkpoint("water Back preserved $restoredBounds")
-                scrollTo("Wall teleports: 3", AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
-                click("Wall teleports: 3")
+                scrollTo("Wall teleports", AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
+                click("Wall teleports")
                 awaitText("What XL does")
                 awaitText("Unsupported")
                 scrollTo("Current Redux support")
@@ -351,15 +351,15 @@ internal class XlCompatibilityViewChecks(
                     launcher.setContent { MaterialTheme { XlCompatibilityButton(listOf(report)) } }
                 }
                 instrumentation.waitForIdleSync()
-                click("D2X-XL compatibility: unverified")
+                click("D2X-XL feature support")
                 if (rows.isEmpty()) {
-                    awaitText("No feature inventory available; support is unknown")
+                    awaitText("No feature inventory available")
                 } else {
-                    awaitText("Missing fixture: ?")
-                    awaitText("Not inspected")
-                    awaitText("Absent fixture: 0")
+                    awaitText("Missing fixture")
+                    awaitText("Unverified")
+                    awaitText("Absent fixture")
                     awaitText("Not present")
-                    click("Missing fixture: ?")
+                    click("Missing fixture")
                     awaitText("No verified feature explanation is available")
                     click("Back to features")
                 }
@@ -374,17 +374,15 @@ internal class XlCompatibilityViewChecks(
                 launcher.setContent { MaterialTheme { XlCompatibilityButton(listOf(sourceA, sourceB)) } }
             }
             instrumentation.waitForIdleSync()
-            click("D2X-XL compatibility: unverified")
-            awaitText("Missing fixture: ?")
-            click("Source B")
-            awaitText("Absent fixture: 0")
-            awaitText("Sibling not inspected")
+            click("D2X-XL feature support")
+            awaitText("Missing fixture")
+            awaitText("Absent fixture")
+            awaitText("Whole-package summary from 2 source reports")
             click("Close")
             instrumentation.waitForIdleSync()
-            click("D2X-XL compatibility: unverified")
-            awaitText("Absent fixture: 0")
-            click("Source A")
-            awaitText("Missing fixture: ?")
+            click("D2X-XL feature support")
+            awaitText("Absent fixture")
+            awaitText("Missing fixture")
             click("Close")
             instrumentation.waitForIdleSync()
             val catalog =
@@ -397,7 +395,7 @@ internal class XlCompatibilityViewChecks(
                     count = 1,
                     status = "partial",
                 )
-            checkpoint("source switching and reopen passed")
+            checkpoint("aggregate summary and reopen passed")
             val longRows =
                 List(12) { XlCompatibilityRow("Uninspected category $it", "Unknown", "Unqualified", "unknown", "") } +
                     water.copy(counted = false)
@@ -412,7 +410,7 @@ internal class XlCompatibilityViewChecks(
                 }
             }
             instrumentation.waitForIdleSync()
-            click("D2X-XL compatibility: cannot load")
+            click("D2X-XL feature support")
             awaitText("D2X-XL extensions")
             click("Uninspected category 0")
             awaitText("No verified feature explanation is available")
@@ -474,7 +472,7 @@ internal class XlCompatibilityViewChecks(
                 launcher.setContent { MaterialTheme { XlCompatibilityButton(listOf(report)) } }
             }
             instrumentation.waitForIdleSync()
-            click("D2X-XL compatibility: cannot load")
+            click("D2X-XL feature support")
             scrollTo(effect.feature)
             click(effect.feature)
             awaitText("What XL does")
@@ -552,7 +550,7 @@ internal class XlCompatibilityViewChecks(
                 launcher.setContent { MaterialTheme { XlCompatibilityButton(reports) } }
             }
             instrumentation.waitForIdleSync()
-            click("D2X-XL compatibility: cannot load")
+            click("D2X-XL feature support")
             scrollTo("Mission WAV effects and sound banks")
             click("Mission WAV effects and sound banks")
             awaitText("What XL does")

@@ -2218,6 +2218,27 @@ int escort_save_runtime(guidebot_save_stream *s)
 		if (route_bytes && s->ok) {
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 			const size_t start = s->bytes;
+			if (!s->writing) {
+				/* XL expanded the trigger array without changing the save version.
+				 * Accept only the two exact framed layouts, not a guessed offset */
+				guidebot_save_stream measure = *s;
+				measure.writing = 2;
+				measure.bytes = 0;
+				measure.trigger_capacity = 0;
+				escort_route_save_runtime(&measure);
+				level_metadata_save_runtime(&measure);
+				if (!measure.ok) return s->ok = 0;
+				s->trigger_capacity = 0;
+				if (route_bytes != measure.bytes) {
+					if (MAX_TRIGGERS > DXX_CLASSIC_MAX_TRIGGERS &&
+					    route_bytes + (MAX_TRIGGERS - DXX_CLASSIC_MAX_TRIGGERS) == measure.bytes)
+						s->trigger_capacity = DXX_CLASSIC_MAX_TRIGGERS;
+					else {
+						guidebot_save_failure(s, "route frame size");
+						return s->ok = 0;
+					}
+				}
+			}
 			escort_route_save_runtime(s);
 #ifdef __ANDROID__
 			if (s->writing) android_save_probe_mark("route_write");

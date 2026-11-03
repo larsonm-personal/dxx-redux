@@ -59,6 +59,40 @@ object MissionZipMusic {
     private val COMPRESSED_AUDIO_EXTENSIONS = setOf("flac", "mp3", "ogg", "wav")
     private val PLAYABLE_EXTENSIONS = MIDI_EXTENSIONS + COMPRESSED_AUDIO_EXTENSIONS
 
+    // Keep the complete catalog for preview lookup and alternate MIDI metadata.
+    // Explicit playlists and authored music directories define the browsing view.
+    internal fun soundtrackSources(catalog: MissionZipMusicCatalog): List<MissionZipMusicSource> {
+        val selectedIds =
+            catalog.songLists
+                .flatMap { resolveSongList(catalog, it) }
+                .map { it.track.id }
+                .toSet()
+
+        fun parts(track: MissionZipMusicTrack): List<String> =
+            (track.nestedEntryPath ?: track.archiveEntryPath)
+                .replace(
+                    '\\',
+                    '/',
+                ).lowercase(Locale.ROOT)
+                .split('/')
+                .dropLast(1)
+        val hasMusicDirectory = catalog.sources.any { source -> source.tracks.any { "music" in parts(it) } }
+        return catalog.sources.mapNotNull { source ->
+            val tracks =
+                source.tracks.filter { track ->
+                    val directories = parts(track)
+                    when {
+                        track.id in selectedIds || track.kind == KIND_SONG_REFERENCE -> true
+                        directories.any { it in setOf("sound", "sounds", "sfx") } -> false
+                        "music" in directories -> true
+                        hasMusicDirectory || catalog.songLists.isNotEmpty() -> false
+                        else -> true
+                    }
+                }
+            source.copy(tracks = tracks).takeIf { tracks.isNotEmpty() }
+        }
+    }
+
     private fun logSkippedOptionalSource(
         path: String,
         error: Exception,
