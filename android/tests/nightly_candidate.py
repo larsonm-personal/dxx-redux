@@ -79,7 +79,6 @@ def verify(target_sha=None, env=None, fetch=api):
             and pr["base"]["repo"]["id"] == REPOSITORY_ID
             and head["repo"]["id"] == REPOSITORY_ID
             and head["repo"]["full_name"] == retail.REPOSITORY
-            and head["repo"]["fork"] is False
             and head["sha"] == sha
             and fetch("git/ref/heads/" + quote(head["ref"], safe=""))["object"]["sha"] == sha
         ):

@@ -86,7 +86,6 @@ def verify(target_sha=None, env=None, fetch=api, event=None):
             and pr["user"]["id"] == actor["id"]
             and pr["base"]["repo"]["id"] == REPOSITORY_ID
             and head["repo"]["id"] == REPOSITORY_ID
-            and head["repo"]["fork"] is False
             and head["repo"]["full_name"] == retail.REPOSITORY
             and head["ref"] == source["head_branch"]
             and head["sha"] == sha

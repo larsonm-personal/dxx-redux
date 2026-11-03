@@ -63,6 +63,7 @@ class CandidateTests(unittest.TestCase):
         return self.candidate.verify(SHA, self.env, self.responses.__getitem__)
 
     def test_exact_endorsement_and_same_actor_rerun(self):
+        self.responses["pulls/319"]["head"]["repo"]["fork"] = True
         self.assertEqual(self.verify(), SHA)
         self.env["GITHUB_RUN_ATTEMPT"] = "2"
         self.responses["actions/runs/123"]["run_attempt"] = 2
@@ -91,7 +92,7 @@ class CandidateTests(unittest.TestCase):
             ("actions/runs/123", ["repository", "id"], 99),
             ("pulls/319", ["user", "id"], 99),
             ("pulls/319", ["head", "repo", "id"], 99),
-            ("pulls/319", ["head", "repo", "fork"], True),
+            ("pulls/319", ["head", "repo", "full_name"], "outsider/fork"),
             ("pulls/319", ["head", "sha"], "b" * 40),
             ("git/ref/heads/my%2Fbranch", ["object", "sha"], "b" * 40),
         ]
@@ -211,6 +212,7 @@ class AutomaticCandidateTests(unittest.TestCase):
         return self.automatic.verify(sha, self.env, self.responses.__getitem__, self.event)
 
     def test_owned_source_exact_head_and_same_actor_rerun(self):
+        self.responses["pulls/319"]["head"]["repo"]["fork"] = True
         self.assertEqual(self.verify(), {"number": 319, "sha": SHA})
         self.responses["actions/runs/123"]["run_attempt"] = 2
         self.env["GITHUB_RUN_ATTEMPT"] = "2"
@@ -231,7 +233,7 @@ class AutomaticCandidateTests(unittest.TestCase):
             ("actions/runs/456", ["run_attempt"], 2),
             ("pulls/319", ["user", "id"], 99),
             ("pulls/319", ["head", "repo", "id"], 99),
-            ("pulls/319", ["head", "repo", "fork"], True),
+            ("pulls/319", ["head", "repo", "full_name"], "outsider/fork"),
             ("pulls/319", ["state"], "closed"),
             ("pulls/319", ["head", "sha"], "b" * 40),
             ("git/ref/heads/my%2Fbranch", ["object", "sha"], "b" * 40),
