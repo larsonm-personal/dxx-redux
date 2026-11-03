@@ -1,40 +1,49 @@
 # Original Pumo gameplay playtest
 
-**November 2 phone limitation:** The reported Samsung SM-S931U / Adreno 830
-cannot enter Pumo because the required fog scene-depth transfer check fails.
-The emulator results below do not qualify that phone, and no alternative Pumo
-level is verified there. Do not downgrade to this bundle to repeat that failure.
-The latest loading/save fixes are local; a replacement phone APK and a working
-fog path are still needed before a useful gameplay session. Next-tranche work
-prioritizes that live-test prerequisite; see
-[phone follow-up](../ai%20tool%20plans/pumo_phone_loading_restore_followup.md).
+The new [phone fog candidate](../../temp/pumo-phone-fog-playtest-20261102/README.md)
+includes ARM64, ARMv7 and x86_64, the preserved loading/save and metadata fixes,
+and verified direct scene depth for fog, soft particles and lightning.
+[Manifest](../../temp/pumo-phone-fog-playtest-20261102/manifest.json) and
+[ZIP](../../temp/pumo-phone-fog-playtest-20261102.zip) retain exact identities and evidence.
 
-The latest verified bundle is [pumo-selector-playtest-20261102.zip](../../temp/pumo-selector-playtest-20261102.zip).
-Its [README](../../temp/pumo-selector-playtest-20261102/README.md) and
-[manifest](../../temp/pumo-selector-playtest-20261102/manifest.json) record installation,
-exact hashes and validation. Original mission content is unchanged.
+**Physical Samsung SM-S931U / Adreno 830 remains untested.** The earlier phone
+build rejected required fog depth transfer. The owned SwiftShader emulator
+reproduced the broken transfer and now passes the new capture path. This ARM
+candidate is ready for a short live session; no alternative phone level is
+claimed verified. See [depth evidence](evidence/fog-direct-depth.md).
 
-Source: `8b80ef220dbda2d9481c21611084ef21f5413808`, stacked through
-[PR308](https://github.com/larsonm-personal/dxx-redux/pull/308). All six D1/D2
-libraries across ARM64, ARMv7 and x86_64 match this commit and version code 28810,
-which updates 28800 normally. APK SHA-256:
-`89df3369e09897fbce528d6ae4825c7d9c58d02e30ca55741e99c3347fc49069`.
-ZIP SHA-256:
-`e4b1b6d698131956664a9d96fe3fffbdaeaf4a6e7cdb91a36b6447dd18c1094b`.
+Source: `4abb2b47dab5915d898959089fed8b826d669372`, version code **29080**.
+All six native library IDs match. APK SHA-256:
+`5d535b74c71de7a416a0f7f0555fb40e51215f59b69bd94796fce33f149f7788`.
+Runtime archive SHA-256:
+`f54be3a7f2b6a6755a85b22d52bcb947379f5d54ecde8df8d329230217db4bbd`.
+Stack: [PR318](https://github.com/larsonm-personal/dxx-redux/pull/318),
+[PR320](https://github.com/larsonm-personal/dxx-redux/pull/320),
+[PR321](https://github.com/larsonm-personal/dxx-redux/pull/321).
+Later branch commits repair CI inventories only; the APK remains pinned above.
 
-This build repairs [repeatable PMC2 selectors](evidence/pmc2-selectors.md).
-Previously, a first laser hit destroyed a permanent control panel. Changing a
-setting and trying to select the earlier choice again could therefore leave
-its route locked. The panel and its light now remain intact, as in the pinned
-XL source, while normal impact and trigger activation still occur. Ordinary
-destructible panels retain their behavior.
+Why: depth blits can report success while returning unchanged depth. The new
+path qualifies direct clears and raster writes numerically, captures normal
+geometry depth, and preserves fog, particle fading and lightning occlusion.
+Indexed POG palette-key flags now match original XL so opaque walls write depth.
+No mission rewrite, GPU-name exception or admission bypass is used. Direct scene
+capture is single sampled even with 2x/4x presentation; equivalent scene MSAA is
+not claimed.
 
-It retains [difficulty-dependent boss weak spots](evidence/pmc-boss-combat.md),
-[final-HXM boss binding](evidence/hxm-gameplay.md) and the
-[reactor/objective correction](evidence/reactor-objectives.md). The original PMC1
-reactor remains alongside its six countdown bosses; destroying it does not start
-the final countdown while bosses remain. XL's enabled authored exit has no
-universal boss-clear lock. No objectives, weapons, keys or health are granted.
+Exact-APK qualification on owned Android 14 x86_64 SwiftShader:
+
+| Check                                                                            | Result                                                   | Boundary                                                              |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------- |
+| Original hub door and PMC exit, repeated after hub save/load                     | 36/36 PASS, 83.164s                                      | Normal laser/thrust; fixed local approaches                           |
+| Fog geometry, save/rewind, stock transitions, MSAA presentation and context loss | 208/208 PASS, 160.083s                                   | Seven derived levels; controlled pixel/geometry checks                |
+| Bundled installer                                                                | 14 protected files unchanged; installed APK hash matches | Owned emulator, not a physical phone                                  |
+| Rendered GuideBot authored PMC exit                                              | Unsupported after 548 physics frames                     | Companion reached exit; XL rejected activation; no progression credit |
+
+The previous [selector bundle](../../temp/pumo-selector-playtest-20261102/README.md)
+and all older bundles remain historical baselines. This candidate retains
+[repeatable selectors](evidence/pmc2-selectors.md),
+[boss weak spots](evidence/pmc-boss-combat.md), [HXM binding](evidence/hxm-gameplay.md)
+and [reactor/objective corrections](evidence/reactor-objectives.md).
 
 ## Install and start playing
 
@@ -44,7 +53,7 @@ From the repository root:
 
 ```powershell
 pwsh -NoProfile -File android/helpers/install_pumo_playtest.ps1 `
-  -Serial YOUR_DEVICE_SERIAL -Bundle temp/pumo-selector-playtest-20261102
+  -Serial YOUR_DEVICE_SERIAL -Bundle temp/pumo-phone-fog-playtest-20261102
 ```
 
 From an extracted ZIP, run `pwsh -NoProfile -File ./install_pumo_playtest.ps1
@@ -61,7 +70,7 @@ Control Station and Cybernetic Menaces Research Lab. Existing touch/controller
 bindings apply. Use the pause menu for Quick Save/Load or named save slots;
 normal Load Game resumes after closing the app.
 
-## Verified scope
+## Historical broader coverage (selector baseline 8b80ef22)
 
 | Scenario on this exact APK       | Result            | Scope                                                                                                                                                                            |
 | -------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

@@ -18,6 +18,8 @@ extern "C" {
 #endif
 }
 #include "fog.h"
+#include "preview.h"
+#include "particle_renderer.h"
 #include "../fog_shader.h"
 
 #if defined(OGLES) && !defined(ANDROID)
@@ -29,6 +31,10 @@ extern "C" const char *ogl_xl_fog_prepare(void)
 extern "C" void ogl_xl_fog_volumes(const short *, int) {}
 extern "C" void ogl_xl_fog_begin_scene(void) {}
 extern "C" void ogl_xl_fog_end_scene(void) {}
+extern "C" int ogl_xl_fog_direct_depth_dimensions(int *, int *)
+{
+	return 0;
+}
 extern "C" void ogl_xl_fog_composite(void) {}
 extern "C" void ogl_xl_fog_destroy(int) {}
 extern "C" void ogl_xl_fog_diagnostics(struct xl_fog_diagnostics *out)
@@ -586,7 +592,7 @@ extern "C" const char *ogl_xl_fog_prepare(void)
 
 extern "C" void ogl_xl_fog_begin_scene(void)
 {
-	if (!xl_fog_active()) return;
+	if (!xl_fog_active() && !(xl_level_extensions_active() && xl_particle_soft_required())) return;
 	try {
 		// A restored context must select its capture path before scene geometry
 		if (!capable) {
@@ -618,6 +624,16 @@ extern "C" void ogl_xl_fog_begin_scene(void)
 	} catch (const std::exception &error) {
 		fail(error);
 	}
+}
+
+extern "C" int ogl_xl_fog_direct_depth_dimensions(int *width, int *height)
+{
+	GLint target = 0;
+	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &target);
+	if (!direct_scene_active || target != static_cast<GLint>(buffers.depth_fbo)) return 0;
+	*width = buffers.width;
+	*height = buffers.height;
+	return 1;
 }
 
 extern "C" void ogl_xl_fog_end_scene(void)

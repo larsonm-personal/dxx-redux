@@ -7,6 +7,7 @@
 #include "lightning_renderer.h"
 #include "lightning_scene.h"
 #include "particle_renderer.h"
+#include "fog.h"
 #include "../lightning_outline.h"
 extern "C" {
 #include "3d.h"
@@ -119,13 +120,15 @@ void xl_compat::draw_lightning_scene_item(const LightningSceneItem &item, Partic
 		return;
 	}
 	// Capture the full scene target so offset canvases retain source windowScale
-	if (!compositor.batch_active()) {
-		glViewport(0, 0, grd_curscreen->sc_w, grd_curscreen->sc_h);
-		depth.capture();
-		glViewport(view[0], view[1], view[2], view[3]);
-	}
+	int width = grd_curscreen->sc_w, height = grd_curscreen->sc_h;
+	if (!ogl_xl_fog_direct_depth_dimensions(&width, &height)) xl_camera_target_active_dimensions(&width, &height);
+	glViewport(0, 0, width, height);
+	bool captured = compositor.batch_active();
+	ParticleDepthRead scene_depth(depth, captured);
+	glViewport(view[0], view[1], view[2], view[3]);
 	const auto corona = image->border_handle();
-	compositor.begin(target, depth.texture, depth.stencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT, depth.width, depth.height, view);
+	const bool stencil = scene_depth.borrowed ? scene_depth.stencil != 0 : depth.stencil != 0;
+	compositor.begin(target, scene_depth.texture, stencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT, scene_depth.width, scene_depth.height, view);
 	compositor.draw(core, glow, item.random_nodes, color, item.width, matrix, corona, extent, { .25f, .25f });
 #endif
 }

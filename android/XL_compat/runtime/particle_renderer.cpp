@@ -10,6 +10,7 @@
 #include "lightning_renderer.h"
 #include "shield_renderer.h"
 #include "pog_renderer.h"
+#include "fog.h"
 #include "../particle_render.h"
 extern "C" {
 #include "3d.h"
@@ -25,6 +26,11 @@ void ogl_bindbmtex(grs_bitmap *);
 #include "camera_target_gpu.h"
 #endif
 
+namespace
+{
+unsigned soft_texture_count = 0;
+}
+
 namespace xl_compat
 {
 static void draw_particle_texture(GLuint image, const ParticleQuad *quads, std::size_t count);
@@ -34,13 +40,18 @@ struct ParticleTexture::State {
 	grs_bitmap bitmap{};
 	GLuint border = 0;
 	std::string name;
-	State(const PogBitmap &pixels, const char *label, bool require_soft_depth) : name(label)
+	bool requires_soft_depth;
+	State(const PogBitmap &pixels, const char *label, bool require_soft_depth) : name(label), requires_soft_depth(require_soft_depth)
 	{
 		if (const char *error = ogl_xl_rgba_prepare(int(pixels.width), int(pixels.height))) throw std::runtime_error(error);
 #if !defined(OGLES) || defined(ANDROID)
 		if (gl_initialized && require_soft_depth) {
 			prepare_particle_soft();
 			verify_particle_soft_depth();
+			xl_fog_diagnostics depth{};
+			ogl_xl_fog_diagnostics(&depth);
+			if (depth.direct_depth)
+				if (const char *error = ogl_xl_fog_prepare()) throw std::runtime_error(error);
 		}
 #endif
 		bitmap.bm_w = short(pixels.width);
@@ -52,6 +63,7 @@ struct ParticleTexture::State {
 		next = head;
 		if (next) next->previous = this;
 		head = this;
+		if (requires_soft_depth) ++soft_texture_count;
 	}
 	void release(bool abandoned)
 	{
@@ -62,6 +74,7 @@ struct ParticleTexture::State {
 	}
 	~State()
 	{
+		if (requires_soft_depth) --soft_texture_count;
 		release(false);
 		if (previous) previous->next = next;
 		else head = next;
@@ -303,6 +316,10 @@ extern "C" void xl_particle_soft_begin_scene(void)
 	particle_soft.active = true;
 	particle_soft.captured = false;
 #endif
+}
+extern "C" int xl_particle_soft_required(void)
+{
+	return soft_texture_count != 0;
 }
 extern "C" void xl_particle_soft_end_scene(void)
 {

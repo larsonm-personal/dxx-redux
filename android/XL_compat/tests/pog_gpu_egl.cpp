@@ -64,6 +64,10 @@ int xl_fog_active(void)
 {
 	return 0;
 }
+int xl_level_extensions_active(void)
+{
+	return 0;
+}
 // This asset-free owner has no level-bound camera monitors
 void xl_camera_monitor_uv(int, int, float *) {}
 void ogl_prepare_framebuffer_readback(void);
@@ -482,6 +486,7 @@ void original(const char *path)
 	std::cout << "Original GPU resources: " << resources << " POG files, " << count << " complete uploads/mipmaps and source shader comparisons\n";
 }
 #include "particle_gpu_controls.h"
+#include "particle_direct_depth_controls.h"
 #include "additive_wall_gpu_controls.h"
 #include "lightning_scene_gpu_controls.h"
 #include "sprite_bitmap_gpu_controls.h"
@@ -554,6 +559,7 @@ int main(int argc, char **argv)
 			check(shield_device_controls(shield_pixels) == 72, "Shared analytical shield controls failed");
 #endif
 			particle_gpu_controls();
+			particle_direct_depth_controls();
 			sprite_bitmap_gpu_controls();
 
 			particle_context_controls(recreate);

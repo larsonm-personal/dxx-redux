@@ -72,3 +72,25 @@ times out at the still-locked exit, preserving the reactor prerequisite. Neither
 result changes canonical regression files. Android provisioning passes 95/95
 launch/lifecycle steps on the unchanged published APK; this is not Android
 validation of the new native harness code.
+
+## November 2 phone-candidate replay
+
+Replayed the same authored route after the depth/POG changes using a clean
+committed native build from `4abb2b47dab5915d898959089fed8b826d669372`.
+Executable SHA-256:
+`eeca8a242b42453b3318101f5c4b476ac14d0ca083334182be44f50f67c7e7e3`.
+Fresh disposable staging was extracted from runtime archive
+`f54be3a7f2b6a6755a85b22d52bcb947379f5d54ecde8df8d329230217db4bbd`;
+all 272 file hashes and the unchanged original mission HOG hash are retained.
+
+The result remains unsupported after 548 frames, with the same segment77 and
+fixed position[-13809964,0,23924101]. No objective was credited. The terminal
+render was inspected. Native executable/DLLs, source-commit receipt, trace,
+last position and screenshot are under temp/xl-phone-fog-20261102/guide-native-4abb2b4
+and guide-pmc-4abb2b4; stage hashes are in guide-stage-hashes.json.
+
+The paired exact-APK normal-player probe passes 36/36 hub door/PMC exit checks,
+including save restoration and repeated laser/thrust activation. This separates
+the companion actor limitation from normal player progression. Expand the
+planner only if its actor model can express the required XL interaction; do not
+bypass that actor gate. Further ordinary-player save/route probes have priority.

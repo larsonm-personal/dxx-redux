@@ -78,3 +78,73 @@ struct ParticleDepth {
 		if (glGetError() != GL_NO_ERROR) throw std::runtime_error("XL particle scene-depth transfer failed");
 	}
 };
+
+// Borrow a texture-backed scene only for a color-only particle draw. Detaching
+// every reference avoids framebuffer feedback; the owner retains its lifetime
+struct ParticleDepthRead {
+	GLuint texture = 0;
+	int width = 0, height = 0;
+	GLint target = 0, stencil = 0;
+	bool borrowed = false;
+	ParticleDepthRead(ParticleDepth &snapshot, bool &captured, bool enabled = true)
+	{
+		if (!enabled) return;
+		glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &target);
+		GLint type = 0, name = 0, level = 0;
+		if (target) {
+			glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
+			if (type == GL_TEXTURE) {
+				glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &name);
+				glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL, &level);
+			}
+		}
+		if (name) {
+			if (level || glIsEnabled(GL_STENCIL_TEST)) throw std::runtime_error("XL soft particle direct depth requires a level-zero texture and inactive stencil test");
+#ifdef ANDROID
+			// ES 3.0 has no texture-level size query; accept the known scene owners
+			if (!ogl_xl_fog_direct_depth_dimensions(&width, &height) && !xl_camera_target_active_dimensions(&width, &height))
+				throw std::runtime_error("XL soft particle depth texture has no qualified scene owner");
+#else
+			GLint binding = 0;
+			glGetIntegerv(GL_TEXTURE_BINDING_2D, &binding);
+			glBindTexture(GL_TEXTURE_2D, GLuint(name));
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+			glBindTexture(GL_TEXTURE_2D, GLuint(binding));
+#endif
+			GLint view[4];
+			glGetIntegerv(GL_VIEWPORT, view);
+			if (width <= 0 || height <= 0 || view[0] < 0 || view[1] < 0 || view[0] + view[2] > width || view[1] + view[3] > height)
+				throw std::runtime_error("XL soft particle direct depth does not cover the viewport");
+			glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
+			if (type == GL_TEXTURE) {
+				GLint stencil_name = 0;
+				glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &stencil_name);
+				if (stencil_name == name) stencil = name;
+			}
+			if (glGetError() != GL_NO_ERROR) throw std::runtime_error("XL soft particle direct depth inspection failed");
+			texture = GLuint(name);
+			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+			if (stencil) glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+			borrowed = true;
+		} else {
+			if (!captured) {
+				snapshot.capture();
+				captured = true;
+			}
+			texture = snapshot.texture;
+			width = snapshot.width;
+			height = snapshot.height;
+		}
+	}
+	~ParticleDepthRead()
+	{
+		if (!borrowed) return;
+		GLint current = 0;
+		glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &current);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, GLuint(target));
+		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture, 0);
+		if (stencil) glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, GLuint(stencil), 0);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, GLuint(current));
+	}
+};

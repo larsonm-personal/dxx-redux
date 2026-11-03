@@ -2,6 +2,13 @@
 void verify_particle_soft_depth()
 {
 	if (particle_soft.verified) return;
+	int scene_width = 0, scene_height = 0;
+	if (ogl_xl_fog_direct_depth_dimensions(&scene_width, &scene_height)) {
+		// Context recreation qualified direct depth before geometry. Do not resize
+		// or replace that live scene while preparing the first particle draw
+		particle_soft.verified = true;
+		return;
+	}
 	ParticleSoftRestore restore_draw;
 	struct RestoreProbe {
 		GLint read, draw, renderbuffer, view[4], pack, alignment, row, skip_rows, skip_pixels;
@@ -128,8 +135,16 @@ void verify_particle_soft_depth()
 #endif
 		unsigned char observed[4]{};
 		glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, observed);
-		if (glGetError() != GL_NO_ERROR || std::abs(observed[0] / 255.f - .625f) > .004f)
-			throw std::runtime_error("XL soft particles require working scene-depth transfer; this graphics driver did not preserve depth");
+		if (glGetError() != GL_NO_ERROR || std::abs(observed[0] / 255.f - .625f) > .004f) {
+			// The scene owner qualifies both cleared and rasterized direct depth
+			// numerically before accepting a driver whose depth blit is ineffective
+			if (const char *reason = ogl_xl_fog_prepare()) throw std::runtime_error(reason);
+			xl_fog_diagnostics diagnostics{};
+			ogl_xl_fog_diagnostics(&diagnostics);
+			if (!diagnostics.direct_depth)
+				throw std::runtime_error("XL soft particles require verified direct scene depth when depth transfer fails");
+			break;
+		}
 	}
 	particle_soft.verified = true;
 }
