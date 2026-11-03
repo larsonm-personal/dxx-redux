@@ -173,6 +173,7 @@ internal fun isDirectoryImportCandidateName(
         lowercaseName.endsWith(".pkg") ||
         lowercaseName.endsWith(".sow") ||
         isLauncherDxaFilename(name) ||
+        runCatching { XL_RESOURCE_MOD.target(name) != null }.getOrDefault(false) ||
         AndroidGameFileExtensions.hasGameExtension(name) ||
         lowercaseName in allGameFileNames ||
         AndroidGameFileExtensions.isGogAudioFile(name)

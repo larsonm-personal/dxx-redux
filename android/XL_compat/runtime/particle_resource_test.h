@@ -1,6 +1,7 @@
 #include "particle_resources.h"
 #include "resource_validation.h"
 #include "../scoped_texture.h"
+#include "../particle_image.h"
 
 template <bool Shield = false>
 static void particle_resource_profile(const std::filesystem::path &root, const std::filesystem::path &installation, int subtype, bool spray = false, bool lightning = false)
@@ -77,6 +78,37 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 	write_bytes(global_path.string().c_str(), image(23));
 	const auto fallback = prepare(level);
 	require(fallback && fallback->path == global && fallback->bitmap.pixels[0] == 23 && fallback->bitmap.pixels[3] == 255, "Owned default particle image was not decoded");
+	if constexpr (!Shield) {
+		if (subtype == 3 && !lightning) {
+			// Independent PNG encoding of the same synthetic RGBA rows tests orientation and soft alpha
+			const Bytes png{ 137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 8, 0, 0, 0, 8, 8, 6, 0, 0, 0, 196, 15, 190, 139, 0, 0, 0, 133, 73, 68, 65, 84, 120, 156, 21, 202, 49, 13, 3, 32, 16, 0, 192, 183, 80, 1, 44, 181, 208, 13, 150, 14, 181, 64, 112, 128, 2, 18, 214, 90, 192, 8, 70, 16, 213, 30, 227, 37, 23, 17, 37, 30, 81, 222, 207, 40, 223, 87, 148, 223, 135, 43, 119, 158, 28, 145, 132, 36, 36, 33, 9, 92, 185, 243, 76, 55, 100, 33, 11, 89, 200, 2, 87, 238, 60, 243, 13, 77, 104, 66, 19, 154, 192, 149, 59, 207, 118, 195, 16, 134, 48, 132, 33, 112, 229, 206, 115, 220, 176, 132, 37, 44, 97, 9, 92, 185, 243, 92, 55, 108, 97, 11, 91, 216, 2, 87, 238, 60, 247, 13, 71, 56, 194, 17, 142, 192, 149, 59, 79, 254, 3, 15, 187, 82, 241, 215, 198, 190, 58, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130 };
+			Bytes tga(18 + 8 * 8 * 4);
+			tga[2] = 2;
+			tga[10] = 1;
+			tga[12] = tga[14] = 8;
+			tga[16] = 32;
+			const unsigned char alpha[] = { 0, 64, 128, 255 };
+			for (unsigned y = 0; y < 8; ++y)
+				for (unsigned x = 0; x < 8; ++x) {
+					const auto at = 18 + (y * 8 + x) * 4;
+					tga[at] = x * 17;
+					tga[at + 1] = y * 29;
+					tga[at + 2] = 59;
+					tga[at + 3] = alpha[x % 4];
+				}
+			const auto png_path = root / (global.substr(0, global.size() - 4) + ".png");
+			std::filesystem::remove(global_path);
+			write_bytes(png_path.string().c_str(), png);
+			const auto decoded = prepare(level);
+			require(decoded && decoded->bitmap.pixels == read_particle_image(tga.data(), tga.size()).pixels,
+			        "PNG effect changed source RGBA orientation or soft alpha");
+			write_bytes(mod_path.string().c_str(), image(47));
+			require(prepare(level)->bitmap.pixels[0] == 47, "Mission TGA did not override installed PNG");
+			std::filesystem::remove(mod_path);
+			std::filesystem::remove(png_path);
+			write_bytes(global_path.string().c_str(), image(23));
+		}
+	}
 	write_bytes(mod_path.string().c_str(), image(47));
 	const auto selected = prepare(level);
 	require(selected && selected->path == mod && selected->bitmap.pixels[0] == 47, "Mission particle image did not take precedence over the default");
