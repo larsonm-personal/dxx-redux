@@ -331,5 +331,14 @@
     "status": "downloaded",
     "bytes": 34933586,
     "sha256": "636b07e2cb1f52f5263b558ed0abb40724553d2b3d67cfdd4728f4addac68481"
+  },
+  {
+    "url": null,
+    "name": "BoilingPoint-XL.zip",
+    "folder": "",
+    "source": "user-supplied original download",
+    "status": "supplied and archive tested",
+    "bytes": 20721428,
+    "sha256": "0994e8a70a91988a5ecf9a05f593b6960514a6579a9fa2fe762138808775f5f8"
   }
 ]
