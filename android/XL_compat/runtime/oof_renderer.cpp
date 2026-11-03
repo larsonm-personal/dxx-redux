@@ -68,7 +68,13 @@ extern "C" int xl_oof_draw(int id, vms_vector *position, vms_matrix *orientation
 		GLint previous_buffer = 0, previous_texture = 0;
 		glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &previous_buffer);
 		glGetIntegerv(GL_TEXTURE_BINDING_2D, &previous_texture);
-		const bool textured = glIsEnabled(GL_TEXTURE_2D) != 0, blended = glIsEnabled(GL_BLEND) != 0;
+#ifdef ANDROID
+		// GLES texture enablement belongs to the fixed-function shim, not the driver
+		const bool textured = GL_TEXTURE_2D_enabled == 1;
+#else
+		const bool textured = glIsEnabled(GL_TEXTURE_2D) != 0;
+#endif
+		const bool blended = glIsEnabled(GL_BLEND) != 0;
 		const bool depth = glIsEnabled(GL_DEPTH_TEST) != 0;
 		if (ogl_use_classic_depth()) glEnable(GL_DEPTH_TEST);
 		const bool cloaked = tmap_drawer_ptr == draw_tmap_flat;
@@ -96,9 +102,9 @@ extern "C" int xl_oof_draw(int id, vms_vector *position, vms_matrix *orientation
 				if (cloaked) vertex.color[0] = vertex.color[1] = vertex.color[2] = 0;
 			}
 			if (face.texture >= 0 && !cloaked) {
-				glEnable(GL_TEXTURE_2D);
+				OGL_ENABLE(TEXTURE_2D);
 				glBindTexture(GL_TEXTURE_2D, gpu.skins.at(face.texture)->handle());
-			} else glDisable(GL_TEXTURE_2D);
+			} else OGL_DISABLE(TEXTURE_2D);
 			glVertexPointer(3, GL_FLOAT, sizeof(xl_compat::OofRenderVertex), vertices[0].position.data());
 			glTexCoordPointer(2, GL_FLOAT, sizeof(xl_compat::OofRenderVertex), vertices[0].uv.data());
 			glColorPointer(4, GL_FLOAT, sizeof(xl_compat::OofRenderVertex), vertices[0].color.data());
@@ -114,8 +120,11 @@ extern "C" int xl_oof_draw(int id, vms_vector *position, vms_matrix *orientation
 		glDisableClientState(GL_VERTEX_ARRAY);
 		glBindBuffer(GL_ARRAY_BUFFER, previous_buffer);
 		glBindTexture(GL_TEXTURE_2D, previous_texture);
-		if (!textured) glDisable(GL_TEXTURE_2D);
-		else glEnable(GL_TEXTURE_2D);
+		if (!textured) {
+			OGL_DISABLE(TEXTURE_2D);
+		} else {
+			OGL_ENABLE(TEXTURE_2D);
+		}
 		if (!blended) glDisable(GL_BLEND);
 		if (!depth) glDisable(GL_DEPTH_TEST);
 		return 1;

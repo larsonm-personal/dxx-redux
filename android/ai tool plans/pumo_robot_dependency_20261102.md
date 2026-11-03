@@ -828,3 +828,37 @@ When omitted, only the already backed-up mission d2x.ham path is temporarily
 removed and restored by existing finally cleanup. This enables a correct
 hub-activation regression using Pumo's own definitions. Exact APK validation and
 hub activation are still pending; this checkpoint is not a delivered candidate.
+
+## Candidate Android firing failure and public registration correction
+
+Committed candidate90a5c7ff40196dd8c847d76c7d52eb0329e845ee, version29410,
+is in scratch as candidate-90a5c7f-universal.apk. SHA256:
+4f6ceb022f6a5d716feb8830ab829fcd9ea369102d980b8088cee5c239669930.
+All six D1/D2 ABI build IDs match; no mission/addon/model payloads are bundled.
+Installed only on owned emulator-5556; all13 protected profile hashes preserved.
+Draft PR331 targets PR330: https://github.com/larsonm-personal/dxx-redux/pull/331.
+
+Public Linux/Windows CI failed registration because the new xl_ase_contract and
+xl_oof_contract were omitted from PUBLIC_TESTS. Added both required entries.
+Rebuilt existing lightning-public-registration with its x64 toolchain and pinned
+reference source: all46 CTests PASS, exact registration and JUnit verifier PASS.
+Evidence: public-registration-ctest.xml/.log under temp/xl-robot-import-20261102.
+Initial local attempt used x86 environment against x64 cache; corrected without
+changing source or weakening checks.
+
+Original hub activation reached level1 with normal pilot/weapons, then the game
+process exited on the first firing step at22:09:23. Logs show glIsEnabled with
+GL_TEXTURE_2D returned GL_INVALID_ENUM on GLES, followed by owned model114 skin
+upload reporting the stale GL error. This is a renderer bug, not missing Vertigo
+or evidence that hub-to-level progression passed. Read-only snapshot is
+candidate-live-logcat.txt. Runner8296 remains active awaiting its timeout/finally
+restoration; do not stage another device test until it terminates and restores.
+
+Changed only owned-model texture-state handling to follow the established
+particle-renderer Android shim/cache pattern, and use OGL_ENABLE/OGL_DISABLE
+so the engine cache agrees with the actual shim state. Desktop retains its
+native GL state query. Scoped formatter PASS. Native ARM64 and desktop builds
+are in progress; replacement APK and firing/transition retest remain required.
+Do not publish the failed90a candidate as a working phone improvement.
+
+Both follow-up native builds completed exit0 (ARM64 D2 and Windows D2).
