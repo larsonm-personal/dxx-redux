@@ -147,6 +147,30 @@ std::vector<PogBitmap> read_pog(const unsigned char *data, std::size_t size, uns
 		total += bytes;
 		bitmap.pixels.assign(data + start, data + start + bytes);
 		if (bitmap.truecolor) prepare_pog_rgba(bitmap);
+		else {
+			const auto note = [&](unsigned pixel) {
+				if (pixel == 255) bitmap.palette_flags |= pog_transparent;
+				if (pixel == 254) bitmap.palette_flags |= pog_super;
+			};
+			if (!(bitmap.flags & pog_rle)) {
+				for (unsigned pixel : bitmap.pixels) note(pixel);
+			} else {
+				// Validation above established every row's bounds and decoded width.
+				const unsigned row_bytes = bitmap.flags & pog_rle_big ? 2 : 1;
+				std::size_t row = 4 + bitmap.height * row_bytes;
+				for (unsigned y = 0; y < bitmap.height; ++y) {
+					const auto table = bitmap.pixels.data() + 4 + y * row_bytes;
+					const auto end = row + (row_bytes == 2 ? u16(table) : *table);
+					while (row < end) {
+						const unsigned code = bitmap.pixels[row++];
+						if ((code & 0xe0) != 0xe0) note(code);
+						else if (code & 31) note(bitmap.pixels[row++]);
+						else break;
+					}
+					row = end;
+				}
+			}
+		}
 		result.push_back(std::move(bitmap));
 	}
 	return result;

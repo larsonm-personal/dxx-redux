@@ -11,6 +11,7 @@ struct xl_pog_bitmap {
 	/* Keep field offsets identical under the engine's MSVC pack(1) and C++ defaults */
 	unsigned char average_rgb[4];
 	unsigned rgba, offset, size; /* The bounded owned pixel arena is at most 128 MiB */
+	unsigned palette_flags;
 };
 /* Bounded preparation owns normalized pixels without changing live bitmaps */
 struct xl_pog_resources *xl_pog_prepare(PHYSFS_file *file, unsigned max_bitmaps, char *error, size_t error_size);

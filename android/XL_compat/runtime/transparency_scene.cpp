@@ -40,7 +40,6 @@ extern "C" {
 #include "../../../d2/3d/globvars.h"
 #ifdef ANDROID
 #include "merged_wall_debug.h"
-#include "android_log.h"
 #endif
 void render_face(int, int, int, int *, int, int, uvl *, int);
 }
@@ -292,12 +291,7 @@ extern "C" int xl_transparency_face(int segment, int side, int count, const int 
 			PIGGY_PAGE_IN(Textures[overlay & 0x3fff]);
 			top = GameBitmaps[Textures[overlay & 0x3fff].index].bm_flags;
 		}
-		const bool queued = transparent_face(flat ? std::nullopt : std::optional<unsigned>(GameBitmaps[Textures[base].index].bm_flags), top, flat || faded, additive, alpha);
-#ifdef ANDROID
-		static int reports = 0;
-		if (reports++ < 24) debug_log_force(DLOG_GRAPHICS, "[XL-FOG] classify seg=%d side=%d base=%d flags=%u stored=%d name=%s type=%d index=%d top=%d flat=%d faded=%d additive=%d alpha=%.9g queued=%d", segment, side, base, unsigned(GameBitmaps[Textures[base].index].bm_flags), piggy_bitmap_get_flags(&GameBitmaps[Textures[base].index]), piggy_game_bitmap_name(&GameBitmaps[Textures[base].index]), int(GameBitmaps[Textures[base].index].bm_type), int(Textures[base].index), top ? int(*top) : -1, flat, faded, additive, alpha, queued);
-#endif
-		if (!queued) return 0;
+		if (!transparent_face(flat ? std::nullopt : std::optional<unsigned>(GameBitmaps[Textures[base].index].bm_flags), top, flat || faded, additive, alpha)) return 0;
 #ifdef ANDROID
 		android_merged_wall_clear_draw_face_context();
 #endif

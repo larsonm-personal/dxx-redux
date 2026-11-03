@@ -42,6 +42,7 @@ extern "C" xl_pog_resources *xl_pog_prepare(PHYSFS_file *file, unsigned max_bitm
 			entry.average_index = image.average_index;
 			for (unsigned c = 0; c < 3; ++c) entry.average_rgb[c] = image.average_rgb[c];
 			entry.rgba = image.truecolor;
+			entry.palette_flags = image.palette_flags;
 			entry.offset = unsigned(result->pixels.size());
 			entry.size = unsigned(image.pixels.size());
 			result->entries.push_back(entry);

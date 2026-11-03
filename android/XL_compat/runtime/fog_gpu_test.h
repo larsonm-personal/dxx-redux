@@ -4,7 +4,10 @@ namespace
 {
 struct ProbeDepthPlane {
 	GLuint name = compile("void main() { gl_FragColor = vec4(1.0); }");
-	~ProbeDepthPlane() { glDeleteProgram(name); }
+	~ProbeDepthPlane()
+	{
+		glDeleteProgram(name);
+	}
 	void render(float distance)
 	{
 		SavedState saved;
