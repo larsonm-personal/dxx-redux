@@ -350,6 +350,54 @@ class SweepTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "absent"):
             sweep.select_public_campaign(plan, policy, {"tests": []}, "online-transports")
 
+    def test_public_android_failure_is_bounded_and_excludes_private_logs(self):
+        ident = "master:test_controller_overlay"
+        plan = {"tests": [{"id": ident, "lane": "android-single"}]}
+        receipt = {"results": [{"id": ident, "status": "FAIL"}]}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "master").mkdir()
+            (root / "master.log").write_text("public owner failed")
+            log = root / "master/test_controller_overlay_1.log"
+            log.write_text("old\n" * 20000 + "assertion failed\n::error::untrusted\n##[error]legacy\n")
+            (root / "master/unrelated.log").write_text("do not publish")
+            with patch("sys.stdout", io.StringIO()) as output:
+                sweep.print_public_android_failure(plan, "android-single", root, receipt)
+            rendered = output.getvalue()
+            self.assertIn("assertion failed", rendered)
+            self.assertNotIn("do not publish", rendered)
+            self.assertNotIn("##[", rendered)
+            self.assertEqual(len(json.loads(rendered.splitlines()[-1])["tail"]), 100)
+            for hidden_plan in (
+                {**plan, "retail_assets": {"commit": SHA}},
+                {"tests": plan["tests"] + [{"id": "master:unreviewed", "lane": "android-single"}]},
+            ):
+                with patch("sys.stdout", io.StringIO()) as output:
+                    sweep.print_public_android_failure(hidden_plan, "android-single", root, receipt)
+                self.assertEqual(output.getvalue(), "")
+            with patch.dict(os.environ, {"RETAIL_REQUESTED": "true"}), patch("sys.stdout", io.StringIO()) as output:
+                sweep.print_public_android_failure(plan, "android-single", root, receipt)
+                self.assertEqual(output.getvalue(), "")
+            with patch("sys.stdout", io.StringIO()) as output:
+                sweep.print_public_android_failure(plan, "host", root, receipt)
+                sweep.print_public_android_failure(
+                    plan, "android-single", root, {"results": [{"id": ident, "status": "PASS"}]}
+                )
+                self.assertEqual(output.getvalue(), "")
+            log.unlink()
+            outside = root.parent / (root.name + "-outside.log")
+            outside.write_text("external content")
+            try:
+                try:
+                    log.symlink_to(outside)
+                except OSError:
+                    return
+                with patch("sys.stdout", io.StringIO()) as output:
+                    sweep.print_public_android_failure(plan, "android-single", root, receipt)
+                self.assertNotIn("external content", output.getvalue())
+            finally:
+                outside.unlink()
+
     def test_public_jvm_failure_exposes_bounded_owner_log(self):
         plan = {"tests": [{"id": "master:test_gradle_unit_tests", "lane": "jvm"}]}
         with tempfile.TemporaryDirectory() as temporary:

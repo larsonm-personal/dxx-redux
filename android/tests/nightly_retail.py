@@ -14,6 +14,45 @@ WORKFLOW = REPOSITORY + "/.github/workflows/nightly-tooling-sweep.yml@refs/heads
 PR_WORKFLOW = REPOSITORY + "/.github/workflows/xl-pr-assets.yml@refs/heads/cmake"
 
 
+# Last entered owner stage, never evidence that the stage completed
+XL_STAGES = frozenset(
+    (
+        "verify-assets",
+        "preview-configure",
+        "preview-build",
+        "jvm-tests",
+        "reference-sources",
+        "stock-configure",
+        "stock-build",
+        "stage-runtime",
+        "contracts-configure",
+        "contracts-build",
+        "register-tests",
+        "native-tests",
+        "format-probes",
+        "modern-probes",
+        "navigation-smoke",
+        "verify-receipt",
+        "complete",
+    )
+)
+
+
+def xl_stage(path):
+    """Read only a bounded, fixed vocabulary from candidate progress."""
+    import json
+
+    path = Path(path)
+    try:
+        if any(p.is_symlink() for p in (path, *path.parents)) or not path.is_file() or path.stat().st_size > 1024:
+            return None
+        value = json.loads(path.read_text())
+        stage = value.get("stage") if isinstance(value, dict) else None
+        return stage if isinstance(stage, str) and stage in XL_STAGES else None
+    except (OSError, ValueError):
+        return None
+
+
 def trusted_context(env=None):
     env = os.environ if env is None else env
     return (
@@ -307,6 +346,9 @@ def public_diagnostics(value):
         if isinstance(experimental, dict) and experimental.get("xl_level_two_keys") in ("passed", "failed"):
             clean["experimental_acceptance"] = {"xl_level_two_keys": experimental["xl_level_two_keys"]}
     if value.get("id") in ("host-profile:retail-xl-originals", "host-profile:retail-xl-fast"):
+        stage = value.get("xl_stage")
+        if isinstance(stage, str) and stage in XL_STAGES:
+            clean["xl_stage"] = stage
         counts = value.get("xl_checks", {})
         if isinstance(counts, dict) and all(
             type(counts.get(key)) is int and 0 <= counts[key] <= 1000
