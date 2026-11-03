@@ -15,6 +15,14 @@ class XlAddonArchiveSelectionTest {
         val camera = entry("D2X-XL\\data\\D2X-XL.HOG")
         val vertigo = entry("data/d2x.ham")
         assertEquals(
+            XL_ADDON_FILENAMES,
+            selectArchiveGameFilenames(listOf(camera.name, vertigo.name, "exit.ham"), ALL_GAME_FILENAMES),
+        )
+        assertEquals(
+            ALL_GAME_FILENAMES,
+            selectArchiveGameFilenames(listOf(camera.name, "descent2.ham"), ALL_GAME_FILENAMES),
+        )
+        assertEquals(
             listOf(camera, vertigo),
             selectSevenZGameEntries(listOf(camera, vertigo, entry("hoard.ham")), XL_ADDON_FILENAMES),
         )
@@ -35,7 +43,7 @@ class XlAddonArchiveSelectionTest {
             ).setMaxMemoryLimitKiB(ExtractionLimits.MAX_SEVEN_Z_DECODER_MEMORY_KIB)
             .get()
             .use { archive ->
-                val selected = selectSevenZGameEntries(archive.entries, XL_ADDON_FILENAMES)
+                val selected = selectSevenZGameEntries(archive.entries, ALL_GAME_FILENAMES)
                 assertEquals(listOf("d2x-xl.hog"), selected.map { archiveGameFilename(it.name) })
                 val digest = MessageDigest.getInstance("SHA-256")
                 var bytes = 0L

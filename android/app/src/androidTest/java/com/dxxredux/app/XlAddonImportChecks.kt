@@ -47,7 +47,7 @@ internal class XlAddonImportChecks(
                             context,
                             Uri.parse("content://${context.packageName}.saf-test/$provider/${source.name}"),
                             output,
-                            XL_ADDON_FILENAMES,
+                            if (provider == "seekable") ALL_GAME_FILENAMES else XL_ADDON_FILENAMES,
                         ) { name, _, _ ->
                             progress +=
                                 name
@@ -75,6 +75,23 @@ internal class XlAddonImportChecks(
                     check(player.readText() == "preserved")
                     check(!File(output, ".tmp_7z_import").exists())
                 }
+                val zipSource = File(root, "addons.zip")
+                java.util.zip.ZipOutputStream(zipSource.outputStream()).use { zip ->
+                    for ((name, text) in fixtures) {
+                        zip.putNextEntry(java.util.zip.ZipEntry(name))
+                        zip.write(text.toByteArray())
+                        zip.closeEntry()
+                    }
+                }
+                val zipResult =
+                    extractZipContents(
+                        context,
+                        Uri.fromFile(zipSource),
+                        File(root, "zip-output"),
+                        ExtractionBudget(),
+                    ) { _, _, _ -> }
+                check(zipResult.error == null) { zipResult.error.orEmpty() }
+                check(zipResult.files.map { it.name }.toSet() == XL_ADDON_FILENAMES)
                 instrumentation.runOnMainSync {
                     val overlay = LoadingProgressOverlayView(context)
                     prefs.edit().remove(PREF_SHOW_PROGRESS_BARS).commit()
