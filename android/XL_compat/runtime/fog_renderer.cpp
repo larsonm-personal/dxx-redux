@@ -335,6 +335,27 @@ void resize(int width, int height, int bits, int stencil)
 	buffers.bits = bits;
 	buffers.stencil = stencil;
 }
+void prepare_scene_color(int red)
+{
+	// Match the source format for color resolves from an MSAA target
+	const GLenum format = red == 5 ? GL_RGB565 : red == 10 ? GL_RGB10_A2
+	                                                       : GL_RGBA8;
+	if (!buffers.scene_color || buffers.scene_format != format) {
+		if (buffers.scene_color) glDeleteTextures(1, &buffers.scene_color);
+		texture(&buffers.scene_color, buffers.width, buffers.height, format,
+		        red == 5 ? GL_RGB : GL_RGBA,
+		        red == 5 ? GL_UNSIGNED_SHORT_5_6_5 : red == 10 ? GL_UNSIGNED_INT_2_10_10_10_REV
+		                                                       : GL_UNSIGNED_BYTE);
+		buffers.scene_format = format;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, buffers.depth_fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffers.scene_color, 0);
+	const GLenum color = GL_COLOR_ATTACHMENT0;
+	glDrawBuffers(1, &color);
+	glReadBuffer(color);
+	require(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Cannot allocate direct fog scene");
+	errors("Direct fog scene allocation");
+}
 void draw(const GLfloat *vertices, int count)
 {
 	glBindVertexArray(vao);
@@ -544,12 +565,16 @@ extern "C" const char *ogl_xl_fog_prepare(void)
 		setup();
 		// Check the actual surface format and allocation before committing a level
 		glBindFramebuffer(GL_FRAMEBUFFER, saved.draw);
-		GLint bits = 0, stencil = 0;
+		GLint bits = 0, stencil = 0, red = 0;
+		glGetIntegerv(GL_RED_BITS, &red);
 		glGetIntegerv(GL_DEPTH_BITS, &bits);
 		glGetIntegerv(GL_STENCIL_BITS, &stencil);
 		require(saved.viewport[0] >= 0 && saved.viewport[1] >= 0, "Fog requires a nonnegative scene viewport");
 		resize(saved.viewport[0] + saved.viewport[2], saved.viewport[1] + saved.viewport[3], direct_depth ? 24 : bits, direct_depth ? 0 : stencil);
-		if (!direct_depth) depth_snapshot(saved.draw, saved.viewport);
+		if (direct_depth) {
+			require(!glIsEnabled(GL_STENCIL_TEST), "Direct fog scene requires stencil-free scene rendering");
+			prepare_scene_color(red);
+		} else depth_snapshot(saved.draw, saved.viewport);
 		++diagnostics.preparations;
 		return nullptr;
 	} catch (const std::exception &error) {
@@ -575,30 +600,12 @@ extern "C" void ogl_xl_fog_begin_scene(void)
 			direct_target = saved.draw;
 			direct_read_target = saved.read;
 			std::copy(saved.viewport, saved.viewport + 4, direct_view);
-			GLint red = 0, bits = 0, stencil = 0;
+			GLint red = 0;
 			glBindFramebuffer(GL_FRAMEBUFFER, saved.draw);
 			glGetIntegerv(GL_RED_BITS, &red);
-			glGetIntegerv(GL_DEPTH_BITS, &bits);
-			glGetIntegerv(GL_STENCIL_BITS, &stencil);
 			require(!glIsEnabled(GL_STENCIL_TEST), "Direct fog scene requires stencil-free scene rendering");
 			resize(saved.viewport[0] + saved.viewport[2], saved.viewport[1] + saved.viewport[3], 24, 0);
-			// Match the source format for color resolves from an MSAA target
-			const GLenum format = red == 5 ? GL_RGB565 : red == 10 ? GL_RGB10_A2
-			                                                       : GL_RGBA8;
-			if (!buffers.scene_color || buffers.scene_format != format) {
-				if (buffers.scene_color) glDeleteTextures(1, &buffers.scene_color);
-				texture(&buffers.scene_color, buffers.width, buffers.height, format,
-				        red == 5 ? GL_RGB : GL_RGBA,
-				        red == 5 ? GL_UNSIGNED_SHORT_5_6_5 : red == 10 ? GL_UNSIGNED_INT_2_10_10_10_REV
-				                                                       : GL_UNSIGNED_BYTE);
-				buffers.scene_format = format;
-			}
-			glBindFramebuffer(GL_FRAMEBUFFER, buffers.depth_fbo);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffers.scene_color, 0);
-			const GLenum color = GL_COLOR_ATTACHMENT0;
-			glDrawBuffers(1, &color);
-			glReadBuffer(color);
-			require(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Cannot allocate direct fog scene");
+			prepare_scene_color(red);
 			glDisable(GL_SCISSOR_TEST);
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, saved.draw);
 			glBlitFramebuffer(direct_view[0], direct_view[1], buffers.width, buffers.height,
