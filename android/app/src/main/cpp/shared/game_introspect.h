@@ -21,6 +21,7 @@ extern "C" {
 struct object;
 /* Read-only D2 damage evidence for guided-flight diagnosis */
 void game_introspect_record_player_damage(int damage, int shields_before, const struct object *killer);
+void game_introspect_record_guided_wall_hit(const struct object *weapon, int segment, int side, int x, int y, int z);
 
 /*
  * Returns a heap-allocated JSON string describing the current game state.
@@ -72,6 +73,15 @@ static inline void game_introspect_record_player_damage(int damage, int shields_
 	(void) damage;
 	(void) shields_before;
 	(void) killer;
+}
+static inline void game_introspect_record_guided_wall_hit(const struct object *weapon, int segment, int side, int x, int y, int z)
+{
+	(void) weapon;
+	(void) segment;
+	(void) side;
+	(void) x;
+	(void) y;
+	(void) z;
 }
 static inline char *game_introspect_get_state(void)
 {

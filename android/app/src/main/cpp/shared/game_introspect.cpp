@@ -826,6 +826,31 @@ extern "C" void game_introspect_record_player_damage(int damage, int shields_bef
 #endif
 }
 
+#ifdef DXX_BUILD_DESCENT_II
+static json last_guided_wall_hit = nullptr;
+static unsigned int guided_wall_hit_sequence = 0;
+#endif
+extern "C" void game_introspect_record_guided_wall_hit(const object *weapon, int segment, int side, int x, int y, int z)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	if (!weapon || !ConsoleObject || weapon->type != OBJ_WEAPON || weapon->id != GUIDEDMISS_ID ||
+	    weapon->ctype.laser_info.parent_num != Players[Player_num].objnum ||
+	    weapon->ctype.laser_info.parent_signature != ConsoleObject->signature ||
+	    segment < 0 || segment >= Num_segments || side < 0 || side >= 6) return;
+	const auto &surface = Segments[segment].sides[side];
+	last_guided_wall_hit = {
+		{ "sequence", ++guided_wall_hit_sequence }, { "game_time_raw", GameTime64 }, { "level", Current_level_num }, { "signature", weapon->signature }, { "segment", segment }, { "side", side }, { "wall", surface.wall_num }, { "base_texture", surface.tmap_num }, { "overlay_texture", surface.tmap_num2 }, { "position", { { "x", f2fl(x) }, { "y", f2fl(y) }, { "z", f2fl(z) } } }, { "forward", serialize_scene_point(weapon->orient.fvec) }, { "guided_active", Guided_missile[Player_num] == weapon && Guided_missile_sig[Player_num] == weapon->signature }
+	};
+#else
+	(void) weapon;
+	(void) segment;
+	(void) side;
+	(void) x;
+	(void) y;
+	(void) z;
+#endif
+}
+
 /* Read-only scene evidence for ordinary weapon, door and destruction tests */
 static json serialize_surface_asset(int texture)
 {
@@ -3551,6 +3576,7 @@ extern "C" char *game_introspect_get_state(void)
 #ifdef DXX_BUILD_DESCENT_II
 		j["guided_missile"] = serialize_guided_missile();
 		j["last_player_damage"] = last_player_damage;
+		j["last_guided_wall_hit"] = last_guided_wall_hit;
 		j["guidebot"] = serialize_guidebot();
 		j["thief"] = serialize_thief();
 #endif

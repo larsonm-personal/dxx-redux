@@ -818,6 +818,9 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 	//	If this is a guided missile and it strikes fairly directly, clear bounce flag.
 	if (weapon->id == GUIDEDMISS_ID) {
 		fix	dot;
+#ifdef __ANDROID__
+		game_introspect_record_guided_wall_hit(weapon, hitseg, hitwall, hitpt->x, hitpt->y, hitpt->z);
+#endif
 
 		dot = vm_vec_dot(&weapon->orient.fvec, &Segments[hitseg].sides[hitwall].normals[0]);
 		if (dot < -F1_0/6) {
