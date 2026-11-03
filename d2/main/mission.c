@@ -811,6 +811,11 @@ int load_mission_ham()
 #ifdef DXX_XL_RUNTIME
 	extra_robots = xl_resource_load_vertigo();
 	if (extra_robots < 0) return 0;
+	{
+		const int mod_data = xl_resource_load_mod_data();
+		if (mod_data < 0) return 0;
+		if (mod_data) extra_robots = 1;
+	}
 #endif
 
 	if (Current_mission->enhanced == 3 && Current_mission->alternate_ham_file) {

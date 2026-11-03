@@ -8,6 +8,7 @@ extern "C" {
 void xl_resource_baseline_clear(void);
 void xl_resource_baseline_capture(void);
 int xl_resource_load_vertigo(void);
+int xl_resource_load_mod_data(void);
 void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file);
 void xl_resource_select_mission(int requires_xl);
 void xl_resource_commit_mission(void);
@@ -24,6 +25,7 @@ int xl_prepared_pog_receipt(int bitmap, unsigned *bytes, unsigned *fnv1a);
 int xl_custom_model_radius(int model, int fallback);
 struct object;
 struct vms_vector;
+int xl_model_gun_point(int model, int gun, struct vms_vector *point);
 void xl_hitbox_begin_frame(void);
 int xl_camera_query(const struct object *camera, const struct object *moving, const struct vms_vector *start, const struct vms_vector *end, int radius, struct vms_vector *hit, struct vms_vector *normal);
 int xl_camera_hitbox_query(const struct object *camera, const struct object *moving, const struct vms_vector *start, const struct vms_vector *end, struct vms_vector *hit, struct vms_vector *normal);
@@ -31,7 +33,10 @@ int xl_camera_hitbox_query(const struct object *camera, const struct object *mov
 }
 
 #include <memory>
+#include <map>
 #include <string>
+const std::map<std::string, std::string> &xl_resource_mod_sources();
+std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal);
 struct object;
 struct vms_vector;
 void xl_validate_level_graphics(const std::string &palette);

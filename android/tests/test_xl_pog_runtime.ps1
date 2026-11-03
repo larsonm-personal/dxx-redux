@@ -74,12 +74,12 @@ if ($PmcColdResume -and !$Pmc3Playtest) { throw 'PmcColdResume requires Pmc3Play
 if ($Pmc3Playtest -and !$PmcPlaytest) { throw 'Pmc3Playtest requires PmcPlaytest' }
 # PMC2 also preflights the authored PMC3 exit, so its resources must be explicit
 if ($PmcPlaytest -and (!$BubbleImage -or !$BubbleWave)) { throw 'PmcPlaytest requires original BubbleImage and BubbleWave for PMC3 readiness' }
-if ($PmcPlaytest -and (!$OriginalHub -or !$MissionFlow -or $OpeningPlaytest -or $SceneOnly -or $LightningGpu -or $BubbleGpu -or $CampaignEnd -or !$CameraHog -or !$VertigoHam)) { throw 'PmcPlaytest requires OriginalHub, MissionFlow assets, CameraHog and VertigoHam in its own mode' }
+if ($PmcPlaytest -and (!$OriginalHub -or !$MissionFlow -or $OpeningPlaytest -or $SceneOnly -or $LightningGpu -or $BubbleGpu -or $CampaignEnd -or !$CameraHog -or (!$PumoMods -and !$VertigoHam))) { throw 'PmcPlaytest requires OriginalHub, MissionFlow assets, CameraHog and original PumoMods (or the historical Vertigo fixture) in its own mode' }
 # Both original distributions contain the same byte-identical cambot.hxm
 $cameraHogHashes = @('df69c62aad949f2d92bc1bbea4b597623cd29d0a0f594cdcc3d66568d6ce482a',
     'e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6')
 if ($PmcPlaytest -and (Get-FileHash -LiteralPath $CameraHog -Algorithm SHA256).Hash -notin $cameraHogHashes) { throw 'Requires a qualified original XL camera addon archive' }
-if ($PmcPlaytest -and (Get-FileHash -LiteralPath $VertigoHam -Algorithm SHA256).Hash -ne 'faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f') { throw 'Requires the original Vertigo robot extension' }
+if ($PmcPlaytest -and $VertigoHam -and (Get-FileHash -LiteralPath $VertigoHam -Algorithm SHA256).Hash -ne 'faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f') { throw 'Requires the original Vertigo robot extension when explicitly supplied' }
 if ($OpeningPlaytest -and (!$OriginalHub -or $MissionFlow -or $SceneOnly -or $LightningGpu -or $BubbleGpu -or $CampaignEnd -or $FlyoutFixture)) { throw 'OpeningPlaytest requires OriginalHub and its own mode' }
 if ($BubbleDry -and !$BubbleFixture) { throw 'BubbleDry requires BubbleFixture' }
 if ($BubbleFixture -and ($OriginalHub -or $BubbleGpu -or $LightningGpu -or $SmokeFixture -or $SkyboxFixture -or $SecretFixture -or $SceneOnly -or $MissionFlow -or $CampaignEnd -or $RevisitFixture -or $FlyoutFixture -or !$PumoMods -or !$SmokeImage -or !$BubbleImage -or !$BubbleWave)) { throw 'BubbleFixture requires original mod assets, smoke/bubble atlases, bubble wave and its own derived mode' }
@@ -283,8 +283,13 @@ try {
     if ($PmcPlaytest) {
         Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $CameraHog).Path, '/data/local/tmp/xl-pmc-camera.hog') | Out-Null
         Invoke-PogPrivate 'mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-pmc-camera.hog files/d2x-redux/missions/d2x-xl.hog' | Out-Null
-        Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $VertigoHam).Path, '/data/local/tmp/xl-pmc-d2x.ham') | Out-Null
-        Invoke-PogPrivate 'cp /data/local/tmp/xl-pmc-d2x.ham files/d2x-redux/missions/d2x.ham' | Out-Null
+        if ($VertigoHam) {
+            Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $VertigoHam).Path, '/data/local/tmp/xl-pmc-d2x.ham') | Out-Null
+            Invoke-PogPrivate 'cp /data/local/tmp/xl-pmc-d2x.ham files/d2x-redux/missions/d2x.ham' | Out-Null
+        } else {
+            # This path is protected by the existing backup and restored in finally
+            Invoke-PogPrivate 'rm -f files/d2x-redux/missions/d2x.ham' | Out-Null
+        }
     }
     if ($SmokeFixture -or $OriginalHub -or $BubbleFixture) {
         Invoke-PogAdb -Arguments @('push', (Resolve-Path -LiteralPath $SmokeImage).Path, '/data/local/tmp/xl-pog-smoke.tga') | Out-Null

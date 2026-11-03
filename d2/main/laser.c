@@ -1672,6 +1672,11 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 
 	// Find the initial position of the laser
 	pnt = &Player_ship->gun_points[gun_num];
+#ifdef DXX_XL_RUNTIME
+	vms_vector xl_gun_point;
+	if (xl_model_gun_point(obj->rtype.pobj_info.model_num, gun_num, &xl_gun_point))
+		pnt = &xl_gun_point;
+#endif
 
 	vm_copy_transpose_matrix(&m,&obj->orient);
 	vm_vec_rotate(&gun_point,pnt,&m);

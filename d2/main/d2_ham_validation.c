@@ -307,10 +307,10 @@ int d2_ham_validate_main(const uint8_t *data, size_t size,
 	return cursor.position <= cursor.end;
 }
 
-int d2_ham_validate_extra(const uint8_t *data, size_t size, int type,
+static int d2_ham_validate_extra_internal(const uint8_t *data, size_t size, int type,
                           const d2_ham_validation_limits *limits, int base_weapons, int base_robots,
                           int base_joints, int base_models, int base_object_bitmaps,
-	                      int base_object_bitmap_ptrs, d2_ham_validation_report *report)
+	                      int base_object_bitmap_ptrs, d2_ham_validation_report *report, int xl_deferred)
 {
 	d2_ham_cursor cursor;
 	d2_ham_model_meta models[D2_HAM_MAX_MODELS];
@@ -344,8 +344,8 @@ int d2_ham_validate_extra(const uint8_t *data, size_t size, int type,
 	                               limits->max_object_bitmaps, limits->max_submodels))
 		return 0;
 	for (i = 0; i < robot_count; ++i)
-		if (!d2_ham_validate_robot_meta(&robots[i], base_models + model_count,
-		                                base_joints + joint_count))
+		if (!d2_ham_validate_robot_meta(&robots[i], xl_deferred ? limits->max_models : base_models + model_count,
+		                                xl_deferred ? limits->max_joints : base_joints + joint_count))
 			return 0;
 	for (i = 0; i < model_count; ++i)
 		if (!d2_ham_validate_model_data(&cursor, &models[i], &total_model_bytes)) return 0;
@@ -370,9 +370,26 @@ int d2_ham_validate_extra(const uint8_t *data, size_t size, int type,
 	return 0;
 }
 
-int d2_ham_validate_hxm(const uint8_t *data, size_t size,
+/* Stock callers retain exact loaded-table closure; XL performs final closure per level */
+int d2_ham_validate_extra(const uint8_t *data, size_t size, int type,
+                         const d2_ham_validation_limits *limits, int base_weapons, int base_robots,
+                         int base_joints, int base_models, int base_object_bitmaps,
+                         int base_object_bitmap_ptrs, d2_ham_validation_report *report)
+{
+ return d2_ham_validate_extra_internal(data, size, type, limits, base_weapons, base_robots,
+     base_joints, base_models, base_object_bitmaps, base_object_bitmap_ptrs, report, 0);
+}
+
+int d2_ham_validate_xl_extra(const uint8_t *data, size_t size,
+                            const d2_ham_validation_limits *limits, d2_ham_validation_report *report)
+{
+ /* Original D2 extension offsets, shared with bm.c and XL LoadRobotExtensions */
+ return d2_ham_validate_extra_internal(data, size, 2, limits, 62, 66, 1145, 166, 422, 502, report, 1);
+}
+
+static int d2_ham_validate_hxm_internal(const uint8_t *data, size_t size,
                         const d2_ham_validation_limits *limits, int robot_count, int joint_count,
-	                    int model_count, d2_ham_validation_report *report)
+	                    int model_count, d2_ham_validation_report *report, int xl_deferred)
 {
 	d2_ham_cursor cursor;
 	d2_ham_model_meta meta;
@@ -396,7 +413,8 @@ int d2_ham_validate_hxm(const uint8_t *data, size_t size,
 		if (!d2_ham_read_i32(&cursor, &index) || index < 0 || index >= robot_count ||
 		    !d2_ham_take(&cursor, D2_HAM_ROBOT_RECORD_SIZE, &record) ||
 		    !d2_ham_read_robot_meta(record, &robot, report) ||
-		    !d2_ham_validate_robot_meta(&robot, model_count, joint_count))
+		    !d2_ham_validate_robot_meta(&robot, xl_deferred ? limits->max_models : model_count,
+		                                xl_deferred ? limits->max_joints : joint_count))
 			return 0;
 	}
 	if (!d2_ham_read_count(&cursor, joint_count, &count)) return 0;
@@ -432,4 +450,18 @@ int d2_ham_validate_hxm(const uint8_t *data, size_t size,
 		if (cursor.data[i]) return 0;
 	if (report) report->ignored_trailing_bytes = cursor.end - cursor.position;
 	return 1;
+}
+
+int d2_ham_validate_hxm(const uint8_t *data, size_t size,
+                        const d2_ham_validation_limits *limits, int robot_count, int joint_count,
+                        int model_count, d2_ham_validation_report *report)
+{
+	return d2_ham_validate_hxm_internal(data, size, limits, robot_count, joint_count, model_count, report, 0);
+}
+
+int d2_ham_validate_xl_hxm(const uint8_t *data, size_t size,
+                           const d2_ham_validation_limits *limits, int robot_count, int joint_count,
+                           int model_count, d2_ham_validation_report *report)
+{
+	return d2_ham_validate_hxm_internal(data, size, limits, robot_count, joint_count, model_count, report, 1);
 }

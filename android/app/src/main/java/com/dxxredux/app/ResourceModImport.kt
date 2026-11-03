@@ -52,6 +52,8 @@ internal suspend fun importResourceMod(
             return catalog.select(paths).isNotEmpty()
         }
 
+        // Reading a solid 7z catalog can take time before extraction starts
+        onProgress("Opening $name", 0, 0)
         val scratch = OwnedCacheDirectories.create(context.cacheDir)
         var direct: ParcelFileDescriptor.AutoCloseInputStream? = null
         try {
