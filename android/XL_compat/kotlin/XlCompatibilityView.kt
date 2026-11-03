@@ -1,10 +1,8 @@
 package com.dxxredux.app
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -27,7 +25,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -35,8 +32,8 @@ import androidx.compose.ui.unit.sp
 private fun compatibilityColor(status: String): Color {
     val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     return when (status) {
-        "full" -> if (dark) Color(0xFF81C995) else Color(0xFF216E39)
-        "partial", "eligible" -> if (dark) Color(0xFFFFB86C) else Color(0xFF8A4B00)
+        "full", "supported", "not_required" -> if (dark) Color(0xFF81C995) else Color(0xFF216E39)
+        "partial", "eligible", "unknown" -> if (dark) Color(0xFFFFB86C) else Color(0xFF8A4B00)
         "blocked" -> if (dark) Color(0xFFFFB4AB) else Color(0xFFB3261E)
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -46,16 +43,11 @@ private fun compatibilityColor(status: String): Color {
 internal fun XlCompatibilityButton(reports: List<XlCompatibilityReport>) {
     if (reports.isEmpty()) return
     var open by remember(reports) { mutableStateOf(false) }
-    var selected by remember(reports) { mutableStateOf(0) }
     var explanation by remember(reports) { mutableStateOf<XlCompatibilityRow?>(null) }
     // Unscanned siblings cannot inherit a detected level's compatibility
     val status = compatibilityGroupStatus(reports)
-    val label =
-        when (status) {
-            "blocked" -> "D2X-XL compatibility: cannot load"
-            "eligible" -> "D2X-XL compatibility: runtime checks needed"
-            else -> "D2X-XL compatibility: unverified"
-        }
+    val label = "D2X-XL feature support"
+    val rows = remember(reports) { compatibilitySummaryRows(reports) }
     OutlinedButton(
         onClick = { open = true },
         colors = ButtonDefaults.outlinedButtonColors(contentColor = compatibilityColor(status)),
@@ -69,83 +61,32 @@ internal fun XlCompatibilityButton(reports: List<XlCompatibilityReport>) {
         text = {
             Column(Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState())) {
                 Text(
-                    "Green: supported feature. Orange: experimental, partial, or eligible pending runtime checks. Red: unsupported feature. Gray: not inspected or not present. Feature support does not mean this level is playable.",
+                    "Green: supported or not required. Yellow: partial or unverified. Red: unsupported. Feature support does not establish campaign playability.",
                     fontSize = 12.sp,
                 )
                 Text(
-                    "Only inspected sources are listed. Other levels and external assets remain unverified. Tap a row for its explanation.",
+                    "Whole-package summary from ${reports.size} source reports. Counts cover inspected records; uninspected levels and external assets remain unverified. Tap a feature for details.",
                     fontSize = 12.sp,
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
-                Row(Modifier.horizontalScroll(rememberScrollState())) {
-                    reports.forEachIndexed { index, report ->
-                        TextButton(onClick = { selected = index }) {
-                            Text(
-                                report.source,
-                                fontWeight =
-                                    if (index ==
-                                        selected
-                                    ) {
-                                        FontWeight.Bold
-                                    } else {
-                                        FontWeight.Normal
-                                    },
-                            )
-                        }
-                    }
-                }
-                val report = reports[selected]
-                Text(report.summary, color = compatibilityColor(report.status), fontWeight = FontWeight.Bold)
-                if (report.rows.isEmpty()) Text("No feature inventory available; support is unknown", fontSize = 12.sp)
-                report.rows.sortedByDescending { it.counted }.forEach { row ->
+                if (rows.isEmpty()) Text("No feature inventory available", fontSize = 12.sp)
+                rows.forEach { row ->
                     HorizontalDivider()
                     Column(
-                        Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(
-                            role = Role.Button,
-                            onClickLabel = "Explain ${row.feature}",
-                            onClick = { explanation = row },
-                        ),
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .clickable(
+                                role = Role.Button,
+                                onClickLabel = "Explain ${row.feature}",
+                                onClick = { explanation = row },
+                            ).padding(vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        if (row.counted) {
-                            Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(row.shortTitle(), Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                                    Text(
-                                        compatibilityStatusLabel(row.status),
-                                        color = compatibilityColor(row.status),
-                                        fontSize = 12.sp,
-                                    )
-                                }
-                                if (row.count == null) Text("Not inspected", fontSize = 12.sp)
-                                if (row.count != 0) Text(row.support, fontSize = 12.sp)
-                            }
-                        } else {
-                            Row(
-                                Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text(row.shortTitle(), Modifier.weight(1f), fontSize = 12.sp)
-                                Text(row.requirement, Modifier.weight(1f), fontSize = 12.sp)
-                                Column(Modifier.weight(1f)) {
-                                    Text(
-                                        compatibilityStatusLabel(row.status),
-                                        color = compatibilityColor(row.status),
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp,
-                                    )
-                                    Text(row.support, fontSize = 12.sp, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                                    if (row.evidence.isNotBlank()) {
-                                        Text(
-                                            row.evidence,
-                                            fontSize = 11.sp,
-                                            maxLines = 3,
-                                            overflow = TextOverflow.Ellipsis,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                        Text(row.feature, fontWeight = FontWeight.Bold)
+                        Text(compatibilityStatusLabel(row.status), color = compatibilityColor(row.status))
+                        if (row.counted && row.count != null) Text("${row.count} inspected records", fontSize = 12.sp)
+                        if (row.count != 0) Text(row.support, fontSize = 12.sp)
                     }
                 }
             }

@@ -3,9 +3,37 @@ package com.dxxredux.app
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class XlCompatibilityTest {
+    @Test
+    fun summaryUsesInspectedSupportInsteadOfContainerPlaceholders() {
+        val known = XlCompatibilityRow("Doors", "2 doors", "Supported doors", "supported", "level", 2, true, "doors")
+        val unknown = known.copy(status = "unknown", count = null)
+        val rows =
+            compatibilitySummaryRows(
+                listOf(
+                    XlCompatibilityReport("container", "unknown", "", listOf(unknown)),
+                    XlCompatibilityReport("level1", "eligible", "", listOf(known)),
+                    XlCompatibilityReport("level2", "eligible", "", listOf(known.copy(count = 3))),
+                ),
+            )
+        assertEquals(1, rows.size)
+        assertEquals(5, rows.single().count)
+        assertEquals("Supported", compatibilityStatusLabel(rows.single().status))
+        assertTrue(rows.single().evidence.contains("1 records without inspection"))
+        val blocked = known.copy(status = "blocked")
+        assertEquals(
+            "blocked",
+            compatibilitySummaryRows(
+                listOf(
+                    XlCompatibilityReport("levels", "blocked", "", listOf(known, blocked)),
+                ),
+            ).single().status,
+        )
+    }
+
     @Test
     fun packageEvidenceDoesNotDisableAnalysisOrQualifyTheMission() {
         val inventory =
@@ -56,10 +84,10 @@ class XlCompatibilityTest {
         val unknown = XlCompatibility.parse(report(",\"count\":null", "unknown"))!!.rows.single()
         val absent = XlCompatibility.parse(report(",\"count\":0", "not_required"))!!.rows.single()
         assertEquals("Wall teleports: ?", unknown.shortTitle())
-        assertEquals("Not inspected", compatibilityStatusLabel(unknown.status))
+        assertEquals("Unverified", compatibilityStatusLabel(unknown.status))
         assertEquals("Wall teleports: 0", absent.shortTitle())
         assertEquals("Not present", compatibilityStatusLabel(absent.status))
-        assertEquals("Not inspected", compatibilityStatusLabel("future-status"))
+        assertEquals("Unverified", compatibilityStatusLabel("future-status"))
     }
 
     @Test

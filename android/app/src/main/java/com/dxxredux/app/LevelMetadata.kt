@@ -1362,7 +1362,8 @@ internal object LevelMetadataAnalyzer {
         onProgress: suspend (LevelMetadataAnalysisProgress) -> Unit = {},
     ): LevelMetadataResult =
         withContext(Dispatchers.IO) {
-            xlCompatibilityAnalysisFailure(target)?.let { return@withContext it }
+            // Movie-only requests return before native level decoding or route simulation.
+            if (!moviesOnly) xlCompatibilityAnalysisFailure(target)?.let { return@withContext it }
             val stepCount = 5
             val expectedLevelCount =
                 if (moviesOnly) 0 else (target.normalLevelFiles.size + target.secretLevelFiles.size).coerceAtLeast(0)

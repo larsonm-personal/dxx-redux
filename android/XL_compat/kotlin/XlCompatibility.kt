@@ -98,12 +98,12 @@ internal fun XlCompatibilityRow.shortTitle(): String = if (counted) "$feature: $
 
 internal fun compatibilityStatusLabel(status: String): String =
     when (status) {
-        "full" -> "Supported"
+        "full", "supported" -> "Supported"
         "partial" -> "Experimental / partial"
         "blocked" -> "Unsupported"
         "eligible" -> "Eligible; runtime checks needed"
         "not_required" -> "Not present"
-        else -> "Not inspected"
+        else -> "Unverified"
     }
 
 internal fun XlCompatibilityRow.xlExplanation(): String =
@@ -139,4 +139,52 @@ internal fun compatibilityGroupStatus(reports: List<XlCompatibilityReport>): Str
         reports.any { it.status == "blocked" } -> "blocked"
         reports.isNotEmpty() && reports.all { it.status == "eligible" } -> "eligible"
         else -> "unknown"
+    }
+
+// Container/descriptor placeholders do not erase evidence from inspected levels.
+// Unknown coverage remains explicit; this summary never grants runtime admission.
+internal fun compatibilitySummaryRows(reports: List<XlCompatibilityReport>): List<XlCompatibilityRow> =
+    reports.flatMap { it.rows }.groupBy { it.id.ifBlank { it.feature } }.values.map { rows ->
+        val inspected = rows.filter { it.status != "unknown" }
+        val candidates = inspected.ifEmpty { rows }
+        val representative =
+            candidates.maxBy { row ->
+                when (row.status) {
+                    "blocked" -> 5
+                    "partial" -> 4
+                    "eligible" -> 3
+                    "supported", "full" -> 2
+                    "not_required" -> 1
+                    else -> 0
+                }
+            }
+        representative.copy(
+            count = candidates.mapNotNull { it.count }.takeIf { it.isNotEmpty() }?.sum(),
+            requirement = candidates.map { it.requirement }.distinct().joinToString("\n"),
+            support =
+                candidates
+                    .map { it.support }
+                    .filter { it.isNotBlank() }
+                    .distinct()
+                    .joinToString("\n"),
+            limitations =
+                candidates
+                    .map { it.limitations }
+                    .filter { it.isNotBlank() }
+                    .distinct()
+                    .joinToString("\n"),
+            evidence =
+                buildString {
+                    append(
+                        "${inspected.size} inspected feature records; ${rows.size - inspected.size} records without inspection.\n",
+                    )
+                    append(
+                        candidates
+                            .map { it.evidence }
+                            .filter { it.isNotBlank() }
+                            .distinct()
+                            .joinToString("\n"),
+                    )
+                },
+        )
     }

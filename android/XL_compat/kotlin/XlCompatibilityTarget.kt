@@ -11,7 +11,9 @@ internal suspend fun xlCompatibilityAnalysisFailure(target: LevelMetadataTarget)
     return LevelMetadataResult.failed(
         source = target.displayName,
         game = target.game,
-        problem = "XL metadata analysis is unavailable. See runtime eligibility in the compatibility table.",
+        problem =
+            "Feature and movie inspection are available above. " +
+                "Route simulation and classic-engine level statistics are not available for this XL format.",
         diagnostics = blockers.map { "${it.source}: ${it.summary}" },
         failureKind = "unsupported_format",
     )

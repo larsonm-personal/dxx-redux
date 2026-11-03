@@ -711,12 +711,6 @@ internal fun ModDetailsDialog(
     var constituentTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     var levelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
     var musicDialogTarget by remember { mutableStateOf<MissionZipMusicDialogTarget?>(null) }
-    val usage by produceState<List<Pair<String, String>>>(emptyList(), details?.archivePath) {
-        value =
-            withContext(kotlinx.coroutines.Dispatchers.IO) {
-                details?.archivePath?.let { readModUsage(context.filesDir, it) }.orEmpty()
-            }
-    }
     val topLevelMetadataTargets =
         remember(details?.archivePath, details?.missionZip, setDir.absolutePath, mod.displayName, mod.game) {
             details?.let {
@@ -862,9 +856,6 @@ internal fun ModDetailsDialog(
                         )
                         DetailRow("Game", mod.game.uppercase(Locale.US))
                         DetailRow("State", if (mod.enabled) "Enabled" else "Disabled")
-                        usage.forEach { (label, value) -> DetailRow(label, value) }
-                        if (usage.isEmpty()) ModDetailLine("Launch a game to record sound, image and font use")
-                        ModDetailLine("Usage describes the last run of each engine; changes apply on the next launch")
                         DetailRow(
                             "Manifest",
                             if (details.missionZip != null) {
@@ -898,7 +889,8 @@ internal fun ModDetailsDialog(
                         }
 
                         details.missionZipMusic?.let { catalog ->
-                            val trackCount = catalog.sources.sumOf { it.tracks.size }
+                            val soundtrack = MissionZipMusic.soundtrackSources(catalog)
+                            val trackCount = soundtrack.sumOf { it.tracks.size }
                             OutlinedButton(
                                 onClick = { musicDialogTarget = MissionZipMusicDialogTarget(catalog) },
                                 shape = MaterialTheme.shapes.small,
@@ -916,7 +908,7 @@ internal fun ModDetailsDialog(
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                     Text(
-                                        "$trackCount entries across ${catalog.sources.size} source(s)",
+                                        "$trackCount entries across ${soundtrack.size} source(s)",
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -1204,7 +1196,7 @@ private fun missionZipMusicDisplaySources(
     songList: MissionZipMusicSongList?,
 ): List<MissionZipMusicDisplaySource> =
     if (songList == null) {
-        catalog.sources.map { source ->
+        MissionZipMusic.soundtrackSources(catalog).map { source ->
             MissionZipMusicDisplaySource(
                 label = source.label,
                 containerPath = source.containerPath,
@@ -3310,11 +3302,6 @@ private fun LevelMetadataDialog(
             )
         movieScanning = true
         xlReports = inspectXlCompatibilityTarget(target)
-        if (xlReports.analysisBlockers().any { it.status == "blocked" }) {
-            movieScanning = false
-            loading = false
-            return@LaunchedEffect
-        }
         movieScan = scanMissionMovies(context, target)
         movieScanning = false
         result =
@@ -3370,7 +3357,7 @@ private fun LevelMetadataDialog(
                             scan.problems.forEach { ModDetailLine(it, color = MaterialTheme.colorScheme.error) }
                             if (scan.missing.isNotEmpty()) {
                                 ModDetailLine(
-                                    "The mission is playable, but these animations or cutscenes will be absent.",
+                                    "These animations or cutscenes will be absent.",
                                 )
                                 if (scan.unavailableLibraries.isNotEmpty()) {
                                     ModDetailLine(
@@ -3381,11 +3368,7 @@ private fun LevelMetadataDialog(
                         }
                     }
                     TextButton(
-                        enabled =
-                            !movieScanning && !loading &&
-                                xlReports.analysisBlockers().none {
-                                    it.status == "blocked"
-                                },
+                        enabled = !movieScanning && !loading,
                         onClick = {
                             scope.launch {
                                 movieScanning = true
@@ -3397,9 +3380,7 @@ private fun LevelMetadataDialog(
                             }
                         },
                     ) { Text("Scan for missing movies") }
-                    if (xlReports.analysisBlockers().any { it.status == "blocked" }) {
-                        Text("Engine analysis is unavailable because this source requires unsupported D2X-XL features.")
-                    } else if (loading) {
+                    if (loading) {
                         Text(
                             "This is a separate whole-mission report. Existing Guide-Bot route " +
                                 "caches are reused when available.",

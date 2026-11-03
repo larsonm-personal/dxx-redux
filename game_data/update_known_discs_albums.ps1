@@ -161,6 +161,17 @@ foreach ($file in $albumFiles) {
     $trackNum = 1
     $tracksList = @()
     foreach ($t in $info.tracks) {
+        # Repeated playlist slots with identical audio and a reviewed title describe
+        # one song. Keep the source catalog intact, but index that song only once.
+        $sameReviewedSong = @($tracksList | Where-Object {
+                $t.name_source -eq 'tracklist' -and $t.tracklist_name -and
+                $_.NameSource -eq 'tracklist' -and $_.TracklistName -ceq $t.tracklist_name -and
+                $_.Chromaprint -ceq $t.chromaprint -and $_.DurationMs -eq $t.duration_ms
+            })
+        if ($sameReviewedSong.Count -gt 0) {
+            $trackNum++
+            continue
+        }
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($t.filename)
         # New lookups carry score and recording ID, but older checked-in cache
         # entries predate those fields. Keep a fingerprint-stable legacy result
