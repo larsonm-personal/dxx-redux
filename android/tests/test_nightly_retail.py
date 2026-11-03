@@ -1,4 +1,5 @@
 """Synthetic private-fixture boundary checks; no token, network or game data."""
+
 import copy
 import hashlib
 import json
@@ -12,10 +13,14 @@ import nightly_retail as retail
 import nightly_tooling_sweep as sweep
 
 ROOT = Path(__file__).resolve().parents[2]
-SHA = 'a' * 40
-ENV = {'GITHUB_REPOSITORY': retail.REPOSITORY, 'GITHUB_REF': 'refs/heads/cmake',
-       'GITHUB_WORKFLOW_REF': retail.WORKFLOW, 'GITHUB_EVENT_NAME': 'schedule',
-       'RETAIL_ASSETS_COMMIT': 'b' * 40}
+SHA = "a" * 40
+ENV = {
+    "GITHUB_REPOSITORY": retail.REPOSITORY,
+    "GITHUB_REF": "refs/heads/cmake",
+    "GITHUB_WORKFLOW_REF": retail.WORKFLOW,
+    "GITHUB_EVENT_NAME": "schedule",
+    "RETAIL_ASSETS_COMMIT": "b" * 40,
+}
 
 
 class RetailBoundaryTests(unittest.TestCase):
@@ -44,7 +49,12 @@ class RetailBoundaryTests(unittest.TestCase):
             self.assertTrue(details["source_verified"])
             self.assertEqual(details["duration_seconds"], 123)
             clean = retail.public_receipt(
-                {"schema": 1, "target_sha": SHA, "catalog_hash": SHA, "batch_id": SHA, "lane": "android-dual",
+                {
+                    "schema": 1,
+                    "target_sha": SHA,
+                    "catalog_hash": SHA,
+                    "batch_id": SHA,
+                    "lane": "android-dual",
                     "results": [
                         {
                             "id": "master:test_lan_lobby_discovery",
@@ -53,7 +63,7 @@ class RetailBoundaryTests(unittest.TestCase):
                             "reason": "SECRET",
                             "master_diagnostics": details,
                         }
-                    ]
+                    ],
                 }
             )
             self.assertIn(source + ":" + str(expected_line), clean["results"][0]["reason"])
@@ -72,10 +82,21 @@ class RetailBoundaryTests(unittest.TestCase):
             self.assertFalse(retail.master_failure_diagnostics(row, root)["log_available"])
 
     def setUp(self):
-        self.policy = {'schema': 1, 'suites': [
-            {'id': 'master:retail', 'owner': 'master', 'lane': 'android-single',
-             'args': {'suite': 'retail'}, 'fixture': 'retail-base', 'estimated_seconds': 100}], 'exclusions': []}
-        self.catalog = {'schema': 1, 'tests': [{'name': 'retail'}]}
+        self.policy = {
+            "schema": 1,
+            "suites": [
+                {
+                    "id": "master:retail",
+                    "owner": "master",
+                    "lane": "android-single",
+                    "args": {"suite": "retail"},
+                    "fixture": "retail-base",
+                    "estimated_seconds": 100,
+                }
+            ],
+            "exclusions": [],
+        }
+        self.catalog = {"schema": 1, "tests": [{"name": "retail"}]}
         self.identity = retail.configured_identity(ENV)
 
     def plan(self, identity=None, state=None):
@@ -83,63 +104,69 @@ class RetailBoundaryTests(unittest.TestCase):
 
     def test_only_exact_trusted_cmake_entry_can_enable_assets(self):
         self.assertTrue(retail.trusted_context(ENV))
-        self.assertTrue(retail.trusted_context({**ENV, 'GITHUB_EVENT_NAME': 'workflow_dispatch'}))
-        for key, value in [('GITHUB_REPOSITORY', 'other/repo'), ('GITHUB_REF', 'refs/pull/1/merge'),
-                           ('GITHUB_REF', 'refs/heads/feature'), ('GITHUB_REF', 'refs/tags/cmake'),
-                           ('GITHUB_EVENT_NAME', 'pull_request'), ('GITHUB_EVENT_NAME', 'pull_request_target'),
-                           ('GITHUB_EVENT_NAME', 'workflow_call'), ('GITHUB_WORKFLOW_REF', retail.WORKFLOW.replace('nightly-tooling-sweep', 'other'))]:
+        self.assertTrue(retail.trusted_context({**ENV, "GITHUB_EVENT_NAME": "workflow_dispatch"}))
+        for key, value in [
+            ("GITHUB_REPOSITORY", "other/repo"),
+            ("GITHUB_REF", "refs/pull/1/merge"),
+            ("GITHUB_REF", "refs/heads/feature"),
+            ("GITHUB_REF", "refs/tags/cmake"),
+            ("GITHUB_EVENT_NAME", "pull_request"),
+            ("GITHUB_EVENT_NAME", "pull_request_target"),
+            ("GITHUB_EVENT_NAME", "workflow_call"),
+            ("GITHUB_WORKFLOW_REF", retail.WORKFLOW.replace("nightly-tooling-sweep", "other")),
+        ]:
             with self.subTest(key=key, value=value):
                 self.assertIsNone(retail.configured_identity({**ENV, key: value}))
 
     def test_missing_config_pending_not_excluded_or_completed(self):
-        self.assertIsNone(retail.configured_identity({**ENV, 'RETAIL_ASSETS_COMMIT': ''}))
+        self.assertIsNone(retail.configured_identity({**ENV, "RETAIL_ASSETS_COMMIT": ""}))
         plan, state = self.plan()
-        self.assertEqual(plan['tests'], [])
-        self.assertEqual(plan['unavailable'][0]['id'], 'master:retail')
-        self.assertNotIn('master:retail', {row['id'] for row in plan['exclusions']})
-        self.assertEqual(state['records'], {})
+        self.assertEqual(plan["tests"], [])
+        self.assertEqual(plan["unavailable"][0]["id"], "master:retail")
+        self.assertNotIn("master:retail", {row["id"] for row in plan["exclusions"]})
+        self.assertEqual(state["records"], {})
         available, _ = self.plan(self.identity, state)
-        self.assertEqual(len(available['tests']), 1)
+        self.assertEqual(len(available["tests"]), 1)
 
     def test_mission_owners_require_the_same_private_boundary(self):
-        self.policy['suites'][0]['fixture'] = 'retail-missions'
+        self.policy["suites"][0]["fixture"] = "retail-missions"
         missing, _ = self.plan()
-        self.assertEqual(missing['tests'], [])
-        self.assertEqual(len(missing['unavailable']), 1)
+        self.assertEqual(missing["tests"], [])
+        self.assertEqual(len(missing["unavailable"]), 1)
         plan, _ = self.plan(self.identity)
-        self.assertTrue(retail.lane_requires_retail(plan, 'android-single'))
-        self.assertFalse(retail.lane_requires_retail(plan, 'host'))
+        self.assertTrue(retail.lane_requires_retail(plan, "android-single"))
+        self.assertFalse(retail.lane_requires_retail(plan, "host"))
         sweep.validate_plan(plan, self.policy)
-        workflow = (ROOT / '.github/workflows/nightly-tooling-sweep.yml').read_text()
-        self.assertIn('from nightly_retail import lane_requires_retail', workflow)
-        self.assertIn('sorted(lane for lane in p[\'lanes\'] if lane_requires_retail(p, lane))', workflow)
-        del plan['retail_assets']
+        workflow = (ROOT / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        self.assertIn("from nightly_retail import lane_requires_retail", workflow)
+        self.assertIn("sorted(lane for lane in p['lanes'] if lane_requires_retail(p, lane))", workflow)
+        del plan["retail_assets"]
         with self.assertRaises(ValueError):
             sweep.validate_plan(plan, self.policy)
 
     def test_configuration_requires_immutable_commit(self):
-        for commit in ('main', 'b' * 39, 'B' * 40, '../secret'):
+        for commit in ("main", "b" * 39, "B" * 40, "../secret"):
             with self.subTest(commit=commit), self.assertRaises(ValueError):
-                retail.configured_identity({**ENV, 'RETAIL_ASSETS_COMMIT': commit})
+                retail.configured_identity({**ENV, "RETAIL_ASSETS_COMMIT": commit})
 
     def test_identity_binds_manifest_repository_commit_and_batch(self):
         plan, _ = self.plan(self.identity)
-        for key, value in [('repository', 'other/repo'), ('manifest_sha256', '0' * 64), ('commit', 'c' * 40)]:
+        for key, value in [("repository", "other/repo"), ("manifest_sha256", "0" * 64), ("commit", "c" * 40)]:
             altered = copy.deepcopy(plan)
-            altered['retail_assets'][key] = value
+            altered["retail_assets"][key] = value
             with self.subTest(key=key), self.assertRaises(ValueError):
                 sweep.validate_plan(altered, self.policy)
-        del plan['retail_assets']
+        del plan["retail_assets"]
         with self.assertRaises(ValueError):
             sweep.validate_plan(plan, self.policy)
 
     def test_changed_data_commit_cannot_reuse_pass(self):
         plan, state = self.plan(self.identity)
-        state['records']['master:retail'] = {'status': 'PASS', 'run_url': 'https://github.com/o/r/actions/runs/1'}
-        changed = {**self.identity, 'commit': 'c' * 40}
+        state["records"]["master:retail"] = {"status": "PASS", "run_url": "https://github.com/o/r/actions/runs/1"}
+        changed = {**self.identity, "commit": "c" * 40}
         other, reset = self.plan(changed, state)
-        self.assertNotEqual(plan['catalog_hash'], other['catalog_hash'])
-        self.assertEqual(reset['records'], {})
+        self.assertNotEqual(plan["catalog_hash"], other["catalog_hash"])
+        self.assertEqual(reset["records"], {})
 
     def test_typed_failure_evidence_survives_projection_without_raw_output(self):
         row = {
@@ -174,82 +201,127 @@ class RetailBoundaryTests(unittest.TestCase):
         self.assertEqual(retail.public_receipt(receipt)["results"][0]["reason"], "tests: FAIL")
 
     def test_projection_removes_all_arbitrary_test_strings(self):
-        marker = 'ASSET_BYTES_MUST_NOT_ESCAPE'
+        marker = "ASSET_BYTES_MUST_NOT_ESCAPE"
         plan, state = self.plan(self.identity)
-        row = {'id': 'master:retail', 'status': 'FAIL', 'phase': 'tests', 'attempted_tests': True,
-               'reason': marker, 'run_url': marker, 'exclusions': [marker], 'traceback': marker, 'private_error': marker, 'workers': [{'categories': [marker], 'executable': marker}], 'owner_failure': {'categories': [marker], 'reason': marker},
-               'cases': [{'id': marker, 'status': 'FAIL', 'reason': marker}], 'blocker_kind': marker,
-               'exit_code': 1, 'coverage_complete': False}
-        receipt = {key: plan[key] for key in ('schema', 'target_sha', 'catalog_hash', 'batch_id', 'retail_assets')}
-        receipt.update(lane='android-single', results=[row])
-        with patch.dict(os.environ, {'GITHUB_RUN_ID': '123'}):
+        row = {
+            "id": "master:retail",
+            "status": "FAIL",
+            "phase": "tests",
+            "attempted_tests": True,
+            "reason": marker,
+            "run_url": marker,
+            "exclusions": [marker],
+            "traceback": marker,
+            "private_error": marker,
+            "workers": [{"categories": [marker], "executable": marker}],
+            "owner_failure": {"categories": [marker], "reason": marker},
+            "cases": [{"id": marker, "status": "FAIL", "reason": marker}],
+            "blocker_kind": marker,
+            "exit_code": 1,
+            "coverage_complete": False,
+        }
+        receipt = {key: plan[key] for key in ("schema", "target_sha", "catalog_hash", "batch_id", "retail_assets")}
+        receipt.update(lane="android-single", results=[row])
+        with patch.dict(os.environ, {"GITHUB_RUN_ID": "123"}):
             clean = retail.public_receipt(receipt)
             ledger = sweep.reconcile(plan, self.policy, state, [receipt])
         self.assertNotIn(marker, json.dumps(clean))
         self.assertNotIn(marker, json.dumps(ledger))
-        self.assertEqual(ledger['records']['master:retail']['status'], 'FAIL')
-        self.assertEqual(ledger['records']['master:retail']['case_counts']['FAIL'], 1)
+        self.assertEqual(ledger["records"]["master:retail"]["status"], "FAIL")
+        self.assertEqual(ledger["records"]["master:retail"]["case_counts"]["FAIL"], 1)
 
     def test_failed_setup_remains_pending_after_projection(self):
         plan, state = self.plan(self.identity)
         with tempfile.TemporaryDirectory() as directory:
-            result = sweep.collect(plan, self.policy, 'android-single', directory, 'secret raw setup detail')
-            self.assertNotIn('secret raw', json.dumps(result))
-            self.assertEqual(result['results'][0]['status'], 'BLOCKED')
-            self.assertFalse(result['results'][0]['attempted_tests'])
-            self.assertEqual(sweep.reconcile(plan, self.policy, state, [result])['records'], {})
+            result = sweep.collect(plan, self.policy, "android-single", directory, "secret raw setup detail")
+            self.assertNotIn("secret raw", json.dumps(result))
+            self.assertEqual(result["results"][0]["status"], "BLOCKED")
+            self.assertFalse(result["results"][0]["attempted_tests"])
+            self.assertEqual(sweep.reconcile(plan, self.policy, state, [result])["records"], {})
 
     def test_corpus_setup_stages_survive_projection_without_raw_diagnostics(self):
         plan, state = self.plan(self.identity)
-        for kind in ('metadata-cli-setup', 'corpus-worker-configure', 'corpus-worker-build'):
+        for kind in ("metadata-cli-setup", "corpus-worker-configure", "corpus-worker-build"):
             with self.subTest(kind=kind):
-                receipt = {key: plan[key] for key in ('schema', 'target_sha', 'catalog_hash', 'batch_id', 'retail_assets')}
-                receipt.update(lane='android-single', results=[{
-                    'id': 'master:retail', 'status': 'BLOCKED', 'phase': 'setup',
-                    'reason': 'PRIVATE_COMPILER_OUTPUT', 'blocker_kind': kind,
-                    'exit_code': 9, 'retryable': True, 'attempted_tests': False}])
+                receipt = {
+                    key: plan[key] for key in ("schema", "target_sha", "catalog_hash", "batch_id", "retail_assets")
+                }
+                receipt.update(
+                    lane="android-single",
+                    results=[
+                        {
+                            "id": "master:retail",
+                            "status": "BLOCKED",
+                            "phase": "setup",
+                            "reason": "PRIVATE_COMPILER_OUTPUT",
+                            "blocker_kind": kind,
+                            "exit_code": 9,
+                            "retryable": True,
+                            "attempted_tests": False,
+                        }
+                    ],
+                )
                 clean = retail.public_receipt(receipt)
-                self.assertEqual(clean['results'][0]['blocker_kind'], kind)
-                self.assertEqual(clean['results'][0]['exit_code'], 9)
-                self.assertNotIn('PRIVATE_COMPILER_OUTPUT', json.dumps(clean))
-                with patch.dict(os.environ, {'GITHUB_RUN_ID': '123'}):
+                self.assertEqual(clean["results"][0]["blocker_kind"], kind)
+                self.assertEqual(clean["results"][0]["exit_code"], 9)
+                self.assertNotIn("PRIVATE_COMPILER_OUTPUT", json.dumps(clean))
+                with patch.dict(os.environ, {"GITHUB_RUN_ID": "123"}):
                     ledger = sweep.reconcile(plan, self.policy, state, [receipt])
-                self.assertEqual(ledger['records'], {})
-                self.assertIn('master:retail', ledger['retryable'])
+                self.assertEqual(ledger["records"], {})
+                self.assertIn("master:retail", ledger["retryable"])
 
     def test_checkout_cli_rejects_untrusted_or_changed_configuration(self):
         plan, _ = self.plan(self.identity)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            sweep.write(root / 'plan', plan); sweep.write(root / 'policy', self.policy)
-            argv = ['sweep', 'retail-check', '--plan', str(root / 'plan'), '--policy', str(root / 'policy'), '--lane', 'android-single']
-            for changes in ({'GITHUB_EVENT_NAME': 'pull_request'}, {'RETAIL_ASSETS_COMMIT': 'c' * 40}, {'RETAIL_ASSETS_COMMIT': ''}):
-                with patch.dict(os.environ, {**ENV, **changes}, clear=True), patch('sys.argv', argv), self.assertRaises(ValueError):
+            sweep.write(root / "plan", plan)
+            sweep.write(root / "policy", self.policy)
+            argv = [
+                "sweep",
+                "retail-check",
+                "--plan",
+                str(root / "plan"),
+                "--policy",
+                str(root / "policy"),
+                "--lane",
+                "android-single",
+            ]
+            for changes in (
+                {"GITHUB_EVENT_NAME": "pull_request"},
+                {"RETAIL_ASSETS_COMMIT": "c" * 40},
+                {"RETAIL_ASSETS_COMMIT": ""},
+            ):
+                with (
+                    patch.dict(os.environ, {**ENV, **changes}, clear=True),
+                    patch("sys.argv", argv),
+                    self.assertRaises(ValueError),
+                ):
                     sweep.main()
-            with patch.dict(os.environ, ENV, clear=True), patch('sys.argv', argv), patch('builtins.print'):
+            with patch.dict(os.environ, ENV, clear=True), patch("sys.argv", argv), patch("builtins.print"):
                 self.assertEqual(sweep.main(), 0)
 
     def test_reusable_workflow_passes_only_named_retail_secret(self):
-        caller = (ROOT / '.github/workflows/nightly-tooling-sweep.yml').read_text()
-        callee = (ROOT / '.github/workflows/android-nightly-tooling.yml').read_text()
-        android_job = caller.split('\n  android:\n', 1)[1].split('\n  finish:\n', 1)[0]
+        caller = (ROOT / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        callee = (ROOT / ".github/workflows/android-nightly-tooling.yml").read_text()
+        android_job = caller.split("\n  android:\n", 1)[1].split("\n  finish:\n", 1)[0]
         # A selected environment alone does not expose its secrets to a reusable job
-        self.assertIn('    secrets:\n      RETAIL_ASSETS_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}\n', android_job)
-        named_secrets = android_job.split('    secrets:\n', 1)[1].split('\n\n', 1)[0]
-        self.assertEqual(named_secrets.splitlines(), [
-            '      RETAIL_ASSETS_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}'])
-        declaration = callee.split('    secrets:\n', 1)[1].split('\n\n', 1)[0]
-        self.assertEqual(declaration.splitlines(), [
-            '      RETAIL_ASSETS_READ_TOKEN:',
-            '        required: false'])
+        self.assertIn(
+            "    secrets:\n      RETAIL_ASSETS_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}\n", android_job
+        )
+        named_secrets = android_job.split("    secrets:\n", 1)[1].split("\n\n", 1)[0]
+        self.assertEqual(
+            named_secrets.splitlines(), ["      RETAIL_ASSETS_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}"]
+        )
+        declaration = callee.split("    secrets:\n", 1)[1].split("\n\n", 1)[0]
+        self.assertEqual(declaration.splitlines(), ["      RETAIL_ASSETS_READ_TOKEN:", "        required: false"])
         # Public/JVM calls need no credential; the existing retail-only runtime gate does
-        self.assertNotIn('    environment:', android_job)
-        self.assertIn('        if: inputs.retail_assets\n', callee)
+        self.assertNotIn("    environment:", android_job)
+        self.assertIn("        if: inputs.retail_assets\n", callee)
         self.assertIn('[[ -n "$RETAIL_READ_TOKEN" ]]', callee)
 
     def test_workflow_secret_and_artifact_boundary_is_explicit(self):
-        for name in ('nightly-tooling-sweep.yml', 'android-nightly-tooling.yml'):
-            source = (ROOT / '.github/workflows' / name).read_text()
+        for name in ("nightly-tooling-sweep.yml", "android-nightly-tooling.yml"):
+            source = (ROOT / ".github/workflows" / name).read_text()
             requested = (
                 "contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')"
                 if name == "nightly-tooling-sweep.yml"
@@ -268,25 +340,30 @@ class RetailBoundaryTests(unittest.TestCase):
                 "      deployment: ${{ " + trusted_retail + " }}\n",
                 source,
             )
-            self.assertNotIn('secrets: inherit', source)
-            self.assertIn('repository: larsonm-personal/dxx-redux-test-assets', source)
-            self.assertIn('token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}', source)
-            self.assertIn('unset RETAIL_READ_TOKEN', source)
-            self.assertIn('--stage target/game_data/retail-ci --include-missions', source)
-            self.assertIn('results/retail-verification.json', source)
-            self.assertIn('rm -rf retail-input', source)
-        android = (ROOT / '.github/workflows/android-nightly-tooling.yml').read_text()
-        first_step = android.split('      - name: Check out trusted sweep controller')[0]
-        self.assertIn('$GITHUB_WORKFLOW_REF', first_step)
-        self.assertIn('$GITHUB_EVENT_NAME', first_step)
-        self.assertIn('github.workflow_ref ==', first_step)
-        self.assertIn('github.repository ==', first_step)
-        for step in android.split('      - name: '):
-            if 'uses: actions/cache/save@' in step:
-                self.assertIn('!inputs.retail_assets', step)
-            if 'uses: actions/upload-artifact@' in step and 'retail-safe' not in step:
-                self.assertIn('!inputs.retail_assets', step)
+            self.assertNotIn("secrets: inherit", source)
+            self.assertIn("repository: larsonm-personal/dxx-redux-test-assets", source)
+            self.assertIn("token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}", source)
+            if name == "nightly-tooling-sweep.yml":
+                before_checkout = source.split("      - name: Check out immutable private retail inputs", 1)[0]
+                self.assertNotIn("secrets.RETAIL_ASSETS_READ_TOKEN", before_checkout)
+                self.assertIn("nightly_tooling_sweep.py retail-check", before_checkout)
+            else:
+                self.assertIn("unset RETAIL_READ_TOKEN", source)
+            self.assertIn("--stage target/game_data/retail-ci --include-missions", source)
+            self.assertIn("results/retail-verification.json", source)
+            self.assertIn("rm -rf retail-input", source)
+        android = (ROOT / ".github/workflows/android-nightly-tooling.yml").read_text()
+        first_step = android.split("      - name: Check out trusted sweep controller")[0]
+        self.assertIn("$GITHUB_WORKFLOW_REF", first_step)
+        self.assertIn("$GITHUB_EVENT_NAME", first_step)
+        self.assertIn("github.workflow_ref ==", first_step)
+        self.assertIn("github.repository ==", first_step)
+        for step in android.split("      - name: "):
+            if "uses: actions/cache/save@" in step:
+                self.assertIn("!inputs.retail_assets", step)
+            if "uses: actions/upload-artifact@" in step and "retail-safe" not in step:
+                self.assertIn("!inputs.retail_assets", step)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

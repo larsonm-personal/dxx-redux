@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import time
+import nightly_candidate as candidate
 import nightly_retail as retail
 from xl_private_assets import FAST_OWNER_ID, ORIGINAL_OWNER_IDS, OWNER_IDS, available
 import nightly_regression_catalog as corpus
@@ -1132,14 +1133,18 @@ def main():
             or plan.get("retail_assets") != retail.configured_identity()
         ):
             raise ValueError("Private checkout is not authorized by this trusted run and plan")
+        candidate.verify(plan["target_sha"])
         print("Verified trusted retail lane and immutable data identity")
     elif args.command == "plan":
+        approved_candidate = candidate.verify(args.target_sha)
+        if approved_candidate and args.campaign != os.environ.get("CANDIDATE_CAMPAIGN"):
+            raise ValueError("Candidate campaign differs from authenticated dispatch")
         retail_assets = retail.configured_identity()
         if retail.corpus_available(retail_assets):
             controller_sha = subprocess.check_output(
                 ["git", "-C", str(corpus.ROOT), "rev-parse", "HEAD"], text=True
             ).strip()
-            if controller_sha != args.target_sha:
+            if controller_sha != args.target_sha and not approved_candidate:
                 raise ValueError(
                     "Corpus controller/catalog differs from exact target; retry the current cmake revision"
                 )
