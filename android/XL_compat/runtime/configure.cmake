@@ -93,6 +93,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/visibility.cpp"
                 "${xl_runtime_dir}/menu_indicator.c"
                 "${xl_runtime_dir}/resource_validation.cpp"
+                "${xl_runtime_dir}/oof_renderer.cpp"
                 "${xl_runtime_dir}/camera_collision.cpp"
                 "${xl_runtime_dir}/camera_splash.cpp"
                 "${xl_runtime_dir}/camera_flash.cpp"
@@ -148,8 +149,9 @@ target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE DXX_XL_RUNTIME)
 target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE "${xl_runtime_dir}")
 if(DXX_XL_DEVELOPER_TESTS AND TARGET dxx-redux-d2-headless-metadata)
     # Export earned private checkpoints with Android's real source-definition trailer
-    set(xl_checkpoint_sources "${xl_runtime_dir}/checkpoint_export.cpp"
-                              "${xl_runtime_dir}/../../app/src/main/cpp/shared/mod_save_compat.cpp")
+    set(xl_checkpoint_sources
+        "${xl_runtime_dir}/checkpoint_export.cpp" "${xl_runtime_dir}/mod_save_identity_test.cpp"
+        "${xl_runtime_dir}/../../app/src/main/cpp/shared/mod_save_compat.cpp")
     set_source_files_properties(
         ${xl_checkpoint_sources} TARGET_DIRECTORY dxx-redux-d2-headless-metadata
         PROPERTIES COMPILE_DEFINITIONS DXX_REWIND_FILE_WRAPPER)

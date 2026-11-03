@@ -3860,12 +3860,22 @@ private fun SetupScreen(
                 val name = getDisplayName(context, uri)
                 if (name != null) {
                     val resourceMod =
-                        importResourceMod(context, uri, name) { label, done, total ->
+                        try {
+                            importResourceMod(context, uri, name) { label, done, total ->
+                                withContext(Dispatchers.Main) {
+                                    zipExtracting = true
+                                    importStatus = label
+                                    zipProgressFile = label
+                                    zipProgressBytes = done
+                                    zipProgressTotal = total
+                                }
+                            }
+                        } finally {
                             withContext(Dispatchers.Main) {
-                                importStatus = label
-                                zipProgressFile = label
-                                zipProgressBytes = done
-                                zipProgressTotal = total
+                                zipExtracting = false
+                                zipProgressFile = ""
+                                zipProgressBytes = 0L
+                                zipProgressTotal = 0L
                             }
                         }
                     if (resourceMod != null) {

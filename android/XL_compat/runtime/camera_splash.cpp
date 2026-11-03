@@ -1,4 +1,5 @@
 #include "camera_splash.h"
+#include "camera_collision.h"
 #include "camera_flash.h"
 #include "camera_children.h"
 #include "seismic_gameplay.h"
@@ -93,29 +94,24 @@ bool xl_camera_splash_profile(int id)
 {
 	if (id < 0 || id >= N_weapon_types) return false;
 	const auto &definition = Weapon_info[id];
-	// High-force custom profiles that can detonate other mines remain gated
-	const bool qualified = id == GAUSS_ID || id == CONCUSSION_ID || id == HOMING_ID ||
-	                       id == GUIDEDMISS_ID || id == MERCURY_ID || id == FLASH_ID || id == PROXIMITY_ID ||
-	                       id == SMART_ID || id == MEGA_ID || id == SUPERPROX_ID || id == EARTHSHAKER_ID ||
-	                       id == EARTHSHAKER_MEGA_ID || id == PMINE_ID;
-	const int children = id == SMART_ID ? PLAYER_SMART_HOMING_ID : id == SUPERPROX_ID ? SMART_MINE_HOMING_ID
-	                                                           : id == EARTHSHAKER_ID ? EARTHSHAKER_MEGA_ID
-	                                                                                  : -1;
-	if (!qualified || (definition.flash && id != FLASH_ID) || definition.children != children) return false;
+	const bool mine = is_proximity_bomb_or_smart_mine_or_placed_mine(static_cast<weapon_type_t>(id)) || id == ROBOT_SUPERPROX_ID;
+	// Source flash processing is driven by the weapon data, including custom missiles
+	if ((!xl_camera_contact_projectile(id) && !mine) || definition.flash < 0 || definition.children < -1 || definition.children >= N_weapon_types) return false;
 	const int radius = definition.damage_radius;
 	for (int difficulty = 0; difficulty < NDL; ++difficulty) {
 		const int strength = definition.strength[difficulty];
-		if (strength <= 0 || radius <= 0 || double(strength) / F1_0 * double(radius) / F1_0 / 4.0 + double(radius) / F1_0 / F1_0 >= 8000.0) return false;
+		if (double(strength) * definition.flash > INT32_MAX) return false;
+		// The source mine-chain test multiplies distance by force in signed fixed point
+		if (strength <= 0 || radius <= 0 || double(strength) / F1_0 * double(radius) / 4.0 + double(radius) / F1_0 > INT32_MAX) return false;
 	}
 	return true;
 }
-void xl_camera_splash(object &weapon, object &camera, vms_vector &impact)
+static void camera_radial_explosion(object &weapon, vms_vector impact)
 {
 	const auto &definition = Weapon_info[weapon.id];
 	if (!xl_camera_splash_profile(weapon.id)) Error("Camera splash weapon profile requires further qualification");
 	const int strength = definition.strength[Difficulty_level], radius = definition.damage_radius;
 	try {
-		impact = native(xl_compat::camera_splash_impact(point(impact), point(camera.pos), camera.size, weapon.size));
 		if (weapon.id == EARTHSHAKER_ID) xl_seismic_detonation(&impact);
 		xl_gameplay_weapon_explosion(int(&weapon - Objects), 0);
 		auto *explosion = object_create_explosion(weapon.segnum, &impact, definition.impact_size, definition.robot_hit_vclip);
@@ -140,6 +136,11 @@ void xl_camera_splash(object &weapon, object &camera, vms_vector &impact)
 			int damage = sample.damage;
 			if (actor.type == OBJ_WEAPON) {
 				apply_force(actor, sample.impulse);
+				if (splash_multiply(sample.distance, sample.force) > 8000 * F1_0) {
+					// Mark before recursion so overlapping mine blasts cannot detonate it twice
+					actor.flags |= OF_SHOULD_BE_DEAD;
+					camera_radial_explosion(actor, actor.pos);
+				}
 			} else if (actor.type == OBJ_ROBOT) {
 				apply_force(actor, sample.impulse);
 				int skip = actor.ctype.ai_info.SKIP_AI_COUNT;
@@ -188,4 +189,10 @@ void xl_camera_splash(object &weapon, object &camera, vms_vector &impact)
 	} catch (const std::exception &error) {
 		Error("Cannot apply camera splash: %s", error.what());
 	}
+}
+
+void xl_camera_splash(object &weapon, object &camera, vms_vector &impact)
+{
+	impact = native(xl_compat::camera_splash_impact(point(impact), point(camera.pos), camera.size, weapon.size));
+	camera_radial_explosion(weapon, impact);
 }

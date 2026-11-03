@@ -1,4 +1,55 @@
 #include "seismic_gameplay.h"
+static void camera_mine_chain_controls(object &camera)
+{
+	const auto gauss = Weapon_info[GAUSS_ID], mine_definition = Weapon_info[PROXIMITY_ID];
+	const auto pilot = Players[Player_num];
+	const auto player = *ConsoleObject;
+	std::vector<std::pair<int, int>> hidden;
+	for (int i = 0; i <= Highest_object_index; ++i)
+		if (Objects[i].type != OBJ_NONE && &Objects[i] != ConsoleObject && &Objects[i] != &camera) {
+			hidden.emplace_back(i, Objects[i].type);
+			Objects[i].type = OBJ_NONE;
+		}
+	Players[Player_num].flags |= PLAYER_FLAGS_INVULNERABLE;
+	for (int strength : { 1900, 2500 }) {
+		Weapon_info[GAUSS_ID].damage_radius = 16 * F1_0;
+		Weapon_info[GAUSS_ID].children = -1;
+		Weapon_info[GAUSS_ID].flash = 0;
+		Weapon_info[PROXIMITY_ID].damage_radius = 16 * F1_0;
+		Weapon_info[PROXIMITY_ID].children = -1;
+		Weapon_info[PROXIMITY_ID].flash = 0;
+		for (auto &value : Weapon_info[GAUSS_ID].strength) value = strength * F1_0;
+		for (auto &value : Weapon_info[PROXIMITY_ID].strength) value = 2500 * F1_0;
+		xl_camera_validate_weapon_definitions();
+		std::array<int, MAX_OBJECTS> signatures{};
+		const int highest = Highest_object_index;
+		for (int i = 0; i <= highest; ++i) signatures[i] = Objects[i].signature;
+		const int shot = projectile_test_shot(int(ConsoleObject - Objects), GAUSS_ID);
+		const int first = projectile_test_shot(int(ConsoleObject - Objects), PROXIMITY_ID);
+		const int second = projectile_test_shot(int(ConsoleObject - Objects), PROXIMITY_ID);
+		for (int owner : { shot, first, second }) {
+			Objects[owner].pos = camera.pos;
+			obj_relink(owner, camera.segnum);
+		}
+		Objects[first].pos.x += 8 * F1_0;
+		require(object_to_object_visibility(&Objects[shot], &Objects[first], FQ_TRANSWALL), "Mine-chain fixture lacks visibility");
+		auto impact = camera.pos;
+		collide_two_objects(&Objects[shot], &camera, &impact);
+		const bool chained = strength == 2500;
+		require(bool(Objects[first].flags & OF_SHOULD_BE_DEAD) == chained &&
+		            bool(Objects[second].flags & OF_SHOULD_BE_DEAD) == chained,
+		        "Camera splash lost threshold or recursive mine detonation");
+		for (int i = 0; i <= Highest_object_index; ++i)
+			if (Objects[i].type != OBJ_NONE && (i > highest || Objects[i].signature != signatures[i])) obj_delete(i);
+	}
+	for (const auto &entry : hidden) Objects[entry.first].type = entry.second;
+	Weapon_info[GAUSS_ID] = gauss;
+	Weapon_info[PROXIMITY_ID] = mine_definition;
+	Players[Player_num] = pilot;
+	*ConsoleObject = player;
+	std::cout << "Camera splash mine threshold and recursive detonation passed\n";
+}
+
 static void camera_missile_native_controls(object &camera)
 {
 	xl_camera_validate_weapon_definitions();
@@ -6,8 +57,8 @@ static void camera_missile_native_controls(object &camera)
 	for (int mode = 0; mode < 3; ++mode) {
 		Weapon_info[SMART_ID] = original_definition;
 		if (mode == 0) Weapon_info[SMART_ID].strength[4] = 32000 * F1_0;
-		if (mode == 1) Weapon_info[SMART_ID].children = EARTHSHAKER_MEGA_ID;
-		if (mode == 2) Weapon_info[SMART_ID].flash = 16;
+		if (mode == 1) Weapon_info[SMART_ID].children = N_weapon_types;
+		if (mode == 2) Weapon_info[SMART_ID].flash = -1;
 		bool rejected = false;
 		try {
 			XlPreparedResources rejected_resources("__camera_bad_weapons__.rl2");

@@ -24,6 +24,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "robot.h"
 #include "object.h"
 #include "polyobj.h"
+#ifdef DXX_XL_RUNTIME
+#include "resource_validation.h"
+#endif
 
 int	N_robot_types = 0;
 int	N_robot_joints = 0;
@@ -113,6 +116,9 @@ void calc_gun_point(vms_vector *gun_point,object *obj,int gun_num)
 	}
 
 	pnt = r->gun_points[gun_num];
+#ifdef DXX_XL_RUNTIME
+	xl_model_gun_point(obj->rtype.pobj_info.model_num, gun_num, &pnt);
+#endif
 	mn = r->gun_submodels[gun_num];
 
 	//instance up the tree for this gun

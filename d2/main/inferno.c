@@ -439,8 +439,8 @@ int main(int argc, char *argv[])
 
 	setbuf(stdout, NULL); // unbuffered output via printf
 #ifdef _WIN32
-	/* Preserve redirected diagnostics for the isolated rendered route runner */
-	if (!startup_find_cmd_arg("-route-confirm-json-out")) {
+	/* Preserve redirected diagnostics for isolated rendered automation */
+	if (!startup_find_cmd_arg("-route-confirm-json-out") && !startup_find_cmd_arg("-xl-preview-start")) {
 		freopen( "CON", "w", stdout );
 		freopen( "CON", "w", stderr );
 	}

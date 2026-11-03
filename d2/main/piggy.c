@@ -1050,7 +1050,7 @@ int read_hamfile()
 	{
 		int i;
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_XL_RUNTIME)
 		/* Re-reading mission HAM must release the previous model allocations */
 		for (i = 0; i < N_polygon_models; ++i)
 			if (Polygon_models[i].model_data) free_model(&Polygon_models[i]);

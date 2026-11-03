@@ -25,6 +25,12 @@
 #include "../inventory.h"
 #include "preview.h"
 #include "particle_resources.h"
+#include "oof_resource.h"
+#include "oof_renderer.h"
+#include "../oof_geometry.h"
+#include "../ase_mesh.h"
+#include "../model_names.h"
+#include "../particle_image.h"
 #include <utility>
 #ifdef __ANDROID__
 #include "../../app/src/main/cpp/shared/android_mission_assets.h"
@@ -53,11 +59,15 @@ namespace
 static_assert(MAX_SUBMODELS == 10, "Update the bounded XL model geometry capacity with native submodels");
 using File = std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)>;
 std::string startup_ham_name, startup_ham_hash, startup_origin, base_rejection;
-std::string vertigo_rejection;
+std::string vertigo_rejection, mod_rejection;
 const std::array<const char *, 2> sound_banks{ "descent2.s11", "descent2.s22" };
 std::array<std::string, 2> startup_sound_hashes;
 std::map<std::string, std::string> startup_graphics_hashes;
 bool mission_requires_xl = false;
+std::map<int, std::shared_ptr<xl_compat::OofResource>> mission_oof_models;
+std::map<std::string, std::string> mission_mod_sources;
+std::map<std::string, std::string> mission_definition_sources;
+std::set<int> mission_generated_models;
 
 bool mounted_mission_requires_xl(bool owned_only = false)
 {
@@ -167,7 +177,7 @@ struct HxmChanges {
 	std::set<int> robots, joints, models, bitmaps, pointers;
 };
 
-std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefinitions &definitions, xl_assets::ObjectDependencies &graph, HxmChanges &changes, bool camera = false)
+std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefinitions &definitions, xl_assets::ObjectDependencies &graph, HxmChanges &changes, bool camera = false, bool defer_dependencies = false, bool defer_robots = false)
 {
 	// Native readers decode into the same owned tables used by the level walk
 	auto &robots = definitions.robots;
@@ -278,12 +288,16 @@ std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefiniti
 			throw std::runtime_error("Camera addon profile: guns=" + std::to_string(robot.n_guns) + ", submodels=" + std::to_string(models[camera_ids.second].n_models) +
 			                         ", simpler=" + std::to_string(models[camera_ids.second].simpler_model) + ", dying=" + std::to_string(dying[camera_ids.second]) + ", dead=" + std::to_string(dead[camera_ids.second]));
 	}
+	// Mission HXM is followed by V-HAM; validate reachable closure after all layers
+	if (defer_dependencies) return camera_ids;
 	for (const int id : changed_models) graph.model(id);
 	for (const int id : changed_bitmaps) graph.bitmap(bitmaps[id].index);
 	for (const int id : changed_pointers) {
 		if (pointers[id] >= N_ObjBitmaps) throw std::runtime_error("HXM model texture references missing object bitmap");
 		graph.bitmap(bitmaps[pointers[id]].index);
 	}
+	// XL level admission walks reachable robot profiles after HXM and model layers
+	if (defer_robots) return camera_ids;
 	// A changed joint/model can invalidate an otherwise unchanged robot
 	for (int id = 0; id < int(robots.size()); ++id) {
 		// Camera control never dispatches ordinary robot guns, combat or animation
@@ -388,9 +402,15 @@ extern "C" void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file
 
 extern "C" void xl_resource_select_mission(int requires_xl)
 {
+	xl_oof_renderer_clear();
+	mission_oof_models.clear();
+	mission_mod_sources.clear();
+	mission_definition_sources.clear();
+	mission_generated_models.clear();
 	mission_requires_xl = requires_xl != 0;
 	base_rejection.clear();
 	vertigo_rejection.clear();
+	mod_rejection.clear();
 }
 
 // Pinned LoadModData stage zero tries the original Vertigo extension for D2
@@ -443,6 +463,266 @@ extern "C" int xl_resource_load_vertigo(void)
 	}
 }
 
+namespace
+{
+std::string owned_mod_file(const char *extension, const std::string &relative = {})
+{
+	const std::string archive = mission_resource_archive();
+	const auto slash = archive.find_last_of("/\\");
+	const auto leaf = archive.substr(slash == std::string::npos ? 0 : slash + 1);
+	const auto dot = leaf.find_last_of('.');
+	if (dot == std::string::npos || resource_key(leaf.substr(dot)) != ".hog") return {};
+	const auto name = leaf.substr(0, dot);
+	if (name.empty() || name == "." || name == ".." || name.find_first_of(":/\\") != std::string::npos)
+		throw std::runtime_error("Invalid XL mission resource identity");
+	std::string path = "mods/" + name + "/" + (relative.empty() ? name + extension : relative);
+#ifdef __ANDROID__
+	if (*android_mission_assets_key()) {
+		char resolved[PATH_MAX];
+		if (!android_mission_assets_find_owned_file(path.c_str(), resolved, sizeof(resolved))) return {};
+		path = resolved;
+	}
+#endif
+	if (PHYSFSEXT_locateCorrectCase(path.data()) != 0) return {};
+	const char *origin = PHYSFS_getRealDir(path.c_str());
+#ifdef __ANDROID__
+	if (!*android_mission_assets_key())
+#endif
+		if (!mission_owns_resource_directory(origin) && !mission_owns_resource_archive(origin))
+			throw std::runtime_error("XL mission definitions are shadowed outside their owner: " + path);
+	return path;
+}
+
+void install_mission_hxm(PHYSFS_file *file)
+{
+	if (!bm_validate_level_hxm(file)) throw std::runtime_error("Malformed XL mission HXM");
+	MissionDefinitions definitions;
+	xl_assets::ObjectDependencies graph;
+	HxmChanges changes;
+	validate_hxm_dependencies(file, definitions, graph, changes, false, true);
+	std::map<int, std::unique_ptr<NativeModel>> models;
+	for (int id : changes.models) models[id] = std::make_unique<NativeModel>(definitions.models[id]);
+	// All decoding and allocations finish before native tables change
+	for (int id : changes.robots) Robot_info[id] = definitions.robots[id];
+	for (int id : changes.joints) Robot_joints[id] = definitions.joints[id];
+	for (int id : changes.bitmaps) ObjBitmaps[id] = definitions.bitmaps[id];
+	for (int id : changes.pointers) ObjBitmapPtrs[id] = definitions.pointers[id];
+	for (auto &entry : models) {
+		const int id = entry.first;
+		free_model(&Polygon_models[id]);
+		Polygon_models[id] = entry.second->model;
+		entry.second->model.model_data = nullptr;
+		Dying_modelnums[id] = definitions.dying[id];
+		Dead_modelnums[id] = definitions.dead[id];
+	}
+}
+
+std::vector<uint8_t> read_model_resource(const std::string &path)
+{
+	File file(PHYSFSX_openReadBuffered(path.c_str()), PHYSFS_close);
+	const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
+	if (length <= 0 || length > 64 * 1024 * 1024) throw std::runtime_error("Invalid owned model resource: " + path);
+	std::vector<uint8_t> bytes(static_cast<std::size_t>(length));
+	if (PHYSFS_readBytes(file.get(), bytes.data(), length) != length) throw std::runtime_error("Cannot read owned model resource: " + path);
+	return bytes;
+}
+
+xl_compat::OwnedModelSet prepare_owned_models(int ordinal)
+{
+	xl_compat::OwnedModelSet result;
+	auto &pending = result.models;
+	auto &sources = result.sources;
+	std::vector<std::string> folders;
+	if (ordinal) {
+		const auto number = std::to_string(ordinal < 0 ? -ordinal : ordinal);
+		folders.push_back(std::string("models/") + (ordinal < 0 ? "slevel" : "level") + (number.size() < 2 ? "0" : "") + number + "/");
+	}
+	folders.push_back("models/");
+	std::map<std::string, std::shared_ptr<xl_compat::OofResource>> by_path;
+	std::map<std::string, std::shared_ptr<const xl_compat::PogBitmap>> skins_by_path;
+	for (int id = 0; id < MAX_POLYGON_MODELS; ++id) {
+		const auto mapping = xl_compat::model_name(id);
+		if (mapping.shared >= 0) {
+			const auto shared = pending.find(mapping.shared);
+			if (shared != pending.end()) {
+				pending.emplace(id, shared->second);
+				continue;
+			}
+		}
+		std::string path;
+		std::string selected_folder;
+		for (const auto &folder : folders) {
+			for (const auto &candidate : xl_compat::model_candidates(id)) {
+				path = owned_mod_file("", folder + candidate);
+				if (!path.empty()) {
+					selected_folder = folder;
+					break;
+				}
+			}
+			if (!path.empty()) break;
+		}
+		if (path.empty()) continue;
+		const bool ase = resource_key(path).substr(path.size() - 4) == ".ase";
+		const auto cached = by_path.find(path);
+		if (cached != by_path.end()) {
+			pending.emplace(id, cached->second);
+			continue;
+		}
+		auto resource = std::make_shared<xl_compat::OofResource>();
+		resource->path = path;
+		const auto model_bytes = read_model_resource(path);
+		if (ase) {
+			const std::string text(model_bytes.begin(), model_bytes.end());
+			auto compiled = xl_compat::compile_ase_mesh(xl_compat::decode_ase_model(xl_compat::read_ase_records(text)));
+			resource->model.textures = std::move(compiled.textures);
+			resource->mesh = std::move(compiled.geometry);
+			resource->gunpoints = std::move(compiled.gunpoints);
+			resource->thrusters = std::move(compiled.thrusters);
+		} else {
+			resource->model = xl_compat::read_oof(model_bytes);
+			resource->mesh = xl_compat::compile_oof_mesh(resource->model, mapping.flip_v);
+		}
+		sources[path] = picosha2::hash256_hex_string(model_bytes);
+		for (auto texture : resource->model.textures) {
+			if (texture.empty() || texture == "." || texture == ".." || texture.find_first_of("/\\:") != std::string::npos)
+				throw std::runtime_error("Invalid owned OOF skin name: " + path);
+			if (resource_key(texture).size() < 4 || resource_key(texture).substr(texture.size() - 4) != ".tga") texture += ".tga";
+			auto skin_path = owned_mod_file("", selected_folder + texture);
+			if (skin_path.empty() && selected_folder != "models/") skin_path = owned_mod_file("", "models/" + texture);
+			if (skin_path.empty()) throw std::runtime_error("Missing owned OOF skin: " + texture);
+			auto &skin = skins_by_path[skin_path];
+			if (!skin) {
+				const auto bytes = read_model_resource(skin_path);
+				skin = std::make_shared<const xl_compat::PogBitmap>(xl_compat::read_particle_image(bytes.data(), bytes.size()));
+				sources[skin_path] = picosha2::hash256_hex_string(bytes);
+			}
+			resource->skins.push_back(skin);
+		}
+		by_path.emplace(path, resource);
+		pending.emplace(id, std::move(resource));
+	}
+	return result;
+}
+
+void install_missing_oof_geometry()
+{
+	std::map<int, std::unique_ptr<NativeModel>> pending;
+	for (const auto &entry : mission_oof_models) {
+		if (entry.first < N_polygon_models && Polygon_models[entry.first].model_data) continue;
+		const auto payload = xl_compat::oof_native_geometry(entry.second->mesh);
+		polymodel model{};
+		model.n_models = 1;
+		model.model_data_size = int(payload.size());
+		model.model_data = const_cast<ubyte *>(payload.data());
+		model.rad = xl_compat::ModelGeometry(payload.data(), payload.size(), 1).custom_radius();
+		model.submodel_rads[0] = model.rad;
+		model.mins = { fix(entry.second->mesh.low[0] * 65536), fix(entry.second->mesh.low[1] * 65536), fix(entry.second->mesh.low[2] * 65536) };
+		model.maxs = { fix(entry.second->mesh.high[0] * 65536), fix(entry.second->mesh.high[1] * 65536), fix(entry.second->mesh.high[2] * 65536) };
+		model.submodel_mins[0] = model.mins;
+		model.submodel_maxs[0] = model.maxs;
+		pending.emplace(entry.first, std::make_unique<NativeModel>(model));
+		mission_generated_models.insert(entry.first);
+	}
+	for (auto &entry : pending) {
+		while (N_polygon_models <= entry.first) {
+			Polygon_models[N_polygon_models] = {};
+			Dying_modelnums[N_polygon_models] = Dead_modelnums[N_polygon_models] = -1;
+			++N_polygon_models;
+		}
+		Polygon_models[entry.first] = entry.second->model;
+		entry.second->model.model_data = nullptr;
+	}
+}
+} // namespace
+
+std::shared_ptr<const xl_compat::OofResource> xl_owned_oof_model(int id)
+{
+	const auto found = mission_oof_models.find(id);
+	return found == mission_oof_models.end() ? nullptr : found->second;
+}
+
+xl_compat::OwnedModelSet xl_prepare_owned_models(int ordinal)
+{
+	if (!mission_requires_xl || !Current_mission || Current_mission->descent_version != 2) return {};
+	if (ordinal > Last_level || ordinal < Last_secret_level) throw std::runtime_error("Invalid XL model level ordinal");
+	return prepare_owned_models(ordinal);
+}
+
+extern "C" int xl_resource_load_mod_data(void)
+{
+	if (!mission_requires_xl || !Current_mission || Current_mission->descent_version != 2) return 0;
+	mod_rejection.clear();
+	try {
+		std::map<std::string, std::string> sources;
+		const auto ham = owned_mod_file(".ham"), hxm = owned_mod_file(".hxm"), vham = owned_mod_file(".vham");
+		for (const auto &path : { ham, hxm, vham }) {
+			if (path.empty()) continue;
+			File file(PHYSFSX_openReadBuffered(path.c_str()), PHYSFS_close);
+			if (!file) throw std::runtime_error("Cannot read XL mission definition: " + path);
+			sources[path] = resource_hash(file.get(), path);
+		}
+		if (!ham.empty()) {
+			File file(PHYSFSX_openReadBuffered(ham.c_str()), PHYSFS_close);
+			if (!bm_read_xl_main_ham(file.get())) throw std::runtime_error("Malformed or unsupported XL mission HAM: " + ham);
+		}
+		if (!hxm.empty()) {
+			File file(PHYSFSX_openReadBuffered(hxm.c_str()), PHYSFS_close);
+			install_mission_hxm(file.get());
+		}
+		if (!vham.empty() && !bm_read_xl_extra_robots(vham.c_str()))
+			throw std::runtime_error("Malformed XL mission V-HAM: " + vham);
+		auto staged_models = xl_prepare_owned_models(0);
+		mission_definition_sources = sources;
+		sources.insert(staged_models.sources.begin(), staged_models.sources.end());
+		mission_oof_models = std::move(staged_models.models);
+		install_missing_oof_geometry();
+		mission_mod_sources = std::move(sources);
+		if (ham.empty() && hxm.empty() && vham.empty() && mission_oof_models.empty()) return 0;
+		con_printf(CON_NORMAL, "XL mission definitions: HAM=%s HXM=%s VHAM=%s robots=%d models=%d\n",
+		           ham.c_str(), hxm.c_str(), vham.c_str(), N_robot_types, N_polygon_models);
+		return 1;
+	} catch (const std::exception &error) {
+		// The caller has already reset to retail data; failed layers must not survive
+		mod_rejection = error.what();
+		mission_oof_models.clear();
+		mission_mod_sources.clear();
+		mission_definition_sources.clear();
+		mission_generated_models.clear();
+		piggy_load_mission_data();
+		con_printf(CON_URGENT, "XL mission definitions rejected: %s\n", mod_rejection.c_str());
+		return -1;
+	}
+}
+
+const std::map<std::string, std::string> &xl_resource_mod_sources()
+{
+	return mission_mod_sources;
+}
+
+std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal)
+{
+	auto result = mission_definition_sources;
+	const auto models = xl_prepare_owned_models(ordinal);
+	result.insert(models.sources.begin(), models.sources.end());
+	return result;
+}
+
+extern "C" int xl_model_gun_point(int model, int gun, vms_vector *point)
+{
+	if (!mission_requires_xl || !point || gun < 0 || gun >= 8) return 0;
+	const auto resource = xl_owned_oof_model(model);
+	if (!resource || resource->gunpoints.empty()) return 0;
+	// XL selects the model's complete gun array when it has any authored markers
+	*point = {};
+	const auto found = resource->gunpoints.find(gun);
+	if (found != resource->gunpoints.end()) {
+		point->x = fix(found->second[0] * 65536);
+		point->y = fix(found->second[1] * 65536);
+		point->z = fix(found->second[2] * 65536);
+	}
+	return 1;
+}
+
 extern "C" void xl_resource_commit_mission(void)
 {
 	// Seal from the parsed descriptor or selected HOG, never from texture presence
@@ -470,6 +750,7 @@ extern "C" const char *xl_resource_base_rejection(void)
 		// The browser flag is only a hint; mounted level headers remain authoritative
 		if (!mission_requires_xl && !mounted_mission_requires_xl()) return base_rejection.c_str();
 		if (!vertigo_rejection.empty()) throw std::runtime_error(vertigo_rejection);
+		if (!mod_rejection.empty()) throw std::runtime_error(mod_rejection);
 		if (startup_ham_hash.empty()) throw std::runtime_error("trusted startup base HAM is unavailable for XL resource admission");
 		File file(PHYSFSX_openReadBuffered(startup_ham_name.c_str()), PHYSFS_close);
 		if (!file) throw std::runtime_error("required base HAM is missing: " + startup_ham_name);
@@ -527,6 +808,7 @@ extern "C" void xl_resource_baseline_capture(void)
 }
 
 struct XlPreparedResources::State {
+	xl_compat::OwnedModelSet owned_models;
 	MissionDefinitions definitions;
 	xl_assets::ObjectDependencies graph;
 	bool has_hxm = false;
@@ -558,12 +840,54 @@ struct XlPreparedResources::State {
 			native_models[id] = std::make_unique<NativeModel>(definitions.models[id]);
 	}
 
+	void prepare_models(int ordinal)
+	{
+		owned_models = xl_prepare_owned_models(ordinal);
+		owned_models.sources.insert(mission_definition_sources.begin(), mission_definition_sources.end());
+		for (const auto &entry : owned_models.models) {
+			const int id = entry.first;
+			if (changes.models.count(id)) continue;
+			if (std::size_t(id) < definitions.models.size() && definitions.models[id].model_data && !mission_generated_models.count(id)) continue;
+			const std::size_t size = (std::max) (definitions.models.size(), std::size_t(id + 1));
+			definitions.models.resize(size);
+			definitions.payloads.resize(size);
+			definitions.dying.resize(size, -1);
+			definitions.dead.resize(size, -1);
+			definitions.custom_radii.resize(size);
+			definitions.base_radii.resize(size);
+			auto &payload = definitions.payloads[id];
+			payload = xl_compat::oof_native_geometry(entry.second->mesh);
+			auto &model = definitions.models[id];
+			model = {};
+			model.n_models = 1;
+			model.model_data_size = int(payload.size());
+			model.model_data = payload.data();
+			model.rad = xl_compat::ModelGeometry(payload.data(), payload.size(), 1).custom_radius();
+			model.submodel_rads[0] = model.rad;
+			const auto &mesh = entry.second->mesh;
+			model.mins = { fix(mesh.low[0] * 65536), fix(mesh.low[1] * 65536), fix(mesh.low[2] * 65536) };
+			model.maxs = { fix(mesh.high[0] * 65536), fix(mesh.high[1] * 65536), fix(mesh.high[2] * 65536) };
+			model.submodel_mins[0] = model.mins;
+			model.submodel_maxs[0] = model.maxs;
+			definitions.custom_radii[id] = model.rad;
+			changes.models.insert(id);
+			has_hxm = true;
+		}
+		bind_graph();
+		prepare_native_models();
+	}
+
 	explicit State(const MissionDefinitions &base) : definitions(base)
 	{
 		// Vector copying owns bytes, but model headers still need their pointers rebound
 		for (std::size_t id = 0; id < definitions.models.size(); ++id)
 			if (!definitions.payloads[id].empty())
 				definitions.models[id].model_data = definitions.payloads[id].data();
+		bind_graph();
+	}
+	void bind_graph()
+	{
+		graph = xl_assets::ObjectDependencies{};
 		graph.robot_data = definitions.robots.data();
 		graph.joint_data = definitions.joints.data();
 		graph.model_data = definitions.models.data();
@@ -597,6 +921,19 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 	if (!counts_match(*mission_base) && !(prepared_resources && prepared_resources->state->installed && counts_match(prepared_resources->state->definitions)))
 		throw std::runtime_error("definition registry changed outside the owned mission resources");
 	state = std::make_unique<State>(*mission_base);
+	if (!ordinal) {
+		for (int i = 0; i < Last_level; ++i)
+			if (!d_stricmp(level_filename, Level_names[i])) {
+				ordinal = i + 1;
+				break;
+			}
+		if (!ordinal)
+			for (int i = 0; i < -Last_secret_level; ++i)
+				if (!d_stricmp(level_filename, Secret_level_names[i])) {
+					ordinal = -i - 1;
+					break;
+				}
+	}
 	if (level) state->messages = xl_compat::prepare_messages(level_filename, *level);
 	if (level) state->audio = xl_compat::prepare_named_audio(level_filename, *level, ordinal);
 	if (level) {
@@ -620,16 +957,17 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 	}
 	const auto hxm_name = base + ".HXM";
 	if (auto file = companion(hxm_name)) {
-		if (!bm_validate_level_hxm(file.get()))
+		if (!bm_validate_xl_level_hxm(file.get()))
 			throw std::runtime_error("HXM definitions are malformed or require unsupported normalization: " + hxm_name);
 		try {
-			validate_hxm_dependencies(file.get(), state->definitions, state->graph, state->changes);
+			validate_hxm_dependencies(file.get(), state->definitions, state->graph, state->changes, false, false, true);
 			state->has_hxm = true;
 			state->prepare_native_models();
 		} catch (const std::exception &error) {
 			throw std::runtime_error("HXM dependencies: " + hxm_name + ": " + error.what());
 		}
 	}
+	state->prepare_models(ordinal);
 	const auto pog_name = base + ".POG";
 	if (auto file = companion(pog_name)) {
 		char error[256]{};
@@ -661,9 +999,15 @@ void XlPreparedResources::prepare_camera_model()
 	if (!bm_validate_level_hxm(addon.file.get())) throw std::runtime_error("Camera addon HXM is malformed or uses unqualified serialized indices");
 	// Prepare transactionally; a rejected addon leaves this owner's prior definitions intact
 	auto staged = std::make_unique<State>(state->definitions);
-	staged->changes = state->changes;
 	staged->graph = state->graph;
 	const auto ids = validate_hxm_dependencies(addon.file.get(), staged->definitions, staged->graph, staged->changes, true);
+	// Validate the camera append independently of earlier level model replacements
+	// Those robots are checked by the level walk with their authored activation mode
+	staged->changes.robots.insert(state->changes.robots.begin(), state->changes.robots.end());
+	staged->changes.joints.insert(state->changes.joints.begin(), state->changes.joints.end());
+	staged->changes.models.insert(state->changes.models.begin(), state->changes.models.end());
+	staged->changes.bitmaps.insert(state->changes.bitmaps.begin(), state->changes.bitmaps.end());
+	staged->changes.pointers.insert(state->changes.pointers.begin(), state->changes.pointers.end());
 	staged->prepare_native_models();
 	state->definitions = std::move(staged->definitions);
 	state->changes = std::move(staged->changes);
@@ -905,7 +1249,17 @@ extern "C" int xl_prepared_pog_receipt(int bitmap, unsigned *bytes, unsigned *fn
 
 void XlPreparedResources::install_hxm()
 {
-	if (!state->has_hxm) return;
+	// Allocate publication copies before changing any live definitions
+	auto models = state->owned_models.models;
+	auto sources = state->owned_models.sources;
+	if (!state->has_hxm) {
+		xl_oof_renderer_clear();
+		mission_oof_models = std::move(models);
+		mission_mod_sources = std::move(sources);
+		state->installed = true;
+		installed_resources = this;
+		return;
+	}
 	state->hitboxes.clear();
 	// A repeated native reload gets fresh buffers before any live definitions change
 	for (const int id : state->changes.models)
@@ -929,6 +1283,9 @@ void XlPreparedResources::install_hxm()
 	N_robot_joints = int(definitions.joints.size());
 	N_polygon_models = int(definitions.models.size());
 	Robot_replacements_loaded = 1;
+	xl_oof_renderer_clear();
+	mission_oof_models = std::move(models);
+	mission_mod_sources = std::move(sources);
 	state->installed = true;
 	state->hitbox_frame = 1;
 	installed_resources = this;

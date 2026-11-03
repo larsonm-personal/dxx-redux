@@ -1,6 +1,6 @@
 #include "camera_children.h"
 #include "../camera_children.h"
-static void camera_children_native_controls(object &camera)
+static void camera_children_native_controls(object &camera, bool custom = false)
 {
 	const auto saved_player = *ConsoleObject;
 	const auto saved_pilot = Players[Player_num];
@@ -13,7 +13,7 @@ static void camera_children_native_controls(object &camera)
 		}
 	const auto point = [](const vms_vector &v) { return xl_compat::FixedLightPoint{ v.x, v.y, v.z }; };
 	unsigned cases = 0, births = 0, repeats = 0, damaged = 0;
-	for (int id : { SMART_ID, SUPERPROX_ID })
+	for (int id : (custom ? std::vector<int>{ GAUSS_ID } : std::vector<int>{ SMART_ID, SUPERPROX_ID }))
 		for (bool robot_parent : { true, false })
 			for (int available : { 0, 1, 2 })
 				for (unsigned seed : { 0u, 17u, 99u }) {
@@ -54,7 +54,9 @@ static void camera_children_native_controls(object &camera)
 						const auto direction = xl_compat::camera_smart_direction(point(weapon.pos), target < 0 ? nullptr : &goal, [] { return d_rand(); });
 						fix speed = child_definition.speed[Difficulty_level];
 						if (child_definition.speedvar != 128) speed = fixmul(speed, F1_0 - ((d_rand() * child_definition.speedvar) >> 6));
-						speed /= 4;
+						if (definition.children == PLAYER_SMART_HOMING_ID || definition.children == SMART_MINE_HOMING_ID ||
+						    definition.children == ROBOT_SMART_HOMING_ID || definition.children == ROBOT_SMART_MINE_HOMING_ID ||
+						    definition.children == EARTHSHAKER_MEGA_ID) speed /= 4;
 						if (child_definition.thrust) speed /= 2;
 						vms_vector native{ direction[0], direction[1], direction[2] }, velocity{};
 						vm_vec_copy_scale(&velocity, &native, speed);
@@ -98,6 +100,13 @@ static void camera_children_native_controls(object &camera)
 						++births;
 					}
 					const bool retain = id == SUPERPROX_ID && !robot_parent && available == 2 && seed == 99;
+					if (custom && !robot_parent) {
+						auto &child = Objects[created.back()];
+						const auto camera_shields = camera.shields;
+						collide_two_objects(&child, &camera, &camera.pos);
+						require((child.flags & OF_SHOULD_BE_DEAD) && camera.shields == camera_shields,
+						        "Custom smart child lost camera impact behavior");
+					}
 					if (!robot_parent && available && !retain) {
 						auto &victim = Objects[targets[0]];
 						const int shields = victim.shields;

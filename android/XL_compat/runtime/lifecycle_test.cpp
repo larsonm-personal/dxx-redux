@@ -1582,6 +1582,7 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 #include "cloak_test.h"
 #include "trigger_capacity_test.h"
 #include "projectile_test.h"
+#include "mod_data_test.h"
 #include "object_capacity_test.h"
 #include "changing_light_test.h"
 extern "C" void flicker_lights(void);
@@ -1617,6 +1618,7 @@ int main(int argc, char **argv)
 	if (find_arg_value(argc, argv, "-flicker-test")) return flicker_test(argc, argv);
 	if (find_arg_value(argc, argv, "-changing-light-test")) return changing_light_test(argc, argv);
 	if (find_arg_value(argc, argv, "-object-capacity-test")) return object_capacity_test(argc, argv);
+	if (find_arg_value(argc, argv, "-mod-data-test")) return mod_data_test(argc, argv);
 	if (find_arg_value(argc, argv, "-projectile-test")) return projectile_test(argc, argv);
 	if (find_arg_value(argc, argv, "-format34-test")) return format34_test(argc, argv);
 	if (find_arg_value(argc, argv, "-hxm-test")) return hxm_test(argc, argv);

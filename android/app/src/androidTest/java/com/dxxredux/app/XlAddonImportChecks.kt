@@ -61,6 +61,7 @@ internal class XlAddonImportChecks(
                             manager,
                         ) { label, _, _ -> progress += label }
                     check(mod?.filename == "xl-resources")
+                    check(progress.first() == "Opening ${source.name}")
                     check(progress.any { it.startsWith("Reading ") } == (provider == "pipe"))
                     checkPack()
                 }

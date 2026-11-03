@@ -12,6 +12,9 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#if defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
+#include "../../../../../XL_compat/runtime/resource_validation.h"
+#endif
 extern "C" {
 #include "bm.h"
 #include "effects.h"
@@ -390,6 +393,9 @@ int mod_save_write(rewind_file *file)
 		block["schema"] = 1;
 		block["sources"] = level_sources;
 		block["extra_ham"] = extra_ham;
+#if defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
+		if (!xl_resource_mod_sources().empty()) block["xl_mod_sources"] = xl_resource_mod_sources();
+#endif
 		block["level"] = Current_level_num;
 		block["highest_segment"] = Highest_segment_index;
 		block["effect_offset"] = effect_offset;
@@ -445,6 +451,10 @@ int mod_save_prepare(rewind_file *file, int level, int version, int swap)
 #endif
 		check(!legacy || rewind_file_is_memory(file) || version < first_version, "Missing mod source definitions in save");
 		if (legacy) return 1;
+#if defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
+		check(saved.value("xl_mod_sources", json::object()) == json(xl_resource_sources_for_level(level)),
+		      "XL mission definitions or models changed; restore the original mission assets");
+#endif
 		// D1-in-D2 publishes its own source identity at level entry
 		if (!d1_content()) check(saved.at("extra_ham") == extra_ham, "Mission robot or weapon definitions changed; restore the original gameplay assets");
 		check(saved.at("schema") == 1 && saved.at("level") == level && saved.at("effects").is_array() &&
