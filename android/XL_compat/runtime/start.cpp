@@ -1,8 +1,10 @@
 // Reproducible developer preview startup; no gameplay assists
 #include "preview.h"
+#include "resource_validation.h"
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <exception>
 #include <nlohmann/json.hpp>
 #if defined(__ANDROID__) && defined(INTROSPECT_ON)
 #include "game_automate.h"
@@ -18,7 +20,9 @@ extern "C" {
 #include "inferno.h"
 #include "input_demo_start.h"
 #include "mission.h"
+#include "dxxerror.h"
 #include "player.h"
+#include "state.h"
 #include <physfs.h>
 int input_demo_maybe_start_replay_from_cmdline(void);
 extern int Canvas_width, Canvas_height;
@@ -48,6 +52,19 @@ extern "C" int xl_preview_start(void)
 #else
 	const bool option = has_option("-xl-preview-start");
 	if (!option) return input_demo_maybe_start_replay_from_cmdline();
+	std::set_terminate([] {
+		try {
+			if (auto error = std::current_exception()) std::rethrow_exception(error);
+		} catch (const std::exception &error) {
+			std::fprintf(stderr, "XL preview uncaught exception: %s\n", error.what());
+		} catch (...) {
+			std::fprintf(stderr, "XL preview uncaught nonstandard exception\n");
+		}
+		std::fflush(stderr);
+		std::abort();
+	});
+	// Unattended developer captures must preserve failures without a modal dialog
+	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); std::fflush(stderr); });
 	if (!has_option("-xl-static-light-preview") && !has_option("-xl-classic-light-preview") && !has_option("-xl-pilot") && !has_option("-xl-water-physics")) {
 		std::fprintf(stderr, "XL preview startup requires a lighting, pilot or fluid profile option\n");
 		return 1;
@@ -87,8 +104,46 @@ extern "C" int xl_preview_start(void)
 		return 1;
 	}
 	std::strcpy(Players[Player_num].callsign, "XLTest");
+	int level = 1;
+	for (int i = 1; i < Num_args; ++i) {
+		if (std::strcmp(Args[i], "-xl-preview-level")) continue;
+		char *end = nullptr;
+		const long value = i + 1 < Num_args ? std::strtol(Args[i + 1], &end, 10) : 0;
+		if (!end || *end || value < 1 || value > Last_level) {
+			std::fprintf(stderr, "XL preview level must identify an ordinary level in the selected mission\n");
+			return 1;
+		}
+		level = static_cast<int>(value);
+	}
 	input_demo_set_skip_level_intro(1);
-	StartNewGame(1);
+	StartNewGame(level);
+	if (has_option("-xl-preview-save-roundtrip")) {
+		if (!has_option("-route-confirm-user-dir")) Error("XL save probe requires an explicit disposable user directory");
+		const auto sources = xl_resource_mod_sources();
+		const auto energy = Players[Player_num].energy;
+		const auto flags = Players[Player_num].flags;
+		const auto position = ConsoleObject->pos;
+		const int segment = ConsoleObject->segnum;
+		const auto robot_count = [] {
+			int count = 0;
+			for (int i = 0; i <= Highest_object_index; ++i)
+				if (Objects[i].type == OBJ_ROBOT) ++count;
+			return count;
+		};
+		const int robots = robot_count();
+		char save[] = "xl-model-roundtrip.sav", description[] = "XL model loading probe";
+		stop_time();
+		if (!state_save_all_sub(save, description)) Error("XL model probe could not save the loaded world");
+		Players[Player_num].energy = 1;
+		if (!state_restore_all_sub(save, 0)) Error("XL model probe could not restore the loaded world");
+		if (Current_level_num != level || std::strcmp(Current_mission_filename, mission) ||
+		    Players[Player_num].energy != energy || Players[Player_num].flags != flags ||
+		    ConsoleObject->segnum != segment || std::memcmp(&ConsoleObject->pos, &position, sizeof(position)) ||
+		    robot_count() != robots || xl_resource_mod_sources() != sources)
+			Error("XL model save roundtrip changed mission, player, robots or resource identity");
+		std::fprintf(stdout, "XL model save roundtrip passed: level=%d robots=%d; rendered continuation pending\n", level, robots);
+		std::fflush(stdout);
+	}
 	if (has_option("-xl-preview-still")) {
 		/* Explicit visual fixture only; never use it as normal gameplay evidence */
 		ConsoleObject->mtype.phys_info.flags &= ~PF_WIGGLE;

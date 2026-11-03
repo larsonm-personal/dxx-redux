@@ -171,7 +171,7 @@ int gamedata_init()
 	return 0;
 }
 
-void bm_read_all(PHYSFS_file * fp)
+static void bm_read_all_internal(PHYSFS_file * fp, int apply_global_patch)
 {
 	int i,t;
 	REWIND_PHYSFS_FILE(rewind_fp, fp);
@@ -253,12 +253,34 @@ void bm_read_all(PHYSFS_file * fp)
 	else
 		exit_modelnum = destroyed_exit_modelnum = N_polygon_models;
 
-	dxa_metadata_patch_apply_d2_ham();
+	if (apply_global_patch) dxa_metadata_patch_apply_d2_ham();
 #ifdef __ANDROID__
 	extern void mod_save_capture_definitions(void);
 	mod_save_capture_definitions();
 #endif
 }
+
+void bm_read_all(PHYSFS_file *fp)
+{
+	bm_read_all_internal(fp, 1);
+}
+
+#ifdef DXX_XL_RUNTIME
+/* Mission-owned version-3 HAM only; validate the complete file before mutation */
+int bm_read_xl_main_ham(PHYSFS_file *fp)
+{
+	int i;
+	if (!fp || !bm_validate_main_ham(fp) || !PHYSFS_seek(fp, 0)) return 0;
+	if (PHYSFSX_readInt(fp) != MAKE_SIG('!','M','A','H') || PHYSFSX_readInt(fp) != 3) return 0;
+	for (i = 0; i < N_polygon_models; ++i)
+		if (Polygon_models[i].model_data) free_model(&Polygon_models[i]);
+	init_polygon_models();
+	Piggy_hamfile_version = 3;
+	/* Mission data overrides installation-wide metadata replacement packs */
+	bm_read_all_internal(fp, 0);
+	return 1;
+}
+#endif
 
 //these values are the number of each item in the release of d2
 //extra items added after the release get written in an additional hamfile
@@ -328,13 +350,16 @@ int bm_validate_main_ham(PHYSFS_file *fp)
 	return valid;
 }
 
-static int bm_validate_extra_ham(PHYSFS_file *fp, int type)
+static int bm_validate_extra_ham(PHYSFS_file *fp, int type, int xl_staged)
 {
 	d2_ham_validation_limits limits = bm_validation_limits();
 	ubyte *data;
 	size_t size;
 	int valid;
 	if (!bm_read_validation_bytes(fp, &data, &size)) return 0;
+	if (xl_staged)
+		valid = d2_ham_validate_xl_extra(data, size, &limits, &Mission_ham_validation_report);
+	else
 	valid = d2_ham_validate_extra(data, size, type, &limits,
 	                              N_D2_WEAPON_TYPES, N_D2_ROBOT_TYPES,
 	                              N_D2_ROBOT_JOINTS, N_D2_POLYGON_MODELS,
@@ -361,7 +386,7 @@ static int bm_validate_hxm(PHYSFS_file *fp)
 }
 
 /* Read-only companion preflight; do not replace the active warning report */
-int bm_validate_level_hxm(PHYSFS_file *fp)
+static int bm_validate_level_hxm_internal(PHYSFS_file *fp, int xl_deferred)
 {
 	d2_ham_validation_limits limits = bm_validation_limits();
 	d2_ham_validation_report report;
@@ -369,11 +394,21 @@ int bm_validate_level_hxm(PHYSFS_file *fp)
 	size_t size;
 	int valid;
 	if (!bm_read_validation_bytes(fp, &data, &size)) return 0;
-	valid = d2_ham_validate_hxm(data, size, &limits,
+	valid = (xl_deferred ? d2_ham_validate_xl_hxm : d2_ham_validate_hxm)(data, size, &limits,
 	                          N_robot_types, N_robot_joints, N_polygon_models, &report);
 	d_free(data);
 	/* Empty joint lists are not dereferenced; XL closes after the five tables */
 	return valid && !report.inert_robot_records;
+}
+
+int bm_validate_level_hxm(PHYSFS_file *fp)
+{
+	return bm_validate_level_hxm_internal(fp, 0);
+}
+
+int bm_validate_xl_level_hxm(PHYSFS_file *fp)
+{
+	return bm_validate_level_hxm_internal(fp, 1);
 }
 
 void bm_reset_mission_compatibility_warnings(void)
@@ -485,7 +520,7 @@ void bm_free_extra_models()
 }
 
 //type==1 means 1.1, type==2 means 1.2 (with weapons)
-void bm_read_extra_robots(const char *fname,int type)
+static int bm_read_extra_robots_internal(const char *fname, int type, int xl_staged)
 {
 	PHYSFS_file *fp;
 	int t,i,version;
@@ -495,13 +530,13 @@ void bm_read_extra_robots(const char *fname,int type)
 	if (!fp)
 	{
 		con_printf(CON_URGENT, "Failed to open HAM file \"%s\"\n", fname);
-		return;
+		return 0;
 	}
-	if (!bm_validate_extra_ham(fp, type)) {
+	if (!bm_validate_extra_ham(fp, type, xl_staged)) {
 		Mission_ham_rejected = 1;
 		con_printf(CON_URGENT, "Rejected malformed extra HAM file \"%s\"\n", fname);
 		PHYSFS_close(fp);
-		return;
+		return 0;
 	}
 
 #ifdef __ANDROID__
@@ -515,7 +550,7 @@ void bm_read_extra_robots(const char *fname,int type)
 		sig = PHYSFSX_readInt(fp);
 		if (sig != MAKE_SIG('X','H','A','M')) {
 			PHYSFS_close(fp);
-			return;
+			return 0;
 		}
 		version = PHYSFSX_readInt(fp);
 	}
@@ -575,7 +610,19 @@ void bm_read_extra_robots(const char *fname,int type)
 
 	input_demo_assets_extra_ham_loaded();
 	PHYSFS_close(fp);
+	return 1;
 }
+
+void bm_read_extra_robots(const char *fname, int type)
+{
+	(void)bm_read_extra_robots_internal(fname, type, 0);
+}
+#ifdef DXX_XL_RUNTIME
+int bm_read_xl_extra_robots(const char *fname)
+{
+	return bm_read_extra_robots_internal(fname, 2, 1);
+}
+#endif
 
 int Robot_replacements_loaded = 0;
 

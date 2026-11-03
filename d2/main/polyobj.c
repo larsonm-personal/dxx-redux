@@ -48,6 +48,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_visual_policy.h"
 #endif
 #include "xmodel.h"
+#ifdef DXX_XL_RUNTIME
+#include "oof_renderer.h"
+#endif
 #include "d1_shareware_model.h"
 #include "d1_in_d2/d1_pig_validation.h"
 #ifndef DRIVE
@@ -307,6 +310,10 @@ void draw_polygon_model(vms_vector *pos,vms_matrix *orient,vms_angvec *anim_angl
 
 	if (model_num < 0)
 		return;
+
+#ifdef DXX_XL_RUNTIME
+	if (xl_oof_draw(model_num, pos, orient, &light)) return;
+#endif
 
 #ifdef OGL
 #ifdef ANDROID

@@ -367,7 +367,7 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 		if (obj.type == OBJ_NONE || obj.type == OBJ_COOP) continue;
 		try {
 			if (obj.type == OBJ_ROBOT) {
-				graph.robot_behavior(obj.id, obj.control_data.empty() ? 0 : obj.control_data[0]);
+				graph.robot_behavior(obj.id, obj.control_data.empty() ? 0 : obj.control_data[0], level.level_version >= 21);
 				if (!obj.control_data.empty() && obj.control_data[0] == 135 && !graph.robot_data[obj.id].attack_type)
 					xl_assets::asset_require(obj.movement_data.empty() || (obj.movement_data.size() >= 3 &&
 					                                                       !obj.movement_data[0] && !obj.movement_data[1] && !obj.movement_data[2]),

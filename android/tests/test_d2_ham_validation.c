@@ -201,6 +201,40 @@ int main(int argc, char **argv)
 	put16(joint_hxm, 16 + 298, 1145);
 	expect(!d2_ham_validate_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166, &report),
 	       "out-of-range nonempty robot joint list is rejected");
+	expect(d2_ham_validate_xl_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166, &report),
+	       "XL stages bounded unused animation references for final level closure");
+	expect(!d2_ham_validate_xl_hxm(joint_hxm, position - 1, &validation_limits, 66, 1145, 166, &report),
+	       "XL HXM rejects truncated tables");
+	put32(joint_hxm, 12, 66);
+	expect(!d2_ham_validate_xl_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166, &report),
+	       "XL HXM replacement indices remain bounded to loaded robot tables");
+	put32(joint_hxm, 12, 0);
+	put16(joint_hxm, 16 + 298, validation_limits.max_joints);
+	expect(!d2_ham_validate_xl_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166, &report),
+	       "XL HXM animation ranges remain bounded by native capacity");
+	put16(joint_hxm, 16 + 298, -1);
+	expect(!d2_ham_validate_xl_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166, &report),
+	       "XL HXM rejects negative nonempty animation ranges");
+	{
+		unsigned char xl_extra[512] = { 0 };
+		size_t size = 0;
+		append32(xl_extra, &size, 0x5848414d);
+		append32(xl_extra, &size, 1);
+		append32(xl_extra, &size, 0);
+		append32(xl_extra, &size, 1);
+		put32(xl_extra, size, 170);
+		size += 480;
+		for (i = 0; i < 4; ++i) append32(xl_extra, &size, 0);
+		expect(!d2_ham_validate_extra(xl_extra, size, 2, &validation_limits, 62, 66, 1145, 166, 422, 502, &report),
+		       "stock extensions still reject unloaded model references");
+		expect(d2_ham_validate_xl_extra(xl_extra, size, &validation_limits, &report),
+		       "XL can stage an unused robot pending final level dependency closure");
+		expect(!d2_ham_validate_xl_extra(xl_extra, size - 1, &validation_limits, &report),
+		       "XL structural admission still rejects truncated files");
+		put32(xl_extra, 16, validation_limits.max_models);
+		expect(!d2_ham_validate_xl_extra(xl_extra, size, &validation_limits, &report),
+		       "XL staged references remain bounded by native capacity");
+	}
 	if (argc == 2)
 		validate_public_demo_ham(argv[1], &validation_limits);
 

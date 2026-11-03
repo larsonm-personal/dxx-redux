@@ -35,6 +35,7 @@ struct ObjectDependencies {
 	const bitmap_index *object_bitmaps = ObjBitmaps;
 	const ushort *object_bitmap_ptrs = ObjBitmapPtrs;
 	const int *dying_models = Dying_modelnums, *dead_models = Dead_modelnums;
+	std::set<std::pair<int, bool>> robot_profiles;
 	std::set<int> robots, weapons, powerups, models, clips, bitmaps, sounds, textures, effects, wall_clips;
 	void sound(int id)
 	{
@@ -111,7 +112,9 @@ struct ObjectDependencies {
 	void model(int id)
 	{
 		if (id == -1) return;
-		asset_require(id >= 0 && id < model_count, "object dependency references missing model");
+		if (id < 0 || id >= model_count)
+			throw std::runtime_error("object dependency references missing model " + std::to_string(id) +
+			                         " (loaded " + std::to_string(model_count) + ")");
 		if (!models.insert(id).second) return;
 		const auto &p = model_data[id];
 		asset_require(p.model_data && p.model_data_size > 0 && p.n_models > 0 && p.n_models <= MAX_SUBMODELS, "object dependency model has no valid payload");
@@ -170,19 +173,26 @@ struct ObjectDependencies {
 		} else if (type == OBJ_POWERUP) powerup(id);
 		else asset_require(false, "unknown contained object dependency");
 	}
-	void robot_behavior(int id, int behavior)
+	void robot_behavior(int id, int behavior, bool static_control = false)
 	{
-		robot(id);
+		asset_require(id >= 0 && id < robot_count, "object dependency references missing robot");
+		const bool inert = static_control && behavior == 135 && !robot_data[id].attack_type &&
+		                   !robot_data[id].companion && !robot_data[id].thief;
+		robot(id, !inert);
 		// Source melee initialization changes static behavior to NORMAL before contact
 		asset_require(behavior != 135 || robot_data[id].attack_type || (!robot_data[id].companion && !robot_data[id].thief),
 		              "static companion/thief contact response requires source qualification");
 	}
-	void robot(int id)
+	void robot(int id, bool animated = true)
 	{
-		asset_require(id >= 0 && id < robot_count && robot_data[id].model_num >= 0 &&
-		                  robot_data[id].model_num < model_count,
-		              "object dependency references unusable robot");
-		if (!robots.insert(id).second) return;
+		if (id < 0 || id >= robot_count) {
+			throw std::runtime_error("Missing robot definition " + std::to_string(id) + " (loaded " + std::to_string(robot_count) + ")");
+		}
+		if (robot_data[id].model_num < 0 || robot_data[id].model_num >= model_count)
+			throw std::runtime_error("Robot " + std::to_string(id) + " references unusable model " +
+			                         std::to_string(robot_data[id].model_num) + " (loaded " + std::to_string(model_count) + ")");
+		if (!robot_profiles.emplace(id, animated).second) return;
+		robots.insert(id);
 		const auto &r = robot_data[id];
 		for (const int id : { r.exp1_sound_num, r.exp2_sound_num, r.see_sound, r.attack_sound, r.claw_sound, r.taunt_sound }) sound(id);
 		if (r.death_roll) sound(r.deathroll_sound);
@@ -194,6 +204,8 @@ struct ObjectDependencies {
 		if (r.contains_count > 0) contents(r.contains_type, r.contains_id);
 		if (r.smart_blobs || r.energy_blobs) weapon(ROBOT_SMART_HOMING_ID);
 		asset_require(!r.boss_flag || (xl_boss_spawning && r.boss_flag >= 21 && r.boss_flag < 29), "boss profile requires an implemented XL boss runtime");
+		// Pinned AIB_STATIC installs CT_NONE/MT_NONE, so no AI joint animation runs
+		if (!animated) return;
 		asset_require(r.n_guns >= 0 && r.n_guns <= MAX_GUNS, "robot gun count invalid");
 		for (int gun = 0; gun < r.n_guns; ++gun)
 			asset_require(r.gun_submodels[gun] < model_data[r.model_num].n_models, "robot gun references missing submodel");

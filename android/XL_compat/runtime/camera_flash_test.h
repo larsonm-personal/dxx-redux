@@ -3,7 +3,7 @@
 extern "C" {
 extern fix64 Time_flash_last_played;
 }
-static void camera_flash_native_controls(object &camera)
+static void camera_flash_native_controls(object &camera, int weapon_id = FLASH_ID)
 {
 	const auto saved_player = *ConsoleObject;
 	const auto saved_pilot = Players[Player_num];
@@ -22,9 +22,9 @@ static void camera_flash_native_controls(object &camera)
 			Objects[i].type = OBJ_NONE;
 		}
 	unsigned cases = 0;
-	const auto &definition = Weapon_info[FLASH_ID];
-	require(definition.flash > 0 && definition.children == -1, "Original flash missile definition is not childless");
-	std::cout << "Original flash missile: flash=" << int(definition.flash) << " radius=" << definition.damage_radius << "\n";
+	const auto &definition = Weapon_info[weapon_id];
+	require(definition.flash > 0, "Flash collision control requires a flash effect");
+	std::cout << "Flash missile " << weapon_id << ": flash=" << int(definition.flash) << " radius=" << definition.damage_radius << "\n";
 	for (bool self : { false, true })
 		for (bool reverse : { false, true }) {
 			robot = original_robot;
@@ -42,7 +42,7 @@ static void camera_flash_native_controls(object &camera)
 			PALETTE_FLASH_SET(0, 0, 0);
 			Flash_effect = 0;
 			Time_flash_last_played = 0;
-			const int shot = projectile_test_shot(int(ConsoleObject - Objects), FLASH_ID);
+			const int shot = projectile_test_shot(int(ConsoleObject - Objects), weapon_id);
 			auto &weapon = Objects[shot];
 			if (!self) ++weapon.ctype.laser_info.parent_signature;
 			const auto point = [](const vms_vector &v) { return xl_compat::FixedLightPoint{ v.x, v.y, v.z }; };
@@ -81,8 +81,13 @@ static void camera_flash_native_controls(object &camera)
 			require(xl_camera_flash_frame() && Flash_effect == std::max(0, pulse.delay - FrameTime) &&
 			            Time_flash_last_played == GameTime64 && d_rand_get_call_count() == sim_calls,
 			        "Active flash frame lost delay/sound timing or consumed simulation randomness");
+			int children = 0;
 			for (int i = 0; i <= Highest_object_index; ++i)
-				if (Objects[i].type == OBJ_FIREBALL && (i > highest || Objects[i].signature != signatures[i])) obj_delete(i);
+				if (i != shot && (i > highest || Objects[i].signature != signatures[i])) {
+					if (Objects[i].type == OBJ_WEAPON && Objects[i].id == definition.children) ++children;
+					if (Objects[i].type == OBJ_FIREBALL || Objects[i].type == OBJ_WEAPON) obj_delete(i);
+				}
+			require(children == (definition.children == -1 ? 0 : NUM_SMART_CHILDREN), "Flash collision lost smart children");
 			obj_delete(shot);
 			++cases;
 		}

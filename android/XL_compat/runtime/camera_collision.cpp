@@ -58,7 +58,7 @@ void reflect_actor(object &actor)
 	const auto result = xl_compat::camera_reflect_velocity({ velocity.x, velocity.y, velocity.z }, actor.mtype.phys_info.mass, blocked);
 	actor.mtype.phys_info.velocity = { result[0], result[1], result[2] };
 }
-bool contact_projectile(int id)
+bool player_projectile(int id)
 {
 	switch (id) {
 		case LASER_ID_L1:
@@ -95,13 +95,38 @@ bool contact_projectile(int id)
 }
 } // namespace
 
+bool xl_camera_contact_projectile(int id)
+{
+	if (id < 0 || id >= N_weapon_types) return false;
+	std::array<bool, MAX_WEAPON_TYPES> reachable{};
+	for (int root = 0; root < N_weapon_types; ++root) {
+		if (!player_projectile(root)) continue;
+		int child = root;
+		while (child >= 0 && child < N_weapon_types && !reachable[child]) {
+			reachable[child] = true;
+			child = Weapon_info[child].children;
+			if (child < 1) break;
+		}
+	}
+	return reachable[id];
+}
+
 void xl_camera_validate_weapon_definitions()
 {
+	for (int mine : { PROXIMITY_ID, SUPERPROX_ID, PMINE_ID, ROBOT_SUPERPROX_ID })
+		if (mine < N_weapon_types && !xl_camera_splash_profile(mine))
+			throw std::runtime_error("Camera mine-chain definition is unsupported: " + std::to_string(mine));
 	for (int id = 0; id < N_weapon_types; ++id) {
-		if (!contact_projectile(id)) continue;
+		if (!xl_camera_contact_projectile(id)) continue;
 		const auto &definition = Weapon_info[id];
-		if (definition.damage_radius ? !xl_camera_splash_profile(id) : definition.children != -1 || definition.flash)
-			throw std::runtime_error("Camera weapon definition exceeds the qualified gameplay profile: " + std::to_string(id));
+		// Source CollideWeaponAndRobot applies flash through radial explosions only
+		// A zero-radius custom weapon can carry an unused flash value
+		if (definition.damage_radius ? !xl_camera_splash_profile(id) : definition.children != -1)
+			throw std::runtime_error("Camera weapon definition exceeds the qualified gameplay profile: " + std::to_string(id) +
+			                         " radius=" + std::to_string(definition.damage_radius) +
+			                         " children=" + std::to_string(definition.children) +
+			                         " flash=" + std::to_string(definition.flash) +
+			                         " strength=" + std::to_string(definition.strength[0]));
 	}
 }
 
@@ -253,7 +278,7 @@ extern "C" int xl_camera_weapon_contact(object *a, object *b, vms_vector *point)
 	if (weapon->ctype.laser_info.parent_type == OBJ_ROBOT) return 1;
 	const auto &definition = Weapon_info[weapon->id];
 	// Missile lightning rods use the source-supported explosion-decoration-off profile
-	if (!contact_projectile(weapon->id))
+	if (!xl_camera_contact_projectile(weapon->id))
 		Error("Camera missile blast and splash contact is not yet qualified (weapon=%d radius=%d)", weapon->id, definition.damage_radius);
 	// Optional missile blast decoration is deferred; impact and radial effects remain active
 	if (weapon->id == EARTHSHAKER_ID) xl_seismic_detonation(&weapon->pos);
