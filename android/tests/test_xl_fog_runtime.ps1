@@ -61,11 +61,12 @@ try {
     Invoke-FogPrivate 'cat files/automation_result.json' | Set-Content "$output/result.json" -Encoding utf8
     Invoke-FogPrivate 'cat files/automation_log.jsonl' | Set-Content "$output/steps.jsonl" -Encoding utf8
     Invoke-FogPrivate 'cat files/introspect.json' | Set-Content "$output/state.json" -Encoding utf8
+    # Preserve the failed view as well as successful composition evidence
+    Invoke-FogAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-fog.png') | Out-Null
+    Invoke-FogAdb -Arguments @('pull', '/data/local/tmp/xl-fog.png', "$output/render.png") | Out-Null
     if ($testExit -ne 0) { throw "Fog runtime failed ($testExit); see $output" }
     $result = Get-Content "$output/result.json" -Raw | ConvertFrom-Json
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete Fog runtime result' }
-    Invoke-FogAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-fog.png') | Out-Null
-    Invoke-FogAdb -Arguments @('pull', '/data/local/tmp/xl-fog.png', "$output/render.png") | Out-Null
     Write-Host "PASS: $scriptName ($($result.total_steps) steps)"
 } finally {
     try {
