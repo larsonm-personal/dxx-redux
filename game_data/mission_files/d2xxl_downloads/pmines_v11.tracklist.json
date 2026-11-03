@@ -1,0 +1,109 @@
+{
+  "schema": "dxx-mission-tracklist-v1",
+  "source": "Pumo Mines Manual, Song list (page 20), corroborated by original v1.1 OGG Vorbis tags and pmines.mn2 level order",
+  "notes": "level01 and level10 both use Alone - Ambient Remix. level02..09 are MV1..8; level11..13 are KM1..3; level14 is MV Secret. Titles preserve embedded tag spelling.",
+  "tracks": [
+    {
+      "original_name": "briefing.ogg",
+      "title": "Unveiling",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/briefing.ogg"
+    },
+    {
+      "original_name": "credits.ogg",
+      "title": "Until Then...",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/credits.ogg"
+    },
+    {
+      "original_name": "level01.ogg",
+      "title": "Alone - Ambient Remix",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/level01.ogg"
+    },
+    {
+      "original_name": "level02.ogg",
+      "title": "Initialization",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/level02.ogg"
+    },
+    {
+      "original_name": "level03.ogg",
+      "title": "The Planet",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/level03.ogg"
+    },
+    {
+      "original_name": "level04.ogg",
+      "title": "Rocking With The Bots",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/level04.ogg"
+    },
+    {
+      "original_name": "level05.ogg",
+      "title": "Lonely Shafts",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/level05.ogg"
+    },
+    {
+      "original_name": "level06.ogg",
+      "title": "Trip to the Bottom",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/level06.ogg"
+    },
+    {
+      "original_name": "level07.ogg",
+      "title": "Midnight Star",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/level07.ogg"
+    },
+    {
+      "original_name": "level08.ogg",
+      "title": "The Water Falls",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/level08.ogg"
+    },
+    {
+      "original_name": "level09.ogg",
+      "title": "Plot",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/level09.ogg"
+    },
+    {
+      "original_name": "level10.ogg",
+      "title": "Alone - Ambient Remix",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/level10.ogg"
+    },
+    {
+      "original_name": "level11.ogg",
+      "title": "Alone",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/level11.ogg"
+    },
+    {
+      "original_name": "level12.ogg",
+      "title": "Firewall",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/level12.ogg"
+    },
+    {
+      "original_name": "level13.ogg",
+      "title": "Secrets",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/level13.ogg"
+    },
+    {
+      "original_name": "level14.ogg",
+      "title": "Flashes",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/level14.ogg"
+    },
+    {
+      "original_name": "title.ogg",
+      "title": "Pumo Mines Theme",
+      "artist": "R.a.M. Land",
+      "source_path": "pmines_v11.7z/mods/pmines/music/title.ogg"
+    }
+  ]
+}

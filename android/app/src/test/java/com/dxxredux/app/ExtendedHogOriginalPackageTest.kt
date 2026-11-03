@@ -53,6 +53,21 @@ class ExtendedHogOriginalPackageTest {
             val music = requireNotNull(details.missionZipMusic)
             val playable = music.sources.flatMap { it.tracks }.filter { it.playable }
             assertTrue(playable.isNotEmpty())
+            val soundtrack = MissionZipMusic.soundtrackSources(music)
+            assertEquals(1, soundtrack.size)
+            val songs = soundtrack.single().tracks
+            assertEquals(17, songs.size)
+            assertTrue(songs.all { it.extension == "ogg" && "/music/" in it.archiveEntryPath })
+            assertEquals(
+                (
+                    listOf(
+                        "title.ogg",
+                        "briefing.ogg",
+                        "credits.ogg",
+                    ) + (1..14).map { "level%02d.ogg".format(it) }
+                ).toSet(),
+                songs.map { it.displayName }.toSet(),
+            )
             assertTrue(manager.hasEnabledMissionZipSoundtrack("d2"))
             val compressed = playable.first { it.kind == MissionZipMusic.KIND_COMPRESSED_AUDIO }
             val stage = MissionZipMusicStageManager(File(root, "preview-cache"))
