@@ -56,6 +56,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var demoImportInterruption: Bundle? = null
     private var enemyWithinImportOnly = false
     private var xlAddonImportOnly = false
+    private var xlAddonDistributionName: String? = null
     private var controllerOverlayOnly = false
     private var installationWorkOnly = false
     private var xlCompatibilityOnly = false
@@ -83,6 +84,7 @@ class RecoveryInstrumentation : Instrumentation() {
         if (arguments?.getString("suite") == "demo_import_interruption") demoImportInterruption = arguments
         enemyWithinImportOnly = arguments?.getString("suite") == "enemy_within_import"
         xlAddonImportOnly = arguments?.getString("suite") == "xl_addon_import"
+        xlAddonDistributionName = arguments?.getString("xl_addon_distribution")
         controllerOverlayOnly = arguments?.getString("suite") == "controller_overlay"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
         coopSessionOnly = arguments?.getString("suite") == "coop_session"
@@ -95,6 +97,12 @@ class RecoveryInstrumentation : Instrumentation() {
         try {
             if (xlAddonImportOnly) {
                 XlAddonImportChecks(this).run()
+                xlAddonDistributionName?.let { name ->
+                    require(name.matches(Regex("[A-Za-z0-9_.-]+\\.7z")))
+                    val source = File(targetContext.filesDir, "saf_provider_source/$name")
+                    check(source.isFile) { "Original addon distribution source is missing" }
+                    XlAddonPickerChecks(this).run(source, originalDistribution = true)
+                }
                 result.putString(
                     "stream",
                     "PASS: XL addon selective import, raw publication, tracker and loading preference\n",

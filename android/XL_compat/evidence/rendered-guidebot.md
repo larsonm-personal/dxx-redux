@@ -94,3 +94,43 @@ including save restoration and repeated laser/thrust activation. This separates
 the companion actor limitation from normal player progression. Expand the
 planner only if its actor model can express the required XL interaction; do not
 bypass that actor gate. Further ordinary-player save/route probes have priority.
+
+## November 3 full original model follow-up
+
+The bounded Desktop rerun uses committed source
+`fbb6257188b4326e33b1b4d9b49cdf51650b6479`, executable SHA256
+`90846967f713a13c8336d1a31e755c3536daa78dc8601335f25cbe786f78271b`.
+Unlike the historical stage above, its 2672 hashed files include original Pumo
+HAM/HXM/VHAM/ASE/OOF resources and no Vertigo HAM. Original mission-owned effects
+take precedence; original XL resources supplement absent files. The helper uses
+an isolated desktop profile, explicit exit trigger 3, and no regression writes.
+
+Result: **unsupported**, after 568 physics frames / 9.46666 simulated seconds,
+segment 77, fixed position `[-13802954, 0, 23913847]`. The terminal reason remains
+"XL exit reached but companion activation was not accepted". No objective or
+campaign transition is credited. This does not replace the historical 548-frame
+result or attribute the frame difference to a particular model or physics change.
+The retained trace includes an assisted flare at wall 8 and incidental triggers
+2 and 7. Existing sandbox, speed and objective-assistance limits still apply.
+
+The source audit confirms the pinned reference `main/trigger.cpp` rejects
+non-player wall actions except teleport, speed boost and master triggers, and
+`CTrigger::DoExit` requires the local player. Current `runtime/trigger.cpp`,
+`teleport.cpp` and `d2/main/switch.c` preserve the distinction between companion
+motion and local-player exit activation. Multiple authored exit destinations
+remain explicit; no actor guard was changed to make this route pass.
+
+Paired ordinary-player evidence on exact universal APK version 29430, source
+`fbb6257188b4326e33b1b4d9b49cdf51650b6479`: **36/36 PASS**, 73906 ms,
+without Vertigo. Normal laser/thrust reaches original PMC level 11, restores the
+hub save, then repeats activation. This uses fixed local approaches and does not
+prove full human traversal or campaign completion. Separate stock/Pumo save-menu
+isolation passes 68 warm and 39 fresh-process steps; protected hashes match.
+
+Evidence under `temp/xl-overnight-20261103`: `guide-full-original/exit-scenario.json`,
+native result and redirected logs, `desktop_sandbox/screenshots/scrn0000.png`
+(visually inspected), retained executable/DLLs in `guide-native-fbb6257`,
+`guide-native-identity.json`, `guide-stage-hashes.json`, and
+`guide-stage-restoration.json`. All stage and original source hashes match after
+the run. Android receipts are in `current-hub-29430` and
+`temp/xl-original-save-isolation`. No physical-phone verification is claimed.
