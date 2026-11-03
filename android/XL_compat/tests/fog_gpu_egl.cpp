@@ -138,6 +138,7 @@ int main(int argc, char **argv)
 	int result = 1;
 	try {
 		if (argc == 2 && !std::strcmp(argv[1], "--direct")) ogl_xl_fog_force_direct_probe();
+		if (argc == 2 && !std::strcmp(argv[1], "--fail-copy16")) ogl_xl_fog_fail_copy_probe(16);
 		display = eglGetPlatformDisplay(EGL_PLATFORM_SURFACELESS_MESA, EGL_DEFAULT_DISPLAY, nullptr);
 		check(display != EGL_NO_DISPLAY && eglInitialize(display, nullptr, nullptr), "Cannot initialize surfaceless EGL");
 		check(eglBindAPI(EGL_OPENGL_API), "Cannot select desktop OpenGL");
@@ -181,7 +182,7 @@ int main(int argc, char **argv)
 		production_geometry();
 		xl_fog_diagnostics capture{};
 		ogl_xl_fog_diagnostics(&capture);
-		if (argc == 2) check(capture.direct_depth && capture.direct_scenes > 0, "Forced direct fog path was not exercised");
+		if (argc == 2) check(capture.direct_depth && capture.direct_depth_bits == 24 && capture.direct_scenes > 0, "Forced direct fog path was not exercised");
 		// Retiring renderer resources must rebuild before the next scene begins
 		ogl_xl_fog_destroy(0);
 		production_geometry();

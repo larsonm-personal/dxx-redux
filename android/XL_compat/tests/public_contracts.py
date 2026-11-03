@@ -55,7 +55,7 @@ PUBLIC_TESTS = {
     "xl_wave_contract",
     "xl_wave_channels_reference",
 }
-GPU_TESTS = {"xl_fog_gpu", "xl_fog_gpu_direct", "xl_pog_gpu"}
+GPU_TESTS = {"xl_fog_gpu", "xl_fog_gpu_direct", "xl_fog_gpu_copy16_fallback", "xl_pog_gpu"}
 AUDIO_TESTS = {"xl_audio_mixer_reference"}
 
 
