@@ -100,6 +100,8 @@ CAMPAIGN_TESTS = {name for name in CORE_TESTS if name.startswith("xl_normal_")} 
     "xl_route_checkpoint_probe",
 }
 FAST_TESTS = (CORE_TESTS - CAMPAIGN_TESTS) | {
+    "xl_ase_contract",
+    "xl_oof_contract",
     "xl_audio_voice_contract",
     "xl_audio_mixer_reference",
     "xl_modern_layout_contract",
