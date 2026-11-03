@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <cstdio>
 #include <cmath>
 #include <stdexcept>
 #include <string>
@@ -208,6 +209,9 @@ GLuint volume_program = 0, composite_program = 0, vao = 0, vbo = 0;
 GLuint present_program = 0;
 bool direct_depth = false, direct_scene_active = false;
 bool force_direct_probe = false;
+#ifdef DXX_XL_DEVELOPER_PROBE
+int failed_copy_probe_bits = 0;
+#endif
 GLint direct_target = 0, direct_read_target = 0, direct_view[4]{};
 // MIN/MAX accumulation is order-independent; batch by type, cap and culling
 std::array<std::vector<GLfloat>, 16> cap_batches;
@@ -405,6 +409,7 @@ void verify_depth_transfer()
 		glGenRenderbuffers(1, &color);
 		glGenRenderbuffers(1, &depth);
 		const GLint view[4] = { 0, 0, 1, 1 };
+		bool need_direct = force_direct_probe;
 		for (int bits : { 24, 16 }) {
 			diagnostics.depth_copy_bits = bits;
 			resize(1, 1, bits, 0);
@@ -439,38 +444,55 @@ void verify_depth_transfer()
 			debug_log_force(DLOG_GRAPHICS, "[XL-FOG] depth transfer bits=%d expected=0.625 observed=%.9g", bits, observed[0]);
 #endif
 			errors("Fog scene-depth transfer check");
-			if (force_direct_probe || direct_depth || !(std::abs(observed[0] - .625f) < .0001f)) {
-				// Separate a transfer failure from depth-texture sampling failure
-				glBindFramebuffer(GL_FRAMEBUFFER, buffers.depth_fbo);
-				glDepthMask(GL_TRUE);
-				clear_depth(.625f);
-				glClear(GL_DEPTH_BUFFER_BIT);
-				glBindFramebuffer(GL_FRAMEBUFFER, buffers.fbo[0]);
-				draw(quad, 6);
-				GLfloat direct[4]{};
-				glReadPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, direct);
-				errors("Fog direct-depth sampling check");
-#ifdef __ANDROID__
-				debug_log_force(DLOG_GRAPHICS, "[XL-FOG] direct depth sampling bits=%d expected=0.625 observed=%.9g", bits, direct[0]);
+#ifdef DXX_XL_DEVELOPER_PROBE
+			// Inject only a copy failure; direct sampling/raster checks remain real
+			if (bits == failed_copy_probe_bits) observed[0] = 0.f;
 #endif
-				require(std::abs(direct[0] - .625f) < .0001f, "XL fog scene-depth transfer and direct sampling failed.\nRequired fog cannot be drawn safely.");
-				// A failed copy is not permission to omit depth. Qualify actual raster
-				// writes into the same texture before selecting direct scene rendering
-				glBindFramebuffer(GL_FRAMEBUFFER, buffers.depth_fbo);
-				glBindTexture(GL_TEXTURE_2D, 0);
-				glEnable(GL_DEPTH_TEST);
-				glDepthFunc(GL_ALWAYS);
-				draw(quad, 6);
-				glDisable(GL_DEPTH_TEST);
-				glBindFramebuffer(GL_FRAMEBUFFER, buffers.fbo[0]);
-				glBindTexture(GL_TEXTURE_2D, buffers.depth);
-				draw(quad, 6);
-				glReadPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, direct);
-				errors("Fog direct raster depth check");
-				require(std::abs(direct[0] - .5f) < .0001f, "XL fog direct raster depth failed.\nRequired fog cannot be drawn safely.");
-				direct_depth = true;
-				diagnostics.direct_depth = 1;
-			}
+			need_direct |= !(std::abs(observed[0] - .625f) < .0001f);
+		}
+		if (need_direct) {
+			// Both source formats must copy accurately. If either fails, qualify
+			// the D24 texture actually used by direct scene rendering, once
+			resize(1, 1, 24, 0);
+			use(probe, identity);
+			glUniform1i(glGetUniformLocation(probe, "depthTex"), 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, buffers.depth);
+			glBindFramebuffer(GL_FRAMEBUFFER, buffers.depth_fbo);
+			glDepthMask(GL_TRUE);
+			clear_depth(.625f);
+			glClear(GL_DEPTH_BUFFER_BIT);
+			glBindFramebuffer(GL_FRAMEBUFFER, buffers.fbo[0]);
+			draw(quad, 6);
+			GLfloat direct[4]{};
+			glReadPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, direct);
+			errors("Fog direct-depth sampling check");
+			diagnostics.direct_depth_bits = buffers.bits;
+			auto verify_direct = [](float observed, float expected, const char *stage) {
+#ifdef __ANDROID__
+				debug_log_force(DLOG_GRAPHICS, "[XL-FOG] direct depth %s bits=24 expected=%.9g observed=%.9g", stage, expected, observed);
+#endif
+				char message[160];
+				std::snprintf(message, sizeof(message), "XL fog depth check failed\n24-bit %s\nGot: %.9g\nExpected: %.9g\nRequired fog unavailable", stage, observed, expected);
+				require(std::abs(observed - expected) < .0001f, message);
+			};
+			verify_direct(direct[0], .625f, "sampling");
+			// A failed copy is not permission to omit depth. Qualify actual raster
+			// writes into the same texture before selecting direct scene rendering
+			glBindFramebuffer(GL_FRAMEBUFFER, buffers.depth_fbo);
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_ALWAYS);
+			draw(quad, 6);
+			glDisable(GL_DEPTH_TEST);
+			glBindFramebuffer(GL_FRAMEBUFFER, buffers.fbo[0]);
+			glBindTexture(GL_TEXTURE_2D, buffers.depth);
+			draw(quad, 6);
+			glReadPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, direct);
+			errors("Fog direct raster depth check");
+			verify_direct(direct[0], .5f, "raster");
+			direct_depth = true;
+			diagnostics.direct_depth = 1;
 		}
 	} catch (...) {
 		release();
@@ -815,6 +837,10 @@ extern "C" void ogl_xl_fog_diagnostics(struct xl_fog_diagnostics *out)
 extern "C" void ogl_xl_fog_force_direct_probe(void)
 {
 	force_direct_probe = true;
+}
+extern "C" void ogl_xl_fog_fail_copy_probe(int bits)
+{
+	failed_copy_probe_bits = bits;
 }
 #endif
 
