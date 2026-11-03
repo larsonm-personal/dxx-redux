@@ -344,8 +344,6 @@ internal val D2_FILES =
             alternatives = listOf("robots-l.mvl", "robots.mvl"),
         ),
         GameFileInfo("hoard.ham", "Hoard multiplayer mode", required = false),
-        GameFileInfo("d2x-xl.hog", "XL camera addon", required = false),
-        GameFileInfo("d2x.ham", "Vertigo models used by some XL missions", required = false),
     )
 
 internal val D2_DEMO_FILES =
@@ -466,8 +464,6 @@ internal fun visibleDemoInstallerOffers(
             }
         }
     }
-
-internal val XL_ADDON_FILENAMES = setOf("d2x-xl.hog", "d2x.ham")
 
 internal val ALL_GAME_FILENAMES: Set<String> by lazy {
     (D2_FILES + D2_DEMO_FILES + D2_PARTIAL_FILES + D1_FILES)

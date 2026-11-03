@@ -8,7 +8,14 @@
 #include "../scoped_texture.h"
 #ifdef __ANDROID__
 #include "android_mission_assets.h"
+#include "stb_image.h"
+#else
+extern "C" {
+#include "pngfile.h"
+}
 #endif
+#include <cstdlib>
+#include <cstring>
 extern "C" {
 #include "physfsx.h"
 #include "mission.h"
@@ -22,6 +29,54 @@ ShieldImageResource::ShieldImageResource() = default;
 ShieldImageResource::~ShieldImageResource() = default;
 namespace
 {
+PogBitmap read_effect_png(const Bytes &bytes, const std::string &path)
+{
+#if !defined(__ANDROID__) && !defined(HAVE_LIBPNG)
+	(void) bytes;
+	throw std::runtime_error("PNG support is unavailable for XL effect image: " + path);
+#else
+	const unsigned char signature[] = { 137, 80, 78, 71, 13, 10, 26, 10 };
+	if (bytes.size() < 33 || std::memcmp(bytes.data(), signature, 8) ||
+	    std::memcmp(bytes.data() + 12, "IHDR", 4) || bytes[24] != 8 || (bytes[25] != 2 && bytes[25] != 6))
+		throw std::runtime_error("XL effect PNG requires 8-bit RGB or RGBA: " + path);
+	const auto word = [&](unsigned at) {
+		return std::uint32_t(bytes[at]) << 24 | std::uint32_t(bytes[at + 1]) << 16 |
+		       std::uint32_t(bytes[at + 2]) << 8 | bytes[at + 3];
+	};
+	const unsigned width = word(16), height = word(20);
+	if (!width || width > 4096 || !height || height > 32767 ||
+	    std::uint64_t(width) * height > pog_file_limit / 4 ||
+	    (height > width && (height % width || height / width > 128)))
+		throw std::runtime_error("XL effect PNG exceeds image limits: " + path);
+#ifdef __ANDROID__
+	int w = 0, h = 0, channels = 0;
+	std::unique_ptr<unsigned char, decltype(&stbi_image_free)> pixels(
+	    stbi_load_from_memory(bytes.data(), int(bytes.size()), &w, &h, &channels, 0), stbi_image_free);
+#else
+	png_data decoded{};
+	const bool loaded = read_png(path.c_str(), &decoded) != 0;
+	std::unique_ptr<unsigned char, decltype(&std::free)> pixels(decoded.data, std::free);
+	std::free(decoded.palette);
+	const unsigned w = decoded.width, h = decoded.height, channels = decoded.channels;
+	if (!loaded) throw std::runtime_error("Cannot decode XL effect PNG: " + path);
+#endif
+	if (!pixels || unsigned(w) != width || unsigned(h) != height || (channels != 3 && channels != 4))
+		throw std::runtime_error("Invalid decoded XL effect PNG: " + path);
+	// Feed identical raw rows into the existing CTGA alpha/atlas policy. No cosmetic fitting
+	Bytes raw(18 + std::size_t(width) * height * channels);
+	raw[2] = 2;
+	raw[10] = 1; // CTGA's source-order marker: raw RGB, top row first
+	raw[12] = width & 255;
+	raw[13] = width >> 8;
+	raw[14] = height & 255;
+	raw[15] = height >> 8;
+	raw[16] = channels * 8;
+	std::memcpy(raw.data() + 18, pixels.get(), raw.size() - 18);
+	pixels.reset();
+	return read_particle_image(raw.data(), raw.size());
+#endif
+}
+
 bool locate(std::string &path, bool installation, const std::string &kind)
 {
 	if (PHYSFSEXT_locateCorrectCase(path.data()) != 0) return false;
@@ -46,13 +101,21 @@ std::shared_ptr<Resource> read_addon_image(const char *name, const std::string &
 {
 	auto mission = addon_mission_texture_path(mission_resource_archive(), name);
 	if (mission.empty()) throw std::runtime_error("XL " + kind + " images require a selected mission HOG identity");
-	std::string selected = mission;
-	if (!locate(selected, false, kind)) {
-		selected = std::string("textures/d2x-xl/") + name + ".tga";
-		if (!locate(selected, true, kind)) {
-			if (optional) return {};
-			throw std::runtime_error("Missing XL " + kind + " image; checked " + mission + " and " + selected + " in the selected mission or base installation");
+	std::string selected;
+	for (bool installation : { false, true }) {
+		const auto base = installation ? std::string("textures/d2x-xl/") + name : mission.substr(0, mission.size() - 4);
+		for (const char *extension : { ".tga", ".png" }) {
+			auto candidate = base + extension;
+			if (locate(candidate, installation, kind)) {
+				selected = std::move(candidate);
+				break;
+			}
 		}
+		if (!selected.empty()) break;
+	}
+	if (selected.empty()) {
+		if (optional) return {};
+		throw std::runtime_error("Missing XL " + kind + " image in the selected mission or enabled resource mods: " + name);
 	}
 	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(selected.c_str()), PHYSFS_close);
 	const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
@@ -63,7 +126,7 @@ std::shared_ptr<Resource> read_addon_image(const char *name, const std::string &
 		throw std::runtime_error("Cannot read complete XL " + kind + " image: " + selected);
 	auto image = std::make_shared<Resource>();
 	image->path = std::move(selected);
-	image->bitmap = read_particle_image(bytes.data(), bytes.size());
+	image->bitmap = bytes[0] == 137 && bytes[1] == 'P' ? read_effect_png(bytes, image->path) : read_particle_image(bytes.data(), bytes.size());
 	return image;
 }
 std::shared_ptr<const ParticleImageResource> prepare_addon_image(const char *name, const std::string &kind, unsigned atlas_side, bool optional = false)

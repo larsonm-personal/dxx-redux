@@ -7,7 +7,7 @@ import kotlinx.coroutines.runBlocking
 import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile
 import java.io.File
 
-/** Exercise the same raw/7z operations used by the optional addon picker */
+/** Exercise normal resource-mod import using isolated mod storage */
 internal class XlAddonImportChecks(
     private val instrumentation: Instrumentation,
 ) {
@@ -19,7 +19,7 @@ internal class XlAddonImportChecks(
             check(root.mkdirs())
             val source = File(context.filesDir, "saf_provider_source/xl-addon-check.7z")
             check(!source.exists())
-            source.parentFile.mkdirs()
+            source.parentFile!!.mkdirs()
             val prefs = context.getSharedPreferences("dxx_prefs", 0)
             val hadPreference = prefs.contains(PREF_SHOW_PROGRESS_BARS)
             val oldPreference = prefs.getBoolean(PREF_SHOW_PROGRESS_BARS, true)
@@ -39,42 +39,37 @@ internal class XlAddonImportChecks(
                         archive.closeArchiveEntry()
                     }
                 }
+                val manager = ModManager(root)
+
+                fun checkPack() {
+                    check(manager.listMods().size == 1)
+                    val resources = File(root, "mods/xl-resources")
+                    check(resources.isDirectory)
+                    check(File(resources, "d2x-xl.hog").readText() == "camera bytes")
+                    check(File(resources, "d2x.ham").readText() == "vertigo bytes")
+                    check(!File(resources, "hoard.ham").exists())
+                    check(root.walkTopDown().none { it.extension == "dxa" })
+                    check(D2_FILES.none { it.filename == "d2x-xl.hog" || it.filename == "d2x.ham" })
+                }
                 for (provider in listOf("seekable", "pipe")) {
-                    val output = File(root, provider).apply { mkdirs() }
                     val progress = mutableListOf<String>()
-                    val result =
-                        extract7zContents(
+                    val mod =
+                        importResourceMod(
                             context,
                             Uri.parse("content://${context.packageName}.saf-test/$provider/${source.name}"),
-                            output,
-                            if (provider == "seekable") ALL_GAME_FILENAMES else XL_ADDON_FILENAMES,
-                        ) { name, _, _ ->
-                            progress +=
-                                name
-                        }
-                    check(result.error == null) { result.error.orEmpty() }
-                    check(result.files.map { it.name }.toSet() == XL_ADDON_FILENAMES)
-                    check(
-                        ("Copying archive" in progress) == (provider == "pipe"),
-                    ) { "Wrong seekable/streaming strategy" }
-                    val set = File(root, "$provider-set").apply { mkdirs() }
-                    val player = File(root, "player.sg0").apply { writeText("preserved") }
-                    for (file in result.files) {
-                        check(importFile(context, FoundFile(file.name, Uri.fromFile(file.tmpFile)), set))
-                    }
-                    FileSetContentManager(set).reconcile()
-                    check(
-                        checkFiles(set, D2_FILES).filter { it.info.filename in XL_ADDON_FILENAMES }.all {
-                            it.found &&
-                                !it.info.required
-                        },
-                    )
-                    check(File(set, "d2x-xl.hog").readText() == "camera bytes")
-                    check(File(set, "d2x.ham").readText() == "vertigo bytes")
-                    check(!File(set, "hoard.ham").exists())
-                    check(player.readText() == "preserved")
-                    check(!File(output, ".tmp_7z_import").exists())
+                            source.name,
+                            manager,
+                        ) { label, _, _ -> progress += label }
+                    check(mod?.filename == "xl-resources")
+                    check(progress.any { it.startsWith("Reading ") } == (provider == "pipe"))
+                    checkPack()
                 }
+                val existing = manager.listMods().single()
+                manager.setEnabled(existing.filename, false)
+                val raw = File(root, "d2x.ham").apply { writeText("vertigo bytes") }
+                check(importResourceMod(context, Uri.fromFile(raw), raw.name, manager)?.enabled == false)
+                checkPack()
+                check(manager.listMods().single().order == existing.order)
                 val zipSource = File(root, "addons.zip")
                 java.util.zip.ZipOutputStream(zipSource.outputStream()).use { zip ->
                     for ((name, text) in fixtures) {
@@ -83,15 +78,27 @@ internal class XlAddonImportChecks(
                         zip.closeEntry()
                     }
                 }
-                val zipResult =
-                    extractZipContents(
+                check(importResourceMod(context, Uri.fromFile(zipSource), zipSource.name, manager) != null)
+                checkPack()
+                // Resource recognition must not consume mixed retail or mission packages
+                for (other in listOf("descent2.ham", "mission.mn2")) {
+                    java.util.zip.ZipOutputStream(zipSource.outputStream()).use { zip ->
+                        for ((name, text) in mapOf("d2x-xl.hog" to "replacement", other to "other")) {
+                            zip.putNextEntry(java.util.zip.ZipEntry(name))
+                            zip.write(text.toByteArray())
+                            zip.closeEntry()
+                        }
+                    }
+                    check(importResourceMod(context, Uri.fromFile(zipSource), zipSource.name, manager) == null)
+                    val camera = File(root, "mods/xl-resources/d2x-xl.hog")
+                    check(camera.readText() == if (other == "descent2.ham") "replacement" else "camera bytes")
+                    importResourceMod(
                         context,
-                        Uri.fromFile(zipSource),
-                        File(root, "zip-output"),
-                        ExtractionBudget(),
-                    ) { _, _, _ -> }
-                check(zipResult.error == null) { zipResult.error.orEmpty() }
-                check(zipResult.files.map { it.name }.toSet() == XL_ADDON_FILENAMES)
+                        Uri.parse("content://${context.packageName}.saf-test/seekable/${source.name}"),
+                        source.name,
+                        manager,
+                    )
+                }
                 instrumentation.runOnMainSync {
                     val overlay = LoadingProgressOverlayView(context)
                     prefs.edit().remove(PREF_SHOW_PROGRESS_BARS).commit()

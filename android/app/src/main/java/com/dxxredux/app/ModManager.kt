@@ -69,6 +69,7 @@ class ModManager(
         private const val GENERATED_PATCH_DIR = ".generated_mod_patches"
         private const val GENERATED_MISSION_ZIP_DIR = ".generated_mission_zips"
         const val MOD_KIND_DXA = "dxa"
+        const val MOD_KIND_RESOURCES = "imported_resources"
         const val MOD_KIND_MISSION_ZIP = MissionZip.KIND
         private val MISSION_SOUNDTRACK_EXTENSIONS = setOf("flac", "hmp", "mid", "mp3", "ogg")
         private val MISSION_SONG_LIST_FILES = setOf("descent.sng", "dxx-r.sng")
@@ -430,8 +431,13 @@ class ModManager(
     ) {
         val previous = mods.firstOrNull { it.filename == filename }
         if (enabled) {
-            val scan = DxaTextureScanner.scan(File(modsDir, filename))
-            if (scan?.canEnable != true) {
+            val accepted =
+                if (previous?.kind == MOD_KIND_RESOURCES) {
+                    ResourceModStore.valid(File(modsDir, filename))
+                } else {
+                    DxaTextureScanner.scan(File(modsDir, filename))?.canEnable == true
+                }
+            if (!accepted) {
                 Log.w(TAG, "Refusing to enable unsafe or unreadable mod: $filename")
                 return
             }
@@ -453,7 +459,11 @@ class ModManager(
 
     fun deleteMod(filename: String) {
         updateManifest {
-            File(modsDir, filename).delete()
+            if (mods.any { it.filename == filename && it.kind == MOD_KIND_RESOURCES }) {
+                File(modsDir, filename).deleteRecursively()
+            } else {
+                File(modsDir, filename).delete()
+            }
             MissionZipMusicNames.deleteCacheFile(supportDir, filename)
             MissionZipExtractionStore(supportDir).removeOwner(filename)
             mods.removeAll { it.filename == filename }
@@ -463,7 +473,15 @@ class ModManager(
     }
 
     fun clearAllMods(): Int {
-        val removedMods = (modsDir.listFiles() ?: emptyArray()).count { it.isFile && it.name != MANIFEST_FILE }
+        val removedMods =
+            (modsDir.listFiles() ?: emptyArray()).count {
+                it.name != MANIFEST_FILE && (
+                    it.isFile ||
+                        mods.any { mod ->
+                            mod.filename == it.name && mod.kind == MOD_KIND_RESOURCES
+                        }
+                )
+            }
 
         if (modsDir.exists()) modsDir.deleteRecursively()
         if (setDir != null && supportDir.exists()) supportDir.deleteRecursively()
@@ -538,6 +556,34 @@ class ModManager(
         Log.i(TAG, "Imported mod: ${mod.displayName} (${mod.sizeBytes / 1024 / 1024} MB)")
         return mod
     }
+
+    /** Import into one private resource directory without changing its toggle or ordering */
+    internal fun importResourceMod(
+        catalog: ResourceModCatalog,
+        assemble: (File) -> List<String>,
+    ): ModInfo =
+        updateManifest {
+            val filename = catalog.id
+            val destination = File(modsDir, filename)
+            val previous = mods.firstOrNull { it.filename == filename }
+            assemble(destination)
+            val size = ResourceModStore.inventory(destination).sumOf { it.size }
+            val mod =
+                previous?.copy(sizeBytes = size) ?: ModInfo(
+                    filename = filename,
+                    displayName = catalog.displayName,
+                    enabled = true,
+                    addedAt = System.currentTimeMillis(),
+                    sizeBytes = size,
+                    game = catalog.game,
+                    order = (mods.maxOfOrNull { it.order } ?: -1) + 1,
+                    kind = MOD_KIND_RESOURCES,
+                )
+            mods.removeAll { it.filename == filename }
+            mods.add(mod)
+            save()
+            mod
+        }
 
     /** Register a mod file that was already downloaded directly into modsDir */
     fun importCompleted(
@@ -865,7 +911,19 @@ class ModManager(
                 catalog.plus(FileSetContentManager(it).buildMissionLaunchCatalog(game, includeD1MissionZipsForD2))
         }
         val globalMods = enabled.filterNot { it.isLevel }
-        val globalRevision = globalMods.joinToString("\n") { "${it.filename}:${computeSha256(modFile(it.filename))}" }
+        val globalRevision =
+            globalMods.joinToString("\n") {
+                val file = modFile(it.filename)
+                val revision =
+                    if (it.kind ==
+                        MOD_KIND_RESOURCES
+                    ) {
+                        ResourceModStore.revision(file)
+                    } else {
+                        computeSha256(file)
+                    }
+                "${it.filename}:$revision"
+            }
         val activationErrors =
             catalog.missions.associate { mission ->
                 val selected = enabled.filter { mission.key.owner == "mod/${it.filename}" }
@@ -886,7 +944,8 @@ class ModManager(
                 File(filesDir, gameDir),
                 globalRevision,
                 activationErrors,
-                contentPaths.filter {
+                // Enabled global mods are explicit user-selected resource owners too
+                (contentPaths + globalMods.map { modFile(it.filename).absolutePath }).filter {
                     File(it).exists()
                 },
             ) { selection, root ->
@@ -905,7 +964,7 @@ class ModManager(
             writeGeneratedPatchOverrides(game, globalMods)?.let { validPaths += it.absolutePath }
             for (mod in globalMods) {
                 val modFile = File(modsDir, mod.filename)
-                if (modFile.exists() && modFile.length() > 0) {
+                if (modFile.exists() && (modFile.isDirectory || modFile.length() > 0)) {
                     validPaths.addAll(activeModPathLines(mod, modFile))
                 } else {
                     Log.e(TAG, "Mod file missing or empty: ${modFile.absolutePath} (${mod.displayName})")
@@ -1138,6 +1197,49 @@ class ModManager(
         setDir: File,
     ): ModDetails {
         val modFile = File(modsDir, mod.filename)
+        if (mod.kind == MOD_KIND_RESOURCES) {
+            val result = runCatching { ResourceModStore.inventory(modFile) }
+            val resources = result.getOrDefault(emptyList())
+            val groups =
+                resources.groupBy {
+                    when {
+                        it.path.startsWith("textures/") -> "Effect images"
+                        it.path.startsWith("sounds/") -> "Shared sounds"
+                        else -> "Model resources"
+                    }
+                }
+            return ModDetails(
+                archivePath = modFile.absolutePath,
+                fileCount = resources.size,
+                archiveSizeBytes = resources.sumOf { it.size },
+                manifestSchema = null,
+                notes =
+                    listOf(
+                        "Imported from your files into private app storage; no resource archive is generated",
+                        "Missing resources are required only by missions using them",
+                    ),
+                categories =
+                    groups.map { (label, entries) ->
+                        ModFileCategorySummary(
+                            label,
+                            entries.size,
+                            entries.sumOf { it.size },
+                            entries.take(8).map { it.path },
+                            entries.size > 8,
+                        )
+                    },
+                patches = emptyList(),
+                baseRequirements = emptyList(),
+                problems =
+                    result
+                        .exceptionOrNull()
+                        ?.let {
+                            listOf(
+                                it.message ?: "Invalid imported resources",
+                            )
+                        }.orEmpty(),
+            )
+        }
         if (!modFile.isFile) {
             return ModDetails(
                 archivePath = modFile.absolutePath,

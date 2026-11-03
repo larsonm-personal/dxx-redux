@@ -334,7 +334,7 @@ struct CameraAddonFile {
 			path = "data/d2x-xl.hog";
 			if (!owned(path)) {
 				path = "d2x-xl.hog";
-				if (!owned(path)) throw std::runtime_error("Missing owned cambot.hxm or data/d2x-xl.hog camera addon. Import d2x-xl.hog in the launcher's D2 XL addon files");
+				if (!owned(path)) throw std::runtime_error("Missing owned cambot.hxm or data/d2x-xl.hog camera addon. Import your XL resources and enable the XL resources mod in the launcher");
 			}
 			if (PHYSFS_getMountPoint(mount)) throw std::runtime_error("Camera addon private mount is already active");
 			File archive(PHYSFS_openRead(path.c_str()), PHYSFS_close);
