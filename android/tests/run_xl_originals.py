@@ -144,6 +144,7 @@ FAST_TESTS = (CORE_TESTS - CAMPAIGN_TESTS) | {
     "xl_modern_water",
     "xl_neptune_native_features",
     "xl_fog_gpu",
+    "xl_fog_gpu_direct",
 }
 
 # Unfinished campaign acceptance: execution is required, success is not qualification.
