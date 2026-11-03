@@ -31,7 +31,7 @@ struct ProbeTarget {
 	GLuint scene = 0, color = 0, depth = 0, resolved = 0, resolved_color = 0;
 	GLint old_renderbuffer = 0;
 	GLfloat old_clear_depth = 1;
-	ProbeTarget(int samples, int bits)
+	ProbeTarget(int samples, int bits, GLenum format)
 	{
 		glGetIntegerv(GL_RENDERBUFFER_BINDING, &old_renderbuffer);
 		glGetFloatv(GL_DEPTH_CLEAR_VALUE, &old_clear_depth);
@@ -40,7 +40,7 @@ struct ProbeTarget {
 			glBindFramebuffer(GL_FRAMEBUFFER, scene);
 			glGenRenderbuffers(1, &color);
 			glBindRenderbuffer(GL_RENDERBUFFER, color);
-			glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, 96, 96);
+			glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, format, 96, 96);
 			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, color);
 			glGenRenderbuffers(1, &depth);
 			glBindRenderbuffer(GL_RENDERBUFFER, depth);
@@ -49,7 +49,7 @@ struct ProbeTarget {
 			require(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Fog control scene framebuffer is incomplete");
 			glGenFramebuffers(1, &resolved);
 			glBindFramebuffer(GL_FRAMEBUFFER, resolved);
-			texture(&resolved_color, 96, 96, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
+			texture(&resolved_color, 96, 96, format, format == GL_RGB8 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, resolved_color, 0);
 			require(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Fog control readback framebuffer is incomplete");
 		} catch (...) {
@@ -104,116 +104,118 @@ void gpu_cases(xl_fog_gpu_result &result)
 	cases.push_back({ "no-boundaries", 300, 300, {} });
 	GLint max_samples = 0;
 	glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
-	for (int bits : { 16, 24 })
-		for (int samples : { 0, 2, 4 }) {
-			if (samples > max_samples) continue;
-			ProbeTarget target(samples, bits);
-			const GLint view[4] = { 13, 11, 64, 64 };
-			resize(view[0] + view[2], view[1] + view[3], bits, 0);
-			for (const auto &test : cases) {
-				glBindFramebuffer(GL_FRAMEBUFFER, target.scene);
-				glDisable(GL_SCISSOR_TEST);
-				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-				glClearColor(.25f, .5f, .75f, 1.f);
-				glDepthMask(GL_TRUE);
-				clear_depth(1.f);
-				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-				glViewport(view[0], view[1], view[2], view[3]);
-				ogl_xl_fog_begin_scene();
-				const GLuint scene = direct_scene_active ? buffers.depth_fbo : target.scene;
-				// The direct scene owns its depth from the first raster operation
-				if (direct_scene_active) glClear(GL_DEPTH_BUFFER_BIT);
-				plane.render(test.geometry);
-				depth_snapshot(scene, view);
-				glDisable(GL_DEPTH_TEST);
-				glDepthMask(GL_FALSE);
-				glDisable(GL_CULL_FACE);
-				glEnable(GL_BLEND);
-				use(volume_program, projection);
-				glUniform1i(glGetUniformLocation(volume_program, "sceneDepthTex"), 0);
-				glUniform2f(glGetUniformLocation(volume_program, "windowSize"), static_cast<float>(buffers.width), static_cast<float>(buffers.height));
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, buffers.depth);
-				int types = 0;
-				std::array<float, 4> first{ 5000, 5000, 5000, 5000 }, last{ 1, 1, 1, 1 };
-				for (int pair = 0; pair < 2; ++pair) {
-					volume_begin(pair, view);
-					for (const auto &cap : test.caps) {
-						if (cap.type / 2 != pair) continue;
-						types |= 1 << cap.type;
-						cap_mode(cap.type, cap.near_cap);
-						GLfloat triangle[18];
-						for (int corner = 0; corner < 6; ++corner) {
-							triangle[corner * 3] = quad[corner * 3] * cap.distance;
-							triangle[corner * 3 + 1] = quad[corner * 3 + 1] * cap.distance;
-							triangle[corner * 3 + 2] = -cap.distance;
-						}
-						draw(triangle, 6);
-						if (cap.distance <= test.geometry) {
-							if (cap.near_cap) first[cap.type] = (std::min) (first[cap.type], cap.distance);
-							else last[cap.type] = (std::max) (last[cap.type], cap.distance);
-						}
-					}
-				}
-				glBindFramebuffer(GL_FRAMEBUFFER, scene);
-				glViewport(view[0], view[1], view[2], view[3]);
-				plane.render(test.objects);
-				prepared_types = types;
-				prepared_target = scene;
-				std::copy(view, view + 4, prepared_view);
-				// Deliberately nondefault state around the actual production compositor
-				glEnable(GL_SCISSOR_TEST);
-				glScissor(3, 4, 89, 88);
-				glColorMask(GL_TRUE, GL_FALSE, GL_TRUE, GL_FALSE);
-				glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ZERO, GL_ONE);
-				glBlendEquationSeparate(GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT);
-				{
-					SavedState before;
-					ogl_xl_fog_composite();
-					SavedState after;
-					require(before.same(after), "Fog compositor leaked GL state");
-				}
-				ogl_xl_fog_end_scene();
-				glDisable(GL_SCISSOR_TEST);
-				glBindFramebuffer(GL_READ_FRAMEBUFFER, target.scene);
-				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target.resolved);
-				glBlitFramebuffer(0, 0, 96, 96, 0, 0, 96, 96, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-				glBindFramebuffer(GL_READ_FRAMEBUFFER, target.resolved);
-				float expected[3] = { 64.f / 255, 128.f / 255, 191.f / 255 };
-				for (int pair = 0; pair < 2; ++pair) {
-					float mixed[3] = { 1, 1, 1 }, opacity = 0;
-					for (int type = pair * 2; type < pair * 2 + 2; ++type) {
-						const float start = first[type] > last[type] ? 1.f : first[type];
-						const float length = (std::min) (last[type], test.objects) - start;
-						if (length <= 0 || colors[type][3] == 0) continue;
-						for (int c = 0; c < 3; ++c) mixed[c] *= colors[type][c];
-						opacity += (std::min) (1.f, length / colors[type][3]);
-					}
-					opacity = (std::min) (1.f, opacity);
-					for (int c = 0; c < 3; ++c) expected[c] = mixed[c] * opacity + expected[c] * (1 - opacity);
-				}
-				for (int sample = 0; sample < 3; ++sample) {
-					const int x = sample == 2 ? 2 : view[0] + (sample ? 48 : 16);
-					const int y = sample == 2 ? 2 : view[1] + (sample ? 16 : 48);
-					unsigned char pixel[4]{};
-					glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
-					const int background[3] = { 64, 128, 191 };
-					for (int c = 0; c < 3; ++c) {
-						const int wanted = sample == 2 ? background[c] : static_cast<int>(std::lround(expected[c] * 255));
-						const int difference = std::abs(int(pixel[c]) - wanted);
-						result.max_error = (std::max) (result.max_error, difference);
-						if (difference > 3) {
-							throw std::runtime_error(std::string("Fog GPU ") + test.name + " samples=" + std::to_string(samples) + " depth=" + std::to_string(bits) + " channel=" + std::to_string(c) + " actual=" + std::to_string(pixel[c]) + " expected=" + std::to_string(wanted));
+	for (GLenum format : { GL_RGB8, GL_RGBA8 })
+		for (int bits : { 16, 24 })
+			for (int samples : { 0, 2, 4 }) {
+				if (samples > max_samples) continue;
+				ProbeTarget target(samples, bits, format);
+				const GLint view[4] = { 13, 11, 64, 64 };
+				resize(view[0] + view[2], view[1] + view[3], bits, 0);
+				for (const auto &test : cases) {
+					glBindFramebuffer(GL_FRAMEBUFFER, target.scene);
+					glDisable(GL_SCISSOR_TEST);
+					glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+					glClearColor(.25f, .5f, .75f, 1.f);
+					glDepthMask(GL_TRUE);
+					clear_depth(1.f);
+					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+					glViewport(view[0], view[1], view[2], view[3]);
+					ogl_xl_fog_begin_scene();
+					if (direct_scene_active) require(buffers.scene_format == format, "Direct fog capture changed the source color format");
+					const GLuint scene = direct_scene_active ? buffers.depth_fbo : target.scene;
+					// The direct scene owns its depth from the first raster operation
+					if (direct_scene_active) glClear(GL_DEPTH_BUFFER_BIT);
+					plane.render(test.geometry);
+					depth_snapshot(scene, view);
+					glDisable(GL_DEPTH_TEST);
+					glDepthMask(GL_FALSE);
+					glDisable(GL_CULL_FACE);
+					glEnable(GL_BLEND);
+					use(volume_program, projection);
+					glUniform1i(glGetUniformLocation(volume_program, "sceneDepthTex"), 0);
+					glUniform2f(glGetUniformLocation(volume_program, "windowSize"), static_cast<float>(buffers.width), static_cast<float>(buffers.height));
+					glActiveTexture(GL_TEXTURE0);
+					glBindTexture(GL_TEXTURE_2D, buffers.depth);
+					int types = 0;
+					std::array<float, 4> first{ 5000, 5000, 5000, 5000 }, last{ 1, 1, 1, 1 };
+					for (int pair = 0; pair < 2; ++pair) {
+						volume_begin(pair, view);
+						for (const auto &cap : test.caps) {
+							if (cap.type / 2 != pair) continue;
+							types |= 1 << cap.type;
+							cap_mode(cap.type, cap.near_cap);
+							GLfloat triangle[18];
+							for (int corner = 0; corner < 6; ++corner) {
+								triangle[corner * 3] = quad[corner * 3] * cap.distance;
+								triangle[corner * 3 + 1] = quad[corner * 3 + 1] * cap.distance;
+								triangle[corner * 3 + 2] = -cap.distance;
+							}
+							draw(triangle, 6);
+							if (cap.distance <= test.geometry) {
+								if (cap.near_cap) first[cap.type] = (std::min) (first[cap.type], cap.distance);
+								else last[cap.type] = (std::max) (last[cap.type], cap.distance);
+							}
 						}
 					}
-					require(pixel[3] == 255, "Fog changed presentation opacity");
-					++result.pixels;
+					glBindFramebuffer(GL_FRAMEBUFFER, scene);
+					glViewport(view[0], view[1], view[2], view[3]);
+					plane.render(test.objects);
+					prepared_types = types;
+					prepared_target = scene;
+					std::copy(view, view + 4, prepared_view);
+					// Deliberately nondefault state around the actual production compositor
+					glEnable(GL_SCISSOR_TEST);
+					glScissor(3, 4, 89, 88);
+					glColorMask(GL_TRUE, GL_FALSE, GL_TRUE, GL_FALSE);
+					glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ZERO, GL_ONE);
+					glBlendEquationSeparate(GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT);
+					{
+						SavedState before;
+						ogl_xl_fog_composite();
+						SavedState after;
+						require(before.same(after), "Fog compositor leaked GL state");
+					}
+					ogl_xl_fog_end_scene();
+					glDisable(GL_SCISSOR_TEST);
+					glBindFramebuffer(GL_READ_FRAMEBUFFER, target.scene);
+					glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target.resolved);
+					glBlitFramebuffer(0, 0, 96, 96, 0, 0, 96, 96, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+					glBindFramebuffer(GL_READ_FRAMEBUFFER, target.resolved);
+					float expected[3] = { 64.f / 255, 128.f / 255, 191.f / 255 };
+					for (int pair = 0; pair < 2; ++pair) {
+						float mixed[3] = { 1, 1, 1 }, opacity = 0;
+						for (int type = pair * 2; type < pair * 2 + 2; ++type) {
+							const float start = first[type] > last[type] ? 1.f : first[type];
+							const float length = (std::min) (last[type], test.objects) - start;
+							if (length <= 0 || colors[type][3] == 0) continue;
+							for (int c = 0; c < 3; ++c) mixed[c] *= colors[type][c];
+							opacity += (std::min) (1.f, length / colors[type][3]);
+						}
+						opacity = (std::min) (1.f, opacity);
+						for (int c = 0; c < 3; ++c) expected[c] = mixed[c] * opacity + expected[c] * (1 - opacity);
+					}
+					for (int sample = 0; sample < 3; ++sample) {
+						const int x = sample == 2 ? 2 : view[0] + (sample ? 48 : 16);
+						const int y = sample == 2 ? 2 : view[1] + (sample ? 16 : 48);
+						unsigned char pixel[4]{};
+						glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+						const int background[3] = { 64, 128, 191 };
+						for (int c = 0; c < 3; ++c) {
+							const int wanted = sample == 2 ? background[c] : static_cast<int>(std::lround(expected[c] * 255));
+							const int difference = std::abs(int(pixel[c]) - wanted);
+							result.max_error = (std::max) (result.max_error, difference);
+							if (difference > 3) {
+								throw std::runtime_error(std::string("Fog GPU ") + test.name + " samples=" + std::to_string(samples) + " depth=" + std::to_string(bits) + " channel=" + std::to_string(c) + " actual=" + std::to_string(pixel[c]) + " expected=" + std::to_string(wanted));
+							}
+						}
+						require(pixel[3] == 255, "Fog changed presentation opacity");
+						++result.pixels;
+					}
+					errors("Fog GPU controls");
+					++result.cases;
+					if (samples) ++result.multisample_cases;
 				}
-				errors("Fog GPU controls");
-				++result.cases;
-				if (samples) ++result.multisample_cases;
 			}
-		}
 }
 } // namespace
 
