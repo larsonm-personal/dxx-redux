@@ -55,6 +55,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var demoImportOnly = false
     private var demoImportInterruption: Bundle? = null
     private var enemyWithinImportOnly = false
+    private var xlAddonImportOnly = false
     private var controllerOverlayOnly = false
     private var installationWorkOnly = false
     private var xlCompatibilityOnly = false
@@ -81,6 +82,7 @@ class RecoveryInstrumentation : Instrumentation() {
         demoImportOnly = arguments?.getString("suite") == "demo_import"
         if (arguments?.getString("suite") == "demo_import_interruption") demoImportInterruption = arguments
         enemyWithinImportOnly = arguments?.getString("suite") == "enemy_within_import"
+        xlAddonImportOnly = arguments?.getString("suite") == "xl_addon_import"
         controllerOverlayOnly = arguments?.getString("suite") == "controller_overlay"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
         coopSessionOnly = arguments?.getString("suite") == "coop_session"
@@ -91,6 +93,15 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            if (xlAddonImportOnly) {
+                XlAddonImportChecks(this).run()
+                result.putString(
+                    "stream",
+                    "PASS: XL addon selective import, raw publication, tracker and loading preference\n",
+                )
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             if (xlCompatibilityOnly) {
                 val checks = XlCompatibilityViewChecks(this)
                 when {

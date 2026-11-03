@@ -3835,7 +3835,10 @@ private fun SetupScreen(
     val importChooserConfig = remember(androidTvDevice) { importChooserConfigForDevice(androidTvDevice) }
     var showImportChooser by remember { mutableStateOf(false) }
 
-    suspend fun processPickedUris(uris: List<Uri>) {
+    suspend fun processPickedUris(
+        uris: List<Uri>,
+        wantedFiles: Set<String>? = null,
+    ) {
         try {
             val dxaImportUris = mutableListOf<Pair<String, Uri>>()
             val missionZipImportUris = mutableListOf<Pair<String, Uri>>()
@@ -3859,6 +3862,18 @@ private fun SetupScreen(
                     val ext = GameFileFormats.extensionOf(name)
                     val demoPackage = matchDemoInstallerPackage(context, name, uri)
                     when {
+                        wantedFiles != null && ext in setOf("zip", "7z") -> {
+                            zipUris.add(name to uri)
+                        }
+
+                        wantedFiles != null && portableGameFilenameIdentity(name) in wantedFiles -> {
+                            gameUris.add(FoundFile(name, uri))
+                        }
+
+                        wantedFiles != null -> {
+                            unhandledFiles.add(name)
+                        }
+
                         demoPackage != null -> {
                             zipUris.add(demoPackage.filename to uri)
                         }
@@ -4133,7 +4148,12 @@ private fun SetupScreen(
                     val arcLower = portableGameFilenameIdentity(arcName)
                     val result =
                         if (arcLower.endsWith(".7z")) {
-                            extract7zContents(context, arcUri, archiveDir) { name, copied, total ->
+                            extract7zContents(
+                                context,
+                                arcUri,
+                                archiveDir,
+                                wantedFiles ?: ALL_GAME_FILENAMES,
+                            ) { name, copied, total ->
                                 zipProgressFile = "$arcName: $name"
                                 zipProgressBytes = copied
                                 zipProgressTotal = total
@@ -4162,6 +4182,7 @@ private fun SetupScreen(
                                 archiveDir,
                                 budget = zipExtractionBudget,
                                 archiveName = arcName,
+                                wantedFiles = wantedFiles ?: ALL_GAME_FILENAMES,
                             ) { name, copied, total ->
                                 zipProgressFile = "$arcName: $name"
                                 zipProgressBytes = copied
@@ -4205,13 +4226,16 @@ private fun SetupScreen(
         }
     }
 
-    fun startPickedUriImport(uris: List<Uri>) {
+    fun startPickedUriImport(
+        uris: List<Uri>,
+        wantedFiles: Set<String>? = null,
+    ) {
         if (uris.isEmpty()) return
         scanning = true
         importStatus = ""
         missionArchiveImporting = false
         scope.launch(Dispatchers.IO) {
-            processPickedUris(uris)
+            processPickedUris(uris, wantedFiles)
         }
     }
 
@@ -4287,6 +4311,11 @@ private fun SetupScreen(
         ) { treeUri: Uri? ->
             if (treeUri == null) return@rememberLauncherForActivityResult
             startDirectoryImport(treeUri)
+        }
+
+    val xlAddonPickerLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+            startPickedUriImport(uris, XL_ADDON_FILENAMES)
         }
 
     // -- Initial focus for D-pad/keyboard navigation -----
@@ -5955,11 +5984,39 @@ private fun SetupScreen(
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         SectionHeader("Optional Files")
-                        d2Statuses.filter { !it.info.required }.forEach {
+                        d2Statuses.filter { !it.info.required && it.info.filename !in XL_ADDON_FILENAMES }.forEach {
                             FileStatusRow(it) {
                                 detailStatus = it
                                 detailIsD2 = true
                             }
+                        }
+                        var addonsExpanded by remember { mutableStateOf(false) }
+                        val addonStatuses = d2Statuses.filter { it.info.filename in XL_ADDON_FILENAMES }
+                        TextButton(onClick = { addonsExpanded = !addonsExpanded }) {
+                            Text(
+                                "XL addon files (optional): ${addonStatuses.count {
+                                    it.found
+                                }}/${XL_ADDON_FILENAMES.size}",
+                            )
+                        }
+                        if (addonsExpanded) {
+                            Text(
+                                "Required only by missions using these assets. Import your own files; they are not included with the app.",
+                                fontSize = 11.sp,
+                            )
+                            addonStatuses.forEach { status ->
+                                FileStatusRow(status) {
+                                    detailStatus = status
+                                    detailIsD2 = true
+                                }
+                            }
+                            OutlinedButton(onClick = { xlAddonPickerLauncher.launch(arrayOf("*/*")) }) {
+                                Text("Import XL addon files")
+                            }
+                            Text(
+                                "Select d2x-xl.hog, d2x.ham, or a ZIP/7z containing them. Only these addon files are extracted.",
+                                fontSize = 11.sp,
+                            )
                         }
                     }
 

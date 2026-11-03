@@ -57,6 +57,7 @@ object ConfigImportExport {
             ExportedPreference("touch_overlay_enabled", ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_SHOW_RESUME_OFFER, ExportedPreferenceType.BOOLEAN),
+            ExportedPreference(PREF_SHOW_PROGRESS_BARS, ExportedPreferenceType.BOOLEAN, true),
             ExportedPreference(PREF_SHOW_DEMO_INSTALLER_OFFER, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_GUIDEBOT_HELPER_LINE, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_PERSIST_GUIDEBOT_GOAL, ExportedPreferenceType.BOOLEAN),

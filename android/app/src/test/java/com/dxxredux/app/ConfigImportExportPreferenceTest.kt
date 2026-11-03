@@ -27,7 +27,8 @@ class ConfigImportExportPreferenceTest {
         val decoded = ConfigImportExport.decodePreferenceValues(json)
         assertNull(decoded.error)
         assertEquals(GuidebotRoutingMode.ENHANCED, json.getInt(PREF_GUIDEBOT_ROUTING_MODE))
-        assertEquals(7, decoded.values.size)
+        assertTrue(json.getBoolean(PREF_SHOW_PROGRESS_BARS))
+        assertEquals(8, decoded.values.size)
     }
 
     @Test
