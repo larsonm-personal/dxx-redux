@@ -27,6 +27,9 @@ struct xl_fog_gpu_result {
 	int cases, pixels, multisample_cases, state_restored, max_error;
 };
 const char *ogl_xl_fog_gpu_probe(struct xl_fog_gpu_result *result);
+#ifdef DXX_XL_DEVELOPER_PROBE
+void ogl_xl_fog_force_direct_probe(void);
+#endif
 struct xl_fog_scene_result {
 	int completed, passed, pixels, covered, changed, types, samples, depth_bits, max_error;
 	float center_depth, center_caps[8], max_length;

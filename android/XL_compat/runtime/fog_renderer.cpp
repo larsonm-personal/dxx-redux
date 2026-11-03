@@ -201,6 +201,7 @@ struct Buffers {
 GLuint volume_program = 0, composite_program = 0, vao = 0, vbo = 0;
 GLuint present_program = 0;
 bool direct_depth = false, direct_scene_active = false;
+bool force_direct_probe = false;
 GLint direct_target = 0, direct_read_target = 0, direct_view[4]{};
 // MIN/MAX accumulation is order-independent; batch by type, cap and culling
 std::array<std::vector<GLfloat>, 16> cap_batches;
@@ -411,7 +412,7 @@ void verify_depth_transfer()
 			debug_log_force(DLOG_GRAPHICS, "[XL-FOG] depth transfer bits=%d expected=0.625 observed=%.9g", bits, observed[0]);
 #endif
 			errors("Fog scene-depth transfer check");
-			if (!(std::abs(observed[0] - .625f) < .0001f)) {
+			if (force_direct_probe || direct_depth || !(std::abs(observed[0] - .625f) < .0001f)) {
 				// Separate a transfer failure from depth-texture sampling failure
 				glBindFramebuffer(GL_FRAMEBUFFER, buffers.depth_fbo);
 				glDepthMask(GL_TRUE);
@@ -560,8 +561,14 @@ extern "C" const char *ogl_xl_fog_prepare(void)
 
 extern "C" void ogl_xl_fog_begin_scene(void)
 {
-	if (!xl_fog_active() || !direct_depth) return;
+	if (!xl_fog_active()) return;
 	try {
+		// A restored context must select its capture path before scene geometry
+		if (!capable) {
+			SavedState saved;
+			setup();
+		}
+		if (!direct_depth) return;
 		{
 			SavedState saved;
 			require(!direct_scene_active, "Nested direct fog scene is unsupported");
@@ -777,6 +784,13 @@ extern "C" void ogl_xl_fog_diagnostics(struct xl_fog_diagnostics *out)
 {
 	*out = diagnostics;
 }
+
+#ifdef DXX_XL_DEVELOPER_PROBE
+extern "C" void ogl_xl_fog_force_direct_probe(void)
+{
+	force_direct_probe = true;
+}
+#endif
 
 #if defined(INTROSPECT_ON) || defined(DXX_XL_DEVELOPER_PROBE)
 #include "fog_gpu_test.h"
