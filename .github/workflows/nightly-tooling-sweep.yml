@@ -42,6 +42,14 @@ on:
             online-transports,
           ]
         default: nightly
+      candidate_pr:
+        description: "Own same-repository PR to qualify from cmake (XL campaigns only)"
+        type: string
+        default: ""
+      candidate_sha:
+        description: "Full PR head SHA explicitly trusted with private assets"
+        type: string
+        default: ""
       evidence_run_id:
         description: "Read sanitized retained online receipt only; no tests or builds"
         type: string
@@ -55,6 +63,11 @@ on:
 
 permissions:
   contents: read
+
+env:
+  CANDIDATE_PR: ${{ inputs.candidate_pr }}
+  CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+  CANDIDATE_CAMPAIGN: ${{ inputs.campaign }}
 
 concurrency:
   group: ${{ inputs.evidence_run_id && format('online-evidence-{0}', inputs.evidence_run_id) || github.event_name == 'pull_request' && format('nightly-tooling-pr-{0}', github.event.pull_request.number) || (inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports') && format('online-preview-{0}', github.ref) || 'nightly-cmake-tooling-sweep' }}
@@ -173,6 +186,10 @@ jobs:
   plan:
     if: ${{ !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'release-first-play') }}
     name: Select tests
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
@@ -199,6 +216,8 @@ jobs:
           sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/cmake" --jq .object.sha)"
           if [[ -n "$PR_SHA" ]]; then sha="$PR_SHA"; fi
           if [[ -n "$CAMPAIGN_SHA" ]]; then sha="$CAMPAIGN_SHA"; fi
+          candidate="$(python3 control/android/tests/nightly_candidate.py)"
+          if [[ -n "$candidate" ]]; then sha="$candidate"; fi
           [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
       - name: Check out exact target catalog
@@ -211,11 +230,15 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
           printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
+          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then
+            printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > control/dependency_base.txt
+          fi
       - name: Export authoritative master catalog
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path plan -Force | Out-Null
-          & ./target/android/run_all_tests.ps1 -ListTests -ExtendedGraphics | Set-Content plan/catalog.json -Encoding utf8
+          $catalogRoot = if ($env:CANDIDATE_PR -or $env:CANDIDATE_SHA) { "control" } else { "target" }
+          & ./$catalogRoot/android/run_all_tests.ps1 -ListTests -ExtendedGraphics | Set-Content plan/catalog.json -Encoding utf8
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Plan unfinished tests without advancing progress
         id: plan
@@ -291,6 +314,10 @@ jobs:
     if: contains(fromJSON(needs.plan.outputs.lanes), 'host')
     runs-on: ubuntu-24.04
     timeout-minutes: 100
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
     # Keep deployment tracking for trusted retail jobs only
     environment:
       name: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), 'host') && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'retail-ci' || 'asset-free' }}
@@ -338,11 +365,16 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
           printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
+          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then
+            printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > control/dependency_base.txt
+          fi
       - name: Prepare verified public fixture runtime
         id: public_prerequisites
         timeout-minutes: 8
         run: |
-          bash target/android/get_deps/helpers/get_bounded_python.sh
+          setup=target
+          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then setup=control; fi
+          bash "$setup/android/get_deps/helpers/get_bounded_python.sh"
           command -v ffmpeg
           command -v ffprobe
       - name: Prepare asset-free metadata CLI
@@ -351,6 +383,7 @@ jobs:
         env:
           VALIDATE_METADATA_CLI: ${{ github.event_name == 'pull_request' }}
         run: |
+          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then exit 0; fi
           if [[ "$VALIDATE_METADATA_CLI" != true ]] && ! python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-corpus' for e in p['tests']))"; then
             exit 0
           fi
@@ -366,15 +399,15 @@ jobs:
         timeout-minutes: 8
         run: |
           node -e 'if (Number(process.versions.node.split(".")[0]) < 20) { throw new Error("Node 20 or newer is required"); }'
-          npm ci --prefix target/android/tools/code-quality --ignore-scripts
+          setup=target
+          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then setup=control; fi
+          npm ci --prefix "$setup/android/tools/code-quality" --ignore-scripts
       - name: Verify trusted retail checkout boundary
         id: retail_gate
         env:
-          RETAIL_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
         run: |
-          [[ -n "$RETAIL_READ_TOKEN" ]] || { echo "Retail read-only environment secret is missing" >&2; exit 1; }
-          unset RETAIL_READ_TOKEN
           [[ "$RETAIL_CHECKOUT_COMMIT" == "$RETAIL_ASSETS_COMMIT" ]]
           python3 control/android/tests/nightly_tooling_sweep.py retail-check \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json --lane host

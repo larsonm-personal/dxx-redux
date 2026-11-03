@@ -15,6 +15,166 @@ import nightly_tooling_sweep as sweep
 SHA = "0000000000000000000000000000000000000008"  # Stable first/second/third fixture ordering.
 
 
+class CandidateTests(unittest.TestCase):
+    def setUp(self):
+        import nightly_candidate as candidate
+
+        self.candidate = candidate
+        self.env = {
+            "GITHUB_REPOSITORY": sweep.retail.REPOSITORY,
+            "GITHUB_REF": "refs/heads/cmake",
+            "GITHUB_WORKFLOW_REF": sweep.retail.WORKFLOW,
+            "GITHUB_EVENT_NAME": "workflow_dispatch",
+            "CANDIDATE_PR": "319",
+            "CANDIDATE_SHA": SHA,
+            "CANDIDATE_CAMPAIGN": "xl-fast",
+            "GITHUB_RUN_ID": "123",
+            "GITHUB_RUN_ATTEMPT": "1",
+            "GITHUB_ACTOR_ID": "265118235",
+            "GITHUB_ACTOR": "larsonm-personal",
+            "GITHUB_TRIGGERING_ACTOR": "larsonm-personal",
+            "GITHUB_SHA": "a" * 40,
+        }
+        actor = {"id": 265118235, "login": "larsonm-personal"}
+        repo = {"id": candidate.REPOSITORY_ID, "full_name": sweep.retail.REPOSITORY, "fork": False}
+        self.responses = {
+            "actions/runs/123": {
+                "id": 123,
+                "run_attempt": 1,
+                "actor": actor.copy(),
+                "triggering_actor": actor.copy(),
+                "event": "workflow_dispatch",
+                "head_branch": "cmake",
+                "head_sha": "a" * 40,
+                "path": ".github/workflows/nightly-tooling-sweep.yml",
+                "repository": repo.copy(),
+            },
+            "pulls/319": {
+                "number": 319,
+                "state": "open",
+                "user": actor.copy(),
+                "base": {"repo": repo.copy()},
+                "head": {"repo": repo.copy(), "ref": "my/branch", "sha": SHA},
+            },
+            "git/ref/heads/my%2Fbranch": {"object": {"sha": SHA}},
+        }
+
+    def verify(self):
+        return self.candidate.verify(SHA, self.env, self.responses.__getitem__)
+
+    def test_exact_endorsement_and_same_actor_rerun(self):
+        self.assertEqual(self.verify(), SHA)
+        self.env["GITHUB_RUN_ATTEMPT"] = "2"
+        self.responses["actions/runs/123"]["run_attempt"] = 2
+        self.assertEqual(self.verify(), SHA)
+        self.assertIsNone(self.candidate.verify(env={}))
+
+    def test_untrusted_context_and_incomplete_inputs(self):
+        for key, value in {
+            "GITHUB_REF": "refs/heads/my/branch",
+            "GITHUB_EVENT_NAME": "pull_request",
+            "GITHUB_WORKFLOW_REF": "untrusted",
+            "CANDIDATE_PR": "",
+            "CANDIDATE_SHA": "main",
+            "CANDIDATE_CAMPAIGN": "nightly",
+            "GITHUB_ACTOR_ID": "99",
+            "GITHUB_TRIGGERING_ACTOR": "other",
+            "GITHUB_RUN_ATTEMPT": "2",
+        }.items():
+            with self.subTest(key=key), patch.dict(self.env, {key: value}), self.assertRaises(ValueError):
+                self.verify()
+
+    def test_forks_other_actors_and_changed_heads_fail_closed(self):
+        cases = [
+            ("actions/runs/123", ["actor", "id"], 99),
+            ("actions/runs/123", ["triggering_actor", "id"], 99),
+            ("actions/runs/123", ["repository", "id"], 99),
+            ("pulls/319", ["user", "id"], 99),
+            ("pulls/319", ["head", "repo", "id"], 99),
+            ("pulls/319", ["head", "repo", "fork"], True),
+            ("pulls/319", ["head", "sha"], "b" * 40),
+            ("git/ref/heads/my%2Fbranch", ["object", "sha"], "b" * 40),
+        ]
+        original = copy.deepcopy(self.responses)
+        for path, keys, value in cases:
+            with self.subTest(path=path, keys=keys):
+                self.responses = copy.deepcopy(original)
+                node = self.responses[path]
+                for key in keys[:-1]:
+                    node = node[key]
+                node[keys[-1]] = value
+                # Spoofed Git author metadata cannot restore admission
+                node["author"] = {"name": "larsonm-personal", "id": 265118235}
+                with self.assertRaises(ValueError):
+                    self.verify()
+        self.responses = {}
+        with self.assertRaises(ValueError):
+            self.verify()
+
+    def test_api_failure_and_mismatched_target_fail_closed(self):
+        with self.assertRaises(ValueError):
+            self.candidate.verify("b" * 40, self.env, self.responses.__getitem__)
+        with self.assertRaises(ValueError):
+            self.candidate.verify(SHA, self.env, lambda path: {})
+
+        def unavailable(path):
+            raise subprocess.TimeoutExpired("gh", 30)
+
+        with self.assertRaises(ValueError):
+            self.candidate.verify(SHA, self.env, unavailable)
+
+    def test_retail_gate_revalidates_pinned_target_on_partial_rerun(self):
+        verify = self.candidate.verify
+        identity = {"commit": "c" * 40}
+
+        def check(target):
+            return verify(target, self.env, self.responses.__getitem__)
+
+        for scenario in ("allowed", "head-moved", "other-rerunner"):
+            with self.subTest(scenario=scenario):
+                self.setUp()
+                if scenario == "head-moved":
+                    self.responses["pulls/319"]["head"]["sha"] = "b" * 40
+                elif scenario == "other-rerunner":
+                    self.responses["actions/runs/123"]["triggering_actor"]["id"] = 99
+                with (
+                    patch.object(
+                        sys,
+                        "argv",
+                        ["sweep", "retail-check", "--plan", "plan.json", "--policy", "policy.json", "--lane", "host"],
+                    ),
+                    patch.object(sweep, "read", side_effect=[{"target_sha": SHA, "retail_assets": identity}, {}]),
+                    patch.object(sweep, "validate_plan"),
+                    patch.object(sweep.retail, "lane_requires_retail", return_value=True),
+                    patch.object(sweep.retail, "trusted_context", return_value=True),
+                    patch.object(sweep.retail, "configured_identity", return_value=identity),
+                    patch.object(self.candidate, "verify", side_effect=check) as gate,
+                ):
+                    if scenario == "allowed":
+                        self.assertEqual(sweep.main(), 0)
+                    else:
+                        with self.assertRaises(ValueError):
+                            sweep.main()
+                    gate.assert_called_once_with(SHA)
+
+    def test_workflow_uses_trusted_setup_and_catalog(self):
+        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        self.assertIn('candidate="$(python3 control/android/tests/nightly_candidate.py)"', workflow)
+        self.assertIn('$catalogRoot = if ($env:CANDIDATE_PR -or $env:CANDIDATE_SHA) { "control" }', workflow)
+        self.assertIn('bash "$setup/android/get_deps/helpers/get_bounded_python.sh"', workflow)
+        self.assertIn('npm ci --prefix "$setup/android/tools/code-quality" --ignore-scripts', workflow)
+        self.assertIn("python3 control/android/tests/nightly_tooling_sweep.py retail-check", workflow)
+        host = workflow.split("  host:", 1)[1].split("\n  android", 1)[0]
+        gate = host.index("      - name: Verify trusted retail checkout boundary")
+        checkout = host.index("      - name: Check out immutable private retail inputs")
+        execute = host.index("      - name: Execute admitted host owners")
+        self.assertLess(gate, checkout)
+        self.assertLess(checkout, execute)
+        self.assertNotIn("secrets.", host[:checkout])
+        self.assertIn("ref: ${{ needs.plan.outputs.target_sha }}", host[:gate])
+        self.assertIn("persist-credentials: false", host[checkout:execute])
+
+
 class SweepTests(unittest.TestCase):
     def test_transport_campaign_is_explicit_and_preserves_scheduled_selection(self):
         policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
