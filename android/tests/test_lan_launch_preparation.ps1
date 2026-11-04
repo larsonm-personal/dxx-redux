@@ -12,6 +12,55 @@ $ErrorActionPreference = 'Stop'
 $hostSerial = $script:PRIMARY_EMULATOR_SERIAL
 $clientSerial = $script:SECONDARY_EMULATOR_SERIAL
 
+function Write-LanPreparationNetworkEvidence {
+    param([string]$HostSerial, [string]$ClientSerial, [string]$Prefix)
+
+    # Best-effort Android diagnostics must not replace the original test failure
+    foreach ($serial in @($HostSerial, $ClientSerial)) {
+        try {
+            $commands = @('ip -4 addr', 'ip rule', 'ip -4 route show table all', 'ip neigh',
+                'cmd wifi status', 'dumpsys connectivity')
+            $peer = if ($serial -eq $HostSerial) { $ClientSerial } else { $HostSerial }
+            $peerIp = Get-DeviceWlanIp -Serial $peer
+            if ($peerIp) { $commands += "ip route get $peerIp" }
+            $evidence = foreach ($command in $commands) {
+                $output = Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', $command) -Seconds 5 -IncludeStandardError
+                [ordered]@{ command = $command; output = $output; no_output_or_timeout = [string]::IsNullOrWhiteSpace($output) }
+            }
+            $evidence | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $outputDirectory "$Prefix-$serial-network.json") -Encoding utf8
+        } catch { Write-Warning "Could not capture LAN network evidence on ${serial}: $_" }
+    }
+}
+
+function Assert-LanPreparationNetwork {
+    param([string]$HostSerial, [string]$ClientSerial, [string]$Prefix)
+
+    # Match test_lan's bounded startup preflight; ICMP readiness is not UDP/gameplay proof
+    $attempts = [Collections.Generic.List[object]]::new()
+    $reachable = $false
+    try {
+        $reachable = Wait-ForCondition -Description 'LAN preparation shared-Wi-Fi reachability' -TimeoutSec 60 -PollMs 1000 -Condition {
+            $hostIp = Get-DeviceWlanIp -Serial $HostSerial
+            $clientIp = Get-DeviceWlanIp -Serial $ClientSerial
+            $probe = [ordered]@{ host_ip = $hostIp; client_ip = $clientIp; client_to_host = $null; host_to_client = $null; reachable = $false }
+            if ($hostIp -and $clientIp -and $hostIp -ne $clientIp) {
+                $probe.client_to_host = Adb-Dev-Timeout -Serial $ClientSerial -AdbArgs @('shell', 'ping', '-c', '1', '-W', '2', $hostIp) -Seconds 5 -IncludeStandardError
+                $probe.host_to_client = Adb-Dev-Timeout -Serial $HostSerial -AdbArgs @('shell', 'ping', '-c', '1', '-W', '2', $clientIp) -Seconds 5 -IncludeStandardError
+                $received = '(?m)^1 packets? transmitted, 1 (?:packets? )?received(?:,|\s|$)'
+                $probe.reachable = $probe.client_to_host -match $received -and $probe.host_to_client -match $received
+            }
+            $attempts.Add($probe)
+            return $probe.reachable
+        }
+        if (-not $reachable) { throw 'LAN infrastructure preflight failed: bidirectional shared-Wi-Fi reachability was not established' }
+    } finally {
+        # Persist every attempt, including failed probes before a transient recovery
+        [ordered]@{ reachable = $reachable; attempts = @($attempts.ToArray()) } | ConvertTo-Json -Depth 10 |
+            Set-Content (Join-Path $outputDirectory "$Prefix-network-preflight.json") -Encoding utf8
+        Write-LanPreparationNetworkEvidence -HostSerial $HostSerial -ClientSerial $ClientSerial -Prefix $Prefix
+    }
+}
+
 function Read-LaunchLog([string]$Serial) {
     Adb-Dev-Timeout -Serial $Serial -AdbArgs @('logcat', '-d', '-s', 'DXX-Launcher:I', 'DXX-MP:I', 'LobbyService:I') -Seconds 5
 }
@@ -152,6 +201,7 @@ function Invoke-D1OnlyLanDiagnostic {
             }
             if (-not $ready) { throw "D1-only fixture readiness was not verified on $serial" }
         }
+        Assert-LanPreparationNetwork -HostSerial $hostSerial -ClientSerial $clientSerial -Prefix 'd1-only'
         $hostIp = Get-DeviceWlanIp -Serial $hostSerial
         if (-not $hostIp) { throw 'D1-only diagnostic requires the host shared-Wi-Fi address' }
         Send-MpCommand -Serial $hostSerial -Command 'lan_host_lobby' -Extras @('--es', 'callsign', 'D1ProbeH', '--es', 'game', 'd2', '--es', 'mission', 'descent')
@@ -210,6 +260,7 @@ function Invoke-LanPreparationSession {
                 "'logcat -c && echo DXX_LAN_LOG_CLEARED'") -Seconds 5
             if ($cleared -cne 'DXX_LAN_LOG_CLEARED') { throw "Could not clear old LAN evidence on $serial" }
         }
+        Assert-LanPreparationNetwork -HostSerial $HostSerial -ClientSerial $ClientSerial -Prefix "session-$Session"
         # Reuse the QR owner's shell quoting for native D1's empty built-in mission key
         $missionArgument = if ($SessionMission) { $SessionMission } else { "''" }
         $hostExtras = @('--es', 'callsign', $hostCallsign, '--es', 'game', $Engine, '--es', 'mission', $missionArgument)
@@ -294,6 +345,9 @@ function Invoke-LanPreparationSession {
         } else {
             Write-Output 'PASS: D1-in-D2 client prepared before host launch, waited for confirmation, then both entered the engine'
         }
+    } catch {
+        Write-LanPreparationNetworkEvidence -HostSerial $HostSerial -ClientSerial $ClientSerial -Prefix "session-$Session-failure"
+        throw
     } finally {
         foreach ($serial in @($HostSerial, $ClientSerial)) {
             Read-LaunchLog $serial | Out-File (Join-Path $outputDirectory "session-$Session-$serial.log") -Encoding utf8
