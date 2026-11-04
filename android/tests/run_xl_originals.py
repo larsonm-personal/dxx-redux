@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from xl_private_assets import verify
+from run_xl_navigation_smoke import run as run_navigation_smoke
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "XL_compat/tests"))
 from reference_sources import SOURCE_ARGUMENTS, reference_parameters, reference_sources, require_source_arguments
@@ -219,9 +220,17 @@ def validate_summary(receipt, fast=False):
         or any(value not in ("passed", "failed") for value in experimental.values())
         or receipt.get("format_witnesses") != (16 if fast else 9)
         or receipt.get("modern_source_levels") != (3 if fast else 0)
+        or (fast and receipt.get("navigation_smoke_passed") != 1)
     ):
         raise ValueError("Invalid original XL acceptance receipt")
+    navigation = {}
+    if fast:
+        elapsed = receipt.get("navigation_smoke_milliseconds")
+        if type(elapsed) is not int or not 0 <= elapsed <= 30000:
+            raise ValueError("Invalid XL navigation smoke timing")
+        navigation = {"navigation_smoke_passed": 1, "navigation_smoke_milliseconds": elapsed}
     return {
+        **navigation,
         "required_passed": len(required),
         "format_witnesses": receipt["format_witnesses"],
         "modern_source_levels": receipt["modern_source_levels"],
@@ -333,6 +342,7 @@ def main():
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--work", type=Path, required=True)
     parser.add_argument("--jvm-only", action="store_true")
+    parser.add_argument("--navigation-seed", type=int, help="Override the XL smoke sample; defaults to target commit")
     parser.add_argument(
         "--fast",
         action="store_true",
@@ -420,7 +430,7 @@ def main():
             "2",
             "--target",
             "dxx-redux-d2-headless-metadata",
-            *([] if args.fast else ["dxx-redux-d2-headless-route"]),
+            "dxx-redux-d2-headless-route",
         ]
     )
     # Imported-D1 Dragon Pit requires the registered D1 bank beside D2 data
@@ -505,6 +515,16 @@ def main():
         if args.fast
         else (0, 0)
     )
+    if args.fast:
+        seed = args.navigation_seed
+        if seed is None:
+            head = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True, timeout=10).strip()
+            seed = int(head[:16], 16)
+        navigation = run_navigation_smoke(
+            stock / "main/dxx-redux-d2-headless-route", stage, retail_data, work / "navigation-smoke", seed
+        )
+        receipt["navigation_smoke_passed"] = navigation["passed"]
+        receipt["navigation_smoke_milliseconds"] = round(navigation["seconds"] * 1000)
     verify(stage, modern=args.fast)
     receipt.update(
         required_tests=sorted(required),

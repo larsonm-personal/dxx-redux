@@ -16,6 +16,7 @@ from unittest.mock import patch
 import nightly_retail as retail
 import nightly_tooling_sweep as sweep
 import run_xl_originals as runner
+import run_xl_navigation_smoke as smoke
 import public_contracts as public
 import pilot_archive as pilot
 import xl_private_assets as assets
@@ -192,7 +193,13 @@ class XlPrivateTests(unittest.TestCase):
                 ET.SubElement(suite, "testcase", name=name, status="run")
             ET.ElementTree(suite).write(path)
             receipt = runner.native_receipt(path, 0, fast=True)
-            receipt.update(required_tests=sorted(runner.FAST_TESTS), format_witnesses=16, modern_source_levels=3)
+            receipt.update(
+                required_tests=sorted(runner.FAST_TESTS),
+                format_witnesses=16,
+                modern_source_levels=3,
+                navigation_smoke_passed=1,
+                navigation_smoke_milliseconds=800,
+            )
             self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 109)
             for mode in ("omitted", "duplicate", "disabled", "skipped", "failed", "experimental"):
                 changed = copy.deepcopy(suite)
@@ -216,6 +223,10 @@ class XlPrivateTests(unittest.TestCase):
                 ("experimental", {"xl_level_two_keys": "failed"}),
                 ("format_witnesses", 9),
                 ("modern_source_levels", 2),
+                ("navigation_smoke_passed", 0),
+                ("navigation_smoke_milliseconds", -1),
+                ("navigation_smoke_milliseconds", 30001),
+                ("navigation_smoke_milliseconds", "private"),
             ):
                 with self.subTest(field=key), self.assertRaises(ValueError):
                     runner.validate_summary({**receipt, key: value}, fast=True)
@@ -547,6 +558,11 @@ class XlPrivateTests(unittest.TestCase):
         clean = retail.public_diagnostics(row)
         self.assertEqual(clean["xl_checks"], {"required_passed": 96, "format_witnesses": 16, "modern_source_levels": 3})
         self.assertNotIn("raw input", json.dumps(clean))
+        row["xl_checks"].update(navigation_smoke_passed=1, navigation_smoke_milliseconds=800)
+        self.assertEqual(retail.public_diagnostics(row)["xl_checks"]["navigation_smoke_milliseconds"], 800)
+        for invalid in ("private", -1, 30001, True):
+            row["xl_checks"]["navigation_smoke_milliseconds"] = invalid
+            self.assertNotIn("navigation_smoke_milliseconds", retail.public_diagnostics(row)["xl_checks"])
         for invalid in (True, -1, 1001, "private text"):
             changed = copy.deepcopy(row)
             changed["xl_checks"]["required_passed"] = invalid
@@ -756,6 +772,70 @@ class XlPrivateTests(unittest.TestCase):
                     sweep.select_xl_originals(plan, policy, catalog)
         self.assertTrue(retail.corpus_available({"commit": assets.ASSETS_COMMIT}))
         self.assertTrue(retail.demos_available({"commit": assets.ASSETS_COMMIT}))
+
+
+class NavigationSmokeTests(unittest.TestCase):
+    def test_sampling_is_reproducible_and_covers_pool(self):
+        chosen = [smoke.select(seed) for seed in range(100)]
+        self.assertEqual(chosen, [smoke.select(seed) for seed in range(100)])
+        self.assertEqual({mission for mission, _ in chosen}, set(smoke.POOL))
+        for mission, level in chosen:
+            self.assertIn(level, smoke.POOL[mission]["levels"])
+
+    def test_only_successful_requested_xl_route_is_accepted(self):
+        mission, level = smoke.select(318)
+        ordinal, filename, version, game, target = level
+        route = {
+            "schema": "dxx-guidebot-route-confirmation-v1",
+            "status": "confirmed",
+            "mission": mission,
+            "level": ordinal,
+            "seed": 1,
+            "fixed_hz": 60,
+            "frames": 90,
+            "verification_goal": {"kind": "segment", "segment": target},
+            "last_actor_state": {"segment": target},
+            "objectives": [{"kind": "unexplored"}],
+        }
+        proof = {
+            "mission": mission,
+            "level": ordinal,
+            "level_file": filename,
+            "xl_active": True,
+            "level_version": version,
+            "game_version": game,
+            "segments": 200,
+            "visited_segments": 8,
+        }
+        smoke.validate(route, proof, mission, level)
+        for field, values in {
+            "status": ["failed", "timeout", "unsupported", "partial", "inspection_only"],
+            "mission": ["other"],
+            "level": [ordinal + 1],
+            "seed": [2],
+            "frames": [0, 1801],
+            "objectives": [[]],
+            "verification_goal": [{"kind": "segment", "segment": target + 1}],
+            "last_actor_state": [{"segment": target + 1}],
+        }.items():
+            for value in values:
+                changed = copy.deepcopy(route)
+                changed[field] = value
+                with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                    smoke.validate(changed, proof, mission, level)
+        for field, value in {
+            "xl_active": False,
+            "visited_segments": 2,
+            "segments": 0,
+            "level_file": "other.rl2",
+            "level_version": 8,
+            "game_version": 32,
+            "mission": "other",
+            "level": 9,
+        }.items():
+            changed = dict(proof, **{field: value})
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                smoke.validate(route, changed, mission, level)
 
 
 if __name__ == "__main__":

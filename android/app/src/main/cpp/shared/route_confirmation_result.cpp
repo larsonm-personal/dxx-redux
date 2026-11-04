@@ -34,6 +34,10 @@ nlohmann::ordered_json serialize_result(const route_confirmation_summary &summar
 	result["mission"] = mission && *mission ? mission : "d2";
 	result["level"] = level;
 	result["status"] = route_confirmation_status_name(summary.status);
+	if (summary.requested_segment >= 0) {
+		result["verification_goal"] = { { "kind", "segment" }, { "segment", summary.requested_segment } };
+		result["last_actor_state"] = { { "segment", summary.actor_segment } };
+	}
 	if (summary.requested_key >= 0) {
 		result["verification_goal"] = {
 			{ "kind", "key_pickup" },
@@ -122,7 +126,7 @@ nlohmann::ordered_json serialize_result(const route_confirmation_summary &summar
 		objective_seconds.push_back(fixed_seconds(objective.completed_ticks));
 	}
 	result["objectives"] = objectives;
-	if (summary.status == ROUTE_CONFIRMATION_CONFIRMED && !summary.starts_from_current_state && summary.requested_key < 0 && summary.requested_exit_trigger < 0) {
+	if (summary.status == ROUTE_CONFIRMATION_CONFIRMED && !summary.starts_from_current_state && summary.requested_key < 0 && summary.requested_exit_trigger < 0 && summary.requested_segment < 0) {
 		result["route_confirmation"] = {
 			{ "status", "confirmed" },
 			{ "generation", 1 },
