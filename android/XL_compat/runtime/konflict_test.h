@@ -97,7 +97,7 @@ static int konflict_test(int argc, char **argv)
 		for (int i = 0; i <= Highest_object_index; ++i)
 			if (Objects[i].type == OBJ_CNTRLCEN) reactor = &Objects[i];
 		require(reactor && !Control_center_destroyed, "original live reactor missing");
-		do_controlcen_destroyed_stuff(reactor);
+		apply_damage_to_controlcen(reactor, reactor->shields + F1_0, Players[Player_num].objnum);
 		require(Control_center_destroyed && Countdown_timer > 0, "native reactor did not start countdown");
 		for (int i = 0; i < ControlCenterTriggers.num_links; ++i) {
 			const auto &side = Segments[ControlCenterTriggers.seg[i]].sides[ControlCenterTriggers.side[i]];
@@ -117,6 +117,9 @@ static int konflict_test(int argc, char **argv)
 		require(load_level("d2leva-1.rl2") == 0, "stock recovery load failed");
 		require(!xl_preview_pilot_active() && !xl_prepared_texture_brightness(275, &brightness), "Konflict state leaked into stock mission");
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / "missions";
+		// Remove only this test's loose controls left by an interrupted prior run.
+		std::filesystem::remove(root.parent_path() / "konflict.rl2");
+		std::filesystem::remove(root.parent_path() / "konflict.lgt");
 		for (int variant = 0; variant < 4; ++variant) {
 			// Derived controls, never substituted for the original acceptance fixture
 			xl_compat::Bytes hog{ 'D', 'H', 'F' };
@@ -166,8 +169,16 @@ static int konflict_test(int argc, char **argv)
 			require(bool(descriptor), "cannot write loose lighting control descriptor");
 		}
 		require(load_base_mission("kfloose", error, sizeof(error)), error);
-		require(!xl_level_supported("konflict.rl2", 0) && std::string(xl_level_rejection()).find("owned mission HOG") != std::string::npos,
-		        "loose lighting companion was silently ignored");
+		// Full admission may reject an earlier resource's missing HOG identity.
+		require(!xl_level_supported("konflict.rl2", 0) && std::string(xl_level_rejection()).find("mission HOG identity") != std::string::npos,
+		        "loose mission bypassed resource ownership admission");
+		bool lighting_rejected = false;
+		try {
+			XlPreparedResources resources("konflict.rl2");
+		} catch (const std::exception &error) {
+			lighting_rejected = std::strstr(error.what(), "lighting companions require an owned mission HOG") != nullptr;
+		}
+		require(lighting_rejected, "loose lighting companion was silently ignored");
 		require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0, "loose companion stock recovery failed");
 		std::filesystem::remove(loose_root / "konflict.rl2");
 		std::filesystem::remove(loose_root / "konflict.lgt");

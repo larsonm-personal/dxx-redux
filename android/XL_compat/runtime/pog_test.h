@@ -206,7 +206,9 @@ static void physics(const std::filesystem::path &root)
 
 static void rejection(const std::filesystem::path &root, const std::vector<xl_compat::PogBitmap> &images)
 {
-	const auto path = root / "rtarena.pog";
+	// Match the exact native lookup spelling so an archive entry cannot win
+	// before case-insensitive lookup reaches this private control.
+	const auto path = root / "rtarena.POG";
 	const auto energy = Players[Player_num].energy;
 	const auto state = arena_state();
 	for (int kind = 0; kind < 4; ++kind) {
@@ -223,7 +225,10 @@ static void rejection(const std::filesystem::path &root, const std::vector<xl_co
 		const char *reason = kind == 0 ? "truncated" : kind == 1 ? "animation frames"
 		                                           : kind == 2   ? "cockpit/HUD"
 		                                                         : "index";
-		require(!xl_level_supported("rtarena.rl2", 0) && std::strstr(xl_level_rejection(), reason), "POG rejection omitted the actionable encoding reason");
+		const bool accepted = xl_level_supported("rtarena.rl2", 0) != 0;
+		if (accepted || !std::strstr(xl_level_rejection(), reason))
+			std::cerr << "POG rejection kind=" << kind << ": " << xl_level_rejection() << '\n';
+		require(!accepted && std::strstr(xl_level_rejection(), reason), "POG rejection omitted the actionable encoding reason");
 		require(load_level("rtarena.rl2") != 0 && arena_state() == state && Players[Player_num].energy == energy, "Rejected POG changed active gameplay");
 		installed(images);
 	}

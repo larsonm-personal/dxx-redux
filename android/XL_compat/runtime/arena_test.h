@@ -581,8 +581,16 @@ static int arena_test(int argc, char **argv)
 			PHYSFS_file *control = PHYSFSX_openReadBuffered("rtarena.HXM");
 			require(control && bm_validate_level_hxm(control), "missing-weapon control did not pass structural validation");
 			PHYSFS_close(control);
-			require(!xl_level_supported("rtarena.rl2", 0) && std::strstr(xl_level_rejection(), "missing weapon"),
-			        "staged robot checked live definition instead of its replacement");
+			// This multiplayer arena has no reachable robot 0. Explicitly walk
+			// its staged profile to exercise the replaced definition dependency.
+			bool missing_weapon = false;
+			try {
+				XlPreparedResources prepared("rtarena.rl2");
+				prepared.dependencies().robot(0);
+			} catch (const std::exception &error) {
+				missing_weapon = std::strstr(error.what(), "missing weapon") != nullptr;
+			}
+			require(missing_weapon, "staged robot checked live definition instead of its replacement");
 			require(!std::memcmp(&Robot_info[0], &original_robot, sizeof(original_robot)), "robot preflight changed live definition");
 			require(PHYSFS_removeFromSearchPath(resource_shadow.string().c_str()), "cannot unmount staged robot control");
 			require(std::filesystem::remove(path), "cannot remove staged robot control");
