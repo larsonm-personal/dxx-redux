@@ -41,6 +41,99 @@ foreach ($name in @('Read-LanPreparationLobby', 'Test-LanPreparationLobbyPeers',
     . ([scriptblock]::Create($definition.Extent.Text))
 }
 
+# Host-only transport mocks prove failure propagation, not emulator connectivity
+& {
+    foreach ($name in @('Assert-LanPreparationNetwork', 'Write-LanPreparationNetworkEvidence')) {
+        $definition = $runner.Find({ param($node)
+                $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
+            }, $true)
+        if (-not $definition) { throw "LAN preflight function missing: $name" }
+        . ([scriptblock]::Create($definition.Extent.Text))
+    }
+    $outputDirectory = Join-Path $PSScriptRoot '../temp/lan-network-profile-controls'
+    New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
+    function Get-DeviceWlanIp([string]$Serial) {
+        if ($script:networkCase -eq 'missing') { return $null }
+        if ($script:networkCase -eq 'aliased') { return '10.0.2.15' }
+        if ($Serial -eq 'emulator-5554') { return '10.0.2.16' }
+        return '10.0.2.17'
+    }
+    function Adb-Dev-Timeout {
+        param($Serial, $AdbArgs, $Seconds, [switch]$IncludeStandardError)
+        if ($Seconds -ne 5 -or -not $IncludeStandardError) { throw 'Probes and diagnostics must be bounded and retain stderr' }
+        if ($AdbArgs[1] -eq 'ping') {
+            if ($script:networkCase -eq 'no-output') { return $null }
+            if ($script:networkCase -in @('failed', 'diagnostic-failed') -or
+                ($script:networkCase -eq 'transient' -and $script:networkPoll -eq 1) -or
+                ($script:networkCase -eq 'asymmetric' -and $Serial -eq 'emulator-5554')) {
+                return '1 packets transmitted, 0 received, 100% packet loss'
+            }
+            if ($script:networkCase -eq 'misleading') { return '11 packets transmitted, 11 received, 0% packet loss' }
+            if ($script:networkCase -eq 'android-format') { return '1 packets transmitted, 1 packets received, 0% packet loss' }
+            return '1 packets transmitted, 1 received, 0% packet loss'
+        }
+        if ($script:networkCase -in @('diagnostic-error', 'diagnostic-failed')) { throw 'mock diagnostic failure' }
+        return "mock $Serial $($AdbArgs -join ' ')"
+    }
+    function Wait-ForCondition {
+        param($Description, $TimeoutSec, $PollMs, $Condition)
+        if ($TimeoutSec -ne 60 -or $PollMs -ne 1000) { throw 'Infrastructure polling bound changed' }
+        for ($script:networkPoll = 1; $script:networkPoll -le 2; $script:networkPoll++) {
+            if (& $Condition) { return $true }
+        }
+        return $false
+    }
+    try {
+        foreach ($script:networkCase in @('success', 'android-format', 'transient', 'failed', 'asymmetric', 'missing', 'aliased', 'no-output', 'misleading', 'diagnostic-error', 'diagnostic-failed')) {
+            $expected = $script:networkCase -in @('success', 'android-format', 'transient', 'diagnostic-error')
+            $caught = $false
+            try { Assert-LanPreparationNetwork -HostSerial 'emulator-5554' -ClientSerial 'emulator-5556' -Prefix $script:networkCase } catch {
+                if ($_.Exception.Message -cne 'LAN infrastructure preflight failed: bidirectional shared-Wi-Fi reachability was not established') { throw }
+                $caught = $true
+            }
+            $receipt = Get-Content (Join-Path $outputDirectory "$script:networkCase-network-preflight.json") -Raw | ConvertFrom-Json
+            if ($caught -eq $expected -or $receipt.reachable -ne $expected -or $receipt.attempts.Count -lt 1) {
+                throw "Network preflight did not preserve its outcome: $script:networkCase"
+            }
+            if ($script:networkCase -eq 'transient' -and ($receipt.attempts.Count -ne 2 -or $receipt.attempts[0].reachable)) {
+                throw 'Transient recovery discarded its initial failure'
+            }
+            if ($script:networkCase -notin @('diagnostic-error', 'diagnostic-failed')) {
+                foreach ($serial in @('emulator-5554', 'emulator-5556')) {
+                    $evidence = Get-Content (Join-Path $outputDirectory "$script:networkCase-$serial-network.json") -Raw | ConvertFrom-Json
+                    foreach ($command in @('ip -4 addr', 'ip rule', 'ip -4 route show table all', 'ip neigh', 'cmd wifi status', 'dumpsys connectivity')) {
+                        if ($command -cnotin $evidence.command) { throw "Missing diagnostic command: $command" }
+                    }
+                }
+            }
+        }
+        # Exercise the real session orchestration: failed preflight must never send a lobby command
+        $definition = $runner.Find({ param($node)
+                $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Invoke-LanPreparationSession'
+            }, $true)
+        . ([scriptblock]::Create($definition.Extent.Text))
+        function Reset-DeviceGameState { param($Serial) }
+        function Start-SetupActivity { param($Serial) return $true }
+        function Read-LaunchLog { param($Serial) return 'mock launcher log' }
+        function Send-MpCommand { throw 'Failed network preflight reached a lobby command' }
+        function Adb-Dev-Timeout {
+            param($Serial, $AdbArgs, $Seconds, [switch]$IncludeStandardError)
+            if ($AdbArgs -contains 'pidof') { return $null }
+            if (($AdbArgs -join ' ') -match 'DXX_LAN_LOG_CLEARED') { return 'DXX_LAN_LOG_CLEARED' }
+            if ($AdbArgs -contains 'ping') { return '1 packets transmitted, 0 received, 100% packet loss' }
+            return 'mock diagnostics'
+        }
+        $PublicShareware = $false
+        $script:networkCase = 'failed'
+        $caught = $false
+        try { Invoke-LanPreparationSession -HostSerial 'emulator-5554' -ClientSerial 'emulator-5556' } catch {
+            if ($_.Exception.Message -cne 'LAN infrastructure preflight failed: bidirectional shared-Wi-Fi reachability was not established') { throw }
+            $caught = $true
+        }
+        if (-not $caught) { throw 'Session swallowed infrastructure failure' }
+    } finally { Remove-Item -LiteralPath $outputDirectory -Recurse -Force }
+}
+
 function New-PeerState {
     param([string]$Engine = 'd2', [string]$Content = 'd1')
     $state = @{
@@ -440,7 +533,8 @@ if (Test-LanThreePlayerState $threeState) { throw 'Duplicate local identity pass
     function git { $global:LASTEXITCODE = 0; return ('a' * 40) }
     function Stage-PublicLanAssets { param($Serial, $Files) $script:stageCount++ }
     function Assert-PublicLanDeviceAssets { param($Serial, $Files) }
-    function Reset-DeviceGameState { param($Serial, [switch]$NoEmulatorRecovery)
+    function Reset-DeviceGameState {
+        param($Serial, [switch]$NoEmulatorRecovery)
         if ([bool]$NoEmulatorRecovery -ne ($Serial -ceq 'emulator-5558')) { throw 'Caller-owned third emulator must not enter reset recovery' }
     }
     function Write-LatencyEvent { param($Peer, $Event, $Data) }
@@ -479,11 +573,15 @@ if (Test-LanThreePlayerState $threeState) { throw 'Duplicate local identity pass
     function Send-MpCommand { param($Serial, $Command, $Extras) }
     function Read-LanPreparationLobby {
         param($Serial)
-        return @{ lan = @{ players = @(
+        return @{
+            lan = @{
+                players = @(
                     @{ callsign = 'TimingH'; connected = $true; ready = $true },
                     @{ callsign = 'TimingJ'; connected = $true; ready = $true },
                     @{ callsign = 'TimingK'; connected = $true; ready = $true }
-                ) } }
+                )
+            }
+        }
     }
     function Adb-Dev-Timeout {
         param($Serial, $AdbArgs, $Seconds)
