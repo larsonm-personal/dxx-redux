@@ -103,3 +103,30 @@ harness failure after the native PASS. Its corrected postcondition checks the
 exact catalog owner/generation. All protected restoration hashes match. Evidence
 is retained in `temp/xl-overnight-20261103/pumo-ui-native-pass-29440`; qualification
 of the corrected complete wrapper on a committed candidate remains required.
+
+## Full-model opening gates and catalog-save follow-up
+
+Exact universal29450 passes original PMC1 opening unlock/open-wall shots, three
+normal gate crossings and persistence:76 warm steps in89299ms,15 fresh-process
+steps in24301ms. Both use full original Pumo models, no Vertigo, normal hub entry
+and fixed local approaches; no full human traversal is claimed. Protected hashes
+match. The old opening-gates output was preserved under
+`temp/xl-overnight-20261103/prior-opening-gates-20261102` before the run. The new
+owned621196066-byte transfer was removed after recording SHA and restoration;
+all original resources remain. Current evidence is temp/xl-original-pmc-opening-gates.
+
+A staged-engine cold load does not establish imported-catalog source ownership.
+The existing addon UI owner therefore gains optional `-PumoUiImport -PumoUiCold`:
+it imports the unchanged original resources, runs the same76-step opening probe,
+then starts a fresh game process and loads the15-step checkpoint through the
+normal menu. It requires the exact imported catalog owner before and after the
+restart, retains both PIDs/results/renders, and restores the whole protected
+profile/set. The default public and36-step UI modes remain available.
+
+The first UI-catalog run on29450 passes76 warm steps in110203ms and15 cold
+steps in29527ms, PIDs30948 ->31873. Both retain catalog owner
+`mod/pmines_v11.7z`, with exact protected before/after hashes. The cold menu load
+restores the opened/unlocked gate state and crosses the gate normally. Evidence:
+`temp/xl-overnight-20261103/ui-cold-29450-pass`. The next committed candidate must
+repeat this full owner to verify its own APK/source IDs. This is local approach,
+gate and model-bearing save qualification, not full campaign or phone validation.

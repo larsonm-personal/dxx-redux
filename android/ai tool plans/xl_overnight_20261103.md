@@ -263,3 +263,18 @@ runner offloads only its verified safety backup and removes its verified picker
 input copy after import, retaining host originals and the imported archive.
 The default public addon-control suite still passes after the picker refactor.
 No phone verification or full campaign completion is claimed.
+
+### Catalog-owned cold-save gate
+
+The staged original PMC opening gate passes76 warm/15 fresh-process steps on
+29450 with exact restoration. Extend the existing private addon UI owner with
+-PumoUiCold so the same progression/checkpoint load also verifies imported-catalog
+ownership in a fresh process. This closes a source-identity/data-loss boundary
+that a legacy staged engine run cannot cover. Reuse unchanged canonical scripts;
+keep all original gameplay prerequisites and full profile protection.
+
+First catalog-owned run PASS on29450:76 warm/15 cold, PIDs30948 ->31873,
+owner mod/pmines_v11.7z before/after and matching profile hashes. Preserve the
+29440/29450 bundles. Commit this bounded owner extension, build a new universal
+current-head candidate and repeat its exact UI/catalog cold-save gate before the
+cutoff handoff. No new gameplay change or physical-phone claim follows from this.
