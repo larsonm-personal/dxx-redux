@@ -20,6 +20,8 @@ param(
     [switch]$Producer,
     [switch]$PayloadsOnly,
     [switch]$TemporaryOnly,
+    [switch]$GitTemporaryPacksOnly,
+    [ValidateRange(1, 3650)][int]$GitTemporaryPackDays = 7,
     [string[]]$ExcludePaths = @(),
     [ValidateRange(0, 1048576)][double]$TargetFreeSpaceGB = 0,
     [switch]$PreserveEmulatorWorkspaces,
@@ -35,8 +37,9 @@ param(
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'helpers/host_processes.ps1')
 if ($Producer -and (-not $BuildsOnly -or -not $BuildRoots)) { throw 'Producer cleanup requires BuildsOnly and explicit BuildRoots' }
-if (@($BuildsOnly, $PayloadsOnly, $TemporaryOnly | Where-Object { $_ }).Count -gt 1) { throw 'BuildsOnly, PayloadsOnly and TemporaryOnly are mutually exclusive' }
-if ($PreserveEmulatorWorkspaces -and -not ($TemporaryOnly -or $BuildsOnly)) { throw 'PreserveEmulatorWorkspaces requires TemporaryOnly or BuildsOnly' }
+if (@($BuildsOnly, $PayloadsOnly, $TemporaryOnly, $GitTemporaryPacksOnly | Where-Object { $_ }).Count -gt 1) { throw 'Cleanup-only modes are mutually exclusive' }
+if ($GitTemporaryPacksOnly -and ($BuildRoots -or $Producer -or $IncludeWorktreeBuilds)) { throw 'GitTemporaryPacksOnly requires an unscoped idle checkout' }
+if ($PreserveEmulatorWorkspaces -and -not ($TemporaryOnly -or $BuildsOnly -or $GitTemporaryPacksOnly)) { throw 'PreserveEmulatorWorkspaces requires TemporaryOnly, BuildsOnly or GitTemporaryPacksOnly' }
 if ($IncludeWorktreeBuilds -and ($TemporaryOnly -or $PayloadsOnly -or $Producer -or $BuildRoots)) { throw 'IncludeWorktreeBuilds requires an unscoped normal or BuildsOnly cleanup' }
 Set-StrictMode -Version Latest
 if (-not $RepositoryRoot) { $RepositoryRoot = Split-Path $PSScriptRoot }
@@ -187,6 +190,7 @@ function Assert-CleanupIdle {
                     $_.CommandLine -and $_.CommandLine -match '(?:^|\s)-avd(?:\s|=)' -and
                     $_.CommandLine -notmatch '(?<![A-Za-z0-9_])-(?:data|datadir|snapstorage|cache|sdcard|kernel|ramdisk|system|initdata|sysdir)(?![A-Za-z0-9_-])') -and
                 (
+                    ($GitTemporaryPacksOnly -and $_.Name -match '^git(?:-.*)?(?:\.exe)?$') -or
                     $_.Name -match '^(cl|cc|c\+\+|gcc|g\+\+|cc1|cc1plus|clang|clang\+\+|ninja|cmake|ctest|cargo|rustc|dxx-redux.*|d[12]x-redux|emulator|qemu-system-.*)(?:\.exe)?$' -or
                     ($_.CommandLine -and $_.CommandLine.Contains($RepositoryRoot) -and
                     $_.CommandLine -match '(GradleWrapperMain|run[_-].*tests?\.ps1|test_[^ ]+\.ps1|regenerate[^ ]*\.ps1|run_mission[^ ]*\.ps1|run-code-quality\.ps1)')
@@ -677,6 +681,40 @@ function Find-CargoIncrementalCaches {
     }
 }
 
+function Find-GitTemporaryPacks {
+    # Never follow a linked worktree's common directory outside this checkout
+    $store = Join-Path $RepositoryRoot '.git'
+    if (-not (Test-Path -LiteralPath $store -PathType Container)) { throw 'Git temporary-pack cleanup requires a local .git directory' }
+    $packRoot = Join-Path $store 'objects/pack'
+    if (-not (Test-Path -LiteralPath $packRoot -PathType Container)) { return }
+    Assert-CleanupPath $packRoot
+    $files = @(Get-ChildItem -LiteralPath $packRoot -File -Force)
+    $canonical = @($files | Where-Object { $_.Name -match '^pack-[a-f0-9]{40,64}\.(pack|idx|rev)$' })
+    foreach ($item in $files) {
+        $extension = if ($item.Name -match '^\.tmp-\d+-pack-[a-f0-9]{40,64}\.(pack|idx|rev)$') {
+            $item.Extension
+        } elseif ($item.Name -match '^tmp_pack_[A-Za-z0-9]+$') { '.pack' } else { continue }
+        if (Test-CleanupExcluded $item.FullName) { continue }
+        try {
+            $info = Get-CleanupTreeInfo $item.FullName -IncludeCreationTime
+            if ($info.Latest -gt $now.AddDays(-$GitTemporaryPackDays)) { continue }
+            $digest = $null
+            foreach ($other in $canonical | Where-Object { $_.Extension -eq $extension -and $_.Length -eq $item.Length }) {
+                Assert-CleanupPath $other.FullName
+                if (Test-CleanupExcluded $other.FullName) { continue }
+                if (-not $digest) { $digest = (Get-FileHash -LiteralPath $item.FullName -Algorithm SHA256).Hash }
+                if ((Get-FileHash -LiteralPath $other.FullName -Algorithm SHA256).Hash -ne $digest) { continue }
+                $candidates.Add([pscustomobject]@{
+                        Path = $item.FullName; Category = 'git-temporary-duplicate'; Automatic = $true
+                        Bytes = $info.Bytes; Count = $info.Count; Latest = $info.Latest
+                        Days = $GitTemporaryPackDays; Retained = $other.FullName; Digest = $digest
+                    })
+                break
+            }
+        } catch { Write-Warning "Preserving temporary pack $($item.FullName): $($_.Exception.Message)" }
+    }
+}
+
 # Restrict discovery to known output roles, never arbitrary ignored trees
 $gitRoot = & git -C $RepositoryRoot rev-parse --show-toplevel
 if ($LASTEXITCODE -ne 0 -or -not ([IO.Path]::GetFullPath($gitRoot)).Equals($RepositoryRoot, $comparison)) {
@@ -693,8 +731,9 @@ if ($TargetFreeSpaceGB -gt 0 -and (Get-CleanupFreeBytes) -ge $TargetFreeSpaceGB 
 # Scoped producer discovery is read-only and may find nothing to delete
 # Every deletion below still requires idle processes and a fresh path check
 if (-not $dryRun -and -not $Producer) { Assert-CleanupIdle }
+if ($GitTemporaryPacksOnly) { Find-GitTemporaryPacks }
 if ($PayloadsOnly) { Find-RegressionPayloads }
-if (-not $BuildsOnly -and -not $PayloadsOnly) { Find-TemporaryFiles }
+if (-not $BuildsOnly -and -not $PayloadsOnly -and -not $GitTemporaryPacksOnly) { Find-TemporaryFiles }
 $roots = [Collections.Generic.List[object]]::new()
 foreach ($workspace in $gitProtectionRoots) {
     foreach ($parentRelative in @('', 'android', 'server')) {
@@ -748,7 +787,7 @@ if ($BuildRoots) {
 }
 $discoveredBuildRoots = [Collections.Generic.HashSet[string]]::new($comparer)
 foreach ($root in $roots) {
-    if ($PayloadsOnly -or $TemporaryOnly) { break }
+    if ($PayloadsOnly -or $TemporaryOnly -or $GitTemporaryPacksOnly) { break }
     if (-not $BuildsOnly -and $root.Category -eq 'scratch') { continue }
     if ($root.Category -notin @('build', 'scratch')) { continue }
     if (-not $discoveredBuildRoots.Add($root.Item.FullName)) { continue }
@@ -772,7 +811,7 @@ foreach ($family in $buildGenerations | Group-Object Family) {
     }
 }
 # Cargo target directories can nest custom CARGO_TARGET_DIR and target-triple layouts
-if (-not $TemporaryOnly -and -not $PayloadsOnly -and -not $BuildRoots) {
+if (-not $TemporaryOnly -and -not $PayloadsOnly -and -not $GitTemporaryPacksOnly -and -not $BuildRoots) {
     foreach ($workspace in $gitProtectionRoots) {
         $cargoTarget = Join-Path $workspace 'server/target'
         if ((Test-Path -LiteralPath $cargoTarget -PathType Container) -and
@@ -782,7 +821,7 @@ if (-not $TemporaryOnly -and -not $PayloadsOnly -and -not $BuildRoots) {
     }
 }
 foreach ($root in $roots) {
-    if ($BuildsOnly -or $PayloadsOnly -or $TemporaryOnly) { break }
+    if ($BuildsOnly -or $PayloadsOnly -or $TemporaryOnly -or $GitTemporaryPacksOnly) { break }
     if ($root.Category -eq 'scratch') { continue }
     Write-Host "Scanning $($root.Item.FullName)"
     try { Assert-CleanupPath $root.Item.FullName } catch { Write-Warning $_.Exception.Message; continue }
@@ -820,7 +859,16 @@ foreach ($candidate in $ordered) {
                 $parent = [IO.Path]::GetDirectoryName($parent)
             }
         }
-        if ($candidate.Retained) {
+        if ($candidate.Category -eq 'git-temporary-duplicate') {
+            Assert-CleanupPath $candidate.Retained
+            if ((Get-FileHash -LiteralPath $candidate.Retained -Algorithm SHA256).Hash -ne $candidate.Digest -or
+                (Get-FileHash -LiteralPath $candidate.Path -Algorithm SHA256).Hash -ne $candidate.Digest) {
+                Write-Warning "Duplicate pack bytes changed; preserving $($candidate.Path)"
+                continue
+            }
+            # Hashing large packs takes time; recheck producer activity afterwards
+            Assert-CleanupIdle
+        } elseif ($candidate.Retained) {
             $replacement = Get-CleanupTreeInfo $candidate.Retained -AllowBuildDependencies
             if ($replacement.Latest -lt $candidate.Latest) {
                 Write-Warning "Newer retained build is no longer available; preserving $($candidate.Path)"
@@ -828,7 +876,7 @@ foreach ($candidate in $ordered) {
             }
         }
         $current = Get-CleanupTreeInfo $candidate.Path -AllowBuildDependencies:($candidate.Category -in @('superseded-build', 'temporary')) `
-            -IncludeCreationTime:($candidate.Category -like 'regression-payload*' -or $candidate.Category -eq 'temporary') `
+            -IncludeCreationTime:($candidate.Category -like 'regression-payload*' -or $candidate.Category -in @('temporary', 'git-temporary-duplicate')) `
             -IgnoreRootWriteTime:($candidate.Category -eq 'regression-payload-group') `
             -AllowEmulatorLockMarkers:($candidate.Category -eq 'temporary')
         if ($current.Latest -ne $candidate.Latest -or $current.Bytes -ne $candidate.Bytes -or

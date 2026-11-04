@@ -510,6 +510,57 @@ try {
     Assert-CleanupExists 'android/app/build/emulator/cache.bin'
     Assert-CleanupExists 'android/app/build/emulator/config.ini'
 
+    # Git work files are eligible only with an old byte-identical canonical copy
+    $packName = 'pack-' + ('a' * 40)
+    $duplicate = ".git/objects/pack/.tmp-123-$packName.pack"
+    $canonical = ".git/objects/pack/$packName.pack"
+    $unmatched = '.git/objects/pack/tmp_pack_unmatched'
+    $recent = '.git/objects/pack/tmp_pack_recent'
+    $different = '.git/objects/pack/tmp_pack_different'
+    foreach ($path in @($duplicate, $canonical, $unmatched, $recent, $different)) { New-CleanupFixtureFile $path }
+    [IO.File]::WriteAllText((Join-Path $fixture $unmatched), 'no canonical counterpart')
+    [IO.File]::WriteAllText((Join-Path $fixture $different), 'SYNTHETIC CLEANUP TEST')
+    foreach ($path in @($duplicate, $unmatched, $different)) {
+        $file = Get-Item -LiteralPath (Join-Path $fixture $path)
+        $file.LastWriteTimeUtc = $old
+        $file.CreationTimeUtc = $old
+    }
+    & $helper -RepositoryRoot $fixture -GitTemporaryPacksOnly -Preview
+    & $helper -RepositoryRoot $fixture -GitTemporaryPacksOnly -WhatIf
+    & $helper -RepositoryRoot $fixture -GitTemporaryPacksOnly -ExcludePaths $duplicate
+    Assert-CleanupExists $duplicate
+    $state.Busy = $true
+    $state.BusyName = 'git.exe'
+    $blocked = $false
+    try { & $helper -RepositoryRoot $fixture -GitTemporaryPacksOnly -BusyWaitSeconds 0 } catch {
+        $blocked = $_.Exception.Message -match 'processes are active'
+        if (-not $blocked) { throw }
+    }
+    if (-not $blocked) { throw 'Active Git did not block temporary-pack cleanup' }
+    $state.Busy = $false
+    # Change canonical bytes after discovery; preserve the duplicate despite equal length
+    $state.IdleChecks = 0
+    $state.OnIdle = {
+        if ($state.IdleChecks -eq 2) { [IO.File]::WriteAllText((Join-Path $fixture $canonical), 'SYNTHETIC CLEANUP TEST') }
+    }
+    try {
+        & $helper -RepositoryRoot $fixture -GitTemporaryPacksOnly
+        Assert-CleanupExists $duplicate
+    } finally { $state.OnIdle = $null }
+    [IO.File]::WriteAllText((Join-Path $fixture $canonical), 'synthetic cleanup test')
+    $state.Busy = $true
+    $state.BusyName = 'qemu-system-x86_64.exe'
+    $state.BusyCommandLine = 'emulator -avd ActiveTest'
+    & $helper -RepositoryRoot $fixture -GitTemporaryPacksOnly -PreserveEmulatorWorkspaces -BusyWaitSeconds 0
+    $state.Busy = $false
+    $state.BusyName = 'ninja.exe'
+    $state.BusyCommandLine = 'synthetic active build'
+    Assert-CleanupExists $duplicate $false
+    foreach ($path in @($canonical, $unmatched, $recent, $different)) { Assert-CleanupExists $path }
+    Assert-CleanupExists 'temp/active-emulator/avd/userdata-qemu.img.qcow2'
+    # Synthetic pack bytes are not real Git objects: remove only these fixture files
+    foreach ($path in @($canonical, $unmatched, $recent, $different)) { Remove-Item -LiteralPath (Join-Path $fixture $path) }
+
     # Real registered worktrees use their OWN index, never the enclosing repository's
     Add-Content -LiteralPath (Join-Path $fixture '.gitignore') -Value "android/app/build/`nandroid/extra/build/`n!build-dirty/`nbuild-dirty/*`n!build-dirty/notes.txt"
     New-CleanupFixtureFile 'android/app/build.gradle.kts'
