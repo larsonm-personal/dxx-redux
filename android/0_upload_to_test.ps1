@@ -1,8 +1,8 @@
 #!/usr/bin/env pwsh
 # Menu for Play Store uploads, GitHub releases, or both
 #
-# Computes versionCode = commitCount*10 + rev, where rev auto-increments
-# if Play already has a version from the same commit count on any track or bundle.
+# Uses commitCount*10, or the highest Play version code + 1 when that is larger.
+# This keeps uploads increasing after rebases and squash merges shorten Git history.
 #
 # Usage:
 #   .\0_upload_to_test.ps1                     # Menu; Enter selects Play Store
@@ -59,15 +59,15 @@ function Invoke-PlayBuildAndUpload {
     . "$PSScriptRoot\helpers\playstore-auth.ps1"
 
     # ---------------------------------------------------------------
-    #  Query Play tracks and uploaded bundles to determine version code with rev
+    #  Query Play tracks and uploaded bundles to determine the version code
     # ---------------------------------------------------------------
 
     $commitCountText = git -C $repoRoot rev-list --count HEAD
     if ($LASTEXITCODE -ne 0) { throw 'Cannot read the Git commit count' }
-    $commitCount = [int]$commitCountText.Trim()
+    $commitCount = [long]$commitCountText.Trim()
     Write-Host "Git commit count: $commitCount"
 
-    $rev = 0
+    $versionCode = $commitCount * 10
     if ($BuildOnly) {
         Write-Host "Build-only mode: skipping Play Store version query and upload"
     } else {
@@ -98,28 +98,14 @@ function Invoke-PlayBuildAndUpload {
                 -Headers $headers -TimeoutSec 10 | Out-Null
         }
 
-        # Compute rev
-        if ($deployedCode -gt 0) {
-            $deployedCommit = [math]::Floor($deployedCode / 10)
-            $deployedRev = $deployedCode % 10
-            Write-Host "Deployed version: $deployedCode (commit $deployedCommit, rev $deployedRev)"
-
-            if ($deployedCommit -eq $commitCount) {
-                $rev = $deployedRev + 1
-                if ($rev -gt 9) {
-                    Write-Error "Deployed version is already at rev 9 for commit $commitCount -- commit new changes first"
-                }
-                Write-Host "Same commit count -- bumping rev to $rev"
-            } elseif ($deployedCommit -gt $commitCount) {
-                throw "Play already has a newer commit count ($deployedCommit) than local ($commitCount); update the checkout before publishing"
-            }
-        } else {
-            Write-Host "No deployed version on track '$TrackName'"
-        }
+        Write-Host "Highest Play version code: $deployedCode"
+        $versionCode = [math]::Max($versionCode, [long]$deployedCode + 1)
     }
 
-    $versionCode = $commitCount * 10 + $rev
-    Write-Host "Version code: $versionCode (commit $commitCount, rev $rev)"
+    if ($versionCode -lt 1 -or $versionCode -gt 2100000000) {
+        throw "Version code $versionCode is outside the supported Android range (1..2100000000)"
+    }
+    Write-Host "Version code: $versionCode (Git commit count: $commitCount)"
     Write-Host ""
 
     # Build both local artifacts; only the AAB is uploaded

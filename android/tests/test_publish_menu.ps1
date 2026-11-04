@@ -71,7 +71,7 @@ function Read-Host {
 function git {
     Record-PublishEvent @{ event = 'git' }
     $global:LASTEXITCODE = 0
-    return '100'
+    return [string]$global:publishMenuConfig.commitCount
 }
 function Invoke-RestMethod {
     param($Uri, $Method, $Headers, $ContentType, $Body, $TimeoutSec)
@@ -101,7 +101,7 @@ $cases = @(
     @{ name = 'closed-build-only'; parameters = @{ Action = '4'; BuildOnly = $true }; order = 'git,build' },
     @{ name = 'closed-wrong-track'; parameters = @{ Action = '4'; TrackName = 'production' }; order = ''; exit = 1 },
     @{ name = 'closed-debug'; parameters = @{ Action = '4'; BuildType = '3' }; order = ''; exit = 1 },
-    @{ name = 'newer-remote'; parameters = @{ Action = '4' }; deployedCode = 1010; order = 'git,auth,rest,track,rest'; exit = 1 },
+    @{ name = 'newer-remote'; parameters = @{ Action = '4' }; deployedCode = 1010; expectedCode = 1011; order = 'git,auth,rest,track,rest,build,deploy' },
     @{ name = 'release-only'; responses = @('2', '1.2.0'); noCredentials = $true; order = 'prompt,prompt,release' },
     @{ name = 'both'; responses = @('3', '1.2.0'); order = 'prompt,prompt,git,auth,rest,track,rest,build,deploy,release' },
     @{ name = 'invalid-choices'; responses = @('oops', '5', '3', '', 'v1.2.0', '01.2.0', '1.2.0-rc.1'); order = 'prompt,prompt,prompt,prompt,prompt,prompt,prompt,git,auth,rest,track,rest,build,deploy,release' },
@@ -117,11 +117,16 @@ $cases = @(
     @{ name = 'release-fails'; parameters = @{ Action = '3'; ReleaseVersion = '1.2.0' }; failure = 'release'; order = 'git,auth,rest,track,rest,build,deploy,release'; exit = 1 },
     @{ name = 'invalid-version'; parameters = @{ Action = '3'; ReleaseVersion = 'v1.2.0' }; order = ''; exit = 1 },
     @{ name = 'wrong-destination'; parameters = @{ Action = '1'; ReleaseVersion = '1.2.0' }; order = ''; exit = 1 },
-    @{ name = 'rev-limit'; parameters = @{ Action = '3'; ReleaseVersion = '1.2.0' }; deployedCode = 1009; order = 'git,auth,rest,track,rest'; exit = 1 }
+    @{ name = 'rev-limit'; parameters = @{ Action = '3'; ReleaseVersion = '1.2.0' }; deployedCode = 1009; expectedCode = 1010; order = 'git,auth,rest,track,rest,build,deploy,release' },
+    @{ name = 'squashed-history'; parameters = @{ Action = '1' }; commitCount = 2900; deployedCode = 29350; expectedCode = 29351; order = 'git,auth,rest,track,rest,build,deploy' },
+    @{ name = 'floor-carry'; parameters = @{ Action = '1' }; commitCount = 2900; deployedCode = 29359; expectedCode = 29360; order = 'git,auth,rest,track,rest,build,deploy' },
+    @{ name = 'git-ahead'; parameters = @{ Action = '1' }; deployedCode = 999; expectedCode = 1000; order = 'git,auth,rest,track,rest,build,deploy' },
+    @{ name = 'first-upload'; parameters = @{ Action = '1' }; deployedCode = 0; expectedCode = 1000; order = 'git,auth,rest,track,rest,build,deploy' },
+    @{ name = 'android-version-limit'; parameters = @{ Action = '1' }; deployedCode = 2100000000; order = 'git,auth,rest,track,rest'; exit = 1 }
 )
 foreach ($case in $cases) {
-    $config = @{ parameters = @{}; responses = @(); failure = ''; deployedCode = 1002; noCredentials = $false }
-    foreach ($key in @('parameters', 'responses', 'failure', 'deployedCode', 'noCredentials')) {
+    $config = @{ parameters = @{}; responses = @(); failure = ''; deployedCode = 1002; commitCount = 100; noCredentials = $false }
+    foreach ($key in @('parameters', 'responses', 'failure', 'deployedCode', 'commitCount', 'noCredentials')) {
         if ($case.ContainsKey($key)) { $config[$key] = $case[$key] }
     }
     if ($config.parameters.Action -in @('2', '3') -and $config.parameters.ReleaseVersion) {
@@ -151,12 +156,12 @@ foreach ($case in $cases) {
     $deploy = @($events | Where-Object event -EQ 'deploy')
     $release = @($events | Where-Object event -EQ 'release')
     if ($build.Count) {
-        $expectedType = if ($config.parameters.ContainsKey('BuildType')) { $config.parameters.BuildType } elseif ($case.name -like 'closed-*') { '2' } else { '3' }
-        $expectedCode = if ($config.parameters.BuildOnly) { '1000' } else { '1003' }
+        $expectedType = if ($config.parameters.ContainsKey('BuildType')) { $config.parameters.BuildType } elseif ($config.parameters.Action -eq '4' -or $case.name -like 'closed-*') { '2' } else { '3' }
+        $expectedCode = if ($case.ContainsKey('expectedCode')) { $case.expectedCode } elseif ($config.parameters.BuildOnly) { '1000' } else { '1003' }
         if ($build[0].buildType -ne $expectedType -or $build[0].versionCode -ne $expectedCode) { throw "$($case.name) lost build type or Play revision" }
     }
     if ($deploy.Count) {
-        $expectedTrack = if ($config.parameters.ContainsKey('TrackName')) { $config.parameters.TrackName } elseif ($case.name -like 'closed-*') { 'alpha' } else { 'internal' }
+        $expectedTrack = if ($config.parameters.ContainsKey('TrackName')) { $config.parameters.TrackName } elseif ($config.parameters.Action -eq '4' -or $case.name -like 'closed-*') { 'alpha' } else { 'internal' }
         if ($deploy[0].path -ne $build[0].path -or $deploy[0].track -ne $expectedTrack) { throw "$($case.name) deployed the wrong AAB or track" }
     }
     if ($release.Count) {

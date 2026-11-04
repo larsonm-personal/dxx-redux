@@ -8,7 +8,7 @@
 
 param(
     [ValidateSet('1', '2', '3')][string]$BuildType,
-    [string]$VersionCode,   # Override version code (commit_count*10+rev). Default: commit_count*10
+    [string]$VersionCode,   # Version selected by the upload wrapper. Default: commit_count*10
     [string]$OutputPath
 )
 
@@ -85,7 +85,7 @@ $buildDate = $builtAtUtc.ToString('yyyy-MM-dd')
 $buildTime = $builtAtUtc.ToString('HH:mm')
 Write-Host ""
 Write-Host "commitCount: $commitCount (# of git commits)"
-Write-Host "versionCode: $versionCode (commitCount*10 + rev)"
+Write-Host "versionCode: $versionCode"
 Write-Host "gitHash:     $gitHash"
 Write-Host "buildDate:   $buildDate"
 Write-Host "buildTime:   $buildTime UTC"
