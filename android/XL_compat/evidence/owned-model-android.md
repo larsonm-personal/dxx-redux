@@ -65,3 +65,41 @@ Evidence: `temp/xl-overnight-20261103/current-hub-29430`,
 directory. Failed harness attempts remain retained and are not engine defects.
 See [rendered GuideBot](rendered-guidebot.md) for the full-model route's correctly
 unsupported companion activation and separate ordinary-player evidence.
+
+## Combined original Pumo UI qualification
+
+The optional `test_xl_addon_import.ps1 -PumoUiImport` mode imports the unchanged
+442181363-byte `pmines_v11.7z` and original raw XL camera/effects through the
+production general-picker callback. It then launches the canonical 36-step hub
+probe using the imported mission owner. The host protects the whole default
+retail set, preferences, native profiles and mission mounts and verifies every
+restored file hash. Instrumentation supplies document URIs; system-picker file
+browsing remains outside this test.
+
+Two setup failures are retained separately: the generic launcher selected the
+default set instead of the first cloned test set, and a later default-set launch
+ran out of space while copying the full model view. On this Android image,
+SELinux denies hard links, so mission publication uses its existing private-copy
+fallback. The launcher now checks the existing 50 MiB free-space reserve before
+each fallback copy, retaining the resource name in the error and transactional
+temporary-directory cleanup. It does not weaken ownership or use mutable import
+cache paths as native mounts.
+
+The protected runner streams its verified backup to the host before mutation
+and removes only its hash-verified picker input after successful import. Original
+host resources and the imported private archive remain intact. These changes
+remove test overhead from the small disposable device volume; users still need
+space for the original archive, extracted cache and private native resource view.
+The earlier staging/import failures are not credited as gameplay passes.
+
+The UI-imported mission on universal 29440 completes all 36 gameplay steps in
+113933 ms, run `cb76cdf1ca0a48a082ea76bd72dca748`. Native preparation takes 59
+seconds on the owned software emulator; its existing software-startup budget is
+required to avoid a premature 30-second harness restart. Native state retains
+`mission_asset_owner = mod/pmines_v11.7z`, generation 1. `mounted_mods` is empty
+because it reports legacy mounts, not this catalog view. The original host
+postcondition incorrectly required that legacy list, so the wrapper reports a
+harness failure after the native PASS. Its corrected postcondition checks the
+exact catalog owner/generation. All protected restoration hashes match. Evidence
+is retained in `temp/xl-overnight-20261103/pumo-ui-native-pass-29440`; qualification
+of the corrected complete wrapper on a committed candidate remains required.
