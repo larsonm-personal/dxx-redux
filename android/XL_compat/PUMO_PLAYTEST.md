@@ -246,6 +246,13 @@ It supersedes historical substituted-resource finale evidence for these bounded
 checks, while leaving the other original14-level branch and connected traversal
 unqualified. No new APK or phone qualification is implied.
 
+The [original Multiverse branch](evidence/original-multiverse.md) adds78warm/
+22fresh-process steps on the same retained29471: repeated normal hub entry,
+earned red key/keyed door, reactor combat, all17boosts, the authored99-second
+escape countdown, normal level3 entry and destination save/load. Original assets
+and exact protected profile restoration are preserved; fixed approaches and the
+remaining14-level scope stay explicit.
+
 ## Boundaries and feedback
 
 - Fixed local approaches and bounded escape flights do not qualify full human

@@ -1,0 +1,177 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_pog_runtime",
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Load Game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "[quick] level 2",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "game_window_is_front": true,
+            "current_level_num": 2,
+            "position.segment": 341,
+            "player.has_red_key": true,
+            "cheats_enabled": false,
+            "player.invulnerable": false,
+            "player_dead": false,
+            "xl_pilot.remaining_objectives": 0,
+            "reactor_countdown.active": true,
+            "reactor_countdown.total_seconds": 90,
+            "xl_pilot.wall_triggers.0.operated": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1.0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "xl_pilot.wall_triggers.0.operated": true,
+            "xl_pilot.boosts.0.owner": 0,
+            "xl_pilot.boost_player_locked": true,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0.0,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "menu.subtitle": {
+                "contains": "Level 2 Complete",
+            },
+        },
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.invulnerable": false,
+            "player.has_red_key": true,
+            "xl_pilot.remaining_objectives": 0,
+            "xl_pilot.wall_triggers.18.operated": true,
+            "xl_pilot.wall_triggers.18.actor": 0,
+            "xl_pilot.wall_triggers.18.shot": 0,
+            "xl_pilot.wall_triggers.18.value": 196608,
+            "reactor_countdown.total_seconds": 99,
+            "xl_pilot.wall_triggers.0.operated": true,
+            "xl_pilot.wall_triggers.1.operated": true,
+            "xl_pilot.wall_triggers.2.operated": true,
+            "xl_pilot.wall_triggers.3.operated": true,
+            "xl_pilot.wall_triggers.4.operated": true,
+            "xl_pilot.wall_triggers.5.operated": true,
+            "xl_pilot.wall_triggers.6.operated": true,
+            "xl_pilot.wall_triggers.7.operated": true,
+            "xl_pilot.wall_triggers.8.operated": true,
+            "xl_pilot.wall_triggers.9.operated": true,
+            "xl_pilot.wall_triggers.10.operated": true,
+            "xl_pilot.wall_triggers.11.operated": true,
+            "xl_pilot.wall_triggers.12.operated": true,
+            "xl_pilot.wall_triggers.13.operated": true,
+            "xl_pilot.wall_triggers.14.operated": true,
+            "xl_pilot.wall_triggers.15.operated": true,
+            "xl_pilot.wall_triggers.16.operated": true,
+            "xl_pilot.wall_triggers.17.operated": true,
+            "xl_pilot.wall_triggers.19.operated": true,
+            "xl_pilot.wall_triggers.20.operated": true,
+            "xl_pilot.wall_triggers.21.operated": true,
+        },
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "action": "key",
+        "key": "enter",
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 60000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "game_window_is_front": true,
+            "current_level_num": 3,
+            "position.segment": 72,
+            "player_dead": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1000,
+    },
+    {
+        "action": "face_view",
+        "segment": 0,
+        "side": 0,
+        "distance": 8,
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "current_level_num": 3,
+            "position.segment": 72,
+            "player_dead": false,
+            "xl_pilot.runtime_active": true,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "cheats_enabled": false,
+            "player.invulnerable": false,
+        },
+    },
+    {
+        "action": "introspect",
+    },
+]
