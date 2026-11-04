@@ -55,6 +55,42 @@ class XlPrivateTests(unittest.TestCase):
                 return  # Symlink creation may require elevated Windows privileges
             self.assertIsNone(retail.xl_stage(progress))
 
+    def test_native_failure_diagnostics_exclude_private_junit_content(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            report = Path(temporary) / "original-ctest.xml"
+            root = ET.Element("testsuite")
+            for name, status, child in (
+                ("xl_pilot_archive", "run", None),
+                ("xl_fog_gpu", "fail", "failure"),
+                ("xl_pog_gpu", "notrun", "skipped"),
+                ("PRIVATE_NAME", "fail", "failure"),
+            ):
+                case = ET.SubElement(root, "testcase", name=name, status=status)
+                ET.SubElement(case, "system-out").text = "PRIVATE_OUTPUT"
+                if child:
+                    ET.SubElement(case, child, message="PRIVATE_MESSAGE")
+            ET.ElementTree(root).write(report)
+            expected = ["xl_fog_gpu", "xl_pog_gpu"]
+            self.assertEqual(retail.xl_native_failures(report), expected)
+            row = {"id": "host-profile:retail-xl-fast", "xl_native_failures": expected + ["PRIVATE_NAME", {}]}
+            clean = retail.public_diagnostics(row)
+            self.assertEqual(clean["xl_native_failures"], expected)
+            self.assertNotIn("PRIVATE", json.dumps(clean))
+            self.assertEqual(retail.safe_xl_native_failures("xl_fog_gpu"), [])
+            self.assertEqual(retail.safe_xl_native_failures(["xl_fog_gpu"] * 1000), [])
+            for bad in (b"broken", b"<!DOCTYPE testsuite><testsuite/>", b"x" * (16 * 1024 * 1024 + 1)):
+                report.write_bytes(bad)
+                self.assertEqual(retail.xl_native_failures(report), [])
+            report.unlink()
+            self.assertEqual(retail.xl_native_failures(report), [])
+            other = Path(temporary) / "private.xml"
+            ET.ElementTree(root).write(other)
+            try:
+                report.symlink_to(other)
+            except OSError:
+                return
+            self.assertEqual(retail.xl_native_failures(report), [])
+
     def test_original_pilot_inventory_remains_complete_and_unqualified(self):
         levels = [
             {"name": f"fixture-{i}.rl2", "inventory": {"status": "inspection_only", "playable": False}}

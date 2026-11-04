@@ -53,6 +53,54 @@ def xl_stage(path):
         return None
 
 
+def xl_native_failures(path):
+    """Extract allowlisted test identities, never private JUnit output."""
+    import xml.etree.ElementTree as ET
+    from run_xl_originals import CORE_TESTS, FAST_TESTS, EXPERIMENTAL_TESTS
+
+    path = Path(path)
+    try:
+        if (
+            any(p.is_symlink() for p in (path, *path.parents))
+            or not path.is_file()
+            or path.stat().st_size > 16 * 1024 * 1024
+        ):
+            return []
+        with path.open("rb") as stream:
+            data = stream.read(16 * 1024 * 1024 + 1)
+        if len(data) > 16 * 1024 * 1024:
+            return []
+        text = data.decode("utf-8")
+        if "<!DOCTYPE" in text or "<!ENTITY" in text:
+            return []
+        cases = ET.fromstring(text).iter("testcase")
+        allowed = CORE_TESTS | FAST_TESTS | EXPERIMENTAL_TESTS
+        return sorted(
+            {
+                case.get("name")
+                for case in cases
+                if case.get("name") in allowed
+                and (
+                    case.find("failure") is not None
+                    or case.find("error") is not None
+                    or case.find("skipped") is not None
+                    or case.get("status") != "run"
+                )
+            }
+        )
+    except (OSError, ValueError, ET.ParseError):
+        return []
+
+
+def safe_xl_native_failures(value):
+    from run_xl_originals import CORE_TESTS, FAST_TESTS, EXPERIMENTAL_TESTS
+
+    allowed = CORE_TESTS | FAST_TESTS | EXPERIMENTAL_TESTS
+    if not isinstance(value, list) or len(value) > len(allowed):
+        return []
+    return sorted({name for name in value if isinstance(name, str) and name in allowed})
+
+
 def trusted_context(env=None):
     env = os.environ if env is None else env
     return (
@@ -349,6 +397,9 @@ def public_diagnostics(value):
         stage = value.get("xl_stage")
         if isinstance(stage, str) and stage in XL_STAGES:
             clean["xl_stage"] = stage
+        failures = safe_xl_native_failures(value.get("xl_native_failures"))
+        if failures:
+            clean["xl_native_failures"] = failures
         counts = value.get("xl_checks", {})
         if isinstance(counts, dict) and all(
             type(counts.get(key)) is int and 0 <= counts[key] <= 1000
