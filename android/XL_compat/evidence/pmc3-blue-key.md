@@ -28,7 +28,7 @@ or mission edit is used. The remote-door corridor is one continuous flight.
   then normal fire and flight cross the blue door. Door animation bits may differ
   while unlocked, so the saved unlock checks admit flags 16 through 23.
 
-## Evidence and limits
+## Historical substituted-resource evidence and limits
 
 Exact APK source 8b80ef220dbda2d9481c21611084ef21f5413808, version 28810,
 SHA-256 89df3369e09897fbce528d6ae4825c7d9c58d02e30ca55741e99c3347fc49069.
@@ -50,7 +50,7 @@ device identity with automatic recovery disabled.
 Gold/red-key routes, full connected traversal, human controls and physical ARM
 devices remain outside this scenario. These checks require no runtime fix.
 
-## Protected qualification
+## Historical substituted-resource protected qualification
 
 The exact APK passed 325/325 warm steps in 429.243 seconds and 14/14
 fresh-process steps in 46.895 seconds. PIDs 16488 and 18861 differ. Both
@@ -59,3 +59,25 @@ in both runs, a narrow survival margin that does not qualify robust combat or
 the next encounter. Before/after profile and resource hash lists match, SHA-256
 671dd638ec9ed2de34f0949bdc7d8307636a1dcd04bb63abebf6d31e9eec296c.
 Receipts: temp/xl-original-pmc3-blue. The owner restored the starting profile.
+
+## Full-original firing approach and key access, November 4 2026
+
+With the original PyroGL ship and gunpoints, the old centered room956 shot missed
+switch7 until just after its10-second timeout. The player remained alive and a
+normal player shot activated it in the subsequent failure capture; that attempt
+is not a pass. No trigger-semantic defect was established.
+
+The original panel at955/3 spans x=-5..5,z=-365..-355 on y=-473.3207. Original
+ASE gunpoints0/1 have lateral offsets-4/+4. The revised exterior room956 pose is
+(-18,-468.3207,-364),pitch2300,heading16384: one normal barrel ray reaches near
+the panel center rather than its narrow edge. No placement in thin cap994,
+trigger dispatch, timeout relaxation, collider change or mission edit is used.
+Source geometry/aim audit is local pmc3-panel7-aim-audit.json under
+`temp/xl-overnight-20261104`; it is a geometric estimate, not gameplay proof.
+
+Actual normal firing in the successful full-original392-step gold-key route
+activates switch7 in299ms, then passes its actor0/shot1 and door-unlock assertions.
+The route earns the original blue key by flight, saves/loads it, and crosses the
+blue-key door normally before proceeding to gold. See [the exact combined
+392/16 qualification](pmc3-gold-key.md). Cold gold checks retain both earned keys
+and repeat gold-door flight; a separate cold blue-door flight is not newly claimed.
