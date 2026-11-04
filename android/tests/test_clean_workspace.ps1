@@ -8,6 +8,7 @@ $fixture = Join-Path $repoRoot "temp/cleanup-fixture-$([guid]::NewGuid().ToStrin
 $old = [DateTime]::UtcNow.AddDays(-90)
 $state = [pscustomobject]@{ Answers = [Collections.Generic.Queue[string]]::new(); Prompts = 0; Busy = $false; BusyName = 'ninja.exe'; BusyCommandLine = 'synthetic active build'; OnAnswer = $null; OnIdle = $null; IdleChecks = 0 }
 $heldLock = $null
+$outsideWorktree = $null
 
 ${function:Read-Host} = {
     param([string]$Prompt)
@@ -181,6 +182,25 @@ try {
     Assert-CleanupExists 'server/target/release/incremental' $false
     Assert-CleanupExists 'server/target/debug/server.exe'
     Assert-CleanupExists 'server/target/debug/deps/library.rlib'
+    # Custom target roots and target triples retain binaries but release incremental state
+    foreach ($path in @('server/target/security-auth/debug/incremental/session/work.o',
+            'server/target/linux-musl/x86_64-unknown-linux-musl/release/incremental/session/work.o',
+            'server/target/security-auth/debug/server.exe',
+            'server/target/security-auth/debug/deps/library.rlib',
+            'server/target/excluded/debug/incremental/session/work.o',
+            'server/target/custom/nested-repo/.git/config',
+            'server/target/custom/nested-repo/debug/incremental/session/work.o')) {
+        New-CleanupFixtureFile $path
+    }
+    & $helper -RepositoryRoot $fixture -BuildsOnly -Preview
+    Assert-CleanupExists 'server/target/security-auth/debug/incremental/session/work.o'
+    & $helper -RepositoryRoot $fixture -BuildsOnly -ExcludePaths 'server/target/excluded'
+    Assert-CleanupExists 'server/target/security-auth/debug/incremental' $false
+    Assert-CleanupExists 'server/target/linux-musl/x86_64-unknown-linux-musl/release/incremental' $false
+    Assert-CleanupExists 'server/target/security-auth/debug/server.exe'
+    Assert-CleanupExists 'server/target/security-auth/debug/deps/library.rlib'
+    Assert-CleanupExists 'server/target/excluded/debug/incremental/session/work.o'
+    Assert-CleanupExists 'server/target/custom/nested-repo/debug/incremental/session/work.o'
     New-CleanupFixtureFile 'server/target/debug/incremental/session/work.o'
     New-CleanupFixtureFile 'server/target/debug/incremental/session/producer.lock'
     $cacheLock = [IO.File]::Open((Join-Path $fixture 'server/target/debug/incremental/session/producer.lock'), 'Open', 'Read', 'None')
@@ -435,7 +455,8 @@ try {
     & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -BuildGraceHours 24 -PreserveEmulatorWorkspaces -BusyWaitSeconds 0 -ExcludePaths 'android/app/.cxx/Recovery/keep0000'
     Assert-CleanupExists 'android/app/.cxx/Recovery/old00000' $false
     Assert-CleanupExists 'android/app/build' $false
-    Assert-CleanupExists 'server/target' $false
+    Assert-CleanupExists 'server/target/debug/deps/old.bin' $false
+    Assert-CleanupExists 'server/target/custom/nested-repo/.git/config'
     Assert-CleanupExists 'android/app/build.gradle.kts'
     Assert-CleanupExists 'server/Cargo.toml'
     Assert-CleanupExists 'android/app/.cxx/Recovery/new00000/arm64-v8a/output.o'
@@ -450,7 +471,99 @@ try {
     if (-not $blocked) { throw 'Zero build retention ignored an active native build' }
     $state.Busy = $false
 
-    Write-Host 'PASS: unattended recursive temp cleanup, safety, build generations, and payload retention'
+    # A preserved APK or tracked note must not strand unrelated generated intermediates
+    foreach ($path in @('android/app/build/outputs/apk/current.apk',
+            'android/app/build/intermediates/disposable.bin',
+            'android/app/build/protected.txt')) { New-CleanupFixtureFile $path }
+    & git -C $fixture add -f android/app/build/protected.txt
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot protect generated-tree note' }
+    & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -ExcludePaths 'android/app/build/outputs/apk'
+    Assert-CleanupExists 'android/app/build/intermediates' $false
+    Assert-CleanupExists 'android/app/build/outputs/apk/current.apk'
+    Assert-CleanupExists 'android/app/build/protected.txt'
+    New-CleanupFixtureFile 'android/app/build/intermediates/locked.bin'
+    New-CleanupFixtureFile 'android/app/build/producer.lock'
+    $parentLock = [IO.File]::Open((Join-Path $fixture 'android/app/build/producer.lock'), 'Open', 'Read', 'None')
+    try {
+        & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -ExcludePaths 'android/app/build/outputs/apk'
+        Assert-CleanupExists 'android/app/build/intermediates/locked.bin'
+    } finally { $parentLock.Dispose() }
+    $lateLock = @{ Stream = $null }
+    $state.IdleChecks = 0
+    $state.OnIdle = {
+        if ($state.IdleChecks -eq 2) {
+            $lateLock.Stream = [IO.File]::Open((Join-Path $fixture 'android/app/build/producer.lock'), 'Open', 'Read', 'None')
+        }
+    }
+    try {
+        & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -ExcludePaths 'android/app/build/outputs/apk'
+        Assert-CleanupExists 'android/app/build/intermediates/locked.bin'
+    } finally {
+        $state.OnIdle = $null
+        if ($lateLock.Stream) { $lateLock.Stream.Dispose() }
+    }
+    foreach ($path in @('android/app/build/emulator/userdata-qemu.img',
+            'android/app/build/emulator/cache.bin')) { New-CleanupFixtureFile $path }
+    [IO.File]::WriteAllText((Join-Path $fixture 'android/app/build/emulator/config.ini'), "image.sysdir.1=system-images/test/`n")
+    & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -PreserveEmulatorWorkspaces -ExcludePaths 'android/app/build/outputs/apk'
+    Assert-CleanupExists 'android/app/build/emulator/userdata-qemu.img'
+    Assert-CleanupExists 'android/app/build/emulator/cache.bin'
+    Assert-CleanupExists 'android/app/build/emulator/config.ini'
+
+    # Real registered worktrees use their OWN index, never the enclosing repository's
+    Add-Content -LiteralPath (Join-Path $fixture '.gitignore') -Value "android/app/build/`nandroid/extra/build/`n!build-dirty/`nbuild-dirty/*`n!build-dirty/notes.txt"
+    New-CleanupFixtureFile 'android/app/build.gradle.kts'
+    New-CleanupFixtureFile 'android/extra/build.gradle.kts'
+    & git -C $fixture add .gitignore android/app/build.gradle.kts android/extra/build.gradle.kts
+    & git -C $fixture -c user.name=CleanupFixture -c user.email=fixture@example.invalid -c core.hooksPath=unused-hooks commit -qm fixture
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot seed linked-worktree fixture' }
+    $linked = Join-Path $fixture 'temp/linked worktree [1]'
+    & git -C $fixture worktree add --detach $linked HEAD
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot create linked-worktree fixture' }
+    foreach ($path in @('temp/linked worktree [1]/android/app/build/outputs/apk/current.apk',
+            'temp/linked worktree [1]/android/app/build/intermediates/disposable.bin',
+            'temp/linked worktree [1]/android/app/build/tracked.txt',
+            'temp/linked worktree [1]/android/extra/build/cache.bin',
+            'temp/linked worktree [1]/build-dirty/notes.txt',
+            'temp/linked worktree [1]/build-dirty/output.o')) { New-CleanupFixtureFile $path }
+    [IO.File]::WriteAllText((Join-Path $linked 'build-dirty/CMakeCache.txt'),
+        "CMAKE_HOME_DIRECTORY:INTERNAL=$linked`nCMAKE_GENERATOR:INTERNAL=Ninja`n")
+    & git -C $linked add -f android/app/build/tracked.txt
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot stage linked-worktree protection' }
+    $outsideWorktree = "$fixture-outside"
+    & git -C $fixture worktree add --detach $outsideWorktree HEAD
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot create out-of-workspace worktree fixture' }
+    $outsideCache = Join-Path $outsideWorktree 'android/app/build/outputs/outside.bin'
+    New-Item -ItemType Directory -Path (Split-Path $outsideCache) -Force | Out-Null
+    [IO.File]::WriteAllText($outsideCache, 'outside workspace')
+    & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0
+    Assert-CleanupExists 'temp/linked worktree [1]/android/extra/build/cache.bin'
+    & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -IncludeWorktreeBuilds -Preview
+    Assert-CleanupExists 'temp/linked worktree [1]/android/extra/build/cache.bin'
+    & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -IncludeWorktreeBuilds -ExcludePaths 'temp/linked worktree [1]/android/app/build/outputs/apk'
+    Assert-CleanupExists 'temp/linked worktree [1]/android/extra/build' $false
+    Assert-CleanupExists 'temp/linked worktree [1]/android/app/build/intermediates' $false
+    Assert-CleanupExists 'temp/linked worktree [1]/android/app/build/outputs/apk/current.apk'
+    Assert-CleanupExists 'temp/linked worktree [1]/android/app/build/tracked.txt'
+    Assert-CleanupExists 'temp/linked worktree [1]/build-dirty/notes.txt'
+    Assert-CleanupExists 'temp/linked worktree [1]/.git'
+    if (-not (Test-Path -LiteralPath $outsideCache)) { throw 'Worktree cleanup escaped its workspace' }
+    New-CleanupFixtureFile 'temp/linked worktree [1]/android/extra/build/late.txt'
+    $state.IdleChecks = 0
+    $state.OnIdle = {
+        if ($state.IdleChecks -eq 2) {
+            & git -C $linked add -f android/extra/build/late.txt
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot stage late worktree protection' }
+        }
+    }
+    try {
+        & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -IncludeWorktreeBuilds -ExcludePaths 'temp/linked worktree [1]/android/app/build/outputs/apk'
+        Assert-CleanupExists 'temp/linked worktree [1]/android/extra/build/late.txt'
+    } finally { $state.OnIdle = $null }
+    & git -C $linked diff --cached --quiet
+    if ($LASTEXITCODE -ne 1) { throw 'Linked-worktree staged work was lost' }
+
+    Write-Host 'PASS: unattended recursive temp cleanup, safety, build generations, nested Cargo caches and owning-worktree protection'
 } finally {
     if ($heldLock) { $heldLock.Dispose() }
     # Validate the fixture boundary before removing only this test's own files
@@ -458,6 +571,10 @@ try {
     $resolvedFixture = [IO.Path]::GetFullPath($fixture)
     if (-not $resolvedFixture.StartsWith($expectedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
         throw 'Unexpected cleanup fixture path'
+    }
+    if ($outsideWorktree -and (Test-Path -LiteralPath $outsideWorktree)) {
+        if ([IO.Path]::GetFullPath($outsideWorktree) -ne "$resolvedFixture-outside") { throw 'Unexpected external fixture path' }
+        Remove-Item -LiteralPath $outsideWorktree -Recurse -Force
     }
     $fixtureLink = Join-Path $fixture 'android/temp/link'
     if (Test-Path -LiteralPath $fixtureLink) { [IO.Directory]::Delete($fixtureLink) }

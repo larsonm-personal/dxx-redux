@@ -384,3 +384,38 @@ tree, including logs and nested source workspaces. Temporary-file cleanup must
 preserve this tree.
 The store generator preserves all captures there, including across failed retries. Its disposable Python environment and dedicated AVD remain in
 `android/temp/store-assets-tools/`; removing those does not remove exported media.
+
+## Generated outputs in linked worktrees
+
+`-IncludeWorktreeBuilds` extends normal or `-BuildsOnly` discovery to registered
+Git worktrees contained in this checkout. It does not remove worktrees, source,
+Git metadata or unregistered nested repositories. Each worktree's own index and
+untracked non-ignored files protect its outputs; protection is refreshed before
+deleting. Worktrees outside this checkout and excluded trees are not traversed.
+This option cannot be combined with producer/scoped, temporary-only or
+payload-only cleanup.
+
+Cargo incremental caches are discovered in nested custom-target and target-triple
+layouts, such as `server/target/security-auth/debug/incremental` and
+`server/target/linux-musl/x86_64-unknown-linux-musl/debug/incremental`. Normal and
+build-only cleanup removes these caches without an age threshold while retaining
+binaries and dependency outputs. Exclusions, locks and nested repositories still
+protect their trees.
+
+For deliberate build-space recovery while keeping selected APKs:
+
+```powershell
+.\android\clean-workspace.ps1 -BuildsOnly -IncludeWorktreeBuilds -KeepBuildGenerations 0 `
+    -ExcludePaths android/build-outputs,android/app/build/outputs/apk -Preview
+.\android\clean-workspace.ps1 -BuildsOnly -IncludeWorktreeBuilds -KeepBuildGenerations 0 `
+    -ExcludePaths android/build-outputs,android/app/build/outputs/apk -TargetFreeSpaceGB 50
+```
+
+Zero retention removes reproducible build outputs and can require a full rebuild.
+In a source-declared Gradle/Cargo output tree, excluded or Git-protected children
+are retained while disposable siblings remain eligible. A producer lock in an
+ancestor still protects those split candidates, including a lock acquired after
+scanning. Preserve current scratch reports and externally published bundles with
+additional exclusions as appropriate. Free-space targets use actual volume free
+bytes (GiB); reported candidate sizes are logical and may overstate recovery for
+compressed or hard-linked files.
