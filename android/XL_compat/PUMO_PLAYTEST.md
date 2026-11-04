@@ -1,5 +1,40 @@
 # Original Pumo gameplay playtest
 
+## Current full-original candidate
+
+Use the [universal29470 APK and instructions](../../temp/pumo-mission-toggle-playtest-20261103-29470/README.md).
+Source `7d2899bf816d16f5d59e724ab3d3f144a46211a1`, package
+`com.dxxredux.app`, version29470. Six D1/D2 ARM64/ARMv7/x86_64 native IDs match.
+APK SHA256 `5ba03d7df22b8b78c25dcc99cef0d7761100b248edbc706d9f43712ed41814a3`.
+The [handoff](../../temp/pumo-mission-toggle-playtest-20261103-29470/final_handoff.md)
+retains exact stack heads, validation, pending CI, preservation and continuation.
+
+Tap the APK to update without uninstalling. In the launcher use **Select Game
+Files or Archive to Import > Pick One or More Files** for your retail D2 data,
+original `pmines_v11.7z` and your XL7z/raw camera, effects and sounds. Keep the
+mission and required XL resources enabled in the same file set under
+**Mods/Levels > Show Files**. Choose **Launch Descent2 > New game >
+XL: [-Pumo Mines-] > level1**, then a difficulty. Use a separate save slot.
+No proprietary resources or runtime archive are bundled. Original Pumo supplies
+its own HAM/VHAM/ASE/OOF models; do not substitute Vertigo definitions.
+
+29470 fixes re-enabling a valid7z mission after disabling it. Its exact owned
+Android14 x86_64 emulator checks pass original UI import and production toggles,
+68warm/39cold stock/Pumo save isolation, public damaged-archive rejection and
+62D1 lifecycle steps. Protected hashes restore. Instrumentation supplies picker
+URIs; actual system Files browsing is untested. Earlier29460 separately passes
+76warm/15cold original PMC opening gates and catalog-owned checkpoint loading.
+Approaches use fixed poses; neither run proves connected traversal or a campaign.
+
+No physical phone verification is claimed for29470. Its separate reusable
+disabled-owner gate now passes29seed/26rejection/9recovery steps, with stock save
+bytes unchanged before rollback and full profile hashes restored. Ordinary
+full-model robot/boss combat and later earned progression remain open.
+See [full-original evidence](evidence/owned-model-android.md). The historical
+Samsung hub render and older substituted-resource tests below are separate facts.
+
+## Historical29330 delivery
+
 The new [phone candidate](../../temp/pumo-user-addon-playtest-20261102/README.md)
 includes ARM64, ARMv7 and x86_64, the preserved loading/save and metadata fixes,
 and verified direct scene depth for fog, soft particles and lightning.
@@ -84,7 +119,7 @@ and all older bundles remain historical baselines. This candidate retains
 [boss weak spots](evidence/pmc-boss-combat.md), [HXM binding](evidence/hxm-gameplay.md)
 and [reactor/objective corrections](evidence/reactor-objectives.md).
 
-## Install and start playing
+## Historical29330 install instructions
 
 Tap the new APK to upgrade the existing app. Use your existing retail Descent 2
 data and complete original Pumo mission import. In the launcher, use Import Files

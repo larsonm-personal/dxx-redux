@@ -130,3 +130,67 @@ restores the opened/unlocked gate state and crosses the gate normally. Evidence:
 `temp/xl-overnight-20261103/ui-cold-29450-pass`. The next committed candidate must
 repeat this full owner to verify its own APK/source IDs. This is local approach,
 gate and model-bearing save qualification, not full campaign or phone validation.
+
+## Exact29460 and mission-toggle29470 checkpoints
+
+Universal29460 at `b939f1494fc1de31e7397e082c299a9e0b254e0d` repeats the combined
+UI/catalog PMC opening gate:76warm/15cold PASS, PID2001 ->2806, owner
+`mod/pmines_v11.7z`, with protected restoration. Its independent D1 lifecycle
+passes62steps. Retained [29460 bundle](../../../temp/pumo-owned-model-playtest-20261103-29460/README.md)
+and full receipts remain separate from later candidates.
+
+Android29460 exposed a launcher control defect: original Pumo imports enabled,
+but disabling then re-enabling its7z archive fails with a ZIP-opening exception.
+`ModManager.setEnabled` used the ZIP-only DXA scanner for mission archives.
+Mission-kind enablement now follows import's bounded, format-aware inspection
+and verified extraction-cache reuse. Resource/DXA admission and native guards
+remain unchanged. Targeted JVM controls pass15tests with1optional resource
+witness skipped. Public Android checks also reject a damaged synthetic7z after
+reload; that fixture establishes admission only, not gameplay.
+
+Exact universal29470, source `7d2899bf816d16f5d59e724ab3d3f144a46211a1`, passes
+original Pumo import and production disable/re-enable. Its imported-catalog
+stock/Pumo save isolation passes68warm steps in83025ms, run
+`0c50bda16b104f1a8d8dbd79d0bb0823`, and39cold steps in59959ms, run
+`75bcf0c35be44ee3a52bc1a7631768f6`. PID9734 ->10424; explicit Pumo/base owners
+are checked at each runtime boundary and the final owner isbase. The protection
+manifests both hash to `fef76174b8040ff8e408a7ecdd39896c79a18a5f6d5f673cf29709c73177faf2`.
+Exact D1 lifecycle62steps PASS, run `ac88c99e8e4942788809ebe8cbc60ddc`, with47
+protected files restored. Renders inspected. New owner-result attempt IDs and
+native run-ID correlation distinguish failed attempts from older PASS artifacts.
+
+The [29470 bundle](../../../temp/pumo-mission-toggle-playtest-20261103-29470/README.md)
+records all six native IDs, APK SHA, exact stack heads and CI snapshot. No phone,
+system Files browsing, full campaign or ordinary full-model robot combat claim
+follows. Disabled-owner save rejection/recovery is a separate next gate; positive
+isolation and successful re-enabling do not establish it.
+
+## Reusable disabled-owner recovery gate
+
+The existing protected UI owner now supports `-PumoUiImport -PumoUiDisabledOwner`.
+It derives a29-step seed from the first ordinary stock manual-save boundary of
+the isolation scenario. Two registered support scripts exercise normal launcher
+Load Last Save while Pumo is disabled, then after production re-enable. Both
+require fresh complete run IDs and compare the stock bank before full rollback.
+No live-stock-world preservation claim follows from this cold rejection case.
+
+On unchanged exact APK29470, the full owner passes with attempt
+`1d616ecd90be48cb95d6ce43a27d3847`: seed `b000dc28adfb410999b664526d5aff65`,
+negative26 `5626ee67cf554d1a84e247e780624bf4`, recovery9
+`8c3880b31d6e42308885c003c9a468f9`. Error: Unable to load mission 'pmines',
+in_game=false, owner=base, fitting menu. Normal recovery returns alive to Temporal
+Hub, owner=mod/pmines_v11.7z,99.5energy, no cheats. Renders inspected. The reported
+272/712ms describe only final native phases, not the complete launcher workflow.
+Stock-bank manifest SHA256 is unchanged across all three snapshots:
+`9d39b1f8b855704722b5d6859cf845dacdcb63c87373daedeb0cdc7ab9122567`.
+Protected whole-profile manifests both hash to
+`fef76174b8040ff8e408a7ecdd39896c79a18a5f6d5f673cf29709c73177faf2`.
+Receipts: temp/xl-pumo-ui-disabled-android.
+
+The first attempt stopped before native startup at the intact50MiB storage guard
+while publishing original resources. Protected restoration succeeded; retained
+failure evidence is temp/xl-disabled-owner-20261103/attempt-1-storage. After moving
+one hash-verified old owned-emulator transfer archive to the host and removing
+only its device duplicate, the retry passed without changing any guard/assets.
+This remains emulator evidence, not phone, system7z browsing or campaign proof.
+The next committed current-head APK must verify its own UI change and exact IDs.

@@ -4701,9 +4701,8 @@ internal fun MissingFilesHelp() {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text =
-                    "Copy D2 files (from Steam/GOG) and/or D1 files to the app:\n" +
-                        "  adb push <file> /data/data/com.dxxredux.app/files/\n" +
-                        "Filenames are matched case-insensitively.\n" +
+                    "Import your D1 or D2 game files using \"Select Game Files or Archive to Import\" above.\n" +
+                        "Choose files, an archive, or a folder. You can also download a demo below.\n" +
                         "Either Descent 2 or Descent 1 files are needed to launch.",
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 fontSize = 12.sp,
