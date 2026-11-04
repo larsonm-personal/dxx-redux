@@ -1,0 +1,163 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_addon_import",
+        },
+    },
+    {
+        "action": "enter_launcher",
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Pumo Mines",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 60000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "game_window_is_front": true,
+        },
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "Abort Game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": false,
+        },
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "Load Game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "[quick] level 1",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "game_window_is_front": true,
+            "time_paused": false,
+            "current_level_num": 1,
+            "xl_pilot.runtime_active": true,
+            "player.energy": {
+                "range": [80, 99.99],
+            },
+            "current_level_name": "Temporal Hub",
+            "mission_asset_owner": "mod/pmines_v11.7z",
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "enter_launcher",
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": {
+            "key": "show_resume_offer",
+            "value": true,
+        },
+    },
+    {
+        "action": "wait_for",
+        "field": "resume_offer_enabled",
+        "value": "true",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "resume_candidate.game": "d2",
+            "resume_candidate.level_num": 1,
+            "resume_candidate.level_name": "Temporal Hub",
+            "resume_candidate.save_kind": "auto_exit",
+        },
+    },
+    {
+        "action": "setup_command",
+        "command": "set_mod_enabled",
+        "args": {
+            "filename": "pmines_v11.7z",
+            "enabled": false,
+        },
+    },
+    {
+        "action": "wait_ms",
+        "ms": 2000,
+    },
+    {
+        "action": "tap_button",
+        "text": "Load Last Save",
+        "launches_game": true,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "menu_subtitle": {
+                "contains": "Unable to load mission",
+            },
+        },
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "in_game": false,
+            "menu.fits_screen": true,
+            "mission_asset_owner": "base",
+        },
+    },
+    {
+        "action": "introspect",
+    },
+]
