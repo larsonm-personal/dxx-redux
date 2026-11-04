@@ -15,6 +15,7 @@ param(
     [switch]$Preview,
     [switch]$AutoOnly,
     [switch]$BuildsOnly,
+    [switch]$IncludeWorktreeBuilds,
     [string[]]$BuildRoots,
     [switch]$Producer,
     [switch]$PayloadsOnly,
@@ -36,6 +37,7 @@ $ErrorActionPreference = 'Stop'
 if ($Producer -and (-not $BuildsOnly -or -not $BuildRoots)) { throw 'Producer cleanup requires BuildsOnly and explicit BuildRoots' }
 if (@($BuildsOnly, $PayloadsOnly, $TemporaryOnly | Where-Object { $_ }).Count -gt 1) { throw 'BuildsOnly, PayloadsOnly and TemporaryOnly are mutually exclusive' }
 if ($PreserveEmulatorWorkspaces -and -not ($TemporaryOnly -or $BuildsOnly)) { throw 'PreserveEmulatorWorkspaces requires TemporaryOnly or BuildsOnly' }
+if ($IncludeWorktreeBuilds -and ($TemporaryOnly -or $PayloadsOnly -or $Producer -or $BuildRoots)) { throw 'IncludeWorktreeBuilds requires an unscoped normal or BuildsOnly cleanup' }
 Set-StrictMode -Version Latest
 if (-not $RepositoryRoot) { $RepositoryRoot = Split-Path $PSScriptRoot }
 $RepositoryRoot = [IO.Path]::GetFullPath($RepositoryRoot).TrimEnd('\', '/')
@@ -122,22 +124,35 @@ function Assert-CleanupPath {
 function Update-ProtectedPaths {
     $protectedPaths.Clear()
     # Include untracked non-ignored work as well as tracked files, even when ignored
-    $paths = & git -C $RepositoryRoot -c core.quotepath=false ls-files --cached --others --exclude-standard -z
-    if ($LASTEXITCODE -ne 0) { throw 'Cannot read Git protection list; cleanup aborted' }
-    foreach ($relative in (($paths -join "`n") -split "`0")) {
-        if (-not $relative) { continue }
-        $path = [IO.Path]::GetFullPath((Join-Path $RepositoryRoot $relative))
-        while ($path -and -not $path.Equals($RepositoryRoot, $comparison)) {
-            $null = $protectedPaths.Add($path)
-            $path = [IO.Path]::GetDirectoryName($path)
+    foreach ($gitRoot in $gitProtectionRoots) {
+        $paths = & git -C $gitRoot -c core.quotepath=false ls-files --cached --others --exclude-standard -z
+        if ($LASTEXITCODE -ne 0) { throw "Cannot read Git protection list for $gitRoot; cleanup aborted" }
+        foreach ($relative in (($paths -join "`n") -split "`0")) {
+            if (-not $relative) { continue }
+            $path = [IO.Path]::GetFullPath((Join-Path $gitRoot $relative))
+            while ($path -and -not $path.Equals($RepositoryRoot, $comparison)) {
+                $null = $protectedPaths.Add($path)
+                $path = [IO.Path]::GetDirectoryName($path)
+            }
         }
     }
 }
 
 function Test-CleanupGitProtection {
     param([string]$Path)
-    $relative = $Path.Substring($RepositoryRoot.Length + 1).Replace('\', '/')
-    $paths = & git -C $RepositoryRoot --literal-pathspecs ls-files --cached --others --exclude-standard -z -- $relative
+    $owner = $gitProtectionRoots | Where-Object {
+        $Path.StartsWith($_ + [IO.Path]::DirectorySeparatorChar, $comparison)
+    } | Sort-Object Length -Descending | Select-Object -First 1
+    if (-not $owner.Equals($RepositoryRoot, $comparison)) {
+        $top = (& git -C $owner rev-parse --show-toplevel) -join "`n"
+        if ($LASTEXITCODE -ne 0 -or -not [IO.Path]::GetFullPath($top.Trim()).Equals($owner, $comparison)) { throw "Worktree root changed: $owner" }
+        $common = (& git -C $RepositoryRoot rev-parse --path-format=absolute --git-common-dir) -join "`n"
+        if ($LASTEXITCODE -ne 0) { throw 'Cannot recheck common Git directory' }
+        $store = (& git -C $owner rev-parse --path-format=absolute --git-common-dir) -join "`n"
+        if ($LASTEXITCODE -ne 0 -or -not [IO.Path]::GetFullPath($store.Trim()).Equals([IO.Path]::GetFullPath($common.Trim()), $comparison)) { throw "Worktree Git ownership changed: $owner" }
+    }
+    $relative = $Path.Substring($owner.Length + 1).Replace('\', '/')
+    $paths = & git -C $owner --literal-pathspecs ls-files --cached --others --exclude-standard -z -- $relative
     if ($LASTEXITCODE -ne 0) { throw 'Cannot recheck Git protection; cleanup aborted' }
     return [bool]$paths
 }
@@ -206,6 +221,13 @@ function Assert-CleanupLock {
         $errorRecord = [IO.IOException]::new("Preserving locked workspace ${owner}: $($_.Exception.Message)", $_.Exception)
         $errorRecord.Data['CleanupProtectedDirectory'] = $owner
         throw $errorRecord
+    }
+}
+
+function Assert-CleanupDirectoryLocks {
+    param([string]$Path)
+    foreach ($item in Get-ChildItem -LiteralPath $Path -Force) {
+        if ($item.Name -match '(\.(lock|lck)(\.json)?$|^\.ninja_lock$)') { Assert-CleanupLock $item }
     }
 }
 
@@ -428,7 +450,7 @@ function Find-TemporaryFiles {
 }
 
 function Add-BuildGeneration {
-    param([IO.FileSystemInfo]$Item, [string]$Family)
+    param([IO.FileSystemInfo]$Item, [string]$Family, [switch]$SplitProtectedChildren)
     if (Test-CleanupExcluded $Item.FullName -ContainsExcluded) { return }
     if (-not $registeredBuilds.Add($Item.FullName)) { return }
     # Mark the tree even if unreadable/protected so it cannot fall back to parent deletion
@@ -440,6 +462,11 @@ function Add-BuildGeneration {
     Write-Progress -Activity 'Scanning cleanup candidates' -Status $Item.FullName
     try { $info = Get-CleanupTreeInfo $Item.FullName -AllowBuildDependencies } catch {
         Write-Warning $_.Exception.Message
+        $protectedDirectory = $_.Exception.Data['CleanupProtectedDirectory']
+        if ($SplitProtectedChildren -and $Item.PSIsContainer -and
+            (-not $protectedDirectory -or -not $Item.FullName.Equals($protectedDirectory, $comparison))) {
+            foreach ($child in Get-ChildItem -LiteralPath $Item.FullName -Force) { Add-GeneratedBuildOutput $child }
+        }
         return
     }
     $buildGenerations.Add([pscustomobject]@{
@@ -511,6 +538,7 @@ function Find-RegressionPayloads {
 function Find-BuildGenerations {
     param([IO.FileSystemInfo]$Item, [int]$Depth = 0)
     if ($Item.Attributes -band [IO.FileAttributes]::ReparsePoint) { return }
+    if (Test-CleanupExcluded $Item.FullName) { return }
     if (-not $Item.PSIsContainer) {
         # Versioned packages emitted by the build scripts, including unique deploy suffixes
         if ($Item.Name -match '^(?<family>.+)-v\d+(?:-[a-f0-9]{32})?(?<ext>\.(?:apk|aab|zip))$') {
@@ -528,7 +556,7 @@ function Find-BuildGenerations {
             (Test-Path -LiteralPath (Join-Path $Item.Parent.FullName 'build.gradle.kts') -PathType Leaf))) -or
         ($Item.Name -eq 'target' -and
         (Test-Path -LiteralPath (Join-Path $Item.Parent.FullName 'Cargo.toml') -PathType Leaf)))) {
-        Add-BuildGeneration $Item "generated|$($Item.FullName)"
+        Add-GeneratedBuildOutput $Item
         return
     }
     if ($Item.Name -match '^\.cxx(?:$|[-_])') {
@@ -572,12 +600,91 @@ function Find-BuildGenerations {
     }
 }
 
+function Add-GeneratedBuildOutput {
+    param([IO.FileSystemInfo]$Item)
+    if ($Item.Attributes -band [IO.FileAttributes]::ReparsePoint -or (Test-CleanupExcluded $Item.FullName)) { return }
+    if ($Item.Name -in @('.git', '.hg', '.svn')) { return }
+    if ($Item.PSIsContainer) {
+        if (@('.git', '.hg', '.svn' | Where-Object { Test-Path -LiteralPath (Join-Path $Item.FullName $_) }).Count) { return }
+        try { Assert-CleanupDirectoryLocks $Item.FullName } catch { Write-Warning $_.Exception.Message; return }
+    }
+    if ($protectedPaths.Contains($Item.FullName) -or (Test-CleanupExcluded $Item.FullName -ContainsExcluded)) {
+        # Explicit zero retention may clean generated siblings without touching retained outputs
+        if ($Item.PSIsContainer) {
+            foreach ($child in Get-ChildItem -LiteralPath $Item.FullName -Force) { Add-GeneratedBuildOutput $child }
+        }
+        return
+    }
+    Add-BuildGeneration $Item "generated|$($Item.FullName)" -SplitProtectedChildren
+}
+
+function Get-RegisteredCleanupWorktrees {
+    $common = (& git -C $RepositoryRoot rev-parse --path-format=absolute --git-common-dir) -join "`n"
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot identify common Git directory' }
+    $common = [IO.Path]::GetFullPath($common.Trim())
+    $listing = & git -C $RepositoryRoot worktree list --porcelain -z
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot enumerate registered worktrees' }
+    foreach ($field in (($listing -join "`n") -split "`0")) {
+        if (-not $field.StartsWith('worktree ')) { continue }
+        $path = [IO.Path]::GetFullPath($field.Substring(9))
+        if (-not $path.StartsWith($RepositoryRoot + [IO.Path]::DirectorySeparatorChar, $comparison) -or
+            (Test-CleanupExcluded $path) -or -not (Test-Path -LiteralPath $path -PathType Container)) { continue }
+        Assert-CleanupPath $path
+        $top = (& git -C $path rev-parse --show-toplevel) -join "`n"
+        if ($LASTEXITCODE -ne 0 -or -not [IO.Path]::GetFullPath($top.Trim()).Equals($path, $comparison)) { throw "Worktree root changed: $path" }
+        $store = (& git -C $path rev-parse --path-format=absolute --git-common-dir) -join "`n"
+        if ($LASTEXITCODE -ne 0 -or -not [IO.Path]::GetFullPath($store.Trim()).Equals($common, $comparison)) { throw "Worktree Git ownership changed: $path" }
+        $path
+    }
+}
+
+function Find-CargoIncrementalCaches {
+    param([string]$Target)
+    $pending = [Collections.Generic.Stack[string]]::new()
+    $pending.Push($Target)
+    while ($pending.Count) {
+        $path = $pending.Pop()
+        if ((Test-CleanupExcluded $path) -or
+            @('.git', '.hg', '.svn' | Where-Object { Test-Path -LiteralPath (Join-Path $path $_) }).Count -or
+            @($candidates | Where-Object { $path.Equals($_.Path, $comparison) -or $path.StartsWith($_.Path + [IO.Path]::DirectorySeparatorChar, $comparison) }).Count) { continue }
+        Assert-CleanupPath $path
+        $incremental = Join-Path $path 'incremental'
+        if ((Test-Path -LiteralPath $incremental -PathType Container) -and
+            ((Split-Path $path -Leaf) -in @('debug', 'release') -or
+            ((Test-Path -LiteralPath (Join-Path $path '.fingerprint') -PathType Container) -and
+            (Test-Path -LiteralPath (Join-Path $path 'deps') -PathType Container)))) {
+            $null = $registeredBuilds.Add($incremental)
+            $parent = $incremental
+            while ($parent -and -not $parent.Equals($RepositoryRoot, $comparison)) {
+                $null = $buildContainers.Add($parent)
+                $parent = [IO.Path]::GetDirectoryName($parent)
+            }
+            if (-not $protectedPaths.Contains($incremental)) {
+                try {
+                    $info = Get-CleanupTreeInfo $incremental
+                    $candidates.Add([pscustomobject]@{
+                            Path = $incremental; Category = 'build-cache'; Automatic = $true
+                            Bytes = $info.Bytes; Count = $info.Count; Latest = $info.Latest
+                            Days = 0; Retained = $null
+                        })
+                } catch { Write-Warning $_.Exception.Message }
+            }
+        }
+        foreach ($child in Get-ChildItem -LiteralPath $path -Directory -Force) {
+            if ($child.Name -notin @('incremental', 'deps', 'build', '.fingerprint', 'examples') -and
+                -not ($child.Attributes -band [IO.FileAttributes]::ReparsePoint)) { $pending.Push($child.FullName) }
+        }
+    }
+}
+
 # Restrict discovery to known output roles, never arbitrary ignored trees
 $gitRoot = & git -C $RepositoryRoot rev-parse --show-toplevel
 if ($LASTEXITCODE -ne 0 -or -not ([IO.Path]::GetFullPath($gitRoot)).Equals($RepositoryRoot, $comparison)) {
     throw 'RepositoryRoot must be the root of a Git working tree'
 }
 Write-Host 'Reading Git protection list'
+$gitProtectionRoots = @($RepositoryRoot)
+if ($IncludeWorktreeBuilds) { $gitProtectionRoots += @(Get-RegisteredCleanupWorktrees) }
 Update-ProtectedPaths
 if ($TargetFreeSpaceGB -gt 0 -and (Get-CleanupFreeBytes) -ge $TargetFreeSpaceGB * 1GB) {
     Write-Host "Free-space target already met: $TargetFreeSpaceGB GiB; no cleanup needed"
@@ -589,32 +696,40 @@ if (-not $dryRun -and -not $Producer) { Assert-CleanupIdle }
 if ($PayloadsOnly) { Find-RegressionPayloads }
 if (-not $BuildsOnly -and -not $PayloadsOnly) { Find-TemporaryFiles }
 $roots = [Collections.Generic.List[object]]::new()
-foreach ($parentRelative in @('', 'android', 'server')) {
-    $parent = if ($parentRelative) { Join-Path $RepositoryRoot $parentRelative } else { $RepositoryRoot }
-    if (-not (Test-Path -LiteralPath $parent)) { continue }
-    foreach ($item in Get-ChildItem -LiteralPath $parent -Force) {
-        if ($item.Name -match '^(temp(?:[_-].*)?|\.tmp|test-results|test-reports|regression-results|regression-output|downloads|download-cache)$') {
-            $roots.Add([pscustomobject]@{ Item = $item; Category = if ($item.Name -match 'download') { 'downloads' } else { 'scratch' }; Children = $item.PSIsContainer })
-        } elseif ($item.Name -match '^build(?:$|[_-]|d[12]|2)' -and $item.PSIsContainer) {
-            $roots.Add([pscustomobject]@{ Item = $item; Category = 'build'; Children = $item.Name -eq 'build-outputs' })
+foreach ($workspace in $gitProtectionRoots) {
+    foreach ($parentRelative in @('', 'android', 'server')) {
+        $parent = if ($parentRelative) { Join-Path $workspace $parentRelative } else { $workspace }
+        if (-not (Test-Path -LiteralPath $parent)) { continue }
+        foreach ($item in Get-ChildItem -LiteralPath $parent -Force) {
+            if ($item.Name -match '^(temp(?:[_-].*)?|\.tmp|test-results|test-reports|regression-results|regression-output|downloads|download-cache)$') {
+                $roots.Add([pscustomobject]@{ Item = $item; Category = if ($item.Name -match 'download') { 'downloads' } else { 'scratch' }; Children = $item.PSIsContainer })
+            } elseif ($item.Name -match '^build(?:$|[_-]|d[12]|2)' -and $item.PSIsContainer) {
+                $roots.Add([pscustomobject]@{ Item = $item; Category = 'build'; Children = $item.Name -eq 'build-outputs' })
+            }
         }
     }
-}
-foreach ($relative in @('android/.cxx', 'android/.gradle', 'android/.kotlin',
-        'android/app/build', 'android/app/.cxx', 'android/app/.gradle',
-        'android/mission-metadata-core/build', 'android/mission-metadata-cli/build',
-        'd1/out', 'd2/out', 'server/target')) {
-    $path = Join-Path $RepositoryRoot $relative
-    if (Test-Path -LiteralPath $path) {
-        $roots.Add([pscustomobject]@{ Item = Get-Item -LiteralPath $path -Force; Category = 'build'; Children = $false })
+    foreach ($relative in @('android/.cxx', 'android/.gradle', 'android/.kotlin',
+            'android/app/build', 'android/app/.cxx', 'android/app/.gradle',
+            'android/mission-metadata-core/build', 'android/mission-metadata-cli/build',
+            'd1/out', 'd2/out', 'server/target')) {
+        $path = Join-Path $workspace $relative
+        if (Test-Path -LiteralPath $path) {
+            $roots.Add([pscustomobject]@{ Item = Get-Item -LiteralPath $path -Force; Category = 'build'; Children = $false })
+        }
     }
-}
-$androidRoot = Join-Path $RepositoryRoot 'android'
-if (Test-Path -LiteralPath $androidRoot) {
-    foreach ($module in Get-ChildItem -LiteralPath $androidRoot -Directory -Force) {
-        if ($module.Attributes -band [IO.FileAttributes]::ReparsePoint) { continue }
-        foreach ($nativeRoot in Get-ChildItem -LiteralPath $module.FullName -Directory -Force | Where-Object { $_.Name -match '^\.cxx(?:$|[-_])' }) {
-            $roots.Add([pscustomobject]@{ Item = $nativeRoot; Category = 'build'; Children = $false })
+    $androidRoot = Join-Path $workspace 'android'
+    if (Test-Path -LiteralPath $androidRoot) {
+        foreach ($module in Get-ChildItem -LiteralPath $androidRoot -Directory -Force) {
+            if ($module.Attributes -band [IO.FileAttributes]::ReparsePoint) { continue }
+            $moduleBuild = Join-Path $module.FullName 'build'
+            if ((Test-Path -LiteralPath $moduleBuild -PathType Container) -and
+                ((Test-Path -LiteralPath (Join-Path $module.FullName 'build.gradle') -PathType Leaf) -or
+                (Test-Path -LiteralPath (Join-Path $module.FullName 'build.gradle.kts') -PathType Leaf))) {
+                $roots.Add([pscustomobject]@{ Item = Get-Item -LiteralPath $moduleBuild -Force; Category = 'build'; Children = $false })
+            }
+            foreach ($nativeRoot in Get-ChildItem -LiteralPath $module.FullName -Directory -Force | Where-Object { $_.Name -match '^\.cxx(?:$|[-_])' }) {
+                $roots.Add([pscustomobject]@{ Item = $nativeRoot; Category = 'build'; Children = $false })
+            }
         }
     }
 }
@@ -656,33 +771,13 @@ foreach ($family in $buildGenerations | Group-Object Family) {
             })
     }
 }
-# Cargo incremental state is disposable even when its executable was used recently
-# Keep linked binaries and dependency artifacts warm, and never touch external caches
+# Cargo target directories can nest custom CARGO_TARGET_DIR and target-triple layouts
 if (-not $TemporaryOnly -and -not $PayloadsOnly -and -not $BuildRoots) {
-    $cargoTarget = Join-Path $RepositoryRoot 'server/target'
-    if ((Test-Path -LiteralPath $cargoTarget -PathType Container) -and
-        -not @($candidates | Where-Object Path -eq $cargoTarget).Count) {
-        Assert-CleanupPath $cargoTarget
-        foreach ($profile in @('debug', 'release')) {
-            $incremental = Join-Path $cargoTarget "$profile/incremental"
-            if (-not (Test-Path -LiteralPath $incremental -PathType Container)) { continue }
-            # A failed/protected inspection must also protect it from parent deletion
-            $null = $registeredBuilds.Add($incremental)
-            $parent = $incremental
-            while ($parent -and -not $parent.Equals($RepositoryRoot, $comparison)) {
-                $null = $buildContainers.Add($parent)
-                $parent = [IO.Path]::GetDirectoryName($parent)
-            }
-            if ($protectedPaths.Contains($incremental)) { continue }
-            try { $info = Get-CleanupTreeInfo $incremental } catch {
-                Write-Warning $_.Exception.Message
-                continue
-            }
-            $candidates.Add([pscustomobject]@{
-                    Path = $incremental; Category = 'build-cache'; Automatic = $true
-                    Bytes = $info.Bytes; Count = $info.Count; Latest = $info.Latest
-                    Days = 0; Retained = $null
-                })
+    foreach ($workspace in $gitProtectionRoots) {
+        $cargoTarget = Join-Path $workspace 'server/target'
+        if ((Test-Path -LiteralPath $cargoTarget -PathType Container) -and
+            -not @($candidates | Where-Object Path -eq $cargoTarget).Count) {
+            Find-CargoIncrementalCaches $cargoTarget
         }
     }
 }
@@ -716,6 +811,15 @@ foreach ($candidate in $ordered) {
     Assert-CleanupIdle
     if (Test-CleanupGitProtection $candidate.Path) { Write-Warning "Now protected by Git: $($candidate.Path)"; continue }
     try {
+        if ($candidate.Category -eq 'superseded-build') {
+            # Split generated outputs still belong to their enclosing producer's locks
+            $parent = [IO.Path]::GetDirectoryName($candidate.Path)
+            while ($parent -and -not $parent.Equals($RepositoryRoot, $comparison)) {
+                Assert-CleanupPath $parent
+                Assert-CleanupDirectoryLocks $parent
+                $parent = [IO.Path]::GetDirectoryName($parent)
+            }
+        }
         if ($candidate.Retained) {
             $replacement = Get-CleanupTreeInfo $candidate.Retained -AllowBuildDependencies
             if ($replacement.Latest -lt $candidate.Latest) {
