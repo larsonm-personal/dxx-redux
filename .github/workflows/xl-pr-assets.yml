@@ -1,0 +1,90 @@
+name: XL asset smoke
+run-name: XL asset smoke for PR head ${{ github.event.workflow_run.head_sha }}
+
+on:
+  workflow_run:
+    workflows: [XL asset smoke request]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: xl-assets-controller-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+env:
+  XL_SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+
+jobs:
+  admit:
+    name: Verify owned PR and pin exact head
+    if: github.repository == 'larsonm-personal/dxx-redux' && github.event.workflow_run.actor.id == 265118235 && github.event.workflow_run.head_repository.id == github.event.repository.id && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      statuses: write
+    outputs:
+      sha: ${{ steps.admit.outputs.sha }}
+      number: ${{ steps.admit.outputs.number }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - id: admit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 control/android/tests/nightly_pr_candidate.py admit
+
+  smoke:
+    name: Original XL asset load and navigation
+    needs: admit
+    # The reusable workflow declares a ledger publisher; it is disabled for workflow_run
+    # Executing plan/host jobs explicitly reduce this ceiling to contents: read
+    permissions:
+      contents: write
+      actions: read
+      pull-requests: read
+    uses: ./.github/workflows/nightly-tooling-sweep.yml
+    with:
+      campaign: xl-fast
+      candidate_pr: ${{ needs.admit.outputs.number }}
+      candidate_sha: ${{ needs.admit.outputs.sha }}
+      source_run_id: ${{ format('{0}', github.event.workflow_run.id) }}
+
+  report:
+    name: Publish exact-head XL asset result
+    needs: [admit, smoke]
+    if: always() && needs.admit.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        continue-on-error: true
+        with:
+          name: nightly-results-host
+          path: receipt
+      - name: Require positive load and navigation evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_SHA: ${{ needs.admit.outputs.sha }}
+          CANDIDATE_PR: ${{ needs.admit.outputs.number }}
+          XL_QUALIFICATION_RESULT: ${{ needs.smoke.result }}
+        run: python3 control/android/tests/nightly_pr_candidate.py report --receipt receipt/results.json

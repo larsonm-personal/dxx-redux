@@ -23,6 +23,38 @@ import xl_private_assets as assets
 
 
 class XlPrivateTests(unittest.TestCase):
+    def test_failed_preview_build_retains_only_fixed_stage(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            work = root / "work"
+            failure = subprocess.CalledProcessError(2, ["cmake", "private-path"])
+            with (
+                patch("sys.argv", ["runner", "--repo", str(root), "--work", str(work), "--fast"]),
+                patch.object(runner, "verify", return_value={}),
+                patch.object(runner.subprocess, "run", side_effect=[subprocess.CompletedProcess([], 0), failure]),
+            ):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    runner.main()
+            progress = work / "xl-progress.json"
+            self.assertEqual(retail.xl_stage(progress), "preview-build")
+            row = {"id": "host-profile:retail-xl-fast", "xl_stage": retail.xl_stage(progress)}
+            self.assertEqual(retail.public_diagnostics(row)["xl_stage"], "preview-build")
+            for bad in ("private-path", ["preview-build"], None):
+                progress.write_text(json.dumps({"stage": bad}))
+                self.assertIsNone(retail.xl_stage(progress))
+                self.assertNotIn("xl_stage", retail.public_diagnostics({**row, "xl_stage": bad}))
+            progress.write_text("x" * 1025)
+            self.assertIsNone(retail.xl_stage(progress))
+            progress.unlink()
+            self.assertIsNone(retail.xl_stage(progress))
+            other = root / "other.json"
+            other.write_text(json.dumps({"stage": "preview-build"}))
+            try:
+                progress.symlink_to(other)
+            except OSError:
+                return  # Symlink creation may require elevated Windows privileges
+            self.assertIsNone(retail.xl_stage(progress))
+
     def test_original_pilot_inventory_remains_complete_and_unqualified(self):
         levels = [
             {"name": f"fixture-{i}.rl2", "inventory": {"status": "inspection_only", "playable": False}}

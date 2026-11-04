@@ -333,6 +333,15 @@ class RetailBoundaryTests(unittest.TestCase):
                 " && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake'"
                 " && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')"
             )
+            if name == "nightly-tooling-sweep.yml":
+                trusted_retail = (
+                    requested + " && github.repository == 'larsonm-personal/dxx-redux'"
+                    " && github.ref == 'refs/heads/cmake' && ((github.workflow_ref == "
+                    "'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake'"
+                    " && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'))"
+                    " || (github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/xl-pr-assets.yml@refs/heads/cmake'"
+                    " && github.event_name == 'workflow_run'))"
+                )
             # Environment access and deployment creation must share the full trust gate
             self.assertIn(
                 "    environment:\n"

@@ -1060,6 +1060,8 @@ def run_suite(suite, repo, build_root, output, timeout):
             argv += profile_arguments(suite, repo, build_root, work)
             if suite.get("virtual_display"):
                 argv = ["xvfb-run", "-a"] + argv
+            if suite["profile"] in {"retail-xl-originals", "retail-xl-fast"}:
+                (work / "xl-originals/xl-progress.json").unlink(missing_ok=True)
             code = run(argv, virtual_display=suite.get("virtual_display", False))
             if suite["profile"] in {"retail-xl-originals", "retail-xl-fast"} and code == 0:
                 from run_xl_originals import validate_summary
@@ -1070,6 +1072,12 @@ def run_suite(suite, repo, build_root, output, timeout):
                     result["experimental_acceptance"] = {
                         "xl_level_two_keys": receipt["experimental"]["xl_level_two_keys"]
                     }
+            if suite["profile"] in {"retail-xl-originals", "retail-xl-fast"}:
+                from nightly_retail import xl_stage
+
+                stage = xl_stage(work / "xl-originals/xl-progress.json")
+                if stage:
+                    result["xl_stage"] = stage
             status = "PASS" if code == 0 else "BLOCKED" if code == 2 else "FAIL"
             result["exclusions"] = [
                 {

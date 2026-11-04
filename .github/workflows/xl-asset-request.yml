@@ -1,0 +1,17 @@
+name: XL asset smoke request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  request:
+    name: Signal exact PR head for trusted XL qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      # No checkout, assets, secrets or artifacts; only GitHub run provenance is consumed
+      - run: echo "The default-branch controller evaluates eligibility separately"

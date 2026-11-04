@@ -29,6 +29,12 @@ def verify(target_sha=None, env=None, fetch=api):
     """Return the explicitly endorsed SHA, or None for the unchanged normal path."""
     env = os.environ if env is None else env
     number, sha = env.get("CANDIDATE_PR", ""), env.get("CANDIDATE_SHA", "")
+    if env.get("GITHUB_EVENT_NAME") == "workflow_run":
+        from nightly_pr_candidate import verify as verify_automatic
+
+        if not number or not sha or env.get("CANDIDATE_CAMPAIGN") != "xl-fast":
+            raise ValueError("Automatic XL qualification requires an exact candidate and xl-fast")
+        return verify_automatic(target_sha, env, fetch)["sha"]
     if not number and not sha:
         return None
     try:
@@ -73,7 +79,6 @@ def verify(target_sha=None, env=None, fetch=api):
             and pr["base"]["repo"]["id"] == REPOSITORY_ID
             and head["repo"]["id"] == REPOSITORY_ID
             and head["repo"]["full_name"] == retail.REPOSITORY
-            and head["repo"]["fork"] is False
             and head["sha"] == sha
             and fetch("git/ref/heads/" + quote(head["ref"], safe=""))["object"]["sha"] == sha
         ):

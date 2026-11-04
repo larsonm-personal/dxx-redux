@@ -777,6 +777,53 @@ def print_public_jvm_failure(plan, lane, output):
         print(json.dumps({"file": path.name, "tail": tail}, ensure_ascii=True).replace("#", "\\u0023"))
 
 
+PUBLIC_ANDROID_DIAGNOSTICS = {
+    "master:test_controller_overlay",
+    "master:test_launcher_media_controls_generated",
+    "master:test_android_music_completion",
+    "shareware:test_death#d1",
+    "shareware:test_auto_level_cheats#d2",
+}
+
+
+def print_public_android_failure(plan, lane, output, receipt):
+    """Only the fixed public PR sample; never logs from a private or mixed plan."""
+    if lane != "android-single" or plan.get("retail_assets") or os.environ.get("RETAIL_REQUESTED") == "true":
+        return
+    selected = {entry["id"] for entry in plan["tests"] if entry["lane"] == lane}
+    if not selected or not selected <= PUBLIC_ANDROID_DIAGNOSTICS:
+        return
+    failed = {
+        row["id"]
+        for row in receipt["results"]
+        if row.get("status") in ("FAIL", "TIMEOUT", "BLOCKED", "NOT_RUN") and row.get("id") in selected
+    }
+    if not failed and not receipt.get("runner_failed"):
+        return
+    root = Path(output).absolute()
+    paths = (
+        [root / "master.log"] if any(i.startswith("master:") for i in failed) or receipt.get("runner_failed") else []
+    )
+    for ident in sorted(failed):
+        if ident.startswith("master:"):
+            paths.extend(sorted((root / "master").glob(ident.split(":", 1)[1] + "_*.log"))[-2:])
+        else:
+            paths.append(root / (ident.replace(":", "_") + ".log"))
+    print(json.dumps({"public_android_failures": sorted(failed)}))
+    for path in paths:
+        if (
+            any(p.is_symlink() for p in (path, *path.parents))
+            or not path.is_file()
+            or not path.resolve().is_relative_to(root.resolve())
+        ):
+            continue
+        with path.open("rb") as stream:
+            stream.seek(0, os.SEEK_END)
+            stream.seek(max(0, stream.tell() - 32768))
+            tail = stream.read(32768).decode("utf-8", errors="replace").splitlines()[-100:]
+        print(json.dumps({"file": path.name, "tail": tail}, ensure_ascii=True).replace("#", "\\u0023"))
+
+
 def execute(plan, policy, lane, repo, output):
     validate_plan(plan, policy)
     repo, output = Path(repo).resolve(), Path(output).resolve()
@@ -977,11 +1024,25 @@ def execute(plan, policy, lane, repo, output):
                 raise ValueError("Invalid adapter result")
             if row["status"] == "PASS" and process.returncode != 0:
                 row.update(status="FAIL", reason=f"Owner process exited {process.returncode} despite PASS receipt")
+            if entry["id"] in ("host-profile:retail-xl-fast", "host-profile:retail-xl-originals"):
+                stage = row.get("xl_stage")
+                print(
+                    json.dumps(
+                        {
+                            "owner": entry["id"],
+                            "status": row["status"],
+                            "last_entered_stage": stage
+                            if isinstance(stage, str) and stage in retail.XL_STAGES
+                            else "unavailable",
+                        }
+                    )
+                )
             row = normalize_result(row)
             elapsed += max(0, float(row.get("elapsed_seconds", time.monotonic() - start)))
             save(entry, row["status"], row.get("reason", ""), exclusions=row.get("exclusions", []))
         else:
             save(entry, "NOT_RUN", "adapter did not produce a terminal receipt")
+    print_public_android_failure(plan, lane, output, receipt)
     return receipt
 
 

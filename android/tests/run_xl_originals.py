@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from xl_private_assets import verify
+from nightly_retail import XL_STAGES
 from run_xl_navigation_smoke import run as run_navigation_smoke
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "XL_compat/tests"))
@@ -339,6 +340,12 @@ def modern_results(inspect, reference, stage, work):
     return len(rows), compared
 
 
+def mark_stage(work, stage):
+    if stage not in XL_STAGES:
+        raise ValueError("Unknown XL owner stage")
+    (work / "xl-progress.json").write_text(json.dumps({"stage": stage}) + "\n")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, required=True)
@@ -358,8 +365,9 @@ def main():
         parser.error("Choose fast native or JVM coverage")
     repo, work = args.repo.resolve(), args.work.resolve()
     stage = repo / "game_data/retail-ci/xl"
-    data = verify(stage, modern=args.fast)
     work.mkdir(parents=True, exist_ok=True)
+    mark_stage(work, "verify-assets")
+    data = verify(stage, modern=args.fast)
     (work / "original-status.json").unlink(missing_ok=True)
 
     def run(command, timeout=1200, check=True):
@@ -370,6 +378,7 @@ def main():
             )
 
     preview, stock, contracts = (work / x for x in ("preview", "stock", "contracts"))
+    mark_stage(work, "preview-configure")
     run(
         [
             "cmake",
@@ -382,9 +391,11 @@ def main():
             "-DDXX_XL_DEVELOPER_TESTS=ON",
         ]
     )
+    mark_stage(work, "preview-build")
     run(["cmake", "--build", preview, "--parallel", "2", "--target", "dxx-redux-d2-headless-metadata"])
     engine = preview / "main/xl-preview-lifecycle"
     if args.jvm_only:
+        mark_stage(work, "jvm-tests")
         env = os.environ.copy()
         env.update(
             DXX_XL_LEVELPACK=str(stage / "levelpack.7z"),
@@ -421,8 +432,11 @@ def main():
         require_junit(report, {"originalArchiveImportsPublishesAndResolvesStaticTexture"})
         print("PASS: required original texture import/publication/native resolution JVM test")
         return
+    mark_stage(work, "reference-sources")
     reference = reference_sources(work, args.reference_root, run)
+    mark_stage(work, "stock-configure")
     run(["cmake", "-S", repo / "d2", "-B", stock, "-DCMAKE_BUILD_TYPE=RelWithDebInfo", "-DBUILD_TESTING=ON"])
+    mark_stage(work, "stock-build")
     run(
         [
             "cmake",
@@ -436,6 +450,7 @@ def main():
         ]
     )
     # Imported-D1 Dragon Pit requires the registered D1 bank beside D2 data
+    mark_stage(work, "stage-runtime")
     retail_data = work / "retail-data"
     retail_data.mkdir(exist_ok=True)
     for game in ("d1", "d2"):
@@ -468,6 +483,7 @@ def main():
         parameters.update(reference_parameters(reference))
     if any(not value.exists() for value in parameters.values()):
         raise ValueError("Required XL native fixture or executable missing")
+    mark_stage(work, "contracts-configure")
     run(
         [
             "cmake",
@@ -482,7 +498,9 @@ def main():
             *["-D" + key + "=" + str(value) for key, value in parameters.items()],
         ]
     )
+    mark_stage(work, "contracts-build")
     run(["cmake", "--build", contracts, "--parallel", "2"])
+    mark_stage(work, "register-tests")
     listing = subprocess.check_output(
         ["ctest", "--test-dir", str(contracts), "--show-only=json-v1"], text=True, timeout=30
     )
@@ -492,6 +510,7 @@ def main():
     report = work / "original-ctest.xml"
     report.unlink(missing_ok=True)
     started = time.monotonic()
+    mark_stage(work, "native-tests")
     result = run(
         [
             "ctest",
@@ -511,13 +530,16 @@ def main():
         check=False,
     )
     receipt = native_receipt(report, result.returncode, fast=args.fast)
+    mark_stage(work, "format-probes")
     formats = format_results(contracts / "xl_inspect", stage, work, data)
+    mark_stage(work, "modern-probes")
     modern_count, source_count = (
         modern_results(contracts / "xl_inspect", contracts / "xl_layout_reference", stage, work)
         if args.fast
         else (0, 0)
     )
     if args.fast:
+        mark_stage(work, "navigation-smoke")
         seed = args.navigation_seed
         if seed is None:
             head = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True, timeout=10).strip()
@@ -527,6 +549,7 @@ def main():
         )
         receipt["navigation_smoke_passed"] = navigation["passed"]
         receipt["navigation_smoke_milliseconds"] = round(navigation["seconds"] * 1000)
+    mark_stage(work, "verify-receipt")
     verify(stage, modern=args.fast)
     receipt.update(
         required_tests=sorted(required),
@@ -536,6 +559,7 @@ def main():
     )
     validate_summary(receipt, fast=args.fast)
     (work / "original-status.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+    mark_stage(work, "complete")
     print(json.dumps(receipt, sort_keys=True))
     print("PASS: required original XL native tests, source comparisons and explicit original-format outcomes")
 

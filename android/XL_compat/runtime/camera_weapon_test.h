@@ -623,7 +623,7 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 	require(resources.model_collision_radius(ConsoleObject->rtype.pobj_info.model_num) == Polygon_models[ConsoleObject->rtype.pobj_info.model_num].rad, "Player collision radius lost source base preference");
 	std::cout << "Native post-build model spheres: camera 108769, player 297534, base-radius preference passed\n";
 	for (const auto entry : { std::pair<int, const char *>{ resources.camera_model_id(), "camera-model.bin" },
-	                          std::pair<int, const char *>{ ConsoleObject->rtype.pobj_info.model_num, "player-model.bin" } }) {
+	                          std::pair<int, const char *>{ int{ ConsoleObject->rtype.pobj_info.model_num }, "player-model.bin" } }) {
 		auto &cache = resources.model_hitboxes(entry.first);
 		require(&cache == &resources.model_hitboxes(entry.first), "Native model did not retain a single hitbox cache");
 		const auto &model = resources.dependencies().model_data[entry.first];
@@ -902,7 +902,7 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 	{
 		std::map<int, int> original;
 		for (int i = 0; i <= Highest_object_index; ++i)
-			if (Objects[i].type != OBJ_NONE) original.emplace(i, Objects[i].signature);
+			if (Objects[i].type != OBJ_NONE) original.emplace(i, int{ Objects[i].signature });
 		const int beam = projectile_test_shot(int(ConsoleObject - Objects), OMEGA_ID);
 		auto &omega = Objects[beam];
 		require(omega.movement_type == MT_NONE && !omega.mtype.phys_info.mass, "Production camera Omega fixture is physical");
@@ -935,7 +935,7 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 	const auto stock_smart = Weapon_info[SMART_ID];
 	Weapon_info[SMART_ID].flash = 5;
 	Weapon_info[SMART_ID].damage_radius = 25 * F1_0;
-	for (auto &strength : Weapon_info[SMART_ID].strength) strength = 40 * F1_0;
+	for (int difficulty = 0; difficulty < NDL; ++difficulty) Weapon_info[SMART_ID].strength[difficulty] = 40 * F1_0;
 	xl_camera_validate_weapon_definitions();
 	camera_flash_native_controls(camera, SMART_ID);
 	Weapon_info[SMART_ID] = stock_smart;
@@ -944,14 +944,14 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 	Weapon_info[GAUSS_ID].children = 41;
 	Weapon_info[GAUSS_ID].flash = 2;
 	Weapon_info[GAUSS_ID].damage_radius = 11 * F1_0;
-	for (auto &strength : Weapon_info[GAUSS_ID].strength) strength = 54 * F1_0;
+	for (int difficulty = 0; difficulty < NDL; ++difficulty) Weapon_info[GAUSS_ID].strength[difficulty] = 54 * F1_0;
 	Weapon_info[41].children = -1;
 	Weapon_info[41].damage_radius = 0;
 	Weapon_info[41].flash = 0;
 	Weapon_info[41].homing_flag = 0;
 	Weapon_info[41].bounce = 1;
-	for (auto &strength : Weapon_info[41].strength) strength = F1_0;
-	for (auto &speed : Weapon_info[41].speed) speed = 750 * F1_0;
+	for (int difficulty = 0; difficulty < NDL; ++difficulty) Weapon_info[41].strength[difficulty] = F1_0;
+	for (int difficulty = 0; difficulty < NDL; ++difficulty) Weapon_info[41].speed[difficulty] = 750 * F1_0;
 	xl_camera_validate_weapon_definitions();
 	camera_children_native_controls(camera, true);
 	camera_flash_native_controls(camera, GAUSS_ID);

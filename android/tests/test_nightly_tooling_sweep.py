@@ -63,6 +63,7 @@ class CandidateTests(unittest.TestCase):
         return self.candidate.verify(SHA, self.env, self.responses.__getitem__)
 
     def test_exact_endorsement_and_same_actor_rerun(self):
+        self.responses["pulls/319"]["head"]["repo"]["fork"] = True
         self.assertEqual(self.verify(), SHA)
         self.env["GITHUB_RUN_ATTEMPT"] = "2"
         self.responses["actions/runs/123"]["run_attempt"] = 2
@@ -91,7 +92,7 @@ class CandidateTests(unittest.TestCase):
             ("actions/runs/123", ["repository", "id"], 99),
             ("pulls/319", ["user", "id"], 99),
             ("pulls/319", ["head", "repo", "id"], 99),
-            ("pulls/319", ["head", "repo", "fork"], True),
+            ("pulls/319", ["head", "repo", "full_name"], "outsider/fork"),
             ("pulls/319", ["head", "sha"], "b" * 40),
             ("git/ref/heads/my%2Fbranch", ["object", "sha"], "b" * 40),
         ]
@@ -175,6 +176,160 @@ class CandidateTests(unittest.TestCase):
         self.assertIn("persist-credentials: false", host[checkout:execute])
 
 
+class AutomaticCandidateTests(unittest.TestCase):
+    def setUp(self):
+        import nightly_pr_candidate as automatic
+
+        self.automatic = automatic
+        fixture = CandidateTests()
+        fixture.setUp()
+        self.env = {
+            **fixture.env,
+            "GITHUB_EVENT_NAME": "workflow_run",
+            "GITHUB_WORKFLOW_REF": sweep.retail.PR_WORKFLOW,
+            "XL_SOURCE_RUN_ID": "456",
+        }
+        self.responses = copy.deepcopy(fixture.responses)
+        current = self.responses["actions/runs/123"]
+        current.update(event="workflow_run", path=automatic.CONTROLLER_PATH)
+        source = copy.deepcopy(current)
+        source.update(
+            id=456,
+            event="pull_request",
+            path=automatic.REQUEST_PATH,
+            head_sha=SHA,
+            head_branch="my/branch",
+            status="completed",
+            conclusion="success",
+            head_repository={"id": automatic.REPOSITORY_ID},
+            pull_requests=[],
+        )
+        self.responses["actions/runs/456"] = source
+        self.responses["commits/" + SHA + "/pulls?per_page=100"] = [copy.deepcopy(self.responses["pulls/319"])]
+        self.event = {"action": "completed", "workflow_run": {"id": 456, "run_attempt": 1, "head_sha": SHA}}
+
+    def verify(self, sha=SHA):
+        return self.automatic.verify(sha, self.env, self.responses.__getitem__, self.event)
+
+    def test_owned_source_exact_head_and_same_actor_rerun(self):
+        self.responses["pulls/319"]["head"]["repo"]["fork"] = True
+        self.assertEqual(self.verify(), {"number": 319, "sha": SHA})
+        self.responses["actions/runs/123"]["run_attempt"] = 2
+        self.env["GITHUB_RUN_ATTEMPT"] = "2"
+        self.assertEqual(self.verify()["sha"], SHA)
+        with self.assertRaises(ValueError):
+            self.verify("b" * 40)
+
+    def test_authors_actors_forks_heads_and_source_spoofing_fail_closed(self):
+        cases = [
+            ("actions/runs/123", ["actor", "id"], 99),
+            ("actions/runs/123", ["triggering_actor", "id"], 99),
+            ("actions/runs/456", ["actor", "id"], 99),
+            ("actions/runs/456", ["triggering_actor", "id"], 99),
+            ("actions/runs/456", ["head_repository", "id"], 99),
+            ("actions/runs/456", ["path"], ".github/workflows/spoof.yml"),
+            ("actions/runs/456", ["event"], "workflow_dispatch"),
+            ("actions/runs/456", ["conclusion"], "failure"),
+            ("actions/runs/456", ["run_attempt"], 2),
+            ("pulls/319", ["user", "id"], 99),
+            ("pulls/319", ["head", "repo", "id"], 99),
+            ("pulls/319", ["head", "repo", "full_name"], "outsider/fork"),
+            ("pulls/319", ["state"], "closed"),
+            ("pulls/319", ["head", "sha"], "b" * 40),
+            ("git/ref/heads/my%2Fbranch", ["object", "sha"], "b" * 40),
+        ]
+        original = copy.deepcopy(self.responses)
+        for path, keys, value in cases:
+            with self.subTest(path=path, keys=keys):
+                self.responses = copy.deepcopy(original)
+                node = self.responses[path]
+                for key in keys[:-1]:
+                    node = node[key]
+                node[keys[-1]] = value
+                node["author"] = {"name": "larsonm-personal", "id": 265118235}
+                with self.assertRaises(ValueError):
+                    self.verify()
+
+    def test_missing_ambiguous_associations_and_stale_event_are_denied(self):
+        key = "commits/" + SHA + "/pulls?per_page=100"
+        association = self.responses[key][0]
+        for values in ([], [association, association], [association] * 100):
+            with (
+                self.subTest(count=len(values)),
+                patch.dict(self.responses, {key: values}),
+                self.assertRaises(ValueError),
+            ):
+                self.verify()
+        for field, value in (("id", 999), ("head_sha", "b" * 40), ("run_attempt", 2)):
+            with patch.dict(self.event["workflow_run"], {field: value}), self.assertRaises(ValueError):
+                self.verify()
+        with patch.dict(self.env, {"GITHUB_WORKFLOW_REF": sweep.retail.WORKFLOW}), self.assertRaises(ValueError):
+            self.verify()
+        with self.assertRaises(ValueError):
+            self.automatic.verify(SHA, self.env, lambda path: {}, self.event)
+
+    def test_reused_candidate_gate_requires_pinned_automatic_inputs(self):
+        for changes in ({"CANDIDATE_SHA": ""}, {"CANDIDATE_PR": ""}, {"CANDIDATE_CAMPAIGN": "nightly"}):
+            with patch.dict(self.env, changes), self.assertRaises(ValueError):
+                sweep.candidate.verify(SHA, self.env, self.responses.__getitem__)
+        with patch.object(self.automatic, "verify", return_value={"sha": SHA}) as verify:
+            self.assertEqual(sweep.candidate.verify(SHA, self.env, self.responses.__getitem__), SHA)
+            verify.assert_called_once_with(SHA, self.env, self.responses.__getitem__)
+
+    def test_positive_receipt_cannot_be_replaced_by_skips_or_parser_success(self):
+        from run_xl_originals import FAST_TESTS
+
+        row = {
+            "id": "host-profile:retail-xl-fast",
+            "status": "PASS",
+            "xl_checks": {
+                "required_passed": len(FAST_TESTS),
+                "format_witnesses": 16,
+                "modern_source_levels": 3,
+                "navigation_smoke_passed": 1,
+                "navigation_smoke_milliseconds": 900,
+            },
+        }
+        receipt = {"target_sha": SHA, "results": [row]}
+        self.assertEqual(self.automatic.positive_receipt(receipt, SHA), 900)
+        for status in ("SKIP", "BLOCKED", "FAIL", "TIMEOUT"):
+            with patch.dict(row, {"status": status}), self.assertRaises(ValueError):
+                self.automatic.positive_receipt(receipt, SHA)
+        for changes in (
+            {"navigation_smoke_passed": 0},
+            {"navigation_smoke_passed": True},
+            {"required_passed": 0},
+            {"navigation_smoke_milliseconds": 30001},
+        ):
+            with patch.dict(row["xl_checks"], changes), self.assertRaises(ValueError):
+                self.automatic.positive_receipt(receipt, SHA)
+        for changed in ({"target_sha": "b" * 40}, {"results": []}, {"results": [row, row]}):
+            with patch.dict(receipt, changed), self.assertRaises(ValueError):
+                self.automatic.positive_receipt(receipt, SHA)
+
+    def test_workflow_is_trusted_separate_and_does_not_consume_source_artifacts(self):
+        root = Path(__file__).resolve().parents[2] / ".github/workflows"
+        request = (root / "xl-asset-request.yml").read_text()
+        workflow = (root / "xl-pr-assets.yml").read_text()
+        self.assertNotIn("actions/checkout@", request)
+        self.assertNotIn("secrets.", request)
+        self.assertNotIn("paths:", request)
+        self.assertNotIn("pull_request_target", workflow)
+        admit = workflow.split("  admit:", 1)[1].split("  smoke:", 1)[0]
+        self.assertIn("ref: ${{ github.workflow_sha }}", admit)
+        self.assertNotIn("download-artifact", admit)
+        self.assertNotIn("secrets.", workflow)
+        self.assertIn("candidate_sha: ${{ needs.admit.outputs.sha }}", workflow)
+        self.assertIn("uses: ./.github/workflows/nightly-tooling-sweep.yml", workflow)
+        self.assertIn("XL_QUALIFICATION_RESULT: ${{ needs.smoke.result }}", workflow)
+        reused = (root / "nightly-tooling-sweep.yml").read_text()
+        host = reused.split("  host:", 1)[1].split("  android:", 1)[0]
+        self.assertIn("permissions:\n      contents: read", host)
+        self.assertIn("github.event_name != 'workflow_run'", reused.split("  publish:", 1)[1])
+
+        self.assertIn("CANDIDATE_SHA: ${{ needs.admit.outputs.sha }}", workflow)
+
+
 class SweepTests(unittest.TestCase):
     def test_transport_campaign_is_explicit_and_preserves_scheduled_selection(self):
         policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
@@ -194,6 +349,54 @@ class SweepTests(unittest.TestCase):
         self.assertNotIn("retail_assets", selected)
         with self.assertRaisesRegex(ValueError, "absent"):
             sweep.select_public_campaign(plan, policy, {"tests": []}, "online-transports")
+
+    def test_public_android_failure_is_bounded_and_excludes_private_logs(self):
+        ident = "master:test_controller_overlay"
+        plan = {"tests": [{"id": ident, "lane": "android-single"}]}
+        receipt = {"results": [{"id": ident, "status": "FAIL"}]}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "master").mkdir()
+            (root / "master.log").write_text("public owner failed")
+            log = root / "master/test_controller_overlay_1.log"
+            log.write_text("old\n" * 20000 + "assertion failed\n::error::untrusted\n##[error]legacy\n")
+            (root / "master/unrelated.log").write_text("do not publish")
+            with patch("sys.stdout", io.StringIO()) as output:
+                sweep.print_public_android_failure(plan, "android-single", root, receipt)
+            rendered = output.getvalue()
+            self.assertIn("assertion failed", rendered)
+            self.assertNotIn("do not publish", rendered)
+            self.assertNotIn("##[", rendered)
+            self.assertEqual(len(json.loads(rendered.splitlines()[-1])["tail"]), 100)
+            for hidden_plan in (
+                {**plan, "retail_assets": {"commit": SHA}},
+                {"tests": plan["tests"] + [{"id": "master:unreviewed", "lane": "android-single"}]},
+            ):
+                with patch("sys.stdout", io.StringIO()) as output:
+                    sweep.print_public_android_failure(hidden_plan, "android-single", root, receipt)
+                self.assertEqual(output.getvalue(), "")
+            with patch.dict(os.environ, {"RETAIL_REQUESTED": "true"}), patch("sys.stdout", io.StringIO()) as output:
+                sweep.print_public_android_failure(plan, "android-single", root, receipt)
+                self.assertEqual(output.getvalue(), "")
+            with patch("sys.stdout", io.StringIO()) as output:
+                sweep.print_public_android_failure(plan, "host", root, receipt)
+                sweep.print_public_android_failure(
+                    plan, "android-single", root, {"results": [{"id": ident, "status": "PASS"}]}
+                )
+                self.assertEqual(output.getvalue(), "")
+            log.unlink()
+            outside = root.parent / (root.name + "-outside.log")
+            outside.write_text("external content")
+            try:
+                try:
+                    log.symlink_to(outside)
+                except OSError:
+                    return
+                with patch("sys.stdout", io.StringIO()) as output:
+                    sweep.print_public_android_failure(plan, "android-single", root, receipt)
+                self.assertNotIn("external content", output.getvalue())
+            finally:
+                outside.unlink()
 
     def test_public_jvm_failure_exposes_bounded_owner_log(self):
         plan = {"tests": [{"id": "master:test_gradle_unit_tests", "lane": "jvm"}]}

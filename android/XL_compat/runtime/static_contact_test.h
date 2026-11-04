@@ -32,7 +32,7 @@ static void static_robot_native_controls(const std::filesystem::path &root, bool
 	for (bool stationary : { false, true }) {
 		std::map<int, int> original;
 		for (int i = 0; i <= Highest_object_index; ++i)
-			if (Objects[i].type != OBJ_NONE) original.emplace(i, Objects[i].signature);
+			if (Objects[i].type != OBJ_NONE) original.emplace(i, int{ Objects[i].signature });
 		const int owner = projectile_robot();
 		auto &robot = Objects[owner];
 		robot.id = id;
