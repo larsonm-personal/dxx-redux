@@ -387,6 +387,12 @@ The store generator preserves all captures there, including across failed retrie
 
 ## Generated outputs in linked worktrees
 
+Native helper builds under `android/tools/<tool>/build*` and
+`android/tests/build*` participate in CMake generation retention. Discovery requires
+a CMake cache referring to an existing CMake source project in the owning checkout.
+Unknown directories and caches pointing outside that checkout are preserved.
+The same exclusions, Git protection, locks and active-process checks apply.
+
 `-IncludeWorktreeBuilds` extends normal or `-BuildsOnly` discovery to registered
 Git worktrees contained in this checkout. It does not remove worktrees, source,
 Git metadata or unregistered nested repositories. Each worktree's own index and
@@ -419,3 +425,32 @@ scanning. Preserve current scratch reports and externally published bundles with
 additional exclusions as appropriate. Free-space targets use actual volume free
 bytes (GiB); reported candidate sizes are logical and may overstate recovery for
 compressed or hard-linked files.
+
+## Duplicate temporary Git packs
+
+An interrupted Git repack can strand large temporary files alongside the normal
+packs. Opt-in cleanup handles only old `.tmp-<pid>-pack-<hash>.pack/idx/rev` and
+`tmp_pack_*` files with a byte-identical normal `pack-<hash>` counterpart:
+
+```powershell
+.\android\clean-workspace.ps1 -GitTemporaryPacksOnly -Preview -Verbose
+.\android\clean-workspace.ps1 -GitTemporaryPacksOnly -TargetFreeSpaceGB 50
+```
+
+The minimum age defaults to seven days, using both creation and modification
+times; `-GitTemporaryPackDays` can change it to one or more days. Size and SHA-256
+must match an existing canonical file, and hashes are checked again before
+removal. Unmatched, recent, linked, excluded or changed files are preserved.
+Active Git, build and test processes block deletion. An ordinary emulator can
+remain open with `-PreserveEmulatorWorkspaces`; no AVD paths are candidates.
+Only a checkout with its own local `.git` directory is supported; the mode never
+follows a linked worktree's external common Git directory. Default cleanup does
+not touch Git metadata. This mode does not prune objects, repack, or alter refs,
+stashes, worktrees or canonical packs. It is separate from the other cleanup-only
+modes. Free-space targets remain measured in GiB.
+
+With explicit `-KeepBuildGenerations 0`, CMake outputs also split around retained
+children. A dependency junction, nested repository, selected executable or excluded
+report no longer strands unrelated generated siblings. Links and their targets
+are never deleted or followed. Producer locks in the build and its ancestors
+still prevent deletion. Normal nonzero generation retention remains unchanged.

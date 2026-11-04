@@ -510,6 +510,108 @@ try {
     Assert-CleanupExists 'android/app/build/emulator/cache.bin'
     Assert-CleanupExists 'android/app/build/emulator/config.ini'
 
+    # Git work files are eligible only with an old byte-identical canonical copy
+    $packName = 'pack-' + ('a' * 40)
+    $duplicate = ".git/objects/pack/.tmp-123-$packName.pack"
+    $canonical = ".git/objects/pack/$packName.pack"
+    $unmatched = '.git/objects/pack/tmp_pack_unmatched'
+    $recent = '.git/objects/pack/tmp_pack_recent'
+    $different = '.git/objects/pack/tmp_pack_different'
+    foreach ($path in @($duplicate, $canonical, $unmatched, $recent, $different)) { New-CleanupFixtureFile $path }
+    [IO.File]::WriteAllText((Join-Path $fixture $unmatched), 'no canonical counterpart')
+    [IO.File]::WriteAllText((Join-Path $fixture $different), 'SYNTHETIC CLEANUP TEST')
+    foreach ($path in @($duplicate, $unmatched, $different)) {
+        $file = Get-Item -LiteralPath (Join-Path $fixture $path)
+        $file.LastWriteTimeUtc = $old
+        $file.CreationTimeUtc = $old
+    }
+    & $helper -RepositoryRoot $fixture -GitTemporaryPacksOnly -Preview
+    & $helper -RepositoryRoot $fixture -GitTemporaryPacksOnly -WhatIf
+    & $helper -RepositoryRoot $fixture -GitTemporaryPacksOnly -ExcludePaths $duplicate
+    Assert-CleanupExists $duplicate
+    $state.Busy = $true
+    $state.BusyName = 'git.exe'
+    $blocked = $false
+    try { & $helper -RepositoryRoot $fixture -GitTemporaryPacksOnly -BusyWaitSeconds 0 } catch {
+        $blocked = $_.Exception.Message -match 'processes are active'
+        if (-not $blocked) { throw }
+    }
+    if (-not $blocked) { throw 'Active Git did not block temporary-pack cleanup' }
+    $state.Busy = $false
+    # Change canonical bytes after discovery; preserve the duplicate despite equal length
+    $state.IdleChecks = 0
+    $state.OnIdle = {
+        if ($state.IdleChecks -eq 2) { [IO.File]::WriteAllText((Join-Path $fixture $canonical), 'SYNTHETIC CLEANUP TEST') }
+    }
+    try {
+        & $helper -RepositoryRoot $fixture -GitTemporaryPacksOnly
+        Assert-CleanupExists $duplicate
+    } finally { $state.OnIdle = $null }
+    [IO.File]::WriteAllText((Join-Path $fixture $canonical), 'synthetic cleanup test')
+    $state.Busy = $true
+    $state.BusyName = 'qemu-system-x86_64.exe'
+    $state.BusyCommandLine = 'emulator -avd ActiveTest'
+    & $helper -RepositoryRoot $fixture -GitTemporaryPacksOnly -PreserveEmulatorWorkspaces -BusyWaitSeconds 0
+    $state.Busy = $false
+    $state.BusyName = 'ninja.exe'
+    $state.BusyCommandLine = 'synthetic active build'
+    Assert-CleanupExists $duplicate $false
+    foreach ($path in @($canonical, $unmatched, $recent, $different)) { Assert-CleanupExists $path }
+    Assert-CleanupExists 'temp/active-emulator/avd/userdata-qemu.img.qcow2'
+    # Synthetic pack bytes are not real Git objects: remove only these fixture files
+    foreach ($path in @($canonical, $unmatched, $recent, $different)) { Remove-Item -LiteralPath (Join-Path $fixture $path) }
+
+    # Auxiliary native builds require an in-checkout CMake source and retain families
+    Add-Content -LiteralPath (Join-Path $fixture '.gitignore') -Value "android/tools/native/build*/`nandroid/tests/build*/"
+    foreach ($path in @('android/tools/native/CMakeLists.txt',
+            'android/tools/native/build-old/output.o', 'android/tools/native/build-new/output.o',
+            'android/tools/native/build-unknown/precious.bin', 'android/tests/build-external/precious.bin',
+            'android/tests/build-extract/output.o')) { New-CleanupFixtureFile $path }
+    foreach ($relative in @('android/tools/native/build-old', 'android/tools/native/build-new', 'android/tests/build-extract')) {
+        [IO.File]::WriteAllText((Join-Path $fixture "$relative/CMakeCache.txt"),
+            "CMAKE_HOME_DIRECTORY:INTERNAL=$fixture/android/tools/native`nCMAKE_GENERATOR:INTERNAL=Ninja`n")
+    }
+    [IO.File]::WriteAllText((Join-Path $fixture 'android/tests/build-external/CMakeCache.txt'),
+        "CMAKE_HOME_DIRECTORY:INTERNAL=$([IO.Path]::GetTempPath())`nCMAKE_GENERATOR:INTERNAL=Ninja`n")
+    foreach ($item in Get-ChildItem -LiteralPath (Join-Path $fixture 'android/tools/native/build-old') -Recurse -Force) { $item.LastWriteTimeUtc = $old }
+    (Get-Item -LiteralPath (Join-Path $fixture 'android/tools/native/build-old')).LastWriteTimeUtc = $old
+    & $helper -RepositoryRoot $fixture -BuildsOnly -Preview
+    Assert-CleanupExists 'android/tools/native/build-old/output.o'
+    & $helper -RepositoryRoot $fixture -BuildsOnly -ExcludePaths 'android/tests'
+    Assert-CleanupExists 'android/tools/native/build-old' $false
+    Assert-CleanupExists 'android/tools/native/build-new/output.o'
+    & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -ExcludePaths 'android/tools/native/build-new'
+    Assert-CleanupExists 'android/tests/build-extract' $false
+    Assert-CleanupExists 'android/tools/native/build-new/output.o'
+    Assert-CleanupExists 'android/tools/native/build-unknown/precious.bin'
+    Assert-CleanupExists 'android/tests/build-external/precious.bin'
+    Assert-CleanupExists 'android/tools/native/CMakeLists.txt'
+
+    # Zero-retention CMake cleanup must not strand siblings beside a dependency junction
+    foreach ($path in @('build-split/CMakeCache.txt', 'build-split/objects/generated.o',
+            'build-split/keep/result.json', 'build-split/nested/.git/config',
+            'build-split/nested/precious.cpp', 'outside/dependency/precious.lib',
+            'build-split/producer.lock')) { New-CleanupFixtureFile $path }
+    [IO.File]::WriteAllText((Join-Path $fixture 'build-split/CMakeCache.txt'),
+        "CMAKE_HOME_DIRECTORY:INTERNAL=$fixture/android/tools/native`nCMAKE_GENERATOR:INTERNAL=Ninja`n")
+    $dependencyLink = Join-Path $fixture 'build-split/vcpkg_installed'
+    New-Item -ItemType $linkType -Path $dependencyLink -Target (Join-Path $fixture 'outside/dependency') | Out-Null
+    & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -Preview -ExcludePaths 'build-split/keep'
+    Assert-CleanupExists 'build-split/objects/generated.o'
+    $cmakeHeldLock = [IO.File]::Open((Join-Path $fixture 'build-split/producer.lock'), 'Open', 'ReadWrite', 'None')
+    try {
+        & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -ExcludePaths 'build-split/keep'
+        Assert-CleanupExists 'build-split/objects/generated.o'
+    } finally { $cmakeHeldLock.Dispose() }
+    & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -ExcludePaths 'build-split/keep'
+    Assert-CleanupExists 'build-split/objects' $false
+    Assert-CleanupExists 'build-split/keep/result.json'
+    Assert-CleanupExists 'build-split/nested/precious.cpp'
+    Assert-CleanupExists 'build-split/vcpkg_installed'
+    Assert-CleanupExists 'outside/dependency/precious.lib'
+    # Remove only the fixture link, without traversing its target
+    (Get-Item -LiteralPath $dependencyLink -Force).Delete()
+
     # Real registered worktrees use their OWN index, never the enclosing repository's
     Add-Content -LiteralPath (Join-Path $fixture '.gitignore') -Value "android/app/build/`nandroid/extra/build/`n!build-dirty/`nbuild-dirty/*`n!build-dirty/notes.txt"
     New-CleanupFixtureFile 'android/app/build.gradle.kts'
