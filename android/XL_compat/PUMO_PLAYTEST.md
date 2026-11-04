@@ -33,6 +33,14 @@ full-model robot/boss combat and later earned progression remain open.
 See [full-original evidence](evidence/owned-model-android.md). The historical
 Samsung hub render and older substituted-resource tests below are separate facts.
 
+The retained29471 now separately passes88warm/23fresh-process full-original
+[PMC1 inner gates](evidence/pmc-inner-gates.md): ordinary hub entry, switch/master
+shots, blastable passage, red-key flight/pickup and save persistence. No new APK
+was built. This corrects the old Vertigo-based seven-objective assumption: Pumo's
+type76 is a gunless prop and PMC1 has one reactor objective. Fixed approaches,
+legacy staging and an owned software emulator limit this claim; full traversal,
+reactor/escape, later campaign and phone verification remain open.
+
 ## Historical29330 delivery
 
 The new [phone candidate](../../temp/pumo-user-addon-playtest-20261102/README.md)
