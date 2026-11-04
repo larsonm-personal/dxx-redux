@@ -1031,6 +1031,7 @@ def execute(plan, policy, lane, repo, output):
                         {
                             "owner": entry["id"],
                             "status": row["status"],
+                            "native_failures": retail.safe_xl_native_failures(row.get("xl_native_failures")),
                             "last_entered_stage": stage
                             if isinstance(stage, str) and stage in retail.XL_STAGES
                             else "unavailable",

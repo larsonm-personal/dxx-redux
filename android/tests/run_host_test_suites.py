@@ -1062,6 +1062,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                 argv = ["xvfb-run", "-a"] + argv
             if suite["profile"] in {"retail-xl-originals", "retail-xl-fast"}:
                 (work / "xl-originals/xl-progress.json").unlink(missing_ok=True)
+                (work / "xl-originals/original-ctest.xml").unlink(missing_ok=True)
             code = run(argv, virtual_display=suite.get("virtual_display", False))
             if suite["profile"] in {"retail-xl-originals", "retail-xl-fast"} and code == 0:
                 from run_xl_originals import validate_summary
@@ -1073,11 +1074,13 @@ def run_suite(suite, repo, build_root, output, timeout):
                         "xl_level_two_keys": receipt["experimental"]["xl_level_two_keys"]
                     }
             if suite["profile"] in {"retail-xl-originals", "retail-xl-fast"}:
-                from nightly_retail import xl_stage
+                from nightly_retail import xl_stage, xl_native_failures
 
                 stage = xl_stage(work / "xl-originals/xl-progress.json")
                 if stage:
                     result["xl_stage"] = stage
+                if code != 0 and stage == "native-tests":
+                    result["xl_native_failures"] = xl_native_failures(work / "xl-originals/original-ctest.xml")
             status = "PASS" if code == 0 else "BLOCKED" if code == 2 else "FAIL"
             result["exclusions"] = [
                 {
