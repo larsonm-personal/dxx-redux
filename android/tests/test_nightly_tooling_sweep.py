@@ -171,7 +171,14 @@ class CandidateTests(unittest.TestCase):
         execute = host.index("      - name: Execute admitted host owners")
         self.assertLess(gate, checkout)
         self.assertLess(checkout, execute)
-        self.assertNotIn("secrets.", host[:checkout])
+        availability = host.index("      - name: Check admitted retail credential availability")
+        self.assertLess(gate, availability)
+        self.assertLess(availability, checkout)
+        self.assertNotIn("secrets.", host[:availability])
+        self.assertEqual(host[availability:checkout].count("secrets."), 1)
+        self.assertIn(
+            "RETAIL_TOKEN_AVAILABLE: ${{ secrets.RETAIL_ASSETS_READ_TOKEN != '' }}", host[availability:checkout]
+        )
         self.assertIn("ref: ${{ needs.plan.outputs.target_sha }}", host[:gate])
         self.assertIn("persist-credentials: false", host[checkout:execute])
 
@@ -318,7 +325,10 @@ class AutomaticCandidateTests(unittest.TestCase):
         admit = workflow.split("  admit:", 1)[1].split("  smoke:", 1)[0]
         self.assertIn("ref: ${{ github.workflow_sha }}", admit)
         self.assertNotIn("download-artifact", admit)
-        self.assertNotIn("secrets.", workflow)
+        self.assertNotIn("secrets.", admit)
+        self.assertNotIn("secrets.", workflow.split("  report:", 1)[1])
+        self.assertEqual(workflow.count("secrets.RETAIL_ASSETS_READ_TOKEN"), 1)
+        self.assertNotIn("secrets: inherit", workflow)
         self.assertIn("candidate_sha: ${{ needs.admit.outputs.sha }}", workflow)
         self.assertIn("uses: ./.github/workflows/nightly-tooling-sweep.yml", workflow)
         self.assertIn("XL_QUALIFICATION_RESULT: ${{ needs.smoke.result }}", workflow)

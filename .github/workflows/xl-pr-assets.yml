@@ -53,6 +53,9 @@ jobs:
       actions: read
       pull-requests: read
     uses: ./.github/workflows/nightly-tooling-sweep.yml
+    # Environment secrets still require a named forwarding contract
+    secrets:
+      RETAIL_ASSETS_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
     with:
       campaign: xl-fast
       candidate_pr: ${{ needs.admit.outputs.number }}

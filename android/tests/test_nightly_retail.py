@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json
 import os
+import subprocess
 from pathlib import Path
 import tempfile
 import unittest
@@ -319,6 +320,34 @@ class RetailBoundaryTests(unittest.TestCase):
         self.assertIn("        if: inputs.retail_assets\n", callee)
         self.assertIn('[[ -n "$RETAIL_READ_TOKEN" ]]', callee)
 
+    def test_xl_reusable_secret_contract_and_empty_token_diagnostic(self):
+        caller = (ROOT / ".github/workflows/xl-pr-assets.yml").read_text()
+        callee = (ROOT / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        smoke = caller.split("\n  smoke:\n", 1)[1].split("\n  report:\n", 1)[0]
+        secrets = smoke.split("    secrets:\n", 1)[1].split("    with:\n", 1)[0]
+        self.assertEqual(secrets, "      RETAIL_ASSETS_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}\n")
+        declaration = callee.split("  workflow_call:\n", 1)[1].split("    inputs:\n", 1)[0]
+        self.assertEqual(declaration, "    secrets:\n      RETAIL_ASSETS_READ_TOKEN:\n        required: true\n")
+        check = callee.split("      - name: Check admitted retail credential availability\n", 1)[1].split(
+            "      - name: Check out immutable private retail inputs", 1
+        )[0]
+        self.assertIn("if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')", check)
+        script = "\n".join(line[10:] for line in check.split("        run: |\n", 1)[1].splitlines())
+        # Exercise the exact static shell guard with booleans only, never a real token
+        for available, code in (("true", 0), ("false", 1), ("", 1)):
+            result = subprocess.run(
+                ["bash", "-c", script],
+                env={**os.environ, "RETAIL_TOKEN_AVAILABLE": available},
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, code)
+            self.assertEqual(bool(result.stdout), code != 0)
+            if code:
+                self.assertIn("Private retail checkout token unavailable", result.stdout)
+        self.assertNotIn("secrets: inherit", caller)
+
     def test_workflow_secret_and_artifact_boundary_is_explicit(self):
         for name in ("nightly-tooling-sweep.yml", "android-nightly-tooling.yml"):
             source = (ROOT / ".github/workflows" / name).read_text()
@@ -354,7 +383,9 @@ class RetailBoundaryTests(unittest.TestCase):
             self.assertIn("token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}", source)
             if name == "nightly-tooling-sweep.yml":
                 before_checkout = source.split("      - name: Check out immutable private retail inputs", 1)[0]
-                self.assertNotIn("secrets.RETAIL_ASSETS_READ_TOKEN", before_checkout)
+                availability = before_checkout.split("      - name: Check admitted retail credential availability", 1)
+                self.assertNotIn("secrets.RETAIL_ASSETS_READ_TOKEN", availability[0])
+                self.assertIn("RETAIL_TOKEN_AVAILABLE: ${{ secrets.RETAIL_ASSETS_READ_TOKEN != '' }}", availability[1])
                 self.assertIn("nightly_tooling_sweep.py retail-check", before_checkout)
             else:
                 self.assertIn("unset RETAIL_READ_TOKEN", source)

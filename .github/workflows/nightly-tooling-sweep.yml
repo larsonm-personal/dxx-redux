@@ -60,6 +60,9 @@ on:
         options: [online, jvm-relay]
         default: online
   workflow_call:
+    secrets:
+      RETAIL_ASSETS_READ_TOKEN:
+        required: true
     inputs:
       campaign:
         type: string
@@ -425,6 +428,15 @@ jobs:
           [[ "$RETAIL_CHECKOUT_COMMIT" == "$RETAIL_ASSETS_COMMIT" ]]
           python3 control/android/tests/nightly_tooling_sweep.py retail-check \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json --lane host
+      - name: Check admitted retail credential availability
+        if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
+        env:
+          RETAIL_TOKEN_AVAILABLE: ${{ secrets.RETAIL_ASSETS_READ_TOKEN != '' }}
+        run: |
+          if [[ "$RETAIL_TOKEN_AVAILABLE" != 'true' ]]; then
+            echo '::error::Private retail checkout token unavailable; check named reusable secret forwarding and retail-ci secret configuration'
+            exit 1
+          fi
       - name: Check out immutable private retail inputs
         id: retail_checkout
         if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
