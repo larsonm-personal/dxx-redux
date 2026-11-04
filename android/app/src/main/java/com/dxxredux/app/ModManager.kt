@@ -434,6 +434,18 @@ class ModManager(
             val accepted =
                 if (previous?.kind == MOD_KIND_RESOURCES) {
                     ResourceModStore.valid(File(modsDir, filename))
+                } else if (previous?.kind == MOD_KIND_MISSION_ZIP) {
+                    val archive = File(modsDir, filename)
+                    if (!archive.isFile || archive.length() > ExtractionLimits.MAX_ZIP_SOURCE_BYTES) {
+                        false
+                    } else {
+                        try {
+                            val cached = extractionStore().reusableRecord(filename, archive)
+                            (cached?.let { MissionZip.inspectExtracted(it) } ?: MissionZip.inspect(archive)) != null
+                        } catch (_: Exception) {
+                            false
+                        }
+                    }
                 } else {
                     DxaTextureScanner.scan(File(modsDir, filename))?.canEnable == true
                 }
