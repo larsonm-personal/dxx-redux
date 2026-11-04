@@ -455,6 +455,7 @@ $tierServerManagedDualEmuTests = @()
 
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
+    "test_lan_launch_preparation" = 360 # Shared-Wi-Fi preflight and bounded failure diagnostics
     "test_lan_three_player_startup" = 900
     "test_d1_wall_blast_save" = 300
     "test_public_save_continuation" = 900
