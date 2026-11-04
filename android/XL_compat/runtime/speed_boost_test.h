@@ -1,5 +1,6 @@
 #include "speed_boost.h"
 #include "speed_boost_lifecycle_test.h"
+#include "boost_crossing_test.h"
 // Controlled engine actions and source comparisons; no autonomous navigation
 static int speed_boost_test(int argc, char **argv)
 {
@@ -12,6 +13,11 @@ static int speed_boost_test(int argc, char **argv)
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
 		require(xl_level_extensions_active() && Num_walls > 0 && Num_triggers > 0, "missing boost control geometry");
+		if (const auto *geometry = find_arg_value(argc, argv, "-boost-crossing-geometry")) {
+			boost_crossing_test(geometry);
+			return 0;
+		}
+		boost_crossing_controls(std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")));
 		const int player = ConsoleObject - Objects;
 		const auto original = *ConsoleObject;
 		std::vector<wall> walls(Walls, Walls + Num_walls);
