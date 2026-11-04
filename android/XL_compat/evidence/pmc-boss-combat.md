@@ -1,6 +1,9 @@
-# Original PMC boss combat and vulnerable angles
+# Historical substituted PMC boss combat and vulnerable angles
 
-Original PMC1 has six required static bosses of robot type 76. Normal starter
+This historical fixture substitutes Vertigo robot definitions. It gives PMC1
+six static bosses of type76; original Pumo VHAM instead defines type76 as a
+gunless model20 prop with20shields and boss_flag0. These combat results are not
+qualification of full-original Pumo gameplay. See [original accounting](pmc-inner-gates.md). Normal starter
 laser hits on boss 95 demonstrate frontal immunity and rear damage. A controlled
 burst probe also retired that boss and reduced the required objectives from six
 to five without a reactor countdown, but the player died. That is not a surviving
@@ -17,7 +20,7 @@ on Trainee/Rookie and too wide on Ace/Insane.
 
 The XL-only initialization now sets the authored difficulty threshold. Starting
 a stock mission resets it to the existing zero threshold. Save restoration
-reinitializes it using the saved difficulty. Original boss definitions, mission
+reinitializes it using the saved difficulty. Fixture boss definitions, mission
 bytes, weapons and health are unchanged.
 
 | Difficulty | XL threshold |
@@ -41,8 +44,8 @@ These are native controlled checks, not normal-player combat.
 ## Android scenario and limits
 
 `test_xl_pog_runtime.ps1 -PmcBossCombat -PmcReactorPlaytest
--PmcSwitchPlaytest -PmcPlaytest -OriginalHub -MissionFlow`, with the complete
-original resource arguments, appends a short local combat check to the normal
+-PmcSwitchPlaytest -PmcPlaytest -OriginalHub -MissionFlow`, with the historical
+VertigoHam resource argument, appends a short local combat check to the normal
 hub/switch/key/reactor scenario. It fires at the front, requires a recent hit
 without health loss, then fires at the rear and requires damage. It retreats to
 segment 664, saves and loads normally. The protected owner's fresh-process Load

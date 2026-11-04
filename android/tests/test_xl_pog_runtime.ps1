@@ -63,7 +63,7 @@ if ($PmcInnerGates -and (!$PmcPlaytest -or $PmcOpeningGates -or $PmcSwitchPlayte
 if ($PmcOpeningGates -and (!$PmcPlaytest -or $PmcSwitchPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcOpeningGates requires PmcPlaytest in its own mode' }
 if ($PmcSwitchPlaytest -and (!$PmcPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcSwitchPlaytest requires PmcPlaytest in its own mode' }
 if ($PmcReactorPlaytest -and !($PmcSwitchPlaytest -or $PmcInnerGates)) { throw 'PmcReactorPlaytest requires PmcSwitchPlaytest or PmcInnerGates' }
-if ($PmcInnerGates -and $PmcBossCombat) { throw 'PmcBossCombat uses a historical Vertigo boss, not the original Pumo type76 prop' }
+if ($PumoMods -and $PmcBossCombat) { throw 'PmcBossCombat uses a historical Vertigo boss, not the original Pumo type76 prop' }
 if ($Pmc3Gold -and !$Pmc3Blue) { throw 'Pmc3Gold requires Pmc3Blue' }
 if ($Pmc3Blue -and !$Pmc3Opening) { throw 'Pmc3Blue requires Pmc3Opening' }
 if ($Pmc3Opening -and (!$Pmc2Escape -or $Pmc3Finale)) { throw 'Pmc3Opening requires Pmc2Escape without Pmc3Finale' }
@@ -353,7 +353,8 @@ try {
             $steps += @($bossSteps | Select-Object -Skip 1)
         }
         if ($PmcEscape) {
-            $escapeSteps = @(Get-Content "$PSScriptRoot/../game_scripts/test_xl_pumo_escape.jsonc" -Raw | ConvertFrom-Json -AsHashtable)
+            $escapeScript = if ($PmcInnerGates) { 'test_xl_pumo_original_escape.jsonc' } else { 'test_xl_pumo_escape.jsonc' }
+            $escapeSteps = @(Get-Content "$PSScriptRoot/../game_scripts/$escapeScript" -Raw | ConvertFrom-Json -AsHashtable)
             $steps += @($escapeSteps | Select-Object -Skip 1)
         }
         if ($Pmc2Selectors) {
@@ -469,7 +470,7 @@ try {
         if ($SaveIsolation) { $coldScript = 'test_xl_pumo_save_isolation_cold.jsonc' }
         if ($PmcOpeningGates) { $coldScript = 'test_xl_pumo_opening_gates_cold.jsonc' }
         if ($PmcInnerGates) { $coldScript = 'test_xl_pumo_inner_gates_cold.jsonc' }
-        if ($PmcEscape) { $coldScript = 'test_xl_pumo_escape_cold.jsonc' }
+        if ($PmcEscape) { $coldScript = if ($PmcInnerGates) { 'test_xl_pumo_original_escape_cold.jsonc' } else { 'test_xl_pumo_escape_cold.jsonc' } }
         if ($Pmc2Selectors) { $coldScript = 'test_xl_pumo_pmc2_selectors_cold.jsonc' }
         if ($Pmc2Escape) { $coldScript = 'test_xl_pumo_pmc2_escape_cold.jsonc' }
         if ($Pmc3Finale) { $coldScript = 'test_xl_pumo_pmc3_finale_cold.jsonc' }
