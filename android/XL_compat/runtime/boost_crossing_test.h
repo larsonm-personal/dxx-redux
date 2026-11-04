@@ -12,6 +12,7 @@ static void boost_crossing_test(const std::filesystem::path &geometry_path)
 	const auto original = *ConsoleObject;
 	const auto old_frame = FrameTime;
 	const int count = static_cast<int>(geometry.at("segments").size());
+	char source_file[] = __FILE__;
 	require(base_segment + count < MAX_SEGMENTS && base_vertex + geometry.at("vertices").size() < MAX_VERTICES, "crossing fixture exceeds geometry capacity");
 	for (const auto &point : geometry.at("vertices"))
 		Vertices[Num_vertices++] = { point[0].get<int>(), point[1].get<int>(), point[2].get<int>() };
@@ -61,7 +62,7 @@ static void boost_crossing_test(const std::filesystem::path &geometry_path)
 							start.y += i2f(dy);
 							start.z += i2f(dz);
 							const fix radius = 301466;
-							const auto masks = get_seg_masks(&start, segment, radius, __FILE__, __LINE__);
+							const auto masks = get_seg_masks(&start, segment, radius, source_file, __LINE__);
 							if (masks.centermask) continue;
 							bool blocked = false;
 							for (int face = 0; face < 6; ++face)
@@ -92,7 +93,7 @@ static void boost_crossing_test(const std::filesystem::path &geometry_path)
 							do_physics_sim(ConsoleObject);
 							const bool physics_valid = valid_path(phys_seglist, n_phys_segs, segment, ConsoleObject->segnum);
 							const auto point = [](const vms_vector &value) { return std::array<int, 3>{ value.x, value.y, value.z }; };
-							collisions << nlohmann::json{ { "from", index }, { "frame", frame }, { "speed", speed }, { "offset", { dx, dy, dz } }, { "fate", fate }, { "hit", point(hit.hit_pnt) }, { "normal", point(hit.hit_wallnorm) }, { "segment", hit.hit_seg }, { "side", hit.hit_side }, { "side_segment", hit.hit_side_seg }, { "face", hit.hit_face }, { "object", hit.hit_object }, { "position", point(ConsoleObject->pos) }, { "velocity", point(ConsoleObject->mtype.phys_info.velocity) }, { "end", ConsoleObject->segnum } }.dump() << '\n';
+							collisions << nlohmann::json{ { "from", index }, { "frame", frame }, { "speed", speed }, { "offset", { dx, dy, dz } }, { "fate", fate }, { "hit", point(hit.hit_pnt) }, { "normal", point(hit.hit_wallnorm) }, { "segment", hit.hit_seg }, { "side", hit.hit_side }, { "side_segment", hit.hit_side_seg }, { "face", hit.hit_face }, { "object", hit.hit_object }, { "position", point(ConsoleObject->pos) }, { "velocity", point(ConsoleObject->mtype.phys_info.velocity) }, { "end", int(ConsoleObject->segnum) } }.dump() << '\n';
 							++cases;
 							bad_fvi += !fvi_valid;
 							bad_physics += !physics_valid;
