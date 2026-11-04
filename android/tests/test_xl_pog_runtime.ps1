@@ -57,6 +57,8 @@ $ErrorActionPreference = 'Stop'
 if ($MissingCamera -and (!$HubActivation -or !$PmcPlaytest -or $SaveIsolation)) { throw 'MissingCamera requires the protected HubActivation mode' }
 if ($BriefingPages -and (!$HubActivation -or $MissingCamera -or $SaveIsolation)) { throw 'BriefingPages requires its own protected HubActivation mode' }
 if ($SaveIsolation -and (!$PmcPlaytest -or $HubActivation -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates -or $Pmc3Playtest -or $PmcColdResume)) { throw 'SaveIsolation requires PmcPlaytest in its own mode' }
+# Original Pumo VHAM type76 is a gunless prop, not the historical Vertigo boss
+if ($PmcInnerGates -and (!$PumoMods -or $VertigoHam)) { throw 'PmcInnerGates requires original PumoMods without VertigoHam' }
 if ($PmcInnerGates -and (!$PmcPlaytest -or $PmcOpeningGates -or $PmcSwitchPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcInnerGates requires PmcPlaytest in its own mode' }
 if ($PmcOpeningGates -and (!$PmcPlaytest -or $PmcSwitchPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcOpeningGates requires PmcPlaytest in its own mode' }
 if ($PmcSwitchPlaytest -and (!$PmcPlaytest -or $HubActivation -or $Pmc3Playtest -or $PmcColdResume)) { throw 'PmcSwitchPlaytest requires PmcPlaytest in its own mode' }
