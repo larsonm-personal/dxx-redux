@@ -1,0 +1,71 @@
+{
+    "initial_level": 5,
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 5,
+                "xl_pilot.remaining_objectives": 0,
+                "reactor_countdown.active": true,
+                "xl_pilot.wall_triggers.4.operated": false
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -1
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "xl_pilot.wall_triggers.4.operated": true,
+                "xl_pilot.boost_player_locked": true
+            },
+            "timeout_ms": 5000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "current_level_num": 6,
+                "position.segment": 329,
+                "player.has_blue_key": false,
+                "player.has_red_key": false,
+                "player.has_gold_key": false,
+                "player_dead": false,
+                "reactor_countdown.active": false
+            },
+            "timeout_ms": 20000
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        },
+        {
+            "action": "pose_view",
+            "segment": 0,
+            "position_fixed": [1882434, 28868600, -25536223]
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_load"
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 6,
+                "position.segment": 329,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "introspect"
+        }
+    ]
+}

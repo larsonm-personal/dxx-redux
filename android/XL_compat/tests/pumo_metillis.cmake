@@ -21,64 +21,9 @@ string(JSON plan SET "${plan}" resume_checkpoint "\"metillis-entry.sav\"")
 string(JSON plan SET "${plan}" resume_sha256 "\"${entry_hash}\"")
 file(WRITE "${OUTPUT}/main-plan.json" "${plan}\n")
 
-function(run_metillis name initial destination step_count transition_count)
-    execute_process(
-        COMMAND
-            "${CMAKE_COMMAND}" -E env --unset=SDL_VIDEODRIVER SDL_AUDIODRIVER=dummy "${ENGINE}"
-            -pumo-player-test "${OUTPUT}/${name}-plan.json" -pumo-resource-root "${RESOURCES}"
-            -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nosound
-            -nomusic
-        RESULT_VARIABLE exit_code
-        OUTPUT_VARIABLE stdout
-        ERROR_VARIABLE stderr
-        TIMEOUT 150)
-    file(WRITE "${OUTPUT}/${name}-controls.log" "${stdout}${stderr}")
-    if(NOT exit_code EQUAL 0)
-        message(FATAL_ERROR "Metillis ${name} failed (${exit_code}): ${stdout}${stderr}")
-    endif()
-    file(READ "${OUTPUT}/player-result.json" receipt)
-    string(JSON status GET "${receipt}" result)
-    string(JSON steps GET "${receipt}" steps)
-    string(JSON final GET "${receipt}" final_level)
-    string(JSON resumed GET "${receipt}" resumed_earned_checkpoint)
-    string(JSON count LENGTH "${receipt}" transitions)
-    if(NOT status STREQUAL "PASS"
-       OR NOT steps EQUAL step_count
-       OR NOT final EQUAL destination
-       OR NOT resumed
-       OR NOT count EQUAL transition_count)
-        message(FATAL_ERROR "Metillis ${name} progression evidence incomplete")
-    endif()
-    if(transition_count)
-        string(
-            JSON
-            source
-            GET
-            "${receipt}"
-            transitions
-            0
-            from)
-        string(
-            JSON
-            target
-            GET
-            "${receipt}"
-            transitions
-            0
-            to)
-        if(NOT source EQUAL initial OR NOT target EQUAL destination)
-            message(FATAL_ERROR "Metillis ${name} transition mismatch")
-        endif()
-    endif()
-    foreach(member result state)
-        configure_file("${OUTPUT}/player-${member}.json" "${OUTPUT}/${name}-${member}.json"
-                       COPYONLY)
-    endforeach()
-    configure_file("${OUTPUT}/player-trace.jsonl" "${OUTPUT}/${name}-trace.jsonl" COPYONLY)
-    set(${name}_receipt "${receipt}" PARENT_SCOPE)
-endfunction()
+include("${CMAKE_CURRENT_LIST_DIR}/pumo_player_phase.cmake")
 
-run_metillis(main 4 5 85 1)
+run_pumo_player_phase(main 4 5 85 1)
 # Require the complete automatic corridor, master and 99-second authored countdown
 foreach(
     index
@@ -169,7 +114,7 @@ foreach(field shields energy robots_killed_level has_blue_key has_red_key has_go
 endforeach()
 string(JSON plan SET "${plan}" checkpoint_expect "${expected}")
 file(WRITE "${OUTPUT}/alternate-plan.json" "${plan}\n")
-run_metillis(alternate 4 14 14 1)
+run_pumo_player_phase(alternate 4 14 14 1)
 string(JSON main_process GET "${main_receipt}" process_id)
 string(JSON alternate_process GET "${alternate_receipt}" process_id)
 if(main_process EQUAL alternate_process)
@@ -210,7 +155,7 @@ string(
     "{\"current_level_num\":14,\"position.segment\":228,\"player.shields\":100,\"player.energy\":100}"
 )
 file(WRITE "${OUTPUT}/coldrom-plan.json" "${plan}\n")
-run_metillis(coldrom 14 14 15 0)
+run_pumo_player_phase(coldrom 14 14 15 0)
 string(JSON coldrom_process GET "${coldrom_receipt}" process_id)
 if(coldrom_process EQUAL alternate_process OR coldrom_process EQUAL main_process)
     message(FATAL_ERROR "Coldrom ownership/save checks did not use a fresh process")
