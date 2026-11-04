@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from xl_private_assets import verify
 from nightly_retail import XL_STAGES
-from run_xl_navigation_smoke import run as run_navigation_smoke
+from run_xl_navigation_smoke import run_anchors
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "XL_compat/tests"))
 from reference_sources import SOURCE_ARGUMENTS, reference_parameters, reference_sources, require_source_arguments
@@ -184,10 +184,20 @@ def native_receipt(path, returncode, fast=False):
     if len(names) != len(set(names)) or set(names) != required | optional:
         raise ValueError("Original XL results were omitted or duplicated")
     experimental = {}
+    camera = None
     for case in cases:
         name = case.get("name")
         if any(case.find(tag) is not None for tag in ("skipped", "error")):
             raise ValueError("Original XL execution was skipped or errored")
+        if name == "xl_projectiles":
+            markers = [
+                line.strip().split(": ", 1)[1]
+                for line in (case.findtext("system-out") or "").splitlines()
+                if line.strip().startswith("XL_CAMERA_SUBCHECKS: ")
+            ]
+            if len(markers) != 1 or markers[0] not in ("executed", "not_run_missing_addon"):
+                raise ValueError("Camera subcheck coverage was not reported")
+            camera = markers[0]
         failures = case.findall("failure")
         failed = bool(failures)
         if case.get("status") != ("fail" if failed else "run") or len(failures) > 1:
@@ -207,7 +217,12 @@ def native_receipt(path, returncode, fast=False):
     expected_code = 8 if "failed" in experimental.values() else 0
     if returncode != expected_code:
         raise ValueError("CTest exit status disagrees with original XL receipt")
-    return {"required_passed": len(required), "experimental": experimental, "level_two_completion_qualified": False}
+    return {
+        "required_passed": len(required),
+        "experimental": experimental,
+        "level_two_completion_qualified": False,
+        "camera_subchecks": camera,
+    }
 
 
 def validate_summary(receipt, fast=False):
@@ -218,12 +233,13 @@ def validate_summary(receipt, fast=False):
         receipt.get("required_passed") != len(required)
         or receipt.get("required_tests") != sorted(required)
         or receipt.get("level_two_completion_qualified") is not False
+        or receipt.get("camera_subchecks") not in ("executed", "not_run_missing_addon")
         or not isinstance(experimental, dict)
         or set(experimental) != (set() if fast else EXPERIMENTAL_TESTS)
         or any(value not in ("passed", "failed") for value in experimental.values())
         or receipt.get("format_witnesses") != (16 if fast else 9)
         or receipt.get("modern_source_levels") != (3 if fast else 0)
-        or (fast and receipt.get("navigation_smoke_passed") != 1)
+        or (fast and (receipt.get("navigation_smoke_passed") != 1 or receipt.get("navigation_anchors_passed") != 4))
     ):
         raise ValueError("Invalid original XL acceptance receipt")
     navigation = {}
@@ -231,10 +247,15 @@ def validate_summary(receipt, fast=False):
         elapsed = receipt.get("navigation_smoke_milliseconds")
         if type(elapsed) is not int or not 0 <= elapsed <= 30000:
             raise ValueError("Invalid XL navigation smoke timing")
-        navigation = {"navigation_smoke_passed": 1, "navigation_smoke_milliseconds": elapsed}
+        navigation = {
+            "navigation_smoke_passed": 1,
+            "navigation_anchors_passed": 4,
+            "navigation_smoke_milliseconds": elapsed,
+        }
     return {
         **navigation,
         "required_passed": len(required),
+        "camera_subchecks": receipt["camera_subchecks"],
         "format_witnesses": receipt["format_witnesses"],
         "modern_source_levels": receipt["modern_source_levels"],
     }
@@ -351,7 +372,6 @@ def main():
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--work", type=Path, required=True)
     parser.add_argument("--jvm-only", action="store_true")
-    parser.add_argument("--navigation-seed", type=int, help="Override the XL smoke sample; defaults to target commit")
     parser.add_argument(
         "--fast",
         action="store_true",
@@ -540,13 +560,10 @@ def main():
     )
     if args.fast:
         mark_stage(work, "navigation-smoke")
-        seed = args.navigation_seed
-        if seed is None:
-            head = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True, timeout=10).strip()
-            seed = int(head[:16], 16)
-        navigation = run_navigation_smoke(
-            stock / "main/dxx-redux-d2-headless-route", stage, retail_data, work / "navigation-smoke", seed
+        navigation = run_anchors(
+            stock / "main/dxx-redux-d2-headless-route", stage, retail_data, work / "navigation-smoke"
         )
+        receipt["navigation_anchors_passed"] = navigation["anchors_passed"]
         receipt["navigation_smoke_passed"] = navigation["passed"]
         receipt["navigation_smoke_milliseconds"] = round(navigation["seconds"] * 1000)
     mark_stage(work, "verify-receipt")

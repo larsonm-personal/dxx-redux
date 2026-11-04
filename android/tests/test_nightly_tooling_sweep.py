@@ -294,6 +294,7 @@ class AutomaticCandidateTests(unittest.TestCase):
                 "format_witnesses": 16,
                 "modern_source_levels": 3,
                 "navigation_smoke_passed": 1,
+                "navigation_anchors_passed": 4,
                 "navigation_smoke_milliseconds": 900,
             },
         }
@@ -326,8 +327,9 @@ class AutomaticCandidateTests(unittest.TestCase):
         self.assertIn("ref: ${{ github.workflow_sha }}", admit)
         self.assertNotIn("download-artifact", admit)
         self.assertNotIn("secrets.", admit)
-        self.assertNotIn("secrets.", workflow.split("  report:", 1)[1])
-        self.assertEqual(workflow.count("secrets.RETAIL_ASSETS_READ_TOKEN"), 1)
+        self.assertNotIn("secrets.", workflow.split("  report:", 1)[1].split("  readiness:", 1)[0])
+        self.assertEqual(workflow.count("secrets.RETAIL_ASSETS_READ_TOKEN"), 2)
+        self.assertNotIn("secrets.", workflow.split("  readiness-report:", 1)[1])
         self.assertNotIn("secrets: inherit", workflow)
         self.assertIn("candidate_sha: ${{ needs.admit.outputs.sha }}", workflow)
         self.assertIn("uses: ./.github/workflows/nightly-tooling-sweep.yml", workflow)

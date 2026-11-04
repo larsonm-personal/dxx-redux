@@ -31,6 +31,7 @@ extern "C" {
 #include "gameseq.h"
 #include "gamesave.h"
 #include "escort.h"
+#include "endlevel.h"
 #include "segment.h"
 #include "gr.h"
 #include "inferno.h"
@@ -238,6 +239,16 @@ int main(int argc, char *argv[])
 	char error[256] = "";
 	const char *output = find_arg_value(argc, argv, "-route-confirm-json-out");
 	const char *load_proof = find_arg_value(argc, argv, "-route-confirm-load-proof");
+	const char *readiness_proof = find_arg_value(argc, argv, "-xl-readiness-proof");
+	nlohmann::ordered_json readiness;
+	const auto readiness_phase = [&](const char *phase) {
+		if (!readiness_proof) return;
+		readiness["schema"] = "dxx-xl-load-tick-v1";
+		readiness["phase"] = phase;
+		std::ofstream stream(readiness_proof);
+		stream << readiness.dump(2) << '\n';
+	};
+	readiness_phase("initializing");
 	const char *mission = find_arg_value(argc, argv, "-mission");
 	const char *extra_dir = find_arg_value(argc, argv, "-extra-dir");
 	const char *level_text = find_arg_value(argc, argv, "-level");
@@ -251,6 +262,7 @@ int main(int argc, char *argv[])
 		if (!strcmp(argv[index], "-route-confirm-native-transition")) native_transition = true;
 	for (int index = 1; index < argc; ++index)
 		if ((!strcmp(argv[index], "-route-confirm-load-proof") && (!load_proof || !*load_proof)) ||
+		    (!strcmp(argv[index], "-xl-readiness-proof") && (!readiness_proof || !*readiness_proof)) ||
 		    (!strcmp(argv[index], "-route-confirm-checkpoint") && (!checkpoint || !*checkpoint)) ||
 		    (!strcmp(argv[index], "-route-confirm-checkpoint-out") && (!checkpoint_out || !*checkpoint_out)) ||
 		    (!strcmp(argv[index], "-route-confirm-segment") && (!segment_goal || !*segment_goal)) ||
@@ -263,6 +275,7 @@ int main(int argc, char *argv[])
 	    find_arg_value(argc, argv, "-route-confirm-timeout-seconds");
 	int level = 0;
 	if (!output || !parse_level(level_text, &level) ||
+	    (readiness_proof && (checkpoint || checkpoint_out || segment_goal || key_goal || exit_goal || load_proof)) ||
 	    (key_goal && exit_goal) || (segment_goal && (key_goal || exit_goal)) || (native_transition && !exit_goal) ||
 	    !route_confirmation_configure_key_goal(key_goal) ||
 	    !route_confirmation_configure_segment_goal(segment_goal) ||
@@ -293,6 +306,7 @@ int main(int argc, char *argv[])
 		        extra_dir);
 		return 1;
 	}
+	readiness_phase("mission_load");
 	fprintf(stderr, "ROUTE-CONFIRM phase=mission-load\n");
 	if (!load_requested_mission(mission, error, sizeof(error))) {
 		fprintf(stderr, "ROUTE-CONFIRM FAIL mission %s\n",
@@ -318,9 +332,44 @@ int main(int argc, char *argv[])
 		Newdemo_state = ND_STATE_PLAYBACK;
 	level_metadata_set_progress_callback(route_start_progress, nullptr);
 	fprintf(stderr, "ROUTE-CONFIRM phase=level-load level=%d\n", level);
+	readiness_phase("level_load");
 	StartNewGame(level);
 	if (level < 0)
 		Newdemo_state = ND_STATE_NORMAL;
+	if (readiness_proof) {
+		// No route controller, robot deletion, invulnerability or granted keys.
+		level_metadata_set_progress_callback(nullptr, nullptr);
+		readiness["mission"] = Current_mission_filename;
+		readiness["level"] = Current_level_num;
+		readiness["level_file"] = Gamesave_current_filename;
+		readiness["segments"] = Num_segments;
+#ifdef DXX_XL_RUNTIME
+		readiness["xl_active"] = xl_level_extensions_active() != 0;
+		readiness["level_version"] = xl_source_level_version();
+#else
+		readiness["xl_active"] = false;
+#endif
+		readiness["frames"] = 0;
+		readiness["fixed_hz"] = 60;
+		readiness["seed"] = ROUTE_CONFIRMATION_CANONICAL_SEED;
+		readiness["assisted"] = false;
+		readiness_phase("loaded");
+		int remainder = 0;
+		for (int frame = 0; frame < 120; ++frame) {
+			remainder += F1_0;
+			FrameTime = remainder / 60;
+			remainder %= 60;
+			calc_game_time();
+			GameProcessFrame();
+			if (Current_level_num != level || Player_is_dead || Endlevel_sequence) {
+				readiness_phase("simulation_failed");
+				return 1;
+			}
+			readiness["frames"] = frame + 1;
+		}
+		readiness_phase("loaded_ticked");
+		return 0;
+	}
 	nlohmann::ordered_json proof;
 	if (load_proof) {
 		proof = { { "mission", Current_mission_filename }, { "level", Current_level_num }, { "level_file", Gamesave_current_filename }, { "segments", Num_segments } };

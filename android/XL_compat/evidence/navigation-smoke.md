@@ -8,10 +8,9 @@ nonempty geometry, at least three distinct visited segments and the requested
 final segment. Parser admission, unsupported results, timeouts and baseline-matched
 failures cannot pass. No retry or replacement sample occurs after failure.
 
-The `retail-xl-fast` owner runs one mission-first, then level-first sample after
-building its existing headless targets. Its default selection seed comes from the
-target commit's first 16 hex digits; `--navigation-seed` overrides it. SHA-256
-selection is stable across Python versions. The engine retains seed 1 at 60 Hz.
+The `retail-xl-fast` owner runs all four qualified anchors on every revision,
+after building its existing headless targets. The engine retains seed 1 at 60 Hz.
+The standalone helper still accepts a seed for reproducing a single anchor.
 Simulation is limited to 30 seconds and each process to 15 wall-clock seconds.
 `selection.json` records seed, mission and level beside private engine output.
 Raw receipts and mission data must stay private; no new public asset checkout or
@@ -30,8 +29,7 @@ in `xl_private_assets.py` remain authoritative.
 Measured on Linux with the actual runner, excluding compilation/staging. The
 pool's mission files and manifest were also verified against assets revision
 `9dad21bd65ba05665ac6fe315f37fe7461e85725`; their identities match the existing
-trusted pin. No asset repository metadata changes are needed. Only the selected
-HOG and descriptor are copied into the isolated run directory.
+trusted pin. No asset repository metadata changes are needed. Each anchor copies only its HOG and descriptor into its isolated run directory.
 
 D2-XL level 2 loaded and moved through 50 segments but timed out at segment 117;
 it is deliberately not eligible for this initial bounded objective. The newly
@@ -59,6 +57,16 @@ python android/tests/run_xl_navigation_smoke.py \
   --work temp/xl-navigation-private --seed 318
 ```
 
-Seeds 0, 9, 3 and 1 select the four rows above, respectively. A seeded sample is
-one fast check, not exhaustive coverage of the pool. Extend the allowlist only
+Seeds 0, 9, 3 and 1 select the four rows above, respectively. The CI owner calls
+`run_anchors` to run all four, independently of candidate SHA. Extend the allowlist only
 after running and qualifying the exact new level/objective pair.
+
+## Separate readiness measurement
+
+See [sampled readiness](readiness.md) for the fixed uploaded-asset survey. Its
+failing cases are retained and its percentage is independent of these deliberately
+qualified regression anchors. Passing 111 native regression controls, including
+expected rejection controls, is not a 111-level compatibility result. Camera addon
+subchecks explicitly report `executed` or `not_run_missing_addon`; absence is not
+camera qualification. The HXM dependency control also checks that its corrupted
+replacement belongs to an authored robot before requiring full-level rejection.

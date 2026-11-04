@@ -1058,6 +1058,8 @@ class RetailProfileTests(unittest.TestCase):
                 "level_two_completion_qualified": False,
                 "format_witnesses": 16 if fast else 9,
                 "modern_source_levels": 3 if fast else 0,
+                "camera_subchecks": "not_run_missing_addon",
+                "navigation_anchors_passed": 4 if fast else 0,
                 "navigation_smoke_passed": 1 if fast else 0,
                 "navigation_smoke_milliseconds": 800,
             }

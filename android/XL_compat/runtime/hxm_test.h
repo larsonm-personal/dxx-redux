@@ -35,6 +35,15 @@ static void hxm_dependency_controls(const std::filesystem::path &root)
 	const auto path = shadow / "alarlof.HXM";
 	write_bytes(path.string().c_str(), original);
 	require(PHYSFS_addToSearchPath(shadow.string().c_str(), 0), "Cannot mount private HXM controls");
+	// The missing-weapon control must reach admission through an authored actor,
+	// not merely through a direct dependency helper for an unused definition.
+	auto *level_file = PHYSFSX_openReadBuffered("alarlof.rl2");
+	require(level_file, "Missing reachable-robot admission fixture");
+	xl_compat::Bytes level_bytes(static_cast<std::size_t>(PHYSFS_fileLength(level_file)));
+	require(PHYSFS_readBytes(level_file, level_bytes.data(), level_bytes.size()) == PHYSFS_sint64(level_bytes.size()), "Cannot read reachable-robot fixture");
+	PHYSFS_close(level_file);
+	const auto level = xl_compat::inspect_level(level_bytes);
+	require(std::any_of(level.objects.begin(), level.objects.end(), [](const auto &object) { return object.type == OBJ_ROBOT && object.id == 3; }), "Missing authored robot for replacement admission control");
 	const auto before = gameplay_definitions();
 	const auto model_before = hxm_model_receipt(6);
 	const auto world = arena_state();
@@ -86,6 +95,7 @@ static void hxm_dependency_controls(const std::filesystem::path &root)
 	require(gameplay_definitions() == before && arena_state() == world, "HXM capability checks mutated live state");
 	require(PHYSFS_removeFromSearchPath(shadow.string().c_str()), "Cannot unmount private HXM controls");
 	hxm_require_supported();
+	std::cout << "Reachable authored robot: invalid replacement weapon rejected by full level admission and original recovered\n";
 	std::cout << "HXM malformed payload, dependency, gun/parent/joint, empty animation and boss capability controls passed\n";
 }
 

@@ -408,15 +408,19 @@ def public_diagnostics(value):
             clean["xl_checks"] = {
                 key: counts[key] for key in ("required_passed", "format_witnesses", "modern_source_levels")
             }
+            if counts.get("camera_subchecks") in ("executed", "not_run_missing_addon"):
+                clean["xl_checks"]["camera_subchecks"] = counts["camera_subchecks"]
             if (
                 value.get("id") == "host-profile:retail-xl-fast"
                 and type(counts.get("navigation_smoke_passed")) is int
                 and counts["navigation_smoke_passed"] == 1
+                and counts.get("navigation_anchors_passed") == 4
                 and type(counts.get("navigation_smoke_milliseconds")) is int
                 and 0 <= counts["navigation_smoke_milliseconds"] <= 30000
             ):
                 clean["xl_checks"].update(
                     navigation_smoke_passed=1,
+                    navigation_anchors_passed=4,
                     navigation_smoke_milliseconds=counts["navigation_smoke_milliseconds"],
                 )
     return clean

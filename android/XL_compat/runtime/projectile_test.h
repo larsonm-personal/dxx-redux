@@ -468,6 +468,7 @@ static int projectile_test(int argc, char **argv)
 		projectile_static_robot_controls(true);
 		if (camera_controls) camera_hit_disk_controls();
 		else std::cout << "Camera disk controls not run: optional original XL addon absent\n";
+		std::cout << "XL_CAMERA_SUBCHECKS: " << (camera_controls ? "executed" : "not_run_missing_addon") << '\n';
 		StartNewGame(1);
 		Game_suspended = SUSP_ROBOTS;
 		projectile_impacts(root);
