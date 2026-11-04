@@ -152,6 +152,11 @@ private fun linkMissionResource(
         Os.link(source.absolutePath, destination.absolutePath)
     } catch (_: Exception) {
         // JVM tests and filesystems without hard links use a private copy
+        ImportStorageGuard.requireFreeSpace(
+            destination.parentFile ?: destination,
+            source.length(),
+            "Preparing mission resource: ${source.name}",
+        )
         source.copyTo(destination)
     }
     check(source.length() == destination.length()) { "Mission resource staging failed: ${source.name}" }
