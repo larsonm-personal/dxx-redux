@@ -54,6 +54,7 @@ param(
     [ValidateRange(0.1, 1000)][double]$SceneDistance = 8
 )
 $ErrorActionPreference = 'Stop'
+$earnedFinale = $Pmc3Gold -and $Pmc3Finale
 if ($MissingCamera -and (!$HubActivation -or !$PmcPlaytest -or $SaveIsolation)) { throw 'MissingCamera requires the protected HubActivation mode' }
 if ($BriefingPages -and (!$HubActivation -or $MissingCamera -or $SaveIsolation)) { throw 'BriefingPages requires its own protected HubActivation mode' }
 if ($SaveIsolation -and (!$PmcPlaytest -or $HubActivation -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates -or $Pmc3Playtest -or $PmcColdResume)) { throw 'SaveIsolation requires PmcPlaytest in its own mode' }
@@ -66,7 +67,8 @@ if ($PmcReactorPlaytest -and !($PmcSwitchPlaytest -or $PmcInnerGates)) { throw '
 if ($PumoMods -and $PmcBossCombat) { throw 'PmcBossCombat uses a historical Vertigo boss, not the original Pumo type76 prop' }
 if ($Pmc3Gold -and !$Pmc3Blue) { throw 'Pmc3Gold requires Pmc3Blue' }
 if ($Pmc3Blue -and !$Pmc3Opening) { throw 'Pmc3Blue requires Pmc3Opening' }
-if ($Pmc3Opening -and (!$Pmc2Escape -or $Pmc3Finale)) { throw 'Pmc3Opening requires Pmc2Escape without Pmc3Finale' }
+if ($Pmc3Opening -and (!$Pmc2Escape -or ($Pmc3Finale -and !$Pmc3Gold))) { throw 'Pmc3Opening requires Pmc2Escape and Pmc3Gold when combined with Pmc3Finale' }
+if ($earnedFinale -and !$PmcInnerGates) { throw 'Earned PMC3 finale requires the full-original PmcInnerGates route' }
 if ($Pmc3Finale -and !$Pmc2Escape) { throw 'Pmc3Finale requires Pmc2Escape' }
 if ($Pmc2Escape -and (!$PmcEscape -or $Pmc2Selectors)) { throw 'Pmc2Escape requires PmcEscape without Pmc2Selectors' }
 if ($Pmc2Selectors -and !$PmcEscape) { throw 'Pmc2Selectors requires PmcEscape' }
@@ -176,6 +178,7 @@ if ($Pmc3Finale) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc
 if ($Pmc3Opening) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-opening' }
 if ($Pmc3Blue) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-blue' }
 if ($Pmc3Gold) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-gold' }
+if ($earnedFinale) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-earned-finale' }
 if ($HubActivation) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-activation' }
 if ($SaveIsolation) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-save-isolation' }
 if ($Pmc3Playtest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-android' }
@@ -365,7 +368,7 @@ try {
             $escapeSteps = @(Get-Content "$PSScriptRoot/../game_scripts/test_xl_pumo_pmc2_escape.jsonc" -Raw | ConvertFrom-Json -AsHashtable)
             $steps += @($escapeSteps | Select-Object -Skip 1)
         }
-        if ($Pmc3Finale) {
+        if ($Pmc3Finale -and !$earnedFinale) {
             $finaleSteps = @(Get-Content "$PSScriptRoot/../game_scripts/test_xl_pumo_pmc3_finale.jsonc" -Raw | ConvertFrom-Json -AsHashtable)
             $steps += @($finaleSteps | Select-Object -Skip 1)
         }
@@ -384,6 +387,10 @@ try {
         if ($Pmc3Gold) {
             $goldSteps = @(Get-Content "$PSScriptRoot/../game_scripts/test_xl_pumo_pmc3_gold.jsonc" -Raw | ConvertFrom-Json -AsHashtable)
             $steps += @($goldSteps | Select-Object -Skip 1)
+        }
+        if ($earnedFinale) {
+            $finaleSteps = @(Get-Content "$PSScriptRoot/../game_scripts/test_xl_pumo_pmc3_earned_finale.jsonc" -Raw | ConvertFrom-Json -AsHashtable)
+            $steps += @($finaleSteps | Select-Object -Skip 1)
         }
         $scriptName = [IO.Path]::GetFullPath((Join-Path $output 'reactor-warm.jsonc'))
         ConvertTo-Json -InputObject $steps -Depth 20 | Set-Content -LiteralPath $scriptName -Encoding utf8
@@ -477,6 +484,7 @@ try {
         if ($Pmc3Opening) { $coldScript = 'test_xl_pumo_pmc3_opening_cold.jsonc' }
         if ($Pmc3Blue) { $coldScript = 'test_xl_pumo_pmc3_blue_cold.jsonc' }
         if ($Pmc3Gold) { $coldScript = 'test_xl_pumo_pmc3_gold_cold.jsonc' }
+        if ($earnedFinale) { $coldScript = 'test_xl_pumo_pmc3_earned_finale_cold.jsonc' }
         if ($PmcReactorPlaytest -and !$PmcEscape -and $PmcInnerGates) { $coldScript = 'test_xl_pumo_original_reactor_cold.jsonc' }
         if ($PmcReactorPlaytest -and !$PmcEscape -and !$PmcInnerGates) {
             $steps = @(Get-Content "$PSScriptRoot/../game_scripts/$coldScript" -Raw | ConvertFrom-Json -AsHashtable)
@@ -506,6 +514,7 @@ try {
         if (!$newPid -or $newPid -eq $oldPid) { throw 'PMC cold restore did not use a fresh game process' }
         if ($coldResult.result -ne 'PASS' -or $coldResult.steps_completed -ne $coldResult.total_steps) { throw 'Incomplete PMC cold restore result' }
         $coldProof = @{ initial_game_pid = $oldPid; restored_game_pid = $newPid }
+        if ($earnedFinale) { $coldProof.earned_key_checkpoint_restored = $true }
         if ($PmcInnerGates -and !$PmcReactorPlaytest) { $coldProof.inner_gates_crossed = $true }
         if ($PmcBossCombat) {
             $restoredBoss = @($coldState.level_scene.robots | Where-Object { $_.object -eq 95 -and $_.id -eq 76 })
@@ -523,13 +532,13 @@ try {
             if ($beforeCheckpoint -cne $afterCheckpoint) { throw 'PMC cold restore changed persistent player or camera/static robot state' }
             $coldProof.checkpoint_matches = $true
             Write-Host "PASS: Fresh-process PMC3 menu load ($($coldResult.total_steps) steps), 85 actors and player checkpoint match"
-        } elseif ($Pmc3Gold) {
+        } elseif ($Pmc3Gold -and !$Pmc3Finale) {
             $coldProof.normal_pmc3_gold_key_restored = $coldState.player.has_gold_key
             Write-Host "PASS: Fresh-process PMC3 gold key, consumed shield pickups and normal keyed-door flight ($($coldResult.total_steps) steps)"
-        } elseif ($Pmc3Blue) {
+        } elseif ($Pmc3Blue -and !$Pmc3Finale) {
             $coldProof.normal_pmc3_blue_key_restored = $coldState.player.has_blue_key
             Write-Host "PASS: Fresh-process PMC3 blue key, unlocks and normal keyed-door flight ($($coldResult.total_steps) steps)"
-        } elseif ($Pmc3Opening) {
+        } elseif ($Pmc3Opening -and !$Pmc3Finale) {
             $coldProof.normal_pmc3_opening_restored = $true
             Write-Host "PASS: Fresh-process PMC3 opening masters, connecting gate and one-sided unlock persistence ($($coldResult.total_steps) steps)"
         } elseif ($Pmc3Finale) {
@@ -575,9 +584,10 @@ try {
     elseif ($HubActivation) { Write-Host "PASS: Original hub door and PMC exit through laser/thrust, repeated after hub save restore ($($result.total_steps) steps); fixed initial pose, no human traversal" }
     elseif ($PmcOpeningGates) { Write-Host "PASS: Original PMC1 opening unlock/open-wall shots, three gate crossings and warm/cold persistence; fixed poses, no full traversal" }
     elseif ($PmcInnerGates -and !$PmcReactorPlaytest) { Write-Host "PASS: Original PMC1 unlock/master shots, forcefield flight and red-key pickup, blastable wall and warm/cold persistence; fixed poses, no full traversal" }
-    elseif ($Pmc3Gold) { Write-Host "PASS: Original PMC3 shield collection, gold-key pickup and warm/cold keyed-door flight; fixed local approaches" }
-    elseif ($Pmc3Blue) { Write-Host "PASS: Original PMC3 unlock shots, contact-operated remote door, blue-key pickup and warm/cold keyed-door flight; fixed local approaches" }
-    elseif ($Pmc3Opening) { Write-Host "PASS: Original PMC3 opening grate shots, gate crossings, connecting switches and warm/cold persistence; fixed local approaches" }
+    elseif ($earnedFinale) { Write-Host "PASS: Original PMC3 earned blue/gold keys, ordinary reactor combat, portals and ending; cold key/countdown restore and normal exit repeat, fixed local approaches" }
+    elseif ($Pmc3Gold -and !$Pmc3Finale) { Write-Host "PASS: Original PMC3 shield collection, gold-key pickup and warm/cold keyed-door flight; fixed local approaches" }
+    elseif ($Pmc3Blue -and !$Pmc3Finale) { Write-Host "PASS: Original PMC3 unlock shots, contact-operated remote door, blue-key pickup and warm/cold keyed-door flight; fixed local approaches" }
+    elseif ($Pmc3Opening -and !$Pmc3Finale) { Write-Host "PASS: Original PMC3 opening grate shots, gate crossings, connecting switches and warm/cold persistence; fixed local approaches" }
     elseif ($Pmc3Finale) { Write-Host "PASS: Original PMC3 grate switch, outward/return portals, reactor/countdown persistence, normal exit flight and ending; fixed local approaches" }
     elseif ($Pmc2Escape) { Write-Host "PASS: Original PMC2 field, contact gate and normal boost exit, cold repeat and PMC3 save/load; fixed local approaches" }
     elseif ($Pmc2Selectors) { Write-Host "PASS: Original PMC2 repeatable selector shots, forcefield/door controls and warm/cold persistence after normal PMC1 exit; fixed local approaches" }

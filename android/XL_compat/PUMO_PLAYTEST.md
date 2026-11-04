@@ -238,6 +238,14 @@ flight through the first grate were exercised; switch3, clean release and the
 red-key route remain unqualified. That historical diagnostic candidate is separate
 from the current version 29180 phone fog candidate described above.
 
+The [full-original earned-key finale](evidence/original-earned-finale.md) now
+composes the original PMC gates, earned blue/gold keys, ordinary reactor combat,
+portals and ending in453warm/24fresh-process steps on retained APK29471. This
+uses full original mission-owned resources and preserves exact profile hashes.
+It supersedes historical substituted-resource finale evidence for these bounded
+checks, while leaving the other original14-level branch and connected traversal
+unqualified. No new APK or phone qualification is implied.
+
 ## Boundaries and feedback
 
 - Fixed local approaches and bounded escape flights do not qualify full human
