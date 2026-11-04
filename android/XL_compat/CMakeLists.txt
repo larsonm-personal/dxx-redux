@@ -830,6 +830,18 @@ if(BUILD_TESTING)
                 ${hxm_reference_args} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/hxm.cmake)
         set_tests_properties(xl_hxm_native PROPERTIES TIMEOUT 270)
     endif()
+    set(XL_PUMO_PLAYER_ROOT ""
+        CACHE PATH "Full original Pumo missions/mods/data for native player probes")
+    if(XL_PUMO_PLAYER_ROOT AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        add_test(
+            NAME xl_pumo_majha_player
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-majha-player -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_player.cmake)
+        set_tests_properties(xl_pumo_majha_player PROPERTIES TIMEOUT 240)
+    endif()
     set(XL_ARENA_HOG "" CACHE FILEPATH "Original Robotech Arena HOG for private water coverage")
     set(XL_ARENA_DESCRIPTOR "" CACHE FILEPATH "Original Robotech Arena mission descriptor")
     if(XL_ARENA_HOG AND XL_ARENA_DESCRIPTOR AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)

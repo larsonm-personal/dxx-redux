@@ -40,6 +40,7 @@ param(
     [switch]$HubActivation,
     [ValidateSet('Pmc', 'Multiverse')][string]$HubDestination = 'Pmc',
     [switch]$MultiverseEscape,
+    [switch]$MajhaEscape,
     [switch]$MissingCamera,
     [switch]$BriefingPages,
     [switch]$Pmc3Playtest,
@@ -60,6 +61,7 @@ $earnedFinale = $Pmc3Gold -and $Pmc3Finale
 $multiverseEntry = $HubDestination -eq 'Multiverse'
 if ($multiverseEntry -and (!$HubActivation -or !$PumoMods -or $VertigoHam -or $MissingCamera -or $BriefingPages)) { throw 'Multiverse destination requires full-original HubActivation in its own mode' }
 if ($MultiverseEscape -and !$multiverseEntry) { throw 'MultiverseEscape requires the full-original Multiverse hub destination' }
+if ($MajhaEscape -and !$MultiverseEscape) { throw 'MajhaEscape requires the full-original MultiverseEscape route' }
 if ($MissingCamera -and (!$HubActivation -or !$PmcPlaytest -or $SaveIsolation)) { throw 'MissingCamera requires the protected HubActivation mode' }
 if ($BriefingPages -and (!$HubActivation -or $MissingCamera -or $SaveIsolation)) { throw 'BriefingPages requires its own protected HubActivation mode' }
 if ($SaveIsolation -and (!$PmcPlaytest -or $HubActivation -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates -or $Pmc3Playtest -or $PmcColdResume)) { throw 'SaveIsolation requires PmcPlaytest in its own mode' }
@@ -187,6 +189,7 @@ if ($earnedFinale) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-p
 if ($HubActivation) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-activation' }
 if ($multiverseEntry) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-multiverse-entry' }
 if ($MultiverseEscape) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-multiverse-escape' }
+if ($MajhaEscape) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-majha-escape' }
 if ($SaveIsolation) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-save-isolation' }
 if ($Pmc3Playtest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-android' }
 if ($PmcColdResume) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-cold-android' }
@@ -410,6 +413,18 @@ try {
         $scriptName = [IO.Path]::GetFullPath((Join-Path $output 'multiverse-warm.jsonc'))
         ConvertTo-Json -InputObject $steps -Depth 20 | Set-Content -LiteralPath $scriptName -Encoding utf8
     }
+    if ($MajhaEscape) {
+        $steps = @(Get-Content -LiteralPath $scriptName -Raw | ConvertFrom-Json -AsHashtable)
+        $steps += @(
+            @{ action = 'key'; key = 'enter' },
+            @{ action = 'skip_briefing'; timeout_ms = 60000 },
+            @{ action = 'wait_for'; expect = @{ in_game = $true; game_window_is_front = $true; current_level_num = 3; player_dead = $false }; timeout_ms = 120000 }
+        )
+        $escapeSteps = @(Get-Content "$PSScriptRoot/../game_scripts/test_xl_pumo_majha_escape.jsonc" -Raw | ConvertFrom-Json -AsHashtable)
+        $steps += @($escapeSteps | Select-Object -Skip 1)
+        $scriptName = [IO.Path]::GetFullPath((Join-Path $output 'majha-warm.jsonc'))
+        ConvertTo-Json -InputObject $steps -Depth 20 | Set-Content -LiteralPath $scriptName -Encoding utf8
+    }
     if ($BriefingPages) { $scriptName = 'test_xl_pumo_briefing_pages.jsonc' }
     if ($Pmc3Playtest) { $scriptName = 'test_xl_pumo_pmc3.jsonc' }
     if ($PmcColdResume) {
@@ -500,6 +515,7 @@ try {
         if ($Pmc3Gold) { $coldScript = 'test_xl_pumo_pmc3_gold_cold.jsonc' }
         if ($earnedFinale) { $coldScript = 'test_xl_pumo_pmc3_earned_finale_cold.jsonc' }
         if ($MultiverseEscape) { $coldScript = 'test_xl_pumo_multiverse_escape_cold.jsonc' }
+        if ($MajhaEscape) { $coldScript = 'test_xl_pumo_majha_escape_cold.jsonc' }
         if ($PmcReactorPlaytest -and !$PmcEscape -and $PmcInnerGates) { $coldScript = 'test_xl_pumo_original_reactor_cold.jsonc' }
         if ($PmcReactorPlaytest -and !$PmcEscape -and !$PmcInnerGates) {
             $steps = @(Get-Content "$PSScriptRoot/../game_scripts/$coldScript" -Raw | ConvertFrom-Json -AsHashtable)
@@ -538,7 +554,11 @@ try {
             $coldProof.boss_shields = $initialBoss[0].shields
             $coldProof.boss_damage_matches = $true
         }
-        if ($MultiverseEscape) {
+        if ($MajhaEscape) {
+            $coldProof.normal_majha_escape_repeated = $true
+            $coldProof.destination_level = $coldState.current_level_num
+            Write-Host "PASS: Fresh-process Majha keys/reactor checkpoint, normal boost escape and level4 save/load ($($coldResult.total_steps) steps)"
+        } elseif ($MultiverseEscape) {
             $coldProof.normal_multiverse_escape_repeated = $true
             $coldProof.destination_level = $coldState.current_level_num
             Write-Host "PASS: Fresh-process Multiverse red-key/reactor checkpoint, normal boost escape and level3 save/load ($($coldResult.total_steps) steps)"
@@ -600,6 +620,7 @@ try {
     elseif ($SaveIsolation) { Write-Host "PASS: Original Pumo and stock save-menu isolation, warm and fresh process; no progression bypass" }
     elseif ($MissingCamera) { Write-Host "PASS: Original hub exit rejects missing camera addon with a complete on-screen dialog; no progression granted" }
     elseif ($BriefingPages) { Write-Host "PASS: Original Pumo briefing pages stop printing audio while waiting and restart on the next page ($($result.total_steps) steps)" }
+    elseif ($MajhaEscape) { Write-Host "PASS: Original Majha blue/red keys, contact controls, reactor combat and continuous boost escape; fresh-process checkpoint and level4 save/load, fixed local approaches" }
     elseif ($MultiverseEscape) { Write-Host "PASS: Original hub entry, Multiverse red-key pickup/door, reactor combat and continuous boost escape; fresh-process checkpoint and level3 save/load, fixed local approaches" }
     elseif ($multiverseEntry) { Write-Host "PASS: Original hub door and Multiverse exit through laser/thrust, repeated after hub save restore, level2 normal fire ($($result.total_steps) steps); fixed initial pose, no human traversal" }
     elseif ($HubActivation) { Write-Host "PASS: Original hub door and PMC exit through laser/thrust, repeated after hub save restore ($($result.total_steps) steps); fixed initial pose, no human traversal" }
