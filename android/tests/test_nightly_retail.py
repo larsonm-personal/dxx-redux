@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 import tempfile
 import unittest
@@ -332,6 +333,14 @@ class RetailBoundaryTests(unittest.TestCase):
             "      - name: Check out immutable private retail inputs", 1
         )[0]
         self.assertIn("if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')", check)
+        self.assertNotIn("secrets: inherit", caller)
+
+    @unittest.skipUnless(sys.platform == "linux", "The retail host shell guard runs on Linux")
+    def test_xl_empty_token_shell_diagnostic(self):
+        callee = (ROOT / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        check = callee.split("      - name: Check admitted retail credential availability\n", 1)[1].split(
+            "      - name: Check out immutable private retail inputs", 1
+        )[0]
         script = "\n".join(line[10:] for line in check.split("        run: |\n", 1)[1].splitlines())
         # Exercise the exact static shell guard with booleans only, never a real token
         for available, code in (("true", 0), ("false", 1), ("", 1)):
@@ -342,11 +351,10 @@ class RetailBoundaryTests(unittest.TestCase):
                 text=True,
                 check=False,
             )
-            self.assertEqual(result.returncode, code)
+            self.assertEqual(result.returncode, code, result.stderr)
             self.assertEqual(bool(result.stdout), code != 0)
             if code:
                 self.assertIn("Private retail checkout token unavailable", result.stdout)
-        self.assertNotIn("secrets: inherit", caller)
 
     def test_workflow_secret_and_artifact_boundary_is_explicit(self):
         for name in ("nightly-tooling-sweep.yml", "android-nightly-tooling.yml"):
