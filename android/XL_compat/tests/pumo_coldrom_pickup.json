@@ -1,0 +1,109 @@
+{
+    "initial_level": 14,
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 14,
+                "position.segment": 228,
+                "xl_pilot.remaining_objectives": 1,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.invulnerable": false
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 389,
+            "side": 4,
+            "distance": 8
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -0.2
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "xl_pilot.doorways.54.state": {
+                    "gt": 0
+                },
+                "xl_pilot.doorways.56.state": {
+                    "gt": 0
+                },
+                "xl_pilot.doorways.58.state": {
+                    "gt": 0
+                }
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "player.primary_weapon": 4,
+                "player.primary_weapon_flags": 17,
+                "xl_pilot.remaining_objectives": 1
+            }
+        },
+        {
+            "action": "select_primary",
+            "slot": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "player.primary_weapon": 0,
+                "player.primary_weapon_flags": 17
+            }
+        },
+        {
+            "action": "select_primary",
+            "slot": 2
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "player.primary_weapon": 0,
+                "player.primary_weapon_flags": 17
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        },
+        {
+            "action": "pose_view",
+            "segment": 228,
+            "position_fixed": [-1605632, -1068066, -18259369]
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_load"
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 14,
+                "position.segment": 375,
+                "player.primary_weapon": 0,
+                "player.primary_weapon_flags": 17,
+                "xl_pilot.remaining_objectives": 1,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.invulnerable": false
+            }
+        },
+        {
+            "action": "introspect"
+        }
+    ],
+    "qualification": "earned_14_arrival_then_normal_Fusion_pickup_selection_and_save_load_not_exit"
+}
