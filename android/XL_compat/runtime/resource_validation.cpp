@@ -922,17 +922,13 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 		throw std::runtime_error("definition registry changed outside the owned mission resources");
 	state = std::make_unique<State>(*mission_base);
 	if (!ordinal) {
-		for (int i = 0; i < Last_level; ++i)
-			if (!d_stricmp(level_filename, Level_names[i])) {
-				ordinal = i + 1;
-				break;
-			}
-		if (!ordinal)
-			for (int i = 0; i < -Last_secret_level; ++i)
-				if (!d_stricmp(level_filename, Secret_level_names[i])) {
-					ordinal = -i - 1;
-					break;
-				}
+		for (int candidate = Last_secret_level; candidate <= Last_level; ++candidate) {
+			if (!candidate) continue;
+			const char *name = candidate < 0 ? Secret_level_names[-candidate - 1] : Level_names[candidate - 1];
+			if (d_stricmp(level_filename, name)) continue;
+			if (ordinal) throw std::runtime_error("XL resources require an explicit incoming level number for a repeated level filename");
+			ordinal = candidate;
+		}
 	}
 	if (level) state->messages = xl_compat::prepare_messages(level_filename, *level);
 	if (level) state->audio = xl_compat::prepare_named_audio(level_filename, *level, ordinal);

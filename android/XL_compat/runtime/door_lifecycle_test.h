@@ -262,12 +262,14 @@ static void door_concurrency(const std::filesystem::path &output)
 	require(Num_open_doors == 90 && Walls[first].state == WALL_DOOR_OPENING, "Full-pool reopening failed");
 	require(xl_door_state_valid(ActiveDoors, Num_open_doors), "Full door state is invalid");
 	const std::vector<active_door> earned(ActiveDoors, ActiveDoors + Num_open_doors);
+	const int player_signature = ConsoleObject->signature;
 	char save[] = "doors-full.sav", description[] = "XL active doors";
 	stop_time();
 	require(state_save_all_sub(save, description), "Cannot save full active doors");
 	require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2"), "Door stock transition failed");
 	require(!xl_door_open(Walls[0].segnum, Walls[0].sidenum) && !xl_door_frame_process(), "XL door handler claimed stock");
 	require(state_restore_all_sub(save, 0) && Num_open_doors == 90 && !std::memcmp(earned.data(), ActiveDoors, earned.size() * sizeof(active_door)), "Full door identities/timers lost through stock");
+	require(ConsoleObject->signature == player_signature, "Door restore rewrote the saved player identity");
 	door_saved_rejections(save);
 	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	FrameTime = WallAnims[Walls[first].clip_num].play_time;

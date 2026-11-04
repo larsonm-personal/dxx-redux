@@ -133,6 +133,8 @@ void run(Output output)
 	output();
 	xl_named_audio_stop();
 	GameTime64 = 20 * F1_0;
+	const int objectives = xl_level_objectives_remaining();
+	check(objectives > 0 && !Control_center_destroyed, "Actor audio needs an unfinished boss objective");
 	Objects[actor].shields = -1;
 	xl_boss_start_death(actor);
 	check(xl_boss_is_dying(actor), "Controlled boss did not start its owned death");
@@ -143,7 +145,9 @@ void run(Output output)
 	GameTime64 += 2;
 	xl_boss_deaths_frame();
 	xl_boss_spawn_state ended{};
-	check(xl_boss_spawn_state_get(0, &ended) && ended.dying == 2 && ended.owner == -1 && Control_center_destroyed, "Boss audio completion did not pass through real retirement/countdown");
+	check(xl_boss_spawn_state_get(0, &ended) && ended.dying == 2 && ended.owner == -1 &&
+	          xl_level_objectives_remaining() == objectives - 1 && Control_center_destroyed == (objectives == 1),
+	      "Boss audio completion did not preserve independent reactor/boss objectives");
 	audible(58, XL_SOUND_EXPLOSION, 4 * F1_0);
 	GameTime64 = guard.time;
 	check(restore_named_audio(initial, true), "Cannot restore incoming actor audio state");

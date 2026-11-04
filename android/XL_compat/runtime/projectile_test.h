@@ -464,9 +464,10 @@ static int projectile_test(int argc, char **argv)
 		require(load_base_mission("neptunxl", error, sizeof(error)), error);
 		StartNewGame(1);
 		Game_suspended = SUSP_ROBOTS;
-		camera_weapon_controls(root);
+		const bool camera_controls = camera_weapon_controls(root);
 		projectile_static_robot_controls(true);
-		camera_hit_disk_controls();
+		if (camera_controls) camera_hit_disk_controls();
+		else std::cout << "Camera disk controls not run: optional original XL addon absent\n";
 		StartNewGame(1);
 		Game_suspended = SUSP_ROBOTS;
 		projectile_impacts(root);

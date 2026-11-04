@@ -2609,8 +2609,8 @@ RetryObjectLoading:
 		}
 	}
 
-	//Check for rebirth missing signatures
-	if (!Objects[0].signature && !Objects[1].signature) {
+	// Legacy Rebirth saves can omit signatures; modern saves preserve zero identities
+	if (version < STATE_OBJECT_SIGNATURE_RUNTIME_VERSION && !Objects[0].signature && !Objects[1].signature) {
 		for (i=0; i<=Highest_object_index; i++)
 			Objects[i].signature = i + 1;
 		rebirth = 1;
