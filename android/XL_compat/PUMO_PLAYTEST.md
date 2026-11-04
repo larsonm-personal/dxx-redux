@@ -50,6 +50,14 @@ Protected profile hashes match exactly. These checks use legacy protected
 staging and local fixed approaches; later PMC2/PMC3 progression and physical
 phone execution remain open. No new APK was built or installed.
 
+Full-original [PMC2 selectors](evidence/pmc2-selectors.md) now pass187warm/59cold,
+including repeat selection after loading and normal gate flight. The separate
+[PMC2 escape](evidence/pmc2-escape.md) passes167warm/23cold, reaches PMC3 by its
+authored contact/boost exit and saves/loads normally there. Both use the same
+retained29471, full original resources and exact protected restoration. The
+original descriptor has14levels; these local main-route checks do not establish
+all authored branches, connected human traversal or PMC3 completion.
+
 ## Historical29330 delivery
 
 The new [phone candidate](../../temp/pumo-user-addon-playtest-20261102/README.md)
