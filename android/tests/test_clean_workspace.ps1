@@ -521,7 +521,7 @@ try {
     [IO.File]::WriteAllText((Join-Path $fixture $unmatched), 'no canonical counterpart')
     [IO.File]::WriteAllText((Join-Path $fixture $different), 'SYNTHETIC CLEANUP TEST')
     foreach ($path in @($duplicate, $unmatched, $different)) {
-        $file = Get-Item -LiteralPath (Join-Path $fixture $path)
+        $file = Get-Item -Force -LiteralPath (Join-Path $fixture $path)
         $file.LastWriteTimeUtc = $old
         $file.CreationTimeUtc = $old
     }
