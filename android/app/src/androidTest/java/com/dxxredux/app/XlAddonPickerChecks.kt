@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import android.app.Activity
 import android.app.Instrumentation
+import android.content.ClipData
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
@@ -31,7 +32,7 @@ internal class XlAddonPickerChecks(
         return automation.rootInActiveWindow?.let { visit(it, 30) }
     }
 
-    private fun reveal(text: String): AccessibilityNodeInfo {
+    fun reveal(text: String): AccessibilityNodeInfo {
         val deadline = SystemClock.uptimeMillis() + 15000
         var direction = AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
         while (SystemClock.uptimeMillis() < deadline) {
@@ -69,9 +70,47 @@ internal class XlAddonPickerChecks(
     }
 
     private fun click(text: String) {
-        var node: AccessibilityNodeInfo? = reveal(text)
-        while (node != null && !node.isClickable) node = node.parent
-        check(node?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true) { "Cannot click $text" }
+        val deadline = SystemClock.uptimeMillis() + 15000
+        while (SystemClock.uptimeMillis() < deadline) {
+            var node: AccessibilityNodeInfo? = reveal(text)
+            while (node != null && !node.isClickable) node = node.parent
+            if (node?.isEnabled == true && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return
+            SystemClock.sleep(100)
+        }
+        error("Cannot click $text")
+    }
+
+    fun pickFiles(
+        files: List<File>,
+        completed: () -> Unit,
+    ) {
+        check(files.isNotEmpty() && files.all { it.isFile })
+        val context = instrumentation.targetContext
+        val uris = files.map { Uri.parse("content://${context.packageName}.saf-test/seekable/${it.name}") }
+        val result = Intent().setData(uris.first()).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        if (uris.size > 1) {
+            result.clipData =
+                ClipData.newRawUri("Original test files", uris.first()).apply {
+                    uris.drop(1).forEach { addItem(ClipData.Item(it)) }
+                }
+        }
+        val monitor =
+            instrumentation.addMonitor(
+                IntentFilter(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    addDataType("*/*")
+                },
+                Instrumentation.ActivityResult(Activity.RESULT_OK, result),
+                true,
+            )
+        try {
+            click("\uD83D\uDCC2 Select Game Files or Archive to Import")
+            click("Pick One or More Files")
+            completed()
+            check(monitor.hits == 1) { "General import did not launch its document picker" }
+        } finally {
+            instrumentation.removeMonitor(monitor)
+        }
     }
 
     fun run(
@@ -97,27 +136,13 @@ internal class XlAddonPickerChecks(
                     ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
                 ) as SetupActivity
             instrumentation.waitForIdleSync()
-            val uri = Uri.parse("content://${context.packageName}.saf-test/seekable/${archive.name}")
-            val result = Intent().setData(uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            val monitor =
-                instrumentation.addMonitor(
-                    IntentFilter(Intent.ACTION_OPEN_DOCUMENT).apply {
-                        addCategory(Intent.CATEGORY_OPENABLE)
-                        addDataType("*/*")
-                    },
-                    Instrumentation.ActivityResult(Activity.RESULT_OK, result),
-                    true,
-                )
-            try {
-                click("\uD83D\uDCC2 Select Game Files or Archive to Import")
-                click("Pick One or More Files")
+            pickFiles(listOf(archive)) {
                 val deadline = SystemClock.uptimeMillis() + if (originalDistribution) 120000 else 30000
                 while (ModManager.forActiveSet(context.filesDir, context).listMods().isEmpty() &&
                     SystemClock.uptimeMillis() < deadline
                 ) {
                     SystemClock.sleep(100)
                 }
-                check(monitor.hits == 1) { "General import did not launch its document picker" }
                 val manager = ModManager.forActiveSet(context.filesDir, context)
                 val imported = manager.listMods().single()
                 check(imported.filename == "xl-resources" && imported.enabled)
@@ -146,8 +171,6 @@ internal class XlAddonPickerChecks(
                 } finally {
                     screenshot.recycle()
                 }
-            } finally {
-                instrumentation.removeMonitor(monitor)
             }
         } finally {
             launcher?.let { activity -> instrumentation.runOnMainSync { activity.finish() } }

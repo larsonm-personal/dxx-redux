@@ -98,7 +98,7 @@ hub-to-PMC transition complete with original Pumo's own HAM/VHAM/ASE/OOF?
    useful for a quick causal check, but the final delivered candidate must be
    rebuilt from a committed current stack head after the rebase.
 2. Use the exact protected `test_xl_pog_runtime.ps1 -OriginalHub -MissionFlow
-   -PmcPlaytest -HubActivation` invocation in the handoff. Supply full original
+-PmcPlaytest -HubActivation` invocation in the handoff. Supply full original
    PumoMods and owned camera HOG; omit VertigoHam. Confirm staging has not fallen
    back to the old reduced runtime bundle. Retain logcat and automation receipts.
 3. Prior failure: first firing step produced GL_INVALID_ENUM from
@@ -247,3 +247,19 @@ same repeating deliverable requirement, and use the next user-supplied absolute
 cutoff/time zone. If none is supplied, leave an explicit placeholder. Do not start
 the next goal automatically. Completion means verified requested behavior, not
 elapsed time, a green parser, or an exhausted test queue.
+
+## 2026-11-03 combined UI checkpoint
+
+PR332 delivers committed universal29440 and original owned-model hub qualification.
+The next child adds full original Pumo/raw-addon picker callback import followed
+by normal hub activation. The native UI-imported probe passes36/36 in113933ms,
+with owner mod/pmines_v11.7z and matching profile restoration. The wrapper's
+legacy-mounted_mods assertion was incorrect for catalog activation and is now
+corrected; rerun the complete wrapper on the next committed universal candidate.
+SELinux requires the existing private-copy fallback on this emulator. Apply the
+existing50MiB reserve before each resource copy rather than fill the volume;
+preserve temporary publication rollback and original resource ownership. The
+runner offloads only its verified safety backup and removes its verified picker
+input copy after import, retaining host originals and the imported archive.
+The default public addon-control suite still passes after the picker refactor.
+No phone verification or full campaign completion is claimed.
