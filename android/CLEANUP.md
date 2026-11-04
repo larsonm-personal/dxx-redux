@@ -387,6 +387,12 @@ The store generator preserves all captures there, including across failed retrie
 
 ## Generated outputs in linked worktrees
 
+Native helper builds under `android/tools/<tool>/build*` and
+`android/tests/build*` participate in CMake generation retention. Discovery requires
+a CMake cache referring to an existing CMake source project in the owning checkout.
+Unknown directories and caches pointing outside that checkout are preserved.
+The same exclusions, Git protection, locks and active-process checks apply.
+
 `-IncludeWorktreeBuilds` extends normal or `-BuildsOnly` discovery to registered
 Git worktrees contained in this checkout. It does not remove worktrees, source,
 Git metadata or unregistered nested repositories. Each worktree's own index and

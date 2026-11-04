@@ -492,7 +492,7 @@ function Find-RegressionPayloads {
             $workers = Join-Path $run.FullName 'workers'
             if (Test-Path -LiteralPath $workers -PathType Container) {
                 Assert-CleanupPath $workers
-                $workspaces += @(Get-ChildItem -LiteralPath $workers -Directory -Force | ForEach-Object FullName)
+                $workspaces += @(Get-ChildItem -LiteralPath $workers -Directory -Force | ForEach-Object { $_.FullName })
             }
             foreach ($workspace in $workspaces) {
                 foreach ($role in @('raw', 'stages')) {
@@ -681,6 +681,39 @@ function Find-CargoIncrementalCaches {
     }
 }
 
+function Get-AuxiliaryCMakeBuilds {
+    param([string]$Workspace)
+    # Native tools and extraction tests build outside the main game output roots
+    $parents = @((Join-Path $Workspace 'android/tests'))
+    $tools = Join-Path $Workspace 'android/tools'
+    if (Test-Path -LiteralPath $tools -PathType Container) {
+        Assert-CleanupPath $tools
+        $parents += @(Get-ChildItem -LiteralPath $tools -Directory -Force |
+            Where-Object { -not ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) } |
+            ForEach-Object { $_.FullName })
+    }
+    foreach ($parent in $parents) {
+        if (-not (Test-Path -LiteralPath $parent -PathType Container) -or (Test-CleanupExcluded $parent)) { continue }
+        Assert-CleanupPath $parent
+        if (Test-Path -LiteralPath (Join-Path $parent '.git')) { continue }
+        foreach ($build in Get-ChildItem -LiteralPath $parent -Directory -Force) {
+            if ($build.Name -notmatch '^build(?:$|[-_])' -or
+                ($build.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+                (Test-CleanupExcluded $build.FullName)) { continue }
+            $cache = Join-Path $build.FullName 'CMakeCache.txt'
+            if (-not (Test-Path -LiteralPath $cache -PathType Leaf)) { continue }
+            Assert-CleanupPath $cache
+            $sourceEntries = @(Get-Content -LiteralPath $cache | Where-Object { $_ -match '^CMAKE_HOME_DIRECTORY:[^=]+=' })
+            if ($sourceEntries.Count -ne 1) { continue }
+            $source = [IO.Path]::GetFullPath(($sourceEntries[0] -split '=', 2)[1])
+            if (-not $source.StartsWith($Workspace + [IO.Path]::DirectorySeparatorChar, $comparison) -or
+                -not (Test-Path -LiteralPath (Join-Path $source 'CMakeLists.txt') -PathType Leaf)) { continue }
+            Assert-CleanupPath (Join-Path $source 'CMakeLists.txt')
+            $build
+        }
+    }
+}
+
 function Find-GitTemporaryPacks {
     # Never follow a linked worktree's common directory outside this checkout
     $store = Join-Path $RepositoryRoot '.git'
@@ -736,6 +769,9 @@ if ($PayloadsOnly) { Find-RegressionPayloads }
 if (-not $BuildsOnly -and -not $PayloadsOnly -and -not $GitTemporaryPacksOnly) { Find-TemporaryFiles }
 $roots = [Collections.Generic.List[object]]::new()
 foreach ($workspace in $gitProtectionRoots) {
+    foreach ($nativeBuild in Get-AuxiliaryCMakeBuilds $workspace) {
+        $roots.Add([pscustomobject]@{ Item = $nativeBuild; Category = 'build'; Children = $false })
+    }
     foreach ($parentRelative in @('', 'android', 'server')) {
         $parent = if ($parentRelative) { Join-Path $workspace $parentRelative } else { $workspace }
         if (-not (Test-Path -LiteralPath $parent)) { continue }

@@ -561,6 +561,32 @@ try {
     # Synthetic pack bytes are not real Git objects: remove only these fixture files
     foreach ($path in @($canonical, $unmatched, $recent, $different)) { Remove-Item -LiteralPath (Join-Path $fixture $path) }
 
+    # Auxiliary native builds require an in-checkout CMake source and retain families
+    Add-Content -LiteralPath (Join-Path $fixture '.gitignore') -Value "android/tools/native/build*/`nandroid/tests/build*/"
+    foreach ($path in @('android/tools/native/CMakeLists.txt',
+            'android/tools/native/build-old/output.o', 'android/tools/native/build-new/output.o',
+            'android/tools/native/build-unknown/precious.bin', 'android/tests/build-external/precious.bin',
+            'android/tests/build-extract/output.o')) { New-CleanupFixtureFile $path }
+    foreach ($relative in @('android/tools/native/build-old', 'android/tools/native/build-new', 'android/tests/build-extract')) {
+        [IO.File]::WriteAllText((Join-Path $fixture "$relative/CMakeCache.txt"),
+            "CMAKE_HOME_DIRECTORY:INTERNAL=$fixture/android/tools/native`nCMAKE_GENERATOR:INTERNAL=Ninja`n")
+    }
+    [IO.File]::WriteAllText((Join-Path $fixture 'android/tests/build-external/CMakeCache.txt'),
+        "CMAKE_HOME_DIRECTORY:INTERNAL=$([IO.Path]::GetTempPath())`nCMAKE_GENERATOR:INTERNAL=Ninja`n")
+    foreach ($item in Get-ChildItem -LiteralPath (Join-Path $fixture 'android/tools/native/build-old') -Recurse -Force) { $item.LastWriteTimeUtc = $old }
+    (Get-Item -LiteralPath (Join-Path $fixture 'android/tools/native/build-old')).LastWriteTimeUtc = $old
+    & $helper -RepositoryRoot $fixture -BuildsOnly -Preview
+    Assert-CleanupExists 'android/tools/native/build-old/output.o'
+    & $helper -RepositoryRoot $fixture -BuildsOnly -ExcludePaths 'android/tests'
+    Assert-CleanupExists 'android/tools/native/build-old' $false
+    Assert-CleanupExists 'android/tools/native/build-new/output.o'
+    & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -ExcludePaths 'android/tools/native/build-new'
+    Assert-CleanupExists 'android/tests/build-extract' $false
+    Assert-CleanupExists 'android/tools/native/build-new/output.o'
+    Assert-CleanupExists 'android/tools/native/build-unknown/precious.bin'
+    Assert-CleanupExists 'android/tests/build-external/precious.bin'
+    Assert-CleanupExists 'android/tools/native/CMakeLists.txt'
+
     # Real registered worktrees use their OWN index, never the enclosing repository's
     Add-Content -LiteralPath (Join-Path $fixture '.gitignore') -Value "android/app/build/`nandroid/extra/build/`n!build-dirty/`nbuild-dirty/*`n!build-dirty/notes.txt"
     New-CleanupFixtureFile 'android/app/build.gradle.kts'
