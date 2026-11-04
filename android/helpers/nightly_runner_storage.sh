@@ -41,8 +41,8 @@ if [[ "$mode" == prepare || "$mode" == retire-hosted-sdk ]]; then
         : "${DXX_NIGHTLY_SDK_CACHE:?}" "${ANDROID_HOME:?}" "${ANDROID_SDK_ROOT:?}" "${ANDROID_NDK_ROOT:?}"
         sdk=$(realpath -e "$DXX_NIGHTLY_SDK_CACHE")
         [[ "$sdk" == "$(realpath -e "$ANDROID_HOME")" &&
-            "$sdk" == "$(realpath -e "$ANDROID_SDK_ROOT")" &&
-            -x "$sdk/platform-tools/adb" && -d "$ANDROID_NDK_ROOT" ]] || {
+        "$sdk" == "$(realpath -e "$ANDROID_SDK_ROOT")" &&
+        -x "$sdk/platform-tools/adb" && -d "$ANDROID_NDK_ROOT" ]] || {
             echo '::error::Pinned SDK and NDK must be configured before retiring the hosted SDK'
             exit 1
         }

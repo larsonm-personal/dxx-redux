@@ -95,7 +95,12 @@ class RunnerStorageTest(unittest.TestCase):
                 ANDROID_NDK_LATEST_HOME=str(ndk),
                 JAVA_HOME=str(root / "jdk"),
             )
-            env.update({key: value.replace("{hosted}", str(hosted)).replace("{alias}", str(alias)) for key, value in overrides.items()})
+            env.update(
+                {
+                    key: value.replace("{hosted}", str(hosted)).replace("{alias}", str(alias))
+                    for key, value in overrides.items()
+                }
+            )
             result = subprocess.run(
                 ["bash", str(script), "retire-hosted-sdk", "20"],
                 env=env,
@@ -114,9 +119,15 @@ class RunnerStorageTest(unittest.TestCase):
 
     def test_replaced_sdk_cleanup_rejects_active_locations(self):
         for variable in (
-            "GITHUB_WORKSPACE", "RUNNER_TEMP", "ANDROID_HOME", "ANDROID_SDK_ROOT",
-            "ANDROID_NDK_ROOT", "ANDROID_NDK_HOME", "ANDROID_NDK_LATEST_HOME",
-            "DXX_NIGHTLY_SDK_CACHE", "JAVA_HOME",
+            "GITHUB_WORKSPACE",
+            "RUNNER_TEMP",
+            "ANDROID_HOME",
+            "ANDROID_SDK_ROOT",
+            "ANDROID_NDK_ROOT",
+            "ANDROID_NDK_HOME",
+            "ANDROID_NDK_LATEST_HOME",
+            "DXX_NIGHTLY_SDK_CACHE",
+            "JAVA_HOME",
         ):
             with self.subTest(variable=variable):
                 result, calls, _ = self.run_retire(**{variable: "{hosted}"})
