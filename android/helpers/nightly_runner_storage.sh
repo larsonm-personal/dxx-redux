@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Host storage only: never remove SDKs, caches, build products or test fixtures
+# Host storage only: preserve managed SDKs, caches, builds and test fixtures
 set -euo pipefail
 
 mode=${1:-}
 minimum_gib=${2:-}
-case "$mode" in prepare | check | report) ;; *)
-    echo 'Expected prepare, check or report' >&2
+case "$mode" in prepare | retire-hosted-sdk | check | report) ;; *)
+    echo 'Expected prepare, retire-hosted-sdk, check or report' >&2
     exit 2
     ;;
 esac
@@ -29,18 +29,35 @@ report() {
 }
 
 report
-if [[ "$mode" == prepare ]]; then
+if [[ "$mode" == prepare || "$mode" == retire-hosted-sdk ]]; then
     # Refuse destructive preparation on developer machines and self-hosted runners
     [[ "${GITHUB_ACTIONS:-}" == true && "${RUNNER_ENVIRONMENT:-}" == github-hosted &&
         "${RUNNER_OS:-}" == Linux && "${ImageOS:-}" == ubuntu24 ]] || {
         echo '::error::Storage cleanup requires a GitHub-hosted Ubuntu 24.04 runner'
         exit 1
     }
+    if [[ "$mode" == retire-hosted-sdk ]]; then
+        # Explicit opt-in only after the pinned SDK has replaced the image SDK
+        : "${DXX_NIGHTLY_SDK_CACHE:?}" "${ANDROID_HOME:?}" "${ANDROID_SDK_ROOT:?}" "${ANDROID_NDK_ROOT:?}"
+        sdk=$(realpath -e "$DXX_NIGHTLY_SDK_CACHE")
+        [[ "$sdk" == "$(realpath -e "$ANDROID_HOME")" &&
+            "$sdk" == "$(realpath -e "$ANDROID_SDK_ROOT")" &&
+            -x "$sdk/platform-tools/adb" && -d "$ANDROID_NDK_ROOT" ]] || {
+            echo '::error::Pinned SDK and NDK must be configured before retiring the hosted SDK'
+            exit 1
+        }
+        unused=(/usr/local/lib/android)
+    fi
     for path in "${unused[@]}"; do
         [[ -d "$path" && ! -L "$path" ]] || continue
+        [[ "$(realpath -e "$path")" == "$path" ]] || {
+            echo "::error::Refusing cleanup through a linked parent of $path"
+            exit 1
+        }
         # Do not remove a tool if a caller configured it as a job storage location
         for protected in "$GITHUB_WORKSPACE" "$RUNNER_TEMP" "${ANDROID_HOME:-}" \
-            "${ANDROID_SDK_ROOT:-}" "${ANDROID_NDK_ROOT:-}" "${JAVA_HOME:-}"; do
+            "${ANDROID_SDK_ROOT:-}" "${ANDROID_NDK_ROOT:-}" "${ANDROID_NDK_HOME:-}" \
+            "${ANDROID_NDK_LATEST_HOME:-}" "${DXX_NIGHTLY_SDK_CACHE:-}" "${JAVA_HOME:-}"; do
             [[ -n "$protected" ]] || continue
             resolved=$(realpath -m "$protected")
             if [[ "$resolved" == "$path" || "$resolved" == "$path/"* ]]; then

@@ -162,6 +162,8 @@ jobs:
             echo "ANDROID_HOME=$sdk_root"
             echo "ANDROID_SDK_ROOT=$sdk_root"
             echo "ANDROID_NDK_ROOT=$dep_base/android-ndk-$NDK_VERSION"
+            echo "ANDROID_NDK_HOME=$dep_base/android-ndk-$NDK_VERSION"
+            echo "ANDROID_NDK_LATEST_HOME=$dep_base/android-ndk-$NDK_VERSION"
             echo "DXX_NIGHTLY_SDK_CACHE=$sdk_root"
             echo "DXX_NIGHTLY_COMPILE_SDK=$COMPILE_SDK"
             echo "DXX_NIGHTLY_BUILD_TOOLS=$BUILD_TOOLS_VERSION"
@@ -248,6 +250,12 @@ jobs:
             javac -version
             df -h .
           } 2>&1 | tee ../results/setup/toolchain.log
+      - name: Reclaim superseded hosted Android SDK
+        if: inputs.lane != 'jvm'
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          bash control/android/helpers/nightly_runner_storage.sh retire-hosted-sdk 20 2>&1 | tee results/setup/storage-retire-sdk.log
       - name: Restore emulator components
         if: inputs.lane != 'jvm'
         id: emulator-cache
