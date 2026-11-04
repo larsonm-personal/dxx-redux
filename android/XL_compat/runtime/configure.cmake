@@ -52,6 +52,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/cloak.cpp"
                 "${xl_runtime_dir}/teleport.cpp"
                 "${xl_runtime_dir}/speed_boost.cpp"
+                "${xl_runtime_dir}/crossing_path.cpp"
                 "${xl_runtime_dir}/spawn_points.cpp"
                 "${xl_runtime_dir}/trigger.cpp"
                 "${xl_runtime_dir}/reactor_countdown.cpp"

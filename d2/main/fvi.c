@@ -31,6 +31,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #ifdef DXX_XL_RUNTIME
 #include "speed_boost.h"
+#include "crossing_path.h"
 #include "blocked.h"
 #include "doorway.h"
 #include "ambient_objects.h"
@@ -807,6 +808,9 @@ if (hit_seg!=-1 && fq->flags&FQ_GET_SEGLIST)
 #endif
 	hit_data->hit_object		= fvi_hit_object;	//looks at global
 	hit_data->hit_wallnorm	= wall_norm;		//looks at global
+#ifdef DXX_XL_RUNTIME
+	xl_repair_crossing_path(fq, hit_data);
+#endif
 
 //	if(hit_seg != -1 && get_seg_masks(&hit_data->hit_pnt, hit_data->hit_seg, 0, __FILE__, __LINE__).centermask != 0)
 //		Int3();
