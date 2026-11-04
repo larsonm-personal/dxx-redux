@@ -1,0 +1,55 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_pog_runtime",
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Load Game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "[quick] level 11",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "game_window_is_front": true,
+            "current_level_num": 11,
+            "position.segment": 664,
+            "xl_pilot.runtime_active": true,
+            "xl_pilot.remaining_objectives": 0,
+            "reactor_countdown.active": true,
+            "reactor_countdown.seconds_left": {
+                "gt": 0,
+            },
+            "player.has_red_key": true,
+            "xl_pilot.wall_triggers.14.operated": true,
+            "cheats_enabled": false,
+            "player_dead": false,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "introspect",
+    },
+]
