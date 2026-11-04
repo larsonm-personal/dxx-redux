@@ -62,6 +62,7 @@ jobs:
       - name: Nightly sweep planner and ledger controls
         shell: bash
         run: |
+          python3 android/tests/test_nightly_runner_storage.py
           python3 android/tests/test_nightly_tooling_sweep.py
           python3 android/tests/test_nightly_corpus_stage.py
           python3 android/tests/test_nightly_regression_catalog.py

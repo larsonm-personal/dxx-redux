@@ -83,6 +83,13 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: control
           persist-credentials: false
+      - name: Reclaim unused hosted image tools before downloads
+        if: inputs.lane != 'jvm'
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          mkdir -p results/setup
+          bash control/android/helpers/nightly_runner_storage.sh prepare 20 2>&1 | tee results/setup/storage-prepare.log
       - name: Check out exact test target
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
@@ -342,6 +349,11 @@ jobs:
           bash target/android/gradlew -p target/android -PhostJvmOnly=true \
             -PonlineServerBinary="$GITHUB_WORKSPACE/target/server/target/release/dxx-matchmaking" \
             :proxy-tests:test --no-daemon --max-workers=2
+      - name: Require host storage before APK compilation
+        if: inputs.lane != 'jvm'
+        timeout-minutes: 2
+        shell: bash
+        run: bash control/android/helpers/nightly_runner_storage.sh check 10 2>&1 | tee results/setup/storage-10gib.log
       - name: Build emulator APKs before boot
         if: inputs.lane != 'jvm'
         id: apk
@@ -465,6 +477,9 @@ jobs:
             $avds += @{ Name = 'Nexus5X_Light_3'; Serial = 'emulator-5558' }
             'DXX_THIRD_EMULATOR_SERIAL=emulator-5558' | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           }
+          # Allow host headroom for each selected 8 GiB userdata image before boot
+          & bash "$env:GITHUB_WORKSPACE/control/android/helpers/nightly_runner_storage.sh" check ($avds.Count * 8)
+          if ($LASTEXITCODE -ne 0) { throw 'Insufficient host storage for selected emulator count' }
           foreach ($avd in $avds) {
             & ./android/get_deps/helpers/create_light_avds.ps1 -AvdName $avd.Name
             if ($LASTEXITCODE -ne 0) { throw 'AVD provisioning failed' }
@@ -580,6 +595,13 @@ jobs:
                   if 'ONLINE_EVIDENCE ' in line or 'ONLINE_SAMPLE ' in line or 'ONLINE_WORK ' in line or 'ONLINE_WORK_VECTOR ' in line or 'ONLINE_WORK_RESULT ' in line or 'ONLINE_STATE ' in line or 'ONLINE_ADMISSION ' in line or 'ALL CHECKS PASSED' in line:
                       print(line)
           PYTHON
+      - name: Record final host storage
+        if: always() && inputs.lane != 'jvm'
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          mkdir -p results/setup
+          bash control/android/helpers/nightly_runner_storage.sh report 0 2>&1 | tee results/setup/storage-final.log
       - name: Collect emulator diagnostics
         if: always() && inputs.lane != 'jvm'
         shell: bash
