@@ -20,7 +20,7 @@ is used. It is not a complete human traversal or combat qualification.
   claimed as normal navigation.
 - The no-gold control fires and flies toward wall 110 at 1190/4, remaining before
   the door plane at z=46. The gold key is not initially in the inventory.
-- A local exterior approach in room 761 at (-20, -392.3207, 302), facing west,
+- The historical exterior approach in room 761 at (-20, -392.3207, 302), facing west,
   flies into the original alcove and collects gold-key object 33. The player is
   not placed at the key or inside its chamber. The thin nearby segments were
   audited for clearance before choosing this approach.
@@ -33,7 +33,7 @@ An early exploratory selection confused energy ID 1 with shield ID 2. Objects
 retained separately and excluded from this scenario. The corrected selection
 uses the engine's powerup.h definitions and original objects 27/15.
 
-## Exact-build evidence
+## Historical substituted-resource exact-build evidence
 
 APK source 8b80ef220dbda2d9481c21611084ef21f5413808, version 28810, SHA-256
 89df3369e09897fbce528d6ae4825c7d9c58d02e30ca55741e99c3347fc49069.
@@ -49,7 +49,7 @@ APK source 8b80ef220dbda2d9481c21611084ef21f5413808, version 28810, SHA-256
 The protected run used game PIDs 27449 and 30186. Both endpoint frames were
 inspected. Before/after profile and resource hash lists match, SHA-256
 540570408b017dfe61d079cd48019843665bfb4ceb4993d5ea59242e5ed571dc.
-Receipts: temp/xl-original-pmc3-gold. The starting gold profile was restored.
+Receipts: temp/xl-overnight-20261104/prior-pmc3-gold. The starting gold profile was restored.
 
 Two preparation failures, before the new gold steps, exposed intermittent
 single-position shots at the opening shafts. Their receipts remain retained.
@@ -70,3 +70,44 @@ verifies device identity and disables automatic emulator recovery.
 The red-key route, remaining control-room branches, complete navigation, human
 controls and physical ARM devices remain outside this scenario. No runtime fix
 is required for the actions covered here.
+
+## Full-original combined key qualification, November 4 2026
+
+The protected original route now passes392/392warm steps in290.422seconds,
+run `211b4852115b4c8b9da8c0381e2ee297`, and16/16fresh-process steps in19.164seconds,
+run `3df400f5e47242faa17c35a80286028f`. PIDs24726/26464 differ. This includes
+ordinary hub/PMC1/PMC2 exits, PMC3 opening switches, original shield pickups27/15,
+blue/gold key acquisition and normal keyed-door flight. Warm saves/loads exercise
+both keys; the cold check restores both keys and consumed pickups and repeats
+gold-door flight. The reactor remains alive; no red key is acquired.
+
+Two original-resource preparation attempts remain separate failures: switch7
+missed the old centered aim (288/392), then the old gold approach missed its
+pickup (371/392). In the latter the player remained alive at66.44shields and
+slid above the alcove, ending in2200. For the4.6-radius full ship, the old
+room761 pose(-20,-392.3207,302) has only3.6units clearance to the sloped wall.
+The revised exterior pose(-20,-391.3207,300),still room761 and facing west, has
+5.6units clearance. Normal thrust collects original key33 in825ms. The player is
+not placed in key room754 or at the item. See pmc3-gold-approach-audit.json and
+preserved pmc3-keys-panel7-timeout/pmc3-keys-gold-miss under temp/xl-overnight-20261104.
+No health/key grants, invulnerability, collider or mission changes were used.
+
+Exact retained/installed APK29471, com.dxxredux.app, source
+`ec7715ffa5cd34865b701aa2152ee42f2a51b018`, SHA256
+`da070ebaacf95ea9be2f95fbd630ef5db1ccea0e24cf9108bbb6822c96a0661d`;
+all six native IDs `dxx-build:ec7715ffa5cd34865b701aa2152ee42f2a51b018:29471`.
+Full original HAM/HXM/VHAM/ASE/OOF and camera/effects resources as in the
+[original PMC1 escape](pmc-escape.md), no Vertigo substitution. No APK build/install.
+Owned Android14 software AVD DxxPhoneFog20261102, protected legacy staging.
+Protected before/after manifests both SHA256
+`160d7bc5c74593e3db73d3ac46baed653d55096c34dd403cb87cafe3af5ef253`.
+Both failed preparations also restored exactly.
+
+Final cold position:segment2300,(-80,-587.4680,96.9420),alive,54.7166shields,
+59.5758energy,both keys,one objective,no countdown. Endpoint frame inspected.
+Receipts: `temp/xl-original-pmc3-gold`. Invoke the owner with Pmc3Gold/Pmc3Blue/
+Pmc3Opening/Pmc2Escape/PmcEscape/PmcReactorPlaytest/PmcInnerGates/PmcPlaytest/
+OriginalHub/MissionFlow and original resource arguments. This does not qualify
+connected human navigation, red-key/remaining branches, reactor/ending, all14
+mission levels, current-head native changes, separate launcher UI workflow,
+physical phones or full visual/audio fidelity.

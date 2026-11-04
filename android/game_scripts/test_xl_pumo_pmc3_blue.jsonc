@@ -199,8 +199,8 @@
     {
         "action": "pose_view",
         "segment": 956,
-        "position_fixed": [-1048576, -30691865, -23592960],
-        "pitch": 3159,
+        "position_fixed": [-1179648, -30691865, -23855104],
+        "pitch": 2300,
         "heading": 16384,
     },
     {

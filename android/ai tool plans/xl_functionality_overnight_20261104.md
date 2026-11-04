@@ -79,3 +79,18 @@ After progression, audit mission-owned informational text: original pmines.txt
 contains Pulser and other weapon label replacements while retained screenshots
 still show stock labels. Verify pinned XL selection/lookup semantics before
 calling this a defect or implementing a mission-scoped override. Defer cosmetics.
+
+## Original PMC3 earned-key checkpoint
+
+Full-original392warm/16cold key route passes after geometry-led exterior aim/
+clearance corrections only. Switch7 now accepts normal fire in299ms; the gold
+pickup is earned by normal thrust in825ms. Both keys, consumed shield pickups and
+gold-door flight survive a fresh process; exact profile restoration. The reactor
+is still alive and the red key/remaining branches remain open.
+
+Next connect this earned-key checkpoint to the normal reactor/portal/ending
+scenario rather than independently positioning a fresh PMC3 pilot there. Keep
+all original actor/trigger/inventory guards and distinguish local fixed approaches
+from connected human navigation. Then test the other authored branch: hub->2->3
+->4->5(or4->14->5)->6->7->8->9->10. Exit topology is inspection only; it is not
+runtime admission or progression proof. Preserve all14levels in completion scope.
