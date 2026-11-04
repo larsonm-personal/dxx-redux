@@ -21,7 +21,7 @@ static int save_epoch_fixture_restore(char *filename)
 static void test_save_epoch_record()
 {
 	const fix64 live_epoch = GameTime64;
-	const fix64 epochs[] = { 0, 1, ((fix64)1 << 32) - 1, ((fix64)1 << 40) + 12345, SAVE_EPOCH_MAX };
+	const fix64 epochs[] = { 0, 1, ((fix64) 1 << 32) - 1, ((fix64) 1 << 40) + 12345, SAVE_EPOCH_MAX };
 	for (const fix64 epoch : epochs) {
 		PHYSFS_file *fp = PHYSFS_openWrite("save-epoch-record.bin");
 		require(fp && save_epoch_write(fp, epoch) && PHYSFS_close(fp), "write valid full-width epoch");
@@ -29,12 +29,13 @@ static void test_save_epoch_record()
 		require(native.size() == SAVE_EPOCH_DISK_BYTES, "authoritative epoch occupies exactly eight bytes");
 		PHYSFS_uint32 words[2];
 		std::memcpy(words, native.data(), sizeof(words));
-		require(words[0] == (PHYSFS_uint32)epoch && words[1] == (PHYSFS_uint32)((PHYSFS_uint64)epoch >> 32),
+		require(words[0] == (PHYSFS_uint32) epoch && words[1] == (PHYSFS_uint32) ((PHYSFS_uint64) epoch >> 32),
 		        "epoch wire order is low word then high word");
 		for (int swap : { 0, 1 }) {
 			bytes encoded = native;
-			if (swap) for (size_t offset : { size_t(0), size_t(4) })
-				std::reverse(encoded.begin() + offset, encoded.begin() + offset + 4);
+			if (swap)
+				for (size_t offset : { size_t(0), size_t(4) })
+					std::reverse(encoded.begin() + offset, encoded.begin() + offset + 4);
 			for (size_t length = 0; length <= encoded.size(); ++length) {
 				write_fixture("save-epoch-check.bin", bytes(encoded.begin(), encoded.begin() + length));
 				fix64 actual = -17;
@@ -48,17 +49,19 @@ static void test_save_epoch_record()
 		}
 	}
 	const uint64_t invalid[] = { uint64_t(SAVE_EPOCH_MAX) + 1, uint64_t(INT64_MAX), uint64_t(1) << 63, UINT64_MAX };
-	for (const uint64_t value : invalid) for (int swap : { 0, 1 }) {
-		PHYSFS_uint32 words[] = { PHYSFS_uint32(value), PHYSFS_uint32(value >> 32) };
-		if (swap) for (auto &word : words) word = SWAPINT(word);
-		bytes encoded(sizeof(words));
-		std::memcpy(encoded.data(), words, sizeof(words));
-		write_fixture("save-epoch-check.bin", encoded);
-		fix64 actual = -17;
-		PHYSFS_file *fp = PHYSFS_openRead("save-epoch-check.bin");
-		require(fp && !save_epoch_read(fp, swap, &actual) && PHYSFS_close(fp), "reject out-of-range or negative epoch bit patterns");
-		require(actual == -17 && GameTime64 == live_epoch, "invalid epoch fails without changing output or live clock");
-	}
+	for (const uint64_t value : invalid)
+		for (int swap : { 0, 1 }) {
+			PHYSFS_uint32 words[] = { PHYSFS_uint32(value), PHYSFS_uint32(value >> 32) };
+			if (swap)
+				for (auto &word : words) word = SWAPINT(word);
+			bytes encoded(sizeof(words));
+			std::memcpy(encoded.data(), words, sizeof(words));
+			write_fixture("save-epoch-check.bin", encoded);
+			fix64 actual = -17;
+			PHYSFS_file *fp = PHYSFS_openRead("save-epoch-check.bin");
+			require(fp && !save_epoch_read(fp, swap, &actual) && PHYSFS_close(fp), "reject out-of-range or negative epoch bit patterns");
+			require(actual == -17 && GameTime64 == live_epoch, "invalid epoch fails without changing output or live clock");
+		}
 	for (const fix64 epoch : { fix64(-1), fix64(SAVE_EPOCH_MAX) + 1 }) {
 		PHYSFS_file *fp = PHYSFS_openWrite("save-epoch-check.bin");
 		require(fp && !save_epoch_write(fp, epoch) && PHYSFS_fileLength(fp) == 0 && PHYSFS_close(fp), "invalid epoch writer emits no partial record");
@@ -70,14 +73,7 @@ static nlohmann::json save_epoch_fixture_snapshot()
 	const object &o = *ConsoleObject;
 	unsigned int sim = 0, fx = 0;
 	require(d_rand_get_state(&sim) && d_rand_get_stream_state(D_RNG_FX, &fx), "observe checkpoint RNG streams");
-	return { { "epoch", GameTime64 }, { "phase", controls_get_wiggle_phase() },
-	         { "position", { o.pos.x, o.pos.y, o.pos.z } },
-	         { "orientation", { o.orient.rvec.x, o.orient.rvec.y, o.orient.rvec.z,
-	                            o.orient.uvec.x, o.orient.uvec.y, o.orient.uvec.z,
-	                            o.orient.fvec.x, o.orient.fvec.y, o.orient.fvec.z } },
-	         { "velocity", { o.mtype.phys_info.velocity.x, o.mtype.phys_info.velocity.y, o.mtype.phys_info.velocity.z } },
-	         { "rotation", { o.mtype.phys_info.rotvel.x, o.mtype.phys_info.rotvel.y, o.mtype.phys_info.rotvel.z } },
-	         { "shields", int(Players[Player_num].shields) }, { "sim", sim }, { "fx", fx } };
+	return { { "epoch", GameTime64 }, { "phase", controls_get_wiggle_phase() }, { "position", { o.pos.x, o.pos.y, o.pos.z } }, { "orientation", { o.orient.rvec.x, o.orient.rvec.y, o.orient.rvec.z, o.orient.uvec.x, o.orient.uvec.y, o.orient.uvec.z, o.orient.fvec.x, o.orient.fvec.y, o.orient.fvec.z } }, { "velocity", { o.mtype.phys_info.velocity.x, o.mtype.phys_info.velocity.y, o.mtype.phys_info.velocity.z } }, { "rotation", { o.mtype.phys_info.rotvel.x, o.mtype.phys_info.rotvel.y, o.mtype.phys_info.rotvel.z } }, { "shields", int(Players[Player_num].shields) }, { "sim", sim }, { "fx", fx } };
 }
 
 static void save_epoch_fixture_step()
@@ -118,8 +114,8 @@ static void exercise_save_epoch_runtime(const char *scenario)
 		return;
 	}
 	if (std::strcmp(scenario, "replay") == 0) {
-		const fix64 saved_epoch = ((fix64)1 << 40) + 12345;
-		const fix64 replay_epoch = ((fix64)1 << 35) + 45678;
+		const fix64 saved_epoch = ((fix64) 1 << 40) + 12345;
+		const fix64 replay_epoch = ((fix64) 1 << 35) + 45678;
 		GameTime64 = saved_epoch;
 		Next_laser_fire_time = saved_epoch + 17;
 		save();
@@ -162,7 +158,7 @@ static void exercise_save_epoch_runtime(const char *scenario)
 		        "public base map provides a safe authored secret-return segment");
 		const int expected_return_segment = Secret_return_segment;
 		const vms_matrix expected_return_orientation = Secret_return_orient;
-		GameTime64 = ((fix64)1 << 40) + 12345;
+		GameTime64 = ((fix64) 1 << 40) + 12345;
 		const fix64 saved_epoch = GameTime64;
 		const int saved_objects = Highest_object_index;
 		save();
@@ -189,7 +185,7 @@ static void exercise_save_epoch_runtime(const char *scenario)
 		return;
 	}
 	if (std::strcmp(scenario, "flash") == 0) {
-		for (const fix64 epoch : { fix64(10) * F1_0, ((fix64)1 << 40) + 12345 }) {
+		for (const fix64 epoch : { fix64(10) * F1_0, ((fix64) 1 << 40) + 12345 }) {
 			const fix64 times[] = { 0, epoch, epoch - 1, epoch + 1, epoch - F1_0 / 8, epoch - F1_0 / 8 - 1 };
 			for (const fix64 timestamp : times) {
 				GameTime64 = epoch;
@@ -204,8 +200,7 @@ static void exercise_save_epoch_runtime(const char *scenario)
 					diminish_palette_towards_normal();
 					unsigned fx = 0;
 					require(d_rand_get_stream_state(D_RNG_FX, &fx), "observe flash continuation effects RNG");
-					return json { { "last_played", Time_flash_last_played }, { "flash", Flash_effect },
-					              { "palette", { PaletteRedAdd, PaletteGreenAdd, PaletteBlueAdd } }, { "fx", fx } };
+					return json{ { "last_played", Time_flash_last_played }, { "flash", Flash_effect }, { "palette", { PaletteRedAdd, PaletteGreenAdd, PaletteBlueAdd } }, { "fx", fx } };
 				};
 				const auto expected = step();
 				restore();
@@ -213,7 +208,7 @@ static void exercise_save_epoch_runtime(const char *scenario)
 				        "flash ordinary restore preserves inactive zero, exact-now and nearby absolute timestamps");
 				const auto actual = step();
 				if (actual != expected)
-					std::fprintf(stderr, "flash epoch=%lld timestamp=%lld differences=%s\n", (long long)epoch, (long long)timestamp,
+					std::fprintf(stderr, "flash epoch=%lld timestamp=%lld differences=%s\n", (long long) epoch, (long long) timestamp,
 					             json::diff(expected, actual).dump().c_str());
 				require(actual == expected, "real flash cadence, palette and effects RNG match uninterrupted continuation");
 			}
@@ -233,7 +228,7 @@ static void exercise_save_epoch_runtime(const char *scenario)
 		require(slot >= 0, "public level provides an ordinary native D2 AI actor");
 		const int objval = (slot & 15) ^ 10;
 		const int phase = objval > 4 ? objval : objval ^ 15;
-		GameTime64 = ((fix64)1 << 40) + ((fix64)phase << 18) + 12345;
+		GameTime64 = ((fix64) 1 << 40) + ((fix64) phase << 18) + 12345;
 		const fix64 expected_epoch = GameTime64;
 		Objects[slot].ctype.ai_info.danger_laser_num = -1;
 		vm_vec_zero(&Objects[slot].mtype.phys_info.velocity);
@@ -246,7 +241,7 @@ static void exercise_save_epoch_runtime(const char *scenario)
 			const auto &v = Objects[slot].mtype.phys_info.velocity;
 			unsigned sim = 0;
 			require(d_rand_get_state(&sim), "observe native AI decision SIM state");
-			return json { { "velocity", { v.x, v.y, v.z } }, { "sim", sim } };
+			return json{ { "velocity", { v.x, v.y, v.z } }, { "sim", sim } };
 		};
 		const json expected = decision();
 		restore();
@@ -261,7 +256,7 @@ static void exercise_save_epoch_runtime(const char *scenario)
 	}
 #endif
 	if (std::strcmp(scenario, "high") == 0 || std::strcmp(scenario, "endian") == 0) {
-		GameTime64 = ((fix64)1 << 40) + 12345;
+		GameTime64 = ((fix64) 1 << 40) + 12345;
 		Next_laser_fire_time = GameTime64 + 17;
 		Next_missile_fire_time = GameTime64 + 31;
 		Last_laser_fired_time = GameTime64 - 19;
@@ -329,7 +324,8 @@ static void exercise_save_epoch_runtime(const char *scenario)
 	require(repeated || std::strcmp(scenario, "ordinary") == 0 || std::strcmp(scenario, "save") == 0,
 	        "known save-epoch runtime scenario");
 	for (int generation = 0; generation < (repeated ? 3 : 1); ++generation) {
-		if (generation) for (int frame = 0; frame < 7; ++frame) save_epoch_fixture_step();
+		if (generation)
+			for (int frame = 0; frame < 7; ++frame) save_epoch_fixture_step();
 		const auto initial = save_epoch_fixture_snapshot();
 		save();
 		std::vector<json> expected;
@@ -337,7 +333,7 @@ static void exercise_save_epoch_runtime(const char *scenario)
 			save_epoch_fixture_step();
 			expected.push_back(save_epoch_fixture_snapshot());
 		}
-		const std::string reference = json { { "initial", initial }, { "frames", expected } }.dump();
+		const std::string reference = json{ { "initial", initial }, { "frames", expected } }.dump();
 		write_fixture("save-epoch-reference.json", bytes(reference.begin(), reference.end()));
 		restore();
 		require(save_epoch_fixture_snapshot() == initial, "ordinary restore retains original epoch, player state and RNG");
@@ -353,6 +349,18 @@ static void exercise_save_epoch_runtime(const char *scenario)
 	if (std::strcmp(scenario, "ordinary") == 0) {
 		const bytes baseline_save = read_save_fixture(filename);
 		const auto baseline_player = save_epoch_fixture_snapshot();
+		// A modern sparse world can legitimately retain a zero player signature
+		require(ConsoleObject == &Objects[0], "zero-identity control needs the ordinary player slot");
+		for (int owner = Highest_object_index; owner > 0; --owner)
+			if (Objects[owner].type != OBJ_NONE) obj_delete(owner);
+		Objects[0].signature = Objects[1].signature = 0;
+		save();
+		restore();
+		require(ConsoleObject == &Objects[0] && Objects[0].signature == 0 && Objects[1].type == OBJ_NONE,
+		        "modern sparse save preserves zero identity instead of applying legacy Rebirth repair");
+		write_fixture(filename, baseline_save);
+		restore();
+		require(save_epoch_fixture_snapshot() == baseline_player, "zero-identity control restores the ordinary baseline");
 		// Synthetic global boss timing on public data: no boss encounter is claimed
 		GameTime64 = 1;
 		Boss_dying = 1;

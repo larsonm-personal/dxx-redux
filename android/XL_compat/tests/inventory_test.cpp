@@ -1311,7 +1311,11 @@ void original_neptune(const char *path)
 	for (std::size_t i = 0; i < v.walls.size(); ++i) {
 		auto bad = level->bytes;
 		patch(bad, v.sections.at(1).offset + i * 25 + 18, 1, 1);
-		rejects([&] { xl_compat::prepare_serialization_probe_23_40(bad); });
+		const auto wide = xl_compat::prepare_serialization_probe_23_40(bad);
+		check(wide.source.walls[i].flags == (v.walls[i].flags | 256) && wide.stock_level.size() == probe.stock_level.size() &&
+		          std::equal(probe.stock_level.begin() + read32(game + 47), probe.stock_level.begin() + read32(game + 47) + v.walls.size() * 24,
+		                     wide.stock_level.begin() + read32(game + 47)),
+		      "Neptune high wall flags were lost or leaked into mutable stock flags");
 	}
 	std::cout << "Original Neptune 23/40 inspection and record translation passed; gameplay and resources remain unqualified\n";
 }

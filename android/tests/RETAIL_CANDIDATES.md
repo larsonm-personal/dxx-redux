@@ -24,6 +24,8 @@ This automatically endorses the complete head associated with Michael's authenti
 
 The existing xl-fast owner is reused. The candidate checkout stays pinned; selection, planning and the pre-checkout gate revalidate provenance. Assets remain pinned and hash-verified. Candidate setup does not execute before staging; the asset token is supplied only to private checkout, never candidate commands. Reporting uses a fresh runner with status-write permission and no candidate execution. A green status requires the same exact target's positive navigation count and required XL counts; skips, timeouts, parser-only success and missing receipts fail
 
+The fast lane does not stage the optional original XL camera addon. Camera-dependent disk controls report that they did not run when this addon is absent; they remain mandatory when the camera controls execute. This does not relax the required original-level load and navigation receipt
+
 GitHub reusable workflows cannot elevate token permissions, so the reusable call allows the existing ledger publisher's contents-write ceiling. The actual plan/host jobs explicitly use contents-read, and the publisher is explicitly disabled for workflow_run. No candidate execution job receives a write token. This preserves one executor instead of duplicating asset handling
 
 No new GitHub settings or credentials are intended. Activation requires explicit approval and integration into cmake; this branch does not activate the automatic grant. GitHub's announced default block of pull_request_target makes workflow_run the preferred trigger here. Public PR CI can validate the controller and request job before integration, but a real automatic follow-up requires the reviewed controller to exist on the default branch

@@ -579,9 +579,9 @@ static void camera_projectile_physics_controls(object &camera)
 #include "camera_missile_test.h"
 #include "camera_glass_test.h"
 #include "static_camera_test.h"
-static void camera_weapon_controls(const std::filesystem::path &root)
+static bool camera_weapon_controls(const std::filesystem::path &root)
 {
-	if (!std::filesystem::exists(root / "data/d2x-xl.hog")) return;
+	if (!std::filesystem::exists(root / "data/d2x-xl.hog")) return false;
 	require(xl_level_extensions_active(), "Camera projectile controls require a real active XL level");
 	int room = -1;
 	vms_vector center{};
@@ -998,4 +998,5 @@ static void camera_weapon_controls(const std::filesystem::path &root)
 	FrameTime = saved_frame;
 	std::cout << "Native camera projectile contacts: " << cases
 	          << " primary/missile cases, real XL history, duplicate and parent-signature ordering, attached weapon effects, signed RNG and health passed\n";
+	return true;
 }

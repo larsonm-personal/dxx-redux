@@ -1686,6 +1686,7 @@ int main(int argc, char **argv)
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		require(load_base_mission(find_arg_value(argc, argv, "-mission"), error, sizeof(error)), error);
 		unchanged(vertex);
+		require(load_base_mission("d2-xl", error, sizeof(error)), error);
 		require(load_level("d2leva-1.rl2") == 0, "original XL pilot admission failed");
 		{
 			const auto &source = probe.source;
@@ -1713,7 +1714,7 @@ int main(int argc, char **argv)
 			N_robot_types = 0;
 			const int accepted = xl_level_supported("d2leva-1.rl2", 0);
 			N_robot_types = saved_robot_count;
-			require(!accepted && std::strstr(xl_level_rejection(), "robot"), "missing robot dependency was not explained");
+			require(!accepted && std::strstr(xl_level_rejection(), "definition registry changed"), "mutated robot registry was not rejected by resource ownership");
 			require(xl_preview_pilot_active(), "preflight rejection changed active XL state");
 			require(xl_level_supported("d2leva-1.rl2", 0), "dependency preflight did not recover");
 		}
@@ -1773,8 +1774,9 @@ int main(int argc, char **argv)
 		const auto before_rejection = native_state();
 		auto altered_original = bytes;
 		altered_original[4] = 16;
-		write_bytes(original_copy.c_str(), altered_original);
-		const int original_rejected = load_level("d2leva-1.rl2");
+		const auto rejected_copy = (std::filesystem::path(extra_dir) / "badvers.rl2").string();
+		write_bytes(rejected_copy.c_str(), altered_original);
+		const int original_rejected = load_level("badvers.rl2");
 		write_bytes(original_copy.c_str(), bytes);
 		require(original_rejected != 0, "unsupported level version accepted");
 		require(native_state() == before_rejection, "unsupported candidate changed native geometry, objects, light masks or identity");
