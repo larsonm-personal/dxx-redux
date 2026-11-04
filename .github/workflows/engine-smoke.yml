@@ -67,6 +67,7 @@ jobs:
           ./android/helpers/setup_shareware_test_data.ps1 -Game $fixtures -Download
 
       - name: Exercise real shareware replay and metadata
+        # Debug D2 software rendering with full traces can exceed the 60-second replay budget
         timeout-minutes: 3
         env:
           SDL_VIDEODRIVER: x11
@@ -75,6 +76,7 @@ jobs:
           game="${{ matrix.game }}"
           xvfb-run -a pwsh -NoProfile -File android/tests/test_input_demo_runtime_smoke.ps1 \
             -Game "$game" -DataEdition shareware \
+            -TimeoutSeconds "${{ matrix.game == 'd2' && 120 || 60 }}" \
             -"${game^^}Exe" "$PWD/build${game}-test/main/${game}x-redux"
           pwsh -NoProfile -File android/tests/test_secret_area_baseline.ps1 \
             -Game "$game" -DataEdition shareware -RequireAssets \
