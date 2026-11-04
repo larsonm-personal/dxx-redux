@@ -121,6 +121,7 @@ internal class XlAddonImportChecks(
                         }
                     },
                 )
+                checkMissionToggle(root)
             } finally {
                 val editor = prefs.edit()
                 if (hadPreference) {
@@ -136,4 +137,42 @@ internal class XlAddonImportChecks(
                 source.delete()
             }
         }
+
+    private fun checkMissionToggle(root: File) {
+        // Admission fixture only: this HOG is not a playable mine
+        val hog =
+            java.io
+                .ByteArrayOutputStream()
+                .apply {
+                    write("DHF".toByteArray(Charsets.US_ASCII))
+                    write(ByteArray(13).apply { "level01.rl2".toByteArray().copyInto(this) })
+                    write(byteArrayOf(1, 0, 0, 0, 0))
+                }.toByteArray()
+        val source = File(root, "mission-toggle.7z")
+        SevenZOutputFile(source).use { archive ->
+            for ((name, bytes) in mapOf(
+                "toggle.hog" to hog,
+                "toggle.mn2" to "name = Toggle fixture\nnum_levels = 1\nlevel01.rl2\n".toByteArray(),
+            )) {
+                val input = File(root, "mission-toggle-input").apply { writeBytes(bytes) }
+                archive.putArchiveEntry(archive.createArchiveEntry(input, name))
+                archive.write(bytes)
+                archive.closeArchiveEntry()
+            }
+        }
+        val profile = File(root, "mission-toggle-profile")
+        val manager = ModManager(profile)
+        val imported = checkNotNull(manager.importMissionZipFile(source, source.name))
+        manager.setEnabled(imported.filename, false)
+        val reloaded = ModManager(profile)
+        check(!reloaded.listMods().single().enabled)
+        reloaded.setEnabled(imported.filename, true)
+        check(ModManager(profile).listMods().single().enabled)
+
+        reloaded.setEnabled(imported.filename, false)
+        reloaded.modFile(imported.filename).writeText("damaged archive")
+        ModManager(profile).setEnabled(imported.filename, true)
+        check(!ModManager(profile).listMods().single().enabled) { "Damaged mission archive was enabled" }
+        check(ModManager(profile).buildMissionLaunchCatalog("d2").missions.isEmpty())
+    }
 }
