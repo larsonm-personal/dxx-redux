@@ -1,6 +1,7 @@
 """Exercise host storage admission without deleting anything on the test host."""
 
 import os
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -44,6 +45,108 @@ class RunnerStorageTest(unittest.TestCase):
             )
             self.assertNotIn("UNEXPECTED DESTRUCTIVE COMMAND", result.stderr)
             return result
+
+    def run_retire(self, *, linked=False, missing_adb=False, **overrides):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            hosted = root / "hosted-android"
+            hosted.mkdir()
+            alias = root / "hosted-alias"
+            alias.symlink_to(hosted, target_is_directory=True)
+            if linked:
+                hosted.rmdir()
+                target = root / "other-android"
+                target.mkdir()
+                hosted.symlink_to(target, target_is_directory=True)
+            sdk = root / "managed-sdk"
+            (sdk / "platform-tools").mkdir(parents=True)
+            adb = sdk / "platform-tools/adb"
+            adb.touch()
+            adb.chmod(0o755)
+            if missing_adb:
+                adb.unlink()
+            ndk = root / "managed-ndk"
+            ndk.mkdir()
+            calls = root / "calls"
+            script = root / "storage.sh"
+            script.write_text(SCRIPT.read_text().replace("/usr/local/lib/android", str(hosted)))
+            for name, body in {
+                "df": "echo 'Filesystem Blocks Used Available Capacity Mounted'\necho 'mock 99999999 0 99999999 0% /'\n",
+                "du": "exit 0\n",
+                "sudo": f"printf '%s\\n' \"$*\" >> {shlex.quote(str(calls))}\n",
+            }.items():
+                command = root / name
+                command.write_text("#!/bin/sh\n" + body)
+                command.chmod(0o755)
+            env = dict(os.environ)
+            env.update(
+                PATH=f"{root}:{env['PATH']}",
+                GITHUB_WORKSPACE=str(root / "workspace"),
+                RUNNER_TEMP=str(root / "temp"),
+                GITHUB_ACTIONS="true",
+                RUNNER_ENVIRONMENT="github-hosted",
+                RUNNER_OS="Linux",
+                ImageOS="ubuntu24",
+                DXX_NIGHTLY_SDK_CACHE=str(sdk),
+                ANDROID_HOME=str(sdk),
+                ANDROID_SDK_ROOT=str(sdk),
+                ANDROID_NDK_ROOT=str(ndk),
+                ANDROID_NDK_HOME=str(ndk),
+                ANDROID_NDK_LATEST_HOME=str(ndk),
+                JAVA_HOME=str(root / "jdk"),
+            )
+            env.update({key: value.replace("{hosted}", str(hosted)).replace("{alias}", str(alias)) for key, value in overrides.items()})
+            result = subprocess.run(
+                ["bash", str(script), "retire-hosted-sdk", "20"],
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            # The mock only records commands; no host or fixture tree is removed
+            self.assertTrue(hosted.is_dir())
+            return result, calls.read_text().splitlines() if calls.exists() else [], str(hosted)
+
+    def test_replaced_sdk_cleanup_is_fixed_and_opt_in(self):
+        result, calls, hosted = self.run_retire()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(calls, [f"rm -rf -- {hosted}"])
+
+    def test_replaced_sdk_cleanup_rejects_active_locations(self):
+        for variable in (
+            "GITHUB_WORKSPACE", "RUNNER_TEMP", "ANDROID_HOME", "ANDROID_SDK_ROOT",
+            "ANDROID_NDK_ROOT", "ANDROID_NDK_HOME", "ANDROID_NDK_LATEST_HOME",
+            "DXX_NIGHTLY_SDK_CACHE", "JAVA_HOME",
+        ):
+            with self.subTest(variable=variable):
+                result, calls, _ = self.run_retire(**{variable: "{hosted}"})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(calls, [])
+
+    def test_replaced_sdk_cleanup_preserves_link(self):
+        result, calls, _ = self.run_retire(linked=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(calls, [])
+
+    def test_replaced_sdk_cleanup_resolves_active_alias(self):
+        result, calls, _ = self.run_retire(ANDROID_NDK_HOME="{alias}/ndk")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(calls, [])
+
+    def test_replaced_sdk_cleanup_requires_provisioned_adb(self):
+        result, calls, _ = self.run_retire(missing_adb=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(calls, [])
+
+    def test_replaced_sdk_cleanup_refuses_self_hosted_runner(self):
+        result, calls, _ = self.run_retire(RUNNER_ENVIRONMENT="self-hosted")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(calls, [])
+
+    def test_replaced_sdk_cleanup_requires_managed_sdk(self):
+        result, calls, _ = self.run_retire(DXX_NIGHTLY_SDK_CACHE="")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(calls, [])
 
     def test_cleanup_refuses_non_hosted_runner(self):
         result = self.run_storage("prepare", 20, 30 * 1024 * 1024)
