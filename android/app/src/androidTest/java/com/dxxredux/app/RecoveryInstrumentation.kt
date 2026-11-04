@@ -57,6 +57,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var enemyWithinImportOnly = false
     private var xlAddonImportOnly = false
     private var xlAddonDistributionName: String? = null
+    private var pumoUiImportOnly = false
     private var controllerOverlayOnly = false
     private var installationWorkOnly = false
     private var xlCompatibilityOnly = false
@@ -85,6 +86,7 @@ class RecoveryInstrumentation : Instrumentation() {
         enemyWithinImportOnly = arguments?.getString("suite") == "enemy_within_import"
         xlAddonImportOnly = arguments?.getString("suite") == "xl_addon_import"
         xlAddonDistributionName = arguments?.getString("xl_addon_distribution")
+        pumoUiImportOnly = arguments?.getString("suite") == "pumo_ui_import"
         controllerOverlayOnly = arguments?.getString("suite") == "controller_overlay"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
         coopSessionOnly = arguments?.getString("suite") == "coop_session"
@@ -95,6 +97,15 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            if (pumoUiImportOnly) {
+                PumoUiImportChecks(this).run()
+                result.putString(
+                    "stream",
+                    "PASS: Original Pumo and raw addons imported through launcher picker callbacks\n",
+                )
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             if (xlAddonImportOnly) {
                 XlAddonImportChecks(this).run()
                 xlAddonDistributionName?.let { name ->
