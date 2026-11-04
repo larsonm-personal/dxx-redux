@@ -120,6 +120,7 @@ def positive_receipt(receipt, sha):
         and checks.get("modern_source_levels") == 3
         and type(checks.get("navigation_smoke_passed")) is int
         and checks["navigation_smoke_passed"] == 1
+        and checks.get("navigation_anchors_passed") == 4
         and type(checks.get("navigation_smoke_milliseconds")) is int
         and 0 <= checks["navigation_smoke_milliseconds"] <= 30000
     ):
@@ -168,7 +169,7 @@ def main():
     except (OSError, ValueError, TypeError) as error:
         status(sha, "failure", "XL load/navigation was not qualified; inspect the trusted run")
         raise ValueError("XL asset smoke was not qualified") from error
-    status(sha, "success", f"Original XL load and navigation passed ({elapsed} ms)")
+    status(sha, "success", f"Four assisted XL route anchors passed ({elapsed} ms)")
     return 0
 
 

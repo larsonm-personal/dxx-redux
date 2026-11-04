@@ -55,10 +55,10 @@ def validate(route, proof, mission, level):
         raise ValueError("XL smoke did not prove the requested original load and multi-segment route")
 
 
-def run(engine, stage, data, work, seed=318):
+def run(engine, stage, data, work, seed=318, case=None):
     engine, stage, data, work = (Path(p).resolve() for p in (engine, stage, data, work))
     identities = expected_files(manifest(stage / "manifest.json"))
-    mission, level = select(seed)
+    mission, level = case if case is not None else select(seed)
     work.mkdir(parents=True, exist_ok=False)
     (work / "user").mkdir()
     (work / "missions").mkdir()
@@ -111,6 +111,18 @@ def run(engine, stage, data, work, seed=318):
     for source, size, digest in sources:
         checked(source, {"size": size, "sha256": digest})
     return {"passed": 1, "selection_seed": seed, "seconds": round(time.monotonic() - started, 3)}
+
+
+def run_anchors(engine, stage, data, work):
+    """Every anchor runs on every revision; no commit-dependent reselection."""
+    started = time.monotonic()
+    rows = []
+    for mission, specification in sorted(POOL.items()):
+        for level in specification["levels"]:
+            case_id = f"{mission}:{level[0]}"
+            result = run(engine, stage, data, Path(work) / f"{mission}-{level[0]}", case=(mission, level))
+            rows.append({"id": case_id, "seconds": result["seconds"]})
+    return {"passed": 1, "anchors_passed": len(rows), "anchors": rows, "seconds": round(time.monotonic() - started, 3)}
 
 
 if __name__ == "__main__":

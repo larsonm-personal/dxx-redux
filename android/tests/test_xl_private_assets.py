@@ -172,7 +172,9 @@ class XlPrivateTests(unittest.TestCase):
                     public.validate_registration(missing, gpu=gpu, audio=audio)
                 suite = ET.Element("testsuite")
                 for name in sorted(required):
-                    ET.SubElement(suite, "testcase", name=name, status="run")
+                    case = ET.SubElement(suite, "testcase", name=name, status="run")
+                if name == "xl_projectiles":
+                    ET.SubElement(case, "system-out").text = "XL_CAMERA_SUBCHECKS: not_run_missing_addon"
                 ET.ElementTree(suite).write(report)
                 self.assertEqual(public.require_result(report, 0, gpu=gpu, audio=audio), len(required))
                 with self.assertRaises(ValueError):
@@ -258,7 +260,9 @@ class XlPrivateTests(unittest.TestCase):
             path = Path(temporary) / "native.xml"
             suite = ET.Element("testsuite")
             for name in sorted(runner.FAST_TESTS):
-                ET.SubElement(suite, "testcase", name=name, status="run")
+                case = ET.SubElement(suite, "testcase", name=name, status="run")
+                if name == "xl_projectiles":
+                    ET.SubElement(case, "system-out").text = "XL_CAMERA_SUBCHECKS: not_run_missing_addon"
             ET.ElementTree(suite).write(path)
             receipt = runner.native_receipt(path, 0, fast=True)
             receipt.update(
@@ -266,6 +270,7 @@ class XlPrivateTests(unittest.TestCase):
                 format_witnesses=16,
                 modern_source_levels=3,
                 navigation_smoke_passed=1,
+                navigation_anchors_passed=4,
                 navigation_smoke_milliseconds=800,
             )
             self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 111)
@@ -620,13 +625,24 @@ class XlPrivateTests(unittest.TestCase):
                 "required_passed": 96,
                 "format_witnesses": 16,
                 "modern_source_levels": 3,
+                "camera_subchecks": "not_run_missing_addon",
                 "private": "raw input must not escape",
             },
         }
         clean = retail.public_diagnostics(row)
-        self.assertEqual(clean["xl_checks"], {"required_passed": 96, "format_witnesses": 16, "modern_source_levels": 3})
+        self.assertEqual(
+            clean["xl_checks"],
+            {
+                "required_passed": 96,
+                "format_witnesses": 16,
+                "modern_source_levels": 3,
+                "camera_subchecks": "not_run_missing_addon",
+            },
+        )
         self.assertNotIn("raw input", json.dumps(clean))
-        row["xl_checks"].update(navigation_smoke_passed=1, navigation_smoke_milliseconds=800)
+        row["xl_checks"].update(
+            navigation_smoke_passed=1, navigation_anchors_passed=4, navigation_smoke_milliseconds=800
+        )
         self.assertEqual(retail.public_diagnostics(row)["xl_checks"]["navigation_smoke_milliseconds"], 800)
         for invalid in ("private", -1, 30001, True):
             row["xl_checks"]["navigation_smoke_milliseconds"] = invalid
@@ -692,6 +708,11 @@ class XlPrivateTests(unittest.TestCase):
                     + name
                     + '" status="run">'
                     + ('<failure message="Failed"/>' if required_failure else "")
+                    + (
+                        "<system-out>XL_CAMERA_SUBCHECKS: not_run_missing_addon</system-out>"
+                        if name == "xl_projectiles"
+                        else ""
+                    )
                     + "</testcase>"
                     for name in sorted(runner.CORE_TESTS)
                 )
@@ -793,7 +814,9 @@ class XlPrivateTests(unittest.TestCase):
                     case.set("name", "xl_level_two_keys")
                     suite = ET.Element("testsuite")
                     for name in runner.CORE_TESTS:
-                        ET.SubElement(suite, "testcase", name=name, status="run")
+                        case = ET.SubElement(suite, "testcase", name=name, status="run")
+                if name == "xl_projectiles":
+                    ET.SubElement(case, "system-out").text = "XL_CAMERA_SUBCHECKS: not_run_missing_addon"
                     suite.append(case)
                     ET.ElementTree(suite).write(report)
                     with self.assertRaises(ValueError):
@@ -904,6 +927,188 @@ class NavigationSmokeTests(unittest.TestCase):
             changed = dict(proof, **{field: value})
             with self.subTest(field=field), self.assertRaises(ValueError):
                 smoke.validate(route, changed, mission, level)
+
+
+class ReadinessTests(unittest.TestCase):
+    def test_score_never_counts_rejections_or_unknowns_as_passes(self):
+        import xl_readiness as readiness
+
+        outcomes = [
+            "loaded_ticked",
+            "loaded_ticked",
+            "unsupported_format",
+            "load_failed",
+            "simulation_failed",
+            "crash",
+            "timeout",
+            "load_failed",
+        ]
+        rows = [{"outcome": value} for value in outcomes]
+        self.assertEqual(readiness.summary(rows)["readiness_percent"], 25.0)
+        for unknown in ("untested", "infrastructure_error"):
+            rows[-1]["outcome"] = unknown
+            self.assertIsNone(readiness.summary(rows)["readiness_percent"])
+            self.assertEqual(readiness.summary(rows)["denominator"], 8)
+            self.assertEqual(readiness.summary(rows)["passed"], 2)
+
+    def test_native_load_tick_identity_and_outcomes(self):
+        import xl_readiness as readiness
+
+        case = {"mission": "sample", "level": 2, "level_file": "two.rl2"}
+        proof = {
+            "schema": "dxx-xl-load-tick-v1",
+            "phase": "loaded_ticked",
+            **case,
+            "frames": 120,
+            "segments": 40,
+            "fixed_hz": 60,
+            "seed": 1,
+            "assisted": False,
+        }
+        self.assertEqual(readiness.classify(0, proof, "", case), "loaded_ticked")
+        for key, value in (("frames", 0), ("mission", "wrong"), ("level", 1), ("assisted", True)):
+            self.assertNotEqual(readiness.classify(0, {**proof, key: value}, "", case), "loaded_ticked")
+        self.assertEqual(readiness.classify(-11, proof, "", case), "crash")
+        self.assertEqual(readiness.classify(None, proof, "", case), "timeout")
+        self.assertEqual(
+            readiness.classify(1, {"phase": "level_load"}, "unsupported level version 99", case), "unsupported_format"
+        )
+        self.assertEqual(readiness.classify(1, {"phase": "level_load"}, "missing resource", case), "load_failed")
+        self.assertEqual(readiness.classify(0, {}, "", case), "infrastructure_error")
+
+    def test_advertised_inventory_keeps_secrets_and_unusual_names(self):
+        import xl_readiness as readiness
+
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "sample.mn2"
+            path.write_text("d2x-name = sample\nnum_levels=2\nget3d!ii.rl2\n46&22.rl2\nnum_secrets=1\nsecret.rl2,1\n")
+            self.assertEqual([r["level"] for r in readiness.levels(path)], [1, 2, -1])
+            path.write_text("num_levels=1\n../escape.rl2\n")
+            with self.assertRaises(ValueError):
+                readiness.levels(path)
+
+    def test_frozen_cohort_cannot_drop_failure_or_forge_target(self):
+        import xl_readiness as readiness
+        import xl_readiness_report as reporter
+
+        catalog = json.loads(Path(__file__).with_name("xl_readiness_inventory.json").read_text())
+        cases = {r["id"]: r for r in catalog["cases"]}
+        rows = [
+            {**cases[key], "outcome": "load_failed", "assisted_navigation": "not_run"} for key in catalog["selected"]
+        ]
+        receipt = {
+            "schema": "dxx-xl-readiness-v1",
+            "target_sha": "a" * 40,
+            "asset_commit": readiness.ASSET_COMMIT,
+            "rows": rows,
+        }
+        self.assertEqual(reporter.validate(receipt, catalog, "a" * 40)["readiness_percent"], 0)
+        with self.assertRaises(ValueError):
+            reporter.validate({**receipt, "rows": rows[:-1]}, catalog, "a" * 40)
+        with self.assertRaises(ValueError):
+            reporter.validate(receipt, catalog, "b" * 40)
+        self.assertTrue(readiness.NEW_CAMPAIGNS <= {Path(cases[key]["archive"]).name for key in catalog["selected"]})
+        self.assertEqual(len(catalog["archives"]), 23)
+        workflow = Path(__file__).resolve().parents[2] / ".github/workflows/xl-pr-assets.yml"
+        lane = workflow.read_text().split("  readiness:", 1)[1]
+        self.assertLess(lane.index("Revalidate pinned candidate"), lane.index("Check out pinned uploaded"))
+        self.assertLess(lane.index("rm -rf retail-input"), lane.index("Build candidate"))
+
+    def test_staging_preserves_original_bytes_without_duplicate_descriptors(self):
+        import xl_readiness as readiness
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "sample.zip"
+            descriptor = b"num_levels=1\none.rl2\n"
+            with zipfile.ZipFile(archive, "w") as stream:
+                stream.writestr("missions/single/sample.mn2", descriptor)
+                stream.writestr("missions/single/sample.hog", b"original HOG bytes")
+                stream.writestr("missions/single/other.mn2", descriptor)
+                stream.writestr("mods/sample/sounds/test.wav", b"original sound bytes")
+            record = {"path": archive.name, "size": archive.stat().st_size, "sha256": readiness.digest(archive)}
+            case = {
+                "descriptor": "missions/single/sample.mn2",
+                "descriptor_sha256": hashlib.sha256(descriptor).hexdigest(),
+                "level": 1,
+                "level_file": "one.rl2",
+            }
+            extra = readiness.stage_case(root, record, case, root / "work", None)
+            self.assertEqual(list(extra.rglob("*.mn2")), [extra / "missions/sample.mn2"])
+            self.assertEqual((extra / "missions/sample.mn2").read_bytes(), descriptor)
+            self.assertEqual((extra / "missions/sample.hog").read_bytes(), b"original HOG bytes")
+            self.assertEqual((extra / "mods/sample/sounds/test.wav").read_bytes(), b"original sound bytes")
+
+    def test_auxiliary_failure_does_not_erase_loaded_ticked(self):
+        import xl_readiness as readiness
+        import xl_readiness_report as reporter
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            case = {
+                "id": "sample.zip/sample.mn2:1",
+                "archive": "sample.zip",
+                "mission": "sample",
+                "descriptor": "sample.mn2",
+                "level": 1,
+                "level_file": "one.rl2",
+            }
+            catalog = {
+                "asset_commit": readiness.ASSET_COMMIT,
+                "selection_seed": readiness.SEED,
+                "selected": [case["id"]],
+                "cases": [case],
+                "archives": [{"path": "sample.zip"}],
+            }
+
+            def execute(command, **kwargs):
+                if "-xl-readiness-proof" in command:
+                    readiness.write(
+                        command[command.index("-xl-readiness-proof") + 1],
+                        {
+                            "schema": "dxx-xl-load-tick-v1",
+                            "phase": "loaded_ticked",
+                            "mission": "sample",
+                            "level": 1,
+                            "level_file": "one.rl2",
+                            "frames": 120,
+                            "segments": 40,
+                            "fixed_hz": 60,
+                            "seed": 1,
+                            "assisted": False,
+                            "xl_active": False,
+                        },
+                    )
+                    return subprocess.CompletedProcess(command, 0)
+                raise OSError("auxiliary executable failed")
+
+            with (
+                patch.object(readiness, "stage_case", return_value=root),
+                patch.object(readiness.subprocess, "run", side_effect=execute),
+            ):
+                receipt = readiness.run(root / "engine", root, root, catalog, root / "run", None, "a" * 40)
+            row = receipt["rows"][0]
+            self.assertEqual((row["outcome"], row["assisted_navigation"]), ("loaded_ticked", "infrastructure_error"))
+            result = reporter.validate(receipt, catalog, "a" * 40)
+            self.assertEqual(result["readiness_percent"], 100)
+            self.assertIn("0 XL-active, 1 classic/imported", reporter.markdown(receipt, catalog, result))
+            row["xl_active"] = "arbitrary private text"
+            with self.assertRaises(ValueError):
+                reporter.validate(receipt, catalog, "a" * 40)
+
+    def test_all_four_anchors_run_and_failure_does_not_reroll(self):
+        import run_xl_navigation_smoke as smoke
+
+        with patch.object(smoke, "run", return_value={"seconds": 0.1}) as run:
+            self.assertEqual(smoke.run_anchors("engine", "stage", "data", "work")["anchors_passed"], 4)
+            self.assertEqual(
+                {(call.kwargs["case"][0], call.kwargs["case"][1][0]) for call in run.call_args_list},
+                {("d2-xl", 1), ("d2-xl", 3), ("obsrv-xl", 1), ("neptunxl", 1)},
+            )
+        with patch.object(smoke, "run", side_effect=ValueError("failed")) as run:
+            with self.assertRaises(ValueError):
+                smoke.run_anchors("engine", "stage", "data", "work")
+            self.assertEqual(run.call_count, 1)
 
 
 if __name__ == "__main__":
