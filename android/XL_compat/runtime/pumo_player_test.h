@@ -15,6 +15,7 @@ static std::string file_hash(const std::filesystem::path &path)
 }
 static Json snapshot()
 {
+	// Copy packed mutable fields before JSON forwarding can bind references to them
 	Json state = { { "current_level_num", Current_level_num }, { "player_dead", Player_is_dead != 0 }, { "cheats_enabled", cheats.enabled != 0 } };
 	state["game_time_raw"] = GameTime64;
 	const auto &player = Players[Player_num];
@@ -25,7 +26,7 @@ static Json snapshot()
 	state["player"] = { { "has_blue_key", bool(player.flags & PLAYER_FLAGS_BLUE_KEY) }, { "has_red_key", bool(player.flags & PLAYER_FLAGS_RED_KEY) }, { "has_gold_key", bool(player.flags & PLAYER_FLAGS_GOLD_KEY) }, { "invulnerable", bool(player.flags & PLAYER_FLAGS_INVULNERABLE) }, { "shields", double(player.shields) / F1_0 }, { "energy", double(player.energy) / F1_0 }, { "score", player.score }, { "lives", player.lives }, { "robots_killed_level", player.num_kills_level } };
 	state["player"]["primary_weapon"] = player.primary_weapon;
 	state["player"]["primary_weapon_flags"] = player.primary_weapon_flags;
-	if (ConsoleObject) state["position"] = { { "segment", ConsoleObject->segnum }, { "x", double(ConsoleObject->pos.x) / F1_0 }, { "y", double(ConsoleObject->pos.y) / F1_0 }, { "z", double(ConsoleObject->pos.z) / F1_0 } };
+	if (ConsoleObject) state["position"] = { { "segment", int(ConsoleObject->segnum) }, { "x", double(ConsoleObject->pos.x) / F1_0 }, { "y", double(ConsoleObject->pos.y) / F1_0 }, { "z", double(ConsoleObject->pos.z) / F1_0 } };
 	state["reactor_countdown"] = { { "active", Control_center_destroyed != 0 }, { "total_seconds", Total_countdown_time }, { "timer", Countdown_timer } };
 	auto &pilot = state["xl_pilot"];
 	pilot["remaining_objectives"] = xl_level_objectives_remaining();
@@ -34,7 +35,7 @@ static Json snapshot()
 	for (int index = 0; index < Num_triggers; ++index) {
 		xl_trigger_state value{};
 		if (xl_wall_trigger_state(index, &value)) pilot["wall_triggers"][std::to_string(index)] = {
-			{ "operated", value.operated != 0 }, { "actor", value.object }, { "shot", value.shot }, { "value", Triggers[index].value }
+			{ "operated", value.operated != 0 }, { "actor", value.object }, { "shot", value.shot }, { "value", int(Triggers[index].value) }
 		};
 	}
 	for (int index = 0; index < Num_walls; ++index) pilot["doorways"][std::to_string(index)] = { { "state", Walls[index].state }, { "type", Walls[index].type } };
@@ -54,9 +55,9 @@ static Json snapshot()
 			}
 			state["level_scene"]["reactors"].push_back({ { "object", index }, { "shields", double(object.shields) / F1_0 }, { "guns", guns } });
 		} else if (Objects[index].type == OBJ_ROBOT && ConsoleObject && vm_vec_dist(&Objects[index].pos, &ConsoleObject->pos) < i2f(200))
-			state["level_scene"]["robots"].push_back({ { "object", index }, { "id", Objects[index].id }, { "segment", Objects[index].segnum }, { "shields", double(Objects[index].shields) / F1_0 }, { "boss", Robot_info[Objects[index].id].boss_flag }, { "position_fixed", { Objects[index].pos.x, Objects[index].pos.y, Objects[index].pos.z } } });
+			state["level_scene"]["robots"].push_back({ { "object", index }, { "id", Objects[index].id }, { "segment", int(Objects[index].segnum) }, { "shields", double(Objects[index].shields) / F1_0 }, { "boss", Robot_info[Objects[index].id].boss_flag }, { "position_fixed", { int(Objects[index].pos.x), int(Objects[index].pos.y), int(Objects[index].pos.z) } } });
 	for (int weapon : { 0, CONTROLCEN_WEAPON_NUM })
-		if (weapon < N_weapon_types) state["weapon_definitions"][std::to_string(weapon)] = { { "damage_radius", Weapon_info[weapon].damage_radius }, { "strength", Weapon_info[weapon].strength[Difficulty_level] }, { "speed", Weapon_info[weapon].speed[Difficulty_level] } };
+		if (weapon < N_weapon_types) state["weapon_definitions"][std::to_string(weapon)] = { { "damage_radius", int(Weapon_info[weapon].damage_radius) }, { "strength", int(Weapon_info[weapon].strength[Difficulty_level]) }, { "speed", int(Weapon_info[weapon].speed[Difficulty_level]) } };
 	return state;
 }
 static bool matches(const Json &actual, const Json &expected)
