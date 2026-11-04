@@ -48,3 +48,19 @@ validation/pending checks, preservation/cleanup and ranked next tasks. Each
 handoff includes a copyable fresh-context prompt carrying ALL constraints, this
 repeating requirement and the NO APK BUILDS instruction. For a following goal use
 [USER-SUPPLIED ABSOLUTE CUTOFF AND TIME ZONE] until supplied; never auto-start it.
+
+## Original-resource checkpoints
+
+PR344 at a287637fdb7c05fd316c6bb8cf45fe31b0b5ed8e rebases the88warm/23cold
+inner-gate proof onto Dot's refreshed stack after native-fix PR343 merged.
+The next child xl_pumo_original_reactor adds106warm/7cold reactor combat/countdown
+and117warm/24cold earned escape/PMC2 transition-save checks. Exact Android engine
+is retained APK29471/ec7715, not current-head native qualification. No APK builds.
+Original VHAM type76 is a gunless prop, so the old Vertigo seven/six-objective
+assumptions were stale. Original reactor accounting is1->0 and a90-second countdown.
+
+Next: run original PMC2 selectors/local gates and earned boost exit to PMC3, then
+original PMC3 keys/reactor/ending. Preserve the exact source/assets/trace/terminal
+status, use normal activation and protected restoration, and fix the first
+source-backed gameplay defect. Do not treat historical fixture boss combat or
+controlled next-level dispatch as full-original progression proof.

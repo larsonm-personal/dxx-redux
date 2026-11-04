@@ -1,8 +1,11 @@
 # Reactors beside XL bosses
 
-The ordinary PMC1 reactor probe exposed a legacy initialization defect: the
+The historical PMC1 reactor probe with substituted Vertigo robot definitions
+exposed a legacy initialization defect: the
 authored reactor (object 101, segment 677) was changed to an invisible ghost
-because the level also contains six bosses. On APK
+because the fixture supplied six bosses. Original Pumo supplies gunless props
+for those type76 objects instead. Mixed reactor/boss controls below remain
+relevant to XL semantics, but are not original Pumo combat qualification. On APK
 `888ded31795e2074c46566c688ac813902a60cce`, normal laser fire consequently could
 not hit a reactor. The probe timed out at step 72; introspection showed an empty
 reactor list. Original HOG, descriptor and mod bytes were unchanged.
@@ -28,8 +31,9 @@ that could drift across loading. A reactor death still dispatches its object
 actions and records the dead reactor, but does not start final countdown while
 required bosses remain. Stock level initialization retains its prior behavior.
 
-The earlier probe expectation that destroying PMC1's reactor alone must start
-countdown was incorrect. The replacement expects seven objectives before firing,
+For that historical substituted fixture, expecting PMC1's reactor alone to start
+countdown was incorrect. Full-original Pumo has one objective, so its ordinary
+reactor destruction does start countdown. The replacement expects seven objectives before firing,
 six afterward, and no final countdown. That reactor scenario does not dispatch
 or qualify an exit. The later [normal escape probe](pmc-escape.md) separately
 qualifies the authored boost exit. XL DoExit does not require this countdown
@@ -55,7 +59,7 @@ keys, shields or completion state are granted.
 The exact universal APK from `c94341f823c0c498ae3dc824cf4663f8fddf4d8d`, version
 28780, passed 81/81 warm steps in 187.759 seconds and 15/15 cold steps in 34.769
 seconds. Normal starter laser fire destroyed the reactor in 10.972 seconds.
-The player survived with 42 shields; all six original bosses remained alive,
+The player survived with 42 shields; all six fixture bosses remained alive,
 and countdown stayed inactive. Warm load restored the saved segment 664.
 Fresh-process PIDs were 15671 then 16886; the restored ship also flew through
 the previously opened switch gate. The cold rendered frame was inspected.
@@ -91,3 +95,34 @@ build to exercise the correction. Existing saves are preserved, not rewritten.
 
 Receipts: `temp/xl-traversal-20261102/pmc-reactor-*`, `reactor-native/`, and
 `reactor-native-test.log`. The previous published bundle remains available.
+
+## Original Pumo reactor, November 3 2026
+
+The owner also accepts `-PmcReactorPlaytest -PmcInnerGates -PmcPlaytest
+-OriginalHub -MissionFlow` with complete original PumoMods and no VertigoHam.
+It appends `test_xl_pumo_original_reactor.jsonc` to the original inner-gate route:
+normal hub entry, master shots, blastable wall and red-key pickup by flight,
+then switch14 and ordinary starter-laser fire at reactor101 (segment677).
+The separate original suffix requires its authored750shields before combat,
+one objective before firing, zero afterward, active countdown, survival and
+ordinary warm quick-save/load. No kill, completion or inventory state is granted.
+`test_xl_pumo_original_reactor_cold.jsonc` menu-loads the checkpoint in a fresh
+process, retaining reactor destruction, key, switch14 and active countdown.
+
+Exact retained/installed APK29471 SHA256
+`da070ebaacf95ea9be2f95fbd630ef5db1ccea0e24cf9108bbb6822c96a0661d`, package
+com.dxxredux.app/source `ec7715ffa5cd34865b701aa2152ee42f2a51b018`, passes106/106
+warm steps (102.283seconds,run `6b2cdb510aa54f448f286692423f4300`) and7/7cold
+steps (11.904seconds,run `43cc701a49774ae58172b1fe05a5bbfb`). Game PIDs9379 and10179
+differ. Final segment664,33.3056shields,73.0505energy, reactor shields-8.5,
+zero objectives and an active90-second countdown with87seconds remaining.
+The original Pumo HAM/HXM/VHAM/ASE/OOF and camera/effects resources are the same
+as the [qualified inner-gate run](pmc-inner-gates.md). No APK build or install.
+
+Protected manifests both SHA256
+`160d7bc5c74593e3db73d3ac46baed653d55096c34dd403cb87cafe3af5ef253`.
+Receipts: `temp/xl-original-pmc-reactor`. Prior substituted receipts are preserved
+in `temp/xl-overnight-20261104/prior-reactor`. This uses owned Android14 software
+emulator DxxPhoneFog20261102 and protected legacy staging, not physical hardware
+or independent launcher UI qualification. Fixed poses choose local approaches;
+connected navigation and escape remain outside this reactor-only result.

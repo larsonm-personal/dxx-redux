@@ -39,7 +39,16 @@ shots, blastable passage, red-key flight/pickup and save persistence. No new APK
 was built. This corrects the old Vertigo-based seven-objective assumption: Pumo's
 type76 is a gunless prop and PMC1 has one reactor objective. Fixed approaches,
 legacy staging and an owned software emulator limit this claim; full traversal,
-reactor/escape, later campaign and phone verification remain open.
+later campaign and phone verification remain open.
+
+The same retained29471 now passes full-original [reactor combat](evidence/reactor-objectives.md)
+(106warm/7cold) and [earned PMC1 escape](evidence/pmc-escape.md) (117warm/24cold).
+Ordinary laser fire destroys the750-shield reactor and starts its90-second
+countdown. Normal boost contacts/exit46 reach Level11 Complete, then ordinary
+menu/briefing flow reaches PMC2 and saves/loads there with countdown inactive.
+Protected profile hashes match exactly. These checks use legacy protected
+staging and local fixed approaches; later PMC2/PMC3 progression and physical
+phone execution remain open. No new APK was built or installed.
 
 ## Historical29330 delivery
 
