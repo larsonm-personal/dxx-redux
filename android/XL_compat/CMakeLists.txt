@@ -884,6 +884,17 @@ if(BUILD_TESTING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_iquaxel.cmake)
         set_tests_properties(xl_pumo_iquaxel_player PROPERTIES TIMEOUT 240 FIXTURES_REQUIRED
                                                                pumo_earned_iquaxel RUN_SERIAL TRUE)
+        set_tests_properties(xl_pumo_iquaxel_player PROPERTIES FIXTURES_SETUP pumo_earned_sophodo)
+        add_test(
+            NAME xl_pumo_sophodo_player
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/pumo-iquaxel-player/preview-user/pumo-player-level6.sav
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-sophodo-player -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_sophodo.cmake)
+        set_tests_properties(xl_pumo_sophodo_player PROPERTIES TIMEOUT 300 FIXTURES_REQUIRED
+                                                               pumo_earned_sophodo RUN_SERIAL TRUE)
     endif()
     set(XL_ARENA_HOG "" CACHE FILEPATH "Original Robotech Arena HOG for private water coverage")
     set(XL_ARENA_DESCRIPTOR "" CACHE FILEPATH "Original Robotech Arena mission descriptor")
