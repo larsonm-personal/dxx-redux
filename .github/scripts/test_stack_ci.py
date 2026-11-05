@@ -16,6 +16,57 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class StackPolicyTests(unittest.TestCase):
+    def public_lan_finish(self):
+        workflow = (ROOT / ".github/workflows/public-lan-smoke.yml").read_text()
+        return workflow.split("\n  finish:\n", 1)[1].split("\n  evidence:\n", 1)[0]
+
+    def test_public_lan_finish_distinguishes_cancelled_selection_from_failure(self):
+        finish = self.public_lan_finish()
+        condition = next(line.strip() for line in finish.splitlines() if line.startswith("    if:"))
+        condition = condition.removeprefix("if: ${{ ").removesuffix(" }}")
+        # Evaluate the workflow's actual guard with only its supported context
+        for source, target in (
+            ("always()", "True"),
+            ("!inputs.evidence_run_id", "not evidence"),
+            ("needs.plan.result", "plan"),
+            ("needs.execution-stack.outputs.run", "stack"),
+            ("needs.android.result", "android"),
+            ("&&", "and"),
+            ("||", "or"),
+        ):
+            condition = condition.replace(source, target)
+        for plan, stack, android, expected in (
+            ("cancelled", "", "skipped", False),
+            ("skipped", "", "skipped", False),
+            ("failure", "", "skipped", True),
+            ("success", "true", "success", True),
+            ("success", "true", "failure", True),
+            ("success", "true", "cancelled", True),
+            ("success", "", "skipped", True),
+            ("success", "false", "skipped", False),
+            ("success", "false", "failure", True),
+            ("success", "false", "cancelled", True),
+        ):
+            with self.subTest(plan=plan, stack=stack, android=android):
+                context = {"plan": plan, "stack": stack, "android": android, "evidence": ""}
+                self.assertEqual(eval(condition, {"__builtins__": {}}, context), expected)
+                context["evidence"] = "123"
+                self.assertFalse(eval(condition, {"__builtins__": {}}, context))
+
+    def test_public_lan_missing_plan_artifact_remains_fatal(self):
+        finish = self.public_lan_finish()
+        download = next(step for step in finish.split("      - ") if "name: nightly-plan\n" in step)
+        self.assertIn("uses: actions/download-artifact@", download)
+        self.assertNotIn("continue-on-error:", download)
+        self.assertNotIn("if:", download)
+
+    def test_public_lan_finish_retains_plan_and_gameplay_failures(self):
+        finish = self.public_lan_finish()
+        self.assertIn('[[ "$PLAN_RESULT" == success && "$ANDROID_RESULT" == success ]] || status=$?', finish)
+        self.assertIn("--require-selected --receipts", finish)
+        self.assertIn("> summary.json || status=$?", finish)
+        self.assertIn('exit "$status"', finish)
+
     def test_native_positions_and_unknown_data(self):
         for stack, expected in [
             (None, True),

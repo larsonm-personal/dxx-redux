@@ -108,7 +108,8 @@ jobs:
   finish:
     name: ${{ (github.event.action == 'labeled' || inputs.campaign == 'lan-three-player') && 'Require three-player LAN pass' || 'Require public LAN pass' }}
     needs: [plan, execution-stack, android]
-    if: ${{ always() && !inputs.evidence_run_id && needs.plan.result != 'skipped' && (needs.execution-stack.outputs.run != 'false' || needs.android.result == 'failure' || needs.android.result == 'cancelled') }}
+    # Skip cancelled selection before requiring its possibly absent plan artifact
+    if: ${{ always() && !inputs.evidence_run_id && needs.plan.result != 'skipped' && needs.plan.result != 'cancelled' && (needs.execution-stack.outputs.run != 'false' || needs.android.result == 'failure' || needs.android.result == 'cancelled') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
