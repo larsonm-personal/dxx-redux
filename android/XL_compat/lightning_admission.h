@@ -45,7 +45,7 @@ inline LightningDefinition prepare_authored_lightning(const Inventory &level, co
 	if (target >= 0) definition.length = authored_lightning_target_length(object.position, level.objects[target].position);
 	if (definition.glow < 0)
 		throw std::runtime_error("XL lightning single-layer glow remains unsupported");
-	if (object.render_data[5] != -1 || definition.angle || definition.in_plane || (definition.clamp && definition.amplitude <= 0) ||
+	if (object.render_data[5] != -1 || definition.angle < 0 || definition.in_plane || (definition.clamp && definition.amplitude <= 0) ||
 	    definition.style < -1 || definition.style > 2 || lightning_active_style(definition) || definition.frames <= 0 || definition.nodes > 32767 || definition.bolts <= 0 || definition.bolts > 32767)
 		throw std::runtime_error("XL lightning owner requires the implemented style-0 endpoint profile");
 	(void) lightning_lifetime(definition, target >= 0, authored_lightning_children);

@@ -78,6 +78,7 @@ static int effect_inspection_test(int argc, char **argv)
 					lightning_objects_native_case(true, 1);
 					lightning_objects_native_case(true, 2);
 					lightning_objects_native_case(true, 3);
+					lightning_objects_native_case(true, 4);
 				}
 				if (version == 23 && level == 2) {
 					const auto *installation = find_arg_value(argc, argv, "-particle-installation-fixture");

@@ -74,7 +74,7 @@ static void lightning_native_light_case()
 
 static void lightning_objects_native_case(bool active, int profile = 0)
 {
-	const bool nonglow = profile == 1 || profile == 2;
+	const bool nonglow = profile == 1 || profile == 2 || profile == 4;
 	using namespace xl_compat;
 	const auto sim = d_rand_get_stream_call_count(D_RNG_SIM);
 	const auto fx = d_rand_get_stream_call_count(D_RNG_FX);
@@ -128,11 +128,12 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 			authored.render_data = { 300, 50, 15, 5, 1, -1, 3, 0, 0, 6, 0, 2, 20, 0, 0, 0, 0, 0, 0, 1, 0, 160, 160, 0, 128, index == 1 };
 		if (profile == 2)
 			authored.render_data = { 2000, 0, 30, 5, 1, -1, 50, 0, 0, 50, 5, 3, 3, 0, 1, 1, 1, 0, 0, 1, 0, 32, 64, 255, 100, index == 1 };
-		if (profile == 3) {
+		if (profile >= 3) {
 			native.pos.y += (index == 1 ? -4 : 4) * F1_0;
 			authored.position = { native.pos.x, native.pos.y, native.pos.z };
 			authored.render_data = { 4500, 0, 60, 13, 1, -1, 5, index, 3 - index, 30, 2, index == 1 ? 7 : 10, 3, 0, 2, 1, 1, 1, 0, 0, 0, 255, 38, 76, 100, index == 1 };
 		}
+		if (profile == 4) authored.render_data = { 300, 30, 20, 6, 2, -1, 3, index, 3 - index, 30, 5, 4, 3, 4, 1, 1, 1, 0, 0, 1, 0, 115, 25, 25, 200, index == 1 };
 	}
 	bind_lightning_objects(source);
 	require(!lightning_object_emitter(1) && !lightning_object_emitter(2) && d_rand_get_stream_call_count(D_RNG_FX) == fx, "Lightning bind allocated transient bolts or consumed RNG");
@@ -146,7 +147,7 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 		rejected = true;
 	}
 	require(rejected && lightning_objects_snapshot() == saved, "Failed lightning bind replaced valid ownership");
-	if (profile == 3) {
+	if (profile >= 3) {
 		for (int variant = 0; variant < 3; ++variant) {
 			auto invalid_target = source;
 			if (variant == 0) invalid_target.objects[1].render_data[8] = 999;
@@ -168,10 +169,13 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 	require(lightning_object_emitter(1) && lightning_object_emitter(2) && !lightning_object_emitter(2)->enabled, "Source creates disabled lightning systems too");
 	require(lightning_object_emitter(1)->updated == -1 && lightning_object_emitter(1)->bolts[0].draw_positions.empty(), "New lightning owner animated in its creation frame");
 	require(!lightning_object_render_frame(1, 0) && !lightning_object_render_frame(2, 0), "New lightning owner created render geometry before animation");
-	if (profile == 3) {
+	if (profile >= 3) {
 		const auto &bolt = lightning_object_emitter(1)->bolts.front();
-		require(!bolt.lifetime.random_nodes && bolt.lifetime.length == 8 * F1_0 && bolt.lifetime.nodes == 30,
-		        "Fixed lightning failed to replace authored length with its live target distance");
+		require(bolt.definition.length == 8 * F1_0 && bolt.lifetime.nodes == (profile == 4 ? 36 : 30) && bolt.lifetime.random_nodes == (profile == 4 ? 6 : 0),
+		        "Targeted lightning failed to replace authored length with its live target distance");
+		if (profile == 3) require(bolt.lifetime.length == 8 * F1_0, "Fixed lightning changed its target length");
+		if (profile == 4) require(bolt.reference_end == source.objects[2].position && !bolt.lifetime.children && lightning_active_style(bolt.definition) == 0,
+			                      "Directed lightning lost reference endpoint or existing presentation settings");
 	}
 	const int disabled_ttl = lightning_object_emitter(2)->bolts[0].lifetime.ttl;
 	if (profile == 2) {
@@ -279,11 +283,12 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 	file = PHYSFS_openRead(path);
 	REWIND_PHYSFS_FILE(reader, file);
 	require(file && xl_wall_trigger_read(reader) && PHYSFS_close(file) && lightning_objects_snapshot() == saved, "Full runtime trailer did not restore lightning activation");
-	if (profile == 3) Objects[2].pos.y += F1_0;
+	if (profile >= 3) Objects[2].pos.y += F1_0;
 	lightning_objects_frame();
 	require(lightning_object_emitter(1) && lightning_object_emitter(1)->updated == -1, "Lightning restore did not rebuild a fresh owner");
-	if (profile == 3) require(lightning_object_emitter(1)->bolts.front().definition.length == 9 * F1_0,
+	if (profile >= 3) require(lightning_object_emitter(1)->bolts.front().definition.length == 9 * F1_0,
 		                      "Fixed lightning restore used serialized rather than live target coordinates");
+	if (profile == 4) require(lightning_object_emitter(1)->bolts.front().reference_end == LightningPoint{ Objects[2].pos.x, Objects[2].pos.y, Objects[2].pos.z }, "Directed restore lost live reference endpoint");
 	++Objects[1].signature;
 	lightning_objects_frame();
 	require(!lightning_object_emitter(1) && !xl_lightning_object_set_enabled(1, 1), "Recycled native object inherited lightning");
@@ -291,8 +296,9 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 	lightning_objects_frame();
 	require(!lightning_object_emitter(2), "Deleted object retained lightning");
 	require(d_rand_get_stream_call_count(D_RNG_SIM) == sim, "Lightning used simulation RNG");
-	std::cout << "XL lightning native ownership (" << (profile == 3 ? "PMC fixed-target" : profile == 2 ? "PMC parent-bolt"
-	                                                                                   : nonglow        ? "non-glowing"
-	                                                                                                    : "glowing")
+	std::cout << "XL lightning native ownership (" << (profile == 4 ? "Sphere directed cone" : profile == 3 ? "PMC fixed-target"
+	                                                                                       : profile == 2   ? "PMC parent-bolt"
+	                                                                                       : nonglow        ? "non-glowing"
+	                                                                                                        : "glowing")
 	          << "): creation, clock, movement, activation, atomic restore and signature lifetime passed\n";
 }
