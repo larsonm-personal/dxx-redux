@@ -22,6 +22,7 @@ jobs:
           persist-credentials: false
       - run: |
           python3 .github/scripts/test_stack_ci.py
+          python3 .github/scripts/test_prefer_ubuntu_archive.py
           python3 android/tests/test_input_demo_assets.py
           python3 android/tests/test_linux_build_cli.py
           python3 android/tests/test_verified_dependency_download.py
@@ -58,6 +59,7 @@ jobs:
             command -v "$tool"
             "$tool" --version
           done
+          python3 .github/scripts/prefer_ubuntu_archive.py
           sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o APT::Update::Error-Mode=any update
           sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends \
             libphysfs-dev libsdl1.2-dev \
@@ -156,6 +158,7 @@ jobs:
             command -v "$tool"
             "$tool" --version
           done
+          python3 .github/scripts/prefer_ubuntu_archive.py
           sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o APT::Update::Error-Mode=any update
           sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends \
             libphysfs-dev libsdl1.2-dev \
