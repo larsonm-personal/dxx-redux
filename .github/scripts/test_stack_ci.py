@@ -96,6 +96,98 @@ class StackPolicyTests(unittest.TestCase):
         pr["stack"]["size"] = 3
         self.assertFalse(stack_ci.refresh(12, "owner/repo", fetch, "extended", pr))
 
+    def test_scripts_and_xl_selection(self):
+        for profile in ("scripts", "xl"):
+            pr = {"number": 12, "state": "open", "head": {"sha": "b" * 40}, "base": {"sha": "a" * 40}}
+            comparison = {"files": [{"filename": "README.md"}]}
+
+            def fetch(url):
+                return comparison if "/compare/" in url else pr
+
+            self.assertFalse(stack_ci.refresh(12, "owner/repo", fetch, profile, pr))
+            pr["stack"] = {"number": 7, "position": 2, "size": 2}
+            # A README-only tip must still cover lower-layer script/XL edits
+            self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, profile, pr))
+            pr["stack"]["size"] = 3
+            self.assertFalse(stack_ci.refresh(12, "owner/repo", fetch, profile, pr))
+            comparison["files"] = [{"filename": "android/tests/test_fixture.py"}]
+            self.assertFalse(stack_ci.refresh(12, "owner/repo", fetch, profile, pr))
+            pr["stack"] = {}
+            self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, profile, pr))
+
+    def test_script_paths_and_renames_preserve_standalone_coverage(self):
+        pr = {"number": 12, "state": "open", "head": {"sha": "b" * 40}, "base": {"sha": "a" * 40}, "stack": None}
+        for path in (
+            "android/foo.py",
+            "android/helpers/nested/foo.py",
+            "android/run_all_tests.ps1",
+            "android/helpers/foo.psm1",
+            "android/tests/fixture.json",
+            "android/test_fixtures/a.txt",
+            "android/game_scripts/helper.py",
+            "game_data/mods/d2x-xl/convert.ps1",
+            ".github/workflows/android-tooling.yml",
+            ".github/scripts/stack_ci.py",
+            "cmake/test.cmake",
+            "d2/main/bmread.c",
+        ):
+            for file in ({"filename": path}, {"filename": "removed.txt", "previous_filename": path}):
+                with self.subTest(file=file):
+
+                    def fetch(url):
+                        return {"files": [file]} if "/compare/" in url else pr
+
+                    self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "scripts", pr))
+        for path in ("android/game_scripts/test_new.jsonc", "game_data/mods/d2x-xl/README.md"):
+
+            def fetch(url):
+                return {"files": [{"filename": path}]} if "/compare/" in url else pr
+
+            self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "scripts", pr))
+            standalone = dict(pr, stack=None)
+            self.assertTrue(
+                stack_ci.refresh(
+                    12,
+                    "owner/repo",
+                    lambda url: fetch(url) if "/compare/" in url else standalone,
+                    "scripts",
+                    standalone,
+                )
+            )
+
+    def test_scripts_uncertainty_keeps_coverage(self):
+        pr = {"number": 12, "state": "open", "head": {"sha": "b" * 40}, "base": {"sha": "a" * 40}, "stack": None}
+        for comparison in ({}, {"files": None}, {"files": [None]}, {"files": [{"filename": "README.md"}] * 300}):
+
+            def fetch(url):
+                return comparison if "/compare/" in url else pr
+
+            self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "scripts", pr))
+        self.assertTrue(stack_ci.refresh(12, "owner/repo", lambda url: pr, "scripts", {}))
+        stale = dict(pr, head={"sha": "c" * 40})
+        self.assertTrue(stack_ci.refresh(12, "owner/repo", lambda url: pr, "scripts", stale))
+        stale_base = dict(pr, base={"sha": "c" * 40})
+        self.assertTrue(stack_ci.refresh(12, "owner/repo", lambda url: pr, "scripts", stale_base))
+        pr["stack"] = {"number": 7, "position": 1, "size": 2}
+        self.assertTrue(stack_ci.refresh(12, "owner/repo", lambda url: pr, "unknown-profile", pr))
+
+    def test_workflows_keep_cheap_checks_and_gate_matrix_work(self):
+        scripts = (ROOT / ".github/workflows/android-tooling.yml").read_text()
+        xl = (ROOT / ".github/workflows/xl-compat.yml").read_text()
+        for workflow, profile in ((scripts, "scripts"), (xl, "xl")):
+            self.assertIn("  pull_request:\n", workflow)
+            self.assertNotIn("    paths:", workflow)
+            self.assertIn("    needs: stack", workflow)
+            self.assertIn("    if: needs.stack.outputs.run == 'true'", workflow)
+            self.assertIn("      profile: " + profile, workflow)
+            self.assertIn("          STACK_CI_PROFILE: " + profile, workflow)
+            self.assertIn("if: steps.current.outputs.run == 'true'", workflow)
+        self.assertTrue(scripts.startswith("name: scripts and ci tests\n"))
+        self.assertIn("name: scripts and ci tests (${{ matrix.os }})", scripts)
+        self.assertIn("  workflow-lint:", scripts)
+        self.assertIn("  catalogs:", scripts)
+        self.assertIn("./android/tests/test_validate_automation_catalog.ps1", scripts)
+
     def test_private_skip_does_not_publish_status(self):
         sys.path.insert(0, str(ROOT / "android/tests"))
         import nightly_pr_candidate as candidate

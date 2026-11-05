@@ -1,29 +1,8 @@
-name: Tooling checks
+name: scripts and ci tests
 
 on:
   workflow_dispatch:
   pull_request:
-    paths:
-      - "android/**/*.ps1"
-      - "android/**/*.psm1"
-      - "android/**/*.psd1"
-      - "android/**/*.py"
-      - "android/**/*.sh"
-      - "android/get_deps/**"
-      - "android/game_scripts/**"
-      - "android/tests/**"
-      - "android/test_fixtures/**"
-      - "android/tools/**"
-      - "android/app/src/main/cpp/extract/**"
-      - "run-linux-build.sh"
-      - "run-windows-build.ps1"
-      - "cmake/**"
-      - "game_data/**/*.ps1"
-      - "game_data/mods/d2x-xl/**"
-      - "d1/main/bmread.c"
-      - "d2/main/bmread.c"
-      - ".github/workflows/**"
-      - ".github/scripts/**"
 
 permissions:
   contents: read
@@ -33,7 +12,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  tooling:
+  workflow-lint:
+    name: Workflow syntax
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Validate all GitHub workflows
+        shell: bash
+        run: |
+          lint_root="$RUNNER_TEMP/actionlint-1.7.12"
+          mkdir -p "$lint_root"
+          curl --fail --show-error --location --retry 3 \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
+            -o "$lint_root/actionlint.tar.gz"
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $lint_root/actionlint.tar.gz" | sha256sum --check
+          tar -xzf "$lint_root/actionlint.tar.gz" -C "$lint_root" actionlint
+          "$lint_root/actionlint"
+
+  catalogs:
+    name: Automation catalogs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Resolve catalog dependency paths without installing tools
+        shell: bash
+        run: source android/get_deps/helpers/resolve_dep_base.sh
+      - shell: pwsh
+        run: |
+          ./android/tests/test_validate_automation_catalog.ps1
+          exit $LASTEXITCODE
+
+  stack:
+    uses: ./.github/workflows/stack-ci.yml
+    with:
+      profile: scripts
+
+  scripts-and-ci-tests:
+    name: scripts and ci tests (${{ matrix.os }})
+    needs: stack
+    if: needs.stack.outputs.run == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -45,22 +68,18 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
-      - name: Validate all GitHub workflows
-        if: runner.os == 'Linux'
+      - name: Refresh scripts and CI eligibility
+        id: current
+        env:
+          STACK_CI_PROFILE: scripts
         shell: bash
-        run: |
-          lint_root="$RUNNER_TEMP/actionlint-1.7.12"
-          mkdir -p "$lint_root"
-          curl --fail --show-error --location --retry 3 \
-            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
-            -o "$lint_root/actionlint.tar.gz"
-          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $lint_root/actionlint.tar.gz" | sha256sum --check
-          tar -xzf "$lint_root/actionlint.tar.gz" -C "$lint_root" actionlint
-          "$lint_root/actionlint"
+        run: python3 .github/scripts/stack_ci.py
       - name: Install verified bounded Python
+        if: steps.current.outputs.run == 'true'
         shell: bash
         run: bash ./android/get_deps/helpers/get_bounded_python.sh
       - name: Nightly sweep planner and ledger controls
+        if: steps.current.outputs.run == 'true'
         shell: bash
         run: |
           python3 android/tests/test_nightly_runner_storage.py
@@ -74,18 +93,19 @@ jobs:
           python3 android/tests/test_private_input_demos.py
           python3 android/tests/test_retail_ci_assets.py
           python3 android/tests/test_run_host_test_suites.py
-      - name: Tooling smoke tests
+      - name: Script and CI smoke tests
+        if: steps.current.outputs.run == 'true'
         shell: pwsh
         run: ./android/tests/run_tooling_smoke.ps1 -IncludeBoundedRuntime
       - name: GitHub release tests on Windows PowerShell 5.1
-        if: always() && runner.os == 'Windows'
+        if: always() && steps.current.outputs.run == 'true' && runner.os == 'Windows'
         shell: powershell
         run: ./android/tests/test_github_release.ps1
       - name: Keep bounded diagnostic reports
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: tooling-${{ matrix.os }}
+          name: scripts-and-ci-tests-${{ matrix.os }}
           path: android/temp/tooling_smoke/**
           retention-days: 3
           if-no-files-found: ignore

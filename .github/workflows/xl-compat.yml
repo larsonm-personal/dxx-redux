@@ -2,9 +2,6 @@ name: XL compatibility contracts
 
 on:
   pull_request:
-    paths:
-      - "android/XL_compat/**"
-      - ".github/workflows/xl-compat.yml"
   workflow_dispatch:
 
 permissions:
@@ -15,7 +12,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  stack:
+    uses: ./.github/workflows/stack-ci.yml
+    with:
+      profile: xl
+
   contracts:
+    needs: stack
+    if: needs.stack.outputs.run == 'true'
     name: Asset-free XL checks (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
@@ -28,11 +32,18 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Refresh XL eligibility
+        id: current
+        env:
+          STACK_CI_PROFILE: xl
+        run: python .github/scripts/stack_ci.py
+
       - name: Verify preserved static survey evidence
+        if: steps.current.outputs.run == 'true'
         run: python android/XL_compat/evidence/audit_survey.py
 
       - name: Install production renderer and audio dependencies
-        if: runner.os == 'Linux'
+        if: steps.current.outputs.run == 'true' && runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libegl1-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libglew-dev libsdl1.2-dev libsdl-mixer1.2-dev libphysfs-dev libpng-dev
 
       # Public reference sources are pinned by commit and consumed-file hashes
@@ -40,4 +51,5 @@ jobs:
       # Linux exercises production fog and POG rendering in a surfaceless Mesa context
       # Passing these contracts does not qualify pilot gameplay or Android support
       - name: Build source adapters and require every public contract
+        if: steps.current.outputs.run == 'true'
         run: python android/XL_compat/tests/public_contracts.py --work temp/xl-public-ci ${{ runner.os == 'Linux' && '--gpu --audio' || '' }}

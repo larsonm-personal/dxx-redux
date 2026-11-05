@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       profile:
-        description: Optional standalone PR path selection (extended)
+        description: Optional standalone PR path selection (extended, scripts or xl)
         type: string
         default: ""
     outputs:

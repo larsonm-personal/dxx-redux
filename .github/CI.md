@@ -24,7 +24,7 @@ This is Linux native coverage. It does not compile Android Kotlin/JNI-only
 paths, exercise a GPU/display, run an emulator, package an APK, or validate other
 desktop compilers. Keep the manual packaging workflows for those build paths
 
-## Tooling checks
+## scripts and ci tests
 
 Keep the existing Linux and Windows tooling suites, including the Windows
 PowerShell 5.1 release tests. They exercise download verification, extraction,
@@ -32,20 +32,44 @@ dependency installation, cleanup/process lifetime, release operations, replay
 comparison and test-catalog/evidence handling. Catalog validation is only part
 of their coverage; it does not claim to execute the catalog's game tests
 
-The tooling job ceiling is 20 minutes on Windows and 15 minutes on Linux.
+The scripts and CI job ceiling is 20 minutes on Windows and 15 minutes on Linux.
 Windows job `120313557247` completed every test step successfully but received
 GitHub's maximum-execution-time annotation at 15m01s, after upload and cleanup.
 The extra job headroom preserves the existing 180-second per-fixture pool limit
 and every test assertion, including the separate Windows PowerShell 5.1 suite
 
-The workflow now runs on PRs that change scripts, automation fixtures,
-dependency/extraction infrastructure, workflows, or the asset-loader contracts
-those tests inspect. Ordinary engine and launcher source edits no longer
-trigger it. Manual dispatch remains available; duplicate push runs are removed
+The workflow starts on every PR. Workflow syntax and automation catalog checks
+stay per PR. Native tips run the full Linux/Windows suites regardless of their
+own diff, so an unrelated top layer cannot hide script changes below it
 
-For branch protection, require the two `Linux d1/d2 build and tests` checks.
-Keep path-filtered tooling checks optional, since an unrelated PR will not
-start that workflow. This change does not modify repository protection settings
+Standalone PRs retain the previous script/fixture/contract path selection.
+Native non-tips skip the long suites even when they change scripts or tests:
+the complete combined suite runs at the tip. Each layer still gets workflow
+lint, catalog validation and policy/runner checks. This deliberately gives up
+independent Linux/Windows script and XL contract results on intermediate layers;
+a later layer can mask an earlier defect, and failures are first attributed to
+the combined tip. Rerun a layer manually when independent diagnosis is needed
+
+API failures, malformed stack metadata, stale heads/bases and potentially
+truncated standalone file comparisons retain full coverage. Each matrix runner
+refreshes eligibility before expensive setup. Work already admitted can finish;
+this does not add immediate cancellation when a new top is created
+
+Observed run `41985507434` used 6m32s on Linux and 13m58s on Windows (20m30s
+combined runner time). That is illustrative potential savings per skipped
+matrix, not a guaranteed reduction: lightweight jobs and metadata queries have
+overhead
+
+The visible workflow name changes from `Tooling checks` to `scripts and ci tests`.
+The matrix checks change from `tooling (ubuntu-24.04)` / `tooling (windows-2022)`
+to `scripts and ci tests (ubuntu-24.04)` / `scripts and ci tests (windows-2022)`.
+The workflow filename, concurrency key and local runner filename stay stable
+
+Repository policy keeps these path-selected checks optional. The rulesets API
+returned no rulesets; classic `cmake` branch protection could not be read
+(`403 Resource not accessible by integration`). Confirm that no classic required
+check uses the old names before merging; no protection settings were changed.
+The existing `Linux d1/d2 build and tests` names remain unchanged
 
 ## Full demo replays
 
@@ -348,8 +372,12 @@ malformed metadata retain coverage. It uses no credentials and adds no token
 permissions. Private XL admission still verifies its existing provenance before
 checking eligibility; trusted controller code is checked out at `workflow_sha`
 
-Tooling, asset-free XL contracts, Rust checks, and the CI policy/build-runner
-checks remain per PR under their existing path policies. Rust change detection
+Asset-free XL contracts now run at the tip, with the existing XL path selection
+for standalone PRs and full cumulative coverage for native tips. Run
+`41985507676` used 2m08s Linux plus 2m01s Windows; skipping lower-layer builds
+avoids about four runner minutes per matching layer in that sample. Script
+coverage policy is described above. Rust and CI policy/build-runner checks
+remain per PR under their existing path policies. Rust change detection
 uses `stack.base.sha` for the full stack diff. Extended samples start on every
 PR event and perform their standalone path selection in the gate (including
 renames and conservative fallback on truncated comparisons). Native tips get
@@ -360,7 +388,7 @@ gate allows that event if merge queue coverage is added later
 
 Public save/replay stages refresh eligibility after the build, and LAN/extended
 execution refreshes after planning. A successor created before those refreshes
-causes remaining jobs to be **skipped**, not reported as tested. Existing job
+causes remaining jobs to be **skipped**, not reported as tested. Existing engine/LAN/save job
 names remain stable; summaries distinguish policy omission from test success
 and failed/cancelled test jobs still reach their result checks. No branch
 protection settings are changed. GitHub accepts skipped jobs for required
