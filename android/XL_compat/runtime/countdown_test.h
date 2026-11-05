@@ -64,6 +64,7 @@ static int countdown_test(int argc, char **argv)
 		for (int ordinal : { 1, 2 }) {
 			require(load_base_mission("xcount", error, sizeof(error)), error);
 			StartNewGame(ordinal);
+			Game_suspended = SUSP_ROBOTS;
 			const auto owned_model = xl_owned_oof_model(132);
 			require(owned_model && owned_model->model.has_special_points && owned_model->model.has_rotation_tracks && owned_model->skins.size() == 1, "Typed OOF metadata or owned skin missing after native load");
 			const auto expected_mesh = xl_compat::compile_oof_mesh(xl_compat::read_oof(xl_oof_test::fixture(-1, 2, 0, "", 1, 1)), false);
@@ -96,7 +97,6 @@ static int countdown_test(int argc, char **argv)
 			}
 			write_bytes(model_path.string().c_str(), original_model);
 			require(metadata_rejected && xl_owned_oof_model(132) == owned_model && xl_resource_mod_sources() == model_sources, "Malformed metadata changed installed resources");
-			Game_suspended = SUSP_ROBOTS;
 			events();
 			frames();
 			for (const char *bad : { "badcount.rl2", "badobject.rl2", "badbase.rl2" }) {
@@ -120,11 +120,11 @@ static int countdown_test(int argc, char **argv)
 			xl_countdown_frame();
 			require(equal(snapshot(), stock), "XL countdown consumer changed Redux state");
 			require(state_restore_all_sub(save, 0) && xl_source_level_version() == (ordinal == 1 ? 23 : 27) && equal(snapshot(), earned), "Disk through stock changed exact countdown state");
+			continuation(earned);
+			require(!game_is_time_paused(), "Native save owner left an unbalanced pause");
 			require(Polygon_models[132].model_data_size == int(native_geometry.size()) && std::equal(native_geometry.begin(), native_geometry.end(), Polygon_models[132].model_data), "Restored metadata changed stock collision data");
 			const auto restored_model = xl_owned_oof_model(132);
 			require(restored_model && restored_model->model.has_rotation_tracks && restored_model->model.has_special_points && xl_resource_mod_sources() == model_sources && xl_oof_test::same_mesh(restored_model->mesh, expected_mesh), "OOF metadata identity/output changed across disk-through-stock restore");
-			continuation(earned);
-			require(!game_is_time_paused(), "Native save owner left an unbalanced pause");
 			std::cout << (ordinal == 1 ? 23 : 27) << "/40 countdown: wall/master/object/autoplay, warnings, rocking, 15 malformed trailers and disk-through-stock passed\n";
 		}
 		std::cout << "XL countdown runtime controls passed\n";
