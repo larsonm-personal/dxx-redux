@@ -276,7 +276,7 @@ class LanWifiTopologyTests(unittest.TestCase):
             serial, args = command[2], command[3:]
             calls.append((serial, args))
             address = {"emulator-5554": "10.0.2.16", "emulator-5556": "10.0.2.17", "emulator-5558": "10.0.2.18"}[serial]
-            text, code = "", 0
+            text, code, stderr = "", 0, ""
             if args == ["get-state"]:
                 text = "offline" if fault == "offline" and serial == serials[-1] else "device"
             elif args == ["shell", "getprop", "ro.kernel.qemu"]:
@@ -313,10 +313,14 @@ class LanWifiTopologyTests(unittest.TestCase):
                 else:
                     disabled.add(serial)
             elif args[:5] == ["shell", "ip", "-o", "link", "show"]:
+                code, stderr = 1, "request send failed: Permission denied"
+            elif args[:7] == ["shell", "su", "0", "ip", "-o", "link", "show"]:
                 up = fault == "still-up" or (serial not in disabled and not initially_down)
                 text = "2: eth0: <BROADCAST,MULTICAST" + (",UP" if up else "") + "> mtu 1500"
                 if fault == "missing-link":
                     code, text = 1, ""
+                if fault == "root-link-denied" or (fault == "post-link-denied" and serial in disabled):
+                    code, text, stderr = 1, "", "request send failed: Permission denied"
                 if fault == "empty-link":
                     text = ""
                 if fault == "wrong-link":
@@ -331,7 +335,7 @@ class LanWifiTopologyTests(unittest.TestCase):
                     text, code = "", 2
             else:
                 text = "diagnostic output"
-            return subprocess.CompletedProcess(command, code, text, "denied" if code else "")
+            return subprocess.CompletedProcess(command, code, text, stderr or ("denied" if code else ""))
 
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory, "receipt.json")
@@ -366,6 +370,31 @@ class LanWifiTopologyTests(unittest.TestCase):
             self.assertTrue(any("dev eth0" in row for row in routes))
             self.assertTrue(all("dev wlan0" in row for row in routes[-len(serials) * (len(serials) - 1) :]))
 
+    def test_link_inspection_uses_verified_root_but_routes_keep_shell_identity(self):
+        calls, receipt = self.run_case()
+        for serial in ("emulator-5554", "emulator-5556"):
+            inspections = [
+                i for i, (target, args) in enumerate(calls) if target == serial and "link" in args and "show" in args
+            ]
+            root_check = calls.index((serial, ["shell", "su", "0", "id", "-u"]))
+            self.assertGreaterEqual(len(inspections), 2)
+            for index in inspections:
+                self.assertGreater(index, root_check)
+                self.assertEqual(calls[index][1], ["shell", "su", "0", "ip", "-o", "link", "show", "dev", "eth0"])
+        routes = [entry for entry in receipt["commands"] if "get" in entry["arguments"]]
+        self.assertTrue(routes)
+        self.assertTrue(all(entry["arguments"][:4] == ["shell", "ip", "route", "get"] for entry in routes))
+
+    def test_root_link_permission_failure_remains_failure_with_evidence(self):
+        for fault in ("root-link-denied", "post-link-denied"):
+            calls, receipt = self.run_case(fault=fault)
+            denied = receipt["commands"][-1]
+            self.assertEqual(denied["returncode"], 1)
+            self.assertEqual(denied["stdout"], "")
+            self.assertEqual(denied["stderr"], "request send failed: Permission denied")
+            self.assertFalse(receipt["passed"])
+            self.assertEqual(any(args[-1] == "down" for _, args in calls), fault == "post-link-denied")
+
     def test_route_withdrawal_can_converge_without_repeating_mutation(self):
         calls, receipt = self.run_case(fault="transient")
         self.assertEqual(sum(args[-1] == "down" for _, args in calls), 2)
@@ -398,7 +427,7 @@ class LanWifiTopologyTests(unittest.TestCase):
                 first_mutation = next(i for i, (_, args) in enumerate(calls) if args[-1] == "down")
                 self.assertTrue(
                     any(
-                        s == serial and a == ["shell", "ip", "-o", "link", "show", "dev", "eth0"]
+                        s == serial and a == ["shell", "su", "0", "ip", "-o", "link", "show", "dev", "eth0"]
                         for s, a in calls[:first_mutation]
                     )
                 )

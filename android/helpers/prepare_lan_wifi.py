@@ -28,7 +28,8 @@ def prepare(serials, output):
         return result.stdout.strip() if result.returncode == 0 else ""
 
     def ethernet_flags(serial):
-        link = adb(serial, "shell", "ip", "-o", "link", "show", "dev", "eth0")
+        # API 34 shell UID cannot issue this link netlink request
+        link = adb(serial, "shell", "su", "0", "ip", "-o", "link", "show", "dev", "eth0")
         matches = re.findall(r"(?m)^\d+: eth0(?:@[^: ]+)?: <([^>]*)>", link)
         if len(matches) != 1:
             raise RuntimeError(f"Could not verify eth0 link state on {serial}")
