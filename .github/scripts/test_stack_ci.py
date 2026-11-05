@@ -89,6 +89,8 @@ class StackPolicyTests(unittest.TestCase):
         comparison["files"] = [{"filename": "README.md"}] * 300
         self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "extended", pr))
         comparison["files"] = []
+        pr["stack"] = {}
+        self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "extended", pr))
         pr["stack"] = {"number": 7, "position": 2, "size": 2}
         self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "extended", pr))
         pr["stack"]["size"] = 3

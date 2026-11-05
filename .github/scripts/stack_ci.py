@@ -62,7 +62,7 @@ def refresh(number, repository, fetch=None, profile="", event_pr=None):
             return False
         # Native tips receive the complete sample, so lower-layer changes cannot
         # disappear behind an immediate-parent path filter
-        if profile != "extended" or pr.get("stack") or (event_pr or {}).get("stack"):
+        if profile != "extended" or pr.get("stack") is not None or (event_pr or {}).get("stack") is not None:
             return True
         if not event_pr or pr.get("head", {}).get("sha") != event_pr.get("head", {}).get("sha"):
             return True
