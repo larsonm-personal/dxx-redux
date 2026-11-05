@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 from urllib.parse import quote
 
 from nightly_candidate import KNOWN_ACTORS, REPOSITORY_ID, api
@@ -154,6 +155,15 @@ def main():
     args = parser.parse_args()
     if args.command == "admit":
         candidate = verify()
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / ".github" / "scripts"))
+        from stack_ci import refresh
+
+        run = refresh(candidate["number"], retail.REPOSITORY)
+        with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+            output.write(f"eligible={str(run).lower()}\n")
+        if not run:
+            print("Skipping private XL qualification below the native stack tip")
+            return 0
         status(candidate["sha"], "pending", "Running original XL load and assisted navigation")
         with open(os.environ["GITHUB_OUTPUT"], "a") as output:
             output.write(f"sha={candidate['sha']}\nnumber={candidate['number']}\n")

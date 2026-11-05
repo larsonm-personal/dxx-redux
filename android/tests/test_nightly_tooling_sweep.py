@@ -607,18 +607,27 @@ class SweepTests(unittest.TestCase):
 
     def test_network_paths_trigger_existing_pr_sample(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
-        paths = workflow.split("    paths:", 1)[1].split("  workflow_dispatch:", 1)[0]
-        for expected in (
-            "d[12]/main/net*",
-            "d[12]/main/multi*",
-            "android/app/src/main/cpp/shared/net/**",
-            "android/app/src/main/cpp/shared/coop/**",
-            "android/app/src/main/java/com/dxxredux/app/lobby/**",
-            "android/app/src/main/java/com/dxxredux/app/multiplayer/**",
-            "android/tests/test_lan*",
+        self.assertNotIn("    paths:", workflow.split("  workflow_dispatch:", 1)[0])
+        self.assertIn("profile: extended", workflow)
+        sys.path.insert(0, str(Path(__file__).parents[2] / ".github/scripts"))
+        import stack_ci
+
+        pr = {"number": 12, "state": "open", "head": {"sha": "b" * 40}, "base": {"sha": "a" * 40}}
+        for changed in (
+            "d1/main/network.c",
+            "d2/main/multi.c",
+            "android/app/src/main/cpp/shared/net/client.cpp",
+            "android/app/src/main/cpp/shared/coop/client.cpp",
+            "android/app/src/main/java/com/dxxredux/app/lobby/client.kt",
+            "android/app/src/main/java/com/dxxredux/app/multiplayer/client.kt",
+            "android/tests/test_lan.ps1",
         ):
-            self.assertIn('"' + expected + '"', paths)
-        self.assertNotIn('"**"', paths)
+            with self.subTest(changed=changed):
+
+                def fetch(url):
+                    return {"files": [{"filename": changed}]} if "/compare/" in url else pr
+
+                self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "extended", pr))
 
     def test_first_play_is_fixed_public_and_within_each_lane_budget(self):
         policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
@@ -662,7 +671,7 @@ class SweepTests(unittest.TestCase):
             workflow,
         )
         self.assertIn(
-            "if: ${{ !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'release-first-play') }}",
+            "if: ${{ needs.stack.outputs.run == 'true' && !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'release-first-play') }}",
             workflow,
         )
         self.assertIn("if: github.event_name == 'workflow_dispatch' && inputs.evidence_run_id != ''", workflow)

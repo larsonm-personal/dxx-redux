@@ -12,7 +12,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  checks:
+    name: CI policy and runner checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - run: |
+          python3 .github/scripts/test_stack_ci.py
+          python3 android/tests/test_input_demo_assets.py
+          python3 android/tests/test_linux_build_cli.py
+          python3 android/tests/test_verified_dependency_download.py
+          python3 android/tests/test_d1_briefing_automation.py
+          python3 android/tests/test_save_epoch_contract.py
+          python3 android/tests/test_android_audio_lifecycle.py
+
+  stack:
+    uses: ./.github/workflows/stack-ci.yml
+
   engine:
+    needs: stack
+    if: needs.stack.outputs.run == 'true'
     name: Linux ${{ matrix.game }} build and tests
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -41,18 +63,6 @@ jobs:
             libphysfs-dev libsdl1.2-dev \
             libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev \
             xvfb xauth libgl1-mesa-dri
-
-      - name: Check the Linux build and test runner
-        # These helpers cover both games and receive identical inputs in each matrix job
-        if: matrix.game == 'd2'
-        timeout-minutes: 1
-        run: |
-          python3 android/tests/test_input_demo_assets.py
-          python3 android/tests/test_linux_build_cli.py
-          python3 android/tests/test_verified_dependency_download.py
-          python3 android/tests/test_d1_briefing_automation.py
-          python3 android/tests/test_save_epoch_contract.py
-          python3 android/tests/test_android_audio_lifecycle.py
 
       # Debug keeps assertions active; tests run serially with a 120-second timeout
       - name: Build all native targets and run asset-free tests
@@ -124,6 +134,8 @@ jobs:
           if-no-files-found: ignore
 
   public-sanitizers:
+    needs: stack
+    if: needs.stack.outputs.run == 'true'
     name: Linux public ASan runtime
     runs-on: ubuntu-24.04
     timeout-minutes: 60

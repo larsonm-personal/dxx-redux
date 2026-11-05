@@ -36,9 +36,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  stack:
+    uses: ./.github/workflows/stack-ci.yml
+
   plan:
+    needs: stack
     name: Select public LAN smoke
-    if: ${{ !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'test-three-player-network') }}
+    if: ${{ needs.stack.outputs.run == 'true' && !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'test-three-player-network') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
@@ -83,9 +87,14 @@ jobs:
           path: plan/
           retention-days: 30
 
+  execution-stack:
+    needs: plan
+    uses: ./.github/workflows/stack-ci.yml
+
   android:
     name: ${{ (github.event.action == 'labeled' || inputs.campaign == 'lan-three-player') && 'Three-player startup and selected-player loss' || 'Two-player lobby to game' }}
-    needs: plan
+    needs: [plan, execution-stack]
+    if: needs.execution-stack.outputs.run == 'true'
     uses: ./.github/workflows/android-nightly-tooling.yml
     with:
       target_sha: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -98,8 +107,8 @@ jobs:
 
   finish:
     name: ${{ (github.event.action == 'labeled' || inputs.campaign == 'lan-three-player') && 'Require three-player LAN pass' || 'Require public LAN pass' }}
-    needs: [plan, android]
-    if: ${{ always() && !inputs.evidence_run_id && needs.plan.result != 'skipped' }}
+    needs: [plan, execution-stack, android]
+    if: ${{ always() && !inputs.evidence_run_id && needs.plan.result != 'skipped' && (needs.execution-stack.outputs.run != 'false' || needs.android.result == 'failure' || needs.android.result == 'cancelled') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
