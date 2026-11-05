@@ -513,6 +513,8 @@ jobs:
             if ($addresses.Count -ne $avds.Count -or @($addresses | Where-Object { $_ } | Sort-Object -Unique).Count -ne $avds.Count) {
               throw "LAN topology unavailable: $($avds.Count) distinct wlan0 addresses are required"
             }
+            & python3 "$env:GITHUB_WORKSPACE/control/android/helpers/prepare_lan_wifi.py" --serials @($avds.Serial) --output ../results/setup/lan-wifi-topology.json
+            if ($LASTEXITCODE -ne 0) { throw 'Disposable emulator Wi-Fi topology setup failed' }
           }
           } finally { Stop-Transcript }
           exit 0
