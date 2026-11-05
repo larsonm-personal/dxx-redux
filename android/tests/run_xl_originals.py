@@ -156,7 +156,10 @@ FAST_TESTS = (CORE_TESTS - CAMPAIGN_TESTS) | {
 
 # Unfinished campaign acceptance: execution is required, success is not qualification.
 EXPERIMENTAL_TESTS = {"xl_level_two_keys"}
-REVIEWED_FAST_ADDITIONS = {"xl_changing_lights_invalid_rows", "xl_flickers_invalid_rows"}
+REVIEWED_FAST_ADDITIONS = frozenset({"xl_changing_lights_invalid_rows", "xl_flickers_invalid_rows"})
+# Preserve both reviewed controller cohorts independently of candidate-owned FAST_TESTS
+HISTORICAL_FAST_TESTS = frozenset(FAST_TESTS - REVIEWED_FAST_ADDITIONS)
+REVIEWED_FAST_TESTS = HISTORICAL_FAST_TESTS | REVIEWED_FAST_ADDITIONS
 
 
 def validate_registration(listing, fast=False):
@@ -235,7 +238,7 @@ def validate_summary(receipt, fast=False):
 
 def reviewed_fast_cohort(receipt):
     """Return only an exact reviewed cohort with its matching integer count."""
-    for required in (FAST_TESTS, FAST_TESTS | REVIEWED_FAST_ADDITIONS):
+    for required in (HISTORICAL_FAST_TESTS, REVIEWED_FAST_TESTS):
         if (
             receipt.get("required_tests") == sorted(required)
             and type(receipt.get("required_passed")) is int
