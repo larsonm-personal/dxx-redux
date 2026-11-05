@@ -1691,6 +1691,28 @@ int main(int argc, char **argv)
 				if (mutation == 7) object.render_data[17] = 255;
 				check(!xl_compat::runtime_blockers(invalid).empty(), "Malformed lightning owner admitted");
 			}
+			{
+				auto cone = lightning;
+				cone.objects.back().position = { 22686019, 6375183, 43982521 };
+				cone.objects.back().render_data = { 300, 30, 20, 6, 2, -1, 3, 2, 1, 30, 5, 4, 3, 4, 1, 1, 1, 0, 1, 1, 0, 115, 25, 25, 200, 1 };
+				auto target = cone.objects.back();
+				target.position = { 22449866, 7653026, 43981970 };
+				target.render_data = { 300, 30, 20, 6, 2, -1, 3, 1, 2, 30, 5, 4, 3, 4, 1, 1, 1, 0, 1, 1, 0, 175, 100, 50, 200, 1 };
+				cone.objects.push_back(target);
+				check(xl_compat::runtime_blockers(cone).empty(), "Original Sphere reciprocal directed owners rejected");
+				for (int variant = 0; variant < 7; ++variant) {
+					auto invalid = cone;
+					auto &bad = invalid.objects.back();
+					if (variant == 0) bad.position = invalid.objects[invalid.objects.size() - 2].position;
+					if (variant == 1) bad.render_data[8] = 999;
+					if (variant == 2) bad.render_data[13] = 255;
+					if (variant == 3) bad.render_data[20] = 1;
+					if (variant == 4) bad.render_data[5] = 0;
+					if (variant == 5) bad.movement = 1;
+					if (variant == 6) invalid.objects.push_back(target);
+					check(!xl_compat::runtime_blockers(invalid).empty(), "Directed admission lost target/profile safety checks");
+				}
+			}
 			lightning.unsupported.push_back({ "unimplemented_lightning_dependency", 0, "independent feature" });
 			check(!xl_compat::runtime_blockers(lightning).empty(), "Lightning admission erased an independent blocker");
 		}

@@ -13,6 +13,8 @@ struct LightningBolt {
 	LightningDefinition definition;
 	LightningLifetime lifetime;
 	LightningPoint base{}, position{}, end{}, direction{};
+	// Source m_vRefEnd remains fixed across generated endpoints, movement and restarts
+	LightningPoint reference_end{};
 	std::vector<LightningNode> nodes;
 	std::vector<LightningPoint> draw_positions;
 	int segment = -1;
@@ -86,7 +88,17 @@ void lightning_bolt_setup(LightningBolt &bolt, Random &random)
 	auto &state = bolt.lifetime;
 	bolt.position = bolt.base;
 	if (state.random_nodes) {
-		bolt.direction = lightning_random_direction(random);
+		if (bolt.definition.angle > 0) {
+			const auto axis = subtract(bolt.reference_end, bolt.position);
+			if (axis == LightningPoint{}) throw std::runtime_error("XL directed lightning has a degenerate reference direction");
+			const auto reference = geometry_default_direction(axis);
+			const int minimum_dot = 65536 - bolt.definition.angle * 65536 / 90;
+			do {
+				bolt.direction = lightning_random_direction(random);
+			} while (lightning_dot(reference, bolt.direction) < minimum_dot);
+		} else {
+			bolt.direction = lightning_random_direction(random);
+		}
 		bolt.end = add(bolt.position, multiply(bolt.direction, state.length));
 	} else {
 		bolt.direction = geometry_default_direction(subtract(bolt.end, bolt.position));
@@ -122,12 +134,14 @@ template <class Random>
 LightningBolt create_lightning_bolt(const LightningDefinition &definition, const LightningPoint &position, Random &random, std::optional<LightningPoint> endpoint = {})
 {
 	// Source STYLE caps authored detail; bUseLightning=1 retains parent bolts only
-	if (definition.random_end == endpoint.has_value() || definition.angle || definition.in_plane || (definition.clamp && definition.amplitude <= 0) ||
+	if (definition.random_end == endpoint.has_value() || definition.angle < 0 || definition.angle > 127 || definition.in_plane || (definition.clamp && definition.amplitude <= 0) ||
 	    definition.style < -1 || definition.style > 2 || lightning_active_style(definition) != 0 || definition.frames <= 0 || definition.nodes > 32767)
 		throw std::runtime_error("XL lightning bolt requires the implemented style-0 endpoint profile");
 	LightningBolt bolt{ definition, lightning_lifetime(definition, endpoint.has_value(), authored_lightning_children) };
 	bolt.base = position;
-	if (endpoint) bolt.end = *endpoint;
+	if (endpoint) bolt.end = bolt.reference_end = *endpoint;
+	if (definition.angle > 0 && (!endpoint || *endpoint == position))
+		throw std::runtime_error("XL directed lightning requires a distinct reference endpoint");
 	bolt.nodes.resize(bolt.lifetime.nodes);
 	auto &state = bolt.lifetime;
 	if (state.random_nodes) {

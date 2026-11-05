@@ -4,7 +4,7 @@
 #include "../lightning_audio.h"
 namespace xl_lightning_audio_control
 {
-inline void run(int ordinal)
+inline void run(int ordinal, bool cone = false)
 {
 	using namespace xl_compat;
 	using namespace xl_compat::audio_runtime;
@@ -51,6 +51,12 @@ inline void run(int ordinal)
 		authored.segment = native.segnum;
 		authored.position = { native.pos.x, native.pos.y, native.pos.z };
 		authored.render_data = { 300, 50, 18, 5, 1, -1, 3, 0, 0, 8, 0, 2, 20, 0, 0, 0, 0, 0, 1, 1, 0, 0, 52, 149, 128, index == 1 };
+		if (cone) {
+			authored.render_data[7] = index;
+			authored.render_data[8] = 3 - index;
+			authored.render_data[13] = 4;
+			authored.render_data[14] = 1;
+		}
 	}
 	install_named_audio(prepare_named_audio(Gamesave_current_filename, source, ordinal));
 	bind_lightning_objects(source);
@@ -75,7 +81,7 @@ inline void run(int ordinal)
 			require(captured[i] == expected, "Lightning actual spatial PCM differs");
 		}
 	};
-	int time = 2000000;
+	int time = cone ? 3000000 : 2000000;
 	const auto frame = [&] { lightning_objects_clock(time += 25); lightning_objects_frame(); };
 	frame();
 	require(owners.count == 2 && owners.active() == 2, "Lightning creation omitted enabled or initially disabled sound");
@@ -141,6 +147,19 @@ inline void run(int ordinal)
 	        "Lightning teardown retained the old lifetime or removed its recycled-slot companion");
 	xl_lightning_objects_clear();
 	xl_named_audio_stop();
+	if (cone) {
+		source.objects[1].render_data[1] = 0;
+		source.objects[2].render_data[18] = 0;
+		bind_lightning_objects(source);
+		frame();
+		require(owners.count == 1 && owners.entries[0].external && lightning_audio_matches(snapshot()),
+		        "Zero-delay directed lightning incorrectly created a forcefield companion");
+		output();
+		xl_lightning_objects_clear();
+		xl_named_audio_stop();
+	}
+	// The companion is a separate angle-zero control, even after a directed run
+	source.objects[1].render_data[13] = source.objects[2].render_data[13] = 0;
 	source.objects[1].render_data[1] = 0;
 	source.objects[2].render_data[18] = 0;
 	bind_lightning_objects(source);
@@ -168,7 +187,7 @@ inline void run(int ordinal)
 	install_named_audio(original_bank);
 	require(restore_named_audio(initial, true), "Lightning control failed to recover original bank state");
 	// Guard restores object slots and the original bank after this isolated control
-	std::cout << "Lightning audio passed: prepared addon, source parameters, actual spatial PCM, dormant/restart, disabled creation, range, pause, restore, object reuse and forcefield companion\n";
+	std::cout << (cone ? "Directed lightning audio passed:" : "Lightning audio passed:") << " prepared addon, source parameters, actual spatial PCM, dormant/restart, disabled creation, range, pause, restore, object reuse and forcefield companion\n";
 }
 } // namespace xl_lightning_audio_control
 #endif

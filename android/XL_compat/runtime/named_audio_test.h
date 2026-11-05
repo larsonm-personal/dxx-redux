@@ -509,6 +509,7 @@ static int named_audio_test(int argc, char **argv)
 			xl_shared_audio_control::run(root, initial);
 			xl_linked_audio_control::run(root, initial);
 			xl_lightning_audio_control::run(ordinal);
+			xl_lightning_audio_control::run(ordinal, true);
 			xl_bubble_audio_control::run(ordinal);
 			std::cout << (ordinal == 1 ? 23 : 27) << "/40 sounds: wall/master/object/autoplay, actual stereo output, repetitions, pause, atomic ownership and disk-through-stock passed\n";
 		}
