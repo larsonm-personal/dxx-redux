@@ -51,9 +51,10 @@ a later layer can mask an earlier defect, and failures are first attributed to
 the combined tip. Rerun a layer manually when independent diagnosis is needed
 
 API failures, malformed stack metadata, stale heads/bases and potentially
-truncated standalone file comparisons retain full coverage. Each matrix runner
-refreshes eligibility before expensive setup. Work already admitted can finish;
-this does not add immediate cancellation when a new top is created
+truncated standalone file comparisons retain full coverage. Admission is at job
+level, so omitted tests are reported as skipped. Admitted
+jobs finish and report their real result even if a new top is added; there is
+no in-job short-circuit that could report unexecuted tests as a successful job
 
 Observed run `41985507434` used 6m32s on Linux and 13m58s on Windows (20m30s
 combined runner time). That is illustrative potential savings per skipped
@@ -376,9 +377,15 @@ Asset-free XL contracts now run at the tip, with the existing XL path selection
 for standalone PRs and full cumulative coverage for native tips. Run
 `41985507676` used 2m08s Linux plus 2m01s Windows; skipping lower-layer builds
 avoids about four runner minutes per matching layer in that sample. Script
-coverage policy is described above. Rust and CI policy/build-runner checks
-remain per PR under their existing path policies. Rust change detection
-uses `stack.base.sha` for the full stack diff. Extended samples start on every
+coverage policy is described above. CI policy/build-runner checks remain per PR.
+The Rust `server` check is always
+emitted, but its whole job is skipped for validated non-tips or unrelated PRs.
+Rust PR selection uses current native metadata and `stack.base.sha` for the full
+stack diff; a missing/invalid stack base, malformed metadata or unavailable/
+truncated comparison runs the tests conservatively. It never substitutes an
+immediate-parent diff for an uncertain native stack base. Standalone PRs retain
+server-only path selection, and pushes retain their before/after Git comparison.
+Extended samples start on every
 PR event and perform their standalone path selection in the gate (including
 renames and conservative fallback on truncated comparisons). Native tips get
 the complete sample, so changes in earlier layers cannot be hidden by the

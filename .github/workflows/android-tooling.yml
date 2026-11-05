@@ -68,18 +68,10 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
-      - name: Refresh scripts and CI eligibility
-        id: current
-        env:
-          STACK_CI_PROFILE: scripts
-        shell: bash
-        run: python3 .github/scripts/stack_ci.py
       - name: Install verified bounded Python
-        if: steps.current.outputs.run == 'true'
         shell: bash
         run: bash ./android/get_deps/helpers/get_bounded_python.sh
       - name: Nightly sweep planner and ledger controls
-        if: steps.current.outputs.run == 'true'
         shell: bash
         run: |
           python3 android/tests/test_nightly_runner_storage.py
@@ -94,11 +86,10 @@ jobs:
           python3 android/tests/test_retail_ci_assets.py
           python3 android/tests/test_run_host_test_suites.py
       - name: Script and CI smoke tests
-        if: steps.current.outputs.run == 'true'
         shell: pwsh
         run: ./android/tests/run_tooling_smoke.ps1 -IncludeBoundedRuntime
       - name: GitHub release tests on Windows PowerShell 5.1
-        if: always() && steps.current.outputs.run == 'true' && runner.os == 'Windows'
+        if: always() && runner.os == 'Windows'
         shell: powershell
         run: ./android/tests/test_github_release.ps1
       - name: Keep bounded diagnostic reports

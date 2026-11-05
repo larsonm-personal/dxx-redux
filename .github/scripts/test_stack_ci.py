@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 from unittest.mock import patch
 
@@ -180,13 +181,104 @@ class StackPolicyTests(unittest.TestCase):
             self.assertIn("    needs: stack", workflow)
             self.assertIn("    if: needs.stack.outputs.run == 'true'", workflow)
             self.assertIn("      profile: " + profile, workflow)
-            self.assertIn("          STACK_CI_PROFILE: " + profile, workflow)
-            self.assertIn("if: steps.current.outputs.run == 'true'", workflow)
+            self.assertNotIn("steps.current.outputs.run", workflow)
         self.assertTrue(scripts.startswith("name: scripts and ci tests\n"))
         self.assertIn("name: scripts and ci tests (${{ matrix.os }})", scripts)
         self.assertIn("  workflow-lint:", scripts)
         self.assertIn("  catalogs:", scripts)
         self.assertIn("./android/tests/test_validate_automation_catalog.ps1", scripts)
+
+    def test_rust_full_stack_diff_and_uncertain_base(self):
+        pr = {
+            "number": 12,
+            "state": "open",
+            "head": {"sha": "b" * 40},
+            "base": {"sha": "c" * 40},
+            "stack": {"number": 7, "position": 2, "size": 2, "base": {"sha": "a" * 40}},
+        }
+        files = [{"filename": "server/src/main.rs"}]
+        urls = []
+
+        def fetch(url):
+            urls.append(url)
+            return {"files": files} if "/compare/" in url else pr
+
+        self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "rust", pr))
+        self.assertEqual(urls[-1], "https://api.github.com/repos/owner/repo/compare/" + "a" * 40 + "..." + "b" * 40)
+        files[:] = [{"filename": "README.md"}]
+        self.assertFalse(stack_ci.refresh(12, "owner/repo", fetch, "rust", pr))
+        # An event opened standalone can now be the tip of a new native stack
+        event = dict(pr, stack=None)
+        files[:] = [{"filename": "removed.txt", "previous_filename": "server/src/main.rs"}]
+        self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "rust", event))
+        pr["stack"]["size"] = 3
+        self.assertFalse(stack_ci.refresh(12, "owner/repo", fetch, "rust", event))
+        pr["stack"]["size"] = 2
+        for base in (None, {}, {"sha": "invalid"}, {"sha": ""}):
+            pr["stack"]["base"] = base
+            self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "rust", event))
+        pr["stack"] = {}
+        self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "rust", event))
+        pr["stack"] = None
+        files[:] = [{"filename": "server/Cargo.lock"}]
+        self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "rust", event))
+        self.assertEqual(urls[-1], "https://api.github.com/repos/owner/repo/compare/" + "c" * 40 + "..." + "b" * 40)
+        files[:] = [{"filename": "README.md"}]
+        self.assertFalse(stack_ci.refresh(12, "owner/repo", fetch, "rust", event))
+        files[:] = [{"filename": "README.md"}] * 300
+        self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "rust", event))
+        rust = (ROOT / ".github/workflows/server-rust.yml").read_text()
+        self.assertIn("  server:\n    needs: stack\n    if: needs.stack.outputs.run == 'true'", rust)
+        self.assertIn("      profile: rust", rust)
+        self.assertNotIn("steps.current", rust)
+        self.assertIn("BASE: ${{ github.event.before }}", rust)
+
+    def test_rust_push_detection_and_admitted_pr_execution(self):
+        workflow = (ROOT / ".github/workflows/server-rust.yml").read_text()
+        block = workflow.split("      - name: Detect server changes", 1)[1]
+        script = textwrap.dedent(block.split("        run: |\n", 1)[1].split("      - name:", 1)[0])
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            def git(*args):
+                return subprocess.check_output(
+                    ["git", "-c", "user.name=CI Test", "-c", "user.email=ci@example.invalid", *args],
+                    cwd=root,
+                    stderr=subprocess.DEVNULL,
+                    text=True,
+                ).strip()
+
+            git("init")
+            (root / "README.md").write_text("initial")
+            git("add", ".")
+            git("commit", "-m", "initial")
+            base = git("rev-parse", "HEAD")
+            (root / "README.md").write_text("docs")
+            git("commit", "-am", "docs")
+            docs_head = git("rev-parse", "HEAD")
+            (root / "server").mkdir()
+            (root / "server/main.rs").write_text("fn main() {}")
+            git("add", ".")
+            git("commit", "-m", "server")
+            server_head = git("rev-parse", "HEAD")
+            for event, head, deleted, expected in (
+                ("push", docs_head, "false", "false"),
+                ("push", server_head, "false", "true"),
+                ("push", server_head, "true", "false"),
+                ("pull_request", docs_head, "false", "true"),
+            ):
+                output = root / "output"
+                output.write_text("")
+                env = dict(
+                    os.environ,
+                    GITHUB_EVENT_NAME=event,
+                    GITHUB_OUTPUT=str(output),
+                    BASE=base,
+                    HEAD=head,
+                    DELETED=deleted,
+                )
+                subprocess.run(["bash", "-e", "-c", script], cwd=root, env=env, check=True)
+                self.assertEqual(output.read_text(), "changed=" + expected + "\n")
 
     def test_private_skip_does_not_publish_status(self):
         sys.path.insert(0, str(ROOT / "android/tests"))

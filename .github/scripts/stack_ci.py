@@ -85,21 +85,36 @@ def refresh(number, repository, fetch=None, profile="", event_pr=None):
         pr = (fetch or get)(f"https://api.github.com/repos/{repository}/pulls/{number}")
         if not isinstance(pr, dict) or pr.get("number") != number or pr.get("state") != "open":
             return True
-        if profile not in ("", "extended", "scripts", "xl"):
+        if profile not in ("", "extended", "scripts", "xl", "rust"):
             return True
         if not eligible(pr):
             return False
         # Native tips receive the complete sample, so lower-layer changes cannot
         # disappear behind an immediate-parent path filter
-        if profile not in ("extended", "scripts", "xl"):
+        if profile not in ("extended", "scripts", "xl", "rust"):
             return True
-        if pr.get("stack") is not None or (event_pr or {}).get("stack") is not None:
+        stack = pr.get("stack")
+        has_stack = stack is not None or (event_pr or {}).get("stack") is not None
+        if has_stack and profile != "rust":
             return True
         if not event_pr or pr.get("head", {}).get("sha") != event_pr.get("head", {}).get("sha"):
             return True
-        base, head = event_pr["base"]["sha"], event_pr["head"]["sha"]
-        if pr.get("base", {}).get("sha") != base:
-            return True
+        head = event_pr["head"]["sha"]
+        if has_stack:
+            # Only valid current native tips may use a stack-wide server diff
+            # Missing event/current stack data must never select the parent diff
+            if not isinstance(stack, dict):
+                return True
+            position, size, stack_number = (stack.get(key) for key in ("position", "size", "number"))
+            if not all(type(value) is int for value in (position, size, stack_number)):
+                return True
+            if stack_number <= 0 or not 1 <= position == size:
+                return True
+            base = stack.get("base", {}).get("sha")
+        else:
+            base = event_pr["base"]["sha"]
+            if pr.get("base", {}).get("sha") != base:
+                return True
         if not all(isinstance(sha, str) and re.fullmatch("[0-9a-f]{40}", sha) for sha in (base, head)):
             return True
         comparison = (fetch or get)(f"https://api.github.com/repos/{repository}/compare/{base}...{head}")
@@ -112,6 +127,8 @@ def refresh(number, repository, fetch=None, profile="", event_pr=None):
             patterns = SCRIPTS_PATHS
         elif profile == "xl":
             patterns = XL_PATHS
+        elif profile == "rust":
+            patterns = ("server/*",)
         for file in files:
             if not isinstance(file, dict) or not isinstance(file.get("filename"), str):
                 return True
@@ -140,7 +157,7 @@ def main():
     reason = (
         "Run selected coverage (tip, relevant changes or uncertain metadata)"
         if run
-        else "Skip expensive coverage: native non-tip or unrelated standalone changes"
+        else "Skip expensive coverage: native non-tip or unrelated changes"
     )
     print(reason)
     with open(os.environ["GITHUB_OUTPUT"], "a") as output:
