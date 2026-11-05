@@ -75,6 +75,15 @@ inline void write_countdown_fixture(const std::filesystem::path &original, const
 	for (const std::string name : { "count23", "count27", "badcount", "badobject", "badbase" }) {
 		auto current = name == "count27" ? runtime_layout_fixture(level, 27).bytes : level;
 		const auto source = xl_compat::inspect_level(current);
+		if (name == "count27") {
+			if (source.reactor_targets.empty()) throw std::runtime_error("Reactor count control needs an original target");
+			const auto at = source.sections[5].offset;
+			layout_patch(current, at, 26, 2);
+			for (int i = 0; i < 10; ++i) {
+				layout_patch(current, at + 2 + i * 2, source.reactor_targets[0][0], 2);
+				layout_patch(current, at + 22 + i * 2, source.reactor_targets[0][1], 2);
+			}
+		}
 		if (name == "badcount") layout_patch(current, source.sections[3].offset + 8, 32768);
 		if (name == "badobject") layout_patch(current, source.sections[3].offset + 8 * 52 + 4 + 9, 32768);
 		if (name == "badbase") layout_patch(current, source.flicker_offset - 8, 10923);

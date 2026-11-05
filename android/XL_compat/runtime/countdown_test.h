@@ -62,6 +62,11 @@ static int countdown_test(int argc, char **argv)
 		for (int ordinal : { 1, 2 }) {
 			require(load_base_mission("xcount", error, sizeof(error)), error);
 			StartNewGame(ordinal);
+			const auto reactor_slots = ControlCenterTriggers;
+			if (ordinal == 2) {
+				require(reactor_slots.num_links == 10, "Reference-capped reactor count not loaded");
+				for (int i = 0; i < 10; ++i) require(reactor_slots.seg[i] == reactor_slots.seg[0] && reactor_slots.side[i] == reactor_slots.side[0], "Duplicate reactor slots changed during loading");
+			}
 			Game_suspended = SUSP_ROBOTS;
 			events();
 			frames();
@@ -84,6 +89,8 @@ static int countdown_test(int argc, char **argv)
 			xl_countdown_frame();
 			require(equal(snapshot(), stock), "XL countdown consumer changed Redux state");
 			require(state_restore_all_sub(save, 0) && xl_source_level_version() == (ordinal == 1 ? 23 : 27) && equal(snapshot(), earned), "Disk through stock changed exact countdown state");
+			require(ControlCenterTriggers.num_links == reactor_slots.num_links, "Reactor count changed across disk-through-stock restore");
+			for (int i = 0; i < reactor_slots.num_links; ++i) require(ControlCenterTriggers.seg[i] == reactor_slots.seg[i] && ControlCenterTriggers.side[i] == reactor_slots.side[i], "Reactor order changed across disk-through-stock restore");
 			continuation(earned);
 			require(!game_is_time_paused(), "Native save owner left an unbalanced pause");
 			std::cout << (ordinal == 1 ? 23 : 27) << "/40 countdown: wall/master/object/autoplay, warnings, rocking, 15 malformed trailers and disk-through-stock passed\n";
