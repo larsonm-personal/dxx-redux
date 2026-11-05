@@ -291,6 +291,7 @@ class AutomaticCandidateTests(unittest.TestCase):
             "status": "PASS",
             "xl_checks": {
                 "required_passed": len(FAST_TESTS),
+                "required_tests": sorted(FAST_TESTS),
                 "format_witnesses": 16,
                 "modern_source_levels": 3,
                 "navigation_smoke_passed": 1,

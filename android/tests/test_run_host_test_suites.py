@@ -826,6 +826,12 @@ class RetailProfileTests(unittest.TestCase):
                         path = Path(self.argv[self.argv.index("--work") + 1]) / "original-status.json"
                         path.parent.mkdir(parents=True, exist_ok=True)
                         path.write_text(json.dumps(xl_receipt))
+                        import xml.etree.ElementTree as ET
+
+                        native = ET.Element("testsuite")
+                        for name in xl_receipt.get("required_tests", []):
+                            ET.SubElement(native, "testcase", name=name, status="run")
+                        ET.ElementTree(native).write(path.with_name("original-ctest.xml"))
                     return setup_code if self.argv[0] == "cmake" else owner_code
 
             with (
@@ -1048,8 +1054,11 @@ class RetailProfileTests(unittest.TestCase):
     def test_xl_owners_share_strict_membership_and_preserve_safe_counts(self):
         from run_xl_originals import CORE_TESTS, FAST_TESTS
 
-        for fast in (False, True):
-            required = FAST_TESTS if fast else CORE_TESTS
+        for fast, required in (
+            (False, CORE_TESTS),
+            (True, FAST_TESTS),
+            (True, FAST_TESTS | {"xl_changing_lights_invalid_rows", "xl_flickers_invalid_rows"}),
+        ):
             profile = "retail-xl-fast" if fast else "retail-xl-originals"
             summary = {
                 "required_passed": len(required),
@@ -1069,6 +1078,23 @@ class RetailProfileTests(unittest.TestCase):
             self.assertEqual("--fast" in calls[0], fast)
             self.assertEqual(receipt["xl_checks"]["required_passed"], len(required))
             self.assertEqual("experimental_acceptance" in receipt, not fast)
+            if fast:
+                import nightly_retail
+                from nightly_pr_candidate import positive_receipt
+
+                row = {**receipt, "id": "host-profile:retail-xl-fast"}
+                published = nightly_retail.public_receipt(
+                    {
+                        "schema": 1,
+                        "target_sha": "a" * 40,
+                        "catalog_hash": "test",
+                        "batch_id": "test",
+                        "lane": "host",
+                        "results": [row],
+                    }
+                )
+                self.assertEqual(published["results"][0]["xl_checks"]["required_tests"], sorted(required))
+                self.assertEqual(positive_receipt(published, "a" * 40), 800)
             for invalid in (
                 None,
                 {**summary, "required_passed": 40},

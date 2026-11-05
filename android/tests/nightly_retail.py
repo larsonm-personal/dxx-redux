@@ -56,7 +56,7 @@ def xl_stage(path):
 def xl_native_failures(path):
     """Extract allowlisted test identities, never private JUnit output."""
     import xml.etree.ElementTree as ET
-    from run_xl_originals import CORE_TESTS, FAST_TESTS, EXPERIMENTAL_TESTS
+    from run_xl_originals import CORE_TESTS, FAST_TESTS, EXPERIMENTAL_TESTS, REVIEWED_FAST_ADDITIONS
 
     path = Path(path)
     try:
@@ -74,7 +74,7 @@ def xl_native_failures(path):
         if "<!DOCTYPE" in text or "<!ENTITY" in text:
             return []
         cases = ET.fromstring(text).iter("testcase")
-        allowed = CORE_TESTS | FAST_TESTS | EXPERIMENTAL_TESTS
+        allowed = CORE_TESTS | FAST_TESTS | EXPERIMENTAL_TESTS | REVIEWED_FAST_ADDITIONS
         return sorted(
             {
                 case.get("name")
@@ -93,9 +93,9 @@ def xl_native_failures(path):
 
 
 def safe_xl_native_failures(value):
-    from run_xl_originals import CORE_TESTS, FAST_TESTS, EXPERIMENTAL_TESTS
+    from run_xl_originals import CORE_TESTS, FAST_TESTS, EXPERIMENTAL_TESTS, REVIEWED_FAST_ADDITIONS
 
-    allowed = CORE_TESTS | FAST_TESTS | EXPERIMENTAL_TESTS
+    allowed = CORE_TESTS | FAST_TESTS | EXPERIMENTAL_TESTS | REVIEWED_FAST_ADDITIONS
     if not isinstance(value, list) or len(value) > len(allowed):
         return []
     return sorted({name for name in value if isinstance(name, str) and name in allowed})
@@ -408,6 +408,13 @@ def public_diagnostics(value):
             clean["xl_checks"] = {
                 key: counts[key] for key in ("required_passed", "format_witnesses", "modern_source_levels")
             }
+            if value.get("id") == "host-profile:retail-xl-fast":
+                from run_xl_originals import reviewed_fast_cohort
+
+                try:
+                    clean["xl_checks"]["required_tests"] = sorted(reviewed_fast_cohort(counts))
+                except ValueError:
+                    pass  # Missing or unreviewed membership cannot qualify for publication
             if counts.get("camera_subchecks") in ("executed", "not_run_missing_addon"):
                 clean["xl_checks"]["camera_subchecks"] = counts["camera_subchecks"]
             if (
