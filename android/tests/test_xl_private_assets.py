@@ -304,6 +304,45 @@ class XlPrivateTests(unittest.TestCase):
                 with self.subTest(field=key), self.assertRaises(ValueError):
                     runner.validate_summary({**receipt, key: value}, fast=True)
 
+    def test_format21_requires_strict_inspection_without_playability(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            work = Path(temporary)
+            witness = {"level_version": 21, "game_version": 40, "hog_member": "test.rl2"}
+            for mode in ("decoded", "unsupported", "malformed", "wrong-version", "nonzero", "playable", "empty"):
+                with self.subTest(mode=mode):
+                    inventory = {"status": "inspection_only", "level_version": 21, "game_version": 40}
+                    if mode in ("unsupported", "malformed"):
+                        inventory = {
+                            "status": "rejected",
+                            "reason": "unsupported level/game version pair 21/40"
+                            if mode == "unsupported"
+                            else "invalid packed light index",
+                        }
+                    if mode == "wrong-version":
+                        inventory["level_version"] = 23
+
+                    def inspect(command, **kwargs):
+                        Path(command[2]).write_text(
+                            json.dumps(
+                                {
+                                    "playable": mode == "playable",
+                                    "levels": [] if mode == "empty" else [{"inventory": inventory}],
+                                }
+                            )
+                        )
+                        return subprocess.CompletedProcess(
+                            command, 1 if mode in ("unsupported", "malformed", "nonzero") else 0
+                        )
+
+                    with patch.object(runner.subprocess, "run", side_effect=inspect):
+                        if mode == "decoded":
+                            self.assertEqual(
+                                runner.format_results(Path("inspect"), work, work, {"format_witnesses": [witness]}), 1
+                            )
+                        else:
+                            with self.assertRaises(ValueError):
+                                runner.format_results(Path("inspect"), work, work, {"format_witnesses": [witness]})
+
     def test_format34_preserves_the_original_packed_light_rejection(self):
         with tempfile.TemporaryDirectory() as temporary:
             work = Path(temporary)

@@ -276,7 +276,7 @@ def format_results(inspect, stage, work, data):
             raise ValueError("XL format receipt is incomplete")
         inventory = result["levels"][0]["inventory"]
         pair = (row["level_version"], row["game_version"])
-        if pair in ((15, 33), (17, 36), (23, 40)):
+        if pair in ((15, 33), (17, 36), (21, 40), (23, 40)):
             if (
                 run.returncode
                 or inventory["status"] != "inspection_only"
