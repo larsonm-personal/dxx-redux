@@ -58,3 +58,30 @@ test is environment-blocked (exit 125): its Linux child supervisor cannot read
 
 Both `test_upstream_compat` and `test_classic_trigger_demo` pass on the final
 combined native build. No classic loader or test assertion was changed.
+
+## Hosted modern-witness gate correction
+
+The private smoke modern witness is a different original distribution from the
+readiness witness above. Its unchanged `boilpnt.hog` SHA-256 is
+`5cde12e3188fca12b655de3be424871f61bd464e9318b0da6bcdbc65b79551f3`;
+its version-27 `control2.rl2` SHA-256 is
+`28a21f68d71a7c76e2ed63da036e07f3d7e8522c9437ea49f01ad5b38ee2693c`.
+It also has authored reactor count 26 and ten effective `(0, 0)` target slots.
+The previous smoke gate incorrectly required this corrected original to fail
+with `invalid reactor trigger count`. The unchanged original reproduces that
+stale-gate failure.
+
+The corrected gate requires inspection-only, non-playable status, version 27/40,
+3389 segments, exact authored/effective reactor values and a successful pinned
+source comparison. All seven original outcomes remain mandatory, including the
+other two explicit rejections. The receipt still counts the three historical
+source witnesses by name: canyon, canyon2 and watrwrks. The fourth source
+comparison, control2, is a mandatory supplemental assertion, not a change to
+that historical cohort. Actual original replay returns `(7, 3)`; no trusted
+controller schema/count change is required. This is inspection evidence, not
+unassisted readiness or successful runtime loading.
+
+Negative controls reject the old control2 outcome, wrong raw count, missing or
+changed effective targets, boolean/non-list targets, playable status and missing
+or unsuccessful control2 source comparisons, alongside the existing membership,
+format and rejection controls.
