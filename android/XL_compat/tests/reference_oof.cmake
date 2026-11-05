@@ -44,6 +44,6 @@ add_test(NAME xl_oof_render_reference COMMAND xl_oof_render_reference)
 add_test(
     NAME xl_oof_source_pins
     COMMAND
-        ${CMAKE_COMMAND} -DREFERENCE=${XL_REFERENCE_GEOMETRY_ROOT}
+        ${CMAKE_COMMAND} -DPYTHON=${Python3_EXECUTABLE} -DREFERENCE=${XL_REFERENCE_GEOMETRY_ROOT}
         -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/oof-source-pins -P
         ${CMAKE_CURRENT_LIST_DIR}/reference_oof_pins_test.cmake)

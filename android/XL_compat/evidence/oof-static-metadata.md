@@ -154,3 +154,20 @@ a hosted-CI validation limit, not a local pass claim.
 All 204 runner/controller policy tests pass after this owner correction. Scoped
 quality and catalog validation pass; catalog invocation retains the documented
 exit-125 supervisor environment blocker.
+
+## Binary fixture writes on Windows
+
+The Windows equivalent-source failure was in the fixture writer, not the six
+approved source hashes. CMake `file(WRITE)` opens an ordinary text stream
+([upstream implementation](https://github.com/Kitware/CMake/blob/v3.31.6/Source/cmFileCommand.cxx#L115));
+on Windows an explicit CRLF payload is expanded again to CRCRLF. The controls
+now construct, write and read back exact bytes using Python binary I/O, then
+invoke the unchanged CMake raw-hash validator. The configured Python interpreter
+is passed through the existing CTest owner; no membership or deadline changes.
+
+The fixture logs the actual CMake text-writer bytes for a two-line probe, so
+native Windows runs expose the translation directly. It also tests three
+explicit CRCRLF corruptions, in addition to the previous 30 negative controls.
+All six approved LF/CRLF source hashes remain unchanged, and original reference
+inputs are verified unchanged after the tests. The old hosted job did not retain
+the malformed source files; their exact hosted hashes were not available.
