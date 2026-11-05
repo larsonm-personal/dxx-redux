@@ -2,9 +2,6 @@ name: XL compatibility contracts
 
 on:
   pull_request:
-    paths:
-      - "android/XL_compat/**"
-      - ".github/workflows/xl-compat.yml"
   workflow_dispatch:
 
 permissions:
@@ -15,7 +12,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  stack:
+    uses: ./.github/workflows/stack-ci.yml
+    with:
+      profile: xl
+
   contracts:
+    needs: stack
+    if: needs.stack.outputs.run == 'true'
     name: Asset-free XL checks (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10

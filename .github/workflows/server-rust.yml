@@ -1,6 +1,6 @@
 name: Server Rust checks
 
-# Always emit the server check; gate Rust steps instead of filtering the workflow
+# Always emit the server check; a job-level gate reports omitted PR work as skipped
 on:
   pull_request:
   push:
@@ -14,7 +14,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  stack:
+    uses: ./.github/workflows/stack-ci.yml
+    with:
+      profile: rust
+
   server:
+    needs: stack
+    if: needs.stack.outputs.run == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -25,10 +32,16 @@ jobs:
       - name: Detect server changes
         id: changes
         env:
-          BASE: ${{ github.event.pull_request.stack.base.sha || github.event.pull_request.base.sha || github.event.before }}
-          HEAD: ${{ github.event.pull_request.head.sha || github.event.after }}
+          BASE: ${{ github.event.before }}
+          HEAD: ${{ github.event.after }}
           DELETED: ${{ github.event.deleted }}
         run: |
+          # PR admission already used fresh native metadata and the full stack diff
+          # Once admitted, run the real tests even if a new top is added meanwhile
+          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [[ "$DELETED" == true ]]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
@@ -38,10 +51,7 @@ jobs:
           else
             git cat-file -e "$BASE^{commit}" || git fetch --no-tags --depth=1 origin "$BASE"
           fi
-          # PR aggregate diff; pushes compare their before/after snapshots
-          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
-            BASE=$(git merge-base "$BASE" "$HEAD")
-          fi
+          # Pushes retain their before/after snapshot comparison
           status=0
           git diff --quiet --no-renames "$BASE" "$HEAD" -- server/ || status=$?
           case "$status" in
