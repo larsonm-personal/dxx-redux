@@ -100,6 +100,7 @@ internal class XlAddonImportChecks(
                         manager,
                     )
                 }
+                XlAddonPickerChecks(instrumentation).run(source)
                 instrumentation.runOnMainSync {
                     val overlay = LoadingProgressOverlayView(context)
                     prefs.edit().remove(PREF_SHOW_PROGRESS_BARS).commit()
