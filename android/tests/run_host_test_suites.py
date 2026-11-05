@@ -1065,10 +1065,12 @@ def run_suite(suite, repo, build_root, output, timeout):
                 (work / "xl-originals/original-ctest.xml").unlink(missing_ok=True)
             code = run(argv, virtual_display=suite.get("virtual_display", False))
             if suite["profile"] in {"retail-xl-originals", "retail-xl-fast"} and code == 0:
-                from run_xl_originals import validate_summary
+                from run_xl_originals import validate_controller_summary
 
                 receipt = json.loads((work / "xl-originals/original-status.json").read_text())
-                result["xl_checks"] = validate_summary(receipt, fast=suite["profile"] == "retail-xl-fast")
+                result["xl_checks"] = validate_controller_summary(
+                    receipt, work / "xl-originals/original-ctest.xml", fast=suite["profile"] == "retail-xl-fast"
+                )
                 if receipt["experimental"]:
                     result["experimental_acceptance"] = {
                         "xl_level_two_keys": receipt["experimental"]["xl_level_two_keys"]

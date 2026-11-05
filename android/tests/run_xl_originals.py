@@ -227,19 +227,49 @@ def native_receipt(path, returncode, fast=False):
 
 def validate_summary(receipt, fast=False):
     """The owner and adapter share exact membership, rather than drifting counts."""
+    return _validate_summary(receipt, FAST_TESTS if fast else CORE_TESTS, fast)
+
+
+def validate_controller_summary(receipt, junit, fast=False):
+    """Accept only reviewed complete cohorts, with native execution evidence."""
     required = FAST_TESTS if fast else CORE_TESTS
+    if fast:
+        extended = FAST_TESTS | {"xl_changing_lights_invalid_rows", "xl_flickers_invalid_rows"}
+        if receipt.get("required_tests") == sorted(extended):
+            required = extended
+    result = _validate_summary(receipt, required, fast)
+    if fast:
+        require_junit(junit, required)
+        cases = ET.parse(junit).getroot().findall(".//testcase")
+        if any(case.get("status") != "run" for case in cases):
+            raise ValueError("Required original XL result did not execute normally")
+    return result
+
+
+def _validate_summary(receipt, required, fast):
     experimental = receipt.get("experimental")
     if (
-        receipt.get("required_passed") != len(required)
+        type(receipt.get("required_passed")) is not int
+        or receipt.get("required_passed") != len(required)
         or receipt.get("required_tests") != sorted(required)
         or receipt.get("level_two_completion_qualified") is not False
         or receipt.get("camera_subchecks") not in ("executed", "not_run_missing_addon")
         or not isinstance(experimental, dict)
         or set(experimental) != (set() if fast else EXPERIMENTAL_TESTS)
         or any(value not in ("passed", "failed") for value in experimental.values())
+        or type(receipt.get("format_witnesses")) is not int
         or receipt.get("format_witnesses") != (16 if fast else 9)
+        or type(receipt.get("modern_source_levels")) is not int
         or receipt.get("modern_source_levels") != (3 if fast else 0)
-        or (fast and (receipt.get("navigation_smoke_passed") != 1 or receipt.get("navigation_anchors_passed") != 4))
+        or (
+            fast
+            and (
+                type(receipt.get("navigation_smoke_passed")) is not int
+                or receipt.get("navigation_smoke_passed") != 1
+                or type(receipt.get("navigation_anchors_passed")) is not int
+                or receipt.get("navigation_anchors_passed") != 4
+            )
+        )
     ):
         raise ValueError("Invalid original XL acceptance receipt")
     navigation = {}

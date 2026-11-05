@@ -304,6 +304,87 @@ class XlPrivateTests(unittest.TestCase):
                 with self.subTest(field=key), self.assertRaises(ValueError):
                     runner.validate_summary({**receipt, key: value}, fast=True)
 
+    def test_controller_accepts_only_complete_reviewed_fast_cohorts(self):
+        additions = {"xl_changing_lights_invalid_rows", "xl_flickers_invalid_rows"}
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "native.xml"
+            for required in (runner.FAST_TESTS, runner.FAST_TESTS | additions):
+                receipt = {
+                    "required_tests": sorted(required),
+                    "required_passed": len(required),
+                    "experimental": {},
+                    "level_two_completion_qualified": False,
+                    "camera_subchecks": "executed",
+                    "format_witnesses": 16,
+                    "modern_source_levels": 3,
+                    "navigation_smoke_passed": 1,
+                    "navigation_anchors_passed": 4,
+                    "navigation_smoke_milliseconds": 800,
+                }
+                root = ET.Element("testsuite")
+                for name in sorted(required):
+                    ET.SubElement(root, "testcase", name=name, status="run")
+                ET.ElementTree(root).write(path)
+                self.assertEqual(
+                    runner.validate_controller_summary(receipt, path, fast=True)["required_passed"], len(required)
+                )
+                if required != runner.FAST_TESTS:
+                    with self.assertRaises(ValueError):
+                        runner.validate_summary(receipt, fast=True)
+                invalid = [
+                    {"required_tests": sorted(required) + ["unknown"]},
+                    {"required_tests": sorted(required) + [sorted(required)[0]]},
+                    {"required_tests": sorted(required)[1:], "required_passed": len(required) - 1},
+                    {"required_tests": [None]},
+                    {"required_tests": "malformed"},
+                    {"required_passed": float(len(required))},
+                    {"required_passed": str(len(required))},
+                    {"required_passed": True},
+                    {"required_passed": len(required) - 1},
+                    {"experimental": {"unknown": "passed"}},
+                    {"experimental": []},
+                    {"level_two_completion_qualified": True},
+                    {"camera_subchecks": "missing"},
+                    {"format_witnesses": 15},
+                    {"modern_source_levels": 2},
+                    {"navigation_smoke_passed": 0},
+                    {"navigation_anchors_passed": 3},
+                    {"navigation_smoke_milliseconds": -1},
+                    {"navigation_smoke_milliseconds": 30001},
+                ]
+                invalid += [
+                    {key: value}
+                    for key in (
+                        "format_witnesses",
+                        "modern_source_levels",
+                        "navigation_smoke_passed",
+                        "navigation_anchors_passed",
+                        "navigation_smoke_milliseconds",
+                    )
+                    for value in (True, "1", float(receipt[key]), None)
+                ]
+                invalid += [
+                    {"required_tests": sorted(runner.FAST_TESTS | {name}), "required_passed": 112} for name in additions
+                ]
+                for change in invalid:
+                    with self.subTest(count=len(required), change=change), self.assertRaises(ValueError):
+                        runner.validate_controller_summary({**receipt, **change}, path, fast=True)
+                for mode in ("failure", "error", "skipped", "disabled", "missing", "duplicate", "unknown"):
+                    changed = copy.deepcopy(root)
+                    if mode in ("failure", "error", "skipped"):
+                        ET.SubElement(changed[0], mode)
+                    elif mode == "disabled":
+                        changed[0].set("status", "notrun")
+                    elif mode == "missing":
+                        changed.remove(changed[0])
+                    elif mode == "duplicate":
+                        changed.append(copy.deepcopy(changed[0]))
+                    else:
+                        changed[0].set("name", "unknown")
+                    ET.ElementTree(changed).write(path)
+                    with self.subTest(count=len(required), mode=mode), self.assertRaises(ValueError):
+                        runner.validate_controller_summary(receipt, path, fast=True)
+
     def test_format34_preserves_the_original_packed_light_rejection(self):
         with tempfile.TemporaryDirectory() as temporary:
             work = Path(temporary)
