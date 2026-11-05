@@ -71,6 +71,10 @@ void xl_changing_light_bind(const xl_compat::Inventory *source)
 {
 	if (!source || source->segments.size() != static_cast<std::size_t>(Num_segments))
 		throw std::runtime_error("XL changing-light geometry does not match its source");
+	for (const auto &row : source->light_indices)
+		if (row[0] < 0 || row[0] >= Num_segments || row[1] < 0 || row[1] >= 6 || row[2] < 0 || row[3] < 0 ||
+		    static_cast<std::size_t>(row[3]) > source->delta_lights.size() || static_cast<std::size_t>(row[2]) > source->delta_lights.size() - static_cast<std::size_t>(row[3]))
+			throw std::runtime_error("XL changing-light source or range is invalid");
 	std::vector<std::size_t> indices(source->light_indices.size());
 	std::iota(indices.begin(), indices.end(), 0);
 	std::stable_sort(indices.begin(), indices.end(), [&](std::size_t a, std::size_t b) {
@@ -137,7 +141,7 @@ extern "C" int xl_light_delta_get(int index, xl_light_delta *out)
 {
 	if (!out || index < 0 || index >= xl_light_delta_count()) return 0;
 	const auto &row = authored->delta_lights[index];
-	*out = { row[0], row[1], { row[3], row[4], row[5], row[6] } };
+	*out = { row[0], row[1], { row[3], row[4], row[5], row[6] }, xl_compat::valid_light_delta(*authored, row) };
 	return 1;
 }
 
@@ -155,6 +159,7 @@ extern "C" int xl_changing_light(int segment, int side, int direction)
 		if (index[0] != segment || index[1] != side) break;
 		for (int i = 0; i < index[2]; ++i) {
 			const auto &delta = authored->delta_lights[index[3] + i];
+			if (!xl_compat::valid_light_delta(*authored, delta)) continue;
 			auto &face = Segments[delta[0]].sides[delta[1]];
 			for (int corner = 0; corner < 4; ++corner) {
 				const auto value = static_cast<int64_t>(face.uvls[corner].l) + static_cast<int64_t>(direction) * delta[corner + 3] * DL_SCALE;

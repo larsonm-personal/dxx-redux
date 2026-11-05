@@ -70,6 +70,7 @@ const char *xl_changing_light_probe(const char *operation)
 				for (int j = 0; j < index.count; ++j) {
 					xl_light_delta delta{};
 					require(xl_light_delta_get(index.first + j, &delta), "Android light contribution missing");
+					if (!delta.valid) continue;
 					for (int c = 0; c < 4; ++c) contribution[delta.segment][delta.side * 4 + c] += int64_t(delta.light[c]) * DL_SCALE;
 				}
 			}

@@ -1,3 +1,4 @@
+#include "../inventory.h"
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -58,8 +59,9 @@ struct CSegment {
 		return &sides[side];
 	}
 } segment;
-CSegment *SEGMENT(int)
+CSegment *SEGMENT(int index)
 {
+	if (index != 0) throw std::runtime_error("Reference dereferenced an invalid delta segment");
 	return &segment;
 }
 struct CLightDeltaIndex {
@@ -68,10 +70,30 @@ struct CLightDeltaIndex {
 	uint16_t count : 13;
 	uint16_t index;
 };
+struct CFile {
+	std::vector<uint8_t> bytes;
+	std::size_t position = 0;
+	int8_t ReadByte()
+	{
+		return static_cast<int8_t>(bytes.at(position++));
+	}
+	int16_t ReadShort()
+	{
+		const auto low = uint8_t(ReadByte());
+		return static_cast<int16_t>(low | unsigned(uint8_t(ReadByte())) << 8);
+	}
+	void Read(void *out, std::size_t size, std::size_t count)
+	{
+		auto *target = static_cast<uint8_t *>(out);
+		for (std::size_t i = 0; i < size * count; ++i) target[i] = uint8_t(ReadByte());
+	}
+};
+#define sizeofa(a) (sizeof(a) / sizeof((a)[0]))
 struct CLightDelta {
 	int16_t nSegment = 0, nSide = 0;
 	bool bValid = true;
-	int vertLight[4]{};
+	uint8_t vertLight[4]{};
+	void Read(CFile &);
 };
 template <class T>
 struct Array {
@@ -99,6 +121,9 @@ struct {
 			int nStatic = 0;
 		} lights;
 	} renderData;
+	struct {
+		int nSegments = 1;
+	} segData;
 } gameData;
 struct {
 	struct {
@@ -125,13 +150,25 @@ int32_t nChangedSegs;
 int main(int argc, char **argv)
 {
 	try {
+		xl_compat::Inventory decoded;
+		decoded.segments.resize(1);
+		for (int segment : { -32768, -1, 0, 1, 32767 })
+			for (int side = 0; side < 256; ++side) {
+				CFile file{ { uint8_t(segment), uint8_t(segment >> 8), uint8_t(side), 219, 0, 127, 128, 255 } };
+				CLightDelta row;
+				row.Read(file);
+				const std::array<int, 7> raw{ segment, side, 219, 0, 127, 128, 255 };
+				if (file.position != 8 || row.nSegment != segment || row.bValid != xl_compat::valid_light_delta(decoded, raw) || row.vertLight[1] != 127 || row.vertLight[2] != 128 || row.vertLight[3] != 255)
+					throw std::runtime_error("Pinned row validity, payload or extent differs");
+			}
+		std::cout << "1280 pinned delta-reader validity and raw-payload controls passed\n";
 		if (argc != 2) throw std::runtime_error("Expected production light sample path");
 		std::ifstream input(argv[1]);
 		if (!input) throw std::runtime_error("Cannot open production light samples");
 		int deltas = 0, segments = 0;
 		char kind;
 		while (input >> kind) {
-			if (kind == 'D') {
+			if (kind == 'D' || kind == 'I') {
 				int base, value, direction, count, expected[4];
 				input >> base >> value >> direction >> count;
 				for (auto &v : expected) input >> v;
@@ -149,6 +186,17 @@ int main(int argc, char **argv)
 					d.vertLight[0] = value;
 					d.vertLight[1] = value / 2;
 					d.vertLight[3] = value % 3;
+				}
+				if (kind == 'I') {
+					lights.deltaIndices.data[1].count = 4;
+					lights.deltaIndices.data[2].index = 1;
+					lights.deltaIndices.data[2].count = 4;
+					for (int i = 0; i < 5; ++i) {
+						const int seg = i == 0 ? -1 : i == 4 ? 32767
+						                                     : 0;
+						CFile file{ { uint8_t(seg), uint8_t(seg >> 8), uint8_t(i == 2 ? 6 : 0), 0, uint8_t(i + 1), 0, 0, 0 } };
+						lights.deltas.data[i].Read(file);
+					}
 				}
 				for (auto &uvl : segment.sides[0].m_uvls) uvl.l = base;
 				ChangeLight(0, 0, direction);

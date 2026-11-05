@@ -6,6 +6,7 @@ struct xl_light_index {
 };
 struct xl_light_delta {
 	int segment, side, light[4];
+	int valid; // Raw target is diagnostic data unless this is nonzero
 };
 struct xl_light_segment_state {
 	int light[24], ambient;

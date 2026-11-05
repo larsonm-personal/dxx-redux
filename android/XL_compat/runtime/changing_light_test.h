@@ -94,6 +94,28 @@ static void light_reference_samples(const xl_compat::Inventory &source, const st
 						++matched;
 					} else ++corrected;
 				}
+	for (int base : { 0, 1, 16384, 65536 })
+		for (int direction : { -1, 0, 1, 17 }) {
+			sample.light_indices = { { 0, 0, 4, 0 }, { 0, 0, 4, 1 } };
+			sample.delta_lights = { { -1, 0, 0, 1, 0, 0, 0 }, { 0, 0, 0, 2, 0, 0, 0 }, { 0, 6, 0, 3, 0, 0, 0 }, { 0, 0, 0, 4, 0, 0, 0 }, { 32767, 0, 0, 5, 0, 0, 0 } };
+			xl_changing_light_bind(&sample);
+			for (auto &uvl : Segments[0].sides[0].uvls) uvl.l = base;
+			require(xl_changing_light(0, 0, direction), "Invalid-row sample selected stock lighting");
+			out << "I " << base << " 0 " << direction << " 5";
+			for (const auto &uvl : Segments[0].sides[0].uvls) out << ' ' << uvl.l;
+			out << '\n';
+		}
+	for (const auto &row : std::vector<std::array<int, 4>>{ { -1, 0, 1, 0 }, { 0, 6, 1, 0 }, { 0, 0, -1, 0 }, { 0, 0, 1, -1 }, { 0, 0, 6, 0 }, { 0, 0, 1, 5 } }) {
+		auto malformed = sample;
+		malformed.light_indices = { row };
+		bool rejected = false;
+		try {
+			xl_changing_light_bind(&malformed);
+		} catch (const std::runtime_error &) {
+			rejected = true;
+		}
+		require(rejected && xl_light_index_count() == 2 && xl_light_delta_count() == 5, "Malformed bind replaced valid light ownership");
+	}
 	for (int distance : { 0, 1, F1_0, F1_0 + 1, 2 * F1_0, 13 * F1_0, 80 * F1_0, 80 * F1_0 + 1 })
 		for (int brightness : { -3 * F1_0, -F1_0, -F1_0 / 8, 0, F1_0 / 8, F1_0, 3 * F1_0 })
 			out << "S " << distance << ' ' << brightness << ' ' << xl_light_at_distance(distance, brightness) << '\n';
@@ -103,7 +125,7 @@ static void light_reference_samples(const xl_compat::Inventory &source, const st
 	std::cout << matched << " defined light samples, " << corrected << " overflow controls and 56 source segment-light samples written\n";
 }
 
-static xl_compat::Inventory write_changing_light_fixture(const std::filesystem::path &root)
+static xl_compat::Inventory write_changing_light_fixture(const std::filesystem::path &root, bool invalid_rows = false)
 {
 	std::ifstream input(root / "neptunxl.hog", std::ios::binary);
 	const xl_compat::Bytes original{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
@@ -119,6 +141,14 @@ static xl_compat::Inventory write_changing_light_fixture(const std::filesystem::
 			std::vector<std::array<int, 7>> deltas;
 			for (int i = 0; i < 65535 + 8191; ++i)
 				deltas.push_back({ i % static_cast<int>(source.segments.size()), (i / static_cast<int>(source.segments.size())) % 6, 0, 1, 2, 3, 4 });
+			if (invalid_rows) {
+				indices[1][3] = 0; // Overlap without renumbering any contribution
+				deltas[0][0] = -1;
+				deltas[2][1] = 6;
+				deltas[4][0] = static_cast<int>(source.segments.size());
+				deltas[65535][1] = 255;
+				deltas[65537][0] = 32767;
+			}
 			member.bytes = xl_test::changing_light_tables(member.bytes, indices, deltas, true);
 			result = xl_compat::inspect_level(member.bytes);
 			require(xl_compat::runtime_blockers(result).empty(), "Expanded light fixture was not admitted");
@@ -131,6 +161,24 @@ static xl_compat::Inventory write_changing_light_fixture(const std::filesystem::
 		output.insert(output.end(), member.bytes.begin(), member.bytes.end());
 	}
 	require(result.light_indices.size() == 501 && result.delta_lights.size() == 73726, "Expanded light fixture lost records");
+	if (invalid_rows) {
+		xl_compat::Bytes foreign{ 'D', 'H', 'F' };
+		for (auto member : xl_compat::read_hog(output)) {
+			if (member.name == "neptunxl.rl2") {
+				const auto decoded = xl_compat::inspect_level(member.bytes);
+				require(!xl_compat::valid_light_delta(decoded, decoded.delta_lights[0]), "Identity control needs an invalid first row");
+				member.bytes.at(decoded.sections[8].offset + 4) ^= 1;
+			}
+			char name[13]{};
+			std::strcpy(name, member.name.c_str());
+			foreign.insert(foreign.end(), name, name + sizeof(name));
+			for (unsigned shift = 0; shift < 32; shift += 8) foreign.push_back(static_cast<uint8_t>(member.bytes.size() >> shift));
+			foreign.insert(foreign.end(), member.bytes.begin(), member.bytes.end());
+		}
+		write_bytes((root / "xother.hog").string().c_str(), foreign);
+		std::ofstream alternate(root / "xother.mn2", std::ios::binary);
+		alternate << "d2x-name = Delta identity\nnum_levels = 1\nneptunxl.rl2\n";
+	}
 	write_bytes((root / "xlights.hog").string().c_str(), output);
 	std::ofstream descriptor(root / "xlights.mn2", std::ios::binary);
 	descriptor << "d2x-name = Derived XL light tables\nnum_levels = 1\nneptunxl.rl2\n";
@@ -182,7 +230,7 @@ static int changing_light_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir"));
-		const auto source = write_changing_light_fixture(root / "missions");
+		const auto source = write_changing_light_fixture(root / "missions", !std::strcmp(find_arg_value(argc, argv, "-changing-light-test"), "validity"));
 		require(load_base_mission("xlights", error, sizeof(error)), error);
 		require(xl_level_supported("neptunxl.rl2", 0), xl_level_rejection());
 		std::strcpy(Players[Player_num].callsign, "XLTest");
@@ -199,6 +247,7 @@ static int changing_light_test(int argc, char **argv)
 		for (const auto &index : source.light_indices)
 			for (int i = 0; i < index[2]; ++i) {
 				const auto &delta = source.delta_lights[index[3] + i];
+				if (!xl_compat::valid_light_delta(source, delta)) continue;
 				for (int c = 0; c < 4; ++c) contribution[delta[0]][delta[1] * 4 + c] += int64_t(delta[c + 3]) * DL_SCALE;
 			}
 		require(check_trigger_sub(Num_triggers - 2, Player_num, 1) == 0, "Authored expanded light-off action failed");
@@ -224,6 +273,18 @@ static int changing_light_test(int argc, char **argv)
 		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		require_owned_light_records(source);
 		light_bad_state(root);
+		if (!std::strcmp(find_arg_value(argc, argv, "-changing-light-test"), "validity")) {
+			const auto identity = xl_level_trigger_identity();
+			require(load_base_mission("xother", error, sizeof(error)), error);
+			require(!load_level("neptunxl.rl2"), xl_level_rejection());
+			require(xl_level_trigger_identity() != identity, "Changed invalid raw payload did not change source identity");
+			const auto fresh = light_snapshot();
+			auto *file = PHYSFS_openRead("light-state.bin");
+			require(file && !xl_wall_trigger_read(file) && PHYSFS_close(file) && same_light_snapshot(fresh, light_snapshot()), "Foreign invalid-row trailer changed live state");
+			require(state_restore_all_sub(save, 0) && xl_level_trigger_identity() == identity && same_light_snapshot(earned, light_snapshot()), "Invalid rows or earned state changed through restore");
+			require_owned_light_records(source);
+			std::cout << "Invalid raw-row identity, foreign trailer rejection and exact recovery passed\n";
+		}
 		std::cout << "XL changing-light controls passed: 501 sources, 73726 deltas, full first/count widths, authored toggles and exact disk through stock\n";
 		return 0;
 	} catch (const std::exception &error) {

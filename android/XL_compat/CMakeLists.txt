@@ -490,6 +490,15 @@ if(BUILD_TESTING)
                     -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/changing_light.cmake)
             set_tests_properties(xl_changing_lights PROPERTIES TIMEOUT 180)
             add_test(
+                NAME xl_changing_lights_invalid_rows
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR} -DMODE=validity
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/changing_lights_invalid_rows
+                    ${xl_changing_light_args} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/changing_light.cmake)
+            set_tests_properties(xl_changing_lights_invalid_rows PROPERTIES TIMEOUT 180)
+            add_test(
                 NAME xl_extended_hog
                 COMMAND
                     ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
@@ -508,6 +517,14 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/flickers ${xl_flicker_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/flicker.cmake)
             set_tests_properties(xl_flickers PROPERTIES TIMEOUT 180)
+            add_test(
+                NAME xl_flickers_invalid_rows
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR} -DMODE=validity
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/flickers_invalid_rows ${xl_flicker_args}
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/flicker.cmake)
+            set_tests_properties(xl_flickers_invalid_rows PROPERTIES TIMEOUT 180)
             add_test(
                 NAME xl_wide_walls
                 COMMAND

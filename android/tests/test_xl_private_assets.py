@@ -344,7 +344,7 @@ class XlPrivateTests(unittest.TestCase):
                     runner.validate_registration({"tests": tests}, fast=True)
 
     def test_fast_receipts_require_every_executed_control_and_no_campaign_exemption(self):
-        self.assertEqual(len(runner.FAST_TESTS), 111)
+        self.assertEqual(len(runner.FAST_TESTS), 113)
         self.assertFalse(runner.FAST_TESTS & runner.CAMPAIGN_TESTS)
         self.assertTrue(
             {
@@ -384,7 +384,7 @@ class XlPrivateTests(unittest.TestCase):
                 navigation_anchors_passed=4,
                 navigation_smoke_milliseconds=800,
             )
-            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 111)
+            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 113)
             for mode in ("omitted", "duplicate", "disabled", "skipped", "failed", "experimental"):
                 changed = copy.deepcopy(suite)
                 first = changed[0]
@@ -875,7 +875,7 @@ class XlPrivateTests(unittest.TestCase):
             )
             passed = '<testcase name="xl_level_two_keys" status="run"/>'
             self.assertEqual(receipt(failed)["experimental"], {"xl_level_two_keys": "failed"})
-            self.assertEqual(receipt(passed, 0)["required_passed"], 92)
+            self.assertEqual(receipt(passed, 0)["required_passed"], 94)
             self.assertFalse(receipt(passed, 0)["level_two_completion_qualified"])
             # CTest can exit zero when disabled tests are present
             disabled_required = ET.parse(path)
