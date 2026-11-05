@@ -29,7 +29,7 @@ class SdkWorkflowContractTests(unittest.TestCase):
         runtime = source.split('- name: Provision emulator host runtime', 1)[1].split('- name: Provision emulator image', 1)[0]
         self.assertIn("if: inputs.lane != 'jvm'", runtime)
         self.assertIn('timeout-minutes: 8', runtime)
-        self.assertIn('apt-get install -y --no-install-recommends libpulse0', runtime)
+        self.assertRegex(runtime, r'(?m)^\s*sudo apt-get(?: -o \S+)* install -y --no-install-recommends libpulse0\s*$')
         check = source.split('- name: Check emulator runtime before APK build', 1)[1].split('- name: Require shared Wi-Fi', 1)[0]
         self.assertIn('set -euo pipefail', check)
         self.assertIn('emulator -version', check)
