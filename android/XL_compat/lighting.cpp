@@ -695,7 +695,7 @@ void DynamicVertexLight::add(std::int32_t contribution, const Rgb *source_color,
 std::vector<float> vertex_brightness(const Inventory &level)
 {
 	if (!((level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) || (level.level_version == 17 && level.game_version == 36) || modern_runtime_layout(level)))
-		throw std::runtime_error("XL brightness requires audited 15/33, 15/34, 17/36, 23/40, 25/40 or 27/40 geometry");
+		throw std::runtime_error("XL brightness requires audited 15/33, 15/34, 17/36, 21/40, 23/40, 25/40 or 27/40 geometry");
 	std::vector<float> brightness(level.vertices.size(), 0);
 	for (const auto &segment : level.segments) {
 		for (unsigned side = 0; side < 6; ++side) {

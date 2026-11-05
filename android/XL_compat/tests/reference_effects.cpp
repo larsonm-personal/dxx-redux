@@ -476,7 +476,7 @@ int main(int argc, char **argv)
 				compare_level(read(entry.path()), objects, effects);
 				++levels;
 			}
-			if (levels != 125) throw std::runtime_error("Missing effect reference profiles");
+			if (levels != 150) throw std::runtime_error("Missing effect reference profiles");
 		} else {
 			std::ifstream input(argv[1], std::ios::binary | std::ios::ate);
 			if (!input || input.tellg() < 3) throw std::runtime_error("Cannot read original effect HOG");

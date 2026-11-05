@@ -60,7 +60,7 @@ void effect_layout_contract(const char *directory = nullptr)
 {
 	if (directory) std::filesystem::create_directories(directory);
 	int cases = 0, truncations = 0;
-	for (int version : { 15, 17, 23, 25, 27 })
+	for (int version : { 15, 17, 21, 23, 25, 27 })
 		for (int render : { 0, 8, 11, 12, 13 })
 			for (int profile = 0; profile < 5; ++profile) {
 				auto bytes = fixture(version);
@@ -69,7 +69,7 @@ void effect_layout_contract(const char *directory = nullptr)
 				patch(bytes, base.game_offset + 35, static_cast<unsigned>(start));
 				patch(bytes, base.game_offset + 39, 1);
 				patch(bytes, base.game_offset + 43, 264);
-				const int header = version >= 23 ? 80 : 79;
+				const int header = version >= 21 ? 80 : 79;
 				const int id = profile == 1 ? 7 : profile == 2 ? 0
 				                              : profile == 4   ? 2
 				                              : render == 12   ? 1
@@ -82,7 +82,7 @@ void effect_layout_contract(const char *directory = nullptr)
 				object[2] = profile == 2 ? 17 : 0;
 				object[3] = profile == 3 ? 2 : 0;
 				object[4] = static_cast<unsigned char>(render);
-				const int shift = version >= 23;
+				const int shift = version >= 21;
 				for (int i = 0; i < 9; ++i) patch(object, 20 + shift + i * 4, i % 4 == 0 ? 65536 : 0);
 				patch(object, 56 + shift, 65536);
 				patch(object, 60 + shift, 65536);
@@ -137,7 +137,7 @@ void effect_layout_contract(const char *directory = nullptr)
 				const bool sound_supported = render == 13 && profile == 0;
 				check(xl_compat::runtime_blockers(decoded).empty() == sound_supported, "effect capability admission differs from implemented sound profile");
 				rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
-				if (render == 11 && version >= 23) {
+				if (render == 11 && version >= 21) {
 					auto fire = bytes;
 					patch(fire, start + header + 28, 0, 1);
 					if (profile == 2 || profile == 3) {
@@ -236,7 +236,7 @@ void effect_layout_contract(const char *directory = nullptr)
 				}
 				++cases;
 			}
-	for (int version : { 15, 17, 23, 25, 27 })
+	for (int version : { 15, 17, 21, 23, 25, 27 })
 		for (bool supported : { false, true }) {
 			auto bytes = fixture(version);
 			const auto base = xl_compat::inspect_level(bytes);
@@ -244,11 +244,11 @@ void effect_layout_contract(const char *directory = nullptr)
 			patch(bytes, base.game_offset + 35, static_cast<unsigned>(start));
 			patch(bytes, base.game_offset + 39, 1);
 			patch(bytes, base.game_offset + 43, 264);
-			Bytes object(version >= 23 ? 80 : 79);
+			Bytes object(version >= 21 ? 80 : 79);
 			object[0] = 19;
 			object[2] = 13;
 			object[4] = supported ? 5 : 0;
-			const int shift = version >= 23;
+			const int shift = version >= 21;
 			for (int i = 0; i < 9; ++i) patch(object, 20 + shift + i * 4, i % 4 == 0 ? 65536 : 0);
 			patch(object, 56 + shift, 65536);
 			patch(object, 60 + shift, 65536);
@@ -269,5 +269,5 @@ void effect_layout_contract(const char *directory = nullptr)
 			      "Static explosion metadata lost its count, shape blocker or resource-dependent qualification");
 			if (!supported) check(row.find("static_explosion at record 0") != std::string::npos, "Static shape rejection appeared in the wrong browser row");
 		}
-	std::cout << "XL effect layout controls passed: " << cases << " profiles and " << truncations << " payload truncations; ten static-explosion browser profiles; unsupported effect requirements remain gated\n";
+	std::cout << "XL effect layout controls passed: " << cases << " profiles and " << truncations << " payload truncations; twelve static-explosion browser profiles; unsupported effect requirements remain gated\n";
 }

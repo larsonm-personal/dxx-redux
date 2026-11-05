@@ -84,7 +84,7 @@ static int runtime_layout_test(int argc, char **argv)
 		std::vector<int> baseline;
 		std::uint64_t previous_identity = 0;
 		int ordinal = 0;
-		for (int version : { 23, 25, 27 }) {
+		for (int version : { 21, 23, 25, 27 }) {
 			++ordinal;
 			require(load_base_mission("rtlayout", error, sizeof(error)), error);
 			const auto filename = "rt" + std::to_string(version) + ".rl2";
@@ -93,11 +93,11 @@ static int runtime_layout_test(int argc, char **argv)
 			require(!xl_level_supported(filename.c_str(), 1), "Modern layout bypassed multiplayer admission");
 			require(!load_level(filename.c_str()), "Modern normal load failed");
 			const auto geometry = runtime_layout_geometry(source);
-			if (version == 23) baseline = geometry;
+			if (version == 21) baseline = geometry;
 			else require(geometry == baseline, "Equivalent layouts changed compiled normals, topology, textures or UVLs");
 			for (int texture = 0; texture < 910; ++texture) {
 				int brightness = -1;
-				require(xl_prepared_texture_brightness(texture, &brightness) && brightness == (texture == 302 ? (version - 22) * 16384 : 0), "Modern LGT ownership/precedence differs");
+				require(xl_prepared_texture_brightness(texture, &brightness) && brightness == (texture == 302 ? (version == 21 ? 1 : version - 22) * 16384 : 0), "Modern LGT ownership/precedence differs");
 			}
 			for (std::size_t vertex = 0; vertex < source.vertices.size(); ++vertex) colored(source, static_cast<int>(vertex));
 			require_owned_light_records(source);

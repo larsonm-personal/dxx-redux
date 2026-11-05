@@ -80,7 +80,7 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 		put(b, version >= 25 ? 65535 : 255, version >= 25 ? 2 : 1);
 		put(b, version >= 25 ? 65535 : 255, version >= 25 ? 2 : 1);
 		put(b, segment_flags, 1);
-		if (version >= 23) b.resize(b.size() + 5);
+		if (version >= 21) b.resize(b.size() + 5);
 		put(b, 65536, 4);
 	}
 	for (int i = 0; i < 8 + segment_count * 6; ++i) {
@@ -105,7 +105,7 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 	const auto game = b.size();
 	patch(b, 12, static_cast<std::uint32_t>(game));
 	put(b, 0x6705, 2);
-	put(b, version == 15 ? 33 : version >= 23 ? 40
+	put(b, version == 15 ? 33 : version >= 21 ? 40
 	                                          : 36,
 	    2);
 	b.resize(b.size() + 31);
@@ -170,7 +170,7 @@ Bytes single_wall_fixture(int version)
 void wall_key_contract()
 {
 	unsigned count = 0;
-	for (int version : { 15, 17, 23, 25, 27 }) {
+	for (int version : { 15, 17, 21, 23, 25, 27 }) {
 		auto bytes = single_wall_fixture(version);
 		const auto base = xl_compat::inspect_level(bytes);
 		const auto key = base.sections[1].offset + (base.game_version >= 37 ? 22 : 21);
@@ -204,8 +204,8 @@ void wall_key_contract()
 			rejects([&] { xl_compat::prepare_gameplay_probe(bytes); }); // Additive rendering is independent
 		}
 	}
-	check(count == 1280, "Incomplete wall-key format matrix");
-	std::cout << count << " five-layout raw wall-key translations and modern wide-flag ownership passed\n";
+	check(count == 1536, "Incomplete wall-key format matrix");
+	std::cout << count << " six-layout raw wall-key translations and modern wide-flag ownership passed\n";
 }
 void wide_wall_contract()
 {
@@ -285,18 +285,18 @@ void trigger_capacity_contract()
 
 void generator_assignment_contract(const char *directory = nullptr)
 {
-	for (int version : { 15, 17, 23 }) {
+	for (int version : { 15, 17, 21, 23 }) {
 		auto bytes = fixture(version, 0, 5);
 		const auto base = xl_compat::inspect_level(bytes);
 		const auto properties = base.mine_offset + 5 + 8 * 12 + 5 * 176;
-		const int stride = version == 23 ? 13 : 8;
+		const int stride = version >= 21 ? 13 : 8;
 		for (const auto &entry : std::array<std::array<int, 3>, 4>{ { { 0, 4, 2 }, { 1, 1, -1 }, { 2, 4, 0 }, { 3, 4, 1 } } }) {
 			patch(bytes, properties + entry[0] * stride, entry[1], 1);
 			patch(bytes, properties + entry[0] * stride + 1, entry[2], 1);
 		}
 		patch(bytes, base.game_offset + 35 + 6 * 12, static_cast<unsigned>(bytes.size()));
 		patch(bytes, base.game_offset + 39 + 6 * 12, 3);
-		patch(bytes, base.game_offset + 43 + 6 * 12, 20);
+		patch(bytes, base.game_offset + 43 + 6 * 12, version == 21 ? 16 : 20);
 		for (int row = 0; row < 3; ++row) {
 			put(bytes, 1u << row, 4);
 			put(bytes, 0x80000000u >> row, 4);
@@ -347,7 +347,7 @@ void generator_assignment_contract(const char *directory = nullptr)
 			rejects([&] { xl_compat::prepare_gameplay_probe(invalid); });
 		}
 	}
-	std::cout << "XL generator assignment: three layouts, source permutation, ignored authored links, station mapping and malformed controls passed\n";
+	std::cout << "XL generator assignment: four layouts, source permutation, ignored authored links, station mapping and malformed controls passed\n";
 }
 
 std::string feature_row(const std::string &json, const char *id)
@@ -970,6 +970,64 @@ void version_34_contract()
 	}
 }
 
+void version_21_contract()
+{
+	auto bytes = single_wall_fixture(21);
+	const auto base = xl_compat::inspect_level(bytes);
+	// Actual game40 widths override legacy declared sizes, as in original Dinter
+	patch(bytes, base.game_offset + 55, 24);
+	const auto table = bytes.size();
+	patch(bytes, base.game_offset + 107, static_cast<unsigned>(table));
+	patch(bytes, base.game_offset + 111, 1);
+	patch(bytes, base.game_offset + 115, 16);
+	const auto extras = base.game_offset - (8 + 6 + 910) * 13 - 13;
+	patch(bytes, extras, 4, 1);
+	patch(bytes, extras + 1, 0, 1);
+	for (unsigned value : { 1u, 0u, 65536u, 327680u }) put(bytes, value, 4);
+	put(bytes, 0xffff, 2);
+	put(bytes, 0x7fff, 2);
+	const auto probe = xl_compat::prepare_source_runtime_probe(bytes);
+	check(probe.source.matcens.size() == 1 && probe.source.matcens[0] == std::array<int, 6>{ 1, 0, 65536, 327680, -1, 32767 }, "21/40 producer width or signed fields differ");
+	check(probe.source.walls.size() == 1 && probe.source.sections[1].declared_size == 24, "21/40 declared wall width was used as stride");
+	const auto &stock = probe.stock_level;
+	const auto read = [&](std::size_t at, int width = 4) {
+		unsigned value = 0;
+		for (int i = 0; i < width; ++i) value |= unsigned(stock.at(at + i)) << (i * 8);
+		return value;
+	};
+	const auto game = read(12), wall = read(game + 47), producer = read(game + 107);
+	check(read(game + 2, 2) == 32 && read(game + 4) == 143 && stock.at(game + 143) == 0, "21/40 equipment header removal displaced the native name");
+	check(read(game + 55) == 24 && wall + 24 <= stock.size() && stock.at(wall + 19) == 255 && stock.at(wall + 21) == 1, "21/40 wall flags shifted following native fields");
+	check(read(game + 115) == 20 && producer + 20 <= stock.size() && read(producer) == 1 && read(producer + 8) == 65536 && read(producer + 12) == 327680 && read(producer + 16, 2) == 0 && read(producer + 18, 2) == 0, "21/40 producer offset or native station assignment differs");
+	for (std::size_t cut = table; cut < bytes.size(); ++cut) {
+		auto truncated = bytes;
+		truncated.resize(cut);
+		rejects([&] { xl_compat::inspect_level(truncated); });
+	}
+	for (int version : { 20, 22, 24 }) {
+		auto adjacent = bytes;
+		patch(adjacent, 4, version);
+		rejects([&] { xl_compat::inspect_level(adjacent); });
+	}
+	for (int game_version : { 33, 34, 36, 39, 41 }) {
+		auto wrong_pair = bytes;
+		patch(wrong_pair, base.game_offset + 2, game_version, 2);
+		rejects([&] { xl_compat::inspect_level(wrong_pair); });
+	}
+	// Keep malformed light records rejected even after the version is qualified
+	for (int side : { 6, 34, 255 }) {
+		auto invalid = bytes;
+		patch(invalid, base.game_offset + 131, static_cast<unsigned>(invalid.size()));
+		patch(invalid, base.game_offset + 135, 1);
+		patch(invalid, base.game_offset + 139, 8);
+		put(invalid, 0, 2);
+		put(invalid, side, 1);
+		for (int i = 0; i < 5; ++i) put(invalid, 0, 1);
+		rejects([&] { xl_compat::prepare_source_runtime_probe(invalid); });
+	}
+	std::cout << "21/40 legacy declared widths, native offsets, producer assignment and rejection controls passed\n";
+}
+
 void version_23_contract()
 {
 	const auto bytes = fixture(23);
@@ -1445,6 +1503,7 @@ int main(int argc, char **argv)
 		if (argc == 2) original_observatory(argv[1]);
 		if (argc == 3) original_neptune(argv[2]);
 		version_17_contract();
+		version_21_contract();
 		version_23_contract();
 		serialization_17_contract();
 		teleport_inventory_contract();

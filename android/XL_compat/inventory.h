@@ -144,7 +144,7 @@ struct Inventory {
 // Audited modern record layouts; individual geometry, feature and asset gates remain
 inline bool modern_runtime_layout(const Inventory &level)
 {
-	return level.game_version == 40 && (level.level_version == 23 || level.level_version == 25 || level.level_version == 27);
+	return level.game_version == 40 && (level.level_version == 21 || level.level_version == 23 || level.level_version == 25 || level.level_version == 27);
 }
 
 // Inspection is not admission: even a decoded file is not approved for gameplay
