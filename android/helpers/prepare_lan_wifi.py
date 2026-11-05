@@ -54,13 +54,17 @@ def prepare(serials, output):
                 raise RuntimeError(f"Emulator root shell unavailable: {serial}")
             for interface in ("wlan0", "eth0"):
                 text = adb(serial, "shell", "ip", "-4", "addr", "show", "dev", interface)
-                addresses = re.findall(r"\binet ([0-9.]+)/24\b", text)
+                addresses = re.findall(r"\binet (\S+)", text)
                 if len(addresses) != 1:
-                    raise RuntimeError(f"Expected one /24 IPv4 address on {serial}/{interface}")
-                address = str(ipaddress.IPv4Address(addresses[0]))
-                if interface == "eth0" and address != "10.0.2.15":
+                    raise RuntimeError(f"Expected one IPv4 address on {serial}/{interface}")
+                configured = ipaddress.IPv4Interface(addresses[0])
+                address = str(configured.ip)
+                # API 34 private Ethernet uses /8; shared Wi-Fi remains /24
+                if interface == "eth0" and (address != "10.0.2.15" or configured.network.prefixlen not in (8, 24)):
                     raise RuntimeError(f"Unexpected private Ethernet address on {serial}")
                 if interface == "wlan0":
+                    if configured.network.prefixlen != 24:
+                        raise RuntimeError(f"Expected /24 shared Wi-Fi address on {serial}")
                     if not 16 <= int(ipaddress.IPv4Address(address)) - int(ipaddress.IPv4Address("10.0.2.0")) <= 254:
                         raise RuntimeError(f"Unexpected shared Wi-Fi address on {serial}")
                     receipt["addresses"][serial] = address

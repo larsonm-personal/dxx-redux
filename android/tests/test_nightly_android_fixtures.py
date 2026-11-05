@@ -266,7 +266,7 @@ class FixtureTests(unittest.TestCase):
 
 
 class LanWifiTopologyTests(unittest.TestCase):
-    def run_case(self, serials=None, fault=None):
+    def run_case(self, serials=None, fault=None, ethernet_prefix=8):
         serials = serials or ["emulator-5554", "emulator-5556"]
         calls, disabled = [], set()
         pending_route = [fault == "transient"]
@@ -289,7 +289,18 @@ class LanWifiTopologyTests(unittest.TestCase):
                     ip = "10.0.2.16"
                 if fault == "unexpected-ethernet" and args[-1] == "eth0":
                     ip = "192.168.1.2"
-                text = f"inet {ip}/24"
+                prefix = ethernet_prefix if args[-1] == "eth0" else 24
+                if fault == "wrong-wifi-prefix" and args[-1] == "wlan0":
+                    prefix = 8
+                if fault == "wrong-ethernet-prefix" and args[-1] == "eth0":
+                    prefix = 16
+                text = f"inet {ip}/{prefix}"
+                if fault == "extra-ethernet-address" and args[-1] == "eth0":
+                    text += "\ninet 192.168.1.2/24"
+                if fault == "missing-ethernet-address" and args[-1] == "eth0":
+                    text = ""
+                if fault == "malformed-ethernet-address" and args[-1] == "eth0":
+                    text = "inet 10.0.2.15/33"
             elif args == ["shell", "su", "0", "ip", "link", "set", "dev", "eth0", "down"]:
                 if fault == "mutation-error":
                     code = 1
@@ -323,7 +334,7 @@ class LanWifiTopologyTests(unittest.TestCase):
                 patch.object(wifi.time, "sleep"),
             ):
                 if fault and fault != "transient":
-                    with self.assertRaises((RuntimeError, subprocess.TimeoutExpired)):
+                    with self.assertRaises((RuntimeError, ValueError, subprocess.TimeoutExpired)):
                         wifi.prepare(serials, output)
                 else:
                     wifi.prepare(serials, output)
@@ -348,6 +359,23 @@ class LanWifiTopologyTests(unittest.TestCase):
         calls, receipt = self.run_case(fault="transient")
         self.assertEqual(sum(args[-1] == "down" for _, args in calls), 2)
         self.assertTrue(any(c.get("returncode") == 2 for c in receipt["commands"]))
+
+    def test_observed_ethernet_slash8_and_legacy_slash24_preserve_wifi_routes(self):
+        for prefix in (8, 24):
+            calls, receipt = self.run_case(ethernet_prefix=prefix)
+            self.assertTrue(receipt["passed"])
+            self.assertEqual(sum(args[-1] == "down" for _, args in calls), 2)
+
+    def test_prefix_and_address_failures_prevent_all_mutations(self):
+        for fault in (
+            "wrong-wifi-prefix",
+            "wrong-ethernet-prefix",
+            "extra-ethernet-address",
+            "missing-ethernet-address",
+            "malformed-ethernet-address",
+        ):
+            calls, _ = self.run_case(fault=fault)
+            self.assertFalse(any(args[-1] == "down" for _, args in calls), fault)
 
     def test_invalid_targets_fail_before_mutation(self):
         for fault in ("offline", "physical", "root", "duplicate", "unexpected-ethernet", "wrong-lane"):
