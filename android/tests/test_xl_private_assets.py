@@ -23,12 +23,31 @@ import xl_private_assets as assets
 
 
 class XlPrivateTests(unittest.TestCase):
+    def test_reviewed_cohorts_are_independent_of_candidate_requirements(self):
+        self.assertEqual(len(runner.HISTORICAL_FAST_TESTS), 111)
+        self.assertEqual(
+            hashlib.sha256("\n".join(sorted(runner.HISTORICAL_FAST_TESTS)).encode()).hexdigest(),
+            "d3a911b9012339b3052d1e7d0b1dbc12c604f7fdef2f9c112253ece1ce1deb86",
+        )
+        self.assertEqual(len(runner.REVIEWED_FAST_TESTS), 113)
+        self.assertEqual(runner.FAST_TESTS, runner.REVIEWED_FAST_TESTS)
+        self.assertEqual(runner.REVIEWED_FAST_TESTS - runner.HISTORICAL_FAST_TESTS, runner.REVIEWED_FAST_ADDITIONS)
+        for changed in (set(), runner.HISTORICAL_FAST_TESTS, runner.FAST_TESTS | {"unreviewed"}):
+            with patch.object(runner, "FAST_TESTS", changed):
+                for required in (runner.HISTORICAL_FAST_TESTS, runner.REVIEWED_FAST_TESTS):
+                    receipt = {"required_tests": sorted(required), "required_passed": len(required)}
+                    self.assertEqual(runner.reviewed_fast_cohort(receipt), required)
+                with self.assertRaises(ValueError):
+                    runner.reviewed_fast_cohort(
+                        {"required_tests": sorted(runner.REVIEWED_FAST_TESTS | {"unreviewed"}), "required_passed": 114}
+                    )
+
     def test_controller_accepts_only_complete_reviewed_fast_cohorts(self):
         additions = {"xl_changing_lights_invalid_rows", "xl_flickers_invalid_rows"}
         self.assertEqual(retail.safe_xl_native_failures(sorted(additions) + ["unknown"]), sorted(additions))
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "native.xml"
-            for required in (runner.FAST_TESTS, runner.FAST_TESTS | additions):
+            for required in (runner.HISTORICAL_FAST_TESTS, runner.REVIEWED_FAST_TESTS):
                 receipt = {
                     "required_tests": sorted(required),
                     "required_passed": len(required),
@@ -68,7 +87,7 @@ class XlPrivateTests(unittest.TestCase):
                     {"required_passed": 113 if len(required) == 111 else 111},
                     {"required_passed": float(len(required))},
                     *(
-                        {"required_tests": sorted(runner.FAST_TESTS | {name}), "required_passed": 112}
+                        {"required_tests": sorted(runner.HISTORICAL_FAST_TESTS | {name}), "required_passed": 112}
                         for name in additions
                     ),
                 ):
@@ -113,7 +132,8 @@ class XlPrivateTests(unittest.TestCase):
                     for value in (True, "1", float(receipt[key]), None)
                 ]
                 invalid += [
-                    {"required_tests": sorted(runner.FAST_TESTS | {name}), "required_passed": 112} for name in additions
+                    {"required_tests": sorted(runner.HISTORICAL_FAST_TESTS | {name}), "required_passed": 112}
+                    for name in additions
                 ]
                 for change in invalid:
                     with self.subTest(count=len(required), change=change), self.assertRaises(ValueError):
@@ -344,7 +364,7 @@ class XlPrivateTests(unittest.TestCase):
                     runner.validate_registration({"tests": tests}, fast=True)
 
     def test_fast_receipts_require_every_executed_control_and_no_campaign_exemption(self):
-        self.assertEqual(len(runner.FAST_TESTS), 111)
+        self.assertEqual(len(runner.FAST_TESTS), 113)
         self.assertFalse(runner.FAST_TESTS & runner.CAMPAIGN_TESTS)
         self.assertTrue(
             {
@@ -384,7 +404,7 @@ class XlPrivateTests(unittest.TestCase):
                 navigation_anchors_passed=4,
                 navigation_smoke_milliseconds=800,
             )
-            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 111)
+            self.assertEqual(runner.validate_summary(receipt, fast=True)["required_passed"], 113)
             for mode in ("omitted", "duplicate", "disabled", "skipped", "failed", "experimental"):
                 changed = copy.deepcopy(suite)
                 first = changed[0]
@@ -875,7 +895,7 @@ class XlPrivateTests(unittest.TestCase):
             )
             passed = '<testcase name="xl_level_two_keys" status="run"/>'
             self.assertEqual(receipt(failed)["experimental"], {"xl_level_two_keys": "failed"})
-            self.assertEqual(receipt(passed, 0)["required_passed"], 92)
+            self.assertEqual(receipt(passed, 0)["required_passed"], 94)
             self.assertFalse(receipt(passed, 0)["level_two_completion_qualified"])
             # CTest can exit zero when disabled tests are present
             disabled_required = ET.parse(path)

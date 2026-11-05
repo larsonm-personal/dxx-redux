@@ -147,6 +147,12 @@ inline bool modern_runtime_layout(const Inventory &level)
 	return level.game_version == 40 && (level.level_version == 21 || level.level_version == 23 || level.level_version == 25 || level.level_version == 27);
 }
 
+// Pinned CLightDelta::Read validity; raw serialized fields remain unchanged
+inline bool valid_light_delta(const Inventory &level, const std::array<int, 7> &row)
+{
+	return row[0] >= 0 && static_cast<std::size_t>(row[0]) < level.segments.size() && row[1] >= 0 && row[1] < 6;
+}
+
 // Inspection is not admission: even a decoded file is not approved for gameplay
 // Unsupported version combinations and malformed data throw std::runtime_error
 Inventory inspect_level(const Bytes &bytes);

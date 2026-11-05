@@ -109,7 +109,7 @@ static void flicker_samples(const std::filesystem::path &root)
 	require(bool(out), "Cannot finish flicker samples");
 	std::cout << defined << " defined flicker samples and " << corrected << " overflow/bounded-catch-up controls passed\n";
 }
-static xl_compat::Inventory write_flicker_fixture(const std::filesystem::path &root)
+static xl_compat::Inventory write_flicker_fixture(const std::filesystem::path &root, bool invalid_rows = false)
 {
 	std::ifstream input(root / "neptunxl.hog", std::ios::binary);
 	const xl_compat::Bytes original{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
@@ -118,7 +118,15 @@ static xl_compat::Inventory write_flicker_fixture(const std::filesystem::path &r
 	for (auto member : xl_compat::read_hog(original)) {
 		if (member.name == "neptunxl.rl2") {
 			const auto source = xl_compat::inspect_level(member.bytes);
-			member.bytes = xl_test::changing_light_tables(member.bytes, source.light_indices, source.delta_lights, true);
+			auto deltas = source.delta_lights;
+			if (invalid_rows) {
+				for (int i : { 0, 1 }) {
+					const auto &index = source.light_indices[i];
+					require(index[2] > 1, "Flicker validity needs a valid neighboring contribution");
+					deltas[index[3]][i] = i ? 255 : -1;
+				}
+			}
+			member.bytes = xl_test::changing_light_tables(member.bytes, source.light_indices, deltas, true);
 			std::vector<std::array<int, 5>> rows(128, { source.light_indices[0][0], source.light_indices[0][1], 2, F1_0 / 8, F1_0 / 4 });
 			rows.push_back({ source.light_indices[1][0], source.light_indices[1][1], 2, F1_0 / 8, F1_0 / 4 });
 			rows.push_back({ source.light_indices[0][0], source.light_indices[0][1], 2, 0, 0 });
@@ -203,7 +211,7 @@ static int flicker_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir"));
-		const auto source = write_flicker_fixture(root / "missions");
+		const auto source = write_flicker_fixture(root / "missions", !std::strcmp(find_arg_value(argc, argv, "-flicker-test"), "validity"));
 		require(source.flicker_lights.size() == 130, "Flicker fixture lost source rows");
 		flicker_samples(root);
 		require(load_base_mission("flicker", error, sizeof(error)), error);

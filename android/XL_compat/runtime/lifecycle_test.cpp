@@ -758,6 +758,7 @@ void changing_lights(const xl_compat::Inventory &source, const char *filename = 
 				if (index[0] != light[0] || index[1] != light[1]) continue;
 				for (int i = index[3]; i < index[3] + index[2]; ++i) {
 					const auto &delta = source.delta_lights.at(i);
+					if (!xl_compat::valid_light_delta(source, delta)) continue;
 					for (int k = 0; k < 4; ++k) {
 						auto &value = expected.at(delta[0] * 24 + delta[1] * 4 + k);
 						value = (std::max) (0, value + direction * delta[3 + k] * 2048);

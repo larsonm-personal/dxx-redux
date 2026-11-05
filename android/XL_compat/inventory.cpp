@@ -608,7 +608,7 @@ Inventory inspect_level(const Bytes &bytes)
 		auto r = section_reader(bytes, out, deltas, 8);
 		for (int i = 0; i < deltas.count; ++i) {
 			std::array<int, 7> values{ r.s16(), r.u8(), r.u8(), r.u8(), r.u8(), r.u8(), r.u8() };
-			require(values[0] >= 0 && values[0] < segment_count && values[1] < 6, "invalid delta light " + std::to_string(i));
+			if (!valid_light_delta(out, values)) issue(out.observations, "invalid_light_delta", i, "invalid target retained; source runtime skips this contribution");
 			out.delta_lights.push_back(values);
 		}
 	}

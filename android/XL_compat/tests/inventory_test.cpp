@@ -1020,7 +1020,7 @@ void version_21_contract()
 		patch(wrong_pair, base.game_offset + 2, game_version, 2);
 		rejects([&] { xl_compat::inspect_level(wrong_pair); });
 	}
-	// Keep malformed light records rejected even after the version is qualified
+	// Invalid target rows retain their bytes and require the owned runtime
 	for (int side : { 6, 34, 255 }) {
 		auto invalid = bytes;
 		patch(invalid, base.game_offset + 131, static_cast<unsigned>(invalid.size()));
@@ -1029,7 +1029,9 @@ void version_21_contract()
 		put(invalid, 0, 2);
 		put(invalid, side, 1);
 		for (int i = 0; i < 5; ++i) put(invalid, 0, 1);
-		rejects([&] { xl_compat::prepare_source_runtime_probe(invalid); });
+		const auto decoded = xl_compat::prepare_source_runtime_probe(invalid).source;
+		check(decoded.delta_lights.size() == 1 && decoded.delta_lights[0][1] == side && !xl_compat::valid_light_delta(decoded, decoded.delta_lights[0]), "Invalid target row was normalized or declared valid");
+		rejects([&] { xl_compat::prepare_gameplay_probe(invalid); });
 	}
 	std::cout << "21/40 legacy declared widths, native offsets, producer assignment and rejection controls passed\n";
 }
@@ -1130,6 +1132,30 @@ void version_23_contract()
 	bad = bytes;
 	bad.pop_back();
 	rejects([&] { xl_compat::inspect_level(bad); });
+}
+
+void invalid_light_row_contract()
+{
+	const std::vector<std::array<int, 4>> indices{ { 0, 0, 4, 0 }, { 0, 0, 4, 1 } };
+	const std::vector<std::array<int, 7>> deltas{ { -1, 0, 219, 1, 2, 3, 4 }, { 0, 0, 9, 0, 127, 128, 255 }, { 0, 6, 0, 5, 6, 7, 8 }, { 0, 5, 128, 10, 20, 30, 40 }, { 1, 255, 255, 11, 12, 13, 14 } };
+	for (int version : { 15, 17, 21, 23, 25, 27 }) {
+		const auto bytes = xl_test::changing_light_tables(fixture(version), indices, deltas);
+		const auto probe = xl_compat::prepare_source_runtime_probe(bytes);
+		check(probe.source.light_indices == indices && probe.source.delta_lights == deltas, "Invalid raw rows, padding or overlapping ranges were rewritten");
+		for (int i = 0; i < 5; ++i) check(xl_compat::valid_light_delta(probe.source, probe.source.delta_lights[i]) == (i == 1 || i == 3), "Delta target validity differs");
+		check(std::count_if(probe.source.observations.begin(), probe.source.observations.end(), [](const auto &row) { return row.feature == "invalid_light_delta"; }) == 3, "Invalid target diagnostic rows missing");
+		rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
+		for (std::size_t cut = bytes.size() - 8; cut < bytes.size(); ++cut) {
+			auto truncated = bytes;
+			truncated.resize(cut);
+			rejects([&] { xl_compat::inspect_level(truncated); });
+		}
+		for (const auto range : { std::array<int, 4>{ -1, 0, 1, 0 }, { 0, 0, 6, 0 }, { 0, 0, 1, 5 } }) {
+			const auto invalid = xl_test::changing_light_tables(fixture(version), { range }, deltas);
+			rejects([&] { xl_compat::inspect_level(invalid); });
+		}
+	}
+	std::cout << "Six-layout invalid delta validity, exact raw-row retention and structural bounds passed\n";
 }
 
 void owned_light_contract()
@@ -1519,6 +1545,7 @@ int main(int argc, char **argv)
 		version_34_contract();
 		segment_flags_contract();
 		light_count_contract();
+		invalid_light_row_contract();
 		owned_light_contract();
 		owned_flicker_contract();
 		const auto bytes = fixture();

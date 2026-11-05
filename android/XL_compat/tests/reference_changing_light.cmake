@@ -12,6 +12,7 @@ foreach(
     endif()
 endforeach()
 set(extracted "// Actual pinned XL light lookup, UVL application and segment attenuation\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/lighting/light.cpp" "void CLightDelta::Read (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/lighting/light.cpp" "int32_t FindDLIndex (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/lighting/light.cpp" "void ChangeLight (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/lighting/light.cpp"

@@ -1052,12 +1052,12 @@ class RetailProfileTests(unittest.TestCase):
         )
 
     def test_xl_owners_share_strict_membership_and_preserve_safe_counts(self):
-        from run_xl_originals import CORE_TESTS, FAST_TESTS
+        from run_xl_originals import CORE_TESTS, HISTORICAL_FAST_TESTS, REVIEWED_FAST_TESTS
 
         for fast, required in (
             (False, CORE_TESTS),
-            (True, FAST_TESTS),
-            (True, FAST_TESTS | {"xl_changing_lights_invalid_rows", "xl_flickers_invalid_rows"}),
+            (True, HISTORICAL_FAST_TESTS),
+            (True, REVIEWED_FAST_TESTS),
         ):
             profile = "retail-xl-fast" if fast else "retail-xl-originals"
             summary = {

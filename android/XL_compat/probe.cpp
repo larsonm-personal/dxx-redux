@@ -62,6 +62,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	require(blockers.empty(), blocker_message(blockers));
 	const auto producers = producer_layout(v);
 	if (!source_runtime) {
+		require(std::all_of(v.delta_lights.begin(), v.delta_lights.end(), [&](const auto &row) { return valid_light_delta(v, row); }), "invalid light targets require the source-owned XL runtime");
 		require(std::none_of(v.objects.begin(), v.objects.end(), authored_particle_shape), "particle objects require the source-owned XL runtime");
 		require(std::none_of(v.objects.begin(), v.objects.end(), authored_lightning_shape), "lightning objects require the source-owned XL runtime");
 		require(std::none_of(v.objects.begin(), v.objects.end(), ambient_sound_shape), "ambient sound objects require the source-owned XL runtime");

@@ -15,7 +15,7 @@ void require_owned_light_records(const xl_compat::Inventory &source)
 	for (int i = 0; i < xl_light_delta_count(); ++i) {
 		xl_light_delta actual{};
 		const auto &expected = source.delta_lights[i];
-		require(xl_light_delta_get(i, &actual) && actual.segment == expected[0] && actual.side == expected[1], "Owned XL delta target differs");
+		require(xl_light_delta_get(i, &actual) && actual.segment == expected[0] && actual.side == expected[1] && actual.valid == xl_compat::valid_light_delta(source, expected), "Owned XL delta target or validity differs");
 		for (int corner = 0; corner < 4; ++corner)
 			require(actual.light[corner] == expected[corner + 3], "Owned XL delta contribution differs");
 	}
