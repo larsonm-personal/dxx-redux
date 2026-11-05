@@ -1,7 +1,8 @@
 # Pull request checks
 
 `Engine smoke` runs on every PR and can also be dispatched manually. Two
-independent Ubuntu 24.04 jobs build D1 and D2 in parallel. Each job has a
+Ubuntu 24.04 jobs build D1 and D2 in parallel for independent PRs and native
+stack tips. Lightweight policy and runner checks run on every PR. Each build job has a
 45-minute ceiling, including up to 15 minutes for dependency installation. Superseded runs cancel
 automatically. There is no second copy triggered by pushing the PR branch
 
@@ -333,3 +334,61 @@ or trust-store modifications are part of these recipes
 The Linux supervisor requires `/proc/self/task/<pid>/children` and has no supported
 opt-out. Direct CMake/CTest remains useful if that interface is missing, but full
 tooling/launcher qualification requires an execution environment exposing it
+
+## Native pull request stacks
+
+Expensive native builds, sanitizers, save/replay jobs, public LAN, extended
+Android/JVM/host samples, and private XL qualification run for independent PRs
+and native stack tips. Only validated native metadata with `position < size`
+suppresses coverage; branch names and ancestry never determine membership
+
+The read-only gate queries current public PR metadata (REST API version
+`2026-03-10`) even when the original event had no stack. API errors, missing or
+malformed metadata retain coverage. It uses no credentials and adds no token
+permissions. Private XL admission still verifies its existing provenance before
+checking eligibility; trusted controller code is checked out at `workflow_sha`
+
+Tooling, asset-free XL contracts, Rust checks, and the CI policy/build-runner
+checks remain per PR under their existing path policies. Rust change detection
+uses `stack.base.sha` for the full stack diff. Extended samples start on every
+PR event and perform their standalone path selection in the gate (including
+renames and conservative fallback on truncated comparisons). Native tips get
+the complete sample, so changes in earlier layers cannot be hidden by the
+immediate parent's diff. Push, manual, schedule and reusable non-PR invocations
+retain their behavior. No workflow currently subscribes to `merge_group`; the
+gate allows that event if merge queue coverage is added later
+
+Public save/replay stages refresh eligibility after the build, and LAN/extended
+execution refreshes after planning. A successor created before those refreshes
+causes remaining jobs to be **skipped**, not reported as tested. Existing job
+names remain stable; summaries distinguish policy omission from test success
+and failed/cancelled test jobs still reach their result checks. No branch
+protection settings are changed. GitHub accepts skipped jobs for required
+checks; requiring these names alone does not prove every lower layer was tested
+independently. The tip validates the combined stack
+
+There is no immediate cancellation of already admitted, queued or running test
+jobs, including private XL work admitted before demotion. Their next public
+stage gate can skip later work, but a metadata check is only a snapshot. Private
+XL decides before posting its pending status; once admitted it finishes and
+reports the real result. A skipped admission posts no success or pending status
+and never overwrites an earlier failure
+
+GitHub documents a `stacked` webhook action, but that does not establish an
+Actions trigger on an unchanged former tip. No unverified event or cross-PR
+cancellation group is used. Immediate interruption would require a supported
+trusted lifecycle controller with fresh membership checks, narrowly scoped
+Actions write permission and race-safe run targeting; it must preserve cheap
+checks and existing failures. If stack changes alone do not start a newly
+eligible tip, rerun its PR workflows (manual dispatch intentionally runs full
+coverage regardless of membership)
+
+References: [native stack CI](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/optimizing-ci-for-stacked-pull-requests),
+[stack REST API](https://docs.github.com/en/rest/pulls/stacks?apiVersion=2026-03-10),
+[stack lifecycle webhook](https://github.blog/changelog/2026-10-06-stacked-pull-requests-generally-available/),
+[Actions events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)
+
+Local policy regression: `python3 .github/scripts/test_stack_ci.py`. It exercises
+native positions, live demotion/promotion, standalone-to-stack transitions,
+API uncertainty, full-stack selection and private status omission without
+network calls or credentials. Run `actionlint` for workflow expression validation

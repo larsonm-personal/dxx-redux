@@ -23,6 +23,7 @@ on:
       - "d1/main/bmread.c"
       - "d2/main/bmread.c"
       - ".github/workflows/**"
+      - ".github/scripts/**"
 
 permissions:
   contents: read

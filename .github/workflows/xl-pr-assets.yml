@@ -30,6 +30,7 @@ jobs:
       pull-requests: read
       statuses: write
     outputs:
+      eligible: ${{ steps.admit.outputs.eligible }}
       sha: ${{ steps.admit.outputs.sha }}
       number: ${{ steps.admit.outputs.number }}
     steps:
@@ -46,6 +47,7 @@ jobs:
   smoke:
     name: Original XL asset load and navigation
     needs: admit
+    if: needs.admit.outputs.eligible == 'true'
     # The reusable workflow declares a ledger publisher; it is disabled for workflow_run
     # Executing plan/host jobs explicitly reduce this ceiling to contents: read
     permissions:
@@ -65,7 +67,7 @@ jobs:
   report:
     name: Publish exact-head XL asset result
     needs: [admit, smoke]
-    if: always() && needs.admit.result == 'success'
+    if: always() && needs.admit.result == 'success' && needs.admit.outputs.eligible == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -95,6 +97,7 @@ jobs:
   readiness:
     name: Measure D2X readiness on fixed uploaded sample
     needs: admit
+    if: needs.admit.outputs.eligible == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: retail-ci
@@ -182,7 +185,7 @@ jobs:
   readiness-report:
     name: D2X readiness percentage (sampled load/tick)
     needs: [admit, readiness]
-    if: always() && needs.admit.result == 'success'
+    if: always() && needs.admit.result == 'success' && needs.admit.outputs.eligible == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:

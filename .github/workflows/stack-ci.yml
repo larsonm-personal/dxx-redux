@@ -1,0 +1,33 @@
+name: Native stack CI eligibility
+
+on:
+  workflow_call:
+    inputs:
+      profile:
+        description: Optional standalone PR path selection (extended)
+        type: string
+        default: ""
+    outputs:
+      run:
+        description: Expensive jobs should run
+        value: ${{ jobs.check.outputs.run }}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    outputs:
+      run: ${{ steps.stack.outputs.run }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - id: stack
+        env:
+          STACK_CI_PROFILE: ${{ inputs.profile }}
+        run: python3 .github/scripts/stack_ci.py

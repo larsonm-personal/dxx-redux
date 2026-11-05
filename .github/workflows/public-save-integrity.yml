@@ -12,7 +12,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  stack:
+    uses: ./.github/workflows/stack-ci.yml
+
   build-public:
+    needs: stack
+    if: needs.stack.outputs.run == 'true'
     name: Linux public build and save integrity
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -384,10 +389,15 @@ jobs:
           retention-days: 3
           if-no-files-found: ignore
 
+  replay-stack:
+    needs: build-public
+    uses: ./.github/workflows/stack-ci.yml
+
   save-integrity:
     name: Linux public native save and replay integrity
     timeout-minutes: 105
-    needs: build-public
+    needs: [build-public, replay-stack]
+    if: needs.replay-stack.outputs.run == 'true'
     runs-on: ubuntu-24.04
     env:
       SDL_AUDIODRIVER: dummy
@@ -512,7 +522,8 @@ jobs:
   headed-replay:
     name: Linux public headed replay parity
     timeout-minutes: 135
-    needs: build-public
+    needs: [build-public, replay-stack]
+    if: needs.replay-stack.outputs.run == 'true'
     runs-on: ubuntu-24.04
     env:
       SDL_AUDIODRIVER: dummy

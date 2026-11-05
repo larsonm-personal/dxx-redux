@@ -8,20 +8,6 @@ on:
       timezone: America/Los_Angeles
   pull_request:
     types: [opened, synchronize, reopened, labeled]
-    paths:
-      - ".github/workflows/*nightly*"
-      - "android/tests/*nightly*"
-      - "android/tests/*host_test_suites*"
-      - "android/run_all_tests.ps1"
-      - "android/helpers/nightly_public_fixture_policy.ps1"
-      - "d[12]/main/net*"
-      - "d[12]/main/multi*"
-      - "android/app/src/main/cpp/shared/net/**"
-      - "android/app/src/main/cpp/shared/coop/**"
-      - "android/app/src/main/cpp/shared/android_network_profile.*"
-      - "android/app/src/main/java/com/dxxredux/app/lobby/**"
-      - "android/app/src/main/java/com/dxxredux/app/multiplayer/**"
-      - "android/tests/test_lan*"
   workflow_dispatch:
     inputs:
       campaign:
@@ -91,6 +77,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  stack:
+    uses: ./.github/workflows/stack-ci.yml
+    with:
+      profile: extended
+
   online_evidence:
     if: github.event_name == 'workflow_dispatch' && inputs.evidence_run_id != ''
     name: Inspect retained online receipt
@@ -201,7 +192,8 @@ jobs:
           PYTHON
 
   plan:
-    if: ${{ !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'release-first-play') }}
+    needs: stack
+    if: ${{ needs.stack.outputs.run == 'true' && !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'release-first-play') }}
     name: Select tests
     permissions:
       contents: read
@@ -327,8 +319,8 @@ jobs:
 
   host:
     name: Linux tests
-    needs: plan
-    if: contains(fromJSON(needs.plan.outputs.lanes), 'host')
+    needs: [plan, execution-stack]
+    if: needs.execution-stack.outputs.run == 'true' && contains(fromJSON(needs.plan.outputs.lanes), 'host')
     runs-on: ubuntu-24.04
     timeout-minutes: 100
     permissions:
@@ -507,10 +499,14 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
 
+  execution-stack:
+    needs: plan
+    uses: ./.github/workflows/stack-ci.yml
+
   android:
     name: ${{ matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests' }}
-    needs: plan
-    if: needs.plan.outputs.android_lanes != '[]'
+    needs: [plan, execution-stack]
+    if: needs.execution-stack.outputs.run == 'true' && needs.plan.outputs.android_lanes != '[]'
     strategy:
       fail-fast: false
       max-parallel: 3 # Plus the separate host executor: at most four test lanes.
@@ -529,8 +525,8 @@ jobs:
 
   finish:
     name: Check results
-    needs: [plan, host, android]
-    if: always() && needs.plan.result == 'success'
+    needs: [plan, execution-stack, host, android]
+    if: always() && needs.plan.result == 'success' && (needs.execution-stack.outputs.run != 'false' || needs.host.result == 'failure' || needs.host.result == 'cancelled' || needs.android.result == 'failure' || needs.android.result == 'cancelled')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
