@@ -48,7 +48,27 @@ int main(int argc, char **argv)
 		      "OOF decoder lost authored geometry/material data");
 		for (std::size_t size = 0; size < bytes.size(); ++size)
 			check(rejected(Bytes(bytes.begin(), bytes.begin() + size)), "Truncated OOF was accepted");
-		check(rejected(fixture(1)) && rejected(fixture(-1, 3)) && rejected(fixture(-1, 2, 1)), "Invalid OOF references accepted");
+		check(rejected(fixture(-2)) && rejected(fixture(1)) && rejected(fixture(-1, 3)) && rejected(fixture(-1, 2, 1)), "Invalid OOF references accepted");
+		{
+			// Two distinct submodels pointing at each other remain invalid
+			const auto cyclic_part = fixture(1, 2, 0, "", 1, 1);
+			Bytes cyclic(cyclic_part.begin(), cyclic_part.begin() + 8);
+			xl_compat::oof_detail::Reader records(cyclic_part.data() + 8, cyclic_part.size() - 8);
+			while (records.remaining()) {
+				const std::string tag(reinterpret_cast<const char *>(records.take(4)), 4);
+				const auto size = records.count(1024 * 1024);
+				const auto *data = records.take(size);
+				Bytes payload(data, data + size);
+				if (tag == "OHDR") patch32(payload, 0, 2);
+				chunk(cyclic, tag.c_str(), payload);
+				if (tag == "SOBJ") {
+					patch32(payload, 0, 1);
+					patch32(payload, 4, 0);
+					chunk(cyclic, tag.c_str(), payload);
+				}
+			}
+			check(rejected(cyclic), "Cyclic OOF parents accepted");
+		}
 		auto static_model = model;
 		static_model.submodels.at(0).properties.clear();
 		const auto mesh = xl_compat::compile_oof_mesh(static_model, true);

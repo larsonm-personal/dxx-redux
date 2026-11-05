@@ -199,6 +199,7 @@ struct CModel {
 	Array<CSubModel> m_subModels;
 	V3 m_vMin, m_vMax;
 	void GetSubModelBounds(CSubModel *, V3);
+	void AssignChildren();
 	int m_bCloaked = 0, m_nCloakPulse = 0, m_nCloakChangedTime = 0;
 	float m_fAlpha = 1;
 	int32_t Render(CObject *, float *, int32_t);
@@ -307,11 +308,7 @@ Snapshot compare(const xl_compat::OofModel &decoded, int tick = 0)
 			s.m_vMax.v.coord.y = std::max(s.m_vMax.v.coord.y, v[1]);
 			s.m_vMax.v.coord.z = std::max(s.m_vMax.v.coord.z, v[2]);
 		}
-		for (const auto &child : decoded.submodels)
-			if (child.second.parent == entry.first && child.first != entry.first) {
-				s.m_children.push_back(child.first);
-				++s.m_nChildren;
-			}
+		s.m_children.resize(source.m_nSubModels);
 		s.m_nVerts = p.vertices.size();
 		s.m_rotVerts.resize(p.vertices.size());
 		vertices += p.vertices.size();
@@ -336,6 +333,8 @@ Snapshot compare(const xl_compat::OofModel &decoded, int tick = 0)
 			faceverts += f.corners.size();
 		}
 	}
+	// Execute the pinned loader hierarchy setup, including self-parent roots
+	source.AssignChildren();
 	gameStates.app.nSDLTicks[0] = tick;
 	CObject object;
 	float light = 1;
@@ -425,7 +424,7 @@ Snapshot compare(const xl_compat::OofModel &decoded, int tick = 0)
 	std::size_t face_index = 0;
 	for (const auto &entry : decoded.submodels) {
 		const auto &part = entry.second;
-		if (converted.m_subModels.at(entry.first).m_nParent != part.parent) throw std::runtime_error("Converted hierarchy differs");
+		if (converted.m_subModels.at(entry.first).m_nParent != source.m_subModels.at(entry.first).m_nParent) throw std::runtime_error("Converted hierarchy differs");
 		for (const auto &face : part.faces) {
 			const auto &output = mesh.faces.at(face_index++);
 			std::size_t triangle = 0;
@@ -448,7 +447,13 @@ int main(int argc, char **argv)
 		std::vector<std::vector<uint8_t>> inputs;
 		const bool require_normal_parity = argc > 1 && std::string(argv[1]) == "--require-normal-parity";
 		const int first_input = require_normal_parity ? 2 : 1;
-		if (argc == first_input) inputs.push_back(xl_oof_test::metadata_fixture());
+		if (argc == first_input) {
+			inputs.push_back(xl_oof_test::metadata_fixture());
+			auto self_parent = xl_oof_test::fixture(0, 2, 0, "", 1, 1);
+			xl_oof_test::chunk(self_parent, "SPCL", xl_oof_test::special_points());
+			xl_oof_test::chunk(self_parent, "RANI", xl_oof_test::rotation_tracks());
+			inputs.push_back(self_parent);
+		}
 		for (int i = first_input; i < argc; ++i) {
 			std::ifstream f(argv[i], std::ios::binary);
 			if (!f) throw std::runtime_error("Missing model");

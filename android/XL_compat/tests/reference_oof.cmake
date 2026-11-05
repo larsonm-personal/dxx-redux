@@ -1,7 +1,4 @@
-file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/models/oofread.cpp" oof_reader_hash)
-if(NOT oof_reader_hash STREQUAL "97cc190e8d901d8ce49be52464727801caf2aab8c958916fa3903e369794a91d")
-    message(FATAL_ERROR "OOF reader reference changed")
-endif()
+include("${CMAKE_CURRENT_LIST_DIR}/reference_oof_pins.cmake")
 set(extracted "// Pinned OOF timed and special-point readers\n")
 foreach(
     signature IN
@@ -23,13 +20,6 @@ target_include_directories(xl_oof_metadata_reference PRIVATE "${CMAKE_CURRENT_BI
 target_compile_features(xl_oof_metadata_reference PRIVATE cxx_std_17)
 add_test(NAME xl_oof_metadata_reference COMMAND xl_oof_metadata_reference)
 
-file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/render/oofrender.cpp" oof_render_hash)
-file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/3d/oof2model.cpp" oof_converter_hash)
-if(NOT oof_render_hash STREQUAL "97bdbddd6771e5ed55014fba48e13945591fe044e326ab153c1c038d74168e26"
-   OR NOT oof_converter_hash STREQUAL
-      "aee6218b50428f975cd7b551a5cd749cb74bab421bf491e2c853ecdea62160e0")
-    message(FATAL_ERROR "OOF render reference changed")
-endif()
 set(extracted "// Pinned optimized OOF converter\n")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/3d/oof2model.cpp"
                       "void CModel::GetOOFModelItems (")
@@ -42,9 +32,18 @@ foreach(signature IN ITEMS "void CSubModel::Transform (" "int32_t CSubModel::Ren
     extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/oofrender.cpp" "${signature}")
 endforeach()
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/models/oofread.cpp"
+                      "void CModel::AssignChildren (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/models/oofread.cpp"
                       "void CModel::GetSubModelBounds (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/oof_direct_source.h" CONTENT "${extracted}")
 add_executable(xl_oof_render_reference tests/reference_oof_render.cpp)
 target_include_directories(xl_oof_render_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_compile_features(xl_oof_render_reference PRIVATE cxx_std_17)
 add_test(NAME xl_oof_render_reference COMMAND xl_oof_render_reference)
+
+add_test(
+    NAME xl_oof_source_pins
+    COMMAND
+        ${CMAKE_COMMAND} -DREFERENCE=${XL_REFERENCE_GEOMETRY_ROOT}
+        -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/oof-source-pins -P
+        ${CMAKE_CURRENT_LIST_DIR}/reference_oof_pins_test.cmake)

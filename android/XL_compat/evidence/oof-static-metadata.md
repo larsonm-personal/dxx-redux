@@ -14,6 +14,7 @@ The CMake oracle pins hashes before extracting these actual source functions:
 
 - `models/oofread.cpp:235`: timed frame information; `:256` rotation frame;
   `:306` rotation records; `:456` special point; `:478` special list
+- `models/oofread.cpp:1405`: `AssignChildren`, including self-parent root normalization
 - `models/oofread.cpp:1530`: static hierarchy bounds
 - `render/oofrender.cpp:532`: vertex transform; `:573` submodel rendering;
   `:601` draw; `:651` model rendering and clock handling
@@ -91,3 +92,35 @@ also pass ASan/UBSan (leak detection disabled in this environment). Scoped
 quality and automation catalog validation pass. Catalog invocation is blocked
 with exit 125 by the existing Linux supervisor's unavailable
 `/proc/self/task/<pid>/children`; no checks or time limits were relaxed.
+
+## Exact line-ending pins
+
+The supported `reference_sources.py` checkout explicitly sets
+`core.autocrlf=true`; existing broader oracles still require those CRLF working
+bytes. This narrow follow-up does not change that setup or those validators.
+The three OOF files now accept exactly two raw SHA-256 values each: the pinned
+Git blob (LF) and its byte-for-byte CRLF conversion. No content is normalized
+before hashing; mixed endings, BOMs, truncations and other edits are rejected.
+The full constants are in `tests/reference_oof_pins.cmake`, derived directly
+from Git revision `2576a98b5de310e3ac7c9777df2677d1627b8bae` and verified against
+the supported CRLF checkout. This does not make the broader reference suite
+accept an entirely LF checkout.
+
+`xl_oof_source_pins` exercises both equivalent representations and rejects edits,
+wrong source, truncation, mixed endings and BOMs independently for all three
+files. This adds a standalone source-pin control without altering the trusted
+original-witness cohort or its receipt counts.
+
+The render oracle now executes pinned `AssignChildren` instead of approximating
+its hierarchy setup. A valid opaque, property-free self-parent root fixture
+reproduced the previous adapter-only bounds failure and now participates in
+the complete authored-RANI/time-variation comparisons. Invalid parent indices
+and a two-submodel cycle remain rejected; production geometry is unchanged.
+
+Follow-up validation: all 44 standalone/reference CTests pass with the supported
+CRLF checkout; all four OOF controls pass with only the three OOF files replaced
+by their exact upstream LF blobs. All three extracted oracle headers are
+byte-identical between setups. Both unchanged original models pass reader and
+render/time-variation comparisons in both setups, and the explicit normal-parity
+diagnostic remains failing. Each pin-control run verifies four positive outcomes
+and 30 hash-guard rejections. Updated decoder controls pass ASan/UBSan.
