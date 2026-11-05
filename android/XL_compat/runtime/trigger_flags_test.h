@@ -219,6 +219,30 @@ static int trigger_flags_test(int argc, char **argv)
 		front.children[side] = -1;
 		require(fire(5) == 0 && fire(3) == 0, "exterior XL toggle failed");
 		front.children[side] = child;
+		// Reference DoChangeWalls ignores absent targets without losing later valid links
+		const int front_wall = front.sides[side].wall_num;
+		front.sides[side].wall_num = -1;
+		for (int type : { TT_OPEN_WALL, TT_CLOSE_WALL, TT_ILLUSORY_WALL }) {
+			trigger action{};
+			action.type = type;
+			action.num_links = 1;
+			action.seg[0] = Walls[2].segnum;
+			action.side[0] = side;
+			const int wanted = type == TT_OPEN_WALL ? WALL_OPEN : type == TT_CLOSE_WALL ? WALL_CLOSED
+			                                                                            : WALL_ILLUSION;
+			Walls[0].type = Walls[1].type = wanted == WALL_OPEN ? WALL_CLOSED : WALL_OPEN;
+			const int unchanged = Walls[0].type;
+			Triggers[0] = action;
+			require(fire(0) == 0 && Walls[0].type == unchanged && Walls[1].type == unchanged,
+			        "absent-only XL wall action changed state");
+			action.num_links = 2;
+			action.seg[1] = Walls[0].segnum;
+			action.side[1] = Walls[0].sidenum;
+			Triggers[0] = action;
+			require(fire(0) == 0 && Walls[0].type == wanted && Walls[1].type == wanted,
+			        "absent XL wall target lost a later valid link");
+		}
+		front.sides[side].wall_num = front_wall;
 		std::cout << "XL trigger flag controls passed\n";
 		return 0;
 	} catch (const std::exception &error) {

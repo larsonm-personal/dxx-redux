@@ -267,6 +267,11 @@ int do_change_walls(const trigger *trig)
 			segp = &Segments[trig->seg[i]];
 			side = trig->side[i];
 			input_demo_log_trigger_probe("change_link_before", segp, side, -1, 0, trigger_num);
+#ifdef DXX_XL_RUNTIME
+			/* XL DoChangeWalls skips an absent wall and continues with later links */
+			if (xl_level_extensions_active() && segp->sides[side].wall_num == -1)
+				continue;
+#endif
 
 			if (segp->children[side] < 0)
 			{
