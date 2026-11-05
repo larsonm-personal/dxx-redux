@@ -4,6 +4,7 @@
 #include "trigger_capacity_fixture.h"
 #include "runtime_layout_fixture.h"
 #include "hog_fixture.h"
+#include "oof_fixture.h"
 #include "../admission.h"
 #include <fstream>
 #include <filesystem>
@@ -85,6 +86,22 @@ inline void write_countdown_fixture(const std::filesystem::path &original, const
 			if (ext != ".rl2" && ext != ".mn2") hog_member(output, name + ext, member.bytes, false);
 		}
 	}
+	// Explicitly synthetic owned-model control, never an original mission asset
+	const auto models = directory.parent_path() / "mods/xcount/models";
+	std::filesystem::create_directories(models);
+	const auto model = xl_oof_test::metadata_fixture();
+	std::ofstream model_file(models / "model132.oof", std::ios::binary);
+	model_file.write(reinterpret_cast<const char *>(model.data()), std::streamsize(model.size()));
+	std::vector<unsigned char> skin(18, 0);
+	skin[2] = 2;
+	skin[12] = 2;
+	skin[14] = 2;
+	skin[16] = 32;
+	skin[17] = 0x28;
+	skin.resize(34, 255);
+	std::ofstream skin_file(models / "owned-skin.tga", std::ios::binary);
+	skin_file.write(reinterpret_cast<const char *>(skin.data()), std::streamsize(skin.size()));
+	if (!model_file || !skin_file) throw std::runtime_error("Cannot write synthetic OOF control resources");
 	std::filesystem::create_directories(directory);
 	std::ofstream hog(directory / "xcount.hog", std::ios::binary);
 	hog.write(reinterpret_cast<const char *>(output.data()), std::streamsize(output.size()));

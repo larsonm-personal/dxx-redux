@@ -24,87 +24,9 @@ static void check(bool value, const char *message)
 {
 	if (!value) throw std::runtime_error(message);
 }
-static void integer(Bytes &out, uint32_t value)
-{
-	for (int i = 0; i < 4; ++i) out.push_back(uint8_t(value >> (i * 8)));
-}
-static void real(Bytes &out, float value)
-{
-	uint32_t bits;
-	std::memcpy(&bits, &value, 4);
-	integer(out, bits);
-}
-static void vector(Bytes &out, float x = 0, float y = 0, float z = 0)
-{
-	real(out, x);
-	real(out, y);
-	real(out, z);
-}
-static void string(Bytes &out, const std::string &value)
-{
-	integer(out, uint32_t(value.size()));
-	out.insert(out.end(), value.begin(), value.end());
-}
-static void chunk(Bytes &out, const char *type, const Bytes &payload)
-{
-	out.insert(out.end(), type, type + 4);
-	integer(out, uint32_t(payload.size()));
-	out.insert(out.end(), payload.begin(), payload.end());
-}
-static Bytes fixture(int parent = -1, int vertex = 2, int texture = 0)
-{
-	Bytes result{ 'P', 'S', 'P', 'O' };
-	integer(result, 2300);
-	Bytes textures;
-	integer(textures, 1);
-	string(textures, "owned-skin");
-	chunk(result, "TXTR", textures);
-	Bytes header;
-	integer(header, 1);
-	real(header, 2);
-	vector(header);
-	vector(header, 1, 1, 0);
-	integer(header, 0);
-	chunk(result, "OHDR", header);
-	Bytes object;
-	integer(object, 0);
-	integer(object, uint32_t(parent));
-	vector(object, 0, 0, 1);
-	real(object, 0);
-	vector(object);
-	vector(object, 2, 3, 4);
-	real(object, 2);
-	integer(object, 0);
-	integer(object, 0);
-	vector(object);
-	string(object, "root");
-	string(object, "$facing");
-	integer(object, 0);
-	integer(object, 0);
-	integer(object, 0);
-	integer(object, 3);
-	vector(object);
-	vector(object, 1, 0, 0);
-	vector(object, 0, 1, 0);
-	for (int i = 0; i < 3; ++i) vector(object, 0, 0, 1);
-	real(object, 1);
-	real(object, 0.5f);
-	real(object, 0);
-	integer(object, 1);
-	vector(object, 0, 0, 1);
-	integer(object, 3);
-	integer(object, 1);
-	integer(object, uint32_t(texture));
-	for (int i : { 0, 1, vertex }) {
-		integer(object, uint32_t(i));
-		real(object, float(i));
-		real(object, float(i) / 2);
-	}
-	real(object, 1);
-	real(object, 1);
-	chunk(result, "SOBJ", object);
-	return result;
-}
+#include "oof_fixture.h"
+#include "oof_metadata_controls.h"
+using namespace xl_oof_test;
 static bool rejected(const Bytes &bytes)
 {
 	try {
@@ -117,6 +39,7 @@ static bool rejected(const Bytes &bytes)
 int main(int argc, char **argv)
 {
 	try {
+		metadata_controls();
 		const auto bytes = fixture();
 		const auto model = xl_compat::read_oof(bytes);
 		const auto &part = model.submodels.at(0);

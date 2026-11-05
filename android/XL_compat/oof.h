@@ -44,6 +44,19 @@ struct OofChunk {
 	std::string type;
 	std::vector<uint8_t> bytes;
 };
+struct OofSpecialPoint {
+	std::string name, properties;
+	OofVector position{};
+	float radius = 0;
+};
+struct OofRotationFrame {
+	int start = 0, angle = 0;
+	OofVector axis{}, normalized_axis{};
+};
+struct OofRotationTrack {
+	int first = 0, last = 0;
+	std::vector<OofRotationFrame> frames;
+};
 struct OofModel {
 	int version = 0;
 	float radius = 0;
@@ -51,8 +64,11 @@ struct OofModel {
 	std::vector<int> detail_levels;
 	std::vector<std::string> textures;
 	std::map<int, OofSubmodel> submodels;
-	// Animation, attachment and other records remain explicit until their consumers support them
+	// Preserve raw extension bytes even when typed metadata is qualified
 	std::vector<OofChunk> additional_chunks;
+	bool has_special_points = false, has_rotation_tracks = false;
+	std::vector<OofSpecialPoint> special_points;
+	std::vector<OofRotationTrack> rotation_tracks;
 };
 
 namespace oof_detail
@@ -106,6 +122,19 @@ class Reader
 		std::string result(reinterpret_cast<const char *>(p), std::size_t(length));
 		if (!result.empty() && result.back() == '\0') result.pop_back();
 		if (result.find('\0') != std::string::npos) throw std::runtime_error("Embedded NUL in OOF string");
+		return result;
+	}
+	// Metadata uses source C strings with optional zero padding; resource names stay strict
+	std::string metadata_string()
+	{
+		const auto length = count(4096);
+		const auto *p = take(std::size_t(length));
+		std::string result(reinterpret_cast<const char *>(p), std::size_t(length));
+		const auto nul = result.find('\0');
+		if (nul != std::string::npos) {
+			if (result.find_first_not_of('\0', nul) != std::string::npos) throw std::runtime_error("Nonzero OOF metadata string padding");
+			result.resize(nul);
+		}
 		return result;
 	}
 	void end()
@@ -203,6 +232,56 @@ inline OofModel read_oof(const std::vector<uint8_t> &bytes)
 		} else model.additional_chunks.push_back({ type, { data, data + length } });
 	}
 	if (!textures || submodels < 1 || model.submodels.size() != std::size_t(submodels)) throw std::runtime_error("Incomplete OOF model");
+	// Version 2300 uses timed RANI. These records are retained, not animated: the
+	// pinned static OOF render paths do not consume their frame matrices or tick maps
+	for (const auto &chunk : model.additional_chunks) {
+		oof_detail::Reader r(chunk.bytes.data(), chunk.bytes.size());
+		if (chunk.type == "SPCL") {
+			if (model.has_special_points) throw std::runtime_error("Duplicate OOF special points");
+			model.has_special_points = true;
+			for (int n = r.count(4096); n; --n) {
+				OofSpecialPoint point;
+				point.name = r.metadata_string();
+				point.properties = r.metadata_string();
+				point.position = r.vector();
+				point.radius = r.real();
+				if (point.radius < 0) throw std::runtime_error("Negative OOF special point radius");
+				model.special_points.push_back(std::move(point));
+			}
+			r.end();
+		} else if (chunk.type == "RANI") {
+			if (model.has_rotation_tracks) throw std::runtime_error("Duplicate OOF rotation tracks");
+			model.has_rotation_tracks = true;
+			std::size_t ticks = 0;
+			for (int part = 0; part < submodels; ++part) {
+				OofRotationTrack track;
+				const auto count = r.count(256);
+				track.first = r.integer();
+				track.last = r.integer();
+				const auto span = std::int64_t(track.last) - track.first + 1;
+				if (span < 1 || span > 1048576 || ticks + std::size_t(span) > 1048576) throw std::runtime_error("OOF rotation tick range exceeds bounds");
+				ticks += std::size_t(span);
+				int previous = track.first;
+				for (int i = 0; i < count; ++i) {
+					OofRotationFrame frame;
+					frame.start = r.integer();
+					frame.axis = r.vector();
+					frame.angle = r.integer();
+					if (frame.start < previous || frame.start > track.last) throw std::runtime_error("OOF rotation frame outside ordered range");
+					previous = frame.start;
+					const float magnitude = std::sqrt(frame.axis[0] * frame.axis[0] + frame.axis[1] * frame.axis[1] + frame.axis[2] * frame.axis[2]);
+					if (!std::isfinite(magnitude)) throw std::runtime_error("OOF rotation axis magnitude exceeds bounds");
+					frame.normalized_axis = frame.axis;
+					if (magnitude > 0)
+						for (auto &axis : frame.normalized_axis) axis /= magnitude;
+					track.frames.push_back(frame);
+				}
+				model.rotation_tracks.push_back(std::move(track));
+			}
+			r.end();
+		}
+	}
+
 	for (const auto &entry : model.submodels) {
 		const auto &submodel = entry.second;
 		if (entry.first >= submodels) throw std::runtime_error("OOF submodel index outside header range");

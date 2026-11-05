@@ -34,10 +34,16 @@ inline OofMesh compile_oof_mesh(const OofModel &model, bool flip_v)
 	mesh.high.fill(-(std::numeric_limits<float>::max)());
 	std::size_t vertex_budget = 1024 * 1024;
 	for (const auto &chunk : model.additional_chunks)
-		if (chunk.type != "PINF") throw std::runtime_error("OOF runtime does not support chunk " + chunk.type);
+		if (chunk.type != "PINF" && !(chunk.type == "SPCL" && model.has_special_points) &&
+		    !(chunk.type == "RANI" && model.has_rotation_tracks && model.rotation_tracks.size() == model.submodels.size()))
+			throw std::runtime_error("OOF runtime does not support chunk " + chunk.type);
 	bool points = false;
 	for (const auto &entry : model.submodels) {
 		const auto &part = entry.second;
+		// New metadata admission is limited to the opaque static reference profile
+		if ((model.has_special_points || model.has_rotation_tracks) &&
+		    std::any_of(part.alpha.begin(), part.alpha.end(), [](float value) { return value != 1.0f; }))
+			throw std::runtime_error("OOF metadata profile requires opaque vertex alpha");
 		if (!part.properties.empty() || !part.facing_lists.empty())
 			throw std::runtime_error("OOF runtime requires property/facing-list support for " + part.name);
 		OofVector offset{};
