@@ -1078,6 +1078,23 @@ class RetailProfileTests(unittest.TestCase):
             self.assertEqual("--fast" in calls[0], fast)
             self.assertEqual(receipt["xl_checks"]["required_passed"], len(required))
             self.assertEqual("experimental_acceptance" in receipt, not fast)
+            if fast:
+                import nightly_retail
+                from nightly_pr_candidate import positive_receipt
+
+                row = {**receipt, "id": "host-profile:retail-xl-fast"}
+                published = nightly_retail.public_receipt(
+                    {
+                        "schema": 1,
+                        "target_sha": "a" * 40,
+                        "catalog_hash": "test",
+                        "batch_id": "test",
+                        "lane": "host",
+                        "results": [row],
+                    }
+                )
+                self.assertEqual(published["results"][0]["xl_checks"]["required_tests"], sorted(required))
+                self.assertEqual(positive_receipt(published, "a" * 40), 800)
             for invalid in (
                 None,
                 {**summary, "required_passed": 40},

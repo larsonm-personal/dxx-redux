@@ -9,3 +9,11 @@
 The hosted artifact reports exit 0 followed by ValueError but omits the original
 receipt. The exact cohort mismatch is reproduced from pinned source, not claimed
 as recovered hosted receipt evidence.
+
+## Publisher follow-up
+
+- Carry exact reviewed test membership through sanitized public receipts
+- Require matching membership and counts at the final status publisher
+- Preserve both new native failure names in bounded diagnostics
+- Exercise adapter, sanitization and publisher together for both cohorts
+- Keep unsupported, incomplete and unsuccessful evidence rejected

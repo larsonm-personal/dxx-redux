@@ -306,6 +306,7 @@ class XlPrivateTests(unittest.TestCase):
 
     def test_controller_accepts_only_complete_reviewed_fast_cohorts(self):
         additions = {"xl_changing_lights_invalid_rows", "xl_flickers_invalid_rows"}
+        self.assertEqual(retail.safe_xl_native_failures(sorted(additions) + ["unknown"]), sorted(additions))
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "native.xml"
             for required in (runner.FAST_TESTS, runner.FAST_TESTS | additions):
@@ -328,6 +329,35 @@ class XlPrivateTests(unittest.TestCase):
                 self.assertEqual(
                     runner.validate_controller_summary(receipt, path, fast=True)["required_passed"], len(required)
                 )
+                from nightly_pr_candidate import positive_receipt
+
+                checks = runner.validate_controller_summary(receipt, path, fast=True)
+                row = {"id": "host-profile:retail-xl-fast", "status": "PASS", "xl_checks": checks}
+                clean = retail.public_diagnostics(row)
+                published = {"target_sha": "a" * 40, "results": [{**row, **clean}]}
+                self.assertEqual(clean["xl_checks"]["required_tests"], sorted(required))
+                self.assertEqual(positive_receipt(published, "a" * 40), 800)
+                for status in ("FAIL", "SKIP", "BLOCKED", "TIMEOUT"):
+                    with patch.dict(published["results"][0], {"status": status}), self.assertRaises(ValueError):
+                        positive_receipt(published, "a" * 40)
+                for change in (
+                    {"required_tests": sorted(required)[1:]},
+                    {"required_tests": sorted(required) + ["unknown"]},
+                    {"required_tests": sorted(required) + [sorted(required)[0]]},
+                    {"required_tests": None},
+                    {"required_tests": [None]},
+                    {"required_passed": 113 if len(required) == 111 else 111},
+                    {"required_passed": float(len(required))},
+                    *(
+                        {"required_tests": sorted(runner.FAST_TESTS | {name}), "required_passed": 112}
+                        for name in additions
+                    ),
+                ):
+                    changed = {**row, "xl_checks": {**checks, **change}}
+                    sanitized = retail.public_diagnostics(changed)
+                    self.assertNotIn("required_tests", sanitized.get("xl_checks", {}))
+                    with self.subTest(publisher=change), self.assertRaises(ValueError):
+                        positive_receipt({"target_sha": "a" * 40, "results": [{**changed, **sanitized}]}, "a" * 40)
                 if required != runner.FAST_TESTS:
                     with self.assertRaises(ValueError):
                         runner.validate_summary(receipt, fast=True)

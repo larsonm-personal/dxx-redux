@@ -154,6 +154,7 @@ FAST_TESTS = (CORE_TESTS - CAMPAIGN_TESTS) | {
 
 # Unfinished campaign acceptance: execution is required, success is not qualification.
 EXPERIMENTAL_TESTS = {"xl_level_two_keys"}
+REVIEWED_FAST_ADDITIONS = {"xl_changing_lights_invalid_rows", "xl_flickers_invalid_rows"}
 
 
 def validate_registration(listing, fast=False):
@@ -230,16 +231,25 @@ def validate_summary(receipt, fast=False):
     return _validate_summary(receipt, FAST_TESTS if fast else CORE_TESTS, fast)
 
 
+def reviewed_fast_cohort(receipt):
+    """Return only an exact reviewed cohort with its matching integer count."""
+    for required in (FAST_TESTS, FAST_TESTS | REVIEWED_FAST_ADDITIONS):
+        if (
+            receipt.get("required_tests") == sorted(required)
+            and type(receipt.get("required_passed")) is int
+            and receipt["required_passed"] == len(required)
+        ):
+            return required
+    raise ValueError("XL receipt does not identify a complete reviewed cohort")
+
+
 def validate_controller_summary(receipt, junit, fast=False):
     """Accept only reviewed complete cohorts, with native execution evidence."""
-    required = FAST_TESTS if fast else CORE_TESTS
-    if fast:
-        extended = FAST_TESTS | {"xl_changing_lights_invalid_rows", "xl_flickers_invalid_rows"}
-        if receipt.get("required_tests") == sorted(extended):
-            required = extended
+    required = reviewed_fast_cohort(receipt) if fast else CORE_TESTS
     result = _validate_summary(receipt, required, fast)
     if fast:
         require_junit(junit, required)
+        result["required_tests"] = sorted(required)
         cases = ET.parse(junit).getroot().findall(".//testcase")
         if any(case.get("status") != "run" for case in cases):
             raise ValueError("Required original XL result did not execute normally")

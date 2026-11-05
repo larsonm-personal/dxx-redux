@@ -102,7 +102,7 @@ def verify(target_sha=None, env=None, fetch=api, event=None):
 
 
 def positive_receipt(receipt, sha):
-    from run_xl_originals import FAST_TESTS
+    from run_xl_originals import reviewed_fast_cohort
 
     if not isinstance(receipt, dict):
         raise ValueError("Invalid XL receipt object")
@@ -113,14 +113,17 @@ def positive_receipt(receipt, sha):
     if not isinstance(row, dict) or not isinstance(row.get("xl_checks"), dict):
         raise ValueError("Invalid XL receipt checks")
     checks = row["xl_checks"]
+    reviewed_fast_cohort(checks)
     if not (
         row.get("id") == "host-profile:retail-xl-fast"
         and row.get("status") == "PASS"
-        and checks.get("required_passed") == len(FAST_TESTS)
+        and type(checks.get("format_witnesses")) is int
         and checks.get("format_witnesses") == 16
+        and type(checks.get("modern_source_levels")) is int
         and checks.get("modern_source_levels") == 3
         and type(checks.get("navigation_smoke_passed")) is int
         and checks["navigation_smoke_passed"] == 1
+        and type(checks.get("navigation_anchors_passed")) is int
         and checks.get("navigation_anchors_passed") == 4
         and type(checks.get("navigation_smoke_milliseconds")) is int
         and 0 <= checks["navigation_smoke_milliseconds"] <= 30000
