@@ -355,7 +355,8 @@ if(BUILD_TESTING)
                 -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
                 -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/modern-runtime-layouts
                 ${xl_layout_oracle_args} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/runtime_layouts.cmake)
-        set_tests_properties(xl_modern_runtime_layouts PROPERTIES TIMEOUT 120)
+        # Four complete layout/save/stock cycles, including the qualified 21/40 profile
+        set_tests_properties(xl_modern_runtime_layouts PROPERTIES TIMEOUT 170)
         add_test(
             NAME xl_neptune_native_layout
             COMMAND

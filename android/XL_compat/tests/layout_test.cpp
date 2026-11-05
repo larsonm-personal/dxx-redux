@@ -33,10 +33,10 @@ bool issue(const std::vector<xl_compat::Issue> &issues, const char *feature)
 void contract()
 {
 	int cases = 0;
-	for (int version : { 23, 25, 27 }) {
+	for (int version : { 21, 23, 25, 27 }) {
 		for (int producer : { -32768, -129, -128, -1, 0, 127, 128, 32767 }) {
-			if (version == 23 && (producer < -128 || producer > 127)) continue;
-			for (int shape = 0; shape < (version == 23 ? 1 : 3); ++shape) {
+			if (version < 25 && (producer < -128 || producer > 127)) continue;
+			for (int shape = 0; shape < (version < 25 ? 1 : 3); ++shape) {
 				const auto fixture = xl_test::layout_fixture(version, shape, producer, producer);
 				const auto parsed = xl_compat::inspect_level(fixture.bytes);
 				check(parsed.level_version == version && parsed.game_version == 40 && parsed.segments.size() == 1 && parsed.walls.size() == 1, "Modern layout header or section boundary changed");
@@ -92,7 +92,7 @@ void contract()
 			xl_test::layout_patch(truncated, cut + 71, static_cast<std::uint32_t>(fixture.walls + 25 - fixture.game + cut));
 			rejects(truncated, "truncated section");
 		}
-		for (int invalid : { 24, 26, 28 }) {
+		for (int invalid : { 20, 22, 24, 26, 28 }) {
 			auto bytes = fixture.bytes;
 			xl_test::layout_patch(bytes, 4, invalid);
 			rejects(bytes, "unsupported level version");
@@ -164,7 +164,7 @@ void write_fixture(const std::filesystem::path &directory)
 	std::filesystem::resize_file(directory / "oversized.rl2", padding);
 }
 
-void write_runtime_fixture(const std::filesystem::path &path, const std::filesystem::path &directory)
+void write_runtime_fixture(const std::filesystem::path &path, const std::filesystem::path &directory, bool include_v21 = false)
 {
 	std::ifstream input(path, std::ios::binary);
 	check(bool(input), "Cannot open runtime layout source");
@@ -190,9 +190,10 @@ void write_runtime_fixture(const std::filesystem::path &path, const std::filesys
 	xl_compat::Bytes output{ 'D', 'H', 'F' }, reader{ 'D', 'H', 'F' };
 	std::filesystem::create_directories(directory);
 	std::ofstream descriptor(directory / "rtlayout.mn2", std::ios::binary);
-	descriptor << "d2x-name = Derived XL layouts\nnum_levels = 4\nrt23.rl2\nrt25.rl2\nrt27.rl2\nfg27.rl2\n";
-	for (int version : { 23, 25, 27 }) {
-		auto fixture = version == 23 ? xl_test::RuntimeLayoutFixture{ base, {}, {}, 0 } : xl_test::runtime_layout_fixture(base, version);
+	descriptor << "d2x-name = Derived XL layouts\nnum_levels = " << (include_v21 ? "5\nrt21.rl2\n" : "4\n") << "rt23.rl2\nrt25.rl2\nrt27.rl2\nfg27.rl2\n";
+	for (int version : { 21, 23, 25, 27 }) {
+		if (version == 21 && !include_v21) continue;
+		auto fixture = version <= 23 ? xl_test::RuntimeLayoutFixture{ base, {}, {}, 0 } : xl_test::runtime_layout_fixture(base, version);
 		if (version >= 25) {
 			for (std::size_t i = 0; i < fixture.extras.size(); ++i) {
 				// Inert serialized fields must not alias a native station or robot maker
@@ -202,6 +203,10 @@ void write_runtime_fixture(const std::filesystem::path &path, const std::filesys
 				                      2);
 				xl_test::layout_patch(fixture.bytes, fixture.extras[i] + 3, i % 2 ? 32768 : 32767, 2);
 			}
+		}
+		if (version == 21) {
+			check(std::none_of(source.objects.begin(), source.objects.end(), [](const auto &object) { return object.render == 12; }), "v21 geometry source has version-dependent lightning payload");
+			xl_test::layout_patch(fixture.bytes, 4, 21);
 		}
 		const auto decoded = xl_compat::inspect_level(fixture.bytes);
 		check(xl_compat::runtime_blockers(decoded).empty(), "Derived canonical runtime fixture remains blocked");
@@ -217,7 +222,7 @@ void write_runtime_fixture(const std::filesystem::path &path, const std::filesys
 		}
 		xl_compat::Bytes lgt, clr;
 		for (int texture = 0; texture < 910; ++texture) {
-			xl_test::layout_put(lgt, texture == 302 ? (version - 22) * 16384 : 0, 4);
+			xl_test::layout_put(lgt, texture == 302 ? (version == 21 ? 1 : version - 22) * 16384 : 0, 4);
 			xl_test::layout_put(clr, 1, 1);
 			for (int channel : { 0, 0, 2147483647 }) xl_test::layout_put(clr, channel, 4);
 		}
@@ -246,13 +251,14 @@ void write_runtime_fixture(const std::filesystem::path &path, const std::filesys
 	std::ofstream oracle(directory / "runtime-reader.hog", std::ios::binary);
 	oracle.write(reinterpret_cast<const char *>(reader.data()), static_cast<std::streamsize>(reader.size()));
 	check(bool(hog) && bool(descriptor) && bool(oracle), "Cannot write derived runtime layout package");
-	std::cout << "Derived 23/25/27 canonical runtime package written; geometry unchanged, repair/property/light controls labeled\n";
+	std::cout << "Derived " << (include_v21 ? "21/23/25/27" : "23/25/27") << " canonical runtime package written; geometry unchanged, repair/property/light controls labeled\n";
 }
 } // namespace
 int main(int argc, char **argv)
 {
 	try {
 		if (argc == 4 && std::string(argv[1]) == "--runtime") write_runtime_fixture(argv[2], argv[3]);
+		else if (argc == 4 && std::string(argv[1]) == "--runtime-v21") write_runtime_fixture(argv[2], argv[3], true);
 		else if (argc == 3 && std::string(argv[1]) == "--write") write_fixture(argv[2]);
 		else if (argc == 3 && std::string(argv[1]) == "--age") std::filesystem::last_write_time(argv[2], std::filesystem::file_time_type::clock::now() - std::chrono::hours(24));
 		else {

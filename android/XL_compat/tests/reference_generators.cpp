@@ -470,14 +470,14 @@ int main(int argc, char **argv)
 		}
 		check(argc == 2, "requires generated fixture directory");
 		int cases = 0;
-		for (int version : { 15, 17, 23 }) {
+		for (int version : { 15, 17, 21, 23 }) {
 			std::ifstream input(std::filesystem::path(argv[1]) / ("generators-" + std::to_string(version) + ".rl2"), std::ios::binary);
 			xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
 			const auto original = xl_compat::inspect_level(bytes);
 			const auto properties = original.mine_offset + 5 + 8 * 12 + 5 * 176;
 			std::array<int, 3> order{ 0, 1, 2 };
 			do {
-				for (int i = 0; i < 3; ++i) bytes.at(properties + (i ? i + 1 : 0) * (version == 23 ? 13 : 8) + 1) = static_cast<unsigned char>(order[i]);
+				for (int i = 0; i < 3; ++i) bytes.at(properties + (i ? i + 1 : 0) * (version >= 21 ? 13 : 8) + 1) = static_cast<unsigned char>(order[i]);
 				const auto source = xl_compat::inspect_level(bytes);
 				gameData = {};
 				gameData.segData.nSegments = static_cast<int>(source.segments.size());
@@ -523,7 +523,7 @@ int main(int argc, char **argv)
 				++cases;
 			} while (std::next_permutation(order.begin(), order.end()));
 		}
-		std::cout << "Pinned generator initialization and assignment: " << cases << " three-layout/permutation cases matched\n";
+		std::cout << "Pinned generator initialization and assignment: " << cases << " four-layout/permutation cases matched\n";
 		return 0;
 	} catch (const std::exception &error) {
 		std::cerr << error.what() << '\n';

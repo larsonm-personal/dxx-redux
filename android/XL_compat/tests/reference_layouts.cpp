@@ -301,10 +301,10 @@ int main(int argc, char **argv)
 		} else if (argc > 1)
 			for (int i = 1; i < argc; ++i) original(argv[i]);
 		else {
-			for (const int version : { 23, 25, 27 })
-				for (int shape = 0; shape < (version == 23 ? 1 : 3); ++shape)
+			for (const int version : { 21, 23, 25, 27 })
+				for (int shape = 0; shape < (version < 25 ? 1 : 3); ++shape)
 					for (const int value : { -32768, -129, -128, -1, 0, 127, 128, 32767 }) {
-						if (version == 23 && (value < -128 || value > 127)) continue;
+						if (version < 25 && (value < -128 || value > 127)) continue;
 						compare(xl_test::layout_fixture(version, shape, value, value).bytes);
 					}
 			// Explicit degenerate faces still carry four serialized UVLs. Only
