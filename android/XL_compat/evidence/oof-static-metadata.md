@@ -124,3 +124,33 @@ byte-identical between setups. Both unchanged original models pass reader and
 render/time-variation comparisons in both setups, and the explicit normal-parity
 diagnostic remains failing. Each pin-control run verifies four positive outcomes
 and 30 hash-guard rejections. Updated decoder controls pass ASan/UBSan.
+
+## Public owner integration
+
+The public owner previously required 46 base contracts while CMake registered
+49 after adding the three OOF controls. Linux GPU/audio registration therefore
+contained 54 tests versus the former 51-test requirement, with no missing tests.
+The owner now requires `xl_oof_metadata_reference`, `xl_oof_render_reference`
+and `xl_oof_source_pins`, including exactly one usable reference-tree argument
+for the pin control. Exact membership, duplicates, omitted/skipped/failed results
+and source-argument guards remain mandatory. The private FAST cohort remains
+113; these public additions do not change private receipt or readiness counts.
+
+Actual Linux owner validation passes all 54 tests via:
+
+```sh
+python3 android/XL_compat/tests/public_contracts.py \
+  --work /workspace/scratch/oof-public-owner \
+  --reference-root /workspace/reference-d2x-xl-crlf --gpu --audio
+```
+
+The owner writes a receipt requiring all 54 names after successful CTest/JUnit
+validation. Omission, duplicate (including unchanged-count duplicates), failed
+results and absent/empty/duplicate/incomplete source arguments are covered by
+policy negatives in all GPU/audio selection combinations. Local Linux exercises
+real surfaceless rendering and SDL_mixer; native Windows build/execution remains
+a hosted-CI validation limit, not a local pass claim.
+
+All 204 runner/controller policy tests pass after this owner correction. Scoped
+quality and catalog validation pass; catalog invocation retains the documented
+exit-125 supervisor environment blocker.
