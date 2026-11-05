@@ -567,8 +567,10 @@ Inventory inspect_level(const Bytes &bytes)
 	require(reactor.count <= 1, "multiple reactor trigger records");
 	if (reactor.count) {
 		auto r = section_reader(bytes, out, reactor, 42);
-		const auto count = r.s16();
-		require(count >= 0 && count <= 10, "invalid reactor trigger count");
+		const auto authored_count = out.reactor_authored_count = r.s16();
+		require(authored_count >= 0 && (modern_runtime_layout(out) || authored_count <= 10), "invalid reactor trigger count");
+		// Pinned CTriggerTargets::Read calls Check, which caps the fixed ten slots
+		const auto count = std::min(authored_count, 10);
 		std::array<int, 10> segments{}, sides{};
 		for (auto &v : segments) v = r.s16();
 		for (auto &v : sides) v = r.s16();
@@ -804,6 +806,7 @@ std::string inventory_json(const Inventory &v)
 	s << ']';
 	rows_json(s, "flicker_lights", v.flicker_lights);
 	if (!v.fog_settings.empty()) rows_json(s, "fog_settings", v.fog_settings);
+	s << ",\n  \"reactor_authored_count\": " << v.reactor_authored_count;
 	rows_json(s, "reactor_targets", v.reactor_targets);
 	rows_json(s, "matcens", v.matcens);
 	if (!v.equipment.empty()) rows_json(s, "equipment", v.equipment);

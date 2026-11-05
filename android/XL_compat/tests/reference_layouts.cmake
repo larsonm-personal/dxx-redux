@@ -64,3 +64,21 @@ if(XL_PUMO_HOG)
             ${CMAKE_CURRENT_LIST_DIR}/pumo_layouts.cmake)
     set_tests_properties(xl_pumo_layouts PROPERTIES TIMEOUT 120)
 endif()
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp" reactor_hash)
+if(NOT reactor_hash STREQUAL "74f1284260fb4a4bb7396bc45eeb83868a7f2dfa5e3fdf0bcb767b94f1b12852")
+    message(FATAL_ERROR "Reactor target reference changed")
+endif()
+set(extracted "// Pinned fixed-slot reactor target reader and validator\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp"
+                      "void CTriggerTargets::Check (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp"
+                      "void CTriggerTargets::Read (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_reactor_targets.h"
+     CONTENT "${extracted}")
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/include/trigger.h" reactor_header_hash)
+if(NOT reactor_header_hash STREQUAL
+   "8f539027666ce768f467226381e82fd62c07a3cd3642fe97f857980091cf4dfd")
+    message(FATAL_ERROR "Reactor target capacity reference changed")
+endif()

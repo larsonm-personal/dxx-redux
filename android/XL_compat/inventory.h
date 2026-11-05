@@ -122,6 +122,7 @@ struct Inventory {
 	int countdown = 0, reactor_strength = 0, secret_return_segment = 0;
 	std::array<int, 9> secret_return_orientation{};
 	std::vector<std::array<int, 5>> flicker_lights;
+	int reactor_authored_count = 0;
 	std::vector<std::array<int, 2>> reactor_targets;
 	std::vector<std::array<int, 6>> matcens;
 	std::vector<std::array<int, 6>> equipment;

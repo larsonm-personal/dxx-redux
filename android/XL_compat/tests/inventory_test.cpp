@@ -123,6 +123,59 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 	return b;
 }
 
+void reactor_count_contract()
+{
+	for (int version : { 15, 17, 21, 23, 25, 27 }) {
+		for (int count : { 0, 1, 9, 10, 11, 26, 32767 }) {
+			auto bytes = fixture(version);
+			const auto source = xl_compat::inspect_level(bytes);
+			const auto offset = bytes.size();
+			patch(bytes, source.game_offset + 95, offset);
+			patch(bytes, source.game_offset + 99, 1);
+			patch(bytes, source.game_offset + 103, 42);
+			put(bytes, count, 2);
+			for (int i = 0; i < 10; ++i) put(bytes, 0, 2);
+			for (int i = 0; i < 10; ++i) put(bytes, i % 6, 2);
+			if (version < 21 && count > 10) {
+				rejects([&] { xl_compat::inspect_level(bytes); });
+				continue;
+			}
+			const auto decoded = xl_compat::inspect_level(bytes);
+			check(decoded.reactor_authored_count == count && decoded.reactor_targets.size() == std::size_t(std::min(count, 10)), "Reactor raw/effective count differs");
+			const auto probe = xl_compat::prepare_gameplay_probe(bytes);
+			const auto read32 = [&](std::size_t at) { unsigned n=0; for(int i=0;i<4;++i)n|=unsigned(probe.stock_level.at(at+i))<<(8*i); return n; };
+			const auto stock_at = read32(read32(12) + 95);
+			check(probe.stock_level.at(stock_at) == std::min(count, 10) && probe.stock_level.at(stock_at + 1) == 0, "Unsafe reactor count reached classic shadow");
+			check(std::equal(bytes.begin() + offset + 2, bytes.end(), probe.stock_level.begin() + stock_at + 2), "Reactor slot order or duplicates changed");
+			check(bytes[offset] == (count & 255), "Original reactor input mutated");
+			check(xl_compat::inventory_json(decoded).find("\"reactor_authored_count\": " + std::to_string(count)) != std::string::npos, "Authored reactor count hidden");
+			auto bad = bytes;
+			patch(bad, offset, 65535, 2);
+			rejects([&] { xl_compat::inspect_level(bad); });
+			if (count)
+				for (int slot : { 0, std::min(count, 10) - 1 }) {
+					bad = bytes;
+					patch(bad, offset + 2 + slot * 2, 1, 2);
+					rejects([&] { xl_compat::inspect_level(bad); });
+					bad = bytes;
+					patch(bad, offset + 22 + slot * 2, 6, 2);
+					rejects([&] { xl_compat::inspect_level(bad); });
+					bad = bytes;
+					patch(bad, offset + 22 + slot * 2, 65535, 2);
+					rejects([&] { xl_compat::inspect_level(bad); });
+				}
+			for (std::size_t end = offset; end < bytes.size(); ++end) {
+				bad = bytes;
+				bad.resize(end);
+				rejects([&] { xl_compat::inspect_level(bad); });
+			}
+			bad = bytes;
+			patch(bad, source.game_offset + 99, 2);
+			rejects([&] { xl_compat::inspect_level(bad); });
+		}
+	}
+}
+
 std::string feature_row(const std::string &json, const char *id);
 
 void object_capacity_contract()
@@ -1461,6 +1514,7 @@ void original_observatory(const char *path)
 int main(int argc, char **argv)
 {
 	try {
+		reactor_count_contract();
 		if (argc == 3 && std::string(argv[1]) == "--fire-qualification") {
 			original_fire_translation(argv[2]);
 			return 0;

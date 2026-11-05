@@ -169,6 +169,27 @@ struct {
 	Section player, objects, walls, doors, triggers, links, control, botGen, lightDeltaIndices, lightDeltas, equipGen;
 } gameFileInfo, gameTopFileInfo;
 #include "xl_reference_layouts.h"
+namespace reactor_oracle
+{
+constexpr int MAX_TRIGGER_TARGETS = 10;
+struct CTriggerTargets {
+	int m_nLinks = 0, m_segments[10]{}, m_sides[10]{};
+	void Check();
+	void Read(CFile &);
+};
+struct {
+	struct {
+		int nSegments = 0;
+	} segData;
+	struct {
+		int nObjects = 0;
+	} objData;
+} gameData;
+// Suppress reference diagnostics, including its unrelated trigger-array pointer subtraction
+#define PrintLog(...) ((void) 0)
+#include "xl_reference_reactor_targets.h"
+#undef PrintLog
+} // namespace reactor_oracle
 
 std::size_t comparisons = 0, brightness_count = 0, level_count = 0, segment_count = 0, side_count = 0;
 void equal(bool ok, const char *message)
@@ -244,6 +265,18 @@ void compare(const xl_compat::Bytes &bytes)
 	equal(gameFileInfo.fileinfoVersion == decoded.game_version, "Game version differs");
 	const Section sections[] = { gameFileInfo.objects, gameFileInfo.walls, gameFileInfo.doors, gameFileInfo.triggers, gameFileInfo.links, gameFileInfo.control, gameFileInfo.botGen, gameFileInfo.lightDeltaIndices, gameFileInfo.lightDeltas, gameFileInfo.equipGen };
 	for (std::size_t i = 0; i < decoded.sections.size(); ++i) equal(sections[i].offset == decoded.sections[i].offset && sections[i].count == decoded.sections[i].count && sections[i].size == decoded.sections[i].declared_size, "Game section descriptor differs");
+	if (gameFileInfo.control.count) {
+		CFile reader{ bytes, std::size_t(gameFileInfo.control.offset) };
+		reactor_oracle::gameData.segData.nSegments = count;
+		reactor_oracle::gameData.objData.nObjects = gameFileInfo.objects.count;
+		reactor_oracle::CTriggerTargets targets;
+		targets.m_nLinks = reader.ReadShort();
+		equal(targets.m_nLinks == decoded.reactor_authored_count, "Authored reactor count differs");
+		targets.Read(reader);
+		equal(reader.position == std::size_t(gameFileInfo.control.offset) + 42, "Reactor reader exceeded fixed slots");
+		equal(targets.m_nLinks == int(decoded.reactor_targets.size()), "Reference effective reactor count differs");
+		for (int i = 0; i < targets.m_nLinks; ++i) equal(decoded.reactor_targets[i] == std::array<int, 2>{ targets.m_segments[i], targets.m_sides[i] }, "Reference reactor target order differs");
+	}
 	for (int i = 0; i < 4; ++i) {
 		const auto &color = gameData.segData.fogData[i].m_color.v.color;
 		if (decoded.level_version >= 27) {
@@ -307,6 +340,18 @@ int main(int argc, char **argv)
 						if (version < 25 && (value < -128 || value > 127)) continue;
 						compare(xl_test::layout_fixture(version, shape, value, value).bytes);
 					}
+			for (int version : { 21, 23, 25, 27 })
+				for (int count : { 0, 1, 9, 10, 11, 26, 32767 }) {
+					auto fixture = xl_test::layout_fixture(version);
+					auto &b = fixture.bytes;
+					xl_test::layout_patch(b, fixture.game + 95, b.size());
+					xl_test::layout_patch(b, fixture.game + 99, 1);
+					xl_test::layout_patch(b, fixture.game + 103, 42);
+					xl_test::layout_put(b, count, 2);
+					for (int i = 0; i < 10; ++i) xl_test::layout_put(b, 0, 2);
+					for (int i = 0; i < 10; ++i) xl_test::layout_put(b, i % 6, 2);
+					compare(b);
+				}
 			// Explicit degenerate faces still carry four serialized UVLs. Only
 			// active corners contribute to the source's vertex-brightness maxima
 			for (const int version : { 25, 27 })

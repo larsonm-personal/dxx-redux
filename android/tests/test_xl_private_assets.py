@@ -506,6 +506,7 @@ class XlPrivateTests(unittest.TestCase):
     def test_modern_original_outcomes_cannot_drop_rejections_or_source_comparisons(self):
         decoded = {
             "boilpnt.rl2": (23, 1241),
+            "control2.rl2": (27, 3389),
             "canyon.rl2": (27, 2139),
             "canyon2.rl2": (27, 2125),
             "watrwrks.rl2": (27, 3188),
@@ -522,15 +523,32 @@ class XlPrivateTests(unittest.TestCase):
             }
             for name, (version, segments) in decoded.items()
         ]
+        reactor = next(row["inventory"] for row in rows if row["name"] == "control2.rl2")
+        reactor.update(playable=False, reactor_authored_count=26, reactor_targets=[[0, 0] for _ in range(10)])
         rows += [
             {"name": name, "inventory": {"status": "rejected", "reason": reason}}
             for name, reason in {
                 "control.rl2": "invalid packed light index 0",
-                "control2.rl2": "invalid reactor trigger count",
                 "subzero.rl2": "offset 923615: unsupported movement layout 255 at object 4",
             }.items()
         ]
-        for mode in ("valid", "missing-rejection", "duplicate", "changed-version", "empty-source", "wrong-rejection"):
+        for mode in (
+            "valid",
+            "missing-rejection",
+            "duplicate",
+            "changed-version",
+            "wrong-rejection",
+            "empty-source",
+            "reactor-old-rejection",
+            "reactor-raw",
+            "reactor-short",
+            "reactor-target-changed",
+            "reactor-bool",
+            "reactor-dict",
+            "reactor-playable",
+            "reactor-empty-source",
+            "reactor-source-failure",
+        ):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
                 work = Path(temporary)
                 current = copy.deepcopy(rows)
@@ -542,6 +560,21 @@ class XlPrivateTests(unittest.TestCase):
                     current[1]["inventory"]["level_version"] = 25
                 elif mode == "wrong-rejection":
                     current[-1]["inventory"]["reason"] = "unsupported level version 27"
+                reactor = next(row["inventory"] for row in current if row["name"] == "control2.rl2")
+                if mode == "reactor-old-rejection":
+                    reactor.update(status="rejected", reason="invalid reactor trigger count")
+                elif mode == "reactor-raw":
+                    reactor["reactor_authored_count"] = 10
+                elif mode == "reactor-short":
+                    reactor["reactor_targets"].pop()
+                elif mode == "reactor-target-changed":
+                    reactor["reactor_targets"][5] = [0, 1]
+                elif mode == "reactor-bool":
+                    reactor["reactor_targets"][0][0] = False
+                elif mode == "reactor-dict":
+                    reactor["reactor_targets"] = {}
+                elif mode == "reactor-playable":
+                    reactor["playable"] = True
                 calls = []
 
                 def execute(command, **kwargs):
@@ -549,10 +582,12 @@ class XlPrivateTests(unittest.TestCase):
                     if len(command) == 3:
                         Path(command[2]).write_text(json.dumps({"playable": False, "levels": current}))
                         return subprocess.CompletedProcess(command, 1)
+                    if mode == "reactor-source-failure" and command[3] == "control2.rl2":
+                        raise subprocess.CalledProcessError(1, command)
                     segments = decoded[command[3]][1]
                     output = (
                         ""
-                        if mode == "empty-source"
+                        if mode == "empty-source" or (mode == "reactor-empty-source" and command[3] == "control2.rl2")
                         else f"1 levels, {segments} segments, {segments * 6} sides, 10000 comparisons; 5000 vertex brightness maxima"
                     )
                     return subprocess.CompletedProcess(command, 0, stdout=output)
@@ -560,9 +595,13 @@ class XlPrivateTests(unittest.TestCase):
                 with patch.object(runner.subprocess, "run", side_effect=execute):
                     if mode == "valid":
                         self.assertEqual(runner.modern_results(Path("inspect"), Path("reference"), work, work), (7, 3))
-                        self.assertEqual(len(calls), 4)
+                        self.assertEqual(len(calls), 5)
+                        self.assertEqual(
+                            {command[3] for command in calls[1:]},
+                            {"canyon.rl2", "canyon2.rl2", "watrwrks.rl2", "control2.rl2"},
+                        )
                     else:
-                        with self.assertRaises(ValueError):
+                        with self.assertRaises((ValueError, subprocess.CalledProcessError)):
                             runner.modern_results(Path("inspect"), Path("reference"), work, work)
 
     def test_original_gpu_trace_requires_unique_real_witnesses(self):

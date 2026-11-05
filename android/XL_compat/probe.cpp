@@ -162,6 +162,12 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	};
 	rebase(27); // Legacy unused player block
 	for (std::size_t i = 0; i < 9; ++i) rebase(35 + i * 12);
+	// The classic reader does not apply XL CTriggerTargets::Check
+	// Translate only the inspected count, retaining the original input as evidence
+	if (modern_layout && v.reactor_authored_count > 10) {
+		const auto reactor_offset = read_offset(out, new_game_offset + 35 + 5 * 12);
+		patch(out, reactor_offset, static_cast<int>(v.reactor_targets.size()), 2);
+	}
 	if (!v.matcens.empty()) {
 		// XL initializes producers in geometry order, then reads row i for maker i
 		// Redux's native station list also includes reactors, requiring fresh links

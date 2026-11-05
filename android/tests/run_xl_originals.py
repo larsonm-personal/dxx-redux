@@ -348,7 +348,7 @@ def format_results(inspect, stage, work, data):
 
 
 def modern_results(inspect, reference, stage, work):
-    """Use complete original bytes, preserving known rejections beside successes."""
+    """Preserve the historical v27 cohort and supplement it with reactor assertions."""
     original = stage / "modern/boilpnt.hog"
     report = work / "modern-inventory.json"
     report.unlink(missing_ok=True)
@@ -356,13 +356,13 @@ def modern_results(inspect, reference, stage, work):
     result = json.loads(report.read_text())
     decoded = {
         "boilpnt.rl2": (23, 1241),
+        "control2.rl2": (27, 3389),
         "canyon.rl2": (27, 2139),
         "canyon2.rl2": (27, 2125),
         "watrwrks.rl2": (27, 3188),
     }
     rejected = {
         "control.rl2": "invalid packed light index ",
-        "control2.rl2": "invalid reactor trigger count",
         "subzero.rl2": "offset 923615: unsupported movement layout 255 at object 4",
     }
     rows = result["levels"]
@@ -387,6 +387,20 @@ def modern_results(inspect, reference, stage, work):
             or len(inventory["segments"]) != segments
         ):
             raise ValueError("Modern original format or geometry differs")
+        if name == "control2.rl2":
+            targets = inventory.get("reactor_targets")
+            if (
+                inventory.get("playable") is not False
+                or type(inventory.get("reactor_authored_count")) is not int
+                or inventory["reactor_authored_count"] != 26
+                or type(targets) is not list
+                or len(targets) != 10
+                or any(
+                    type(row) is not list or len(row) != 2 or any(type(value) is not int or value != 0 for value in row)
+                    for row in targets
+                )
+            ):
+                raise ValueError("Original reactor authored/effective targets differ")
         if version == 27:
             check = subprocess.run(
                 [str(reference), "--member", str(original), name],
@@ -400,7 +414,10 @@ def modern_results(inspect, reference, stage, work):
                 check.stdout,
             ):
                 raise ValueError("Modern original source comparison did not execute completely")
-            compared += 1
+            # Receipt count remains the exact three historical v27 witnesses.
+            # control2 is a mandatory supplemental assertion, not a new cohort member.
+            if name in {"canyon.rl2", "canyon2.rl2", "watrwrks.rl2"}:
+                compared += 1
     if compared != 3:
         raise ValueError("Modern original source comparison omitted levels")
     return len(rows), compared
