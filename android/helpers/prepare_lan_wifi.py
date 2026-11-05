@@ -27,6 +27,13 @@ def prepare(serials, output):
             raise RuntimeError(f"ADB command failed on {serial}: {args}")
         return result.stdout.strip() if result.returncode == 0 else ""
 
+    def ethernet_flags(serial):
+        link = adb(serial, "shell", "ip", "-o", "link", "show", "dev", "eth0")
+        matches = re.findall(r"(?m)^\d+: eth0(?:@[^: ]+)?: <([^>]*)>", link)
+        if len(matches) != 1:
+            raise RuntimeError(f"Could not verify eth0 link state on {serial}")
+        return matches[0].split(",")
+
     def snapshot(serial):
         for args in (
             ("ip", "addr"),
@@ -52,8 +59,12 @@ def prepare(serials, output):
                 raise RuntimeError(f"Unverified emulator: {serial}")
             if adb(serial, "shell", "su", "0", "id", "-u") != "0":
                 raise RuntimeError(f"Emulator root shell unavailable: {serial}")
+            # An unaddressed Ethernet NIC still needs verification and disabling
+            ethernet_flags(serial)
             for interface in ("wlan0", "eth0"):
                 text = adb(serial, "shell", "ip", "-4", "addr", "show", "dev", interface)
+                if interface == "eth0" and not text:
+                    continue
                 addresses = re.findall(r"\binet (\S+)", text)
                 if len(addresses) != 1:
                     raise RuntimeError(f"Expected one IPv4 address on {serial}/{interface}")
@@ -82,9 +93,7 @@ def prepare(serials, output):
         while True:
             ready = True
             for serial in serials:
-                link = adb(serial, "shell", "ip", "-o", "link", "show", "dev", "eth0")
-                flags = re.search(r"<([^>]*)>", link)
-                if not flags or "UP" in flags[1].split(","):
+                if "UP" in ethernet_flags(serial):
                     ready = False
                 for peer, address in receipt["addresses"].items():
                     if peer == serial:

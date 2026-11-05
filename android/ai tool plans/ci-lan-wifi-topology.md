@@ -7,7 +7,7 @@ Parent inspection of run 41946467586, job 126997140406, artifact 13383186166 at 
 ## Plan
 
 - Configure only the disposable android-dual CI topology, before test execution
-- Validate every target as an online emulator with qemu property, root shell capability, distinct Wi-Fi IPv4 address and the expected private Ethernet address before changing any target
+- Validate every target as an online emulator with qemu property, root shell capability, distinct Wi-Fi IPv4 address, a verified eth0 interface, and either no Ethernet IPv4 address or the expected private Ethernet address before changing any target
 - Bring eth0 down once using the existing emulator su convention, without changing adbd or application identity
 - Keep bounded before/after receipts and require all unbound peer routes to select wlan0 with the local Wi-Fi source address
 - Preserve existing connectivity preflight, timeouts and gameplay assertions; no retry-after-test-failure behavior
@@ -19,9 +19,13 @@ Local artifact downloads returned HTTP 403; detailed route evidence above was su
 
 ## Validation
 
-- Five host-only topology tests pass, covering two/three peers, all-target admission before mutation, root/command failures, persistent wrong routes/sources, link remaining up and transient route withdrawal without repeating the mutation
+- Nine host-only topology tests pass, covering two/three peers, all-target admission before mutation, root/command failures, persistent wrong routes/sources, link remaining up and transient route withdrawal without repeating the mutation
 - Scoped mixed-language quality passes with pinned Ruff and Prettier; existing fixture-test formatting was normalized by the required formatter
 - Automation catalog passes: 99 standalone JSON tests, 535 support scripts, 315 standalone PowerShell tests
 - Full master-catalog test remains blocked by missing /proc/self/task/<pid>/children in this runtime
 - The broader nightly Android fixture suite has an unchanged baseline failure: its libpulse0 assertion expects apt-get immediately followed by install, while the workflow already includes acquisition options; the same test fails when executed from the HEAD version
 - Android convergence, ICMP, raw UDP and gameplay remain unverified until hosted CI executes this setup and the unchanged owners
+
+## Hosted provisioning follow-up
+
+Run 41957647848 exposed the observed Ethernet prefix 10.0.2.15/8; Ethernet now accepts /8 or /24 while Wi-Fi still requires /24. Run 41961380103 then returned successful empty IPv4 output for client eth0. The parent inspected artifact 13386936264 and confirmed all client commands returned zero with empty stderr. Admission now verifies the eth0 link independently and permits successful empty IPv4 output. Missing interfaces, command failures, unexpected addresses and invalid prefixes still fail before any mutation. Nine host-only controls cover addressed and unaddressed Ethernet, initially up or down, and strict post-mutation link and Wi-Fi route checks. Connectivity and gameplay checks remain unchanged.

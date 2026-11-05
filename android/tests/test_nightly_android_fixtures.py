@@ -266,7 +266,7 @@ class FixtureTests(unittest.TestCase):
 
 
 class LanWifiTopologyTests(unittest.TestCase):
-    def run_case(self, serials=None, fault=None, ethernet_prefix=8):
+    def run_case(self, serials=None, fault=None, ethernet_prefix=8, unaddressed=False, initially_down=False):
         serials = serials or ["emulator-5554", "emulator-5556"]
         calls, disabled = [], set()
         pending_route = [fault == "transient"]
@@ -297,8 +297,12 @@ class LanWifiTopologyTests(unittest.TestCase):
                 text = f"inet {ip}/{prefix}"
                 if fault == "extra-ethernet-address" and args[-1] == "eth0":
                     text += "\ninet 192.168.1.2/24"
-                if fault == "missing-ethernet-address" and args[-1] == "eth0":
+                if unaddressed and serial == serials[-1] and args[-1] == "eth0":
                     text = ""
+                if fault == "missing-wifi-address" and args[-1] == "wlan0":
+                    text = ""
+                if fault == "address-command-error" and args[-1] == "eth0":
+                    code, text = 1, ""
                 if fault == "malformed-ethernet-address" and args[-1] == "eth0":
                     text = "inet 10.0.2.15/33"
             elif args == ["shell", "su", "0", "ip", "link", "set", "dev", "eth0", "down"]:
@@ -309,7 +313,14 @@ class LanWifiTopologyTests(unittest.TestCase):
                 else:
                     disabled.add(serial)
             elif args[:5] == ["shell", "ip", "-o", "link", "show"]:
-                text = "<BROADCAST,MULTICAST,UP>" if fault == "still-up" else "<BROADCAST,MULTICAST>"
+                up = fault == "still-up" or (serial not in disabled and not initially_down)
+                text = "2: eth0: <BROADCAST,MULTICAST" + (",UP" if up else "") + "> mtu 1500"
+                if fault == "missing-link":
+                    code, text = 1, ""
+                if fault == "empty-link":
+                    text = ""
+                if fault == "wrong-link":
+                    text = text.replace("eth0:", "wlan0:")
             elif args[:4] == ["shell", "ip", "route", "get"]:
                 dev, src = ("wlan0", address) if serial in disabled and fault != "bad-route" else ("eth0", "10.0.2.15")
                 if fault == "bad-source" and serial in disabled:
@@ -371,11 +382,33 @@ class LanWifiTopologyTests(unittest.TestCase):
             "wrong-wifi-prefix",
             "wrong-ethernet-prefix",
             "extra-ethernet-address",
-            "missing-ethernet-address",
+            "missing-wifi-address",
+            "address-command-error",
             "malformed-ethernet-address",
         ):
             calls, _ = self.run_case(fault=fault)
             self.assertFalse(any(args[-1] == "down" for _, args in calls), fault)
+
+    def test_unaddressed_client_ethernet_requires_verified_link_and_wifi_routes(self):
+        for initially_down in (False, True):
+            calls, receipt = self.run_case(unaddressed=True, initially_down=initially_down)
+            self.assertTrue(receipt["passed"])
+            self.assertEqual(sum(args[-1] == "down" for _, args in calls), 2)
+            for serial in ("emulator-5554", "emulator-5556"):
+                first_mutation = next(i for i, (_, args) in enumerate(calls) if args[-1] == "down")
+                self.assertTrue(
+                    any(
+                        s == serial and a == ["shell", "ip", "-o", "link", "show", "dev", "eth0"]
+                        for s, a in calls[:first_mutation]
+                    )
+                )
+
+    def test_unaddressed_ethernet_cannot_bypass_link_or_route_checks(self):
+        for fault in ("missing-link", "empty-link", "wrong-link", "bad-route", "bad-source", "still-up"):
+            calls, receipt = self.run_case(fault=fault, unaddressed=True)
+            self.assertFalse(receipt["passed"])
+            if fault in ("missing-link", "empty-link", "wrong-link"):
+                self.assertFalse(any(args[-1] == "down" for _, args in calls))
 
     def test_invalid_targets_fail_before_mutation(self):
         for fault in ("offline", "physical", "root", "duplicate", "unexpected-ethernet", "wrong-lane"):
