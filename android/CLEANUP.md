@@ -448,3 +448,9 @@ follows a linked worktree's external common Git directory. Default cleanup does
 not touch Git metadata. This mode does not prune objects, repack, or alter refs,
 stashes, worktrees or canonical packs. It is separate from the other cleanup-only
 modes. Free-space targets remain measured in GiB.
+
+With explicit `-KeepBuildGenerations 0`, CMake outputs also split around retained
+children. A dependency junction, nested repository, selected executable or excluded
+report no longer strands unrelated generated siblings. Links and their targets
+are never deleted or followed. Producer locks in the build and its ancestors
+still prevent deletion. Normal nonzero generation retention remains unchanged.

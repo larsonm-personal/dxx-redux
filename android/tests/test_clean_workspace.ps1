@@ -587,6 +587,31 @@ try {
     Assert-CleanupExists 'android/tests/build-external/precious.bin'
     Assert-CleanupExists 'android/tools/native/CMakeLists.txt'
 
+    # Zero-retention CMake cleanup must not strand siblings beside a dependency junction
+    foreach ($path in @('build-split/CMakeCache.txt', 'build-split/objects/generated.o',
+            'build-split/keep/result.json', 'build-split/nested/.git/config',
+            'build-split/nested/precious.cpp', 'outside/dependency/precious.lib',
+            'build-split/producer.lock')) { New-CleanupFixtureFile $path }
+    [IO.File]::WriteAllText((Join-Path $fixture 'build-split/CMakeCache.txt'),
+        "CMAKE_HOME_DIRECTORY:INTERNAL=$fixture/android/tools/native`nCMAKE_GENERATOR:INTERNAL=Ninja`n")
+    $dependencyLink = Join-Path $fixture 'build-split/vcpkg_installed'
+    New-Item -ItemType $linkType -Path $dependencyLink -Target (Join-Path $fixture 'outside/dependency') | Out-Null
+    & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -Preview -ExcludePaths 'build-split/keep'
+    Assert-CleanupExists 'build-split/objects/generated.o'
+    $cmakeHeldLock = [IO.File]::Open((Join-Path $fixture 'build-split/producer.lock'), 'Open', 'ReadWrite', 'None')
+    try {
+        & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -ExcludePaths 'build-split/keep'
+        Assert-CleanupExists 'build-split/objects/generated.o'
+    } finally { $cmakeHeldLock.Dispose() }
+    & $helper -RepositoryRoot $fixture -BuildsOnly -KeepBuildGenerations 0 -ExcludePaths 'build-split/keep'
+    Assert-CleanupExists 'build-split/objects' $false
+    Assert-CleanupExists 'build-split/keep/result.json'
+    Assert-CleanupExists 'build-split/nested/precious.cpp'
+    Assert-CleanupExists 'build-split/vcpkg_installed'
+    Assert-CleanupExists 'outside/dependency/precious.lib'
+    # Remove only the fixture link, without traversing its target
+    (Get-Item -LiteralPath $dependencyLink -Force).Delete()
+
     # Real registered worktrees use their OWN index, never the enclosing repository's
     Add-Content -LiteralPath (Join-Path $fixture '.gitignore') -Value "android/app/build/`nandroid/extra/build/`n!build-dirty/`nbuild-dirty/*`n!build-dirty/notes.txt"
     New-CleanupFixtureFile 'android/app/build.gradle.kts'

@@ -594,7 +594,10 @@ function Find-BuildGenerations {
                 'ASM', 'EDITOR', 'OPENGL', 'OPENGLMERGE', 'PNG', 'SDLMIXER', 'UDP', 'TRACKER', 'TRACE_IN_RELEASE')
             $keys += @($settings.Keys | Where-Object { $_ -match '^(DXX_|ANDROID_USE_|CMAKE_(C|CXX)_FLAGS|USE_|ENABLE_)' } | Sort-Object)
             $identity = ($keys | ForEach-Object { "$_=$($settings[$_])" }) -join '|'
-            Add-BuildGeneration $Item "cmake|$identity"
+            if ($KeepBuildGenerations -eq 0) {
+                # Preserve linked dependencies and selected evidence without stranding outputs
+                Add-GeneratedBuildOutput $Item
+            } else { Add-BuildGeneration $Item "cmake|$identity" }
             return
         }
     }
