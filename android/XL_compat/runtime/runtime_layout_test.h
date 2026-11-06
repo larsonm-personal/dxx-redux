@@ -1,6 +1,7 @@
 // Controlled runtime comparison of equivalent authored geometry; no navigation
 #include "resource_validation.h"
 #include "repair.h"
+#include "segment_damage_test.h"
 
 static xl_compat::Bytes runtime_layout_read(const char *name)
 {
@@ -81,6 +82,7 @@ static int runtime_layout_test(int argc, char **argv)
 		char error[256]{};
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
+		if (!std::strcmp(find_arg_value(argc, argv, "-runtime-layouts-test"), "segment-damage")) return segment_damage_test(argc, argv);
 		std::vector<int> baseline;
 		std::uint64_t previous_identity = 0;
 		int ordinal = 0;

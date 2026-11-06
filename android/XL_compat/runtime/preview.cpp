@@ -916,6 +916,17 @@ extern "C" int xl_blocked_segment(int segment)
 	return source && source->level_version >= 21 && !(Game_mode & GM_MULTI) && segment >= 0 && std::size_t(segment) < source->segments.size() && (source->segments[segment].properties & xl_compat::segment_blocked);
 }
 
+extern "C" int xl_segment_damage_rates(int segment, int16_t *shield, int16_t *energy)
+{
+	if (shield) *shield = 0;
+	if (energy) *energy = 0;
+	if (!shield || !energy || !xl_level_extensions_active() || (Current_mission && Current_mission->descent_version == 1) || !xl_compat::modern_runtime_layout(*source) ||
+	    segment < 0 || segment >= Num_segments || std::size_t(segment) >= source->segments.size()) return 0;
+	*shield = static_cast<int16_t>(source->segments[segment].damage[0]);
+	*energy = static_cast<int16_t>(source->segments[segment].damage[1]);
+	return 1;
+}
+
 extern "C" int xl_source_level_version(void)
 {
 	return source ? source->level_version : 0;
@@ -1158,6 +1169,16 @@ extern "C" uint64_t xl_level_trigger_identity(void)
 			for (int value : { segment.function, segment.producer, segment.value, segment.flags, segment.properties, segment.damage[0], segment.damage[1] }) field(value);
 			for (const auto &side : segment.sides)
 				for (int corner : side.corners) field(corner);
+		}
+	}
+	// New nonzero modern profiles bind every ordered raw pair, including zero rooms
+	// Existing all-zero identities remain unchanged; no save schema or mutable state
+	if (xl_compat::modern_runtime_layout(*source) && std::any_of(source->segments.begin(), source->segments.end(), [](const xl_compat::Segment &segment) { return segment.damage[0] || segment.damage[1]; })) {
+		field(0x584c5344);
+		field(static_cast<int>(source->segments.size()));
+		for (const auto &segment : source->segments) {
+			field(segment.damage[0]);
+			field(segment.damage[1]);
 		}
 	}
 	// Earned light snapshots must belong to the same geometry and authored contributions

@@ -1152,7 +1152,8 @@ void version_23_contract()
 		patch(bad, segment + 5, damage, 2);
 		patch(bad, segment + 7, damage, 2);
 		check(xl_compat::inspect_level(bad).segments.at(0).damage == std::array<int, 2>{ damage, damage }, "signed damage changed");
-		rejects([&] { xl_compat::prepare_serialization_probe_23_40(bad); });
+		check(xl_compat::runtime_blockers(xl_compat::inspect_level(bad)).empty(), "Signed segment rates remain blocked");
+		check(!xl_compat::prepare_source_runtime_probe(bad).stock_level.empty(), "Signed segment rates failed translation");
 	}
 	for (int bits = 0; bits < 256; ++bits) {
 		auto combined = bytes;

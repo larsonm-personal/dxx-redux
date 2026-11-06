@@ -53,7 +53,7 @@ void contract()
 				check((json.find("\"fog_settings\"") != std::string::npos) == (version == 27), "Fog JSON presence differs from source layout");
 				check((json.find("\"corners\"") != std::string::npos) == (version >= 25), "Explicit corner JSON presence differs from source layout");
 				check(!issue(xl_compat::runtime_blockers(parsed), "serialization"), "Audited modern layout rejected by version alone");
-				check(!xl_compat::runtime_blockers(parsed).empty(), "Fog/damage/shape requirements bypassed by layout support");
+				check(issue(xl_compat::runtime_blockers(parsed), "side_geometry") == (shape != 0), "Damage admission changed independent side geometry blockers");
 				if (version == 27) {
 					auto missing = parsed;
 					missing.fog_settings.clear();
@@ -65,6 +65,25 @@ void contract()
 				if (version >= 25) check(report.find("independent geometry, fog and gameplay requirements still apply") != std::string::npos, "Browser omitted independent runtime requirements");
 				++cases;
 			}
+		}
+		for (int rate : { -32768, -1, 0, 1, 32767 }) {
+			auto damage = xl_test::layout_fixture(version);
+			const auto offset = damage.extras + (version >= 25 ? 7 : 5);
+			xl_test::layout_patch(damage.bytes, offset, rate, 2);
+			xl_test::layout_patch(damage.bytes, offset + 2, -1, 2);
+			const auto parsed = xl_compat::inspect_level(damage.bytes);
+			check(parsed.segments[0].damage == std::array<int, 2>{ rate, -1 }, "Signed segment damage pair lost");
+			check(issue(parsed.unsupported, "segment_damage") && !issue(xl_compat::runtime_blockers(parsed), "segment_damage"), "Damage diagnosis/admission differs");
+			auto blocked = parsed;
+			blocked.unsupported.push_back({ "segment_properties", 0, "128" });
+			check(issue(xl_compat::runtime_blockers(blocked), "segment_properties"), "Damage support cleared independent property blockers");
+			const auto json = xl_compat::inventory_json(parsed);
+			check(json.find("\"damage\": [" + std::to_string(rate) + ", -1]") != std::string::npos, "Damage JSON changed signed raw values");
+			const auto report = xl_compat::compatibility_json("damage.rl2", damage.bytes);
+			const auto pos = report.find("\"id\": \"segment_resource_damage\"");
+			check(pos != std::string::npos, "Browser lost authored segment damage feature");
+			const auto row = report.substr(pos, report.find('\n', pos) - pos);
+			check(row.find("\"count\": 1") != std::string::npos && row.find("\"status\": \"supported\"") != std::string::npos && row.find("absolute units per second") != std::string::npos && row.find("Component support does not qualify") != std::string::npos, "Browser lost authored damage count, status or scope");
 		}
 		const auto fixture = xl_test::layout_fixture(version);
 		for (std::size_t end = fixture.game; end < fixture.walls; ++end) {
@@ -164,7 +183,7 @@ void write_fixture(const std::filesystem::path &directory)
 	std::filesystem::resize_file(directory / "oversized.rl2", padding);
 }
 
-void write_runtime_fixture(const std::filesystem::path &path, const std::filesystem::path &directory, bool include_v21 = false)
+void write_runtime_fixture(const std::filesystem::path &path, const std::filesystem::path &directory, bool include_v21 = false, bool damage = false)
 {
 	std::ifstream input(path, std::ios::binary);
 	check(bool(input), "Cannot open runtime layout source");
@@ -187,6 +206,21 @@ void write_runtime_fixture(const std::filesystem::path &path, const std::filesys
 		}
 	}
 	check(repair && protected_room, "Source lacks repair/property control rooms");
+	if (damage) {
+		// Private derived controls only; keep the original Android fixture byte-identical
+		for (int room = 60; room <= 66; ++room) {
+			base.at(extras + room * 13) = room == 63 ? 1 : room == 64 ? 2
+			                                                          : 0;
+			base.at(extras + room * 13 + 4) = room == 60 ? xl_compat::segment_no_damage : 0;
+			xl_test::layout_patch(base, extras + room * 13 + 5, room == 61 || room == 66 ? 0 : room == 62 ? -3
+			                                                                                              : 3,
+			                      2);
+			xl_test::layout_patch(base, extras + room * 13 + 7, room == 61 || room == 65 ? 0 : room == 62 ? -5
+			                                                                                              : 5,
+			                      2);
+		}
+	}
+
 	xl_compat::Bytes output{ 'D', 'H', 'F' }, reader{ 'D', 'H', 'F' };
 	std::filesystem::create_directories(directory);
 	std::ofstream descriptor(directory / "rtlayout.mn2", std::ios::binary);
@@ -213,6 +247,22 @@ void write_runtime_fixture(const std::filesystem::path &path, const std::filesys
 		const auto name = "rt" + std::to_string(version);
 		xl_test::hog_member(output, name + ".rl2", fixture.bytes, false);
 		xl_test::hog_member(reader, name + ".rl2", fixture.bytes, false);
+		if (damage) {
+			const auto offset = [&](int room) { return version <= 23 ? extras + room * 13 + 5 : fixture.extras[room] + 7; };
+			for (const std::string variant : { "dr", "ds", "dm", "dz" }) {
+				auto changed = fixture.bytes;
+				if (variant == "dz") {
+					for (int room = 0; room < 93; ++room) {
+						xl_test::layout_patch(changed, offset(room), 0, 2);
+						xl_test::layout_patch(changed, offset(room) + 2, 0, 2);
+					}
+				} else if (variant == "dm") {
+					for (int byte = 0; byte < 4; ++byte) std::swap(changed.at(offset(60) + byte), changed.at(offset(61) + byte));
+				} else xl_test::layout_patch(changed, offset(60), variant == "ds" ? -3 : 4, 2);
+				xl_test::hog_member(output, variant + std::to_string(version) + ".rl2", changed, false);
+			}
+		}
+
 		for (const auto &member : members) {
 			if (member.name.size() <= 8 || member.name.substr(0, 8) != "neptunxl") continue;
 			const auto extension = member.name.substr(8);
@@ -258,6 +308,7 @@ int main(int argc, char **argv)
 {
 	try {
 		if (argc == 4 && std::string(argv[1]) == "--runtime") write_runtime_fixture(argv[2], argv[3]);
+		else if (argc == 4 && std::string(argv[1]) == "--runtime-damage") write_runtime_fixture(argv[2], argv[3], true, true);
 		else if (argc == 4 && std::string(argv[1]) == "--runtime-v21") write_runtime_fixture(argv[2], argv[3], true);
 		else if (argc == 3 && std::string(argv[1]) == "--write") write_fixture(argv[2]);
 		else if (argc == 3 && std::string(argv[1]) == "--age") std::filesystem::last_write_time(argv[2], std::filesystem::file_time_type::clock::now() - std::chrono::hours(24));

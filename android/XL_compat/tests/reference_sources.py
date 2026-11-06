@@ -6,8 +6,8 @@ import subprocess
 REFERENCE_COMMIT = "2576a98b5de310e3ac7c9777df2677d1627b8bae"
 REFERENCE_URL = "https://github.com/arbruijn/d2x-xl.git"
 
-# These CMake scripts can run without their optional source oracle. The required
-# owners require the built oracle in the registered command, not just a test name
+# Some scripts permit optional source oracles outside required selections. All
+# listed owners require built oracles in their commands, not just test names
 SOURCE_ARGUMENTS = {
     name: ("REFERENCE",)
     for name in (
@@ -50,6 +50,7 @@ SOURCE_ARGUMENTS = {
     )
 }
 SOURCE_ARGUMENTS.update(
+    xl_modern_runtime_layouts=("REFERENCE", "DAMAGE_REFERENCE"),
     xl_lava_volumes=("REFERENCE", "MOTION_REFERENCE"),
     xl_observatory_descriptor=("REFERENCE_GATES",),
     xl_pog_native=("REFERENCE", "GPU"),

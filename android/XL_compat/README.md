@@ -716,3 +716,8 @@ The [lightning simulation](evidence/lightning-simulation.md) has pinned-source
 setup, geometry and lifetime comparisons. It is not yet connected to the native
 rendering, lighting or sound consumers, so lightning remains gated. Native
 ownership and activation/save integration are covered by the effect lifecycle owner.
+
+Authored segment shield and energy rates in modern 21/40, 23/40, 25/40 and 27/40
+profiles use signed absolute units per second before movement, then centers only
+for surviving local players. See [scope and validation](evidence/segment-damage.md).
+This component does not qualify Dinter or change the frozen readiness cohort.
