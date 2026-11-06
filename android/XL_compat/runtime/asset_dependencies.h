@@ -215,7 +215,9 @@ struct ObjectDependencies {
 				const auto &j = r.anim_states[gun][state];
 				asset_require(j.n_joints >= 0 && (!j.n_joints || (j.offset >= 0 && j.offset + j.n_joints <= joint_count)), "robot joint range invalid");
 				for (int i = 0; i < j.n_joints; ++i)
-					asset_require(joint_data[j.offset + i].jointnum >= 0 && joint_data[j.offset + i].jointnum < model_data[r.model_num].n_models, "robot joint references missing submodel");
+					asset_require(joint_data[j.offset + i].jointnum >= 0 && joint_data[j.offset + i].jointnum < MAX_SUBMODELS &&
+					                  (joint_data[j.offset + i].jointnum < model_data[r.model_num].n_models || r.n_guns > 0),
+					              "robot joint outside qualified animation storage");
 			}
 	}
 };

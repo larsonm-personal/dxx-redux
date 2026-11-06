@@ -1142,9 +1142,14 @@ static void original_models(const char *path, const std::string &selected)
 	}
 	require(tested == 1, "Original selected HXM model count changed");
 }
+void compare_robot_animation(const char *path);
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--animation") {
+			compare_robot_animation(argv[2]);
+			return 0;
+		}
 		collision_profile_reference::compare();
 		compare_sphere();
 		compare_unstick();

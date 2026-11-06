@@ -48,3 +48,12 @@ if(REFERENCE)
         message(FATAL_ERROR "HXM source comparison failed: ${stdout}${stderr}")
     endif()
 endif()
+
+if(REFERENCE)
+    execute_process(COMMAND "${REFERENCE}" --animation "${OUTPUT}/robot-animation-samples.txt"
+                    RESULT_VARIABLE result OUTPUT_VARIABLE stdout ERROR_VARIABLE stderr)
+    file(WRITE "${OUTPUT}/animation-reference.log" "${stdout}${stderr}")
+    if(NOT result EQUAL 0)
+        message(FATAL_ERROR "Robot animation source comparison failed: ${stdout}${stderr}")
+    endif()
+endif()

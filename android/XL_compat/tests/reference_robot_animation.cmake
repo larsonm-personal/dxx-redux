@@ -1,0 +1,13 @@
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/ai/aianimate.cpp" animation_hash)
+if(NOT animation_hash STREQUAL "81b2a6532d24539e3663f92f09e43f422c8c389bcfd7be081b820b80d8b83230")
+    message(FATAL_ERROR "Robot animation source changed")
+endif()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/ai/aianimate.cpp" animation_source)
+string(FIND "${animation_source}" "int32_t     nFlinchScale" start)
+string(FIND "${animation_source}" "int32_t DoSillyAnimation" end)
+math(EXPR length "${end} - ${start}")
+string(SUBSTRING "${animation_source}" ${start} ${length} extracted)
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/ai/aianimate.cpp" "int32_t DoSillyAnimation (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_robot_animation.h"
+     CONTENT "${extracted}")
+target_sources(xl_hxm_reference PRIVATE tests/reference_robot_animation.cpp)
