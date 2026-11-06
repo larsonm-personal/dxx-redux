@@ -19,7 +19,7 @@ door and engages boost 67. Input is then released; engine physics carries the
 player through boosts 68, 69 and 70 to exit 71 at 2234/2. Its value 851968
 selects PMC3, level 13. There are no pose changes during that escape flight.
 
-## Exact-build exploratory evidence
+## Historical substituted-resource exploratory evidence
 
 Published selector APK 8b80ef220dbda2d9481c21611084ef21f5413808, version 28810,
 SHA-256 89df3369e09897fbce528d6ae4825c7d9c58d02e30ca55741e99c3347fc49069:
@@ -37,7 +37,7 @@ The preflight profile archive has SHA-256
 45a17c0b0472f662c815273f391da683e0a53dd76882a2e621a0f0217f191883.
 It preserves 25 pilot/save/settings files on the owned disposable AVD.
 
-## Repeatable protected owner
+## Historical substituted-resource protected owner
 
 Use test_xl_pog_runtime.ps1 with -Pmc2Escape -PmcEscape
 -PmcReactorPlaytest -PmcSwitchPlaytest -PmcPlaytest -OriginalHub -MissionFlow
@@ -80,3 +80,33 @@ broadcast ANR before the scenario began. Profile restoration matched exactly.
 Four subsequent menu launches and three clean quit/relaunch cycles passed; the
 stall did not reproduce. Diagnostics remain under pmc2-escape-interrupted-* and
 clean-relaunch-* in temp/xl-traversal-20261102. No speculative runtime fix was made.
+
+## Full-original Android qualification, November 4 2026
+
+The protected owner passes with full original Pumo HAM/HXM/VHAM/ASE/OOF, original
+camera/effects resources and no Vertigo substitution. Use `-Pmc2Escape -PmcEscape
+-PmcReactorPlaytest -PmcInnerGates -PmcPlaytest -OriginalHub -MissionFlow` with the
+original resource arguments. The normal original PMC1 route precedes PMC2's field,
+contact, door and boost checks; no exit is dispatched by a debug operation.
+
+Retained/installed APK29471, source `ec7715ffa5cd34865b701aa2152ee42f2a51b018`,
+com.dxxredux.app, SHA256
+`da070ebaacf95ea9be2f95fbd630ef5db1ccea0e24cf9108bbb6822c96a0661d`:
+167/167warm steps in135.062seconds,run `4e28eb6d89b64c19ac0ee5427e56f1c7`;
+23/23fresh-process steps in53.203seconds,run `27997e5467e645d6a9a327316208c657`.
+PIDs17736/18742 differ. Warm normal Level12 Complete ends in segment2239,
+(53.2192,-800.5187,18.1999),alive,78.5575player shields/96.3251energy,
+zero objectives. The normal completion menu/briefing enters PMC3,level13,
+segment1619,(-40,-488.4904,-955); ordinary quick-save/load preserves this position,
+100player shields/100energy and one live reactor objective. The paused PMC3
+endpoint frame was inspected.
+
+Protected manifests both SHA256
+`160d7bc5c74593e3db73d3ac46baed653d55096c34dd403cb87cafe3af5ef253`.
+Receipts: `temp/xl-original-pmc2-escape`. Original resource identities are the same
+as [the original PMC1 escape](pmc-escape.md). No APK built/installed and no phone
+writes. Owned Android14 software emulator DxxPhoneFog20261102, protected legacy
+staging, fixed approaches between local interactions and no pose change during
+boost escape. This does not qualify connected human navigation, independent
+launcher UI import, PMC3 keys/ending, remaining authored branches or full
+physical-device/rendered/audio acceptance.

@@ -61,7 +61,7 @@ Ambient object enable/disable child dispatch is separate from audible playback
 acceptance. The scenario does not establish connected human navigation, full
 boss combat, a PMC2 exit or physical-device controls.
 
-## Exact fixed APK qualification
+## Historical substituted-resource qualification
 
 Build `8b80ef220dbda2d9481c21611084ef21f5413808`, version 28810, has six matching
 D1/D2 library markers. APK SHA-256:
@@ -80,10 +80,38 @@ invulnerability are active. The rendered endpoint was inspected.
 
 Both protected hash lists have SHA-256
 `a469457aa471b05f7919c6ade5a3f8f00fc037b56ad7dd6b31024ba573e4bf10`.
-Receipts are in `temp/xl-original-pmc2-selectors` and the immutable selector
+Historical receipts are in `temp/xl-overnight-20261104/prior-pmc2-selectors` and the immutable selector
 bundle, including traces and exact scripts. The ZIP SHA-256 is
 `e4b1b6d698131956664a9d96fe3fffbdaeaf4a6e7cdb91a36b6447dd18c1094b`.
 
 Previously serialized broken panels remain broken in old saves; start a new game or use an
 unfired checkpoint on the new build. Existing saves and published bundles are
 preserved rather than rewritten.
+
+## Full-original Android qualification, November 3 2026
+
+The existing protected owner also passes with full original Pumo HAM/HXM/VHAM/
+ASE/OOF resources and no Vertigo substitution. Invoke `-Pmc2Selectors -PmcEscape
+-PmcReactorPlaytest -PmcInnerGates -PmcPlaytest -OriginalHub -MissionFlow` with the
+original resource arguments. The earned original inner-gate/reactor/boost route
+enters PMC2 normally before the same selector and physical-gate controls run.
+Only ordinary save/load and pause requests are used by the automation hooks.
+
+Retained/installed APK29471, source `ec7715ffa5cd34865b701aa2152ee42f2a51b018`,
+package com.dxxredux.app, SHA256
+`da070ebaacf95ea9be2f95fbd630ef5db1ccea0e24cf9108bbb6822c96a0661d`:
+187/187warm steps in146.054seconds,run `fbf85c966103464bb4044b4cbaece215`;
+59/59fresh-process steps in24.164seconds,run `5bc0497d89354bf79c8690c47b741d8f`.
+Game PIDs15541/16565 differ. Selector states survive save/load, normal shots change
+them afterward, and ordinary door flight ends at segment189,
+(53.2336,-921.2298,589.4221),alive,70.3824player shields/85.5453energy,
+zero objectives,no bosses. The paused endpoint frame was inspected.
+
+Protected manifests both SHA256
+`160d7bc5c74593e3db73d3ac46baed653d55096c34dd403cb87cafe3af5ef253`.
+Receipts: `temp/xl-original-pmc2-selectors`. Original resource identities are the
+same as [the earned original PMC1 escape](pmc-escape.md). No APK build/install
+and no physical-phone writes. This is the owned Android14 software emulator
+DxxPhoneFog20261102, protected legacy staging and local fixed approaches, not
+connected human navigation, separate launcher UI qualification, original PMC2
+escape, later PMC3 progression or complete visual/audio acceptance.

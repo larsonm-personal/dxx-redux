@@ -64,3 +64,18 @@ original PMC3 keys/reactor/ending. Preserve the exact source/assets/trace/termin
 status, use normal activation and protected restoration, and fix the first
 source-backed gameplay defect. Do not treat historical fixture boss combat or
 controlled next-level dispatch as full-original progression proof.
+
+## Original PMC2 checkpoint
+
+Original selectors187warm/59cold and earned PMC2 escape167warm/23cold pass on the
+same retained29471, with exact protected restoration. The latter reaches PMC3
+through the normal completion menu/briefing and saves/loads at segment1619.
+No engine or test-script change was needed for these checks; historical evidence
+is labeled separately. Next PMC3 opening/earned keys/reactor/ending, then audit
+the remaining original branches: the authoritative MN2 lists14levels, not only
+the three PMC maps. Preserve this wider mission scope in completion claims.
+
+After progression, audit mission-owned informational text: original pmines.txt
+contains Pulser and other weapon label replacements while retained screenshots
+still show stock labels. Verify pinned XL selection/lookup semantics before
+calling this a defect or implementing a mission-scoped override. Defer cosmetics.
