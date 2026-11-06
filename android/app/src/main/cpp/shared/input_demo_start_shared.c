@@ -1,3 +1,6 @@
+#ifdef DXX_XL_RUNTIME
+#include "slow_motion_runtime.h"
+#endif
 #include <stdio.h>
 #include <string.h>
 
@@ -743,6 +746,14 @@ int input_demo_start_loaded_replay_common(void)
 	input_demo_reset_replay_input_state();
 	result = input_demo_restore_loaded_replay();
 	if (!result) {
+#ifdef DXX_XL_RUNTIME
+		const char *unsupported = xl_omega_input_demo_error();
+		if (unsupported) {
+			printf("Input demo replay could not start: %s\n", unsupported);
+			input_demo_replay_unload();
+			return 1;
+		}
+#endif
 		if (!input_demo_assets_check_replay(projection_error, sizeof(projection_error))) {
 			printf("Input demo replay could not start: %s\n", projection_error);
 			input_demo_replay_unload();

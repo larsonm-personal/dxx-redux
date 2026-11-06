@@ -9,6 +9,8 @@ extern "C" {
 #include "game.h"
 #include "vecmat.h"
 #include "aistruct.h"
+#include "weapon.h"
+#include "player.h"
 }
 namespace
 {
@@ -193,4 +195,11 @@ extern "C" int xl_slow_motion_omega_fired(void)
 	if (!enabled()) return 0;
 	last_omega_frame = render_clock;
 	return 1;
+}
+
+extern "C" const char *xl_omega_input_demo_error(void)
+{
+	return enabled() && (Players[Player_num].primary_weapon_flags & (1 << OMEGA_INDEX))
+	           ? "XL Omega input demos require an unimplemented render-clock timeline"
+	           : nullptr;
 }

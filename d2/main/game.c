@@ -1531,6 +1531,14 @@ int game_handler(window *wind, d_event *event, void *data)
 
 		case EVENT_WINDOW_DRAW:
 		{
+#ifdef DXX_XL_RUNTIME
+			/* Reject unsupported input chronology before any render-clock work,
+			 * including draws while the replay is manually paused. */
+			if (input_demo_replay_is_loaded() && xl_omega_input_demo_error()) {
+				input_demo_step_replay_frame();
+				return 1;
+			}
+#endif
 		#ifdef DXX_XL_RUNTIME
 			xl_lightning_objects_clock();
 			#endif

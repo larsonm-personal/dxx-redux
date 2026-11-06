@@ -499,7 +499,12 @@ void create_omega_blobs(int firing_segnum, vms_vector *firing_pos, vms_vector *g
 
 			objp->size = Weapon_info[objp->id].blob_size;
 
-			objp->shields = fixmul(OMEGA_DAMAGE_SCALE*OMEGA_BASE_TIME, Weapon_info[objp->id].strength[Difficulty_level]);
+#ifdef DXX_XL_RUNTIME
+			const fix damage_time = xl_level_extensions_active() ? FrameTime : OMEGA_BASE_TIME;
+#else
+			const fix damage_time = OMEGA_BASE_TIME;
+#endif
+			objp->shields = fixmul(OMEGA_DAMAGE_SCALE*damage_time, Weapon_info[objp->id].strength[Difficulty_level]);
 
 			objp->ctype.laser_info.parent_type			= parent_objp->type;
 			objp->ctype.laser_info.parent_signature	= parent_objp->signature;
