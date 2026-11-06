@@ -94,3 +94,19 @@ all original actor/trigger/inventory guards and distinguish local fixed approach
 from connected human navigation. Then test the other authored branch: hub->2->3
 ->4->5(or4->14->5)->6->7->8->9->10. Exit topology is inspection only; it is not
 runtime admission or progression proof. Preserve all14levels in completion scope.
+
+## Original earned-key finale checkpoint
+
+Combined original453warm/24cold steps PASS on retained29471/ec7715. Earned
+blue/gold keys continue through normal reactor combat, outward/return portals,
+countdown save/load, normal escape and the authored ending/menu return. Source
+geometry and indexed texture masks corrected only the local shot/portal poses;
+no engine change, resource substitution, guard bypass, grant or timeout increase.
+The protected profile manifest matches exactly. See
+android/XL_compat/evidence/original-earned-finale.md for exact run IDs/assets and
+rendered endpoints. This does not qualify connected traversal or all14levels.
+
+Next implement the prepared other-branch entry probe using the protected owner:
+hub44/side2 -> original boost trigger1 -> exit0 at55/side2 -> level2. Exercise
+normal laser/thrust, save/restore and original resource admission. Continue toward
+2/3/4/5(or14)/6/7/8/9/10; investigate actual failures without forcing progression.
