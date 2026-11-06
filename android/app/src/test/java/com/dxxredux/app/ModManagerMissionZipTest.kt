@@ -20,6 +20,31 @@ import java.util.zip.ZipOutputStream
 
 class ModManagerMissionZipTest {
     @Test
+    fun missionSevenZipCanBeReenabledAfterReload() {
+        for (name in listOf("Toggle.7z", "Extensionless")) {
+            val filesDir = File("build/test-mod-manager-toggle-$name").absoluteFile
+            filesDir.deleteRecursively()
+            val manager = ModManager(filesDir)
+            val imported = requireNotNull(manager.importMissionZipFile(createMission7z(), name))
+            val before = manager.buildMissionLaunchCatalog("d2")
+            val key = before.missions.single().key
+            val revision = before.revisionFor(key)
+            manager.setEnabled(imported.filename, false)
+            assertTrue(ModManager(filesDir).buildMissionLaunchCatalog("d2").missions.isEmpty())
+
+            val reloaded = ModManager(filesDir)
+            reloaded.setEnabled(imported.filename, true)
+            assertTrue(
+                "Imported 7z pack must be re-enableable: $name",
+                ModManager(filesDir).listMods().single().enabled,
+            )
+            val after = ModManager(filesDir).buildMissionLaunchCatalog("d2")
+            assertEquals(listOf(key), after.missions.map { it.key })
+            assertEquals(revision, after.revisionFor(key))
+        }
+    }
+
+    @Test
     fun localEnemyWithinAndMaximumKeepRealReplacementBankOwned() {
         val repository =
             generateSequence(

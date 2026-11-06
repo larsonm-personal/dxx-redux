@@ -1,7 +1,8 @@
 #!/usr/bin/env pwsh
-param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold)
+param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation)
 $ErrorActionPreference = 'Stop'
 if ($PumoUiCold -and !$PumoUiImport) { throw 'PumoUiCold requires PumoUiImport' }
+if ($PumoUiIsolation -and (!$PumoUiImport -or $PumoUiCold)) { throw 'PumoUiIsolation requires PumoUiImport in its own mode' }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
 $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
@@ -9,6 +10,7 @@ Assert-IsolatedPhysicalTestApp
 $output = Join-Path $PSScriptRoot '../../temp/xl-addon-import-android'
 if ($PumoUiImport) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-import-android' }
 if ($PumoUiCold) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-cold-android' }
+if ($PumoUiIsolation) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-isolation-android' }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 function Invoke-AddonAdb {
@@ -22,6 +24,15 @@ function Invoke-AddonAdb {
 function Invoke-AddonPrivate {
     param([string]$Command)
     Invoke-AddonAdb -Arguments @('shell', 'run-as', $script:PACKAGE, 'sh', '-c', "'$Command'")
+}
+function Set-ImportedOwnerExpectations {
+    param([object[]]$Steps)
+    foreach ($step in $Steps) {
+        if ($step.expect -and $step.expect.PSObject.Properties.Name -contains 'xl_pilot.runtime_active') {
+            $owner = if ($step.expect.'xl_pilot.runtime_active') { 'mod/pmines_v11.7z' } else { 'base' }
+            $step.expect | Add-Member -NotePropertyName mission_asset_owner -NotePropertyValue $owner -Force
+        }
+    }
 }
 $backup = 'files/xl-addon-import-backup'
 $paths = @('shared_prefs', 'files/file_sets.json')
@@ -40,6 +51,14 @@ $hostBackup = $null
 $backupHash = $null
 $offloaded = $false
 $restoreTemporary = $null
+$attemptId = [guid]::NewGuid().ToString('N')
+$completed = $false
+$restored = $false
+$failure = $null
+$phase = 'protection'
+$warmRun = $null
+$coldRun = $null
+@{ attempt_id = $attemptId; status = 'RUNNING' } | ConvertTo-Json | Set-Content "$output/owner-result.json" -Encoding utf8
 try {
     Invoke-AddonAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     Invoke-AddonPrivate "mkdir $backup" | Out-Null
@@ -53,6 +72,13 @@ try {
         $backupHash = (([string](Invoke-AddonPrivate "sha256sum $backup/state.tar")) -split '\s+')[0]
         if ($backupHash -notmatch '^[0-9a-f]{64}$') { throw 'Invalid profile backup digest' }
         $hostBackup = Join-Path $output "profile-$backupHash.tar"
+        # Reuse an identical private safety archive instead of duplicating retail data
+        if (!(Test-Path -LiteralPath $hostBackup)) {
+            foreach ($prior in @('xl-pumo-ui-import-android', 'xl-pumo-ui-cold-android')) {
+                $candidate = Join-Path $PSScriptRoot "../../temp/$prior/profile-$backupHash.tar"
+                if (Test-Path -LiteralPath $candidate) { $hostBackup = $candidate; break }
+            }
+        }
         if (!(Test-Path -LiteralPath $hostBackup)) {
             # Stream binary bytes directly; run-as cannot write shell-owned external storage
             $transfer = [System.Diagnostics.Process]::new()
@@ -82,6 +108,7 @@ try {
         Invoke-AddonPrivate 'rm -f files/d2x-redux/missions/pmines.hog files/d2x-redux/missions/pmines.mn2 files/d2x-redux/missions/d2x-xl.hog files/d2x-redux/missions/d2x.ham' | Out-Null
     }
     Invoke-AddonAdb -Arguments @('logcat', '-c') | Out-Null
+    $phase = 'import'
     $suite = if ($PumoUiImport) { 'pumo_ui_import' } else { 'xl_addon_import' }
     $instrument = @('shell', 'am', 'instrument', '-w', '-e', 'suite', $suite)
     if ($DistributionName) { $instrument += @('-e', 'xl_addon_distribution', $DistributionName) }
@@ -103,51 +130,79 @@ try {
         if ($inputHash -ne '82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf') { throw 'Pumo picker input changed; preserving it' }
         # The original host archive is retained; the imported private archive is independent
         Invoke-AddonPrivate 'rm files/saf_provider_source/pmines_v11.7z' | Out-Null
-        $scriptName = if ($PumoUiCold) { 'test_xl_pumo_opening_gates.jsonc' } else { 'test_xl_pumo_hub_activation.jsonc' }
+        if ($PumoUiIsolation) {
+            $phase = 'toggle'
+            Invoke-AddonAdb -Arguments @('shell', 'am', 'start', '-n', "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
+            if (!(Wait-SetupActivityReady)) { throw 'Launcher was not ready for mission toggle control' }
+            foreach ($enabled in @($false, $true)) {
+                Invoke-AddonAdb -Arguments @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+                    '--es', 'command', 'set_mod_enabled', '--es', 'filename', 'pmines_v11.7z', '--ez', 'enabled', $enabled.ToString().ToLowerInvariant()) | Out-Null
+                $accepted = Wait-SetupCondition -TimeoutSeconds 20 -Predicate {
+                    param($snapshot)
+                    $entry = $snapshot.content_entries_by_id.'mod:pmines_v11.7z'
+                    return $null -ne $entry -and $entry.enabled -eq $enabled
+                }
+                Invoke-AddonPrivate 'cat files/setup_introspect.json' | Set-Content "$output/toggle-$enabled.json" -Encoding utf8
+                if (!$accepted) { throw "Original 7z mission toggle did not reach enabled=$enabled" }
+            }
+        }
+        $scriptName = if ($PumoUiIsolation) { 'test_xl_pumo_save_isolation.jsonc' } elseif ($PumoUiCold) { 'test_xl_pumo_opening_gates.jsonc' } else { 'test_xl_pumo_hub_activation.jsonc' }
         $steps = @(Get-Content "$PSScriptRoot/../game_scripts/$scriptName" -Raw | ConvertFrom-Json)
+        if ($PumoUiIsolation) { Set-ImportedOwnerExpectations -Steps $steps }
         $steps[0]._info._owner = 'test_xl_addon_import'
         $runtimeScript = Join-Path $output 'ui-owned-hub.jsonc'
         $steps | ConvertTo-Json -Depth 30 | Set-Content $runtimeScript -Encoding utf8
+        $phase = 'warm'
         & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $runtimeScript -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -TimeoutSeconds 600
         $runtimeExit = $LASTEXITCODE
         Invoke-AddonPrivate 'cat files/automation_result.json' | Set-Content "$output/runtime-result.json" -Encoding utf8
         Invoke-AddonPrivate 'cat files/automation_log.jsonl' | Set-Content "$output/runtime-steps.jsonl" -Encoding utf8
         Invoke-AddonPrivate 'cat files/introspect.json' | Set-Content "$output/runtime-state.json" -Encoding utf8
         $runtime = Get-Content "$output/runtime-result.json" -Raw | ConvertFrom-Json
+        $warmRun = $runtime.run_id
         if ($runtimeExit -ne 0 -or $runtime.result -ne 'PASS' -or $runtime.steps_completed -ne ($steps.Count - 1)) { throw 'Imported original Pumo did not pass ordinary activation' }
         $state = Get-Content "$output/runtime-state.json" -Raw | ConvertFrom-Json
         # mounted_mods describes legacy session mounts, not the mission catalog's private view
-        if ($state.mission_asset_owner -ne 'mod/pmines_v11.7z' -or $state.mission_asset_generation -lt 1) {
+        $expectedOwner = if ($PumoUiIsolation) { 'base' } else { 'mod/pmines_v11.7z' }
+        if ($state.mission_asset_owner -ne $expectedOwner -or $state.mission_asset_generation -lt 1) {
             throw 'UI runtime did not retain imported mission ownership'
         }
         Invoke-AddonAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/pumo-ui-runtime.png') | Out-Null
         Invoke-AddonAdb -Arguments @('pull', '/data/local/tmp/pumo-ui-runtime.png', "$output/runtime-render.png") | Out-Null
         Invoke-AddonAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/pumo-ui-runtime.png') | Out-Null
-        if ($PumoUiCold) {
+        if ($PumoUiCold -or $PumoUiIsolation) {
             $warmPid = ([string](Invoke-AddonAdb -Arguments @('shell', 'pidof', "$($script:PACKAGE):game"))).Trim()
             Invoke-AddonAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/warm-logcat.txt" -Encoding utf8
-            $coldSteps = @(Get-Content "$PSScriptRoot/../game_scripts/test_xl_pumo_opening_gates_cold.jsonc" -Raw | ConvertFrom-Json)
+            $coldName = if ($PumoUiIsolation) { 'test_xl_pumo_save_isolation_cold.jsonc' } else { 'test_xl_pumo_opening_gates_cold.jsonc' }
+            $coldSteps = @(Get-Content "$PSScriptRoot/../game_scripts/$coldName" -Raw | ConvertFrom-Json)
+            if ($PumoUiIsolation) { Set-ImportedOwnerExpectations -Steps $coldSteps }
             $coldSteps[0]._info._owner = 'test_xl_addon_import'
             $coldScript = Join-Path $output 'ui-owned-cold.jsonc'
             $coldSteps | ConvertTo-Json -Depth 30 | Set-Content $coldScript -Encoding utf8
             # The normal launcher/menu path must activate the imported owner from the save
+            $phase = 'cold'
             & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $coldScript -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -TimeoutSeconds 300
             $coldExit = $LASTEXITCODE
             Invoke-AddonPrivate 'cat files/automation_result.json' | Set-Content "$output/cold-result.json" -Encoding utf8
             Invoke-AddonPrivate 'cat files/automation_log.jsonl' | Set-Content "$output/cold-steps.jsonl" -Encoding utf8
             Invoke-AddonPrivate 'cat files/introspect.json' | Set-Content "$output/cold-state.json" -Encoding utf8
             $cold = Get-Content "$output/cold-result.json" -Raw | ConvertFrom-Json
+            $coldRun = $cold.run_id
             $coldState = Get-Content "$output/cold-state.json" -Raw | ConvertFrom-Json
             $coldPid = ([string](Invoke-AddonAdb -Arguments @('shell', 'pidof', "$($script:PACKAGE):game"))).Trim()
             if ($coldExit -ne 0 -or $cold.result -ne 'PASS' -or $cold.steps_completed -ne ($coldSteps.Count - 1)) { throw 'Imported original Pumo cold menu load failed' }
             if ($warmPid -notmatch '^\d+$' -or $coldPid -notmatch '^\d+$' -or $warmPid -eq $coldPid) { throw 'Imported Pumo cold load did not use a fresh game process' }
-            if ($coldState.mission_asset_owner -ne 'mod/pmines_v11.7z' -or $coldState.mission_asset_generation -lt 1) { throw 'Imported Pumo cold load lost its catalog owner' }
+            if ($coldState.mission_asset_owner -ne $expectedOwner -or $coldState.mission_asset_generation -lt 1) { throw 'Imported Pumo cold load lost its expected owner' }
             @{ warm_pid = $warmPid; cold_pid = $coldPid; owner = $coldState.mission_asset_owner; fresh_process = $true } |
                 ConvertTo-Json | Set-Content "$output/cold-proof.json" -Encoding utf8
             Invoke-AddonAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/pumo-ui-cold-runtime.png') | Out-Null
             Invoke-AddonAdb -Arguments @('pull', '/data/local/tmp/pumo-ui-cold-runtime.png', "$output/cold-render.png") | Out-Null
             Invoke-AddonAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/pumo-ui-cold-runtime.png') | Out-Null
-            Write-Output 'PASS: UI-imported original Pumo opening gates and fresh-process save restoration'
+            if ($PumoUiIsolation) {
+                Write-Output 'PASS: UI-imported original Pumo and stock warm/cold save isolation'
+            } else {
+                Write-Output 'PASS: UI-imported original Pumo opening gates and fresh-process save restoration'
+            }
         } else {
             Write-Output 'PASS: UI-imported original Pumo normal firing, hub transition and save restoration'
         }
@@ -161,6 +216,11 @@ try {
             Invoke-AddonAdb -Arguments @('shell', 'rm', '-f', $originalRender) | Out-Null
         }
     }
+    $completed = $true
+    $phase = 'complete'
+} catch {
+    $failure = $_.Exception.Message
+    throw
 } finally {
     try {
         $captureFailure = $null
@@ -181,10 +241,23 @@ try {
             if (Compare-Object @($before) @($after)) { throw "Addon import profile restoration differs; backup retained at $backup" }
             Invoke-AddonPrivate "rm -rf $backup" | Out-Null
             if ($restoreTemporary) { Invoke-AddonAdb -Arguments @('shell', 'rm', '-f', $restoreTemporary) | Out-Null }
+            $restored = $true
             Write-Output 'PASS: Addon UI profile restoration hashes match'
         }
         if ($captureFailure) { throw $captureFailure }
+    } catch {
+        $failure = "${failure} Restoration/capture: $($_.Exception.Message)"
+        throw
     } finally {
+        @{
+            attempt_id = $attemptId
+            status = if ($completed -and $restored -and !$failure) { 'PASS' } else { 'FAIL' }
+            phase = $phase
+            failure = $failure
+            profile_hashes_restored = $restored
+            warm_run_id = $warmRun
+            cold_run_id = $coldRun
+        } | ConvertTo-Json | Set-Content "$output/owner-result.json" -Encoding utf8
         if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
     }
 }
