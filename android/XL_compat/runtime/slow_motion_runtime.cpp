@@ -51,3 +51,14 @@ extern "C" int32_t xl_slow_motion_lifetime(const object *actor, int32_t time)
 	if (state.clocks[0].speed == 1) return time;
 	return static_cast<int32_t>(time / state.clocks[0].speed);
 }
+
+extern "C" void xl_slow_motion_rotation(const object *actor, vms_angvec *angles)
+{
+	if (!enabled()) return;
+	const float speed = state.clocks[actor == ConsoleObject ? 1 : 0].speed;
+	if (speed == 1) return;
+	// DoPhysicsSimRot divides already wrapped angles, not thrust or frame time
+	angles->p = static_cast<fixang>(angles->p / speed);
+	angles->h = static_cast<fixang>(angles->h / speed);
+	angles->b = static_cast<fixang>(angles->b / speed);
+}

@@ -215,6 +215,9 @@ static int water_actors_test(int argc, char **argv)
 		require(xl_runtime::slow_motion_state().clocks[0].speed > 1, "Stock transition had no active slow state");
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_equipment_count() && !xl_preview_water_segment(22), "water actor state leaked into Redux");
 		require(xl_runtime::slow_motion_state().clocks[0].speed == 1 && xl_slow_motion_lifetime(ConsoleObject, 1092) == 1092, "XL lifetime/state leaked into classic mode");
+		vms_angvec classic_angles{ -32768, 123, 32767 }, original_angles = classic_angles;
+		xl_slow_motion_rotation(ConsoleObject, &classic_angles);
+		require(!std::memcmp(&classic_angles, &original_angles, sizeof(classic_angles)), "Slow motion changed classic rotation");
 		vms_vector classic_offset{ 1001, -2003, 3007 }, original_offset = classic_offset;
 		xl_slow_motion_offset(ConsoleObject, &classic_offset);
 		require(!std::memcmp(&classic_offset, &original_offset, sizeof(classic_offset)), "Slow motion changed classic displacement");

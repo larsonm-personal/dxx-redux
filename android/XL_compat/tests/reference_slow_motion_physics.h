@@ -12,6 +12,13 @@ struct Lifetime {
 #include "xl_reference_slow_lifetime.h"
 	}
 };
+struct Rotation : CObject {
+	CAngleVector scale(CAngleVector turnAngles)
+	{
+#include "xl_reference_slow_rotation.h"
+		return turnAngles;
+	}
+};
 static int slow_motion_physics(const char *path)
 {
 	std::ifstream input(path);
@@ -19,6 +26,7 @@ static int slow_motion_physics(const char *path)
 	if (!std::getline(input, line) || line != "slow-motion-physics-v1") throw std::runtime_error("Missing slow-motion transcript header");
 	std::set<std::tuple<int, int, int, int, int, fix, fix, fix, fix>> moves;
 	std::set<std::tuple<int, int, fix, fix>> lives;
+	std::set<std::tuple<int, int, int, int>> rotations;
 	while (std::getline(input, line)) {
 		std::istringstream row(line);
 		char kind;
@@ -27,7 +35,25 @@ static int slow_motion_physics(const char *path)
 		const float expected_world = profile == 0 ? 1 : profile == 1 ? 1.025f
 		                                                             : 3;
 		gameStates.gameplay.slowmo[0].fSpeed = expected_world;
-		if (kind == 'L') {
+		if (kind == 'R') {
+			int console, multiplayer, angle, p, h, b;
+			if (!(row >> console >> multiplayer >> angle >> p >> h >> b) ||
+			    (console != 0 && console != 1) || (multiplayer != 0 && multiplayer != 1) ||
+			    (angle != -32768 && angle != -32767 && angle != -1001 && angle != -1 && angle != 0 && angle != 1 && angle != 1001 && angle != 32766 && angle != 32767) ||
+			    !rotations.emplace(profile, console, multiplayer, angle).second)
+				throw std::runtime_error("Invalid/duplicate rotation control");
+			Rotation actor;
+			gameData.objData.pConsole = console ? &actor : &objects[1];
+			gameStates.gameplay.slowmo[1].fSpeed = profile == 3 ? 1 : expected_world;
+			IsMultiGame = multiplayer;
+			CAngleVector angles{};
+			angles.v.coord.p = fixang(angle);
+			angles.v.coord.h = fixang(-angle - 1);
+			angles.v.coord.b = fixang(angle / 3);
+			angles = actor.scale(angles);
+			if (p != angles.v.coord.p || h != angles.v.coord.h || b != angles.v.coord.b)
+				throw std::runtime_error("Native rotation differs from pinned source");
+		} else if (kind == 'L') {
 			float world;
 			fix time, before, actual;
 			if (!(row >> type >> world >> time >> before >> actual) || world != expected_world ||
@@ -84,8 +110,8 @@ static int slow_motion_physics(const char *path)
 		std::string extra;
 		if (row >> extra) throw std::runtime_error("Trailing slow-motion row data");
 	}
-	if (moves.size() != 768 || lives.size() != 144) throw std::runtime_error("Incomplete slow-motion source coverage");
-	std::cout << "768 native offsets/lifetimes and 144 lifetime boundary cases match pinned source\n";
+	if (moves.size() != 768 || lives.size() != 144 || rotations.size() != 144) throw std::runtime_error("Incomplete slow-motion source coverage");
+	std::cout << "768 native offsets/lifetimes and 144 lifetime boundary cases and 144 rotations match pinned source\n";
 	return 0;
 }
 #endif
