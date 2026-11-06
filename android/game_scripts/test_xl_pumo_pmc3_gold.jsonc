@@ -114,7 +114,7 @@
     {
         "action": "pose_view",
         "segment": 761,
-        "position_fixed": [-1310720, -25711129, 19791872],
+        "position_fixed": [-1310720, -25645593, 19660800],
         "pitch": 0,
         "heading": 49152,
     },

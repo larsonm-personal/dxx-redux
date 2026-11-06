@@ -58,6 +58,13 @@ retained29471, full original resources and exact protected restoration. The
 original descriptor has14levels; these local main-route checks do not establish
 all authored branches, connected human traversal or PMC3 completion.
 
+The full-original [PMC3 blue/gold-key route](evidence/pmc3-gold-key.md) now
+passes392warm/16cold on retained29471, including opening switches, normal shield
+and key pickups, warm key saves, cold inventory/consumed-pickup restoration and
+normal gold-door flight. Two local approaches were corrected for the full ship's
+gun spacing and slope clearance; no trigger/collision/inventory rules changed.
+Reactor/ending and remaining14-level branches are still open. No APK was built.
+
 ## Historical29330 delivery
 
 The new [phone candidate](../../temp/pumo-user-addon-playtest-20261102/README.md)

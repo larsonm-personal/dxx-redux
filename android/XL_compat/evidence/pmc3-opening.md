@@ -86,3 +86,12 @@ uses the same bounded +2/-2/0 x-offset firing sweep from room 205, aimed at pane
 288/3. Its focused normal-activation check passed 18/18 in 46.230 seconds, ending
 with 98 shields, actor 0, shot 1 and doorway 12 open. No trigger or collision
 rules changed. The failed descendant receipt remains separate from qualification.
+
+## Full-original warm opening coverage
+
+The original-resource392-step [blue/gold-key route](pmc3-gold-key.md) now passes
+the complete current opening sequence with its bounded normal shaft firing
+approaches, connecting switches and physical gate crossings. Exact binary/run
+identities and restoration are recorded there. Its16-step cold phase qualifies
+the later earned-key checkpoint, not a separate cold replay of all opening gates.
+No engine, trigger or original-content change was required for these interactions.
