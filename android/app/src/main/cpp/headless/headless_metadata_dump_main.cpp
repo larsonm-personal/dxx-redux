@@ -28,6 +28,7 @@ extern "C" {
 #include "game.h"
 #include "gameseq.h"
 #include "gamesave.h"
+#include "gamefont.h"
 #include "gr.h"
 #include "inferno.h"
 #include "makesig.h"
@@ -238,7 +239,7 @@ static int init_headless_screen(char *error, size_t error_size)
 	return 1;
 }
 
-static int init_headless_metadata_runtime(int argc, char *argv[], char *error, size_t error_size)
+static int init_headless_metadata_runtime(int argc, char *argv[], char *error, size_t error_size, bool graphics = false)
 {
 	trace_dump_init("mem_init");
 	mem_init();
@@ -298,7 +299,20 @@ static int init_headless_metadata_runtime(int argc, char *argv[], char *error, s
 	}
 #endif
 	trace_dump_init("screen");
-	if (!init_headless_screen(error, error_size))
+	if (graphics) {
+		// Developer gameplay probes must satisfy the real XL renderer admission
+		GameArg.SysWindow = 1;
+		if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0 || gr_init(Game_screen_mode)) {
+			snprintf(error, error_size, "desktop probe graphics initialization failed: %s", SDL_GetError());
+			return 0;
+		}
+#ifdef DXX_BUILD_DESCENT_II
+		gr_use_palette_table(d1_in_d2_startup_palette());
+#else
+		gr_use_palette_table("palette.256");
+#endif
+		gamefont_init();
+	} else if (!init_headless_screen(error, error_size))
 		return 0;
 	Screen_mode = SCREEN_GAME;
 	trace_dump_init("init_game");

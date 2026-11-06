@@ -136,3 +136,13 @@ both level4 branches including14. Do not repeat unchanged exhaustive tests or th
 unchanged unsupported GuideBot hub route; the full-original568-frame follow-up
 is already recorded in rendered-guidebot.md. Native current-head qualification
 remains distinct from these exact retained-APK results. NO APK BUILDS.
+
+## Majha progression tranche
+
+Extend the earned Multiverse route through normallevel3 entry, absent-key and
+locked-door controls, blue/red pickups, normal contact controls0-4, keyed-door
+flight/save, original reactor127 and17boost escape tolevel4. Reuse the source
+90-second Trainee default and authored99-second override, exact full resources
+and protected fresh-process saves. The actual metl111 indexed grate permits both
+centered barrel rays with4pixel margin; exterior key approaches use511/5 and339/5.
+No grants/controlled exits/guard bypass. Test actuallevel4 admission and save/load.
