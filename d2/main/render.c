@@ -1,4 +1,7 @@
 #ifdef DXX_XL_RUNTIME
+#ifdef DXX_XL_RUNTIME
+#include "slow_motion_runtime.h"
+#endif
 #include "preview.h"
 #include "camera_scene.h"
 #include "camera_renderer.h"
@@ -1962,6 +1965,9 @@ void render_frame(fix eye_offset, int window_num)
 
 	if (Endlevel_sequence) {
 		render_endlevel_frame(eye_offset);
+#ifdef DXX_XL_RUNTIME
+		xl_slow_motion_render_advance();
+#endif
 		return;
 	}
 

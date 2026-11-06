@@ -11,9 +11,11 @@ static void slow_motion_weapon_controls(std::ostream &samples, int profile)
 	const fix saved_time = FrameTime, saved_charge = Omega_charge;
 	const fix64 saved_game = GameTime64, saved_last = Last_omega_fire_time;
 	const auto player = Players[Player_num];
+	const auto saved_clock = xl_runtime::weapon_clock_snapshot();
 	object *saved_console = ConsoleObject;
 	const fix times[] = { 1, 3, 4, 7, 15, 65, 1092, 16384 };
 	GameTime64 = 10 * F1_0;
+	require(xl_runtime::restore_weapon_clock(nlohmann::json{ 0, 2, 0 }, true), "Cannot seed rendered Omega recharge clock");
 	Player_is_dead = 0;
 	Players[Player_num].primary_weapon_flags |= 1 << OMEGA_INDEX;
 	Players[Player_num].primary_weapon = LASER_INDEX;
@@ -32,12 +34,12 @@ static void slow_motion_weapon_controls(std::ostream &samples, int profile)
 						omega_charge_frame();
 						samples << "O " << profile << ' ' << multiplayer << ' ' << difficulty << ' ' << time << ' ' << charge << ' ' << energy << ' ' << Omega_charge << ' ' << Players[Player_num].energy << '\n';
 					}
-		// Keep existing ownership/death/cooldown gates; these are not claimed
-		// as reference frame-index cooldown parity
+		// Classic retains its timestamp cooldown; XL uses the render counter
 		for (int gate = 0; gate < 3; ++gate) {
 			Players[Player_num].primary_weapon_flags = player.primary_weapon_flags | (1 << OMEGA_INDEX);
 			Player_is_dead = gate == 1;
 			Last_omega_fire_time = gate == 2 ? GameTime64 : 0;
+			require(xl_runtime::restore_weapon_clock(nlohmann::json{ 0, 2, gate == 2 ? 2 : 0 }, true), "Cannot prepare Omega gate");
 			if (gate == 0) Players[Player_num].primary_weapon_flags &= ~(1 << OMEGA_INDEX);
 			Players[Player_num].energy = 100 * F1_0;
 			Omega_charge = 0;
@@ -77,5 +79,6 @@ static void slow_motion_weapon_controls(std::ostream &samples, int profile)
 	GameTime64 = saved_game;
 	Last_omega_fire_time = saved_last;
 	Omega_charge = saved_charge;
+	require(xl_runtime::restore_weapon_clock(saved_clock, true), "Cannot restore weapon clocks");
 }
 #endif

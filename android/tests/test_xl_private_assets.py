@@ -20,9 +20,82 @@ import run_xl_navigation_smoke as smoke
 import public_contracts as public
 import pilot_archive as pilot
 import xl_private_assets as assets
+import xl_render_clock as render_clock
 
 
 class XlPrivateTests(unittest.TestCase):
+    def test_render_clock_proof_is_strict_and_assisted(self):
+        for xl in (False, True):
+            proof = dict(
+                schema="xl-render-clock-v1",
+                assisted=True,
+                complete=True,
+                renderer="fixture",
+                xl_active=xl,
+                mission="fixture",
+                level=1,
+                reset_count=0,
+                shot_charge=32768 - (1092 if xl else 3276),
+                shot_delay=1 if xl else 3276,
+                events=[],
+            )
+            count = 0
+            for event, delta in render_clock.EVENTS:
+                if event == "restored":
+                    count = 1 if xl else 0
+                after = count + (delta if xl else 0)
+                proof["events"].append(
+                    dict(
+                        event=event,
+                        before=count,
+                        after=after,
+                        charge=32768 + (273 if xl and after not in (0, 1) else 0),
+                    )
+                )
+                count = after
+            self.assertTrue(render_clock.passed(0, proof, "fixture", 1, xl))
+            self.assertFalse(render_clock.passed(1, proof, "fixture", 1, xl))
+            self.assertFalse(render_clock.passed(False, proof, "fixture", 1, xl))
+            self.assertFalse(render_clock.passed(None, proof, "fixture", 1, xl))
+            for key, value in (
+                ("complete", False),
+                ("assisted", False),
+                ("renderer", ""),
+                ("xl_active", not xl),
+                ("level", True),
+                ("reset_count", True),
+                ("shot_charge", 0),
+                ("shot_delay", 0),
+                ("mission", "wrong"),
+                ("events", proof["events"][:-1]),
+                ("events", proof["events"] + [proof["events"][0]]),
+                ("unknown", 0),
+            ):
+                bad = copy.deepcopy(proof)
+                bad[key] = value
+                self.assertFalse(render_clock.passed(0, bad, "fixture", 1, xl), key)
+            for i in range(len(proof["events"])):
+                for key, value in (("event", "wrong"), ("after", 99), ("before", True), ("charge", 0), ("extra", 0)):
+                    bad = copy.deepcopy(proof)
+                    bad["events"][i][key] = value
+                    self.assertFalse(render_clock.passed(0, bad, "fixture", 1, xl))
+
+    def test_render_clock_pin_accepts_only_exact_representations(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            lf, crlf = b"first\nsecond\n", b"first\r\nsecond\r\n"
+            allowed = {hashlib.sha256(lf).hexdigest(), hashlib.sha256(crlf).hexdigest()}
+            with patch.object(render_clock, "PINS", {"fixture.cpp": allowed}):
+                for good in (lf, crlf):
+                    (root / "fixture.cpp").write_bytes(good)
+                    self.assertEqual(
+                        render_clock.verify_reference(root)["fixture.cpp"], hashlib.sha256(good).hexdigest()
+                    )
+                for bad in (b"first\nchanged\n", b"first\r\nsecond\n", b"unrelated", crlf + b" "):
+                    (root / "fixture.cpp").write_bytes(bad)
+                    with self.assertRaises(ValueError):
+                        render_clock.verify_reference(root)
+
     def test_reviewed_cohorts_are_independent_of_candidate_requirements(self):
         self.assertEqual(len(runner.HISTORICAL_FAST_TESTS), 111)
         self.assertEqual(
