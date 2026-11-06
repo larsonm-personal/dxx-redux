@@ -110,3 +110,29 @@ Next implement the prepared other-branch entry probe using the protected owner:
 hub44/side2 -> original boost trigger1 -> exit0 at55/side2 -> level2. Exercise
 normal laser/thrust, save/restore and original resource admission. Continue toward
 2/3/4/5(or14)/6/7/8/9/10; investigate actual failures without forcing progression.
+
+## Multiverse progression tranche
+
+Normal hub44/side2 entry to originallevel2 passed twice with exact restoration on
+retained29471. Before commit, tighten the firing check with the supported range
+operator (the automation parser reads only one comparison per field). Extend the
+same original route through red-key pickup/keyed-door flight, normal reactor
+combat, the authored17-boost escape, cold checkpoint restore and normallevel3
+entry/save-load. Preserve closed-door controls and exact full resources. Use
+local approaches only, no grants/controlled exits; keep full traversal unqualified.
+
+## Original Multiverse first escape checkpoint
+
+Combined78warm/22cold PASS on retained29471/ec7715, exact protected restoration.
+Repeated ordinary hub->level2 entry, bounded firing, earned red key/keyed door,
+normal reactor damage, closed-gate control, all17boosts/master/fire actions and
+normal exit tolevel3 plus destination save/load. Default Trainee countdown90;
+escape type25/time99 sets99seconds. Failed pre-input pickup and stale base30
+expectation remain failures with restored profiles. No engine or mission change.
+See android/XL_compat/evidence/original-multiverse.md for exact receipts/limits.
+
+Next originallevel3 blue/red keys, doors, reactor and boost exit tolevel4, then
+both level4 branches including14. Do not repeat unchanged exhaustive tests or the
+unchanged unsupported GuideBot hub route; the full-original568-frame follow-up
+is already recorded in rendered-guidebot.md. Native current-head qualification
+remains distinct from these exact retained-APK results. NO APK BUILDS.

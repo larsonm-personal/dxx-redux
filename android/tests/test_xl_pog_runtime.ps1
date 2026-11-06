@@ -38,6 +38,8 @@ param(
     [switch]$Pmc3Blue,
     [switch]$Pmc3Gold,
     [switch]$HubActivation,
+    [ValidateSet('Pmc', 'Multiverse')][string]$HubDestination = 'Pmc',
+    [switch]$MultiverseEscape,
     [switch]$MissingCamera,
     [switch]$BriefingPages,
     [switch]$Pmc3Playtest,
@@ -55,6 +57,9 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $earnedFinale = $Pmc3Gold -and $Pmc3Finale
+$multiverseEntry = $HubDestination -eq 'Multiverse'
+if ($multiverseEntry -and (!$HubActivation -or !$PumoMods -or $VertigoHam -or $MissingCamera -or $BriefingPages)) { throw 'Multiverse destination requires full-original HubActivation in its own mode' }
+if ($MultiverseEscape -and !$multiverseEntry) { throw 'MultiverseEscape requires the full-original Multiverse hub destination' }
 if ($MissingCamera -and (!$HubActivation -or !$PmcPlaytest -or $SaveIsolation)) { throw 'MissingCamera requires the protected HubActivation mode' }
 if ($BriefingPages -and (!$HubActivation -or $MissingCamera -or $SaveIsolation)) { throw 'BriefingPages requires its own protected HubActivation mode' }
 if ($SaveIsolation -and (!$PmcPlaytest -or $HubActivation -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates -or $Pmc3Playtest -or $PmcColdResume)) { throw 'SaveIsolation requires PmcPlaytest in its own mode' }
@@ -180,6 +185,8 @@ if ($Pmc3Blue) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-
 if ($Pmc3Gold) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-gold' }
 if ($earnedFinale) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-earned-finale' }
 if ($HubActivation) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-hub-activation' }
+if ($multiverseEntry) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-multiverse-entry' }
+if ($MultiverseEscape) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-multiverse-escape' }
 if ($SaveIsolation) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-save-isolation' }
 if ($Pmc3Playtest) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc3-android' }
 if ($PmcColdResume) { $output = Join-Path $PSScriptRoot '../../temp/xl-original-pmc-cold-android' }
@@ -395,7 +402,14 @@ try {
         $scriptName = [IO.Path]::GetFullPath((Join-Path $output 'reactor-warm.jsonc'))
         ConvertTo-Json -InputObject $steps -Depth 20 | Set-Content -LiteralPath $scriptName -Encoding utf8
     }
-    if ($HubActivation) { $scriptName = 'test_xl_pumo_hub_activation.jsonc' }
+    if ($HubActivation) { $scriptName = if ($multiverseEntry) { 'test_xl_pumo_multiverse_entry.jsonc' } else { 'test_xl_pumo_hub_activation.jsonc' } }
+    if ($MultiverseEscape) {
+        $steps = @(Get-Content "$PSScriptRoot/../game_scripts/$scriptName" -Raw | ConvertFrom-Json -AsHashtable)
+        $escapeSteps = @(Get-Content "$PSScriptRoot/../game_scripts/test_xl_pumo_multiverse_escape.jsonc" -Raw | ConvertFrom-Json -AsHashtable)
+        $steps += @($escapeSteps | Select-Object -Skip 1)
+        $scriptName = [IO.Path]::GetFullPath((Join-Path $output 'multiverse-warm.jsonc'))
+        ConvertTo-Json -InputObject $steps -Depth 20 | Set-Content -LiteralPath $scriptName -Encoding utf8
+    }
     if ($BriefingPages) { $scriptName = 'test_xl_pumo_briefing_pages.jsonc' }
     if ($Pmc3Playtest) { $scriptName = 'test_xl_pumo_pmc3.jsonc' }
     if ($PmcColdResume) {
@@ -454,13 +468,13 @@ try {
     if ($testExit -ne 0) { throw "POG runtime failed ($testExit); see $output" }
     $result = Get-Content "$output/result.json" -Raw | ConvertFrom-Json
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete POG runtime result' }
-    if ($SaveIsolation -or $PmcColdResume -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates) {
+    if ($SaveIsolation -or $PmcColdResume -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates -or $MultiverseEscape) {
         if ($PmcBossCombat) {
             $initialState = Get-Content "$output/state.json" -Raw | ConvertFrom-Json
             $initialBoss = @($initialState.level_scene.robots | Where-Object { $_.object -eq 95 -and $_.id -eq 76 })
             if ($initialBoss.Count -ne 1 -or $initialBoss[0].shields -le 0 -or $initialBoss[0].shields -ge 1375) { throw 'PMC boss preparation lacks normal weapon damage' }
         }
-        if (($PmcEscape -and !$Pmc2Selectors) -or $Pmc2Escape) {
+        if (($PmcEscape -and !$Pmc2Selectors) -or $Pmc2Escape -or $MultiverseEscape) {
             Invoke-PogAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-escape-complete.png') | Out-Null
             Invoke-PogAdb -Arguments @('pull', '/data/local/tmp/xl-escape-complete.png', "$output/escape-complete.png") | Out-Null
         }
@@ -485,6 +499,7 @@ try {
         if ($Pmc3Blue) { $coldScript = 'test_xl_pumo_pmc3_blue_cold.jsonc' }
         if ($Pmc3Gold) { $coldScript = 'test_xl_pumo_pmc3_gold_cold.jsonc' }
         if ($earnedFinale) { $coldScript = 'test_xl_pumo_pmc3_earned_finale_cold.jsonc' }
+        if ($MultiverseEscape) { $coldScript = 'test_xl_pumo_multiverse_escape_cold.jsonc' }
         if ($PmcReactorPlaytest -and !$PmcEscape -and $PmcInnerGates) { $coldScript = 'test_xl_pumo_original_reactor_cold.jsonc' }
         if ($PmcReactorPlaytest -and !$PmcEscape -and !$PmcInnerGates) {
             $steps = @(Get-Content "$PSScriptRoot/../game_scripts/$coldScript" -Raw | ConvertFrom-Json -AsHashtable)
@@ -523,7 +538,11 @@ try {
             $coldProof.boss_shields = $initialBoss[0].shields
             $coldProof.boss_damage_matches = $true
         }
-        if ($SaveIsolation) {
+        if ($MultiverseEscape) {
+            $coldProof.normal_multiverse_escape_repeated = $true
+            $coldProof.destination_level = $coldState.current_level_num
+            Write-Host "PASS: Fresh-process Multiverse red-key/reactor checkpoint, normal boost escape and level3 save/load ($($coldResult.total_steps) steps)"
+        } elseif ($SaveIsolation) {
             $coldProof.stock_and_xl_menu_saves_restored = $true
             Write-Host "PASS: Fresh-process Pumo and stock save menus restore their own runtime and player state ($($coldResult.total_steps) steps)"
         } elseif ($PmcColdResume) {
@@ -568,7 +587,7 @@ try {
         $coldProof | ConvertTo-Json | Set-Content "$output/cold-proof.json" -Encoding utf8
     }
     Invoke-PogAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-pog.png') | Out-Null
-    $renderPath = if ($SaveIsolation -or $PmcColdResume -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates) { "$output/cold-render.png" } else { "$output/render.png" }
+    $renderPath = if ($SaveIsolation -or $PmcColdResume -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates -or $MultiverseEscape) { "$output/cold-render.png" } else { "$output/render.png" }
     Invoke-PogAdb -Arguments @('pull', '/data/local/tmp/xl-pog.png', $renderPath) | Out-Null
     if ($BubbleGpu) { Write-Host "PASS: Original bubble/smoke multi-image pixels, soft depth, GL state and context recreation ($($result.total_steps) steps); renderer control only" }
     elseif ($BubbleFixture) { Write-Host "PASS: Derived $mission original-payload bubble lifecycle ($($result.total_steps) steps); see the original PMC scenario for campaign qualification" }
@@ -581,6 +600,8 @@ try {
     elseif ($SaveIsolation) { Write-Host "PASS: Original Pumo and stock save-menu isolation, warm and fresh process; no progression bypass" }
     elseif ($MissingCamera) { Write-Host "PASS: Original hub exit rejects missing camera addon with a complete on-screen dialog; no progression granted" }
     elseif ($BriefingPages) { Write-Host "PASS: Original Pumo briefing pages stop printing audio while waiting and restart on the next page ($($result.total_steps) steps)" }
+    elseif ($MultiverseEscape) { Write-Host "PASS: Original hub entry, Multiverse red-key pickup/door, reactor combat and continuous boost escape; fresh-process checkpoint and level3 save/load, fixed local approaches" }
+    elseif ($multiverseEntry) { Write-Host "PASS: Original hub door and Multiverse exit through laser/thrust, repeated after hub save restore, level2 normal fire ($($result.total_steps) steps); fixed initial pose, no human traversal" }
     elseif ($HubActivation) { Write-Host "PASS: Original hub door and PMC exit through laser/thrust, repeated after hub save restore ($($result.total_steps) steps); fixed initial pose, no human traversal" }
     elseif ($PmcOpeningGates) { Write-Host "PASS: Original PMC1 opening unlock/open-wall shots, three gate crossings and warm/cold persistence; fixed poses, no full traversal" }
     elseif ($PmcInnerGates -and !$PmcReactorPlaytest) { Write-Host "PASS: Original PMC1 unlock/master shots, forcefield flight and red-key pickup, blastable wall and warm/cold persistence; fixed poses, no full traversal" }
