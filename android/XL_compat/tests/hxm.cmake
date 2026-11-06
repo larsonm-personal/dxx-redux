@@ -1,3 +1,9 @@
+if(NOT MODE)
+    set(MODE dispatch)
+endif()
+if(NOT MODE STREQUAL "dispatch" AND NOT MODE STREQUAL "signed27")
+    message(FATAL_ERROR "Unknown HXM test mode")
+endif()
 file(SHA256 "${HOG}" original_hash)
 if(NOT original_hash STREQUAL "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db")
     message(FATAL_ERROR "HXM controls require original Apocalyptic Factor XL")
@@ -15,14 +21,19 @@ configure_file("${HOG}" "${OUTPUT}/missions/hxmtest.hog" COPYONLY)
 file(WRITE "${OUTPUT}/missions/hxmtest.mn2"
      "d2x-name = Alarlof HXM control\nnum_levels = 1\nalarlof.rl2\n")
 execute_process(
-    COMMAND "${ENGINE}" -hxm-test dispatch -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir
+    COMMAND "${ENGINE}" -hxm-test "${MODE}" -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir
             "${OUTPUT}/preview-user" -nosound -nomusic
     RESULT_VARIABLE result
     OUTPUT_VARIABLE stdout
     ERROR_VARIABLE stderr
     TIMEOUT 240)
 file(WRITE "${OUTPUT}/controls.log" "${stdout}${stderr}")
-if(NOT result EQUAL 0 OR NOT stdout MATCHES "Original HXM normal startup")
+if(MODE STREQUAL "signed27")
+    set(required_output "Signed profile27 native combat and disk controls passed")
+else()
+    set(required_output "Original HXM normal startup")
+endif()
+if(NOT result EQUAL 0 OR NOT stdout MATCHES "${required_output}")
     message(FATAL_ERROR "HXM native controls failed: ${result}: ${stdout}${stderr}")
 endif()
 if(CAMERA_HOG)
@@ -49,7 +60,7 @@ if(REFERENCE)
     endif()
 endif()
 
-if(REFERENCE)
+if(REFERENCE AND MODE STREQUAL "dispatch")
     execute_process(COMMAND "${REFERENCE}" --animation "${OUTPUT}/robot-animation-samples.txt"
                     RESULT_VARIABLE result OUTPUT_VARIABLE stdout ERROR_VARIABLE stderr)
     file(WRITE "${OUTPUT}/animation-reference.log" "${stdout}${stderr}")

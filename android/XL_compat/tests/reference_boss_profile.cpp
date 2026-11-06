@@ -105,22 +105,52 @@ void check_signed_boss_profile()
 		} botInfo[1];
 		const int h = 0;
 #include "xl_reference_boss_role.h"
-		const bool supported = raw == -1 || raw == -23 || (raw >= 21 && raw <= 28);
+		const bool supported = raw == -1 || raw == -23 || raw == -27 || (raw >= 21 && raw <= 28);
 		if (xl_compat::supported_boss_profile(raw) != supported)
 			throw std::runtime_error("Boss admission widened beyond the qualified profiles");
 		if (!supported) continue;
 		++accepted;
+		for (int original : { 0, 1, 3, 4, 1001, 65536 }) {
+			struct Actor {
+				int role;
+				bool IsBoss() const
+				{
+					return role != 0;
+				}
+				int BossId() const
+				{
+					return role;
+				}
+			} actor{ botInfo[0].bossFlag };
+			auto *pObj = &actor;
+			struct {
+				struct {
+					int bD1Mission = 0;
+				} app;
+			} gameStates;
+			constexpr int BOSS_D2 = 21;
+			int damage = original;
+#include "xl_reference_boss_radial.h"
+			const int profile = xl_compat::effective_boss_profile(raw);
+			const bool resistant = profile == 25 || profile == 26 || profile == 27;
+			if (damage != (resistant ? original / 4 : original))
+				throw std::runtime_error("Boss radial damage differs from pinned source");
+		}
 		death_reference::check(xl_compat::boss_ends_level(raw));
 		if (xl_compat::effective_boss_profile(raw) != botInfo[0].bossFlag ||
 		    xl_compat::boss_ends_level(raw) != botInfo[0].bEndsLevel)
 			throw std::runtime_error("Signed boss decoding differs from the pinned reader");
 	}
+	const auto &signed27 = bossProps[0][6];
+	if (!signed27.bTeleports || signed27.bSpewMore || !signed27.bSpewBotsEnergy || signed27.bSpewBotsKinetic ||
+	    signed27.bSpewBotsTeleport || signed27.bInvulEnergy || !signed27.bInvulKinetic || signed27.bInvulSpot)
+		throw std::runtime_error("Signed profile 27 properties differ from qualified collision/spawn behavior");
 	const auto &signed23 = bossProps[0][2];
 	if (!signed23.bTeleports || signed23.bSpewMore || signed23.bSpewBotsEnergy || !signed23.bSpewBotsKinetic ||
 	    signed23.bSpewBotsTeleport || !signed23.bInvulEnergy || signed23.bInvulKinetic || signed23.bInvulSpot)
 		throw std::runtime_error("Signed profile 23 properties differ from qualified collision/spawn behavior");
 	const auto &profile = bossProps[0][1];
-	if (accepted != 10 || !profile.bTeleports || profile.bSpewBotsTeleport ||
+	if (accepted != 11 || !profile.bTeleports || profile.bSpewBotsTeleport ||
 	    profile.bInvulEnergy || profile.bInvulKinetic || profile.bInvulSpot)
 		throw std::runtime_error("Sphere profile requires different transport or collision semantics");
 }

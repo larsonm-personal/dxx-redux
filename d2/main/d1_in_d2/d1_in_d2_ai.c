@@ -15,6 +15,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 /* D1 robot operations, kept separate from D2 scheduling and firing */
 #include <stdlib.h>
+#ifdef DXX_XL_RUNTIME
+#include "boss_spawn.h"
+#endif
 #include "inferno.h"
 #include "game.h"
 #include "object.h"
@@ -370,7 +373,11 @@ int d1_in_d2_ai_flash_can_stun(const object *obj)
 
 fix d1_in_d2_ai_robot_blast_damage(const object *obj, fix damage)
 {
-	const int boss = Robot_info[obj->id].boss_flag - BOSS_D2;
+	int boss = Robot_info[obj->id].boss_flag;
+#ifdef DXX_XL_RUNTIME
+	boss = xl_boss_effective_profile(boss);
+#endif
+	boss -= BOSS_D2;
 	if (d1_in_d2_ai_actor_role(obj) == D1_AI_NATIVE_ENEMY)
 		return damage;
 	/* Native boss identities must never index the D2-only resistance table */

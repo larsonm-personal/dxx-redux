@@ -1,13 +1,16 @@
+extern "C" fix d1_in_d2_ai_robot_blast_damage(const object *, fix);
+
 // Derived companions alter only the boss role and, for removal, the placed ID
-static void hxm_boss_binding_controls(const std::filesystem::path &root)
+static void hxm_boss_binding_controls(const std::filesystem::path &root, bool vertigo = false)
 {
 	std::ifstream file(root / "missions/hxmtest.hog", std::ios::binary);
 	const xl_compat::Bytes original{ std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
-	for (const int role : { 21, 0, -1, -23 }) {
+	for (const int role : { 21, 0, -1, -23, -27 }) {
 		const bool introduce = role != 0;
-		const std::string mission = role == -23 ? "hxmneg23" : role == -1 ? "hxmnend"
-		                                                   : introduce    ? "hxmboss"
-		                                                                  : "hxmplain";
+		const std::string mission = role == -27 ? "hxmneg27" : role == -23 ? "hxmneg23"
+		                                                   : role == -1    ? "hxmnend"
+		                                                   : introduce     ? "hxmboss"
+		                                                                   : "hxmplain";
 		xl_compat::Bytes output{ 'D', 'H', 'F' };
 		unsigned companions = 0, levels = 0;
 		for (auto member : xl_compat::read_hog(original)) {
@@ -73,14 +76,17 @@ static void hxm_boss_binding_controls(const std::filesystem::path &root)
 	        "Restored HXM boss did not retire exactly one objective");
 
 	// Signed roles preserve the profile while clearing the reference bEndsLevel bit
-	for (int signed_role : { -1, -23 }) {
-		require(load_base_mission(signed_role == -1 ? "hxmnend" : "hxmneg23", error, sizeof(error)), error);
+	for (int signed_role : (vertigo ? std::vector<int>{ -1, -23, -27 } : std::vector<int>{ -1, -23 })) {
+		require(load_base_mission(signed_role == -1 ? "hxmnend" : signed_role == -23 ? "hxmneg23"
+		                                                                             : "hxmneg27",
+		                          error, sizeof(error)),
+		        error);
 		StartNewGame(1);
 		require(Robot_info[3].boss_flag == signed_role && Objects[100].id == 3, "Non-ending HXM boss lost its signed source identity");
 		roles_match();
 		const int nonending_objectives = xl_level_objectives_remaining();
 		require(nonending_objectives == objectives - 1, "Non-ending boss became a required objective");
-		require(xl_boss_spawn_default_type(signed_role, 0) == xl_boss_spawn_default_type(signed_role == -1 ? 22 : 23, 0), "Signed boss chose a different source spawn profile");
+		require(xl_boss_spawn_default_type(signed_role, 0) == xl_boss_spawn_default_type(signed_role == -1 ? 22 : -signed_role, 0), "Signed boss chose a different source spawn profile");
 		xl_boss_spawn_state before{}, after{};
 		int slot = -1;
 		for (int i = 0; i < xl_boss_spawn_count(); ++i) {
@@ -103,10 +109,13 @@ static void hxm_boss_binding_controls(const std::filesystem::path &root)
 			require(shot >= 0, "Non-ending boss weapon control creation failed");
 			auto hit = Objects[100].pos;
 			collide_robot_and_weapon(&Objects[100], &Objects[shot], &hit);
-			require((signed_role == -23 && kind == LASER_ID ? Objects[100].shields == health : Objects[100].shields < health) && !xl_boss_is_dying(100),
+			require((((signed_role == -23 && kind == LASER_ID) || (signed_role == -27 && kind == VULCAN_ID)) ? Objects[100].shields == health : Objects[100].shields < health) && !xl_boss_is_dying(100),
 			        "Signed boss energy/kinetic vulnerability differs from reference profile");
 			if (Objects[shot].type != OBJ_NONE) obj_delete(shot);
 		}
+		for (fix damage : { 0, 1, 3, 4, 1001, F1_0 })
+			require(d1_in_d2_ai_robot_blast_damage(&Objects[100], damage) == (signed_role == -27 ? damage / 4 : damage),
+			        "Signed boss radial resistance differs from pinned quarter-damage rule");
 		require(apply_damage_to_robot(&Objects[100], Objects[100].shields + F1_0, ConsoleObject - Objects) && xl_boss_is_dying(100),
 		        "Non-ending boss skipped lethal combat/death roll");
 		stop_time();
