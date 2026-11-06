@@ -361,6 +361,11 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 			graph.clip(VCLIP_MORPHING_ROBOT);
 		}
 	}
+	// Singleplayer startup still uses the fixed classic player-start arrays
+	const auto player_starts = std::count_if(level.objects.begin(), level.objects.end(), [](const auto &object) {
+		return object.type == OBJ_PLAYER || object.type == OBJ_GHOST;
+	});
+	xl_assets::asset_require(player_starts <= MAX_PLAYERS, "player starts exceed qualified runtime capacity");
 	for (std::size_t i = 0; i < level.objects.size(); ++i) {
 		const auto &obj = level.objects[i];
 		// Cooperative starts are removed by singleplayer initialization

@@ -848,6 +848,18 @@ if(BUILD_TESTING)
                 -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/hxm
                 ${hxm_reference_args} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/hxm.cmake)
         set_tests_properties(xl_hxm_native PROPERTIES TIMEOUT 270)
+        set(XL_HXM_VERTIGO_DATA ""
+            CACHE PATH "Retail plus genuine Vertigo data for signed boss27 controls")
+        if(XL_HXM_VERTIGO_DATA)
+            add_test(
+                NAME xl_signed_boss27_native
+                COMMAND
+                    ${CMAKE_COMMAND} -DHOG=${XL_APOCALYPTIC_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
+                    -DDATA=${XL_HXM_VERTIGO_DATA}
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/signed-boss27 -DMODE=signed27
+                    ${hxm_reference_args} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/hxm.cmake)
+            set_tests_properties(xl_signed_boss27_native PROPERTIES TIMEOUT 270)
+        endif()
     endif()
     set(XL_PUMO_PLAYER_ROOT ""
         CACHE PATH "Full original Pumo missions/mods/data for native player probes")

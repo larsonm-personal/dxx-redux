@@ -44,6 +44,27 @@ static void hxm_dependency_controls(const std::filesystem::path &root)
 	PHYSFS_close(level_file);
 	const auto level = xl_compat::inspect_level(level_bytes);
 	require(std::any_of(level.objects.begin(), level.objects.end(), [](const auto &object) { return object.type == OBJ_ROBOT && object.id == 3; }), "Missing authored robot for replacement admission control");
+	// Exercise capacity admission through unchanged-size serialized objects,
+	// without permitting startup to overrun the classic player arrays
+	auto starts = level_bytes;
+	int count = 0;
+	for (const auto &object : level.objects)
+		if (object.type == OBJ_PLAYER || object.type == OBJ_GHOST) ++count;
+	require(count > 0 && count <= MAX_PLAYERS, "HXM player-start baseline changed");
+	for (const auto &object : level.objects) {
+		if (object.type != OBJ_ROBOT) continue;
+		starts.at(object.source_offset) = OBJ_PLAYER;
+		if (++count > MAX_PLAYERS) break;
+	}
+	require(count == MAX_PLAYERS + 1, "Player-start overflow fixture incomplete");
+	const auto start_path = shadow / "overstart.rl2";
+	const auto start_definitions = gameplay_definitions();
+	write_bytes(start_path.string().c_str(), starts);
+	if (xl_level_supported("overstart.rl2", 0) || !std::strstr(xl_level_rejection(), "player starts exceed qualified runtime capacity"))
+		throw std::runtime_error(std::string("Excess player-start rejection mismatch: ") + xl_level_rejection());
+	require(gameplay_definitions() == start_definitions, "Player-start rejection mutated live definitions");
+	std::filesystem::remove(start_path);
+	require(xl_level_supported("alarlof.rl2", 0), "Original player-start admission did not recover");
 	const auto before = gameplay_definitions();
 	const auto model_before = hxm_model_receipt(6);
 	const auto world = arena_state();
@@ -185,6 +206,19 @@ static int hxm_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir"));
+		const auto mode = find_arg_value(argc, argv, "-hxm-test");
+		if (mode && !std::strcmp(mode, "signed27")) {
+			new_player_config();
+			std::strcpy(Players[Player_num].callsign, "XLTest");
+			input_demo_set_skip_level_intro(1);
+			require(load_base_mission("hxmtest", error, sizeof(error)), error);
+			StartNewGame(1);
+			require(N_robot_types == 78, "Signed profile27 requires genuine Vertigo resources");
+			Game_suspended = SUSP_ROBOTS;
+			hxm_boss_binding_controls(root, true);
+			std::cout << "Signed profile27 native combat and disk controls passed\n";
+			return 0;
+		}
 		require(load_base_mission("d2", error, sizeof(error)), error);
 		const auto stock_robot = Robot_info[3];
 		const auto stock_radius = Polygon_models[6].rad;
