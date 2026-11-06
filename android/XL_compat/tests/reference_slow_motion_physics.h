@@ -28,6 +28,12 @@ static int primary_deadline(fix last, fix next, fix now, float speed)
 	float s;
 #include "xl_reference_slow_primary_deadline.h"
 }
+static int missile_deadline(fix last, fix next, fix now, float speed)
+{
+	float s;
+	fix t;
+#include "xl_reference_slow_missile_deadline.h"
+}
 static int flare_deadline(fix &next, fix now, float speed, bool enough)
 {
 #include "xl_reference_slow_flare_deadline.h"
@@ -78,6 +84,7 @@ static int slow_motion_physics(const char *path)
 	std::set<std::tuple<int, int, int, int, int, int>> omega;
 	std::set<std::tuple<int, int, int, int, int>> homing;
 	std::set<std::tuple<int, int, int, int, int, int>> deadlines;
+	std::set<std::tuple<int, int, int, int, int>> missiles;
 	while (std::getline(input, line)) {
 		std::istringstream row(line);
 		char kind;
@@ -86,7 +93,16 @@ static int slow_motion_physics(const char *path)
 		const float expected_world = profile == 0 ? 1 : profile == 1 ? 1.025f
 		                                                             : 3;
 		gameStates.gameplay.slowmo[0].fSpeed = expected_world;
-		if (kind == 'D') {
+		if (kind == 'E') {
+			int multiplayer, li, ni, epoch, actual;
+			if (!(row >> multiplayer >> li >> ni >> epoch >> actual) ||
+			    (multiplayer != 0 && multiplayer != 1) || li < 0 || li >= 4 || ni < 0 || ni >= 8 ||
+			    (epoch != 0 && epoch != 1) || !missiles.emplace(profile, multiplayer, li, ni, epoch).second) throw std::runtime_error("Invalid/duplicate missile deadline");
+			const fix lasts[] = { -I2X(2), -1, 0, -I2X(1) };
+			const fix nexts[] = { -1, 0, 1, I2X(1) / 4, I2X(5) - 1, I2X(5), I2X(5) + 1, I2X(15) };
+			const auto expected = multiplayer ? int(nexts[ni] <= 0) : missile_deadline(lasts[li], nexts[ni], 0, expected_world);
+			if (actual != expected) throw std::runtime_error("Missile deadline differs from pinned source");
+		} else if (kind == 'D') {
 			int multiplayer, li, ni, epoch, enough, primary, flare, next_actual;
 			if (!(row >> multiplayer >> li >> ni >> epoch >> enough >> primary >> flare >> next_actual) ||
 			    (multiplayer != 0 && multiplayer != 1) || li < 0 || li >= 4 || ni < 0 || ni >= 8 ||
@@ -298,8 +314,8 @@ static int slow_motion_physics(const char *path)
 		std::string extra;
 		if (row >> extra) throw std::runtime_error("Trailing slow-motion row data");
 	}
-	if (moves.size() != 768 || lives.size() != 144 || rotations.size() != 144 || turns.size() != 1536 || contacts.size() != 64 || ai.size() != 1584 || ai_turns.size() != 576 || omega.size() != 3840 || homing.size() != 512 || deadlines.size() != 1024) throw std::runtime_error("Incomplete slow-motion source coverage");
-	std::cout << "768 native offsets/lifetimes and 144 lifetime boundary cases and 144 rotations and 1536 turn impulses and 64 contacts and 1584 AI frames and 576 AI turns, 3840 Omega steps and 512 homing orientations and 1024 firing deadline cases match pinned source\n";
+	if (moves.size() != 768 || lives.size() != 144 || rotations.size() != 144 || turns.size() != 1536 || contacts.size() != 64 || ai.size() != 1584 || ai_turns.size() != 576 || omega.size() != 3840 || homing.size() != 512 || deadlines.size() != 1024 || missiles.size() != 512) throw std::runtime_error("Incomplete slow-motion source coverage");
+	std::cout << "768 native offsets/lifetimes and 144 lifetime boundary cases and 144 rotations and 1536 turn impulses and 64 contacts and 1584 AI frames and 576 AI turns, 3840 Omega steps and 512 homing orientations and 1024 firing deadlines, 512 missile deadlines match pinned source\n";
 	return 0;
 }
 #endif

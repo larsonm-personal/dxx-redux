@@ -162,6 +162,7 @@ static int water_actors_test(int argc, char **argv)
 		for (int frame = 0; frame < 600 && Objects[robot].control_type == CT_MORPH; ++frame) do_morph_frame(&Objects[robot]);
 		require(Objects[robot].control_type == CT_AI, "wet robot did not complete morphing");
 		char earned[] = "water-actors.sav";
+		require(xl_runtime::restore_weapon_clock(nlohmann::json{ -777 }, true), "Cannot prepare disk missile state");
 		Last_laser_fired_time = GameTime64 - 1001;
 		Next_laser_fire_time = GameTime64 + 2003;
 		Next_flare_fire_time = GameTime64 + 3007;
@@ -202,6 +203,7 @@ static int water_actors_test(int argc, char **argv)
 		require(state_restore_all_sub(earned, 0) && xl_preview_water_segment(Objects[robot].segnum) && Objects[robot].control_type == CT_AI, "wet generated robot restore failed");
 		require(xl_runtime::slow_motion_state().clocks[0].speed == 1 && xl_runtime::slow_motion_state().clocks[1].speed == 1, "Level restore retained unpersisted slow-motion state");
 		require(Last_laser_fired_time - GameTime64 == -1001 && Next_laser_fire_time - GameTime64 == 2003 && Next_flare_fire_time - GameTime64 == 3007, "Saved firing timestamp offsets did not survive disk restore");
+		require(xl_runtime::weapon_clock_snapshot() == nlohmann::json{ -777 }, "Disk restore lost missile last-shot offset");
 		water_actor_contacts();
 		water_actor_combat(robot);
 		Players[Player_num].energy = i2f(50);
