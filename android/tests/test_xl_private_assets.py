@@ -459,12 +459,15 @@ class XlPrivateTests(unittest.TestCase):
                 pilot.validate_inventory(changed)
 
     def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
-        self.assertEqual(len(public.PUBLIC_TESTS), 50)
+        self.assertEqual(len(public.PUBLIC_TESTS), 51)
         self.assertEqual(
             public.GPU_TESTS, {"xl_fog_gpu", "xl_fog_gpu_direct", "xl_fog_gpu_copy16_fallback", "xl_pog_gpu"}
         )
         oof_public = {"xl_oof_metadata_reference", "xl_oof_render_reference", "xl_oof_source_pins"}
-        self.assertEqual(public.PUBLIC_TESTS - runner.FAST_TESTS, oof_public | {"xl_segment_damage_reference"})
+        self.assertEqual(
+            public.PUBLIC_TESTS - runner.FAST_TESTS,
+            oof_public | {"xl_segment_damage_reference", "xl_slow_motion_reference"},
+        )
         self.assertEqual(len(runner.FAST_TESTS), 113)
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
