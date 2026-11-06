@@ -39,6 +39,7 @@ int xl_level_supported(const char *filename, int multiplayer);
 int xl_level_supported_at(const char *filename, int multiplayer, int ordinal);
 int xl_level_segment_group(int segment);
 int xl_source_level_version(void);
+int xl_segment_damage_rates(int segment, int16_t *shield, int16_t *energy);
 int xl_source_game_version(void);
 const char *xl_level_rejection(void);
 int xl_test_stop_after_level(void);

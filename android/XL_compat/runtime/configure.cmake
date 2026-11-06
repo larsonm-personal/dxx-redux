@@ -30,6 +30,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/fog.cpp"
                 "${xl_runtime_dir}/blocked.cpp"
                 "${xl_runtime_dir}/repair.cpp"
+                "${xl_runtime_dir}/segment_damage.cpp"
                 "${xl_runtime_dir}/doorway.cpp"
                 "${xl_runtime_dir}/doors.cpp"
                 "${xl_runtime_dir}/changing_light.cpp"

@@ -10,6 +10,7 @@
 #include "blocked.h"
 #include "speed_boost.h"
 #include "boss_spawn.h"
+#include "segment_damage.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -2367,6 +2368,9 @@ void object_move_one( object * obj )
 			 fuelcen_check_for_hoard_goal (&Segments[obj->segnum]);
 #endif
 
+#ifdef DXX_XL_RUNTIME
+		if (xl_segment_damage_tick(obj)) {
+#endif
 		fix fuel=fuelcen_give_fuel( &Segments[obj->segnum], INITIAL_ENERGY-Players[Player_num].energy );
 		if (fuel > 0 )	{
 			fix energy_before = Players[Player_num].energy;
@@ -2390,6 +2394,9 @@ void object_move_one( object * obj )
 			snprintf(extra_log, sizeof(extra_log), " seg=%d repair_raw=%d", obj->segnum, shields);
 			input_demo_trace_player_shield_change("repaircen", shields_before, Players[Player_num].shields, extra_json, extra_log);
 		}
+#ifdef DXX_XL_RUNTIME
+		}
+#endif
 	}
 
 	if (obj->lifeleft != IMMORTAL_TIME) //if not immortal...

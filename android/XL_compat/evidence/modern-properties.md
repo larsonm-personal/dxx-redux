@@ -3,8 +3,10 @@
 The 23/40 profile decodes water (bit 1) and no-damage (bit 8) independently of
 segment function. Bits 0/1/8/9 use the shared OpenGL runtime. Production admission
 uses detected requirements and resource validation, never fixture names or hashes.
-Other property bits, nonzero signed damage, water with robots/contained robots or
-robot generators, and multiplayer remain rejected. Legacy water is still opt-in.
+Authored modern signed damage now has separate [component support](segment-damage.md).
+Other unsupported property bits and multiplayer remain rejected. Modern stock robot
+and generator water controls are recorded separately in [water actors](water-actors.md).
+Legacy water is still opt-in.
 
 The supported rendering profile uses colored segment boundaries, default fluid
 physics and method-0 lighting. Optional volumetric fog is not implemented. This

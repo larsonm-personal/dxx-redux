@@ -37,12 +37,21 @@ static void repair_frames(const std::filesystem::path &output, const std::vector
 		obj_relink(index, segment);
 		compute_segment_center(&player.pos, &Segments[segment]);
 		for (fix health : { -1, 0, i2f(50), i2f(99), i2f(100), i2f(150) }) {
+			if (xl_source_level_version() >= 21 && health < 0) player.control_type = CT_FLYING;
 			Players[Player_num].shields = health;
 			const auto energy = Players[Player_num].energy;
 			object_move_one(&player);
 			samples << (segment == dry ? 0 : 2) << ' ' << FrameTime << ' ' << health << ' ' << energy << ' ' << Players[Player_num].shields << ' ' << Players[Player_num].energy << '\n';
 			const auto expected = health < 0 || health >= i2f(100) || segment == dry ? health : std::min(i2f(100), health + 11 * F1_0 / 4);
 			require(Players[Player_num].shields == expected && Players[Player_num].energy == energy, "Actual repair frame changed rate, cap, dead player or energy");
+			// Modern segment functions now enter ordinary death even with zero rates
+			// Finish this deliberately lethal sample before the independent live case
+			if (xl_source_level_version() >= 21 && health < 0) {
+				require(Player_is_dead, "Modern negative shields skipped the source death boundary");
+				dead_player_end();
+				Dead_player_camera = nullptr;
+				player.control_type = CT_NONE;
+			}
 		}
 	}
 	// Cross the real dry/repair portal; segment functions run before movement,

@@ -52,6 +52,7 @@ PUBLIC_TESTS = {
     "xl_projection_reference",
     "xl_scoped_texture_contract",
     "xl_segment_flags_reference",
+    "xl_segment_damage_reference",
     "xl_side_center_reference",
     "xl_static_pixels_contract",
     "xl_trigger_capacity_reference",
