@@ -68,3 +68,12 @@ if(REFERENCE AND MODE STREQUAL "dispatch")
         message(FATAL_ERROR "Robot animation source comparison failed: ${stdout}${stderr}")
     endif()
 endif()
+
+if(REFERENCE AND MODE STREQUAL "dispatch")
+    execute_process(COMMAND "${REFERENCE}" --starts "${OUTPUT}/player-start-samples.txt"
+                    RESULT_VARIABLE result OUTPUT_VARIABLE stdout ERROR_VARIABLE stderr)
+    file(WRITE "${OUTPUT}/player-start-reference.log" "${stdout}${stderr}")
+    if(NOT result EQUAL 0)
+        message(FATAL_ERROR "Player-start source comparison failed: ${stdout}${stderr}")
+    endif()
+endif()

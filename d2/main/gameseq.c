@@ -317,6 +317,12 @@ int count_number_of_hostages()
 	return count;
 }
 
+#ifdef DXX_XL_RUNTIME
+/* Singleplayer-only overflow; never changes network player arrays or packets */
+static int xl_unused_starts[XL_SINGLEPLAYER_START_LIMIT - MAX_PLAYERS];
+static int xl_unused_start_count;
+#endif
+
 void
 gameseq_init_network_players()
 {
@@ -325,6 +331,9 @@ gameseq_init_network_players()
 	// Initialize network player start locations and object numbers
 
 	ConsoleObject = &Objects[0];
+#ifdef DXX_XL_RUNTIME
+	xl_unused_start_count = 0;
+#endif
 	k = 0;
 	j = 0;
 	for (i=0;i<=Highest_object_index;i++) {
@@ -334,6 +343,17 @@ gameseq_init_network_players()
 			if ( (!(Game_mode & GM_MULTI_COOP) && ((Objects[i].type == OBJ_PLAYER)||(Objects[i].type==OBJ_GHOST))) ||
 	           ((Game_mode & GM_MULTI_COOP) && ((j == 0) || ( Objects[i].type==OBJ_COOP ))) )
 			{
+#ifdef DXX_XL_RUNTIME
+				if (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && k >= MAX_PLAYERS) {
+					if (xl_unused_start_count >= XL_SINGLEPLAYER_START_LIMIT - MAX_PLAYERS)
+						Error("XL player starts exceed qualified runtime capacity");
+					Objects[i].type = OBJ_PLAYER;
+					Objects[i].id = MAX_PLAYERS + xl_unused_start_count;
+					xl_unused_starts[xl_unused_start_count++] = i;
+					j++;
+					continue;
+				}
+#endif
 				Objects[i].type=OBJ_PLAYER;
 				Player_init[k].pos = Objects[i].pos;
 				Player_init[k].orient = Objects[i].orient;
@@ -407,6 +427,13 @@ void gameseq_remove_unused_players()
 		{
 			obj_delete(Players[i].objnum);
 		}
+#ifdef DXX_XL_RUNTIME
+		if (xl_level_extensions_active() && !(Game_mode & GM_MULTI)) {
+			for (i = 0; i < xl_unused_start_count; ++i)
+				obj_delete(xl_unused_starts[i]);
+		}
+	xl_unused_start_count = 0;
+#endif
 	}
 }
 

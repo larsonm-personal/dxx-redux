@@ -1,6 +1,8 @@
 #ifndef DXX_XL_PREVIEW_H
 #define DXX_XL_PREVIEW_H
 #include <stdint.h>
+/* Pinned XL start capacity; network/player storage remains classic-sized */
+#define XL_SINGLEPLAYER_START_LIMIT 16
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1143,9 +1143,14 @@ static void original_models(const char *path, const std::string &selected)
 	require(tested == 1, "Original selected HXM model count changed");
 }
 void compare_robot_animation(const char *path);
+void compare_player_starts(const char *path);
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--starts") {
+			compare_player_starts(argv[2]);
+			return 0;
+		}
 		if (argc == 3 && std::string(argv[1]) == "--animation") {
 			compare_robot_animation(argv[2]);
 			return 0;
