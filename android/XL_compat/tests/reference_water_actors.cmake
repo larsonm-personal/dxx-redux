@@ -6,6 +6,8 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/physics.cpp"
                       "int32_t CObject::UpdateOffset (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/physics.cpp"
                       "void CObject::ProcessDrag (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/physics.cpp"
+                      "void CObject::ComputeMovedTime (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_water_actors.h"
      CONTENT "${extracted}")
 add_executable(xl_water_actors_reference tests/reference_water_actors.cpp)
@@ -48,3 +50,38 @@ math(EXPR rotation_length "${rotation_end} - ${rotation_start}")
 string(SUBSTRING "${rotation_tail}" ${rotation_start} ${rotation_length} rotation_fragment)
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_slow_rotation.h"
      CONTENT "${rotation_fragment}")
+
+set(extracted "")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/physics.cpp"
+                      "void PhysicsSetRotVelAndSaturate (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_slow_saturate.h"
+     CONTENT "${extracted}")
+string(FIND "${rotation_source}" "delta_p = (dest_angles.v.coord.p - cur_angles.v.coord.p);"
+            turn_start)
+if(turn_start LESS 0)
+    message(FATAL_ERROR "Missing pinned turning start")
+endif()
+string(SUBSTRING "${rotation_source}" ${turn_start} -1 turn_tail)
+string(FIND "${turn_tail}" "RETURN" turn_end)
+if(turn_end LESS 0)
+    message(FATAL_ERROR "Missing pinned turning end")
+endif()
+string(SUBSTRING "${turn_tail}" 0 ${turn_end} turn_fragment)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_slow_turn.h"
+     CONTENT "${turn_fragment}")
+
+string(FIND "${rotation_source}" "void CObject::FixPosition (" contact_start)
+if(contact_start LESS 0)
+    message(FATAL_ERROR "Missing pinned contact function")
+endif()
+string(SUBSTRING "${rotation_source}" ${contact_start} -1 contact_tail)
+string(FIND "${contact_tail}" "simData.vMoved = info.position.vPos - simData.vStartPos;"
+            contact_start)
+string(FIND "${contact_tail}" "if ((this == gameData.objData.pConsole)" contact_end)
+if(contact_start LESS 0 OR contact_end LESS contact_start)
+    message(FATAL_ERROR "Missing pinned contact boundaries")
+endif()
+math(EXPR contact_length "${contact_end} - ${contact_start}")
+string(SUBSTRING "${contact_tail}" ${contact_start} ${contact_length} contact_fragment)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_slow_contact.h"
+     CONTENT "${contact_fragment}")
