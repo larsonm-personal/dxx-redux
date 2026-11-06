@@ -8,7 +8,7 @@ constexpr fix FT = I2X(1) / 64;
 #define ENTER(a, b)
 #define RETVAL(value) return (value);
 constexpr int OBJ_PLAYER = 4, OBJ_ROBOT = 2, EARTHSHAKER_MEGA_ID = 54, ROBOT_SHAKER_MEGA_ID = 61;
-constexpr int IsMultiGame = 0;
+int IsMultiGame = 0;
 fix FixMulDiv(fix value, fix scale, fix divisor)
 {
 	return static_cast<fix>(std::int64_t(value) * scale / divisor);
@@ -33,7 +33,7 @@ struct {
 } gameData;
 struct {
 	int bFluidPhysics = 1, nSpeedScale = 0;
-} extraGameInfo[1];
+} extraGameInfo[2];
 struct CPhysSimData {
 	fix xOldSimTime = 0, xMovedTime = 0, xMovedDist = 0, xAttemptedDist = 0, xSimTime = 0;
 	CFixVector vNewPos, vHitPos, vOffset, vMoved, velocity, vOldPos, vStartPos;
@@ -44,9 +44,11 @@ struct CPhysSimData {
 	void Setup();
 };
 #include "xl_reference_water_actors.h"
+#include "reference_slow_motion_physics.h"
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--slow-motion") return slow_motion_physics(argv[2]);
 		if (argc != 2) throw std::runtime_error("Expected water motion samples");
 		std::ifstream input(argv[1]);
 		int type, wet, count = 0;

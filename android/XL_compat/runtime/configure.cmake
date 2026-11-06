@@ -21,6 +21,8 @@ foreach(xl_target IN LISTS xl_targets)
     target_sources(
         ${xl_target}
         PRIVATE "${xl_runtime_dir}/preview.cpp"
+                "${xl_runtime_dir}/slow_motion_runtime.cpp"
+                "${xl_runtime_dir}/../slow_motion.cpp"
                 "${xl_runtime_dir}/object_birth.cpp"
                 "${xl_runtime_dir}/explosion_motion.cpp"
                 "${xl_runtime_dir}/camera_controller.cpp"

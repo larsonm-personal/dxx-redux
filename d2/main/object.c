@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "slow_motion_runtime.h"
 #include "transparency_scene.h"
 #include "projectile.h"
 #include "object_birth.h"
@@ -2400,7 +2401,11 @@ void object_move_one( object * obj )
 	}
 
 	if (obj->lifeleft != IMMORTAL_TIME) //if not immortal...
+#ifdef DXX_XL_RUNTIME
+		obj->lifeleft -= xl_slow_motion_lifetime(obj, FrameTime);
+#else
 		obj->lifeleft -= FrameTime; //...inevitable countdown towards death
+#endif
 
 	Drop_afterburner_blob_flag = 0;
 
