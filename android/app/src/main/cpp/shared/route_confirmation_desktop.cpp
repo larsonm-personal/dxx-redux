@@ -5,6 +5,11 @@
 #include <string.h>
 
 #include <string>
+#include <fstream>
+#include <nlohmann/json.hpp>
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#endif
 
 #include <physfs.h>
 #include <SDL.h>
@@ -15,18 +20,25 @@
 extern "C" {
 #include "args.h"
 #include "config.h"
+#include "dxxerror.h"
+#include "endlevel.h"
 #include "event.h"
 #include "game.h"
 #include "gameseq.h"
+#include "gamesave.h"
 #include "inferno.h"
 #include "input_demo_start.h"
 #include "mission.h"
+#include "maths.h"
 #include "newdemo.h"
 #include "object.h"
+#include "ogl_init.h"
 #include "player.h"
 #include "playsave.h"
+#include "segment.h"
 #include "startup_resume_shared.h"
 #include "window.h"
+void GameProcessFrame(void);
 }
 
 namespace
@@ -40,6 +52,61 @@ struct desktop_route_state {
 };
 
 desktop_route_state State = {};
+
+bool write_readiness(const char *path, nlohmann::ordered_json &proof, const char *phase)
+{
+	proof["phase"] = phase;
+	std::ofstream output(path);
+	output << proof.dump(2) << '\n';
+	output.flush();
+	return output.good();
+}
+
+int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
+{
+	proof["mission"] = Current_mission_filename;
+	proof["level"] = Current_level_num;
+	proof["level_file"] = Gamesave_current_filename;
+	proof["segments"] = Num_segments;
+#ifdef DXX_XL_RUNTIME
+	proof["xl_active"] = xl_level_extensions_active() != 0;
+	proof["level_version"] = xl_source_level_version();
+#else
+	proof["xl_active"] = false;
+#endif
+	proof["frames"] = 0;
+	proof["rendered_frames"] = 0;
+	proof["fixed_hz"] = ROUTE_CONFIRMATION_FIXED_HZ;
+	proof["seed"] = ROUTE_CONFIRMATION_CANONICAL_SEED;
+	proof["assisted"] = false;
+	const auto *renderer = glGetString(GL_RENDERER);
+	proof["renderer"] = renderer ? reinterpret_cast<const char *>(renderer) : "";
+	if (!renderer || !Game_wind || route_confirmation_get_summary()->status != ROUTE_CONFIRMATION_IDLE || game_is_time_paused() || !write_readiness(path, proof, "loaded"))
+		return 1;
+	int remainder = 0;
+	for (int frame = 0; frame < 120; ++frame) {
+		remainder += F1_0;
+		FrameTime = remainder / ROUTE_CONFIRMATION_FIXED_HZ;
+		remainder %= ROUTE_CONFIRMATION_FIXED_HZ;
+		calc_game_time();
+		GameProcessFrame();
+		if (Current_level_num != State.level || Player_is_dead || Endlevel_sequence || game_is_time_paused()) {
+			write_readiness(path, proof, "simulation_failed");
+			return 1;
+		}
+		proof["frames"] = frame + 1;
+		game_render_frame_mono(0);
+		gr_flip();
+		const auto error = glGetError();
+		if (error != GL_NO_ERROR) {
+			proof["gl_error"] = error;
+			write_readiness(path, proof, "rendering_failed");
+			return 1;
+		}
+		proof["rendered_frames"] = frame + 1;
+	}
+	return write_readiness(path, proof, "loaded_ticked") ? 0 : 1;
+}
 
 void publish_progress(const route_confirmation_summary *summary)
 {
@@ -121,6 +188,24 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 {
 	char error[256] = "";
 	const char *output = argument_value("-route-confirm-json-out");
+	const char *readiness = argument_value("-xl-readiness-proof");
+	if (startup_find_cmd_arg("-xl-readiness-proof") && (!readiness || !output ||
+	                                                    startup_find_cmd_arg("-route-confirm-exit-trigger") || startup_find_cmd_arg("-route-confirm-speed-percent") ||
+	                                                    startup_find_cmd_arg("-route-confirm-timeout-seconds") || startup_find_cmd_arg("-route-confirm-capture") ||
+	                                                    startup_find_cmd_arg("-route-confirm-checkpoint") || startup_find_cmd_arg("-route-confirm-checkpoint-out") ||
+	                                                    startup_find_cmd_arg("-route-confirm-key") || startup_find_cmd_arg("-route-confirm-segment") ||
+	                                                    startup_find_cmd_arg("-route-confirm-native-transition") || startup_find_cmd_arg("-route-confirm-load-proof"))) {
+		fprintf(stderr, "Rendered readiness requires proof/output paths and no assisted route options\n");
+		return 1;
+	}
+	nlohmann::ordered_json proof;
+	if (readiness) {
+		// Fatal admission errors must exit unattended instead of opening a modal dialog
+		error_init(nullptr);
+		set_warn_func(warn_printf);
+		proof["schema"] = "dxx-xl-rendered-load-tick-v1";
+		if (!write_readiness(readiness, proof, "initializing")) return 1;
+	}
 	const char *level_text;
 	const char *time_limit_text;
 	const char *exit_goal;
@@ -153,6 +238,7 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	State.output = output;
 	State.mission = argument_value("-mission");
 	mission = State.mission && *State.mission ? State.mission : "d2";
+	if (readiness && !write_readiness(readiness, proof, "mission_load")) return 1;
 	if (!load_mission_by_name(&mission[0])) {
 		fprintf(stderr, "ROUTE-CONFIRM FAIL could not load mission %s\n",
 		        mission.c_str());
@@ -173,6 +259,14 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	PlayerCfg.maxFps = ROUTE_CONFIRMATION_FIXED_HZ;
 	GameCfg.Grabinput = 0;
 	input_demo_set_skip_level_intro(1);
+	if (readiness) {
+		d_srand_stream(D_RNG_SIM, ROUTE_CONFIRMATION_CANONICAL_SEED);
+		d_srand_stream(D_RNG_FX, ROUTE_CONFIRMATION_CANONICAL_SEED);
+		d_rand_reset_stream_call_count(D_RNG_SIM);
+		d_rand_reset_stream_call_count(D_RNG_FX);
+		Difficulty_level = 2;
+		if (!write_readiness(readiness, proof, "level_load")) return 1;
+	}
 	if (State.level < 0)
 		Newdemo_state = ND_STATE_PLAYBACK;
 	StartNewGame(State.level);
@@ -181,6 +275,7 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	PlayerCfg.maxFps = ROUTE_CONFIRMATION_FIXED_HZ;
 	if (game_is_time_paused())
 		start_time();
+	if (readiness) return rendered_readiness(readiness, proof);
 	State.active = 1;
 	event_toggle_focus(0);
 	if (!route_confirmation_start()) {
