@@ -28,6 +28,7 @@ int xl_boss_spawn_robot(int owner, int type, const struct vms_vector *position, 
 int xl_boss_spawn_action(int owner, int segment);
 void xl_boss_spawn_allow_second(int owner);
 int xl_boss_spawn_default_type(int boss_flag, int index);
+int xl_boss_effective_profile(int raw);
 void xl_boss_weapon_spawn(int owner, int weapon, const struct vms_vector *position);
 void xl_boss_ai_frame(int owner, int visible);
 void xl_boss_note_hit(int owner);

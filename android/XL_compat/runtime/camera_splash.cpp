@@ -1,4 +1,5 @@
 #include "camera_splash.h"
+#include "boss_spawn.h"
 #include "camera_collision.h"
 #include "camera_flash.h"
 #include "camera_children.h"
@@ -155,7 +156,7 @@ static void camera_radial_explosion(object &weapon, vms_vector impact)
 				for (auto &axis : rotation) axis = splash_multiply(axis, -2 * F1_0 * (7 - Difficulty_level) / 8);
 				xl_camera_splash_rotation(actor, native(rotation));
 				const auto &robot = Robot_info[actor.id];
-				const int boss = robot.boss_flag - BOSS_D2;
+				const int boss = xl_boss_effective_profile(robot.boss_flag) - BOSS_D2;
 				if (boss >= 0 && boss < NUM_D2_BOSSES && Boss_invulnerable_matter[boss]) damage /= 4;
 				const bool killer_robot = killer && killer->type == OBJ_ROBOT;
 				const bool killer_guidebot = killer_robot && Robot_info[killer->id].companion;

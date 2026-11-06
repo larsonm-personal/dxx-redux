@@ -3,10 +3,11 @@ static void hxm_boss_binding_controls(const std::filesystem::path &root)
 {
 	std::ifstream file(root / "missions/hxmtest.hog", std::ios::binary);
 	const xl_compat::Bytes original{ std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
-	for (const int role : { 21, 0, -1 }) {
+	for (const int role : { 21, 0, -1, -23 }) {
 		const bool introduce = role != 0;
-		const std::string mission = role == -1 ? "hxmnend" : introduce ? "hxmboss"
-		                                                               : "hxmplain";
+		const std::string mission = role == -23 ? "hxmneg23" : role == -1 ? "hxmnend"
+		                                                   : introduce    ? "hxmboss"
+		                                                                  : "hxmplain";
 		xl_compat::Bytes output{ 'D', 'H', 'F' };
 		unsigned companions = 0, levels = 0;
 		for (auto member : xl_compat::read_hog(original)) {
@@ -71,58 +72,60 @@ static void hxm_boss_binding_controls(const std::filesystem::path &root)
 	            bool(Control_center_destroyed) == (objectives == 1),
 	        "Restored HXM boss did not retire exactly one objective");
 
-	// Authored -1 is profile 1 without the reference bEndsLevel bit
-	require(load_base_mission("hxmnend", error, sizeof(error)), error);
-	StartNewGame(1);
-	require(Robot_info[3].boss_flag == -1 && Objects[100].id == 3, "Non-ending HXM boss lost its signed source identity");
-	roles_match();
-	const int nonending_objectives = xl_level_objectives_remaining();
-	require(nonending_objectives == objectives - 1, "Non-ending boss became a required objective");
-	require(xl_boss_spawn_default_type(-1, 0) == xl_boss_spawn_default_type(22, 0), "Signed boss chose a different source spawn profile");
-	xl_boss_spawn_state before{}, after{};
-	int slot = -1;
-	for (int i = 0; i < xl_boss_spawn_count(); ++i) {
-		require(xl_boss_spawn_state_get(i, &before), "Non-ending boss state missing");
-		if (before.owner == 100) {
-			slot = i;
-			break;
+	// Signed roles preserve the profile while clearing the reference bEndsLevel bit
+	for (int signed_role : { -1, -23 }) {
+		require(load_base_mission(signed_role == -1 ? "hxmnend" : "hxmneg23", error, sizeof(error)), error);
+		StartNewGame(1);
+		require(Robot_info[3].boss_flag == signed_role && Objects[100].id == 3, "Non-ending HXM boss lost its signed source identity");
+		roles_match();
+		const int nonending_objectives = xl_level_objectives_remaining();
+		require(nonending_objectives == objectives - 1, "Non-ending boss became a required objective");
+		require(xl_boss_spawn_default_type(signed_role, 0) == xl_boss_spawn_default_type(signed_role == -1 ? 22 : 23, 0), "Signed boss chose a different source spawn profile");
+		xl_boss_spawn_state before{}, after{};
+		int slot = -1;
+		for (int i = 0; i < xl_boss_spawn_count(); ++i) {
+			require(xl_boss_spawn_state_get(i, &before), "Non-ending boss state missing");
+			if (before.owner == 100) {
+				slot = i;
+				break;
+			}
 		}
+		require(slot >= 0, "Non-ending boss missing runtime binding");
+		GameTime64 += i2f(20);
+		Objects[100].ctype.ai_info.CLOAKED = 0;
+		xl_boss_ai_frame(100, 1);
+		require(xl_boss_spawn_state_get(slot, &after) && Objects[100].ctype.ai_info.CLOAKED == 1,
+		        "Non-ending boss did not enter the reference cloak lifecycle");
+		for (const int kind : { LASER_ID, VULCAN_ID }) {
+			const auto health = Objects[100].shields;
+			const int shot = Laser_create_new(&ConsoleObject->orient.fvec, &Objects[100].pos, Objects[100].segnum,
+			                                  ConsoleObject - Objects, kind, 0);
+			require(shot >= 0, "Non-ending boss weapon control creation failed");
+			auto hit = Objects[100].pos;
+			collide_robot_and_weapon(&Objects[100], &Objects[shot], &hit);
+			require((signed_role == -23 && kind == LASER_ID ? Objects[100].shields == health : Objects[100].shields < health) && !xl_boss_is_dying(100),
+			        "Signed boss energy/kinetic vulnerability differs from reference profile");
+			if (Objects[shot].type != OBJ_NONE) obj_delete(shot);
+		}
+		require(apply_damage_to_robot(&Objects[100], Objects[100].shields + F1_0, ConsoleObject - Objects) && xl_boss_is_dying(100),
+		        "Non-ending boss skipped lethal combat/death roll");
+		stop_time();
+		require(state_save_all_sub(save, description), "Non-ending boss save failed");
+		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_boss_spawn_count(),
+		        "Non-ending boss leaked into classic runtime");
+		require(state_restore_all_sub(save, 0) && Robot_info[3].boss_flag == signed_role && xl_boss_is_dying(100) &&
+		            xl_level_objectives_remaining() == nonending_objectives,
+		        "Non-ending boss identity/state changed on restore");
+		// Remove other objectives in this synthetic control: even the last optional
+		// boss must not start a countdown when its death roll completes
+		for (int i = 0; i <= Highest_object_index; ++i)
+			if (Objects[i].type == OBJ_CNTRLCEN) Objects[i].shields = -1;
+		require(xl_level_objectives_remaining() == 0 && !Control_center_destroyed, "Non-ending isolated objective setup failed");
+		GameTime64 += BOSS_DEATH_DURATION + 1;
+		xl_boss_deaths_frame();
+		require(!xl_boss_is_dying(100) && !Control_center_destroyed && xl_level_objectives_remaining() == 0,
+		        "Non-ending boss incorrectly ended the level");
 	}
-	require(slot >= 0, "Non-ending boss missing runtime binding");
-	GameTime64 += i2f(20);
-	Objects[100].ctype.ai_info.CLOAKED = 0;
-	xl_boss_ai_frame(100, 1);
-	require(xl_boss_spawn_state_get(slot, &after) && Objects[100].ctype.ai_info.CLOAKED == 1,
-	        "Non-ending boss did not enter the reference cloak lifecycle");
-	for (const int kind : { LASER_ID, VULCAN_ID }) {
-		const auto health = Objects[100].shields;
-		const int shot = Laser_create_new(&ConsoleObject->orient.fvec, &Objects[100].pos, Objects[100].segnum,
-		                                  ConsoleObject - Objects, kind, 0);
-		require(shot >= 0, "Non-ending boss weapon control creation failed");
-		auto hit = Objects[100].pos;
-		collide_robot_and_weapon(&Objects[100], &Objects[shot], &hit);
-		require(Objects[100].shields < health && !xl_boss_is_dying(100), "Non-ending boss incorrectly rejected ordinary weapon damage");
-		if (Objects[shot].type != OBJ_NONE) obj_delete(shot);
-	}
-	require(apply_damage_to_robot(&Objects[100], Objects[100].shields + F1_0, ConsoleObject - Objects) && xl_boss_is_dying(100),
-	        "Non-ending boss skipped lethal combat/death roll");
-	stop_time();
-	require(state_save_all_sub(save, description), "Non-ending boss save failed");
-	require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_boss_spawn_count(),
-	        "Non-ending boss leaked into classic runtime");
-	require(state_restore_all_sub(save, 0) && Robot_info[3].boss_flag == -1 && xl_boss_is_dying(100) &&
-	            xl_level_objectives_remaining() == nonending_objectives,
-	        "Non-ending boss identity/state changed on restore");
-	// Remove other objectives in this synthetic control: even the last optional
-	// boss must not start a countdown when its death roll completes
-	for (int i = 0; i <= Highest_object_index; ++i)
-		if (Objects[i].type == OBJ_CNTRLCEN) Objects[i].shields = -1;
-	require(xl_level_objectives_remaining() == 0 && !Control_center_destroyed, "Non-ending isolated objective setup failed");
-	GameTime64 += BOSS_DEATH_DURATION + 1;
-	xl_boss_deaths_frame();
-	require(!xl_boss_is_dying(100) && !Control_center_destroyed && xl_level_objectives_remaining() == 0,
-	        "Non-ending boss incorrectly ended the level");
-
 	require(load_base_mission("hxmplain", error, sizeof(error)), error);
 	require(Robot_info[31].boss_flag > 0, "Removed HXM boss has no base boss role");
 	StartNewGame(1);
