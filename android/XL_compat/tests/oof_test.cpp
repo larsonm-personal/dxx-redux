@@ -24,87 +24,9 @@ static void check(bool value, const char *message)
 {
 	if (!value) throw std::runtime_error(message);
 }
-static void integer(Bytes &out, uint32_t value)
-{
-	for (int i = 0; i < 4; ++i) out.push_back(uint8_t(value >> (i * 8)));
-}
-static void real(Bytes &out, float value)
-{
-	uint32_t bits;
-	std::memcpy(&bits, &value, 4);
-	integer(out, bits);
-}
-static void vector(Bytes &out, float x = 0, float y = 0, float z = 0)
-{
-	real(out, x);
-	real(out, y);
-	real(out, z);
-}
-static void string(Bytes &out, const std::string &value)
-{
-	integer(out, uint32_t(value.size()));
-	out.insert(out.end(), value.begin(), value.end());
-}
-static void chunk(Bytes &out, const char *type, const Bytes &payload)
-{
-	out.insert(out.end(), type, type + 4);
-	integer(out, uint32_t(payload.size()));
-	out.insert(out.end(), payload.begin(), payload.end());
-}
-static Bytes fixture(int parent = -1, int vertex = 2, int texture = 0)
-{
-	Bytes result{ 'P', 'S', 'P', 'O' };
-	integer(result, 2300);
-	Bytes textures;
-	integer(textures, 1);
-	string(textures, "owned-skin");
-	chunk(result, "TXTR", textures);
-	Bytes header;
-	integer(header, 1);
-	real(header, 2);
-	vector(header);
-	vector(header, 1, 1, 0);
-	integer(header, 0);
-	chunk(result, "OHDR", header);
-	Bytes object;
-	integer(object, 0);
-	integer(object, uint32_t(parent));
-	vector(object, 0, 0, 1);
-	real(object, 0);
-	vector(object);
-	vector(object, 2, 3, 4);
-	real(object, 2);
-	integer(object, 0);
-	integer(object, 0);
-	vector(object);
-	string(object, "root");
-	string(object, "$facing");
-	integer(object, 0);
-	integer(object, 0);
-	integer(object, 0);
-	integer(object, 3);
-	vector(object);
-	vector(object, 1, 0, 0);
-	vector(object, 0, 1, 0);
-	for (int i = 0; i < 3; ++i) vector(object, 0, 0, 1);
-	real(object, 1);
-	real(object, 0.5f);
-	real(object, 0);
-	integer(object, 1);
-	vector(object, 0, 0, 1);
-	integer(object, 3);
-	integer(object, 1);
-	integer(object, uint32_t(texture));
-	for (int i : { 0, 1, vertex }) {
-		integer(object, uint32_t(i));
-		real(object, float(i));
-		real(object, float(i) / 2);
-	}
-	real(object, 1);
-	real(object, 1);
-	chunk(result, "SOBJ", object);
-	return result;
-}
+#include "oof_fixture.h"
+#include "oof_metadata_controls.h"
+using namespace xl_oof_test;
 static bool rejected(const Bytes &bytes)
 {
 	try {
@@ -117,6 +39,7 @@ static bool rejected(const Bytes &bytes)
 int main(int argc, char **argv)
 {
 	try {
+		metadata_controls();
 		const auto bytes = fixture();
 		const auto model = xl_compat::read_oof(bytes);
 		const auto &part = model.submodels.at(0);
@@ -125,7 +48,27 @@ int main(int argc, char **argv)
 		      "OOF decoder lost authored geometry/material data");
 		for (std::size_t size = 0; size < bytes.size(); ++size)
 			check(rejected(Bytes(bytes.begin(), bytes.begin() + size)), "Truncated OOF was accepted");
-		check(rejected(fixture(1)) && rejected(fixture(-1, 3)) && rejected(fixture(-1, 2, 1)), "Invalid OOF references accepted");
+		check(rejected(fixture(-2)) && rejected(fixture(1)) && rejected(fixture(-1, 3)) && rejected(fixture(-1, 2, 1)), "Invalid OOF references accepted");
+		{
+			// Two distinct submodels pointing at each other remain invalid
+			const auto cyclic_part = fixture(1, 2, 0, "", 1, 1);
+			Bytes cyclic(cyclic_part.begin(), cyclic_part.begin() + 8);
+			xl_compat::oof_detail::Reader records(cyclic_part.data() + 8, cyclic_part.size() - 8);
+			while (records.remaining()) {
+				const std::string tag(reinterpret_cast<const char *>(records.take(4)), 4);
+				const auto size = records.count(1024 * 1024);
+				const auto *data = records.take(size);
+				Bytes payload(data, data + size);
+				if (tag == "OHDR") patch32(payload, 0, 2);
+				chunk(cyclic, tag.c_str(), payload);
+				if (tag == "SOBJ") {
+					patch32(payload, 0, 1);
+					patch32(payload, 4, 0);
+					chunk(cyclic, tag.c_str(), payload);
+				}
+			}
+			check(rejected(cyclic), "Cyclic OOF parents accepted");
+		}
 		auto static_model = model;
 		static_model.submodels.at(0).properties.clear();
 		const auto mesh = xl_compat::compile_oof_mesh(static_model, true);

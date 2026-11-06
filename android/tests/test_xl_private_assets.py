@@ -258,15 +258,22 @@ class XlPrivateTests(unittest.TestCase):
                 pilot.validate_inventory(changed)
 
     def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
-        self.assertEqual(len(public.PUBLIC_TESTS), 46)
+        self.assertEqual(len(public.PUBLIC_TESTS), 49)
         self.assertEqual(
             public.GPU_TESTS, {"xl_fog_gpu", "xl_fog_gpu_direct", "xl_fog_gpu_copy16_fallback", "xl_pog_gpu"}
         )
-        self.assertTrue(public.PUBLIC_TESTS <= runner.FAST_TESTS)
+        oof_public = {"xl_oof_metadata_reference", "xl_oof_render_reference", "xl_oof_source_pins"}
+        self.assertEqual(public.PUBLIC_TESTS - runner.FAST_TESTS, oof_public)
+        self.assertEqual(len(runner.FAST_TESTS), 113)
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             oracle = root / "oracle"
             oracle.write_bytes(b"fixture executable")
+            reference = root / "reference"
+            for name in ("models/oofread.cpp", "render/oofrender.cpp", "3d/oof2model.cpp"):
+                path = reference / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("Fixture path only; the CMake pin controls verify actual source bytes")
             report = root / "public.xml"
             for gpu, audio in ((False, False), (True, False), (False, True), (True, True)):
                 required = (
@@ -287,7 +294,38 @@ class XlPrivateTests(unittest.TestCase):
                         for name in sorted(required)
                     ]
                 }
+                pin = next(test for test in listing["tests"] if test["name"] == "xl_oof_source_pins")
+                pin["command"].append("-DREFERENCE=" + str(reference))
                 public.validate_registration(listing, gpu=gpu, audio=audio)
+                for name in oof_public:
+                    for mode in ("omitted", "duplicate", "same-length-duplicate"):
+                        changed = copy.deepcopy(listing)
+                        selected = next(test for test in changed["tests"] if test["name"] == name)
+                        if mode == "omitted":
+                            changed["tests"].remove(selected)
+                        elif mode == "duplicate":
+                            changed["tests"].append(copy.deepcopy(selected))
+                        else:
+                            changed["tests"][0] = copy.deepcopy(selected)
+                        with self.subTest(name=name, mode=mode), self.assertRaises(ValueError):
+                            public.validate_registration(changed, gpu=gpu, audio=audio)
+                for mode in ("omitted", "empty", "absent", "file", "incomplete", "duplicate"):
+                    changed = copy.deepcopy(listing)
+                    selected = next(test for test in changed["tests"] if test["name"] == "xl_oof_source_pins")
+                    selected["command"] = ["cmake"]
+                    if mode != "omitted":
+                        value = {
+                            "empty": "",
+                            "absent": str(root / "absent"),
+                            "file": str(oracle),
+                            "incomplete": str(root),
+                            "duplicate": str(reference),
+                        }[mode]
+                        selected["command"].append("-DREFERENCE=" + value)
+                        if mode == "duplicate":
+                            selected["command"].append("-DREFERENCE=" + value)
+                    with self.subTest(reference=mode), self.assertRaises(ValueError):
+                        public.validate_registration(changed, gpu=gpu, audio=audio)
                 for tests in (
                     listing["tests"][1:],
                     listing["tests"] + [{"name": "xl_preview_lifecycle"}],
@@ -310,6 +348,21 @@ class XlPrivateTests(unittest.TestCase):
                 self.assertEqual(public.require_result(report, 0, gpu=gpu, audio=audio), len(required))
                 with self.assertRaises(ValueError):
                     public.require_result(report, 8, gpu=gpu, audio=audio)
+                for name in oof_public:
+                    for mode in ("missing", "duplicate", "same-length-duplicate", "skipped", "failure", "error"):
+                        changed = copy.deepcopy(suite)
+                        selected = next(case for case in changed if case.get("name") == name)
+                        if mode == "missing":
+                            changed.remove(selected)
+                        elif mode == "duplicate":
+                            changed.append(copy.deepcopy(selected))
+                        elif mode == "same-length-duplicate":
+                            changed[0] = copy.deepcopy(selected)
+                        else:
+                            ET.SubElement(selected, mode)
+                        ET.ElementTree(changed).write(report)
+                        with self.subTest(name=name, mode=mode), self.assertRaises(ValueError):
+                            public.require_result(report, 0, gpu=gpu, audio=audio)
                 for mode in ("missing", "duplicate", "disabled", "skipped", "failure", "error"):
                     changed = copy.deepcopy(suite)
                     if mode == "missing":

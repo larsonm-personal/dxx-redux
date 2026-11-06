@@ -41,6 +41,9 @@ PUBLIC_TESTS = {
     "xl_nearest_lights_reference",
     "xl_object_trigger_decode_reference",
     "xl_oof_contract",
+    "xl_oof_metadata_reference",
+    "xl_oof_render_reference",
+    "xl_oof_source_pins",
     "xl_player_resource_reference",
     "xl_pog_contract",
     "xl_pog_reference",
@@ -67,6 +70,15 @@ def validate_registration(listing, gpu=False, audio=False):
     if len(tests) != len(required) or {test["name"] for test in tests} != required:
         raise ValueError("Public XL CTests differ from the required asset-free selection")
     require_source_arguments(tests)
+    for test in tests:
+        if test["name"] == "xl_oof_source_pins":
+            roots = [
+                value[len("-DREFERENCE=") :] for value in test.get("command", []) if value.startswith("-DREFERENCE=")
+            ]
+            # Required input files match reference_oof_pins.cmake; that test checks their exact hashes
+            files = ("models/oofread.cpp", "render/oofrender.cpp", "3d/oof2model.cpp")
+            if len(roots) != 1 or not roots[0] or not all((Path(roots[0]) / name).is_file() for name in files):
+                raise ValueError("Required OOF source-pin reference tree missing or duplicated")
 
 
 def require_result(path, returncode, gpu=False, audio=False):

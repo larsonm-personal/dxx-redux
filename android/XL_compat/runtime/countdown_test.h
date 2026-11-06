@@ -1,4 +1,6 @@
 #include "countdown_controls.h"
+#include "oof_resource.h"
+#include "../tests/oof_metadata_controls.h"
 #include "../tests/countdown_fixture.h"
 static void countdown_corruption(const std::filesystem::path &user)
 {
@@ -68,6 +70,38 @@ static int countdown_test(int argc, char **argv)
 				for (int i = 0; i < 10; ++i) require(reactor_slots.seg[i] == reactor_slots.seg[0] && reactor_slots.side[i] == reactor_slots.side[0], "Duplicate reactor slots changed during loading");
 			}
 			Game_suspended = SUSP_ROBOTS;
+			const auto owned_model = xl_owned_oof_model(132);
+			require(owned_model && owned_model->model.has_special_points && owned_model->model.has_rotation_tracks && owned_model->skins.size() == 1, "Typed OOF metadata or owned skin missing after native load");
+			const auto expected_mesh = xl_compat::compile_oof_mesh(xl_compat::read_oof(xl_oof_test::fixture(-1, 2, 0, "", 1, 1)), false);
+			require(xl_oof_test::same_mesh(owned_model->mesh, expected_mesh), "Metadata changed native static render output");
+			// Existing native model slots retain stock collision data while OOF owns rendering
+			require(Polygon_models[132].model_data && Polygon_models[132].model_data_size > 0, "Native stock collision model missing");
+			const xl_compat::Bytes native_geometry(Polygon_models[132].model_data, Polygon_models[132].model_data + Polygon_models[132].model_data_size);
+			const auto model_sources = xl_resource_mod_sources();
+			const auto model_path = root / "mods/xcount/models/model132.oof";
+			const auto original_model = xl_oof_test::metadata_fixture();
+			write_bytes(model_path.string().c_str(), xl_oof_test::metadata_fixture(1));
+			xl_compat::OwnedModelSet changed;
+			try {
+				changed = xl_prepare_owned_models(ordinal);
+			} catch (...) {
+				write_bytes(model_path.string().c_str(), original_model);
+				throw;
+			}
+			write_bytes(model_path.string().c_str(), original_model);
+			require(changed.sources.at("mods/xcount/models/model132.oof") != model_sources.at("mods/xcount/models/model132.oof") && xl_oof_test::same_mesh(changed.models.at(132)->mesh, expected_mesh), "Authored RANI changes lost source identity or changed static output");
+			require(xl_owned_oof_model(132) == owned_model && xl_resource_mod_sources() == model_sources, "Preparing metadata changes mutated installed ownership");
+			auto malformed_model = original_model;
+			malformed_model.pop_back();
+			write_bytes(model_path.string().c_str(), malformed_model);
+			bool metadata_rejected = false;
+			try {
+				(void) xl_prepare_owned_models(ordinal);
+			} catch (const std::exception &) {
+				metadata_rejected = true;
+			}
+			write_bytes(model_path.string().c_str(), original_model);
+			require(metadata_rejected && xl_owned_oof_model(132) == owned_model && xl_resource_mod_sources() == model_sources, "Malformed metadata changed installed resources");
 			events();
 			frames();
 			for (const char *bad : { "badcount.rl2", "badobject.rl2", "badbase.rl2" }) {
@@ -81,6 +115,8 @@ static int countdown_test(int argc, char **argv)
 			require(state_save_all_sub(save, description), "Cannot save countdown through normal disk path");
 			continuation(earned);
 			require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active(), "Countdown stock transition failed");
+			require(!xl_owned_oof_model(132) && xl_resource_mod_sources().empty(), "OOF metadata ownership leaked into classic mission");
+			require(Polygon_models[132].model_data_size == int(native_geometry.size()) && std::equal(native_geometry.begin(), native_geometry.end(), Polygon_models[132].model_data), "Metadata changed stock collision data");
 			const auto stock = snapshot();
 			trigger action{};
 			action.type = 25;
@@ -93,6 +129,9 @@ static int countdown_test(int argc, char **argv)
 			for (int i = 0; i < reactor_slots.num_links; ++i) require(ControlCenterTriggers.seg[i] == reactor_slots.seg[i] && ControlCenterTriggers.side[i] == reactor_slots.side[i], "Reactor order changed across disk-through-stock restore");
 			continuation(earned);
 			require(!game_is_time_paused(), "Native save owner left an unbalanced pause");
+			require(Polygon_models[132].model_data_size == int(native_geometry.size()) && std::equal(native_geometry.begin(), native_geometry.end(), Polygon_models[132].model_data), "Restored metadata changed stock collision data");
+			const auto restored_model = xl_owned_oof_model(132);
+			require(restored_model && restored_model->model.has_rotation_tracks && restored_model->model.has_special_points && xl_resource_mod_sources() == model_sources && xl_oof_test::same_mesh(restored_model->mesh, expected_mesh), "OOF metadata identity/output changed across disk-through-stock restore");
 			std::cout << (ordinal == 1 ? 23 : 27) << "/40 countdown: wall/master/object/autoplay, warnings, rocking, 15 malformed trailers and disk-through-stock passed\n";
 		}
 		std::cout << "XL countdown runtime controls passed\n";
