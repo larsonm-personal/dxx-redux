@@ -44,3 +44,31 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/objects/reactor.cpp"
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_reactor_objectives.h"
      CONTENT "${extracted}")
 target_sources(xl_boss_reference PRIVATE tests/reference_reactor_objectives.cpp)
+
+# Execute the pinned signed role decoding; preserve both effective type and bEndsLevel instead of
+# treating a negative byte as an ordinary robot
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/objects/robot.cpp" signed_robot_hash)
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/ai/aiframe.cpp" boss_properties_hash)
+if(NOT signed_robot_hash STREQUAL "a33aee40ef05eb35d41538c75190df09bb744cd484146c6a3c6afb7a807818a3"
+   OR NOT boss_properties_hash STREQUAL
+      "9fdc24b85cdfc7282830a0cc6e5a52fce9390151ecb4f157080e919c9c9046fd")
+    message(FATAL_ERROR "Signed boss profile reference changed")
+endif()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/objects/robot.cpp" role_source)
+string(FIND "${role_source}" "botInfo [h].bossFlag = cf.ReadByte ();" start)
+string(FIND "${role_source}" "botInfo [h].companion = cf.ReadByte ();" end)
+math(EXPR length "${end} - ${start}")
+string(SUBSTRING "${role_source}" ${start} ${length} role_source)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_boss_role.h"
+     CONTENT "${role_source}")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/ai/aiframe.cpp" properties)
+string(FIND "${properties}" "tBossProps bossProps " start)
+string(FIND "${properties}" "// These globals are set" end)
+math(EXPR length "${end} - ${start}")
+string(SUBSTRING "${properties}" ${start} ${length} properties)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_boss_properties.h"
+     CONTENT "${properties}")
+target_sources(xl_boss_reference PRIVATE tests/reference_boss_profile.cpp)
+set(extracted "// Actual pinned conditional boss death completion\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/ai/aiboss.cpp" "void DoBossDyingFrame (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_boss_death.h" CONTENT "${extracted}")
