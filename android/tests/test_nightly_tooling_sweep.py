@@ -15,6 +15,63 @@ import nightly_tooling_sweep as sweep
 SHA = "0000000000000000000000000000000000000008"  # Stable first/second/third fixture ordering.
 
 
+class CandidateApiTests(unittest.TestCase):
+    def test_timeout_retries_same_read_without_using_partial_output(self):
+        import nightly_candidate as candidate
+
+        command = ["gh", "api", "repos/" + sweep.retail.REPOSITORY + "/commits/" + SHA + "/pulls?per_page=100"]
+        partial = subprocess.TimeoutExpired(command, 30, output='[{"number":999}]', stderr="private diagnostic")
+        response = subprocess.CompletedProcess(command, 0, '[{"number":319}]', "")
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with (
+            patch.object(candidate.subprocess, "run", side_effect=[partial, response]) as run,
+            patch.object(candidate.time, "sleep") as sleep,
+            patch.object(sys, "stdout", stdout),
+            patch.object(sys, "stderr", stderr),
+        ):
+            self.assertEqual(candidate.api("commits/" + SHA + "/pulls?per_page=100"), [{"number": 319}])
+        self.assertEqual(run.call_count, 2)
+        for call in run.call_args_list:
+            self.assertEqual(call.args, (command,))
+            self.assertEqual(call.kwargs, dict(text=True, capture_output=True, timeout=30, check=True))
+        sleep.assert_called_once_with(1)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(stderr.getvalue(), "GitHub provenance lookup timed out; retrying once\n")
+
+    def test_repeated_timeout_is_bounded_and_propagates(self):
+        import nightly_candidate as candidate
+
+        with (
+            patch.object(candidate.subprocess, "run", side_effect=subprocess.TimeoutExpired("gh", 30)) as run,
+            patch.object(candidate.time, "sleep") as sleep,
+            patch.object(sys, "stderr", io.StringIO()),
+            self.assertRaises(subprocess.TimeoutExpired),
+        ):
+            candidate.api("pulls/319")
+        self.assertEqual(run.call_count, 2)
+        sleep.assert_called_once_with(1)
+
+    def test_non_timeout_errors_and_malformed_json_are_not_retried(self):
+        import nightly_candidate as candidate
+
+        failures = [
+            (subprocess.CalledProcessError(1, "gh", stderr="HTTP 403"), subprocess.CalledProcessError),
+            (subprocess.CalledProcessError(1, "gh", stderr="HTTP 500"), subprocess.CalledProcessError),
+            (OSError("missing executable"), OSError),
+            (subprocess.CompletedProcess("gh", 0, "[", ""), json.JSONDecodeError),
+        ]
+        for result, error in failures:
+            with (
+                self.subTest(result=result),
+                patch.object(candidate.subprocess, "run", side_effect=[result]) as run,
+                patch.object(candidate.time, "sleep") as sleep,
+                self.assertRaises(error),
+            ):
+                candidate.api("pulls/319")
+            run.assert_called_once()
+            sleep.assert_not_called()
+
+
 class CandidateTests(unittest.TestCase):
     def setUp(self):
         import nightly_candidate as candidate
@@ -217,6 +274,69 @@ class AutomaticCandidateTests(unittest.TestCase):
 
     def verify(self, sha=SHA):
         return self.automatic.verify(sha, self.env, self.responses.__getitem__, self.event)
+
+    def test_association_timeout_recovery_preserves_all_provenance_checks(self):
+        import nightly_candidate as candidate
+
+        key = "commits/" + SHA + "/pulls?per_page=100"
+        for scenario in ("valid", "empty", "ambiguous", "truncated", "closed", "head-moved", "ref-moved", "fork"):
+            self.setUp()
+            if scenario in ("empty", "ambiguous", "truncated"):
+                self.responses[key] *= {"empty": 0, "ambiguous": 2, "truncated": 100}[scenario]
+            elif scenario == "closed":
+                self.responses["pulls/319"]["state"] = "closed"
+            elif scenario == "head-moved":
+                self.responses["pulls/319"]["head"]["sha"] = "b" * 40
+            elif scenario == "ref-moved":
+                self.responses["git/ref/heads/my%2Fbranch"]["object"]["sha"] = "b" * 40
+            elif scenario == "fork":
+                self.responses["pulls/319"]["head"]["repo"]["id"] = 99
+            seen = []
+
+            def run(command, **kwargs):
+                path = command[-1].removeprefix("repos/" + sweep.retail.REPOSITORY + "/")
+                seen.append(path)
+                if path == key and seen.count(key) == 1:
+                    raise subprocess.TimeoutExpired(command, 30, output=json.dumps(self.responses[key]))
+                return subprocess.CompletedProcess(command, 0, json.dumps(self.responses[path]), "")
+
+            with (
+                self.subTest(scenario=scenario),
+                patch.object(candidate.subprocess, "run", side_effect=run),
+                patch.object(candidate.time, "sleep") as sleep,
+                patch.object(sys, "stderr", io.StringIO()),
+            ):
+                if scenario == "valid":
+                    self.assertEqual(
+                        self.automatic.verify(SHA, self.env, candidate.api, self.event), {"number": 319, "sha": SHA}
+                    )
+                else:
+                    with self.assertRaisesRegex(ValueError, "provenance was not established"):
+                        self.automatic.verify(SHA, self.env, candidate.api, self.event)
+            self.assertEqual(seen.count(key), 2)
+            sleep.assert_called_once_with(1)
+
+    def test_exhausted_association_timeout_still_denies_provenance(self):
+        import nightly_candidate as candidate
+
+        key = "commits/" + SHA + "/pulls?per_page=100"
+        seen = []
+
+        def run(command, **kwargs):
+            path = command[-1].removeprefix("repos/" + sweep.retail.REPOSITORY + "/")
+            seen.append(path)
+            if path == key:
+                raise subprocess.TimeoutExpired(command, 30, output=json.dumps(self.responses[key]))
+            return subprocess.CompletedProcess(command, 0, json.dumps(self.responses[path]), "")
+
+        with (
+            patch.object(candidate.subprocess, "run", side_effect=run),
+            patch.object(candidate.time, "sleep"),
+            patch.object(sys, "stderr", io.StringIO()),
+            self.assertRaisesRegex(ValueError, "provenance was not established"),
+        ):
+            self.automatic.verify(SHA, self.env, candidate.api, self.event)
+        self.assertEqual(seen, ["actions/runs/123", "actions/runs/456", key, key])
 
     def test_owned_source_exact_head_and_same_actor_rerun(self):
         self.responses["pulls/319"]["head"]["repo"]["fork"] = True

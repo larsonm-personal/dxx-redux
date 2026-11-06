@@ -4,6 +4,8 @@ import json
 import os
 import re
 import subprocess
+import sys
+import time
 from urllib.parse import quote
 
 import nightly_retail as retail
@@ -15,13 +17,14 @@ CAMPAIGNS = ("xl-fast", "xl-originals")
 
 
 def api(path):
-    result = subprocess.run(
-        ["gh", "api", "repos/" + retail.REPOSITORY + "/" + path],
-        text=True,
-        capture_output=True,
-        timeout=30,
-        check=True,
-    )
+    # Retry only a timed-out read, never rejected provenance or a failed API response
+    command = ["gh", "api", "repos/" + retail.REPOSITORY + "/" + path]
+    try:
+        result = subprocess.run(command, text=True, capture_output=True, timeout=30, check=True)
+    except subprocess.TimeoutExpired:
+        print("GitHub provenance lookup timed out; retrying once", file=sys.stderr)
+        time.sleep(1)
+        result = subprocess.run(command, text=True, capture_output=True, timeout=30, check=True)
     return json.loads(result.stdout)
 
 
