@@ -1,0 +1,584 @@
+{
+    "initial_level": 4,
+    "checkpoint_expect": {
+        "current_level_num": 4,
+        "position.segment": 126,
+        "player.shields": 100,
+        "player.energy": 100
+    },
+    "qualification": "earned_native_Majha_destination_then_Metillis_local_actions",
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 4,
+                "position.segment": 126,
+                "player.has_blue_key": false,
+                "player.has_red_key": false,
+                "player.has_gold_key": false,
+                "xl_pilot.remaining_objectives": 1,
+                "reactor_countdown.active": false,
+                "cheats_enabled": false,
+                "player.invulnerable": false
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 343,
+            "side": 5,
+            "distance": 8
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -1
+        },
+        {
+            "action": "wait_ms",
+            "ms": 1500
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.z": {
+                    "gt": -271.06573486328125
+                },
+                "xl_pilot.doorways.69.state": 0,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 344,
+            "side": 5,
+            "distance": 8
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -1
+        },
+        {
+            "action": "wait_ms",
+            "ms": 1500
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.z": {
+                    "gt": -271.06573486328125
+                },
+                "xl_pilot.doorways.71.state": 0,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 406,
+            "side": 5,
+            "distance": 8
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -1
+        },
+        {
+            "action": "wait_ms",
+            "ms": 1500
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.z": {
+                    "gt": -257.06573486328125
+                },
+                "xl_pilot.doorways.72.state": 0,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 740,
+            "side": 3,
+            "distance": 8
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "player.has_blue_key": false
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -0.2
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "player.has_blue_key": true
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "face_view",
+            "segment": 343,
+            "side": 5,
+            "distance": 8
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -0.3
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "position.z": {
+                    "lt": -275.06573486328125
+                },
+                "xl_pilot.doorways.69.state": {
+                    "gt": 0
+                },
+                "xl_pilot.wall_triggers.34.operated": true,
+                "player_dead": false
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "face_view",
+            "segment": 1083,
+            "side": 5,
+            "distance": 8
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "player.has_red_key": false
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -0.2
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "player.has_red_key": true
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "face_view",
+            "segment": 344,
+            "side": 5,
+            "distance": 8
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -0.3
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "position.z": {
+                    "lt": -275.06573486328125
+                },
+                "xl_pilot.doorways.71.state": {
+                    "gt": 0
+                },
+                "xl_pilot.wall_triggers.37.operated": true,
+                "player_dead": false
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "face_view",
+            "segment": 944,
+            "side": 2,
+            "distance": 8
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "player.has_gold_key": false
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -0.2
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "player.has_gold_key": true
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "face_view",
+            "segment": 406,
+            "side": 5,
+            "distance": 8
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -0.3
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "position.z": {
+                    "lt": -261.06573486328125
+                },
+                "xl_pilot.doorways.72.state": {
+                    "gt": 0
+                },
+                "xl_pilot.wall_triggers.35.operated": true,
+                "player_dead": false
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "player.has_blue_key": true,
+                "player.has_red_key": true,
+                "player.has_gold_key": true,
+                "reactor_countdown.active": false,
+                "xl_pilot.remaining_objectives": 1,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        },
+        {
+            "action": "face_view",
+            "segment": 126,
+            "side": 0,
+            "distance": 8
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_load"
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "player.has_blue_key": true,
+                "player.has_red_key": true,
+                "player.has_gold_key": true,
+                "reactor_countdown.active": false,
+                "xl_pilot.remaining_objectives": 1
+            }
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "face_view",
+            "segment": 345,
+            "side": 1,
+            "distance": 4.8
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -1
+        },
+        {
+            "action": "wait_ms",
+            "ms": 1500
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.y": {
+                    "lt": 108.07672119140625
+                },
+                "xl_pilot.doorways.50.state": 0,
+                "reactor_countdown.active": false,
+                "player_dead": false,
+                "xl_pilot.wall_triggers.10.operated": false
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 1183,
+            "side": 2,
+            "distance": 8
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -0.5
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "held": 1
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "position.segment": 1187
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "wait_ms",
+            "ms": 1000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.z": {
+                    "gt": -129
+                },
+                "xl_pilot.doorways.215.state": 0,
+                "xl_pilot.wall_triggers.39.operated": true,
+                "xl_pilot.wall_triggers.39.actor": 0,
+                "xl_pilot.wall_triggers.39.shot": 0,
+                "reactor_countdown.active": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "pressed": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "player.robots_killed_level": 1,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "face_view",
+            "segment": 1202,
+            "side": 0,
+            "distance": 24
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "level_scene.reactors": {
+                    "contains_object": {
+                        "object": 204,
+                        "shields": {
+                            "gt": 0
+                        }
+                    }
+                },
+                "player.robots_killed_level": 1,
+                "xl_pilot.remaining_objectives": 1
+            }
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "held": 1
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "xl_pilot.remaining_objectives": 0,
+                "reactor_countdown.active": true,
+                "player_dead": false
+            },
+            "timeout_ms": 30000
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "pressed": 0
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "xl_pilot.doorways.50.state": {
+                    "gt": 0
+                },
+                "xl_pilot.doorways.51.state": {
+                    "gt": 0
+                },
+                "xl_pilot.doorways.215.state": {
+                    "gt": 0
+                },
+                "xl_pilot.doorways.216.state": {
+                    "gt": 0
+                }
+            },
+            "timeout_ms": 3000
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "reactor_countdown.total_seconds": 90,
+                "player.has_blue_key": true,
+                "player.has_red_key": true,
+                "player.has_gold_key": true,
+                "player.invulnerable": false,
+                "cheats_enabled": false
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 345,
+            "side": 1,
+            "distance": 4.8
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 4,
+                "xl_pilot.remaining_objectives": 0,
+                "reactor_countdown.active": true,
+                "reactor_countdown.total_seconds": 90,
+                "xl_pilot.wall_triggers.10.operated": false
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -1
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "xl_pilot.wall_triggers.10.operated": true,
+                "xl_pilot.boost_player_locked": true
+            },
+            "timeout_ms": 5000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "current_level_num": 5,
+                "position.segment": 260,
+                "player_dead": false,
+                "player.has_blue_key": false,
+                "player.has_red_key": false,
+                "player.has_gold_key": false,
+                "reactor_countdown.active": false
+            },
+            "timeout_ms": 20000
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        },
+        {
+            "action": "pose_view",
+            "segment": 0,
+            "position_fixed": [-5995032, 8169065, -14746133]
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_load"
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 5,
+                "position.segment": 260,
+                "player_dead": false,
+                "player.has_blue_key": false,
+                "player.has_red_key": false,
+                "player.has_gold_key": false
+            }
+        },
+        {
+            "action": "introspect"
+        }
+    ]
+}

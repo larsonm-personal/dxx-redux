@@ -17,8 +17,15 @@ static Json snapshot()
 {
 	// Copy packed mutable fields before JSON forwarding can bind references to them
 	Json state = { { "current_level_num", Current_level_num }, { "player_dead", Player_is_dead != 0 }, { "cheats_enabled", cheats.enabled != 0 } };
+	state["game_time_raw"] = GameTime64;
 	const auto &player = Players[Player_num];
-	state["player"] = { { "has_blue_key", bool(player.flags & PLAYER_FLAGS_BLUE_KEY) }, { "has_red_key", bool(player.flags & PLAYER_FLAGS_RED_KEY) }, { "has_gold_key", bool(player.flags & PLAYER_FLAGS_GOLD_KEY) }, { "invulnerable", bool(player.flags & PLAYER_FLAGS_INVULNERABLE) }, { "shields", double(player.shields) / F1_0 }, { "energy", double(player.energy) / F1_0 }, { "score", player.score }, { "lives", player.lives } };
+	if (Player_is_dead && player.killer_objnum >= 0 && player.killer_objnum <= Highest_object_index) {
+		const auto &killer = Objects[player.killer_objnum];
+		state["player_death_source"] = { { "object", player.killer_objnum }, { "type", killer.type }, { "id", killer.id }, { "segment", killer.segnum } };
+	}
+	state["player"] = { { "has_blue_key", bool(player.flags & PLAYER_FLAGS_BLUE_KEY) }, { "has_red_key", bool(player.flags & PLAYER_FLAGS_RED_KEY) }, { "has_gold_key", bool(player.flags & PLAYER_FLAGS_GOLD_KEY) }, { "invulnerable", bool(player.flags & PLAYER_FLAGS_INVULNERABLE) }, { "shields", double(player.shields) / F1_0 }, { "energy", double(player.energy) / F1_0 }, { "score", player.score }, { "lives", player.lives }, { "robots_killed_level", player.num_kills_level } };
+	state["player"]["primary_weapon"] = player.primary_weapon;
+	state["player"]["primary_weapon_flags"] = player.primary_weapon_flags;
 	if (ConsoleObject) state["position"] = { { "segment", int(ConsoleObject->segnum) }, { "x", double(ConsoleObject->pos.x) / F1_0 }, { "y", double(ConsoleObject->pos.y) / F1_0 }, { "z", double(ConsoleObject->pos.z) / F1_0 } };
 	state["reactor_countdown"] = { { "active", Control_center_destroyed != 0 }, { "total_seconds", Total_countdown_time }, { "timer", Countdown_timer } };
 	auto &pilot = state["xl_pilot"];
@@ -37,8 +44,20 @@ static Json snapshot()
 		if (xl_speed_boost_state_get(index, &value)) pilot["boosts"][std::to_string(index)] = { { "owner", value.owner } };
 	}
 	state["level_scene"]["reactors"] = Json::array();
+	state["level_scene"]["robots"] = Json::array();
 	for (int index = 0; index <= Highest_object_index; ++index)
-		if (Objects[index].type == OBJ_CNTRLCEN) state["level_scene"]["reactors"].push_back({ { "object", index }, { "shields", double(Objects[index].shields) / F1_0 } });
+		if (Objects[index].type == OBJ_CNTRLCEN) {
+			Json guns = Json::array();
+			const auto &object = Objects[index];
+			for (int gun = 0; gun < get_reactor_definition(object.id)->n_guns; ++gun) {
+				const auto &point = object.ctype.reactor_info.gun_pos[gun], &direction = object.ctype.reactor_info.gun_dir[gun];
+				guns.push_back({ { "position_fixed", { point.x, point.y, point.z } }, { "direction_fixed", { direction.x, direction.y, direction.z } } });
+			}
+			state["level_scene"]["reactors"].push_back({ { "object", index }, { "shields", double(object.shields) / F1_0 }, { "guns", guns } });
+		} else if (Objects[index].type == OBJ_ROBOT && ConsoleObject && vm_vec_dist(&Objects[index].pos, &ConsoleObject->pos) < i2f(200))
+			state["level_scene"]["robots"].push_back({ { "object", index }, { "id", Objects[index].id }, { "segment", int(Objects[index].segnum) }, { "shields", double(Objects[index].shields) / F1_0 }, { "boss", Robot_info[Objects[index].id].boss_flag }, { "position_fixed", { int(Objects[index].pos.x), int(Objects[index].pos.y), int(Objects[index].pos.z) } } });
+	for (int weapon : { 0, CONTROLCEN_WEAPON_NUM })
+		if (weapon < N_weapon_types) state["weapon_definitions"][std::to_string(weapon)] = { { "damage_radius", int(Weapon_info[weapon].damage_radius) }, { "strength", int(Weapon_info[weapon].strength[Difficulty_level]) }, { "speed", int(Weapon_info[weapon].speed[Difficulty_level]) } };
 	return state;
 }
 static bool matches(const Json &actual, const Json &expected)
@@ -119,6 +138,8 @@ static int run(int argc, char **argv)
 		return 1;
 	}
 	const auto root = std::filesystem::path(extra);
+	const auto *resource_argument = find_arg_value(argc, argv, "-pumo-resource-root");
+	const auto resources = resource_argument ? std::filesystem::path(resource_argument) : root;
 	std::ofstream trace(root / "player-trace.jsonl");
 	int completed = 0;
 	try {
@@ -126,11 +147,13 @@ static int run(int argc, char **argv)
 		         { "missions/pmines.hog", "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043" },
 		         { "missions/pmines.mn2", "45b4138e0a0d49ab8ee09334b7cfa97c0ec75ac6c6b6406b21eba28ddaa19cfd" },
 		         { "mods/pmines/pmines.vham", "a623c7a909e6a7b546816f5082e57d33a19fc4b59f84bb3f8493df3ac86b6b05" } }) {
-			require(file_hash(root / file) == expected, ("Native Pumo player requires original " + file).c_str());
+			require(file_hash(resources / file) == expected, ("Native Pumo player requires original " + file).c_str());
 		}
 		char error[256]{};
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error), true), error);
 		require(mount_extra_dir(root.string().c_str(), error, sizeof(error)), error);
+		if (resources != root)
+			require(PHYSFS_addToSearchPath(resources.string().c_str(), 1), "cannot mount read-only original Pumo resource input");
 		require(load_base_mission("d2", error, sizeof(error)), error);
 		require(load_base_mission("pmines", error, sizeof(error)), error);
 		require(N_robot_types == 78 && N_weapon_types == 65 && Robot_info[68].model_num == 17 && xl_owned_oof_model(171), "native player requires full original Pumo definitions/models, not Vertigo");
@@ -203,6 +226,11 @@ static int run(int argc, char **argv)
 			} else if (action == "send_button") {
 				require(step.at("button") == 100, "native player probe only supports primary fire");
 				firing = step.value("held", step.value("pressed", 0)) != 0;
+			} else if (action == "select_primary") {
+				const int slot = step.at("slot");
+				require(slot >= 0 && slot < 5 && !firing, "native weapon selection requires a normal released-fire weapon slot");
+				// Use the keyboard selection path, including ownership and upgrade checks
+				do_weapon_select(slot, 0);
 			} else if (action == "wait_ms") {
 				for (int frame = 0, count = (step.at("ms").get<int>() * fps + 999) / 1000; frame < count; ++frame) tick();
 			} else if (action == "wait_for") {
