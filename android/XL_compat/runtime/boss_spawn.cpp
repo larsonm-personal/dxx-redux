@@ -1,3 +1,4 @@
+#include "boss_profile.h"
 #include "boss_spawn.h"
 #include "gameplay_audio.h"
 #include "boss_routes.h"
@@ -184,7 +185,8 @@ extern "C" void xl_boss_spawn_clear(void)
 }
 extern "C" int xl_boss_spawn_default_type(int flag, int index)
 {
-	const int slot = flag >= BOSS_D2 ? flag - BOSS_D2 : flag;
+	const int profile = xl_compat::effective_boss_profile(flag);
+	const int slot = profile >= BOSS_D2 ? profile - BOSS_D2 : profile;
 	return slot >= 0 && slot < 8 && index >= 0 && index < spew_count[slot] ? spew[slot][index] : -1;
 }
 extern "C" void xl_boss_spawn_load(void)
@@ -244,10 +246,10 @@ extern "C" int xl_level_objectives_remaining(void)
 {
 	if (!xl_level_extensions_active()) return 0;
 	int remaining = 0;
-	// The admitted positive XL boss flags all carry the source bEndsLevel bit
+	// The authored sign retains the reference bEndsLevel bit
 	// Count through the death roll, until xl_boss_deaths_frame retires the owner
 	for (const auto &boss : bosses)
-		if (bound(boss) && boss.dying != 2 && Robot_info[boss.id].boss_flag > 0) ++remaining;
+		if (bound(boss) && boss.dying != 2 && xl_compat::boss_ends_level(Robot_info[boss.id].boss_flag)) ++remaining;
 	for (int i = 0; i <= Highest_object_index; ++i) {
 		const auto &object = Objects[i];
 		if (object.type == OBJ_CNTRLCEN && object.shields >= 0 &&
@@ -334,7 +336,8 @@ extern "C" int xl_boss_spawn_robot(int owner, int type, const vms_vector *positi
 	else compute_segment_center(&origin, &Segments[segment]);
 	if (type < 0) {
 		const int flag = Robot_info[source.id].boss_flag;
-		const int slot = flag >= BOSS_D2 ? flag - BOSS_D2 : flag;
+		const int profile = xl_compat::effective_boss_profile(flag);
+		const int slot = profile >= BOSS_D2 ? profile - BOSS_D2 : profile;
 		if (slot < 0 || slot >= 8) return -1;
 		type = spew[slot][spew_count[slot] * d_rand() >> 15];
 	}
@@ -493,7 +496,8 @@ extern "C" void xl_boss_deaths_frame(void)
 			const int owner = boss.owner;
 			boss.dying = 2;
 			boss.owner = -1;
-			do_controlcen_destroyed_stuff(nullptr);
+			if (xl_compat::boss_ends_level(Robot_info[boss.id].boss_flag))
+				do_controlcen_destroyed_stuff(nullptr);
 			xl_gameplay_sound_object(58, XL_SOUND_EXPLOSION, owner, 0, i2f(4), i2f(512), -1, -1, 0);
 			explode_object(&object, F1_0 / 4);
 		}

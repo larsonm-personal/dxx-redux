@@ -8,6 +8,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+void check_signed_boss_profile();
 void check_reactor_objectives(const std::filesystem::path &path);
 #define ENTER(...)
 #define RETVAL(value)          return (value);
@@ -253,6 +254,7 @@ bool equal(const CFixVector &a, const CFixVector &b)
 int main(int argc, char **argv)
 {
 	try {
+		check_signed_boss_profile();
 		check(argc == 2, "Boss reference requires production samples");
 		std::ifstream file(argv[1]);
 		int types = 0;

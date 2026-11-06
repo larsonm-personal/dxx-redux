@@ -1,3 +1,4 @@
+#include "boss_profile.h"
 #ifndef DXX_XL_ASSET_DEPENDENCIES_H
 #define DXX_XL_ASSET_DEPENDENCIES_H
 #include <set>
@@ -203,7 +204,7 @@ struct ObjectDependencies {
 		clip(r.exp2_vclip_num);
 		if (r.contains_count > 0) contents(r.contains_type, r.contains_id);
 		if (r.smart_blobs || r.energy_blobs) weapon(ROBOT_SMART_HOMING_ID);
-		asset_require(!r.boss_flag || (xl_boss_spawning && r.boss_flag >= 21 && r.boss_flag < 29), "boss profile requires an implemented XL boss runtime");
+		asset_require(!r.boss_flag || (xl_boss_spawning && xl_compat::supported_boss_profile(r.boss_flag)), "boss profile requires an implemented XL boss runtime");
 		// Pinned AIB_STATIC installs CT_NONE/MT_NONE, so no AI joint animation runs
 		if (!animated) return;
 		asset_require(r.n_guns >= 0 && r.n_guns <= MAX_GUNS, "robot gun count invalid");
