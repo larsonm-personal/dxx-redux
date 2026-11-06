@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "slow_motion_runtime.h"
 #include "fluids.h"
 #include "blocked.h"
 #include "doorway.h"
@@ -476,6 +477,7 @@ void do_physics_sim(object *obj)
 		//Move the object
 #ifdef DXX_XL_RUNTIME
 		vm_vec_copy_scale(&frame_vec, &obj->mtype.phys_info.velocity, xl_preview_motion_time(orig_segnum, sim_time));
+		xl_slow_motion_offset(obj, &frame_vec);
 #else
 		vm_vec_copy_scale(&frame_vec, &obj->mtype.phys_info.velocity, sim_time);
 #endif
