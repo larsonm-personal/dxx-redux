@@ -1,4 +1,6 @@
 // Developer-only ordinary-player simulation; initial level and local poses are setup
+#include <chrono>
+#include <thread>
 #ifdef _WIN32
 #include <process.h>
 #else
@@ -18,6 +20,10 @@ static Json snapshot()
 	// Copy packed mutable fields before JSON forwarding can bind references to them
 	Json state = { { "current_level_num", Current_level_num }, { "player_dead", Player_is_dead != 0 }, { "cheats_enabled", cheats.enabled != 0 } };
 	state["game_time_raw"] = GameTime64;
+	state["level_scene"]["powerups"] = Json::array();
+	for (int index = 0; index <= Highest_object_index; ++index)
+		if (Objects[index].type == OBJ_POWERUP && !(Objects[index].flags & OF_SHOULD_BE_DEAD))
+			state["level_scene"]["powerups"].push_back({ { "object", index }, { "id", Objects[index].id }, { "segment", int(Objects[index].segnum) } });
 	const auto &player = Players[Player_num];
 	if (Player_is_dead && player.killer_objnum >= 0 && player.killer_objnum <= Highest_object_index) {
 		const auto &killer = Objects[player.killer_objnum];
@@ -26,6 +32,15 @@ static Json snapshot()
 	state["player"] = { { "has_blue_key", bool(player.flags & PLAYER_FLAGS_BLUE_KEY) }, { "has_red_key", bool(player.flags & PLAYER_FLAGS_RED_KEY) }, { "has_gold_key", bool(player.flags & PLAYER_FLAGS_GOLD_KEY) }, { "invulnerable", bool(player.flags & PLAYER_FLAGS_INVULNERABLE) }, { "shields", double(player.shields) / F1_0 }, { "energy", double(player.energy) / F1_0 }, { "score", player.score }, { "lives", player.lives }, { "robots_killed_level", player.num_kills_level } };
 	state["player"]["primary_weapon"] = player.primary_weapon;
 	state["player"]["primary_weapon_flags"] = player.primary_weapon_flags;
+	state["player"]["vulcan_ammo"] = player.primary_ammo[VULCAN_INDEX];
+	state["player"]["cloaked"] = (player.flags & PLAYER_FLAGS_CLOAKED) != 0;
+	state["primary_fire"] = { { "next_delta_raw", Next_laser_fire_time - GameTime64 }, { "count", Global_laser_firing_count }, { "held", Controls.fire_primary_state } };
+	if (ConsoleObject && Player_ship)
+		for (int gun : { 0, 1, 6 }) {
+			vms_vector point = Player_ship->gun_points[gun];
+			const bool owned = xl_model_gun_point(ConsoleObject->rtype.pobj_info.model_num, gun, &point) != 0;
+			state["player"]["muzzles"][std::to_string(gun)] = { { "model", int(ConsoleObject->rtype.pobj_info.model_num) }, { "owned", owned }, { "point_fixed", { int(point.x), int(point.y), int(point.z) } }, { "quick_distance", vm_vec_mag_quick(&point) }, { "legacy_limit_exceeded", vm_vec_mag_quick(&point) > 0x50000 } };
+		}
 	if (ConsoleObject) state["position"] = { { "segment", int(ConsoleObject->segnum) }, { "x", double(ConsoleObject->pos.x) / F1_0 }, { "y", double(ConsoleObject->pos.y) / F1_0 }, { "z", double(ConsoleObject->pos.z) / F1_0 } };
 	state["reactor_countdown"] = { { "active", Control_center_destroyed != 0 }, { "total_seconds", Total_countdown_time }, { "timer", Countdown_timer } };
 	auto &pilot = state["xl_pilot"];
@@ -38,7 +53,15 @@ static Json snapshot()
 			{ "operated", value.operated != 0 }, { "actor", value.object }, { "shot", value.shot }, { "value", int(Triggers[index].value) }
 		};
 	}
-	for (int index = 0; index < Num_walls; ++index) pilot["doorways"][std::to_string(index)] = { { "state", Walls[index].state }, { "type", Walls[index].type } };
+	for (int index = 0; index < Num_walls; ++index) pilot["doorways"][std::to_string(index)] = { { "state", Walls[index].state }, { "type", Walls[index].type }, { "flags", Walls[index].flags }, { "keys", Walls[index].keys }, { "clip", Walls[index].clip_num } };
+	pilot["spawn_count"] = xl_spawn_state_count();
+	for (int index = 0; index < xl_spawn_state_count(); ++index) {
+		xl_spawn_point point{};
+		if (!xl_spawn_state_get(index, &point)) continue;
+		Json orientation = Json::array();
+		for (const auto coordinate : point.orientation) orientation.push_back(coordinate);
+		pilot["spawn_points"][std::to_string(index)] = { { "segment", point.segment }, { "side", point.side }, { "position_fixed", { point.position[0], point.position[1], point.position[2] } }, { "orientation_fixed", orientation } };
+	}
 	for (int index = 0; index < xl_speed_boost_state_count(); ++index) {
 		xl_speed_boost_state value{};
 		if (xl_speed_boost_state_get(index, &value)) pilot["boosts"][std::to_string(index)] = { { "owner", value.owner } };
@@ -56,16 +79,19 @@ static Json snapshot()
 			state["level_scene"]["reactors"].push_back({ { "object", index }, { "shields", double(object.shields) / F1_0 }, { "guns", guns } });
 		} else if (Objects[index].type == OBJ_ROBOT && ConsoleObject && vm_vec_dist(&Objects[index].pos, &ConsoleObject->pos) < i2f(200))
 			state["level_scene"]["robots"].push_back({ { "object", index }, { "id", Objects[index].id }, { "segment", int(Objects[index].segnum) }, { "shields", double(Objects[index].shields) / F1_0 }, { "boss", Robot_info[Objects[index].id].boss_flag }, { "position_fixed", { int(Objects[index].pos.x), int(Objects[index].pos.y), int(Objects[index].pos.z) } } });
-	for (int weapon : { 0, CONTROLCEN_WEAPON_NUM })
-		if (weapon < N_weapon_types) state["weapon_definitions"][std::to_string(weapon)] = { { "damage_radius", int(Weapon_info[weapon].damage_radius) }, { "strength", int(Weapon_info[weapon].strength[Difficulty_level]) }, { "speed", int(Weapon_info[weapon].speed[Difficulty_level]) } };
+	const int primary_id = player.primary_weapon >= 0 && player.primary_weapon < MAX_PRIMARY_WEAPONS ? Primary_weapon_to_weapon_info[player.primary_weapon] : -1;
+	for (int weapon : { 0, CONTROLCEN_WEAPON_NUM, primary_id })
+		if (weapon >= 0 && weapon < N_weapon_types) state["weapon_definitions"][std::to_string(weapon)] = { { "damage_radius", int(Weapon_info[weapon].damage_radius) }, { "strength", int(Weapon_info[weapon].strength[Difficulty_level]) }, { "speed", int(Weapon_info[weapon].speed[Difficulty_level]) }, { "fire_wait", int(Weapon_info[weapon].fire_wait) }, { "fire_count", Weapon_info[weapon].fire_count }, { "ammo_usage", Weapon_info[weapon].ammo_usage }, { "energy_usage", int(Weapon_info[weapon].energy_usage) } };
 	return state;
 }
 static bool matches(const Json &actual, const Json &expected)
 {
 	if (!expected.is_object()) return actual == expected;
 	for (const auto &[key, value] : expected.items()) {
-		if (key == "contains_object") {
-			if (!actual.is_array() || std::none_of(actual.begin(), actual.end(), [&](const auto &item) { return matches(item, value); })) return false;
+		if (key == "contains_object" || key == "not_contains_object") {
+			if (!actual.is_array()) return false;
+			const bool found = std::any_of(actual.begin(), actual.end(), [&](const auto &item) { return matches(item, value); });
+			if ((key == "contains_object" && !found) || (key == "not_contains_object" && found)) return false;
 		} else if (key == "lt" || key == "gt" || key == "lte" || key == "gte") {
 			if (!actual.is_number() || !value.is_number()) return false;
 			const double a = actual.get<double>(), b = value.get<double>();
@@ -141,7 +167,7 @@ static int run(int argc, char **argv)
 	const auto *resource_argument = find_arg_value(argc, argv, "-pumo-resource-root");
 	const auto resources = resource_argument ? std::filesystem::path(resource_argument) : root;
 	std::ofstream trace(root / "player-trace.jsonl");
-	int completed = 0;
+	int completed = 0, view_aim_events = 0;
 	try {
 		for (const auto &[file, expected] : std::map<std::string, std::string>{
 		         { "missions/pmines.hog", "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043" },
@@ -180,19 +206,22 @@ static int run(int argc, char **argv)
 			const bool restored = expectations(snapshot(), plan.at("checkpoint_expect"), failure);
 			require(restored, ("native earned checkpoint: " + failure).c_str());
 		}
-		double thrust = 0;
+		double thrust = 0, sideways = 0;
 		bool firing = false;
 		int remainder = 0, fps = plan.value("simulation_fps", 60);
 		require(fps >= 1 && fps <= 120, "native player simulation rate out of range");
 		Json transitions = Json::array(), checkpoints = Json::object(), last_activation = snapshot();
 		auto observed_mask = xl_preview_trigger_mask();
 		const auto tick = [&] {
+			const auto frame_started = std::chrono::steady_clock::now();
+			timer_update();
 			require(!Player_is_dead && !cheats.enabled && !cheats.ghostphysics && !cheats.monsterdamage && !cheats.robotfiringsuspended && !(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE), "ordinary player probe died or acquired assisted combat");
 			remainder += F1_0;
 			FrameTime = remainder / fps;
 			remainder %= fps;
 			Controls = {};
 			Controls.forward_thrust_time = static_cast<fix>(thrust * FrameTime);
+			Controls.sideways_thrust_time = static_cast<fix>(sideways * FrameTime);
 			Controls.fire_primary_state = firing;
 			do_weapon_n_item_stuff();
 			calc_game_time();
@@ -200,6 +229,8 @@ static int run(int argc, char **argv)
 			input_demo_set_skip_level_intro(1);
 			const int before_level = Current_level_num;
 			GameProcessFrame();
+			// Wall-trigger debounce uses the real timer, not GameTime64
+			if (plan.value("realtime", false)) std::this_thread::sleep_until(frame_started + std::chrono::microseconds(1000000 / fps));
 			const auto mask = xl_preview_trigger_mask();
 			if (before_level != Current_level_num) {
 				transitions.push_back({ { "from", before_level }, { "to", Current_level_num }, { "last_activation", last_activation } });
@@ -221,8 +252,11 @@ static int run(int argc, char **argv)
 				require(passed, failed.c_str());
 			} else if (action == "face_view" || action == "pose_view") pose(step);
 			else if (action == "send_axis") {
-				require(step.at("axis") == 1, "native player probe only supports forward thrust");
-				thrust = -step.at("axis_value").get<double>();
+				const int axis = step.at("axis");
+				require(axis == 0 || axis == 1, "native player probe supports sideways/forward thrust axes");
+				require(step.at("axis_value").get<double>() >= -1 && step.at("axis_value").get<double>() <= 1, "native thrust axis out of range");
+				if (axis == 0) sideways = step.at("axis_value").get<double>();
+				else thrust = -step.at("axis_value").get<double>();
 			} else if (action == "send_button") {
 				require(step.at("button") == 100, "native player probe only supports primary fire");
 				firing = step.value("held", step.value("pressed", 0)) != 0;
@@ -235,8 +269,23 @@ static int run(int argc, char **argv)
 				for (int frame = 0, count = (step.at("ms").get<int>() * fps + 999) / 1000; frame < count; ++frame) tick();
 			} else if (action == "wait_for") {
 				const int limit = (step.value("timeout_ms", 10000) * fps + 999) / 1000;
+				const int target = step.value("face_object", -1);
+				const int interval = step.value("face_interval_ms", 200);
+				require(target == -1 || (target >= 0 && target <= Highest_object_index && (Objects[target].type == OBJ_ROBOT || Objects[target].type == OBJ_CNTRLCEN)), "native view target is not a live combat object");
+				require(interval >= 17 && interval <= 1000, "native view interval out of range");
+				const int aim_frames = std::max(1, (interval * fps + 999) / 1000);
 				int frame = 0;
-				while (!expectations(snapshot(), step.at("expect"), failed) && frame++ < limit) tick();
+				while (!expectations(snapshot(), step.at("expect"), failed) && frame < limit) {
+					if (target >= 0 && frame % aim_frames == 0 && Objects[target].shields > 0 && (Objects[target].type == OBJ_ROBOT || Objects[target].type == OBJ_CNTRLCEN)) {
+						vms_vector forward;
+						vm_vec_sub(&forward, &Objects[target].pos, &ConsoleObject->pos);
+						if (vm_vec_normalize_quick(&forward)) vm_vector_2_matrix(&ConsoleObject->orient, &forward, nullptr, nullptr);
+						++view_aim_events;
+						trace << Json{ { "event", "fixed_view_aim" }, { "target", target }, { "game_time_raw", GameTime64 }, { "forward_fixed", { int(forward.x), int(forward.y), int(forward.z) } } }.dump() << '\n';
+					}
+					tick();
+					++frame;
+				}
 				const bool passed = expectations(snapshot(), step.at("expect"), failed);
 				require(passed, ("native wait: " + failed).c_str());
 			} else if (action == "set_debug") {
@@ -266,12 +315,12 @@ static int run(int argc, char **argv)
 #else
 		const int process = getpid();
 #endif
-		std::ofstream(root / "player-result.json") << Json{ { "result", "PASS" }, { "steps", completed }, { "process_id", process }, { "initial_level_setup", initial_level }, { "resumed_earned_checkpoint", plan.contains("resume_checkpoint") }, { "final_level", Current_level_num }, { "transitions", transitions }, { "checkpoints", checkpoints }, { "rendered", bool{ false } } }.dump(2) << '\n';
+		std::ofstream(root / "player-result.json") << Json{ { "result", "PASS" }, { "steps", completed }, { "process_id", process }, { "initial_level_setup", initial_level }, { "resumed_earned_checkpoint", plan.contains("resume_checkpoint") }, { "final_level", Current_level_num }, { "transitions", transitions }, { "checkpoints", checkpoints }, { "rendered", bool{ false } }, { "fixed_view_aim_events", view_aim_events } }.dump(2) << '\n';
 		std::cout << "Original Pumo ordinary player controls passed: " << completed << " steps, initial level setup " << initial_level << " -> " << Current_level_num << "; unrendered\n";
 		return 0;
 	} catch (const std::exception &error) {
 		std::ofstream(root / "player-state.json") << snapshot().dump(2) << '\n';
-		std::ofstream(root / "player-result.json") << Json{ { "result", "FAIL" }, { "steps", completed }, { "error", error.what() } }.dump(2) << '\n';
+		std::ofstream(root / "player-result.json") << Json{ { "result", "FAIL" }, { "steps", completed }, { "error", error.what() }, { "fixed_view_aim_events", view_aim_events } }.dump(2) << '\n';
 		std::cerr << "Original Pumo player probe failed: " << error.what() << '\n';
 		return 1;
 	}
