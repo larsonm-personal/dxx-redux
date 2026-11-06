@@ -236,6 +236,7 @@ struct CObject {
 		return mType.physInfo.velocity;
 	}
 	void ProcessDrag(CPhysSimData &);
+	void ComputeMovedTime(CPhysSimData &);
 	struct {
 		tObjTransformation position;
 		int nType = 0, nId = 0, nSegment = 0, movementType = 1;

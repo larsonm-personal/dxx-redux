@@ -8,6 +8,7 @@ struct vms_angvec;
 extern "C" {
 #endif
 void xl_slow_motion_reset(void);
+void xl_slow_motion_turn_delta(const struct object *actor, int32_t *pitch, int32_t *heading);
 void xl_slow_motion_rotation(const struct object *actor, struct vms_angvec *angles);
 void xl_slow_motion_offset(const struct object *actor, struct vms_vector *offset);
 int32_t xl_slow_motion_lifetime(const struct object *actor, int32_t time);
