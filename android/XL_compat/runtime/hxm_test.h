@@ -51,7 +51,7 @@ static void hxm_dependency_controls(const std::filesystem::path &root)
 		bytes.at(at) = value & 255;
 		bytes.at(at + 1) = (value >> 8) & 255;
 	};
-	for (int variant = 0; variant < 6; ++variant) {
+	for (int variant = 0; variant < 7; ++variant) {
 		auto bytes = original;
 		const char *reason = "HXM";
 		if (variant == 0) bytes.back() = 1;
@@ -69,15 +69,28 @@ static void hxm_dependency_controls(const std::filesystem::path &root)
 			reason = "parent chain";
 		}
 		if (variant == 5) {
-			put16(bytes, 504, MAX_SUBMODELS - 1);
-			reason = "joint references missing submodel";
+			put16(bytes, 504, MAX_SUBMODELS);
+			reason = "HXM";
 		}
+		if (variant == 6) put16(bytes, 504, 65535);
 		write_bytes(path.string().c_str(), bytes);
 		const bool admitted = xl_level_supported("alarlof.rl2", 0) != 0;
 		if (admitted || !std::strstr(xl_level_rejection(), reason))
 			throw std::runtime_error("Malformed HXM variant " + std::to_string(variant) + ": expected " + reason + ", got " + (admitted ? "admitted" : xl_level_rejection()));
 		require(gameplay_definitions() == before && hxm_model_receipt(6) == model_before && arena_state() == world, "Rejected HXM mutated live definitions or combat state");
 	}
+	auto unused = original;
+	put16(unused, 504, MAX_SUBMODELS - 1);
+	write_bytes(path.string().c_str(), unused);
+	require(xl_level_supported("alarlof.rl2", 0), "Reference-skipped bounded joint rejected");
+	require(gameplay_definitions() == before && hxm_model_receipt(6) == model_before && arena_state() == world,
+	        "Unused-joint preflight changed live state");
+	unused.at(16 + 118) = 0; // Zero-gun animation differs from the pinned reference
+	write_bytes(path.string().c_str(), unused);
+	require(!xl_level_supported("alarlof.rl2", 0) && std::strstr(xl_level_rejection(), "qualified animation storage"),
+	        "Unqualified zero-gun unused joint admitted");
+	require(gameplay_definitions() == before && hxm_model_receipt(6) == model_before && arena_state() == world,
+	        "Zero-gun rejection changed live state");
 	auto empty = original;
 	put16(empty, 16 + 296, 0);
 	put16(empty, 16 + 298, 65535);
@@ -162,6 +175,7 @@ static void hxm_projectile_controls(const std::filesystem::path &root)
 
 #include "camera_resource_test.h"
 #include "hxm_boss_test.h"
+#include "robot_animation_test.h"
 
 static int hxm_test(int argc, char **argv)
 {
@@ -248,6 +262,7 @@ static int hxm_test(int argc, char **argv)
 		StartNewGame(1);
 		check_actor();
 		require(Objects[actor].shields == i2f(750) && hxm_model_receipt(6) == custom_model, "Repeated HXM game retained old combat state or stale model/texture resources");
+		unused_robot_joint_controls(root);
 		hxm_dependency_controls(root);
 		hxm_boss_binding_controls(root);
 		hxm_projectile_controls(root);

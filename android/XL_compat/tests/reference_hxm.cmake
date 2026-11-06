@@ -413,3 +413,4 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/sphere_collision.cp
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_collision_profile.h"
      CONTENT "${extracted}")
 add_test(NAME xl_hxm_geometry_reference COMMAND xl_hxm_reference)
+include(tests/reference_robot_animation.cmake)

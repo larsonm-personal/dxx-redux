@@ -619,6 +619,11 @@ int do_silly_animation(object *objp)
 		for (joint=0; joint<num_joint_positions; joint++) {
 			fix			delta_angle, delta_2;
 			int			jointnum = jp_list[joint].jointnum;
+#ifdef DXX_XL_RUNTIME
+			/* Pinned XL skips inherited joints absent from a replacement model */
+			if (xl_level_extensions_active() && jointnum >= Polygon_models[objp->rtype.pobj_info.model_num].n_models)
+				continue;
+#endif
 			const vms_angvec	*jp = &jp_list[joint].angles;
 			vms_angvec	*pobjp = &pobj_info->anim_angles[jointnum];
 
