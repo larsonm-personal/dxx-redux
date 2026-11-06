@@ -62,10 +62,23 @@ def main() -> None:
     assert "ExtractionLimits.MAX_DXA_SOURCE_BYTES" in scanner
     assert "ExtractionBudget()" in scanner
     manager = read("android/app/src/main/java/com/dxxredux/app/ModManager.kt")
-    assert "Refusing to enable unsafe or unreadable mod" in manager
-    assert manager.count("?.canEnable == true") == 1
-    assert "enabled = scan.canEnable" in manager
-    assert "scan?.canEnable != true" in manager
+    # Check each DXA entry point so a guard in another method cannot mask a bypass
+    set_enabled = manager.split("    fun setEnabled(", 1)[1].split("\n    }", 1)[0]
+    assert "DxaTextureScanner.scan(File(modsDir, filename))?.canEnable == true" in set_enabled
+    rejected = set_enabled.split("if (!accepted) {", 1)[1].split("}", 1)[0]
+    assert "Refusing to enable unsafe or unreadable mod" in rejected
+    assert "return" in rejected
+    assert set_enabled.index("if (!accepted)") < set_enabled.index("updateManifest")
+
+    imported = manager.split("    fun importMod(", 1)[1].split("\n    }", 1)[0]
+    assert "DxaTextureScanner.scan(temporary) ?: throw java.io.IOException" in " ".join(imported.split())
+    assert "if (!scan.canEnable) throw java.io.IOException" in imported
+    assert imported.index("DxaTextureScanner.scan(temporary)") < imported.index("if (!scan.canEnable)")
+    assert imported.index("if (!scan.canEnable)") < imported.index("AtomicFilePublication.publishFile")
+    assert "enabled = scan.canEnable" in imported
+
+    downloaded = manager.split("    fun importCompleted(", 1)[1].split("\n    }", 1)[0]
+    assert "enabled = DxaTextureScanner.scan(File(modsDir, filename))?.canEnable == true" in downloaded
 
     generator = read("game_data/mods/d2x-xl/convert_d2xxl_textures.ps1")
     assert "$engineTextureCap = 2048" in generator
