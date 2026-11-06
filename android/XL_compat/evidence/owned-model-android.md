@@ -65,3 +65,68 @@ Evidence: `temp/xl-overnight-20261103/current-hub-29430`,
 directory. Failed harness attempts remain retained and are not engine defects.
 See [rendered GuideBot](rendered-guidebot.md) for the full-model route's correctly
 unsupported companion activation and separate ordinary-player evidence.
+
+## Combined original Pumo UI qualification
+
+The optional `test_xl_addon_import.ps1 -PumoUiImport` mode imports the unchanged
+442181363-byte `pmines_v11.7z` and original raw XL camera/effects through the
+production general-picker callback. It then launches the canonical 36-step hub
+probe using the imported mission owner. The host protects the whole default
+retail set, preferences, native profiles and mission mounts and verifies every
+restored file hash. Instrumentation supplies document URIs; system-picker file
+browsing remains outside this test.
+
+Two setup failures are retained separately: the generic launcher selected the
+default set instead of the first cloned test set, and a later default-set launch
+ran out of space while copying the full model view. On this Android image,
+SELinux denies hard links, so mission publication uses its existing private-copy
+fallback. The launcher now checks the existing 50 MiB free-space reserve before
+each fallback copy, retaining the resource name in the error and transactional
+temporary-directory cleanup. It does not weaken ownership or use mutable import
+cache paths as native mounts.
+
+The protected runner streams its verified backup to the host before mutation
+and removes only its hash-verified picker input after successful import. Original
+host resources and the imported private archive remain intact. These changes
+remove test overhead from the small disposable device volume; users still need
+space for the original archive, extracted cache and private native resource view.
+The earlier staging/import failures are not credited as gameplay passes.
+
+The UI-imported mission on universal 29440 completes all 36 gameplay steps in
+113933 ms, run `cb76cdf1ca0a48a082ea76bd72dca748`. Native preparation takes 59
+seconds on the owned software emulator; its existing software-startup budget is
+required to avoid a premature 30-second harness restart. Native state retains
+`mission_asset_owner = mod/pmines_v11.7z`, generation 1. `mounted_mods` is empty
+because it reports legacy mounts, not this catalog view. The original host
+postcondition incorrectly required that legacy list, so the wrapper reports a
+harness failure after the native PASS. Its corrected postcondition checks the
+exact catalog owner/generation. All protected restoration hashes match. Evidence
+is retained in `temp/xl-overnight-20261103/pumo-ui-native-pass-29440`; qualification
+of the corrected complete wrapper on a committed candidate remains required.
+
+## Full-model opening gates and catalog-save follow-up
+
+Exact universal29450 passes original PMC1 opening unlock/open-wall shots, three
+normal gate crossings and persistence:76 warm steps in89299ms,15 fresh-process
+steps in24301ms. Both use full original Pumo models, no Vertigo, normal hub entry
+and fixed local approaches; no full human traversal is claimed. Protected hashes
+match. The old opening-gates output was preserved under
+`temp/xl-overnight-20261103/prior-opening-gates-20261102` before the run. The new
+owned621196066-byte transfer was removed after recording SHA and restoration;
+all original resources remain. Current evidence is temp/xl-original-pmc-opening-gates.
+
+A staged-engine cold load does not establish imported-catalog source ownership.
+The existing addon UI owner therefore gains optional `-PumoUiImport -PumoUiCold`:
+it imports the unchanged original resources, runs the same76-step opening probe,
+then starts a fresh game process and loads the15-step checkpoint through the
+normal menu. It requires the exact imported catalog owner before and after the
+restart, retains both PIDs/results/renders, and restores the whole protected
+profile/set. The default public and36-step UI modes remain available.
+
+The first UI-catalog run on29450 passes76 warm steps in110203ms and15 cold
+steps in29527ms, PIDs30948 ->31873. Both retain catalog owner
+`mod/pmines_v11.7z`, with exact protected before/after hashes. The cold menu load
+restores the opened/unlocked gate state and crosses the gate normally. Evidence:
+`temp/xl-overnight-20261103/ui-cold-29450-pass`. The next committed candidate must
+repeat this full owner to verify its own APK/source IDs. This is local approach,
+gate and model-bearing save qualification, not full campaign or phone validation.
