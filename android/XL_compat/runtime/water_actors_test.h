@@ -162,6 +162,9 @@ static int water_actors_test(int argc, char **argv)
 		for (int frame = 0; frame < 600 && Objects[robot].control_type == CT_MORPH; ++frame) do_morph_frame(&Objects[robot]);
 		require(Objects[robot].control_type == CT_AI, "wet robot did not complete morphing");
 		char earned[] = "water-actors.sav";
+		Last_laser_fired_time = GameTime64 - 1001;
+		Next_laser_fire_time = GameTime64 + 2003;
+		Next_flare_fire_time = GameTime64 + 3007;
 		stop_time();
 		require(state_save_all_sub(earned, description), "water actor save failed");
 		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
@@ -198,6 +201,7 @@ static int water_actors_test(int argc, char **argv)
 		slow_motion_physics_controls(root);
 		require(state_restore_all_sub(earned, 0) && xl_preview_water_segment(Objects[robot].segnum) && Objects[robot].control_type == CT_AI, "wet generated robot restore failed");
 		require(xl_runtime::slow_motion_state().clocks[0].speed == 1 && xl_runtime::slow_motion_state().clocks[1].speed == 1, "Level restore retained unpersisted slow-motion state");
+		require(Last_laser_fired_time - GameTime64 == -1001 && Next_laser_fire_time - GameTime64 == 2003 && Next_flare_fire_time - GameTime64 == 3007, "Saved firing timestamp offsets did not survive disk restore");
 		water_actor_contacts();
 		water_actor_combat(robot);
 		Players[Player_num].energy = i2f(50);
@@ -215,6 +219,8 @@ static int water_actors_test(int argc, char **argv)
 		require(xl_runtime::slow_motion_state().clocks[0].speed > 1, "Stock transition had no active slow state");
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_equipment_count() && !xl_preview_water_segment(22), "water actor state leaked into Redux");
 		require(xl_runtime::slow_motion_state().clocks[0].speed == 1 && xl_slow_motion_lifetime(ConsoleObject, 1092) == 1092, "XL lifetime/state leaked into classic mode");
+		require(xl_slow_motion_primary_blocked(0, 6 * F1_0, 0) && xl_slow_motion_flare_blocked(6 * F1_0, 0), "XL deadline sanity windows leaked into classic mode");
+		require(xl_slow_motion_flare_delay(1) == F1_0 / 4 && xl_slow_motion_flare_delay(0) == 2 * F1_0, "Classic flare delay changed");
 		vms_angvec classic_angles{ -32768, 123, 32767 }, original_angles = classic_angles;
 		xl_slow_motion_rotation(ConsoleObject, &classic_angles);
 		require(!std::memcmp(&classic_angles, &original_angles, sizeof(classic_angles)), "Slow motion changed classic rotation");
