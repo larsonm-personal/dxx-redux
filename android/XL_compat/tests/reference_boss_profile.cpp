@@ -105,7 +105,7 @@ void check_signed_boss_profile()
 		} botInfo[1];
 		const int h = 0;
 #include "xl_reference_boss_role.h"
-		const bool supported = raw == -1 || (raw >= 21 && raw <= 28);
+		const bool supported = raw == -1 || raw == -23 || (raw >= 21 && raw <= 28);
 		if (xl_compat::supported_boss_profile(raw) != supported)
 			throw std::runtime_error("Boss admission widened beyond the qualified profiles");
 		if (!supported) continue;
@@ -115,8 +115,12 @@ void check_signed_boss_profile()
 		    xl_compat::boss_ends_level(raw) != botInfo[0].bEndsLevel)
 			throw std::runtime_error("Signed boss decoding differs from the pinned reader");
 	}
+	const auto &signed23 = bossProps[0][2];
+	if (!signed23.bTeleports || signed23.bSpewMore || signed23.bSpewBotsEnergy || !signed23.bSpewBotsKinetic ||
+	    signed23.bSpewBotsTeleport || !signed23.bInvulEnergy || signed23.bInvulKinetic || signed23.bInvulSpot)
+		throw std::runtime_error("Signed profile 23 properties differ from qualified collision/spawn behavior");
 	const auto &profile = bossProps[0][1];
-	if (accepted != 9 || !profile.bTeleports || profile.bSpewBotsTeleport ||
+	if (accepted != 10 || !profile.bTeleports || profile.bSpewBotsTeleport ||
 	    profile.bInvulEnergy || profile.bInvulKinetic || profile.bInvulSpot)
 		throw std::runtime_error("Sphere profile requires different transport or collision semantics");
 }

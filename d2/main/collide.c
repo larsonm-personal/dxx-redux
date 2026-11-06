@@ -1746,7 +1746,11 @@ int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collisio
 
 	damage_flag = 1;
 
-	d2_boss_index = Robot_info[robot->id].boss_flag - BOSS_D2;
+	d2_boss_index = Robot_info[robot->id].boss_flag;
+#ifdef DXX_XL_RUNTIME
+	d2_boss_index = xl_boss_effective_profile(d2_boss_index);
+#endif
+	d2_boss_index -= BOSS_D2;
 
 	Assert((d2_boss_index >= 0) && (d2_boss_index < NUM_D2_BOSSES));
 
@@ -1877,7 +1881,11 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 		else
 #endif
 		Boss_hit_time = GameTime64;
+		#ifdef DXX_XL_RUNTIME
+		if (xl_boss_effective_profile(Robot_info[robot->id].boss_flag) >= BOSS_D2) {
+#else
 		if (Robot_info[robot->id].boss_flag >= BOSS_D2) {
+#endif
 			damage_flag = do_boss_weapon_collision(robot, weapon, collision_point);
 			boss_invul_flag = !damage_flag;
 		}

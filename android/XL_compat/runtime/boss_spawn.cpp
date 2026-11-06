@@ -309,12 +309,16 @@ extern "C" void xl_boss_spawn_allow_second(int owner)
 {
 	if (auto *boss = find(owner)) boss->last = GameTime64 - gate_interval() - 1;
 }
+extern "C" int xl_boss_effective_profile(int raw)
+{
+	return xl_level_extensions_active() ? xl_compat::effective_boss_profile(raw) : raw;
+}
 extern "C" void xl_boss_weapon_spawn(int owner, int weapon, const vms_vector *position)
 {
 	if (!find(owner) || weapon < 0 || weapon > Highest_object_index || !position) return;
 	const auto &hit = Objects[weapon];
 	if (hit.type != OBJ_WEAPON || hit.id >= N_weapon_types || hit.ctype.laser_info.parent_type != OBJ_PLAYER) return;
-	const int slot = Robot_info[Objects[owner].id].boss_flag - BOSS_D2;
+	const int slot = xl_compat::effective_boss_profile(Robot_info[Objects[owner].id].boss_flag) - BOSS_D2;
 	if (slot < 0 || slot >= 8) return;
 	constexpr bool energy[] = { true, true, false, true, false, true, true, true };
 	constexpr bool kinetic[] = { false, false, true, true, true, true, false, true };
