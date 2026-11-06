@@ -45,7 +45,7 @@ static void hxm_dependency_controls(const std::filesystem::path &root)
 	const auto level = xl_compat::inspect_level(level_bytes);
 	require(std::any_of(level.objects.begin(), level.objects.end(), [](const auto &object) { return object.type == OBJ_ROBOT && object.id == 3; }), "Missing authored robot for replacement admission control");
 	// Exercise capacity admission through unchanged-size serialized objects,
-	// without permitting startup to overrun the classic player arrays
+	// without permitting startup to overrun the qualified singleplayer start capacity
 	auto starts = level_bytes;
 	int count = 0;
 	for (const auto &object : level.objects)
@@ -54,9 +54,9 @@ static void hxm_dependency_controls(const std::filesystem::path &root)
 	for (const auto &object : level.objects) {
 		if (object.type != OBJ_ROBOT) continue;
 		starts.at(object.source_offset) = OBJ_PLAYER;
-		if (++count > MAX_PLAYERS) break;
+		if (++count > XL_SINGLEPLAYER_START_LIMIT) break;
 	}
-	require(count == MAX_PLAYERS + 1, "Player-start overflow fixture incomplete");
+	require(count == XL_SINGLEPLAYER_START_LIMIT + 1, "Player-start overflow fixture incomplete");
 	const auto start_path = shadow / "overstart.rl2";
 	const auto start_definitions = gameplay_definitions();
 	write_bytes(start_path.string().c_str(), starts);
@@ -64,6 +64,13 @@ static void hxm_dependency_controls(const std::filesystem::path &root)
 		throw std::runtime_error(std::string("Excess player-start rejection mismatch: ") + xl_level_rejection());
 	require(gameplay_definitions() == start_definitions, "Player-start rejection mutated live definitions");
 	std::filesystem::remove(start_path);
+	starts.at(level.objects[0].source_offset) = OBJ_COOP;
+	const auto bad_first = shadow / "badfirst.rl2";
+	write_bytes(bad_first.string().c_str(), starts);
+	require(!xl_level_supported("badfirst.rl2", 0) && std::strstr(xl_level_rejection(), "extended player starts require player object zero"),
+	        "Extended starts without player object zero admitted");
+	require(gameplay_definitions() == start_definitions, "Invalid first start changed live definitions");
+	std::filesystem::remove(bad_first);
 	require(xl_level_supported("alarlof.rl2", 0), "Original player-start admission did not recover");
 	const auto before = gameplay_definitions();
 	const auto model_before = hxm_model_receipt(6);
@@ -197,6 +204,7 @@ static void hxm_projectile_controls(const std::filesystem::path &root)
 #include "camera_resource_test.h"
 #include "hxm_boss_test.h"
 #include "robot_animation_test.h"
+#include "player_starts_test.h"
 
 static int hxm_test(int argc, char **argv)
 {
@@ -297,6 +305,7 @@ static int hxm_test(int argc, char **argv)
 		check_actor();
 		require(Objects[actor].shields == i2f(750) && hxm_model_receipt(6) == custom_model, "Repeated HXM game retained old combat state or stale model/texture resources");
 		unused_robot_joint_controls(root);
+		player_start_controls(root);
 		hxm_dependency_controls(root);
 		hxm_boss_binding_controls(root);
 		hxm_projectile_controls(root);
