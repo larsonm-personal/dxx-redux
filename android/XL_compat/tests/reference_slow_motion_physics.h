@@ -12,7 +12,20 @@ struct Lifetime {
 #include "xl_reference_slow_lifetime.h"
 	}
 };
+#include "xl_reference_slow_saturate.h"
+struct Contact : CObject {
+	void reconstruct(CPhysSimData &simData)
+	{
+#include "xl_reference_slow_contact.h"
+	}
+};
 struct Rotation : CObject {
+	void turn(CAngleVector dest_angles, CAngleVector cur_angles, fix rate)
+	{
+		fix delta_p, delta_h;
+		auto &pvRotVel = mType.physInfo.rotVel;
+#include "xl_reference_slow_turn.h"
+	}
 	CAngleVector scale(CAngleVector turnAngles)
 	{
 #include "xl_reference_slow_rotation.h"
@@ -27,6 +40,8 @@ static int slow_motion_physics(const char *path)
 	std::set<std::tuple<int, int, int, int, int, fix, fix, fix, fix>> moves;
 	std::set<std::tuple<int, int, fix, fix>> lives;
 	std::set<std::tuple<int, int, int, int>> rotations;
+	std::set<std::tuple<int, int, int, int, int, int, int>> turns;
+	std::set<std::tuple<int, int, int, int, int>> contacts;
 	while (std::getline(input, line)) {
 		std::istringstream row(line);
 		char kind;
@@ -35,7 +50,77 @@ static int slow_motion_physics(const char *path)
 		const float expected_world = profile == 0 ? 1 : profile == 1 ? 1.025f
 		                                                             : 3;
 		gameStates.gameplay.slowmo[0].fSpeed = expected_world;
-		if (kind == 'R') {
+		if (kind == 'C') {
+			int console, multiplayer, room, bounce;
+			if (!(row >> console >> multiplayer >> room >> bounce) || (console != 0 && console != 1) ||
+			    (multiplayer != 0 && multiplayer != 1) || (room != 60 && room != 61) || (bounce != 0 && bounce != 1) ||
+			    !contacts.emplace(profile, console, multiplayer, room, bounce).second)
+				throw std::runtime_error("Invalid/duplicate contact control");
+			CFixVector values[6];
+			for (auto &v : values)
+				if (!(row >> v.v.coord.x >> v.v.coord.y >> v.v.coord.z)) throw std::runtime_error("Truncated contact vector");
+			for (const auto &v : values)
+				for (fix component : { v.v.coord.x, v.v.coord.y, v.v.coord.z })
+					if (std::int64_t(component) < -(1LL << 27) || std::int64_t(component) > (1LL << 27))
+						throw std::runtime_error("Contact coordinate outside qualified fixture domain");
+			const auto normal = values[3].v.coord;
+			if (std::abs(normal.x) + std::abs(normal.y) + std::abs(normal.z) != I2X(1) ||
+			    (normal.x && normal.x != I2X(1) && normal.x != -I2X(1)) ||
+			    (normal.y && normal.y != I2X(1) && normal.y != -I2X(1)) ||
+			    (normal.z && normal.z != I2X(1) && normal.z != -I2X(1)) ||
+			    values[1].v.coord.x != -4 * normal.x || values[1].v.coord.y != -4 * normal.y || values[1].v.coord.z != -4 * normal.z)
+				throw std::runtime_error("Contact is not a qualified axial impact");
+			Contact actor;
+			gameData.objData.pConsole = console ? &actor : &objects[1];
+			gameStates.gameplay.slowmo[1].fSpeed = profile == 3 ? 1 : expected_world;
+			IsMultiGame = multiplayer;
+			gameData.physicsData.xTime = I2X(1) / 4;
+			actor.Velocity() = values[1];
+			CPhysSimData state;
+			state.xSimTime = state.xOldSimTime = gameData.physicsData.xTime;
+			state.xTimeScale = !multiplayer && room == 60 ? 75 : 100;
+			state.vStartPos = state.vOldPos = values[0];
+			actor.info.position.vPos = values[2];
+			actor.UpdateOffset(state);
+			actor.ComputeMovedTime(state);
+			if (state.xSimTime <= 0 || state.xSimTime >= state.xOldSimTime) throw std::runtime_error("Contact did not leave a retry interval");
+			if (bounce) {
+				const fix wall_part = CFixVector::Dot(values[3], actor.Velocity());
+				actor.Velocity() -= values[3] * (2 * wall_part);
+				actor.UpdateOffset(state);
+				actor.info.position.vPos += state.vOffset;
+			} else if (!multiplayer) {
+				// Multiplayer fluid handling is inactive, so classic weapon
+				// termination does not reconstruct its velocity
+				actor.reconstruct(state);
+			}
+			const auto same = [](const CFixVector &a, const CFixVector &b) {
+				return a.v.coord.x == b.v.coord.x && a.v.coord.y == b.v.coord.y && a.v.coord.z == b.v.coord.z;
+			};
+			if (!same(actor.info.position.vPos, values[4]) || !same(actor.Velocity(), values[5]))
+				throw std::runtime_error("Native contact/retry differs from pinned source at control " + std::to_string(contacts.size()));
+		} else if (kind == 'T') {
+			int console, multiplayer, morph, goal, rate, sign, dp, dh, cp, ch, x, y, z;
+			if (!(row >> console >> multiplayer >> morph >> goal >> rate >> sign >> dp >> dh >> cp >> ch >> x >> y >> z) ||
+			    (console != 0 && console != 1) || (multiplayer != 0 && multiplayer != 1) || (morph != 0 && morph != 1) ||
+			    goal < 0 || goal >= 8 || (rate != I2X(1) / 4 && rate != I2X(1) && rate != I2X(4)) || (sign != -1 && sign != 1) ||
+			    dp < -32768 || dp > 32767 || dh < -32768 || dh > 32767 || cp < -32768 || cp > 32767 || ch < -32768 || ch > 32767 ||
+			    !turns.emplace(profile, console, multiplayer, morph, goal, rate, sign).second)
+				throw std::runtime_error("Invalid/duplicate turn-impulse control");
+			Rotation actor;
+			gameData.objData.pConsole = console ? &actor : &objects[1];
+			gameStates.gameplay.slowmo[1].fSpeed = profile == 3 ? 1 : expected_world;
+			IsMultiGame = multiplayer;
+			CAngleVector destination{}, current{};
+			destination.v.coord.p = fixang(dp);
+			destination.v.coord.h = fixang(dh);
+			current.v.coord.p = fixang(cp);
+			current.v.coord.h = fixang(ch);
+			actor.mType.physInfo.rotVel.Set(sign * 8191, -sign * 8192, 123);
+			actor.turn(destination, current, rate * (morph ? 2 : 1));
+			const auto result = actor.mType.physInfo.rotVel.v.coord;
+			if (x != result.x || y != result.y || z != result.z) throw std::runtime_error("Native turn impulse differs from pinned source");
+		} else if (kind == 'R') {
 			int console, multiplayer, angle, p, h, b;
 			if (!(row >> console >> multiplayer >> angle >> p >> h >> b) ||
 			    (console != 0 && console != 1) || (multiplayer != 0 && multiplayer != 1) ||
@@ -110,8 +195,8 @@ static int slow_motion_physics(const char *path)
 		std::string extra;
 		if (row >> extra) throw std::runtime_error("Trailing slow-motion row data");
 	}
-	if (moves.size() != 768 || lives.size() != 144 || rotations.size() != 144) throw std::runtime_error("Incomplete slow-motion source coverage");
-	std::cout << "768 native offsets/lifetimes and 144 lifetime boundary cases and 144 rotations match pinned source\n";
+	if (moves.size() != 768 || lives.size() != 144 || rotations.size() != 144 || turns.size() != 1536 || contacts.size() != 64) throw std::runtime_error("Incomplete slow-motion source coverage");
+	std::cout << "768 native offsets/lifetimes and 144 lifetime boundary cases and 144 rotations and 1536 turn impulses and 64 contacts match pinned source\n";
 	return 0;
 }
 #endif

@@ -62,3 +62,13 @@ extern "C" void xl_slow_motion_rotation(const object *actor, vms_angvec *angles)
 	angles->h = static_cast<fixang>(angles->h / speed);
 	angles->b = static_cast<fixang>(angles->b / speed);
 }
+
+extern "C" void xl_slow_motion_turn_delta(const object *actor, int32_t *pitch, int32_t *heading)
+{
+	if (!enabled()) return;
+	const float speed = state.clocks[actor == ConsoleObject ? 1 : 0].speed;
+	if (speed == 1) return;
+	// Reference TurnTowardsVector scales before sign-change saturation
+	*pitch = static_cast<fix>(*pitch / speed);
+	*heading = static_cast<fix>(*heading / speed);
+}
