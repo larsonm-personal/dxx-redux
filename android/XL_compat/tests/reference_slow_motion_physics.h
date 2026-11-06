@@ -12,6 +12,17 @@ struct Lifetime {
 #include "xl_reference_slow_lifetime.h"
 	}
 };
+struct tAILocalInfo {
+	fix pNextrimaryFire, nextSecondaryFire, timeSinceProcessed;
+};
+struct tRobotInfo {
+	int nSecWeaponType;
+};
+struct tAIStateInfo {
+	tAILocalInfo *pLocalInfo;
+	tRobotInfo *pRobotInfo;
+};
+#include "xl_reference_slow_ai.h"
 #include "xl_reference_slow_saturate.h"
 struct Contact : CObject {
 	void reconstruct(CPhysSimData &simData)
@@ -42,6 +53,8 @@ static int slow_motion_physics(const char *path)
 	std::set<std::tuple<int, int, int, int>> rotations;
 	std::set<std::tuple<int, int, int, int, int, int, int>> turns;
 	std::set<std::tuple<int, int, int, int, int>> contacts;
+	std::set<std::tuple<int, int, int, int, int, int>> ai;
+	std::set<std::tuple<int, int, int, int, int, int>> ai_turns;
 	while (std::getline(input, line)) {
 		std::istringstream row(line);
 		char kind;
@@ -50,7 +63,38 @@ static int slow_motion_physics(const char *path)
 		const float expected_world = profile == 0 ? 1 : profile == 1 ? 1.025f
 		                                                             : 3;
 		gameStates.gameplay.slowmo[0].fSpeed = expected_world;
-		if (kind == 'C') {
+		if (kind == 'B') {
+			int multiplayer, console, goal, rate, time, actual_dot, actual_scale;
+			if (!(row >> multiplayer >> console >> goal >> rate >> time >> actual_dot >> actual_scale) ||
+			    (multiplayer != 0 && multiplayer != 1) || (console != 0 && console != 1) || goal < 0 || goal >= 4 ||
+			    (rate != I2X(1) / 4 && rate != I2X(1) && rate != I2X(4)) || (time != I2X(1) / 1000 && time != I2X(1) / 60 && time != I2X(1) / 4) ||
+			    !ai_turns.emplace(profile, multiplayer, console, goal, rate, time).second) throw std::runtime_error("Invalid/duplicate AI turn control");
+			IsMultiGame = multiplayer;
+			fix dot = goal == 0 ? 0 : goal == 1 ? I2X(1)
+			                      : goal == 2   ? -I2X(1)
+			                                    : 65528;
+			fix new_scale = FixDiv(time, rate);
+#include "xl_reference_slow_ai_dot.h"
+#include "xl_reference_slow_ai_new_scale.h"
+			if (dot != actual_dot || new_scale != actual_scale) throw std::runtime_error("AI world-clock turn differs from pinned source");
+		} else if (kind == 'A') {
+			int multiplayer, secondary, sample, time, elapsed, primary_result, secondary_result, elapsed_result;
+			if (!(row >> multiplayer >> secondary >> sample >> time >> elapsed >> primary_result >> secondary_result >> elapsed_result) ||
+			    (multiplayer != 0 && multiplayer != 1) || (secondary != -1 && secondary != 0) || sample < 0 || sample >= 11 ||
+			    (time != I2X(1) / 1000 && time != I2X(1) / 60 && time != I2X(1) / 4) ||
+			    (elapsed != 0 && elapsed != I2X(256) - 1 && elapsed != I2X(256)) ||
+			    !ai.emplace(profile, multiplayer, secondary, sample, time, elapsed).second) throw std::runtime_error("Invalid/duplicate AI clock control");
+			const fix floor = fix(I2X(8) * expected_world);
+			const fix times[] = { -I2X(24) - 1, -I2X(24), -I2X(24) + 1, -I2X(8) - 1, -I2X(8), -I2X(8) + 1, -floor - 1, -floor, -floor + 1, 0, I2X(1) };
+			tAILocalInfo local{ times[sample], times[sample] - 1, elapsed };
+			tRobotInfo robot{ secondary };
+			tAIStateInfo state{ &local, &robot };
+			gameStates.gameplay.slowmo[0].fSpeed = multiplayer ? 1 : expected_world;
+			gameData.timeData.xFrame = time;
+			AINextFireHandler(&object, &state);
+			if (local.pNextrimaryFire != primary_result || local.nextSecondaryFire != secondary_result || local.timeSinceProcessed != elapsed_result)
+				throw std::runtime_error("Native AI frame timers differ from pinned source at control " + std::to_string(ai.size()));
+		} else if (kind == 'C') {
 			int console, multiplayer, room, bounce;
 			if (!(row >> console >> multiplayer >> room >> bounce) || (console != 0 && console != 1) ||
 			    (multiplayer != 0 && multiplayer != 1) || (room != 60 && room != 61) || (bounce != 0 && bounce != 1) ||
@@ -195,8 +239,8 @@ static int slow_motion_physics(const char *path)
 		std::string extra;
 		if (row >> extra) throw std::runtime_error("Trailing slow-motion row data");
 	}
-	if (moves.size() != 768 || lives.size() != 144 || rotations.size() != 144 || turns.size() != 1536 || contacts.size() != 64) throw std::runtime_error("Incomplete slow-motion source coverage");
-	std::cout << "768 native offsets/lifetimes and 144 lifetime boundary cases and 144 rotations and 1536 turn impulses and 64 contacts match pinned source\n";
+	if (moves.size() != 768 || lives.size() != 144 || rotations.size() != 144 || turns.size() != 1536 || contacts.size() != 64 || ai.size() != 1584 || ai_turns.size() != 576) throw std::runtime_error("Incomplete slow-motion source coverage");
+	std::cout << "768 native offsets/lifetimes and 144 lifetime boundary cases and 144 rotations and 1536 turn impulses and 64 contacts and 1584 AI frames and 576 AI turns match pinned source\n";
 	return 0;
 }
 #endif

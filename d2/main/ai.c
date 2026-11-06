@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "slow_motion_runtime.h"
 #include "boss_spawn.h"
 #endif
 /*
@@ -422,17 +423,22 @@ void do_ai_frame(object *obj)
 
 	obj_ref = objnum ^ d_tick_count;
 
-	if (ailp->next_fire > -F1_0*8)
-		ailp->next_fire -= FrameTime;
+#ifdef DXX_XL_RUNTIME
+	if (!xl_slow_motion_ai_timers(ailp, robptr->weapon_type2, FrameTime))
+#endif
+	{
+		if (ailp->next_fire > -F1_0*8)
+			ailp->next_fire -= FrameTime;
 
-	if (robptr->weapon_type2 != -1) {
-		if (ailp->next_fire2 > -F1_0*8)
-			ailp->next_fire2 -= FrameTime;
-	} else
-		ailp->next_fire2 = F1_0*8;
+		if (robptr->weapon_type2 != -1) {
+			if (ailp->next_fire2 > -F1_0*8)
+				ailp->next_fire2 -= FrameTime;
+		} else
+			ailp->next_fire2 = F1_0*8;
 
-	if (ailp->time_since_processed < F1_0*256)
-		ailp->time_since_processed += FrameTime;
+		if (ailp->time_since_processed < F1_0*256)
+			ailp->time_since_processed += FrameTime;
+	}
 
 	previous_visibility = ailp->previous_visibility;    //  Must get this before we toast the master copy!
 

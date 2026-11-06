@@ -4,10 +4,13 @@
 struct object;
 struct vms_vector;
 struct vms_angvec;
+struct ai_local;
 #ifdef __cplusplus
 extern "C" {
 #endif
 void xl_slow_motion_reset(void);
+int32_t xl_slow_motion_world_time(int32_t time);
+int xl_slow_motion_ai_timers(struct ai_local *local, int secondary, int32_t time);
 void xl_slow_motion_turn_delta(const struct object *actor, int32_t *pitch, int32_t *heading);
 void xl_slow_motion_rotation(const struct object *actor, struct vms_angvec *angles);
 void xl_slow_motion_offset(const struct object *actor, struct vms_vector *offset);
