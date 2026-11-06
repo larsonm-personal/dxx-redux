@@ -53,6 +53,7 @@ extern "C" {
 #include "key.h"
 #include "input_demo_hooks.h"
 #include "input_demo_newdemo_shared.h"
+#include "input_demo_hooks_shared.h"
 void GameProcessFrame(void);
 void omega_charge_frame(void);
 void do_omega_stuff(object *, vms_vector *, object *);

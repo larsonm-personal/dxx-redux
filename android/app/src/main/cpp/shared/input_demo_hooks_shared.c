@@ -1071,6 +1071,8 @@ int input_demo_prepare_replay_frame_shared(
 	return 1;
 }
 
+static int input_demo_replay_clock_supported(void (*stop_replay)(int));
+
 void input_demo_stop_replay_shared(int write_result,
                                    fix64 *replay_last_timer_value,
                                    void (*write_replay_result)(void),
@@ -1112,8 +1114,10 @@ int input_demo_finish_replay_shared(int close_window,
 	 * advance_frame runs. Never silently discard remaining frames or input */
 	{
 		char error[256] = "";
-		if (input_demo_replay_next_frame_index() + 1 != input_demo_replay_frame_count() ||
-		    !input_demo_apply_ordered_input(input_demo_replay_frame_count(), error, sizeof(error))) {
+		if (!input_demo_replay_clock_supported(NULL) ||
+		    input_demo_replay_next_frame_index() + 1 != input_demo_replay_frame_count() ||
+		    !input_demo_apply_ordered_input(input_demo_replay_frame_count(), error, sizeof(error)) ||
+		    !input_demo_replay_clock_supported(NULL)) {
 			con_printf(CON_NORMAL, "Input demo replay stopped at early exit: %s\n",
 			           error[0] ? error : "unconsumed recorded simulation frames");
 			input_demo_trace_boundary("aborted");
@@ -1251,6 +1255,7 @@ void input_demo_advance_replay_frame_shared(
 			stop_replay(0);
 			return;
 		}
+		if (!input_demo_replay_clock_supported(stop_replay)) return;
 		stop_replay(1);
 	}
 }
