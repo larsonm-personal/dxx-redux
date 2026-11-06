@@ -9,6 +9,8 @@
 # Prerequisites:
 #   - Two emulators running (emulator-5554, emulator-5556) with emulator 36.5+
 #   - APK installed on both
+#   - Pinned public shareware prepared with helpers/setup_shareware_test_data.ps1
+# Both disposable emulator apps are cleared before staging the owned fixture
 #
 # Usage:
 #   .\test_lan_lobby_discovery.ps1
@@ -59,6 +61,42 @@ function Get-LogcatLines {
     return @($raw -split "`r?`n" | Where-Object { $_ })
 }
 
+function Initialize-LanDiscoveryFixture {
+    param([string[]]$Serials, [ValidateSet('d1', 'd2')][string]$Game)
+
+    . "$PSScriptRoot/../helpers/shareware_test_data.ps1"
+    # Resolve and hash-check host inputs and verify BOTH targets before clearing either app
+    $directory = Resolve-SharewareTestData -RepoRoot $REPO_ROOT -Game $Game
+    $config = Get-SharewareTestGameConfig -RepoRoot $REPO_ROOT -Game $Game
+    if ($Serials.Count -ne 2 -or $Serials[0] -eq $Serials[1]) { throw 'Discovery requires two distinct disposable emulators' }
+    foreach ($serial in $Serials) {
+        if ($serial -notmatch '^emulator-\d+$') { throw "Refusing to clear non-emulator $serial" }
+        $emulated = Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'getprop', 'ro.kernel.qemu') -Seconds 5
+        if (([string]$emulated).Trim() -cne '1') { throw "Refusing to clear unverified emulator $serial" }
+    }
+    foreach ($serial in $Serials) {
+        # Eliminate inherited active sets and retail archives that shadow d2demo
+        $cleared = Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'pm', 'clear', $PACKAGE) -Seconds 30
+        if ($cleared -cne 'Success') { throw "Could not clear disposable emulator app state on $serial" }
+        Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'mkdir', '-p', $script:DEFAULT_SET_DIR) -Seconds 5 | Out-Null
+        foreach ($file in $config.RequiredHashes) {
+            $staged = "/data/local/tmp/discovery-public-$($file.File)"
+            $target = "$($script:DEFAULT_SET_DIR)/$($file.File)"
+            try {
+                Adb-Dev-Timeout -Serial $serial -AdbArgs @('push', (Join-Path $directory $file.File), $staged) -Seconds 30 | Out-Null
+                Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'cp', $staged, $target) -Seconds 10 | Out-Null
+            } finally {
+                Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'rm', '-f', $staged) -Seconds 5 | Out-Null
+            }
+            $hash = Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'sha256sum', $target) -Seconds 30
+            if ($hash -cne "$($file.Sha256)  $target") { throw "Pinned discovery asset differs on ${serial}: $($file.File)" }
+        }
+    }
+    # Native D1's catalog key is empty; preserve it through adb's remote shell
+    if ($Game -eq 'd1') { return "''" }
+    return 'd2demo'
+}
+
 try {
     Write-Status "=== LAN Lobby Discovery Test ===" "White"
 
@@ -71,7 +109,9 @@ try {
     }
     Write-Status "Both emulators online"
 
-    # Clear app and launcher state inherited from earlier multiplayer tests.
+    $missionArgument = Initialize-LanDiscoveryFixture -Serials @($EMU1, $EMU2) -Game $HostGame
+
+    # Clear app and launcher state inherited from earlier multiplayer tests
     foreach ($emu in @($EMU1, $EMU2)) {
         Reset-DeviceGameState -Serial $emu
         if (-not (Start-SetupActivity -Serial $emu)) {
@@ -94,7 +134,7 @@ try {
     Send-MpCommand -Serial $EMU1 -Command "lan_host_lobby" -Extras @(
         "--es", "callsign", "DiscoveryHost",
         "--es", "game", $HostGame,
-        "--es", "mission", $(if ($HostGame -eq "d1") { "descent" } else { "d2" }),
+        "--es", "mission", $missionArgument,
         "--es", "mode", "coop",
         "--ei", "max_players", "4"
     )

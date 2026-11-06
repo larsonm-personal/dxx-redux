@@ -78,6 +78,92 @@ class RegressionToolContractsTest(unittest.TestCase):
         self.assertNotIn("$emus[0]", source)
         self.assertIn("if addr in ('255.255.255.255', '10.0.2.255'):", source)
 
+    def test_discovery_owns_verified_fixture_before_hosting(self) -> None:
+        pwsh = shutil.which("pwsh")
+        if not pwsh:
+            self.skipTest("PowerShell is required for fixture lifecycle controls")
+        owner = ROOT / "android/tests/test_lan_lobby_discovery.ps1"
+        source = owner.read_text()
+        self.assertLess(
+            source.index("$missionArgument = Initialize-LanDiscoveryFixture"), source.index('-Command "lan_host_lobby"')
+        )
+        self.assertIn('"--es", "mission", $missionArgument', source)
+        workflow = (ROOT / ".github/workflows/android-nightly-tooling.yml").read_text()
+        selection = next(line for line in workflow.splitlines() if "'public_fixtures':" in line)
+        self.assertIn("'test_lan_lobby_discovery'", selection)
+        harness = r"""
+param([string]$Owner)
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+$REPO_ROOT = 'fixture-root'
+$PACKAGE = 'com.dxxredux.app'
+$script:DEFAULT_SET_DIR = 'files/imported/sets/default'
+function Adb-Dev-Timeout {
+    param($Serial, $AdbArgs, $Seconds)
+    $script:calls.Add("${Serial}:$($AdbArgs -join ' ')")
+    if ($AdbArgs -contains 'getprop') {
+        if ($script:bad -eq 'target' -and $Serial -eq 'emulator-5556') { return '0' }
+        return '1'
+    }
+    if ($AdbArgs -contains 'clear') {
+        if ($script:bad -eq 'clear') { return 'Failure' }
+        return 'Success'
+    }
+    if ($AdbArgs -contains 'sha256sum') {
+        if ($script:bad -eq 'hash') { return 'wrong' }
+        return "pinned-hash  $($AdbArgs[-1])"
+    }
+}
+foreach ($game in @('d1', 'd2')) {
+    foreach ($bad in @('', 'host', 'target', 'clear', 'hash', 'same', 'physical')) {
+        $script:bad = $bad
+        $script:calls = [Collections.Generic.List[string]]::new()
+        $serials = @('emulator-5554', 'emulator-5556')
+        if ($bad -eq 'same') { $serials[1] = $serials[0] }
+        if ($bad -eq 'physical') { $serials[1] = 'phone' }
+        $rejected = $false
+        try { $mission = Initialize-LanDiscoveryFixture -Serials $serials -Game $game } catch { if (-not $bad) { throw }; $rejected = $true }
+        if ($rejected -ne ($bad -ne '')) { throw "Wrong fixture result: $game/$bad" }
+        $clears = @($calls | Where-Object { $_ -match 'pm clear' })
+        if ($bad -in @('host', 'target', 'same', 'physical') -and $clears.Count) { throw 'Cleared before validating all inputs/targets' }
+        if ($bad -eq 'clear' -and @($calls | Where-Object { $_ -match ':push ' }).Count) { throw 'Staged after failed reset' }
+        if (-not $bad) {
+            $expected = if ($game -eq 'd1') { "''" } else { 'd2demo' }
+            if ($mission -cne $expected -or $clears.Count -ne 2) { throw 'Wrong mission or missing isolation' }
+            foreach ($serial in $serials) {
+                foreach ($step in @(':push ', ' cp ', 'sha256sum', 'rm -f')) {
+                    if (-not @($calls | Where-Object { $_.StartsWith($serial + ':') -and $_.Contains($step) }).Count) { throw "Missing $step on $serial" }
+                }
+            }
+            if ($calls[0] -notmatch 'getprop' -or $calls[1] -notmatch 'getprop') { throw 'Did not preflight both peers' }
+        }
+    }
+}
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "tests").mkdir()
+            (root / "helpers").mkdir()
+            (root / "helpers/shareware_test_data.ps1").write_text(r"""
+function Resolve-SharewareTestData {
+    param($RepoRoot, $Game)
+    if ($script:bad -eq 'host') { throw 'Missing or corrupt pinned host fixture' }
+    return '/fixture'
+}
+function Get-SharewareTestGameConfig {
+    param($RepoRoot, $Game)
+    return @{ RequiredHashes = @(@{ File = 'fixture.hog'; Sha256 = 'pinned-hash' }) }
+}
+""")
+            script = root / "tests/check.ps1"
+            start = source.index("function Initialize-LanDiscoveryFixture")
+            fixture_function = source[start : source.index("\ntry {", start)]
+            script.write_text(harness.replace("$REPO_ROOT =", fixture_function + "\n$REPO_ROOT =", 1))
+            result = subprocess.run(
+                [pwsh, "-NoProfile", "-File", str(script), str(owner)], capture_output=True, text=True, timeout=30
+            )
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
     def test_health_uses_selected_emulator(self) -> None:
         health = (ROOT / "android/helpers/emu_health.ps1").read_text(encoding="utf-8")
         self.assertIn("test_helpers.ps1", health)
