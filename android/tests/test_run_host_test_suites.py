@@ -1142,6 +1142,7 @@ class RetailProfileTests(unittest.TestCase):
                                 patch.object(adapter, "verify_retail_stage"),
                                 patch.object(adapter.subprocess, "Popen", Process),
                                 patch.object(adapter.os, "killpg", create=True),
+                                patch.object(adapter.signal, "SIGKILL", 9, create=True),
                             ):
                                 code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
                             receipt = json.loads((root / "receipt.json").read_text())
