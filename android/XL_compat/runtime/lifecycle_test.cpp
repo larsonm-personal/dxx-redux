@@ -1,6 +1,7 @@
 // Exercise the real loader wrapper; no renderer or gameplay certification
 #include "native_crash_diagnostic.h"
 #include "slow_motion_runtime.h"
+#include "slow_motion_save.h"
 #include "changing_light.h"
 #include "flicker.h"
 #include <algorithm>

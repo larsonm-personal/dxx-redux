@@ -1038,7 +1038,11 @@ int allowed_to_fire_missile(void)
 	if (xl_preview_no_damage_segment(ConsoleObject->segnum)) return 0;
 #endif
 	//	Make sure enough time has elapsed to fire missile
+#ifdef DXX_XL_RUNTIME
+	if (xl_slow_motion_missile_blocked(Next_missile_fire_time, GameTime64))
+#else
 	if (Next_missile_fire_time > GameTime64)
+#endif
 		return 0;
 
 	if (is_observer()) {
@@ -1527,7 +1531,7 @@ int game_handler(window *wind, d_event *event, void *data)
 
 		case EVENT_WINDOW_DRAW:
 		{
-			#ifdef DXX_XL_RUNTIME
+		#ifdef DXX_XL_RUNTIME
 			xl_lightning_objects_clock();
 			#endif
 			#ifdef __ANDROID__
