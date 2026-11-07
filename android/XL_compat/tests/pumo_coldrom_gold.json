@@ -1,0 +1,97 @@
+{
+    "initial_level": 5,
+    "checkpoint_expect": {
+        "current_level_num": 5,
+        "position.segment": 260,
+        "player.shields": 100,
+        "player.energy": 100,
+        "player.primary_weapon_flags": 17,
+        "xl_pilot.remaining_objectives": 1
+    },
+    "simulation_fps": 60,
+    "qualification": "main_warm_destination_Fusion_branch_Iquaxel_original_gold_key_gate",
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 5,
+                "cheats_enabled": false,
+                "player_dead": false,
+                "player.invulnerable": false,
+                "position.segment": 260,
+                "player.primary_weapon_flags": 17,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.has_blue_key": false,
+                "xl_pilot.wall_triggers.17.operated": false,
+                "xl_pilot.doorways.34.type": 5,
+                "level_scene.powerups": {
+                    "contains_object": {
+                        "object": 28,
+                        "id": 6,
+                        "segment": 322
+                    }
+                }
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 324,
+            "side": 5,
+            "distance": 4.8
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -0.2
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "player.has_gold_key": true,
+                "xl_pilot.wall_triggers.17.operated": true,
+                "xl_pilot.doorways.34.type": 4,
+                "level_scene.powerups": {
+                    "not_contains_object": {
+                        "object": 28,
+                        "id": 6
+                    }
+                },
+                "player_dead": false
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 5,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.invulnerable": false,
+                "player.primary_weapon_flags": 17,
+                "player.has_gold_key": true,
+                "xl_pilot.wall_triggers.17.operated": true,
+                "xl_pilot.doorways.34.type": 4,
+                "level_scene.powerups": {
+                    "not_contains_object": {
+                        "object": 28,
+                        "id": 6
+                    }
+                }
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        },
+        {
+            "action": "introspect"
+        }
+    ]
+}

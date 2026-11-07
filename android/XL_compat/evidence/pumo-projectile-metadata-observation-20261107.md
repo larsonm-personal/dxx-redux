@@ -1,0 +1,11 @@
+# Pumo projectile metadata observation
+
+The native player observer adds read-only player, collision geometry, weapon definition and live player-owned projectile metadata. It keeps the existing parent identity filter, 64-record cap and truncation flag, source-boundary trigger behavior and simulation RNG behavior. It adds no game hook, action, recorder mode or FVI query. The field contract is in [the combat observation interface](pumo-combat-observation-interface-20261107.md).
+
+The frozen header has SHA-256 `56c359822de7339f8c54be8194fd88d1c143a34121fe1a01e50a14181b64b444` and Git blob SHA-1 `a9958456515296cd6573145ea00608444d73f661`. The separate Release executable has SHA-256 `cb045a4db5e9330f71f3684788d6220d30105718902cd493a49a11fa4611f1f8`. It was built in a new directory, without changing the prior observer executable. Focused classic controls passed 3/3: upstream compatibility, classic trigger demo and mixed-rate sound.
+
+A bounded eight-step original-level paired run compared the prior observer (`a88bd6bb81896c4c9b421c96ae9a0b388b7519c0b29e35d292e57efff14b9c54`) with the metadata executable. All nine trace entries and the final state were exactly equal after removing only the new metadata fields from the new output. Final game time was 1092; RNG state was 1071920736 with seven calls in both outputs. The new output reported laser level 0, quad lasers false, player collision radius 301466 raw, and two live player-owned laser-0 projectiles, each with radius 8669 raw and a physics velocity vector. Those values are observations of that run, not route constants.
+
+The unchanged four-fixture original Pumo predecessor baseline passed 4/4 on the metadata executable: Majha 33.56 s, Metillis 42.55 s, Iquaxel 52.42 s and Sophodo 129.66 s. The private baseline log has SHA-256 `e7d386a7999406e83063f63ba4f7b4381d95c97b88a2232f62e0310c9feb37bf`. These results do not accept the new Coldrom owner or qualify earned 14-to-5 or 7-to-8 traversal.
+
+The added radius and velocity fields support bounded geometry diagnosis only. No actual wall hit, transparent-grate passage, or switch operation is qualified from a static ray model. Original resources, saves, profiles, coordinates, bitmap data and raw traces remain private.
