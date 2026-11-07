@@ -2,6 +2,9 @@
 #include "texture_pixels.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
+extern "C" {
+#include "collide.h"
+}
 #include <limits>
 #include <chrono>
 #include <thread>
@@ -24,6 +27,48 @@ struct TrackedCombatObject {
 };
 static std::vector<TrackedCombatObject> tracked_combat_objects;
 static unsigned combat_load_generation = 0;
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+static std::array<xl_weapon_wall_contact, 2> weapon_wall_contacts{};
+static unsigned weapon_wall_contact_count = 0;
+static bool weapon_wall_pixels_used = false;
+static void weapon_wall_contact_observed(const xl_weapon_wall_contact *contact)
+{
+	if (weapon_wall_contact_count < weapon_wall_contacts.size()) weapon_wall_contacts[weapon_wall_contact_count] = *contact;
+	if (weapon_wall_contact_count <= weapon_wall_contacts.size()) ++weapon_wall_contact_count;
+}
+static Json weapon_wall_contact_result()
+{
+	Json contacts = Json::array();
+	for (unsigned index = 0; index < std::min(weapon_wall_contact_count, unsigned(weapon_wall_contacts.size())); ++index) {
+		const auto &c = weapon_wall_contacts[index];
+		contacts.push_back({ { "level", c.level }, { "object", c.object }, { "signature", c.signature }, { "weapon_id", c.weapon_id }, { "parent_object", c.parent_object }, { "parent_signature", c.parent_signature }, { "hit_segment", c.hit_segment }, { "hit_side", c.hit_side }, { "hit_point_fixed", { c.point[0], c.point[1], c.point[2] } }, { "wall", c.wall }, { "trigger", c.trigger }, { "base", c.base }, { "overlay_raw", c.overlay }, { "eclip", c.eclip }, { "destroyed", c.destroyed }, { "effect_dest", c.effect_dest }, { "effect_flags", c.effect_flags }, { "blew_up", c.blew_up } });
+	}
+	return { { "kind", "actual_contacts_reaching_effect_blowup_gate" }, { "contact_count_lower_bound", weapon_wall_contact_count }, { "contact_limit", weapon_wall_contacts.size() }, { "truncated", weapon_wall_contact_count > weapon_wall_contacts.size() }, { "contacts", std::move(contacts) } };
+}
+static Json diagnostic_weapon_wall_contact_pixels()
+{
+	Json pixels = Json::array();
+	for (unsigned index = 0; index < std::min(weapon_wall_contact_count, unsigned(weapon_wall_contacts.size())); ++index) {
+		const auto &contact = weapon_wall_contacts[index];
+		require(contact.level == Current_level_num && contact.hit_segment >= 0 && contact.hit_segment <= Highest_segment_index && contact.hit_side >= 0 && contact.hit_side < 6, "native wall pixel contact no longer belongs to this level");
+		auto &room = Segments[contact.hit_segment];
+		require(room.sides[contact.hit_side].wall_num == contact.wall, "native wall pixel contact wall changed");
+		vms_vector point{ contact.point[0], contact.point[1], contact.point[2] };
+		fix u = 0, v = 0;
+		find_hitpoint_uv(&u, &v, nullptr, &point, &room, contact.hit_side, 0);
+		const int overlay_texture = contact.overlay & 0x3fff;
+		const int orientation = (contact.overlay >> 14) & 3;
+		require(overlay_texture > 0 && overlay_texture < NumTextures && contact.base >= 0 && contact.base < NumTextures, "native wall pixel contact texture out of range");
+		const int overlay_transparency = xl_texture_pixel_transparency(overlay_texture, orientation, u, v);
+		const int composed_transparency = xl_side_pixel_transparency(contact.base, contact.overlay, u, v);
+		const int bitmap_index = Textures[overlay_texture].index;
+		require(bitmap_index >= 0 && bitmap_index < Num_bitmap_files, "native wall pixel contact bitmap out of range");
+		const auto &bitmap = GameBitmaps[bitmap_index];
+		pixels.push_back({ { "level", contact.level }, { "object", contact.object }, { "signature", contact.signature }, { "weapon_id", contact.weapon_id }, { "hit_segment", contact.hit_segment }, { "hit_side", contact.hit_side }, { "wall", contact.wall }, { "trigger", contact.trigger }, { "base", contact.base }, { "overlay_raw", contact.overlay }, { "overlay_texture", overlay_texture }, { "overlay_orientation", orientation }, { "u_raw", int(u) }, { "v_raw", int(v) }, { "overlay_pixel_transparency", overlay_transparency }, { "composed_pixel_transparency", composed_transparency }, { "overlay_bitmap", { { "bitmap_index", bitmap_index }, { "type", int(bitmap.bm_type) }, { "width", int(bitmap.bm_w) }, { "height", int(bitmap.bm_h) }, { "rowsize", int(bitmap.bm_rowsize) }, { "flags", int(bitmap.bm_flags) } } }, { "blew_up", contact.blew_up } });
+	}
+	return { { "kind", "post_contact_pixel_query_not_collision_qualification" }, { "contact_limit", weapon_wall_contacts.size() }, { "contact_count_lower_bound", weapon_wall_contact_count }, { "truncated", weapon_wall_contact_count > weapon_wall_contacts.size() }, { "pixels", std::move(pixels) } };
+}
+#endif
 static bool combat_object_matches(const TrackedCombatObject &tracked)
 {
 	if (tracked.level != Current_level_num || tracked.load_generation != combat_load_generation || tracked.index < 0 || tracked.index > Highest_object_index) return false;
@@ -358,6 +403,11 @@ static int run(int argc, char **argv)
 		std::ifstream input(plan_path);
 		Json plan;
 		input >> plan;
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+		const bool observe_weapon_wall_contacts = plan.value("observe_weapon_wall_contacts", false);
+		weapon_wall_contact_count = 0;
+		weapon_wall_pixels_used = false;
+#endif
 		// Legacy direct Majha phases do not pass a nonce; the strict phase owner does
 		run_id = plan.value("receipt_run_id", std::string{});
 		std::strcpy(Players[Player_num].callsign, "PumoNat");
@@ -409,6 +459,9 @@ static int run(int argc, char **argv)
 		operation_last = &last_activation;
 		operation_trace = &trace;
 		xl_wall_trigger_set_operation_observer(operation_observed);
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+		if (observe_weapon_wall_contacts) xl_weapon_wall_set_contact_observer(weapon_wall_contact_observed);
+#endif
 		auto observed_state = trigger_observation();
 		const auto tick = [&] {
 			const auto frame_started = std::chrono::steady_clock::now();
@@ -538,6 +591,19 @@ static int run(int argc, char **argv)
 				const auto after = snapshot();
 				trace << Json{ { "event", "diagnostic_weapon_rays" }, { "step", completed }, { "result", result }, { "common_state_unchanged", before == after } }.dump() << '\n';
 				require(before == after, "native weapon ray query changed common state or RNG");
+			} else if (action == "diagnostic_weapon_wall_contact_pixels") {
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+				require(plan.value("observe_weapon_wall_contacts", false) && frame_count > 0 && weapon_wall_contact_count > 0 && !weapon_wall_pixels_used, "native wall pixels require prior contacts and run once");
+				require(!input_demo_recorder_is_active() && !input_demo_replay_is_loaded(), "native wall pixels require recorder and replay off");
+				weapon_wall_pixels_used = true;
+				const auto before = snapshot();
+				const auto result = diagnostic_weapon_wall_contact_pixels();
+				const auto after = snapshot();
+				trace << Json{ { "event", "diagnostic_weapon_wall_contact_pixels" }, { "step", completed }, { "result", result }, { "common_state_unchanged", before == after } }.dump() << '\n';
+				require(before == after, "native wall pixel query changed common state or RNG");
+#else
+				require(false, "native wall pixel query requires developer metadata target");
+#endif
 			} else if (action == "frame_rate") {
 				fps = step.at("fps");
 				require(fps >= 1 && fps <= 120, "native player simulation rate out of range");
@@ -546,6 +612,9 @@ static int run(int argc, char **argv)
 			++completed;
 		}
 		std::ofstream(root / "player-state.json") << snapshot().dump(2) << '\n';
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+		if (observe_weapon_wall_contacts) trace << Json{ { "event", "weapon_wall_contacts" }, { "result", weapon_wall_contact_result() } }.dump() << '\n';
+#endif
 #ifdef _WIN32
 		const int process = _getpid();
 #else
@@ -553,10 +622,16 @@ static int run(int argc, char **argv)
 #endif
 		std::ofstream(root / "player-result.json") << Json{ { "result", "PASS" }, { "receipt_version", 2 }, { "run_id", run_id }, { "plan_sha256", plan_sha256 }, { "executable_sha256", executable_sha256 }, { "resume_sha256", resume_sha256 }, { "steps", completed }, { "process_id", process }, { "initial_level_setup", initial_level }, { "resumed_earned_checkpoint", plan.contains("resume_checkpoint") }, { "final_level", Current_level_num }, { "transitions", transitions }, { "checkpoints", checkpoints }, { "checkpoint_history", checkpoint_history }, { "rendered", bool{ false } }, { "fixed_view_aim_events", view_aim_events }, { "position_assist_events", position_assist_events }, { "operation_sequence", operation_sequence } }.dump(2) << '\n';
 		xl_wall_trigger_set_operation_observer(nullptr);
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+		xl_weapon_wall_set_contact_observer(nullptr);
+#endif
 		std::cout << "Original Pumo ordinary player controls passed: " << completed << " steps, initial level setup " << initial_level << " -> " << Current_level_num << "; unrendered\n";
 		return 0;
 	} catch (const std::exception &error) {
 		xl_wall_trigger_set_operation_observer(nullptr);
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+		xl_weapon_wall_set_contact_observer(nullptr);
+#endif
 		std::ofstream(root / "player-state.json") << (runtime_initialized ? snapshot() : Json::object()).dump(2) << '\n';
 		std::ofstream(root / "player-result.json") << Json{ { "result", "FAIL" }, { "steps", completed }, { "error", error.what() }, { "fixed_view_aim_events", view_aim_events }, { "position_assist_events", position_assist_events } }.dump(2) << '\n';
 		std::cerr << "Original Pumo player probe failed: " << error.what() << '\n';

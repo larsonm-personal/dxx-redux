@@ -23,6 +23,16 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "playsave.h"
 
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+typedef struct xl_weapon_wall_contact {
+	int level, object, signature, weapon_id, parent_object, parent_signature;
+	int hit_segment, hit_side, point[3];
+	int wall, trigger, base, overlay, eclip, destroyed, effect_dest, effect_flags;
+	int blew_up;
+} xl_weapon_wall_contact;
+void xl_weapon_wall_set_contact_observer(void (*observer)(const xl_weapon_wall_contact *));
+#endif
+
 void collide_init();
 void collide_two_objects(object * A, object * B, vms_vector *collision_point);
 void collide_object_with_wall(object * A, fix hitspeed, short hitseg, short hitwall, vms_vector * hitpt);
