@@ -334,7 +334,7 @@ class XlPrivateTests(unittest.TestCase):
 
     def test_native_command_uses_fresh_private_log_without_changing_timeouts(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve()
             work = root / "work"
             work.mkdir()
             (work / "native-ctest.log").write_text("STALE\n")
