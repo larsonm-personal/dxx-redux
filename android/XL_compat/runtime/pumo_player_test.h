@@ -64,6 +64,8 @@ static Json snapshot()
 	state["player"] = { { "has_blue_key", bool(player.flags & PLAYER_FLAGS_BLUE_KEY) }, { "has_red_key", bool(player.flags & PLAYER_FLAGS_RED_KEY) }, { "has_gold_key", bool(player.flags & PLAYER_FLAGS_GOLD_KEY) }, { "invulnerable", bool(player.flags & PLAYER_FLAGS_INVULNERABLE) }, { "shields", double(player.shields) / F1_0 }, { "energy", double(player.energy) / F1_0 }, { "score", player.score }, { "lives", player.lives }, { "robots_killed_level", player.num_kills_level } };
 	state["player"]["primary_weapon"] = player.primary_weapon;
 	state["player"]["primary_weapon_flags"] = player.primary_weapon_flags;
+	state["player"]["laser_level"] = int(player.laser_level);
+	state["player"]["quad_lasers"] = bool(player.flags & PLAYER_FLAGS_QUAD_LASERS);
 	state["player"]["vulcan_ammo"] = player.primary_ammo[VULCAN_INDEX];
 	state["player"]["cloaked"] = (player.flags & PLAYER_FLAGS_CLOAKED) != 0;
 	state["primary_fire"] = { { "next_delta_raw", Next_laser_fire_time - GameTime64 }, { "count", Global_laser_firing_count }, { "held", Controls.fire_primary_state } };
@@ -76,7 +78,7 @@ static Json snapshot()
 			const bool owned = xl_model_gun_point(ConsoleObject->rtype.pobj_info.model_num, gun, &point) != 0;
 			state["player"]["muzzles"][std::to_string(gun)] = { { "model", int(ConsoleObject->rtype.pobj_info.model_num) }, { "owned", owned }, { "point_fixed", { int(point.x), int(point.y), int(point.z) } }, { "quick_distance", vm_vec_mag_quick(&point) }, { "legacy_limit_exceeded", vm_vec_mag_quick(&point) > 0x50000 } };
 		}
-	if (ConsoleObject) state["position"] = { { "segment", int(ConsoleObject->segnum) }, { "x", double(ConsoleObject->pos.x) / F1_0 }, { "y", double(ConsoleObject->pos.y) / F1_0 }, { "z", double(ConsoleObject->pos.z) / F1_0 } };
+	if (ConsoleObject) state["position"] = { { "segment", int(ConsoleObject->segnum) }, { "x", double(ConsoleObject->pos.x) / F1_0 }, { "y", double(ConsoleObject->pos.y) / F1_0 }, { "z", double(ConsoleObject->pos.z) / F1_0 }, { "radius_raw", int(ConsoleObject->size) }, { "orient_right_fixed", { int(ConsoleObject->orient.rvec.x), int(ConsoleObject->orient.rvec.y), int(ConsoleObject->orient.rvec.z) } }, { "orient_up_fixed", { int(ConsoleObject->orient.uvec.x), int(ConsoleObject->orient.uvec.y), int(ConsoleObject->orient.uvec.z) } }, { "orient_forward_fixed", { int(ConsoleObject->orient.fvec.x), int(ConsoleObject->orient.fvec.y), int(ConsoleObject->orient.fvec.z) } } };
 	state["reactor_countdown"] = { { "active", Control_center_destroyed != 0 }, { "total_seconds", Total_countdown_time }, { "timer", Countdown_timer } };
 	auto &pilot = state["xl_pilot"];
 	pilot["remaining_objectives"] = xl_level_objectives_remaining();
@@ -126,7 +128,8 @@ static Json snapshot()
 		if (parent_type != OBJ_PLAYER || parent_num != player.objnum || !ConsoleObject || parent_signature != ConsoleObject->signature) continue;
 		++owned_weapon_count;
 		if (owned_weapon_count > max_owned_weapons) continue;
-		state["combat_observation"]["owned_weapons"].push_back({ { "object", index }, { "signature", int(object.signature) }, { "weapon_id", int(object.id) }, { "parent_type", parent_type }, { "parent_object", parent_num }, { "parent_signature", parent_signature }, { "segment", int(object.segnum) }, { "creation_time_raw", int64_t(laser.creation_time) }, { "creation_delta_raw", int64_t(laser.creation_time - GameTime64) }, { "lifeleft_raw", int(object.lifeleft) }, { "position_fixed", { int(object.pos.x), int(object.pos.y), int(object.pos.z) } } });
+		const auto velocity = object.movement_type == MT_PHYSICS ? Json{ int(object.mtype.phys_info.velocity.x), int(object.mtype.phys_info.velocity.y), int(object.mtype.phys_info.velocity.z) } : Json{};
+		state["combat_observation"]["owned_weapons"].push_back({ { "object", index }, { "signature", int(object.signature) }, { "weapon_id", int(object.id) }, { "parent_type", parent_type }, { "parent_object", parent_num }, { "parent_signature", parent_signature }, { "segment", int(object.segnum) }, { "creation_time_raw", int64_t(laser.creation_time) }, { "creation_delta_raw", int64_t(laser.creation_time - GameTime64) }, { "lifeleft_raw", int(object.lifeleft) }, { "position_fixed", { int(object.pos.x), int(object.pos.y), int(object.pos.z) } }, { "radius_raw", int(object.size) }, { "velocity_fixed", velocity } });
 	}
 	state["combat_observation"]["owned_weapon_count"] = owned_weapon_count;
 	state["combat_observation"]["owned_weapons_truncated"] = owned_weapon_count > max_owned_weapons;
@@ -144,7 +147,7 @@ static Json snapshot()
 			state["level_scene"]["robots"].push_back({ { "object", index }, { "id", Objects[index].id }, { "segment", int(Objects[index].segnum) }, { "shields", double(Objects[index].shields) / F1_0 }, { "boss", Robot_info[Objects[index].id].boss_flag }, { "position_fixed", { int(Objects[index].pos.x), int(Objects[index].pos.y), int(Objects[index].pos.z) } } });
 	const int primary_id = player.primary_weapon >= 0 && player.primary_weapon < MAX_PRIMARY_WEAPONS ? Primary_weapon_to_weapon_info[player.primary_weapon] : -1;
 	for (int weapon : { 0, CONTROLCEN_WEAPON_NUM, primary_id })
-		if (weapon >= 0 && weapon < N_weapon_types) state["weapon_definitions"][std::to_string(weapon)] = { { "damage_radius", int(Weapon_info[weapon].damage_radius) }, { "strength", int(Weapon_info[weapon].strength[Difficulty_level]) }, { "speed", int(Weapon_info[weapon].speed[Difficulty_level]) }, { "fire_wait", int(Weapon_info[weapon].fire_wait) }, { "fire_count", Weapon_info[weapon].fire_count }, { "ammo_usage", Weapon_info[weapon].ammo_usage }, { "energy_usage", int(Weapon_info[weapon].energy_usage) }, { "matter", int(Weapon_info[weapon].matter) } };
+		if (weapon >= 0 && weapon < N_weapon_types) state["weapon_definitions"][std::to_string(weapon)] = { { "damage_radius", int(Weapon_info[weapon].damage_radius) }, { "strength", int(Weapon_info[weapon].strength[Difficulty_level]) }, { "speed", int(Weapon_info[weapon].speed[Difficulty_level]) }, { "fire_wait", int(Weapon_info[weapon].fire_wait) }, { "fire_count", int(Weapon_info[weapon].fire_count) }, { "ammo_usage", int(Weapon_info[weapon].ammo_usage) }, { "energy_usage", int(Weapon_info[weapon].energy_usage) }, { "matter", int(Weapon_info[weapon].matter) }, { "blob_size", int(Weapon_info[weapon].blob_size) }, { "render_type", int(Weapon_info[weapon].render_type) }, { "model_num", Weapon_info[weapon].render_type == WEAPON_RENDER_POLYMODEL ? Json(int(Weapon_info[weapon].model_num)) : Json{} } };
 	return state;
 }
 using TriggerObservation = std::vector<std::array<std::int64_t, 11>>;
