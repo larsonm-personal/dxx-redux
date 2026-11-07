@@ -30,7 +30,10 @@ class SdkWorkflowContractTests(unittest.TestCase):
         runtime = source.split("- name: Provision emulator host runtime", 1)[1].split(
             "- name: Provision emulator image", 1
         )[0]
-        self.assertIn("if: inputs.lane != 'jvm'", runtime)
+        self.assertIn(
+            "if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane != 'jvm')",
+            runtime,
+        )
         self.assertIn("timeout-minutes: 8", runtime)
         self.assertRegex(runtime, r"(?m)^\s*sudo apt-get(?: -o \S+)* install -y --no-install-recommends libpulse0\s*$")
         check = source.split("- name: Check emulator runtime before APK build", 1)[1].split(
@@ -145,7 +148,10 @@ class KvmWorkflowContractTests(unittest.TestCase):
     def test_cleanup_is_unconditional_and_restores_prior_acl(self):
         source = (ROOT / ".github/workflows/android-nightly-tooling.yml").read_text()
         cleanup = source.split("- name: Restore original KVM access", 1)[1].split("- name: Record lane lifecycle", 1)[0]
-        self.assertIn("if: always() && inputs.lane != 'jvm'", cleanup)
+        self.assertIn(
+            "if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && inputs.lane != 'jvm')",
+            cleanup,
+        )
         self.assertIn("timeout-minutes: 1", cleanup)
         self.assertIn('[[ -f "$RUNNER_TEMP/dxx-kvm-acl-changed" ]]', cleanup)
         self.assertIn('sudo setfacl --restore="$RUNNER_TEMP/dxx-kvm-before.acl"', cleanup)
