@@ -1,0 +1,169 @@
+"""Supplemental assisted render-clock qualification; never a readiness result."""
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+
+REVISION = "2576a98b5de310e3ac7c9777df2677d1627b8bae"
+PINS = {
+    "render/renderframe.cpp": {
+        "56f059e9f02903cece0da2b95acbb2469bd65c9046d0a8539ee0708c632e3bbf",
+        "9d09dbc8597c8c02ed738c73ba89f964bfcede1730eef54feb10f20a66f5e7c1",
+    },
+    "render/automap.cpp": {
+        "19b7128b48dadea220a085018e0fd3a2ff31d59fa04d60fce78d4bb1f5877be8",
+        "4b00b69943bc6dba010d84f280da266afc68cfccde104ff724b5c7c4eb0b6d1b",
+    },
+    "weapons/omega.cpp": {
+        "76f003622dcbac54dbd533fd4dfa8537c7ceceed0c75c5310c83b7b075cfb61d",
+        "40cfe360e3ced7b5a5625009c419d1a2f4ac4b69d99ef457c68d1bb5bec6743c",
+    },
+    "gameio/loadgame.cpp": {
+        "5d7ff36d6121411e0250be94353bbe3268bdd02b9bd35c6161951d879fcecc55",
+        "4b9cb1f149c9c64929f1cfef7183ad9ff541604a79331454c3205ec89c477f68",
+    },
+}
+# Source trace: renderframe.cpp:348/735; automap.cpp:504; loadgame.cpp:913
+# An end-level inner RenderFrame contributes in addition to GameRenderFrame.
+EVENTS = (
+    ("simulation_only", 0),
+    ("main", 1),
+    ("auxiliary_mono", 0),
+    ("automap", 1),
+    ("endlevel_main", 2),
+    ("endlevel_auxiliary", 1),
+    ("simulation_after_render", 0),
+    ("main_again", 1),
+    ("restored", 0),
+    ("main_after_restore", 1),
+)
+
+
+def verify_reference(root):
+    found = {}
+    for name, allowed in PINS.items():
+        actual = hashlib.sha256((root / name).read_bytes()).hexdigest()
+        if actual not in allowed:
+            raise ValueError(f"Render-clock reference differs: {name}")
+        found[name] = actual
+    return found
+
+
+def passed(code, proof, mission, level, xl):
+    keys = {
+        "schema",
+        "assisted",
+        "complete",
+        "events",
+        "renderer",
+        "xl_active",
+        "mission",
+        "level",
+        "reset_count",
+        "shot_charge",
+        "shot_delay",
+    }
+    if (
+        type(code) is not int
+        or code != 0
+        or not isinstance(proof, dict)
+        or set(proof) != keys
+        or proof["schema"] != "xl-render-clock-v1"
+        or proof["assisted"] is not True
+        or proof["complete"] is not True
+        or proof["xl_active"] is not xl
+        or proof["mission"] != mission
+        or type(proof["level"]) is not int
+        or proof["level"] != level
+        or not isinstance(proof["renderer"], str)
+        or not proof["renderer"].strip()
+        or type(proof["reset_count"]) is not int
+        or proof["reset_count"] != 0
+        or type(proof["shot_charge"]) is not int
+        or proof["shot_charge"] != 32768 - (1092 if xl else 3276)
+        or type(proof["shot_delay"]) is not int
+        or proof["shot_delay"] != (1 if xl else 3276)
+        or not isinstance(proof["events"], list)
+        or len(proof["events"]) != len(EVENTS)
+    ):
+        return False
+    count = 0
+    for row, (event, delta) in zip(proof["events"], EVENTS):
+        if event == "restored":
+            count = 1 if xl else 0
+        if (
+            not isinstance(row, dict)
+            or set(row) != {"event", "before", "after", "charge"}
+            or row["event"] != event
+            or type(row["before"]) is not int
+            or type(row["after"]) is not int
+            or row["before"] != count
+            or row["after"] != count + (delta if xl else 0)
+            or type(row["charge"]) is not int
+            or row["charge"] != 32768 + (273 if xl and row["after"] not in (0, 1) else 0)
+        ):
+            return False
+        count = row["after"]
+    return True
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    for name in ("engine", "data", "extra", "work", "reference-root"):
+        parser.add_argument("--" + name, required=True, type=Path)
+    parser.add_argument("--mission", required=True)
+    parser.add_argument("--level", required=True, type=int)
+    parser.add_argument("--xl", action="store_true")
+    args = parser.parse_args()
+    pins = verify_reference(args.reference_root)
+    work = args.work.resolve()
+    work.mkdir(parents=True, exist_ok=False)
+    (work / "user").mkdir()
+    proof_path = work / "proof.json"
+    engine = args.engine.resolve()
+    command = [
+        str(engine),
+        "-mission",
+        args.mission,
+        "-level",
+        str(args.level),
+        "-hogdir",
+        str(args.data.resolve()),
+        "-extra-dir",
+        str(args.extra.resolve()),
+        "-route-confirm-user-dir",
+        str(work / "user"),
+        "-route-confirm-json-out",
+        str(work / "unused-route.json"),
+        "-xl-render-clock-proof",
+        str(proof_path),
+        "-nosound",
+        "-nomusic",
+    ]
+    with (work / "engine.log").open("wb") as log:
+        try:
+            code = subprocess.run(
+                command, cwd=work, stdout=log, stderr=subprocess.STDOUT, timeout=45, check=False
+            ).returncode
+        except subprocess.TimeoutExpired:
+            code = None
+    proof = json.loads(proof_path.read_text()) if proof_path.exists() else {}
+    success = passed(code, proof, args.mission, args.level, args.xl)
+    result = {
+        "passed": success,
+        "exit_code": code,
+        "proof": proof,
+        "reference_revision": REVISION,
+        "reference_hashes": pins,
+        "engine_sha256": hashlib.sha256(engine.read_bytes()).hexdigest(),
+        "official_readiness_status_updated": False,
+    }
+    (work / "result.json").write_text(json.dumps(result, indent=2) + "\n")
+    print(json.dumps({"passed": success, "exit_code": code, "events": len(proof.get("events", []))}))
+    return 0 if success else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

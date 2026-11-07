@@ -131,7 +131,7 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 31;
+		block["schema"] = 32;
 		block["weapon_clock"] = xl_runtime::weapon_clock_snapshot();
 		require(xl_runtime::restore_weapon_clock(block["weapon_clock"], false), "Cannot capture XL weapon clock");
 		block["mission_progress"] = xl_compat::mission_progress_snapshot();
@@ -236,7 +236,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 23u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 31 &&
+		require(saved.is_object() && saved.size() == 23u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 32 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
 		require(xl_runtime::restore_weapon_clock(saved.at("weapon_clock"), false), "Invalid XL weapon clock");

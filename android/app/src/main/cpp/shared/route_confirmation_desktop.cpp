@@ -5,6 +5,16 @@
 #include <string.h>
 
 #include <string>
+#if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
+#include <fstream>
+#include <stdexcept>
+#include <nlohmann/json.hpp>
+#include "slow_motion_runtime.h"
+#include "slow_motion_save.h"
+#include "preview.h"
+#include "input_demo_recorder.h"
+#include "input_demo_replay.h"
+#endif
 
 #include <physfs.h>
 #include <SDL.h>
@@ -28,6 +38,31 @@ extern "C" {
 #include "startup_resume_shared.h"
 #include "window.h"
 }
+
+#if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
+extern "C" {
+#include "automap.h"
+#include "dxxerror.h"
+#include "endlevel.h"
+#include "ogl_init.h"
+#include "laser.h"
+#include "weapon.h"
+#include "state.h"
+#include "ai.h"
+#include "collide.h"
+#include "key.h"
+#include "input_demo_hooks.h"
+#include "input_demo_newdemo_shared.h"
+#include "input_demo_hooks_shared.h"
+void GameProcessFrame(void);
+void omega_charge_frame(void);
+void do_omega_stuff(object *, vms_vector *, object *);
+void game_render_frame(void);
+void game_render_frame_mono(int);
+}
+#include "render_clock_probe.h"
+#include "omega_damage_probe.h"
+#endif
 
 namespace
 {
@@ -121,6 +156,18 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 {
 	char error[256] = "";
 	const char *output = argument_value("-route-confirm-json-out");
+#if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
+	const char *clock_probe = argument_value("-xl-render-clock-proof");
+	const char *omega_probe = argument_value("-xl-omega-damage-proof");
+	if (startup_find_cmd_arg("-xl-render-clock-proof") || startup_find_cmd_arg("-xl-omega-damage-proof")) {
+		if ((!clock_probe && !omega_probe) || (clock_probe && omega_probe) || !output || !argument_value("-route-confirm-user-dir")) {
+			std::fprintf(stderr, "Render-clock probe requires proof/output paths and an isolated user directory\n");
+			return 1;
+		}
+		error_init(nullptr);
+		set_warn_func(warn_printf);
+	}
+#endif
 	const char *level_text;
 	const char *time_limit_text;
 	const char *exit_goal;
@@ -181,6 +228,10 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	PlayerCfg.maxFps = ROUTE_CONFIRMATION_FIXED_HZ;
 	if (game_is_time_paused())
 		start_time();
+#if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
+	if (clock_probe) return xl_render_clock_probe(clock_probe);
+	if (omega_probe) return xl_omega_damage_probe(omega_probe);
+#endif
 	State.active = 1;
 	event_toggle_focus(0);
 	if (!route_confirmation_start()) {

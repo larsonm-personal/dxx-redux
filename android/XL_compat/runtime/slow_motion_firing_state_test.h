@@ -24,25 +24,24 @@ static void slow_motion_firing_state_controls(std::ostream &samples, int profile
 			for (int ni = 0; ni < 8; ++ni)
 				for (int epoch : { 0, 1 }) {
 					GameTime64 = epoch ? INT64_C(1) << 40 : 0;
-					require(xl_runtime::restore_weapon_clock(nlohmann::json{ lasts[li] }, true), "Cannot seed missile deadline");
+					require(xl_runtime::restore_weapon_clock(nlohmann::json{ lasts[li], 2, 0 }, true), "Cannot seed missile deadline");
 					Next_missile_fire_time = GameTime64 + nexts[ni];
 					samples << "E " << profile << ' ' << multiplayer << ' ' << li << ' ' << ni << ' ' << epoch << ' ' << allowed_to_fire_missile() << '\n';
 				}
-
 	}
 	Game_mode = mode;
 	GameTime64 = 10 * F1_0;
-	const nlohmann::json baseline{ -123 };
+	const nlohmann::json baseline{ -123, 2, 0 };
 	require(xl_runtime::restore_weapon_clock(baseline, true), "Cannot seed save validation");
-	for (const auto &invalid : { nlohmann::json(nullptr), nlohmann::json::array(), nlohmann::json{ 1 }, nlohmann::json{ 0.0 }, nlohmann::json{ true }, nlohmann::json{ UINT64_MAX }, nlohmann::json{ INT64_MIN }, nlohmann::json{ 0, 1 } }) {
+	for (const auto &invalid : { nlohmann::json(nullptr), nlohmann::json::array(), nlohmann::json{ 1, 0, 0 }, nlohmann::json{ 0.0, 0, 0 }, nlohmann::json{ true, 0, 0 }, nlohmann::json{ UINT64_MAX, 0, 0 }, nlohmann::json{ INT64_MIN, 0, 0 }, nlohmann::json{ 0, UINT64_MAX, 0 }, nlohmann::json{ 0, 0, UINT64_MAX }, nlohmann::json{ 0, -1, 0 }, nlohmann::json{ 0, 0, true }, nlohmann::json{ 0, 1 } }) {
 		require(!xl_runtime::restore_weapon_clock(invalid, false) && !xl_runtime::restore_weapon_clock(invalid, true), "Malformed weapon state accepted");
 		require(xl_runtime::weapon_clock_snapshot() == baseline, "Rejected weapon state partially published");
 	}
-	require(xl_runtime::restore_weapon_clock(nlohmann::json{ -456 }, false) && xl_runtime::weapon_clock_snapshot() == baseline, "Validation-only weapon restore mutated state");
+	require(xl_runtime::restore_weapon_clock(nlohmann::json{ -456, 3, 1 }, false) && xl_runtime::weapon_clock_snapshot() == baseline, "Validation-only weapon restore mutated state");
 	Players[Player_num].secondary_weapon = CONCUSSION_INDEX;
 	Players[Player_num].secondary_ammo[CONCUSSION_INDEX] = 1;
 	Next_missile_fire_time = GameTime64;
-	require(xl_runtime::restore_weapon_clock(nlohmann::json{ -987 }, true), "Cannot seed prior missile shot");
+	require(xl_runtime::restore_weapon_clock(nlohmann::json{ -987, 2, 0 }, true), "Cannot seed prior missile shot");
 	do_missile_firing(0);
 	require(Players[Player_num].secondary_ammo[CONCUSSION_INDEX] == 0 && xl_runtime::weapon_clock_snapshot()[0] == 0, "Native missile did not record its last shot");
 	GameTime64 += 1001;

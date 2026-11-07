@@ -1,0 +1,86 @@
+# Omega correction and isolation
+
+Correct #398 as an unmerged follow-up. No pickup admission, merge, stack rewrite
+or asset changes. Pin reference revision 2576a98b5de310e3ac7c9777df2677d1627b8bae.
+
+The real engine confirmed frame-time charge/deadline with fixed-20-Hz blob damage.
+Scale active-XL damage by the same frame time, preserving classic/network damage.
+Qualify actual native target collision and charge at 20/30/60/120 Hz with a genuine
+render context. Compare classic controls against the previous common engine paths.
+Keep the existing blob lifetime/visual behavior explicitly outside visual-parity claims.
+
+Require DXX_XL_DEVELOPER_PROBE for all mutation-heavy diagnostic dispatch/includes.
+Verify ordinary and developer compiler configurations independently.
+
+Input demos do not encode the render chronology needed by XL Omega. Reject
+capture/replay when an active XL player owns Omega, including newly acquired Omega,
+before accepting a replay result or recording frame. Apply the same admission to
+headless, rendered and manually paused replay paths. Classic/network handling stays
+unchanged. Do not synthesize hidden render ticks or claim equivalence.
+
+Exercise gate negatives, save/restore and source identity; retain existing XL schema
+32 and classic native save layout. Report the intentional old-XL-schema incompatibility.
+Run scoped quality, classic differential controls and applicable existing regressions.
+
+## Evidence and boundaries
+
+- Actual robot collisions at 20/30/60/120 Hz: XL consumes 65536 charge and
+  applies 14680064 fixed-point shield damage at each rate (strength 458752).
+  The old #398 laser translation unit fails the same assertion.
+- The complete pre-slow-motion `laser.c` from
+  `02bb982a375d32c5731565b26d9b501cfd627a0c` was compiled into the same
+  instrumented engine. Its eight classic/network-mode rows match the corrected
+  implementation exactly. This is a translation-unit differential, not a claim
+  that every pre-chain engine path or real network session was compared.
+- Developer and ordinary compiler controls inspect both diagnostic flags; neither
+  is present in the ordinary route-confirmation object. No production renderer
+  behavior is added by the diagnostic harness.
+- Replay controls generate a real input recording, load it into the initialized
+  fixture, then exercise the shared headless step and real draw/key dispatch.
+  The fixture temporarily detaches the global game window so the normal abort
+  callback does not terminate the entire test process. All three paths unload
+  without a result, simulation-time advance or weapon-clock change. This tests
+  acquisition/pre-frame rejection, not a legacy checkpoint startup end-to-end.
+- Existing ten-event rendered clock controls pass for XL and classic, including
+  actual disk save/restore. The baseline classic translation unit passes too.
+  This patch changes no save bytes/schema; schema 32 still rejects older XL
+  schemas. This is not comprehensive historical save compatibility coverage.
+- Pinned `weapons/omega.cpp:161` scales damage by frame duration; `:240` consumes
+  that duration as charge. Existing Redux blob lifetime and visual differences
+  remain unaddressed. No complete slow-motion or pickup-support claim is made.
+
+Reproduction: use `android/tests/xl_omega_damage.py` under a genuine GL context,
+with explicit engine/data/extra/reference-root/work paths, mission, level and
+`--xl` only for XL. Its receipt is assisted and never updates readiness. Actual
+qualification used the derived wetbots fixture and stock d2 level 1; it did not
+alter or rerun the frozen original readiness cohort. The multiplayer rows use
+engine mode flags and native collision, not a multi-peer network session.
+
+Final local checks: desktop build passed; eight XL/multiplayer-mode and eight
+classic/multiplayer-mode actual target cases passed; existing XL/classic ten-event
+render/save controls passed; 36 private-assets Python tests passed; upstream
+compatibility and classic trigger/demo CTests passed (25.33 seconds total); scoped
+quality and automation catalog validation passed. Catalog execution stopped at the
+4 GiB free-space reserve (3.70 GiB available), so it remains incomplete. No deadline
+or reserve was relaxed. Windows/Android builds, true multi-peer networking, the
+standalone headless executable and comprehensive historical-save loading remain
+outside this local evidence. Hosted CI is required after publication.
+
+## Completion-edge correction
+
+The final ordered-input tail can contain an authored `d2_honestbob` grant, which
+adds Omega after the normal post-simulation gate. Completion now checks policy
+again after applying that tail. The early-exit completion path checks before and
+after its tail too: `GameProcessFrame` calls `do_controlcen_dead_frame`, whose
+countdown expiry calls `input_demo_finish_replay_from_mine_exit` before returning
+to the outer post-step guard. Level/game-over completion shares the same finalizer.
+
+Developer controls record and replay an actual terminal all-weapons command, then
+assert zero success-writer calls and unloaded replay for normal and early-exit
+completion. A separate owned-Omega control invokes the final-step exit entry
+before the outer step check. This is a native finalizer control, not an end-to-end
+physical mine-explosion simulation. Classic Omega passes both completion paths.
+Independent diagnostic binaries removing only the finish guard or only the tail
+guard fail respectively with `Final-step exit published unsupported Omega success`
+and `Terminal-tail Omega published success`; the same fixtures pass with both guards.
+The strict receipt requires these completion assertions; neither can be omitted.
