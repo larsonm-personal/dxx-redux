@@ -14,6 +14,30 @@ static unsigned operation_sequence = 0;
 static int operation_count_level = 0, operation_frame_source = -1;
 static Json *operation_last = nullptr;
 static std::ofstream *operation_trace = nullptr;
+struct TrackedCombatObject {
+	int index, signature, type, id, level;
+	unsigned load_generation;
+};
+static std::vector<TrackedCombatObject> tracked_combat_objects;
+static unsigned combat_load_generation = 0;
+static bool combat_object_matches(const TrackedCombatObject &tracked)
+{
+	if (tracked.level != Current_level_num || tracked.load_generation != combat_load_generation || tracked.index < 0 || tracked.index > Highest_object_index) return false;
+	const auto &object = Objects[tracked.index];
+	return object.signature == tracked.signature && object.type == tracked.type && object.id == tracked.id;
+}
+static Json combat_object_state(const TrackedCombatObject &tracked)
+{
+	const bool exists = combat_object_matches(tracked);
+	Json result = { { "object", tracked.index }, { "expected_signature", tracked.signature }, { "expected_type", tracked.type }, { "expected_id", tracked.id }, { "expected_level", tracked.level }, { "expected_load_generation", tracked.load_generation }, { "observed_level", Current_level_num }, { "observed_load_generation", combat_load_generation }, { "exists", exists }, { "actor_state", nullptr }, { "current_slot", nullptr } };
+	if (tracked.index < 0 || tracked.index > Highest_object_index) return result;
+	const auto &object = Objects[tracked.index];
+	result["current_slot"] = { { "signature", int(object.signature) }, { "type", int(object.type) }, { "id", int(object.id) } };
+	if (!exists) return result;
+	const auto velocity = object.movement_type == MT_PHYSICS ? Json{ int(object.mtype.phys_info.velocity.x), int(object.mtype.phys_info.velocity.y), int(object.mtype.phys_info.velocity.z) } : Json{};
+	result["actor_state"] = { { "segment", int(object.segnum) }, { "shields_raw", int(object.shields) }, { "flags", int(object.flags) }, { "should_be_dead", bool(object.flags & OF_SHOULD_BE_DEAD) }, { "movement_type", int(object.movement_type) }, { "position_fixed", { int(object.pos.x), int(object.pos.y), int(object.pos.z) } }, { "velocity_fixed", velocity } };
+	return result;
+}
 static std::string file_hash(const std::filesystem::path &path)
 {
 	std::ifstream stream(path, std::ios::binary);
@@ -25,6 +49,9 @@ static Json snapshot()
 	// Copy packed mutable fields before JSON forwarding can bind references to them
 	Json state = { { "current_level_num", Current_level_num }, { "player_dead", Player_is_dead != 0 }, { "cheats_enabled", cheats.enabled != 0 } };
 	state["game_time_raw"] = GameTime64;
+	unsigned int rng_state = 0;
+	const bool rng_available = d_rand_get_state(&rng_state) != 0;
+	state["simulation_rng"] = { { "state_available", rng_available }, { "state", rng_available ? Json(rng_state) : Json{} }, { "call_count", d_rand_get_call_count() } };
 	state["level_scene"]["powerups"] = Json::array();
 	for (int index = 0; index <= Highest_object_index; ++index)
 		if (Objects[index].type == OBJ_POWERUP && !(Objects[index].flags & OF_SHOULD_BE_DEAD))
@@ -40,6 +67,9 @@ static Json snapshot()
 	state["player"]["vulcan_ammo"] = player.primary_ammo[VULCAN_INDEX];
 	state["player"]["cloaked"] = (player.flags & PLAYER_FLAGS_CLOAKED) != 0;
 	state["primary_fire"] = { { "next_delta_raw", Next_laser_fire_time - GameTime64 }, { "count", Global_laser_firing_count }, { "held", Controls.fire_primary_state } };
+	state["primary_fire"]["fusion_charge_raw"] = int(Fusion_charge);
+	state["primary_fire"]["fusion_auto_fire_pending"] = Auto_fire_fusion_cannon_time != 0;
+	state["primary_fire"]["fusion_auto_fire_delta_raw"] = Auto_fire_fusion_cannon_time != 0 ? Json(Auto_fire_fusion_cannon_time - GameTime64) : Json{};
 	if (ConsoleObject && Player_ship)
 		for (int gun : { 0, 1, 6 }) {
 			vms_vector point = Player_ship->gun_points[gun];
@@ -76,6 +106,31 @@ static Json snapshot()
 	}
 	state["level_scene"]["reactors"] = Json::array();
 	state["level_scene"]["robots"] = Json::array();
+	state["combat_observation"]["load_generation"] = combat_load_generation;
+	state["combat_observation"]["binding_policy"] = "invalidate_on_load_or_level_transition";
+	state["combat_observation"]["player_object"] = player.objnum;
+	state["combat_observation"]["player_signature"] = ConsoleObject ? Json(int(ConsoleObject->signature)) : Json{};
+	state["combat_observation"]["tracked_objects"] = Json::array();
+	for (const auto &tracked : tracked_combat_objects)
+		state["combat_observation"]["tracked_objects"].push_back(combat_object_state(tracked));
+	// A before/after snapshot can prove a live emitted shot, not a count of shots
+	// that may already have collided or expired between observations.
+	constexpr int max_owned_weapons = 64;
+	int owned_weapon_count = 0;
+	state["combat_observation"]["owned_weapons"] = Json::array();
+	for (int index = 0; index <= Highest_object_index; ++index) {
+		const auto &object = Objects[index];
+		if (object.type != OBJ_WEAPON || (object.flags & OF_SHOULD_BE_DEAD)) continue;
+		const auto &laser = object.ctype.laser_info;
+		const int parent_type = laser.parent_type, parent_num = laser.parent_num, parent_signature = laser.parent_signature;
+		if (parent_type != OBJ_PLAYER || parent_num != player.objnum || !ConsoleObject || parent_signature != ConsoleObject->signature) continue;
+		++owned_weapon_count;
+		if (owned_weapon_count > max_owned_weapons) continue;
+		state["combat_observation"]["owned_weapons"].push_back({ { "object", index }, { "signature", int(object.signature) }, { "weapon_id", int(object.id) }, { "parent_type", parent_type }, { "parent_object", parent_num }, { "parent_signature", parent_signature }, { "segment", int(object.segnum) }, { "creation_time_raw", int64_t(laser.creation_time) }, { "creation_delta_raw", int64_t(laser.creation_time - GameTime64) }, { "lifeleft_raw", int(object.lifeleft) }, { "position_fixed", { int(object.pos.x), int(object.pos.y), int(object.pos.z) } } });
+	}
+	state["combat_observation"]["owned_weapon_count"] = owned_weapon_count;
+	state["combat_observation"]["owned_weapons_truncated"] = owned_weapon_count > max_owned_weapons;
+	state["combat_observation"]["owned_weapon_limit"] = max_owned_weapons;
 	for (int index = 0; index <= Highest_object_index; ++index)
 		if (Objects[index].type == OBJ_CNTRLCEN) {
 			Json guns = Json::array();
@@ -89,7 +144,7 @@ static Json snapshot()
 			state["level_scene"]["robots"].push_back({ { "object", index }, { "id", Objects[index].id }, { "segment", int(Objects[index].segnum) }, { "shields", double(Objects[index].shields) / F1_0 }, { "boss", Robot_info[Objects[index].id].boss_flag }, { "position_fixed", { int(Objects[index].pos.x), int(Objects[index].pos.y), int(Objects[index].pos.z) } } });
 	const int primary_id = player.primary_weapon >= 0 && player.primary_weapon < MAX_PRIMARY_WEAPONS ? Primary_weapon_to_weapon_info[player.primary_weapon] : -1;
 	for (int weapon : { 0, CONTROLCEN_WEAPON_NUM, primary_id })
-		if (weapon >= 0 && weapon < N_weapon_types) state["weapon_definitions"][std::to_string(weapon)] = { { "damage_radius", int(Weapon_info[weapon].damage_radius) }, { "strength", int(Weapon_info[weapon].strength[Difficulty_level]) }, { "speed", int(Weapon_info[weapon].speed[Difficulty_level]) }, { "fire_wait", int(Weapon_info[weapon].fire_wait) }, { "fire_count", Weapon_info[weapon].fire_count }, { "ammo_usage", Weapon_info[weapon].ammo_usage }, { "energy_usage", int(Weapon_info[weapon].energy_usage) } };
+		if (weapon >= 0 && weapon < N_weapon_types) state["weapon_definitions"][std::to_string(weapon)] = { { "damage_radius", int(Weapon_info[weapon].damage_radius) }, { "strength", int(Weapon_info[weapon].strength[Difficulty_level]) }, { "speed", int(Weapon_info[weapon].speed[Difficulty_level]) }, { "fire_wait", int(Weapon_info[weapon].fire_wait) }, { "fire_count", Weapon_info[weapon].fire_count }, { "ammo_usage", Weapon_info[weapon].ammo_usage }, { "energy_usage", int(Weapon_info[weapon].energy_usage) }, { "matter", int(Weapon_info[weapon].matter) } };
 	return state;
 }
 using TriggerObservation = std::vector<std::array<std::int64_t, 11>>;
@@ -209,6 +264,8 @@ static int run(int argc, char **argv)
 	bool runtime_initialized = false;
 	std::string resume_sha256, run_id, plan_sha256, executable_sha256;
 	try {
+		tracked_combat_objects.clear();
+		combat_load_generation = 0;
 		const auto plan_path = std::filesystem::path(find_arg_value(argc, argv, "-pumo-player-test"));
 		const auto executable_path = std::filesystem::canonical(argv[0]);
 		require(std::filesystem::is_regular_file(plan_path) && std::filesystem::is_regular_file(executable_path) && std::filesystem::file_size(plan_path) > 0 && std::filesystem::file_size(executable_path) > 0, "native player requires readable nonempty plan and executable files");
@@ -243,6 +300,7 @@ static int run(int argc, char **argv)
 		const int initial_level = plan.at("initial_level");
 		require(initial_level >= 1 && initial_level <= Last_level, "native player initial level out of range");
 		StartNewGame(initial_level);
+		++combat_load_generation;
 		if (plan.contains("resume_checkpoint")) {
 			const std::string file = plan.at("resume_checkpoint");
 			require(!file.empty() && std::filesystem::path(file).filename() == file, "native checkpoint must name an isolated save file");
@@ -252,6 +310,21 @@ static int run(int argc, char **argv)
 			std::vector<char> name(file.begin(), file.end());
 			name.push_back(0);
 			require(state_restore_all_sub(name.data(), 0), "native earned checkpoint failed to restore");
+			++combat_load_generation;
+		}
+		if (plan.contains("track_objects")) {
+			const auto &targets = plan.at("track_objects");
+			require(targets.is_array() && targets.size() <= 16, "native combat tracking requires at most 16 object indices");
+			for (const auto &target : targets) {
+				require(target.is_number_integer(), "native combat tracking index must be an integer");
+				const int index = target.get<int>();
+				require(index >= 0 && index <= Highest_object_index && (Objects[index].type == OBJ_ROBOT || Objects[index].type == OBJ_CNTRLCEN) && !(Objects[index].flags & OF_SHOULD_BE_DEAD), "native combat tracking target is not a live combat object");
+				require(std::none_of(tracked_combat_objects.begin(), tracked_combat_objects.end(), [index](const auto &entry) { return entry.index == index; }), "native combat tracking contains a duplicate object index");
+				const auto &object = Objects[index];
+				tracked_combat_objects.push_back({ index, object.signature, object.type, object.id, Current_level_num, combat_load_generation });
+			}
+		}
+		if (plan.contains("resume_checkpoint")) {
 			std::string failure;
 			const bool restored = expectations(snapshot(), plan.at("checkpoint_expect"), failure);
 			require(restored, ("native earned checkpoint: " + failure).c_str());
@@ -289,6 +362,7 @@ static int run(int argc, char **argv)
 			operation_frame_source = before_level;
 			GameProcessFrame();
 			operation_frame_source = -1;
+			if (before_level != Current_level_num) ++combat_load_generation;
 			// Wall-trigger debounce uses the real timer, not GameTime64
 			if (plan.value("realtime", false)) std::this_thread::sleep_until(frame_started + std::chrono::microseconds(1000000 / fps));
 			if (operation_count_level != Current_level_num) {
@@ -343,16 +417,17 @@ static int run(int argc, char **argv)
 				const int target = step.value("face_object", -1);
 				const int interval = step.value("face_interval_ms", 200);
 				require(target == -1 || (target >= 0 && target <= Highest_object_index && (Objects[target].type == OBJ_ROBOT || Objects[target].type == OBJ_CNTRLCEN)), "native view target is not a live combat object");
+				const TrackedCombatObject aimed_target = target >= 0 ? TrackedCombatObject{ target, Objects[target].signature, Objects[target].type, Objects[target].id, Current_level_num, combat_load_generation } : TrackedCombatObject{ -1, -1, -1, -1, Current_level_num, combat_load_generation };
 				require(interval >= 17 && interval <= 1000, "native view interval out of range");
 				const int aim_frames = std::max(1, (interval * fps + 999) / 1000);
 				int frame = 0;
 				while (!expectations(snapshot(), step.at("expect"), failed) && frame < limit) {
-					if (target >= 0 && frame % aim_frames == 0 && Objects[target].shields > 0 && (Objects[target].type == OBJ_ROBOT || Objects[target].type == OBJ_CNTRLCEN)) {
+					if (target >= 0 && frame % aim_frames == 0 && combat_object_matches(aimed_target) && !(Objects[target].flags & OF_SHOULD_BE_DEAD) && Objects[target].shields > 0) {
 						vms_vector forward;
 						vm_vec_sub(&forward, &Objects[target].pos, &ConsoleObject->pos);
 						if (vm_vec_normalize_quick(&forward)) vm_vector_2_matrix(&ConsoleObject->orient, &forward, nullptr, nullptr);
 						++view_aim_events;
-						trace << Json{ { "event", "fixed_view_aim" }, { "target", target }, { "game_time_raw", GameTime64 }, { "forward_fixed", { int(forward.x), int(forward.y), int(forward.z) } } }.dump() << '\n';
+						trace << Json{ { "event", "fixed_view_aim" }, { "target", target }, { "target_state", combat_object_state(aimed_target) }, { "game_time_raw", GameTime64 }, { "forward_fixed", { int(forward.x), int(forward.y), int(forward.z) } } }.dump() << '\n';
 					}
 					tick();
 					++frame;
@@ -378,6 +453,8 @@ static int run(int argc, char **argv)
 				} else {
 					require(step.at("value") == "quick_load", "unsupported native player save action");
 					require(state_restore_all_sub(file, 0), "native player checkpoint load failed");
+					// A load invalidates every prior target binding, even if its slot and signature recur
+					++combat_load_generation;
 					operation_counts.fill(0);
 					operation_count_level = Current_level_num;
 					last_activation = snapshot();
