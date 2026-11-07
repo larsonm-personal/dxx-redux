@@ -3,6 +3,7 @@
 #include "slow_motion_runtime.h"
 #include <iomanip>
 #include "slow_motion_rotation_test.h"
+#include "slow_motion_contact_test.h"
 static void slow_motion_physics_controls(const std::filesystem::path &root)
 {
 	std::ofstream samples(root.parent_path() / "slow-motion-physics.txt");
@@ -35,6 +36,8 @@ static void slow_motion_physics_controls(const std::filesystem::path &root)
 		}
 		const auto clocks = xl_runtime::slow_motion_state().clocks;
 		slow_motion_rotation_controls(samples, profile);
+		slow_motion_turn_controls(samples, profile);
+		slow_motion_wall_controls(samples, profile);
 		if (profile == 3) require(clocks[0].speed == 3 && clocks[1].speed == 1, "Native bullet time did not separate clocks");
 		for (const auto type : { OBJ_PLAYER, OBJ_ROBOT, OBJ_WEAPON, OBJ_POWERUP }) {
 			vms_vector center;
