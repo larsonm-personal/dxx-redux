@@ -1428,7 +1428,10 @@ class SweepTests(unittest.TestCase):
         fixture_step = workflow.split("      - name: Provision verified public fixtures", 1)[1].split(
             "      - name:", 1
         )[0]
-        self.assertIn("if: steps.selection.outputs.public_fixtures == 'true'", fixture_step)
+        self.assertIn(
+            "if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (steps.selection.outputs.public_fixtures == 'true')",
+            fixture_step,
+        )
         self.assertNotIn("inputs.lane == 'android-single'", fixture_step)
         self.assertIn("-Game both -Download -RequireArchives", fixture_step)
         for name in (
@@ -1464,7 +1467,10 @@ class SweepTests(unittest.TestCase):
         setup = workflow.split("      - name: Provision selected auto-level replay prerequisites", 1)[1].split(
             "      - name:", 1
         )[0]
-        self.assertIn("if: steps.selection.outputs.native_replay == 'true'", setup)
+        self.assertIn(
+            "if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (steps.selection.outputs.native_replay == 'true')",
+            setup,
+        )
         self.assertIn("bash android/get_deps/helpers/get_linux_build_prereqs.sh", setup)
         self.assertIn("xvfb xauth libgl1-mesa-dri", setup)
         self.assertIn("timeout-minutes: 15", setup)
@@ -1592,7 +1598,10 @@ class SweepTests(unittest.TestCase):
         collect = workflow.split("      - name: Collect public first-play diagnostics", 1)[1].split("      - name:", 1)[
             0
         ]
-        self.assertIn("if: always() && !inputs.retail_assets", collect)
+        self.assertIn(
+            "if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && !inputs.retail_assets)",
+            collect,
+        )
         self.assertIn(
             "('public-first-play-*', 'lan-launch-preparation-public-shareware', 'lan-host-migration-public-shareware')",
             collect,
@@ -1601,7 +1610,11 @@ class SweepTests(unittest.TestCase):
         self.assertNotIn("game_data", collect)
         upload = workflow.split("      - name: Upload execution evidence", 1)[1].split("      - name:", 1)[0]
         self.assertIn("path: results/", upload)
-        self.assertIn("if: always() && !inputs.retail_assets", upload)
+        self.assertIn(
+            "if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') "
+            "&& (always() && !inputs.retail_assets)",
+            upload,
+        )
 
     def test_graphics_failure_collector_is_exact_bounded_and_rejects_links(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
