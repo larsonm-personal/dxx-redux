@@ -25,7 +25,8 @@ add_library(
     ../app/src/main/cpp/shared/bounded_rle.c
     wave.cpp
     companion_lighting.cpp
-    scoped_sound.cpp)
+    scoped_sound.cpp
+    slow_motion.cpp)
 target_compile_features(xl_inventory PUBLIC cxx_std_17)
 target_include_directories(xl_inventory PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(xl_inspect inspect.cpp)
@@ -212,6 +213,7 @@ if(BUILD_TESTING)
     set(XL_REFERENCE_GEOMETRY_ROOT "" CACHE PATH "Pinned XL source root for face hit-point oracle")
     if(XL_REFERENCE_GEOMETRY_ROOT)
         include(tests/reference_face_point.cmake)
+        include(tests/reference_slow_motion.cmake)
         include(tests/reference_teleport.cmake)
         include(tests/reference_speed_boost.cmake)
         include(tests/reference_spawn_points.cmake)
