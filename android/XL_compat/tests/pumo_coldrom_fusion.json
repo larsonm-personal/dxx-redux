@@ -1,0 +1,144 @@
+{
+    "initial_level": 14,
+    "checkpoint_expect": {
+        "current_level_num": 14,
+        "cheats_enabled": false,
+        "player_dead": false,
+        "player.invulnerable": false,
+        "position.segment": 375,
+        "player.primary_weapon": 0,
+        "player.primary_weapon_flags": 17,
+        "player.energy": 100,
+        "xl_pilot.remaining_objectives": 1
+    },
+    "track_objects": [103, 125],
+    "simulation_fps": 60,
+    "qualification": "earned_postpickup_fusion_normal_charge_release_projectile_witness",
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "cheats_enabled": false,
+                "current_level_num": 14,
+                "player_dead": false,
+                "player.invulnerable": false,
+                "player.primary_weapon": 0,
+                "player.primary_weapon_flags": 17,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.owned_weapons_truncated": false,
+                "combat_observation.owned_weapon_count": 0
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 375,
+            "side": 5,
+            "distance": 8
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 14,
+                "player.primary_weapon": 0,
+                "position.segment": 375
+            }
+        },
+        {
+            "action": "select_primary",
+            "slot": 4
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "player.primary_weapon": 4,
+                "player.primary_weapon_flags": 17,
+                "weapon_definitions.14.ammo_usage": 0,
+                "combat_observation.owned_weapon_count": 0
+            }
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "primary_fire.next_delta_raw": {
+                    "lte": 0
+                },
+                "player.primary_weapon": 4,
+                "player_dead": false
+            },
+            "timeout_ms": 1500
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "primary_fire.next_delta_raw": {
+                    "lte": 0
+                },
+                "primary_fire.fusion_charge_raw": 0,
+                "player.energy": 100,
+                "combat_observation.owned_weapon_count": 0
+            }
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "pressed": 1
+        },
+        {
+            "action": "wait_ms",
+            "ms": 250
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 14,
+                "player.primary_weapon": 4,
+                "primary_fire.held": 1,
+                "primary_fire.fusion_charge_raw": {
+                    "gt": 0
+                },
+                "player.energy": {
+                    "lt": 100
+                },
+                "combat_observation.owned_weapons_truncated": false
+            }
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "pressed": 0
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "combat_observation.owned_weapons": {
+                    "contains_object": {
+                        "weapon_id": 14
+                    }
+                },
+                "combat_observation.owned_weapons_truncated": false
+            },
+            "timeout_ms": 100
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "cheats_enabled": false,
+                "current_level_num": 14,
+                "player_dead": false,
+                "player.invulnerable": false,
+                "player.primary_weapon": 4,
+                "primary_fire.held": 0,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.owned_weapons": {
+                    "contains_object": {
+                        "weapon_id": 14
+                    }
+                },
+                "combat_observation.owned_weapons_truncated": false
+            }
+        },
+        {
+            "action": "introspect"
+        }
+    ]
+}

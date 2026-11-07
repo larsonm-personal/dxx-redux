@@ -137,7 +137,15 @@ def run(cmake):
             launched = subprocess.run([cmake, "-P", str(script)], capture_output=True, text=True, timeout=10)
             if launched.returncode == 0 or "failed (7)" not in launched.stderr:
                 raise AssertionError(f"process failure misclassified: {launched.stderr}")
-    print("Pumo earned-phase receipt controls passed")
+    import unittest
+
+    import pumo_coldrom_contract_test
+
+    suite = unittest.defaultTestLoader.loadTestsFromModule(pumo_coldrom_contract_test)
+    checked = unittest.TextTestRunner(verbosity=0).run(suite)
+    if not checked.wasSuccessful():
+        raise AssertionError("Coldrom native witness controls failed")
+    print("Pumo earned-phase receipt and Coldrom witness controls passed")
 
 
 if __name__ == "__main__":
