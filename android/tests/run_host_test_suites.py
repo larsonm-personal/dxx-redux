@@ -1063,16 +1063,21 @@ def run_suite(suite, repo, build_root, output, timeout):
             if suite["profile"] in {"retail-xl-originals", "retail-xl-fast"}:
                 (work / "xl-originals/xl-progress.json").unlink(missing_ok=True)
                 (work / "xl-originals/original-ctest.xml").unlink(missing_ok=True)
+                (work / "xl-originals/native-ctest.log").unlink(missing_ok=True)
             try:
                 code = run(argv, virtual_display=suite.get("virtual_display", False))
             finally:
                 # Preserve bounded progress even when the owner times out or is cancelled
                 if suite["profile"] in {"retail-xl-originals", "retail-xl-fast"}:
-                    from nightly_retail import xl_stage
+                    from nightly_retail import xl_progress, xl_native_progress
 
-                    stage = xl_stage(work / "xl-originals/xl-progress.json")
-                    if stage:
-                        result["xl_stage"] = stage
+                    progress = xl_progress(work / "xl-originals/xl-progress.json")
+                    result.update(progress)
+                    stage = progress.get("xl_stage")
+                    if stage == "native-tests":
+                        observed = xl_native_progress(work / "xl-originals/native-ctest.log")
+                        if observed:
+                            result["xl_native_progress"] = observed
             if suite["profile"] in {"retail-xl-originals", "retail-xl-fast"} and code == 0:
                 from run_xl_originals import validate_controller_summary
 

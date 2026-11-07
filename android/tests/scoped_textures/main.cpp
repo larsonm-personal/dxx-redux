@@ -95,7 +95,11 @@ int main(int argc, char **argv)
 	soft_base_pattern();
 #endif
 	const bool original = std::filesystem::is_regular_file("ceil002.tga");
-	if (original) std::filesystem::copy_file("ceil002.tga", "a/mods/pilot/textures/CEIL002.TGA", std::filesystem::copy_options::overwrite_existing);
+	// Exercise input staging in the public control too, without making it an original witness
+	if (!original) image("./ceil002.tga", 210);
+	std::filesystem::copy_file("ceil002.tga", "a/mods/pilot/textures/CEIL002.TGA", std::filesystem::copy_options::overwrite_existing);
+	// The isolated input copy must not shadow the global texture after mission staging
+	require(std::filesystem::remove("ceil002.tga"), "retire staged texture input");
 	image("b/mods/pilot/textures/CEIL002.TGA", 110);
 	image("global/ceil002.tga", 10);
 	image("a/mods/pilot/textures/translucent.tga", 230, 100);
@@ -126,6 +130,8 @@ int main(int argc, char **argv)
 	image("installation/addon.tga", 20);
 	std::ofstream(".mission_assets.json") << nlohmann::json({ { "schema", 2 }, { "installation_mounts", { "installation" } }, { "entries", entries } });
 	require(PHYSFS_mount("global", nullptr, 1), "global control mount");
+	const char *global_texture_source = PHYSFS_getRealDir("ceil002.tga");
+	require(global_texture_source && !std::strcmp(global_texture_source, "global"), "staged input does not shadow global control");
 	require(PHYSFS_mount("installation", nullptr, 1), "file-set installation mount");
 	android_mission_assets_init();
 	require(android_mission_assets_owns_installation("installation"), "published mounted installation admitted");
