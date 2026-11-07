@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -26,6 +27,94 @@ ENV = {
 
 
 class RetailBoundaryTests(unittest.TestCase):
+    def test_xl_android_diagnostics_are_source_verified_and_fixed(self):
+        source = retail.MASTER_DIAGNOSTIC_SOURCES["test_xl_original_assets"]
+        data = (ROOT / source).read_bytes()
+        markers = re.findall(r"'XL_ANDROID_STAGE: ([a-z-]+)'", data.decode())
+        self.assertEqual(set(markers), retail.XL_ANDROID_STAGES)
+        self.assertEqual(len(markers), len(retail.XL_ANDROID_STAGES))
+        message = "Required original XL Android runtime test failed"
+        expected_line = next(i for i, line in enumerate(data.decode().splitlines(), 1) if message in line)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            log = root / "test.log"
+            row = {
+                "name": "test_xl_original_assets",
+                "status": "FAIL",
+                "log": str(log),
+                "source": source,
+                "source_sha256": hashlib.sha256(data).hexdigest(),
+            }
+            for stage in markers:
+                with self.subTest(stage=stage):
+                    log.write_text(
+                        "XL_ANDROID_STAGE: initialize-target\nSECRET_ASSET_TEXT\n"
+                        f"\x1b[32mXL_ANDROID_STAGE: {stage}\x1b[0m\nException: {message}\n"
+                    )
+                    details = retail.master_failure_diagnostics(row, root)
+                    self.assertEqual(details["last_observed_stage"], stage)
+                    self.assertEqual(details["source_matches"], [{"path": source, "line": expected_line}])
+                    clean = retail.public_receipt(
+                        {
+                            "schema": 1,
+                            "target_sha": SHA,
+                            "catalog_hash": SHA,
+                            "batch_id": SHA,
+                            "lane": "android-single",
+                            "results": [
+                                {
+                                    "id": "master:test_xl_original_assets",
+                                    "status": "FAIL",
+                                    "phase": "tests",
+                                    "master_diagnostics": details,
+                                }
+                            ],
+                        }
+                    )["results"][0]
+                    self.assertEqual(clean["master_diagnostics"]["last_observed_stage"], stage)
+                    self.assertIn("last observed XL Android stage: " + stage, clean["reason"])
+                    self.assertEqual(clean["status"], "FAIL")
+                    self.assertFalse(clean["coverage_complete"])
+                    for private in ("SECRET", str(root), message):
+                        self.assertNotIn(private, str(clean))
+            for change in ({"source_sha256": "0" * 64}, {"source": "private.ps1"}, {"status": "PASS"}):
+                self.assertNotIn("last_observed_stage", retail.master_failure_diagnostics({**row, **change}, root))
+            marker = "XL_ANDROID_STAGE: jvm-tests\n"
+            for text in (
+                "XL_ANDROID_STAGE: private\n",
+                "prefix XL_ANDROID_STAGE: jvm-tests\n",
+                "XL_ANDROID_STAGE: jvm-tests private\n",
+                "Write-Host 'XL_ANDROID_STAGE: jvm-tests'\n",
+                "X" * 40000 + "\nXL_ANDROID_STAGE: jvm-tests\n" + "X" * 40000,
+                "X" * 40000 + marker + "X" * (32768 - len(marker)),
+            ):
+                log.write_text(text)
+                self.assertNotIn("last_observed_stage", retail.master_failure_diagnostics(row, root))
+            log.write_text("X" * 70000 + "\nXL_ANDROID_STAGE: texture-witness\n")
+            self.assertEqual(retail.master_failure_diagnostics(row, root)["last_observed_stage"], "texture-witness")
+            log.unlink()
+            self.assertNotIn("last_observed_stage", retail.master_failure_diagnostics(row, root))
+            outside = root / "other.log"
+            outside.write_text("XL_ANDROID_STAGE: jvm-tests\n")
+            try:
+                log.symlink_to(outside)
+            except OSError:
+                return  # Symlink creation may require elevated Windows privileges
+            self.assertFalse(retail.master_failure_diagnostics(row, root)["log_available"])
+
+    def test_xl_android_public_stage_rejects_untrusted_values(self):
+        row = {"id": "master:test_xl_original_assets"}
+        for stage in ("private", ["jvm-tests"], None, True):
+            clean = retail.public_diagnostics(
+                {**row, "master_diagnostics": {"source_verified": True, "last_observed_stage": stage}}
+            )
+            self.assertNotIn("last_observed_stage", clean["master_diagnostics"])
+        for owner, verified in ((row["id"], False), (row["id"], "true"), ("master:test_lan", True)):
+            clean = retail.public_diagnostics(
+                {"id": owner, "master_diagnostics": {"source_verified": verified, "last_observed_stage": "jvm-tests"}}
+            )
+            self.assertNotIn("last_observed_stage", clean["master_diagnostics"])
+
     def test_lan_failure_source_sites_retain_no_private_log_text(self):
         source = "android/tests/test_lan_lobby_discovery.ps1"
         data = (ROOT / source).read_bytes()
