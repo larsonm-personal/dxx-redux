@@ -639,7 +639,8 @@ def run_suite(suite, repo, build_root, output, timeout):
         return finish("BLOCKED", "This initial host adapter is qualified for Linux only")
     try:
         if suite.get("kind") == "retail-corpus":
-            from nightly_regression_catalog import CORPUS_COMMIT, vertigo_campaign, unavailable_level
+            from nightly_regression_catalog import vertigo_campaign, unavailable_level
+            from nightly_retail import corpus_available
             from nightly_corpus_stage import stage_route, StageUnavailable
             from nightly_regression_corpus import (
                 compare_metadata,
@@ -648,7 +649,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                 require_unchanged_oracles,
             )
 
-            if os.environ.get("RETAIL_CHECKOUT_COMMIT") != CORPUS_COMMIT:
+            if not corpus_available({"commit": os.environ.get("RETAIL_CHECKOUT_COMMIT")}):
                 return finish("BLOCKED", "Reviewed corpus revision is not staged", retryable=True)
             baseline = target_file(repo, "game_data/mission_files/" + suite["baseline"])
             archive = next(
