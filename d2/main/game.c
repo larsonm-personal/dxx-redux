@@ -17,6 +17,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  *
  */
 
+#ifdef DXX_XL_RUNTIME
+#include "slow_motion_runtime.h"
+#endif
 #include <stdio.h>
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
@@ -994,7 +997,11 @@ int allowed_to_fire_laser(void)
 #ifdef DXX_XL_RUNTIME
 	if (xl_preview_no_damage_segment(ConsoleObject->segnum)) return 0;
 #endif
+#ifdef DXX_XL_RUNTIME
+	if (xl_slow_motion_primary_blocked(Last_laser_fired_time, Next_laser_fire_time, GameTime64))
+#else
 	if (Next_laser_fire_time > GameTime64)
+#endif
 		return 0;
 
 	return 1;
@@ -1002,17 +1009,25 @@ int allowed_to_fire_laser(void)
 
 int allowed_to_fire_flare(void)
 {
+#ifdef DXX_XL_RUNTIME
+	if (xl_slow_motion_flare_blocked(Next_flare_fire_time, GameTime64))
+#else
 	if (Next_flare_fire_time > GameTime64)
+#endif
 		return 0;
 
 	if (is_observer()) {
 		return 0;
 	}
 
+#ifdef DXX_XL_RUNTIME
+	Next_flare_fire_time = GameTime64 + xl_slow_motion_flare_delay(Players[Player_num].energy >= Weapon_info[FLARE_ID].energy_usage);
+#else
 	if (Players[Player_num].energy >= Weapon_info[FLARE_ID].energy_usage)
 		Next_flare_fire_time = GameTime64 + F1_0/4;
 	else
 		Next_flare_fire_time = GameTime64 + FLARE_BIG_DELAY;
+#endif
 
 	return 1;
 }
