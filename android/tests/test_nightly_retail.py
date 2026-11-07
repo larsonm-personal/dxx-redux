@@ -27,6 +27,60 @@ ENV = {
 
 
 class RetailBoundaryTests(unittest.TestCase):
+    def test_xl_native_progress_is_resanitized_and_never_qualifies_coverage(self):
+        progress = {
+            "last_started_test": "xl_preview_lifecycle",
+            "last_finished_test": "xl_pilot_archive",
+            "last_finished_status": "passed",
+            "log_truncated": True,
+        }
+        row = {
+            "id": "host-profile:retail-xl-originals",
+            "status": "FAIL",
+            "phase": "tests",
+            "xl_stage": "native-tests",
+            "xl_stage_entered_after_milliseconds": 650123,
+            "xl_native_progress": {**progress, "PRIVATE_KEY": "PRIVATE_CONTENT"},
+        }
+        receipt = {
+            "schema": 1,
+            "target_sha": SHA,
+            "catalog_hash": SHA,
+            "batch_id": SHA,
+            "lane": "host",
+            "results": [row],
+        }
+        published = retail.public_receipt(receipt)
+        clean = published["results"][0]
+        self.assertEqual(clean["xl_native_progress"], progress)
+        self.assertEqual(clean["xl_stage_entered_after_milliseconds"], 650123)
+        self.assertEqual(clean["status"], "FAIL")
+        self.assertFalse(clean["coverage_complete"])
+        self.assertNotIn("xl_checks", clean)
+        self.assertNotIn("PRIVATE", json.dumps(clean))
+        self.assertEqual(published, retail.public_receipt(published))
+        for invalid in (-1, 86400001, True, 1.5, float("nan"), float("inf"), "PRIVATE", None):
+            self.assertNotIn(
+                "xl_stage_entered_after_milliseconds",
+                retail.public_diagnostics({**row, "xl_stage_entered_after_milliseconds": invalid}),
+            )
+        for changed in ({"id": "other"}, {"xl_stage": "PRIVATE"}):
+            clean = retail.public_diagnostics({**row, **changed})
+            self.assertNotIn("xl_native_progress", clean)
+            self.assertNotIn("xl_stage_entered_after_milliseconds", clean)
+        for invalid in (None, [], "PRIVATE", {"last_started_test": []}, {"last_finished_status": "passed"}):
+            self.assertEqual(retail.safe_xl_native_progress(invalid), {})
+        for key in ("last_started_test", "last_finished_test", "last_finished_status", "log_truncated"):
+            clean = retail.safe_xl_native_progress({**progress, key: "PRIVATE"})
+            self.assertNotIn(key, clean)
+            self.assertNotIn("PRIVATE", json.dumps(clean))
+        # A last-observed passing leaf cannot substitute for the exact positive receipt
+        from nightly_pr_candidate import positive_receipt
+
+        published["results"][0].update(id="host-profile:retail-xl-fast", status="PASS")
+        with self.assertRaises(ValueError):
+            positive_receipt(published, SHA)
+
     def test_xl_android_diagnostics_are_source_verified_and_fixed(self):
         source = retail.MASTER_DIAGNOSTIC_SOURCES["test_xl_original_assets"]
         data = (ROOT / source).read_bytes()

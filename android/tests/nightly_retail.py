@@ -38,19 +38,103 @@ XL_STAGES = frozenset(
 )
 
 
-def xl_stage(path):
+def xl_progress(path):
     """Read only a bounded, fixed vocabulary from candidate progress."""
     import json
 
     path = Path(path)
     try:
         if any(p.is_symlink() for p in (path, *path.parents)) or not path.is_file() or path.stat().st_size > 1024:
-            return None
-        value = json.loads(path.read_text())
+            return {}
+        with path.open("rb") as stream:
+            data = stream.read(1025)
+        if len(data) > 1024:
+            return {}
+        value = json.loads(data)
         stage = value.get("stage") if isinstance(value, dict) else None
-        return stage if isinstance(stage, str) and stage in XL_STAGES else None
+        if not isinstance(stage, str) or stage not in XL_STAGES:
+            return {}
+        clean = {"xl_stage": stage}
+        entered = value.get("entered_after_milliseconds")
+        if type(entered) is int and 0 <= entered <= 86400000:
+            clean["xl_stage_entered_after_milliseconds"] = entered
+        return clean
     except (OSError, ValueError):
-        return None
+        return {}
+
+
+def xl_stage(path):
+    return xl_progress(path).get("xl_stage")
+
+
+def safe_xl_native_progress(value):
+    from run_xl_originals import CORE_TESTS, FAST_TESTS, EXPERIMENTAL_TESTS, REVIEWED_FAST_ADDITIONS
+
+    if not isinstance(value, dict):
+        return {}
+    allowed = CORE_TESTS | FAST_TESTS | EXPERIMENTAL_TESTS | REVIEWED_FAST_ADDITIONS
+    clean = {}
+    started = value.get("last_started_test")
+    if isinstance(started, str) and started in allowed:
+        clean["last_started_test"] = started
+    finished = value.get("last_finished_test")
+    status = value.get("last_finished_status")
+    if isinstance(finished, str) and finished in allowed and status in ("passed", "failed", "timeout"):
+        clean.update(last_finished_test=finished, last_finished_status=status)
+    if type(value.get("log_truncated")) is bool:
+        clean["log_truncated"] = value["log_truncated"]
+    return clean
+
+
+def xl_native_progress(path):
+    """Read bounded current CTest observations, never test output or coverage evidence."""
+    path = Path(path)
+    limit = 64 * 1024
+    try:
+        if any(p.is_symlink() for p in (path, *path.parents)) or not path.is_file():
+            return {}
+        with path.open("rb") as stream:
+            size = os.fstat(stream.fileno()).st_size
+            truncated = size > 2 * limit
+            if truncated:
+                chunks = [(stream.read(limit), False)]
+                stream.seek(-limit, os.SEEK_END)
+                chunks.append((stream.read(limit), True))
+            else:
+                chunks = [(stream.read(2 * limit), False)]
+        progress = {"log_truncated": truncated}
+        for data, cut_start in chunks:
+            lines = data.split(b"\n")
+            # Both boundaries can cut an arbitrary private output line
+            lines = lines[1:-1] if cut_start else lines[:-1]
+            for line in lines:
+                if len(line) > 1024:
+                    continue
+                line = line.decode("ascii", errors="replace").rstrip("\r")
+                started = re.fullmatch(r"[ \t]*Start[ \t]+[0-9]+:[ \t]+([a-z0-9_]+)[ \t]*", line)
+                finished = re.fullmatch(
+                    r"[ \t]*[0-9]+/[0-9]+[ \t]+Test[ \t]+#[ \t]*[0-9]+:[ \t]+([a-z0-9_]+)"
+                    r"[ \t]+\.+[ \t]*(Passed|\*\*\*Failed|\*\*\*Timeout)[ \t]+[0-9]+(?:\.[0-9]+)? sec[ \t]*",
+                    line,
+                )
+                if started:
+                    progress.update(safe_xl_native_progress({"last_started_test": started[1]}))
+                if finished:
+                    progress.update(
+                        safe_xl_native_progress(
+                            {
+                                "last_finished_test": finished[1],
+                                "last_finished_status": {
+                                    "Passed": "passed",
+                                    "***Failed": "failed",
+                                    "***Timeout": "timeout",
+                                }[finished[2]],
+                            }
+                        )
+                    )
+        return progress
+    except (OSError, ValueError):
+        return {}
 
 
 def xl_native_failures(path):
@@ -433,6 +517,13 @@ def public_diagnostics(value):
         stage = value.get("xl_stage")
         if isinstance(stage, str) and stage in XL_STAGES:
             clean["xl_stage"] = stage
+            entered = value.get("xl_stage_entered_after_milliseconds")
+            if type(entered) is int and 0 <= entered <= 86400000:
+                clean["xl_stage_entered_after_milliseconds"] = entered
+            if stage == "native-tests":
+                progress = safe_xl_native_progress(value.get("xl_native_progress"))
+                if progress:
+                    clean["xl_native_progress"] = progress
         failures = safe_xl_native_failures(value.get("xl_native_failures"))
         if failures:
             clean["xl_native_failures"] = failures

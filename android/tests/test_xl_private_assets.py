@@ -4,8 +4,10 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import struct
 import subprocess
+import sys
 import xml.etree.ElementTree as ET
 import tempfile
 import unittest
@@ -221,6 +223,152 @@ class XlPrivateTests(unittest.TestCase):
             except OSError:
                 return
             self.assertEqual(retail.xl_native_failures(report), [])
+
+    def test_stage_entry_time_is_bounded_and_requires_a_known_stage(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "xl-progress.json"
+            with patch.object(runner.time, "monotonic", return_value=75.25):
+                runner.mark_stage(root, "native-tests", owner_started=25)
+            self.assertEqual(
+                retail.xl_progress(path),
+                {"xl_stage": "native-tests", "xl_stage_entered_after_milliseconds": 50250},
+            )
+            self.assertFalse((root / "xl-progress.json.tmp").exists())
+            for value in (-1, 86400001, True, 1.5, float("nan"), float("inf"), "PRIVATE", None):
+                path.write_text(json.dumps({"stage": "native-tests", "entered_after_milliseconds": value}))
+                self.assertEqual(retail.xl_progress(path), {"xl_stage": "native-tests"})
+            path.write_text(json.dumps({"stage": "PRIVATE", "entered_after_milliseconds": 100}))
+            self.assertEqual(retail.xl_progress(path), {})
+            path.write_bytes(b"\xff")
+            self.assertEqual(retail.xl_progress(path), {})
+
+    def test_native_progress_retains_only_observed_allowlisted_ctest_fields(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "native-ctest.log"
+            path.write_text(
+                "Test project PRIVATE_PATH\n"
+                "    Start 1: xl_pilot_archive\n"
+                "    Start 2: xl_preview_lifecycle\n"
+                "1/3 Test # 1: xl_pilot_archive ........ Passed 0.01 sec\n"
+                "    Start 3: xl_stock_loader_probe\n"
+                "2/3 Test # 2: xl_preview_lifecycle .....***Failed 0.02 sec\n"
+                "PRIVATE_OUTPUT\n"
+                "    Start 4: PRIVATE_NAME\n"
+                "3/3 Test # 4: PRIVATE_NAME ..... ***Timeout 90.00 sec\n"
+                "prefix Start 9: xl_pog_gpu\n"
+                "3/3 Test # 9: xl_pog_gpu ..... PRIVATE_STATUS 0.01 sec\n"
+                "    Start 9: xl_pog_gpu PRIVATE_PATH\n"
+                "    Start 9: xl_pog_gpu"
+            )
+            self.assertEqual(
+                retail.xl_native_progress(path),
+                {
+                    "last_started_test": "xl_stock_loader_probe",
+                    "last_finished_test": "xl_preview_lifecycle",
+                    "last_finished_status": "failed",
+                    "log_truncated": False,
+                },
+            )
+            path.write_text("1/1 Test #99: xl_pog_gpu ........***Timeout 60.00 sec\r\n")
+            self.assertEqual(retail.xl_native_progress(path)["last_finished_status"], "timeout")
+
+    @unittest.skipUnless(shutil.which("ctest"), "Real completion observations require CTest")
+    def test_native_progress_matches_real_ctest_failure_and_timeout_output(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "CTestTestfile.cmake").write_text(
+                f'add_test(xl_pilot_archive "{Path(sys.executable).as_posix()}" "-c" "raise SystemExit(1)")\n'
+                f'add_test(xl_preview_lifecycle "{Path(sys.executable).as_posix()}" "-c" "import time; time.sleep(30)")\n'
+                "set_tests_properties(xl_preview_lifecycle PROPERTIES TIMEOUT 0.1)\n"
+            )
+            path = root / "native-ctest.log"
+            for name, status in (("xl_pilot_archive", "failed"), ("xl_preview_lifecycle", "timeout")):
+                with self.subTest(status=status), path.open("wb") as log:
+                    completed = subprocess.run(
+                        ["ctest", "--test-dir", str(root), "-R", "^" + name + "$"],
+                        stdout=log,
+                        stderr=subprocess.STDOUT,
+                        timeout=10,
+                    )
+                self.assertNotEqual(completed.returncode, 0)
+                self.assertEqual(
+                    retail.xl_native_progress(path),
+                    {
+                        "last_started_test": name,
+                        "last_finished_test": name,
+                        "last_finished_status": status,
+                        "log_truncated": False,
+                    },
+                )
+
+    def test_native_progress_bounds_reads_and_discards_cut_or_oversized_lines(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "native-ctest.log"
+            start = b"    Start 1: xl_pilot_archive\n"
+            finish = b"1/1 Test #1: xl_pilot_archive ........ Passed 0.01 sec\n"
+            path.write_bytes(start + b"PRIVATE" * 30000 + b"\n" + finish)
+            progress = retail.xl_native_progress(path)
+            self.assertTrue(progress["log_truncated"])
+            self.assertEqual(progress["last_started_test"], "xl_pilot_archive")
+            self.assertEqual(progress["last_finished_test"], "xl_pilot_archive")
+            # A marker at the start of a clipped tail is not a complete observed line
+            clipped = b"    Start 2: xl_pog_gpu\n"
+            path.write_bytes(start + b"x" * 131072 + clipped + b"x" * (65536 - len(clipped)))
+            self.assertEqual(retail.xl_native_progress(path)["last_started_test"], "xl_pilot_archive")
+            path.write_bytes(b" " * 1025 + b"Start 2: xl_pog_gpu\n\xff\n")
+            self.assertEqual(retail.xl_native_progress(path), {"log_truncated": False})
+            path.unlink()
+            self.assertEqual(retail.xl_native_progress(path), {})
+            other = Path(temporary) / "other"
+            other.mkdir()
+            (other / path.name).write_bytes(start)
+            try:
+                path.symlink_to(other / path.name)
+                linked = Path(temporary) / "linked"
+                linked.symlink_to(other, target_is_directory=True)
+            except OSError:
+                return
+            self.assertEqual(retail.xl_native_progress(path), {})
+            self.assertEqual(retail.xl_native_progress(linked / path.name), {})
+
+    def test_native_command_uses_fresh_private_log_without_changing_timeouts(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            work = root / "work"
+            work.mkdir()
+            (work / "native-ctest.log").write_text("STALE\n")
+            for game in ("d1", "d2"):
+                (root / "game_data/retail-ci" / game).mkdir(parents=True)
+            listing = {"tests": [{"name": name} for name in runner.CORE_TESTS | runner.EXPERIMENTAL_TESTS]}
+            calls = []
+
+            def command(argv, **kwargs):
+                calls.append((argv, kwargs["timeout"], kwargs["check"], kwargs["stdout"].name))
+                kwargs["stdout"].write(b"PRIVATE_OUTPUT\n")
+                return subprocess.CompletedProcess(argv, 0)
+
+            with (
+                patch("sys.argv", ["runner", "--repo", str(root), "--work", str(work)]),
+                patch.object(runner, "verify", return_value={}),
+                patch.object(runner, "reference_sources", return_value=root),
+                patch.object(runner.Path, "exists", return_value=True),
+                patch.object(runner.subprocess, "run", side_effect=command),
+                patch.object(runner.subprocess, "check_output", return_value=json.dumps(listing)),
+                patch.object(runner, "native_receipt", return_value={}),
+                patch.object(runner, "format_results", return_value=9),
+                patch.object(runner, "validate_summary"),
+                patch("builtins.print"),
+            ):
+                runner.main()
+            native = [call for call in calls if call[0][0] == "ctest"]
+            self.assertEqual(len(native), 1)
+            argv, timeout, check, log = native[0]
+            self.assertEqual((timeout, check, log), (1200, False, str(work / "native-ctest.log")))
+            self.assertEqual(argv[argv.index("--timeout") + 1], "180")
+            self.assertEqual(argv[argv.index("--parallel") + 1], "1")
+            self.assertEqual((work / "native-ctest.log").read_text(), "PRIVATE_OUTPUT\n")
+            self.assertEqual(retail.xl_stage(work / "xl-progress.json"), "complete")
 
     def test_original_pilot_inventory_remains_complete_and_unqualified(self):
         levels = [
