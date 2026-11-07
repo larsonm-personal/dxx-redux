@@ -36,16 +36,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  stack:
-    uses: ./.github/workflows/stack-ci.yml
-
   plan:
-    needs: stack
     name: Select public LAN smoke
-    if: ${{ needs.stack.outputs.run == 'true' && !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'test-three-player-network') }}
+    if: ${{ !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'test-three-player-network') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
+      run: ${{ steps.stack.outputs.run }}
       campaign: ${{ steps.select.outputs.campaign }}
     steps:
       - name: Check out trusted controller
@@ -54,17 +51,23 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: control
           persist-credentials: false
+      - name: Check current stack eligibility before planning
+        id: stack
+        run: python3 control/.github/scripts/stack_ci.py
       - name: Check out exact target catalog
+        if: steps.stack.outputs.run == 'true'
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           path: target
           persist-credentials: false
       - name: Prepare host dependency location
+        if: steps.stack.outputs.run == 'true'
         run: |
           mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
           printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
       - name: Export authoritative master catalog
+        if: steps.stack.outputs.run == 'true'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path plan -Force | Out-Null
@@ -72,6 +75,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Select the bounded public LAN campaign
         id: select
+        if: steps.stack.outputs.run == 'true'
         env:
           TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           CAMPAIGN: ${{ github.event.action == 'labeled' && github.event.label.name == 'test-three-player-network' && 'lan-three-player' || inputs.campaign || 'lan-smoke' }}
@@ -82,34 +86,32 @@ jobs:
             --policy control/android/tests/nightly_tooling_policy.json --campaign "$CAMPAIGN" \
             --output plan/plan.json --state-output plan/state.json
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        if: steps.stack.outputs.run == 'true'
         with:
           name: nightly-plan
           path: plan/
           retention-days: 30
 
-  execution-stack:
-    needs: plan
-    uses: ./.github/workflows/stack-ci.yml
-
   android:
     name: ${{ (github.event.action == 'labeled' || inputs.campaign == 'lan-three-player') && 'Three-player startup and selected-player loss' || 'Two-player lobby to game' }}
-    needs: [plan, execution-stack]
-    if: needs.execution-stack.outputs.run == 'true'
+    needs: plan
+    if: needs.plan.outputs.run == 'true'
     uses: ./.github/workflows/android-nightly-tooling.yml
     with:
       target_sha: ${{ github.event.pull_request.head.sha || github.sha }}
       plan_artifact: nightly-plan
       lane: android-dual
       retail_assets: false
+      recheck_stack: true
       measure_transitions: ${{ needs.plan.outputs.campaign != 'lan-three-player' && inputs.measure_transitions == true }}
       recovery_checks: ${{ needs.plan.outputs.campaign != 'lan-three-player' && inputs.recovery_checks == true }}
       recovery_cases: ${{ inputs.recovery_cases }}
 
   finish:
     name: ${{ (github.event.action == 'labeled' || inputs.campaign == 'lan-three-player') && 'Require three-player LAN pass' || 'Require public LAN pass' }}
-    needs: [plan, execution-stack, android]
+    needs: [plan, android]
     # Skip cancelled selection before requiring its possibly absent plan artifact
-    if: ${{ always() && !inputs.evidence_run_id && needs.plan.result != 'skipped' && needs.plan.result != 'cancelled' && (needs.execution-stack.outputs.run != 'false' || needs.android.result == 'failure' || needs.android.result == 'cancelled') }}
+    if: ${{ always() && !inputs.evidence_run_id && needs.plan.result != 'skipped' && needs.plan.result != 'cancelled' && ((needs.plan.outputs.run != 'false' && needs.android.outputs.run != 'false') || needs.plan.result == 'failure' || needs.android.result == 'failure' || needs.android.result == 'cancelled') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
