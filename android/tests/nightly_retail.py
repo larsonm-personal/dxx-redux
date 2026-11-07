@@ -222,18 +222,33 @@ COMMANDS = frozenset(
 )
 
 
-LAN_DIAGNOSTIC_SOURCES = {
+MASTER_DIAGNOSTIC_SOURCES = {
     "test_lan": "android/tests/test_lan.ps1",
     "test_lan_host_migration_public_shareware": "android/tests/test_lan.ps1",
     "test_lan_lobby_discovery": "android/tests/test_lan_lobby_discovery.ps1",
+    "test_xl_original_assets": "android/tests/test_xl_original_assets.ps1",
 }
+
+# Fixed literals in test_xl_original_assets.ps1, never evidence of completion
+XL_ANDROID_STAGES = frozenset(
+    (
+        "initialize-target",
+        "verify-assets",
+        "jvm-tests",
+        "pilot-setup",
+        "water-runtime",
+        "observatory-runtime",
+        "konflict-runtime",
+        "texture-witness",
+    )
+)
 
 
 def master_failure_diagnostics(row, output):
     """Locate fixed source messages; private log text never leaves this reader."""
     import hashlib
 
-    source = LAN_DIAGNOSTIC_SOURCES.get(row.get("name"))
+    source = MASTER_DIAGNOSTIC_SOURCES.get(row.get("name"))
     if not source or row.get("status") not in ("FAIL", "TIMEOUT", "BLOCKED", "RUNNING"):
         return {}
     result = {"source_matches": [], "log_available": False, "source_verified": False}
@@ -255,8 +270,13 @@ def master_failure_diagnostics(row, output):
     result.update(log_available=True, log_bytes=log.stat().st_size)
     with log.open("rb") as stream:
         head = stream.read(32768)
-        stream.seek(max(len(head), result["log_bytes"] - 32768))
-        text = (head + stream.read(32768)).decode("utf-8", errors="replace")
+        if result["log_bytes"] <= 65536:
+            text = head + stream.read(32768)
+        else:
+            stream.seek(result["log_bytes"] - 32768)
+            # Never invent a marker by joining fragments or starting mid-line
+            text = head.rpartition(b"\n")[0] + b"\n" + stream.read(32768).partition(b"\n")[2]
+    text = text.decode("utf-8", errors="replace")
     text = re.sub(r"\x1b\[[0-9;]*m", "", text)
     result["powershell_exception"] = bool(re.search(r"(?m)\bException:|EXCEPTION:", text))
     script = Path(__file__).resolve().parents[2] / source
@@ -264,7 +284,15 @@ def master_failure_diagnostics(row, output):
     if row.get("source") != source or row.get("source_sha256") != hashlib.sha256(data).hexdigest():
         return result
     result["source_verified"] = True
-    for number, line in enumerate(data.decode("utf-8-sig").splitlines(), 1):
+    source_text = data.decode("utf-8-sig")
+    if row.get("name") == "test_xl_original_assets":
+        for line in text.splitlines():
+            if not line.startswith("XL_ANDROID_STAGE: "):
+                continue
+            stage = line.removeprefix("XL_ANDROID_STAGE: ")
+            if stage in XL_ANDROID_STAGES and "'" + line + "'" in source_text:
+                result["last_observed_stage"] = stage
+    for number, line in enumerate(source_text.splitlines(), 1):
         # Only literal source prefixes of failure messages, never interpolation
         match = re.search(r"""(?:throw\s+|Write-Status\s+)["']([^"'$`\r\n]+)""", line)
         if not match or ("throw" not in line and not match[1].startswith("FAIL:")):
@@ -372,10 +400,18 @@ def public_diagnostics(value):
             for match in details.get("source_matches", [])[:8]
             if details.get("source_verified") is True
             and isinstance(match, dict)
-            and match.get("path") in LAN_DIAGNOSTIC_SOURCES.values()
+            and match.get("path") in MASTER_DIAGNOSTIC_SOURCES.values()
             and type(match.get("line")) is int
             and 1 <= match["line"] <= 100000
         ]
+        stage = details.get("last_observed_stage")
+        if (
+            value.get("id") == "master:test_xl_original_assets"
+            and details.get("source_verified") is True
+            and isinstance(stage, str)
+            and stage in XL_ANDROID_STAGES
+        ):
+            clean["master_diagnostics"]["last_observed_stage"] = stage
     clean["assets"] = {
         key: value["assets"][key]
         for key in (
@@ -484,6 +520,9 @@ def public_receipt(receipt):
                 + "; matched failure source: "
                 + ", ".join(site["path"] + ":" + str(site["line"]) for site in sites)
             )
+        stage = clean.get("master_diagnostics", {}).get("last_observed_stage")
+        if stage and status in ("FAIL", "TIMEOUT", "BLOCKED", "RUNNING"):
+            clean["reason"] += "; last observed XL Android stage: " + stage
         clean["comparison_only"] = row.get("comparison_only") is True
         clean["runtime_outcome"] = (
             row.get("runtime_outcome")

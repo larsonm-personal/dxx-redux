@@ -1105,6 +1105,59 @@ class RetailProfileTests(unittest.TestCase):
                     self.assertNotEqual(code, 0)
                     self.assertEqual(receipt["status"], "FAIL")
 
+    def test_interrupted_xl_owners_retain_only_current_allowlisted_stage(self):
+        import nightly_retail as retail
+
+        for profile in ("retail-xl-originals", "retail-xl-fast"):
+            for interruption in (subprocess.TimeoutExpired("private-command", 1), adapter.SuiteCancelled("private")):
+                for stage in ("native-tests", "private-text", None):
+                    with self.subTest(profile=profile, interruption=type(interruption).__name__, stage=stage):
+                        with tempfile.TemporaryDirectory() as directory:
+                            root = Path(directory).resolve()
+                            suite = adapter.load_suites()["host-profile:" + profile]
+                            script = root / suite["path"]
+                            script.parent.mkdir(parents=True)
+                            script.touch()
+                            progress = root / "receipt.artifacts/xl-originals/xl-progress.json"
+                            progress.parent.mkdir(parents=True)
+                            progress.write_text('{"stage": "complete"}')
+
+                            class Process:
+                                pid = 4321
+                                calls = 0
+
+                                def __init__(self, *args, **kwargs):
+                                    if progress.exists():
+                                        raise AssertionError("Prior invocation progress was not removed")
+                                    if stage is not None:
+                                        progress.write_text(json.dumps({"stage": stage, "private": "SECRET"}))
+
+                                def wait(self, **kwargs):
+                                    self.calls += 1
+                                    if self.calls == 1:
+                                        raise interruption
+                                    return 0
+
+                            with (
+                                patch.object(adapter, "verify_retail_stage"),
+                                patch.object(adapter.subprocess, "Popen", Process),
+                                patch.object(adapter.os, "killpg", create=True),
+                            ):
+                                code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
+                            receipt = json.loads((root / "receipt.json").read_text())
+                            self.assertNotEqual(code, 0)
+                            self.assertIn(receipt["status"], ("FAIL", "BLOCKED"))
+                            self.assertFalse(receipt["coverage_complete"])
+                            self.assertNotIn("xl_checks", receipt)
+                            clean = retail.public_diagnostics({**receipt, "id": suite["id"]})
+                            if stage == "native-tests":
+                                self.assertEqual(clean["xl_stage"], stage)
+                            else:
+                                self.assertNotIn("xl_stage", receipt)
+                                self.assertNotIn("xl_stage", clean)
+                            for private in ("SECRET", "private-text", "private-command", str(root)):
+                                self.assertNotIn(private, str(clean))
+
     def test_vertigo_profile_uses_reused_worker_and_exact_staged_missions(self):
         code, receipt, calls, root = self.run_profile("retail-vertigo-metadata")
         self.assertEqual(code, 0)
