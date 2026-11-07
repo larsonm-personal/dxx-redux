@@ -50,6 +50,7 @@ PUBLIC_TESTS = {
     "xl_projectile_history_contract",
     "xl_projectile_reference",
     "xl_projection_reference",
+    "xl_pumo_receipt_contract",
     "xl_scoped_texture_contract",
     "xl_segment_flags_reference",
     "xl_segment_damage_reference",

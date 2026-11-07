@@ -11,6 +11,7 @@ namespace pumo_player_probe
 using Json = nlohmann::json;
 static std::array<unsigned, DXX_XL_MAX_TRIGGERS> operation_counts{};
 static unsigned operation_sequence = 0;
+static int operation_count_level = 0, operation_frame_source = -1;
 static Json *operation_last = nullptr;
 static std::ofstream *operation_trace = nullptr;
 static std::string file_hash(const std::filesystem::path &path)
@@ -99,12 +100,18 @@ static Json observation_state(const Json &state)
 static void operation_observed(int index, int shot, int pre_exit)
 {
 	if (index < 0 || index >= int(operation_counts.size())) return;
+	if (operation_count_level != Current_level_num) {
+		operation_counts.fill(0);
+		operation_count_level = Current_level_num;
+	}
 	++operation_counts[index];
 	++operation_sequence;
 	if (!operation_last || !operation_trace) return;
-	*operation_last = snapshot();
-	(*operation_last)["observation_boundary"] = pre_exit ? "pre_exit" : "post_operation";
-	*operation_trace << Json{ { "event", "successful_wall_operation" }, { "index", index }, { "shot", shot }, { "sequence", operation_sequence }, { "state", *operation_last } }.dump() << '\n';
+	auto state = snapshot();
+	state["observation_boundary"] = pre_exit ? "pre_exit" : "post_operation";
+	// A destination automatic action can run before GameProcessFrame returns
+	if (operation_frame_source < 0 || operation_frame_source == Current_level_num) *operation_last = state;
+	*operation_trace << Json{ { "event", "successful_wall_operation" }, { "index", index }, { "shot", shot }, { "sequence", operation_sequence }, { "state", state } }.dump() << '\n';
 }
 static bool matches(const Json &actual, const Json &expected)
 {
@@ -247,6 +254,8 @@ static int run(int argc, char **argv)
 		require(fps >= 1 && fps <= 120, "native player simulation rate out of range");
 		operation_counts.fill(0);
 		operation_sequence = 0;
+		operation_count_level = Current_level_num;
+		operation_frame_source = -1;
 		Json transitions = Json::array(), checkpoints = Json::object(), checkpoint_history = Json::array(), last_activation = snapshot();
 		last_activation["observation_boundary"] = "post_load";
 		operation_last = &last_activation;
@@ -269,15 +278,20 @@ static int run(int argc, char **argv)
 			// Presentation is outside this simulation probe, including later levels
 			input_demo_set_skip_level_intro(1);
 			const int before_level = Current_level_num;
+			operation_frame_source = before_level;
 			GameProcessFrame();
+			operation_frame_source = -1;
 			// Wall-trigger debounce uses the real timer, not GameTime64
 			if (plan.value("realtime", false)) std::this_thread::sleep_until(frame_started + std::chrono::microseconds(1000000 / fps));
+			if (operation_count_level != Current_level_num) {
+				operation_counts.fill(0);
+				operation_count_level = Current_level_num;
+			}
 			const auto post_frame = snapshot();
 			const auto state_now = observation_state(post_frame);
 			if (before_level != Current_level_num) {
 				transitions.push_back({ { "from", before_level }, { "to", Current_level_num }, { "last_activation", last_activation } });
 				trace << Json{ { "event", "normal_level_transition" }, { "transition", transitions.back() }, { "state", snapshot() } }.dump() << '\n';
-				operation_counts.fill(0);
 				last_activation = snapshot();
 				last_activation["observation_boundary"] = "post_frame";
 			} else if (state_now != observed_state) {
@@ -357,6 +371,7 @@ static int run(int argc, char **argv)
 					require(step.at("value") == "quick_load", "unsupported native player save action");
 					require(state_restore_all_sub(file, 0), "native player checkpoint load failed");
 					operation_counts.fill(0);
+					operation_count_level = Current_level_num;
 					last_activation = snapshot();
 					last_activation["observation_boundary"] = "post_load";
 					observed_state = observation_state(last_activation);
