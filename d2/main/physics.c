@@ -289,6 +289,9 @@ void do_physics_sim_rot(object *obj)
 	tangles.p = fixmul(obj->mtype.phys_info.rotvel.x,FrameTime);
 	tangles.h = fixmul(obj->mtype.phys_info.rotvel.y,FrameTime);
 	tangles.b = fixmul(obj->mtype.phys_info.rotvel.z,FrameTime);
+#ifdef DXX_XL_RUNTIME
+	xl_slow_motion_rotation(obj, &tangles);
+#endif
 
 	vm_angles_2_matrix(&rotmat,&tangles);
 	vm_matrix_x_matrix(&new_orient,&obj->orient,&rotmat);
