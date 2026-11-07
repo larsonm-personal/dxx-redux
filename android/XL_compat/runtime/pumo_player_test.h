@@ -9,6 +9,11 @@
 namespace pumo_player_probe
 {
 using Json = nlohmann::json;
+static std::array<unsigned, DXX_XL_MAX_TRIGGERS> operation_counts{};
+static unsigned operation_sequence = 0;
+static int operation_count_level = 0, operation_frame_source = -1;
+static Json *operation_last = nullptr;
+static std::ofstream *operation_trace = nullptr;
 static std::string file_hash(const std::filesystem::path &path)
 {
 	std::ifstream stream(path, std::ios::binary);
@@ -49,10 +54,13 @@ static Json snapshot()
 	pilot["runtime_active"] = xl_level_extensions_active() != 0;
 	for (int index = 0; index < Num_triggers; ++index) {
 		xl_trigger_state value{};
+		pilot["trigger_activated"][std::to_string(index)] = xl_preview_trigger_activated(index) != 0;
 		if (xl_wall_trigger_state(index, &value)) pilot["wall_triggers"][std::to_string(index)] = {
-			{ "operated", value.operated != 0 }, { "actor", value.object }, { "shot", value.shot }, { "value", int(Triggers[index].value) }
+			{ "operated", value.operated != 0 }, { "actor", value.object }, { "shot", value.shot }, { "value", int(Triggers[index].value) }, { "type", int(Triggers[index].type) }, { "flags", int(Triggers[index].flags) }, { "delay_ms", value.delay_ms }, { "attached", value.attached != 0 }
 		};
+		if (operation_counts[index]) pilot["operation_counts"][std::to_string(index)] = operation_counts[index];
 	}
+	pilot["operation_sequence"] = operation_sequence;
 	for (int index = 0; index < Num_walls; ++index) pilot["doorways"][std::to_string(index)] = { { "state", Walls[index].state }, { "type", Walls[index].type }, { "flags", Walls[index].flags }, { "keys", Walls[index].keys }, { "clip", Walls[index].clip_num } };
 	pilot["spawn_count"] = xl_spawn_state_count();
 	for (int index = 0; index < xl_spawn_state_count(); ++index) {
@@ -83,6 +91,35 @@ static Json snapshot()
 	for (int weapon : { 0, CONTROLCEN_WEAPON_NUM, primary_id })
 		if (weapon >= 0 && weapon < N_weapon_types) state["weapon_definitions"][std::to_string(weapon)] = { { "damage_radius", int(Weapon_info[weapon].damage_radius) }, { "strength", int(Weapon_info[weapon].strength[Difficulty_level]) }, { "speed", int(Weapon_info[weapon].speed[Difficulty_level]) }, { "fire_wait", int(Weapon_info[weapon].fire_wait) }, { "fire_count", Weapon_info[weapon].fire_count }, { "ammo_usage", Weapon_info[weapon].ammo_usage }, { "energy_usage", int(Weapon_info[weapon].energy_usage) } };
 	return state;
+}
+using TriggerObservation = std::vector<std::array<std::int64_t, 11>>;
+static TriggerObservation trigger_observation()
+{
+	TriggerObservation result;
+	result.reserve(Num_triggers + 1);
+	result.push_back({ Current_level_num, operation_sequence });
+	for (int index = 0; index < Num_triggers; ++index) {
+		xl_trigger_state state{};
+		const bool valid = xl_wall_trigger_state(index, &state) != 0;
+		result.push_back({ xl_preview_trigger_activated(index), valid, valid ? state.operated : 0, valid ? state.object : -1, valid ? state.shot : 0, valid ? state.delay_ms : -1, valid ? state.attached : 0, Triggers[index].type, Triggers[index].flags, Triggers[index].value, operation_counts[index] });
+	}
+	return result;
+}
+static void operation_observed(int index, int shot, int pre_exit)
+{
+	if (index < 0 || index >= int(operation_counts.size())) return;
+	if (operation_count_level != Current_level_num) {
+		operation_counts.fill(0);
+		operation_count_level = Current_level_num;
+	}
+	++operation_counts[index];
+	++operation_sequence;
+	if (!operation_last || !operation_trace) return;
+	auto state = snapshot();
+	state["observation_boundary"] = pre_exit ? "pre_exit" : "post_operation";
+	// A destination automatic action can run before GameProcessFrame returns
+	if (operation_frame_source < 0 || operation_frame_source == Current_level_num) *operation_last = state;
+	*operation_trace << Json{ { "event", "successful_wall_operation" }, { "index", index }, { "shot", shot }, { "sequence", operation_sequence }, { "state", state } }.dump() << '\n';
 }
 static bool matches(const Json &actual, const Json &expected)
 {
@@ -167,8 +204,16 @@ static int run(int argc, char **argv)
 	const auto *resource_argument = find_arg_value(argc, argv, "-pumo-resource-root");
 	const auto resources = resource_argument ? std::filesystem::path(resource_argument) : root;
 	std::ofstream trace(root / "player-trace.jsonl");
-	int completed = 0, view_aim_events = 0;
+	int completed = 0, view_aim_events = 0, position_assist_events = 0;
+	const auto checkpoint_tag = std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+	bool runtime_initialized = false;
+	std::string resume_sha256, run_id, plan_sha256, executable_sha256;
 	try {
+		const auto plan_path = std::filesystem::path(find_arg_value(argc, argv, "-pumo-player-test"));
+		const auto executable_path = std::filesystem::canonical(argv[0]);
+		require(std::filesystem::is_regular_file(plan_path) && std::filesystem::is_regular_file(executable_path) && std::filesystem::file_size(plan_path) > 0 && std::filesystem::file_size(executable_path) > 0, "native player requires readable nonempty plan and executable files");
+		plan_sha256 = file_hash(plan_path);
+		executable_sha256 = file_hash(executable_path);
 		for (const auto &[file, expected] : std::map<std::string, std::string>{
 		         { "missions/pmines.hog", "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043" },
 		         { "missions/pmines.mn2", "45b4138e0a0d49ab8ee09334b7cfa97c0ec75ac6c6b6406b21eba28ddaa19cfd" },
@@ -177,6 +222,7 @@ static int run(int argc, char **argv)
 		}
 		char error[256]{};
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error), true), error);
+		runtime_initialized = true;
 		require(mount_extra_dir(root.string().c_str(), error, sizeof(error)), error);
 		if (resources != root)
 			require(PHYSFS_addToSearchPath(resources.string().c_str(), 1), "cannot mount read-only original Pumo resource input");
@@ -186,9 +232,11 @@ static int run(int argc, char **argv)
 		const auto &sources = xl_resource_mod_sources();
 		for (const auto *file : { "mods/pmines/pmines.ham", "mods/pmines/pmines.hxm", "mods/pmines/pmines.vham", "mods/pmines/models/model171.oof" })
 			require(sources.count(file), "native player is missing original mission-owned resources");
-		std::ifstream input(find_arg_value(argc, argv, "-pumo-player-test"));
+		std::ifstream input(plan_path);
 		Json plan;
 		input >> plan;
+		// Legacy direct Majha phases do not pass a nonce; the strict phase owner does
+		run_id = plan.value("receipt_run_id", std::string{});
 		std::strcpy(Players[Player_num].callsign, "PumoNat");
 		Difficulty_level = 0;
 		input_demo_set_skip_level_intro(1);
@@ -198,7 +246,9 @@ static int run(int argc, char **argv)
 		if (plan.contains("resume_checkpoint")) {
 			const std::string file = plan.at("resume_checkpoint");
 			require(!file.empty() && std::filesystem::path(file).filename() == file, "native checkpoint must name an isolated save file");
-			require(file_hash(root / "preview-user" / file) == plan.at("resume_sha256"), "native earned checkpoint hash changed");
+			require(std::filesystem::is_regular_file(root / "preview-user" / file), "native earned checkpoint file missing");
+			resume_sha256 = file_hash(root / "preview-user" / file);
+			require(resume_sha256 == plan.at("resume_sha256"), "native earned checkpoint hash changed");
 			std::vector<char> name(file.begin(), file.end());
 			name.push_back(0);
 			require(state_restore_all_sub(name.data(), 0), "native earned checkpoint failed to restore");
@@ -210,8 +260,16 @@ static int run(int argc, char **argv)
 		bool firing = false;
 		int remainder = 0, fps = plan.value("simulation_fps", 60);
 		require(fps >= 1 && fps <= 120, "native player simulation rate out of range");
-		Json transitions = Json::array(), checkpoints = Json::object(), last_activation = snapshot();
-		auto observed_mask = xl_preview_trigger_mask();
+		operation_counts.fill(0);
+		operation_sequence = 0;
+		operation_count_level = Current_level_num;
+		operation_frame_source = -1;
+		Json transitions = Json::array(), checkpoints = Json::object(), checkpoint_history = Json::array(), last_activation = snapshot();
+		last_activation["observation_boundary"] = "post_load";
+		operation_last = &last_activation;
+		operation_trace = &trace;
+		xl_wall_trigger_set_operation_observer(operation_observed);
+		auto observed_state = trigger_observation();
 		const auto tick = [&] {
 			const auto frame_started = std::chrono::steady_clock::now();
 			timer_update();
@@ -228,19 +286,28 @@ static int run(int argc, char **argv)
 			// Presentation is outside this simulation probe, including later levels
 			input_demo_set_skip_level_intro(1);
 			const int before_level = Current_level_num;
+			operation_frame_source = before_level;
 			GameProcessFrame();
+			operation_frame_source = -1;
 			// Wall-trigger debounce uses the real timer, not GameTime64
 			if (plan.value("realtime", false)) std::this_thread::sleep_until(frame_started + std::chrono::microseconds(1000000 / fps));
-			const auto mask = xl_preview_trigger_mask();
+			if (operation_count_level != Current_level_num) {
+				operation_counts.fill(0);
+				operation_count_level = Current_level_num;
+			}
+			const auto state_now = trigger_observation();
 			if (before_level != Current_level_num) {
 				transitions.push_back({ { "from", before_level }, { "to", Current_level_num }, { "last_activation", last_activation } });
-				trace << Json{ { "event", "normal_level_transition" }, { "transition", transitions.back() }, { "state", snapshot() } }.dump() << '\n';
+				const auto post_frame = snapshot();
+				trace << Json{ { "event", "normal_level_transition" }, { "transition", transitions.back() }, { "state", post_frame } }.dump() << '\n';
+				last_activation = post_frame;
+				last_activation["observation_boundary"] = "post_frame";
+			} else if (state_now != observed_state) {
 				last_activation = snapshot();
-			} else if (mask != observed_mask) {
-				last_activation = snapshot();
+				last_activation["observation_boundary"] = "post_frame";
 				trace << Json{ { "event", "trigger_change" }, { "state", last_activation } }.dump() << '\n';
 			}
-			observed_mask = mask;
+			observed_state = state_now;
 		};
 		for (const auto &step : plan.at("steps")) {
 			const std::string action = step.at("action");
@@ -250,7 +317,11 @@ static int run(int argc, char **argv)
 			if (action == "assert") {
 				const bool passed = expectations(snapshot(), step.at("expect"), failed);
 				require(passed, failed.c_str());
-			} else if (action == "face_view" || action == "pose_view") pose(step);
+			} else if (action == "face_view" || action == "pose_view") {
+				pose(step);
+				++position_assist_events;
+				trace << Json{ { "event", "position_assist" }, { "action", action }, { "step", completed }, { "position", snapshot().at("position") } }.dump() << '\n';
+			}
 			else if (action == "send_axis") {
 				const int axis = step.at("axis");
 				require(axis == 0 || axis == 1, "native player probe supports sideways/forward thrust axes");
@@ -294,13 +365,24 @@ static int run(int argc, char **argv)
 				if (step.at("value") == "quick_save") {
 					stop_time();
 					require(state_save_all_sub(file, description), "native player checkpoint save failed");
-					// Preserve the exact earned file before a later level reuses quick-save
-					const auto retained = "pumo-player-level" + std::to_string(Current_level_num) + ".sav";
-					std::filesystem::copy_file(root / "preview-user" / file, root / "preview-user" / retained, std::filesystem::copy_options::overwrite_existing);
-					checkpoints[std::to_string(Current_level_num)] = { { "file", retained }, { "sha256", file_hash(root / "preview-user" / retained) }, { "state", snapshot() } };
+					// Keep every same-level checkpoint, plus the existing latest-level alias
+					const auto prefix = "pumo-player-level" + std::to_string(Current_level_num);
+					const auto retained = prefix + ".sav";
+					const auto unique = prefix + "-" + checkpoint_tag + "-step" + std::to_string(completed) + ".sav";
+					std::filesystem::copy_file(root / "preview-user" / file, root / "preview-user" / unique);
+					std::filesystem::copy_file(root / "preview-user" / unique, root / "preview-user" / retained, std::filesystem::copy_options::overwrite_existing);
+					const auto state = snapshot();
+					const auto hash = file_hash(root / "preview-user" / unique);
+					checkpoint_history.push_back({ { "step", completed }, { "file", unique }, { "sha256", hash }, { "state", state } });
+					checkpoints[std::to_string(Current_level_num)] = { { "file", retained }, { "sha256", hash }, { "state", state } };
 				} else {
 					require(step.at("value") == "quick_load", "unsupported native player save action");
 					require(state_restore_all_sub(file, 0), "native player checkpoint load failed");
+					operation_counts.fill(0);
+					operation_count_level = Current_level_num;
+					last_activation = snapshot();
+					last_activation["observation_boundary"] = "post_load";
+					observed_state = trigger_observation();
 				}
 			} else if (action == "frame_rate") {
 				fps = step.at("fps");
@@ -315,12 +397,14 @@ static int run(int argc, char **argv)
 #else
 		const int process = getpid();
 #endif
-		std::ofstream(root / "player-result.json") << Json{ { "result", "PASS" }, { "steps", completed }, { "process_id", process }, { "initial_level_setup", initial_level }, { "resumed_earned_checkpoint", plan.contains("resume_checkpoint") }, { "final_level", Current_level_num }, { "transitions", transitions }, { "checkpoints", checkpoints }, { "rendered", bool{ false } }, { "fixed_view_aim_events", view_aim_events } }.dump(2) << '\n';
+		std::ofstream(root / "player-result.json") << Json{ { "result", "PASS" }, { "receipt_version", 2 }, { "run_id", run_id }, { "plan_sha256", plan_sha256 }, { "executable_sha256", executable_sha256 }, { "resume_sha256", resume_sha256 }, { "steps", completed }, { "process_id", process }, { "initial_level_setup", initial_level }, { "resumed_earned_checkpoint", plan.contains("resume_checkpoint") }, { "final_level", Current_level_num }, { "transitions", transitions }, { "checkpoints", checkpoints }, { "checkpoint_history", checkpoint_history }, { "rendered", bool{ false } }, { "fixed_view_aim_events", view_aim_events }, { "position_assist_events", position_assist_events }, { "operation_sequence", operation_sequence } }.dump(2) << '\n';
+		xl_wall_trigger_set_operation_observer(nullptr);
 		std::cout << "Original Pumo ordinary player controls passed: " << completed << " steps, initial level setup " << initial_level << " -> " << Current_level_num << "; unrendered\n";
 		return 0;
 	} catch (const std::exception &error) {
-		std::ofstream(root / "player-state.json") << snapshot().dump(2) << '\n';
-		std::ofstream(root / "player-result.json") << Json{ { "result", "FAIL" }, { "steps", completed }, { "error", error.what() }, { "fixed_view_aim_events", view_aim_events } }.dump(2) << '\n';
+		xl_wall_trigger_set_operation_observer(nullptr);
+		std::ofstream(root / "player-state.json") << (runtime_initialized ? snapshot() : Json::object()).dump(2) << '\n';
+		std::ofstream(root / "player-result.json") << Json{ { "result", "FAIL" }, { "steps", completed }, { "error", error.what() }, { "fixed_view_aim_events", view_aim_events }, { "position_assist_events", position_assist_events } }.dump(2) << '\n';
 		std::cerr << "Original Pumo player probe failed: " << error.what() << '\n';
 		return 1;
 	}

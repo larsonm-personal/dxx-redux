@@ -178,6 +178,11 @@ if(BUILD_TESTING)
     add_test(NAME xl_wave_contract COMMAND xl_wave_test)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     add_test(
+        NAME xl_pumo_receipt_contract
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_receipt_contract.py
+                --cmake ${CMAKE_COMMAND})
+    set_tests_properties(xl_pumo_receipt_contract PROPERTIES TIMEOUT 30)
+    add_test(
         NAME xl_wave_channels_reference
         COMMAND
             ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/wave_channels_reference.py

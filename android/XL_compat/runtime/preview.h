@@ -114,6 +114,10 @@ void xl_preview_trigger_result(int trigger, int shot, int result);
 uint64_t xl_preview_trigger_mask(void);
 // Diagnostic since the current level load, not persisted scheduler state
 int xl_preview_trigger_activated(int index);
+#ifdef DXX_XL_DEVELOPER_PROBE
+/* Called only after a wall operation is accepted, before a synchronous exit */
+void xl_wall_trigger_set_operation_observer(void (*observer)(int index, int shot, int pre_exit));
+#endif
 typedef struct xl_texture_emitter {
 	int texture;
 	float rgb[3];

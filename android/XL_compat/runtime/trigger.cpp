@@ -58,6 +58,14 @@ std::array<int, MAX_TRIGGERS> object_destinations{};
 std::array<std::array<std::uint64_t, 2>, 2> cue_queries{};
 #endif
 int stock_bypass = -1;
+#ifdef DXX_XL_DEVELOPER_PROBE
+int stock_bypass_shot = 0;
+void (*operation_observer)(int, int, int) = nullptr;
+void observe_operation(int index, int shot, bool pre_exit)
+{
+	if (operation_observer) operation_observer(index, shot, pre_exit);
+}
+#endif
 constexpr int supported_flags = xl_compat::trigger_flags_mask;
 bool delayed(const trigger &action)
 {
@@ -90,6 +98,7 @@ struct TriggerDepth {
 struct MissionExitWorld {
 	trigger &action;
 	int flags;
+	int index, shot;
 	int local_player() const
 	{
 		return Player_num;
@@ -135,12 +144,18 @@ struct MissionExitWorld {
 		// Publish flags before a synchronous level change invalidates this action
 		action.flags = static_cast<ubyte>(flags);
 		++exit_generation;
+#ifdef DXX_XL_DEVELOPER_PROBE
+		observe_operation(index, shot, true);
+#endif
 		start_endlevel_sequence();
 	}
 	void exit_secret()
 	{
 		action.flags = static_cast<ubyte>(flags);
 		++exit_generation;
+#ifdef DXX_XL_DEVELOPER_PROBE
+		observe_operation(index, shot, true);
+#endif
 		ExitSecretLevel();
 	}
 };
@@ -154,6 +169,13 @@ int linked_trigger(const trigger &source, int link)
 	return target >= 0 && target < Num_triggers ? target : -1;
 }
 } // namespace
+
+#ifdef DXX_XL_DEVELOPER_PROBE
+extern "C" void xl_wall_trigger_set_operation_observer(void (*observer)(int, int, int))
+{
+	operation_observer = observer;
+}
+#endif
 
 extern "C" void xl_wall_trigger_reset(void)
 {
@@ -196,7 +218,13 @@ extern "C" std::uint64_t xl_trigger_cue_queries(int sound, int enabled)
 extern "C" void xl_wall_trigger_exit(void)
 {
 	xl_speed_boost_stop(Players[Player_num].objnum);
-	if (depth >= 0) ++exit_generation;
+	if (depth >= 0) {
+		++exit_generation;
+#ifdef DXX_XL_DEVELOPER_PROBE
+		// The stock leaf has passed its exit gates and is about to tear down this level
+		if (stock_bypass >= 0) observe_operation(stock_bypass, stock_bypass_shot, true);
+#endif
+	}
 }
 
 extern "C" void xl_wall_trigger_bind_effect_targets(void)
@@ -275,7 +303,7 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 		return 1;
 	}
 	if (action.type == TT_EXIT) {
-		MissionExitWorld world{ action, action.flags };
+		MissionExitWorld world{ action, action.flags, index, shot };
 		if (xl_compat::operate_mission_exit(world, player ? Player_num : -1, world.flags, action.value)) return 1;
 	} else if (action.type == 25) {
 		xl_countdown_action(&action);
@@ -304,9 +332,16 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 		xl_object_classic_action(&action);
 	} else if (!chain) {
 		const int previous = stock_bypass;
+#ifdef DXX_XL_DEVELOPER_PROBE
+		const int previous_shot = stock_bypass_shot;
+		stock_bypass_shot = shot;
+#endif
 		stock_bypass = index;
 		check_trigger_sub(index, Player_num, shot);
 		stock_bypass = previous;
+#ifdef DXX_XL_DEVELOPER_PROBE
+		stock_bypass_shot = previous_shot;
+#endif
 		if (exit_generation != entry_exit) return 1;
 	}
 	for (int i = 0; chain && i < action.num_links; ++i) {
@@ -335,6 +370,9 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 	}
 	if (action.flags & TF_ONE_SHOT) action.flags |= TF_DISABLED;
 	if (action.flags & 16) action.type = opposite(action.type);
+#ifdef DXX_XL_DEVELOPER_PROBE
+	if (exit_generation == entry_exit) observe_operation(index, shot, false);
+#endif
 	xl_preview_trigger_result(index, shot, 0);
 	return 0;
 }
