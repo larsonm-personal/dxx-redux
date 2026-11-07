@@ -20,6 +20,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdlib.h>
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "slow_motion_runtime.h"
 #include "gameplay_audio.h"
 #include "resource_validation.h"
 #endif
@@ -614,7 +615,11 @@ void omega_charge_frame(void)
 		fix	energy_used;
 
 		old_omega_charge = Omega_charge;
+#ifdef DXX_XL_RUNTIME
+		Omega_charge += xl_slow_motion_world_time(FrameTime/OMEGA_CHARGE_SCALE);
+#else
 		Omega_charge += FrameTime/OMEGA_CHARGE_SCALE;
+#endif
 		if (Omega_charge > MAX_OMEGA_CHARGE)
 			Omega_charge = MAX_OMEGA_CHARGE;
 
@@ -1907,7 +1912,11 @@ void homing_missile_turn_towards_velocity(object *objp, vms_vector *norm_vel, fi
 
 	new_fvec = *norm_vel;
 
+#ifdef DXX_XL_RUNTIME
+	vm_vec_scale(&new_fvec, xl_slow_motion_world_time(turn_time * HOMING_MISSILE_SCALE));
+#else
 	vm_vec_scale(&new_fvec, turn_time * HOMING_MISSILE_SCALE);
+#endif
 	vm_vec_add2(&new_fvec, &objp->orient.fvec);
 	vm_vec_normalize_quick(&new_fvec);
 
