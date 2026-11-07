@@ -26,6 +26,13 @@ if(REFERENCE)
         message(
             FATAL_ERROR "Water actor reference mismatch: ${reference_stdout}${reference_stderr}")
     endif()
+    execute_process(
+        COMMAND "${REFERENCE}" --slow-motion "${OUTPUT}/slow-motion-physics.txt"
+        RESULT_VARIABLE slow_result OUTPUT_VARIABLE slow_stdout ERROR_VARIABLE slow_stderr)
+    file(WRITE "${OUTPUT}/slow-motion-reference.log" "${slow_stdout}${slow_stderr}")
+    if(NOT slow_result EQUAL 0)
+        message(FATAL_ERROR "Slow-motion reference mismatch: ${slow_stdout}${slow_stderr}")
+    endif()
 endif()
 file(SHA256 "${HOG}" final_hash)
 if(NOT final_hash STREQUAL original_hash)
