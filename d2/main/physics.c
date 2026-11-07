@@ -50,6 +50,14 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_debug_logging.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+#include "robot.h"
+static void (*xl_player_fvi_observer)(const xl_player_fvi_sample *);
+void xl_player_fvi_set_observer(void (*observer)(const xl_player_fvi_sample *))
+{
+	xl_player_fvi_observer = observer;
+}
+#endif
 #include "d1_in_d2/d1_in_d2_semantics.h"
 #if defined(ANDROID) && defined(INTROSPECT_ON)
 #include "game_automate.h"
@@ -526,6 +534,52 @@ void do_physics_sim(object *obj)
 		fate = find_vector_intersection(&fq,&hit_info);
 #ifdef DXX_XL_RUNTIME
 		if (fate == HIT_WALL && xl_skybox_wall_collision(obj, &hit_info, &new_pos)) fate = hit_info.hit_type;
+#endif
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+		if (xl_player_fvi_observer && objnum == Players[Player_num].objnum && obj->type == OBJ_PLAYER) {
+			xl_player_fvi_sample sample = { 0 };
+			sample.level = Current_level_num;
+			sample.player_object = objnum;
+			sample.player_signature = obj->signature;
+			sample.game_time = GameTime64;
+			sample.start_segment = fq.startseg;
+			sample.start[0] = fq.p0->x;
+			sample.start[1] = fq.p0->y;
+			sample.start[2] = fq.p0->z;
+			sample.end[0] = fq.p1->x;
+			sample.end[1] = fq.p1->y;
+			sample.end[2] = fq.p1->z;
+			sample.radius = fq.rad;
+			sample.flags = fq.flags;
+			sample.fate = fate;
+			sample.hit_segment = hit_info.hit_seg;
+			sample.hit_side_segment = hit_info.hit_side_seg;
+			sample.hit_side = hit_info.hit_side;
+			sample.hit_object = hit_info.hit_object;
+			sample.hit_point[0] = hit_info.hit_pnt.x;
+			sample.hit_point[1] = hit_info.hit_pnt.y;
+			sample.hit_point[2] = hit_info.hit_pnt.z;
+			sample.hit_object_type = sample.hit_object_id = sample.hit_object_signature = -1;
+			sample.robot_energy_drain = sample.robot_attack_type = -1;
+			sample.hit_wall = sample.hit_wall_type = sample.hit_doorway = -1;
+			if (fate == HIT_OBJECT && hit_info.hit_object >= 0 && hit_info.hit_object <= Highest_object_index) {
+				const object *other = &Objects[hit_info.hit_object];
+				sample.hit_object_type = other->type;
+				sample.hit_object_id = other->id;
+				sample.hit_object_signature = other->signature;
+				if (other->type == OBJ_ROBOT && other->id >= 0 && other->id < N_robot_types) {
+					sample.robot_energy_drain = Robot_info[other->id].energy_drain;
+					sample.robot_attack_type = Robot_info[other->id].attack_type;
+				}
+			}
+			if (fate == HIT_WALL && hit_info.hit_side_seg >= 0 && hit_info.hit_side_seg <= Highest_segment_index && hit_info.hit_side >= 0 && hit_info.hit_side < 6) {
+				const segment *room = &Segments[hit_info.hit_side_seg];
+				sample.hit_wall = room->sides[hit_info.hit_side].wall_num;
+				if (sample.hit_wall >= 0 && sample.hit_wall < Num_walls) sample.hit_wall_type = Walls[sample.hit_wall].type;
+				sample.hit_doorway = xl_wall_doorway(objnum, hit_info.hit_side_seg, hit_info.hit_side);
+			}
+			xl_player_fvi_observer(&sample);
+		}
 #endif
 #if defined(ANDROID) && defined(INTROSPECT_ON)
 		if (obj == ConsoleObject && fate != HIT_NONE)
