@@ -527,6 +527,8 @@ jobs:
   finish:
     name: Check results
     needs: [plan, execution-stack, host, android]
+    outputs:
+      reconciled: ${{ steps.reconcile.outcome == 'success' }}
     if: always() && needs.plan.result == 'success' && (needs.execution-stack.outputs.run != 'false' || needs.host.result == 'failure' || needs.host.result == 'cancelled' || needs.android.result == 'failure' || needs.android.result == 'cancelled')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -546,6 +548,7 @@ jobs:
           pattern: nightly-results-*
           path: receipts
       - name: Reconcile terminal results and retain unresolved failures
+        id: reconcile
         env:
           TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
           REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'xl-textures' || inputs.campaign == 'basic-use' || inputs.campaign == 'xl-originals' || inputs.campaign == 'xl-fast' }}
@@ -577,10 +580,31 @@ jobs:
             published-state.json
           retention-days: 30
 
+      - name: Require no unresolved failures or infrastructure blocks
+        if: always() && steps.reconcile.outcome == 'success'
+        env:
+          EXECUTION_STACK_RESULT: ${{ needs.execution-stack.result }}
+          HOST_RESULT: ${{ needs.host.result }}
+          ANDROID_RESULT: ${{ needs.android.result }}
+        run: |
+          python3 - <<'PYTHON'
+          import json, os
+          from pathlib import Path
+          summary = json.loads(Path('summary.json').read_text())
+          failures = summary['failures']
+          blocked = summary['retryable_infrastructure']
+          lanes_failed = any(os.environ[key] in ('failure', 'cancelled')
+                             for key in ('EXECUTION_STACK_RESULT', 'HOST_RESULT', 'ANDROID_RESULT'))
+          if failures or blocked or lanes_failed:
+              print(f'::error::{len(failures)} unresolved test failures; {len(blocked)} infrastructure blocks; failed or cancelled lane: {lanes_failed}')
+              raise SystemExit(1)
+          print('No unresolved failures or infrastructure blocks; unattempted work remains pending')
+          PYTHON
+
   publish:
     name: Save nightly progress (scheduled/manual only)
     needs: [plan, finish]
-    if: always() && needs.finish.result == 'success' && github.event_name != 'workflow_run' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'xl-browser' && inputs.campaign != 'xl-textures' && inputs.campaign != 'xl-originals' && inputs.campaign != 'xl-fast' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && inputs.campaign != 'online-transports' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
+    if: always() && needs.plan.result == 'success' && needs.finish.outputs.reconciled == 'true' && github.event_name != 'workflow_run' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'xl-browser' && inputs.campaign != 'xl-textures' && inputs.campaign != 'xl-originals' && inputs.campaign != 'xl-fast' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && inputs.campaign != 'online-transports' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:

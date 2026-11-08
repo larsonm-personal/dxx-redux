@@ -273,6 +273,16 @@ jobs:
             javac -version
             df -h .
           } 2>&1 | tee ../results/setup/toolchain.log
+      - name: Provision JVM soundfont before test execution
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane == 'jvm')
+        timeout-minutes: 10
+        shell: bash
+        working-directory: target
+        run: |
+          set -euo pipefail
+          # Keep download failures outside the owner journal so they remain retryable
+          bash android/gradlew -p android :app:downloadSoundfont \
+            --console=plain --no-daemon 2>&1 | tee ../results/setup/soundfont.log
       - name: Reclaim superseded hosted Android SDK
         if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane != 'jvm')
         timeout-minutes: 5

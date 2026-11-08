@@ -2358,6 +2358,137 @@ class SweepTests(unittest.TestCase):
             self.assertEqual(result["results"][0]["status"], "BLOCKED")
             self.assertFalse(result["results"][0]["attempted_tests"])
 
+    def test_jvm_soundfont_provisioning_failure_stays_outside_test_journal(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
+        name = "      - name: Provision JVM soundfont before test execution"
+        step = workflow.split(name, 1)[1].split("      - name:", 1)[0]
+        self.assertIn("(inputs.lane == 'jvm')", step)
+        self.assertIn("inputs.recheck_stack != true || steps.stack.outputs.run == 'true'", step)
+        self.assertIn("timeout-minutes: 10", step)
+        self.assertLess(workflow.index(name), workflow.index("      - name: Execute reviewed test selection"))
+        self.assertIn("job.status == 'failure' && steps.execute.outcome == 'skipped'", workflow)
+        command = "\n".join(line[10:] for line in step.split("        run: |\n", 1)[1].splitlines())
+        policy = copy.deepcopy(self.policy)
+        policy["suites"] = [dict(policy["suites"][0], lane="jvm")]
+        plan, state = sweep.plan_batch(SHA, self.catalog, policy)
+        for code in (22, 0):
+            with self.subTest(exit_code=code), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                target, output = root / "target", root / "results"
+                (target / "android").mkdir(parents=True)
+                (output / "setup").mkdir(parents=True)
+                (target / "android/gradlew").write_text('printf "%s\\n" "$@" > args.txt\nexit ' + str(code) + "\n")
+                result = subprocess.run(["bash", "-c", command], cwd=target, capture_output=True, text=True)
+                self.assertEqual(result.returncode, code, result.stderr)
+                self.assertEqual(
+                    (target / "args.txt").read_text().splitlines(),
+                    ["-p", "android", ":app:downloadSoundfont", "--console=plain", "--no-daemon"],
+                )
+                self.assertTrue((output / "setup/soundfont.log").is_file())
+                self.assertFalse((output / "journal.jsonl").exists())
+                if code:
+                    receipt = sweep.collect(plan, policy, "jvm", output, "Lane provisioning failed")
+                    row = receipt["results"][0]
+                    self.assertEqual((row["status"], row["phase"]), ("BLOCKED", "setup"))
+                    self.assertTrue(row["retryable"])
+                    self.assertFalse(row["attempted_tests"])
+                    self.assertFalse(row["coverage_complete"])
+                    reconciled = sweep.reconcile(plan, policy, state, [receipt])
+                    self.assertEqual(reconciled["records"], {})
+                    self.assertEqual(reconciled["retryable"]["master:first"]["attempts"], 1)
+                    self.assertEqual(sweep.plan_batch(SHA, self.catalog, policy, reconciled)[0]["tests"], plan["tests"])
+                else:
+                    # A later genuine owner failure must remain terminal, not become setup
+                    sweep.write(
+                        output / "attempt.json",
+                        {**sweep.attempt_identity(plan, "jvm"), "processes": {"master": {"exit_code": 1}}},
+                    )
+                    (output / "journal.jsonl").write_text(
+                        json.dumps({"name": "first", "commit": SHA, "status": "FAIL", "attempted_tests": True}) + "\n"
+                    )
+                    receipt = sweep.collect(plan, policy, "jvm", output)
+                    row = receipt["results"][0]
+                    self.assertEqual((row["status"], row["phase"]), ("FAIL", "tests"))
+                    self.assertFalse(row["retryable"])
+                    reconciled = sweep.reconcile(plan, policy, state, [receipt])
+                    self.assertEqual(reconciled["records"]["master:first"]["status"], "FAIL")
+                    self.assertEqual(sweep.plan_batch(SHA, self.catalog, policy, reconciled)[0]["tests"], [])
+                self.assertEqual(state["records"], {})
+
+    def test_aggregate_gate_keeps_failed_reconciled_progress_and_allows_pending_work(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        finish = workflow.split("  finish:\n", 1)[1].split("  publish:\n", 1)[0]
+        self.assertIn("reconciled: ${{ steps.reconcile.outcome == 'success' }}", finish)
+        self.assertIn("        id: reconcile\n", finish)
+        gate = finish.split("      - name: Require no unresolved failures or infrastructure blocks", 1)[1]
+        self.assertIn("if: always() && steps.reconcile.outcome == 'success'", gate)
+        self.assertLess(finish.index("name: nightly-sweep-summary"), finish.index("Require no unresolved failures"))
+        publish = workflow.split("  publish:\n", 1)[1]
+        self.assertIn("needs.finish.outputs.reconciled == 'true'", publish)
+        self.assertNotIn("needs.finish.result == 'success'", publish)
+        for guard in (
+            "needs.plan.result == 'success'",
+            "github.event_name != 'pull_request'",
+            "github.ref == 'refs/heads/cmake'",
+        ):
+            self.assertIn(guard, publish)
+        code = gate.split("          python3 - <<'PYTHON'\n", 1)[1].split("          PYTHON", 1)[0]
+        code = "\n".join(line[10:] for line in code.splitlines())
+        environment = {
+            **os.environ,
+            "EXECUTION_STACK_RESULT": "success",
+            "HOST_RESULT": "success",
+            "ANDROID_RESULT": "skipped",
+        }
+        for status, expected in ((None, 0), ("PASS", 0), ("FAIL", 1), ("TIMEOUT", 1), ("BLOCKED", 1)):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                receipts = [] if status is None else [self.receipt(status)]
+                # Previously recorded failures must still make later batches red
+                state = sweep.reconcile(self.plan, self.policy, self.state, receipts)
+                plan, _ = sweep.plan_batch(SHA, self.catalog, self.policy, state)
+                for name, value in (("plan", plan), ("policy", self.policy), ("state", state)):
+                    sweep.write(root / name, value)
+                original = (root / "state").read_bytes()
+                argv = [
+                    "sweep",
+                    "reconcile",
+                    "--plan",
+                    str(root / "plan"),
+                    "--policy",
+                    str(root / "policy"),
+                    "--state",
+                    str(root / "state"),
+                    "--output",
+                    str(root / "summary-state.json"),
+                ]
+                summary_output = io.StringIO()
+                with patch.object(sys, "argv", argv), patch.object(sys, "stdout", summary_output):
+                    self.assertEqual(sweep.main(), 0)
+                (root / "summary.json").write_text(summary_output.getvalue())
+                result = subprocess.run(
+                    [sys.executable, "-c", code], cwd=root, env=environment, capture_output=True, text=True
+                )
+                self.assertEqual(result.returncode, expected, result.stderr)
+                self.assertEqual(sweep.read(root / "summary-state.json"), state)
+                self.assertEqual((root / "state").read_bytes(), original)
+                if status is None:
+                    for lane in ("EXECUTION_STACK_RESULT", "HOST_RESULT", "ANDROID_RESULT"):
+                        for outcome in ("failure", "cancelled"):
+                            failed = subprocess.run(
+                                [sys.executable, "-c", code],
+                                cwd=root,
+                                env={**environment, lane: outcome},
+                                capture_output=True,
+                                text=True,
+                            )
+                            self.assertEqual(failed.returncode, 1, failed.stderr)
+                    (root / "summary.json").write_text("{}")
+                    malformed = subprocess.run(
+                        [sys.executable, "-c", code], cwd=root, env=environment, capture_output=True
+                    )
+                    self.assertNotEqual(malformed.returncode, 0)
+
     def test_stable_target_capability_is_exclusion_not_coverage(self):
         receipt = self.receipt("BLOCKED")
         receipt["results"][0].update(
