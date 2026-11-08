@@ -237,9 +237,10 @@ struct CObject {
 	}
 	void ProcessDrag(CPhysSimData &);
 	void ComputeMovedTime(CPhysSimData &);
+	void FinishPhysicsSim(CPhysSimData &);
 	struct {
 		tObjTransformation position;
-		int nType = 0, nId = 0, nSegment = 0, movementType = 1;
+		int nType = 0, nId = 0, nSegment = 0, movementType = 1, nFlags = 0;
 		fix xShield = I2X(100), xSize = 0;
 	} info;
 	struct {

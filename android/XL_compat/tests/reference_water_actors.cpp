@@ -7,7 +7,9 @@
 constexpr fix FT = I2X(1) / 64;
 #define ENTER(a, b)
 #define RETVAL(value) return (value);
+#define PROF_END(value)
 constexpr int OBJ_PLAYER = 4, OBJ_ROBOT = 2, EARTHSHAKER_MEGA_ID = 54, ROBOT_SHAKER_MEGA_ID = 61;
+constexpr int HIT_NONE = 0, HIT_WALL = 1, HIT_OBJECT = 2, HIT_BAD_P0 = 3, OF_SHOULD_BE_DEAD = 2;
 int IsMultiGame = 0;
 fix FixMulDiv(fix value, fix scale, fix divisor)
 {
@@ -41,6 +43,9 @@ struct CPhysSimData {
 	int nObject = 0, nOldSeg = 0, nStartSeg = 0, xTimeScale = 0;
 	Boost speedBoost;
 	CObject *pObj = nullptr;
+	struct {
+		int nType = HIT_NONE;
+	} hitResult;
 	void Setup();
 };
 #include "xl_reference_water_actors.h"
@@ -48,6 +53,7 @@ struct CPhysSimData {
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 2 && std::string(argv[1]) == "--contact-control-flow") return contact_control_flow();
 		if (argc == 3 && std::string(argv[1]) == "--slow-motion") return slow_motion_physics(argv[2]);
 		if (argc != 2) throw std::runtime_error("Expected water motion samples");
 		std::ifstream input(argv[1]);

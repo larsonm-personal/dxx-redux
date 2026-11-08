@@ -45,13 +45,10 @@ static void water_actor_contacts()
 			const auto inward = Segments[wet].sides[wall].normals[0];
 			obj_relink(index, wet);
 			vm_vec_scale_add(&actor.pos, &face, &inward, actor.size + F1_0 / 16);
-			const auto before = actor.pos;
 			vm_vec_copy_scale(&actor.mtype.phys_info.velocity, &inward, -i2f(4));
+			const auto velocity = actor.mtype.phys_info.velocity;
 			do_physics_sim(&actor);
-			vms_vector moved, expected;
-			vm_vec_sub(&moved, &actor.pos, &before);
-			vm_vec_copy_scale(&expected, &moved, i2f(3));
-			require((actor.flags & OF_SHOULD_BE_DEAD) && !std::memcmp(&expected, &actor.mtype.phys_info.velocity, sizeof(expected)), "wet projectile wall contact lost termination or reconstructed velocity");
+			require((actor.flags & OF_SHOULD_BE_DEAD) && !std::memcmp(&velocity, &actor.mtype.phys_info.velocity, sizeof(velocity)), "wet terminating projectile changed its velocity after collision");
 		}
 		obj_delete(index);
 	}

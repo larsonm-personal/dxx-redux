@@ -13,12 +13,7 @@ struct Lifetime {
 	}
 };
 #include "xl_reference_slow_saturate.h"
-struct Contact : CObject {
-	void reconstruct(CPhysSimData &simData)
-	{
-#include "xl_reference_slow_contact.h"
-	}
-};
+#include "reference_contact_control_flow.h"
 struct Rotation : CObject {
 	void turn(CAngleVector dest_angles, CAngleVector cur_angles, fix rate)
 	{
@@ -89,10 +84,12 @@ static int slow_motion_physics(const char *path)
 				actor.Velocity() -= values[3] * (2 * wall_part);
 				actor.UpdateOffset(state);
 				actor.info.position.vPos += state.vOffset;
-			} else if (!multiplayer) {
-				// Multiplayer fluid handling is inactive, so classic weapon
-				// termination does not reconstruct its velocity
-				actor.reconstruct(state);
+			} else {
+				// Native controls require death after this ordinary laser wall hit
+				// Execute the pinned early return before considering FixPosition
+				actor.info.nFlags = OF_SHOULD_BE_DEAD;
+				state.hitResult.nType = HIT_WALL;
+				actor.finish_wall_contact(state);
 			}
 			const auto same = [](const CFixVector &a, const CFixVector &b) {
 				return a.v.coord.x == b.v.coord.x && a.v.coord.y == b.v.coord.y && a.v.coord.z == b.v.coord.z;

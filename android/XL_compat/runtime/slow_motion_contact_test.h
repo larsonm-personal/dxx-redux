@@ -90,6 +90,8 @@ static void slow_motion_wall_controls(std::ostream &samples, int profile)
 					require(find_vector_intersection(&query, &hit) == HIT_WALL && hit.hit_side == wall && hit.hit_seg == room, "Slow contact first hit differs from fixture wall");
 					do_physics_sim(&actor);
 					require(actor.segnum == room && bool(actor.flags & OF_SHOULD_BE_DEAD) == !bounce, "Slow contact termination/bounce differs");
+					if (!bounce)
+						require(!std::memcmp(&velocity, &actor.mtype.phys_info.velocity, sizeof(velocity)), "Terminating slow contact reconstructed velocity");
 					samples << "C " << profile << ' ' << console << ' ' << multiplayer << ' ' << room << ' ' << bounce;
 					for (const auto &v : { start, velocity, hit.hit_pnt, hit.hit_wallnorm, actor.pos, actor.mtype.phys_info.velocity }) samples << ' ' << v.x << ' ' << v.y << ' ' << v.z;
 					samples << '\n';
