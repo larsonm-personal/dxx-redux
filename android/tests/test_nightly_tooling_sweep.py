@@ -2358,34 +2358,49 @@ class SweepTests(unittest.TestCase):
             self.assertEqual(result["results"][0]["status"], "BLOCKED")
             self.assertFalse(result["results"][0]["attempted_tests"])
 
-    def test_jvm_soundfont_provisioning_failure_stays_outside_test_journal(self):
+    def test_jvm_soundfont_workflow_provisions_before_owner(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
         name = "      - name: Provision JVM soundfont before test execution"
         step = workflow.split(name, 1)[1].split("      - name:", 1)[0]
         self.assertIn("(inputs.lane == 'jvm')", step)
         self.assertIn("inputs.recheck_stack != true || steps.stack.outputs.run == 'true'", step)
         self.assertIn("timeout-minutes: 10", step)
+        self.assertIn("runs-on: ubuntu-24.04", workflow)
         self.assertLess(workflow.index(name), workflow.index("      - name: Execute reviewed test selection"))
         self.assertIn("job.status == 'failure' && steps.execute.outcome == 'skipped'", workflow)
+
+    @unittest.skipUnless(sys.platform == "linux", "JVM provisioning Bash runs in the hosted Ubuntu job")
+    def test_jvm_soundfont_setup_command_runs_without_starting_tests(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
+        step = workflow.split("      - name: Provision JVM soundfont before test execution", 1)[1].split(
+            "      - name:", 1
+        )[0]
         command = "\n".join(line[10:] for line in step.split("        run: |\n", 1)[1].splitlines())
-        policy = copy.deepcopy(self.policy)
-        policy["suites"] = [dict(policy["suites"][0], lane="jvm")]
-        plan, state = sweep.plan_batch(SHA, self.catalog, policy)
         for code in (22, 0):
             with self.subTest(exit_code=code), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 target, output = root / "target", root / "results"
                 (target / "android").mkdir(parents=True)
                 (output / "setup").mkdir(parents=True)
-                (target / "android/gradlew").write_text('printf "%s\\n" "$@" > args.txt\nexit ' + str(code) + "\n")
+                (target / "android/gradlew").write_text(
+                    'printf "%s\\n" "$@" > args.txt\nexit ' + str(code) + "\n", newline="\n"
+                )
                 result = subprocess.run(["bash", "-c", command], cwd=target, capture_output=True, text=True)
-                self.assertEqual(result.returncode, code, result.stderr)
+                self.assertEqual(result.returncode, code, result.stdout + result.stderr)
                 self.assertEqual(
                     (target / "args.txt").read_text().splitlines(),
                     ["-p", "android", ":app:downloadSoundfont", "--console=plain", "--no-daemon"],
                 )
                 self.assertTrue((output / "setup/soundfont.log").is_file())
                 self.assertFalse((output / "journal.jsonl").exists())
+
+    def test_jvm_soundfont_provisioning_failure_stays_outside_test_journal(self):
+        policy = copy.deepcopy(self.policy)
+        policy["suites"] = [dict(policy["suites"][0], lane="jvm")]
+        plan, state = sweep.plan_batch(SHA, self.catalog, policy)
+        for code in (22, 0):
+            with self.subTest(exit_code=code), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory).resolve()
                 if code:
                     receipt = sweep.collect(plan, policy, "jvm", output, "Lane provisioning failed")
                     row = receipt["results"][0]
