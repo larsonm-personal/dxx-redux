@@ -24,6 +24,59 @@ import pilot_archive as pilot
 import xl_private_assets as assets
 
 
+class RenderedReadinessTests(unittest.TestCase):
+    def test_requires_actual_rendered_and_unassisted_exact_level_evidence(self):
+        from xl_rendered_readiness import passed
+
+        proof = dict(
+            schema="dxx-xl-rendered-load-tick-v1",
+            phase="loaded_ticked",
+            mission="sphere",
+            level=2,
+            level_file="sp-02.rl2",
+            frames=120,
+            rendered_frames=120,
+            fixed_hz=60,
+            seed=1,
+            segments=4,
+            renderer="Mesa llvmpipe",
+            xl_active=True,
+            assisted=False,
+        )
+        self.assertTrue(passed(0, proof, "sphere", 2, "sp-02.rl2"))
+        for code in (None, -11, 1):
+            self.assertFalse(passed(code, proof, "sphere", 2, "sp-02.rl2"))
+        negatives = dict(
+            schema="dxx-xl-load-tick-v1",
+            phase="loaded",
+            mission="different",
+            level=1,
+            level_file="sp-01.rl2",
+            frames=119,
+            rendered_frames=0,
+            fixed_hz=30,
+            seed=True,
+            segments=0,
+            renderer=" ",
+            xl_active=1,
+            assisted=True,
+            gl_error=1280,
+        )
+        for key, value in negatives.items():
+            with self.subTest(key=key):
+                self.assertFalse(passed(0, {**proof, key: value}, "sphere", 2, "sp-02.rl2"))
+        for key in proof:
+            with self.subTest(missing=key):
+                self.assertFalse(passed(0, {k: v for k, v in proof.items() if k != key}, "sphere", 2, "sp-02.rl2"))
+        import xl_readiness
+
+        # Supplemental rendered evidence must never satisfy the unchanged headless scorer
+        self.assertNotEqual(
+            xl_readiness.classify(0, proof, "", dict(mission="sphere", level=2, level_file="sp-02.rl2")),
+            "loaded_ticked",
+        )
+
+
 class XlPrivateTests(unittest.TestCase):
     def test_reviewed_cohorts_are_independent_of_candidate_requirements(self):
         self.assertEqual(len(runner.HISTORICAL_FAST_TESTS), 111)
