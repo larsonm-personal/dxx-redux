@@ -220,22 +220,21 @@ static void arena_fluid_objects()
 		        "non-player water motion entered the reference's player-only turbulence path");
 		probe.mtype.phys_info.thrust = {};
 		if (type == OBJ_WEAPON) {
-			// A terminating wall hit reaches the final reconstruction branch, unlike
-			// a successful wall slide that retries and finishes with HIT_NONE
+			// Upstream returns on projectile death before final velocity reconstruction
 			probe.pos.x = -25 * F1_0 + probe.size + F1_0 / 16;
 			const auto collision_start = probe.pos;
-			probe.mtype.phys_info.velocity = { -4 * F1_0, 0, 0 };
+			const vms_vector velocity = { -4 * F1_0, 0, 0 };
+			probe.mtype.phys_info.velocity = velocity;
 			probe.ctype.laser_info.parent_type = OBJ_PLAYER;
 			probe.ctype.laser_info.parent_num = Players[Player_num].objnum;
 			probe.ctype.laser_info.parent_signature = ConsoleObject->signature;
 			do_physics_sim(&probe);
-			vms_vector moved, expected;
+			vms_vector moved;
 			vm_vec_sub(&moved, &probe.pos, &collision_start);
-			vm_vec_copy_scale(&expected, &moved, 3 * F1_0); // (1 / 0.25 seconds) * 75 percent
 			require((probe.flags & OF_SHOULD_BE_DEAD) && moved.x < 0 && moved.x > -F1_0 / 8,
 			        "weapon probe did not terminate against the authored water wall");
-			require(!std::memcmp(&probe.mtype.phys_info.velocity, &expected, sizeof(expected)),
-			        "final water wall velocity omitted the reference reconstruction scale");
+			require(!std::memcmp(&probe.mtype.phys_info.velocity, &velocity, sizeof(velocity)),
+			        "terminating water projectile changed its velocity after collision");
 		}
 		obj_delete(index);
 	}
