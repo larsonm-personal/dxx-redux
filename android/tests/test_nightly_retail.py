@@ -461,7 +461,10 @@ class RetailBoundaryTests(unittest.TestCase):
         self.assertEqual(declaration.splitlines(), ["      RETAIL_ASSETS_READ_TOKEN:", "        required: false"])
         # Public/JVM calls need no credential; the existing retail-only runtime gate does
         self.assertNotIn("    environment:", android_job)
-        self.assertIn("        if: inputs.retail_assets\n", callee)
+        self.assertIn(
+            "        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.retail_assets)\n",
+            callee,
+        )
         self.assertIn('[[ -n "$RETAIL_READ_TOKEN" ]]', callee)
 
     def test_xl_reusable_secret_contract_and_empty_token_diagnostic(self):

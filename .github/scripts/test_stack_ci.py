@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -28,30 +29,100 @@ class StackPolicyTests(unittest.TestCase):
         for source, target in (
             ("always()", "True"),
             ("!inputs.evidence_run_id", "not evidence"),
+            ("needs.plan.outputs.run", "planning"),
+            ("needs.android.outputs.run", "execution"),
             ("needs.plan.result", "plan"),
-            ("needs.execution-stack.outputs.run", "stack"),
             ("needs.android.result", "android"),
             ("&&", "and"),
             ("||", "or"),
         ):
             condition = condition.replace(source, target)
-        for plan, stack, android, expected in (
-            ("cancelled", "", "skipped", False),
-            ("skipped", "", "skipped", False),
-            ("failure", "", "skipped", True),
-            ("success", "true", "success", True),
-            ("success", "true", "failure", True),
-            ("success", "true", "cancelled", True),
-            ("success", "", "skipped", True),
-            ("success", "false", "skipped", False),
-            ("success", "false", "failure", True),
-            ("success", "false", "cancelled", True),
+        for plan, planning, execution, android, expected in (
+            ("cancelled", "", "", "skipped", False),
+            ("skipped", "", "", "skipped", False),
+            ("failure", "", "", "skipped", True),
+            ("failure", "false", "", "skipped", True),
+            ("success", "true", "true", "success", True),
+            ("success", "true", "true", "failure", True),
+            ("success", "true", "true", "cancelled", True),
+            ("success", "true", "", "skipped", True),
+            ("success", "true", "", "success", True),
+            ("success", "false", "", "skipped", False),
+            ("success", "true", "false", "success", False),
+            ("success", "true", "false", "failure", True),
+            ("success", "true", "false", "cancelled", True),
         ):
-            with self.subTest(plan=plan, stack=stack, android=android):
-                context = {"plan": plan, "stack": stack, "android": android, "evidence": ""}
+            with self.subTest(plan=plan, planning=planning, execution=execution, android=android):
+                context = {
+                    "plan": plan,
+                    "planning": planning,
+                    "execution": execution,
+                    "android": android,
+                    "evidence": "",
+                }
                 self.assertEqual(eval(condition, {"__builtins__": {}}, context), expected)
                 context["evidence"] = "123"
                 self.assertFalse(eval(condition, {"__builtins__": {}}, context))
+
+    def test_public_lan_consolidates_gates_without_changing_required_verdict(self):
+        workflow = (ROOT / ".github/workflows/public-lan-smoke.yml").read_text()
+        self.assertEqual(
+            re.findall(r"^  ([a-z-]+):$", workflow.split("\njobs:\n", 1)[1], re.MULTILINE),
+            ["plan", "android", "finish", "evidence"],
+        )
+        plan = workflow.split("\n  plan:\n", 1)[1].split("\n  android:\n", 1)[0]
+        steps = plan.split("\n      - ")[1:]
+        self.assertIn("ref: ${{ github.workflow_sha }}", steps[0])
+        self.assertIn("id: stack", steps[1])
+        self.assertIn("python3 control/.github/scripts/stack_ci.py", steps[1])
+        self.assertIn("run: ${{ steps.stack.outputs.run }}", plan)
+        for step in steps[2:]:
+            self.assertIn("if: steps.stack.outputs.run == 'true'", step)
+        android = workflow.split("\n  android:\n", 1)[1].split("\n  finish:\n", 1)[0]
+        self.assertIn("needs: plan", android)
+        self.assertIn("if: needs.plan.outputs.run == 'true'", android)
+        self.assertIn("uses: ./.github/workflows/android-nightly-tooling.yml", android)
+        self.assertIn("recheck_stack: true", android)
+        self.assertIn(
+            "'Require three-player LAN pass' || 'Require public LAN pass'",
+            self.public_lan_finish(),
+        )
+
+    def test_late_stack_gate_runs_on_execution_runner_before_all_provisioning(self):
+        workflow = (ROOT / ".github/workflows/android-nightly-tooling.yml").read_text()
+        option = workflow.split("      recheck_stack:\n", 1)[1].split("      recovery_cases:\n", 1)[0]
+        self.assertIn("type: boolean", option)
+        self.assertIn("default: false", option)
+        self.assertIn("value: ${{ jobs.android.outputs.run }}", workflow)
+        self.assertIn(
+            "run: ${{ !inputs.recheck_stack && 'true' || steps.stack.outputs.run }}",
+            workflow,
+        )
+        steps = workflow.split("\n      - ")[1:]
+        self.assertTrue(steps[0].startswith("name: Check lane arguments"))
+        self.assertTrue(steps[1].startswith("name: Check out trusted sweep controller"))
+        self.assertIn("ref: ${{ github.workflow_sha }}", steps[1])
+        self.assertTrue(steps[2].startswith("name: Recheck current stack eligibility before provisioning"))
+        self.assertIn("id: stack", steps[2])
+        self.assertIn("if: inputs.recheck_stack", steps[2])
+        self.assertIn("python3 control/.github/scripts/stack_ci.py", steps[2])
+        guard = "(inputs.recheck_stack != true || steps.stack.outputs.run == 'true')"
+        for step in steps[3:]:
+            condition = next(line.strip() for line in step.splitlines() if line.startswith("        if:"))
+            self.assertTrue(condition.startswith("if: " + guard), step.splitlines()[0])
+        # Opt-out callers retain their prior conditions; opt-in callers need a positive late result
+        expression = guard.replace("inputs.recheck_stack", "enabled").replace("steps.stack.outputs.run", "result")
+        expression = expression.replace("true", "True").replace("'True'", "'true'").replace("||", "or")
+        for enabled in (False, True):
+            for result in ("", "false", "true"):
+                self.assertEqual(
+                    eval(
+                        expression,
+                        {"__builtins__": {}},
+                        {"enabled": enabled, "result": result},
+                    ),
+                    not enabled or result == "true",
+                )
 
     def test_public_lan_missing_plan_artifact_remains_fatal(self):
         finish = self.public_lan_finish()

@@ -11,6 +11,11 @@ on:
         description: Same-run artifact containing plan.json
         required: true
         type: string
+      recheck_stack:
+        description: Recheck native stack eligibility on the execution runner before provisioning
+        required: false
+        type: boolean
+        default: false
       recovery_cases:
         required: false
         type: string
@@ -35,6 +40,10 @@ on:
         description: jvm, android-single, or android-dual (two or three devices as selected)
         required: true
         type: string
+    outputs:
+      run:
+        description: Whether execution remained eligible after the optional late stack check
+        value: ${{ jobs.android.outputs.run }}
     secrets:
       RETAIL_ASSETS_READ_TOKEN:
         required: false
@@ -45,6 +54,8 @@ permissions:
 jobs:
   android:
     name: Run selected tests
+    outputs:
+      run: ${{ !inputs.recheck_stack && 'true' || steps.stack.outputs.run }}
     runs-on: ubuntu-24.04
     # Provision/build time is separate from the approximately 45-minute test sample
     timeout-minutes: 105
@@ -83,14 +94,20 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: control
           persist-credentials: false
+      # Run on the actual execution runner, after its queue and before provisioning
+      - name: Recheck current stack eligibility before provisioning
+        id: stack
+        if: inputs.recheck_stack
+        run: python3 control/.github/scripts/stack_ci.py
       - name: Reclaim unused hosted image tools before downloads
-        if: inputs.lane != 'jvm'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane != 'jvm')
         timeout-minutes: 5
         shell: bash
         run: |
           mkdir -p results/setup
           bash control/android/helpers/nightly_runner_storage.sh prepare 20 2>&1 | tee results/setup/storage-prepare.log
       - name: Check out exact test target
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true')
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ inputs.target_sha }}
@@ -98,11 +115,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Download selected tests
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true')
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: ${{ inputs.plan_artifact }}
           path: plan
       - name: Inspect fixed fixture requirement
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true')
         id: selection
         shell: bash
         run: |
@@ -127,7 +146,7 @@ jobs:
                   output.write(f"{name}={str(needed).lower()}\n")
           PYTHON
       - name: Prepare pinned local matchmaking server
-        if: steps.selection.outputs.online_preview == 'true'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (steps.selection.outputs.online_preview == 'true')
         shell: bash
         run: |
           set -euo pipefail
@@ -137,13 +156,14 @@ jobs:
           echo "RUSTUP_TOOLCHAIN=$version" >> "$GITHUB_ENV"
           cargo +"$version" build --locked --release --manifest-path target/server/Cargo.toml
       - name: Rehearse owned TLS listener lifecycle
-        if: steps.selection.outputs.online_preview == 'true'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (steps.selection.outputs.online_preview == 'true')
         shell: bash
         run: |
           python3 target/server/test_loopback_fault_proxy.py
           python3 target/server/rehearse_preview.py \
             --binary "$GITHUB_WORKSPACE/target/server/target/release/dxx-matchmaking"
       - name: Prepare dependency locations
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true')
         shell: bash
         run: |
           set -euo pipefail
@@ -177,7 +197,7 @@ jobs:
           } >> "$GITHUB_PATH"
           df -h . | tee results/setup/storage-before.log
       - name: Require accelerated emulator access
-        if: inputs.lane != 'jvm'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane != 'jvm')
         shell: bash
         run: |
           set -euo pipefail
@@ -211,6 +231,7 @@ jobs:
           [[ -r /dev/kvm && -w /dev/kvm ]]
           getfacl -p -n /dev/kvm | tee results/setup/kvm-effective.acl
       - name: Restore pinned toolchain components
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true')
         id: tools
         uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -224,6 +245,7 @@ jobs:
             ${{ env.DXX_NIGHTLY_SDK_CACHE }}/platform-tools
           key: nightly-android-tools-v2-${{ runner.os }}-${{ hashFiles('target/android/get_deps/tool_versions.conf') }}
       - name: Restore Gradle and native dependencies
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true')
         id: dependencies
         uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -233,6 +255,7 @@ jobs:
             target/android/.cxx/dependency-cache
           key: nightly-android-deps-${{ runner.os }}-${{ hashFiles('target/android/get_deps/tool_versions.conf', 'target/android/**/*.gradle') }}
       - name: Provision pinned build tools
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true')
         id: setup
         timeout-minutes: 35
         shell: bash
@@ -251,13 +274,13 @@ jobs:
             df -h .
           } 2>&1 | tee ../results/setup/toolchain.log
       - name: Reclaim superseded hosted Android SDK
-        if: inputs.lane != 'jvm'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane != 'jvm')
         timeout-minutes: 5
         shell: bash
         run: |
           bash control/android/helpers/nightly_runner_storage.sh retire-hosted-sdk 20 2>&1 | tee results/setup/storage-retire-sdk.log
       - name: Restore emulator components
-        if: inputs.lane != 'jvm'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane != 'jvm')
         id: emulator-cache
         uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -266,7 +289,7 @@ jobs:
             ${{ env.DXX_NIGHTLY_SDK_CACHE }}/system-images/android-${{ env.DXX_NIGHTLY_EMULATOR_API }}/google_apis/x86_64
           key: nightly-android-emulator-${{ runner.os }}-${{ hashFiles('target/android/get_deps/tool_versions.conf') }}
       - name: Provision emulator host runtime
-        if: inputs.lane != 'jvm'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane != 'jvm')
         timeout-minutes: 8
         shell: bash
         run: |
@@ -277,7 +300,7 @@ jobs:
             sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends libpulse0
           } 2>&1 | tee results/setup/emulator-host-runtime.log
       - name: Provision dual-lane master host prerequisites
-        if: inputs.lane == 'android-dual'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane == 'android-dual')
         timeout-minutes: 15
         shell: bash
         working-directory: target
@@ -285,7 +308,7 @@ jobs:
           set -euo pipefail
           bash android/get_deps/helpers/get_linux_build_prereqs.sh 2>&1 | tee ../results/setup/dual-host-prerequisites.log
       - name: Provision selected auto-level replay prerequisites
-        if: steps.selection.outputs.native_replay == 'true'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (steps.selection.outputs.native_replay == 'true')
         timeout-minutes: 15
         shell: bash
         working-directory: target
@@ -297,7 +320,7 @@ jobs:
             command -v xvfb-run
           } 2>&1 | tee ../results/setup/native-replay-prerequisites.log
       - name: Build selected native replay executables before test budget
-        if: steps.selection.outputs.native_replay == 'true'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (steps.selection.outputs.native_replay == 'true')
         timeout-minutes: 20
         shell: bash
         working-directory: target
@@ -324,7 +347,7 @@ jobs:
             bash ./run-linux-build.sh --target "$game" --game-only --jobs 2
           done < ../results/setup/native-replay-games.txt 2>&1 | tee ../results/setup/native-replay-build.log
       - name: Provision emulator image
-        if: inputs.lane != 'jvm'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane != 'jvm')
         id: emulator
         timeout-minutes: 15
         shell: bash
@@ -333,14 +356,14 @@ jobs:
           set -euo pipefail
           bash android/get_deps/helpers/get_emulator.sh 2>&1 | tee ../results/setup/emulator-image.log
       - name: Check emulator runtime before APK build
-        if: inputs.lane != 'jvm'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane != 'jvm')
         timeout-minutes: 1
         shell: bash
         run: |
           set -euo pipefail
           emulator -version 2>&1 | tee results/setup/emulator-version.log
       - name: Require shared Wi-Fi emulator generation
-        if: inputs.lane == 'android-dual'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane == 'android-dual')
         shell: bash
         run: |
           set -euo pipefail
@@ -352,19 +375,19 @@ jobs:
               raise SystemExit('BLOCKED: dual LAN tests require emulator 36.5+ shared Wi-Fi; isolated NAT is unsupported')
           PYTHON
       - name: Qualify production installation identity with real service
-        if: steps.selection.outputs.online_preview == 'true'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (steps.selection.outputs.online_preview == 'true')
         shell: bash
         run: |
           bash target/android/gradlew -p target/android -PhostJvmOnly=true \
             -PonlineServerBinary="$GITHUB_WORKSPACE/target/server/target/release/dxx-matchmaking" \
             :proxy-tests:test --no-daemon --max-workers=2
       - name: Require host storage before APK compilation
-        if: inputs.lane != 'jvm'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane != 'jvm')
         timeout-minutes: 2
         shell: bash
         run: bash control/android/helpers/nightly_runner_storage.sh check 10 2>&1 | tee results/setup/storage-10gib.log
       - name: Build emulator APKs before boot
-        if: inputs.lane != 'jvm'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane != 'jvm')
         id: apk
         timeout-minutes: 35
         shell: bash
@@ -375,7 +398,7 @@ jobs:
             -PciApk=false -PgithubRelease=false -PlegacyRelease=false -PnsdDiagnosticApp=false \
             --console=plain --no-daemon --max-workers=2 2>&1 | tee ../results/setup/apk-build.log
       - name: Check out pre-admission compatibility peer
-        if: inputs.recovery_checks && (inputs.recovery_cases == '' || contains(inputs.recovery_cases, 'mixed-binaries'))
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.recovery_checks && (inputs.recovery_cases == '' || contains(inputs.recovery_cases, 'mixed-binaries')))
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: 01401425aff549eefd8b5a9e9fd8a8458d01a9b8
@@ -383,7 +406,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Build actual old peer binary
-        if: inputs.recovery_checks && (inputs.recovery_cases == '' || contains(inputs.recovery_cases, 'mixed-binaries'))
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.recovery_checks && (inputs.recovery_cases == '' || contains(inputs.recovery_cases, 'mixed-binaries')))
         timeout-minutes: 35
         shell: bash
         run: |
@@ -400,7 +423,7 @@ jobs:
           git -C compatibility-peer rev-parse HEAD > results/setup/compatibility-revision.txt
           echo "DXX_COMPAT_APK=$GITHUB_WORKSPACE/$old_apk" >> "$GITHUB_ENV"
       - name: Provision verified public fixtures
-        if: steps.selection.outputs.public_fixtures == 'true'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (steps.selection.outputs.public_fixtures == 'true')
         id: fixtures
         timeout-minutes: 15
         shell: bash
@@ -412,7 +435,7 @@ jobs:
           pwsh -NoProfile -NonInteractive -File android/helpers/setup_shareware_test_data.ps1 \
             -Game both -Download -RequireArchives 2>&1 | tee ../results/setup/public-fixtures.log
       - name: Require standard FFmpeg for generated preview fixture
-        if: inputs.lane == 'android-single' && steps.selection.outputs.generated_audio == 'true'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane == 'android-single' && steps.selection.outputs.generated_audio == 'true')
         timeout-minutes: 10
         shell: bash
         run: |
@@ -435,7 +458,7 @@ jobs:
         id: retail_gate
         env:
           RETAIL_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
-        if: inputs.retail_assets
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.retail_assets)
         run: |
           [[ -n "$RETAIL_READ_TOKEN" ]] || { echo "Retail read-only environment secret is missing" >&2; exit 1; }
           unset RETAIL_READ_TOKEN
@@ -444,7 +467,7 @@ jobs:
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json --lane "$SWEEP_LANE"
       - name: Check out immutable private retail inputs
         id: retail_checkout
-        if: inputs.retail_assets
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.retail_assets)
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           repository: larsonm-personal/dxx-redux-test-assets
@@ -453,7 +476,7 @@ jobs:
           path: retail-input
           persist-credentials: false
       - name: Verify supplied edition and stage base retail files
-        if: inputs.retail_assets
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.retail_assets)
         id: retail_stage
         run: |
           [[ "$(git -C retail-input rev-parse HEAD)" == "$RETAIL_CHECKOUT_COMMIT" ]]
@@ -468,7 +491,7 @@ jobs:
           fi
           rm -rf retail-input
       - name: Prepare isolated headless emulators
-        if: inputs.lane != 'jvm'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane != 'jvm')
         timeout-minutes: 8
         shell: pwsh
         working-directory: target
@@ -520,6 +543,7 @@ jobs:
           } finally { Stop-Transcript }
           exit 0
       - name: Execute reviewed test selection
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true')
         id: execute
         timeout-minutes: 50
         shell: bash
@@ -540,7 +564,7 @@ jobs:
           fi
           "${command[@]}"
       - name: Reconcile durable test evidence
-        if: always() && hashFiles('plan/plan.json') != '' && hashFiles('control/android/tests/nightly_tooling_sweep.py') != ''
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && hashFiles('plan/plan.json') != '' && hashFiles('control/android/tests/nightly_tooling_sweep.py') != '')
         shell: bash
         env:
           PROVISIONING_FAILED: ${{ job.status == 'failure' && steps.execute.outcome == 'skipped' }}
@@ -553,7 +577,7 @@ jobs:
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --lane "$SWEEP_LANE" --output "$GITHUB_WORKSPACE/results" "${reason[@]}"
       - name: Report synthetic XL dialog result
-        if: always() && !inputs.retail_assets && hashFiles('plan/plan.json') != ''
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && !inputs.retail_assets && hashFiles('plan/plan.json') != '')
         shell: bash
         run: |
           python3 - <<'PYTHON'
@@ -571,7 +595,7 @@ jobs:
                       print(re.sub(r'\x1b\[[0-9;]*m', '', text))
           PYTHON
       - name: Report synthetic XL texture result
-        if: always() && !inputs.retail_assets && hashFiles('plan/plan.json') != ''
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && !inputs.retail_assets && hashFiles('plan/plan.json') != '')
         shell: bash
         run: |
           python3 - <<'PYTHON'
@@ -589,7 +613,7 @@ jobs:
                       print(re.sub(r'\x1b\[[0-9;]*m', '', text))
           PYTHON
       - name: Report sanitized online qualification receipt
-        if: always() && steps.selection.outputs.online_preview == 'true'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && steps.selection.outputs.online_preview == 'true')
         shell: bash
         run: |
           python3 - <<'PYTHON'
@@ -607,14 +631,14 @@ jobs:
                       print(line)
           PYTHON
       - name: Record final host storage
-        if: always() && inputs.lane != 'jvm'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && inputs.lane != 'jvm')
         timeout-minutes: 2
         shell: bash
         run: |
           mkdir -p results/setup
           bash control/android/helpers/nightly_runner_storage.sh report 0 2>&1 | tee results/setup/storage-final.log
       - name: Collect emulator diagnostics
-        if: always() && inputs.lane != 'jvm'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && inputs.lane != 'jvm')
         shell: bash
         run: |
           mkdir -p results/setup
@@ -628,7 +652,7 @@ jobs:
             done
           fi
       - name: Restore original KVM access
-        if: always() && inputs.lane != 'jvm'
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && inputs.lane != 'jvm')
         timeout-minutes: 1
         shell: bash
         run: |
@@ -640,7 +664,7 @@ jobs:
             echo 'Original KVM ACL restored' | tee results/setup/kvm-cleanup.log
           fi
       - name: Record lane lifecycle
-        if: always()
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always())
         shell: bash
         env:
           SETUP_OUTCOME: ${{ steps.setup.outcome }}
@@ -656,7 +680,7 @@ jobs:
           (path / 'lifecycle.json').write_text(json.dumps(data, indent=2) + '\n')
           PY
       - name: Collect public first-play diagnostics
-        if: always() && !inputs.retail_assets
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && !inputs.retail_assets)
         shell: bash
         run: |
           python3 - <<'PYTHON'
@@ -716,7 +740,7 @@ jobs:
                               target.write_bytes(stream.read(65536))
           PYTHON
       - name: Upload execution evidence
-        if: always() && !inputs.retail_assets
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && !inputs.retail_assets)
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: nightly-results-${{ inputs.lane }}
@@ -724,7 +748,7 @@ jobs:
           retention-days: 14
           if-no-files-found: error
       - name: Upload Gradle test reports
-        if: always() && !inputs.retail_assets
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && !inputs.retail_assets)
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: nightly-gradle-reports-${{ inputs.lane }}
@@ -738,7 +762,7 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
       - name: Upload generated fixture provenance
-        if: always() && !inputs.retail_assets
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && !inputs.retail_assets)
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: nightly-fixture-provenance-${{ inputs.lane }}
@@ -747,7 +771,7 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
       - name: Upload retail-safe owner receipts
-        if: always() && inputs.retail_assets
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && inputs.retail_assets)
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: nightly-results-${{ inputs.lane }}
@@ -759,7 +783,7 @@ jobs:
       - name: Save provisioned toolchain cache
         timeout-minutes: 5
         continue-on-error: true
-        if: always() && !cancelled() && steps.setup.outcome == 'success' && steps.tools.outputs.cache-hit != 'true' && !inputs.retail_assets
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && !cancelled() && steps.setup.outcome == 'success' && steps.tools.outputs.cache-hit != 'true' && !inputs.retail_assets)
         uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
@@ -774,7 +798,7 @@ jobs:
       - name: Save emulator components
         timeout-minutes: 5
         continue-on-error: true
-        if: always() && !cancelled() && inputs.lane != 'jvm' && steps.emulator.outcome == 'success' && steps.emulator-cache.outputs.cache-hit != 'true' && !inputs.retail_assets
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && !cancelled() && inputs.lane != 'jvm' && steps.emulator.outcome == 'success' && steps.emulator-cache.outputs.cache-hit != 'true' && !inputs.retail_assets)
         uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
@@ -784,7 +808,7 @@ jobs:
       - name: Save completed dependency downloads
         timeout-minutes: 5
         continue-on-error: true
-        if: always() && !cancelled() && steps.execute.outcome == 'success' && steps.dependencies.outputs.cache-hit != 'true' && !inputs.retail_assets
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && !cancelled() && steps.execute.outcome == 'success' && steps.dependencies.outputs.cache-hit != 'true' && !inputs.retail_assets)
         uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
