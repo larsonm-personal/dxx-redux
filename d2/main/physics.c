@@ -919,13 +919,10 @@ void do_physics_sim(object *obj)
 	// Source FixPosition reconstructs wall/bad-start velocity, not camera object responses
 	if (fate == HIT_OBJECT && hit_info.hit_object >= 0 && Objects[hit_info.hit_object].type == 16)
 		reconstruct_velocity = 0;
-	// FixPosition applies wall/bad-start reconstruction to dry XL actors too
-	if (!speed_boost && xl_level_extensions_active() && !(Game_mode & GM_MULTI) &&
-		((fate == HIT_WALL) || (fate == HIT_BAD_P0)))
-		reconstruct_velocity = 1;
-	// Preserve the existing fluid object-response exclusions
+	// Terminating XL wall contacts return before FixPosition, including in fluids
 	if (!speed_boost && (xl_preview_water_segment(orig_segnum) || xl_lava_segment(orig_segnum)))
-		reconstruct_velocity = (fate == HIT_WALL) || (fate == HIT_BAD_P0);
+		reconstruct_velocity = (fate == HIT_BAD_P0) ||
+			((fate == HIT_WALL) && !(obj->flags & OF_SHOULD_BE_DEAD));
 #endif
 	if (!obj_stopped && !bounced && reconstruct_velocity)
 	{	

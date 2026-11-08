@@ -10,6 +10,7 @@ import xml.etree.ElementTree as ET
 from reference_sources import reference_parameters, reference_sources, require_source_arguments
 
 PUBLIC_TESTS = {
+    "xl_contact_control_flow_reference",
     "xl_ase_contract",
     "xl_audio_voice_contract",
     "xl_animation_phase_contract",

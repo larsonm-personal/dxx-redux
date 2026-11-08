@@ -16,33 +16,45 @@ Run native owners, source sanitizers, public/classic regressions and scoped qual
 Controls, authentic pickup rendering, audio and persistence remain subsequent
 stages. Do not merge, rewrite published history or alter the readiness cohort.
 
-## Findings and correction
+## Corrected contact rationale
 
-The new native transcript initially failed source comparison at contact 9:
-neutral clocks, dry room 61, non-console projectile, single player, terminating
-wall hit. It moved 4096 fixed units in a 16384-unit frame. Source reconstruction
-requires velocity 16384, but the engine retained 262144. The old engine extended
-wall reconstruction beyond players/robots/debris only in fluid rooms.
+The original contact-9 explanation was invalid. The fixture is a terminating
+laser, but the oracle applied an isolated FixPosition arithmetic fragment after
+its death. Pinned physics.cpp ProcessWallCollision returns -1 for
+OF_SHOULD_BE_DEAD (lines 714-715); DoPhysicsSim propagates that into a return
+before FixPosition (lines 1291-1299). FinishPhysicsSim does not change velocity.
+Thus the claimed 262144-to-16384 reconstruction was not the upstream result.
+The preserved pre-fix transcript's rejection by that oracle was not evidence
+that dry XL contact behavior needed broadening.
 
-Extend the existing reconstruction predicate to all single-player XL wall and
-bad-start contacts, preserving speed-boost, stopped and bounced exclusions and
-classic/network behavior. Do not change unrelated dry object-contact semantics.
-The preserved pre-fix transcript still fails the final oracle at contact 9.
+The correction is based on PR #393 head
+c023cbba807b44077d70d7a8117453d349fa60a3. Remove the unsupported dry-actor
+widening. In the existing water/lava override, suppress reconstruction only for
+dead wall contacts. Preserve the previous bad-start and surviving-contact
+scope, speed-boost/stopped/bounced exclusions, classic and multiplayer behavior.
+The earlier water actor assertion also expected the incorrect reconstruction;
+it now requires the terminating projectile's incoming velocity to remain intact.
+The 64 native slow-motion wall controls make that requirement explicit too.
+
+The reference now executes the pinned post-callback death check and caller
+negative-result return before the complete FixPosition reconstruction condition.
+Post-callback death state and completed retry state are adapter inputs. This is
+not execution of the entire upstream collision callback or FVI engine.
 
 TurnTowardsVector needs its own world/console scaling before sign saturation;
-scaling rotation angles alone does not implement this force consumer. The new
+scaling rotation angles alone does not implement this force consumer. The
 helper uses the same isolated clocks and leaves null vectors and real-time force
 integration unchanged.
 
-## Completed validation
+## Historical validation, not a fresh correction pass
 
 - 1536 native turning rows match the pinned angle-delta, wrap, small-angle boost,
   scaling and saturation statements, including morph rates, old velocity signs,
   console identity and network isolation. Zero-vector calls remain inert
 - 64 real axial projectile wall cases cover dry/wet rooms, termination/bounce,
   four clock profiles and console/network combinations. Pinned ComputeMovedTime
-  and UpdateOffset reproduce the final retry position; the pinned FixPosition
-  fragment reproduces terminating single-player velocity
+  and UpdateOffset reproduce the final retry position. The original terminating
+  velocity comparison was invalid and is withdrawn
 - Reference comparison takes native FVI hit geometry and native vector-to-angle
   output as inputs. It does not qualify the entire reference FVI or trig engine,
   corner collisions, bad-start recovery, arbitrary object contacts or speed boost
@@ -76,3 +88,42 @@ qualification; globally scaling FrameTime would contradict the force controls.
 Pickup admission remains disabled. Genuine sprites at assets PR #4 head
 d09f199c3b66bab71970364b1939b1658851ea81 remain reserved for rendering integration.
 No readiness improvement, original mission changes or merges are claimed.
+
+## Surviving contacts and correction validation
+
+The source-controlled completion matrix covers players, robots and a powerup
+storage type across dry/water/lava scales, wall/bad-start/object/no-hit results,
+and speed-boost/stopped/bounced exclusions. Only wall cases supply a dead state,
+because the proven death short-circuit belongs to the wall callback. Alive
+controls explicitly assume the retry loop completed. They do not demonstrate a
+native surviving wall trajectory.
+
+The actual Redux reconstruction predicate is compiled with and without the XL
+configuration. Its dry all-type policy is deliberately not widened by this fix.
+A surviving, head-on, nonbouncing physics powerup is a useful future native
+comparison: unlike a robot, it lies outside the original player/robot/debris
+predicate. Upstream's complete guard reconstructs that storage type if the
+final result is still HIT_WALL. A native fixture must establish survival and the
+final fate; a tangential slide may instead finish HIT_NONE. No general survivor
+parity, bad-start recovery, corner behavior or powerup admission is claimed.
+
+Fresh correction checks:
+- Focused CMake configure/build and the registered asset-free CTest pass
+- 360 pinned completion/eligibility cases and 960 checks of the actual Redux
+  predicate pass in Debug, optimized NDEBUG and UBSan builds
+- Seven compiled negative variants fail normally: missing/inverted death return,
+  missing caller return, arithmetic-only reconstruction, dead-water regression,
+  overbroad dead bad-start exclusion and restored dry-type widening
+- The public owner selection test passes, including explicit omission, duplicate,
+  skipped, failed and error results for the new mandatory test. Private FAST
+  membership remains exactly 113
+- Direct scoped clang-format, Ruff and cmake-format/cmake-lint checks pass. The
+  repository quality wrapper could not resolve its upstream Git baseline in
+  the bounded sparse staging environment
+
+The full native water/lava/projectile/classic owners and native 64-contact
+transcript have not been rerun for this correction. Full catalog execution,
+Windows, Android, ASan and original rendered Warp Shock qualification remain
+unverified. The new tests execute extracted source decisions and the production
+predicate, not a rebuilt native engine. Historical owner results above must not
+be reused as evidence that the corrected native engine has run.
