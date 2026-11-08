@@ -3,6 +3,7 @@
 import copy
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -15,6 +16,8 @@ from unittest.mock import patch
 import run_host_test_suites as adapter
 import test_fingerprint_match_strict as strict
 import test_secret_area_liquid_obsidian as missions
+
+REAL_CTEST = shutil.which("ctest")
 
 
 class HostAdapterTests(unittest.TestCase):
@@ -1159,6 +1162,8 @@ class RetailProfileTests(unittest.TestCase):
                             progress = root / "receipt.artifacts/xl-originals/xl-progress.json"
                             progress.parent.mkdir(parents=True)
                             progress.write_text('{"stage": "complete"}')
+                            native_log = progress.with_name("native-ctest.log")
+                            native_log.write_text("    Start 99: xl_pog_gpu\n")
 
                             class Process:
                                 pid = 4321
@@ -1167,8 +1172,19 @@ class RetailProfileTests(unittest.TestCase):
                                 def __init__(self, *args, **kwargs):
                                     if progress.exists():
                                         raise AssertionError("Prior invocation progress was not removed")
+                                    if native_log.exists():
+                                        raise AssertionError("Prior invocation CTest log was not removed")
                                     if stage is not None:
-                                        progress.write_text(json.dumps({"stage": stage, "private": "SECRET"}))
+                                        progress.write_text(
+                                            json.dumps(
+                                                {
+                                                    "stage": stage,
+                                                    "entered_after_milliseconds": 650000,
+                                                    "private": "SECRET",
+                                                }
+                                            )
+                                        )
+                                        native_log.write_text("    Start 1: xl_pilot_archive\nSECRET_OUTPUT\n")
 
                                 def wait(self, **kwargs):
                                     self.calls += 1
@@ -1191,11 +1207,66 @@ class RetailProfileTests(unittest.TestCase):
                             clean = retail.public_diagnostics({**receipt, "id": suite["id"]})
                             if stage == "native-tests":
                                 self.assertEqual(clean["xl_stage"], stage)
+                                self.assertEqual(clean["xl_stage_entered_after_milliseconds"], 650000)
+                                self.assertEqual(
+                                    clean["xl_native_progress"],
+                                    {"last_started_test": "xl_pilot_archive", "log_truncated": False},
+                                )
                             else:
                                 self.assertNotIn("xl_stage", receipt)
                                 self.assertNotIn("xl_stage", clean)
+                                self.assertNotIn("xl_native_progress", clean)
                             for private in ("SECRET", "private-text", "private-command", str(root)):
                                 self.assertNotIn(private, str(clean))
+
+    @unittest.skipUnless(sys.platform == "linux" and REAL_CTEST, "Real CTest timeout requires Linux and CTest")
+    def test_real_xl_timeout_retains_live_ctest_observations_without_junit(self):
+        import nightly_retail as retail
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            suite = adapter.load_suites()["host-profile:retail-xl-originals"]
+            suite["executables"] = ["ctest"]
+            contracts = root / "contracts"
+            contracts.mkdir()
+            (contracts / "CTestTestfile.cmake").write_text(
+                f'add_test(xl_pilot_archive "{Path(sys.executable).as_posix()}" "-c" "print(1)")\n'
+                f'add_test(xl_preview_lifecycle "{Path(sys.executable).as_posix()}" "-c" "import time; time.sleep(30)")\n'
+            )
+            script = root / suite["path"]
+            script.parent.mkdir(parents=True)
+            script.write_text(
+                "import argparse, json, pathlib, subprocess\n"
+                "parser = argparse.ArgumentParser()\n"
+                "parser.add_argument('--repo')\n"
+                "parser.add_argument('--work', type=pathlib.Path)\n"
+                "args = parser.parse_args()\n"
+                "args.work.mkdir(parents=True, exist_ok=True)\n"
+                "(args.work / 'xl-progress.json').write_text(json.dumps({'stage': 'native-tests', 'entered_after_milliseconds': 0}))\n"
+                "with (args.work / 'native-ctest.log').open('wb') as log:\n"
+                f"    subprocess.run({[REAL_CTEST, '--test-dir', str(contracts), '--parallel', '1', '--output-junit']!r}"
+                " + [str(args.work / 'original-ctest.xml')], stdout=log, stderr=subprocess.STDOUT, timeout=1200)\n"
+            )
+            with patch.object(adapter, "verify_retail_stage"):
+                code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 3)
+            row = json.loads((root / "receipt.json").read_text())
+            clean = retail.public_diagnostics({**row, "id": suite["id"]})
+            self.assertEqual(code, 1)
+            self.assertEqual(row["status"], "FAIL")
+            self.assertEqual(row["commands"][-1]["outcome"], "timeout")
+            self.assertFalse(row["coverage_complete"])
+            self.assertNotIn("xl_checks", row)
+            self.assertFalse((root / "receipt.artifacts/xl-originals/original-ctest.xml").exists())
+            self.assertEqual(
+                clean["xl_native_progress"],
+                {
+                    "last_started_test": "xl_preview_lifecycle",
+                    "last_finished_test": "xl_pilot_archive",
+                    "last_finished_status": "passed",
+                    "log_truncated": False,
+                },
+            )
+            self.assertNotIn(str(root), json.dumps(clean))
 
     def test_vertigo_profile_uses_reused_worker_and_exact_staged_missions(self):
         code, receipt, calls, root = self.run_profile("retail-vertigo-metadata")
