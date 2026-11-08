@@ -23,6 +23,44 @@ class HostAdapterTests(unittest.TestCase):
         self.enterContext(patch.object(adapter.sys, "platform", "linux"))
         self.enterContext(patch.object(adapter.signal, "SIGKILL", 9, create=True))
 
+    def test_corpus_preflight_uses_reviewed_revision_allowlist(self):
+        from nightly_regression_catalog import CORPUS_COMMIT
+        from xl_private_assets import ASSETS_COMMIT as XL_ASSETS_COMMIT
+
+        for commit in (CORPUS_COMMIT, XL_ASSETS_COMMIT, "a" * 40, "", None):
+            with self.subTest(commit=commit), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory).resolve()
+                suite = {
+                    "id": "corpus:fixture",
+                    "kind": "retail-corpus",
+                    "profile": "metadata",
+                    "baseline": "fixture.json",
+                    "coverage_scope": "synthetic",
+                }
+                with (
+                    patch.dict(adapter.os.environ, {}, clear=True),
+                    patch.object(adapter, "target_file", wraps=adapter.target_file) as resolve_target,
+                    patch.object(adapter.subprocess, "Popen") as launch,
+                ):
+                    if commit is not None:
+                        adapter.os.environ["RETAIL_CHECKOUT_COMMIT"] = commit
+                    code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
+                receipt = json.loads((root / "receipt.json").read_text())
+                self.assertEqual(code, 2)
+                self.assertEqual(receipt["status"], "BLOCKED")
+                self.assertFalse(receipt["attempted_tests"])
+                launch.assert_not_called()
+                if commit in (CORPUS_COMMIT, XL_ASSETS_COMMIT):
+                    resolve_target.assert_called_once_with(root, "game_data/mission_files/fixture.json")
+                    self.assertEqual(receipt["reason"], "Archive or CD-source fixture unavailable")
+                    self.assertEqual(receipt["blocker_kind"], "target-capability")
+                    self.assertFalse(receipt["retryable"])
+                else:
+                    resolve_target.assert_not_called()
+                    self.assertEqual(receipt["reason"], "Reviewed corpus revision is not staged")
+                    self.assertEqual(receipt["assets"], {})
+                    self.assertTrue(receipt["retryable"])
+
     def test_nested_corpus_metadata_stops_before_build_or_flattening(self):
         from nightly_regression_catalog import CORPUS_COMMIT
 
