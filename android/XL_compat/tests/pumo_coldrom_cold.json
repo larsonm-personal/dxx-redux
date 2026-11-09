@@ -1,0 +1,227 @@
+{
+    "initial_level": 14,
+    "checkpoint_expect": {
+        "current_level_num": 14,
+        "cheats_enabled": false,
+        "player_dead": false,
+        "player.invulnerable": false,
+        "position.segment": 698,
+        "player.primary_weapon_flags": 17,
+        "xl_pilot.remaining_objectives": 0,
+        "reactor_countdown.active": true
+    },
+    "simulation_fps": 60,
+    "qualification": "main_earned_postreactor_fresh_process_continuous_cold_escape",
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 14,
+                "cheats_enabled": false,
+                "player_dead": false,
+                "player.invulnerable": false,
+                "player.primary_weapon_flags": 17,
+                "xl_pilot.remaining_objectives": 0,
+                "reactor_countdown.active": true,
+                "xl_pilot.wall_triggers.5.operated": false
+            }
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "xl_pilot.doorways.36.state": 4,
+                "xl_pilot.doorways.37.state": 4,
+                "player_dead": false
+            },
+            "timeout_ms": 5000
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 14,
+                "xl_pilot.remaining_objectives": 0,
+                "reactor_countdown.active": true,
+                "xl_pilot.wall_triggers.5.operated": false
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 614,
+            "side": 4,
+            "distance": 8
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 14,
+                "position.segment": 614,
+                "player_dead": false,
+                "player.invulnerable": false
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -0.2
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "xl_pilot.operation_counts.4": {
+                    "gt": 0
+                },
+                "player_dead": false
+            },
+            "timeout_ms": 3000
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "xl_pilot.operation_counts.5": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.21": {
+                    "gt": 0
+                },
+                "reactor_countdown.total_seconds": 99,
+                "player_dead": false
+            },
+            "timeout_ms": 3000
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "xl_pilot.operation_counts.6": {
+                    "gt": 0
+                },
+                "player_dead": false
+            },
+            "timeout_ms": 3000
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "xl_pilot.operation_counts.10": {
+                    "gt": 0
+                },
+                "player_dead": false
+            },
+            "timeout_ms": 5000
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "xl_pilot.operation_counts.14": {
+                    "gt": 0
+                },
+                "player_dead": false
+            },
+            "timeout_ms": 5000
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "xl_pilot.operation_counts.18": {
+                    "gt": 0
+                },
+                "player_dead": false
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "xl_pilot.operation_counts.4": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.5": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.6": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.7": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.8": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.9": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.10": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.11": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.12": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.13": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.14": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.15": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.16": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.17": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.18": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.20": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.21": {
+                    "gt": 0
+                },
+                "xl_pilot.operation_counts.22": {
+                    "gt": 0
+                },
+                "current_level_num": 14,
+                "reactor_countdown.active": true,
+                "reactor_countdown.total_seconds": 99,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "current_level_num": 5,
+                "player_dead": false
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 5,
+                "cheats_enabled": false,
+                "player_dead": false,
+                "player.invulnerable": false,
+                "player.primary_weapon_flags": 17,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.energy": {
+                    "gt": 0
+                }
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        },
+        {
+            "action": "introspect"
+        }
+    ]
+}
