@@ -68,14 +68,15 @@ def check_workflow(contents):
 
 def verify_build(build):
     cache = (build / "CMakeCache.txt").read_text()
-    for key, value in (
-        ("DXX_XL_DEVELOPER_TESTS", "ON"),
-        ("OPENGL", "ON"),
-        ("BUILD_TESTING", "OFF"),
-        ("CMAKE_EXPORT_COMPILE_COMMANDS", "ON"),
+    for key, cache_type, value in (
+        ("DXX_XL_DEVELOPER_TESTS", "BOOL", "ON"),
+        ("OPENGL", "BOOL", "ON"),
+        ("BUILD_TESTING", "BOOL", "OFF"),
+        ("CMAKE_EXPORT_COMPILE_COMMANDS", "(?:BOOL|UNINITIALIZED)", "ON"),
     ):
         require(
-            re.search(rf"^{key}:BOOL={value}$", cache, re.MULTILINE) is not None,
+            re.search(rf"^{key}:{cache_type}={value}$", cache, re.MULTILINE)
+            is not None,
             f"{key} must be {value}",
         )
     commands = json.loads((build / "compile_commands.json").read_text())

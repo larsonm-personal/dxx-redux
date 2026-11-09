@@ -60,6 +60,12 @@ class DeveloperCompileCiTests(unittest.TestCase):
             commands = build / "compile_commands.json"
             commands.write_text(json.dumps([entry]))
             verify_build(build)
+            cache = cache.replace(
+                "CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=ON",
+                "CMAKE_EXPORT_COMPILE_COMMANDS:UNINITIALIZED=ON",
+            )
+            (build / "CMakeCache.txt").write_text(cache)
+            verify_build(build)
             for bad in (
                 command.replace("-DDXX_XL_DEVELOPER_PROBE ", ""),
                 command.replace(
