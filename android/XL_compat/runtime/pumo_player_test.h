@@ -92,10 +92,18 @@ static Json snapshot()
 		if (weapon >= 0 && weapon < N_weapon_types) state["weapon_definitions"][std::to_string(weapon)] = { { "damage_radius", int(Weapon_info[weapon].damage_radius) }, { "strength", int(Weapon_info[weapon].strength[Difficulty_level]) }, { "speed", int(Weapon_info[weapon].speed[Difficulty_level]) }, { "fire_wait", int(Weapon_info[weapon].fire_wait) }, { "fire_count", Weapon_info[weapon].fire_count }, { "ammo_usage", Weapon_info[weapon].ammo_usage }, { "energy_usage", int(Weapon_info[weapon].energy_usage) } };
 	return state;
 }
-static Json observation_state(const Json &state)
+using TriggerObservation = std::vector<std::array<std::int64_t, 11>>;
+static TriggerObservation trigger_observation()
 {
-	const auto &pilot = state.at("xl_pilot");
-	return { { "activated", pilot.value("trigger_activated", Json::object()) }, { "wall_triggers", pilot.value("wall_triggers", Json::object()) }, { "operation_sequence", operation_sequence } };
+	TriggerObservation result;
+	result.reserve(Num_triggers + 1);
+	result.push_back({ Current_level_num, operation_sequence });
+	for (int index = 0; index < Num_triggers; ++index) {
+		xl_trigger_state state{};
+		const bool valid = xl_wall_trigger_state(index, &state) != 0;
+		result.push_back({ xl_preview_trigger_activated(index), valid, valid ? state.operated : 0, valid ? state.object : -1, valid ? state.shot : 0, valid ? state.delay_ms : -1, valid ? state.attached : 0, Triggers[index].type, Triggers[index].flags, Triggers[index].value, operation_counts[index] });
+	}
+	return result;
 }
 static void operation_observed(int index, int shot, int pre_exit)
 {
@@ -261,7 +269,7 @@ static int run(int argc, char **argv)
 		operation_last = &last_activation;
 		operation_trace = &trace;
 		xl_wall_trigger_set_operation_observer(operation_observed);
-		auto observed_state = observation_state(last_activation);
+		auto observed_state = trigger_observation();
 		const auto tick = [&] {
 			const auto frame_started = std::chrono::steady_clock::now();
 			timer_update();
@@ -287,19 +295,19 @@ static int run(int argc, char **argv)
 				operation_counts.fill(0);
 				operation_count_level = Current_level_num;
 			}
-			const auto post_frame = snapshot();
-			const auto state_now = observation_state(post_frame);
+			const auto state_now = trigger_observation();
 			if (before_level != Current_level_num) {
 				transitions.push_back({ { "from", before_level }, { "to", Current_level_num }, { "last_activation", last_activation } });
-				trace << Json{ { "event", "normal_level_transition" }, { "transition", transitions.back() }, { "state", snapshot() } }.dump() << '\n';
-				last_activation = snapshot();
+				const auto post_frame = snapshot();
+				trace << Json{ { "event", "normal_level_transition" }, { "transition", transitions.back() }, { "state", post_frame } }.dump() << '\n';
+				last_activation = post_frame;
 				last_activation["observation_boundary"] = "post_frame";
 			} else if (state_now != observed_state) {
-				last_activation = post_frame;
+				last_activation = snapshot();
 				last_activation["observation_boundary"] = "post_frame";
 				trace << Json{ { "event", "trigger_change" }, { "state", last_activation } }.dump() << '\n';
 			}
-			observed_state = observation_state(last_activation);
+			observed_state = state_now;
 		};
 		for (const auto &step : plan.at("steps")) {
 			const std::string action = step.at("action");
@@ -374,7 +382,7 @@ static int run(int argc, char **argv)
 					operation_count_level = Current_level_num;
 					last_activation = snapshot();
 					last_activation["observation_boundary"] = "post_load";
-					observed_state = observation_state(last_activation);
+					observed_state = trigger_observation();
 				}
 			} else if (action == "frame_rate") {
 				fps = step.at("fps");
