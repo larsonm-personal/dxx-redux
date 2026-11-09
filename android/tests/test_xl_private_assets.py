@@ -613,7 +613,7 @@ class XlPrivateTests(unittest.TestCase):
                 pilot.validate_inventory(changed)
 
     def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
-        self.assertEqual(len(public.PUBLIC_TESTS), 53)
+        self.assertEqual(len(public.PUBLIC_TESTS), 54)
         self.assertEqual(
             public.GPU_TESTS, {"xl_fog_gpu", "xl_fog_gpu_direct", "xl_fog_gpu_copy16_fallback", "xl_pog_gpu"}
         )
@@ -624,6 +624,7 @@ class XlPrivateTests(unittest.TestCase):
             | {
                 "xl_contact_control_flow_reference",
                 "xl_pumo_receipt_contract",
+                "xl_pumo_tulev1_spawn_contract",
                 "xl_segment_damage_reference",
                 "xl_slow_motion_reference",
             },
@@ -661,7 +662,11 @@ class XlPrivateTests(unittest.TestCase):
                 pin = next(test for test in listing["tests"] if test["name"] == "xl_oof_source_pins")
                 pin["command"].append("-DREFERENCE=" + str(reference))
                 public.validate_registration(listing, gpu=gpu, audio=audio)
-                for name in oof_public | {"xl_contact_control_flow_reference", "xl_pumo_receipt_contract"}:
+                for name in oof_public | {
+                    "xl_contact_control_flow_reference",
+                    "xl_pumo_receipt_contract",
+                    "xl_pumo_tulev1_spawn_contract",
+                }:
                     for mode in ("omitted", "duplicate", "same-length-duplicate"):
                         changed = copy.deepcopy(listing)
                         selected = next(test for test in changed["tests"] if test["name"] == name)
@@ -712,7 +717,11 @@ class XlPrivateTests(unittest.TestCase):
                 self.assertEqual(public.require_result(report, 0, gpu=gpu, audio=audio), len(required))
                 with self.assertRaises(ValueError):
                     public.require_result(report, 8, gpu=gpu, audio=audio)
-                for name in oof_public | {"xl_contact_control_flow_reference", "xl_pumo_receipt_contract"}:
+                for name in oof_public | {
+                    "xl_contact_control_flow_reference",
+                    "xl_pumo_receipt_contract",
+                    "xl_pumo_tulev1_spawn_contract",
+                }:
                     for mode in ("missing", "duplicate", "same-length-duplicate", "skipped", "failure", "error"):
                         changed = copy.deepcopy(suite)
                         selected = next(case for case in changed if case.get("name") == name)
