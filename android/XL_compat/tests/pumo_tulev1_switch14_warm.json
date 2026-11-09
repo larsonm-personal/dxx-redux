@@ -1,0 +1,271 @@
+{
+    "initial_level": 7,
+    "simulation_fps": 60,
+    "realtime": false,
+    "qualification": "ASSISTED_LOCAL_REGISTERED_SWITCH14",
+    "observe_weapon_wall_contacts": true,
+    "track_objects": [210, 282, 283, 314],
+    "checkpoint_expect": {},
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "position.segment": 458,
+                "player.secondary_weapon": 0,
+                "player.cloaked": true,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.14.operated": false,
+                "xl_pilot.doorways.183.type": 5,
+                "xl_pilot.doorways.184.type": 5,
+                "xl_pilot.doorways.185.type": 5,
+                "xl_pilot.doorways.186.type": 5
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 0,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 2,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 3,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 4,
+            "axis_value": 0.0
+        },
+        {
+            "action": "pose_view",
+            "segment": 1547,
+            "position_fixed": [14876672, -4161536, -6094848],
+            "pitch": 0,
+            "bank": 0,
+            "heading": 16882
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 1547,
+                "position.orient_forward_fixed": [65456, 0, -3132],
+                "player.secondary_weapon": 0,
+                "player_dead": false,
+                "combat_observation.guided_control": null,
+                "position.x": {
+                    "gte": 226.75,
+                    "lte": 227.25
+                },
+                "position.y": {
+                    "gte": -64.1,
+                    "lte": -62.9
+                },
+                "position.z": {
+                    "gte": -93.25,
+                    "lte": -92.75
+                },
+                "position.orient_right_fixed": [-3132, 0, -65456],
+                "position.orient_up_fixed": [0, 65536, 0]
+            }
+        },
+        {
+            "action": "select_secondary",
+            "slot": 1
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 1547,
+                "player.secondary_weapon": 6,
+                "secondary_weapon_definition.weapon_id": 37,
+                "secondary_fire.next_delta_raw": 65536,
+                "secondary_fire.count": 0,
+                "secondary_fire.held": 0,
+                "combat_observation.guided_control": null,
+                "position.x": {
+                    "gte": 226.75,
+                    "lte": 227.25
+                },
+                "position.y": {
+                    "gte": -64.1,
+                    "lte": -62.9
+                },
+                "position.z": {
+                    "gte": -93.25,
+                    "lte": -92.75
+                },
+                "position.orient_right_fixed": [-3132, 0, -65456],
+                "position.orient_up_fixed": [0, 65536, 0],
+                "position.orient_forward_fixed": [65456, 0, -3132]
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 1000
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 1547,
+                "player.secondary_weapon": 6,
+                "secondary_weapon_definition.weapon_id": 37,
+                "secondary_fire.next_delta_raw": 0,
+                "secondary_fire.count": 0,
+                "secondary_fire.held": 0,
+                "combat_observation.guided_control": null,
+                "position.x": {
+                    "gte": 226.75,
+                    "lte": 227.25
+                },
+                "position.y": {
+                    "gte": -64.1,
+                    "lte": -62.9
+                },
+                "position.z": {
+                    "gte": -93.25,
+                    "lte": -92.75
+                },
+                "player_dead": false,
+                "player.cloaked": true,
+                "position.orient_right_fixed": [-3132, 0, -65456],
+                "position.orient_up_fixed": [0, 65536, 0],
+                "position.orient_forward_fixed": [65456, 0, -3132],
+                "level_scene.powerups": {
+                    "contains_object": {
+                        "object": 116,
+                        "id": 23,
+                        "segment": 1547
+                    }
+                },
+                "combat_observation.tracked_objects": {
+                    "not_contains_object": {
+                        "actor_state": {
+                            "segment": 1547
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "send_button",
+            "button": 101,
+            "held": 1
+        },
+        {
+            "action": "wait_ms",
+            "ms": 1
+        },
+        {
+            "action": "send_button",
+            "button": 101,
+            "held": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.guided_control.weapon_id": 37,
+                "combat_observation.guided_control.lifeleft_raw": {
+                    "gte": 1
+                },
+                "combat_observation.owned_weapons": {
+                    "contains_object": {
+                        "weapon_id": 37,
+                        "parent_type": 4,
+                        "parent_object": 0
+                    }
+                },
+                "position.segment": 1547,
+                "position.x": {
+                    "gte": 226.75,
+                    "lte": 227.25
+                },
+                "position.y": {
+                    "gte": -64.1,
+                    "lte": -62.9
+                },
+                "position.z": {
+                    "gte": -93.25,
+                    "lte": -92.75
+                },
+                "position.orient_right_fixed": [-3132, 0, -65456],
+                "position.orient_up_fixed": [0, 65536, 0],
+                "position.orient_forward_fixed": [65456, 0, -3132]
+            }
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_ms",
+            "ms": 2100
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "position.segment": 1547,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "xl_pilot.wall_triggers.14.operated": true,
+                "xl_pilot.doorways.183.type": 4,
+                "xl_pilot.doorways.184.type": 4,
+                "xl_pilot.doorways.185.type": 4,
+                "xl_pilot.doorways.186.type": 4,
+                "player.cloaked": true,
+                "player.quad_lasers": true,
+                "position.x": {
+                    "gte": 226.75,
+                    "lte": 227.25
+                },
+                "position.y": {
+                    "gte": -64.1,
+                    "lte": -62.9
+                },
+                "position.z": {
+                    "gte": -93.25,
+                    "lte": -92.75
+                },
+                "combat_observation.guided_control": null,
+                "position.orient_right_fixed": [-3132, 0, -65456],
+                "position.orient_up_fixed": [0, 65536, 0],
+                "position.orient_forward_fixed": [65456, 0, -3132],
+                "level_scene.powerups": {
+                    "contains_object": {
+                        "object": 116,
+                        "id": 23,
+                        "segment": 1547
+                    }
+                }
+            }
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        },
+        {
+            "action": "introspect"
+        }
+    ]
+}

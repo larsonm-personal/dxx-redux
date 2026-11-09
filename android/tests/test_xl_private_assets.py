@@ -613,7 +613,7 @@ class XlPrivateTests(unittest.TestCase):
                 pilot.validate_inventory(changed)
 
     def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
-        self.assertEqual(len(public.PUBLIC_TESTS), 61)
+        self.assertEqual(len(public.PUBLIC_TESTS), 62)
         self.assertEqual(
             public.GPU_TESTS, {"xl_fog_gpu", "xl_fog_gpu_direct", "xl_fog_gpu_copy16_fallback", "xl_pog_gpu"}
         )
@@ -632,6 +632,7 @@ class XlPrivateTests(unittest.TestCase):
                 "xl_pumo_tulev1_blast136_contract",
                 "xl_pumo_tulev1_courtyard_guards_contract",
                 "xl_pumo_tulev1_supplies_contract",
+                "xl_pumo_tulev1_switch14_contract",
                 "xl_segment_damage_reference",
                 "xl_slow_motion_reference",
             },
@@ -678,6 +679,7 @@ class XlPrivateTests(unittest.TestCase):
                     "xl_pumo_tulev1_quad_guard255_contract",
                     "xl_pumo_tulev1_guided_switch12_contract",
                     "xl_pumo_tulev1_supplies_contract",
+                    "xl_pumo_tulev1_switch14_contract",
                 }:
                     for mode in ("omitted", "duplicate", "same-length-duplicate"):
                         changed = copy.deepcopy(listing)
@@ -738,6 +740,7 @@ class XlPrivateTests(unittest.TestCase):
                     "xl_pumo_tulev1_quad_guard255_contract",
                     "xl_pumo_tulev1_guided_switch12_contract",
                     "xl_pumo_tulev1_supplies_contract",
+                    "xl_pumo_tulev1_switch14_contract",
                 }:
                     for mode in ("missing", "duplicate", "same-length-duplicate", "skipped", "failure", "error"):
                         changed = copy.deepcopy(suite)
