@@ -32,6 +32,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+#include <string.h>
+#endif
 
 #include "rle.h"
 #include "inferno.h"
@@ -107,6 +110,11 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "collide.h"
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+static void (*xl_robot_weapon_damage_observer)(const xl_robot_weapon_damage_sample *);
+void xl_robot_weapon_damage_set_observer(void (*observer)(const xl_robot_weapon_damage_sample *))
+{
+	xl_robot_weapon_damage_observer = observer;
+}
 static void (*xl_weapon_wall_contact_observer)(const xl_weapon_wall_contact *);
 void xl_weapon_wall_set_contact_observer(void (*observer)(const xl_weapon_wall_contact *))
 {
@@ -2099,6 +2107,32 @@ input_demo_debug_log_weapon_robot_reason_probe("accept", (void *)weapon, (void *
 			fix	damage = weapon->shields;
 			fix robot_old_shields = robot->shields;
 			int robot_died;
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+			xl_robot_weapon_damage_sample damage_sample;
+			const int observe_damage = xl_robot_weapon_damage_observer != NULL;
+			if (observe_damage) {
+				memset(&damage_sample, 0, sizeof(damage_sample));
+				const int parent = weapon->ctype.laser_info.parent_num;
+				damage_sample.level = Current_level_num;
+				damage_sample.game_time_raw = GameTime64;
+				damage_sample.weapon = weapon - Objects;
+				damage_sample.weapon_signature = weapon->signature;
+				damage_sample.weapon_id = weapon->id;
+				damage_sample.parent_type = weapon->ctype.laser_info.parent_type;
+				damage_sample.parent_object = parent;
+				damage_sample.parent_signature = weapon->ctype.laser_info.parent_signature;
+				damage_sample.parent_actual_type = -1;
+				damage_sample.parent_actual_signature = -1;
+				if (parent >= 0 && parent <= Highest_object_index) {
+					damage_sample.parent_actual_type = Objects[parent].type;
+					damage_sample.parent_actual_signature = Objects[parent].signature;
+				}
+				damage_sample.target = robot - Objects;
+				damage_sample.target_signature = robot->signature;
+				damage_sample.target_id = robot->id;
+				damage_sample.before_raw = robot_old_shields;
+			}
+#endif
 
 			if (damage_flag)
 				damage = fixmul(damage, weapon->ctype.laser_info.multiplier);
@@ -2111,10 +2145,36 @@ input_demo_debug_log_weapon_robot_reason_probe("accept", (void *)weapon, (void *
 				if (Robot_info[robot->id].boss_flag)
 					damage = damage * (2*NDL-Difficulty_level)/(2*NDL);
 
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+			if (observe_damage) damage_sample.requested_raw = damage;
+#endif
+
 			if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum)
 				input_demo_debug_log_weapon_robot_collision_pose("weapon_robot pre_damage", (void *)weapon, (void *)robot, (void *)collision_point, (int)damage, (int)robot_old_shields);
 
 			robot_died = apply_damage_to_robot(robot, damage, weapon->ctype.laser_info.parent_num);
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+			if (observe_damage) {
+				const int parent = damage_sample.parent_object;
+				const int weapon_slot = damage_sample.weapon;
+				const int target = damage_sample.target;
+				// Slots remain allocated, but the original robot may have been retired/reused.
+				damage_sample.parent_valid = parent >= 0 && parent <= Highest_object_index &&
+					Objects[parent].type == damage_sample.parent_actual_type &&
+					Objects[parent].signature == damage_sample.parent_actual_signature;
+				damage_sample.weapon_valid = weapon_slot >= 0 && weapon_slot <= Highest_object_index &&
+					Objects[weapon_slot].type == OBJ_WEAPON && Objects[weapon_slot].id == damage_sample.weapon_id &&
+					Objects[weapon_slot].signature == damage_sample.weapon_signature;
+				damage_sample.target_valid = target >= 0 && target <= Highest_object_index &&
+					Objects[target].type == OBJ_ROBOT && Objects[target].id == damage_sample.target_id &&
+					Objects[target].signature == damage_sample.target_signature;
+				if (damage_sample.target_valid) {
+					damage_sample.after_raw = Objects[target].shields;
+					damage_sample.accepted_delta_raw = (long long)damage_sample.before_raw - (long long)damage_sample.after_raw;
+				}
+				xl_robot_weapon_damage_observer(&damage_sample);
+			}
+#endif
 			input_demo_log_replay_weapon_robot_resolution("collide_robot_weapon_resolve",
 				weapon, robot, collision_point, damage, robot_old_shields,
 				robot_died);
