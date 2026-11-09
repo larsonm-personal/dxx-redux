@@ -401,6 +401,68 @@ void nonpermanent_and_classic()
 	require(boss_state(owner_a).elapsed == interval(), "classic did not mutate boss timer");
 }
 
+void natural_spew_attachment_controls()
+{
+	for (int profile = 0; profile < 12; ++profile) {
+		Difficulty_level = 2;
+		reset();
+		N_robot_types = 41;
+		for (const int type : { 38, 40 }) Robot_info[type] = Robot_info[child_type];
+		auto level = authored_level(true);
+		level.object_trigger_records.clear();
+		const auto add = [&](int owner, int type, int flags = 0) {
+			xl_compat::ObjectTrigger record;
+			record.object = owner;
+			record.action.type = type;
+			record.action.flags = flags;
+			record.action.value = 1;
+			record.action.time = -1;
+			if (type == 14 || type == 26) record.action.targets.push_back({ 1, 0 });
+			level.object_trigger_records.push_back(record);
+		};
+		if (profile != 7) {
+			const int type = profile == 1 ? 14 : profile == 2 ? 26
+			                                                  : 30;
+			add(profile == 6 ? owner_b : owner_a, type, profile == 4 || profile == 5 ? TF_DISABLED : 0);
+			if (profile == 3) add(owner_a, 26);
+		}
+		xl_object_trigger_load(level);
+		if (profile == 5) {
+			xl_object_trigger_event(owner_a, 0); // Disabled action is consumed without unrelated audio
+			require(trigger_state(-1).owner == -1, "consumed attachment fixture");
+		}
+		if (profile == 8) {
+			++Objects[owner_a].signature;
+			xl_boss_spawn_load(); // Rebind the boss, not the stale trigger
+		}
+		if (profile == 10) extensions = false;
+		if (profile == 11) Game_mode = GM_MULTI;
+		GameTime64 = interval();
+		d_srand(703);
+		const unsigned before_calls = d_rand_get_call_count();
+		unsigned before_rng = 0, after_rng = 0;
+		d_rand_get_state(&before_rng);
+		const bool explicit_spawn = profile == 9;
+		const int created = xl_boss_spawn_robot(owner_a, explicit_spawn ? child_type : -1, nullptr, explicit_spawn);
+		d_rand_get_state(&after_rng);
+		const bool rejected = profile <= 5 || profile == 10 || profile == 11;
+		require((created < 0) == rejected,
+		        "natural boss spew must reject every attached trigger, not just spawn actions");
+		if (rejected) {
+			require(births == 0 && !ai_calls && !morph_calls && !effect_calls && !sound_calls &&
+			            before_rng == after_rng && before_calls == d_rand_get_call_count(),
+			        "attachment suppression consumed RNG or emitted spawn effects");
+			if (profile != 10) require(boss_state(owner_a).elapsed == GameTime64, "attachment rejection changed cooldown");
+		} else {
+			require(births == 1 && ai_calls == 1 && morph_calls == 1 && effect_calls == 1 && sound_calls == 1,
+			        "no-attachment/stale/other-owner/explicit spawn lost production effects");
+			require(requested_type == (explicit_spawn ? child_type : Objects[created].id) &&
+			            (explicit_spawn || requested_type == 38 || requested_type == 40),
+			        "natural spew fixture lacks usable profile-21 child definitions");
+		}
+	}
+}
+
 void unattributed_robot_kill_counters()
 {
 	for (const bool boss : { false, true })
@@ -645,6 +707,7 @@ int main(int argc, char **argv)
 			common_damage_gates(!std::strcmp(argv[1], "age"), !std::strcmp(argv[1], "strength"));
 			return 0;
 		}
+		natural_spew_attachment_controls();
 		threshold_and_attribution();
 		restore_retry_and_owner_isolation();
 		nonpermanent_and_classic();
