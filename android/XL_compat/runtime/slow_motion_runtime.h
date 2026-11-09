@@ -9,6 +9,7 @@ struct ai_local;
 extern "C" {
 #endif
 void xl_slow_motion_reset(void);
+const char *xl_omega_input_demo_error(void);
 void xl_slow_motion_render_advance(void);
 uint32_t xl_slow_motion_render_clock(void);
 int xl_slow_motion_omega_blocked(void);

@@ -23,6 +23,7 @@ import public_contracts as public
 import pilot_archive as pilot
 import xl_private_assets as assets
 import xl_render_clock as render_clock
+import xl_omega_damage as omega_damage
 
 
 class RenderedReadinessTests(unittest.TestCase):
@@ -79,6 +80,74 @@ class RenderedReadinessTests(unittest.TestCase):
 
 
 class XlPrivateTests(unittest.TestCase):
+    def test_omega_damage_requires_actual_complete_controls(self):
+        for xl in (False, True):
+            policy = {
+                "omega_free_recording": True,
+                "xl": xl,
+                "rejected_paths": ["headless", "rendered", "paused"] if xl else [],
+            }
+            policy["acquired_recording_rejected" if xl else "classic_recording_allowed"] = True
+            proof = {
+                "schema": "xl-omega-damage-v1",
+                "assisted": True,
+                "complete": True,
+                "renderer": "test fixture",
+                "mission": "fixture",
+                "input_policy": policy,
+                "cases": [],
+            }
+            for multi in (False, True):
+                for hz in (20, 30, 60, 120):
+                    active = xl and not multi
+                    shots = hz if active else (15 if hz == 30 else 20)
+                    charge = 65536 if active else shots * 3276
+                    damage = charge * 32 * 7
+                    proof["cases"].append(
+                        dict(
+                            hz=hz,
+                            multiplayer=multi,
+                            xl=active,
+                            shots=shots,
+                            charge_used=charge,
+                            target_damage=damage,
+                            charge_remaining=65536 - charge,
+                            target_remaining=10000 * 65536 - damage,
+                            strength=7 * 65536,
+                        )
+                    )
+            self.assertTrue(omega_damage.passed(0, proof, "fixture", 1, xl))
+            for code in (1, None, False):
+                self.assertFalse(omega_damage.passed(code, proof, "fixture", 1, xl))
+            for index in range(8):
+                for field in (
+                    "hz",
+                    "shots",
+                    "charge_used",
+                    "target_damage",
+                    "charge_remaining",
+                    "target_remaining",
+                    "strength",
+                ):
+                    bad = copy.deepcopy(proof)
+                    bad["cases"][index][field] += 65536 if field == "strength" else 1
+                    self.assertFalse(omega_damage.passed(0, bad, "fixture", 1, xl), (index, field))
+            for mutation in ("missing", "duplicate", "policy", "extra", "assisted", "complete", "boolean_policy"):
+                bad = copy.deepcopy(proof)
+                if mutation == "missing":
+                    bad["cases"].pop()
+                elif mutation == "duplicate":
+                    bad["cases"][1] = bad["cases"][0]
+                elif mutation == "policy":
+                    bad["input_policy"]["rejected_paths"] = ["headless"]
+                elif mutation == "extra":
+                    bad["unexpected"] = True
+                elif mutation == "boolean_policy":
+                    bad["input_policy"]["omega_free_recording"] = 1
+                else:
+                    bad[mutation] = False
+                self.assertFalse(omega_damage.passed(0, bad, "fixture", 1, xl), mutation)
+
     def test_render_clock_proof_is_strict_and_assisted(self):
         for xl in (False, True):
             proof = dict(

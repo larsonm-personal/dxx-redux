@@ -1,3 +1,6 @@
+#ifdef DXX_XL_RUNTIME
+#include "slow_motion_runtime.h"
+#endif
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -421,6 +424,13 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 			snprintf(error, error_size, "%s", "multiplayer input demo recording is not supported");
 		return 0;
 	}
+#ifdef DXX_XL_RUNTIME
+	unsupported_view = xl_omega_input_demo_error();
+	if (unsupported_view) {
+		if (error && error_size) snprintf(error, error_size, "%s", unsupported_view);
+		return 0;
+	}
+#endif
 	unsupported_view = render_game_view_automap_unsupported_reason();
 	if (unsupported_view) {
 		if (error && error_size) snprintf(error, error_size, "%s", unsupported_view);
