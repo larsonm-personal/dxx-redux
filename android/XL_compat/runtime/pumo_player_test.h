@@ -51,7 +51,7 @@ static Json weapon_lifecycle_identity_snapshot()
 {
 	Json slots = Json::array();
 	for (int index = 0; index <= Highest_object_index; ++index)
-		slots.push_back({ { "object", index }, { "signature", Objects[index].signature }, { "type", Objects[index].type }, { "id", Objects[index].id }, { "flags", Objects[index].flags }, { "should_be_dead", bool(Objects[index].flags & OF_SHOULD_BE_DEAD) } });
+		slots.push_back({ { "object", index }, { "signature", int(Objects[index].signature) }, { "type", int(Objects[index].type) }, { "id", int(Objects[index].id) }, { "flags", int(Objects[index].flags) }, { "should_be_dead", bool(Objects[index].flags & OF_SHOULD_BE_DEAD) } });
 	return { { "level", Current_level_num }, { "load_generation", combat_load_generation }, { "game_time_raw", GameTime64 }, { "highest_object_index", Highest_object_index }, { "slots", std::move(slots) } };
 }
 static Json weapon_lifecycle_result()
