@@ -6,6 +6,8 @@ The native Pumo player plan may specify `track_objects` as up to 16 distinct, li
 
 `combat_observation.player_object` and `player_signature` identify the current player object (signature null if unavailable). `combat_observation.owned_weapons` lists live player-owned weapons by object/signature, weapon ID, parent identity, creation time and lifetime. It reports the total matching count, a 64-object output limit and whether output was truncated. A before/after presence proves a live emitted weapon, but absence does not prove no shot was fired. `primary_fire` exposes raw Fusion charge, a pending flag and a timer delta that is null when no Fusion auto-fire timer is queued. `simulation_rng` exposes read-only state availability, the state when available and the call count.
 
+The metadata supplement adds `player.laser_level` and `player.quad_lasers` (from player flags), `position.radius_raw` and fixed right/up/forward orientation vectors from the player collision object. Each bounded `owned_weapons` record also has `radius_raw` and `velocity_fixed` (null for non-physics movement). Existing `weapon_definitions` entries include `blob_size`, `render_type` and `model_num` (null unless rendered as a polygon model). These are value-copied observations, not a ray query or predicted hit. [The paired metadata evidence](pumo-projectile-metadata-observation-20261107.md) verifies the supplement without qualifying a wall hit or switch.
+
 This is an observation-only interface, not a gameplay change. Its bounded
 original Coldrom Fusion qualification and remaining limits are recorded in
 `original-coldrom-fusion-observation-20261107.md`.
