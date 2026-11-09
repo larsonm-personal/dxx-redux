@@ -1,0 +1,2324 @@
+{
+    "initial_level": 7,
+    "simulation_fps": 60,
+    "realtime": false,
+    "qualification": "ASSISTED_LOCAL_ORDINARY_REGISTERED_SUPPLIES",
+    "checkpoint_expect": {},
+    "observe_weapon_wall_contacts": true,
+    "observe_player_fvi": true,
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false,
+                "position.segment": 450,
+                "xl_pilot.wall_triggers.6.operated": false
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 0,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 2,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 3,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 4,
+            "axis_value": 0.0
+        },
+        {
+            "action": "pose_view",
+            "segment": 450,
+            "position_fixed": [-29216306, 12619118, -10993001],
+            "pitch": 285,
+            "bank": 0,
+            "heading": 4553
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "held": 1
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "held": 0
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "xl_pilot.wall_triggers.6.shot": 1
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "player.cloaked": false,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "xl_pilot.wall_triggers.6.shot": 1
+            }
+        }
+    ]
+}

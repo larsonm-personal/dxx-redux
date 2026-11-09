@@ -1,0 +1,2591 @@
+{
+    "initial_level": 7,
+    "simulation_fps": 60,
+    "realtime": false,
+    "qualification": "ASSISTED_LOCAL_ORDINARY_REGISTERED_SUPPLIES",
+    "checkpoint_expect": {},
+    "observe_player_fvi": true,
+    "track_objects": [214, 162],
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                "position.segment": 450,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 0,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 2,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 3,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 4,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "held": 0
+        },
+        {
+            "action": "send_button",
+            "button": 101,
+            "held": 0
+        },
+        {
+            "action": "pose_view",
+            "segment": 450,
+            "position_fixed": [0, 0, 0],
+            "pitch": -1317,
+            "bank": 0,
+            "heading": 11074
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -1.0
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 214,
+                        "expected_signature": 215,
+                        "expected_type": 2,
+                        "expected_id": 20,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 215,
+                            "type": 2,
+                            "id": 20
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 162,
+                        "expected_signature": 163,
+                        "expected_type": 2,
+                        "expected_id": 8,
+                        "exists": true,
+                        "damage_since_binding_raw": 0,
+                        "current_slot": {
+                            "signature": 163,
+                            "type": 2,
+                            "id": 8
+                        },
+                        "actor_state": {
+                            "shields_raw": {
+                                "gt": 0
+                            },
+                            "should_be_dead": false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0.0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.invulnerable": false,
+                "player.quad_lasers": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 4,
+                "xl_pilot.remaining_objectives": 1,
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                "position.segment": 457,
+                "player.cloaked": true
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        },
+        {
+            "action": "introspect"
+        }
+    ]
+}
