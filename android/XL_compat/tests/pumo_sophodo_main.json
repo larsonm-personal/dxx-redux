@@ -904,9 +904,7 @@
         {
             "action": "wait_for",
             "expect": {
-                "xl_pilot.doorways.43.state": {
-                    "gt": 0
-                }
+                "xl_pilot.doorways.43.state": 4
             },
             "timeout_ms": 3000
         },
