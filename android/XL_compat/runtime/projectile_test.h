@@ -136,6 +136,92 @@ static void projectile_sound_dependency_controls()
 	std::cout << "Original silent sound mappings and missing-sample rejection passed\n";
 }
 
+static void projectile_hostile_robot_contact(bool xl)
+{
+	int room = -1, guidebot = -1;
+	vms_vector center{};
+	for (int i = 0; i < Num_segments; ++i) {
+		compute_segment_center(&center, &Segments[i]);
+		if (Segments[i].objects < 0 && !get_seg_masks(&center, i, i2f(10), __FILE__, __LINE__).facemask) {
+			room = i;
+			break;
+		}
+	}
+	for (int id = 0; id < N_robot_types; ++id)
+		if (Robot_info[id].companion) {
+			guidebot = id;
+			break;
+		}
+	require(room >= 0 && guidebot >= 0, "hostile contact controls require an empty room and guidebot");
+	const int victim = projectile_robot(), attacker = projectile_robot(), nearby = projectile_robot();
+	for (const int actor : { victim, attacker, nearby }) {
+		obj_relink(actor, room);
+		Objects[actor].pos = center;
+	}
+	Objects[attacker].pos.z += i2f(10);
+	Objects[nearby].pos.z += F1_0;
+	GameTime64 += F1_0;
+	const int saved_mode = Game_mode, saved_cheat = cheats.robotskillrobots;
+	for (const int profile : { 0, 1, 2, 3, 4 })
+		for (const bool persistent : { false, true })
+			for (const int id : { FUSION_ID, CONCUSSION_ID }) {
+				Game_mode = profile == 4 ? GM_MULTI : 0;
+				cheats.robotskillrobots = profile == 3;
+				Objects[attacker].id = profile == 1 ? guidebot : 1;
+				Objects[victim].shields = Objects[nearby].shields = i2f(1000);
+				Objects[victim].mtype.phys_info.velocity = Objects[nearby].mtype.phys_info.velocity = {};
+				const int parent = profile == 2 ? int(ConsoleObject - Objects) : attacker;
+				const int shot = projectile_test_shot(parent, id);
+				Objects[shot].pos = Objects[victim].pos;
+				obj_relink(shot, room);
+				Objects[shot].mtype.phys_info.flags = persistent ? PF_PERSISTENT : 0;
+				const auto before = Objects[shot];
+				const auto victim_physics = Objects[victim].mtype.phys_info, nearby_physics = Objects[nearby].mtype.phys_info;
+				const int before_count = num_objects;
+				std::array<int, MAX_OBJECTS> signatures{};
+				const int prior_highest = Highest_object_index;
+				for (int i = 0; i <= prior_highest; ++i) signatures[i] = Objects[i].type == OBJ_NONE ? -1 : Objects[i].signature;
+				d_srand(1234);
+				unsigned prior_rng = 0;
+				d_rand_get_state(&prior_rng);
+				const auto calls = d_rand_get_call_count();
+				collide_robot_and_weapon(&Objects[victim], &Objects[shot], &Objects[victim].pos);
+				const bool rejected = xl && profile != 2 && profile != 3 && profile != 4;
+				if (rejected) {
+					unsigned after_rng = 0;
+					d_rand_get_state(&after_rng);
+					require(Objects[victim].shields == i2f(1000) && Objects[nearby].shields == i2f(1000) &&
+					            !std::memcmp(&Objects[nearby].mtype.phys_info, &nearby_physics, sizeof(physics_info)) &&
+					            !std::memcmp(&Objects[victim].mtype.phys_info, &victim_physics, sizeof(physics_info)),
+					        "rejected enemy contact applied direct damage or nearby splash force");
+					require(!std::memcmp(&Objects[shot], &before, sizeof(object)) &&
+					            !xl_projectile_has_hit(shot, victim) && Objects[shot].ctype.laser_info.last_hitobj == before.ctype.laser_info.last_hitobj,
+					        "rejected enemy contact recorded history or consumed its projectile");
+					require(num_objects == before_count && after_rng == prior_rng && d_rand_get_call_count() == calls,
+					        "rejected enemy contact created effects or consumed simulation randomness");
+					collide_robot_and_weapon(&Objects[victim], &Objects[shot], &Objects[victim].pos);
+					require(num_objects == before_count && Objects[shot].flags == before.flags && !xl_projectile_has_hit(shot, victim),
+					        "repeat rejected enemy contact changed projectile state");
+				} else {
+					if (profile == 2 || profile == 3) require(Objects[victim].shields < i2f(1000), "allowed player/cheat control lost shield damage");
+					require(persistent ? (xl ? xl_projectile_has_hit(shot, victim) : Objects[shot].ctype.laser_info.hitobj_list[victim] != 0)
+					                   : (Objects[shot].flags & OF_SHOULD_BE_DEAD) != 0,
+					        "allowed player/classic/multiplayer/cheat contact lost history or disposition");
+					if (id == CONCUSSION_ID)
+						require(Objects[nearby].mtype.phys_info.velocity.z != 0, "allowed splash control did not reach nearby actor");
+				}
+				for (int i = Highest_object_index; i >= 0; --i)
+					if (Objects[i].type != OBJ_NONE && (i > prior_highest || signatures[i] != Objects[i].signature)) obj_delete(i);
+				obj_delete(shot);
+			}
+	Game_mode = saved_mode;
+	cheats.robotskillrobots = saved_cheat;
+	obj_delete(nearby);
+	obj_delete(attacker);
+	obj_delete(victim);
+	std::cout << "Hostile ordinary contact early return, repeat, splash and disposition controls passed; XL=" << xl << "\n";
+}
+
 static void projectile_ordinary_gauss_spin(bool xl)
 {
 	const int victim = projectile_robot();
@@ -602,6 +688,7 @@ static int projectile_test(int argc, char **argv)
 		StartNewGame(1);
 		Game_suspended = SUSP_ROBOTS;
 		projectile_impacts(root);
+		projectile_hostile_robot_contact(true);
 		projectile_ordinary_gauss_spin(true);
 		projectile_robot_attacker_blast();
 		projectile_robot_damage_grace();
@@ -650,6 +737,7 @@ static int projectile_test(int argc, char **argv)
 		require(state_save_all_sub(save, description), "Cannot save earned projectile histories");
 		projectile_corrupt_controls(root);
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active() && projectile_capture().empty(), "Projectile state leaked into stock");
+		projectile_hostile_robot_contact(false);
 		projectile_ordinary_gauss_spin(false);
 		projectile_combat(false);
 		projectile_static_robot_controls(false);
