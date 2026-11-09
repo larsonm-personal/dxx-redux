@@ -2,6 +2,7 @@
 
 import copy
 import json
+import re
 import unittest
 from pathlib import Path
 
@@ -9,6 +10,146 @@ import pumo_tulev1_early_contract as contract
 
 
 class Tulev1EarlyWitnessTests(unittest.TestCase):
+    def test_old_overlap_and_switch_first_order_are_rejected(self):
+        order = contract.EARLY_ORDER
+        self.assertIsNone(contract.phase_predecessor("combat", order))
+        self.assertEqual(contract.phase_predecessor("switch", order), "combat")
+        with self.assertRaises(contract.WitnessError):
+            contract.phase_predecessor("switch", ("switch", "combat") + order[2:])
+        plan = json.loads((Path(__file__).parent / "pumo_tulev1_early_combat.json").read_text())
+        contract.combat_setup(plan["steps"])
+        old_overlap = copy.deepcopy(plan["steps"])
+        old_overlap[6]["segment"] = 450
+        with self.assertRaises(contract.WitnessError):
+            contract.combat_setup(old_overlap)
+        old_fire = copy.deepcopy(plan["steps"])
+        old_fire[12]["held"] = 1
+        with self.assertRaises(contract.WitnessError):
+            contract.combat_setup(old_fire)
+        cmake = (Path(__file__).parent / "pumo_tulev1_early.cmake").read_text()
+        phases = re.search(r"foreach\(\s*phase\s+([^)]*)\)", cmake)
+        self.assertIsNotNone(phases)
+        self.assertEqual(tuple(phases.group(1).split()), order)
+
+    def test_cold_durable_parity_rejects_forgery(self):
+        saved = {
+            "position": {"segment": 449},
+            "game_time_raw": 23,
+            "level_scene": {"powerups": [], "robots": []},
+            "simulation_rng": {"state_available": True, "state": 17, "call_count": 4},
+            "xl_pilot": {
+                "wall_triggers": {"6": {"operated": False}},
+                "doorways": {"58": {"type": 5}},
+                "remaining_objectives": 1,
+            },
+            "player": {
+                "shields": 90,
+                "energy": 80,
+                "vulcan_ammo": 12,
+                "lives": 3,
+                "score": 7,
+                "primary_weapon": 0,
+                "primary_weapon_flags": 1,
+                "laser_level": 0,
+                "quad_lasers": False,
+                "secondary_ammo": [0] * 10,
+                "secondary_weapon": 0,
+                "secondary_weapon_flags": 1,
+                "robots_killed_level": 1,
+                "has_blue_key": False,
+                "has_red_key": False,
+                "has_gold_key": False,
+                "cloaked": False,
+                "invulnerable": False,
+            },
+        }
+        restored = copy.deepcopy(saved)
+        restored["simulation_rng"]["call_count"] = 0
+        contract.cold_boundary(saved, restored)
+        for section, key, value in (
+            ("position", "segment", 450),
+            ("simulation_rng", "state", 18),
+            ("simulation_rng", "call_count", 1),
+            ("player", "vulcan_ammo", 99),
+            ("player", "secondary_ammo", [1] + [0] * 9),
+            ("xl_pilot", "remaining_objectives", 2),
+        ):
+            bad = copy.deepcopy(restored)
+            bad[section][key] = value
+            with self.assertRaises(contract.WitnessError):
+                contract.cold_boundary(saved, bad)
+
+    def test_exact_earned_drop_accounting(self):
+        def state(powerups, ammo):
+            return {"level_scene": {"powerups": powerups}, "player": {"vulcan_ammo": ammo, "primary_weapon_flags": 1}}
+
+        original = {"object": 20, "id": 23, "segment": 457}
+        earned = {"object": 30, "id": 22, "segment": 450}
+        start = state([original], 12)
+        guard = state([original, earned], 12)
+        drops = contract.guard_drops(start, guard)
+        self.assertEqual(drops, {30: (22, 450)})
+        self.assertEqual(contract.switch_drops(guard, state([original], 110), drops), {30})
+        for bad in (
+            state([original], 109),
+            state([], 110),
+            state([original, {"object": 31, "id": 22, "segment": 450}], 110),
+        ):
+            with self.assertRaises(contract.WitnessError):
+                contract.switch_drops(guard, bad, drops)
+
+    def test_owned_switch_shot_rejects_forged_contact(self):
+        def weapon(obj, sig):
+            return {
+                "object": obj,
+                "signature": sig,
+                "weapon_id": 0,
+                "parent_object": 0,
+                "parent_signature": 0,
+                "parent_type": 4,
+            }
+
+        def contact(obj, sig, blew_up):
+            return {
+                "object": obj,
+                "signature": sig,
+                "weapon_id": 0,
+                "parent_object": 0,
+                "parent_signature": 0,
+                "hit_segment": 457,
+                "hit_side": 5,
+                "wall": 59,
+                "trigger": 6,
+                "overlay_raw": 7,
+                "blew_up": blew_up,
+            }
+
+        events = [
+            {"step": 10, "state": {"combat_observation": {"owned_weapons": [weapon(7, 11), weapon(8, 12)]}}},
+            {
+                "event": "weapon_wall_contacts",
+                "result": {
+                    "truncated": False,
+                    "contact_count_lower_bound": 2,
+                    "contacts": [contact(7, 11, 0), contact(8, 12, 1)],
+                },
+            },
+        ]
+        contract.switch_shot_witness(events)
+        for path, value in (
+            ((1, "result", "contacts", 1, "parent_object"), 9),
+            ((1, "result", "contacts", 1, "blew_up"), 0),
+            ((1, "result", "contacts", 1, "trigger"), 5),
+            ((1, "result", "truncated"), True),
+        ):
+            bad = copy.deepcopy(events)
+            target = bad
+            for key in path[:-1]:
+                target = target[key]
+            target[path[-1]] = value
+            with self.assertRaises(contract.WitnessError):
+                contract.switch_shot_witness(bad)
+
     def test_restored_guided_inventory_rejects_forged_persistence(self):
         state = {
             "current_level_num": 7,
@@ -126,9 +267,7 @@ class Tulev1EarlyWitnessTests(unittest.TestCase):
                 )
             )
         ]
-        plan = json.loads(
-            (here / "pumo_tulev1_early_guided_inventory.json").read_text()
-        )
+        plan = json.loads((here / "pumo_tulev1_early_guided_inventory.json").read_text())
         contract.guided_inventory_witness(trace, plan)
         for step, path, value in (
             (7, ("player", "secondary_ammo", 6), 3),
@@ -193,7 +332,7 @@ class Tulev1EarlyWitnessTests(unittest.TestCase):
                 "expected_load_generation": 2,
                 "observed_load_generation": 2,
                 "exists": exists,
-                "binding_shields_raw": 12435456,
+                "binding_shields_raw": 500,
                 "damage_since_binding_raw": damage,
                 "actor_state": {"shields_raw": shields} if exists else None,
             }
@@ -203,41 +342,76 @@ class Tulev1EarlyWitnessTests(unittest.TestCase):
                     "tracked_objects": [actor],
                 },
                 "player": {"robots_killed_level": kills},
+                "primary_fire": {"held": 0},
             }
 
-        events = [
-            {"step": step, "action": action, "state": snapshot(*values)}
-            for step, (action, values) in enumerate(
-                (
-                    ("assert", (12435456, 0, True, 0)),
-                    ("send_button", (12435456, 0, True, 0)),
-                    ("wait_for", (12435456, 0, True, 0)),
-                    ("wait_for", (11091968, 1343488, True, 0)),
-                    ("send_button", (None, None, False, 1)),
-                )
+        actions = (
+            ["assert"]
+            + ["send_axis"] * 5
+            + [
+                "pose_view",
+                "assert",
+                "wait_for",
+                "introspect",
+                "send_button",
+                "wait_for",
+                "send_button",
+                "introspect",
+                "wait_ms",
+                "introspect",
+                "assert",
+                "set_debug",
+            ]
+        )
+        events = []
+        for step, action in enumerate(actions):
+            values = (500, 0, True, 0) if step < 12 else ((-3, 503, True, 1) if step < 16 else (None, None, False, 1))
+            state = snapshot(*values)
+            state["primary_fire"]["held"] = int(12 <= step < 15)
+            state["game_time_raw"] = (
+                0 if step <= 8 else 65536 // 60 if step <= 11 else 10 * 65536 // 60 if step <= 14 else 55 * 65536 // 60
             )
-        ]
+            events.append({"step": step, "action": action, "state": state})
+        for tick in (0, 1):
+            events.append(
+                {
+                    "event": "fixed_view_aim",
+                    "target": 256,
+                    "game_time_raw": tick * 65536 // 60,
+                    "target_state": {"expected_signature": 257, "expected_load_generation": 2, "exists": True},
+                }
+            )
         contract.combat_trace_witness(events)
-        # First parent run used 0/2/3 as if snapshots followed actions;
-        # step 2 is still pre-hit and must not satisfy the damage witness.
-        with self.assertRaises(contract.WitnessError):
-            contract.combat_damage(
-                contract.bound(events[0]["state"]),
-                contract.bound(events[2]["state"]),
-                contract.bound(events[3]["state"]),
-            )
-        for step, field, value in (
-            (3, "damage_since_binding_raw", 1),
-            (4, "exists", True),
-        ):
+        for step, clock in ((9, 0), (12, 4000), (15, 90000)):
             changed = copy.deepcopy(events)
-            changed[step]["state"]["combat_observation"]["tracked_objects"][0][
-                field
-            ] = value
+            changed[step]["state"]["game_time_raw"] = clock
             with self.assertRaises(contract.WitnessError):
                 contract.combat_trace_witness(changed)
         changed = copy.deepcopy(events)
-        changed[4]["state"]["player"]["robots_killed_level"] = 0
+        changed[-1]["target"] = 305
+        with self.assertRaises(contract.WitnessError):
+            contract.combat_trace_witness(changed)
+        # Step 11 is PRE goal-stop; the negative-HP witness is step 12.
+        with self.assertRaises(contract.WitnessError):
+            contract.combat_damage(
+                contract.bound(events[0]["state"]),
+                contract.bound(events[11]["state"]),
+                contract.bound(events[12]["state"]),
+            )
+        for step, field, value in (
+            (12, "damage_since_binding_raw", 1),
+            (16, "exists", True),
+        ):
+            changed = copy.deepcopy(events)
+            changed[step]["state"]["combat_observation"]["tracked_objects"][0][field] = value
+            with self.assertRaises(contract.WitnessError):
+                contract.combat_trace_witness(changed)
+        changed = copy.deepcopy(events)
+        changed[12]["state"]["player"]["robots_killed_level"] = 0
+        with self.assertRaises(contract.WitnessError):
+            contract.combat_trace_witness(changed)
+        changed = copy.deepcopy(events)
+        changed[13]["state"]["primary_fire"]["held"] = 0
         with self.assertRaises(contract.WitnessError):
             contract.combat_trace_witness(changed)
 
@@ -246,31 +420,31 @@ class Tulev1EarlyWitnessTests(unittest.TestCase):
             "exists": True,
             "expected_signature": 257,
             "expected_load_generation": 2,
-            "binding_shields_raw": 12435456,
+            "binding_shields_raw": 500,
             "damage_since_binding_raw": 0,
-            "actor_state": {"shields_raw": 12435456},
+            "actor_state": {"shields_raw": 500},
         }
         damaged = copy.deepcopy(pre)
-        damaged["actor_state"]["shields_raw"] = 11091968
-        damaged["damage_since_binding_raw"] = 1343488
+        damaged["actor_state"]["shields_raw"] = 400
+        damaged["damage_since_binding_raw"] = 100
         defeated = copy.deepcopy(damaged)
         defeated["exists"] = False
         defeated["actor_state"] = None
         defeated["damage_since_binding_raw"] = None
         contract.combat_damage(pre, damaged, defeated)
         for mutation in (
-            lambda a, b, c: b["actor_state"].update(shields_raw=12435456),
+            lambda a, b, c: b["actor_state"].update(shields_raw=500),
             lambda a, b, c: b.update(expected_signature=258),
             lambda a, b, c: b.update(expected_load_generation=3),
-            lambda a, b, c: b.update(binding_shields_raw=13107200),
+            lambda a, b, c: b.update(binding_shields_raw=600),
             lambda a, b, c: b.update(binding_shields_raw=True),
-            lambda a, b, c: a.update(binding_shields_raw=13107200),
+            lambda a, b, c: a.update(binding_shields_raw=600),
             lambda a, b, c: a.update(damage_since_binding_raw=1),
             lambda a, b, c: b.update(damage_since_binding_raw=0),
             lambda a, b, c: b.update(damage_since_binding_raw=1),
-            lambda a, b, c: c.update(binding_shields_raw=13107200),
+            lambda a, b, c: c.update(binding_shields_raw=600),
             lambda a, b, c: c.update(exists=True),
-            lambda a, b, c: c.update(damage_since_binding_raw=1343488),
+            lambda a, b, c: c.update(damage_since_binding_raw=100),
         ):
             a, b, c = copy.deepcopy((pre, damaged, defeated))
             mutation(a, b, c)
@@ -314,9 +488,7 @@ class Tulev1EarlyWitnessTests(unittest.TestCase):
             "expected_load_generation": 2,
             "observed_load_generation": 2,
         }
-        state = {
-            "combat_observation": {"load_generation": 2, "tracked_objects": [item]}
-        }
+        state = {"combat_observation": {"load_generation": 2, "tracked_objects": [item]}}
         contract.bound(state)
         for field, value in (
             ("expected_id", 29),
