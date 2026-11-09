@@ -2,9 +2,11 @@
 // from production translation units; only external engine effects are recorded.
 #include "object_trigger.h"
 #include "boss_spawn.h"
+#include "object_birth.h"
 #include "robot_generator.h"
 #include "inventory.h"
 #include <cstdlib>
+#include <cstring>
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>
@@ -81,6 +83,7 @@ fix part(fix whole, int numerator, int denominator)
 void reset(bool permanent = true)
 {
 	xl_object_trigger_clear();
+	xl_object_birth_clear();
 	xl_boss_spawn_clear();
 	xl_robot_generator_clear();
 	births = ai_calls = morph_calls = effect_calls = sound_calls = death_calls = 0;
@@ -176,6 +179,7 @@ void threshold_and_attribution()
 		Difficulty_level = difficulty;
 		reset();
 		const fix maximum = boss_health_maximum_for_difficulty(strength, difficulty);
+		GameTime64 = F1_0;
 		const fix expected = difficulty == 0 ? (strength / (NDL + 3) * 4) / 2
 		                                     : strength / (NDL + 3) * (difficulty + 4);
 		require(maximum == expected, "difficulty maximum");
@@ -184,17 +188,21 @@ void threshold_and_attribution()
 		hit(owner_a, part(maximum, 905, 1000));
 		require(trigger_state(owner_a).operated && births == 0, "90.5 percent operates in cooldown");
 		reset();
+		GameTime64 = F1_0;
 		hit(owner_a, part(maximum, 905, 1000), -1);
 		require(!trigger_state(owner_a).operated, "unattributed damage");
 		reset();
+		GameTime64 = F1_0;
 		hit(owner_a, part(maximum, 905, 1000), owner_b);
 		require(!trigger_state(owner_a).operated, "nonplayer damage");
 		// Fixed-point neighbors straddle the reference's float-to-int cast.
 		reset();
+		GameTime64 = F1_0;
 		const fix lower = part(maximum, 91, 100) - 2;
 		hit(owner_a, lower);
 		require(trigger_state(owner_a).operated, "below 91 percent cast boundary");
 		reset();
+		GameTime64 = F1_0;
 		hit(owner_a, part(maximum, 91, 100) + 1);
 		require(!trigger_state(owner_a).operated, "above 91 percent cast boundary");
 	}
@@ -297,6 +305,7 @@ void rejection_controls()
 	require(apply_damage_to_robot(&Objects[owner_a], 1, player_slot) == 0, "dead result");
 	require(!trigger_state(owner_a).operated, "dead actor does not fire");
 	reset();
+	GameTime64 = F1_0;
 	require(apply_damage_to_robot(&Objects[owner_a], maximum + 1, player_slot) == 1, "lethal result");
 	require(death_calls == 1 && !trigger_state(owner_a).operated, "death endpoint, not damage trigger");
 	reset();
@@ -386,16 +395,160 @@ void nonpermanent_and_classic()
 	        "classic did not mutate XL trigger");
 	require(boss_state(owner_a).elapsed == interval(), "classic did not mutate boss timer");
 }
+
+void definition_instance_and_zero_damage()
+{
+	reset();
+	GameTime64 = F1_0;
+	Objects[owner_a].shields = 0;
+	require(apply_damage_to_robot(&Objects[owner_a], 1, player_slot) == 1 && death_calls == 1,
+	        "positive definition with zero instance shields remains destructible");
+	reset();
+	GameTime64 = F1_0;
+	Objects[owner_a].shields = part(Objects[owner_a].shields, 905, 1000);
+	require(!apply_damage_to_robot(&Objects[owner_a], 0, player_slot) && trigger_state(owner_a).operated,
+	        "accepted zero damage retains threshold event");
+	reset();
+	GameTime64 = F1_0;
+	Objects[4].type = OBJ_ROBOT;
+	Objects[4].id = child_type;
+	Objects[4].ctype.ai_info.behavior = 135;
+	Objects[4].shields = 100 * F1_0;
+	require(!apply_damage_to_robot(&Objects[4], F1_0, player_slot) && Objects[4].shields == 99 * F1_0,
+	        "mature positive-strength behavior 135 remains damageable");
+}
+
+void spawned_child_birth_and_registry()
+{
+	reset();
+	GameTime64 = 20 * F1_0;
+	hit(owner_a, part(Objects[owner_a].shields, 905, 1000));
+	require(births == 1, "damage event spawned child");
+	const int child = Highest_object_index;
+	const auto born = GameTime64;
+	const fix original = Objects[child].shields;
+	require(xl_object_birth_time(child) == born && xl_object_birth_order(child) == 1,
+	        "spawn endpoint records actual birth");
+	for (const int age : { -1, 0, F1_0 - 1 }) {
+		GameTime64 = born + age;
+		require(!apply_damage_to_robot(&Objects[child], 1, player_slot) && Objects[child].shields == original,
+		        "spawned child grace interval");
+	}
+	GameTime64 = born + F1_0;
+	require(!apply_damage_to_robot(&Objects[child], 1, player_slot) && Objects[child].shields == original - 1,
+	        "spawned child exact mature boundary");
+	// Reusing a slot must not inherit the old actor's private birth
+	++Objects[child].signature;
+	require(xl_object_birth_time(child) == 0 && xl_object_birth_order(child) == 0, "reused signature drops birth");
+	xl_object_birth_created(child);
+	require(xl_object_birth_time(child) == GameTime64 && xl_object_birth_order(child) == 2, "new signature records new birth");
+	require(!apply_damage_to_robot(&Objects[child], 1, player_slot) && Objects[child].shields == original - 1,
+	        "reused newborn rejects damage");
+	// Registry reset models omitted private state, not the full save codec
+	xl_object_birth_clear();
+	require(xl_object_birth_time(child) == 0 && xl_object_birth_order(child) == 0, "registry reset clears private state");
+	require(!apply_damage_to_robot(&Objects[child], 1, player_slot) && Objects[child].shields == original - 2,
+	        "restored mature epoch does not invent grace");
+	GameTime64 = F1_0 - 1;
+	require(!apply_damage_to_robot(&Objects[child], 1, player_slot) && Objects[child].shields == original - 2,
+	        "restored initial epoch preserves grace");
+	GameTime64 = F1_0;
+	require(!apply_damage_to_robot(&Objects[child], 1, player_slot) && Objects[child].shields == original - 3,
+	        "restored initial epoch exact boundary");
+}
+
+void common_damage_gates(bool age_cases = true, bool strength_cases = true)
+{
+	Difficulty_level = 2;
+	if (age_cases) {
+		for (const bool dynamic : { false, true }) {
+			for (const int age : { -1, 0, F1_0 - 1, F1_0, F1_0 + 1 }) {
+				reset();
+				const int owner = dynamic ? 4 : owner_a;
+				if (dynamic) {
+					Objects[owner].type = OBJ_ROBOT;
+					Objects[owner].id = child_type;
+					Objects[owner].signature = 404;
+					Objects[owner].shields = 100 * F1_0;
+					GameTime64 = 10 * F1_0;
+					xl_object_birth_created(owner);
+				} else {
+					GameTime64 = 0;
+				}
+				const fix old = Objects[owner].shields;
+				GameTime64 += age;
+				const auto hit_before = boss_state(owner_a).hit;
+				require(!apply_damage_to_robot(&Objects[owner], F1_0, player_slot), "boundary result");
+				const bool eligible = age >= F1_0;
+				require(Objects[owner].shields == old - (eligible ? F1_0 : 0), "age gate shield boundary");
+				require(boss_state(owner_a).hit == (dynamic || !eligible ? hit_before : 0), "age gate boss bookkeeping");
+				require(death_calls == 0 && Players[0].num_kills_level == 0 && !trigger_state(owner_a).operated,
+				        "age gate side effect");
+			}
+		}
+	}
+	if (strength_cases) {
+		for (const int owner : { owner_a, 4 })
+			for (const fix definition_strength : { -F1_0, 0 }) {
+				reset();
+				GameTime64 = 2 * F1_0;
+				Objects[4].type = OBJ_ROBOT;
+				Objects[4].id = child_type;
+				Objects[4].shields = 100 * F1_0;
+				Robot_info[Objects[owner].id].strength = definition_strength;
+				const fix old = Objects[owner].shields;
+				const auto hit_before = boss_state(owner_a).hit;
+				require(!apply_damage_to_robot(&Objects[owner], F1_0, player_slot) && Objects[owner].shields == old &&
+				            boss_state(owner_a).hit == hit_before && !trigger_state(owner_a).operated,
+				        "definition strength gate");
+			}
+	}
+	if (age_cases) {
+		reset();
+		GameTime64 = INT64_C(1) << 40;
+		Objects[4].type = OBJ_ROBOT;
+		Objects[4].id = child_type;
+		Objects[4].signature = 405;
+		Objects[4].shields = 100 * F1_0;
+		xl_object_birth_created(4);
+		GameTime64 += F1_0 - 1;
+		require(!apply_damage_to_robot(&Objects[4], F1_0, player_slot) && Objects[4].shields == 100 * F1_0,
+		        "large epoch newborn gate");
+		++GameTime64;
+		require(!apply_damage_to_robot(&Objects[4], F1_0, player_slot) && Objects[4].shields == 99 * F1_0,
+		        "large epoch mature boundary");
+	}
+	reset();
+	Robot_info[boss_type].strength = 0;
+	extensions = false;
+	const fix classic_shields = Objects[owner_a].shields;
+	require(!apply_damage_to_robot(&Objects[owner_a], F1_0, player_slot) && Objects[owner_a].shields == classic_shields - F1_0,
+	        "classic inactive newborn and strength control");
+	reset();
+	fixture_mission.descent_version = 1;
+	Robot_info[boss_type].strength = 0;
+	extensions = false;
+	const fix d1_shields = Objects[owner_a].shields;
+	require(!apply_damage_to_robot(&Objects[owner_a], F1_0, player_slot) && Objects[owner_a].shields == d1_shields - F1_0,
+	        "D1-in-D2 inactive newborn and strength control");
+}
 } // namespace
 
-int main()
+int main(int argc, char **argv)
 {
 	try {
+		if (argc == 2 && (!std::strcmp(argv[1], "age") || !std::strcmp(argv[1], "strength"))) {
+			common_damage_gates(!std::strcmp(argv[1], "age"), !std::strcmp(argv[1], "strength"));
+			return 0;
+		}
 		threshold_and_attribution();
 		restore_retry_and_owner_isolation();
 		nonpermanent_and_classic();
 		rejection_controls();
 		disabled_and_one_shot_ordering();
+		common_damage_gates();
+		spawned_child_birth_and_registry();
+		definition_instance_and_zero_damage();
 		std::cout << "boss gameplay consumer: pass\n";
 		return 0;
 	} catch (const std::exception &error) {
@@ -468,8 +621,15 @@ int obj_create(enum object_type_t type, ubyte id, int segment, const vms_vector 
 	Objects[index].movement_type = movement;
 	Objects[index].render_type = render;
 	Objects[index].signature = 300 + index;
+	xl_object_birth_created(index);
 	return index;
 }
+int object_capacity(void)
+{
+	return MAX_OBJECTS;
+}
+void xl_camera_hit_state_clear(void) {}
+void xl_camera_hit_state_created(int) {}
 void init_ai_object(int, int, int)
 {
 	++ai_calls;

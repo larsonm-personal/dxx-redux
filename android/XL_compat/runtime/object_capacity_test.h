@@ -399,6 +399,7 @@ static int object_capacity_test(int argc, char **argv)
 		for (int i = 32728; i < 32768; ++i)
 			if (Objects[i].type != OBJ_NONE) obj_delete(i);
 		const int robot = projectile_robot();
+		GameTime64 += F1_0;
 		const int shot = projectile_test_shot(ConsoleObject - Objects);
 		require(robot >= 1000 && shot >= 1000, "High combat fixture allocated only classic identities");
 		require(Objects[robot].signature > 32767 && Objects[shot].signature > 32767, "Full-pool reuse did not retain wide lifetime signatures");

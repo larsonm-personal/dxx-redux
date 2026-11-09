@@ -76,6 +76,7 @@ static void no_damage_bump_test(const xl_compat::Inventory &source, int segment)
 	require(robot_index >= 0 && !Robot_info[0].companion && !Robot_info[0].kamikaze && !Robot_info[0].thief,
 	        "robot contact control requires an ordinary robot");
 	auto &robot = Objects[robot_index];
+	GameTime64 += F1_0;
 	robot.mtype.phys_info.mass = ConsoleObject->mtype.phys_info.mass;
 	const int saved_awareness_count = Num_awareness_events;
 	physics_info baseline_robot{}, baseline_player{};

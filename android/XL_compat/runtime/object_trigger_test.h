@@ -5,6 +5,7 @@ extern "C" {
 #include "cntrlcen.h"
 #include "fireball.h"
 void obj_delete_all_that_should_be_dead(void);
+void collide_robot_and_weapon(object *, object *, vms_vector *);
 int xl_object_master_action(const trigger *action, int object_index);
 }
 
@@ -216,13 +217,23 @@ static int object_trigger_test(int argc, char **argv)
 		Objects[robot].mtype.phys_info.velocity = velocity;
 		const auto orientation = Objects[robot].orient;
 		const auto maximum = Robot_info[Objects[robot].id].strength;
+		if (GameTime64 < F1_0) GameTime64 = F1_0;
 		Objects[robot].shields = maximum * 3 / 4;
 		require(!apply_damage_to_robot(&Objects[robot], maximum / 4, -1) && !state(once).operated, "nonlocal damage activated an object action");
 		require(!apply_damage_to_robot(&Objects[robot], 1, ConsoleObject - Objects), "nonlethal robot damage was lethal");
 		require(state(once).operated && state(once).value == 0 && state(repeat).operated && state(repeat).value == 5 * F1_0, "threshold event or permanent consumption differs");
 		require(!std::memcmp(&Objects[robot].orient, &orientation, sizeof(orientation)) && !std::memcmp(&Objects[robot].mtype.phys_info.velocity, &velocity, sizeof(velocity)), "object teleport changed orientation or velocity");
 		const int old_destination = state(repeat).destination;
-		apply_damage_to_robot(&Objects[robot], 1, ConsoleObject - Objects);
+		const int damage_shot = Laser_create_new(&ConsoleObject->orient.fvec, &ConsoleObject->pos,
+		                                         ConsoleObject->segnum, ConsoleObject - Objects, LASER_ID_L1, 0);
+		require(damage_shot >= 0, "object-trigger damage shot allocation failed");
+		Objects[damage_shot].shields = 1;
+		Objects[damage_shot].ctype.laser_info.multiplier = F1_0;
+		const fix before_contact = Objects[robot].shields;
+		collide_robot_and_weapon(&Objects[robot], &Objects[damage_shot], &Objects[robot].pos);
+		require(Objects[robot].shields == before_contact - 1 && (Objects[damage_shot].flags & OF_SHOULD_BE_DEAD),
+		        "ordinary object-trigger contact lost shield damage or shot disposition");
+		obj_delete(damage_shot);
 		require(state(repeat).destination != old_destination && Objects[robot].segnum == state(repeat).destination, "permanent object teleport repeated its previous destination");
 		const auto master_facing = Objects[powerups[4]].orient;
 		const auto master_motion = Objects[powerups[4]].mtype.phys_info.velocity;
@@ -285,6 +296,7 @@ static int object_trigger_test(int argc, char **argv)
 		xl_object_trigger_event(replacement, 0);
 		require(state(pickup).owner == -1 && !state(pickup).operated && !(Walls[10].flags & WALL_ILLUSION_OFF), "replacement object inherited an authored event");
 		require(state_restore_all_sub(initial, 0) != 0, "lethal source restore failed");
+		if (GameTime64 < F1_0) GameTime64 = F1_0;
 		require(apply_damage_to_robot(&Objects[robot], Objects[robot].shields + F1_0, ConsoleObject - Objects) != 0, "lethal combat control did not kill robot");
 		for (int frame = 0; frame < 180 && state(death).owner >= 0; ++frame) {
 			for (int object = 0; object <= Highest_object_index; ++object)

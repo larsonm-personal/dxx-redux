@@ -282,6 +282,7 @@ static int hxm_test(int argc, char **argv)
 			        "Custom actor AI failed to select/fire its configured weapon and arm its cooldown");
 			obj_delete(shot);
 		}
+		if (GameTime64 < F1_0) GameTime64 = F1_0;
 		require(!apply_damage_to_robot(&Objects[actor], i2f(37), ConsoleObject - Objects) && Objects[actor].shields == i2f(713),
 		        "Custom actor combat ignored replacement health");
 		const auto custom_definitions = gameplay_definitions();

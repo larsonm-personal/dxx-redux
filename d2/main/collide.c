@@ -9,6 +9,7 @@
 #include "boss_spawn.h"
 #include "resource_validation.h"
 #include "camera_collision.h"
+#include "object_birth.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -1653,6 +1654,15 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 	if ( robot->flags&OF_EXPLODING) return 0;
 
 	if (robot->shields < 0 ) return 0;	//robot already dead...
+
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		const int64_t created = xl_object_birth_time(robot - Objects);
+		if (Robot_info[robot->id].strength <= 0 || GameTime64 < created ||
+		    (uint64_t) GameTime64 - (uint64_t) created < F1_0)
+			return 0;
+	}
+#endif
 
 	if (Robot_info[robot->id].boss_flag && !d1_in_d2_ai_note_boss_damage(robot)) {
 #ifdef DXX_XL_RUNTIME
