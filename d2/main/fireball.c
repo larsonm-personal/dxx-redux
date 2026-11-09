@@ -101,6 +101,25 @@ static fix explosion_damage_distance(const vms_vector *a, const vms_vector *b)
 	return vm_vec_dist_quick(a, b);
 }
 
+// Preserve the source fixed normalization, including its floored magnitude.
+static void explosion_force_direction(vms_vector *direction, const vms_vector *end, const vms_vector *start)
+{
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !d1_in_d2_use_d1_gameplay()) {
+		const double x = (double) end->x - start->x, y = (double) end->y - start->y, z = (double) end->z - start->z;
+		const double magnitude = floor(sqrt(x * x + y * y + z * z));
+		if (magnitude) {
+			direction->x = (fix) (x / magnitude * F1_0);
+			direction->y = (fix) (y / magnitude * F1_0);
+			direction->z = (fix) (z / magnitude * F1_0);
+		} else
+			vm_vec_zero(direction);
+		return;
+	}
+#endif
+	vm_vec_normalized_dir_quick(direction, end, start);
+}
+
 object *object_create_explosion_sub(object *objp, short segnum, vms_vector * position, fix size, int vclip_type, fix maxdamage, fix maxdistance, fix maxforce, int parent )
 {
 	int objnum;
@@ -157,7 +176,7 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 						force = maxforce - fixmuldiv( dist, maxforce, maxdistance );
 
 						// Find the force vector on the object
-						vm_vec_normalized_dir_quick( &vforce, &obj0p->pos, &obj->pos );
+						explosion_force_direction(&vforce, &obj0p->pos, &obj->pos);
 						vm_vec_scale(&vforce, force );
 	
 						// Find where the point of impact is... ( pos_hit )
@@ -182,14 +201,29 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 								//	If not a boss, stun for 2 seconds at 32 force, 1 second at 16 force
 								if (d1_in_d2_ai_flash_can_stun(obj0p) && (objp != NULL) && (!Robot_info[obj0p->id].boss_flag) && (Weapon_info[objp->id].flash)) {
 									ai_static	*aip = &obj0p->ctype.ai_info;
-									int			force_val = f2i(fixdiv(vm_vec_mag_quick(&vforce) * Weapon_info[objp->id].flash, FrameTime)/128) + 2;
+									int force_val;
+#ifdef DXX_XL_RUNTIME
+									if (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !d1_in_d2_use_d1_gameplay())
+										force_val = f2i(fixdiv(explosion_damage_distance(&vforce, &vmd_zero_vector) * Weapon_info[objp->id].flash, FrameTime) / 128) + 2;
+									else
+#endif
+										force_val = f2i(fixdiv(vm_vec_mag_quick(&vforce) * Weapon_info[objp->id].flash, FrameTime)/128) + 2;
 
 									if (obj->ctype.ai_info.SKIP_AI_COUNT * FrameTime < F1_0) {
 										aip->SKIP_AI_COUNT += force_val;
 										// SIM RNG: this directly feeds live robot stun spin physics
+#ifdef DXX_XL_RUNTIME
+										if (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !d1_in_d2_use_d1_gameplay()) {
+											obj0p->mtype.phys_info.rotthrust.x = ((16383 - d_rand()) * force_val) / 16;
+											obj0p->mtype.phys_info.rotthrust.y = ((16383 - d_rand()) * force_val) / 16;
+											obj0p->mtype.phys_info.rotthrust.z = ((16383 - d_rand()) * force_val) / 16;
+										} else
+#endif
+										{
 										obj0p->mtype.phys_info.rotthrust.x = ((d_rand() - 16384) * force_val)/16;
 										obj0p->mtype.phys_info.rotthrust.y = ((d_rand() - 16384) * force_val)/16;
 										obj0p->mtype.phys_info.rotthrust.z = ((d_rand() - 16384) * force_val)/16;
+										}
 										obj0p->mtype.phys_info.flags |= PF_USES_THRUST;
 
 										//@@if (Robot_info[obj0p->id].companion)

@@ -101,6 +101,7 @@ fix self_splash_damage=15*F1_0;
 bool self_splash_visible=true;
 int self_splash_console=0,self_splash_timers=0;
 std::vector<int> self_splash_events;
+bool smart_trace=false;
 bool splash_trace=false;
 int splash_visibility=0,splash_forces=0,splash_rotations=0;
 bool splash_visible=true;
@@ -3906,14 +3907,14 @@ namespace {
 void splash_controls(int mode=0) {
  struct Row {vms_vector position;fix exact,legacy;vms_vector force,rotation,old_force,old_rotation;};
  const Row rows[]={
- {{917504,2359296,0},67515,0,{22913,58922,0},{-28641,-73652,0},{0,0,0},{0,0,0}},
- {{-917504,-2359296,0},67515,0,{-22913,-58922,0},{28641,73652,0},{0,0,0},{0,0,0}},
+ {{917504,2359296,0},67515,0,{24470,62923,0},{-30587,-78653,0},{0,0,0},{0,0,0}},
+ {{-917504,-2359296,0},67515,0,{-24470,-62923,0},{30587,78653,0},{0,0,0},{0,0,0}},
  {{1572864,1572864,1572864},0,122880,{0,0,0},{0,0,0},{78643,78643,78643},{-98303,-98303,-98303}},
  {{-1572864,-1572864,-1572864},0,122880,{0,0,0},{0,0,0},{-78643,-78643,-78643},{98303,98303,98303}},
- {{1441792,1441792,1441792},93138,276480,{59608,59608,59608},{-74510,-74510,-74510},{176947,176947,176947},{-221183,-221183,-221183}},
- {{-1441792,-1441792,-1441792},93138,276480,{-59608,-59608,-59608},{74510,74510,74510},{-176947,-176947,-176947},{221183,221183,221183}},
- {{1572864,1966080,0},77723,49152,{47828,59786,0},{-59785,-74732,0},{30246,37809,0},{-37807,-47261,0}},
- {{-1572864,-1966080,0},77723,49152,{-47828,-59786,0},{59785,74732,0},{-30246,-37809,0},{37807,47261,0}},
+ {{1441792,1441792,1441792},93138,276480,{53772,53772,53772},{-67215,-67215,-67215},{176947,176947,176947},{-221183,-221183,-221183}},
+ {{-1441792,-1441792,-1441792},93138,276480,{-53772,-53772,-53772},{67215,67215,67215},{-176947,-176947,-176947},{221183,221183,221183}},
+ {{1572864,1966080,0},77723,49152,{48553,60691,0},{-60691,-75863,0},{30246,37809,0},{-37807,-47261,0}},
+ {{-1572864,-1966080,0},77723,49152,{-48553,-60691,0},{60691,75863,0},{-30246,-37809,0},{37807,47261,0}},
  {{0,0,0},1966080,1966080,{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
  {{0,0,0},1966080,1966080,{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
  {{655360,0,0},1474560,1474560,{1474560,0,0},{-1843200,0,0},{1474560,0,0},{-1843200,0,0}},
@@ -3922,14 +3923,19 @@ void splash_controls(int mode=0) {
  {{-2621440,0,0},0,0,{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
  {{2686976,0,0},0,0,{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
  {{-2686976,0,0},0,0,{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
+ {{524288,524288,524288},1285011,1351680,{741896,741896,741896},{-927370,-927370,-927370},{865074,865074,865074},{-1081342,-1081342,-1081342}},
+ {{-524288,-524288,-524288},1285011,1351680,{-741896,-741896,-741896},{927370,927370,927370},{-865074,-865074,-865074},{1081342,1081342,1081342}},
+ {{1,1,1},1966080,1966080,{1966080,1966080,1966080},{-2457600,-2457600,-2457600},{1966080,1966080,1966080},{-2457600,-2457600,-2457600}},
+ {{-1,-1,-1},1966080,1966080,{-1966080,-1966080,-1966080},{2457600,2457600,2457600},{-1966080,-1966080,-1966080},{2457600,2457600,2457600}},
  };
  int cases=0;
  for(int profile=0;profile<4&&mode!=3;++profile) {
-  if((mode==1||mode==4)&&profile)continue;if(mode==2&&!profile)continue;
+  if((mode==1||mode==4||mode==5)&&profile)continue;if(mode==2&&!profile)continue;
   for(unsigned row=0;row<sizeof(rows)/sizeof(rows[0]);++row) {
-   if(mode==1&&row)continue;if(mode==4&&row!=2)continue;
+   if(row>=16&&profile)continue;
+   if(mode==1&&row)continue;if(mode==4&&row!=2)continue;if(mode==5&&row!=16)continue;
    for(int exclusion=0;exclusion<3;++exclusion) {
-    if((mode==1||mode==4)&&exclusion)continue;
+    if((mode==1||mode==4||mode==5)&&exclusion)continue;
     reset();xl_object_trigger_clear();xl_boss_spawn_clear();
     for(int i=0;i<=Highest_object_index;++i)Objects[i]={};
     Highest_object_index=3;Objects[player_slot].type=OBJ_PLAYER;Objects[player_slot].id=Player_num;Objects[player_slot].pos={1000*F1_0,0,0};
@@ -3949,9 +3955,11 @@ void splash_controls(int mode=0) {
     require(!std::memcmp(&victim,&expected_actor,sizeof(victim))&&!std::memcmp(&Objects[player_slot],&parent_before,sizeof(parent_before)),"splash preserves unrelated actor fields and parent");
     const bool inside=(profile?rows[row].legacy:rows[row].exact)>0;
     require(splash_visibility==int(inside&&exclusion!=2)&&splash_forces==int(inside&&!exclusion)&&splash_rotations==splash_forces,"splash visibility admission and impulse dispatch counts");
-    if(splash_forces){const auto &f=profile?rows[row].old_force:rows[row].force;const auto &r=profile?rows[row].old_rotation:rows[row].rotation;require(!std::memcmp(&splash_force,&f,sizeof(f))&&!std::memcmp(&splash_rotation,&r,sizeof(r)),"unchanged quick direction with exact scalar force and rotation");}
+
     require(births==before_births+1&&effect->type==OBJ_FIREBALL&&effect->id==7&&effect->segnum==0&&!std::memcmp(&effect->pos,&origin,sizeof(origin))&&effect->size==7*F1_0&&effect->control_type==CT_EXPLOSION&&effect->movement_type==MT_NONE&&effect->render_type==RT_FIREBALL&&effect->lifeleft==F1_0&&effect->ctype.expl_info.spawn_time==-1&&effect->ctype.expl_info.delete_objnum==-1&&effect->ctype.expl_info.delete_time==-1,"real explosion setup on bounded allocation");
     unsigned after_sim,after_fx;d_rand_get_stream_state(D_RNG_SIM,&after_sim);d_rand_get_stream_state(D_RNG_FX,&after_fx);require(sim==after_sim&&fx==after_fx&&sim_calls==d_rand_get_stream_call_count(D_RNG_SIM)&&fx_calls==d_rand_get_stream_call_count(D_RNG_FX),"splash preserves both complete RNG streams");
+    if(mode==5)std::cout<<"observed impulse="<<splash_force.x<<","<<splash_force.y<<","<<splash_force.z<<" damage="<<(100*F1_0-victim.shields)<<"\n";
+    if(splash_forces){const auto &f=profile?rows[row].old_force:rows[row].force;const auto &r=profile?rows[row].old_rotation:rows[row].rotation;require(!std::memcmp(&splash_force,&f,sizeof(f)),"ordinary splash full normalized impulse");require(!std::memcmp(&splash_rotation,&r,sizeof(r)),"ordinary splash rotation uses corrected impulse");}
     splash_trace=false;++cases;
    }
   }
@@ -3991,7 +3999,7 @@ void self_splash_controls(int mode=0) {
   vms_vector origin{};Vclip[7].play_time=F1_0;
   require(object_create_explosion_sub(&weapon,0,&origin,7*F1_0,7,30*F1_0,40*F1_0,30*F1_0,weapon.ctype.laser_info.parent_num)==&Objects[4],"self splash actual explosion result");
   vms_vector expected_force{},expected_rotation{};fix force=sign*983040;fix rotation=force/(parent_kind==1?4:(!profile&&parent_kind==0)?2:(parent_kind==0&&axis!=0)?4:2);
-  if(axis==0){expected_force.x=force;expected_rotation.x=rotation;}if(axis==1){expected_force.y=force;expected_rotation.y=rotation;}if(axis==2){expected_force.z=force;expected_rotation.z=rotation;}if(axis>=4){expected_force={sign*575430,axis==4?sign*767250:0,axis==5?sign*767250:0};expected_rotation={expected_force.x/(parent_kind==1?4:2),expected_force.y/(parent_kind==1?4:2),expected_force.z/(parent_kind==1?4:2)};}
+  if(axis==0){expected_force.x=force;expected_rotation.x=rotation;}if(axis==1){expected_force.y=force;expected_rotation.y=rotation;}if(axis==2){expected_force.z=force;expected_rotation.z=rotation;}if(axis>=4){expected_force={sign*589815,axis==4?sign*786420:0,axis==5?sign*786420:0};expected_rotation={expected_force.x/(parent_kind==1?4:2),expected_force.y/(parent_kind==1?4:2),expected_force.z/(parent_kind==1?4:2)};}
   if(mode==1)std::cout<<"observed self rotation="<<self_splash_rotation.x<<","<<self_splash_rotation.y<<","<<self_splash_rotation.z<<" shields="<<Players[0].shields<<"\n";
   auto expected_actor=actor_before;auto expected_player=player_before;const fix damage=protection?0:self_splash_damage;expected_actor.shields-=damage;expected_player.shields-=damage;
   require(!std::memcmp(ConsoleObject,&expected_actor,sizeof(expected_actor))&&!std::memcmp(&Players[0],&expected_player,sizeof(expected_player))&&!std::memcmp(&weapon,&weapon_before,sizeof(weapon))&&!std::memcmp(&Objects[3],&parent_before,sizeof(parent_before))&&!std::memcmp(&Controls,&controls_before,sizeof(Controls)),"self splash actual shields and whole actor/player/control preservation");
@@ -4007,9 +4015,82 @@ void self_splash_controls(int mode=0) {
 }
 }
 
+namespace {
+void smart_stun_controls(int mode=0) {
+ struct Row {vms_vector position;fix frame,damage,old_damage;vms_vector force,old_force,rotation,old_rotation;int count,old_count;vms_vector spin,old_spin;};
+ const Row rows[]={
+ {{131072,131072,131072},1024,2258204,2293760,{1303766,1303766,1303766},{1468005,1468005,1468005},{-1629707,-1629707,-1629707},{-1835006,-1835006,-1835006},88,89,{85112,-35387,33792},{-86085,35783,-34181}},
+ {{-131072,-131072,-131072},1024,2258204,2293760,{-1303766,-1303766,-1303766},{-1468005,-1468005,-1468005},{1629707,1629707,1629707},{1835006,1835006,1835006},88,89,{85112,-35387,33792},{-86085,35783,-34181}},
+ {{131072,131072,131072},1092,2258204,2293760,{1303766,1303766,1303766},{1468005,1468005,1468005},{-1629707,-1629707,-1629707},{-1835006,-1835006,-1835006},82,84,{79309,-32974,31488},{-81249,33773,-32261}},
+ {{-131072,-131072,-131072},1092,2258204,2293760,{-1303766,-1303766,-1303766},{-1468005,-1468005,-1468005},{1629707,1629707,1629707},{1835006,1835006,1835006},82,84,{79309,-32974,31488},{-81249,33773,-32261}},
+ {{131072,131072,131072},2048,2258204,2293760,{1303766,1303766,1303766},{1468005,1468005,1468005},{-1629707,-1629707,-1629707},{-1835006,-1835006,-1835006},45,45,{43523,-18095,17280},{-43526,18092,-17282}},
+ {{-131072,-131072,-131072},2048,2258204,2293760,{-1303766,-1303766,-1303766},{-1468005,-1468005,-1468005},{1629707,1629707,1629707},{1835006,1835006,1835006},45,45,{43523,-18095,17280},{-43526,18092,-17282}},
+ {{524288,524288,524288},1024,1168492,1310720,{674625,674625,674625},{838860,838860,838860},{-843281,-843281,-843281},{-1048575,-1048575,-1048575},46,51,{44490,-18497,17664},{-49329,20505,-19587}},
+ {{-524288,-524288,-524288},1024,1168492,1310720,{-674625,-674625,-674625},{-838860,-838860,-838860},{843281,843281,843281},{1048575,1048575,1048575},46,51,{44490,-18497,17664},{-49329,20505,-19587}},
+ {{524288,524288,524288},1092,1168492,1310720,{674625,674625,674625},{838860,838860,838860},{-843281,-843281,-843281},{-1048575,-1048575,-1048575},43,48,{41589,-17291,16512},{-46428,19299,-18435}},
+ {{-524288,-524288,-524288},1092,1168492,1310720,{-674625,-674625,-674625},{-838860,-838860,-838860},{843281,843281,843281},{1048575,1048575,1048575},43,48,{41589,-17291,16512},{-46428,19299,-18435}},
+ {{524288,524288,524288},2048,1168492,1310720,{674625,674625,674625},{838860,838860,838860},{-843281,-843281,-843281},{-1048575,-1048575,-1048575},24,26,{23212,-9651,9216},{-25148,10453,-9985}},
+ {{-524288,-524288,-524288},2048,1168492,1310720,{-674625,-674625,-674625},{-838860,-838860,-838860},{843281,843281,843281},{1048575,1048575,1048575},24,26,{23212,-9651,9216},{-25148,10453,-9985}},
+ {{393216,524288,0},1024,1572864,1546650,{943704,1258272,0},{905343,1207140,0},{-1179630,-1572840,0},{-1131678,-1508925,0},61,60,{58998,-24529,23424},{-58035,24123,-23043}},
+ {{-393216,-524288,0},1024,1572864,1546650,{-943704,-1258272,0},{-905343,-1207140,0},{1179630,1572840,0},{1131678,1508925,0},61,60,{58998,-24529,23424},{-58035,24123,-23043}},
+ {{393216,524288,0},1092,1572864,1546650,{943704,1258272,0},{905343,1207140,0},{-1179630,-1572840,0},{-1131678,-1508925,0},58,57,{56096,-23323,22272},{-55133,22917,-21891}},
+ {{-393216,-524288,0},1092,1572864,1546650,{-943704,-1258272,0},{-905343,-1207140,0},{1179630,1572840,0},{1131678,1508925,0},58,57,{56096,-23323,22272},{-55133,22917,-21891}},
+ {{393216,524288,0},2048,1572864,1546650,{943704,1258272,0},{905343,1207140,0},{-1179630,-1572840,0},{-1131678,-1508925,0},31,31,{29982,-12465,11904},{-29984,12463,-11905}},
+ {{-393216,-524288,0},2048,1572864,1546650,{-943704,-1258272,0},{-905343,-1207140,0},{1179630,1572840,0},{1131678,1508925,0},31,31,{29982,-12465,11904},{-29984,12463,-11905}},
+ {{655360,0,0},1024,1572864,1572864,{1572864,0,0},{1572864,0,0},{-1966080,0,0},{-1966080,0,0},62,62,{59965,-24931,23808},{-59969,24927,-23811}},
+ {{-655360,0,0},1024,1572864,1572864,{-1572864,0,0},{-1572864,0,0},{1966080,0,0},{1966080,0,0},62,62,{59965,-24931,23808},{-59969,24927,-23811}},
+ {{655360,0,0},1092,1572864,1572864,{1572864,0,0},{1572864,0,0},{-1966080,0,0},{-1966080,0,0},58,58,{56096,-23323,22272},{-56100,23319,-22275}},
+ {{-655360,0,0},1092,1572864,1572864,{-1572864,0,0},{-1572864,0,0},{1966080,0,0},{1966080,0,0},58,58,{56096,-23323,22272},{-56100,23319,-22275}},
+ {{655360,0,0},2048,1572864,1572864,{1572864,0,0},{1572864,0,0},{-1966080,0,0},{-1966080,0,0},32,32,{30950,-12868,12288},{-30952,12866,-12290}},
+ {{-655360,0,0},2048,1572864,1572864,{-1572864,0,0},{-1572864,0,0},{1966080,0,0},{1966080,0,0},32,32,{30950,-12868,12288},{-30952,12866,-12290}},
+ {{0,0,0},1024,2621440,2621440,{0,0,0},{0,0,0},{0,0,0},{0,0,0},2,2,{1934,-804,768},{-1934,804,-768}},
+ {{0,0,0},1024,2621440,2621440,{0,0,0},{0,0,0},{0,0,0},{0,0,0},2,2,{1934,-804,768},{-1934,804,-768}},
+ {{0,0,0},1092,2621440,2621440,{0,0,0},{0,0,0},{0,0,0},{0,0,0},2,2,{1934,-804,768},{-1934,804,-768}},
+ {{0,0,0},1092,2621440,2621440,{0,0,0},{0,0,0},{0,0,0},{0,0,0},2,2,{1934,-804,768},{-1934,804,-768}},
+ {{0,0,0},2048,2621440,2621440,{0,0,0},{0,0,0},{0,0,0},{0,0,0},2,2,{1934,-804,768},{-1934,804,-768}},
+ {{0,0,0},2048,2621440,2621440,{0,0,0},{0,0,0},{0,0,0},{0,0,0},2,2,{1934,-804,768},{-1934,804,-768}},
+ };
+ int cases=0;
+ for(int profile=0;profile<4;++profile)for(unsigned row=0;row<sizeof(rows)/sizeof(rows[0]);++row)for(int scenario=0;scenario<5;++scenario)for(int initial_skip:{0,3}) {
+  if(mode==1&&(profile||row||scenario||initial_skip))continue;
+  if(mode==2&&(profile||row!=18||scenario||initial_skip))continue;
+  if((mode==3||mode==4)&&!profile&&!scenario)continue;
+  if(mode==4&&!profile&&(scenario==1||scenario==4)&&row<18)continue;
+  reset();xl_object_trigger_clear();xl_boss_spawn_clear();for(int i=0;i<=Highest_object_index;++i)Objects[i]={};Highest_object_index=3;
+  Objects[player_slot].type=OBJ_PLAYER;Objects[player_slot].id=Player_num;Objects[player_slot].signature=101;Objects[player_slot].pos={1000*F1_0,0,0};
+  auto &victim=Objects[owner_a];victim.type=OBJ_ROBOT;victim.id=child_type;victim.signature=701;victim.shields=100*F1_0;victim.pos=rows[row].position;victim.size=F1_0;victim.movement_type=MT_PHYSICS;victim.control_type=CT_AI;victim.ctype.ai_info.behavior=AIB_NORMAL;victim.ctype.ai_info.SKIP_AI_COUNT=initial_skip;victim.mtype.phys_info.rotthrust={11,-22,33};if(scenario==2)victim.flags|=OF_SHOULD_BE_DEAD;
+  Robot_info[child_type].strength=200*F1_0;Robot_info[child_type].companion=0;Robot_info[child_type].boss_flag=scenario==4?21:0;
+  auto &weapon=Objects[2];weapon.type=OBJ_WEAPON;weapon.id=SMART_ID;weapon.signature=401;weapon.ctype.laser_info.parent_type=OBJ_PLAYER;weapon.ctype.laser_info.parent_num=player_slot;weapon.ctype.laser_info.parent_signature=101;
+  Weapon_info[SMART_ID]={};Weapon_info[SMART_ID].flash=scenario==1?0:5;Weapon_info[SMART_ID].damage_radius=25*F1_0;Weapon_info[SMART_ID].children=19;for(int difficulty=0;difficulty<NDL;++difficulty)Weapon_info[SMART_ID].strength[difficulty]=40*F1_0;
+  GameTime64=20*F1_0;Difficulty_level=2;FrameTime=rows[row].frame;extensions=profile!=1;fixture_mission.descent_version=profile==2?1:2;Game_mode=profile==3?GM_MULTI:0;
+  smart_trace=true;splash_trace=true;splash_visible=scenario!=3;splash_visibility=splash_forces=splash_rotations=0;
+  d_srand(2);const auto calls=d_rand_get_call_count();unsigned fx;d_rand_get_stream_state(D_RNG_FX,&fx);const auto fx_calls=d_rand_get_stream_call_count(D_RNG_FX);
+  const auto before=victim,parent_before=Objects[player_slot],weapon_before=weapon;
+  vms_vector origin{};splash_origin=origin;Vclip[7].play_time=F1_0;
+  auto *effect=object_create_explosion_sub(&weapon,0,&origin,7*F1_0,7,40*F1_0,25*F1_0,40*F1_0,player_slot);
+  const bool accepted=scenario!=2&&scenario!=3,stun=accepted&&scenario==0&&profile!=2;const fix damage=accepted?(profile?rows[row].old_damage:rows[row].damage):0;
+  auto expected=before;expected.shields-=damage;if(stun){expected.ctype.ai_info.SKIP_AI_COUNT=victim.ctype.ai_info.SKIP_AI_COUNT;expected.mtype.phys_info.rotthrust=victim.mtype.phys_info.rotthrust;expected.mtype.phys_info.flags|=PF_USES_THRUST;}
+  require(!std::memcmp(&victim,&expected,sizeof(expected))&&!std::memcmp(&Objects[player_slot],&parent_before,sizeof(parent_before))&&!std::memcmp(&weapon,&weapon_before,sizeof(weapon_before)),"Smart actual damage and unrelated actor/weapon preservation");
+  require(splash_visibility==int(scenario!=2)&&splash_forces==int(accepted)&&splash_rotations==splash_forces,"Smart source visibility and physics output counts");
+  if(accepted){const auto &force=profile?rows[row].old_force:rows[row].force;const auto &rotation=profile?rows[row].old_rotation:rows[row].rotation;require(!std::memcmp(&splash_force,&force,sizeof(force))&&!std::memcmp(&splash_rotation,&rotation,sizeof(rotation)),"Smart unchanged force and robot rotation before stun assertion");}
+  require(effect==&Objects[4]&&effect->type==OBJ_FIREBALL&&effect->id==7&&effect->segnum==0&&!effect->pos.x&&!effect->pos.y&&!effect->pos.z&&effect->size==7*F1_0&&effect->control_type==CT_EXPLOSION&&effect->movement_type==MT_NONE&&effect->render_type==RT_FIREBALL&&effect->lifeleft==F1_0&&effect->ctype.expl_info.spawn_time==-1&&effect->ctype.expl_info.delete_objnum==-1&&effect->ctype.expl_info.delete_time==-1&&effect->ctype.ai_info.SKIP_AI_COUNT==-1,"real explosion setup retains original union-owned skip admission");
+  unsigned sim_after,fx_after;d_rand_get_state(&sim_after);d_rand_get_stream_state(D_RNG_FX,&fx_after);require(d_rand_get_call_count()==calls+(stun?3:0)&&sim_after==(stun?2818548041u:2u)&&fx==fx_after&&fx_calls==d_rand_get_stream_call_count(D_RNG_FX),"Smart exact three SIM draws/state and preserved FX stream");
+  if(mode==1||mode==2)std::cout<<"observed skip="<<int(victim.ctype.ai_info.SKIP_AI_COUNT)<<" spin="<<victim.mtype.phys_info.rotthrust.x<<","<<victim.mtype.phys_info.rotthrust.y<<","<<victim.mtype.phys_info.rotthrust.z<<" damage="<<damage<<"\n";
+  if(stun){require(victim.ctype.ai_info.SKIP_AI_COUNT==initial_skip+(profile?rows[row].old_count:rows[row].count),"Smart stun uses source full force magnitude count");const auto &spin=profile?rows[row].old_spin:rows[row].spin;require(!std::memcmp(&victim.mtype.phys_info.rotthrust,&spin,sizeof(spin)),"Smart stun uses source signed draw mapping");}
+  smart_trace=false;splash_trace=false;++cases;
+ }
+ std::cout<<"PASS Smart stun "<<cases<<" cases\n";
+}
+}
+
 int main(int argc, char **argv)
 {
 	try {
+ if(argc==2&&!std::strcmp(argv[1],"smart-stun")){smart_stun_controls();return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"smart-stun-count-probe")){smart_stun_controls(1);return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"smart-stun-spin-probe")){smart_stun_controls(2);return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"smart-stun-base-guards")){smart_stun_controls(4);return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"smart-stun-guards")){smart_stun_controls(3);return 0;}
  if(argc==2&&!std::strcmp(argv[1],"self-splash")){self_splash_controls();return 0;}
  if(argc==2&&!std::strcmp(argv[1],"self-splash-probe")){self_splash_controls(1);return 0;}
  if(argc==2&&!std::strcmp(argv[1],"self-splash-base-guards")){self_splash_controls(3);return 0;}
@@ -4018,6 +4099,7 @@ int main(int argc, char **argv)
  if(argc==2&&!std::strcmp(argv[1],"splash-probe")){splash_controls(1);return 0;}
  if(argc==2&&!std::strcmp(argv[1],"splash-guards")){splash_controls(2);return 0;}
  if(argc==2&&!std::strcmp(argv[1],"splash-outside-probe")){splash_controls(4);return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"impulse-probe")){splash_controls(5);return 0;}
  if(argc==2&&!std::strcmp(argv[1],"splash-range")){splash_controls(3);return 0;}
  if(argc==2&&!std::strcmp(argv[1],"master-forcefield")){master_forcefield_controls();return 0;}
  if(argc==2&&!std::strcmp(argv[1],"master-chain")){master_chain_controls();return 0;}
@@ -4168,6 +4250,7 @@ int main(int argc, char **argv)
 			common_damage_gates(!std::strcmp(argv[1], "age"), !std::strcmp(argv[1], "strength"));
 			return 0;
 		}
+        smart_stun_controls();
         self_splash_controls();
         splash_controls();
 		master_forcefield_controls();
@@ -4432,7 +4515,7 @@ void input_demo_record_robot_damage_event(object *, int32_t, int32_t) {}
 void input_demo_log_replay_robot_damage(object *, int32_t, int32_t) {}
 void input_demo_rng_trace_record_srand(int, const char *, const char *, int, uint32_t, int, uint32_t, int has_after, uint32_t state_after, uint32_t seed)
 {
-	require((countdown_trace || seismic_trace || teleport_trace || gauss_trace || forcefield_trace || matcen_trace || fluid_trace) && (seed == 2 || (seismic_trace && seed == 7)) && has_after && state_after == seed, "actual gameplay RNG seed record");
+	require((countdown_trace || seismic_trace || teleport_trace || gauss_trace || forcefield_trace || matcen_trace || fluid_trace || smart_trace) && (seed == 2 || (seismic_trace && seed == 7)) && has_after && state_after == seed, "actual gameplay RNG seed record");
 }
 void input_demo_rng_trace_record_rand(int, const char *, const char *, int,
                                       uint32_t, int, uint32_t, int, uint32_t, int) {}
