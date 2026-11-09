@@ -2433,6 +2433,9 @@ void bash_buddy_weapon_info(int weapon_objnum)
 	objp->ctype.laser_info.parent_num = ConsoleObject-Objects;
 	objp->ctype.laser_info.parent_type = OBJ_PLAYER;
 	objp->ctype.laser_info.parent_signature = ConsoleObject->signature;
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+	xl_weapon_lifecycle_emit(XL_WEAPON_BUDDY_PARENT, weapon_objnum, ConsoleObject - Objects);
+#endif
 }
 
 //	-----------------------------------------------------------------------------

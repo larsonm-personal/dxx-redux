@@ -476,6 +476,24 @@ int obj_create_copy(int objnum, vms_vector *new_pos, int newsegnum);
 // remove object from the world
 void obj_delete(int objnum);
 
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+// Copies a weapon state at one source event. Parent fields at birth are provisional.
+typedef struct xl_weapon_lifecycle_sample {
+	int kind, level, object, signature, weapon_id, segment, position[3], radius;
+	int movement_type, flags, lifeleft, parent_type, parent_object, parent_signature;
+	int source_object, source_signature;
+	long long game_time_raw, creation_time_raw;
+} xl_weapon_lifecycle_sample;
+enum { XL_WEAPON_BIRTH = 1,
+	   XL_WEAPON_PARENT = 2,
+	   XL_WEAPON_OMEGA_PARENT = 3,
+	   XL_WEAPON_BUDDY_PARENT = 4,
+	   XL_WEAPON_REFLECTION = 5,
+	   XL_WEAPON_RETIRE = 6 };
+void xl_weapon_lifecycle_set_observer(void (*observer)(const xl_weapon_lifecycle_sample *));
+void xl_weapon_lifecycle_emit(int kind, int object, int source_object);
+#endif
+
 // called after load.  Takes number of objects, and objects should be
 // compressed
 void reset_objects(int n_objs);

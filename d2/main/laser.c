@@ -510,7 +510,9 @@ void create_omega_blobs(int firing_segnum, vms_vector *firing_pos, vms_vector *g
 			objp->ctype.laser_info.parent_signature	= parent_objp->signature;
 			objp->ctype.laser_info.parent_num			= parent_objp-Objects;
 			objp->movement_type = MT_NONE;	//	Only last one moves, that will get bashed below.
-
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+			xl_weapon_lifecycle_emit(XL_WEAPON_OMEGA_PARENT, blob_objnum, parent_objp - Objects);
+#endif
 		}
 
 		vm_vec_add2(&blob_pos, &omega_delta_vector);
@@ -706,6 +708,9 @@ void do_omega_stuff(object *parent_objp, vms_vector *firing_pos, object *weapon_
 	weapon_objp->ctype.laser_info.parent_type = OBJ_PLAYER;
 	weapon_objp->ctype.laser_info.parent_num = Players[pnum].objnum;
 	weapon_objp->ctype.laser_info.parent_signature = Objects[Players[pnum].objnum].signature;
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+	xl_weapon_lifecycle_emit(XL_WEAPON_PARENT, weapon_objp - Objects, Players[pnum].objnum);
+#endif
 
 	lock_objnum = find_homing_object(firing_pos, weapon_objp);
 
@@ -912,6 +917,9 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 		}
 	}
 
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+	xl_weapon_lifecycle_emit(XL_WEAPON_PARENT, objnum, parent);
+#endif
 	// Create orientation matrix so we can look from this pov
 	//	Homing missiles also need an orientation matrix so they know if they can make a turn.
 	if ((obj->render_type == RT_POLYOBJ) || (Weapon_info[obj->id].homing_flag))
