@@ -1,6 +1,7 @@
 """Source-only artifact negative checks; never run the probe."""
 
 import json
+import struct
 import subprocess
 import tempfile
 import unittest
@@ -9,6 +10,7 @@ from pathlib import Path
 
 from probe_artifact import (
     BINARY,
+    MAX_BINARY,
     NOTICES,
     RECEIPT,
     REPO,
@@ -108,6 +110,10 @@ class ArtifactTests(unittest.TestCase):
                 {BINARY, RECEIPT, *NOTICES},
             )
             self.assertEqual(json.loads((output / RECEIPT).read_text())["head"], head)
+            with (build / "main" / BINARY).open("wb") as binary:
+                binary.truncate(MAX_BINARY + 1)
+            with self.assertRaises(ValueError):
+                create(build, Path(temp) / "over-limit", head, "123", "2")
 
     def test_compiler_identity(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -206,7 +212,7 @@ class ArtifactTests(unittest.TestCase):
             ("name", "old"),
             ("expired", True),
             ("digest", "wrong"),
-            ("size_in_bytes", 60 * 1024 * 1024),
+            ("size_in_bytes", 180 * 1024 * 1024),
         ):
             with self.subTest(field=field), self.assertRaises(ValueError):
                 authenticate_metadata(run, [{**artifact, field: value}], jobs, **args)
@@ -296,9 +302,71 @@ class ArtifactTests(unittest.TestCase):
                     ) if field != "artifact_digest" else verify_zip(
                         archive, artifact_digest=bad, **args
                     )
-            for member in ("../secret", "/absolute", "private.pig", BINARY):
+            for member in ("../secret", "/absolute", "private.pig", NOTICES[0]):
                 with self.subTest(member=member), self.assertRaises(ValueError):
-                    verify_zip(archive, artifact_digest=write([(member, b"x")]), **args)
+                    with zipfile.ZipFile(archive, "w") as z:
+                        for name, data in files.items():
+                            z.writestr(member if name == BINARY else name, data)
+                    verify_zip(
+                        archive,
+                        artifact_digest="sha256:" + sha256(archive.read_bytes()),
+                        **args,
+                    )
+            with self.assertRaises(ValueError):
+                verify_zip(archive, artifact_digest=write([("extra", b"x")]), **args)
+            with zipfile.ZipFile(archive, "w") as z:
+                for name, data in files.items():
+                    z.writestr(name, b"x" * 65537 if name == NOTICES[0] else data)
+            with self.assertRaises(ValueError):
+                verify_zip(
+                    archive,
+                    artifact_digest="sha256:" + sha256(archive.read_bytes()),
+                    **args,
+                )
+            write()
+            data = archive.read_bytes()
+            eocd = data.rfind(b"PK\x05\x06")
+            archive.write_bytes(
+                data[:eocd]
+                + struct.pack("<4sLQL", b"PK\x06\x07", 0, 0, 1)
+                + data[eocd:]
+            )
+            with self.assertRaises(ValueError):
+                verify_zip(
+                    archive,
+                    artifact_digest="sha256:" + sha256(archive.read_bytes()),
+                    **args,
+                )
+            write()
+            data = archive.read_bytes()
+            eocd = data.rfind(b"PK\x05\x06")
+            end = bytearray(data[eocd:])
+            end[20:22] = struct.pack("<H", 65535)
+            archive.write_bytes(
+                data[:eocd]
+                + struct.pack("<4sLQL", b"PK\x06\x07", 0, 0, 1)
+                + end
+                + b"x" * 65535
+            )
+            with self.assertRaises(ValueError):
+                verify_zip(
+                    archive,
+                    artifact_digest="sha256:" + sha256(archive.read_bytes()),
+                    **args,
+                )
+            link = zipfile.ZipInfo(BINARY)
+            link.external_attr = 0o120777 << 16
+            with zipfile.ZipFile(archive, "w") as z:
+                for name, data in files.items():
+                    if name != BINARY:
+                        z.writestr(name, data)
+                z.writestr(link, b"target")
+            with self.assertRaises(ValueError):
+                verify_zip(
+                    archive,
+                    artifact_digest="sha256:" + sha256(archive.read_bytes()),
+                    **args,
+                )
 
 
 if __name__ == "__main__":

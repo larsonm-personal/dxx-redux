@@ -13,6 +13,7 @@ import re
 import shlex
 import shutil
 import stat
+import struct
 import subprocess
 import zipfile
 from pathlib import Path, PurePosixPath
@@ -23,8 +24,8 @@ BINARY = "xl-preview-lifecycle"
 NOTICES = ("COPYING.txt", "d2/COPYING.txt")
 RECEIPT = "provenance.json"
 FILES = frozenset((BINARY, RECEIPT, *NOTICES))
-MAX_BINARY = 50 * 1024 * 1024
-MAX_ARCHIVE = 55 * 1024 * 1024
+MAX_BINARY = 160 * 1024 * 1024
+MAX_ARCHIVE = 170 * 1024 * 1024
 WORKFLOW = ".github/workflows/xl-compat.yml"
 REPO = "larsonm-personal/dxx-redux"
 JOB = "XL developer source compile (no game assets)"
@@ -90,6 +91,47 @@ def sha256(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def file_digest(path):
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for block in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def preflight_zip(archive):
+    """Reject oversized ZIP directory metadata before ZipFile allocates entries."""
+    size = archive.stat().st_size
+    require(22 <= size <= MAX_ARCHIVE, "archive outside size bound")
+    with archive.open("rb") as source:
+        source.seek(max(0, size - 65577))
+        tail = source.read(65577)
+    offset = tail.rfind(b"PK\x05\x06")
+    require(offset >= 0 and offset + 22 <= len(tail), "ZIP end record missing")
+    require(
+        offset < 20 or tail[offset - 20 : offset - 16] != b"PK\x06\x07",
+        "ZIP64 locator is not allowed",
+    )
+    (
+        _,
+        disk,
+        directory_disk,
+        disk_entries,
+        entries,
+        directory_size,
+        directory_offset,
+        comment,
+    ) = struct.unpack_from("<4s4H2LH", tail, offset)
+    require(
+        offset + 22 + comment == len(tail)
+        and disk == directory_disk == 0
+        and disk_entries == entries == len(FILES)
+        and directory_size <= 4096
+        and directory_offset + directory_size <= size - 22,
+        "ZIP directory outside packet bounds",
+    )
+
+
 def git(*args):
     return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
 
@@ -136,7 +178,7 @@ def create(build, output, head, run_id, run_attempt):
         "files": {
             name: {
                 "size": (output / name).stat().st_size,
-                "sha256": sha256((output / name).read_bytes()),
+                "sha256": file_digest(output / name),
             }
             for name in (BINARY, *NOTICES)
         },
@@ -144,11 +186,13 @@ def create(build, output, head, run_id, run_attempt):
         "workflow_binding": "runner comparison only; GitHub REST does not independently attest executed YAML bytes",
     }
     (output / RECEIPT).write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
-    check_files(
+    check_manifest(
         {
-            p.relative_to(output).as_posix(): p.read_bytes()
-            for p in output.rglob("*")
-            if p.is_file()
+            name: {
+                "size": (output / name).stat().st_size,
+                "sha256": file_digest(output / name),
+            }
+            for name in FILES - {RECEIPT}
         },
         receipt,
         repository=REPO,
@@ -175,6 +219,37 @@ def check_files(
     expected_compile=None,
 ):
     require(set(files) == FILES, "missing or unexpected packet files")
+    return check_manifest(
+        {
+            name: {"size": len(files[name]), "sha256": sha256(files[name])}
+            for name in FILES - {RECEIPT}
+        },
+        receipt,
+        repository=repository,
+        workflow=workflow,
+        run_id=run_id,
+        run_attempt=run_attempt,
+        head=head,
+        tree=tree,
+        platform=platform,
+        expected_compile=expected_compile,
+    )
+
+
+def check_manifest(
+    manifest,
+    receipt,
+    *,
+    repository,
+    workflow,
+    run_id,
+    run_attempt,
+    head,
+    tree,
+    platform,
+    expected_compile=None,
+):
+    require(set(manifest) == FILES - {RECEIPT}, "missing or unexpected packet files")
     require(receipt.get("schema") == 1, "unknown receipt schema")
     for key, expected in (
         ("repository", repository),
@@ -234,12 +309,15 @@ def check_files(
         set(receipt.get("files", {})) == FILES - {RECEIPT}, "file manifest mismatch"
     )
     for name in FILES - {RECEIPT}:
-        data = files[name]
         require(
-            receipt["files"][name] == {"size": len(data), "sha256": sha256(data)},
+            receipt["files"][name] == manifest[name],
             f"{name} digest mismatch",
         )
-    require(0 < len(files[BINARY]) <= MAX_BINARY, "binary outside size bound")
+    require(0 < manifest[BINARY]["size"] <= MAX_BINARY, "binary outside size bound")
+    require(
+        all(0 < manifest[name]["size"] <= 64 * 1024 for name in (*NOTICES,)),
+        "license notice outside size bound",
+    )
 
 
 def verify_zip(
@@ -270,12 +348,13 @@ def verify_zip(
         artifact_name == f"xl-developer-probe-{head}-{run_attempt}",
         "artifact name mismatch",
     )
-    require(archive.stat().st_size <= MAX_ARCHIVE, "archive outside size bound")
+    preflight_zip(archive)
     require(
-        "sha256:" + sha256(archive.read_bytes()) == artifact_digest,
+        "sha256:" + file_digest(archive) == artifact_digest,
         "GitHub archive digest mismatch",
     )
-    files = {}
+    manifest = {}
+    receipt_data = None
     with zipfile.ZipFile(archive) as z:
         for info in z.infolist():
             name = info.filename
@@ -284,22 +363,38 @@ def verify_zip(
                 name in FILES
                 and not path.is_absolute()
                 and ".." not in path.parts
-                and name not in files,
+                and name not in manifest
+                and not (name == RECEIPT and receipt_data is not None),
                 "unsafe or unexpected ZIP member",
             )
             mode = info.external_attr >> 16
             require(
-                not stat.S_ISLNK(mode) and not info.is_dir(), "link or directory in ZIP"
+                stat.S_IFMT(mode) in (0, stat.S_IFREG) and not info.is_dir(),
+                "nonregular ZIP member",
             )
+            limit = MAX_BINARY if name == BINARY else 64 * 1024
             require(
-                info.file_size <= MAX_BINARY and info.compress_size <= MAX_ARCHIVE,
+                0 < info.file_size <= limit and info.compress_size <= MAX_ARCHIVE,
                 "ZIP member too large",
             )
-            files[name] = z.read(info)
-    require(set(files) == FILES, "missing ZIP members")
-    receipt = json.loads(files[RECEIPT])
-    check_files(
-        files,
+            digest = hashlib.sha256()
+            size = 0
+            with z.open(info) as source:
+                for block in iter(lambda: source.read(1024 * 1024), b""):
+                    size += len(block)
+                    require(size <= limit, "decompressed ZIP member too large")
+                    digest.update(block)
+                    if name == RECEIPT:
+                        receipt_data = (receipt_data or b"") + block
+            if name != RECEIPT:
+                manifest[name] = {"size": size, "sha256": digest.hexdigest()}
+    require(
+        set(manifest) == FILES - {RECEIPT} and receipt_data is not None,
+        "missing ZIP members",
+    )
+    receipt = json.loads(receipt_data)
+    check_manifest(
+        manifest,
         receipt,
         repository=repository,
         workflow=workflow,
