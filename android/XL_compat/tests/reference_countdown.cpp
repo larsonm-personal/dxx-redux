@@ -20,7 +20,7 @@ constexpr int I2X(int value)
 }
 constexpr int X2I(int value)
 {
-	return value >> 16;
+	return value / 65536;
 }
 constexpr int F2X(double value)
 {
@@ -28,7 +28,7 @@ constexpr int F2X(double value)
 }
 int FixMul(int a, int b)
 {
-	return int((std::int64_t(a) * b) >> 16);
+	return int((std::int64_t(a) * b) / 65536);
 }
 static_assert(SOUND_COUNTDOWN_0_SECS == 100 && SOUND_COUNTDOWN_13_SECS == 113 && SOUND_COUNTDOWN_29_SECS == 114 &&
               SOUND_CONTROL_CENTER_WARNING_SIREN == 32 && SOUND_MINE_BLEW_UP == 33 &&
@@ -184,6 +184,10 @@ void countdown_source_controls()
 {
 	using namespace countdown_reference;
 	const auto require = [](bool condition, const char *reason) { if (!condition) throw std::runtime_error(reason); };
+	require(X2I(-1) == 0 && X2I(-65535) == 0 && X2I(-65536) == -1 && X2I(65535) == 0 && X2I(65536) == 1,
+	        "Pinned X2I signed division microcontrols");
+	require(FixMul(-15476, 12288) == -2901 && FixMul(15476, 12288) == 2901 && FixMul(-1, 1) == 0 && FixMul(1, 1) == 0,
+	        "Pinned FixMul signed truncation microcontrols");
 	unsigned cases = 0;
 	for (int authored : { -99, 0, 1, 99, 1000, 32767 })
 		for (int base : { 0, 1, 30, 60, 500 })

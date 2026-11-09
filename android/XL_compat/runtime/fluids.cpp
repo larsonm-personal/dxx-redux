@@ -164,7 +164,7 @@ extern "C" int xl_fluid_scrape(int index, int segment, int side, const int32_t p
 			direction.y += multiply(random.y, F1_0 / 8);
 			direction.z += multiply(random.z, F1_0 / 8);
 			direction = normalize(direction);
-			if (actor.mtype.phys_info.mass && actor.movement_type == MT_PHYSICS && !Automap_active && !xl_speed_boost_active(index)) {
+			if (actor.mtype.phys_info.mass && actor.movement_type == MT_PHYSICS && !Automap_active && xl_speed_boost_active(index) < 1) {
 				const float scale = 1.0f / (float(actor.mtype.phys_info.mass) / F1_0);
 				actor.mtype.phys_info.velocity.x += static_cast<fix>(float(multiply(direction.x, i2f(8))) * scale);
 				actor.mtype.phys_info.velocity.y += static_cast<fix>(float(multiply(direction.y, i2f(8))) * scale);

@@ -320,6 +320,15 @@ void apply_force_damage(object *obj,fix force,object *other_obj)
 }
 
 //	-----------------------------------------------------------------------------
+static fix bump_damage_force_magnitude(const vms_vector *force)
+{
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !d1_in_d2_use_d1_gameplay())
+		return vm_vec_mag(force);
+#endif
+	return vm_vec_mag_quick(force);
+}
+
 void bump_this_object(object *objp, object *other_objp, vms_vector *force, int damage_flag)
 {
 #ifdef DXX_XL_RUNTIME
@@ -336,7 +345,7 @@ void bump_this_object(object *objp, object *other_objp, vms_vector *force, int d
 			force2.z = force->z/4;
 			phys_apply_force(objp,&force2);
 			if (damage_flag && ((other_objp->type != OBJ_ROBOT) || !Robot_info[other_objp->id].companion)) {
-				force_mag = vm_vec_mag_quick(&force2);
+				force_mag = bump_damage_force_magnitude(&force2);
 				apply_force_damage(objp, force_mag, other_objp);
 			}
 		} else if ((objp->type == OBJ_ROBOT) || (objp->type == OBJ_CLUTTER) || (objp->type == OBJ_CNTRLCEN)) {
@@ -346,17 +355,27 @@ void bump_this_object(object *objp, object *other_objp, vms_vector *force, int d
 #endif
 			    !Robot_info[objp->id].boss_flag) {
 				vms_vector force2;
-				force2.x = force->x/(4 + Difficulty_level);
-				force2.y = force->y/(4 + Difficulty_level);
-				force2.z = force->z/(4 + Difficulty_level);
+#ifdef DXX_XL_RUNTIME
+				if (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !d1_in_d2_use_d1_gameplay()) {
+					const float scale = 1.0f / (float) (4 + Difficulty_level);
+					force2.x = (fix) (force->x * scale);
+					force2.y = (fix) (force->y * scale);
+					force2.z = (fix) (force->z * scale);
+				} else
+#endif
+				{
+					force2.x = force->x / (4 + Difficulty_level);
+					force2.y = force->y / (4 + Difficulty_level);
+					force2.z = force->z / (4 + Difficulty_level);
+				}
 
 				phys_apply_force(objp, force);
 				phys_apply_rot(objp, &force2);
 				if (damage_flag) {
 #ifdef DXX_XL_RUNTIME
-					force_mag = vm_vec_mag_quick(xl_level_extensions_active() && !(Game_mode & GM_MULTI) ? &force2 : force);
+					force_mag = bump_damage_force_magnitude(xl_level_extensions_active() && !(Game_mode & GM_MULTI) ? &force2 : force);
 #else
-					force_mag = vm_vec_mag_quick(force);
+					force_mag = bump_damage_force_magnitude(force);
 #endif
 					apply_force_damage(objp, force_mag, other_objp);
 				}
@@ -458,9 +477,18 @@ void collide_player_and_wall( object * playerobj, fix hitspeed, short hitseg, sh
 
 		//knock player around
 		// SIM RNG: this directly perturbs live player physics on forcefield hits
+#ifdef DXX_XL_RUNTIME
+		if (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !d1_in_d2_use_d1_gameplay()) {
+			force.x = 40 * (16383 - d_rand());
+			force.y = 40 * (16383 - d_rand());
+			force.z = 40 * (16383 - d_rand());
+		} else
+#endif
+		{
 		force.x = 40*(d_rand() - 16384);
 		force.y = 40*(d_rand() - 16384);
 		force.z = 40*(d_rand() - 16384);
+		}
 		phys_apply_rot(playerobj, &force);
 
 		//make sound
@@ -1570,7 +1598,12 @@ void collide_weapon_and_controlcen( object * weapon, object *controlcen, vms_vec
 			}
 		}
 
-		if (Objects[weapon->ctype.laser_info.parent_num].id == Player_num)
+		if (
+#ifdef DXX_XL_RUNTIME
+		    (!(xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !d1_in_d2_use_d1_gameplay()) ||
+		     (weapon->ctype.laser_info.parent_num >= 0 && weapon->ctype.laser_info.parent_num <= Highest_object_index)) &&
+#endif
+		    Objects[weapon->ctype.laser_info.parent_num].id == Player_num)
 			Control_center_been_hit = 1;
 
 		if ( Weapon_info[weapon->id].damage_radius )
@@ -1839,6 +1872,21 @@ fix64	Last_time_buddy_gave_hint = 0;
 
 //	------------------------------------------------------------------------------------------------------
 //	Return true if damage done to boss, else return false.
+#ifdef DXX_XL_RUNTIME
+static double xl_boss_reflection_normalize(vms_vector *vector)
+{
+	const double x = vector->x, y = vector->y, z = vector->z;
+	const double magnitude = floor(sqrt(x * x + y * y + z * z));
+	if (magnitude) {
+		vector->x = (fix) (x / magnitude * 65536.0);
+		vector->y = (fix) (y / magnitude * 65536.0);
+		vector->z = (fix) (z / magnitude * 65536.0);
+	} else
+		vm_vec_zero(vector);
+	return magnitude;
+}
+#endif
+
 int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collision_point)
 {
 	int	d2_boss_index;
@@ -1871,16 +1919,34 @@ int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collisio
 		}
 
 	if (Boss_invulnerable_spot[d2_boss_index]) {
-		fix			dot;
-		vms_vector	tvec1;
+		fix dot;
+		vms_vector tvec1;
 
 		//	Boss only vulnerable in back.  See if hit there.
 		vm_vec_sub(&tvec1, collision_point, &robot->pos);
-		vm_vec_normalize_quick(&tvec1);	//	Note, if BOSS_INVULNERABLE_DOT is close to F1_0 (in magnitude), then should probably use non-quick version.
-		dot = vm_vec_dot(&tvec1, &robot->orient.fvec);
+#ifdef DXX_XL_RUNTIME
+		if (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !d1_in_d2_use_d1_gameplay()) {
+			const double x = tvec1.x, y = tvec1.y, z = tvec1.z;
+			const double magnitude = floor(sqrt(x * x + y * y + z * z));
+			if (magnitude) {
+				tvec1.x = (fix) ((double) tvec1.x / magnitude * 65536.0);
+				tvec1.y = (fix) ((double) tvec1.y / magnitude * 65536.0);
+				tvec1.z = (fix) ((double) tvec1.z / magnitude * 65536.0);
+			} else
+				vm_vec_zero(&tvec1);
+			dot = (fix) (((double) tvec1.x * robot->orient.fvec.x +
+			              (double) tvec1.y * robot->orient.fvec.y +
+			              (double) tvec1.z * robot->orient.fvec.z) /
+			             65536.0);
+		} else
+#endif
+		{
+			vm_vec_normalize_quick(&tvec1); //	Note, if BOSS_INVULNERABLE_DOT is close to F1_0 (in magnitude), then should probably use non-quick version.
+			dot = vm_vec_dot(&tvec1, &robot->orient.fvec);
+		}
 		if (dot > Boss_invulnerable_dot) {
-			int	new_obj;
-			int	segnum;
+			int new_obj;
+			int segnum;
 
 			segnum = find_point_seg(collision_point, robot->segnum);
 			digi_link_sound_to_pos( SOUND_WEAPON_HIT_DOOR, segnum, 0, collision_point, 0, F1_0);
@@ -1938,11 +2004,25 @@ int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collisio
 					vm_vec_zero(&Objects[new_obj].mtype.phys_info.thrust);
 
 					vm_vec_sub(&vec_to_point, collision_point, &robot->pos);
-					vm_vec_normalize_quick(&vec_to_point);
-					weap_vec = weapon->mtype.phys_info.velocity;
-					speed = vm_vec_normalize_quick(&weap_vec);
-					vm_vec_scale_add2(&vec_to_point, &weap_vec, -F1_0*2);
-					vm_vec_scale(&vec_to_point, speed/4);
+#ifdef DXX_XL_RUNTIME
+					if (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !d1_in_d2_use_d1_gameplay()) {
+						xl_boss_reflection_normalize(&vec_to_point);
+						weap_vec = weapon->mtype.phys_info.velocity;
+						const double full_speed = xl_boss_reflection_normalize(&weap_vec);
+						const fix scale = (fix) floor(full_speed / 4.0);
+						// Products fit int64; division preserves source truncation for negative components
+						vec_to_point.x = (fix) (((int64_t) vec_to_point.x - 2 * (int64_t) weap_vec.x) * scale / F1_0);
+						vec_to_point.y = (fix) (((int64_t) vec_to_point.y - 2 * (int64_t) weap_vec.y) * scale / F1_0);
+						vec_to_point.z = (fix) (((int64_t) vec_to_point.z - 2 * (int64_t) weap_vec.z) * scale / F1_0);
+					} else
+#endif
+					{
+						vm_vec_normalize_quick(&vec_to_point);
+						weap_vec = weapon->mtype.phys_info.velocity;
+						speed = vm_vec_normalize_quick(&weap_vec);
+						vm_vec_scale_add2(&vec_to_point, &weap_vec, -F1_0 * 2);
+						vm_vec_scale(&vec_to_point, speed / 4);
+					}
 					Objects[new_obj].mtype.phys_info.velocity = vec_to_point;
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 					xl_weapon_lifecycle_emit(XL_WEAPON_REFLECTION, new_obj, weapon - Objects);
