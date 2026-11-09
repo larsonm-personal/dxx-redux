@@ -47,6 +47,7 @@ class DeveloperCompileCiTests(unittest.TestCase):
                     ("CMAKE_EXPORT_COMPILE_COMMANDS", "ON"),
                 )
             )
+            cache += "\nCMAKE_BUILD_TYPE:STRING=Debug"
             (build / "CMakeCache.txt").write_text(cache)
             command = (
                 "c++ -DDXX_XL_DEVELOPER_PROBE -DDXX_PUMO_CONTACT_DEVELOPER_PROBE "
@@ -76,6 +77,15 @@ class DeveloperCompileCiTests(unittest.TestCase):
                     commands.write_text(json.dumps([{**entry, "command": bad}]))
                     verify_build(build)
             commands.write_text(json.dumps([entry]))
+            with self.assertRaises(ValueError):
+                (build / "CMakeCache.txt").write_text(
+                    cache.replace(
+                        "CMAKE_BUILD_TYPE:STRING=Debug",
+                        "CMAKE_BUILD_TYPE:STRING=Release",
+                    )
+                )
+                verify_build(build)
+            (build / "CMakeCache.txt").write_text(cache)
             with self.assertRaises(ValueError):
                 (build / "CMakeCache.txt").write_text(
                     cache.replace(

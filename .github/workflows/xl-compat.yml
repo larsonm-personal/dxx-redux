@@ -56,6 +56,23 @@ jobs:
     env:
       EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
+      # The PR workflow executes from GitHub's merge ref. Compare that YAML with
+      # the reviewed candidate head before producing any downloadable binary.
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+          path: workflow-source
+          sparse-checkout: .github/workflows/xl-compat.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Record executed workflow source hash
+        env:
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          test "$(git -C workflow-source rev-parse HEAD)" = "$WORKFLOW_SHA"
+          echo "EXECUTED_WORKFLOW_HASH=$(sha256sum workflow-source/.github/workflows/xl-compat.yml | cut -d' ' -f1)" >> "$GITHUB_ENV"
+
       # Compile the candidate PR head, not GitHub's synthetic pull-request merge ref.
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
@@ -65,8 +82,10 @@ jobs:
       - name: Verify candidate head and source-only CI contract
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          test "$(sha256sum .github/workflows/xl-compat.yml | cut -d' ' -f1)" = "$EXECUTED_WORKFLOW_HASH"
           python3 android/XL_compat/tests/developer_compile_ci.py --check-workflow
           python3 android/XL_compat/tests/test_developer_compile_ci.py
+          python3 android/XL_compat/tests/test_probe_artifact.py
 
       - name: Install production renderer and audio dependencies
         timeout-minutes: 15
@@ -85,3 +104,21 @@ jobs:
             -DBUILD_TESTING=OFF -DOPENGL=ON -DDXX_XL_DEVELOPER_TESTS=ON
           cmake --build build-xl-developer-ci --parallel 2 --target dxx-redux-d2-headless-metadata
           python3 android/XL_compat/tests/developer_compile_ci.py --verify-build build-xl-developer-ci
+
+      - name: Prepare source-only developer probe packet
+        env:
+          PROBE_RUN_ID: ${{ github.run_id }}
+          PROBE_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          python3 android/XL_compat/tests/probe_artifact.py create \
+            --build build-xl-developer-ci --output temp/xl-developer-probe-packet \
+            --head "$EXPECTED_HEAD" --run-id "$PROBE_RUN_ID" \
+            --run-attempt "$PROBE_RUN_ATTEMPT"
+
+      - name: Upload source-only developer probe packet
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: xl-developer-probe-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_attempt }}
+          path: temp/xl-developer-probe-packet/
+          if-no-files-found: error
+          retention-days: 1
