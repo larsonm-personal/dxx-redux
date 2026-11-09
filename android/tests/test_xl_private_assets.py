@@ -1463,6 +1463,9 @@ class ReadinessTests(unittest.TestCase):
             "schema": "dxx-xl-readiness-v1",
             "target_sha": "a" * 40,
             "asset_commit": readiness.ASSET_COMMIT,
+            "selection_seed": catalog["selection_seed"],
+            "inventory_levels": len(catalog["cases"]),
+            "inventory_archives": len(catalog["archives"]),
             "rows": rows,
         }
         self.assertEqual(reporter.validate(receipt, catalog, "a" * 40)["readiness_percent"], 0)
@@ -1476,6 +1479,152 @@ class ReadinessTests(unittest.TestCase):
         lane = workflow.read_text().split("  readiness:", 1)[1]
         self.assertLess(lane.index("Revalidate pinned candidate"), lane.index("Check out pinned uploaded"))
         self.assertLess(lane.index("rm -rf retail-input"), lane.index("Build candidate"))
+
+    def expected_fixture(self):
+        catalog_path = Path(__file__).with_name("xl_readiness_inventory.json")
+        baseline = json.loads(Path(__file__).with_name("xl_readiness_expected.json").read_text())
+        catalog = json.loads(catalog_path.read_text())
+        cases = {r["id"]: r for r in catalog["cases"]}
+        receipt = {
+            "schema": "dxx-xl-readiness-v1",
+            "target_sha": "a" * 40,
+            "asset_commit": baseline["asset_commit"],
+            "selection_seed": catalog["selection_seed"],
+            "inventory_levels": len(catalog["cases"]),
+            "inventory_archives": len(catalog["archives"]),
+            "rows": [{**cases[row["id"]], **row} for row in baseline["rows"]],
+        }
+        return receipt, catalog, baseline, hashlib.sha256(catalog_path.read_bytes()).hexdigest()
+
+    def test_expected_readiness_keeps_honest_score_and_accepts_improvements(self):
+        import xl_readiness_report as reporter
+
+        receipt, catalog, baseline, digest = self.expected_fixture()
+        result = reporter.validate(receipt, catalog, "a" * 40)
+        self.assertEqual((result["passed"], result["denominator"], result["readiness_percent"]), (4, 8, 50.0))
+        self.assertTrue(reporter.expected_failures_match(receipt, catalog, baseline, digest, "success"))
+        text = reporter.markdown(receipt, catalog, result, True)
+        self.assertIn("4/8 sampled levels confirmed", text)
+        self.assertIn("readiness remains unsuccessful until 8/8", text)
+        self.assertIn("no root-cause fingerprint", text)
+        for row in receipt["rows"]:
+            if row["outcome"] == "load_failed":
+                row.update(outcome="loaded_ticked", frames=120, xl_active=True)
+        self.assertEqual(reporter.validate(receipt, catalog, "a" * 40)["passed"], 8)
+        self.assertTrue(reporter.expected_failures_match(receipt, catalog, baseline, digest, "success"))
+
+    def test_expected_readiness_rejects_new_or_changed_failures_and_incomplete_measurements(self):
+        import xl_readiness_report as reporter
+
+        receipt, catalog, baseline, digest = self.expected_fixture()
+        for index, prior in enumerate(receipt["rows"]):
+            for outcome in (
+                "unsupported_format",
+                "simulation_failed",
+                "crash",
+                "timeout",
+                "infrastructure_error",
+                "untested",
+            ):
+                changed = copy.deepcopy(receipt)
+                changed["rows"][index]["outcome"] = outcome
+                with self.subTest(index=index, outcome=outcome):
+                    self.assertFalse(reporter.expected_failures_match(changed, catalog, baseline, digest, "success"))
+            if prior["outcome"] == "load_failed":
+                for key, value in (
+                    ("frames", 1),
+                    ("xl_active", False),
+                    ("assisted_navigation", "confirmed"),
+                    ("failure_signature", "new"),
+                ):
+                    changed = copy.deepcopy(receipt)
+                    changed["rows"][index][key] = value
+                    self.assertFalse(reporter.expected_failures_match(changed, catalog, baseline, digest, "success"))
+                for key in ("frames", "xl_active", "assisted_navigation"):
+                    changed = copy.deepcopy(receipt)
+                    del changed["rows"][index][key]
+                    self.assertFalse(reporter.expected_failures_match(changed, catalog, baseline, digest, "success"))
+        # Still 4/8, but a formerly passing case now fails.
+        changed = copy.deepcopy(receipt)
+        changed["rows"][0].update(outcome="loaded_ticked", frames=120, xl_active=True)
+        changed["rows"][1].update(outcome="load_failed", frames=0, xl_active=None, assisted_navigation="not_run")
+        self.assertEqual(reporter.validate(changed, catalog, "a" * 40)["passed"], 4)
+        self.assertFalse(reporter.expected_failures_match(changed, catalog, baseline, digest, "success"))
+        for measurement in (None, "", "failure", "cancelled", "skipped"):
+            self.assertFalse(reporter.expected_failures_match(receipt, catalog, baseline, digest, measurement))
+        self.assertFalse(reporter.expected_failures_match(receipt, catalog, baseline, "wrong", "success"))
+        for key, value in (
+            ("selection_seed", "wrong"),
+            ("inventory_levels", 1),
+            ("inventory_archives", 1),
+            ("asset_commit", "wrong"),
+        ):
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                reporter.validate({**receipt, key: value}, catalog, "a" * 40)
+        for rows in (receipt["rows"][:-1], list(reversed(receipt["rows"]))):
+            with self.assertRaises(ValueError):
+                reporter.validate({**receipt, "rows": rows}, catalog, "a" * 40)
+
+    def test_reporting_expected_failure_does_not_publish_success_readiness(self):
+        import io
+
+        import xl_readiness_report as reporter
+
+        receipt, _catalog, _baseline, _digest = self.expected_fixture()
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "results.json"
+            path.write_text(json.dumps(receipt))
+            argv = [
+                "xl_readiness_report.py",
+                "--receipt",
+                str(path),
+                "--catalog",
+                str(Path(__file__).with_name("xl_readiness_inventory.json")),
+                "--expected-failures",
+                str(Path(__file__).with_name("xl_readiness_expected.json")),
+            ]
+            with (
+                patch.object(sys, "argv", argv),
+                patch.object(sys, "stdout", io.StringIO()),
+                patch.dict(os.environ, {"CANDIDATE_SHA": "a" * 40, "READINESS_RESULT": "success"}, clear=True),
+                patch.object(reporter.candidate, "verify") as verify,
+                patch.object(reporter.candidate, "status") as status,
+            ):
+                self.assertEqual(reporter.main(), 0)
+                verify.assert_called_once_with("a" * 40)
+                self.assertEqual(status.call_args.args[1], "failure")
+                self.assertIn("50.0% (4/8", status.call_args.args[2])
+                for row in receipt["rows"]:
+                    row.update(outcome="loaded_ticked", frames=120, xl_active=True)
+                path.write_text(json.dumps(receipt))
+                self.assertEqual(reporter.main(), 0)
+                self.assertEqual(status.call_args.args[1], "success")
+                for measurement in ("failure", "cancelled", "skipped", ""):
+                    os.environ["READINESS_RESULT"] = measurement
+                    self.assertEqual(reporter.main(), 1)
+                    self.assertEqual(status.call_args.args[1], "failure")
+                os.environ["READINESS_RESULT"] = "success"
+                for malformed in (
+                    [],
+                    None,
+                    "text",
+                    1,
+                    {**receipt, "rows": [None] * 8},
+                    {**receipt, "rows": ["row"] * 8},
+                ):
+                    path.write_text(json.dumps(malformed))
+                    with self.subTest(malformed=malformed), self.assertRaises((ValueError, TypeError)):
+                        reporter.main()
+                    self.assertEqual(status.call_args.args[1], "error")
+                path.unlink()
+                with self.assertRaises(OSError):
+                    reporter.main()
+                self.assertEqual(status.call_args.args[1], "error")
+        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/xl-pr-assets.yml").read_text()
+        reporting = workflow.split("  readiness-report:", 1)[1]
+        self.assertIn("READINESS_RESULT: ${{ needs.readiness.result }}", reporting)
+        self.assertIn("--expected-failures control/android/tests/xl_readiness_expected.json", reporting)
+        self.assertNotIn("continue-on-error", reporting.split("Publish honest readiness", 1)[1])
 
     def test_staging_preserves_original_bytes_without_duplicate_descriptors(self):
         import xl_readiness as readiness

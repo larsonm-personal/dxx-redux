@@ -1,0 +1,70 @@
+{
+  "schema": "dxx-xl-readiness-expected-v1",
+  "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+  "selection_seed": "d2x-readiness-cohort-v1",
+  "catalog_sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+  "source_target_sha": "a4217ba4000d14fa495ac015f5263baee0c8883f",
+  "source_pr": "https://github.com/larsonm-personal/dxx-redux/pull/440",
+  "limitations": "Temporary per-case coarse baseline. load_failed has no root-cause fingerprint; same-case root-cause changes cannot be detected by v1 receipts. Improvements do not change the baseline automatically.",
+  "rows": [
+    {
+      "id": "BoilingPoint-XL.zip/missions/boilpnt.mn2:7",
+      "outcome": "load_failed",
+      "frames": 0,
+      "xl_active": null,
+      "assisted_navigation": "not_run"
+    },
+    {
+      "id": "diehard.7z/missions/single/diehard.mn2:17",
+      "outcome": "loaded_ticked",
+      "frames": 120,
+      "xl_active": false,
+      "assisted_navigation": "confirmed"
+    },
+    {
+      "id": "dinter-1.5.7z/missions/single/dinter.mn2:1",
+      "outcome": "load_failed",
+      "frames": 0,
+      "xl_active": null,
+      "assisted_navigation": "not_run"
+    },
+    {
+      "id": "ironstar.7z/missions/geld/ironstar.msn:6",
+      "outcome": "loaded_ticked",
+      "frames": 120,
+      "xl_active": false,
+      "assisted_navigation": "confirmed"
+    },
+    {
+      "id": "orionneb.7z/orionneb.msn:4",
+      "outcome": "loaded_ticked",
+      "frames": 120,
+      "xl_active": false,
+      "assisted_navigation": "unconfirmed"
+    },
+    {
+      "id": "phobos-e.7z/missions/single/phobos-e.mn2:4",
+      "outcome": "loaded_ticked",
+      "frames": 120,
+      "xl_active": false,
+      "assisted_navigation": "unconfirmed"
+    },
+    {
+      "id": "sphere-1.6.zip/missions/single/sphere.mn2:2",
+      "outcome": "load_failed",
+      "frames": 0,
+      "xl_active": null,
+      "assisted_navigation": "not_run"
+    },
+    {
+      "id": "wshock20.7z/missions/single/wshock20.mn2:6",
+      "outcome": "load_failed",
+      "frames": 0,
+      "xl_active": null,
+      "assisted_navigation": "not_run"
+    }
+  ],
+  "source_run": "https://github.com/larsonm-personal/dxx-redux/actions/runs/42518168350",
+  "source_artifact_id": 13632690953,
+  "source_artifact_sha256": "d0a60c6ae1b5c1518c71b921ba6ca22fd714b45670cae98c9548c65e4f05ec33"
+}

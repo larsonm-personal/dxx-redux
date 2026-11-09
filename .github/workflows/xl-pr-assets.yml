@@ -209,4 +209,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           CANDIDATE_SHA: ${{ needs.admit.outputs.sha }}
           CANDIDATE_PR: ${{ needs.admit.outputs.number }}
-        run: python3 control/android/tests/xl_readiness_report.py --receipt receipt/results.json --catalog control/android/tests/xl_readiness_inventory.json
+          READINESS_RESULT: ${{ needs.readiness.result }}
+        run: python3 control/android/tests/xl_readiness_report.py --receipt receipt/results.json --catalog control/android/tests/xl_readiness_inventory.json --expected-failures control/android/tests/xl_readiness_expected.json
