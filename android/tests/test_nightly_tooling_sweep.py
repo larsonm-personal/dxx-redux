@@ -2549,6 +2549,81 @@ class SweepTests(unittest.TestCase):
             with self.assertRaises(subprocess.TimeoutExpired):
                 sweep.run_command([sys.executable, "-c", "import time; time.sleep(60)"], d, log, timeout=0.1)
 
+    def test_host_public_tool_cache_uses_only_trusted_verified_directories(self):
+        root = Path(__file__).parents[2]
+        workflow = (root / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        host = workflow[workflow.index("  host:") : workflow.index("  execution-stack:")]
+        trust = next(line for line in host.splitlines() if "PUBLIC_TOOL_CACHE_TRUSTED:" in line)
+        self.assertIn("github.repository == 'larsonm-personal/dxx-redux'", trust)
+        self.assertIn("github.ref == 'refs/heads/cmake'", trust)
+        self.assertIn("github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'", trust)
+        self.assertIn("nightly-tooling-sweep.yml@refs/heads/cmake'", trust)
+        self.assertIn("xl-pr-assets.yml@refs/heads/cmake' && github.event_name == 'workflow_run'", trust)
+        self.assertNotIn("pull_request", trust)
+
+        def step(name):
+            return host.split("      - name: " + name + "\n", 1)[1].split("      - name:", 1)[0]
+
+        locate = step("Locate trusted public tool cache")
+        restore = step("Restore trusted public tools")
+        discard = step("Discard incomplete public tool restore")
+        verify = step("Prepare verified public fixture runtime")
+        save = step("Save verified public tools")
+        self.assertIn("source control/android/get_deps/tool_versions.conf", locate)
+        self.assertIn("$PYTHON_BOUNDED_LINUX_DIR_NAME", locate)
+        self.assertIn("$SEVENZIP_DIR_NAME", locate)
+        self.assertIn("host-profile:retail-xl-originals", locate)
+        self.assertIn("host-profile:retail-xl-fast", locate)
+        self.assertLess(locate.index("then exit 0; fi"), locate.index("echo 'enabled=true'"))
+        self.assertIn(
+            "native-public-tools-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('control/android/get_deps/tool_versions.conf') }}",
+            restore,
+        )
+        self.assertNotIn("restore-keys:", restore)
+        for operation, action in ((restore, "restore"), (save, "save")):
+            self.assertIn("if: env.PUBLIC_TOOL_CACHE_TRUSTED == 'true'", operation)
+            self.assertIn("steps.public_tool_cache.outputs.enabled == 'true'", operation)
+            self.assertIn("continue-on-error: true", operation)
+            self.assertIn("actions/cache/" + action + "@27d5ce7f107fe9357f9df03efb73ab90386fccae", operation)
+            paths = operation.split("          path: |\n", 1)[1].split("          key:", 1)[0]
+            self.assertEqual(
+                paths.splitlines(),
+                [
+                    "            ${{ steps.public_tool_cache.outputs.python }}",
+                    "            ${{ steps.public_tool_cache.outputs.sevenzip }}",
+                ],
+            )
+        self.assertIn('"${{ steps.public_tool_cache.outputs.enabled }}" == true ]]; then setup=control', verify)
+        self.assertIn('bash "$setup/android/get_deps/helpers/get_bounded_python.sh"', verify)
+        self.assertIn("-File control/android/get_deps/helpers/get_7zip.ps1", verify)
+        self.assertIn("timeout-minutes: 8", verify)
+        self.assertNotIn("cache-hit", verify)
+        self.assertIn("steps.public_prerequisites.outcome == 'success'", save)
+        self.assertIn("steps.public_tool_cache_restore.outputs.cache-hit != 'true'", save)
+        self.assertEqual(
+            restore.split("          key: ", 1)[1].splitlines()[0], save.split("          key: ", 1)[1].splitlines()[0]
+        )
+        self.assertIn("steps.public_tool_cache_restore.outputs.cache-hit != 'true'", discard)
+        self.assertIn('rm -rf -- "$CACHED_PYTHON" "$CACHED_SEVENZIP"', discard)
+        self.assertIn("CACHED_PYTHON: ${{ steps.public_tool_cache.outputs.python }}", discard)
+        self.assertIn("CACHED_SEVENZIP: ${{ steps.public_tool_cache.outputs.sevenzip }}", discard)
+        self.assertLess(
+            host.index("Discard incomplete public tool restore"), host.index("Prepare verified public fixture runtime")
+        )
+        self.assertLess(
+            host.index("Restore trusted public tools"), host.index("Prepare verified public fixture runtime")
+        )
+        for later in (
+            "Prepare asset-free metadata CLI",
+            "Prepare locked formatter dependencies",
+            "Check out immutable private retail inputs",
+            "Execute admitted host owners",
+        ):
+            self.assertLess(host.index("Save verified public tools"), host.index(later))
+        self.assertIn("steps.public_tool_cache.outcome == 'failure'", host)
+        # No post-job cache action may capture tools after candidate execution
+        self.assertEqual(host.count("uses: actions/cache/"), 2)
+
     def test_host_metadata_cli_bootstraps_before_private_inputs(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
         host = workflow[workflow.index("  host:") : workflow.index("  android:")]

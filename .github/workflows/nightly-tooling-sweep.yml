@@ -332,6 +332,7 @@ jobs:
       name: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), 'host') && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && ((github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) || (github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/xl-pr-assets.yml@refs/heads/cmake' && github.event_name == 'workflow_run')) && 'retail-ci' || 'asset-free' }}
       deployment: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), 'host') && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && ((github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) || (github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/xl-pr-assets.yml@refs/heads/cmake' && github.event_name == 'workflow_run')) }}
     env:
+      PUBLIC_TOOL_CACHE_TRUSTED: ${{ github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && ((github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) || (github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/xl-pr-assets.yml@refs/heads/cmake' && github.event_name == 'workflow_run')) }}
       RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
       RETAIL_CHECKOUT_COMMIT: ${{ needs.plan.outputs.retail_commit }}
       SDL_AUDIODRIVER: dummy
@@ -378,15 +379,59 @@ jobs:
           if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then
             printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > control/dependency_base.txt
           fi
+      # Only public verified tools, never the dependency root, private inputs or candidate output
+      - name: Locate trusted public tool cache
+        id: public_tool_cache
+        if: env.PUBLIC_TOOL_CACHE_TRUSTED == 'true'
+        run: |
+          # Match the existing 7-Zip consumers; do not add downloads to unrelated host campaigns
+          if ! python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e['id'] in ('host-profile:retail-xl-originals', 'host-profile:retail-xl-fast') for e in p['tests']))"; then exit 0; fi
+          echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          source control/android/get_deps/tool_versions.conf
+          printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > control/dependency_base.txt
+          echo "python=$RUNNER_TEMP/dxx-nightly-deps/$PYTHON_BOUNDED_LINUX_DIR_NAME" >> "$GITHUB_OUTPUT"
+          echo "sevenzip=$RUNNER_TEMP/dxx-nightly-deps/$SEVENZIP_DIR_NAME" >> "$GITHUB_OUTPUT"
+      - name: Restore trusted public tools
+        id: public_tool_cache_restore
+        if: env.PUBLIC_TOOL_CACHE_TRUSTED == 'true' && steps.public_tool_cache.outputs.enabled == 'true'
+        continue-on-error: true
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ${{ steps.public_tool_cache.outputs.python }}
+            ${{ steps.public_tool_cache.outputs.sevenzip }}
+          key: native-public-tools-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('control/android/get_deps/tool_versions.conf') }}
+      - name: Discard incomplete public tool restore
+        if: env.PUBLIC_TOOL_CACHE_TRUSTED == 'true' && steps.public_tool_cache.outputs.enabled == 'true' && steps.public_tool_cache_restore.outputs.cache-hit != 'true'
+        env:
+          CACHED_PYTHON: ${{ steps.public_tool_cache.outputs.python }}
+          CACHED_SEVENZIP: ${{ steps.public_tool_cache.outputs.sevenzip }}
+        run: |
+          # An interrupted cache extraction must not turn an optional cache miss into a broken install
+          rm -rf -- "$CACHED_PYTHON" "$CACHED_SEVENZIP"
       - name: Prepare verified public fixture runtime
         id: public_prerequisites
         timeout-minutes: 8
         run: |
           setup=target
-          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then setup=control; fi
+          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" || "${{ steps.public_tool_cache.outputs.enabled }}" == true ]]; then setup=control; fi
           bash "$setup/android/get_deps/helpers/get_bounded_python.sh"
+          # Cache hits must pass the same tree, version and executable hash checks as cold installs
+          if [[ "${{ steps.public_tool_cache.outputs.enabled }}" == true ]]; then
+            pwsh -NoProfile -NonInteractive -File control/android/get_deps/helpers/get_7zip.ps1
+          fi
           command -v ffmpeg
           command -v ffprobe
+      # Save now, before any target script, private checkout or candidate executable can run
+      - name: Save verified public tools
+        if: env.PUBLIC_TOOL_CACHE_TRUSTED == 'true' && steps.public_tool_cache.outputs.enabled == 'true' && steps.public_prerequisites.outcome == 'success' && steps.public_tool_cache_restore.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ${{ steps.public_tool_cache.outputs.python }}
+            ${{ steps.public_tool_cache.outputs.sevenzip }}
+          key: native-public-tools-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('control/android/get_deps/tool_versions.conf') }}
       - name: Prepare asset-free metadata CLI
         id: metadata_cli_prerequisites
         timeout-minutes: 15
@@ -473,7 +518,7 @@ jobs:
       - name: Recover completed receipts after failure or interruption
         if: always()
         env:
-          SETUP_FAILED: ${{ (steps.prerequisites.outcome == 'failure' || steps.public_prerequisites.outcome == 'failure' || steps.metadata_cli_prerequisites.outcome == 'failure' || steps.formatter_prerequisites.outcome == 'failure' || steps.retail_stage.outcome == 'failure' || steps.retail_gate.outcome == 'failure' || steps.retail_checkout.outcome == 'failure') && steps.execute.outcome == 'skipped' }}
+          SETUP_FAILED: ${{ (steps.prerequisites.outcome == 'failure' || steps.public_tool_cache.outcome == 'failure' || steps.public_prerequisites.outcome == 'failure' || steps.metadata_cli_prerequisites.outcome == 'failure' || steps.formatter_prerequisites.outcome == 'failure' || steps.retail_stage.outcome == 'failure' || steps.retail_gate.outcome == 'failure' || steps.retail_checkout.outcome == 'failure') && steps.execute.outcome == 'skipped' }}
         run: |
           blocked=()
           if [[ "$SETUP_FAILED" == true ]]; then blocked=(--blocked-reason 'host lane provisioning failed; inspect setup logs'); fi
