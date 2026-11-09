@@ -18,6 +18,7 @@ static void generator_contact_samples(const std::filesystem::path &output)
 	compute_segment_center(&center, &Segments[20]);
 	auto *robot = create_morph_robot(&Segments[20], &center, 0);
 	require(robot, "cannot create generator contact actor");
+	GameTime64 += F1_0; // Contact samples compare mature-actor damage
 	std::ofstream samples(output / "generator-contact.txt");
 	for (bool player : { false, true })
 		for (int profile = 0; profile < 6; ++profile)

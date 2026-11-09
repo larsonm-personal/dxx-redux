@@ -126,6 +126,7 @@ static void blocked_crossings(const std::filesystem::path &output)
 	const int robot = obj_create(OBJ_ROBOT, 0, dry, &position, &vmd_identity_matrix, F1_0, CT_AI, MT_PHYSICS, RT_NONE);
 	require(robot >= 0, "Blocked recovery allocation failed");
 	Objects[robot].shields = i2f(100);
+	GameTime64 += F1_0; // Qualify lethal recovery rather than newborn shield grace
 	move_object_to_legal_spot(&Objects[robot]);
 	require(Objects[robot].segnum != blocked && Objects[robot].shields < 0, "Robot legal-position recovery entered blocked destination");
 	obj_delete(robot);
