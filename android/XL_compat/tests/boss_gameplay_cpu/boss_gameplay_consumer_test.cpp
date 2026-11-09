@@ -88,6 +88,7 @@ void reset(bool permanent = true)
 	xl_robot_generator_clear();
 	births = ai_calls = morph_calls = effect_calls = sound_calls = death_calls = 0;
 	allocation_failure = false;
+	cheats = {};
 	extensions = true;
 	GameTime64 = 0;
 	FrameTime = F1_0 / 60;
@@ -193,8 +194,12 @@ void threshold_and_attribution()
 		require(!trigger_state(owner_a).operated, "unattributed damage");
 		reset();
 		GameTime64 = F1_0;
-		hit(owner_a, part(maximum, 905, 1000), owner_b);
-		require(!trigger_state(owner_a).operated, "nonplayer damage");
+		require(!apply_damage_to_robot(&Objects[owner_a], F1_0, owner_b) && Objects[owner_a].shields == maximum &&
+		            !trigger_state(owner_a).operated,
+		        "hostile robot damage rejected");
+		Objects[2].type = OBJ_CNTRLCEN;
+		hit(owner_a, part(maximum, 905, 1000), 2);
+		require(!trigger_state(owner_a).operated, "nonrobot nonplayer damage has no player event");
 		// Fixed-point neighbors straddle the reference's float-to-int cast.
 		reset();
 		GameTime64 = F1_0;
@@ -396,6 +401,51 @@ void nonpermanent_and_classic()
 	require(boss_state(owner_a).elapsed == interval(), "classic did not mutate boss timer");
 }
 
+void robot_attacker_damage_gate()
+{
+	for (const bool boss : { false, true })
+		for (const bool lethal : { false, true })
+			for (const int profile : { 0, 1, 2, 3, 4, 5, 6, 7 }) {
+				reset();
+				GameTime64 = 20 * F1_0;
+				const int victim = boss ? owner_a : 4;
+				if (!boss) {
+					Objects[victim].type = OBJ_ROBOT;
+					Objects[victim].id = child_type;
+					Objects[victim].shields = 100 * F1_0;
+				}
+				const auto prior_hit = boss_state(owner_a).hit;
+				int killer = owner_b;
+				if (profile == 1) {
+					Objects[owner_b].id = 6;
+					Robot_info[6] = {};
+					Robot_info[6].companion = 1;
+				}
+				if (profile == 2) killer = player_slot;
+				if (profile == 3) {
+					killer = 2;
+					Objects[killer].type = OBJ_CNTRLCEN;
+				}
+				if (profile == 4) killer = -1;
+				if (profile == 5) cheats.robotskillrobots = 1;
+				if (profile == 6) extensions = false;
+				if (profile == 7) Game_mode = GM_MULTI;
+				const fix before = Objects[victim].shields;
+				const fix damage = lethal ? before + 1 : F1_0;
+				const int result = apply_damage_to_robot(&Objects[victim], damage, killer);
+				const bool rejected = profile == 0;
+				require(Objects[victim].shields == before - (rejected ? 0 : damage),
+				        "hostile robot attacker shield gate");
+				require(result == (!rejected && lethal) && death_calls == (!rejected && lethal),
+				        "hostile robot attacker death gate");
+				if (rejected) {
+					require(boss_state(owner_a).hit == prior_hit && !trigger_state(owner_a).operated &&
+					            births == 0 && Players[0].num_kills_level == 0,
+					        "hostile robot rejection precedes bookkeeping and events");
+				}
+			}
+}
+
 void definition_instance_and_zero_damage()
 {
 	reset();
@@ -537,6 +587,10 @@ void common_damage_gates(bool age_cases = true, bool strength_cases = true)
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 2 && !std::strcmp(argv[1], "attacker")) {
+			robot_attacker_damage_gate();
+			return 0;
+		}
 		if (argc == 2 && (!std::strcmp(argv[1], "age") || !std::strcmp(argv[1], "strength"))) {
 			common_damage_gates(!std::strcmp(argv[1], "age"), !std::strcmp(argv[1], "strength"));
 			return 0;
@@ -549,6 +603,7 @@ int main(int argc, char **argv)
 		common_damage_gates();
 		spawned_child_birth_and_registry();
 		definition_instance_and_zero_damage();
+		robot_attacker_damage_gate();
 		std::cout << "boss gameplay consumer: pass\n";
 		return 0;
 	} catch (const std::exception &error) {
@@ -581,6 +636,7 @@ int Num_triggers;
 Mission *Current_mission;
 int Player_is_dead;
 fix64 Boss_hit_time;
+game_cheats cheats;
 
 int xl_level_extensions_active(void)
 {
@@ -663,9 +719,10 @@ void special_reactor_stuff(void)
 {
 	require(false, "unexpected reactor effect");
 }
-void explode_object(object *, fix)
+void explode_object(object *actor, fix delay)
 {
-	require(false, "unexpected explosion");
+	require(actor->type == OBJ_ROBOT && actor->id == child_type && delay == F1_0 / 4, "unexpected explosion");
+	++death_calls;
 }
 void buddy_message(char *, ...)
 {
