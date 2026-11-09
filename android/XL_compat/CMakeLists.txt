@@ -931,6 +931,20 @@ if(BUILD_TESTING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_sophodo.cmake)
         set_tests_properties(xl_pumo_sophodo_player PROPERTIES TIMEOUT 300 FIXTURES_REQUIRED
                                                                pumo_earned_sophodo RUN_SERIAL TRUE)
+        set_tests_properties(xl_pumo_sophodo_player PROPERTIES FIXTURES_SETUP pumo_earned_tulev1_early)
+        add_test(
+            NAME xl_pumo_tulev1_early_player
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/pumo-sophodo-player/preview-user/sophodo-main-level7.sav
+                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-sophodo-player/main-result.json
+                -DPYTHON=${Python3_EXECUTABLE}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-early-player -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_early.cmake)
+        # The aggregate bound is tighter than six independent 150s phase ceilings.
+        set_tests_properties(xl_pumo_tulev1_early_player PROPERTIES TIMEOUT 300
+                             FIXTURES_REQUIRED pumo_earned_tulev1_early RUN_SERIAL TRUE)
     endif()
     set(XL_ARENA_HOG "" CACHE FILEPATH "Original Robotech Arena HOG for private water coverage")
     set(XL_ARENA_DESCRIPTOR "" CACHE FILEPATH "Original Robotech Arena mission descriptor")

@@ -1,0 +1,131 @@
+{
+    "initial_level": 7,
+    "checkpoint_expect": {
+        "current_level_num": 7,
+        "position.segment": 450,
+        "player_dead": false,
+        "player.cloaked": false,
+        "player.has_gold_key": false,
+        "cheats_enabled": false,
+        "player.invulnerable": false
+    },
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "position.segment": 450,
+                "player.primary_weapon": 0,
+                "player.laser_level": 0,
+                "player.quad_lasers": false,
+                "player.energy": 98.7750244140625,
+                "player.shields": 100,
+                "player.vulcan_ammo": 264,
+                "player.robots_killed_level": 0,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "xl_pilot.doorways.58.type": 4,
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 256,
+                        "expected_id": 28,
+                        "exists": true,
+                        "actor_state": {
+                            "movement_type": 1
+                        }
+                    }
+                },
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.invulnerable": false
+            }
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "held": 1
+        },
+        {
+            "action": "wait_for",
+            "face_object": 256,
+            "face_interval_ms": 100,
+            "timeout_ms": 1000,
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 256,
+                        "expected_id": 28,
+                        "exists": true,
+                        "damage_since_binding_raw": {
+                            "gt": 0
+                        }
+                    }
+                },
+                "player_dead": false,
+                "player.shields": {
+                    "gt": 0
+                }
+            }
+        },
+        {
+            "action": "wait_for",
+            "face_object": 256,
+            "face_interval_ms": 100,
+            "timeout_ms": 5000,
+            "expect": {
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 256,
+                        "expected_id": 28,
+                        "exists": false
+                    }
+                },
+                "player.robots_killed_level": {
+                    "gte": 1
+                },
+                "player_dead": false,
+                "player.shields": {
+                    "gt": 0
+                }
+            }
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "held": 0
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "position.segment": 450,
+                "combat_observation.tracked_objects": {
+                    "contains_object": {
+                        "object": 256,
+                        "expected_id": 28,
+                        "exists": false
+                    }
+                },
+                "player.robots_killed_level": {
+                    "gte": 1
+                },
+                "player_dead": false,
+                "player.invulnerable": false,
+                "cheats_enabled": false,
+                "player.has_red_key": false,
+                "player.has_blue_key": false,
+                "player.has_gold_key": false,
+                "player.cloaked": false
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ],
+    "realtime": true,
+    "track_objects": [256]
+}
