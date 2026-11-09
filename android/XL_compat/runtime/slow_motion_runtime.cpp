@@ -14,6 +14,7 @@ namespace
 {
 xl_compat::SlowMotionState state;
 int64_t last_missile;
+uint32_t render_clock, last_omega_frame;
 bool enabled()
 {
 	return xl_level_extensions_active() && !(Game_mode & GM_MULTI);
@@ -36,6 +37,8 @@ extern "C" void xl_slow_motion_reset(void)
 {
 	state = {};
 	last_missile = 0;
+	// The reference loader resets the render counter, not the Omega marker
+	render_clock = 0;
 }
 extern "C" void xl_slow_motion_offset(const object *actor, vms_vector *offset)
 {
@@ -144,12 +147,12 @@ extern "C" void xl_slow_motion_missile_fired(void)
 }
 nlohmann::json xl_runtime::weapon_clock_snapshot()
 {
-	return nlohmann::json{ last_missile - GameTime64 };
+	return nlohmann::json{ last_missile - GameTime64, render_clock, last_omega_frame };
 }
 bool xl_runtime::restore_weapon_clock(const nlohmann::json &saved, bool apply)
 {
 	try {
-		if (!save_epoch_valid(GameTime64) || !saved.is_array() || saved.size() != 1) return false;
+		if (!save_epoch_valid(GameTime64) || !saved.is_array() || saved.size() != 3) return false;
 		const auto integer = [](const nlohmann::json &value, int64_t low, int64_t high) {
 			if (!value.is_number_integer() || (value.is_number_unsigned() && value.get<uint64_t>() > uint64_t(high))) throw std::runtime_error("Invalid weapon clock integer");
 			const auto result = value.get<int64_t>();
@@ -157,12 +160,37 @@ bool xl_runtime::restore_weapon_clock(const nlohmann::json &saved, bool apply)
 			return result;
 		};
 		const auto missile = GameTime64 + integer(saved[0], -SAVE_EPOCH_MAX, 0);
+		const auto rendered = uint32_t(integer(saved[1], 0, UINT32_MAX));
+		const auto omega = uint32_t(integer(saved[2], 0, UINT32_MAX));
 		if (!save_timestamp_valid(missile)) return false;
 		if (apply) {
 			last_missile = missile;
+			render_clock = rendered;
+			last_omega_frame = omega;
 		}
 		return true;
 	} catch (const std::exception &) {
 		return false;
 	}
+}
+
+extern "C" void xl_slow_motion_render_advance(void)
+{
+	if (enabled()) ++render_clock;
+}
+extern "C" uint32_t xl_slow_motion_render_clock(void)
+{
+	return render_clock;
+}
+
+extern "C" int xl_slow_motion_omega_blocked(void)
+{
+	if (!enabled()) return -1;
+	return last_omega_frame == render_clock || last_omega_frame == render_clock - 1;
+}
+extern "C" int xl_slow_motion_omega_fired(void)
+{
+	if (!enabled()) return 0;
+	last_omega_frame = render_clock;
+	return 1;
 }

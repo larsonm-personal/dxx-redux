@@ -17,6 +17,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  *
  */
 
+#ifdef DXX_XL_RUNTIME
+#include "slow_motion_runtime.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -918,6 +921,9 @@ void draw_automap(automap *am)
 	if ((PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator)
 		show_mousefs_indicator(am->controls.raw_mouse_axis[0], am->controls.raw_mouse_axis[1], am->controls.raw_mouse_axis[2], GWIDTH-(GHEIGHT/8), GHEIGHT-(GHEIGHT/8), GHEIGHT/5);
 
+#ifdef DXX_XL_RUNTIME
+	xl_slow_motion_render_advance();
+#endif
 	am->t2 = timer_query();
 	{
 		int max_fps = GameCfg.VSync ? MAXIMUM_FPS : GameArg.SysMaxFPS;

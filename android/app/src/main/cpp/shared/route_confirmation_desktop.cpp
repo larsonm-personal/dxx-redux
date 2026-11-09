@@ -7,6 +7,11 @@
 #include <string>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#if defined(DXX_XL_RUNTIME) && defined(OGL)
+#include <stdexcept>
+#include "slow_motion_runtime.h"
+#include "slow_motion_save.h"
+#endif
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #endif
@@ -40,6 +45,24 @@ extern "C" {
 #include "window.h"
 void GameProcessFrame(void);
 }
+
+#if defined(DXX_XL_RUNTIME) && defined(OGL)
+extern "C" {
+#include "automap.h"
+#include "dxxerror.h"
+#include "endlevel.h"
+#include "ogl_init.h"
+#include "laser.h"
+#include "weapon.h"
+#include "state.h"
+void GameProcessFrame(void);
+void omega_charge_frame(void);
+void do_omega_stuff(object *, vms_vector *, object *);
+void game_render_frame(void);
+void game_render_frame_mono(int);
+}
+#include "render_clock_probe.h"
+#endif
 
 namespace
 {
@@ -206,6 +229,17 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 		proof["schema"] = "dxx-xl-rendered-load-tick-v1";
 		if (!write_readiness(readiness, proof, "initializing")) return 1;
 	}
+#if defined(DXX_XL_RUNTIME) && defined(OGL)
+	const char *clock_probe = argument_value("-xl-render-clock-proof");
+	if (startup_find_cmd_arg("-xl-render-clock-proof")) {
+		if (!clock_probe || !output || !argument_value("-route-confirm-user-dir")) {
+			std::fprintf(stderr, "Render-clock probe requires proof/output paths and an isolated user directory\n");
+			return 1;
+		}
+		error_init(nullptr);
+		set_warn_func(warn_printf);
+	}
+#endif
 	const char *level_text;
 	const char *time_limit_text;
 	const char *exit_goal;
@@ -276,6 +310,9 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	if (game_is_time_paused())
 		start_time();
 	if (readiness) return rendered_readiness(readiness, proof);
+#if defined(DXX_XL_RUNTIME) && defined(OGL)
+	if (clock_probe) return xl_render_clock_probe(clock_probe);
+#endif
 	State.active = 1;
 	event_toggle_focus(0);
 	if (!route_confirmation_start()) {
