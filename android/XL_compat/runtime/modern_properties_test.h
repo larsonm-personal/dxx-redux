@@ -234,6 +234,7 @@ static int modern_properties_test(int argc, char **argv)
 		ordinary_nonphysical_bump_controls(false, false);
 		ordinary_force_damage_controls(false, false);
 		ordinary_bump_boss_scope_controls(false, false);
+		ordinary_nonplayer_force_damage_controls(false, false);
 		int32_t stock_points[4][3];
 		float stock_colors[4][4];
 		for (int i = 0; i < Num_segments; ++i)
