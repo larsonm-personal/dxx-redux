@@ -1,0 +1,179 @@
+{
+    "initial_level": 7,
+    "simulation_fps": 60,
+    "realtime": false,
+    "qualification": "ASSISTED_LOCAL_REGISTERED_SWITCH13",
+    "observe_weapon_wall_contacts": true,
+    "track_objects": [210, 282, 283, 314],
+    "checkpoint_expect": {},
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "position.segment": 1547,
+                "player.secondary_weapon": 6,
+                "player.cloaked": true,
+                "player.quad_lasers": true,
+                "xl_pilot.wall_triggers.14.operated": true,
+                "xl_pilot.wall_triggers.13.operated": false,
+                "xl_pilot.doorways.201.type": 4,
+                "xl_pilot.doorways.202.type": 4,
+                "xl_pilot.doorways.183.type": 4,
+                "xl_pilot.doorways.184.type": 4,
+                "xl_pilot.doorways.185.type": 4,
+                "xl_pilot.doorways.186.type": 4,
+                "xl_pilot.doorways.193.type": 5,
+                "xl_pilot.doorways.194.type": 5,
+                "xl_pilot.doorways.195.type": 5,
+                "xl_pilot.doorways.196.type": 5,
+                "xl_pilot.doorways.197.type": 5,
+                "xl_pilot.doorways.198.type": 5,
+                "xl_pilot.doorways.199.type": 5,
+                "xl_pilot.doorways.200.type": 5
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 0,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 2,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 3,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 4,
+            "axis_value": 0.0
+        },
+        {
+            "action": "pose_view",
+            "segment": 1537,
+            "position_fixed": [20371657, -12582912, 2670085],
+            "pitch": -9441,
+            "bank": 0,
+            "heading": 4975
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 1537,
+                "position.orient_right_fixed": [58216, 0, -30080],
+                "position.orient_up_fixed": [-23657, 40472, -45786],
+                "position.orient_forward_fixed": [18576, 51544, 35951],
+                "player_dead": false,
+                "player.cloaked": true,
+                "secondary_fire.next_delta_raw": {
+                    "lte": 0
+                },
+                "position.x": {
+                    "gte": 310.55,
+                    "lte": 311.15
+                },
+                "position.y": {
+                    "gte": -192.7,
+                    "lte": -191.3
+                },
+                "position.z": {
+                    "gte": 40.15,
+                    "lte": 41.35
+                }
+            }
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "send_button",
+            "button": 101,
+            "held": 1
+        },
+        {
+            "action": "wait_ms",
+            "ms": 1
+        },
+        {
+            "action": "send_button",
+            "button": 101,
+            "held": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 1537,
+                "combat_observation.guided_control.weapon_id": 37,
+                "combat_observation.guided_control.lifeleft_raw": {
+                    "gte": 1
+                }
+            }
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_ms",
+            "ms": 2100
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 1537,
+                "position.orient_right_fixed": [58216, 0, -30080],
+                "position.orient_up_fixed": [-23657, 40472, -45786],
+                "position.orient_forward_fixed": [18576, 51544, 35951],
+                "player_dead": false,
+                "player.cloaked": true,
+                "secondary_fire.next_delta_raw": {
+                    "lte": 0
+                },
+                "position.x": {
+                    "gte": 310.55,
+                    "lte": 311.15
+                },
+                "position.y": {
+                    "gte": -192.7,
+                    "lte": -191.3
+                },
+                "position.z": {
+                    "gte": 40.15,
+                    "lte": 41.35
+                },
+                "combat_observation.guided_control": null,
+                "xl_pilot.wall_triggers.13.operated": true,
+                "xl_pilot.doorways.193.type": 4,
+                "xl_pilot.doorways.194.type": 4,
+                "xl_pilot.doorways.195.type": 4,
+                "xl_pilot.doorways.196.type": 4,
+                "xl_pilot.doorways.197.type": 4,
+                "xl_pilot.doorways.198.type": 4,
+                "xl_pilot.doorways.199.type": 4,
+                "xl_pilot.doorways.200.type": 4
+            }
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        },
+        {
+            "action": "introspect"
+        }
+    ]
+}
