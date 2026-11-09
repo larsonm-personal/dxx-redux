@@ -45,3 +45,43 @@ jobs:
       # Passing these contracts does not qualify pilot gameplay or Android support
       - name: Build source adapters and require every public contract
         run: python android/XL_compat/tests/public_contracts.py --work temp/xl-public-ci ${{ runner.os == 'Linux' && '--gpu --audio' || '' }}
+
+  # This proves the opt-in lifecycle source compiles and links, not gameplay or runtime behavior.
+  developer-compile:
+    needs: stack
+    if: needs.stack.outputs.run == 'true'
+    name: XL developer source compile (no game assets)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      # Compile the candidate PR head, not GitHub's synthetic pull-request merge ref.
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Verify candidate head and source-only CI contract
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          python3 android/XL_compat/tests/developer_compile_ci.py --check-workflow
+          python3 android/XL_compat/tests/test_developer_compile_ci.py
+
+      - name: Install production renderer and audio dependencies
+        timeout-minutes: 15
+        run: |
+          python3 .github/scripts/prefer_ubuntu_archive.py
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o APT::Update::Error-Mode=any update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends \
+            libegl1-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libglew-dev \
+            libsdl1.2-dev libsdl-mixer1.2-dev libphysfs-dev libpng-dev zlib1g-dev
+
+      - name: Compile D2 developer metadata target without running it
+        timeout-minutes: 28
+        run: |
+          cmake -S d2 -B build-xl-developer-ci -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DBUILD_TESTING=OFF -DOPENGL=ON -DDXX_XL_DEVELOPER_TESTS=ON
+          cmake --build build-xl-developer-ci --parallel 2 --target dxx-redux-d2-headless-metadata
+          python3 android/XL_compat/tests/developer_compile_ci.py --verify-build build-xl-developer-ci
