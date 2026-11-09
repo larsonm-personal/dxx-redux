@@ -945,6 +945,19 @@ if(BUILD_TESTING)
         # The aggregate bound is tighter than eight independent 150s phase ceilings.
         set_tests_properties(xl_pumo_tulev1_early_player PROPERTIES TIMEOUT 300
                              FIXTURES_REQUIRED pumo_earned_tulev1_early RUN_SERIAL TRUE)
+        set_tests_properties(xl_pumo_tulev1_early_player PROPERTIES FIXTURES_SETUP
+                                                              pumo_guided_inventory)
+        add_test(
+            NAME xl_pumo_guided_input_player
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
+                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-early-player/guided_inventory/guided_inventory-result.json
+                -DPYTHON=${Python3_EXECUTABLE}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-guided-input-player -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_guided_input.cmake)
+        set_tests_properties(xl_pumo_guided_input_player PROPERTIES TIMEOUT 120
+                             FIXTURES_REQUIRED pumo_guided_inventory RUN_SERIAL TRUE)
     endif()
     set(XL_ARENA_HOG "" CACHE FILEPATH "Original Robotech Arena HOG for private water coverage")
     set(XL_ARENA_DESCRIPTOR "" CACHE FILEPATH "Original Robotech Arena mission descriptor")
