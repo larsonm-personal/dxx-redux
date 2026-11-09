@@ -1,5 +1,6 @@
 #ifndef XL_REFERENCE_SLOW_MOTION_PHYSICS_H
 #define XL_REFERENCE_SLOW_MOTION_PHYSICS_H
+#include <algorithm>
 #include <set>
 #include <tuple>
 constexpr fix IMMORTAL_TIME = 0x3fffffff, ONE_FRAME_TIME = 0x3ffffffe;
@@ -12,6 +13,16 @@ struct Lifetime {
 #include "xl_reference_slow_lifetime.h"
 	}
 };
+#include "xl_reference_slow_omega_constants.h"
+#include "xl_reference_slow_omega_energy.h"
+static fix slow_omega_step()
+{
+#include "xl_reference_slow_omega_step.h"
+}
+static fix slow_homing_step(fix frameTime)
+{
+#include "xl_reference_slow_homing_step.h"
+}
 struct tAILocalInfo {
 	fix pNextrimaryFire, nextSecondaryFire, timeSinceProcessed;
 };
@@ -50,6 +61,8 @@ static int slow_motion_physics(const char *path)
 	std::set<std::tuple<int, int, int, int, int>> contacts;
 	std::set<std::tuple<int, int, int, int, int, int>> ai;
 	std::set<std::tuple<int, int, int, int, int, int>> ai_turns;
+	std::set<std::tuple<int, int, int, int, int, int>> omega;
+	std::set<std::tuple<int, int, int, int, int>> homing;
 	while (std::getline(input, line)) {
 		std::istringstream row(line);
 		char kind;
@@ -58,7 +71,27 @@ static int slow_motion_physics(const char *path)
 		const float expected_world = profile == 0 ? 1 : profile == 1 ? 1.025f
 		                                                             : 3;
 		gameStates.gameplay.slowmo[0].fSpeed = expected_world;
-		if (kind == 'B') {
+		if (kind == 'O') {
+			int multiplayer, difficulty, time, charge, energy, actual_charge, actual_energy;
+			if (!(row >> multiplayer >> difficulty >> time >> charge >> energy >> actual_charge >> actual_energy) ||
+			    (multiplayer != 0 && multiplayer != 1) || difficulty < 0 || difficulty > 4 ||
+			    (time != 1 && time != 3 && time != 4 && time != 7 && time != 15 && time != 65 && time != 1092 && time != 16384) ||
+			    (charge != 0 && charge != 1 && charge != I2X(1) - 1 && charge != I2X(1)) || (energy != 0 && energy != 1 && energy != I2X(100)) ||
+			    !omega.emplace(profile, multiplayer, difficulty, time, charge, energy).second) throw std::runtime_error("Invalid/duplicate Omega clock control");
+			gameStates.gameplay.slowmo[0].fSpeed = multiplayer ? 1 : expected_world;
+			gameStates.app.nDifficultyLevel = difficulty;
+			gameData.timeData.xFrame = time;
+			const fix result = energy ? std::min(I2X(1), charge + slow_omega_step()) : charge;
+			const fix debit = OmegaEnergy(result - charge);
+			if (actual_charge != result || actual_energy != std::max(0, energy - debit)) throw std::runtime_error("Native Omega increment/debit differs from pinned source");
+		} else if (kind == 'H') {
+			int multiplayer, console, goal, time, actual;
+			if (!(row >> multiplayer >> console >> goal >> time >> actual) || (multiplayer != 0 && multiplayer != 1) || (console != 0 && console != 1) || goal < 0 || goal >= 4 ||
+			    (time != 1 && time != 3 && time != 4 && time != 7 && time != 15 && time != 65 && time != 1092 && time != 16384) ||
+			    !homing.emplace(profile, multiplayer, console, goal, time).second) throw std::runtime_error("Invalid/duplicate homing clock control");
+			gameStates.gameplay.slowmo[0].fSpeed = multiplayer ? 1 : expected_world;
+			if (actual != slow_homing_step(time)) throw std::runtime_error("Native homing orientation scale differs from pinned source");
+		} else if (kind == 'B') {
 			int multiplayer, console, goal, rate, time, actual_dot, actual_scale;
 			if (!(row >> multiplayer >> console >> goal >> rate >> time >> actual_dot >> actual_scale) ||
 			    (multiplayer != 0 && multiplayer != 1) || (console != 0 && console != 1) || goal < 0 || goal >= 4 ||
@@ -236,8 +269,8 @@ static int slow_motion_physics(const char *path)
 		std::string extra;
 		if (row >> extra) throw std::runtime_error("Trailing slow-motion row data");
 	}
-	if (moves.size() != 768 || lives.size() != 144 || rotations.size() != 144 || turns.size() != 1536 || contacts.size() != 64 || ai.size() != 1584 || ai_turns.size() != 576) throw std::runtime_error("Incomplete slow-motion source coverage");
-	std::cout << "768 native offsets/lifetimes and 144 lifetime boundary cases and 144 rotations and 1536 turn impulses and 64 contacts and 1584 AI frames and 576 AI turns match pinned source\n";
+	if (moves.size() != 768 || lives.size() != 144 || rotations.size() != 144 || turns.size() != 1536 || contacts.size() != 64 || ai.size() != 1584 || ai_turns.size() != 576 || omega.size() != 3840 || homing.size() != 512) throw std::runtime_error("Incomplete slow-motion source coverage");
+	std::cout << "768 native offsets/lifetimes and 144 lifetime boundary cases and 144 rotations and 1536 turn impulses and 64 contacts and 1584 AI frames and 576 AI turns, 3840 Omega steps and 512 homing orientations match pinned source\n";
 	return 0;
 }
 #endif

@@ -138,3 +138,49 @@ foreach(value IN ITEMS dot new_scale)
     file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_slow_ai_${value}.h"
          CONTENT "if (!IsMultiGame) { ${scaled} }\n")
 endforeach()
+
+foreach(
+    pair IN
+    ITEMS "weapons/omega.cpp|76f003622dcbac54dbd533fd4dfa8537c7ceceed0c75c5310c83b7b075cfb61d"
+          "weapons/fireweapon.cpp|37ae81f686e063ca7102bb9154368e67626e843ae898d82e8583167d31dbaac8")
+    string(REPLACE "|" ";" parts "${pair}")
+    list(GET parts 0 path)
+    list(GET parts 1 expected)
+    file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/${path}" actual)
+    if(NOT actual STREQUAL expected)
+        message(FATAL_ERROR "Slow weapon reference differs: ${path}")
+    endif()
+endforeach()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/weapons/omega.cpp" omega_source)
+string(REGEX MATCH "#define[ \t]+OMEGA_ENERGY_RATE[^\n]*" omega_rate "${omega_source}")
+string(REGEX MATCH "#define[ \t]+OMEGA_CHARGE_SCALE[^\n]*" omega_scale "${omega_source}")
+if(NOT omega_rate OR NOT omega_scale)
+    message(FATAL_ERROR "Missing pinned Omega constants")
+endif()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_slow_omega_constants.h"
+     CONTENT "${omega_rate}\n${omega_scale}\n")
+
+set(extracted "")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/weapons/omega.cpp" "fix OmegaEnergy (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_slow_omega_energy.h"
+     CONTENT "${extracted}")
+set(needle
+    "(fix) (gameData.timeData.xFrame / OMEGA_CHARGE_SCALE / gameStates.gameplay.slowmo [0].fSpeed)")
+string(FIND "${omega_source}" "${needle}" omega_start)
+if(omega_start LESS 0)
+    message(FATAL_ERROR "Missing pinned Omega charge arithmetic")
+endif()
+string(LENGTH "${needle}" omega_length)
+string(SUBSTRING "${omega_source}" ${omega_start} ${omega_length} omega_step)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_slow_omega_step.h"
+     CONTENT "return ${omega_step};\n")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/weapons/fireweapon.cpp" weapon_source)
+set(needle "((fix) (frameTime * 16 / gameStates.gameplay.slowmo [0].fSpeed))")
+string(FIND "${weapon_source}" "${needle}" homing_start)
+if(homing_start LESS 0)
+    message(FATAL_ERROR "Missing pinned homing orientation arithmetic")
+endif()
+string(LENGTH "${needle}" homing_length)
+string(SUBSTRING "${weapon_source}" ${homing_start} ${homing_length} homing_step)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_slow_homing_step.h"
+     CONTENT "return ${homing_step};\n")
