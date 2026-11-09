@@ -10,6 +10,7 @@
 #include "resource_validation.h"
 #include "camera_collision.h"
 #include "object_birth.h"
+#include "gauss_random.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -1938,6 +1939,16 @@ int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collisio
 }
 
 //	------------------------------------------------------------------------------------------------------
+static int ordinary_gauss_signed_random(void)
+{
+	const int draw = d_rand();
+#ifdef DXX_XL_RUNTIME
+	return xl_gauss_signed_draw(draw, xl_level_extensions_active() && !(Game_mode & GM_MULTI));
+#else
+	return draw - 16384;
+#endif
+}
+
 void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *collision_point )
 {
 	int	damage_flag=1;
@@ -2224,9 +2235,9 @@ input_demo_debug_log_weapon_robot_reason_probe("accept", (void *)weapon, (void *
 			if (aip->SKIP_AI_COUNT * FrameTime < F1_0) {
 				aip->SKIP_AI_COUNT++;
 				// SIM RNG: these rolls directly torque live robot physics
-				robot->mtype.phys_info.rotthrust.x = fixmul((d_rand() - 16384), FrameTime * aip->SKIP_AI_COUNT);
-				robot->mtype.phys_info.rotthrust.y = fixmul((d_rand() - 16384), FrameTime * aip->SKIP_AI_COUNT);
-				robot->mtype.phys_info.rotthrust.z = fixmul((d_rand() - 16384), FrameTime * aip->SKIP_AI_COUNT);
+				robot->mtype.phys_info.rotthrust.x = fixmul(ordinary_gauss_signed_random(), FrameTime * aip->SKIP_AI_COUNT);
+				robot->mtype.phys_info.rotthrust.y = fixmul(ordinary_gauss_signed_random(), FrameTime * aip->SKIP_AI_COUNT);
+				robot->mtype.phys_info.rotthrust.z = fixmul(ordinary_gauss_signed_random(), FrameTime * aip->SKIP_AI_COUNT);
 				robot->mtype.phys_info.flags |= PF_USES_THRUST;
 
 			}
