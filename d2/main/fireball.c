@@ -186,7 +186,11 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 							case OBJ_WEAPON:
 								phys_apply_force(obj0p,&vforce);
 
-								if (obj0p->id == PROXIMITY_ID || obj0p->id == SUPERPROX_ID) {		//prox bombs have chance of blowing up
+								if (obj0p->id == PROXIMITY_ID || obj0p->id == SUPERPROX_ID
+#ifdef DXX_XL_RUNTIME
+									    || (obj0p->id == PMINE_ID && xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !d1_in_d2_use_d1_gameplay())
+#endif
+									) {		//prox bombs have chance of blowing up
 									if (fixmul(dist,force) > i2f(8000)) {
 										obj0p->flags |= OF_SHOULD_BE_DEAD;
 										explode_badass_weapon(obj0p,&obj0p->pos);

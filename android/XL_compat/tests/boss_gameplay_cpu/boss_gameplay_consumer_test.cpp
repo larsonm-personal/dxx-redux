@@ -101,6 +101,10 @@ fix self_splash_damage=15*F1_0;
 bool self_splash_visible=true;
 int self_splash_console=0,self_splash_timers=0;
 std::vector<int> self_splash_events;
+bool mine_trace=false,mine_repeat=false,mine_blocked=false,mine_chain_expected=false;
+int mine_id=PMINE_ID,mine_allocations=0,mine_audio=0,mine_classic_audio=0,mine_children=0;
+vms_vector mine_position{};
+std::vector<std::array<int,4>> mine_events;
 bool smart_trace=false;
 bool splash_trace=false;
 int splash_visibility=0,splash_forces=0,splash_rotations=0;
@@ -4083,9 +4087,67 @@ void smart_stun_controls(int mode=0) {
 }
 }
 
+namespace {
+void placed_mine_controls(int mode=0) {
+ struct Case {int distance;fix force,radius,expected_force;bool eligible,robot;};
+ const Case rows[]={
+  {90,225*F1_0,180*F1_0,7372800,true,true},
+  {40,225*F1_0,180*F1_0,11468800,false,false},
+  {140,225*F1_0,180*F1_0,3276800,false,false},
+  {180,225*F1_0,180*F1_0,0,false,false},
+  {181,225*F1_0,180*F1_0,0,false,false},
+  {90,225*F1_0,180*F1_0,7372800,false,false},
+  {90,225*F1_0,180*F1_0,7372800,false,false},
+  {90,225*F1_0,180*F1_0,7372800,false,false},
+  {90,225*F1_0,180*F1_0,7372800,true,false},
+  {80,200*F1_0-2,160*F1_0,6553599,false,false},
+  {80,200*F1_0,160*F1_0,6553600,false,false},
+  {80,200*F1_0+1,160*F1_0,6553601,true,false}
+ };
+ int cases=0;
+ for(int profile=0;profile<4;++profile)for(unsigned row=0;row<sizeof(rows)/sizeof(rows[0]);++row) {
+  if(mode==1&&(profile||row))continue;
+  if(mode==2&&!profile&&(row==0||row==11))continue;
+  reset();xl_object_trigger_clear();xl_boss_spawn_clear();for(int i=0;i<=Highest_object_index;++i)Objects[i]={};Highest_object_index=4;
+  extensions=profile!=1;fixture_mission.descent_version=profile==2?1:2;Game_mode=profile==3?GM_MULTI:0;Difficulty_level=2;GameTime64=20*F1_0;
+  Objects[player_slot].type=OBJ_PLAYER;Objects[player_slot].id=Player_num;Objects[player_slot].signature=101;Objects[player_slot].pos={1000*F1_0,0,0};
+  auto &mine=Objects[2];mine.type=OBJ_WEAPON;mine.id=row==8?PROXIMITY_ID:PMINE_ID;mine.signature=402;mine.segnum=0;mine.pos={rows[row].distance*F1_0,0,0};mine.movement_type=MT_PHYSICS;mine.mtype.phys_info.mass=F1_0;mine.mtype.phys_info.velocity={123,-456,789};mine.lifeleft=10*F1_0;mine.ctype.laser_info.parent_type=OBJ_PLAYER;mine.ctype.laser_info.parent_num=player_slot;mine.ctype.laser_info.parent_signature=101;if(row==5)mine.flags|=OF_SHOULD_BE_DEAD;
+  auto &source=Objects[4];source.type=OBJ_WEAPON;source.id=EARTHSHAKER_ID;source.signature=404;source.segnum=0;source.ctype.laser_info.parent_type=OBJ_PLAYER;source.ctype.laser_info.parent_num=player_slot;source.ctype.laser_info.parent_signature=101;
+  auto &robot=Objects[owner_a];if(rows[row].robot){robot.type=OBJ_ROBOT;robot.id=child_type;robot.signature=703;robot.segnum=0;robot.pos={120*F1_0,0,0};robot.size=F1_0;robot.shields=500*F1_0;robot.control_type=CT_AI;robot.ctype.ai_info.behavior=AIB_NORMAL;Robot_info[child_type].strength=500*F1_0;Robot_info[child_type].boss_flag=Robot_info[child_type].companion=0;}
+  Weapon_info[EARTHSHAKER_ID]={};Weapon_info[EARTHSHAKER_ID].damage_radius=180*F1_0;Weapon_info[EARTHSHAKER_ID].children=44;for(int d=0;d<NDL;++d)Weapon_info[EARTHSHAKER_ID].strength[d]=225*F1_0;
+  Weapon_info[mine.id]={};Weapon_info[mine.id].flash=0;Weapon_info[mine.id].children=-1;Weapon_info[mine.id].robot_hit_vclip=mine.id==PMINE_ID?5:7;Weapon_info[mine.id].impact_size=7*F1_0;Weapon_info[mine.id].damage_radius=(mine.id==PMINE_ID?40:75)*F1_0;for(int d=0;d<NDL;++d)Weapon_info[mine.id].strength[d]=mine.id==PMINE_ID?(10+5*d)*F1_0:d==NDL-1?3283354:50*F1_0;
+  Vclip[7].play_time=F1_0;Vclip[5].play_time=2*F1_0;
+  mine_trace=true;mine_repeat=false;mine_blocked=row==6;mine_id=mine.id;mine_position=mine.pos;mine_allocations=mine_audio=mine_classic_audio=mine_children=0;mine_events.clear();
+  const bool chain=rows[row].eligible&&(row==8||profile==0);const bool admitted=row!=3&&row!=4&&row!=5&&row!=7;const bool force=admitted&&!mine_blocked;const auto mine_before=mine,source_before=source,parent_before=Objects[player_slot],robot_before=robot;
+  unsigned sim,fx;d_rand_get_state(&sim);d_rand_get_stream_state(D_RNG_FX,&fx);const auto sim_calls=d_rand_get_call_count(),fx_calls=d_rand_get_stream_call_count(D_RNG_FX);vms_vector origin{};
+  auto *effect=object_create_explosion_sub(row==7?&mine:&source,0,&origin,7*F1_0,7,225*F1_0,rows[row].radius,rows[row].force,player_slot);
+  require((mine.flags&~OF_SHOULD_BE_DEAD)==(mine_before.flags&~OF_SHOULD_BE_DEAD),"non-death mine flag bits preserved");auto preserved=mine_before;preserved.flags=mine.flags;require(!std::memcmp(&mine,&preserved,sizeof(mine))&&!std::memcmp(&source,&source_before,sizeof(source))&&!std::memcmp(&Objects[player_slot],&parent_before,sizeof(parent_before)),"mine/source/attribution fields preserved apart from dead bit");
+  unsigned sim_after,fx_after;d_rand_get_state(&sim_after);d_rand_get_stream_state(D_RNG_FX,&fx_after);require(sim==sim_after&&fx==fx_after&&sim_calls==d_rand_get_call_count()&&fx_calls==d_rand_get_stream_call_count(D_RNG_FX),"nested no-child explosions preserve both RNG streams");
+  if(force)require(mine_events.size()>2&&mine_events[2]==std::array<int,4>{3,2,rows[row].expected_force,0},"outer mine impulse precedes detonation admission");
+  if(mode==1)std::cout<<"observed mine dead="<<int(bool(mine.flags&OF_SHOULD_BE_DEAD))<<" effects="<<mine_allocations<<" robot shields="<<robot.shields<<"\n";
+  require(bool(mine.flags&OF_SHOULD_BE_DEAD)==(row==5||chain),"placed mine chains under strict XL threshold predicate");
+  require(effect==&Objects[5]&&mine_allocations==1+int(chain)&&mine_children==int(chain)&&mine_audio==int(chain)&&mine_classic_audio==int(chain&&!extensions),"real nested effect and bounded no-child/audio output counts");
+  std::vector<std::array<int,4>> expected{{1,5,7,int(row==5)}};
+  if(admitted)expected.push_back({2,5,2,int(row==5)});
+  if(force)expected.push_back({3,2,rows[row].expected_force,0});
+  if(chain){expected.push_back({4,2,0,1});if(!extensions)expected.push_back({5,2,11,1});expected.push_back({1,6,Weapon_info[mine_id].robot_hit_vclip,1});if(rows[row].robot){expected.push_back({2,6,owner_a,1});expected.push_back({3,owner_a,5*F1_0,0});expected.push_back({6,owner_a,-409600,0});expected.push_back({7,500*F1_0,5*F1_0,495*F1_0});}expected.push_back({8,mine_id,NUM_SMART_CHILDREN,1});}
+  if(rows[row].robot){const int before=chain?495:500;expected.push_back({2,5,owner_a,int(chain)});expected.push_back({3,owner_a,75*F1_0,0});expected.push_back({6,owner_a,-6144000,0});expected.push_back({7,before*F1_0,75*F1_0,(before-75)*F1_0});}
+  require(mine_events==expected,"exact reentrant force/audio/allocation/damage/child ordering");
+  auto expected_robot=robot_before;if(rows[row].robot)expected_robot.shields=(chain?420:425)*F1_0;require(!std::memcmp(&robot,&expected_robot,sizeof(robot)),"real nested then outer surviving robot damage");
+  for(int slot=5;slot<=Highest_object_index;++slot){const auto &e=Objects[slot];const bool inner=slot==6;require(e.type==OBJ_FIREBALL&&e.id==(inner?Weapon_info[mine_id].robot_hit_vclip:7)&&e.lifeleft==Vclip[e.id].play_time&&e.ctype.expl_info.spawn_time==-1&&e.ctype.expl_info.delete_objnum==-1&&e.ctype.expl_info.delete_time==-1,"actual nested fireball setup");}
+  if(!profile&&!row){mine_repeat=true;auto dead_mine=mine;auto repeated_robot=robot;const auto before_events=mine_events.size();require(object_create_explosion_sub(&source,0,&origin,7*F1_0,7,225*F1_0,180*F1_0,225*F1_0,player_slot)==&Objects[7],"repeat outer creates only one ordinary effect");repeated_robot.shields=345*F1_0;require(!std::memcmp(&mine,&dead_mine,sizeof(mine))&&!std::memcmp(&robot,&repeated_robot,sizeof(robot))&&mine_allocations==3&&mine_audio==1&&mine_children==1,"already-dead mine does not detonate again on repeated outer event");const std::vector<std::array<int,4>> suffix(mine_events.begin()+before_events,mine_events.end());require(suffix==std::vector<std::array<int,4>>{{1,7,7,1},{2,7,owner_a,1},{3,owner_a,75*F1_0,0},{6,owner_a,-6144000,0},{7,420*F1_0,75*F1_0,345*F1_0}},"repeat outer damage without nested callbacks");d_rand_get_state(&sim_after);d_rand_get_stream_state(D_RNG_FX,&fx_after);require(sim==sim_after&&fx==fx_after&&sim_calls==d_rand_get_call_count()&&fx_calls==d_rand_get_stream_call_count(D_RNG_FX),"repeat outer preserves both complete streams");}
+  mine_trace=false;mine_repeat=false;++cases;
+ }
+ std::cout<<"PASS placed mine "<<cases<<" cases\n";
+}
+}
+
 int main(int argc, char **argv)
 {
 	try {
+ if(argc==2&&!std::strcmp(argv[1],"placed-mine")){placed_mine_controls();return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"placed-mine-probe")){placed_mine_controls(1);return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"placed-mine-guards")){placed_mine_controls(2);return 0;}
  if(argc==2&&!std::strcmp(argv[1],"smart-stun")){smart_stun_controls();return 0;}
  if(argc==2&&!std::strcmp(argv[1],"smart-stun-count-probe")){smart_stun_controls(1);return 0;}
  if(argc==2&&!std::strcmp(argv[1],"smart-stun-spin-probe")){smart_stun_controls(2);return 0;}
@@ -4250,6 +4312,7 @@ int main(int argc, char **argv)
 			common_damage_gates(!std::strcmp(argv[1], "age"), !std::strcmp(argv[1], "strength"));
 			return 0;
 		}
+        placed_mine_controls();
         smart_stun_controls();
         self_splash_controls();
         splash_controls();
@@ -4381,6 +4444,7 @@ void compute_segment_center(vms_vector *result, segment *where)
 int obj_create(enum object_type_t type, ubyte id, int segment, const vms_vector *position,
                const vms_matrix *orientation, fix size, ubyte control, ubyte movement, ubyte render)
 {
+ if(mine_trace){++mine_allocations;require(mine_allocations<=2+(mine_repeat?1:0)&&type==OBJ_FIREBALL&&segment==0&&position&&orientation==&vmd_identity_matrix&&size==7*F1_0&&control==CT_EXPLOSION&&movement==MT_NONE&&render==RT_FIREBALL,"bounded nested fireball allocation");const bool inner=position->x!=0;require((inner&&mine_allocations==2&&!std::memcmp(position,&mine_position,sizeof(mine_position))&&id==Weapon_info[mine_id].robot_hit_vclip&&(Objects[2].flags&OF_SHOULD_BE_DEAD))||(!inner&&(mine_allocations==1||(mine_repeat&&mine_allocations==3))&&!position->y&&!position->z&&id==7),"chain dead flag before exact inner allocation and bounded repeat");mine_events.push_back({1,Highest_object_index+1,id,int(bool(Objects[2].flags&OF_SHOULD_BE_DEAD))});}
  if(self_splash_trace)require(type==OBJ_FIREBALL&&id==7&&segment==0&&position&&!position->x&&!position->y&&!position->z&&orientation==&vmd_identity_matrix&&size==7*F1_0&&control==CT_EXPLOSION&&movement==MT_NONE&&render==RT_FIREBALL,"self splash bounded effect allocation");
  if(splash_trace)require(type==OBJ_FIREBALL&&id==7&&segment==0&&position&&!std::memcmp(position,&splash_origin,sizeof(splash_origin))&&orientation==&vmd_identity_matrix&&size==7*F1_0&&control==CT_EXPLOSION&&movement==MT_NONE&&render==RT_FIREBALL,"splash bounded fireball allocator inputs");
 	++births;
@@ -4510,7 +4574,7 @@ void buddy_message(char *, ...)
 {
 	require(false, "unexpected buddy message");
 }
-void newdemo_dump_note_robot_damage(object *, fix, fix) {}
+void newdemo_dump_note_robot_damage(object *actor, fix before, fix damage) {if(mine_trace){require(actor==&Objects[owner_a]&&actor->shields==before-damage,"actual nested robot shield change");mine_events.push_back({7,before,damage,actor->shields});}}
 void input_demo_record_robot_damage_event(object *, int32_t, int32_t) {}
 void input_demo_log_replay_robot_damage(object *, int32_t, int32_t) {}
 void input_demo_rng_trace_record_srand(int, const char *, const char *, int, uint32_t, int, uint32_t, int has_after, uint32_t state_after, uint32_t seed)
@@ -4589,6 +4653,7 @@ int PHYSFS_delete(const char *)
 
 void phys_apply_force(object *actor, vms_vector *force)
 {
+ if(mine_trace){require((actor==&Objects[2]||actor==&Objects[owner_a])&&force&&!force->y&&!force->z,"exact mine-chain force output owner/axis");mine_events.push_back({3,int(actor-Objects),force->x,0});return;}
  if(self_splash_trace){require(actor==ConsoleObject,"self splash force owner");++self_splash_forces;self_splash_force=*force;self_splash_events.push_back(2);return;}
  if(splash_trace){require(actor==&Objects[owner_a],"splash force victim");++splash_forces;splash_force=*force;return;}
 	if (matcen_trace) {
@@ -4608,6 +4673,7 @@ void phys_apply_force(object *actor, vms_vector *force)
 }
 void phys_apply_rot(object *actor, vms_vector *force)
 {
+ if(mine_trace){require(actor==&Objects[owner_a]&&force&&!force->y&&!force->z,"exact nested robot rotation output");mine_events.push_back({6,int(actor-Objects),force->x,0});return;}
  if(self_splash_trace){require(actor==ConsoleObject,"self splash rotation owner");++self_splash_rotations;self_splash_rotation=*force;self_splash_events.push_back(3);return;}
  if(splash_trace){require(actor==&Objects[owner_a],"splash rotation victim");++splash_rotations;splash_rotation=*force;return;}
 	if (forcefield_trace) {
@@ -5283,8 +5349,9 @@ int xl_static_robot_gauss(object *actor)
 	++gauss_static_calls;
 	return 0;
 }
-void create_smart_children(object *, int)
+void create_smart_children(object *actor, int count)
 {
+ if(mine_trace){require(actor==&Objects[2]&&(actor->id==PMINE_ID||actor->id==PROXIMITY_ID)&&Weapon_info[actor->id].children==-1&&count==NUM_SMART_CHILDREN&&(actor->flags&OF_SHOULD_BE_DEAD)&&mine_allocations==2,"authenticated no-child mine endpoint only");++mine_children;mine_events.push_back({8,actor->id,count,1});return;}
 	require(false, "unexpected smart children");
 }
 object *__wrap_object_create_badass_explosion(object *, short, vms_vector *, fix, int, fix, fix, fix, int)
@@ -5387,7 +5454,7 @@ int xl_lightning_object_set_enabled(int target, int enabled)
 
 }
 
-extern "C" int object_to_object_visibility(object *effect, object *target, int flags){if(self_splash_trace){require(effect==&Objects[4]&&target==ConsoleObject&&flags==2,"self splash visibility");++self_splash_visibility;self_splash_events.push_back(1);return self_splash_visible;}require(splash_trace&&effect==&Objects[4]&&target==&Objects[owner_a]&&flags==2,"splash visibility boundary");++splash_visibility;return splash_visible;}
+extern "C" int object_to_object_visibility(object *effect, object *target, int flags){if(mine_trace){require((effect==&Objects[5]||effect==&Objects[6]||effect==&Objects[7])&&(target==&Objects[2]||target==&Objects[owner_a])&&flags==2,"exact nested visibility output boundary");mine_events.push_back({2,int(effect-Objects),int(target-Objects),int(bool(Objects[2].flags&OF_SHOULD_BE_DEAD))});return target==&Objects[2]?!mine_blocked:1;}if(self_splash_trace){require(effect==&Objects[4]&&target==ConsoleObject&&flags==2,"self splash visibility");++self_splash_visibility;self_splash_events.push_back(1);return self_splash_visible;}require(splash_trace&&effect==&Objects[4]&&target==&Objects[owner_a]&&flags==2,"splash visibility boundary");++splash_visibility;return splash_visible;}
 extern "C" {
 void multi_send_damage(fix damage,fix shields,ubyte type,ubyte id,ubyte kind,object*source){if(self_splash_trace){require(damage==self_splash_damage&&shields==100*F1_0&&type==(self_splash_killer?self_splash_killer->type:OBJ_WEAPON)&&id==(self_splash_killer?self_splash_killer->id:0)&&kind==DAMAGE_BLAST&&source==&Objects[2],"self splash pre-damage telemetry");++self_splash_telemetry;self_splash_events.push_back(4);return;}require(false,"splash excludes player network damage");}
 int input_demo_recorder_is_active(){if(self_splash_trace)return 0;require(false,"splash excludes player recording");return 0;}
@@ -5395,6 +5462,6 @@ int input_demo_replay_is_loaded(){if(self_splash_trace)return 0;require(false,"s
 const char *input_demo_debug_activity_mode_name(){require(false,"splash excludes player tracing");return "";}
 unsigned input_demo_debug_frame_index(){require(false,"splash excludes player tracing");return 0;}
 void input_demo_log_player_weapon_hit(const char*,unsigned,object*,object*,int,const vms_vector*){require(false,"splash excludes player hit tracing");}
-int xl_gameplay_weapon_explosion(int,int){require(false,"splash excludes weapon audio policy");return 0;}
-int digi_link_sound_to_object(int,short,int,fix){require(false,"splash excludes weapon audio output");return 0;}
+int xl_gameplay_weapon_explosion(int owner,int water){if(mine_trace){require(owner==2&&!water&&(Objects[2].flags&OF_SHOULD_BE_DEAD)&&mine_allocations==1,"dead mine before audio and nested explosion");++mine_audio;mine_events.push_back({4,2,0,1});return extensions?1:0;}require(false,"splash excludes weapon audio policy");return 0;}
+int digi_link_sound_to_object(int sound,short owner,int loop,fix volume){if(mine_trace){require(sound==11&&owner==2&&!loop&&volume==F1_0&&!extensions&&mine_audio==1&&mine_allocations==1&&(Objects[2].flags&OF_SHOULD_BE_DEAD),"classic mine sound before nested allocation");++mine_classic_audio;mine_events.push_back({5,owner,sound,1});return 0;}require(false,"splash excludes weapon audio output");return 0;}
 }
