@@ -141,6 +141,11 @@ static Json snapshot()
 	}
 	state["player"] = { { "has_blue_key", bool(player.flags & PLAYER_FLAGS_BLUE_KEY) }, { "has_red_key", bool(player.flags & PLAYER_FLAGS_RED_KEY) }, { "has_gold_key", bool(player.flags & PLAYER_FLAGS_GOLD_KEY) }, { "invulnerable", bool(player.flags & PLAYER_FLAGS_INVULNERABLE) }, { "shields", double(player.shields) / F1_0 }, { "energy", double(player.energy) / F1_0 }, { "score", player.score }, { "lives", player.lives }, { "robots_killed_level", player.num_kills_level } };
 	state["player"]["primary_weapon"] = player.primary_weapon;
+	state["player"]["secondary_weapon"] = int(player.secondary_weapon);
+	state["player"]["secondary_weapon_flags"] = int(player.secondary_weapon_flags);
+	state["player"]["secondary_ammo"] = Json::array();
+	for (int slot = 0; slot < MAX_SECONDARY_WEAPONS; ++slot)
+		state["player"]["secondary_ammo"].push_back(int(player.secondary_ammo[slot]));
 	state["player"]["primary_weapon_flags"] = player.primary_weapon_flags;
 	state["player"]["laser_level"] = int(player.laser_level);
 	state["player"]["quad_lasers"] = bool(player.flags & PLAYER_FLAGS_QUAD_LASERS);
@@ -151,7 +156,7 @@ static Json snapshot()
 	state["primary_fire"]["fusion_auto_fire_pending"] = Auto_fire_fusion_cannon_time != 0;
 	state["primary_fire"]["fusion_auto_fire_delta_raw"] = Auto_fire_fusion_cannon_time != 0 ? Json(Auto_fire_fusion_cannon_time - GameTime64) : Json{};
 	if (ConsoleObject && Player_ship)
-		for (int gun : { 0, 1, 6 }) {
+		for (int gun : { 0, 1, 4, 5, 6 }) {
 			vms_vector point = Player_ship->gun_points[gun];
 			const bool owned = xl_model_gun_point(ConsoleObject->rtype.pobj_info.model_num, gun, &point) != 0;
 			state["player"]["muzzles"][std::to_string(gun)] = { { "model", int(ConsoleObject->rtype.pobj_info.model_num) }, { "owned", owned }, { "point_fixed", { int(point.x), int(point.y), int(point.z) } }, { "quick_distance", vm_vec_mag_quick(&point) }, { "legacy_limit_exceeded", vm_vec_mag_quick(&point) > 0x50000 } };
@@ -212,6 +217,21 @@ static Json snapshot()
 	state["combat_observation"]["owned_weapon_count"] = owned_weapon_count;
 	state["combat_observation"]["owned_weapons_truncated"] = owned_weapon_count > max_owned_weapons;
 	state["combat_observation"]["owned_weapon_limit"] = max_owned_weapons;
+	state["secondary_fire"] = { { "next_delta_raw", Next_missile_fire_time - GameTime64 }, { "count", Global_missile_firing_count }, { "held", Controls.fire_secondary_state } };
+	state["combat_observation"]["guided_control"] = nullptr;
+	// The global guided pointer may outlive an object slot. Match without dereferencing it.
+	const object *guided = Guided_missile[Player_num];
+	for (int index = 0; guided && index <= Highest_object_index; ++index) {
+		const auto &object = Objects[index];
+		if (guided != &object) continue;
+		if (object.type == OBJ_WEAPON && object.id == GUIDEDMISS_ID &&
+		    !(object.flags & OF_SHOULD_BE_DEAD) && object.signature == Guided_missile_sig[Player_num] &&
+		    object.ctype.laser_info.parent_type == OBJ_PLAYER &&
+		    object.ctype.laser_info.parent_num == player.objnum && ConsoleObject &&
+		    object.ctype.laser_info.parent_signature == ConsoleObject->signature)
+			state["combat_observation"]["guided_control"] = { { "object", index }, { "signature", int(object.signature) }, { "weapon_id", int(object.id) }, { "parent_object", int(object.ctype.laser_info.parent_num) }, { "parent_signature", int(object.ctype.laser_info.parent_signature) }, { "segment", int(object.segnum) }, { "position_fixed", { int(object.pos.x), int(object.pos.y), int(object.pos.z) } }, { "orient_right_fixed", { int(object.orient.rvec.x), int(object.orient.rvec.y), int(object.orient.rvec.z) } }, { "orient_up_fixed", { int(object.orient.uvec.x), int(object.orient.uvec.y), int(object.orient.uvec.z) } }, { "orient_forward_fixed", { int(object.orient.fvec.x), int(object.orient.fvec.y), int(object.orient.fvec.z) } }, { "lifeleft_raw", int(object.lifeleft) } };
+		break;
+	}
 	for (int index = 0; index <= Highest_object_index; ++index)
 		if (Objects[index].type == OBJ_CNTRLCEN) {
 			Json guns = Json::array();
@@ -226,6 +246,15 @@ static Json snapshot()
 	const int primary_id = player.primary_weapon >= 0 && player.primary_weapon < MAX_PRIMARY_WEAPONS ? Primary_weapon_to_weapon_info[player.primary_weapon] : -1;
 	for (int weapon : { 0, CONTROLCEN_WEAPON_NUM, primary_id })
 		if (weapon >= 0 && weapon < N_weapon_types) state["weapon_definitions"][std::to_string(weapon)] = { { "damage_radius", int(Weapon_info[weapon].damage_radius) }, { "strength", int(Weapon_info[weapon].strength[Difficulty_level]) }, { "speed", int(Weapon_info[weapon].speed[Difficulty_level]) }, { "fire_wait", int(Weapon_info[weapon].fire_wait) }, { "fire_count", int(Weapon_info[weapon].fire_count) }, { "ammo_usage", int(Weapon_info[weapon].ammo_usage) }, { "energy_usage", int(Weapon_info[weapon].energy_usage) }, { "matter", int(Weapon_info[weapon].matter) }, { "blob_size", int(Weapon_info[weapon].blob_size) }, { "render_type", int(Weapon_info[weapon].render_type) }, { "model_num", Weapon_info[weapon].render_type == WEAPON_RENDER_POLYMODEL ? Json(int(Weapon_info[weapon].model_num)) : Json{} } };
+	state["secondary_weapon_definition"] = nullptr;
+	const int secondary_slot = int(player.secondary_weapon);
+	if (secondary_slot >= 0 && secondary_slot < MAX_SECONDARY_WEAPONS) {
+		const int secondary_id = int(Secondary_weapon_to_weapon_info[secondary_slot]);
+		if (secondary_id >= 0 && secondary_id < N_weapon_types) {
+			const auto &weapon = Weapon_info[secondary_id];
+			state["secondary_weapon_definition"] = { { "selected_slot", secondary_slot }, { "weapon_id", secondary_id }, { "damage_radius", int(weapon.damage_radius) }, { "strength", int(weapon.strength[Difficulty_level]) }, { "speed", int(weapon.speed[Difficulty_level]) }, { "fire_wait", int(weapon.fire_wait) }, { "fire_count", int(weapon.fire_count) }, { "ammo_usage", int(weapon.ammo_usage) }, { "energy_usage", int(weapon.energy_usage) }, { "matter", int(weapon.matter) }, { "bounce", int(weapon.bounce) }, { "lifetime", int(weapon.lifetime) }, { "render_type", int(weapon.render_type) }, { "model_num", weapon.render_type == WEAPON_RENDER_POLYMODEL ? Json(int(weapon.model_num)) : Json{} }, { "model_num_inner", weapon.render_type == WEAPON_RENDER_POLYMODEL ? Json(int(weapon.model_num_inner)) : Json{} }, { "blob_size", int(weapon.blob_size) }, { "bitmap_index", weapon.render_type == WEAPON_RENDER_BLOB || weapon.render_type == WEAPON_RENDER_LASER ? Json(int(weapon.bitmap.index)) : Json{} } };
+		}
+	}
 	return state;
 }
 // A bounded static query from live owned bolts, not a gameplay collision qualification
