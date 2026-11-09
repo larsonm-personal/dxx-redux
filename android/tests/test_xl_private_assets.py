@@ -88,6 +88,10 @@ class XlPrivateTests(unittest.TestCase):
                 "rejected_paths": ["headless", "rendered", "paused"] if xl else [],
             }
             policy["acquired_recording_rejected" if xl else "classic_recording_allowed"] = True
+            if xl:
+                policy.update(simulation_exit_rejected=True, terminal_tail_rejected=True)
+            else:
+                policy["classic_completion_allowed"] = True
             proof = {
                 "schema": "xl-omega-damage-v1",
                 "assisted": True,
@@ -117,6 +121,14 @@ class XlPrivateTests(unittest.TestCase):
                         )
                     )
             self.assertTrue(omega_damage.passed(0, proof, "fixture", 1, xl))
+            if xl:
+                for key in ("simulation_exit_rejected", "terminal_tail_rejected"):
+                    bad = copy.deepcopy(proof)
+                    bad["input_policy"].pop(key)
+                    self.assertFalse(omega_damage.passed(0, bad, "fixture", 1, xl))
+                    bad["input_policy"][key] = False
+                    self.assertFalse(omega_damage.passed(0, bad, "fixture", 1, xl))
+
             for code in (1, None, False):
                 self.assertFalse(omega_damage.passed(code, proof, "fixture", 1, xl))
             for index in range(8):

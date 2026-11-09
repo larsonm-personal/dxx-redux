@@ -29,6 +29,10 @@ def passed(code, proof, mission, level, xl):
         "rejected_paths": ["headless", "rendered", "paused"] if xl else [],
     }
     expected_policy["acquired_recording_rejected" if xl else "classic_recording_allowed"] = True
+    if xl:
+        expected_policy.update(simulation_exit_rejected=True, terminal_tail_rejected=True)
+    else:
+        expected_policy["classic_completion_allowed"] = True
     if proof["input_policy"] != expected_policy or any(
         proof["input_policy"].get(key) is not value for key, value in expected_policy.items() if isinstance(value, bool)
     ):

@@ -8,6 +8,16 @@ int allowed_to_fire_laser(void);
 extern fix64 Last_omega_fire_time;
 void collide_robot_and_weapon(object *, object *, vms_vector *);
 }
+static int omega_completion_writes = 0;
+static void omega_completion_write()
+{
+	++omega_completion_writes;
+}
+static void omega_completion_stop(int write)
+{
+	omega_completion_writes += write;
+	input_demo_replay_unload();
+}
 static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 {
 	const auto require = [](bool ok, const char *message) { if (!ok) throw std::runtime_error(message); };
@@ -64,10 +74,50 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 		Players[Player_num].primary_weapon_flags |= 1 << OMEGA_INDEX;
 		require(!input_demo_record_finish_input_tail(error, sizeof(error)) && !input_demo_recorder_is_active(), "Acquired Omega recording was accepted");
 		results["acquired_recording_rejected"] = true;
+		// Exercise the final-step exit entry before the outer post-step gate runs.
+		require(input_demo_replay_load(replay_path.c_str(), error, sizeof(error)), error);
+		omega_completion_writes = 0;
+		fix64 timer = 1;
+		require(input_demo_finish_replay_shared(0, &timer, nullptr, omega_completion_write), "Final-step exit was not handled");
+		require(!omega_completion_writes && !input_demo_replay_is_loaded() && timer == 0, "Final-step exit published unsupported Omega success");
+		results["simulation_exit_rejected"] = true;
+
+		// Build a legacy terminal tail containing a real authored all-weapons command.
+		// Low-level recorder APIs intentionally bypass the new live-capture admission.
+		Players[Player_num].primary_weapon_flags &= ~(1 << OMEGA_INDEX);
+		require(maybe_start_input_demo_recording(0), "Terminal-tail fixture recorder did not start");
+		d_rand_get_stream_state(D_RNG_SIM, &seed);
+		require(input_demo_recorder_capture_frame(F1_0 / 60, &controls, &pulse, seed, 1, d_rand_get_call_count(), nullptr, nullptr, error, sizeof(error)), error);
+		require(input_demo_recorder_begin_input_batch(seed, d_rand_get_call_count(), FrameTime, error, sizeof(error)), error);
+		require(input_demo_recorder_stage_direct_command_grant_all_weapons(INPUT_DEMO_GRANT_ALL_WEAPONS_D2_HONESTBOB, error, sizeof(error)), error);
+		require(input_demo_recorder_finish_input_tail(&controls, &pulse, seed, d_rand_get_call_count(), error, sizeof(error)), error);
+		const std::string tail_path = std::string(path) + ".tail.dximdemo";
+		require(input_demo_recorder_flush_with_result(tail_path.c_str(), &result, error, sizeof(error)), error);
+		input_demo_recorder_cancel();
+		for (bool early_exit : { false, true }) {
+			Players[Player_num].primary_weapon_flags &= ~(1 << OMEGA_INDEX);
+			require(input_demo_replay_load(tail_path.c_str(), error, sizeof(error)), error);
+			omega_completion_writes = 0;
+			if (early_exit) require(input_demo_finish_replay_shared(0, &timer, nullptr, omega_completion_write), "Tail exit not handled");
+			else input_demo_advance_replay_frame_shared(nullptr, omega_completion_stop);
+			require(Players[Player_num].primary_weapon_flags & (1 << OMEGA_INDEX), "Authored terminal tail did not acquire Omega");
+			require(!omega_completion_writes && !input_demo_replay_is_loaded(), "Terminal-tail Omega published success");
+		}
+		results["terminal_tail_rejected"] = true;
+
 	} else {
 		require(maybe_start_input_demo_recording(0), "Classic Omega recording was rejected");
 		input_demo_recorder_cancel();
 		results["classic_recording_allowed"] = true;
+		for (bool early_exit : { false, true }) {
+			require(input_demo_replay_load(replay_path.c_str(), error, sizeof(error)), error);
+			omega_completion_writes = 0;
+			fix64 timer = 1;
+			if (early_exit) require(input_demo_finish_replay_shared(0, &timer, nullptr, omega_completion_write), "Classic exit not handled");
+			else input_demo_advance_replay_frame_shared(nullptr, omega_completion_stop);
+			require(omega_completion_writes == 1 && !input_demo_replay_is_loaded(), "Classic Omega completion was rejected");
+		}
+		results["classic_completion_allowed"] = true;
 	}
 	Players[Player_num].primary_weapon_flags = flags;
 	return results;

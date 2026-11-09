@@ -62,6 +62,7 @@ extern "C" {
 #include "key.h"
 #include "input_demo_hooks.h"
 #include "input_demo_newdemo_shared.h"
+#include "input_demo_hooks_shared.h"
 void GameProcessFrame(void);
 void omega_charge_frame(void);
 void do_omega_stuff(object *, vms_vector *, object *);
@@ -225,7 +226,8 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	                                                    startup_find_cmd_arg("-route-confirm-timeout-seconds") || startup_find_cmd_arg("-route-confirm-capture") ||
 	                                                    startup_find_cmd_arg("-route-confirm-checkpoint") || startup_find_cmd_arg("-route-confirm-checkpoint-out") ||
 	                                                    startup_find_cmd_arg("-route-confirm-key") || startup_find_cmd_arg("-route-confirm-segment") ||
-	                                                    startup_find_cmd_arg("-route-confirm-native-transition") || startup_find_cmd_arg("-route-confirm-load-proof"))) {
+	                                                    startup_find_cmd_arg("-route-confirm-native-transition") || startup_find_cmd_arg("-route-confirm-load-proof") ||
+	                                                    startup_find_cmd_arg("-xl-render-clock-proof") || startup_find_cmd_arg("-xl-omega-damage-proof"))) {
 		fprintf(stderr, "Rendered readiness requires proof/output paths and no assisted route options\n");
 		return 1;
 	}

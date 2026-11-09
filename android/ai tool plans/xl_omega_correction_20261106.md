@@ -65,3 +65,22 @@ quality and automation catalog validation passed. Catalog execution stopped at t
 or reserve was relaxed. Windows/Android builds, true multi-peer networking, the
 standalone headless executable and comprehensive historical-save loading remain
 outside this local evidence. Hosted CI is required after publication.
+
+## Completion-edge correction
+
+The final ordered-input tail can contain an authored `d2_honestbob` grant, which
+adds Omega after the normal post-simulation gate. Completion now checks policy
+again after applying that tail. The early-exit completion path checks before and
+after its tail too: `GameProcessFrame` calls `do_controlcen_dead_frame`, whose
+countdown expiry calls `input_demo_finish_replay_from_mine_exit` before returning
+to the outer post-step guard. Level/game-over completion shares the same finalizer.
+
+Developer controls record and replay an actual terminal all-weapons command, then
+assert zero success-writer calls and unloaded replay for normal and early-exit
+completion. A separate owned-Omega control invokes the final-step exit entry
+before the outer step check. This is a native finalizer control, not an end-to-end
+physical mine-explosion simulation. Classic Omega passes both completion paths.
+Independent diagnostic binaries removing only the finish guard or only the tail
+guard fail respectively with `Final-step exit published unsupported Omega success`
+and `Terminal-tail Omega published success`; the same fixtures pass with both guards.
+The strict receipt requires these completion assertions; neither can be omitted.
