@@ -114,3 +114,27 @@ set_property(
 extract_contact_fragment(
     "${redux_physics}" "void do_physics_sim(object *obj)" "int reconstruct_velocity ="
     "if (!obj_stopped && !bounced" xl_redux_contact_predicate.h)
+
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/ai/aiframe.cpp" ai_hash)
+if(NOT ai_hash STREQUAL "9fdc24b85cdfc7282830a0cc6e5a52fce9390151ecb4f157080e919c9c9046fd")
+    message(FATAL_ERROR "AI timer reference differs from pinned source")
+endif()
+set(extracted "")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/ai/aiframe.cpp" "int32_t AINextFireHandler (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_slow_ai.h" CONTENT "${extracted}")
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/ai/aimove.cpp" aimove_hash)
+if(NOT aimove_hash STREQUAL "2aef988961c51464669d280d9073e2eceb98a8da45041a43d503b667005b5941")
+    message(FATAL_ERROR "AI turn reference differs from pinned source")
+endif()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/ai/aimove.cpp" aimove_source)
+foreach(value IN ITEMS dot new_scale)
+    set(needle "${value} = (fix) (${value} / gameStates.gameplay.slowmo [0].fSpeed);")
+    string(FIND "${aimove_source}" "${needle}" scaled_start)
+    if(scaled_start LESS 0)
+        message(FATAL_ERROR "Missing pinned AI scaling expression")
+    endif()
+    string(LENGTH "${needle}" scaled_length)
+    string(SUBSTRING "${aimove_source}" ${scaled_start} ${scaled_length} scaled)
+    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_slow_ai_${value}.h"
+         CONTENT "if (!IsMultiGame) { ${scaled} }\n")
+endforeach()

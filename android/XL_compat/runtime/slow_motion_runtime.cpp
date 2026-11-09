@@ -5,6 +5,7 @@ extern "C" {
 #include "object.h"
 #include "game.h"
 #include "vecmat.h"
+#include "aistruct.h"
 }
 namespace
 {
@@ -71,4 +72,22 @@ extern "C" void xl_slow_motion_turn_delta(const object *actor, int32_t *pitch, i
 	// Reference TurnTowardsVector scales before sign-change saturation
 	*pitch = static_cast<fix>(*pitch / speed);
 	*heading = static_cast<fix>(*heading / speed);
+}
+
+extern "C" int32_t xl_slow_motion_world_time(int32_t time)
+{
+	if (!enabled() || state.clocks[0].speed == 1) return time;
+	return static_cast<int32_t>(time / state.clocks[0].speed);
+}
+extern "C" int xl_slow_motion_ai_timers(ai_local *local, int secondary, int32_t time)
+{
+	if (!enabled()) return 0;
+	const float speed = state.clocks[0].speed;
+	if (local->next_fire > -8 * F1_0 * speed) local->next_fire -= xl_slow_motion_world_time(time);
+	if (secondary != -1) {
+		if (local->next_fire2 > -8 * F1_0 * speed) local->next_fire2 -= xl_slow_motion_world_time(time);
+	} else local->next_fire2 = 8 * F1_0;
+	// Scheduling is intentionally not on the world clock
+	if (local->time_since_processed < 256 * F1_0) local->time_since_processed += time;
+	return 1;
 }
