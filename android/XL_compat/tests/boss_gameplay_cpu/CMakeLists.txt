@@ -37,6 +37,7 @@ add_executable(
     boss_gameplay_consumer_test.cpp
     ${repo_root}/d2/main/d1_in_d2/d1_in_d2_levels.c
     ${repo_root}/d2/main/switch.c
+    ${repo_root}/d2/main/fireball.c
     ${repo_root}/d2/main/collide.c
     ${repo_root}/d2/main/cntrlcen.c
     ${repo_root}/d2/main/robot.c
@@ -72,6 +73,8 @@ elseif(MSVC)
     set_property(SOURCE ${repo_root}/d2/main/cntrlcen.c APPEND PROPERTY COMPILE_OPTIONS
                  /FI${repo_root}/d2/main/multi.h)
 endif()
+# Resolve the native C API, not the same-named C++ source helper.
+set_property(SOURCE ${repo_root}/d2/main/fireball.c APPEND PROPERTY INCLUDE_DIRECTORIES "${xl}/runtime")
 target_compile_features(xl_boss_gameplay_consumer PRIVATE cxx_std_17)
 target_compile_definitions(xl_boss_gameplay_consumer PRIVATE DXX_BUILD_DESCENT_II DXX_XL_RUNTIME)
 target_include_directories(
@@ -85,6 +88,8 @@ target_include_directories(
                                       ${NLOHMANN_JSON_INCLUDE_DIR})
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(xl_boss_gameplay_consumer PRIVATE -ffunction-sections -fdata-sections)
-    target_link_options(xl_boss_gameplay_consumer PRIVATE -Wl,--gc-sections)
+    target_link_options(xl_boss_gameplay_consumer PRIVATE -Wl,--gc-sections
+        -Wl,--wrap=object_create_explosion -Wl,--wrap=explode_object
+        -Wl,--wrap=object_create_badass_explosion -Wl,--wrap=explode_badass_weapon)
 endif()
 add_test(NAME xl_boss_gameplay_consumer COMMAND xl_boss_gameplay_consumer)

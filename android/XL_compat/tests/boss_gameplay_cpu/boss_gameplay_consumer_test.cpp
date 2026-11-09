@@ -19,6 +19,8 @@
 #include <nlohmann/json.hpp>
 #include "gameplay_audio.h"
 #include <cstdlib>
+#include <cstdarg>
+#include <cstdio>
 #include <cstring>
 #include <cstdint>
 #include <iostream>
@@ -80,15 +82,29 @@ void bump_this_object(object *, object *, vms_vector *, int);
 #include "args.h"
 int do_boss_weapon_collision(object *, object *, vms_vector *);
 void collide_robot_and_weapon(object *, object *, vms_vector *);
+object *object_create_explosion_sub(object *,short,vms_vector *,fix,int,fix,fix,fix,int);
 void collide_weapon_and_controlcen(object *, object *, vms_vector *);
 extern fix Boss_invulnerable_dot;
 #include "newdemo.h"
 #include "input_demo_hooks.h"
 #include "input_demo_rng_trace.h"
+int object_to_object_visibility(object *, object *, int);
 }
 
 namespace
 {
+bool self_splash_trace=false,self_splash_protected=false;
+object *self_splash_killer=nullptr;
+int self_splash_visibility=0,self_splash_forces=0,self_splash_rotations=0,self_splash_telemetry=0,self_splash_damage_events=0,self_splash_palettes=0;
+vms_vector self_splash_force{},self_splash_rotation{};
+fix self_splash_damage=15*F1_0;
+bool self_splash_visible=true;
+int self_splash_console=0,self_splash_timers=0;
+std::vector<int> self_splash_events;
+bool splash_trace=false;
+int splash_visibility=0,splash_forces=0,splash_rotations=0;
+bool splash_visible=true;
+vms_vector splash_force{},splash_rotation{},splash_origin{};
 constexpr int owner_a = 3, owner_b = 5, player_slot = 1;
 constexpr int boss_type = 12, child_type = 7;
 constexpr fix strength = 400 * F1_0;
@@ -3886,9 +3902,123 @@ void common_damage_gates(bool age_cases = true, bool strength_cases = true)
 }
 } // namespace
 
+namespace {
+void splash_controls(int mode=0) {
+ struct Row {vms_vector position;fix exact,legacy;vms_vector force,rotation,old_force,old_rotation;};
+ const Row rows[]={
+ {{917504,2359296,0},67515,0,{22913,58922,0},{-28641,-73652,0},{0,0,0},{0,0,0}},
+ {{-917504,-2359296,0},67515,0,{-22913,-58922,0},{28641,73652,0},{0,0,0},{0,0,0}},
+ {{1572864,1572864,1572864},0,122880,{0,0,0},{0,0,0},{78643,78643,78643},{-98303,-98303,-98303}},
+ {{-1572864,-1572864,-1572864},0,122880,{0,0,0},{0,0,0},{-78643,-78643,-78643},{98303,98303,98303}},
+ {{1441792,1441792,1441792},93138,276480,{59608,59608,59608},{-74510,-74510,-74510},{176947,176947,176947},{-221183,-221183,-221183}},
+ {{-1441792,-1441792,-1441792},93138,276480,{-59608,-59608,-59608},{74510,74510,74510},{-176947,-176947,-176947},{221183,221183,221183}},
+ {{1572864,1966080,0},77723,49152,{47828,59786,0},{-59785,-74732,0},{30246,37809,0},{-37807,-47261,0}},
+ {{-1572864,-1966080,0},77723,49152,{-47828,-59786,0},{59785,74732,0},{-30246,-37809,0},{37807,47261,0}},
+ {{0,0,0},1966080,1966080,{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
+ {{0,0,0},1966080,1966080,{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
+ {{655360,0,0},1474560,1474560,{1474560,0,0},{-1843200,0,0},{1474560,0,0},{-1843200,0,0}},
+ {{-655360,0,0},1474560,1474560,{-1474560,0,0},{1843200,0,0},{-1474560,0,0},{1843200,0,0}},
+ {{2621440,0,0},0,0,{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
+ {{-2621440,0,0},0,0,{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
+ {{2686976,0,0},0,0,{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
+ {{-2686976,0,0},0,0,{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
+ };
+ int cases=0;
+ for(int profile=0;profile<4&&mode!=3;++profile) {
+  if((mode==1||mode==4)&&profile)continue;if(mode==2&&!profile)continue;
+  for(unsigned row=0;row<sizeof(rows)/sizeof(rows[0]);++row) {
+   if(mode==1&&row)continue;if(mode==4&&row!=2)continue;
+   for(int exclusion=0;exclusion<3;++exclusion) {
+    if((mode==1||mode==4)&&exclusion)continue;
+    reset();xl_object_trigger_clear();xl_boss_spawn_clear();
+    for(int i=0;i<=Highest_object_index;++i)Objects[i]={};
+    Highest_object_index=3;Objects[player_slot].type=OBJ_PLAYER;Objects[player_slot].id=Player_num;Objects[player_slot].pos={1000*F1_0,0,0};
+    auto &victim=Objects[owner_a];victim.type=OBJ_ROBOT;victim.id=child_type;victim.signature=701;victim.shields=100*F1_0;victim.pos=rows[row].position;victim.size=F1_0;victim.movement_type=MT_PHYSICS;
+    Robot_info[child_type].strength=200*F1_0;Robot_info[child_type].boss_flag=Robot_info[child_type].companion=0;
+    GameTime64=20*F1_0;Difficulty_level=2;extensions=profile!=1;fixture_mission.descent_version=profile==2?1:2;Game_mode=profile==3?GM_MULTI:0;
+    if(exclusion==2)victim.flags|=OF_SHOULD_BE_DEAD;
+    splash_trace=true;splash_visible=exclusion!=1;splash_visibility=splash_forces=splash_rotations=0;
+    const auto before=victim;const auto parent_before=Objects[player_slot];
+    unsigned sim,fx;d_rand_get_stream_state(D_RNG_SIM,&sim);d_rand_get_stream_state(D_RNG_FX,&fx);const auto sim_calls=d_rand_get_stream_call_count(D_RNG_SIM),fx_calls=d_rand_get_stream_call_count(D_RNG_FX);
+    vms_vector origin{};splash_origin=origin;Vclip[7].play_time=F1_0;const int before_births=births;
+    auto *effect=object_create_explosion_sub(nullptr,0,&origin,7*F1_0,7,30*F1_0,40*F1_0,30*F1_0,player_slot);
+    const fix expected=exclusion?0:profile?rows[row].legacy:rows[row].exact;
+    if(mode==1||mode==4)std::cout<<"observed damage="<<(100*F1_0-victim.shields)<<" expected="<<expected<<"\n";
+    require(effect==&Objects[4]&&victim.shields==100*F1_0-expected,row==2?"ordinary concussion rejects false-inclusion diagonal":"ordinary concussion full-distance radius admission and scalar falloff");
+    auto expected_actor=before;expected_actor.shields-=expected;
+    require(!std::memcmp(&victim,&expected_actor,sizeof(victim))&&!std::memcmp(&Objects[player_slot],&parent_before,sizeof(parent_before)),"splash preserves unrelated actor fields and parent");
+    const bool inside=(profile?rows[row].legacy:rows[row].exact)>0;
+    require(splash_visibility==int(inside&&exclusion!=2)&&splash_forces==int(inside&&!exclusion)&&splash_rotations==splash_forces,"splash visibility admission and impulse dispatch counts");
+    if(splash_forces){const auto &f=profile?rows[row].old_force:rows[row].force;const auto &r=profile?rows[row].old_rotation:rows[row].rotation;require(!std::memcmp(&splash_force,&f,sizeof(f))&&!std::memcmp(&splash_rotation,&r,sizeof(r)),"unchanged quick direction with exact scalar force and rotation");}
+    require(births==before_births+1&&effect->type==OBJ_FIREBALL&&effect->id==7&&effect->segnum==0&&!std::memcmp(&effect->pos,&origin,sizeof(origin))&&effect->size==7*F1_0&&effect->control_type==CT_EXPLOSION&&effect->movement_type==MT_NONE&&effect->render_type==RT_FIREBALL&&effect->lifeleft==F1_0&&effect->ctype.expl_info.spawn_time==-1&&effect->ctype.expl_info.delete_objnum==-1&&effect->ctype.expl_info.delete_time==-1,"real explosion setup on bounded allocation");
+    unsigned after_sim,after_fx;d_rand_get_stream_state(D_RNG_SIM,&after_sim);d_rand_get_stream_state(D_RNG_FX,&after_fx);require(sim==after_sim&&fx==after_fx&&sim_calls==d_rand_get_stream_call_count(D_RNG_SIM)&&fx_calls==d_rand_get_stream_call_count(D_RNG_FX),"splash preserves both complete RNG streams");
+    splash_trace=false;++cases;
+   }
+  }
+ }
+ if(mode==0||mode==3) {
+  for(int safety=0;safety<4;++safety) {
+   const vms_vector position=safety==0?vms_vector{1300000000,1300000000,1300000000}:safety==2?vms_vector{INT32_MIN,INT32_MIN,INT32_MIN}:vms_vector{INT32_MAX,INT32_MAX,INT32_MAX};
+   reset();xl_object_trigger_clear();xl_boss_spawn_clear();for(int i=0;i<=Highest_object_index;++i)Objects[i]={};Highest_object_index=3;
+   Objects[player_slot].type=OBJ_PLAYER;Objects[player_slot].pos={1000*F1_0,0,0};auto &victim=Objects[owner_a];victim.type=OBJ_ROBOT;victim.id=child_type;victim.signature=701;victim.shields=100*F1_0;victim.pos=position;victim.size=F1_0;
+   Robot_info[child_type].strength=200*F1_0;GameTime64=20*F1_0;const auto before=victim;
+   splash_trace=true;splash_visibility=splash_forces=splash_rotations=0;vms_vector origin=safety==3?vms_vector{INT32_MIN,INT32_MIN,INT32_MIN}:vms_vector{};splash_origin=origin;
+   require(object_create_explosion_sub(nullptr,0,&origin,7*F1_0,7,30*F1_0,40*F1_0,30*F1_0,player_slot)==&Objects[4]&&!std::memcmp(&victim,&before,sizeof(before))&&!splash_visibility&&!splash_forces&&!splash_rotations,"corrected-only distance saturation outside fix range");splash_trace=false;++cases;
+  }
+ }
+ std::cout<<"PASS splash distance "<<cases<<" cases\n";
+}
+}
+namespace {
+void self_splash_controls(int mode=0) {
+ int cases=0;
+ for(int profile=0;profile<4;++profile)for(int parent_kind=0;parent_kind<3;++parent_kind)for(int axis=0;axis<6;++axis)for(int sign:{1,-1})for(int protection=0;protection<5;++protection) {
+  if(axis>=4&&profile)continue;if(axis==3&&sign<0)continue;
+  if(mode==1&&(profile||parent_kind||axis!=1||sign!=1||protection))continue;
+  if(mode==3&&axis>=4)continue;
+  if((mode==2||mode==3)&&!profile&&parent_kind==0&&(axis==1||axis==2||axis>=4))continue;
+  reset();xl_object_trigger_clear();xl_boss_spawn_clear();for(int i=0;i<=Highest_object_index;++i)Objects[i]={};Highest_object_index=3;
+  Player_num=0;ConsoleObject=&Objects[player_slot];ConsoleObject->type=OBJ_PLAYER;ConsoleObject->id=0;ConsoleObject->signature=101;ConsoleObject->segnum=0;ConsoleObject->shields=100*F1_0;ConsoleObject->size=2*F1_0;
+  if(axis==0)ConsoleObject->pos.x=sign*20*F1_0;if(axis==1)ConsoleObject->pos.y=sign*20*F1_0;if(axis==2)ConsoleObject->pos.z=sign*20*F1_0;if(axis==4)ConsoleObject->pos={sign*12*F1_0,sign*16*F1_0,0};if(axis==5)ConsoleObject->pos={sign*12*F1_0,0,sign*16*F1_0};if(protection==4)ConsoleObject->flags|=OF_SHOULD_BE_DEAD;
+  std::strcpy(Players[0].callsign,"LOCAL");std::strcpy(Players[1].callsign,"REMOTE");Players[0].objnum=player_slot;Players[0].shields=100*F1_0;Players[0].flags=protection==1?PLAYER_FLAGS_INVULNERABLE:0;Player_is_dead=0;Endlevel_sequence=0;Controls={};
+  auto &weapon=Objects[2];weapon.type=OBJ_WEAPON;weapon.id=CONCUSSION_ID;weapon.ctype.laser_info.parent_type=OBJ_PLAYER;weapon.ctype.laser_info.parent_num=parent_kind==0?player_slot:parent_kind==1?3:-1;weapon.ctype.laser_info.parent_signature=parent_kind==0?101:parent_kind==1?301:-1;
+  Objects[3].type=OBJ_PLAYER;Objects[3].id=1;Objects[3].signature=301;Objects[3].pos={1000*F1_0,0,0};
+  Weapon_info[CONCUSSION_ID]={};Weapon_info[CONCUSSION_ID].flash=0;
+  GameTime64=20*F1_0;Difficulty_level=2;extensions=profile!=1;fixture_mission.descent_version=profile==2?1:2;Game_mode=profile==3?GM_MULTI:0;
+  self_splash_trace=true;self_splash_protected=protection==2;self_splash_visible=protection!=3;self_splash_killer=parent_kind==0?ConsoleObject:parent_kind==1?&Objects[3]:nullptr;self_splash_visibility=self_splash_forces=self_splash_rotations=self_splash_telemetry=self_splash_damage_events=self_splash_palettes=0;self_splash_events.clear();self_splash_console=self_splash_timers=0;self_splash_damage=axis==3?30*F1_0:15*F1_0;reset_shield_warning_damage();
+  const auto actor_before=*ConsoleObject,weapon_before=weapon,parent_before=Objects[3];const auto player_before=Players[0];const auto controls_before=Controls;
+  unsigned sim,fx;d_rand_get_stream_state(D_RNG_SIM,&sim);d_rand_get_stream_state(D_RNG_FX,&fx);const auto sim_calls=d_rand_get_stream_call_count(D_RNG_SIM),fx_calls=d_rand_get_stream_call_count(D_RNG_FX);
+  vms_vector origin{};Vclip[7].play_time=F1_0;
+  require(object_create_explosion_sub(&weapon,0,&origin,7*F1_0,7,30*F1_0,40*F1_0,30*F1_0,weapon.ctype.laser_info.parent_num)==&Objects[4],"self splash actual explosion result");
+  vms_vector expected_force{},expected_rotation{};fix force=sign*983040;fix rotation=force/(parent_kind==1?4:(!profile&&parent_kind==0)?2:(parent_kind==0&&axis!=0)?4:2);
+  if(axis==0){expected_force.x=force;expected_rotation.x=rotation;}if(axis==1){expected_force.y=force;expected_rotation.y=rotation;}if(axis==2){expected_force.z=force;expected_rotation.z=rotation;}if(axis>=4){expected_force={sign*575430,axis==4?sign*767250:0,axis==5?sign*767250:0};expected_rotation={expected_force.x/(parent_kind==1?4:2),expected_force.y/(parent_kind==1?4:2),expected_force.z/(parent_kind==1?4:2)};}
+  if(mode==1)std::cout<<"observed self rotation="<<self_splash_rotation.x<<","<<self_splash_rotation.y<<","<<self_splash_rotation.z<<" shields="<<Players[0].shields<<"\n";
+  auto expected_actor=actor_before;auto expected_player=player_before;const fix damage=protection?0:self_splash_damage;expected_actor.shields-=damage;expected_player.shields-=damage;
+  require(!std::memcmp(ConsoleObject,&expected_actor,sizeof(expected_actor))&&!std::memcmp(&Players[0],&expected_player,sizeof(expected_player))&&!std::memcmp(&weapon,&weapon_before,sizeof(weapon))&&!std::memcmp(&Objects[3],&parent_before,sizeof(parent_before))&&!std::memcmp(&Controls,&controls_before,sizeof(Controls)),"self splash actual shields and whole actor/player/control preservation");
+  require(self_splash_visibility==int(protection!=4)&&self_splash_forces==int(protection<3)&&self_splash_rotations==self_splash_forces&&self_splash_telemetry==self_splash_forces&&self_splash_damage_events==int(!protection)&&self_splash_palettes==int(!protection),"self splash exact ingress, force-before-damage and output counts");
+  const auto expected_events=protection==4?std::vector<int>{}:protection==3?std::vector<int>{1}:protection?std::vector<int>{1,2,3,4}:std::vector<int>{1,2,3,4,5,6,7,8};require(self_splash_events==expected_events,"self splash force/rotation/telemetry before accepted damage trace/event/palette");
+  unsigned sim_after,fx_after;d_rand_get_stream_state(D_RNG_SIM,&sim_after);d_rand_get_stream_state(D_RNG_FX,&fx_after);require(sim==sim_after&&fx==fx_after&&sim_calls==d_rand_get_stream_call_count(D_RNG_SIM)&&fx_calls==d_rand_get_stream_call_count(D_RNG_FX),"self splash preserves complete SIM and FX streams");
+  require(total_ouch==(protection?0:self_splash_damage)&&last_damage_time==(protection?0:GameTime64)&&self_splash_timers==int(!protection)&&self_splash_console==int(protection<3),"actual shield warning accumulation/timestamp and console boundaries");
+  auto &effect=Objects[4];require(effect.type==OBJ_FIREBALL&&effect.id==7&&effect.segnum==0&&!effect.pos.x&&!effect.pos.y&&!effect.pos.z&&effect.size==7*F1_0&&effect.control_type==CT_EXPLOSION&&effect.movement_type==MT_NONE&&effect.render_type==RT_FIREBALL&&effect.lifeleft==F1_0&&effect.ctype.expl_info.spawn_time==-1&&effect.ctype.expl_info.delete_objnum==-1&&effect.ctype.expl_info.delete_time==-1&&!death_calls,"self splash real effect setup and surviving lifecycle");
+  if(protection<3){require(!std::memcmp(&self_splash_force,&expected_force,sizeof(expected_force)),"self splash unchanged full impulse before torque assertion");require(!std::memcmp(&self_splash_rotation,&expected_rotation,sizeof(expected_rotation)),"XL self splash halves all torque axes only once");}
+  self_splash_trace=false;++cases;
+ }
+ std::cout<<"PASS self splash "<<cases<<" cases\n";
+}
+}
+
 int main(int argc, char **argv)
 {
 	try {
+ if(argc==2&&!std::strcmp(argv[1],"self-splash")){self_splash_controls();return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"self-splash-probe")){self_splash_controls(1);return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"self-splash-base-guards")){self_splash_controls(3);return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"self-splash-guards")){self_splash_controls(2);return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"splash")){splash_controls();return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"splash-probe")){splash_controls(1);return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"splash-guards")){splash_controls(2);return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"splash-outside-probe")){splash_controls(4);return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"splash-range")){splash_controls(3);return 0;}
  if(argc==2&&!std::strcmp(argv[1],"master-forcefield")){master_forcefield_controls();return 0;}
  if(argc==2&&!std::strcmp(argv[1],"master-chain")){master_chain_controls();return 0;}
  if(argc==2&&!std::strcmp(argv[1],"boost-motion")){boost_contact_controls(true);return 0;}
@@ -4038,6 +4168,8 @@ int main(int argc, char **argv)
 			common_damage_gates(!std::strcmp(argv[1], "age"), !std::strcmp(argv[1], "strength"));
 			return 0;
 		}
+        self_splash_controls();
+        splash_controls();
 		master_forcefield_controls();
 		master_chain_controls();
 		boost_contact_controls(true);
@@ -4164,8 +4296,10 @@ void compute_segment_center(vms_vector *result, segment *where)
 	*result = { fix((where - Segments) * 100 * F1_0), 0, 0 };
 }
 int obj_create(enum object_type_t type, ubyte id, int segment, const vms_vector *position,
-               const vms_matrix *, fix size, ubyte control, ubyte movement, ubyte render)
+               const vms_matrix *orientation, fix size, ubyte control, ubyte movement, ubyte render)
 {
+ if(self_splash_trace)require(type==OBJ_FIREBALL&&id==7&&segment==0&&position&&!position->x&&!position->y&&!position->z&&orientation==&vmd_identity_matrix&&size==7*F1_0&&control==CT_EXPLOSION&&movement==MT_NONE&&render==RT_FIREBALL,"self splash bounded effect allocation");
+ if(splash_trace)require(type==OBJ_FIREBALL&&id==7&&segment==0&&position&&!std::memcmp(position,&splash_origin,sizeof(splash_origin))&&orientation==&vmd_identity_matrix&&size==7*F1_0&&control==CT_EXPLOSION&&movement==MT_NONE&&render==RT_FIREBALL,"splash bounded fireball allocator inputs");
 	++births;
 	requested_type = id;
 	requested_segment = segment;
@@ -4201,7 +4335,7 @@ void morph_start(object *)
 {
 	++morph_calls;
 }
-object *object_create_explosion(short segment, vms_vector *point, fix size, int vclip)
+object *__wrap_object_create_explosion(short segment, vms_vector *point, fix size, int vclip)
 {
 	if (matcen_trace) {
 		require(segment == 0 && point == &matcen_actor->pos && size == (matcen_actor->type == OBJ_PLAYER ? 5 * F1_0 : 3 * F1_0) && vclip == (matcen_actor->type == OBJ_PLAYER ? VCLIP_PLAYER_HIT : VCLIP_SMALL_EXPLOSION), "matcen hit explosion boundary");
@@ -4274,7 +4408,7 @@ void start_robot_death_sequence(object *)
 {
 	require(false, "unexpected robot death");
 }
-void explode_object(object *actor, fix delay)
+void __wrap_explode_object(object *actor, fix delay)
 {
 	if (reactor_trace) {
 		require((actor == &Objects[4] || actor == &Objects[owner_b]) && delay == 0, "reactor destruction explosion endpoint");
@@ -4372,6 +4506,8 @@ int PHYSFS_delete(const char *)
 
 void phys_apply_force(object *actor, vms_vector *force)
 {
+ if(self_splash_trace){require(actor==ConsoleObject,"self splash force owner");++self_splash_forces;self_splash_force=*force;self_splash_events.push_back(2);return;}
+ if(splash_trace){require(actor==&Objects[owner_a],"splash force victim");++splash_forces;splash_force=*force;return;}
 	if (matcen_trace) {
 		require(!extensions && matcen_axis && actor == matcen_actor && actor->type == OBJ_ROBOT && force->x == 8 * F1_0 && !force->y && !force->z, "classic matcen axis-force dispatch only");
 		++matcen_force_calls;
@@ -4389,6 +4525,8 @@ void phys_apply_force(object *actor, vms_vector *force)
 }
 void phys_apply_rot(object *actor, vms_vector *force)
 {
+ if(self_splash_trace){require(actor==ConsoleObject,"self splash rotation owner");++self_splash_rotations;self_splash_rotation=*force;self_splash_events.push_back(3);return;}
+ if(splash_trace){require(actor==&Objects[owner_a],"splash rotation victim");++splash_rotations;splash_rotation=*force;return;}
 	if (forcefield_trace) {
 		require(actor == ConsoleObject && actor == &Objects[player_slot] && actor->type == OBJ_PLAYER && actor->movement_type == MT_PHYSICS &&
 		            force->x >= -655360 && force->x <= 655320 && force->y >= -655360 && force->y <= 655320 && force->z >= -655360 && force->z <= 655320,
@@ -4459,6 +4597,7 @@ void input_demo_log_reactor_destroyed(object *actor)
 }
 fix64 timer_query(void)
 {
+ if(self_splash_trace){++self_splash_timers;self_splash_events.push_back(8);return GameTime64;}
  if(master_forcefield_trace)return GameTime64;
  if(master_trace)return GameTime64;
  if(boost_trace&&!matcen_trace)return GameTime64;
@@ -4483,6 +4622,7 @@ fix64 timer_query(void)
 }
 int xl_preview_no_damage_segment(int segment)
 {
+ if(self_splash_trace){require(segment==0,"self splash protection input");return self_splash_protected;}
 	if (fluid_trace) {
 		require(segment == 0, "bounded fluid protection segment");
 		return fluid_protected;
@@ -4497,6 +4637,7 @@ int xl_preview_no_damage_segment(int segment)
 }
 int multi_maybe_disable_friendly_fire(object *killer)
 {
+ if(self_splash_trace){require(killer==self_splash_killer,"self splash friendly fire input");return 0;}
 	if (fluid_trace) {
 		require(killer == ConsoleObject, "bounded fluid friendly fire");
 		return 0;
@@ -4510,6 +4651,7 @@ int multi_maybe_disable_friendly_fire(object *killer)
 }
 bool object_is_observer(object *actor)
 {
+ if(self_splash_trace){require(actor==ConsoleObject,"self splash observer input");return false;}
 	if (fluid_trace) {
 		require(actor == ConsoleObject, "bounded fluid observer input");
 		return false;
@@ -4523,6 +4665,7 @@ bool object_is_observer(object *actor)
 }
 void input_demo_trace_player_shield_change(const char *kind, int32_t before, int32_t after, const char *, const char *)
 {
+ if(self_splash_trace){require(!std::strcmp(kind,"apply_damage")&&before==100*F1_0&&after==before-self_splash_damage,"self splash actual shield trace");self_splash_events.push_back(5);return;}
 	if (fluid_trace) {
 		require(!std::strcmp(kind, "apply_damage") && before == Players[Player_num].shields + 2 * F1_0 && after == before - 2 * F1_0, "actual fluid damage trace");
 		++fluid_damage_traces;
@@ -4541,6 +4684,7 @@ void input_demo_trace_player_shield_change(const char *kind, int32_t before, int
 }
 void input_demo_record_player_damage_event(int32_t damage, int32_t before, object *killer, int friendly)
 {
+ if(self_splash_trace){require(damage==self_splash_damage&&before==100*F1_0&&killer==self_splash_killer&&friendly==1,"self splash actual damage event");++self_splash_damage_events;self_splash_events.push_back(6);return;}
 	if (fluid_trace) {
 		require(damage == 2 * F1_0 && before == Players[Player_num].shields + damage && killer == ConsoleObject && !friendly, "actual fluid damage event");
 		++fluid_damage_records;
@@ -4559,6 +4703,7 @@ void input_demo_record_player_damage_event(int32_t damage, int32_t before, objec
 }
 int input_demo_trace_collision_pose_active(void)
 {
+ if(self_splash_trace)return 0;
 	require(contact_trace || forcefield_trace || matcen_trace || fluid_trace, "unexpected collision trace query");
 	return 0;
 }
@@ -4578,6 +4723,7 @@ void input_demo_log_player_damage_probe(const char *, unsigned, int, int32_t, in
 }
 void PALETTE_FLASH_ADD(int r, int g, int b)
 {
+ if(self_splash_trace){require(r==(self_splash_damage/F1_0)*4&&g==-(self_splash_damage/2/F1_0)&&b==g,"self splash actual damage palette");++self_splash_palettes;self_splash_events.push_back(7);return;}
 	if (fluid_trace) {
 		require((r == 8 && g == -1 && b == -1) || (r == 8 && g == 0 && b == 0), "exact fluid damage and scrape flashes");
 		fluid_palettes.push_back({ r, g, b });
@@ -4867,8 +5013,9 @@ void do_end_briefing_screens(char *)
 {
 	require(false, "unused D1 briefing");
 }
-void con_printf(int, const char *, ...)
+void con_printf(int priority, const char *format, ...)
 {
+ if(self_splash_trace){char actual[256],expected[256];va_list args;va_start(args,format);std::vsnprintf(actual,sizeof(actual),format,args);va_end(args);if(self_splash_killer)std::snprintf(expected,sizeof(expected),"You took %.1f damage from %s's concussion blast, shields now %.1f\n",double(self_splash_damage)/F1_0,Players[self_splash_killer->id].callsign,100.0-double(self_splash_damage)/F1_0);else std::snprintf(expected,sizeof(expected),"You took %.1f damage from a unknown blast, shields now %.1f\n",double(self_splash_damage)/F1_0,100.0-double(self_splash_damage)/F1_0);require(priority==CON_NORMAL&&!std::strcmp(actual,expected),"self splash exact formatted damage telemetry");++self_splash_console;return;}
 	require(false, "unused D1 progression console");
 }
 void StartNewLevel(int)
@@ -5057,12 +5204,12 @@ void create_smart_children(object *, int)
 {
 	require(false, "unexpected smart children");
 }
-object *object_create_badass_explosion(object *, short, vms_vector *, fix, int, fix, fix, fix, int)
+object *__wrap_object_create_badass_explosion(object *, short, vms_vector *, fix, int, fix, fix, fix, int)
 {
 	require(false, "unexpected splash explosion");
 	return nullptr;
 }
-object *explode_badass_weapon(object *, vms_vector *)
+object *__wrap_explode_badass_weapon(object *, vms_vector *)
 {
 	require(false, "unexpected splash weapon");
 	return nullptr;
@@ -5155,4 +5302,16 @@ int xl_lightning_object_set_enabled(int target, int enabled)
 	return reactor_backend == 2;
 }
 
+}
+
+extern "C" int object_to_object_visibility(object *effect, object *target, int flags){if(self_splash_trace){require(effect==&Objects[4]&&target==ConsoleObject&&flags==2,"self splash visibility");++self_splash_visibility;self_splash_events.push_back(1);return self_splash_visible;}require(splash_trace&&effect==&Objects[4]&&target==&Objects[owner_a]&&flags==2,"splash visibility boundary");++splash_visibility;return splash_visible;}
+extern "C" {
+void multi_send_damage(fix damage,fix shields,ubyte type,ubyte id,ubyte kind,object*source){if(self_splash_trace){require(damage==self_splash_damage&&shields==100*F1_0&&type==(self_splash_killer?self_splash_killer->type:OBJ_WEAPON)&&id==(self_splash_killer?self_splash_killer->id:0)&&kind==DAMAGE_BLAST&&source==&Objects[2],"self splash pre-damage telemetry");++self_splash_telemetry;self_splash_events.push_back(4);return;}require(false,"splash excludes player network damage");}
+int input_demo_recorder_is_active(){if(self_splash_trace)return 0;require(false,"splash excludes player recording");return 0;}
+int input_demo_replay_is_loaded(){if(self_splash_trace)return 0;require(false,"splash excludes player replay");return 0;}
+const char *input_demo_debug_activity_mode_name(){require(false,"splash excludes player tracing");return "";}
+unsigned input_demo_debug_frame_index(){require(false,"splash excludes player tracing");return 0;}
+void input_demo_log_player_weapon_hit(const char*,unsigned,object*,object*,int,const vms_vector*){require(false,"splash excludes player hit tracing");}
+int xl_gameplay_weapon_explosion(int,int){require(false,"splash excludes weapon audio policy");return 0;}
+int digi_link_sound_to_object(int,short,int,fix){require(false,"splash excludes weapon audio output");return 0;}
 }
