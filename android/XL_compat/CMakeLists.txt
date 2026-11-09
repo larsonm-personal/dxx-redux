@@ -213,6 +213,11 @@ if(BUILD_TESTING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_blast136_contract_test.py)
     set_tests_properties(xl_pumo_tulev1_blast136_contract PROPERTIES TIMEOUT 30)
     add_test(
+        NAME xl_pumo_tulev1_courtyard_guards_contract
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_courtyard_guards_contract_test.py)
+    set_tests_properties(xl_pumo_tulev1_courtyard_guards_contract PROPERTIES TIMEOUT 30)
+    add_test(
         NAME xl_wave_channels_reference
         COMMAND
             ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/wave_channels_reference.py
@@ -1063,6 +1068,24 @@ if(BUILD_TESTING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_blast136.cmake)
         set_tests_properties(xl_pumo_tulev1_blast136_player PROPERTIES TIMEOUT 300
                              FIXTURES_REQUIRED pumo_earned_tulev1_guided_switch12 RUN_SERIAL TRUE)
+        set_tests_properties(xl_pumo_tulev1_blast136_player PROPERTIES FIXTURES_SETUP
+                                                              pumo_earned_tulev1_blast136)
+        add_test(
+            NAME xl_pumo_tulev1_courtyard_guards_player
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
+                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-blast136-player/warm/warm-result.json
+                -DGUIDED_PRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guided-switch12-player/warm/warm-result.json
+                -DGUIDED_GUARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/guard255/guard255-result.json
+                -DQUAD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/quad/quad-result.json
+                -DGUARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guard269-player/ordinary/ordinary-result.json
+                -DBLUE=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-master5-player/blue/blue-result.json
+                -DPYTHON=${Python3_EXECUTABLE}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-courtyard-guards-player -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_courtyard_guards.cmake)
+        set_tests_properties(xl_pumo_tulev1_courtyard_guards_player PROPERTIES TIMEOUT 650
+                             FIXTURES_REQUIRED pumo_earned_tulev1_blast136 RUN_SERIAL TRUE)
         add_test(
             NAME xl_pumo_guided_input_player
             COMMAND
