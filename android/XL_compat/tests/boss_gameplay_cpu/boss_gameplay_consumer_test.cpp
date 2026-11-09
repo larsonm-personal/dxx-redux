@@ -438,7 +438,7 @@ void natural_spew_attachment_controls()
 		if (profile == 10) extensions = false;
 		if (profile == 11) Game_mode = GM_MULTI;
 		GameTime64 = interval();
-		d_srand(703);
+		d_rand_set_state(703);
 		const unsigned before_calls = d_rand_get_call_count();
 		unsigned before_rng = 0, after_rng = 0;
 		d_rand_get_state(&before_rng);
