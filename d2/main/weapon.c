@@ -43,6 +43,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 #include "d1_in_d2/d1_in_d2_weapons.h"
 #include "d1_in_d2/d1_in_d2.h"
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#endif
 
 int POrderList (int num);
 int SOrderList (int num);
@@ -445,11 +448,16 @@ void do_weapon_select(int weapon_num, int secondary_flag)
 	ubyte	last_was_super;
 
 	if (!secondary_flag) {
+#ifdef DXX_XL_RUNTIME
+		if (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !d1_in_d2_use_d1_gameplay()) {
+			Players[Player_num].energy += Fusion_charge;
+			Fusion_charge = 0;
+		}
+#endif
 		current = Players[Player_num].primary_weapon;
 		last_was_super = Primary_last_was_super[weapon_num];
 		has_flag = HAS_WEAPON_FLAG;
-	}
-	else {
+	} else {
 		current = Players[Player_num].secondary_weapon;
 		last_was_super = Secondary_last_was_super[weapon_num];
 		has_flag = HAS_WEAPON_FLAG+HAS_AMMO_FLAG;
