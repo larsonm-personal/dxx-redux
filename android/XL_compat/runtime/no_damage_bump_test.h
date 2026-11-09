@@ -40,8 +40,14 @@ static void ordinary_nonphysical_bump_controls(bool xl, bool protected_profile)
 								for (auto &axis : expected) axis += fixmul(fixmul(axis, -mass), fixdiv(F1_0, mass));
 						}
 						collide_set_collision_delay_last_play_time(GameTime64 - i2f(2));
-						unsigned before_rng = 0, after_rng = 0;
+						unsigned before_rng = 0, after_rng = 0, expected_rng = 0;
 						d_rand_get_state(&before_rng);
+						const auto before_calls = d_rand_get_call_count();
+						fix64 expected_delay = GameTime64 - i2f(2);
+						if (!protected_clutter) expected_delay = GameTime64 - d_rand() / 2;
+						d_rand_get_state(&expected_rng);
+						d_rand_set_state(before_rng);
+						d_rand_set_call_count(before_calls);
 						auto hit = ConsoleObject->pos;
 						collide_two_objects(reverse ? &fixed : ConsoleObject, reverse ? ConsoleObject : &fixed, &hit);
 						d_rand_get_state(&after_rng);
@@ -50,9 +56,10 @@ static void ordinary_nonphysical_bump_controls(bool xl, bool protected_profile)
 						            fixed.mtype.phys_info.velocity.x == 0 && fixed.mtype.phys_info.velocity.y == 0 && fixed.mtype.phys_info.velocity.z == 0,
 						        "ordinary stationary contact velocity differs from its source profile");
 						require(ConsoleObject->shields == i2f(1000) && Players[Player_num].shields == i2f(1000) &&
-						            fixed.shields == i2f(1000) && before_rng == after_rng,
+						            fixed.shields == i2f(1000) && expected_rng == after_rng &&
+						            d_rand_get_call_count() - before_calls == unsigned(protected_clutter ? 0 : 1),
 						        "stationary contact changed damage or simulation RNG");
-						require((collide_get_collision_delay_last_play_time() == GameTime64 - i2f(2)) == protected_clutter,
+						require(collide_get_collision_delay_last_play_time() == expected_delay,
 						        "stationary contact changed protected or ordinary sound-gate dispatch");
 					}
 		obj_delete(stationary);
