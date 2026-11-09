@@ -183,6 +183,11 @@ if(BUILD_TESTING)
                 --cmake ${CMAKE_COMMAND})
     set_tests_properties(xl_pumo_receipt_contract PROPERTIES TIMEOUT 30)
     add_test(
+        NAME xl_pumo_tulev1_spawn_contract
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_spawn_contract_test.py)
+    set_tests_properties(xl_pumo_tulev1_spawn_contract PROPERTIES TIMEOUT 30)
+    add_test(
         NAME xl_wave_channels_reference
         COMMAND
             ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/wave_channels_reference.py
@@ -947,6 +952,18 @@ if(BUILD_TESTING)
                              FIXTURES_REQUIRED pumo_earned_tulev1_early RUN_SERIAL TRUE)
         set_tests_properties(xl_pumo_tulev1_early_player PROPERTIES FIXTURES_SETUP
                                                               pumo_guided_inventory)
+        add_test(
+            NAME xl_pumo_tulev1_spawn_player
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/pumo-sophodo-player/preview-user/sophodo-main-level7.sav
+                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-sophodo-player/main-result.json
+                -DPYTHON=${Python3_EXECUTABLE}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-spawn-player -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_spawn.cmake)
+        set_tests_properties(xl_pumo_tulev1_spawn_player PROPERTIES TIMEOUT 300
+                             FIXTURES_REQUIRED pumo_earned_tulev1_early RUN_SERIAL TRUE)
         add_test(
             NAME xl_pumo_guided_input_player
             COMMAND
