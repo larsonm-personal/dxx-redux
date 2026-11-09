@@ -76,6 +76,88 @@ static void ordinary_nonphysical_bump_controls(bool xl, bool protected_profile)
 	std::cout << "Ordinary nonphysical reactor/clutter controls passed; XL=" << xl << " protected=" << protected_profile << "\n";
 }
 
+// Equal masses and a persistent counterpart isolate the real player force-damage consumer
+static void ordinary_force_damage_controls(bool xl, bool protected_profile)
+{
+	const auto saved_physics = ConsoleObject->mtype.phys_info;
+	const auto saved_movement = ConsoleObject->movement_type;
+	const auto saved_object_flags = ConsoleObject->flags;
+	const fix saved_object_shields = ConsoleObject->shields, saved_player_shields = Players[Player_num].shields;
+	const auto saved_player_flags = Players[Player_num].flags;
+	const int saved_mode = Game_mode, saved_difficulty = Difficulty_level, saved_dead = Player_is_dead, saved_endlevel = Endlevel_sequence;
+	const auto saved_delay = collide_get_collision_delay_last_play_time();
+	unsigned saved_rng = 0;
+	d_rand_get_state(&saved_rng);
+	const auto saved_calls = d_rand_get_call_count();
+	const int other_index = obj_create(OBJ_CLUTTER, 0, ConsoleObject->segnum, &ConsoleObject->pos,
+	                                   &vmd_identity_matrix, F1_0, CT_NONE, MT_PHYSICS, RT_NONE);
+	require(other_index >= 0, "cannot allocate force-damage contact control");
+	auto &other = Objects[other_index];
+	other.mtype.phys_info = {};
+	other.mtype.phys_info.mass = F1_0;
+	other.mtype.phys_info.flags = PF_PERSISTENT;
+	other.shields = i2f(1000);
+	for (const bool multiplayer : { false, true })
+		for (const bool reverse : { false, true })
+			for (const int difficulty : { 0, 1 })
+				for (const int direction : { -1, 1 })
+					for (const fix raw_damage : { 0, 1, 16384, 21844, 21845, 21846 }) {
+						Game_mode = multiplayer ? GM_NETWORK : 0;
+						Difficulty_level = difficulty;
+						Player_is_dead = Endlevel_sequence = 0;
+						Players[Player_num].flags &= ~PLAYER_FLAGS_INVULNERABLE;
+						ConsoleObject->flags &= ~(OF_EXPLODING | OF_SHOULD_BE_DEAD);
+						ConsoleObject->movement_type = MT_PHYSICS;
+						ConsoleObject->mtype.phys_info = {};
+						ConsoleObject->mtype.phys_info.mass = F1_0;
+						const fix speed = direction * raw_damage * 32;
+						ConsoleObject->mtype.phys_info.velocity = { speed, 0, 0 };
+						const fix real_shields = i2f(100), object_sentinel = i2f(101);
+						Players[Player_num].shields = real_shields;
+						ConsoleObject->shields = object_sentinel;
+						const bool protected_contact = protected_profile && xl_preview_no_damage_segment(ConsoleObject->segnum);
+						const bool dispatched = !protected_contact && ((xl && !multiplayer) || raw_damage >= F1_0 / 3);
+						const fix damage = dispatched ? (difficulty == 0 ? raw_damage / 2 : raw_damage) : 0;
+						collide_set_collision_delay_last_play_time(GameTime64 - i2f(2));
+						unsigned prior_rng = 0, expected_rng = 0, actual_rng = 0;
+						d_rand_get_state(&prior_rng);
+						const auto prior_calls = d_rand_get_call_count();
+						fix64 expected_delay = GameTime64 - i2f(2);
+						if (!protected_contact) expected_delay = GameTime64 - d_rand() / 2;
+						d_rand_get_state(&expected_rng);
+						d_rand_set_state(prior_rng);
+						d_rand_set_call_count(prior_calls);
+						auto point = ConsoleObject->pos;
+						collide_two_objects(reverse ? &other : ConsoleObject, reverse ? ConsoleObject : &other, &point);
+						d_rand_get_state(&actual_rng);
+						require(Players[Player_num].shields == real_shields - damage &&
+						            ConsoleObject->shields == (dispatched ? real_shields - damage : object_sentinel),
+						        "ordinary force-damage cutoff, zero dispatch or trainee scaling differs");
+						const fix expected_speed = protected_contact ? speed : direction * raw_damage * 24;
+						require(ConsoleObject->mtype.phys_info.velocity.x == expected_speed &&
+						            other.mtype.phys_info.velocity.x == 0 && other.shields == i2f(1000),
+						        "force-damage threshold changed collision response or persistent counterpart");
+						require(actual_rng == expected_rng && d_rand_get_call_count() - prior_calls == unsigned(protected_contact ? 0 : 1) &&
+						            collide_get_collision_delay_last_play_time() == expected_delay,
+						        "force-damage threshold changed collision sound RNG or gate");
+					}
+	obj_delete(other_index);
+	ConsoleObject->mtype.phys_info = saved_physics;
+	ConsoleObject->movement_type = saved_movement;
+	ConsoleObject->flags = saved_object_flags;
+	ConsoleObject->shields = saved_object_shields;
+	Players[Player_num].shields = saved_player_shields;
+	Players[Player_num].flags = saved_player_flags;
+	Game_mode = saved_mode;
+	Difficulty_level = saved_difficulty;
+	Player_is_dead = saved_dead;
+	Endlevel_sequence = saved_endlevel;
+	collide_set_collision_delay_last_play_time(saved_delay);
+	d_rand_set_state(saved_rng);
+	d_rand_set_call_count(saved_calls);
+	std::cout << "Actual force-damage boundaries, zero dispatch, trainee/protection and classic/multiplayer controls passed; XL=" << xl << "\n";
+}
+
 // Controlled singleplayer dispatch; this does not qualify multiplayer synchronization
 static void no_damage_bump_test(const xl_compat::Inventory &source, int segment)
 {
@@ -96,8 +178,10 @@ static void no_damage_bump_test(const xl_compat::Inventory &source, int segment)
 	const bool active_xl = xl_level_extensions_active() != 0;
 	xl_test_bind_no_damage(neutral);
 	ordinary_nonphysical_bump_controls(active_xl, false);
+	ordinary_force_damage_controls(active_xl, false);
 	xl_test_bind_no_damage(source);
 	ordinary_nonphysical_bump_controls(active_xl, true);
+	ordinary_force_damage_controls(active_xl, true);
 	for (auto type : { OBJ_CLUTTER, OBJ_PLAYER }) {
 		const int id = type == OBJ_PLAYER ? (Player_num + 1) % MAX_PLAYERS : 0;
 		const int other_index = obj_create(type, id, segment, &ConsoleObject->pos, &ConsoleObject->orient,

@@ -245,8 +245,11 @@ void apply_force_damage(object *obj,fix force,object *other_obj)
 	if ((other_obj->type == OBJ_PLAYER) && cheats.monsterdamage)
 		damage = 0x7fffffff;
 
-	if (damage < FORCE_DAMAGE_THRESHOLD)
-		return;
+#ifdef DXX_XL_RUNTIME
+	if (!xl_level_extensions_active() || (Game_mode & GM_MULTI))
+#endif
+		if (damage < FORCE_DAMAGE_THRESHOLD)
+			return;
 
 	switch (obj->type) {
 
