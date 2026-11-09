@@ -338,7 +338,7 @@ static void ordinary_nonplayer_force_damage_controls(bool xl, bool protected_pro
 								other.mtype.phys_info.mass = F1_0;
 								if (persistent) other.mtype.phys_info.flags = PF_PERSISTENT;
 								other.ctype.ai_info.behavior = AIB_NORMAL;
-								other.ctype.ai_info.SKIP_AI_COUNT = 1000;
+								other.ctype.ai_info.SKIP_AI_COUNT = 127;
 								Robot_info[0].boss_flag = boss ? 1 : 0;
 								Num_awareness_events = Overall_agitation = 0;
 								const bool protected_contact = protected_profile && xl_preview_no_damage_segment(ConsoleObject->segnum);
