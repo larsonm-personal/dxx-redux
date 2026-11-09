@@ -942,7 +942,7 @@ if(BUILD_TESTING)
                 -DPYTHON=${Python3_EXECUTABLE}
                 -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-early-player -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_early.cmake)
-        # The aggregate bound is tighter than six independent 150s phase ceilings.
+        # The aggregate bound is tighter than eight independent 150s phase ceilings.
         set_tests_properties(xl_pumo_tulev1_early_player PROPERTIES TIMEOUT 300
                              FIXTURES_REQUIRED pumo_earned_tulev1_early RUN_SERIAL TRUE)
     endif()

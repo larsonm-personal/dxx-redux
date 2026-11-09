@@ -1,0 +1,13 @@
+{
+    "initial_level": 7,
+    "checkpoint_expect": {
+        "current_level_num": 7,
+        "position.segment": 458,
+        "player.cloaked": true,
+        "player.has_red_key": true,
+        "player_dead": false,
+        "cheats_enabled": false,
+        "player.invulnerable": false
+    },
+    "steps": [{ "action": "introspect" }]
+}
