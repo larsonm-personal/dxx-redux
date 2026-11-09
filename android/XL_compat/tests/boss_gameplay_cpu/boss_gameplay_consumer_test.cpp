@@ -78,6 +78,7 @@ extern fix64 Next_seismic_sound_time;
 void do_countdown_frame(void);
 #include "multi.h"
 void bump_this_object(object *, object *, vms_vector *, int);
+void collide_robot_and_robot(object *,object *,vms_vector *);
 #include "reactor_countdown.h"
 #include "args.h"
 int do_boss_weapon_collision(object *, object *, vms_vector *);
@@ -101,6 +102,10 @@ fix self_splash_damage=15*F1_0;
 bool self_splash_visible=true;
 int self_splash_console=0,self_splash_timers=0;
 std::vector<int> self_splash_events;
+bool separating_trace=false;
+object *separating_first=nullptr,*separating_second=nullptr;
+vms_vector separating_force{},separating_rotation{};
+std::vector<std::array<int,5>> separating_events;
 bool mine_trace=false,mine_repeat=false,mine_blocked=false,mine_chain_expected=false;
 int mine_id=PMINE_ID,mine_allocations=0,mine_audio=0,mine_classic_audio=0,mine_children=0;
 vms_vector mine_position{};
@@ -4142,9 +4147,63 @@ void placed_mine_controls(int mode=0) {
 }
 }
 
+namespace {
+void separating_bump_controls(int mode=0) {
+ struct Row {vms_vector delta,v0,v1,force,rotation;int damage,old_damage,active_d1_damage;bool old_event,reject;};
+ const Row rows[]={
+ {{655360,0,0},{-4194304,0,0},{4194304,0,0},{-8388608,0,0},{-2097152,0,0},131072,524288,131072,true,true},
+ {{0,655360,0},{0,-4194304,0},{0,4194304,0},{0,-8388608,0},{0,-2097152,0},131072,524288,131072,true,true},
+ {{0,0,655360},{0,0,-4194304},{0,0,4194304},{0,0,-8388608},{0,0,-2097152},131072,524288,131072,true,true},
+ {{655360,0,0},{4194304,0,0},{-4194304,0,0},{8388608,0,0},{2097152,0,0},131072,524288,131072,true,false},
+ {{655360,0,0},{0,0,0},{4194304,0,0},{-4194304,0,0},{-1048576,0,0},65536,262144,65536,true,false},
+ {{655360,0,0},{-4194304,0,0},{0,0,0},{-4194304,0,0},{-1048576,0,0},65536,262144,65536,true,false},
+ {{655360,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},0,0,0,false,false},
+ {{655360,0,0},{0,-4194304,0},{0,4194304,0},{0,-8388608,0},{0,-2097152,0},131072,524288,131072,true,false},
+ {{655360,0,0},{-4194304,0,0},{-2097152,0,0},{-2097152,0,0},{-524288,0,0},32768,131072,32768,true,false},
+ {{0,0,0},{-4194304,0,0},{4194304,0,0},{-8388608,0,0},{-2097152,0,0},131072,524288,131072,true,false},
+ {{65535,0,0},{-1,0,0},{1,0,0},{-2,0,0},{0,0,0},0,0,0,false,false},
+ {{65536,0,0},{-1,0,0},{1,0,0},{-2,0,0},{0,0,0},0,0,0,false,true},
+ {{1,0,0},{-65536,0,0},{65535,0,0},{-131071,0,0},{-32767,0,0},2047,0,2047,false,false},
+ {{1,0,0},{-65535,0,0},{65536,0,0},{-131071,0,0},{-32767,0,0},2047,0,2047,false,false},
+ {{196608,262144,0},{-6291456,-8388608,0},{6291456,8388608,0},{-12582912,-16777216,0},{-3145728,-4194304,0},327680,1343488,335872,true,true},
+ };
+ int cases=0;
+ for(int profile=0;profile<5;++profile)for(unsigned row=0;row<sizeof(rows)/sizeof(rows[0]);++row)for(int cheat:{0,1})for(int swapped:{0,1})for(int mirror:{1,-1}) {
+  if(mode==1&&(profile||row||cheat||swapped||mirror!=1))continue;
+  if(mode==2&&(profile||row||cheat!=1||swapped||mirror!=1))continue;
+  if(mode==3&&!profile&&rows[row].reject)continue;
+  reset();xl_object_trigger_clear();xl_boss_spawn_clear();for(int i=0;i<=Highest_object_index;++i)Objects[i]={};Highest_object_index=owner_b;
+  ConsoleObject=&Objects[player_slot];ConsoleObject->type=OBJ_PLAYER;ConsoleObject->id=Player_num;ConsoleObject->signature=101;
+  auto &a=Objects[owner_a];auto &b=Objects[owner_b];
+  for(int i=0;i<2;++i){auto &actor=i?b:a;const int type=i?8:child_type;Robot_info[type]={};Robot_info[type].strength=200*F1_0;actor.type=OBJ_ROBOT;actor.id=type;actor.signature=703+i;actor.segnum=0;actor.size=6*F1_0;actor.movement_type=MT_PHYSICS;actor.mtype.phys_info.mass=F1_0;actor.control_type=CT_AI;actor.ctype.ai_info.behavior=AIB_NORMAL;actor.shields=100*F1_0;}
+  b.pos={mirror*rows[row].delta.x,mirror*rows[row].delta.y,mirror*rows[row].delta.z};a.mtype.phys_info.velocity={mirror*rows[row].v0.x,mirror*rows[row].v0.y,mirror*rows[row].v0.z};b.mtype.phys_info.velocity={mirror*rows[row].v1.x,mirror*rows[row].v1.y,mirror*rows[row].v1.z};
+  extensions=profile==0||profile==3||profile==4;fixture_mission.descent_version=(profile==2||profile==4)?1:2;Game_mode=profile==3?GM_MULTI:0;GameTime64=20*F1_0;Difficulty_level=0;cheats.robotskillrobots=cheat;
+  separating_first=swapped?&b:&a;separating_second=swapped?&a:&b;const int sign=mirror*(swapped?-1:1);separating_force={sign*rows[row].force.x,sign*rows[row].force.y,sign*rows[row].force.z};separating_rotation={sign*rows[row].rotation.x,sign*rows[row].rotation.y,sign*rows[row].rotation.z};
+  const auto before_a=a,before_b=b,before_parent=*ConsoleObject;const auto player_before=Players[Player_num];const auto controls=Controls;unsigned sim,fx;d_rand_get_state(&sim);d_rand_get_stream_state(D_RNG_FX,&fx);const auto sim_calls=d_rand_get_call_count(),fx_calls=d_rand_get_stream_call_count(D_RNG_FX);separating_trace=true;separating_events.clear();vms_vector point{};
+  collide_robot_and_robot(separating_first,separating_second,&point);
+  const bool did_bump=separating_events.size()>1;const bool event=(profile==0||profile==4)?bool(cheat):rows[row].old_event;const fix damage=event?(profile==4?rows[row].active_d1_damage:profile?rows[row].old_damage:rows[row].damage):0;
+  auto expected_a=before_a,expected_b=before_b;if(did_bump){expected_a.shields-=damage;expected_b.shields-=damage;}
+  require(!std::memcmp(&a,&expected_a,sizeof(a))&&!std::memcmp(&b,&expected_b,sizeof(b))&&!std::memcmp(ConsoleObject,&before_parent,sizeof(before_parent))&&!std::memcmp(&Controls,&controls,sizeof(Controls))&&!std::memcmp(&Players[Player_num],&player_before,sizeof(player_before)),"physical pair whole-object preservation and real attribution-gated damage");
+  std::vector<std::array<int,5>> expected{{0,int(separating_first-Objects),int(separating_second-Objects),0,0}};
+  if(did_bump){expected.push_back({1,int(separating_first-Objects),int(separating_second-Objects),0,0});for(auto *actor:{separating_second,separating_first}){const int direction=actor==separating_second?1:-1;expected.push_back({2,int(actor-Objects),direction*separating_force.x,direction*separating_force.y,direction*separating_force.z});expected.push_back({3,int(actor-Objects),direction*separating_rotation.x,direction*separating_rotation.y,direction*separating_rotation.z});if(event)expected.push_back({4,int(actor-Objects),100*F1_0,damage,100*F1_0-damage});}expected.push_back({5,int(separating_first-Objects),int(separating_second-Objects),0,0});}
+  require(separating_events==expected,"real pair ordered static/pre/force/rotation/damage/post boundaries");
+  unsigned sim_after,fx_after;d_rand_get_state(&sim_after);d_rand_get_stream_state(D_RNG_FX,&fx_after);require(sim==sim_after&&fx==fx_after&&sim_calls==d_rand_get_call_count()&&fx_calls==d_rand_get_stream_call_count(D_RNG_FX)&&!death_calls&&!births&&!effect_calls&&!sound_calls,"pair no death/score/effect and preserved complete RNG streams");
+  if(mode==1||mode==2)std::cout<<"observed physical path="<<did_bump<<" shields="<<a.shields<<","<<b.shields<<" robot-damage-cheat="<<cheat<<"\n";
+  const bool rejected=!profile&&rows[row].reject;require(did_bump!=rejected,"separating ordinary robots must not receive physical bump impulse");
+  if(rejected){const auto stable_a=a,stable_b=b;separating_events.clear();collide_robot_and_robot(separating_first,separating_second,&point);require(separating_events==std::vector<std::array<int,5>>{{0,int(separating_first-Objects),int(separating_second-Objects),0,0}}&&!std::memcmp(&a,&stable_a,sizeof(a))&&!std::memcmp(&b,&stable_b,sizeof(b)),"repeated separating collision remains physically inert after static exclusion");d_rand_get_state(&sim_after);d_rand_get_stream_state(D_RNG_FX,&fx_after);require(sim==sim_after&&fx==fx_after&&sim_calls==d_rand_get_call_count()&&fx_calls==d_rand_get_stream_call_count(D_RNG_FX),"repeated separating callback preserves streams");}
+  separating_trace=false;++cases;
+ }
+ std::cout<<"PASS separating pair "<<cases<<" cases\n";
+}
+}
+
 int main(int argc, char **argv)
 {
 	try {
+ if(argc==2&&!std::strcmp(argv[1],"bump-separating")){separating_bump_controls();return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"bump-separating-probe")){separating_bump_controls(1);return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"bump-separating-damage-probe")){separating_bump_controls(2);return 0;}
+ if(argc==2&&!std::strcmp(argv[1],"bump-separating-guards")){separating_bump_controls(3);return 0;}
  if(argc==2&&!std::strcmp(argv[1],"placed-mine")){placed_mine_controls();return 0;}
  if(argc==2&&!std::strcmp(argv[1],"placed-mine-probe")){placed_mine_controls(1);return 0;}
  if(argc==2&&!std::strcmp(argv[1],"placed-mine-guards")){placed_mine_controls(2);return 0;}
@@ -4312,6 +4371,7 @@ int main(int argc, char **argv)
 			common_damage_gates(!std::strcmp(argv[1], "age"), !std::strcmp(argv[1], "strength"));
 			return 0;
 		}
+        separating_bump_controls();
         placed_mine_controls();
         smart_stun_controls();
         self_splash_controls();
@@ -4574,7 +4634,7 @@ void buddy_message(char *, ...)
 {
 	require(false, "unexpected buddy message");
 }
-void newdemo_dump_note_robot_damage(object *actor, fix before, fix damage) {if(mine_trace){require(actor==&Objects[owner_a]&&actor->shields==before-damage,"actual nested robot shield change");mine_events.push_back({7,before,damage,actor->shields});}}
+void newdemo_dump_note_robot_damage(object *actor, fix before, fix damage) {if(separating_trace){require((actor==separating_first||actor==separating_second)&&actor->shields==before-damage,"actual separating force damage record");separating_events.push_back({4,int(actor-Objects),before,damage,actor->shields});return;}if(mine_trace){require(actor==&Objects[owner_a]&&actor->shields==before-damage,"actual nested robot shield change");mine_events.push_back({7,before,damage,actor->shields});}}
 void input_demo_record_robot_damage_event(object *, int32_t, int32_t) {}
 void input_demo_log_replay_robot_damage(object *, int32_t, int32_t) {}
 void input_demo_rng_trace_record_srand(int, const char *, const char *, int, uint32_t, int, uint32_t, int has_after, uint32_t state_after, uint32_t seed)
@@ -4653,6 +4713,7 @@ int PHYSFS_delete(const char *)
 
 void phys_apply_force(object *actor, vms_vector *force)
 {
+ if(separating_trace){require(actor==separating_first||actor==separating_second,"exact separating pair force owner");separating_events.push_back({2,int(actor-Objects),force->x,force->y,force->z});return;}
  if(mine_trace){require((actor==&Objects[2]||actor==&Objects[owner_a])&&force&&!force->y&&!force->z,"exact mine-chain force output owner/axis");mine_events.push_back({3,int(actor-Objects),force->x,0});return;}
  if(self_splash_trace){require(actor==ConsoleObject,"self splash force owner");++self_splash_forces;self_splash_force=*force;self_splash_events.push_back(2);return;}
  if(splash_trace){require(actor==&Objects[owner_a],"splash force victim");++splash_forces;splash_force=*force;return;}
@@ -4673,6 +4734,7 @@ void phys_apply_force(object *actor, vms_vector *force)
 }
 void phys_apply_rot(object *actor, vms_vector *force)
 {
+ if(separating_trace){require(actor==separating_first||actor==separating_second,"exact separating pair rotation owner");separating_events.push_back({3,int(actor-Objects),force->x,force->y,force->z});return;}
  if(mine_trace){require(actor==&Objects[owner_a]&&force&&!force->y&&!force->z,"exact nested robot rotation output");mine_events.push_back({6,int(actor-Objects),force->x,0});return;}
  if(self_splash_trace){require(actor==ConsoleObject,"self splash rotation owner");++self_splash_rotations;self_splash_rotation=*force;self_splash_events.push_back(3);return;}
  if(splash_trace){require(actor==&Objects[owner_a],"splash rotation victim");++splash_rotations;splash_rotation=*force;return;}
@@ -5288,6 +5350,7 @@ void input_demo_trace_robot_damage(object *boss, object *weapon, int old, int da
 }
 int xl_static_robot_bump(object *boss, object *weapon)
 {
+ if(separating_trace){require(boss==separating_first&&weapon==separating_second&&boss!=weapon,"exact ordinary robot pair bridge");for(auto *actor:{boss,weapon})require(actor->type==OBJ_ROBOT&&actor->movement_type==MT_PHYSICS&&actor->mtype.phys_info.mass==F1_0&&actor->control_type==CT_AI&&actor->ctype.ai_info.behavior==AIB_NORMAL&&!Robot_info[actor->id].boss_flag&&!Robot_info[actor->id].companion&&!Robot_info[actor->id].thief,"nonstatic nonboss ordinary pair only");separating_events.push_back({0,int(boss-Objects),int(weapon-Objects),0,0});return 0;}
 	if (gauss_trace) {
 		require(contact_trace && boss == &Objects[owner_a] && weapon == &Objects[4] && boss->type == OBJ_ROBOT && weapon->type == OBJ_WEAPON && (weapon->id == GAUSS_ID || weapon->id == 0) &&
 		            boss->ctype.ai_info.behavior != 135 && weapon->ctype.ai_info.behavior != 135 && boss->movement_type == MT_PHYSICS && weapon->movement_type == MT_PHYSICS &&
@@ -5307,8 +5370,9 @@ int xl_nonphysical_bump_reflection(object *, vms_vector *, vms_vector *)
 	require(false, "unexpected nonphysical reflection");
 	return 0;
 }
-void input_demo_log_player_bump_probe(const char *, object *boss, object *weapon, const vms_vector *relative, const vms_vector *force, int32_t num, int32_t den, int damage)
+void input_demo_log_player_bump_probe(const char *stage, object *boss, object *weapon, const vms_vector *relative, const vms_vector *force, int32_t num, int32_t den, int damage)
 {
+ if(separating_trace){require(boss==separating_first&&weapon==separating_second&&num==2*F1_0&&den==2*F1_0&&damage==1&&!std::memcmp(relative,&separating_force,sizeof(separating_force))&&!std::memcmp(force,&separating_force,sizeof(separating_force))&&(!std::strcmp(stage,"pre")||!std::strcmp(stage,"post")),"real physical pair pre/post force scaling");separating_events.push_back({!std::strcmp(stage,"pre")?1:5,int(boss-Objects),int(weapon-Objects),0,0});return;}
 	require(contact_trace && boss == &Objects[owner_a] && weapon == &Objects[4] && !relative->x && !relative->y && !relative->z && !force->x && !force->y && !force->z && num == 2 * F1_0 && den == 2 * F1_0 && !damage, "actual zero-force physical bump trace");
 }
 void input_demo_debug_log_weapon_robot_path_probe(const char *, void *weapon, void *boss, const void *point)
