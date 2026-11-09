@@ -2882,6 +2882,9 @@ void do_missile_firing(int drop_bomb)
 		else
 			Next_missile_fire_time = GameTime64 + (F1_0/25) - fire_frame_overhead;
 
+#ifdef DXX_XL_RUNTIME
+		xl_slow_motion_missile_fired();
+#endif
 		weapon_gun = Secondary_weapon_to_gun_num[weapon];
 
 		if (weapon_gun==4) {		//alternate left/right

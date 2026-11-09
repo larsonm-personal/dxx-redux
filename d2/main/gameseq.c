@@ -82,6 +82,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "slow_motion_runtime.h"
 #include "boss_spawn.h"
 #include "camera_controller.h"
 #include "mission_progress.h"
@@ -522,6 +523,9 @@ void coop_advance_player_stats(int pnum)
 	Netgame.player_flags[pnum] = p->flags;
 	if (pnum == Player_num) {
 		Next_flare_fire_time = Last_laser_fired_time = Next_laser_fire_time = Next_missile_fire_time = GameTime64;
+#ifdef DXX_XL_RUNTIME
+		xl_slow_motion_missile_fired();
+#endif
 		Fusion_charge = 0;
 		Auto_fire_fusion_cannon_time = 0;
 	}
@@ -576,6 +580,9 @@ void init_player_stats_level(int secret_flag)
 
 	// properly init these cursed globals
 	Next_flare_fire_time = Last_laser_fired_time = Next_laser_fire_time = Next_missile_fire_time = GameTime64;
+#ifdef DXX_XL_RUNTIME
+	xl_slow_motion_missile_fired();
+#endif
 
 	Controls.afterburner_state = 0;
 	Last_afterburner_state = 0;

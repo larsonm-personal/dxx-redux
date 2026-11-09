@@ -1,0 +1,9 @@
+#ifndef XL_SLOW_MOTION_SAVE_H
+#define XL_SLOW_MOTION_SAVE_H
+#include <nlohmann/json_fwd.hpp>
+namespace xl_runtime
+{
+nlohmann::json weapon_clock_snapshot();
+bool restore_weapon_clock(const nlohmann::json &saved, bool apply);
+} // namespace xl_runtime
+#endif
