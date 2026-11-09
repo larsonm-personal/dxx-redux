@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Synthetic mirror and workflow tests; never change this machine's apt config."""
 
-from pathlib import Path
+import re
 import subprocess
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import prefer_ubuntu_archive as helper
@@ -16,6 +17,31 @@ SOURCES = b"Types: deb\nURIs: mirror+file:/etc/apt/apt-mirrors.txt\nSuites: nobl
 
 
 class MirrorTests(unittest.TestCase):
+    def apt_jobs(self, source):
+        jobs = source.split("\njobs:\n", 1)[1]
+        return {
+            name: body
+            for name, body in re.findall(
+                r"(?ms)^  ([\w-]+):\n(.*?)(?=^  [\w-]+:|\Z)", jobs
+            )
+            if "sudo apt-get" in body
+        }
+
+    def assert_controller_before_apt(self, source, job_name):
+        match = re.search(
+            rf"(?ms)^  {re.escape(job_name)}:\n(.*?)(?=^  [\w-]+:|\Z)", source
+        )
+        self.assertIsNotNone(match, f"Missing {job_name} job")
+        job = match.group(1)
+        call = "python3 control/.github/scripts/prefer_ubuntu_archive.py"
+        self.assertEqual(job.count(call), 1)
+        trusted_ref = "ref: ${{ github.workflow_sha }}"
+        self.assertIn(trusted_ref, job)
+        self.assertLess(job.index(trusted_ref), job.index(call))
+        self.assertLess(job.index("path: control"), job.index(call))
+        self.assertLess(job.index(call), job.index("sudo apt-get"))
+        self.assertNotIn("python3 target/.github/scripts/prefer_ubuntu_archive.py", job)
+
     def transform(self, data, sources=SOURCES, env=None, release=None, machine="x86_64"):
         return helper.prefer_archive(
             data, sources, ENV if env is None else env, RELEASE if release is None else release, machine
@@ -107,18 +133,58 @@ class MirrorTests(unittest.TestCase):
                     helper.main()
 
     def test_host_and_android_use_controller_before_apt(self):
-        for name in ("nightly-tooling-sweep.yml", "android-nightly-tooling.yml"):
-            source = (ROOT / ".github/workflows" / name).read_text()
-            call = "python3 control/.github/scripts/prefer_ubuntu_archive.py"
-            self.assertEqual(source.count(call), 1)
-            self.assertLess(source.index("path: control"), source.index(call))
-            self.assertLess(source.index(call), source.index("sudo apt-get"))
-            self.assertNotIn("python3 target/.github/scripts/prefer_ubuntu_archive.py", source)
+        nightly = (ROOT / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        nightly_apt_jobs = self.apt_jobs(nightly)
+        self.assertEqual(set(nightly_apt_jobs), {"host", "pumo_stage"})
+        for job_name in nightly_apt_jobs:
+            with self.subTest(job=job_name):
+                self.assert_controller_before_apt(nightly, job_name)
         android = (ROOT / ".github/workflows/android-nightly-tooling.yml").read_text()
+        android_apt_jobs = self.apt_jobs(android)
+        self.assertEqual(set(android_apt_jobs), {"android"})
+        for job_name in android_apt_jobs:
+            self.assert_controller_before_apt(android, job_name)
         self.assertIn("expected='7:6.1.1-3ubuntu5'", android)
         smoke = (ROOT / ".github/workflows/engine-smoke.yml").read_text()
         self.assertEqual(smoke.count("python3 .github/scripts/prefer_ubuntu_archive.py"), 2)
         self.assertIn("python3 .github/scripts/test_prefer_ubuntu_archive.py", smoke)
+
+    def test_pumo_stage_controller_contract_rejects_missing_or_late_call(self):
+        nightly = (ROOT / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        call = "python3 control/.github/scripts/prefer_ubuntu_archive.py"
+        prefix, marker, suffix = nightly.partition("  pumo_stage:\n")
+        self.assertTrue(marker)
+        job, next_marker, rest = suffix.partition("  execution-stack:\n")
+        self.assertTrue(next_marker)
+        first_apt = next(
+            line for line in job.splitlines(keepends=True) if "sudo apt-get" in line
+        )
+        variants = {
+            "missing": job.replace(call, "# controller omitted"),
+            "duplicate": job.replace(call, call + "\n          " + call),
+            "late": job.replace("          " + call + "\n", "", 1).replace(
+                first_apt, first_apt + "          " + call + "\n", 1
+            ),
+            "target": job.replace(
+                call, "python3 target/.github/scripts/prefer_ubuntu_archive.py"
+            ),
+            "untrusted-ref": job.replace(
+                "ref: ${{ github.workflow_sha }}",
+                "ref: ${{ needs.plan.outputs.target_sha }}",
+            ),
+        }
+        for name, altered in variants.items():
+            with self.subTest(name=name), self.assertRaises(AssertionError):
+                self.assert_controller_before_apt(
+                    prefix + marker + altered + next_marker + rest, "pumo_stage"
+                )
+
+    def test_new_apt_job_requires_explicit_review(self):
+        nightly = (ROOT / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        added = nightly + "\n  new_job:\n    steps:\n      - run: sudo apt-get update\n"
+        self.assertIn("new_job", self.apt_jobs(added))
+        with self.assertRaises(AssertionError):
+            self.assert_controller_before_apt(added, "new_job")
 
 
 if __name__ == "__main__":
