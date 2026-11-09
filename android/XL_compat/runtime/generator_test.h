@@ -256,6 +256,16 @@ static void generator_behavior_controls(const std::filesystem::path &output)
 		robotmaker_proc(&center);
 		require(center.Flag == 0 && center.Timer < i2f(1000), "occupied XL generator did not defer production");
 		require(robot ? actor->shields == i2f(99) : Players[Player_num].shields == i2f(96), "occupied XL generator did not use native collision damage");
+		if (robot) {
+			const int level_kills = Players[Player_num].num_kills_level;
+			const int total_kills = Players[Player_num].num_kills_total;
+			actor->shields = F1_0 / 2;
+			collide_robot_and_materialization_center(actor);
+			require(actor->shields < 0 && (actor->flags & OF_EXPLODING),
+			        "unattributed generator contact did not retain native robot death");
+			require(Players[Player_num].num_kills_level == level_kills && Players[Player_num].num_kills_total == total_kills,
+			        "unattributed generator contact credited the local player");
+		}
 		reset();
 	}
 	std::ofstream activations(output / "generator-activation.txt");

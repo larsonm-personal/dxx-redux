@@ -1730,8 +1730,13 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 			  }
 
 	if (robot->shields < 0) {
-		Players[Player_num].num_kills_level++;
-		Players[Player_num].num_kills_total++;
+#ifdef DXX_XL_RUNTIME
+		if (!xl_level_extensions_active() || (Game_mode & GM_MULTI) || killer_objnum >= 0)
+#endif
+		{
+			Players[Player_num].num_kills_level++;
+			Players[Player_num].num_kills_total++;
+		}
 #ifdef NETWORK
 		if (Game_mode & GM_MULTI) {
 		 if (Robot_info[robot->id].thief)
