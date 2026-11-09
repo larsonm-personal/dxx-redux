@@ -340,7 +340,11 @@ void bump_this_object(object *objp, object *other_objp, vms_vector *force, int d
 				apply_force_damage(objp, force_mag, other_objp);
 			}
 		} else if ((objp->type == OBJ_ROBOT) || (objp->type == OBJ_CLUTTER) || (objp->type == OBJ_CNTRLCEN)) {
-			if (!Robot_info[objp->id].boss_flag) {
+			if (
+#ifdef DXX_XL_RUNTIME
+			    (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && objp->type != OBJ_ROBOT) ||
+#endif
+			    !Robot_info[objp->id].boss_flag) {
 				vms_vector force2;
 				force2.x = force->x/(4 + Difficulty_level);
 				force2.y = force->y/(4 + Difficulty_level);
