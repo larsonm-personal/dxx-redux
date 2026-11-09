@@ -613,7 +613,7 @@ class XlPrivateTests(unittest.TestCase):
                 pilot.validate_inventory(changed)
 
     def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
-        self.assertEqual(len(public.PUBLIC_TESTS), 60)
+        self.assertEqual(len(public.PUBLIC_TESTS), 61)
         self.assertEqual(
             public.GPU_TESTS, {"xl_fog_gpu", "xl_fog_gpu_direct", "xl_fog_gpu_copy16_fallback", "xl_pog_gpu"}
         )
