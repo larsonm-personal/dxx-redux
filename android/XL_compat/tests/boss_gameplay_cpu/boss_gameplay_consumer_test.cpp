@@ -695,6 +695,10 @@ void common_damage_gates(bool age_cases = true, bool strength_cases = true)
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 2 && !std::strcmp(argv[1], "attachment")) {
+			natural_spew_attachment_controls();
+			return 0;
+		}
 		if (argc == 2 && !std::strcmp(argv[1], "unattributed")) {
 			unattributed_robot_kill_counters();
 			return 0;

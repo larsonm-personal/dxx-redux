@@ -84,3 +84,12 @@ math(EXPR length "${end} - ${start}")
 string(SUBSTRING "${blast_source}" ${start} ${length} blast_source)
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_boss_radial.h"
      CONTENT "${blast_source}")
+
+# FindObjTrigger intentionally ignores nType and current trigger ownership
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp" trigger_lookup_hash)
+if(NOT trigger_lookup_hash STREQUAL "74f1284260fb4a4bb7396bc45eeb83868a7f2dfa5e3fdf0bcb767b94f1b12852")
+    message(FATAL_ERROR "Boss attachment lookup source changed")
+endif()
+set(extracted "// Actual pinned attachment-presence lookup\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp" "CTrigger *FindObjTrigger (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_boss_trigger_lookup.h" CONTENT "${extracted}")
