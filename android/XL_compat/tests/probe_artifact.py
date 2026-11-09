@@ -18,7 +18,13 @@ import subprocess
 import zipfile
 from pathlib import Path, PurePosixPath
 
-from developer_compile_ci import ROOT, SOURCE, TARGET, verify_build
+from developer_compile_ci import (
+    ROOT,
+    SOURCE,
+    TARGET,
+    check_release_workflow,
+    verify_build,
+)
 
 BINARY = "xl-preview-lifecycle"
 NOTICES = ("COPYING.txt", "d2/COPYING.txt")
@@ -29,10 +35,34 @@ MAX_ARCHIVE = 170 * 1024 * 1024
 WORKFLOW = ".github/workflows/xl-compat.yml"
 REPO = "larsonm-personal/dxx-redux"
 JOB = "XL developer source compile (no game assets)"
+RELEASE_JOB = "XL developer Release source compile (no game assets)"
+RELEASE_BRANCHES = (
+    "fix/pumo-release-probe-packet-20261108",
+    "fix/pumo-accepted-robot-damage-20261108",
+)
 WORKFLOW_ID = 394846952
 
 
-def compile_identity(build):
+def packet_name(head, attempt, mode):
+    require(mode in ("Debug", "Release"), "unsupported build mode")
+    prefix = "xl-developer-release-probe" if mode == "Release" else "xl-developer-probe"
+    return f"{prefix}-{head}-{attempt}"
+
+
+def mode_receipt(mode):
+    require(mode in ("Debug", "Release"), "unsupported build mode")
+    result = {
+        "build_type": mode,
+        "opengl": True,
+        "developer_tests": True,
+        "build_testing": False,
+    }
+    if mode == "Release":
+        result["gl_preference"] = "LEGACY"
+    return result
+
+
+def compile_identity(build, mode="Debug"):
     """Record public, path-free properties of the actual lifecycle TU compile."""
     commands = json.loads((build / "compile_commands.json").read_text())
     entries = [
@@ -58,7 +88,7 @@ def compile_identity(build):
         and "DXX_PUMO_CONTACT_DEVELOPER_PROBE" in macros,
         "developer macro identity missing",
     )
-    require("NDEBUG" not in macros, "release macro in Debug probe")
+    require(("NDEBUG" in macros) == (mode == "Release"), "compile mode macro mismatch")
     require(platform.machine() == "x86_64", "unexpected runner ABI")
     compiler_files = list((build / "CMakeFiles").glob("*/CMakeCXXCompiler.cmake"))
     require(len(compiler_files) == 1, "CMake compiler identity missing")
@@ -142,11 +172,11 @@ def exact_head(head):
     return git("rev-parse", "HEAD^{tree}")
 
 
-def create(build, output, head, run_id, run_attempt):
+def create(build, output, head, run_id, run_attempt, mode="Debug"):
     require(re.fullmatch(r"[1-9][0-9]*", run_id) is not None, "invalid run id")
     require(re.fullmatch(r"[1-9][0-9]*", run_attempt) is not None, "invalid attempt")
     tree = exact_head(head)
-    verify_build(build)
+    verify_build(build, mode)
     source = build / "main" / BINARY
     require(source.is_file() and not source.is_symlink(), "binary must be regular")
     size = source.stat().st_size
@@ -168,13 +198,8 @@ def create(build, output, head, run_id, run_attempt):
         "tree": tree,
         "platform": "ubuntu-24.04",
         "target": TARGET,
-        "compile": compile_identity(build),
-        "mode": {
-            "build_type": "Debug",
-            "opengl": True,
-            "developer_tests": True,
-            "build_testing": False,
-        },
+        "compile": compile_identity(build, mode),
+        "mode": mode_receipt(mode),
         "files": {
             name: {
                 "size": (output / name).stat().st_size,
@@ -202,6 +227,7 @@ def create(build, output, head, run_id, run_attempt):
         head=head,
         tree=tree,
         platform="ubuntu-24.04",
+        mode=mode,
     )
 
 
@@ -217,6 +243,7 @@ def check_files(
     tree,
     platform,
     expected_compile=None,
+    mode="Debug",
 ):
     require(set(files) == FILES, "missing or unexpected packet files")
     return check_manifest(
@@ -233,6 +260,7 @@ def check_files(
         tree=tree,
         platform=platform,
         expected_compile=expected_compile,
+        mode=mode,
     )
 
 
@@ -248,7 +276,9 @@ def check_manifest(
     tree,
     platform,
     expected_compile=None,
+    mode="Debug",
 ):
+    require(mode in ("Debug", "Release"), "unsupported build mode")
     require(set(manifest) == FILES - {RECEIPT}, "missing or unexpected packet files")
     require(receipt.get("schema") == 1, "unknown receipt schema")
     for key, expected in (
@@ -263,13 +293,7 @@ def check_manifest(
     ):
         require(receipt.get(key) == expected, f"{key} mismatch")
     require(
-        receipt.get("mode")
-        == {
-            "build_type": "Debug",
-            "opengl": True,
-            "developer_tests": True,
-            "build_testing": False,
-        },
+        receipt.get("mode") == mode_receipt(mode),
         "mode mismatch",
     )
     compile_data = receipt.get("compile")
@@ -289,7 +313,7 @@ def check_manifest(
         isinstance(compile_data.get("macros"), list)
         and "DXX_XL_DEVELOPER_PROBE" in compile_data["macros"]
         and "DXX_PUMO_CONTACT_DEVELOPER_PROBE" in compile_data["macros"]
-        and "NDEBUG" not in compile_data["macros"],
+        and ("NDEBUG" in compile_data["macros"]) == (mode == "Release"),
         "compile macro mismatch",
     )
     require(isinstance(compile_data.get("switches"), list), "compile flags missing")
@@ -333,6 +357,7 @@ def verify_zip(
     artifact_name,
     artifact_digest,
     expected_compile=None,
+    mode="Debug",
 ):
     """Verify bytes after a caller authenticates run and artifact metadata via GitHub.
 
@@ -345,7 +370,7 @@ def verify_zip(
     require(re.fullmatch(r"[0-9a-f]{40}", tree) is not None, "invalid tree")
     require(run_id > 0 and run_attempt > 0, "invalid run identity")
     require(
-        artifact_name == f"xl-developer-probe-{head}-{run_attempt}",
+        artifact_name == packet_name(head, run_attempt, mode),
         "artifact name mismatch",
     )
     preflight_zip(archive)
@@ -367,9 +392,9 @@ def verify_zip(
                 and not (name == RECEIPT and receipt_data is not None),
                 "unsafe or unexpected ZIP member",
             )
-            mode = info.external_attr >> 16
+            file_mode = info.external_attr >> 16
             require(
-                stat.S_IFMT(mode) in (0, stat.S_IFREG) and not info.is_dir(),
+                stat.S_IFMT(file_mode) in (0, stat.S_IFREG) and not info.is_dir(),
                 "nonregular ZIP member",
             )
             limit = MAX_BINARY if name == BINARY else 64 * 1024
@@ -404,12 +429,22 @@ def verify_zip(
         tree=tree,
         platform=platform,
         expected_compile=expected_compile,
+        mode=mode,
     )
     return receipt
 
 
 def authenticate_metadata(
-    run, artifacts, jobs, *, head, tree, pr_number, executed_workflow, reviewed_workflow
+    run,
+    artifacts,
+    jobs,
+    *,
+    head,
+    tree,
+    pr_number,
+    executed_workflow,
+    reviewed_workflow,
+    mode="Debug",
 ):
     """Check official GitHub API objects before treating a ZIP as input.
 
@@ -446,6 +481,13 @@ def authenticate_metadata(
         and sha256(reviewed_workflow) == sha256((ROOT / WORKFLOW).read_bytes()),
         "executed workflow differs from reviewed candidate source",
     )
+    require(mode in ("Debug", "Release"), "unsupported build mode")
+    if mode == "Release":
+        require(
+            run.get("head_branch") in RELEASE_BRANCHES,
+            "Release opt-in branch mismatch",
+        )
+        check_release_workflow(reviewed_workflow.decode("utf-8"))
     require(
         run.get("path") == WORKFLOW and run.get("event") == "pull_request",
         "run workflow/event mismatch",
@@ -479,12 +521,12 @@ def authenticate_metadata(
     )
     require(isinstance(artifacts, list), "artifact listing missing")
     matches = [
-        a for a in artifacts if a.get("name") == f"xl-developer-probe-{head}-{attempt}"
+        a for a in artifacts if a.get("name") == packet_name(head, attempt, mode)
     ]
     require(len(matches) == 1, "missing or multiple probe artifacts")
     artifact = matches[0]
     require(
-        artifact.get("name") == f"xl-developer-probe-{head}-{attempt}"
+        artifact.get("name") == packet_name(head, attempt, mode)
         and artifact.get("expired") is False
         and artifact.get("workflow_run", {}).get("id") == run_id
         and artifact.get("workflow_run", {}).get("head_sha") == head
@@ -497,7 +539,13 @@ def authenticate_metadata(
         and 0 < artifact.get("size_in_bytes", 0) <= MAX_ARCHIVE,
         "artifact digest/size mismatch",
     )
-    matches = [job for job in jobs if job.get("name") == JOB]
+    expected_job = RELEASE_JOB if mode == "Release" else JOB
+    expected_upload = (
+        "Upload source-only Release developer probe packet"
+        if mode == "Release"
+        else "Upload source-only developer probe packet"
+    )
+    matches = [job for job in jobs if job.get("name") == expected_job]
     require(
         len(matches) == 1
         and matches[0].get("run_id") == run_id
@@ -507,7 +555,7 @@ def authenticate_metadata(
         and matches[0].get("status") == "completed"
         and matches[0].get("conclusion") == "success"
         and any(
-            step.get("name") == "Upload source-only developer probe packet"
+            step.get("name") == expected_upload
             and step.get("conclusion") == "success"
             for step in matches[0].get("steps", [])
         ),
@@ -523,6 +571,7 @@ def authenticate_metadata(
         "platform": "ubuntu-24.04",
         "artifact_name": artifact["name"],
         "artifact_digest": artifact["digest"],
+        "mode": mode,
     }
 
 
@@ -532,6 +581,7 @@ def main():
     create_parser = sub.add_parser("create")
     for flag in ("build", "output", "head", "run-id", "run-attempt"):
         create_parser.add_argument("--" + flag, required=True)
+    create_parser.add_argument("--mode", choices=("Debug", "Release"), default="Debug")
     args = parser.parse_args()
     if args.command == "create":
         create(
@@ -540,6 +590,7 @@ def main():
             args.head,
             args.run_id,
             args.run_attempt,
+            args.mode,
         )
     print("Source-only developer probe packet prepared; no runtime qualification")
 

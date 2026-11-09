@@ -122,3 +122,78 @@ jobs:
           path: temp/xl-developer-probe-packet/
           if-no-files-found: error
           retention-days: 1
+
+  # Separate Release source receipt for later gameplay work; never runs the engine.
+  developer-release-compile:
+    needs: stack
+    if: needs.stack.outputs.run == 'true' && github.event_name == 'pull_request' && (github.head_ref == 'fix/pumo-release-probe-packet-20261108' || github.head_ref == 'fix/pumo-accepted-robot-damage-20261108')
+    name: XL developer Release source compile (no game assets)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+          path: workflow-source
+          sparse-checkout: .github/workflows/xl-compat.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Record executed workflow source hash
+        env:
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          test "$(git -C workflow-source rev-parse HEAD)" = "$WORKFLOW_SHA"
+          echo "EXECUTED_WORKFLOW_HASH=$(sha256sum workflow-source/.github/workflows/xl-compat.yml | cut -d' ' -f1)" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Verify Release candidate head and source-only CI contract
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          test "$(sha256sum .github/workflows/xl-compat.yml | cut -d' ' -f1)" = "$EXECUTED_WORKFLOW_HASH"
+          python3 android/XL_compat/tests/developer_compile_ci.py --check-workflow
+          python3 android/XL_compat/tests/test_developer_compile_ci.py
+          python3 android/XL_compat/tests/test_probe_artifact.py
+
+      - name: Install production renderer and audio dependencies
+        timeout-minutes: 15
+        run: |
+          python3 .github/scripts/prefer_ubuntu_archive.py
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o APT::Update::Error-Mode=any update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends \
+            libegl1-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libglew-dev \
+            libsdl1.2-dev libsdl-mixer1.2-dev libphysfs-dev libpng-dev zlib1g-dev
+
+      - name: Compile D2 Release developer metadata target without running it
+        timeout-minutes: 28
+        run: |
+          cmake -S d2 -B build-xl-developer-release-ci -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DBUILD_TESTING=OFF -DOPENGL=ON -DOpenGL_GL_PREFERENCE=LEGACY \
+            -DDXX_XL_DEVELOPER_TESTS=ON
+          cmake --build build-xl-developer-release-ci --parallel 2 --target dxx-redux-d2-headless-metadata
+          python3 android/XL_compat/tests/developer_compile_ci.py --verify-build build-xl-developer-release-ci --mode Release
+
+      - name: Prepare source-only Release developer probe packet
+        env:
+          PROBE_RUN_ID: ${{ github.run_id }}
+          PROBE_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          python3 android/XL_compat/tests/probe_artifact.py create \
+            --build build-xl-developer-release-ci --output temp/xl-developer-release-probe-packet \
+            --head "$EXPECTED_HEAD" --run-id "$PROBE_RUN_ID" \
+            --run-attempt "$PROBE_RUN_ATTEMPT" --mode Release
+
+      - name: Upload source-only Release developer probe packet
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: xl-developer-release-probe-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_attempt }}
+          path: temp/xl-developer-release-probe-packet/
+          if-no-files-found: error
+          retention-days: 1

@@ -20,6 +20,7 @@ from probe_artifact import (
     check_files,
     compile_identity,
     create,
+    packet_name,
     sha256,
     verify_zip,
 )
@@ -69,6 +70,55 @@ def packet():
 
 
 class ArtifactTests(unittest.TestCase):
+    def test_release_mode_is_caller_bound(self):
+        files, receipt = packet()
+        release = dict(receipt)
+        release["mode"] = {
+            **receipt["mode"], "build_type": "Release", "gl_preference": "LEGACY"
+        }
+        release["compile"] = {
+            **receipt["compile"],
+            "macros": [*receipt["compile"]["macros"], "NDEBUG"],
+        }
+        files[RECEIPT] = json.dumps(release).encode()
+        args = {
+            "repository": REPO, "workflow": WORKFLOW, "run_id": 123,
+            "run_attempt": 2, "head": HEAD, "tree": TREE,
+            "platform": "ubuntu-24.04",
+        }
+        check_files(files, release, **args, mode="Release")
+        with self.assertRaises(ValueError):
+            check_files(files, release, **args)
+        with self.assertRaises(ValueError):
+            check_files(files, release, **{**args, "head": "c" * 40}, mode="Release")
+        for bad in (
+            {**release["mode"], "gl_preference": "GLVND"},
+            {**release["mode"], "build_type": "Debug"},
+        ):
+            with self.assertRaises(ValueError):
+                check_files(files, {**release, "mode": bad}, **args, mode="Release")
+        self.assertEqual(packet_name(HEAD, 2, "Release"), f"xl-developer-release-probe-{HEAD}-2")
+        with self.assertRaises(ValueError):
+            packet_name(HEAD, 2, "RelWithDebInfo")
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / "release.zip"
+            with zipfile.ZipFile(archive, "w") as output:
+                for name, data in files.items():
+                    output.writestr(name, data)
+            zip_args = {
+                **args,
+                "artifact_name": packet_name(HEAD, 2, "Release"),
+                "artifact_digest": "sha256:" + sha256(archive.read_bytes()),
+            }
+            verify_zip(archive, **zip_args, mode="Release")
+            with self.assertRaises(ValueError):
+                verify_zip(archive, **zip_args)
+            with self.assertRaises(ValueError):
+                verify_zip(
+                    archive, **{**zip_args, "artifact_digest": "sha256:" + "0" * 64},
+                    mode="Release"
+                )
+
     def test_create_source_only_packet(self):
         with tempfile.TemporaryDirectory() as temp:
             build = Path(temp) / "build"
@@ -150,6 +200,7 @@ class ArtifactTests(unittest.TestCase):
             "status": "completed",
             "conclusion": "success",
             "head_sha": HEAD,
+            "head_branch": "fix/pumo-release-probe-packet-20261108",
             "head_commit": {"tree_id": TREE},
             "referenced_workflows": [
                 {
@@ -231,6 +282,32 @@ class ArtifactTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             authenticate_metadata(
                 run, [artifact], jobs, **{**args, "executed_workflow": b"wrong"}
+            )
+        release_artifact = {**artifact, "name": packet_name(HEAD, 2, "Release")}
+        release_job = {
+            **jobs[0],
+            "name": "XL developer Release source compile (no game assets)",
+            "steps": [{"name": "Upload source-only Release developer probe packet", "conclusion": "success"}],
+        }
+        authenticate_metadata(run, [release_artifact], [release_job], **args, mode="Release")
+        authenticate_metadata(
+            {**run, "head_branch": "fix/pumo-accepted-robot-damage-20261108"},
+            [release_artifact], [release_job], **args, mode="Release"
+        )
+        for bad_artifact, bad_job, bad_args in (
+            (artifact, release_job, args),
+            (release_artifact, jobs[0], args),
+            (release_artifact, {**release_job, "conclusion": "failure"}, args),
+            (release_artifact, release_job, {**args, "reviewed_workflow": b"tampered"}),
+        ):
+            with self.assertRaises(ValueError):
+                authenticate_metadata(
+                    run, [bad_artifact], [bad_job], **bad_args, mode="Release"
+                )
+        with self.assertRaises(ValueError):
+            authenticate_metadata(
+                {**run, "head_branch": "other"}, [release_artifact],
+                [release_job], **args, mode="Release"
             )
 
     def test_packet_negative_fields(self):
