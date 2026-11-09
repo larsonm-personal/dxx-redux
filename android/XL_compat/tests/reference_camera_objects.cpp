@@ -451,3 +451,23 @@ void controls()
 	std::cout << "Pinned camera Gauss: " << cases << " frame/skip/RNG states; signed draw convention, increment-before-thrust, saturation gate and exact three draws passed\n";
 }
 } // namespace camera_gauss_reference
+
+std::array<std::int32_t, 3> camera_force_source_apply(std::array<std::int32_t, 3> velocity, int mass,
+                                                      std::array<std::int32_t, 3> impulse, bool blocked)
+{
+	using namespace camera_force_reference;
+	CObject actor;
+	actor.mType.physInfo.mass = mass;
+	actor.Velocity().Set(velocity[0], velocity[1], velocity[2]);
+	gameData.objData.pConsole = blocked ? &actor : nullptr;
+	gameData.objData.speedBoost[0].bBoosted = blocked;
+	automap.active = false;
+	CFixVector force;
+	force.Set(impulse[0], impulse[1], impulse[2]);
+	actor.ApplyForce(force);
+	const auto &result = actor.Velocity().v.coord;
+	const std::array<std::int32_t, 3> output{ result.x, result.y, result.z };
+	gameData.objData.pConsole = nullptr;
+	gameData.objData.speedBoost[0].bBoosted = 0;
+	return output;
+}

@@ -12,6 +12,8 @@ void xl_static_robot_restore_prepare(void);
 void xl_static_robot_restore_payloads(void);
 void xl_static_robot_restore_clear(void);
 int xl_static_robot_bump(struct object *a, struct object *b);
+int xl_nonphysical_bump_reflection(const struct object *actor, struct vms_vector *force,
+                                   struct vms_vector *velocity);
 int xl_static_robot_player_contact(struct object *robot, struct object *player);
 int xl_static_robot_gauss(struct object *robot);
 int xl_static_robot_query(const struct object *target, const struct object *moving,

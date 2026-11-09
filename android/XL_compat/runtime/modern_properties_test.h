@@ -231,6 +231,7 @@ static int modern_properties_test(int argc, char **argv)
 		require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0, "modern property stock recovery failed");
 		depth_policy(false);
 		for (int i = 0; i < Num_segments; ++i) require(!xl_preview_no_damage_segment(i) && !xl_preview_water_segment(i), "property state leaked into stock");
+		ordinary_nonphysical_bump_controls(false, false);
 		int32_t stock_points[4][3];
 		float stock_colors[4][4];
 		for (int i = 0; i < Num_segments; ++i)
