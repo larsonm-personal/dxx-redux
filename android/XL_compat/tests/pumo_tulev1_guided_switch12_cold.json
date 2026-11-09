@@ -1,0 +1,18 @@
+{
+    "initial_level": 7,
+    "checkpoint_expect": {
+        "current_level_num": 7,
+        "player_dead": false,
+        "cheats_enabled": false,
+        "player.invulnerable": false,
+        "player.cloaked": true,
+        "combat_observation.guided_control": null,
+        "combat_observation.owned_weapon_count": 0
+    },
+    "qualification": "COLD_NOFRAME_FROM_VERSIONED_SETTLED_GUIDED_SWITCH12_SAVE",
+    "steps": [
+        {
+            "action": "introspect"
+        }
+    ]
+}

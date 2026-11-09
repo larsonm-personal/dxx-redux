@@ -203,6 +203,11 @@ if(BUILD_TESTING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_quad_guard255_contract_test.py)
     set_tests_properties(xl_pumo_tulev1_quad_guard255_contract PROPERTIES TIMEOUT 30)
     add_test(
+        NAME xl_pumo_tulev1_guided_switch12_contract
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_guided_switch12_contract_test.py)
+    set_tests_properties(xl_pumo_tulev1_guided_switch12_contract PROPERTIES TIMEOUT 30)
+    add_test(
         NAME xl_wave_channels_reference
         COMMAND
             ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/wave_channels_reference.py
@@ -1020,6 +1025,22 @@ if(BUILD_TESTING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_quad_guard255.cmake)
         set_tests_properties(xl_pumo_tulev1_quad_guard255_player PROPERTIES TIMEOUT 300
                              FIXTURES_REQUIRED pumo_earned_tulev1_guard269 RUN_SERIAL TRUE)
+        set_tests_properties(xl_pumo_tulev1_quad_guard255_player PROPERTIES FIXTURES_SETUP
+                                                              pumo_earned_tulev1_quad_guard255)
+        add_test(
+            NAME xl_pumo_tulev1_guided_switch12_player
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
+                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/guard255/guard255-result.json
+                -DQUAD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/quad/quad-result.json
+                -DGUARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guard269-player/ordinary/ordinary-result.json
+                -DBLUE=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-master5-player/blue/blue-result.json
+                -DPYTHON=${Python3_EXECUTABLE}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guided-switch12-player -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_guided_switch12.cmake)
+        set_tests_properties(xl_pumo_tulev1_guided_switch12_player PROPERTIES TIMEOUT 300
+                             FIXTURES_REQUIRED pumo_earned_tulev1_quad_guard255 RUN_SERIAL TRUE)
         add_test(
             NAME xl_pumo_guided_input_player
             COMMAND
