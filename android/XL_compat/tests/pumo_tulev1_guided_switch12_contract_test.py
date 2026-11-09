@@ -62,10 +62,7 @@ def witnesses():
         "operation_sequence": 1,
     }
     tail = final_state()
-    events = [
-        {"step": i, "action": "introspect", "state": copy.deepcopy(launch)}
-        for i in range(15)
-    ]
+    events = [{"step": i, "action": "introspect", "state": copy.deepcopy(launch)} for i in range(15)]
     events.append({"step": 15, "action": "send_button", "state": launch})
     events.append({"step": 16, "action": "assert", "state": copy.deepcopy(launch)})
     events.append(
@@ -135,15 +132,8 @@ class GuidedSwitch12ContractTest(unittest.TestCase):
             ],
         )
         self.assertEqual([s["action"] for s in warm["steps"]].count("pose_view"), 1)
-        self.assertEqual(
-            [s["action"] for s in warm["steps"]].count("select_secondary"), 1
-        )
-        self.assertFalse(
-            any(
-                s["action"] in {"load", "save", "face_view", "set_invulnerable"}
-                for s in warm["steps"]
-            )
-        )
+        self.assertEqual([s["action"] for s in warm["steps"]].count("select_secondary"), 1)
+        self.assertFalse(any(s["action"] in {"load", "save", "face_view", "set_invulnerable"} for s in warm["steps"]))
         self.assertNotIn("resume_checkpoint", warm)
         self.assertNotIn("resume_sha256", warm)
         self.assertNotIn("game_time_raw", warm["checkpoint_expect"])
@@ -179,9 +169,7 @@ class GuidedSwitch12ContractTest(unittest.TestCase):
             self.assertEqual(bound["steps"][0]["expect"]["player.shields"], 70)
             for change in (
                 lambda x: x["checkpoint_history"][0].update(step=43),
-                lambda x: x["checkpoint_history"].append(
-                    copy.deepcopy(x["checkpoint_history"][0])
-                ),
+                lambda x: x["checkpoint_history"].append(copy.deepcopy(x["checkpoint_history"][0])),
             ):
                 forged = copy.deepcopy(source)
                 change(forged)
@@ -204,14 +192,10 @@ class GuidedSwitch12ContractTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 contract.identity(forged)
         events, _ = witnesses()
-        self.assertEqual(
-            contract.flight(events, [e for e in events if "step" in e])[0], (9, 31)
-        )
+        self.assertEqual(contract.flight(events, [e for e in events if "step" in e])[0], (9, 31))
         for mutate in (
             lambda es: es[16]["state"]["player"].update(shields=59),
-            lambda es: es[16]["state"]["combat_observation"]["guided_control"].update(
-                signature=32
-            ),
+            lambda es: es[16]["state"]["combat_observation"]["guided_control"].update(signature=32),
             lambda es: es[17].update(index=11),
             lambda es: es[17].update(sequence=2),
             lambda es: es[17].update(shot=True),
@@ -229,16 +213,11 @@ class GuidedSwitch12ContractTest(unittest.TestCase):
         source = {"game_time_raw": 90}
         steps[15]["state"]["game_time_raw"] = 100
         # The synthetic end state is independent of private measurements.
-        steps.extend(
-            {"step": i, "state": {"game_time_raw": 90 + 820 * 65536 // 60}}
-            for i in range(17, 1859)
-        )
+        steps.extend({"step": i, "state": {"game_time_raw": 90 + 820 * 65536 // 60}} for i in range(17, 1859))
         contract.relative_timing(source, steps, events[17]["state"])
         for forged_origin in (91, True):
             with self.assertRaises(ValueError):
-                contract.relative_timing(
-                    {"game_time_raw": forged_origin}, steps, events[17]["state"]
-                )
+                contract.relative_timing({"game_time_raw": forged_origin}, steps, events[17]["state"])
 
     def test_contact_effect_and_door_forgeries(self):
         events, final = witnesses()
@@ -266,14 +245,10 @@ class GuidedSwitch12ContractTest(unittest.TestCase):
         settled = final_state()
         contract.settled_observation(settled)
         for mutate in (
-            lambda s: s["combat_observation"].update(
-                guided_control=state()["combat_observation"]["guided_control"]
-            ),
+            lambda s: s["combat_observation"].update(guided_control=state()["combat_observation"]["guided_control"]),
             lambda s: s["combat_observation"].update(owned_weapon_count=True),
             lambda s: s["combat_observation"].update(owned_weapons_truncated=True),
-            lambda s: s["combat_observation"].update(
-                owned_weapons=[state()["combat_observation"]["owned_weapons"][0]]
-            ),
+            lambda s: s["combat_observation"].update(owned_weapons=[state()["combat_observation"]["owned_weapons"][0]]),
         ):
             forged = copy.deepcopy(settled)
             mutate(forged)

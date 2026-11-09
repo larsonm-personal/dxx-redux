@@ -34,9 +34,7 @@ def bind(plan_path, source_path):
     producer = doc(source_path)
     history = producer["checkpoint_history"]
     need(
-        source_path.name == "guard255-result.json"
-        and len(history) == 1
-        and same(history[0]["step"], 44),
+        source_path.name == "guard255-result.json" and len(history) == 1 and same(history[0]["step"], 44),
         "not an actual versioned guard255 producer",
     )
     state = history[0]["state"]
@@ -62,9 +60,7 @@ def bundle(phase, root, engine, source_state=None):
     final = doc(root / f"{phase}-state.json")
     # The full 820-frame trace exceeds the shared 16 MiB default; keep an explicit cap.
     limit = 128 << 20 if phase == "warm" else 16 << 20
-    events = [
-        decode(line) for line in read(root / f"{phase}-trace.jsonl", limit).splitlines()
-    ]
+    events = [decode(line) for line in read(root / f"{phase}-trace.jsonl", limit).splitlines()]
     steps = [event for event in events if "step" in event and "state" in event]
     expected = template(phase)
     for key in ("resume_checkpoint", "resume_sha256", "receipt_run_id"):
@@ -103,9 +99,7 @@ def bundle(phase, root, engine, source_state=None):
         and receipt["run_id"] == plan["receipt_run_id"]
         and receipt["plan_sha256"] == sha(plan_path)
         and receipt["executable_sha256"] == sha(engine) == quad.ENGINE_SHA
-        and receipt["resume_sha256"]
-        == plan["resume_sha256"]
-        == sha(save(root, plan["resume_checkpoint"])),
+        and receipt["resume_sha256"] == plan["resume_sha256"] == sha(save(root, plan["resume_checkpoint"])),
         "receipt or input pin invalid",
     )
     need(
@@ -128,10 +122,7 @@ def bundle(phase, root, engine, source_state=None):
     }[phase]
     need(
         all(
-            (
-                set(event) == {"step", "action", "state", "simulation_fps"}
-                and same(event["simulation_fps"], 60)
-            )
+            (set(event) == {"step", "action", "state", "simulation_fps"} and same(event["simulation_fps"], 60))
             if "step" in event and "state" in event
             else event.get("event") in allowed
             for event in events
@@ -187,16 +178,12 @@ def flight(events, steps):
     launch = steps[15]["state"]
     first = identity(launch)
     hp = steps[12]["state"]["player"]["shields"]
-    operation = next(
-        event for event in events if event.get("event") == "successful_wall_operation"
-    )
+    operation = next(event for event in events if event.get("event") == "successful_wall_operation")
     before = []
     for event in events:
         if event is operation:
             break
-        if "state" in event and (
-            ("step" in event) or event.get("event") == "trigger_change"
-        ):
+        if "state" in event and (("step" in event) or event.get("event") == "trigger_change"):
             before.append(event["state"])
     clocks = []
     launched = False
@@ -226,9 +213,7 @@ def flight(events, steps):
     )
     max_gap = max([boundary_clock - clocks[-1], *(b - a for a, b in pairwise(clocks))])
     need(
-        same(operation["index"], 12)
-        and same(operation["shot"], 1)
-        and same(operation["sequence"], 1),
+        same(operation["index"], 12) and same(operation["shot"], 1) and same(operation["sequence"], 1),
         "wrong switch operation provenance",
     )
     return first, max_gap, hp
@@ -251,12 +236,8 @@ def relative_timing(source_state, steps, operation_state):
 
 
 def target(events, final, first, owner):
-    contacts = [
-        event for event in events if event.get("event") == "weapon_wall_contacts"
-    ]
-    operations = [
-        event for event in events if event.get("event") == "successful_wall_operation"
-    ]
+    contacts = [event for event in events if event.get("event") == "weapon_wall_contacts"]
+    operations = [event for event in events if event.get("event") == "successful_wall_operation"]
     changes = [event for event in events if event.get("event") == "trigger_change"]
     need(
         len(contacts) == len(operations) == len(changes) == 1,
@@ -299,8 +280,7 @@ def target(events, final, first, owner):
         pilot = snapshot["xl_pilot"]
         need(
             all(
-                same(pilot["doorways"][str(i)]["type"], 4)
-                and same(pilot["doorways"][str(i)]["state"], 0)
+                same(pilot["doorways"][str(i)]["type"], 4) and same(pilot["doorways"][str(i)]["state"], 0)
                 for i in (201, 202)
             ),
             "gates 201/202 not OPEN",
@@ -341,14 +321,10 @@ def warm(root, engine, source_path, quad_path, guard_path, blue_path):
         "not fresh actual guard255 continuation",
     )
     expected = restored(prior["state"])
-    expected["combat_observation"]["tracked_objects"] = steps[0]["state"][
-        "combat_observation"
-    ]["tracked_objects"]
+    expected["combat_observation"]["tracked_objects"] = steps[0]["state"]["combat_observation"]["tracked_objects"]
     need(same(steps[0]["state"], expected), "guard255 save cold-load mismatch")
     first, max_gap, _hp = flight(events, steps)
-    operation = next(
-        event for event in events if event.get("event") == "successful_wall_operation"
-    )
+    operation = next(event for event in events if event.get("event") == "successful_wall_operation")
     relative_timing(prior["state"], steps, operation["state"])
     observed = steps[15]["state"]["combat_observation"]
     target(
@@ -366,8 +342,7 @@ def warm(root, engine, source_path, quad_path, guard_path, blue_path):
         and history[0]["sha256"] == sha(save(root, history[0]["file"]))
         and same(history[0]["state"], steps[1859]["state"])
         and receipt["checkpoints"]["7"]["sha256"] == history[0]["sha256"]
-        and sha(save(root, receipt["checkpoints"]["7"]["file"]))
-        == history[0]["sha256"],
+        and sha(save(root, receipt["checkpoints"]["7"]["file"])) == history[0]["sha256"],
         "settled versioned save invalid",
     )
     settled_observation(history[0]["state"])
@@ -377,9 +352,7 @@ def warm(root, engine, source_path, quad_path, guard_path, blue_path):
 
 
 def cold(root, engine, warm_path, source_path, quad_path, guard_path, blue_path):
-    previous, saved = warm(
-        warm_path.parent, engine, source_path, quad_path, guard_path, blue_path
-    )
+    previous, saved = warm(warm_path.parent, engine, source_path, quad_path, guard_path, blue_path)
     receipt, plan, final, events, _steps = bundle("cold", root, engine)
     need(
         plan["resume_checkpoint"] == saved["file"]
@@ -407,8 +380,7 @@ def cold_persistence(final, source_state):
         need(same(final[key], source_state[key]), f"cold persistent {key} differs")
     expected_rng = dict(source_state["simulation_rng"], call_count=0)
     need(
-        same(final["game_time_raw"], source_state["game_time_raw"])
-        and same(final["simulation_rng"], expected_rng),
+        same(final["game_time_raw"], source_state["game_time_raw"]) and same(final["simulation_rng"], expected_rng),
         "cold clock/RNG persistence differs",
     )
     excluded = {"operation_counts", "operation_sequence", "trigger_activated"}
