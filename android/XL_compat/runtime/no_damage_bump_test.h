@@ -93,10 +93,11 @@ static void no_damage_bump_test(const xl_compat::Inventory &source, int segment)
 	auto neutral = source;
 	if (neutral.level_version >= 21) neutral.segments[segment].properties &= ~xl_compat::segment_no_damage;
 	else neutral.segments[segment].function = 0;
+	const bool active_xl = xl_level_extensions_active() != 0;
 	xl_test_bind_no_damage(neutral);
-	ordinary_nonphysical_bump_controls(true, false);
+	ordinary_nonphysical_bump_controls(active_xl, false);
 	xl_test_bind_no_damage(source);
-	ordinary_nonphysical_bump_controls(true, true);
+	ordinary_nonphysical_bump_controls(active_xl, true);
 	for (auto type : { OBJ_CLUTTER, OBJ_PLAYER }) {
 		const int id = type == OBJ_PLAYER ? (Player_num + 1) % MAX_PLAYERS : 0;
 		const int other_index = obj_create(type, id, segment, &ConsoleObject->pos, &ConsoleObject->orient,
