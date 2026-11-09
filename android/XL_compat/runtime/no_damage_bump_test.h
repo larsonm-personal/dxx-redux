@@ -166,6 +166,7 @@ static void ordinary_bump_boss_scope_controls(bool xl, bool protected_profile)
 	const auto saved_player_state = Players[Player_num];
 	const auto saved_robot = Robot_info[0];
 	const auto saved_cheats = cheats;
+	const auto saved_frame = FrameTime;
 	const int saved_mode = Game_mode, saved_difficulty = Difficulty_level, saved_dead = Player_is_dead, saved_endlevel = Endlevel_sequence;
 	const auto saved_delay = collide_get_collision_delay_last_play_time();
 	unsigned saved_rng = 0;
@@ -175,6 +176,7 @@ static void ordinary_bump_boss_scope_controls(bool xl, bool protected_profile)
 	                             &vmd_identity_matrix, F1_0, CT_NONE, MT_PHYSICS, RT_NONE);
 	require(index >= 0, "cannot allocate boss-scope clutter control");
 	auto &other = Objects[index];
+	FrameTime = F1_0 / 60;
 	cheats.monsterdamage = 0;
 	for (const bool multiplayer : { false, true })
 		for (const bool reverse : { false, true })
@@ -253,7 +255,7 @@ static void ordinary_bump_boss_scope_controls(bool xl, bool protected_profile)
 					robot.mtype.phys_info.mass = F1_0;
 					if (persistent) robot.mtype.phys_info.flags = PF_PERSISTENT;
 					robot.ctype.ai_info.behavior = AIB_NORMAL;
-					robot.ctype.ai_info.SKIP_AI_COUNT = 1000; // Keep unrelated stochastic AI scheduling outside this control
+					robot.ctype.ai_info.SKIP_AI_COUNT = 127; // Keep unrelated stochastic AI scheduling outside this control
 					unsigned before_rng = 0, after_rng = 0;
 					d_rand_get_state(&before_rng);
 					const auto before_calls = d_rand_get_call_count();
@@ -266,6 +268,7 @@ static void ordinary_bump_boss_scope_controls(bool xl, bool protected_profile)
 				}
 	obj_delete(robot_index);
 	Robot_info[0] = saved_robot;
+	FrameTime = saved_frame;
 	cheats = saved_cheats;
 	*ConsoleObject = saved_player;
 	Players[Player_num] = saved_player_state;
