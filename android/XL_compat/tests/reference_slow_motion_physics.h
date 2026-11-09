@@ -23,6 +23,15 @@ static fix slow_homing_step(fix frameTime)
 {
 #include "xl_reference_slow_homing_step.h"
 }
+static int primary_deadline(fix last, fix next, fix now, float speed)
+{
+	float s;
+#include "xl_reference_slow_primary_deadline.h"
+}
+static int flare_deadline(fix &next, fix now, float speed, bool enough)
+{
+#include "xl_reference_slow_flare_deadline.h"
+}
 struct tAILocalInfo {
 	fix pNextrimaryFire, nextSecondaryFire, timeSinceProcessed;
 };
@@ -63,6 +72,7 @@ static int slow_motion_physics(const char *path)
 	std::set<std::tuple<int, int, int, int, int, int>> ai_turns;
 	std::set<std::tuple<int, int, int, int, int, int>> omega;
 	std::set<std::tuple<int, int, int, int, int>> homing;
+	std::set<std::tuple<int, int, int, int, int, int>> deadlines;
 	while (std::getline(input, line)) {
 		std::istringstream row(line);
 		char kind;
@@ -71,7 +81,23 @@ static int slow_motion_physics(const char *path)
 		const float expected_world = profile == 0 ? 1 : profile == 1 ? 1.025f
 		                                                             : 3;
 		gameStates.gameplay.slowmo[0].fSpeed = expected_world;
-		if (kind == 'O') {
+		if (kind == 'D') {
+			int multiplayer, li, ni, epoch, enough, primary, flare, next_actual;
+			if (!(row >> multiplayer >> li >> ni >> epoch >> enough >> primary >> flare >> next_actual) ||
+			    (multiplayer != 0 && multiplayer != 1) || li < 0 || li >= 4 || ni < 0 || ni >= 8 ||
+			    (epoch != 0 && epoch != 1) || (enough != 0 && enough != 1) ||
+			    !deadlines.emplace(profile, multiplayer, li, ni, epoch, enough).second) throw std::runtime_error("Invalid/duplicate firing deadline control");
+			const fix lasts[] = { -I2X(2), -1, 0, I2X(1) };
+			const fix nexts[] = { -1, 0, 1, I2X(1) / 4, I2X(2) - 1, I2X(2), I2X(2) + 1, I2X(6) };
+			fix next = nexts[ni];
+			const auto expected_primary = multiplayer ? int(next <= 0) : primary_deadline(lasts[li], next, 0, expected_world);
+			int expected_flare;
+			if (multiplayer) {
+				expected_flare = next <= 0;
+				if (expected_flare) next = enough ? I2X(1) / 4 : I2X(2);
+			} else expected_flare = flare_deadline(next, 0, expected_world, enough);
+			if (primary != expected_primary || flare != expected_flare || next_actual != next) throw std::runtime_error("Native firing deadline differs from pinned source");
+		} else if (kind == 'O') {
 			int multiplayer, difficulty, time, charge, energy, actual_charge, actual_energy;
 			if (!(row >> multiplayer >> difficulty >> time >> charge >> energy >> actual_charge >> actual_energy) ||
 			    (multiplayer != 0 && multiplayer != 1) || difficulty < 0 || difficulty > 4 ||
@@ -269,8 +295,8 @@ static int slow_motion_physics(const char *path)
 		std::string extra;
 		if (row >> extra) throw std::runtime_error("Trailing slow-motion row data");
 	}
-	if (moves.size() != 768 || lives.size() != 144 || rotations.size() != 144 || turns.size() != 1536 || contacts.size() != 64 || ai.size() != 1584 || ai_turns.size() != 576 || omega.size() != 3840 || homing.size() != 512) throw std::runtime_error("Incomplete slow-motion source coverage");
-	std::cout << "768 native offsets/lifetimes and 144 lifetime boundary cases and 144 rotations and 1536 turn impulses and 64 contacts and 1584 AI frames and 576 AI turns, 3840 Omega steps and 512 homing orientations match pinned source\n";
+	if (moves.size() != 768 || lives.size() != 144 || rotations.size() != 144 || turns.size() != 1536 || contacts.size() != 64 || ai.size() != 1584 || ai_turns.size() != 576 || omega.size() != 3840 || homing.size() != 512 || deadlines.size() != 1024) throw std::runtime_error("Incomplete slow-motion source coverage");
+	std::cout << "768 native offsets/lifetimes and 144 lifetime boundary cases and 144 rotations and 1536 turn impulses and 64 contacts and 1584 AI frames and 576 AI turns, 3840 Omega steps and 512 homing orientations and 1024 firing deadline cases match pinned source\n";
 	return 0;
 }
 #endif

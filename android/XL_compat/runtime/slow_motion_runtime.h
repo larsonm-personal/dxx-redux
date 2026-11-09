@@ -9,6 +9,9 @@ struct ai_local;
 extern "C" {
 #endif
 void xl_slow_motion_reset(void);
+int xl_slow_motion_primary_blocked(int64_t last, int64_t next, int64_t now);
+int xl_slow_motion_flare_blocked(int64_t next, int64_t now);
+int32_t xl_slow_motion_flare_delay(int enough_energy);
 int32_t xl_slow_motion_world_time(int32_t time);
 int xl_slow_motion_ai_timers(struct ai_local *local, int secondary, int32_t time);
 void xl_slow_motion_turn_delta(const struct object *actor, int32_t *pitch, int32_t *heading);

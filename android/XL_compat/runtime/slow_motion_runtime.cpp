@@ -91,3 +91,36 @@ extern "C" int xl_slow_motion_ai_timers(ai_local *local, int secondary, int32_t 
 	if (local->time_since_processed < 256 * F1_0) local->time_since_processed += time;
 	return 1;
 }
+
+extern "C" int xl_slow_motion_primary_blocked(int64_t last, int64_t next, int64_t now)
+{
+	if (!enabled()) return next > now;
+	const float speed = state.clocks[0].speed;
+	int64_t deadline = next;
+	if (speed > 1) {
+		// Relative fixed-point intervals retain precision on Redux's 64-bit clock
+		const bool positive = next >= last;
+		const uint64_t magnitude = positive ? uint64_t(next) - uint64_t(last) : uint64_t(last) - uint64_t(next);
+		if (magnitude > uint64_t(INT32_MAX)) return 1;
+		const int64_t interval = positive ? int64_t(magnitude) : -int64_t(magnitude);
+		const float scaled = float(interval) * speed;
+		// The reference casts to fix; reject values outside that defined domain
+		if (double(scaled) > INT32_MAX || double(scaled) < INT32_MIN) return 1;
+		const auto delay = static_cast<int32_t>(scaled);
+		if ((delay > 0 && last > INT64_MAX - delay) || (delay < 0 && last < INT64_MIN - delay)) return 1;
+		deadline = last + delay;
+	}
+	// Compare remaining duration, not float absolute timestamps
+	return deadline > now && uint64_t(deadline) - uint64_t(now) < double(2 * F1_0 * speed);
+}
+extern "C" int xl_slow_motion_flare_blocked(int64_t next, int64_t now)
+{
+	if (!enabled()) return next > now;
+	return next > now && uint64_t(next) - uint64_t(now) < 2 * F1_0;
+}
+extern "C" int32_t xl_slow_motion_flare_delay(int enough_energy)
+{
+	const float speed = enabled() ? state.clocks[0].speed : 1;
+	// F2X then integer division for sufficient energy; multiply for empty energy
+	return enough_energy ? int32_t(speed * F1_0) / 4 : int32_t(speed * (2 * F1_0));
+}
