@@ -1,6 +1,6 @@
 #include "camera_object_state.h"
 #include "camera_contact.h"
-#include "gauss_random.h"
+#include "runtime/gauss_random.h"
 #include <array>
 #include <cstring>
 #include <iostream>
