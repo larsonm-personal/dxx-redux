@@ -401,6 +401,52 @@ void nonpermanent_and_classic()
 	require(boss_state(owner_a).elapsed == interval(), "classic did not mutate boss timer");
 }
 
+void unattributed_robot_kill_counters()
+{
+	for (const bool boss : { false, true })
+		for (const bool lethal : { false, true })
+			for (const int profile : { 0, 1, 2, 3, 4, 5, 6, 7, 8 }) {
+				reset();
+				GameTime64 = 20 * F1_0;
+				const int victim = boss ? owner_a : 4;
+				if (!boss) {
+					Objects[victim].type = OBJ_ROBOT;
+					Objects[victim].id = child_type;
+					Objects[victim].shields = 100 * F1_0;
+				}
+				int killer = profile == 1 ? -2 : -1;
+				if (profile == 2) killer = player_slot;
+				if (profile == 3) {
+					killer = 2;
+					Objects[killer].type = OBJ_CNTRLCEN;
+				}
+				if (profile == 4) {
+					killer = owner_b;
+					Objects[killer].id = 6;
+					Robot_info[6] = {};
+					Robot_info[6].companion = 1;
+				}
+				if (profile == 5 || profile == 6) extensions = false;
+				if (profile == 6) fixture_mission.descent_version = 1;
+				if (profile == 7) Game_mode = GM_MULTI;
+				if (profile == 8) cheats.robotskillrobots = 1;
+				Players[0].num_kills_level = 7;
+				Players[0].num_kills_total = 13;
+				const fix before = Objects[victim].shields;
+				const fix damage = lethal ? before + 1 : 1;
+				require(apply_damage_to_robot(&Objects[victim], damage, killer) == lethal &&
+				            Objects[victim].shields == before - damage && death_calls == lethal,
+				        "unattributed damage retains shield and death effects");
+				const int credited = lethal && (killer >= 0 || profile == 5 || profile == 6 || profile == 7);
+				require(Players[0].num_kills_level == 7 + credited && Players[0].num_kills_total == 13 + credited,
+				        "unattributed XL kill counter gate");
+				const bool active = extensions;
+				extensions = true;
+				require(!trigger_state(owner_a).operated && births == 0, "kill credit is independent of object-trigger operation");
+				extensions = active;
+			}
+}
+
 void robot_attacker_damage_gate()
 {
 	for (const bool boss : { false, true })
@@ -587,6 +633,10 @@ void common_damage_gates(bool age_cases = true, bool strength_cases = true)
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 2 && !std::strcmp(argv[1], "unattributed")) {
+			unattributed_robot_kill_counters();
+			return 0;
+		}
 		if (argc == 2 && !std::strcmp(argv[1], "attacker")) {
 			robot_attacker_damage_gate();
 			return 0;
@@ -604,6 +654,7 @@ int main(int argc, char **argv)
 		spawned_child_birth_and_registry();
 		definition_instance_and_zero_damage();
 		robot_attacker_damage_gate();
+		unattributed_robot_kill_counters();
 		std::cout << "boss gameplay consumer: pass\n";
 		return 0;
 	} catch (const std::exception &error) {
