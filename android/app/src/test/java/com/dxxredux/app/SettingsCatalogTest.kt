@@ -24,6 +24,8 @@ class SettingsCatalogTest {
         }
         // Navigation exposes passive target identities, never executes a chip or destructive action
         assertEquals(SettingsSections.MUSIC_CD, SettingsCatalog.search("redbook").first().section)
+        assertEquals(SettingsSections.TOUCH_ENABLED, SettingsCatalog.search("Enable touch controls").first().section)
+        assertEquals(SettingsSections.GAME_REWIND_AMOUNT, SettingsCatalog.search("Rewind amount").first().section)
         assertEquals(SettingsSections.ADVANCED_RESET, SettingsCatalog.search("Reset all controls").first().section)
     }
 

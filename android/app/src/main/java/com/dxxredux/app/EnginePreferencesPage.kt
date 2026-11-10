@@ -784,9 +784,19 @@ fun EnginePreferencesPage(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    "Rewind amount",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier =
+                        Modifier.settingsSectionTarget(
+                            SettingsSections.GAME_REWIND_AMOUNT,
+                            sectionTarget,
+                            focusContainer = true,
+                        ),
+                )
                 if (rewindSupportEnabled) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text("Rewind amount", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                     Text(
                         "Targets the first rewind point at least this far back. Actual distance snaps to saved 5 second points",
                         fontSize = 9.sp,
@@ -809,6 +819,12 @@ fun EnginePreferencesPage(
                             Text("$seconds seconds", fontSize = 10.sp)
                         }
                     }
+                } else {
+                    Text(
+                        "Enable rewind support above to change the rewind amount. Your saved amount is unchanged",
+                        fontSize = 9.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))

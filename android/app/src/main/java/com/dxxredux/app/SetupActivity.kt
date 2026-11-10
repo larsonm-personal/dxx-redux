@@ -62,6 +62,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -4540,7 +4542,9 @@ private fun SetupScreen(
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 val submenuFocus = remember { FocusRequester() }
                 LaunchedEffect(destination, shouldSeedLauncherFocus) {
-                    if (shouldSeedLauncherFocus && destination == LauncherDestination.TOUCH_CONTROLS) {
+                    if (shouldSeedLauncherFocus && destination == LauncherDestination.TOUCH_CONTROLS &&
+                        sectionTarget == null
+                    ) {
                         withFrameNanos { }
                         submenuFocus.requestFocus()
                     }
@@ -4571,19 +4575,20 @@ private fun SetupScreen(
                         var touchOverlay by remember {
                             mutableStateOf(gamePrefs.getBoolean("touch_overlay_enabled", DEFAULT_TOUCH_OVERLAY_ENABLED))
                         }
-                        Row(
-                            modifier =
-                                Modifier.settingsSectionTarget(
-                                    SettingsSections.TOUCH_ENABLED,
-                                    sectionTarget,
-                                    focusContainer = true,
-                                ),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Checkbox(checked = touchOverlay, onCheckedChange = {
-                                touchOverlay = it
-                                gamePrefs.edit().putBoolean("touch_overlay_enabled", it).apply()
-                            }, modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp).tvFocusBorder())
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = touchOverlay,
+                                onCheckedChange = {
+                                    touchOverlay = it
+                                    gamePrefs.edit().putBoolean("touch_overlay_enabled", it).apply()
+                                },
+                                modifier =
+                                    Modifier
+                                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                        .settingsSectionTarget(SettingsSections.TOUCH_ENABLED, sectionTarget)
+                                        .semantics { contentDescription = "Touch controls overlay" }
+                                        .tvFocusBorder(),
+                            )
                             Text("Touch controls overlay")
                         }
                         Text("Applies to this device", style = MaterialTheme.typography.bodySmall)
@@ -4731,7 +4736,12 @@ private fun SetupScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "${stringResource(R.string.app_brand_name)} Setup",
+                        text =
+                            when (destination) {
+                                LauncherDestination.FILES_CONTENT -> "Files & content"
+                                LauncherDestination.ABOUT -> "About"
+                                else -> "${stringResource(R.string.app_brand_name)} Setup"
+                            },
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,

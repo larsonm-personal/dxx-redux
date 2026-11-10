@@ -39,6 +39,7 @@ object SettingsSections {
     const val GAME_PILOT = "game.pilot"
     const val GAME_INTRO = "game.intro"
     const val GAME_GAMEPLAY = "game.gameplay"
+    const val GAME_REWIND_AMOUNT = "game.rewind_amount"
     const val GAME_SCREENSAVER = "game.screensaver"
     const val GAME_GUIDEBOT = "game.guidebot"
     const val GAME_HELPERS = "game.helpers"
@@ -168,7 +169,7 @@ object SettingsCatalog {
                 }
                 add(
                     LauncherDestination.TOUCH_CONTROLS,
-                    null,
+                    SettingsSections.TOUCH_ENABLED,
                     "touch.enabled",
                     "Enable touch controls",
                     "overlay",
@@ -236,7 +237,13 @@ object SettingsCatalog {
                     add(this, SettingsSections.GAME_INTRO, "game.progress", "Show progress bars", "loading")
                     add(this, SettingsSections.GAME_GAMEPLAY, "game.headlight", "Headlight off by default")
                     add(this, SettingsSections.GAME_GAMEPLAY, "game.rewind", "Enable rewind support")
-                    add(this, SettingsSections.GAME_GAMEPLAY, "game.rewind_amount", "Rewind amount", "rewind seconds")
+                    add(
+                        this,
+                        SettingsSections.GAME_REWIND_AMOUNT,
+                        "game.rewind_amount",
+                        "Rewind amount",
+                        "rewind seconds",
+                    )
                     add(this, SettingsSections.GAME_SCREENSAVER, "game.screensaver", "Screen saver after inactivity")
                     add(this, SettingsSections.GAME_GUIDEBOT, "game.guidebot", "Guidebot routing")
                     add(this, SettingsSections.GAME_GUIDEBOT, "game.guidebot_message", "Persist guidebot goal message")
