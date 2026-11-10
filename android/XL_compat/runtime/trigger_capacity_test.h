@@ -1,4 +1,83 @@
 #include "../tests/trigger_capacity_fixture.h"
+#include <chrono>
+#include <thread>
+
+static void trigger_capacity_cross(int wall);
+static std::vector<int> observed_trigger_operations;
+static int observed_exit_source = 0, observed_exit_index = -1;
+static void trigger_capacity_observe_operation(int index, int, int pre_exit)
+{
+	if (pre_exit) {
+		observed_exit_source = Current_level_num;
+		observed_exit_index = index;
+	} else require(observed_exit_index < 0, "Non-exit control reported after exit");
+	observed_trigger_operations.push_back(index);
+}
+
+static void trigger_capacity_observer_controls()
+{
+	observed_trigger_operations.clear();
+	xl_wall_trigger_set_operation_observer(trigger_capacity_observe_operation);
+	const auto wall = Walls[0];
+	std::size_t expected_count = 0;
+	for (const int index : { 63, 64, 66, 79 }) {
+		Walls[0].trigger = static_cast<sbyte>(index);
+		xl_preview_trigger_result(index, 0, 0);
+		require(observed_trigger_operations.size() == expected_count, "Duplicate preview report counted as an operation");
+		trigger_capacity_cross(0);
+		++expected_count;
+		require(observed_trigger_operations.size() == expected_count && observed_trigger_operations.back() == index && xl_preview_trigger_activated(index), "High-index wall crossing was not observed exactly once");
+		xl_preview_trigger_result(index, 0, 0);
+		require(observed_trigger_operations.size() == expected_count, "Native duplicate preview report counted as an operation");
+	}
+	trigger_capacity_cross(0);
+	require(observed_trigger_operations.size() == 4, "Debounce-rejected crossing reported a successful operation");
+	std::this_thread::sleep_for(std::chrono::milliseconds(800));
+	timer_update();
+	trigger_capacity_cross(0);
+	require(observed_trigger_operations.size() == 5 && observed_trigger_operations.back() == 79, "Repeated successful crossing was not observed exactly once");
+	FrameTime = F1_0 / 60;
+	xl_wall_trigger_frame();
+	require(observed_trigger_operations.size() == 5, "Idle frame reported an operation");
+	char save[] = "trigcap-observer.sav", description[] = "Derived observer restore";
+	stop_time();
+	require(state_save_all_sub(save, description) && state_restore_all_sub(save, 0), "Observer restore control failed");
+	require(observed_trigger_operations.size() == 5, "State restore reported a new operation");
+	Triggers[79].flags |= TF_DISABLED;
+	trigger_capacity_cross(0);
+	require(observed_trigger_operations.size() == 5, "Disabled attempt reported a successful operation");
+	Walls[0] = wall;
+	xl_wall_trigger_set_operation_observer(nullptr);
+	StartNewGame(1);
+	require(!xl_preview_trigger_activated(79), "Diagnostic activation survived a fresh level");
+	std::cout << "High-index successful operation and repeat controls passed\n";
+}
+
+static void trigger_capacity_exit_observer_control()
+{
+	observed_trigger_operations.clear();
+	observed_exit_source = 0;
+	observed_exit_index = -1;
+	StartNewGame(1);
+	require(Last_level == 2 && Current_level_num == 1, "Derived exit control lacks two levels");
+	xl_wall_trigger_set_operation_observer(trigger_capacity_observe_operation);
+	Walls[0].trigger = static_cast<sbyte>(79);
+	Triggers[79].type = TT_EXIT;
+	Triggers[79].flags = 8;
+	Triggers[79].value = 2 * F1_0;
+	Triggers[79].time = 0;
+	Triggers[79].num_links = 0;
+	trigger_capacity_cross(0);
+	require(observed_trigger_operations.size() == 1 && observed_exit_index == 79 && observed_exit_source == 1 && Current_level_num == 2, "Pre-exit operation did not preserve source before synchronous destination arrival");
+	for (int frame = 0; frame < 2; ++frame) {
+		FrameTime = F1_0 / 60;
+		xl_wall_trigger_frame();
+	}
+	require(observed_trigger_operations.size() == 1 && Current_level_num == 2, "Destination idle frame repeated departing operation");
+	xl_wall_trigger_set_operation_observer(nullptr);
+	StartNewGame(1);
+	std::cout << "Same-dispatch pre-exit source and independent destination passed\n";
+}
 
 static void write_trigger_capacity_fixture(const std::filesystem::path &root)
 {
@@ -6,6 +85,7 @@ static void write_trigger_capacity_fixture(const std::filesystem::path &root)
 	std::ifstream input(root / "close.hog", std::ios::binary);
 	const xl_compat::Bytes original{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
 	xl_compat::Bytes output{ 'D', 'H', 'F' };
+	xl_compat::Bytes second_level;
 	for (auto member : xl_compat::read_hog(original)) {
 		if (member.name == "neptunxl.rl2") {
 			member.bytes = xl_test::expand_triggers(member.bytes, DXX_XL_MAX_TRIGGERS);
@@ -46,6 +126,7 @@ static void write_trigger_capacity_fixture(const std::filesystem::path &root)
 				member.bytes.at(source.sections[1].offset + wall * 25 + 20) = uint8_t(hosts[wall]);
 			const auto blockers = xl_compat::runtime_blockers(xl_compat::inspect_level(member.bytes));
 			require(blockers.empty(), xl_compat::blocker_message(blockers).c_str());
+			second_level = member.bytes;
 		}
 		char name[13]{};
 		require(member.name.size() < sizeof(name), "Trigger fixture member name too long");
@@ -54,9 +135,14 @@ static void write_trigger_capacity_fixture(const std::filesystem::path &root)
 		for (unsigned shift = 0; shift < 32; shift += 8) output.push_back(uint8_t(member.bytes.size() >> shift));
 		output.insert(output.end(), member.bytes.begin(), member.bytes.end());
 	}
+	require(!second_level.empty(), "Derived exit control has no second source level");
+	char second_name[13] = "trigcap2.rl2";
+	output.insert(output.end(), second_name, second_name + sizeof(second_name));
+	for (unsigned shift = 0; shift < 32; shift += 8) output.push_back(uint8_t(second_level.size() >> shift));
+	output.insert(output.end(), second_level.begin(), second_level.end());
 	write_bytes((root / "trigcap.hog").string().c_str(), output);
 	std::ofstream descriptor(root / "trigcap.mn2", std::ios::binary);
-	descriptor << "d2x-name = Derived XL triggers\nnum_levels = 1\nneptunxl.rl2\n";
+	descriptor << "d2x-name = Derived XL triggers\nnum_levels = 2\nneptunxl.rl2\ntrigcap2.rl2\n";
 }
 
 static void trigger_capacity_cross(int wall)
@@ -225,6 +311,7 @@ static int trigger_capacity_test(int argc, char **argv)
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
 		require(xl_level_extensions_active() && !xl_loading_extended_triggers() && Num_triggers == 254, "Extended trigger load or transient permission failed");
+		trigger_capacity_observer_controls();
 		require(wall_trigger_index(Walls[0].trigger) == 128 && wall_trigger_index(Walls[1].trigger) == 253 && wall_trigger_index(Walls[0].controlling_trigger) == 253, "Native trigger identity narrowed");
 		route_snapshot_summary snapshot{};
 		require(level_metadata_get_canonical_route_snapshot(&snapshot) && snapshot.trigger_count == 254 && snapshot.wall_count == Num_walls, "Metadata snapshot rejected the high-trigger table");
@@ -275,6 +362,7 @@ static int trigger_capacity_test(int argc, char **argv)
 		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		require(load_base_mission("trigcap", error, sizeof(error)), error);
 		trigger_capacity_demo();
+		trigger_capacity_exit_observer_control();
 		trigger_capacity_rejections(output);
 		std::cout << "XL trigger capacity native controls passed\n";
 		return 0;
