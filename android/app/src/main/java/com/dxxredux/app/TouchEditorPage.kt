@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
@@ -260,16 +259,16 @@ private fun addFloatingZoneEdgeHits(
 @Composable
 fun TouchEditorPage(
     gameVariant: String = "d2",
+    sectionTarget: String? = null,
     onBack: () -> Unit,
 ) {
-    BackHandler(onBack = onBack)
+    val draft = rememberSettingsEditorDraft("touch.editor")
     val context = LocalContext.current
-    var touchSlots by remember { mutableStateOf(TouchLayoutSlotRepository.load(context)) }
-    var layout by remember { mutableStateOf(touchSlots.activeSlot.value) }
+    var touchSlots by draft.state("touchSlots") { mutableStateOf(TouchLayoutSlotRepository.load(context)) }
+    var layout by draft.state("layout") { mutableStateOf(touchSlots.activeSlot.value) }
     val activeSlotName = touchSlots.activeSlot.name
-    var selectedType by remember { mutableStateOf<String?>(null) }
-    var selectedIndex by remember { mutableIntStateOf(-1) }
-    var dirty by remember { mutableStateOf(false) }
+    var selectedType by draft.state("selectedType") { mutableStateOf<String?>(null) }
+    var selectedIndex by draft.state("selectedIndex") { mutableIntStateOf(-1) }
     var canvasWidth by remember { mutableFloatStateOf(1f) }
     var canvasHeight by remember { mutableFloatStateOf(1f) }
 
@@ -284,7 +283,7 @@ fun TouchEditorPage(
     var gyroRoll by remember { mutableFloatStateOf(0f) }
     var editorGyroManager by remember { mutableStateOf<GyroInputManager?>(null) }
     // Buffered ref values from calibration -- written to layout on save, not on every callback
-    val pendingRef = remember { mutableStateOf<Triple<Float, Float, Float>?>(null) }
+    val pendingRef = draft.state("pendingRef") { mutableStateOf<Triple<Float, Float, Float>?>(null) }
     val hasDiagnostics = layout.diagnostics.isNotEmpty()
     val gyroEnabled = layout.gyro.enabled
     if (hasDiagnostics && gyroEnabled) {
@@ -299,7 +298,6 @@ fun TouchEditorPage(
             }
             gm.onCalibrated = { az, pi, ro ->
                 pendingRef.value = Triple(az, pi, ro)
-                dirty = true
             }
             editorGyroManager = gm
             gm.resume()
@@ -345,12 +343,12 @@ fun TouchEditorPage(
     }
 
     // Dialogs
-    var showSlotDialog by remember { mutableStateOf(false) }
-    var showPresetPicker by remember { mutableStateOf(false) }
-    var showAddControl by remember { mutableStateOf(false) }
-    var showGlobalSettings by remember { mutableStateOf(false) }
-    var showGyroSettings by remember { mutableStateOf(false) }
-    var longPressPos by remember { mutableStateOf(Offset.Zero) } // where to place new control
+    var showSlotDialog by draft.state("showSlotDialog") { mutableStateOf(false) }
+    var showPresetPicker by draft.state("showPresetPicker") { mutableStateOf(false) }
+    var showAddControl by draft.state("showAddControl") { mutableStateOf(false) }
+    var showGlobalSettings by draft.state("showGlobalSettings") { mutableStateOf(false) }
+    var showGyroSettings by draft.state("showGyroSettings") { mutableStateOf(false) }
+    var longPressPos by draft.state("longPressPos") { mutableStateOf(Offset.Zero) } // where to place new control
     val configImportScope = rememberCoroutineScope()
 
     // SAF file picker for importing touch layouts
@@ -367,29 +365,47 @@ fun TouchEditorPage(
                 // Reload after import
                 touchSlots = TouchLayoutSlotRepository.load(context)
                 layout = touchSlots.activeSlot.value
-                dirty = false
+                pendingRef.value = null
             }
         }
 
+    val dirty =
+        layout != touchSlots.activeSlot.value ||
+            pendingRef.value?.let { (azimuth, pitch, roll) ->
+                azimuth != layout.gyro.refAzimuth || pitch != layout.gyro.refPitch || roll != layout.gyro.refRoll
+            } == true
+
     // Save helper
-    fun save() {
-        // Flush any pending gyro calibration reference into the layout before saving
-        val ref = pendingRef.value
-        if (ref != null) {
-            layout =
-                layout.copy(
-                    gyro =
-                        layout.gyro.copy(
-                            refAzimuth = ref.first,
-                            refPitch = ref.second,
-                            refRoll = ref.third,
-                        ),
-                )
-            pendingRef.value = null
+    fun save(): Boolean {
+        try {
+            // Flush any pending gyro calibration reference into the layout before saving
+            val ref = pendingRef.value
+            if (ref != null) {
+                layout =
+                    layout.copy(
+                        gyro =
+                            layout.gyro.copy(
+                                refAzimuth = ref.first,
+                                refPitch = ref.second,
+                                refRoll = ref.third,
+                            ),
+                    )
+                pendingRef.value = null
+            }
+            touchSlots = TouchLayoutSlotRepository.saveActiveLayout(context, layout)
+            return true
+        } catch (_: Exception) {
+            Toast.makeText(context, "Could not save touch layout. Please retry", Toast.LENGTH_LONG).show()
+            return false
         }
-        touchSlots = TouchLayoutSlotRepository.saveActiveLayout(context, layout)
-        dirty = false
     }
+
+    rememberSettingsEditorExit(
+        dirty = dirty,
+        onSaveAndLeave = { if (save()) onBack() },
+        onLeave = onBack,
+        mixedImmediateSaves = true,
+    )
 
     val sheetState =
         rememberBottomSheetScaffoldState(
@@ -428,7 +444,7 @@ fun TouchEditorPage(
             48.dp
         }
     val toolbarFocusRequesters = remember { List(TOUCH_EDITOR_TOOLBAR_ACTION_COUNT) { FocusRequester() } }
-    RequestLauncherControllerFocus(toolbarFocusRequesters[0], true)
+    RequestLauncherControllerFocus(toolbarFocusRequesters[0], sectionTarget == null)
 
     fun moveToolbarFocus(
         fromIndex: Int,
@@ -443,7 +459,18 @@ fun TouchEditorPage(
     fun toolbarButtonModifier(index: Int): Modifier =
         Modifier
             .focusRequester(toolbarFocusRequesters[index])
-            .onPreviewKeyEvent { event ->
+            .then(
+                when (index) {
+                    1 -> Modifier.settingsSectionTarget(SettingsSections.TOUCH_SLOTS, sectionTarget)
+                    2 -> Modifier.settingsSectionTarget(SettingsSections.TOUCH_PRESETS, sectionTarget)
+                    3 -> Modifier.settingsSectionTarget(SettingsSections.TOUCH_SETTINGS, sectionTarget)
+                    4 -> Modifier.settingsSectionTarget(SettingsSections.TOUCH_GYRO, sectionTarget)
+                    5 -> Modifier.settingsSectionTarget(SettingsSections.TOUCH_ADD, sectionTarget)
+                    6 -> Modifier.settingsSectionTarget(SettingsSections.TOUCH_EXPORT, sectionTarget)
+                    7 -> Modifier.settingsSectionTarget(SettingsSections.TOUCH_IMPORT, sectionTarget)
+                    else -> Modifier
+                },
+            ).onPreviewKeyEvent { event ->
                 val direction =
                     when (event.key) {
                         Key.DirectionLeft -> -1
@@ -484,8 +511,7 @@ fun TouchEditorPage(
                     overflow = TextOverflow.Ellipsis,
                 )
                 TextButton(onClick = {
-                    if (dirty) save()
-                    onBack()
+                    if (!dirty || save()) onBack()
                 }, modifier = toolbarButtonModifier(0)) {
                     Text("Close Editor", fontSize = 12.sp, color = Color.White)
                 }
@@ -508,8 +534,7 @@ fun TouchEditorPage(
                     Icon(Icons.Default.Add, "Add control", tint = Color.White)
                 }
                 TextButton(onClick = {
-                    save()
-                    if (!ConfigImportExport.exportTouchLayout(context)) {
+                    if (save() && !ConfigImportExport.exportTouchLayout(context)) {
                         Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
                     }
                 }, modifier = toolbarButtonModifier(6)) {
@@ -562,7 +587,6 @@ fun TouchEditorPage(
                                                             it[panelIndex] = updated
                                                         },
                                                 )
-                                            dirty = true
                                         },
                                         onDelete = {
                                             layout =
@@ -574,7 +598,6 @@ fun TouchEditorPage(
                                                 )
                                             selectedType = null
                                             selectedIndex = -1
-                                            dirty = true
                                         },
                                     )
                                 }
@@ -591,7 +614,6 @@ fun TouchEditorPage(
                                                             it[panelIndex] = updated
                                                         },
                                                 )
-                                            dirty = true
                                         },
                                         onDelete = {
                                             layout =
@@ -603,7 +625,6 @@ fun TouchEditorPage(
                                                 )
                                             selectedType = null
                                             selectedIndex = -1
-                                            dirty = true
                                         },
                                     )
                                 }
@@ -622,7 +643,6 @@ fun TouchEditorPage(
                                                             it[panelIndex] = updated
                                                         },
                                                 )
-                                            dirty = true
                                         },
                                         onDelete = {
                                             layout =
@@ -634,7 +654,6 @@ fun TouchEditorPage(
                                                 )
                                             selectedType = null
                                             selectedIndex = -1
-                                            dirty = true
                                         },
                                     )
                                 }
@@ -650,7 +669,6 @@ fun TouchEditorPage(
                                                             it[panelIndex] = updated
                                                         },
                                                 )
-                                            dirty = true
                                         },
                                         onDelete = {
                                             layout =
@@ -662,7 +680,6 @@ fun TouchEditorPage(
                                                 )
                                             selectedType = null
                                             selectedIndex = -1
-                                            dirty = true
                                         },
                                     )
                                 }
@@ -678,7 +695,6 @@ fun TouchEditorPage(
                                                             it[panelIndex] = updated
                                                         },
                                                 )
-                                            dirty = true
                                         },
                                         onDelete = {
                                             layout =
@@ -690,7 +706,6 @@ fun TouchEditorPage(
                                                 )
                                             selectedType = null
                                             selectedIndex = -1
-                                            dirty = true
                                         },
                                     )
                                 }
@@ -706,7 +721,6 @@ fun TouchEditorPage(
                                                             it[panelIndex] = updated
                                                         },
                                                 )
-                                            dirty = true
                                         },
                                         onDelete = {
                                             layout =
@@ -718,7 +732,6 @@ fun TouchEditorPage(
                                                 )
                                             selectedType = null
                                             selectedIndex = -1
-                                            dirty = true
                                         },
                                     )
                                 }
@@ -728,7 +741,6 @@ fun TouchEditorPage(
                                         control = layout.moreActions,
                                         onUpdate = { updated ->
                                             layout = layout.copy(moreActions = updated)
-                                            dirty = true
                                         },
                                     )
                                 }
@@ -875,7 +887,6 @@ fun TouchEditorPage(
                                     val dxPct = (dragAmount.x / canvasWidth) * 100f
                                     val dyPct = (dragAmount.y / canvasHeight) * 100f
                                     layout = moveControl(lay, st, si, dxPct, dyPct, canvasWidth, canvasHeight)
-                                    dirty = true
                                 }
                             }
                         },
@@ -906,38 +917,38 @@ fun TouchEditorPage(
             title = "Touch Slots",
             slotNames = touchSlots.slots.map { slot -> slot.name },
             activeIndex = touchSlots.safeActiveIndex,
-            onSelectSlot = { slotIndex ->
-                if (dirty) save()
+            onSelectSlot = selectSlot@{ slotIndex ->
+                if (dirty && !save()) return@selectSlot
                 touchSlots = TouchLayoutSlotRepository.selectSlot(context, slotIndex)
                 layout = touchSlots.activeSlot.value
+                pendingRef.value = null
                 selectedType = null
                 selectedIndex = -1
-                dirty = false
             },
             onRenameActiveSlot = { name ->
                 touchSlots = TouchLayoutSlotRepository.renameActiveSlot(context, name)
             },
-            onNewSlot = { name ->
-                if (dirty) save()
+            onNewSlot = newSlot@{ name ->
+                if (dirty && !save()) return@newSlot
                 touchSlots = TouchLayoutSlotRepository.addDefaultSlot(context, name)
                 layout = touchSlots.activeSlot.value
+                pendingRef.value = null
                 selectedType = null
                 selectedIndex = -1
-                dirty = false
             },
             onDuplicateActiveSlot = { name ->
                 touchSlots = TouchLayoutSlotRepository.duplicateActiveSlot(context, name, layout)
                 layout = touchSlots.activeSlot.value
+                pendingRef.value = null
                 selectedType = null
                 selectedIndex = -1
-                dirty = false
             },
             onDeleteActiveSlot = {
                 touchSlots = TouchLayoutSlotRepository.deleteActiveSlot(context)
                 layout = touchSlots.activeSlot.value
+                pendingRef.value = null
                 selectedType = null
                 selectedIndex = -1
-                dirty = false
             },
             onDismiss = { showSlotDialog = false },
         )
@@ -949,7 +960,6 @@ fun TouchEditorPage(
                 layout = preset
                 selectedType = null
                 selectedIndex = -1
-                dirty = true
                 showPresetPicker = false
             },
         )
@@ -978,7 +988,6 @@ fun TouchEditorPage(
                     )
                 selectedType = "stick"
                 selectedIndex = layout.sticks.lastIndex
-                dirty = true
                 showAddControl = false
                 longPressPos = Offset.Zero
             },
@@ -997,7 +1006,6 @@ fun TouchEditorPage(
                     )
                 selectedType = "button"
                 selectedIndex = layout.buttons.lastIndex
-                dirty = true
                 showAddControl = false
                 longPressPos = Offset.Zero
             },
@@ -1033,7 +1041,6 @@ fun TouchEditorPage(
                     )
                 selectedType = "radial"
                 selectedIndex = layout.radialMenus.lastIndex
-                dirty = true
                 showAddControl = false
                 longPressPos = Offset.Zero
             },
@@ -1051,7 +1058,6 @@ fun TouchEditorPage(
                     )
                 selectedType = "slider"
                 selectedIndex = layout.sliders.lastIndex
-                dirty = true
                 showAddControl = false
                 longPressPos = Offset.Zero
             },
@@ -1069,7 +1075,6 @@ fun TouchEditorPage(
                     )
                 selectedType = "diagnostic"
                 selectedIndex = layout.diagnostics.lastIndex
-                dirty = true
                 showAddControl = false
                 longPressPos = Offset.Zero
             },
@@ -1084,7 +1089,6 @@ fun TouchEditorPage(
                     )
                 selectedType = "axisRegion"
                 selectedIndex = layout.axisRegions.lastIndex
-                dirty = true
                 showAddControl = false
                 longPressPos = Offset.Zero
             },
@@ -1096,7 +1100,6 @@ fun TouchEditorPage(
             onDismiss = { showGlobalSettings = false },
             onUpdate = { updated ->
                 layout = updated
-                dirty = true
             },
         )
     }
@@ -1106,7 +1109,6 @@ fun TouchEditorPage(
             onDismiss = { showGyroSettings = false },
             onUpdate = { updated ->
                 layout = layout.copy(gyro = updated)
-                dirty = true
             },
             onRecenter = { editorGyroManager?.calibrate() },
         )
@@ -4185,24 +4187,25 @@ private fun GyroSettingsDialog(
     onUpdate: (GyroConfig) -> Unit,
     onRecenter: () -> Unit = {},
 ) {
-    var enabled by remember { mutableStateOf(gyro.enabled) }
-    var activation by remember { mutableStateOf(gyro.activation) }
-    var mode by remember { mutableStateOf(gyro.mode) }
-    var invertX by remember { mutableStateOf(gyro.invertX) }
-    var invertY by remember { mutableStateOf(gyro.invertY) }
-    var invertZ by remember { mutableStateOf(gyro.invertZ) }
-    var deadzoneX by remember { mutableFloatStateOf(gyro.deadzoneX) }
-    var deadzoneY by remember { mutableFloatStateOf(gyro.deadzoneY) }
-    var deadzoneZ by remember { mutableFloatStateOf(gyro.deadzoneZ) }
-    var maxAngleX by remember { mutableFloatStateOf(gyro.maxAngleX) }
-    var maxAngleY by remember { mutableFloatStateOf(gyro.maxAngleY) }
-    var maxAngleZ by remember { mutableFloatStateOf(gyro.maxAngleZ) }
-    var axisX by remember { mutableIntStateOf(gyro.axisX) }
-    var axisY by remember { mutableIntStateOf(gyro.axisY) }
-    var axisZ by remember { mutableIntStateOf(gyro.axisZ) }
-    var refAzimuth by remember { mutableStateOf(gyro.refAzimuth) }
-    var refPitch by remember { mutableStateOf(gyro.refPitch) }
-    var refRoll by remember { mutableStateOf(gyro.refRoll) }
+    val draft = rememberSettingsEditorDraft("touch.gyro")
+    var enabled by draft.state("enabled") { mutableStateOf(gyro.enabled) }
+    var activation by draft.state("activation") { mutableStateOf(gyro.activation) }
+    var mode by draft.state("mode") { mutableStateOf(gyro.mode) }
+    var invertX by draft.state("invertX") { mutableStateOf(gyro.invertX) }
+    var invertY by draft.state("invertY") { mutableStateOf(gyro.invertY) }
+    var invertZ by draft.state("invertZ") { mutableStateOf(gyro.invertZ) }
+    var deadzoneX by draft.state("deadzoneX") { mutableFloatStateOf(gyro.deadzoneX) }
+    var deadzoneY by draft.state("deadzoneY") { mutableFloatStateOf(gyro.deadzoneY) }
+    var deadzoneZ by draft.state("deadzoneZ") { mutableFloatStateOf(gyro.deadzoneZ) }
+    var maxAngleX by draft.state("maxAngleX") { mutableFloatStateOf(gyro.maxAngleX) }
+    var maxAngleY by draft.state("maxAngleY") { mutableFloatStateOf(gyro.maxAngleY) }
+    var maxAngleZ by draft.state("maxAngleZ") { mutableFloatStateOf(gyro.maxAngleZ) }
+    var axisX by draft.state("axisX") { mutableIntStateOf(gyro.axisX) }
+    var axisY by draft.state("axisY") { mutableIntStateOf(gyro.axisY) }
+    var axisZ by draft.state("axisZ") { mutableIntStateOf(gyro.axisZ) }
+    var refAzimuth by draft.state("refAzimuth") { mutableStateOf(gyro.refAzimuth) }
+    var refPitch by draft.state("refPitch") { mutableStateOf(gyro.refPitch) }
+    var refRoll by draft.state("refRoll") { mutableStateOf(gyro.refRoll) }
 
     AlertDialog(
         modifier = Modifier.repeatVerticalDpadFocus(useTraversalOrder = true),

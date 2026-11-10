@@ -79,7 +79,7 @@ internal fun SetupActivity.collectAccessibleButtons(): List<SetupActivity.Button
         info.getBoundsInScreen(bounds)
         if (bounds.width() > 0 && bounds.height() > 0) {
             val focused = info.isFocused || info.isAccessibilityFocused
-            info.text?.toString()?.let { t ->
+            (info.text ?: info.contentDescription)?.toString()?.let { t ->
                 if (t.isNotEmpty()) textNodes.add(TextNode(t, focused, Rect(bounds)))
             }
             if (info.isClickable || info.isCheckable) {
@@ -275,7 +275,7 @@ internal fun SetupActivity.performAccessibilityClick(
         val bounds = Rect()
         info.getBoundsInScreen(bounds)
         if (bounds.width() > 0 && bounds.height() > 0) {
-            info.text?.toString()?.let { t ->
+            (info.text ?: info.contentDescription)?.toString()?.let { t ->
                 if (t.isNotEmpty()) textNodes.add(TextNode(t, Rect(bounds)))
             }
             if (info.isClickable) clickNodes.add(ClickNode(id, Rect(bounds)))
