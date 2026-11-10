@@ -1,5 +1,6 @@
 #include "camera_object_state.h"
 #include "camera_contact.h"
+#include "runtime/gauss_random.h"
 #include <array>
 #include <cstring>
 #include <iostream>
@@ -419,6 +420,13 @@ int RandShort()
 #include "xl_reference_camera_gauss.h"
 void controls()
 {
+	for (int draw = 0; draw <= SHORT_RAND_MAX; ++draw) {
+		random_values = { draw, 0, 0 };
+		random_calls = 0;
+		const int expected = SRandShort();
+		if (xl_gauss_signed_draw(draw, 1) != expected || xl_gauss_signed_draw(draw, 0) != draw - 16384 || random_calls != 1)
+			throw std::runtime_error("Ordinary Gauss signed draw differs from pinned source or classic profile");
+	}
 	unsigned cases = 0;
 	for (int frame : { 512, 546, 1092, 3276, 6553, 65536 })
 		for (int skip : { 0, 1, 9, 10, 59, 60, 119, 120, 126 })
