@@ -1,0 +1,102 @@
+{
+    "initial_level": 7,
+    "checkpoint_expect": {
+        "current_level_num": 7,
+        "position.segment": 457,
+        "player_dead": false,
+        "player.cloaked": true,
+        "player.has_red_key": false,
+        "player.has_blue_key": false,
+        "player.has_gold_key": false,
+        "player.robots_killed_level": 1,
+        "cheats_enabled": false,
+        "player.invulnerable": false
+    },
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "position.segment": 457,
+                "player.cloaked": true,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 1,
+                "level_scene.powerups": {
+                    "contains_object": {
+                        "object": 51,
+                        "id": 5,
+                        "segment": 424
+                    }
+                },
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.invulnerable": false
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 427,
+            "side": 5,
+            "distance": 8
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 427,
+                "player.cloaked": true,
+                "player.has_red_key": false,
+                "level_scene.powerups": {
+                    "contains_object": {
+                        "object": 51,
+                        "id": 5,
+                        "segment": 424
+                    }
+                },
+                "player_dead": false
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -0.2
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "player.has_red_key": true,
+                "player.cloaked": true,
+                "level_scene.powerups": {
+                    "not_contains_object": {
+                        "object": 51
+                    }
+                },
+                "player_dead": false
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player.has_red_key": true,
+                "player.cloaked": true,
+                "player.has_blue_key": false,
+                "player.has_gold_key": false,
+                "player.invulnerable": false,
+                "cheats_enabled": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ],
+    "realtime": true
+}

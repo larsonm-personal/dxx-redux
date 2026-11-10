@@ -25,6 +25,7 @@ static std::ofstream *operation_trace = nullptr;
 struct TrackedCombatObject {
 	int index, signature, type, id, level;
 	unsigned load_generation;
+	int shields_raw;
 };
 static std::vector<TrackedCombatObject> tracked_combat_objects;
 static unsigned combat_load_generation = 0;
@@ -105,11 +106,12 @@ static bool combat_object_matches(const TrackedCombatObject &tracked)
 static Json combat_object_state(const TrackedCombatObject &tracked)
 {
 	const bool exists = combat_object_matches(tracked);
-	Json result = { { "object", tracked.index }, { "expected_signature", tracked.signature }, { "expected_type", tracked.type }, { "expected_id", tracked.id }, { "expected_level", tracked.level }, { "expected_load_generation", tracked.load_generation }, { "observed_level", Current_level_num }, { "observed_load_generation", combat_load_generation }, { "exists", exists }, { "actor_state", nullptr }, { "current_slot", nullptr } };
+	Json result = { { "object", tracked.index }, { "expected_signature", tracked.signature }, { "expected_type", tracked.type }, { "expected_id", tracked.id }, { "expected_level", tracked.level }, { "expected_load_generation", tracked.load_generation }, { "observed_level", Current_level_num }, { "observed_load_generation", combat_load_generation }, { "exists", exists }, { "binding_shields_raw", tracked.index >= 0 ? Json(tracked.shields_raw) : Json{} }, { "damage_since_binding_raw", nullptr }, { "actor_state", nullptr }, { "current_slot", nullptr } };
 	if (tracked.index < 0 || tracked.index > Highest_object_index) return result;
 	const auto &object = Objects[tracked.index];
 	result["current_slot"] = { { "signature", int(object.signature) }, { "type", int(object.type) }, { "id", int(object.id) } };
 	if (!exists) return result;
+	result["damage_since_binding_raw"] = int64_t(tracked.shields_raw) - int64_t(object.shields);
 	const auto velocity = object.movement_type == MT_PHYSICS ? Json{ int(object.mtype.phys_info.velocity.x), int(object.mtype.phys_info.velocity.y), int(object.mtype.phys_info.velocity.z) } : Json{};
 	result["actor_state"] = { { "segment", int(object.segnum) }, { "shields_raw", int(object.shields) }, { "flags", int(object.flags) }, { "should_be_dead", bool(object.flags & OF_SHOULD_BE_DEAD) }, { "movement_type", int(object.movement_type) }, { "position_fixed", { int(object.pos.x), int(object.pos.y), int(object.pos.z) } }, { "velocity_fixed", velocity } };
 	return result;
@@ -466,7 +468,7 @@ static int run(int argc, char **argv)
 				require(index >= 0 && index <= Highest_object_index && (Objects[index].type == OBJ_ROBOT || Objects[index].type == OBJ_CNTRLCEN) && !(Objects[index].flags & OF_SHOULD_BE_DEAD), "native combat tracking target is not a live combat object");
 				require(std::none_of(tracked_combat_objects.begin(), tracked_combat_objects.end(), [index](const auto &entry) { return entry.index == index; }), "native combat tracking contains a duplicate object index");
 				const auto &object = Objects[index];
-				tracked_combat_objects.push_back({ index, object.signature, object.type, object.id, Current_level_num, combat_load_generation });
+				tracked_combat_objects.push_back({ index, object.signature, object.type, object.id, Current_level_num, combat_load_generation, int(object.shields) });
 			}
 		}
 		if (plan.contains("resume_checkpoint")) {
@@ -568,7 +570,7 @@ static int run(int argc, char **argv)
 				const int target = step.value("face_object", -1);
 				const int interval = step.value("face_interval_ms", 200);
 				require(target == -1 || (target >= 0 && target <= Highest_object_index && (Objects[target].type == OBJ_ROBOT || Objects[target].type == OBJ_CNTRLCEN)), "native view target is not a live combat object");
-				const TrackedCombatObject aimed_target = target >= 0 ? TrackedCombatObject{ target, Objects[target].signature, Objects[target].type, Objects[target].id, Current_level_num, combat_load_generation } : TrackedCombatObject{ -1, -1, -1, -1, Current_level_num, combat_load_generation };
+				const TrackedCombatObject aimed_target = target >= 0 ? TrackedCombatObject{ target, Objects[target].signature, Objects[target].type, Objects[target].id, Current_level_num, combat_load_generation, int(Objects[target].shields) } : TrackedCombatObject{ -1, -1, -1, -1, Current_level_num, combat_load_generation, 0 };
 				require(interval >= 17 && interval <= 1000, "native view interval out of range");
 				const int aim_frames = std::max(1, (interval * fps + 999) / 1000);
 				int frame = 0;
