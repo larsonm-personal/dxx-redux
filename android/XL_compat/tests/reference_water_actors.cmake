@@ -29,3 +29,22 @@ endif()
 string(SUBSTRING "${lifetime_tail}" 0 ${lifetime_end} lifetime_fragment)
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_slow_lifetime.h"
      CONTENT "${lifetime_fragment}")
+
+# The enclosing physics file is hash-pinned by reference_speed_boost.cmake
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/physics/physics.cpp" rotation_source)
+string(FIND "${rotation_source}"
+            "turnAngles.v.coord.b = fixang (FixMul (mType.physInfo.rotVel.v.coord.z, t));"
+            rotation_start)
+if(rotation_start LESS 0)
+    message(FATAL_ERROR "Missing pinned rotation start")
+endif()
+string(SUBSTRING "${rotation_source}" ${rotation_start} -1 rotation_tail)
+string(FIND "${rotation_tail}" "if (!IsMultiGame)" rotation_start)
+string(FIND "${rotation_tail}" "mRotate = CFixMatrix::Create (turnAngles);" rotation_end)
+if(rotation_start LESS 0 OR rotation_end LESS rotation_start)
+    message(FATAL_ERROR "Missing pinned rotation boundaries")
+endif()
+math(EXPR rotation_length "${rotation_end} - ${rotation_start}")
+string(SUBSTRING "${rotation_tail}" ${rotation_start} ${rotation_length} rotation_fragment)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_slow_rotation.h"
+     CONTENT "${rotation_fragment}")
