@@ -1661,6 +1661,11 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 		if (Robot_info[robot->id].strength <= 0 || GameTime64 < created ||
 		    (uint64_t) GameTime64 - (uint64_t) created < F1_0)
 			return 0;
+		if (!(Game_mode & GM_MULTI) && !cheats.robotskillrobots &&
+		    killer_objnum >= 0 && killer_objnum <= Highest_object_index &&
+		    Objects[killer_objnum].type == OBJ_ROBOT &&
+		    !Robot_info[Objects[killer_objnum].id].companion)
+			return 0;
 	}
 #endif
 

@@ -127,8 +127,15 @@ static void blocked_crossings(const std::filesystem::path &output)
 	require(robot >= 0, "Blocked recovery allocation failed");
 	Objects[robot].shields = i2f(100);
 	GameTime64 += F1_0; // Qualify lethal recovery rather than newborn shield grace
+	const int prior_robot_cheat = cheats.robotskillrobots;
+	cheats.robotskillrobots = 0;
 	move_object_to_legal_spot(&Objects[robot]);
-	require(Objects[robot].segnum != blocked && Objects[robot].shields < 0, "Robot legal-position recovery entered blocked destination");
+	require(Objects[robot].segnum != blocked && Objects[robot].shields == i2f(100) && !(Objects[robot].flags & OF_EXPLODING),
+	        "ordinary XL recovery bypassed blocked entry or self-damage rejection");
+	cheats.robotskillrobots = 1;
+	move_object_to_legal_spot(&Objects[robot]);
+	require(Objects[robot].segnum != blocked && Objects[robot].shields < 0, "cheat-enabled recovery lost lethal damage or entered blocked destination");
+	cheats.robotskillrobots = prior_robot_cheat;
 	obj_delete(robot);
 	Segments[dry] = dry_segment;
 	std::cout << "Blocked portal " << dry << ':' << back << " -> " << blocked << ':' << side << " actual actor crossings, rays, projectiles, recovery and no-clip passed\n";

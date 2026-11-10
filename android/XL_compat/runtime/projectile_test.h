@@ -136,6 +136,54 @@ static void projectile_sound_dependency_controls()
 	std::cout << "Original silent sound mappings and missing-sample rejection passed\n";
 }
 
+static void projectile_robot_attacker_blast()
+{
+	int room = -1, guidebot = -1;
+	vms_vector center{};
+	for (int i = 0; i < Num_segments; ++i) {
+		compute_segment_center(&center, &Segments[i]);
+		if (Segments[i].objects < 0 && !get_seg_masks(&center, i, i2f(10), __FILE__, __LINE__).facemask) {
+			room = i;
+			break;
+		}
+	}
+	for (int id = 0; id < N_robot_types; ++id)
+		if (Robot_info[id].companion) {
+			guidebot = id;
+			break;
+		}
+	require(room >= 0 && guidebot >= 0 && !Robot_info[1].companion && !Robot_info[1].boss_flag,
+	        "radial attacker controls require an empty room and distinct hostile/guidebot definitions");
+	const int victim = projectile_robot(), attacker = projectile_robot();
+	for (const int actor : { victim, attacker }) {
+		obj_relink(actor, room);
+		Objects[actor].pos = center;
+	}
+	Objects[attacker].pos.z += i2f(10);
+	Objects[victim].pos.z += F1_0;
+	GameTime64 += F1_0;
+	const int old_cheat = cheats.robotskillrobots;
+	for (const int profile : { 0, 1, 2, 3 }) {
+		Objects[attacker].id = profile == 1 ? guidebot : 1;
+		cheats.robotskillrobots = profile == 3;
+		Objects[victim].shields = i2f(100);
+		Objects[victim].mtype.phys_info.velocity = {};
+		const int parent = profile == 2 ? int(ConsoleObject - Objects) : attacker;
+		auto *effect = object_create_badass_explosion(nullptr, room, &center, F1_0, VCLIP_SMALL_EXPLOSION,
+		                                              i2f(20), i2f(4), i2f(4), parent);
+		require(effect, "radial attacker control could not allocate its explosion");
+		require(Objects[victim].shields == i2f(profile == 0 ? 100 : 85),
+		        "ordinary radial robot-attacker damage crossed its source profile");
+		require(Objects[victim].mtype.phys_info.velocity.z != 0,
+		        "shield-rejected radial contact lost its earlier force");
+		obj_delete(int(effect - Objects));
+	}
+	cheats.robotskillrobots = old_cheat;
+	obj_delete(attacker);
+	obj_delete(victim);
+	std::cout << "Native hostile/guidebot/player/cheat radial damage and force controls passed\n";
+}
+
 static void projectile_robot_damage_grace()
 {
 	const int victim = projectile_robot();
@@ -502,6 +550,7 @@ static int projectile_test(int argc, char **argv)
 		StartNewGame(1);
 		Game_suspended = SUSP_ROBOTS;
 		projectile_impacts(root);
+		projectile_robot_attacker_blast();
 		projectile_robot_damage_grace();
 		projectile_combat(true);
 		projectile_physics();
