@@ -1,5 +1,6 @@
 // Detected XL requirements and runtime integration; developer previews remain explicit
 #include "preview.h"
+#include "slow_motion_runtime.h"
 #include "mission_progress.h"
 #include "../door_obstruction.h"
 #include "particle_world.h"
@@ -609,6 +610,7 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 
 extern "C" void xl_preview_clear_mission(void)
 {
+	xl_slow_motion_reset();
 	xl_disarm_clear();
 	xl_countdown_clear();
 	xl_seismic_clear();

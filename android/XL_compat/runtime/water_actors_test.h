@@ -1,3 +1,4 @@
+#include "slow_motion_physics_test.h"
 #include "water_actors_fixture.h"
 extern "C" void collide_robot_and_weapon(object *, object *, vms_vector *);
 
@@ -194,14 +195,29 @@ static int water_actors_test(int argc, char **argv)
 					}
 			obj_delete(index);
 		}
+		slow_motion_physics_controls(root);
 		require(state_restore_all_sub(earned, 0) && xl_preview_water_segment(Objects[robot].segnum) && Objects[robot].control_type == CT_AI, "wet generated robot restore failed");
+		require(xl_runtime::slow_motion_state().clocks[0].speed == 1 && xl_runtime::slow_motion_state().clocks[1].speed == 1, "Level restore retained unpersisted slow-motion state");
 		water_actor_contacts();
 		water_actor_combat(robot);
 		Players[Player_num].energy = i2f(50);
 		auto &energy = Objects[items(20)[0]];
 		collide_player_and_powerup(ConsoleObject, &energy, &energy.pos);
 		require(Players[Player_num].energy > i2f(50) && (energy.flags & OF_SHOULD_BE_DEAD), "wet generated energy did not grant the ordinary pickup reward");
+		xl_compat::SlowMotionInput slow_input;
+		slow_input.energy = 100 * F1_0;
+		slow_input.equipment = xl_compat::slow_motion_equipment;
+		slow_input.slow_pressed = true;
+		xl_runtime::slow_motion_step(slow_input);
+		slow_input.slow_pressed = false;
+		slow_input.now_ms = 26;
+		xl_runtime::slow_motion_step(slow_input);
+		require(xl_runtime::slow_motion_state().clocks[0].speed > 1, "Stock transition had no active slow state");
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_equipment_count() && !xl_preview_water_segment(22), "water actor state leaked into Redux");
+		require(xl_runtime::slow_motion_state().clocks[0].speed == 1 && xl_slow_motion_lifetime(ConsoleObject, 1092) == 1092, "XL lifetime/state leaked into classic mode");
+		vms_vector classic_offset{ 1001, -2003, 3007 }, original_offset = classic_offset;
+		xl_slow_motion_offset(ConsoleObject, &classic_offset);
+		require(!std::memcmp(&classic_offset, &original_offset, sizeof(classic_offset)), "Slow motion changed classic displacement");
 		require(state_restore_all_sub(earned, 0) && xl_preview_water_segment(22) && xl_equipment_count() == 2 && Objects[robot].id == 0 && Objects[robot].control_type == CT_AI, "water/robot/item disk restoration through Redux failed");
 		require(state_restore_all_sub(pending, 0) && equipment(0).pending && equipment(1).pending && items(20).empty() && items(23).empty(), "wet pending production did not restore");
 		FrameTime = Vclip[VCLIP_MORPHING_ROBOT].play_time / 2;
