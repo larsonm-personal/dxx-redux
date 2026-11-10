@@ -1,0 +1,37 @@
+{
+    "initial_level": 7,
+    "checkpoint_expect": {
+        "current_level_num": 7,
+        "position.segment": 1152,
+        "player_dead": false,
+        "cheats_enabled": false,
+        "player.cloaked": true,
+        "player.invulnerable": false,
+        "player.quad_lasers": true,
+        "player.has_blue_key": true,
+        "player.has_red_key": false,
+        "player.has_gold_key": false,
+        "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "player.secondary_weapon_flags": 65,
+        "player.robots_killed_level": 2,
+        "combat_observation.guided_control": null,
+        "combat_observation.owned_weapon_count": 0,
+        "xl_pilot.remaining_objectives": 1,
+        "xl_pilot.doorways.136.type": 1,
+        "xl_pilot.doorways.136.flags": 17,
+        "xl_pilot.doorways.137.type": 1,
+        "xl_pilot.doorways.137.flags": 17,
+        "xl_pilot.doorways.201.type": 4,
+        "xl_pilot.doorways.202.type": 4,
+        "xl_pilot.wall_triggers.12.operated": true,
+        "xl_pilot.wall_triggers.12.shot": 1
+    },
+    "simulation_fps": 60,
+    "realtime": false,
+    "qualification": "COLD_NOFRAME_FROM_VERSIONED_BLAST136_SAVE",
+    "steps": [
+        {
+            "action": "introspect"
+        }
+    ]
+}
