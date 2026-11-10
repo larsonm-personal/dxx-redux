@@ -1981,6 +1981,12 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 		}
 	}
 
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !cheats.robotskillrobots &&
+	    weapon->ctype.laser_info.parent_type == OBJ_ROBOT)
+		return;
+#endif
+
 	//	Put in at request of Jasen (and Adam) because the Buddy-Bot gets in their way.
 	//	MK has so much fun whacking his butt around the mine he never cared...
 	if ((Robot_info[robot->id].companion) && ((weapon->ctype.laser_info.parent_type != OBJ_ROBOT) && !cheats.robotskillrobots)) {
