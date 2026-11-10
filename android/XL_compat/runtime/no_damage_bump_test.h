@@ -2,6 +2,7 @@
 extern "C" {
 #include "automap.h"
 #include "cntrlcen.h"
+void bump_two_objects(object *, object *, int);
 }
 
 // Controlled native dispatch, not multiplayer synchronization
@@ -158,6 +159,129 @@ static void ordinary_force_damage_controls(bool xl, bool protected_profile)
 	std::cout << "Actual force-damage boundaries, zero dispatch, trainee/protection and classic/multiplayer controls passed; XL=" << xl << "\n";
 }
 
+// Only robots inherit robot-definition boss immunity in XL singleplayer
+static void ordinary_bump_boss_scope_controls(bool xl, bool protected_profile)
+{
+	const auto saved_player = *ConsoleObject;
+	const auto saved_player_state = Players[Player_num];
+	const auto saved_robot = Robot_info[0];
+	const auto saved_cheats = cheats;
+	const auto saved_frame = FrameTime;
+	const int saved_mode = Game_mode, saved_difficulty = Difficulty_level, saved_dead = Player_is_dead, saved_endlevel = Endlevel_sequence;
+	const auto saved_delay = collide_get_collision_delay_last_play_time();
+	unsigned saved_rng = 0;
+	d_rand_get_state(&saved_rng);
+	const auto saved_calls = d_rand_get_call_count();
+	const int index = obj_create(OBJ_CLUTTER, 0, ConsoleObject->segnum, &ConsoleObject->pos,
+	                             &vmd_identity_matrix, F1_0, CT_NONE, MT_PHYSICS, RT_NONE);
+	require(index >= 0, "cannot allocate boss-scope clutter control");
+	auto &other = Objects[index];
+	FrameTime = F1_0 / 60;
+	cheats.monsterdamage = 0;
+	for (const bool multiplayer : { false, true })
+		for (const bool reverse : { false, true })
+			for (const bool persistent : { false, true })
+				for (const int difficulty : { 0, 1, 4 })
+					for (const int direction : { -1, 1 }) {
+						physics_info baseline{};
+						fix baseline_shields = 0, baseline_player_shields = 0;
+						unsigned baseline_rng = 0;
+						for (const bool boss_definition : { false, true }) {
+							Game_mode = multiplayer ? GM_NETWORK : 0;
+							Difficulty_level = difficulty;
+							Player_is_dead = Endlevel_sequence = 0;
+							Players[Player_num].flags &= ~PLAYER_FLAGS_INVULNERABLE;
+							ConsoleObject->flags &= ~(OF_EXPLODING | OF_SHOULD_BE_DEAD);
+							ConsoleObject->movement_type = MT_PHYSICS;
+							ConsoleObject->mtype.phys_info = {};
+							ConsoleObject->mtype.phys_info.mass = F1_0;
+							ConsoleObject->mtype.phys_info.velocity = { direction * i2f(8), i2f(2), -i2f(1) };
+							Players[Player_num].shields = ConsoleObject->shields = i2f(100);
+							other.flags = 0;
+							other.shields = i2f(100);
+							other.mtype.phys_info = {};
+							other.mtype.phys_info.mass = F1_0;
+							if (persistent) other.mtype.phys_info.flags = PF_PERSISTENT;
+							Robot_info[0].boss_flag = boss_definition ? 1 : 0;
+							collide_set_collision_delay_last_play_time(GameTime64 - i2f(2));
+							d_srand(9012);
+							d_rand_set_call_count(0);
+							const bool protected_contact = protected_profile && xl_preview_no_damage_segment(ConsoleObject->segnum);
+							unsigned expected_rng = 0, actual_rng = 0;
+							const fix64 expected_delay = protected_contact ? GameTime64 - i2f(2) : GameTime64 - d_rand() / 2;
+							d_rand_get_state(&expected_rng);
+							d_srand(9012);
+							d_rand_set_call_count(0);
+							auto point = ConsoleObject->pos;
+							collide_two_objects(reverse ? &other : ConsoleObject, reverse ? ConsoleObject : &other, &point);
+							d_rand_get_state(&actual_rng);
+							const bool suppressed = protected_contact || persistent || (boss_definition && !(xl && !multiplayer));
+							require((other.mtype.phys_info.velocity.x == 0) == suppressed &&
+							            (other.shields == i2f(100)) == suppressed,
+							        "clutter inherited unrelated boss immunity or lost persistent/protected behavior");
+							require(actual_rng == expected_rng && d_rand_get_call_count() == unsigned(protected_contact ? 0 : 1) &&
+							            collide_get_collision_delay_last_play_time() == expected_delay,
+							        "boss-scope change altered collision sound RNG or dispatch");
+							if (!boss_definition) {
+								baseline = other.mtype.phys_info;
+								baseline_shields = other.shields;
+								baseline_player_shields = Players[Player_num].shields;
+								baseline_rng = actual_rng;
+							} else if ((xl && !multiplayer) || protected_contact || persistent) {
+								require(!std::memcmp(&baseline, &other.mtype.phys_info, sizeof(baseline)) &&
+								            baseline_shields == other.shields && baseline_player_shields == Players[Player_num].shields &&
+								            baseline_rng == actual_rng,
+								        "unrelated boss definition changed XL clutter force, rotation or damage");
+							}
+						}
+					}
+	obj_delete(index);
+	// Direct physical-pair consumer: actual bosses and persistent robots remain immovable
+	const int robot_index = obj_create(OBJ_ROBOT, 0, ConsoleObject->segnum, &ConsoleObject->pos,
+	                                   &vmd_identity_matrix, F1_0, CT_AI, MT_PHYSICS, RT_NONE);
+	require(robot_index >= 0, "cannot allocate actual boss bump control");
+	auto &robot = Objects[robot_index];
+	for (const bool multiplayer : { false, true })
+		for (const bool reverse : { false, true })
+			for (const bool boss : { false, true })
+				for (const bool persistent : { false, true }) {
+					Game_mode = multiplayer ? GM_NETWORK : 0;
+					Difficulty_level = 1;
+					Robot_info[0].boss_flag = boss ? 1 : 0;
+					ConsoleObject->mtype.phys_info = {};
+					ConsoleObject->mtype.phys_info.mass = F1_0;
+					ConsoleObject->mtype.phys_info.velocity = { i2f(8), 0, 0 };
+					robot.mtype.phys_info = {};
+					robot.mtype.phys_info.mass = F1_0;
+					if (persistent) robot.mtype.phys_info.flags = PF_PERSISTENT;
+					robot.ctype.ai_info.behavior = AIB_NORMAL;
+					robot.ctype.ai_info.SKIP_AI_COUNT = 127; // Keep unrelated stochastic AI scheduling outside this control
+					unsigned before_rng = 0, after_rng = 0;
+					d_rand_get_state(&before_rng);
+					const auto before_calls = d_rand_get_call_count();
+					bump_two_objects(reverse ? &robot : ConsoleObject, reverse ? ConsoleObject : &robot, 0);
+					d_rand_get_state(&after_rng);
+					require((robot.mtype.phys_info.velocity.x == 0) == (boss || persistent),
+					        "actual robot boss or persistent bump immunity changed");
+					require(before_rng == after_rng && before_calls == d_rand_get_call_count(),
+					        "robot boss bump control changed simulation RNG");
+				}
+	obj_delete(robot_index);
+	Robot_info[0] = saved_robot;
+	FrameTime = saved_frame;
+	cheats = saved_cheats;
+	*ConsoleObject = saved_player;
+	Players[Player_num] = saved_player_state;
+	Game_mode = saved_mode;
+	Difficulty_level = saved_difficulty;
+	Player_is_dead = saved_dead;
+	Endlevel_sequence = saved_endlevel;
+	collide_set_collision_delay_last_play_time(saved_delay);
+	d_rand_set_state(saved_rng);
+	d_rand_set_call_count(saved_calls);
+	std::cout << "Actual clutter contact boss-scope controls passed; XL=" << xl << " protected=" << protected_profile << "\n";
+}
+
 // Controlled singleplayer dispatch; this does not qualify multiplayer synchronization
 static void no_damage_bump_test(const xl_compat::Inventory &source, int segment)
 {
@@ -179,9 +303,11 @@ static void no_damage_bump_test(const xl_compat::Inventory &source, int segment)
 	xl_test_bind_no_damage(neutral);
 	ordinary_nonphysical_bump_controls(active_xl, false);
 	ordinary_force_damage_controls(active_xl, false);
+	ordinary_bump_boss_scope_controls(active_xl, false);
 	xl_test_bind_no_damage(source);
 	ordinary_nonphysical_bump_controls(active_xl, true);
 	ordinary_force_damage_controls(active_xl, true);
+	ordinary_bump_boss_scope_controls(active_xl, true);
 	for (auto type : { OBJ_CLUTTER, OBJ_PLAYER }) {
 		const int id = type == OBJ_PLAYER ? (Player_num + 1) % MAX_PLAYERS : 0;
 		const int other_index = obj_create(type, id, segment, &ConsoleObject->pos, &ConsoleObject->orient,
