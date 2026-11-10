@@ -32,6 +32,17 @@ class DeveloperCompileCiTests(unittest.TestCase):
             check_workflow(
                 workflow + "\n      - run: setup_shareware_test_data --download\n"
             )
+        for original, replacement in (
+            ("-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_BUILD_TYPE=Debug"),
+            ("-DOpenGL_GL_PREFERENCE=LEGACY", "-DOpenGL_GL_PREFERENCE=GLVND"),
+            ("--mode Release", "--mode Debug"),
+            ("xl-developer-release-probe-", "xl-developer-probe-"),
+            ("XL developer Release source compile", "XL developer source compile"),
+            ("github.head_ref == 'fix/pumo-release-probe-packet-20261108'", "true"),
+            ("github.head_ref == 'fix/pumo-accepted-robot-damage-20261108'", "true"),
+        ):
+            with self.subTest(original=original), self.assertRaises(ValueError):
+                check_workflow(workflow.replace(original, replacement))
 
     def test_build_receipt_and_negative_bindings(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -94,6 +105,18 @@ class DeveloperCompileCiTests(unittest.TestCase):
                     )
                 )
                 verify_build(build)
+            release_cache = cache.replace(
+                "CMAKE_BUILD_TYPE:STRING=Debug", "CMAKE_BUILD_TYPE:STRING=Release"
+            ) + "\nOpenGL_GL_PREFERENCE:STRING=LEGACY"
+            (build / "CMakeCache.txt").write_text(release_cache)
+            verify_build(build, "Release")
+            with self.assertRaises(ValueError):
+                verify_build(build, "Debug")
+            with self.assertRaises(ValueError):
+                (build / "CMakeCache.txt").write_text(
+                    release_cache.replace("LEGACY", "GLVND")
+                )
+                verify_build(build, "Release")
 
 
 if __name__ == "__main__":

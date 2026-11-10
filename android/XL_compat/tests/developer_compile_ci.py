@@ -21,7 +21,9 @@ def require(condition, message):
 
 def check_workflow(contents):
     require("  developer-compile:\n" in contents, "developer compile job missing")
-    job = contents.split("  developer-compile:\n", 1)[1]
+    job = contents.split("  developer-compile:\n", 1)[1].split(
+        "  developer-release-compile:\n", 1
+    )[0]
     require("    needs: stack\n" in job, "stack gate missing")
     require("if: needs.stack.outputs.run == 'true'" in job, "XL profile gate missing")
     require("runs-on: ubuntu-24.04" in job, "hosted Linux runner missing")
@@ -106,12 +108,78 @@ def check_workflow(contents):
         in job,
         "artifact identity not bound to candidate head and attempt",
     )
+    check_release_workflow(contents)
 
 
-def verify_build(build):
+def check_release_workflow(contents):
+    require("  developer-release-compile:\n" in contents, "Release job missing")
+    job = contents.split("  developer-release-compile:\n", 1)[1]
+    for token in (
+        "needs: stack",
+        "if: needs.stack.outputs.run == 'true' && "
+        "github.event_name == 'pull_request' && "
+        "(github.head_ref == 'fix/pumo-release-probe-packet-20261108' || "
+        "github.head_ref == 'fix/pumo-accepted-robot-damage-20261108')",
+        "name: XL developer Release source compile (no game assets)",
+        "runs-on: ubuntu-24.04",
+        "timeout-minutes: 45",
+        "ref: ${{ github.workflow_sha }}",
+        "sparse-checkout: .github/workflows/xl-compat.yml",
+        "sparse-checkout-cone-mode: false",
+        'test "$(git -C workflow-source rev-parse HEAD)" = "$WORKFLOW_SHA"',
+        'test "$(sha256sum .github/workflows/xl-compat.yml | cut -d\' \' -f1)" = "$EXECUTED_WORKFLOW_HASH"',
+        "ref: ${{ github.event.pull_request.head.sha || github.sha }}",
+        'test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"',
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DOPENGL=ON",
+        "-DOpenGL_GL_PREFERENCE=LEGACY",
+        "-DDXX_XL_DEVELOPER_TESTS=ON",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "--parallel 2 --target " + TARGET,
+        "--verify-build build-xl-developer-release-ci --mode Release",
+        "probe_artifact.py create",
+        '--head "$EXPECTED_HEAD"',
+        '--run-id "$PROBE_RUN_ID"',
+        '--run-attempt "$PROBE_RUN_ATTEMPT" --mode Release',
+        "path: temp/xl-developer-release-probe-packet/",
+        "if-no-files-found: error",
+        "retention-days: 1",
+        "test_developer_compile_ci.py",
+        "test_probe_artifact.py",
+        "libphysfs-dev",
+        "libsdl-mixer1.2-dev",
+        "libglew-dev",
+    ):
+        require(token in job, f"Release policy missing: {token}")
+    require(
+        job.count("persist-credentials: false") == 2, "Release checkout credentials"
+    )
+    require(
+        job.count("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02")
+        == 1,
+        "Release uploader missing",
+    )
+    require(
+        "name: xl-developer-release-probe-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_attempt }}"
+        in job,
+        "Release artifact identity missing",
+    )
+    for forbidden in (
+        "setup_shareware_test_data",
+        "run_xl_originals",
+        "--download",
+        "xvfb-run",
+        "ctest",
+        "secrets.",
+    ):
+        require(forbidden not in job, "Release runtime, fixture or secret route")
+
+
+def verify_build(build, mode="Debug"):
+    require(mode in ("Debug", "Release"), "unsupported build mode")
     cache = (build / "CMakeCache.txt").read_text()
     for key, cache_type, value in (
-        ("CMAKE_BUILD_TYPE", "STRING", "Debug"),
+        ("CMAKE_BUILD_TYPE", "STRING", mode),
         ("DXX_XL_DEVELOPER_TESTS", "BOOL", "ON"),
         ("OPENGL", "BOOL", "ON"),
         ("BUILD_TESTING", "BOOL", "OFF"),
@@ -121,6 +189,16 @@ def verify_build(build):
             re.search(rf"^{key}:{cache_type}={value}$", cache, re.MULTILINE)
             is not None,
             f"{key} must be {value}",
+        )
+    if mode == "Release":
+        require(
+            re.search(
+                r"^OpenGL_GL_PREFERENCE:(?:STRING|UNINITIALIZED)=LEGACY$",
+                cache,
+                re.MULTILINE,
+            )
+            is not None,
+            "Release OpenGL preference must be LEGACY",
         )
     commands = json.loads((build / "compile_commands.json").read_text())
     entries = [
@@ -153,11 +231,12 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--check-workflow", action="store_true")
     group.add_argument("--verify-build", type=Path)
+    parser.add_argument("--mode", choices=("Debug", "Release"), default="Debug")
     args = parser.parse_args()
     if args.check_workflow:
         check_workflow(WORKFLOW.read_text())
     else:
-        verify_build(args.verify_build)
+        verify_build(args.verify_build, args.mode)
     print("XL developer compile CI contract passed (compile only, no runtime proof)")
 
 
