@@ -6,6 +6,7 @@
 #include "pumo_ordinary_input_validation.h"
 #include "pumo_player_fvi_observer.h"
 #include "pumo_weapon_lifecycle_observer.h"
+#include "pumo_robot_damage_observer.h"
 #include "d1_in_d2/d1_in_d2.h"
 #include "newdemo.h"
 extern "C" {
@@ -43,6 +44,35 @@ static pumo_player_fvi_observer::PlanBound<xl_player_fvi_sample> bound_player_fv
 static bool bound_player_fvi_enabled = false;
 static pumo_weapon_lifecycle_observer::PlanBound<xl_weapon_lifecycle_sample> bound_weapon_lifecycle;
 static bool bound_weapon_lifecycle_enabled = false;
+static pumo_robot_damage_observer::PlanBound<xl_robot_weapon_damage_sample> bound_robot_damage;
+static bool bound_robot_damage_enabled = false;
+static void robot_damage_observed(const xl_robot_weapon_damage_sample *sample)
+{
+	bound_robot_damage.observe(*sample);
+}
+static Json robot_damage_result()
+{
+	Json events = Json::array();
+	for (unsigned index = 0; index < bound_robot_damage.count(); ++index) {
+		const auto &event = bound_robot_damage.event(index);
+		const auto &s = event.sample;
+		events.push_back({ { "frame", event.frame }, { "load_generation", event.load_generation },
+		                   { "level", s.level }, { "game_time_raw", s.game_time_raw },
+		                   { "weapon", s.weapon }, { "weapon_signature", s.weapon_signature }, { "weapon_id", s.weapon_id },
+		                   { "weapon_valid", bool(s.weapon_valid) },
+		                   { "parent_type", s.parent_type }, { "parent_object", s.parent_object }, { "parent_signature", s.parent_signature },
+		                   { "parent_actual_type", s.parent_actual_type }, { "parent_actual_signature", s.parent_actual_signature },
+		                   { "parent_valid", bool(s.parent_valid) },
+		                   { "target", s.target }, { "target_signature", s.target_signature }, { "target_id", s.target_id },
+		                   { "target_valid", bool(s.target_valid) }, { "requested_raw", s.requested_raw },
+		                   { "before_raw", s.before_raw }, { "after_raw", s.after_raw },
+		                   { "accepted_delta_raw", s.accepted_delta_raw } });
+	}
+	return { { "kind", "plan_bound_robot_weapon_damage" }, { "complete", bound_robot_damage.complete() },
+	         { "truncated", bound_robot_damage.truncated() }, { "frame_count", bound_robot_damage.frame_count() },
+	         { "frame_limit", bound_robot_damage.frame_limit() }, { "event_limit", bound_robot_damage.event_limit() },
+	         { "events", std::move(events) } };
+}
 static void weapon_lifecycle_observed(const xl_weapon_lifecycle_sample *sample)
 {
 	bound_weapon_lifecycle.observe(*sample);
@@ -551,6 +581,8 @@ static int run(int argc, char **argv)
 		bound_player_fvi_enabled = false;
 		bound_weapon_lifecycle.reset();
 		bound_weapon_lifecycle_enabled = false;
+		bound_robot_damage.reset();
+		bound_robot_damage_enabled = false;
 		weapon_wall_contact_count = 0;
 		weapon_wall_pixels_used = false;
 #endif
@@ -629,6 +661,31 @@ static int run(int argc, char **argv)
 					        "weapon lifecycle source seed invalid");
 			bound_weapon_lifecycle_enabled = true;
 		}
+		if (plan.contains("robot_damage_plan")) {
+			const auto &binding = plan.at("robot_damage_plan");
+			require(binding.is_object() && binding.at("level").is_number_integer() &&
+			            binding.at("player_object").is_number_integer() && binding.at("player_signature").is_number_integer() &&
+			            binding.at("target_object").is_number_integer() && binding.at("target_signature").is_number_integer() &&
+			            binding.at("target_id").is_number_integer() && binding.at("max_frames").is_number_unsigned() &&
+			            binding.at("max_events").is_number_unsigned(), "robot damage plan requires integer source identity and limits");
+			const int target = binding.at("target_object").get<int>();
+			require(ConsoleObject && binding.at("level") == Current_level_num &&
+			            binding.at("player_object") == Players[Player_num].objnum &&
+			            binding.at("player_signature") == ConsoleObject->signature &&
+			            target >= 0 && target <= Highest_object_index && Objects[target].type == OBJ_ROBOT &&
+			            !(Objects[target].flags & OF_SHOULD_BE_DEAD) &&
+			            binding.at("target_signature") == Objects[target].signature &&
+			            binding.at("target_id") == Objects[target].id &&
+			            binding.at("max_frames") >= 1 && binding.at("max_frames") <= 10000 &&
+			            binding.at("max_events") >= 1 && binding.at("max_events") <= 64,
+			        "robot damage source identity or limits mismatch");
+			require(bound_robot_damage.configure(Current_level_num, Players[Player_num].objnum,
+			                                      ConsoleObject->signature, OBJ_PLAYER, target, Objects[target].signature,
+			                                      Objects[target].id, combat_load_generation,
+			                                      binding.at("max_frames").get<unsigned>(), binding.at("max_events").get<unsigned>()),
+			        "robot damage configuration invalid");
+			bound_robot_damage_enabled = true;
+		}
 #endif
 		require_ordinary_secondary_input("after_resume");
 		if (plan.contains("track_objects")) {
@@ -666,6 +723,7 @@ static int run(int argc, char **argv)
 		if (observe_weapon_wall_contacts) xl_weapon_wall_set_contact_observer(weapon_wall_contact_observed);
 		if (observe_player_fvi || bound_player_fvi_enabled) xl_player_fvi_set_observer(player_fvi_observed);
 		if (bound_weapon_lifecycle_enabled) xl_weapon_lifecycle_set_observer(weapon_lifecycle_observed);
+		if (bound_robot_damage_enabled) xl_robot_weapon_damage_set_observer(robot_damage_observed);
 		if (bound_weapon_lifecycle_enabled)
 			trace << Json{ { "event", "weapon_lifecycle_source" }, { "state", weapon_lifecycle_identity_snapshot() } }.dump() << '\n';
 #endif
@@ -693,6 +751,9 @@ static int run(int argc, char **argv)
 			if (bound_weapon_lifecycle_enabled) bound_weapon_lifecycle.begin_frame(unsigned(frame_count + 1),
 				                                                                   Current_level_num, Players[Player_num].objnum, ConsoleObject ? ConsoleObject->signature : -1,
 				                                                                   combat_load_generation, GameTime64);
+			if (bound_robot_damage_enabled) bound_robot_damage.begin_frame(unsigned(frame_count + 1),
+				Current_level_num, Players[Player_num].objnum, ConsoleObject ? ConsoleObject->signature : -1,
+				combat_load_generation);
 #endif
 			do_weapon_n_item_stuff();
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
@@ -712,6 +773,7 @@ static int run(int argc, char **argv)
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 			if (bound_player_fvi_enabled) bound_player_fvi.end_frame();
 			if (bound_weapon_lifecycle_enabled) bound_weapon_lifecycle.end_frame(GameTime64);
+			if (bound_robot_damage_enabled) bound_robot_damage.end_frame();
 #endif
 			++frame_count;
 			operation_frame_source = -1;
@@ -725,6 +787,10 @@ static int run(int argc, char **argv)
 				if (bound_weapon_lifecycle_enabled) {
 					bound_weapon_lifecycle.invalidate();
 					xl_weapon_lifecycle_set_observer(nullptr);
+				}
+				if (bound_robot_damage_enabled) {
+					bound_robot_damage.invalidate();
+					xl_robot_weapon_damage_set_observer(nullptr);
 				}
 #endif
 			}
@@ -856,6 +922,10 @@ static int run(int argc, char **argv)
 						bound_weapon_lifecycle.invalidate();
 						xl_weapon_lifecycle_set_observer(nullptr);
 					}
+					if (bound_robot_damage_enabled) {
+						bound_robot_damage.invalidate();
+						xl_robot_weapon_damage_set_observer(nullptr);
+					}
 #endif
 					operation_counts.fill(0);
 					operation_count_level = Current_level_num;
@@ -907,6 +977,11 @@ static int run(int argc, char **argv)
 			trace.flush();
 			require(bound_weapon_lifecycle.valid(), "weapon lifecycle observation invalid or truncated");
 		}
+		if (bound_robot_damage_enabled) {
+			trace << Json{ { "event", "robot_weapon_damage" }, { "result", robot_damage_result() } }.dump() << '\n';
+			trace.flush();
+			require(bound_robot_damage.complete(), "robot damage observation invalid or truncated");
+		}
 #endif
 #ifdef _WIN32
 		const int process = _getpid();
@@ -919,8 +994,11 @@ static int run(int argc, char **argv)
 		xl_weapon_wall_set_contact_observer(nullptr);
 		xl_player_fvi_set_observer(nullptr);
 		xl_weapon_lifecycle_set_observer(nullptr);
+		xl_robot_weapon_damage_set_observer(nullptr);
 		bound_weapon_lifecycle_enabled = false;
 		bound_weapon_lifecycle.reset();
+		bound_robot_damage_enabled = false;
+		bound_robot_damage.reset();
 		bound_player_fvi_enabled = false;
 		bound_player_fvi.reset();
 #endif
@@ -932,8 +1010,11 @@ static int run(int argc, char **argv)
 		xl_weapon_wall_set_contact_observer(nullptr);
 		xl_player_fvi_set_observer(nullptr);
 		xl_weapon_lifecycle_set_observer(nullptr);
+		xl_robot_weapon_damage_set_observer(nullptr);
 		bound_weapon_lifecycle_enabled = false;
 		bound_weapon_lifecycle.reset();
+		bound_robot_damage_enabled = false;
+		bound_robot_damage.reset();
 		bound_player_fvi_enabled = false;
 		bound_player_fvi.reset();
 #endif

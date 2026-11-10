@@ -24,6 +24,16 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+// Source receipt from the robot-weapon damage consumer, never a hit prediction.
+typedef struct xl_robot_weapon_damage_sample {
+	int level, weapon, weapon_signature, weapon_id, weapon_valid;
+	int parent_type, parent_object, parent_signature, parent_actual_type, parent_actual_signature, parent_valid;
+	int target, target_signature, target_id, target_valid;
+	int requested_raw, before_raw, after_raw;
+	long long accepted_delta_raw, game_time_raw;
+} xl_robot_weapon_damage_sample;
+void xl_robot_weapon_damage_set_observer(void (*observer)(const xl_robot_weapon_damage_sample *));
+
 typedef struct xl_weapon_wall_contact {
 	int level, object, signature, weapon_id, parent_object, parent_signature;
 	int hit_segment, hit_side, point[3];

@@ -52,6 +52,7 @@ PUBLIC_TESTS = {
     "xl_projectile_reference",
     "xl_projection_reference",
     "xl_pumo_player_fvi_observer_contract",
+    "xl_pumo_robot_damage_observer_contract",
     "xl_pumo_weapon_lifecycle_observer_contract",
     "xl_pumo_receipt_contract",
     "xl_pumo_tulev1_spawn_contract",

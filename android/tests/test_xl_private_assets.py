@@ -613,7 +613,7 @@ class XlPrivateTests(unittest.TestCase):
                 pilot.validate_inventory(changed)
 
     def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
-        self.assertEqual(len(public.PUBLIC_TESTS), 65)
+        self.assertEqual(len(public.PUBLIC_TESTS), 66)
         self.assertEqual(
             public.GPU_TESTS, {"xl_fog_gpu", "xl_fog_gpu_direct", "xl_fog_gpu_copy16_fallback", "xl_pog_gpu"}
         )
@@ -624,6 +624,7 @@ class XlPrivateTests(unittest.TestCase):
             | {
                 "xl_contact_control_flow_reference",
                 "xl_pumo_player_fvi_observer_contract",
+                "xl_pumo_robot_damage_observer_contract",
                 "xl_pumo_weapon_lifecycle_observer_contract",
                 "xl_pumo_receipt_contract",
                 "xl_pumo_tulev1_spawn_contract",
@@ -675,6 +676,7 @@ class XlPrivateTests(unittest.TestCase):
                 public.validate_registration(listing, gpu=gpu, audio=audio)
                 for name in oof_public | {
                     "xl_contact_control_flow_reference",
+                    "xl_pumo_robot_damage_observer_contract",
                     "xl_pumo_weapon_lifecycle_observer_contract",
                     "xl_pumo_player_fvi_observer_contract",
                     "xl_pumo_receipt_contract",
@@ -739,6 +741,7 @@ class XlPrivateTests(unittest.TestCase):
                     public.require_result(report, 8, gpu=gpu, audio=audio)
                 for name in oof_public | {
                     "xl_contact_control_flow_reference",
+                    "xl_pumo_robot_damage_observer_contract",
                     "xl_pumo_weapon_lifecycle_observer_contract",
                     "xl_pumo_player_fvi_observer_contract",
                     "xl_pumo_receipt_contract",
