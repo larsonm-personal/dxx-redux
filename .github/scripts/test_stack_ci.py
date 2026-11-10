@@ -278,6 +278,19 @@ class StackPolicyTests(unittest.TestCase):
                 )
             )
 
+    def test_xl_developer_engine_paths_and_renames_run_standalone(self):
+        pr = {"number": 12, "state": "open", "head": {"sha": "b" * 40}, "base": {"sha": "a" * 40}}
+        for path in ("android/XL_compat/runtime/lifecycle_test.cpp", "d2/CMakeLists.txt",
+                     "d2/main/CMakeLists.txt", "d2/main/weapon.c", "cmake/dxx-headless-targets.cmake"):
+            for file in ({"filename": path}, {"filename": "removed.txt", "previous_filename": path}):
+                with self.subTest(file=file):
+                    def fetch(url, file=file):
+                        return {"files": [file]} if "/compare/" in url else pr
+
+                    self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "xl", pr))
+        self.assertFalse(stack_ci.refresh(12, "owner/repo", lambda url: {"files": [{"filename": "README.md"}]}
+                                          if "/compare/" in url else pr, "xl", pr))
+
     def test_scripts_uncertainty_keeps_coverage(self):
         pr = {"number": 12, "state": "open", "head": {"sha": "b" * 40}, "base": {"sha": "a" * 40}, "stack": None}
         for comparison in ({}, {"files": None}, {"files": [None]}, {"files": [{"filename": "README.md"}] * 300}):

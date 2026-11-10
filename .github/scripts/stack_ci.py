@@ -51,7 +51,14 @@ SCRIPTS_PATHS = (
 )
 
 
-XL_PATHS = ("android/XL_compat/*", ".github/workflows/*", ".github/scripts/*")
+XL_PATHS = (
+    "android/XL_compat/*",
+    "d2/CMakeLists.txt",
+    "d2/main/*",
+    "cmake/*",
+    ".github/workflows/*",
+    ".github/scripts/*",
+)
 
 
 def eligible(pr):
