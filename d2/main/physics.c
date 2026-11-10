@@ -919,9 +919,10 @@ void do_physics_sim(object *obj)
 	// Source FixPosition reconstructs wall/bad-start velocity, not camera object responses
 	if (fate == HIT_OBJECT && hit_info.hit_object >= 0 && Objects[hit_info.hit_object].type == 16)
 		reconstruct_velocity = 0;
-	// XL's fluid profile reconstructs all object types after wall/bad-start hits
+	// Terminating XL wall contacts return before FixPosition, including in fluids
 	if (!speed_boost && (xl_preview_water_segment(orig_segnum) || xl_lava_segment(orig_segnum)))
-		reconstruct_velocity = (fate == HIT_WALL) || (fate == HIT_BAD_P0);
+		reconstruct_velocity = (fate == HIT_BAD_P0) ||
+			((fate == HIT_WALL) && !(obj->flags & OF_SHOULD_BE_DEAD));
 #endif
 	if (!obj_stopped && !bounced && reconstruct_velocity)
 	{	
@@ -1088,6 +1089,9 @@ void physics_turn_towards_vector(vms_vector *goal_vector, object *obj, fix rate)
 
 	if (abs(delta_p) < F1_0/16) delta_p *= 4;
 	if (abs(delta_h) < F1_0/16) delta_h *= 4;
+#ifdef DXX_XL_RUNTIME
+	xl_slow_motion_turn_delta(obj, &delta_p, &delta_h);
+#endif
 
 #ifdef WORDS_NEED_ALIGNMENT
 	if ((delta_p ^ rotvel_ptr->x) < 0) {

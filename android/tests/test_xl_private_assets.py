@@ -459,14 +459,15 @@ class XlPrivateTests(unittest.TestCase):
                 pilot.validate_inventory(changed)
 
     def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
-        self.assertEqual(len(public.PUBLIC_TESTS), 51)
+        self.assertEqual(len(public.PUBLIC_TESTS), 52)
         self.assertEqual(
             public.GPU_TESTS, {"xl_fog_gpu", "xl_fog_gpu_direct", "xl_fog_gpu_copy16_fallback", "xl_pog_gpu"}
         )
         oof_public = {"xl_oof_metadata_reference", "xl_oof_render_reference", "xl_oof_source_pins"}
         self.assertEqual(
             public.PUBLIC_TESTS - runner.FAST_TESTS,
-            oof_public | {"xl_segment_damage_reference", "xl_slow_motion_reference"},
+            oof_public
+            | {"xl_contact_control_flow_reference", "xl_segment_damage_reference", "xl_slow_motion_reference"},
         )
         self.assertEqual(len(runner.FAST_TESTS), 113)
         with tempfile.TemporaryDirectory() as temporary:
@@ -501,7 +502,7 @@ class XlPrivateTests(unittest.TestCase):
                 pin = next(test for test in listing["tests"] if test["name"] == "xl_oof_source_pins")
                 pin["command"].append("-DREFERENCE=" + str(reference))
                 public.validate_registration(listing, gpu=gpu, audio=audio)
-                for name in oof_public:
+                for name in oof_public | {"xl_contact_control_flow_reference"}:
                     for mode in ("omitted", "duplicate", "same-length-duplicate"):
                         changed = copy.deepcopy(listing)
                         selected = next(test for test in changed["tests"] if test["name"] == name)
@@ -552,7 +553,7 @@ class XlPrivateTests(unittest.TestCase):
                 self.assertEqual(public.require_result(report, 0, gpu=gpu, audio=audio), len(required))
                 with self.assertRaises(ValueError):
                     public.require_result(report, 8, gpu=gpu, audio=audio)
-                for name in oof_public:
+                for name in oof_public | {"xl_contact_control_flow_reference"}:
                     for mode in ("missing", "duplicate", "same-length-duplicate", "skipped", "failure", "error"):
                         changed = copy.deepcopy(suite)
                         selected = next(case for case in changed if case.get("name") == name)
