@@ -36,7 +36,15 @@ endif()
 include("${CMAKE_CURRENT_LIST_DIR}/pumo_player_phase.cmake")
 set(earned_save "${ENTRY}")
 set(previous_process "")
-foreach(phase switch combat cloak red_key red_door master)
+foreach(
+    phase
+    switch
+    combat
+    cloak
+    red_key
+    red_door
+    master
+    guided_inventory)
     set(OUTPUT "${owner}/${phase}")
     file(MAKE_DIRECTORY "${OUTPUT}/preview-user")
     set(input_name "tulev1-${phase}-earned-input.sav")
@@ -84,3 +92,28 @@ foreach(phase switch combat cloak red_key red_door master)
         message(FATAL_ERROR "Tulev1 early ${phase} versioned save changed")
     endif()
 endforeach()
+
+set(OUTPUT "${owner}/guided_load")
+file(MAKE_DIRECTORY "${OUTPUT}/preview-user")
+set(input_name "tulev1-guided-load-earned-input.sav")
+configure_file("${earned_save}" "${OUTPUT}/preview-user/${input_name}" COPYONLY)
+file(SHA256 "${OUTPUT}/preview-user/${input_name}" input_hash)
+file(READ "${CMAKE_CURRENT_LIST_DIR}/pumo_tulev1_early_guided_load.json" plan)
+string(JSON plan SET "${plan}" resume_checkpoint "\"${input_name}\"")
+string(JSON plan SET "${plan}" resume_sha256 "\"${input_hash}\"")
+file(WRITE "${OUTPUT}/guided_load-plan.json" "${plan}\n")
+run_pumo_player_phase(guided_load 7 7 1 0)
+string(JSON process GET "${guided_load_receipt}" process_id)
+if("${process}" STREQUAL "${previous_process}")
+    message(FATAL_ERROR "Tulev1 guided load did not use a fresh process")
+endif()
+execute_process(
+    COMMAND "${PYTHON}" "${CMAKE_CURRENT_LIST_DIR}/pumo_tulev1_early_contract.py" load "${OUTPUT}"
+            "${ENGINE}" "${owner}/guided_inventory"
+    RESULT_VARIABLE valid
+    OUTPUT_VARIABLE stdout
+    ERROR_VARIABLE stderr
+    TIMEOUT 20)
+if(NOT valid EQUAL 0)
+    message(FATAL_ERROR "Tulev1 guided inventory restored-load witness failed: ${stdout}${stderr}")
+endif()
