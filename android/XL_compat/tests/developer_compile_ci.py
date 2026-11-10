@@ -32,12 +32,35 @@ def check_workflow(contents):
     require(
         "persist-credentials: false" in job, "checkout credentials must not persist"
     )
+    require(
+        job.count("persist-credentials: false") == 2,
+        "both checkouts must drop credentials",
+    )
+    require(
+        "ref: ${{ github.workflow_sha }}" in job
+        and "sparse-checkout: .github/workflows/xl-compat.yml" in job
+        and "sparse-checkout-cone-mode: false" in job,
+        "executed workflow checkout missing",
+    )
+    require(
+        'test "$(git -C workflow-source rev-parse HEAD)" = "$WORKFLOW_SHA"' in job,
+        "executed workflow SHA not checked",
+    )
+    require(
+        'test "$(sha256sum .github/workflows/xl-compat.yml | cut -d\' \' -f1)" = "$EXECUTED_WORKFLOW_HASH"'
+        in job,
+        "merge-ref and head workflow content not compared",
+    )
     head = "${{ github.event.pull_request.head.sha || github.sha }}"
-    require(job.count(head) == 2, "candidate head must bind checkout and receipt")
+    require(
+        job.count(head) == 3, "candidate head must bind checkout, receipt and artifact"
+    )
     require(
         'test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"' in job, "head receipt missing"
     )
     require("-DDXX_XL_DEVELOPER_TESTS=ON" in job, "developer option missing")
+    require("-DCMAKE_BUILD_TYPE=Debug" in job, "debug build option missing")
+    require("test_probe_artifact.py" in job, "artifact policy tests missing")
     require("-DOPENGL=ON" in job, "production renderer option missing")
     require("-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" in job, "compile receipt missing")
     require("--parallel 2 --target " + TARGET in job, "bounded target build missing")
@@ -58,17 +81,37 @@ def check_workflow(contents):
         "ctest",
         "./build-xl-developer-ci/main/",
         "secrets.",
-        "actions/upload-artifact",
     )
     require(
         not any(token in job for token in forbidden),
         "runtime, fixture, secret or artifact route in job",
+    )
+    require(
+        job.count("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02")
+        == 1,
+        "pinned official artifact uploader missing",
+    )
+    for token in (
+        "probe_artifact.py create",
+        '--head "$EXPECTED_HEAD"',
+        '--run-id "$PROBE_RUN_ID"',
+        '--run-attempt "$PROBE_RUN_ATTEMPT"',
+        "path: temp/xl-developer-probe-packet/",
+        "if-no-files-found: error",
+        "retention-days: 1",
+    ):
+        require(token in job, f"artifact policy missing: {token}")
+    require(
+        "name: xl-developer-probe-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_attempt }}"
+        in job,
+        "artifact identity not bound to candidate head and attempt",
     )
 
 
 def verify_build(build):
     cache = (build / "CMakeCache.txt").read_text()
     for key, cache_type, value in (
+        ("CMAKE_BUILD_TYPE", "STRING", "Debug"),
         ("DXX_XL_DEVELOPER_TESTS", "BOOL", "ON"),
         ("OPENGL", "BOOL", "ON"),
         ("BUILD_TESTING", "BOOL", "OFF"),
