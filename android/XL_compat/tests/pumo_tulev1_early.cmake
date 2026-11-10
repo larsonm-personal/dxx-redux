@@ -38,8 +38,8 @@ set(earned_save "${ENTRY}")
 set(previous_process "")
 foreach(
     phase
-    switch
     combat
+    switch
     cloak
     red_key
     red_door
@@ -51,10 +51,62 @@ foreach(
     configure_file("${earned_save}" "${OUTPUT}/preview-user/${input_name}" COPYONLY)
     file(SHA256 "${OUTPUT}/preview-user/${input_name}" input_hash)
     file(READ "${CMAKE_CURRENT_LIST_DIR}/pumo_tulev1_early_${phase}.json" plan)
+    if(phase STREQUAL "combat")
+        file(READ "${PRODUCER}" sophodo_receipt)
+        string(JSON history_count LENGTH "${sophodo_receipt}" checkpoint_history)
+        math(EXPR last_history "${history_count} - 1")
+        string(
+            JSON
+            source_clock
+            GET
+            "${sophodo_receipt}"
+            checkpoint_history
+            ${last_history}
+            state
+            game_time_raw)
+        string(
+            JSON
+            source_kills
+            GET
+            "${sophodo_receipt}"
+            checkpoint_history
+            ${last_history}
+            state
+            player
+            robots_killed_level)
+        math(EXPR first_tick_clock "${source_clock} + 65536 / 60")
+        math(EXPR goal_kills "${source_kills} + 1")
+        string(
+            JSON
+            plan
+            SET
+            "${plan}"
+            steps
+            8
+            expect
+            game_time_raw
+            gte
+            "${first_tick_clock}")
+        string(
+            JSON
+            plan
+            SET
+            "${plan}"
+            steps
+            11
+            expect
+            "player.robots_killed_level"
+            gte
+            "${goal_kills}")
+    endif()
     string(JSON plan SET "${plan}" resume_checkpoint "\"${input_name}\"")
     string(JSON plan SET "${plan}" resume_sha256 "\"${input_hash}\"")
     file(WRITE "${OUTPUT}/${phase}-plan.json" "${plan}\n")
-    if(phase STREQUAL "cloak")
+    if(phase STREQUAL "combat")
+        set(expected_steps 18)
+    elseif(phase STREQUAL "switch")
+        set(expected_steps 194)
+    elseif(phase STREQUAL "cloak")
         set(expected_steps 7)
     elseif(phase STREQUAL "master")
         set(expected_steps 12)

@@ -5,11 +5,15 @@ import json
 import re
 import stat
 import sys
+from itertools import pairwise
 from pathlib import Path
 
 
 class WitnessError(ValueError):
     pass
+
+
+EARLY_ORDER = ("combat", "switch", "cloak", "red_key", "red_door", "master", "guided_inventory")
 
 
 def need(ok, message):
@@ -46,20 +50,14 @@ def trace(path):
 
 def checkpoint(root, name):
     need(
-        type(name) is str
-        and re.fullmatch(r"[A-Za-z0-9_.-]+\.sav", name)
-        and name not in (".", ".."),
+        type(name) is str and re.fullmatch(r"[A-Za-z0-9_.-]+\.sav", name) and name not in (".", ".."),
         "unsafe save name",
     )
     return root / "preview-user" / name
 
 
 def state_at(events, index):
-    found = [
-        event["state"]
-        for event in events
-        if event.get("step") == index and "state" in event
-    ]
+    found = [event["state"] for event in events if event.get("step") == index and "state" in event]
     need(len(found) == 1, f"step {index} state missing or duplicate")
     return found[0]
 
@@ -140,9 +138,7 @@ def bound(state):
         item["expected_id"] == 28
         and item["expected_type"] == 2
         and item["expected_level"] == item["observed_level"] == 7
-        and item["expected_load_generation"]
-        == item["observed_load_generation"]
-        == obs["load_generation"],
+        and item["expected_load_generation"] == item["observed_load_generation"] == obs["load_generation"],
         "robot256 binding invalidated",
     )
     return item
@@ -157,9 +153,7 @@ def combat_damage(pre, damaged, defeated):
         and damaged["exists"] is True
         and defeated["exists"] is False
         and defeated["actor_state"] is None
-        and pre["expected_signature"]
-        == damaged["expected_signature"]
-        == defeated["expected_signature"]
+        and pre["expected_signature"] == damaged["expected_signature"] == defeated["expected_signature"]
         and pre["expected_load_generation"]
         == damaged["expected_load_generation"]
         == defeated["expected_load_generation"]
@@ -184,7 +178,24 @@ def combat_damage(pre, damaged, defeated):
 
 
 def combat_trace_witness(events):
-    actions = ["assert", "send_button", "wait_for", "wait_for", "send_button"]
+    actions = (
+        ["assert"]
+        + ["send_axis"] * 5
+        + [
+            "pose_view",
+            "assert",
+            "wait_for",
+            "introspect",
+            "send_button",
+            "wait_for",
+            "send_button",
+            "introspect",
+            "wait_ms",
+            "introspect",
+            "assert",
+            "set_debug",
+        ]
+    )
     need(
         all(
             any(e.get("step") == index and e.get("action") == action for e in events)
@@ -192,14 +203,53 @@ def combat_trace_witness(events):
         ),
         "robot256 combat action trace incomplete",
     )
-    # Trace snapshots precede their numbered action. Step 3 sees first damage
-    # from step 2; step 4 sees defeat from step 3.
-    pre, damaged, defeated = (bound(state_at(events, n)) for n in (0, 3, 4))
-    combat_damage(pre, damaged, defeated)
+    # All state-bearing step records are PRE action. The prefire wait is one tick;
+    # the 3-second goal has a hard maximum of 180 additional frames.
+    source = state_at(events, 0)
+    origin = source["game_time_raw"]
+    prefire = origin + 65536 // 60
+    at_goal = state_at(events, 12)["game_time_raw"]
+    elapsed = at_goal - origin
+    goal_frames = next((n for n in range(1, 182) if n * 65536 // 60 == elapsed), None)
     need(
-        state_at(events, 4)["player"]["robots_killed_level"]
-        == state_at(events, 0)["player"]["robots_killed_level"] + 1,
-        "robot256 defeat did not increment level kills",
+        all(state_at(events, n)["game_time_raw"] == origin for n in range(1, 9))
+        and all(state_at(events, n)["game_time_raw"] == prefire for n in (9, 10, 11))
+        and goal_frames is not None
+        and all(state_at(events, n)["game_time_raw"] == at_goal for n in (13, 14))
+        and all(state_at(events, n)["game_time_raw"] == origin + (goal_frames + 45) * 65536 // 60 for n in (15, 16, 17))
+        and all(state_at(events, n)["primary_fire"]["held"] == 0 for n in range(11))
+        and state_at(events, 11)["primary_fire"]["held"] == 0,
+        "combat PRE clock, goal bound, fire latch, or 45-frame neutral tail invalid",
+    )
+    # The fixed-view target must stay the same loaded robot during prefire and
+    # goal polling. Cadence is bounded by the protocol's 17ms face interval;
+    # death may end polling before the next aim update.
+    aims = [e for e in events if e.get("event") == "fixed_view_aim"]
+    pre_binding = bound(source)
+    need(
+        len(aims) >= 2
+        and aims[0]["game_time_raw"] == origin
+        and all(
+            a["target"] == 256
+            and a["target_state"]["expected_signature"] == pre_binding["expected_signature"]
+            and a["target_state"]["expected_load_generation"] == pre_binding["expected_load_generation"]
+            and a["target_state"]["exists"] is True
+            and origin <= a["game_time_raw"] < at_goal
+            for a in aims
+        )
+        and all(0 < b["game_time_raw"] - a["game_time_raw"] <= 3 * 65536 // 60 for a, b in pairwise(aims)),
+        "combat bound target or view-aim cadence invalid",
+    )
+    # The goal is visible only after action 11; action 12 releases the button.
+    pre, killed, removed = (bound(state_at(events, n)) for n in (0, 12, 16))
+    combat_damage(pre, killed, removed)
+    need(
+        killed["actor_state"]["shields_raw"] < 0
+        and state_at(events, 12)["primary_fire"]["held"] == 1
+        and state_at(events, 13)["primary_fire"]["held"] == 1
+        and state_at(events, 16)["primary_fire"]["held"] == 0
+        and state_at(events, 12)["player"]["robots_killed_level"] == source["player"]["robots_killed_level"] + 1,
+        "robot256 same-bound negative HP, released fire, or kill credit missing",
     )
 
 
@@ -208,11 +258,8 @@ def operations(events, expected):
     need(len(found) == len(expected), "operation count mismatch")
     for event, (index, sequence, shot) in zip(found, expected):
         need(
-            all(
-                type(event.get(field)) is int for field in ("index", "sequence", "shot")
-            )
-            and (event["index"], event["sequence"], event["shot"])
-            == (index, sequence, shot)
+            all(type(event.get(field)) is int for field in ("index", "sequence", "shot"))
+            and (event["index"], event["sequence"], event["shot"]) == (index, sequence, shot)
             and event["state"]["current_level_num"] == 7,
             "wrong native operation sequence, type, or source level",
         )
@@ -235,11 +282,7 @@ def guided_inventory_witness(events, plan):
         and "qualification" not in plan
         and "flight_claim" not in plan
         and [step.get("action") for step in plan["steps"]] == actions
-        and [
-            (plan["steps"][n].get("axis"), plan["steps"][n].get("axis_value"))
-            for n in (3, 5)
-        ]
-        == [(1, -0.2), (1, 0)]
+        and [(plan["steps"][n].get("axis"), plan["steps"][n].get("axis_value")) for n in (3, 5)] == [(1, -0.2), (1, 0)]
         and plan["steps"][1].get("segment") == 457
         and plan["steps"][1].get("side") == 4
         and plan["steps"][1].get("distance") == 8
@@ -248,8 +291,7 @@ def guided_inventory_witness(events, plan):
         and plan["steps"][7].get("field") == "android_game_request"
         and plan["steps"][7].get("value") == "quick_save"
         and all(
-            any(e.get("step") == n and e.get("action") == action for e in events)
-            for n, action in enumerate(actions)
+            any(e.get("step") == n and e.get("action") == action for e in events) for n, action in enumerate(actions)
         ),
         "guided pickup action or timing changed",
     )
@@ -262,21 +304,12 @@ def guided_inventory_witness(events, plan):
         initial["position"]["segment"] == 1149
         and staged["position"]["segment"] == moving["position"]["segment"] == 457
         and final["position"]["segment"] == 458
-        and all(
-            object140(s) == [{"object": 140, "id": 41, "segment": 458}]
-            for s in (initial, staged, moving)
-        )
+        and all(object140(s) == [{"object": 140, "id": 41, "segment": 458}] for s in (initial, staged, moving))
         and not object140(final)
         and initial["xl_pilot"]["wall_triggers"]["6"]["operated"] is True
-        and all(
-            initial["xl_pilot"]["doorways"][str(w)]["type"] == 4
-            for w in (55, 56, 57, 58)
-        )
-        and final["xl_pilot"]["remaining_objectives"]
-        == initial["xl_pilot"]["remaining_objectives"]
-        == 1
-        and final["xl_pilot"]["operation_sequence"]
-        == initial["xl_pilot"]["operation_sequence"],
+        and all(initial["xl_pilot"]["doorways"][str(w)]["type"] == 4 for w in (55, 56, 57, 58))
+        and final["xl_pilot"]["remaining_objectives"] == initial["xl_pilot"]["remaining_objectives"] == 1
+        and final["xl_pilot"]["operation_sequence"] == initial["xl_pilot"]["operation_sequence"],
         "guided object identity, consumption, entrance, or objective invalid",
     )
     before, after = initial["player"], final["player"]
@@ -288,9 +321,7 @@ def guided_inventory_witness(events, plan):
         and ammo0[6] == 0
         and ammo1[6] == 4
         and all(ammo0[n] == ammo1[n] for n in range(10) if n != 6)
-        and type(before["secondary_weapon_flags"])
-        is type(after["secondary_weapon_flags"])
-        is int
+        and type(before["secondary_weapon_flags"]) is type(after["secondary_weapon_flags"]) is int
         and before["secondary_weapon_flags"] == 1
         and after["secondary_weapon_flags"] == 65
         and before["secondary_weapon"] == after["secondary_weapon"] == 0
@@ -299,13 +330,8 @@ def guided_inventory_witness(events, plan):
             and s["secondary_weapon_definition"]["weapon_id"] == 8
             for s in (initial, final)
         )
-        and all(
-            s["combat_observation"]["guided_control"] is None for s in (initial, final)
-        )
-        and all(
-            s["secondary_fire"]["count"] == s["secondary_fire"]["held"] == 0
-            for s in (initial, final)
-        ),
+        and all(s["combat_observation"]["guided_control"] is None for s in (initial, final))
+        and all(s["secondary_fire"]["count"] == s["secondary_fire"]["held"] == 0 for s in (initial, final)),
         "guided secondary inventory, selection, or fire witness invalid",
     )
     for field in (
@@ -330,18 +356,216 @@ def guided_inventory_witness(events, plan):
 
 def guided_receipt_controls(result):
     need(
-        type(result["fixed_view_aim_events"]) is int
-        and result["fixed_view_aim_events"] == 0,
+        type(result["fixed_view_aim_events"]) is int and result["fixed_view_aim_events"] == 0,
         "guided pickup used an undisclosed fixed-view aim",
     )
 
 
 def earned_predecessor(prior, result):
     need(
-        re.fullmatch(r"[0-9a-f]{64}", prior["sha256"])
-        and prior["sha256"] == result["resume_sha256"],
+        re.fullmatch(r"[0-9a-f]{64}", prior["sha256"]) and prior["sha256"] == result["resume_sha256"],
         "phase did not resume its immediate earned predecessor",
     )
+
+
+def phase_predecessor(name, order):
+    need(tuple(order) == EARLY_ORDER and name in EARLY_ORDER, "unsafe switch-first or unknown early phase order")
+    index = EARLY_ORDER.index(name)
+    return EARLY_ORDER[index - 1] if index else None
+
+
+def combat_setup(steps):
+    need(
+        len(steps) == 18
+        and steps[1:6] == [{"action": "send_axis", "axis": axis, "axis_value": 0.0} for axis in range(5)]
+        and steps[6]
+        == {
+            "action": "pose_view",
+            "segment": 449,
+            "position_fixed": [-30317922, 12828834, -11607676],
+            "pitch": 0,
+            "bank": 0,
+            "heading": 0,
+        }
+        and steps[8]["action"] == "wait_for"
+        and steps[8]["face_object"] == 256
+        and steps[8]["face_interval_ms"] == steps[11]["face_interval_ms"] == 17
+        and steps[8]["timeout_ms"] == 17
+        and steps[11]["action"] == "wait_for"
+        and steps[11]["face_object"] == 256
+        and steps[11]["timeout_ms"] == 3000
+        and steps[11]["expect"]["combat_observation.tracked_objects"]["contains_object"]
+        == {"object": 256, "expected_id": 28, "exists": True, "actor_state": {"shields_raw": {"lte": -1}}}
+        and steps[11]["expect"]["player_dead"] is False
+        and steps[10] == {"action": "send_button", "button": 100, "held": 1}
+        and steps[12] == {"action": "send_button", "button": 100, "held": 0}
+        and steps[14] == {"action": "wait_ms", "ms": 750}
+        and steps[17]
+        == {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save",
+        },
+        "unsafe guard setup or nonordinary combat input",
+    )
+
+
+def cold_boundary(saved, restored):
+    """Check durable save state, not process-local input or observer counters."""
+    need(
+        saved["position"] == restored["position"]
+        and saved["game_time_raw"] == restored["game_time_raw"]
+        and saved["level_scene"] == restored["level_scene"]
+        and saved["simulation_rng"]["state_available"] is True
+        and restored["simulation_rng"]["state_available"] is True
+        and saved["simulation_rng"]["state"] == restored["simulation_rng"]["state"]
+        and restored["simulation_rng"]["call_count"] == 0
+        and saved["xl_pilot"]["wall_triggers"] == restored["xl_pilot"]["wall_triggers"]
+        and saved["xl_pilot"]["doorways"] == restored["xl_pilot"]["doorways"]
+        and saved["xl_pilot"]["remaining_objectives"] == restored["xl_pilot"]["remaining_objectives"],
+        "earned checkpoint did not cold-restore durable scene, gates, position, time, or RNG",
+    )
+    fields = (
+        "shields",
+        "energy",
+        "vulcan_ammo",
+        "lives",
+        "score",
+        "primary_weapon",
+        "primary_weapon_flags",
+        "laser_level",
+        "quad_lasers",
+        "secondary_ammo",
+        "secondary_weapon",
+        "secondary_weapon_flags",
+        "robots_killed_level",
+        "has_blue_key",
+        "has_red_key",
+        "has_gold_key",
+        "cloaked",
+        "invulnerable",
+    )
+    need(
+        all(saved["player"][field] == restored["player"][field] for field in fields),
+        "earned checkpoint did not cold-restore player inventory or resources",
+    )
+
+
+def powerup_map(state):
+    powerups = state["level_scene"]["powerups"]
+    found = {p["object"]: (p["id"], p["segment"]) for p in powerups}
+    need(len(found) == len(powerups), "duplicate powerup object identity")
+    return found
+
+
+def guard_drops(pre, post):
+    before, after = powerup_map(pre), powerup_map(post)
+    need(
+        all(after.get(obj) == identity for obj, identity in before.items())
+        and post["player"]["vulcan_ammo"] == pre["player"]["vulcan_ammo"]
+        and post["player"]["primary_weapon_flags"] == pre["player"]["primary_weapon_flags"],
+        "guard clear removed an original item or changed inherited primary ammo or weapons",
+    )
+    drops = {obj: identity for obj, identity in after.items() if obj not in before}
+    need(
+        all(identity[0] == 22 and identity[1] == 450 for identity in drops.values()),
+        "guard clear produced an unverified item",
+    )
+    return drops
+
+
+def switch_drops(pre, post, drops):
+    before, after = powerup_map(pre), powerup_map(post)
+    need(
+        all(after.get(obj) == identity for obj, identity in before.items() if obj not in drops)
+        and not (set(after) - set(before))
+        and all(after[obj][0] == 22 for obj in drops if obj in after),
+        "switch phase lost an original item or added an unearned item",
+    )
+    consumed = set(drops) - set(after)
+    # Stock d2/main/powerup.h VULCAN_AMMO_AMOUNT is 49*2.
+    need(
+        post["player"]["vulcan_ammo"] == pre["player"]["vulcan_ammo"] + 98 * len(consumed),
+        "Vulcan ammo differs from exactly the earned consumed drop count",
+    )
+    return consumed
+
+
+def switch_shot_witness(events):
+    born = state_at(events, 10)["combat_observation"]["owned_weapons"]
+    ids = {(w["object"], w["signature"]) for w in born}
+    need(
+        len(born) == len(ids) == 2
+        and all(
+            w["weapon_id"] == 0 and w["parent_object"] == 0 and w["parent_signature"] == 0 and w["parent_type"] == 4
+            for w in born
+        ),
+        "single ordinary owned two-bolt Laser0 pulse missing",
+    )
+    contacts = [event["result"] for event in events if event.get("event") == "weapon_wall_contacts"]
+    need(len(contacts) == 1, "ordinary wall contact observer missing")
+    result = contacts[0]
+    hits = result["contacts"]
+    need(
+        result["truncated"] is False
+        and result["contact_count_lower_bound"] == len(hits) == 2
+        and all(
+            (hit["object"], hit["signature"]) in ids
+            and hit["parent_object"] == hit["parent_signature"] == 0
+            and hit["weapon_id"] == 0
+            and hit["hit_segment"] == 457
+            and hit["hit_side"] == 5
+            and hit["wall"] == 59
+            and hit["trigger"] == 6
+            and (hit["overlay_raw"] & 16383) > 0
+            for hit in hits
+        )
+        and sum(hit["blew_up"] == 1 for hit in hits) == 1,
+        "owned Laser0 switch contact or opaque overlay operation missing",
+    )
+
+
+def switch_trace_witness(events, plan, drops):
+    """PRE snapshots bind the finite pulse, drops, and live-actor identity."""
+    steps = plan["steps"]
+    source = state_at(events, 0)
+    bound = source["combat_observation"]["tracked_objects"]
+    need(
+        len(bound) == 1 and bound[0]["object"] == 305 and bound[0]["expected_id"] == 44 and bound[0]["exists"] is True,
+        "fresh switch source must bind the live adjacent actor",
+    )
+    signature = bound[0]["expected_signature"]
+    frame = held = firing = 0
+    for index, action in enumerate(steps):
+        state = state_at(events, index)
+        need(
+            state["game_time_raw"] == source["game_time_raw"] + frame * 65536 // 60
+            and state["primary_fire"]["held"] == held,
+            f"switch PRE clock or Controls mismatch at {index}",
+        )
+        if index >= 7:
+            actor = state["combat_observation"]["tracked_objects"]
+            need(
+                state["position"]["segment"] == 450
+                and state["player_dead"] is False
+                and state["player"]["shields"] > 0
+                and state["player"]["shields"] <= source["player"]["shields"]
+                and state["player"]["energy"] <= source["player"]["energy"]
+                and len(actor) == 1
+                and actor[0]["object"] == 305
+                and actor[0]["expected_signature"] == signature
+                and actor[0]["exists"] is True
+                and actor[0]["actor_state"]["shields_raw"] > 0,
+                f"switch observed segment/life/resource status at {index}",
+            )
+            switch_drops(source, state, drops)
+        if action["action"] == "send_button":
+            firing = action["held"]
+        if action["action"] == "wait_ms":
+            frame += (action["ms"] * 60 + 999) // 1000
+            held = firing
+    need(frame == 91 and held == firing == 0, "switch pulse/tail did not settle")
+    switch_shot_witness(events)
 
 
 def restored_inventory(saved, restored):
@@ -378,14 +602,9 @@ def restored_inventory(saved, restored):
         and restored["secondary_weapon_definition"]["selected_slot"] == 0
         and restored["secondary_weapon_definition"]["weapon_id"] == 8
         and restored["combat_observation"]["guided_control"] is None
-        and restored["secondary_fire"]["count"]
-        == restored["secondary_fire"]["held"]
-        == 0
-        and saved["xl_pilot"]["operation_sequence"]
-        == restored["xl_pilot"]["operation_sequence"]
-        and saved["xl_pilot"]["remaining_objectives"]
-        == restored["xl_pilot"]["remaining_objectives"]
-        == 1,
+        and restored["secondary_fire"]["count"] == restored["secondary_fire"]["held"] == 0
+        and saved["xl_pilot"]["operation_sequence"] == restored["xl_pilot"]["operation_sequence"]
+        and saved["xl_pilot"]["remaining_objectives"] == restored["xl_pilot"]["remaining_objectives"] == 1,
         "guided inventory did not persist on fresh load",
     )
 
@@ -419,8 +638,7 @@ def load(root, engine, guided_root):
         and result["plan_sha256"] == sha(plan_path, 1 << 20)
         and result["executable_sha256"] == sha(engine)
         and result["resume_sha256"] == plan["resume_sha256"]
-        and result["resume_sha256"]
-        == sha(checkpoint(root, plan["resume_checkpoint"]), 4 << 20)
+        and result["resume_sha256"] == sha(checkpoint(root, plan["resume_checkpoint"]), 4 << 20)
         and result["resume_sha256"] == saved["sha256"],
         "guided fresh-load input or receipt invalid",
     )
@@ -429,8 +647,8 @@ def load(root, engine, guided_root):
 
 def phase(name, root, engine, producer_path):
     steps = {
-        "switch": 8,
-        "combat": 8,
+        "combat": 18,
+        "switch": 194,
         "cloak": 7,
         "red_key": 8,
         "red_door": 8,
@@ -477,15 +695,14 @@ def phase(name, root, engine, producer_path):
         "saved resources or state differ from execution",
     )
     start_player, end_player = live(initial), live(final)
-    order = list(steps)
-    previous = order[order.index(name) - 1] if name != "switch" else None
+    previous = phase_predecessor(name, steps)
     if previous is None:
         prior = doc(producer_path)["checkpoint_history"][-1]
     else:
-        prior = doc(root.parent / previous / f"{previous}-result.json")[
-            "checkpoint_history"
-        ][0]
+        prior = doc(root.parent / previous / f"{previous}-result.json")["checkpoint_history"][0]
     earned_predecessor(prior, result)
+    if name in ("combat", "switch", "cloak"):
+        cold_boundary(prior["state"], initial)
     for field in (
         "shields",
         "energy",
@@ -530,35 +747,113 @@ def phase(name, root, engine, producer_path):
             f"missing saved player resource {field}",
         )
     assists = [event for event in events if event.get("event") == "position_assist"]
-    expected_assists = 0 if name == "combat" else 2 if name == "master" else 1
+    expected_assists = 2 if name == "master" else 1
     need(
         result["position_assist_events"] == len(assists) == expected_assists,
         "undisclosed position assist",
     )
-    if name == "switch":
+    if name == "combat":
         need(
-            assists[0]["step"] == 1
+            assists[0]["step"] == 6
             and assists[0]["action"] == "pose_view"
             and initial["position"]["segment"] == 1183
-            and state_at(events, 2)["position"]["segment"] == 450
-            and final["xl_pilot"]["wall_triggers"]["6"]["operated"] is True
-            and all(
-                final["xl_pilot"]["doorways"][str(w)]["type"] == 4
-                for w in (55, 56, 57, 58)
-            )
+            and state_at(events, 7)["position"]["segment"] == 449
+            and final["position"]["segment"] == 449
+            and final["player"]["robots_killed_level"] == initial["player"]["robots_killed_level"] + 1
+            and final["xl_pilot"]["wall_triggers"]["6"]["operated"] is False
             and not end_player["cloaked"]
             and not end_player["has_red_key"],
-            "switch6 opening incomplete",
+            "adjacent guard256 combat incomplete",
         )
-        operations(events, [(6, 1, 1)])
-    elif name == "combat":
-        combat_trace_witness(events)
+        combat_setup(plan["steps"])
         need(
-            end_player["robots_killed_level"] == start_player["robots_killed_level"] + 1
-            and final["position"]["segment"] == 450
-            and result["fixed_view_aim_events"] > 0,
-            "robot256 live-HP damage or defeat not established",
+            plan["track_objects"] == [256, 305]
+            and plan["steps"][8]["expect"]["game_time_raw"]["gte"] == initial["game_time_raw"] + 65536 // 60
+            and plan["steps"][11]["expect"]["player.robots_killed_level"]["gte"]
+            == initial["player"]["robots_killed_level"] + 1
+            and plan["steps"][11]["face_object"] == 256
+            and plan["steps"][11]["face_interval_ms"] == 17
+            and plan["steps"][11]["timeout_ms"] == 3000
+            and plan["steps"][14] == {"action": "wait_ms", "ms": 750},
+            "combat guard goal or bounded neutral tail changed",
         )
+        combat_trace_witness(events)
+        need(result["fixed_view_aim_events"] > 0, "robot256 bound view aim missing")
+        guard_drops(initial, final)
+        need(
+            0 < end_player["shields"] <= start_player["shields"]
+            and 0 < end_player["energy"] <= start_player["energy"]
+            and end_player["secondary_ammo"] == start_player["secondary_ammo"]
+            and end_player["secondary_weapon_flags"] == start_player["secondary_weapon_flags"]
+            and end_player["laser_level"] == start_player["laser_level"] == 0
+            and end_player["quad_lasers"] is start_player["quad_lasers"] is False,
+            "guard combat acquired an upgrade or unearned energy/shields",
+        )
+        operations(events, [])
+    elif name == "switch":
+        need(
+            assists[0]["step"] == 6
+            and assists[0]["action"] == "pose_view"
+            and initial["position"]["segment"] == 449
+            and plan["steps"][6]
+            == {
+                "action": "pose_view",
+                "segment": 450,
+                "position_fixed": [-29216306, 12619118, -10993001],
+                "pitch": 285,
+                "bank": 0,
+                "heading": 4553,
+            }
+            and state_at(events, 7)["position"]["segment"] == 450
+            and final["position"]["segment"] == 450
+            and plan["track_objects"] == [305]
+            and result["fixed_view_aim_events"] == 0
+            and final["xl_pilot"]["wall_triggers"]["6"]["operated"] is True
+            and final["xl_pilot"]["wall_triggers"]["6"]["shot"] == 1
+            and all(final["xl_pilot"]["doorways"][str(w)]["type"] == 4 for w in (55, 56, 57, 58))
+            and not any(p["object"] == 256 for p in initial["level_scene"]["robots"])
+            and not end_player["cloaked"]
+            and not end_player["has_red_key"],
+            "switch6 cold guard-clear or opening incomplete",
+        )
+        need(
+            all(plan["steps"][i] == {"action": "send_axis", "axis": i - 1, "axis_value": 0.0} for i in range(1, 6))
+            and [plan["steps"][i]["action"] for i in range(7, 12)]
+            == ["introspect", "send_button", "wait_ms", "introspect", "send_button"]
+            and plan["steps"][8] == {"action": "send_button", "button": 100, "held": 1}
+            and plan["steps"][9] == {"action": "wait_ms", "ms": 16}
+            and plan["steps"][11] == {"action": "send_button", "button": 100, "held": 0}
+            and all(
+                plan["steps"][i : i + 2]
+                == [
+                    {"action": "wait_ms", "ms": 16},
+                    {"action": "introspect"},
+                ]
+                for i in range(12, 192, 2)
+            )
+            and plan["steps"][193]
+            == {
+                "action": "set_debug",
+                "field": "android_game_request",
+                "value": "quick_save",
+            },
+            "single ordinary Laser0 pulse or bounded neutral tail changed",
+        )
+        original = doc(producer_path)["checkpoint_history"][-1]["state"]
+        drops = guard_drops(original, initial)
+        switch_trace_witness(events, plan, drops)
+        need(
+            end_player["energy"] < start_player["energy"]
+            and end_player["shields"] <= start_player["shields"]
+            and end_player["primary_weapon_flags"] == start_player["primary_weapon_flags"]
+            and end_player["laser_level"] == start_player["laser_level"] == 0
+            and end_player["quad_lasers"] is start_player["quad_lasers"] is False
+            and end_player["secondary_ammo"] == start_player["secondary_ammo"]
+            and end_player["secondary_weapon_flags"] == start_player["secondary_weapon_flags"],
+            "switch acquired an upgrade or unearned energy/shields",
+        )
+        switch_shot_witness(events)
+        operations(events, [(6, 1, 1)])
     elif name == "cloak":
         need(
             assists[0]["step"] == 1
@@ -568,10 +863,7 @@ def phase(name, root, engine, producer_path):
             and final["position"]["segment"] == 457
             and not start_player["cloaked"]
             and end_player["cloaked"]
-            and any(
-                p["object"] == 113 and p["id"] == 23
-                for p in initial["level_scene"]["powerups"]
-            )
+            and any(p["object"] == 113 and p["id"] == 23 for p in initial["level_scene"]["powerups"])
             and not any(p["object"] == 113 for p in final["level_scene"]["powerups"]),
             "cloak113 physical pickup incomplete",
         )
@@ -586,10 +878,7 @@ def phase(name, root, engine, producer_path):
             and end_player["has_red_key"]
             and start_player["cloaked"]
             and end_player["cloaked"]
-            and any(
-                p["object"] == 51 and p["id"] == 5
-                for p in initial["level_scene"]["powerups"]
-            )
+            and any(p["object"] == 51 and p["id"] == 5 for p in initial["level_scene"]["powerups"])
             and not any(p["object"] == 51 for p in final["level_scene"]["powerups"]),
             "red key51 physical pickup incomplete",
         )
@@ -622,8 +911,7 @@ def phase(name, root, engine, producer_path):
     elif name == "master":
         operations(events, [(64, 1, 0), (63, 2, 0), (61, 3, 0)])
         need(
-            [(e["step"], e["action"]) for e in assists]
-            == [(1, "face_view"), (5, "face_view")]
+            [(e["step"], e["action"]) for e in assists] == [(1, "face_view"), (5, "face_view")]
             and initial["position"]["segment"] == 1188
             and state_at(events, 4)["position"]["segment"] == 1199
             and state_at(events, 6)["position"]["segment"] == 1199
