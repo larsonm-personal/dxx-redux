@@ -106,6 +106,13 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 #include "collide.h"
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+static void (*xl_weapon_wall_contact_observer)(const xl_weapon_wall_contact *);
+void xl_weapon_wall_set_contact_observer(void (*observer)(const xl_weapon_wall_contact *))
+{
+	xl_weapon_wall_contact_observer = observer;
+}
+#endif
 #include "escort.h"
 #include "coop/coop_robot_door.h"
 #include "multibot.h"
@@ -864,7 +871,48 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 		return;
 	}
 
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+	xl_weapon_wall_contact contact = { 0 };
+	int observe_contact = 0;
+	if (xl_weapon_wall_contact_observer && weapon->ctype.laser_info.parent_type == OBJ_PLAYER &&
+	    weapon->ctype.laser_info.parent_num == Players[Player_num].objnum &&
+	    weapon->ctype.laser_info.parent_signature == Objects[Players[Player_num].objnum].signature) {
+		const int wall_num = seg->sides[hitwall].wall_num;
+		const int overlay = seg->sides[hitwall].tmap_num2 & 0x3fff;
+		contact.object = weapon - Objects;
+		contact.level = Current_level_num;
+		contact.signature = weapon->signature;
+		contact.weapon_id = weapon->id;
+		contact.parent_object = weapon->ctype.laser_info.parent_num;
+		contact.parent_signature = weapon->ctype.laser_info.parent_signature;
+		contact.hit_segment = hitseg;
+		contact.hit_side = hitwall;
+		contact.point[0] = hitpt->x;
+		contact.point[1] = hitpt->y;
+		contact.point[2] = hitpt->z;
+		contact.wall = wall_num;
+		contact.trigger = wall_num >= 0 && wall_num < Num_walls ? wall_trigger_index(Walls[wall_num].trigger) : -1;
+		contact.base = seg->sides[hitwall].tmap_num;
+		contact.overlay = seg->sides[hitwall].tmap_num2;
+		contact.eclip = contact.destroyed = contact.effect_dest = contact.effect_flags = -1;
+		if (overlay > 0 && overlay < NumTextures) {
+			contact.eclip = TmapInfo[overlay].eclip_num;
+			contact.destroyed = TmapInfo[overlay].destroyed;
+			if (contact.eclip >= 0 && contact.eclip < Num_effects) {
+				contact.effect_dest = Effects[contact.eclip].dest_bm_num;
+				contact.effect_flags = Effects[contact.eclip].flags;
+			}
+		}
+		observe_contact = 1;
+	}
+#endif
 	blew_up = check_effect_blowup(seg,hitwall,hitpt, weapon, 0);
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+	if (observe_contact) {
+		contact.blew_up = blew_up;
+		xl_weapon_wall_contact_observer(&contact);
+	}
+#endif
 
 	//if ((seg->sides[hitwall].tmap_num2==0) && (TmapInfo[seg->sides[hitwall].tmap_num].flags & TMI_VOLATILE)) {
 
