@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "slow_motion_runtime.h"
 #include "gameplay_audio.h"
 #include "blocked.h"
 #include "boss_spawn.h"
@@ -458,10 +459,16 @@ void ai_turn_towards_vector(vms_vector *goal_vector, object *objp, fix rate)
 	new_fvec = *goal_vector;
 
 	dot = vm_vec_dot(goal_vector, &objp->orient.fvec);
+#ifdef DXX_XL_RUNTIME
+	dot = xl_slow_motion_world_time(dot);
+#endif
 
 	if (dot < (F1_0 - FrameTime/2)) {
 		fix	mag;
 		fix	new_scale = fixdiv(FrameTime * AI_TURN_SCALE, rate);
+#ifdef DXX_XL_RUNTIME
+		new_scale = xl_slow_motion_world_time(new_scale);
+#endif
 		vm_vec_scale(&new_fvec, new_scale);
 		vm_vec_add2(&new_fvec, &objp->orient.fvec);
 		mag = vm_vec_normalize_quick(&new_fvec);

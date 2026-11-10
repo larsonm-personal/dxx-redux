@@ -29,6 +29,9 @@ struct {
 		int nSegments = 0;
 	} physicsData;
 	struct {
+		fix xFrame = 0;
+	} timeData;
+	struct {
 		Boost speedBoost[2];
 		CObject *pConsole = &objects[1];
 	} objData;
