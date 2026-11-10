@@ -1,5 +1,6 @@
 #include "camera_splash.h"
 #include "camera_flash.h"
+#include "camera_contact.h"
 #include "robot_damage.h"
 #include "static_contact.h"
 #include <cmath>
@@ -7,6 +8,8 @@
 #include <fstream>
 #include <string>
 #include <stdexcept>
+std::array<std::int32_t, 3> camera_force_source_apply(std::array<std::int32_t, 3>, int,
+                                                      std::array<std::int32_t, 3>, bool);
 namespace camera_splash_reference
 {
 using fix = std::int32_t;
@@ -157,10 +160,7 @@ struct CObject {
 	{
 		throw std::runtime_error("Unexpected nonstatic bump branch");
 	}
-	void ApplyForce(CFixVector)
-	{
-		throw std::runtime_error("Unexpected nonstatic force branch");
-	}
+	void ApplyForce(CFixVector);
 	void RelinkToSeg(int)
 	{
 		throw std::runtime_error("Unexpected sphere separation branch");
@@ -345,6 +345,12 @@ xl_compat::FixedLightPoint point(const CFixVector &v)
 {
 	return { v.v.coord.x, v.v.coord.y, v.v.coord.z };
 }
+void CObject::ApplyForce(CFixVector force)
+{
+	if (info.movementType != MT_PHYSICS) return;
+	const bool blocked = this == gameData.objData.pConsole && (automap.active || gameData.objData.speedBoost[0].bBoosted);
+	mType.physInfo.velocity = vector(::camera_force_source_apply(point(mType.physInfo.velocity), mType.physInfo.mass, point(force), blocked));
+}
 } // namespace camera_splash_reference
 void camera_splash_source_controls()
 {
@@ -520,6 +526,37 @@ void camera_flash_robot_source_controls()
 void static_contact_source_controls()
 {
 	using namespace camera_splash_reference;
+	unsigned ordinary_cases = 0, factor_one_caught = 0, omitted_force_caught = 0;
+	for (const bool reverse : { false, true })
+		for (const int mass : { 0, 1, 3, 32768, 65536, 98317, 262144 })
+			for (const int speed : { 0, 17, -65537, 100001 })
+				for (const bool blocked : { false, true }) {
+					CObject fixed, actor;
+					fixed.stationary = false;
+					fixed.info.movementType = 0;
+					actor.info.movementType = MT_PHYSICS;
+					actor.info.nType = OBJ_PLAYER;
+					actor.mType.physInfo.mass = mass;
+					const xl_compat::FixedLightPoint before{ speed, speed / 3, -speed };
+					actor.mType.physInfo.velocity = vector(before);
+					gameData.objData.pConsole = &actor;
+					gameData.objData.speedBoost[0].bBoosted = blocked;
+					automap.active = false;
+					const auto expected = xl_compat::camera_reflect_velocity(before, mass, blocked);
+					CFixVector hit;
+					BumpTwoObjects(reverse ? &actor : &fixed, reverse ? &fixed : &actor, 0, hit);
+					if (point(actor.mType.physInfo.velocity) != expected || !fixed.mType.physInfo.velocity.IsZero())
+						throw std::runtime_error("Ordinary nonphysical bump differs from complete pinned consumer");
+					const auto factor_one_force = vector(before) * -mass;
+					const auto factor_one = ::camera_force_source_apply(before, mass, point(factor_one_force), blocked);
+					factor_one_caught += factor_one != expected;
+					omitted_force_caught += before != expected;
+					++ordinary_cases;
+				}
+	if (!factor_one_caught || !omitted_force_caught) throw std::runtime_error("Ordinary rebound controls did not distinguish both bad impulse alternatives");
+	gameData.objData.pConsole = nullptr;
+	gameData.objData.speedBoost[0].bBoosted = 0;
+	std::cout << "Pinned ordinary nonphysical bump: " << ordinary_cases << " complete-consumer cases and two bad impulse alternatives distinguished\n";
 	unsigned cases = 0;
 	for (int type : { OBJ_PLAYER, OBJ_WEAPON })
 		for (int mass : { 0, 1, 3, 32768, 65536, 11 * 65536, 400 * 65536 })

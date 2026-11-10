@@ -378,10 +378,22 @@ void bump_two_objects(object *obj0,object *obj1,int damage_flag)
 
 	if (t) {
 		Assert(t->movement_type == MT_PHYSICS);
-		vm_vec_copy_scale(&force,&t->mtype.phys_info.velocity,-t->mtype.phys_info.mass);
-		input_demo_log_player_bump_probe("nonphysics_pre", obj0, obj1, &force, &force, -t->mtype.phys_info.mass, F1_0, damage_flag);
-		phys_apply_force(t,&force);
-		input_demo_log_player_bump_probe("nonphysics_post", obj0, obj1, &force, &force, -t->mtype.phys_info.mass, F1_0, damage_flag);
+		fix force_scale = -t->mtype.phys_info.mass;
+		vms_vector reflected_velocity;
+		int reflected = 0;
+#ifdef DXX_XL_RUNTIME
+		reflected = xl_nonphysical_bump_reflection(t, &force, &reflected_velocity);
+#endif
+		if (reflected)
+			force_scale *= 2;
+		else
+			vm_vec_copy_scale(&force,&t->mtype.phys_info.velocity,force_scale);
+		input_demo_log_player_bump_probe("nonphysics_pre", obj0, obj1, &force, &force, force_scale, F1_0, damage_flag);
+		if (reflected)
+			t->mtype.phys_info.velocity = reflected_velocity;
+		else
+			phys_apply_force(t,&force);
+		input_demo_log_player_bump_probe("nonphysics_post", obj0, obj1, &force, &force, force_scale, F1_0, damage_flag);
 		return;
 	}
 

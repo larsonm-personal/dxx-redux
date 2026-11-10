@@ -95,6 +95,31 @@ bool player_projectile(int id)
 }
 } // namespace
 
+extern "C" int xl_nonphysical_bump_reflection(const object *actor, vms_vector *force, vms_vector *velocity)
+{
+	if (!xl_level_extensions_active() || (Game_mode & GM_MULTI) || actor->movement_type != MT_PHYSICS) return 0;
+	try {
+		const int mass = actor->mtype.phys_info.mass;
+		if (mass < 0 || mass > INT32_MAX / 2) throw std::runtime_error("Ordinary contact mass exceeds qualified bounds");
+		const auto &prior = actor->mtype.phys_info.velocity;
+		const std::array<std::int32_t, 3> input{ prior.x, prior.y, prior.z };
+		// Keep the ordinary consumer's speed-boost suppression, without camera-only automap rules
+		const bool blocked = actor == ConsoleObject && xl_speed_boost_player_locked();
+		const auto result = xl_compat::camera_reflect_velocity(input, mass, blocked);
+		std::array<std::int32_t, 3> source_force{};
+		for (unsigned axis = 0; axis < 3; ++axis) {
+			const double value = double(-2 * mass) / 65536.0 * double(input[axis]);
+			if (value < INT32_MIN || value > INT32_MAX) throw std::runtime_error("Ordinary contact force exceeds qualified bounds");
+			source_force[axis] = std::int32_t(value);
+		}
+		*force = { source_force[0], source_force[1], source_force[2] };
+		*velocity = { result[0], result[1], result[2] };
+	} catch (const std::exception &error) {
+		Error("Cannot apply ordinary nonphysical contact force: %s", error.what());
+	}
+	return 1;
+}
+
 bool xl_camera_contact_projectile(int id)
 {
 	if (id < 0 || id >= N_weapon_types) return false;

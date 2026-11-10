@@ -1,3 +1,81 @@
+#include "../camera_contact.h"
+extern "C" {
+#include "automap.h"
+#include "cntrlcen.h"
+}
+
+// Controlled native dispatch, not multiplayer synchronization
+static void ordinary_nonphysical_bump_controls(bool xl, bool protected_profile)
+{
+	const auto saved_physics = ConsoleObject->mtype.phys_info;
+	const auto saved_movement = ConsoleObject->movement_type;
+	const fix saved_shields = ConsoleObject->shields, saved_player_shields = Players[Player_num].shields;
+	const int saved_mode = Game_mode, saved_center_hit = Control_center_been_hit, saved_automap = Automap_active;
+	const auto saved_delay = collide_get_collision_delay_last_play_time();
+	unsigned saved_rng = 0;
+	d_rand_get_state(&saved_rng);
+	Automap_active = 0;
+	for (const int type : { OBJ_CNTRLCEN, OBJ_CLUTTER }) {
+		const int stationary = obj_create(static_cast<object_type_t>(type), 0, ConsoleObject->segnum, &ConsoleObject->pos,
+		                                  &vmd_identity_matrix, F1_0, CT_NONE, MT_NONE, RT_NONE);
+		require(stationary >= 0, "cannot allocate stationary contact control");
+		auto &fixed = Objects[stationary];
+		fixed.shields = i2f(1000);
+		for (const bool multiplayer : { false, true })
+			for (const bool reverse : { false, true })
+				for (const fix mass : { 0, 1, 3, 32768, 65536, 98317, 262144 })
+					for (const fix speed : { 0, 17, -65537, 100001 }) {
+						Game_mode = multiplayer ? GM_NETWORK : 0;
+						ConsoleObject->movement_type = MT_PHYSICS;
+						ConsoleObject->mtype.phys_info = {};
+						ConsoleObject->mtype.phys_info.mass = mass;
+						const vms_vector before{ speed, speed / 3, -speed };
+						ConsoleObject->mtype.phys_info.velocity = before;
+						ConsoleObject->shields = Players[Player_num].shields = i2f(1000);
+						const bool protected_clutter = type == OBJ_CLUTTER && protected_profile && xl_preview_no_damage_segment(ConsoleObject->segnum);
+						std::array<std::int32_t, 3> expected{ before.x, before.y, before.z };
+						if (!protected_clutter) {
+							if (xl && !multiplayer) expected = xl_compat::camera_reflect_velocity(expected, mass, false);
+							else if (mass)
+								for (auto &axis : expected) axis += fixmul(fixmul(axis, -mass), fixdiv(F1_0, mass));
+						}
+						collide_set_collision_delay_last_play_time(GameTime64 - i2f(2));
+						unsigned before_rng = 0, after_rng = 0, expected_rng = 0;
+						d_rand_get_state(&before_rng);
+						const auto before_calls = d_rand_get_call_count();
+						fix64 expected_delay = GameTime64 - i2f(2);
+						if (!protected_clutter) expected_delay = GameTime64 - d_rand() / 2;
+						d_rand_get_state(&expected_rng);
+						d_rand_set_state(before_rng);
+						d_rand_set_call_count(before_calls);
+						auto hit = ConsoleObject->pos;
+						collide_two_objects(reverse ? &fixed : ConsoleObject, reverse ? ConsoleObject : &fixed, &hit);
+						d_rand_get_state(&after_rng);
+						const auto &actual = ConsoleObject->mtype.phys_info.velocity;
+						require(actual.x == expected[0] && actual.y == expected[1] && actual.z == expected[2] &&
+						            fixed.mtype.phys_info.velocity.x == 0 && fixed.mtype.phys_info.velocity.y == 0 && fixed.mtype.phys_info.velocity.z == 0,
+						        "ordinary stationary contact velocity differs from its source profile");
+						require(ConsoleObject->shields == i2f(1000) && Players[Player_num].shields == i2f(1000) &&
+						            fixed.shields == i2f(1000) && expected_rng == after_rng &&
+						            d_rand_get_call_count() - before_calls == unsigned(protected_clutter ? 0 : 1),
+						        "stationary contact changed damage or simulation RNG");
+						require(collide_get_collision_delay_last_play_time() == expected_delay,
+						        "stationary contact changed protected or ordinary sound-gate dispatch");
+					}
+		obj_delete(stationary);
+	}
+	ConsoleObject->mtype.phys_info = saved_physics;
+	ConsoleObject->movement_type = saved_movement;
+	ConsoleObject->shields = saved_shields;
+	Players[Player_num].shields = saved_player_shields;
+	Game_mode = saved_mode;
+	Control_center_been_hit = saved_center_hit;
+	Automap_active = saved_automap;
+	collide_set_collision_delay_last_play_time(saved_delay);
+	d_rand_set_state(saved_rng);
+	std::cout << "Ordinary nonphysical reactor/clutter controls passed; XL=" << xl << " protected=" << protected_profile << "\n";
+}
+
 // Controlled singleplayer dispatch; this does not qualify multiplayer synchronization
 static void no_damage_bump_test(const xl_compat::Inventory &source, int segment)
 {
@@ -15,6 +93,11 @@ static void no_damage_bump_test(const xl_compat::Inventory &source, int segment)
 	auto neutral = source;
 	if (neutral.level_version >= 21) neutral.segments[segment].properties &= ~xl_compat::segment_no_damage;
 	else neutral.segments[segment].function = 0;
+	const bool active_xl = xl_level_extensions_active() != 0;
+	xl_test_bind_no_damage(neutral);
+	ordinary_nonphysical_bump_controls(active_xl, false);
+	xl_test_bind_no_damage(source);
+	ordinary_nonphysical_bump_controls(active_xl, true);
 	for (auto type : { OBJ_CLUTTER, OBJ_PLAYER }) {
 		const int id = type == OBJ_PLAYER ? (Player_num + 1) % MAX_PLAYERS : 0;
 		const int other_index = obj_create(type, id, segment, &ConsoleObject->pos, &ConsoleObject->orient,
