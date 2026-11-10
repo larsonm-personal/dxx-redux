@@ -1,4 +1,8 @@
 // Developer-only ordinary-player simulation; initial level and local poses are setup
+#include "texture_pixels.h"
+#include "input_demo_recorder.h"
+#include "input_demo_replay.h"
+#include <limits>
 #include <chrono>
 #include <thread>
 #ifdef _WIN32
@@ -149,6 +153,65 @@ static Json snapshot()
 	for (int weapon : { 0, CONTROLCEN_WEAPON_NUM, primary_id })
 		if (weapon >= 0 && weapon < N_weapon_types) state["weapon_definitions"][std::to_string(weapon)] = { { "damage_radius", int(Weapon_info[weapon].damage_radius) }, { "strength", int(Weapon_info[weapon].strength[Difficulty_level]) }, { "speed", int(Weapon_info[weapon].speed[Difficulty_level]) }, { "fire_wait", int(Weapon_info[weapon].fire_wait) }, { "fire_count", int(Weapon_info[weapon].fire_count) }, { "ammo_usage", int(Weapon_info[weapon].ammo_usage) }, { "energy_usage", int(Weapon_info[weapon].energy_usage) }, { "matter", int(Weapon_info[weapon].matter) }, { "blob_size", int(Weapon_info[weapon].blob_size) }, { "render_type", int(Weapon_info[weapon].render_type) }, { "model_num", Weapon_info[weapon].render_type == WEAPON_RENDER_POLYMODEL ? Json(int(Weapon_info[weapon].model_num)) : Json{} } };
 	return state;
+}
+// A bounded static query from live owned bolts, not a gameplay collision qualification
+static Json diagnostic_weapon_rays()
+{
+	constexpr int max_rays = 2;
+	constexpr fix sweep_time = F1_0 / 4;
+	int owned_weapon_count = 0;
+	const int player_object = Players[Player_num].objnum;
+	Json rays = Json::array();
+	for (int index = 0; index <= Highest_object_index; ++index) {
+		const auto &weapon = Objects[index];
+		if (weapon.type != OBJ_WEAPON || (weapon.flags & OF_SHOULD_BE_DEAD) || !ConsoleObject) continue;
+		const auto &parent = weapon.ctype.laser_info;
+		if (parent.parent_type != OBJ_PLAYER || parent.parent_num != player_object || parent.parent_signature != ConsoleObject->signature) continue;
+		++owned_weapon_count;
+		if (owned_weapon_count > max_rays) continue;
+		require(weapon.movement_type == MT_PHYSICS, "owned weapon ray requires a physics weapon");
+		require(weapon.segnum >= 0 && weapon.segnum <= Highest_segment_index, "owned weapon ray has invalid segment");
+		vms_vector start = weapon.pos;
+		const vms_vector velocity = weapon.mtype.phys_info.velocity;
+		const auto endpoint = [](fix position, fix speed) {
+			const fix64 wide_delta = fixmul64(speed, sweep_time);
+			require(wide_delta >= std::numeric_limits<fix>::min() && wide_delta <= std::numeric_limits<fix>::max(), "owned weapon ray displacement overflows fixed coordinates");
+			const fix delta = fixmul(speed, sweep_time);
+			const int64_t value = int64_t(position) + delta;
+			require(value >= std::numeric_limits<fix>::min() && value <= std::numeric_limits<fix>::max(), "owned weapon ray endpoint overflows fixed coordinates");
+			return fix(value);
+		};
+		vms_vector end{ endpoint(start.x, velocity.x), endpoint(start.y, velocity.y), endpoint(start.z, velocity.z) };
+		int ignored[] = { -1 };
+		fvi_query query{};
+		query.p0 = &start;
+		query.p1 = &end;
+		query.startseg = weapon.segnum;
+		query.rad = weapon.size;
+		query.thisobjnum = index;
+		query.ignore_obj_list = ignored;
+		query.flags = FQ_CHECK_OBJS | FQ_TRANSPOINT;
+		fvi_info hit{};
+		find_vector_intersection(&query, &hit);
+		Json ray = { { "object", index }, { "signature", int(weapon.signature) }, { "weapon_id", int(weapon.id) }, { "parent_object", player_object }, { "parent_signature", int(parent.parent_signature) }, { "start_segment", int(weapon.segnum) }, { "start_fixed", { int(start.x), int(start.y), int(start.z) } }, { "end_fixed", { int(end.x), int(end.y), int(end.z) } }, { "velocity_fixed", { int(velocity.x), int(velocity.y), int(velocity.z) } }, { "radius_raw", int(weapon.size) }, { "sweep_time_raw", int(sweep_time) }, { "query_flags", query.flags }, { "hit_type", hit.hit_type }, { "hit_point_fixed", { int(hit.hit_pnt.x), int(hit.hit_pnt.y), int(hit.hit_pnt.z) } }, { "hit_segment", hit.hit_seg }, { "hit_side_segment", hit.hit_side_seg }, { "hit_side", hit.hit_side }, { "hit_face", hit.hit_face }, { "hit_object", hit.hit_object } };
+		if (hit.hit_type == HIT_WALL && hit.hit_side_seg >= 0 && hit.hit_side_seg <= Highest_segment_index && hit.hit_side >= 0 && hit.hit_side < 6 && hit.hit_face >= 0 && hit.hit_face < 2) {
+			const auto &surface = Segments[hit.hit_side_seg].sides[hit.hit_side];
+			const int base_texture = surface.tmap_num, overlay_raw = surface.tmap_num2;
+			const int overlay_texture = overlay_raw & 0x3fff;
+			fix u = 0, v = 0;
+			find_hitpoint_uv(&u, &v, nullptr, &hit.hit_pnt, &Segments[hit.hit_side_seg], hit.hit_side, hit.hit_face);
+			ray["wall_texture"] = { { "base", base_texture }, { "overlay_raw", overlay_raw }, { "overlay_texture", overlay_texture }, { "overlay_orientation", int((overlay_raw >> 14) & 3) }, { "u_raw", int(u) }, { "v_raw", int(v) }, { "pixel_transparency", xl_side_pixel_transparency(base_texture, overlay_raw, u, v) } };
+			for (const auto &[name, texture] : { std::pair<const char *, int>{ "base_bitmap", base_texture }, { "overlay_bitmap", overlay_texture } }) {
+				if (texture < 0 || texture >= NumTextures || (name[0] == 'o' && !texture)) continue;
+				const int bitmap_index = Textures[texture].index;
+				if (bitmap_index < 0 || bitmap_index >= Num_bitmap_files) continue;
+				const auto &bitmap = GameBitmaps[bitmap_index];
+				ray["wall_texture"][name] = { { "texture", texture }, { "bitmap_index", bitmap_index }, { "type", int(bitmap.bm_type) }, { "width", int(bitmap.bm_w) }, { "height", int(bitmap.bm_h) }, { "rowsize", int(bitmap.bm_rowsize) }, { "flags", int(bitmap.bm_flags) } };
+			}
+		}
+		rays.push_back(std::move(ray));
+	}
+	return { { "kind", "constant_velocity_static_query_not_collision_qualification" }, { "ray_limit", max_rays }, { "sweep_time_raw", int(sweep_time) }, { "owned_weapon_count", owned_weapon_count }, { "rays_truncated", owned_weapon_count > max_rays }, { "rays", std::move(rays) } };
 }
 using TriggerObservation = std::vector<std::array<std::int64_t, 11>>;
 static TriggerObservation trigger_observation()
@@ -334,7 +397,8 @@ static int run(int argc, char **argv)
 		}
 		double thrust = 0, sideways = 0;
 		bool firing = false;
-		int remainder = 0, fps = plan.value("simulation_fps", 60);
+		int remainder = 0, fps = plan.value("simulation_fps", 60), frame_count = 0;
+		bool weapon_rays_used = false;
 		require(fps >= 1 && fps <= 120, "native player simulation rate out of range");
 		operation_counts.fill(0);
 		operation_sequence = 0;
@@ -364,6 +428,7 @@ static int run(int argc, char **argv)
 			const int before_level = Current_level_num;
 			operation_frame_source = before_level;
 			GameProcessFrame();
+			++frame_count;
 			operation_frame_source = -1;
 			if (before_level != Current_level_num) ++combat_load_generation;
 			// Wall-trigger debounce uses the real timer, not GameTime64
@@ -464,6 +529,15 @@ static int run(int argc, char **argv)
 					last_activation["observation_boundary"] = "post_load";
 					observed_state = trigger_observation();
 				}
+			} else if (action == "diagnostic_weapon_rays") {
+				require(frame_count > 0 && !weapon_rays_used, "native weapon rays require a prior ordinary frame and run once");
+				require(!input_demo_recorder_is_active() && !input_demo_replay_is_loaded(), "native weapon rays require recorder and replay off");
+				weapon_rays_used = true;
+				const auto before = snapshot();
+				const auto result = diagnostic_weapon_rays();
+				const auto after = snapshot();
+				trace << Json{ { "event", "diagnostic_weapon_rays" }, { "step", completed }, { "result", result }, { "common_state_unchanged", before == after } }.dump() << '\n';
+				require(before == after, "native weapon ray query changed common state or RNG");
 			} else if (action == "frame_rate") {
 				fps = step.at("fps");
 				require(fps >= 1 && fps <= 120, "native player simulation rate out of range");
