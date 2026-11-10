@@ -2,11 +2,16 @@
 #include "texture_pixels.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
+#include "route_confirmation.h"
+#include "pumo_ordinary_input_validation.h"
+#include "d1_in_d2/d1_in_d2.h"
+#include "newdemo.h"
 extern "C" {
 #include "collide.h"
 #include "physics.h"
 }
 #include <limits>
+#include <cmath>
 #include <chrono>
 #include <thread>
 #ifdef _WIN32
@@ -461,6 +466,38 @@ static int run(int argc, char **argv)
 		std::ifstream input(plan_path);
 		Json plan;
 		input >> plan;
+		const bool extended_input_plan = plan.contains("steps") && plan.at("steps").is_array() &&
+		                                 std::any_of(plan.at("steps").begin(), plan.at("steps").end(), [](const Json &step) {
+			                                 if (!step.is_object() || !step.contains("action") || !step.at("action").is_string()) return false;
+			                                 const std::string action = step.at("action");
+			                                 if (action == "select_secondary") return true;
+			                                 return (action == "send_axis" && step.contains("axis") && pumo_ordinary_input_validation::integer_in_range(step.at("axis"), 2, 4)) ||
+			                                        (action == "send_button" && step.contains("button") && pumo_ordinary_input_validation::integer_in_range(step.at("button"), 101, 101));
+		                                 });
+		const auto require_ordinary_secondary_input = [&](const char *stage) {
+			if (!extended_input_plan) return;
+			const int game_mode = Game_mode;
+			const bool d1_gameplay = d1_in_d2_use_d1_gameplay();
+			const int newdemo_state = Newdemo_state;
+			const bool recorder_active = input_demo_recorder_is_active();
+			const bool replay_loaded = input_demo_replay_is_loaded();
+			const bool ordinary_without_route = game_mode == GM_NORMAL && !d1_gameplay && newdemo_state == ND_STATE_NORMAL &&
+			                                    !recorder_active && !replay_loaded;
+			const int route_status = ordinary_without_route ? route_confirmation_get_summary()->status : -1;
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+			const bool full_route_runner = true;
+#else
+			const bool full_route_runner = false;
+#endif
+			if (ordinary_without_route && pumo_ordinary_input_validation::route_status_allowed(
+			        route_status, ROUTE_CONFIRMATION_IDLE, ROUTE_CONFIRMATION_UNSUPPORTED, full_route_runner)) return;
+			const std::string detail = "native secondary controls require ordinary single-player without recorder, replay, or route confirmation"
+			                           " stage=" + std::string(stage) + " game_mode=" + std::to_string(game_mode) +
+			                           " d1_gameplay=" + std::to_string(d1_gameplay) + " newdemo_state=" + std::to_string(newdemo_state) +
+			                           " recorder_active=" + std::to_string(recorder_active) + " replay_loaded=" + std::to_string(replay_loaded) +
+			                           " route_status=" + (ordinary_without_route ? std::to_string(route_status) : "unobserved");
+			require(false, detail.c_str());
+		};
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 		const bool observe_weapon_wall_contacts = plan.value("observe_weapon_wall_contacts", false);
 		const bool observe_player_fvi = plan.value("observe_player_fvi", false);
@@ -476,6 +513,7 @@ static int run(int argc, char **argv)
 		const int initial_level = plan.at("initial_level");
 		require(initial_level >= 1 && initial_level <= Last_level, "native player initial level out of range");
 		StartNewGame(initial_level);
+		require_ordinary_secondary_input("after_start");
 		++combat_load_generation;
 		if (plan.contains("resume_checkpoint")) {
 			const std::string file = plan.at("resume_checkpoint");
@@ -488,6 +526,7 @@ static int run(int argc, char **argv)
 			require(state_restore_all_sub(name.data(), 0), "native earned checkpoint failed to restore");
 			++combat_load_generation;
 		}
+		require_ordinary_secondary_input("after_resume");
 		if (plan.contains("track_objects")) {
 			const auto &targets = plan.at("track_objects");
 			require(targets.is_array() && targets.size() <= 16, "native combat tracking requires at most 16 object indices");
@@ -505,8 +544,8 @@ static int run(int argc, char **argv)
 			const bool restored = expectations(snapshot(), plan.at("checkpoint_expect"), failure);
 			require(restored, ("native earned checkpoint: " + failure).c_str());
 		}
-		double thrust = 0, sideways = 0;
-		bool firing = false;
+		double thrust = 0, sideways = 0, heading = 0, pitch = 0, bank = 0;
+		bool firing = false, firing_secondary = false, secondary_press_pending = false;
 		int remainder = 0, fps = plan.value("simulation_fps", 60), frame_count = 0;
 		bool weapon_rays_used = false;
 		require(fps >= 1 && fps <= 120, "native player simulation rate out of range");
@@ -525,6 +564,7 @@ static int run(int argc, char **argv)
 #endif
 		auto observed_state = trigger_observation();
 		const auto tick = [&] {
+			require_ordinary_secondary_input("before_frame");
 			const auto frame_started = std::chrono::steady_clock::now();
 			timer_update();
 			require(!Player_is_dead && !cheats.enabled && !cheats.ghostphysics && !cheats.monsterdamage && !cheats.robotfiringsuspended && !(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE), "ordinary player probe died or acquired assisted combat");
@@ -534,7 +574,13 @@ static int run(int argc, char **argv)
 			Controls = {};
 			Controls.forward_thrust_time = static_cast<fix>(thrust * FrameTime);
 			Controls.sideways_thrust_time = static_cast<fix>(sideways * FrameTime);
+			Controls.heading_time = static_cast<fix>(heading * FrameTime);
+			Controls.pitch_time = static_cast<fix>(pitch * (FrameTime / 2));
+			Controls.bank_time = static_cast<fix>(bank * FrameTime);
 			Controls.fire_primary_state = firing;
+			Controls.fire_secondary_state = firing_secondary;
+			Controls.fire_secondary_count = secondary_press_pending ? 1 : 0;
+			secondary_press_pending = false;
 			do_weapon_n_item_stuff();
 			calc_game_time();
 			// Presentation is outside this simulation probe, including later levels
@@ -566,6 +612,7 @@ static int run(int argc, char **argv)
 			observed_state = state_now;
 		};
 		for (const auto &step : plan.at("steps")) {
+			require_ordinary_secondary_input("before_step");
 			const std::string action = step.at("action");
 			trace << Json{ { "step", completed }, { "action", action }, { "simulation_fps", fps }, { "state", snapshot() } }.dump() << '\n';
 			trace.flush();
@@ -579,19 +626,42 @@ static int run(int argc, char **argv)
 				trace << Json{ { "event", "position_assist" }, { "action", action }, { "step", completed }, { "position", snapshot().at("position") } }.dump() << '\n';
 			}
 			else if (action == "send_axis") {
+				require(pumo_ordinary_input_validation::integer_in_range(step.at("axis"), 0, 4), "native player probe supports sideways/forward thrust and heading/pitch/bank axes");
 				const int axis = step.at("axis");
-				require(axis == 0 || axis == 1, "native player probe supports sideways/forward thrust axes");
-				require(step.at("axis_value").get<double>() >= -1 && step.at("axis_value").get<double>() <= 1, "native thrust axis out of range");
-				if (axis == 0) sideways = step.at("axis_value").get<double>();
-				else thrust = -step.at("axis_value").get<double>();
+				if (axis >= 2) require_ordinary_secondary_input("axis_action");
+				require(pumo_ordinary_input_validation::axis_value_in_range(step.at("axis_value")), "native player axis out of range");
+				const double value = step.at("axis_value").get<double>();
+				if (axis == 0) sideways = value;
+				else if (axis == 1) thrust = -value;
+				else if (axis == 2) heading = value;
+				else if (axis == 3) pitch = value;
+				else bank = value;
 			} else if (action == "send_button") {
-				require(step.at("button") == 100, "native player probe only supports primary fire");
-				firing = step.value("held", step.value("pressed", 0)) != 0;
+				require(pumo_ordinary_input_validation::integer_in_range(step.at("button"), 100, 101), "native player probe only supports primary and secondary fire");
+				const int button = step.at("button");
+				if (button == 101) {
+					require_ordinary_secondary_input("button_action");
+					require(pumo_ordinary_input_validation::secondary_pressed_value(step), "native secondary fire requires held or pressed as 0 or 1");
+				}
+				const bool pressed = step.value("held", step.value("pressed", 0)) != 0;
+				if (button == 100) firing = pressed;
+				else {
+					if (pressed && !firing_secondary) secondary_press_pending = true;
+					firing_secondary = pressed;
+				}
 			} else if (action == "select_primary") {
+				require(pumo_ordinary_input_validation::integer_in_range(step.at("slot"), 0, 4), "native weapon slot out of range");
 				const int slot = step.at("slot");
-				require(slot >= 0 && slot < 5 && !firing, "native weapon selection requires a normal released-fire weapon slot");
+				require(pumo_ordinary_input_validation::selection_released(firing, firing_secondary, secondary_press_pending, false), "native weapon selection requires a normal released-fire weapon slot");
 				// Use the keyboard selection path, including ownership and upgrade checks
 				do_weapon_select(slot, 0);
+			} else if (action == "select_secondary") {
+				require(pumo_ordinary_input_validation::integer_in_range(step.at("slot"), 0, 4), "native secondary slot out of range");
+				const int slot = step.at("slot");
+				require(pumo_ordinary_input_validation::selection_released(firing, firing_secondary, secondary_press_pending, true), "native secondary selection requires a normal released-fire weapon slot");
+				require_ordinary_secondary_input("select_secondary");
+				// Use the keyboard selection path, including ownership and upgrade checks
+				do_weapon_select(slot, 1);
 			} else if (action == "wait_ms") {
 				for (int frame = 0, count = (step.at("ms").get<int>() * fps + 999) / 1000; frame < count; ++frame) tick();
 			} else if (action == "wait_for") {
@@ -617,6 +687,7 @@ static int run(int argc, char **argv)
 				const bool passed = expectations(snapshot(), step.at("expect"), failed);
 				require(passed, ("native wait: " + failed).c_str());
 			} else if (action == "set_debug") {
+				require(!secondary_press_pending, "native checkpoint requires a consumed secondary press");
 				require(step.at("field") == "android_game_request", "unsupported native player request");
 				char file[] = "pumo-player-quick.sav", description[] = "Ordinary Pumo checkpoint";
 				if (step.at("value") == "quick_save") {
@@ -635,6 +706,8 @@ static int run(int argc, char **argv)
 				} else {
 					require(step.at("value") == "quick_load", "unsupported native player save action");
 					require(state_restore_all_sub(file, 0), "native player checkpoint load failed");
+					require_ordinary_secondary_input("after_quick_load");
+					secondary_press_pending = false;
 					// A load invalidates every prior target binding, even if its slot and signature recur
 					++combat_load_generation;
 					operation_counts.fill(0);
