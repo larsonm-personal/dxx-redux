@@ -331,7 +331,7 @@ extern "C" int xl_boss_spawn_robot(int owner, int type, const vms_vector *positi
 {
 	if (!xl_level_extensions_active() || (Game_mode & GM_MULTI)) return -1;
 	auto *boss = find(owner);
-	if (!boss || (!attached && xl_object_trigger_has_spawn(owner))) return -1;
+	if (!boss || (!attached && xl_object_trigger_has_attachment(owner))) return -1;
 	const auto &source = Objects[owner];
 	const int segment = position ? find_point_seg(const_cast<vms_vector *>(position), source.segnum) : source.segnum;
 	if (segment < 0 || segment > Highest_segment_index) return -1;

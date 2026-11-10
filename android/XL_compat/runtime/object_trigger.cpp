@@ -247,6 +247,14 @@ extern "C" int xl_object_trigger_count(void)
 	return xl_level_extensions_active() ? static_cast<int>(actions.size()) : 0;
 }
 
+extern "C" int xl_object_trigger_has_attachment(int object)
+{
+	if (!xl_level_extensions_active() || !xl_wall_teleport_actor(object)) return 0;
+	for (const auto &entry : actions)
+		if (entry.authored_owner == object && Objects[object].signature == entry.signature) return 1;
+	return 0;
+}
+
 extern "C" int xl_object_trigger_has_spawn(int object)
 {
 	if (!xl_level_extensions_active()) return 0;

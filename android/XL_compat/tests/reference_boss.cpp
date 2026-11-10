@@ -128,7 +128,23 @@ int CObject::Index() const
 	return int(this - objects.data());
 }
 #define OBJ_IDX(object) ((object)->Index())
-bool allocated = false, available = false, has_spawn = false;
+bool allocated = false, available = false;
+struct CTrigger {
+	int type = 0, flags = 0, owner = 0;
+};
+std::vector<CTrigger> object_triggers;
+struct {
+	CTrigger *Buffer()
+	{
+		return object_triggers.empty() ? nullptr : object_triggers.data();
+	}
+	int Length() const
+	{
+		return int(object_triggers.size());
+	}
+} object_trigger_buffer;
+#define OBJTRIGGERS       object_trigger_buffer
+#define OBJTRIGGER(index) (&object_triggers[index])
 CObject *OBJECT(int index)
 {
 	return index >= 0 && index < int(objects.size()) && (index != 1 || allocated) ? &objects[index] : nullptr;
@@ -209,15 +225,18 @@ struct {
 			int nSound = 0;
 		} animations[2][1];
 	} effectData;
+	struct {
+		struct Ref {
+			int nFirst = 0, nCount = 0;
+		};
+		std::array<Ref, 1200> objTriggerRefs{};
+	} trigData;
 } gameData;
 struct {
 	int numRobotsLevel = 0, numRobotsTotal = 0;
 } player;
 #define LOCALPLAYER player
-int FindObjTrigger(int, int, int)
-{
-	return has_spawn;
-}
+#include "xl_reference_boss_trigger_lookup.h"
 int FindSegByPos(const CFixVector &, int, int, int)
 {
 	return 0;
@@ -243,6 +262,29 @@ void check(bool result, const char *message)
 {
 	if (!result) throw std::runtime_error(message);
 }
+void check_attachment_lookup()
+{
+	for (const int type : { 14, 26, 30 })
+		for (const int disabled : { 0, 1 })
+			for (const int owner : { 0, -1 }) {
+				object_triggers = { { type, disabled, owner } };
+				gameData.trigData.objTriggerRefs = {};
+				gameData.trigData.objTriggerRefs[0] = { 0, 1 };
+				check(FindObjTrigger(0, TT_SPAWN_BOT, -1) == &object_triggers[0],
+				      "Pinned lookup filtered type, disabled flag or consumed owner");
+				check(!FindObjTrigger(1, TT_SPAWN_BOT, -1) && !FindObjTrigger(0, TT_SPAWN_BOT, 0),
+				      "Pinned lookup crossed owner or attachment count");
+			}
+	object_triggers = { { 30, 0, 0 }, { 26, 0, 0 } };
+	gameData.trigData.objTriggerRefs[0] = { 0, 2 };
+	check(FindObjTrigger(0, TT_SPAWN_BOT, -1) == &object_triggers[0] &&
+	          FindObjTrigger(0, TT_SPAWN_BOT, 0) == &object_triggers[1],
+	      "Pinned lookup did not retain first attached trigger ordering");
+	object_triggers.clear();
+	gameData.trigData.objTriggerRefs = {};
+	check(!FindObjTrigger(0, TT_SPAWN_BOT, -1), "Pinned lookup invented an attachment");
+}
+
 void read_vector(std::istream &file, CFixVector &vector)
 {
 	file >> vector.v.coord.x >> vector.v.coord.y >> vector.v.coord.z;
@@ -255,6 +297,7 @@ int main(int argc, char **argv)
 {
 	try {
 		check_signed_boss_profile();
+		check_attachment_lookup();
 		check(argc == 2, "Boss reference requires production samples");
 		std::ifstream file(argv[1]);
 		int types = 0;
@@ -304,11 +347,22 @@ int main(int argc, char **argv)
 			check(bool(file), "Truncated boss sample");
 			cursor = 0;
 			allocated = false;
-			has_spawn = false;
+			object_triggers.clear();
+			gameData.trigData.objTriggerRefs = {};
 			player = {};
 			gameData.bossData.state.m_nLastGateTime = gameData.timeData.xGame - elapsed;
 			population.assign(count, {});
 			for (auto &object : population) object.info.nCreator = BOSS_GATE_PRODUCER_NUM;
+			if (!cases) {
+				object_triggers = { { 30, 0, 0 } };
+				gameData.trigData.objTriggerRefs[0] = { 0, 1 };
+				const auto last = gameData.bossData.state.m_nLastGateTime;
+				check(objects[0].BossSpewRobot(nullptr, -1, 0) < 0 && !allocated && !cursor &&
+				          gameData.bossData.state.m_nLastGateTime == last,
+				      "Pinned natural spew ignored sound-only attachment or consumed RNG/cooldown");
+				object_triggers.clear();
+				gameData.trigData.objTriggerRefs = {};
+			}
 			const int created = objects[0].BossSpewRobot(nullptr, std::int16_t(requested), attached);
 			check((created >= 0) == bool(success), "Reference boss creation decision differs");
 			check(gameData.timeData.xGame - gameData.bossData.state.m_nLastGateTime == expected_elapsed, "Reference boss cooldown differs");
