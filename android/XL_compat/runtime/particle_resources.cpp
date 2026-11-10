@@ -5,6 +5,7 @@
 #include "../inventory.h"
 #include "../particle_image.h"
 #include "../lightning_effect.h"
+#include "../lightning_admission.h"
 #include "../scoped_texture.h"
 #ifdef __ANDROID__
 #include "android_mission_assets.h"
@@ -25,6 +26,8 @@ namespace xl_compat
 {
 ParticleImageResource::ParticleImageResource() = default;
 ParticleImageResource::~ParticleImageResource() = default;
+AnimatedImageResource::AnimatedImageResource() = default;
+AnimatedImageResource::~AnimatedImageResource() = default;
 ShieldImageResource::ShieldImageResource() = default;
 ShieldImageResource::~ShieldImageResource() = default;
 namespace
@@ -97,13 +100,14 @@ bool locate(std::string &path, bool installation, const std::string &kind)
 	return true;
 }
 template <typename Resource>
-std::shared_ptr<Resource> read_addon_image(const char *name, const std::string &kind, bool optional)
+std::shared_ptr<Resource> read_addon_image(const char *name, const std::string &kind, bool optional, const char *directory = "textures/d2x-xl/")
 {
-	auto mission = addon_mission_texture_path(mission_resource_archive(), name);
+	auto mission = std::strchr(name, '#') ? animation_mission_texture_path(mission_resource_archive(), name)
+	                                      : addon_mission_texture_path(mission_resource_archive(), name);
 	if (mission.empty()) throw std::runtime_error("XL " + kind + " images require a selected mission HOG identity");
 	std::string selected;
 	for (bool installation : { false, true }) {
-		const auto base = installation ? std::string("textures/d2x-xl/") + name : mission.substr(0, mission.size() - 4);
+		const auto base = installation ? std::string(directory) + name : mission.substr(0, mission.size() - 4);
 		for (const char *extension : { ".tga", ".png" }) {
 			auto candidate = base + extension;
 			if (locate(candidate, installation, kind)) {
@@ -172,12 +176,31 @@ std::shared_ptr<const ParticleImageResource> prepare_lightning_image(const Inven
 {
 	bool required = false;
 	for (const auto &object : level.objects)
-		if (object.render == 12) required |= lightning_definition(object, 2).glow != 0;
+		if (object.render == 12 && authored_lightning_emits(object)) required |= prepare_authored_lightning(level, object).glow != 0;
 	return required ? prepare_addon_image("corona", "lightning corona", 0) : nullptr;
 }
 std::shared_ptr<const ParticleImageResource> prepare_powerup_glare_image()
 {
 	// Source omits optional powerup coronas when glare.Load fails
 	return prepare_addon_image("glare", "powerup glare", 0, true);
+}
+std::shared_ptr<const AnimatedImageResource> prepare_time_equipment_image(unsigned index)
+{
+	if (index > 1) throw std::runtime_error("Invalid XL time-equipment image");
+	auto image = read_addon_image<AnimatedImageResource>(index ? "bullettime#0" : "slowmotion#0", "time equipment", false, "textures/d2/");
+	if (image->bitmap.frames != 16 || image->bitmap.height != image->bitmap.width * 16)
+		throw std::runtime_error("XL time equipment requires sixteen vertical square frames: " + image->path);
+	// The source animation owns square frame textures, not one tall GPU texture
+	image->frames.resize(16);
+	const auto bytes = std::size_t(image->bitmap.width) * image->bitmap.width * 4;
+	for (unsigned i = 0; i < 16; ++i) {
+		auto &frame = image->frames[i];
+		frame.width = frame.height = image->bitmap.width;
+		frame.truecolor = true;
+		frame.flags = image->bitmap.flags;
+		frame.pixels.assign(image->bitmap.pixels.begin() + i * bytes, image->bitmap.pixels.begin() + (i + 1) * bytes);
+		image->textures.push_back(std::make_unique<ParticleTexture>(frame, image->path.c_str(), false));
+	}
+	return image;
 }
 } // namespace xl_compat

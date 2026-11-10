@@ -134,7 +134,8 @@ xl_compat::SlowMotionOutput compare(State &state, const Input &input, bool sound
 	nSlowMotionChannel = state.transition_sound ? 42 : -1;
 	events.clear();
 	delta = 0;
-	DoSlowMotionFrame();
+	if (input.force_off && input.xl && !input.multiplayer && !input.nostalgia) SlowMotionOff();
+	else DoSlowMotionFrame();
 	std::vector<Event> delivered;
 	auto actual = xl_compat::slow_motion_frame(state, input, [&](Event event) { delivered.push_back(event); return sound_available; });
 	require(delivered == actual.events, "Sink delivery did not follow recorded event order");
@@ -147,7 +148,7 @@ xl_compat::SlowMotionOutput compare(State &state, const Input &input, bool sound
 	require(equal(state, expected), "World/player state differs from pinned source");
 	require(actual.events == events, "Audio/message order differs from pinned source");
 	require(actual.energy_delta == delta, "Energy debit differs from pinned source");
-	require(actual.consumed_controls == (input.xl && !input.multiplayer && !input.nostalgia && !input.reactor_destroyed), "Control-consumption contract differs");
+	require(actual.consumed_controls == (input.xl && !input.multiplayer && !input.nostalgia && !input.reactor_destroyed && !input.force_off), "Control-consumption contract differs");
 	require(controls[0].slowMotionCount == (actual.consumed_controls ? 0 : input.slow_pressed) &&
 	            controls[0].bulletTimeCount == (actual.consumed_controls ? 0 : input.bullet_pressed),
 	        "Reference controls were not preserved/consumed");
@@ -197,6 +198,7 @@ void trajectories()
 			input.slow_pressed = step == 0 || step == 400 || step == 900;
 			input.bullet_pressed = step == 200 || step == 600;
 			input.reactor_destroyed = mode == 3 && step > 25;
+			input.force_off = mode == 3 && step == 25;
 			input.multiplayer = mode == 4 && step >= 20 && step <= 300;
 			input.nostalgia = mode == 5 && step >= 20 && step <= 300;
 			input.xl = !(mode == 6 && step >= 20 && step <= 300);
@@ -204,7 +206,10 @@ void trajectories()
 			if (mode == 8 && step == 123) input.equipment = 0;
 			if (mode == 9 && step == 123) input.energy = 10 * 65536;
 			if (mode == 10) input.frame = 0;
-			if (mode == 11) input.now_ms += 10000;
+			if (mode == 11) {
+				input.now_ms += 10000;
+				input.frame = 3 * 65536;
+			}
 			auto saved = state;
 			const auto result = compare(state, input, sound_available);
 			const auto replay = xl_compat::slow_motion_frame(saved, input, [=](Event) { return sound_available; });
@@ -240,7 +245,7 @@ void negatives()
 			case 6: state.clocks[1].updated_ms = 101; break;
 			case 7: input.now_ms = -1; break;
 			case 8: input.frame = -1; break;
-			case 9: input.frame = 65537; break;
+			case 9: input.frame = (std::numeric_limits<std::int32_t>::max)() / 16 + 1; break;
 			case 10: input.difficulty = -1; break;
 			case 11: input.difficulty = 5; break;
 			case 12: input.energy = -2; break;

@@ -71,6 +71,11 @@ internal val XL_RESOURCE_MOD =
         directories =
             listOf(
                 ResourceModCatalog.Directory(
+                    "textures/d2",
+                    setOf("png"),
+                    setOf("slowmotion#0", "bullettime#0"),
+                ),
+                ResourceModCatalog.Directory(
                     "textures/d2x-xl",
                     setOf("png", "tga"),
                     setOf(

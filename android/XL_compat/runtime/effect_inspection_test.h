@@ -8,6 +8,75 @@
 #include "addon_audio_resource_test.h"
 #include "particle_original_test.h"
 #include "particle_secret_test.h"
+#include "camera_controller.h"
+#include "camera_renderer.h"
+#include "camera_save.h"
+#include "../camera_admission.h"
+static void camera_attachment_native_case()
+{
+	const int owner = obj_create(OBJ_ROBOT, 0, ConsoleObject->segnum, &ConsoleObject->pos, &ConsoleObject->orient,
+	                             F1_0, CT_AI, MT_PHYSICS, RT_POLYOBJ);
+	require(owner >= 0, "Camera attachment control could not allocate its owner");
+	const auto original = Objects[owner];
+	struct Guard {
+		int owner;
+		object original;
+		~Guard()
+		{
+			Objects[owner] = original;
+			obj_delete(owner);
+			xl_camera_controller_bind_level();
+		}
+	} guard{ owner, original };
+	for (const int type : { int(OBJ_ROBOT), 20 }) {
+		auto &actor = Objects[owner];
+		actor = original;
+		actor.type = ubyte(type);
+		if (type == 20) {
+			actor.id = 1;
+			actor.control_type = CT_NONE;
+			actor.movement_type = MT_NONE;
+			actor.render_type = RT_NONE;
+		}
+		xl_compat::Inventory fixture;
+		fixture.level_version = 27;
+		fixture.game_version = 40;
+		fixture.segments.resize(Num_segments);
+		fixture.objects.resize(Highest_object_index + 1);
+		fixture.objects[owner].type = type;
+		fixture.object_trigger_records.push_back({ { 16, 0, 0, -1, { { actor.segnum, 0 }, { actor.segnum, 1 } } }, owner });
+		require(xl_compat::qualified_camera_binding(fixture, fixture.object_trigger_records[0]), "General camera owner was not admitted");
+		xl_camera_controller_load(fixture);
+		xl_object_trigger_load(fixture);
+		const auto saved = xl_camera_attachments_snapshot();
+		require(saved.size() == 1 && saved[0] == nlohmann::json({ owner, int(actor.signature) }), "Camera monitors duplicated their shared owner identity");
+		actor.pos.x += F1_0;
+		const auto moved = actor;
+		xl_camera_controller_frame(owner);
+		XlCameraControllerState state;
+		require(xl_camera_controller_get(owner, state) && state.monitor == 1 && !std::memcmp(&actor, &moved, sizeof(actor)),
+		        "General attachment applied CAMBOT motion or changed live owner state");
+		xl_object_trigger_event(owner, 0);
+		require(xl_camera_controller_get(owner, state), "Object event consumed the independent camera binding");
+		++actor.signature;
+		require(!xl_camera_attachments_restore(saved, true), "Camera restore accepted a reused owner signature");
+		--actor.signature;
+		require(xl_camera_controller_get(owner, state), "Invalid camera restore mutated the attachment");
+		auto malformed = saved;
+		malformed[0][1] = bool{ true };
+		require(!xl_camera_attachments_restore(malformed, true) && xl_camera_controller_get(owner, state), "Malformed camera identity changed live binding");
+		actor.type = OBJ_NONE;
+		require(!xl_camera_controller_get(owner, state), "Deleted camera owner stayed attached");
+		actor = moved;
+		xl_camera_renderer_reset();
+		require(!xl_camera_controller_get(owner, state), "Context reset reattached a deleted camera owner");
+		const auto detached = xl_camera_attachments_snapshot();
+		xl_camera_controller_load(fixture);
+		require(xl_camera_attachments_restore(detached, true) && !xl_camera_controller_get(owner, state), "Restore resurrected a detached camera attachment");
+		require(xl_camera_attachments_restore(saved, true) && xl_camera_controller_get(owner, state), "Valid saved live attachment did not restore");
+	}
+	std::cout << "XL camera attachments: moving robot/effect ownership, independent binding, typed atomic restore and deletion/context isolation passed\n";
+}
 static int effect_inspection_test(int argc, char **argv)
 {
 	try {
@@ -64,6 +133,10 @@ static int effect_inspection_test(int argc, char **argv)
 				StartNewGame(1);
 				const int active = xl_level_extensions_active();
 				require(!!active == (level == 2), "stock/XL positive source did not load before rejection control");
+				if (version == 23 && level == 2) {
+					camera_attachment_native_case();
+					require(!load_level("neptunxl.rl2"), "Camera attachment controls did not recover the original level");
+				}
 				if (version == 23 && particle_receipt.is_open()) {
 					particle_world_native_case(particle_receipt, level == 1 ? "stock.rl2" : "neptunxl.rl2", unsigned(level - 1));
 					if (level == 2) {

@@ -1,6 +1,7 @@
 #ifdef DXX_XL_RUNTIME
 #include "explosion_motion.h"
 #include "preview.h"
+#include "slow_motion_runtime.h"
 #include "d1_in_d2/d1_in_d2.h"
 #include <math.h>
 #include <stdint.h>
@@ -1133,9 +1134,14 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 
 				obj->mtype.phys_info.flags = PF_BOUNCE;
 
-				obj->rtype.vclip_info.vclip_num = Powerup_info[obj->id].vclip_num;
-				obj->rtype.vclip_info.frametime = Vclip[obj->rtype.vclip_info.vclip_num].frame_time;
-				obj->rtype.vclip_info.framenum = 0;
+#ifdef DXX_XL_RUNTIME
+				if (!xl_time_equipment_initialize(obj, 1))
+#endif
+				{
+					obj->rtype.vclip_info.vclip_num = Powerup_info[obj->id].vclip_num;
+					obj->rtype.vclip_info.frametime = Vclip[obj->rtype.vclip_info.vclip_num].frame_time;
+					obj->rtype.vclip_info.framenum = 0;
+				}
 
 				switch (obj->id) {
 					case POW_MISSILE_1:

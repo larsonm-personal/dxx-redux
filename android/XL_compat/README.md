@@ -5,6 +5,12 @@ This directory owns D2X-XL format knowledge and compatibility policy. Normal Ope
 Runtime feature and resource checks decide admission. Software-renderer builds
 retain explicit rejection because XL rendering is not implemented there
 
+XL single-player time equipment now uses normal pickups, desktop Alt+S/Alt+B and
+Android Extra-button actions. Genuine addon import, ownership, clocks and cold
+save restoration share the existing resource and runtime owners. See
+[time equipment](evidence/time-equipment.md) for setup, source semantics and
+the limits of the original Warp Shock demonstration
+
 XL OpenGL drawing is in `runtime/corona_renderer.c`, compiled into D2's OpenGL
 target in normal OpenGL builds. Stock source retains the small alpha and
 depth-policy integration hooks. D1 needs no matching XL hooks for this D2-format

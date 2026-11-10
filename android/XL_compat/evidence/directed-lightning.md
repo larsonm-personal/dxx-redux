@@ -16,8 +16,19 @@ product with the normalized reference direction is at least
 `65536 - angle * 65536 / 90`. For angle 4 this is 62624, not a literal four-degree
 cone. The retained reference endpoint is unchanged by Move and reused by every
 restart. The runtime now follows those semantics and rejects a coincident
-reference endpoint before sampling. Negative angles, absent or ambiguous targets,
-moving authored owners, in-plane and waypoint profiles remain rejected.
+reference endpoint before sampling. Negative angles, moving authored owners,
+in-plane and waypoint profiles remain rejected.
+
+The shared owner now follows `FindTargetPos`/`StaticFrame` when targets are absent
+or repeated. Target zero skips lookup; otherwise the first live authored owner
+with the matching signed ID wins, in ascending object order. Missing targets use
+the emitter's current forward vector times the signed authored length. This is
+still a fixed reference endpoint, including for a cone. Random angle-zero owners
+retain their null endpoint. A zero-length fallback remains rejected before RNG.
+Zero-bolt objects retain target identity and activation without allocating bolts,
+sound owners or effects randomness. The existing native lifecycle check covers
+duplicate IDs, removal before rebuilding, live orientation and anchor restore;
+the existing pinned-vector comparison covers positive and negative lengths.
 
 The pre-existing global style 0 and child-detail-off settings remain unchanged.
 The reference STYLE macro caps authored style 1 at effective style 0; this does not
@@ -40,12 +51,15 @@ coordinates. Audio controls exercise actual generated-fixture PCM, range,
 pause, dormant/restart, restore and slot reuse for directed owners. They do not
 substitute generated audio into the original Sphere run.
 
-Original qualification currently reaches a genuine downstream resource failure:
+The earlier original qualification reached a genuine downstream resource failure:
 `Missing XL sound lightning.wav`. The mission archive and owned startup
 installation do not supply it. The original waveform has documented SHA-256
 `149382490dfec4517e2594921c8dcb71518c372846b73ee3c157a0f9ca3efd30`, but is not
 available among the mounted private assets. Unassisted level load and 120 ticks
-are therefore not established, and no readiness improvement is claimed.
+were therefore not established by that run. The November 10 implementation imports
+the genuine waveform through the existing resource owner. Its new rendered
+qualification is tracked separately; this source change alone grants no gameplay
+or readiness claim.
 
 Validation: all 42 standalone/reference tests passed, including 218880
 complete bolt ticks and 11520 emitter ticks; final changed-source controls passed

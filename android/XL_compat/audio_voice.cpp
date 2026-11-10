@@ -147,10 +147,16 @@ void AudioVoices::mix(unsigned char *stream, std::size_t frames, const std::vect
 				std::int16_t previous;
 				auto *destination = stream + (frame * 2 + channel) * sizeof(previous);
 				std::memcpy(&previous, destination, sizeof(previous));
-				const int panned = int(float(sample.stereo[std::size_t(voice.position) * 2 + channel]) * (float(voice.output.pan[channel]) / 255.0f));
+				const auto first = sample.stereo[std::size_t(voice.position) * 2 + channel];
+				const auto next = voice.position + 1 < sample.frames() ? voice.position + 1 : (voice.remaining != 1 ? 0u : voice.position);
+				const auto second = sample.stereo[std::size_t(next) * 2 + channel];
+				const int interpolated = (int(first) * int(slowdown - voice.subframe) + int(second) * int(voice.subframe)) / int(slowdown);
+				const int panned = int(float(interpolated) * (float(voice.output.pan[channel]) / 255.0f));
 				const auto mixed = std::int16_t((std::clamp) (int(previous) + panned * channel_gain / 128, -32768, 32767));
 				std::memcpy(destination, &mixed, sizeof(mixed));
 			}
+			if (++voice.subframe < slowdown) continue;
+			voice.subframe = 0;
 			if (++voice.position == sample.frames()) {
 				voice.position = 0;
 				if (voice.remaining > 0 && !--voice.remaining) {

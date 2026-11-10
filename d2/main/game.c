@@ -1832,6 +1832,9 @@ static void game_process_frame_body(void)
 	input_demo_debug_log_player_motion_state("entry");
 	input_demo_log_current_replay_frame_state_mismatch();
 	input_demo_record_game_frame();
+#ifdef DXX_XL_RUNTIME
+	xl_slow_motion_frame();
+#endif
 	update_player_stats();
 	if (Newdemo_state != ND_STATE_PLAYBACK && ConsoleObject)
 		secret_area_note_segment_entered(ConsoleObject->segnum);

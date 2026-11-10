@@ -79,15 +79,15 @@ void sort_actions(int left, int right)
 bool bound(const ObjectAction &entry)
 {
 	return entry.owner >= 0 && entry.owner <= Highest_object_index &&
-	       (xl_wall_teleport_actor(entry.owner) || (entry.action.type == 16 && Objects[entry.owner].type == 16)) && Objects[entry.owner].signature == entry.signature;
+	       (xl_wall_teleport_actor(entry.owner) || (entry.action.type == 16 && (Objects[entry.owner].type == 16 || Objects[entry.owner].type == 20))) && Objects[entry.owner].signature == entry.signature;
 }
 
 void operate(ObjectAction &entry)
 {
 	auto &action = entry.action;
 	if (!bound(entry) || (action.flags & TF_DISABLED)) return;
-	// CTrigger::Operate rejects OBJ_CAMBOT before recording operation or flags
-	if (Objects[entry.owner].type == 16) return;
+	// CTrigger::Operate rejects OBJ_CAMBOT and OBJ_EFFECT before recording operation or flags
+	if (Objects[entry.owner].type == 16 || Objects[entry.owner].type == 20) return;
 	if (action.type == 25 && !xl_countdown_valid(&action)) return;
 	if (action.type == 34 && !xl_disarm_action_valid(&action)) return;
 	if (action.type == 36 && !xl_seismic_action_valid(&action)) return;
@@ -171,7 +171,8 @@ void xl_object_trigger_load(const xl_compat::Inventory &level)
 	xl_object_trigger_clear();
 	for (const auto &record : level.object_trigger_records) {
 		const auto &source = record.action;
-		const bool camera_binding = source.type == 16 && record.object >= 0 && record.object <= Highest_object_index && Objects[record.object].type == 16;
+		const bool camera_binding = source.type == 16 && record.object >= 0 && record.object <= Highest_object_index &&
+		                            (Objects[record.object].type == 16 || Objects[record.object].type == OBJ_ROBOT || Objects[record.object].type == 20);
 		if ((source.type > 14 && source.type != 15 && !camera_binding && source.type != 19 && source.type != 25 && source.type != 26 && source.type != 28 && source.type != 29 && source.type != 30 && source.type != 34 && source.type != 36 && (source.type < 31 || source.type > 33)) || (source.flags & ~flags_mask) || source.targets.size() > MAX_WALLS_PER_LINK || (source.type == 28 && source.targets.empty()))
 			throw std::runtime_error("object trigger action or flags are not implemented");
 		ObjectAction entry;

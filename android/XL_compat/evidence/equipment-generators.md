@@ -31,8 +31,10 @@ controlled fixtures; no new original mission is qualified.
 
 This profile retains existing capacities, ownership/environment, expanded data,
 unsupported payload and multiplayer gates. Equipment with modern water has
-[separate combined controls](water-actors.md). Legacy equipment encodings and XL slow-motion/bullet-time pickups
-remain unsupported. The equipment checks do not establish full reference pickup,
+[separate combined controls](water-actors.md). Modern makers now support
+[slow-motion and bullet-time pickups](time-equipment.md) through the same
+initializer used by placed items and ordinary contained/death drops. Legacy
+equipment encodings remain unsupported. The equipment checks do not establish full reference pickup,
 AI, rendering or campaign parity.
 
 The pinned XL disk reader calls SetEquipmentMakerStates after restoring producer

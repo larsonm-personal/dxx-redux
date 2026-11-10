@@ -1,9 +1,13 @@
 // Production-load equipment controls use poses and authored actions, never navigation
 #include "equipment.h"
+#include "slow_motion_runtime.h"
+#include "../time_equipment.h"
 extern "C" {
 #include "powerup.h"
 #include "fuelcen.h"
 void do_matcen(const trigger *action);
+void drop_player_eggs(object *playerobj);
+void collide_player_and_powerup(object *, object *, vms_vector *);
 }
 
 static xl_compat::Inventory write_equipment_fixture(const std::filesystem::path &root, int version = 23)
@@ -480,6 +484,46 @@ static int equipment_test(int argc, char **argv)
 		equipment_initialization_controls(root.parent_path(), authored, initial);
 		equipment_mixed_order_controls(authored, initial);
 		equipment_restore_guards(root.parent_path());
+		// One addon lifecycle uses the same makers, collision and real egg/drop paths
+		require(state_restore_all_sub(initial, 0), "Time-equipment producer baseline failed");
+		auto time_equipment = authored;
+		for (unsigned row = 0; row < 2; ++row) {
+			time_equipment.equipment[row][0] = 0;
+			time_equipment.equipment[row][1] = 1u << (16 + row);
+		}
+		xl_equipment_load(time_equipment);
+		require(xl_equipment_trigger(20) == 1 && xl_equipment_trigger(23) == 1, "Time-equipment makers did not activate");
+		FrameTime = i2f(9) + 1;
+		fuelcen_update_all();
+		FrameTime = Vclip[VCLIP_MORPHING_ROBOT].play_time / 2;
+		fuelcen_update_all();
+		Players[Player_num].flags &= ~(XL_PLAYER_FLAGS_SLOW_MOTION | XL_PLAYER_FLAGS_BULLET_TIME);
+		for (int row = 0; row < 2; ++row) {
+			const auto generated = items(row ? 23 : 20);
+			require(generated.size() == 1, "Time-equipment maker did not produce one item");
+			auto &item = Objects[generated[0]];
+			require(item.id == 48 + row && item.size == xl_compat::time_equipment_spawn_radius && item.rtype.vclip_info.vclip_num == -1 - row,
+			        "Spawned time equipment lost its shared sprite/size initialization");
+			collide_player_and_powerup(ConsoleObject, &item, &item.pos);
+			require(item.flags & OF_SHOULD_BE_DEAD, "Generated time equipment did not use ordinary pickup contact");
+			obj_delete(generated[0]);
+		}
+		const auto equipment_bits = XL_PLAYER_FLAGS_SLOW_MOTION | XL_PLAYER_FLAGS_BULLET_TIME;
+		require((Players[Player_num].flags & equipment_bits) == equipment_bits, "Generated pickups did not grant both time devices");
+		drop_player_eggs(ConsoleObject);
+		unsigned dropped = 0;
+		for (int i = 0; i <= Highest_object_index; ++i) {
+			const auto &item = Objects[i];
+			if (item.type != OBJ_POWERUP || !xl_compat::time_equipment_powerup(item.id)) continue;
+			require(item.size == xl_compat::time_equipment_spawn_radius && item.rtype.vclip_info.vclip_num == 47 - item.id && item.movement_type == MT_PHYSICS,
+			        "Death egg path bypassed shared time-equipment initialization");
+			dropped |= 1u << (item.id - 48);
+		}
+		require(dropped == 3 && (Players[Player_num].flags & equipment_bits) == equipment_bits, "Single-player death did not drop and retain source time equipment");
+		init_player_stats_new_ship(Player_num);
+		require((Players[Player_num].flags & equipment_bits) == equipment_bits, "Native new-ship initialization lost source time equipment");
+		require(state_restore_all_sub(initial, 0), "Time-equipment producer cleanup failed");
+		std::cout << "XL time-equipment producers: both makers, ordinary contacts, death eggs and new-ship retention passed\n";
 		std::cout << "XL equipment controls passed: assignment, authored activation, timing, toggles, production/pickup, pending restore and stock isolation\n";
 		return 0;
 	} catch (const std::exception &error) {

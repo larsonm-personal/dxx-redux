@@ -113,6 +113,7 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 		native.movement_type = MT_NONE;
 		native.render_type = RT_NONE;
 		native.segnum = 0;
+		native.orient = vmd_identity_matrix;
 		compute_segment_center(&native.pos, &Segments[0]);
 		auto &authored = source.objects[index];
 		authored.type = 20;
@@ -121,6 +122,7 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 		authored.render = authored.reader_render = 12;
 		authored.segment = 0;
 		authored.position = { native.pos.x, native.pos.y, native.pos.z };
+		authored.orientation = { F1_0, 0, 0, 0, F1_0, 0, 0, 0, F1_0 };
 		authored.render_data = { 300, 50, 18, 5, 1, -1, 3, 0, 0, 8, 0, 2, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, index == 1 };
 		// Geometry/lifetime owner runs without an audio bank; playback has its own owner
 		authored.render_data[18] = 0;
@@ -150,7 +152,10 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 	if (profile >= 3) {
 		for (int variant = 0; variant < 3; ++variant) {
 			auto invalid_target = source;
-			if (variant == 0) invalid_target.objects[1].render_data[8] = 999;
+			if (variant == 0) {
+				invalid_target.objects[1].render_data[8] = 999;
+				invalid_target.objects[1].render_data[2] = 0;
+			}
 			if (variant == 1) invalid_target.objects[2].position = invalid_target.objects[1].position;
 			if (variant == 2) invalid_target.objects[2].movement = 1;
 			bool failed = false;
@@ -211,6 +216,7 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 	require(queued[0].frame.core.vertices == frozen_core && queued[0].frame.glow.vertices == frozen_glow, "Lightning queue lost its captured frame");
 	queued[0].frame.core.vertices[0][0] += 1;
 	require(frame->core.vertices == frozen_core, "Queued lightning geometry aliases its live owner");
+
 	++Objects[1].signature;
 	require(!lightning_scene_item_valid(queued[0]), "Queued lightning followed a recycled native object");
 	--Objects[1].signature;
@@ -289,6 +295,54 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 	if (profile >= 3) require(lightning_object_emitter(1)->bolts.front().definition.length == 9 * F1_0,
 		                      "Fixed lightning restore used serialized rather than live target coordinates");
 	if (profile == 4) require(lightning_object_emitter(1)->bolts.front().reference_end == LightningPoint{ Objects[2].pos.x, Objects[2].pos.y, Objects[2].pos.z }, "Directed restore lost live reference endpoint");
+	if (profile == 3) {
+		auto anchors = source;
+		anchors.objects[2].render_data[6] = 0;
+		anchors.objects[2].render_data[2] = 0;
+		bind_lightning_objects(anchors);
+		lightning_objects_frame();
+		const auto *anchored = lightning_object_emitter(1);
+		const auto anchor_diagnostic = "Zero-bolt target endpoint: emitter=" + std::to_string(anchored != nullptr) +
+		                               " target_emitter=" + std::to_string(lightning_object_emitter(2) != nullptr) +
+		                               " length=" + std::to_string(anchored ? anchored->bolts.front().definition.length : -1);
+		require(anchored && !lightning_object_emitter(2) && anchored->bolts.front().definition.length == 9 * F1_0, anchor_diagnostic.c_str());
+		// Duplicate IDs use the first live owner; a removed target uses live orientation
+		const auto target_native = Objects[2];
+		anchors.objects[3] = anchors.objects[2];
+		Objects[3] = Objects[2];
+		Objects[3].signature += 100;
+		Objects[3].pos.y += F1_0;
+		anchors.objects[3].position[1] += F1_0;
+		bind_lightning_objects(anchors);
+		lightning_objects_frame();
+		require(lightning_object_emitter(1)->bolts.front().reference_end == LightningPoint{ Objects[2].pos.x, Objects[2].pos.y, Objects[2].pos.z },
+		        "Duplicate lightning IDs did not select the first authored live target");
+		Objects[2].type = Objects[3].type = OBJ_NONE;
+		Objects[1].orient.fvec = { F1_0, 0, 0 };
+		const auto fallback_state = lightning_objects_snapshot();
+		require(restore_lightning_objects(fallback_state, true), "Removed lightning targets did not retain safe ownership");
+		lightning_objects_frame();
+		require(lightning_object_emitter(1)->bolts.front().reference_end == LightningPoint{ Objects[1].pos.x + 60 * F1_0, Objects[1].pos.y, Objects[1].pos.z } &&
+		            !lightning_object_emitter(1)->bolts.front().lifetime.random_nodes,
+		        "Missing lightning target did not use a fixed live-orientation endpoint");
+		Objects[2] = target_native;
+		Objects[3] = guard.actor;
+		anchors.objects[3] = source.objects[3];
+		anchors.objects[1].render_data[6] = 0;
+		anchors.objects[1].render_data[2] = 0;
+		bind_lightning_objects(anchors);
+		const auto anchor_state = lightning_objects_snapshot();
+		const auto anchor_rng = d_rand_get_stream_call_count(D_RNG_FX);
+		lightning_objects_frame();
+		require(!lightning_object_emitter(1) && !lightning_object_emitter(2) && d_rand_get_stream_call_count(D_RNG_FX) == anchor_rng,
+		        "Target-only lightning objects emitted bolts or consumed effects RNG");
+		require(restore_lightning_objects(anchor_state, true), "Target-only lightning activation did not restore");
+		lightning_objects_frame();
+		require(!lightning_object_emitter(1) && !lightning_object_emitter(2) && d_rand_get_stream_call_count(D_RNG_FX) == anchor_rng,
+		        "Restored target-only lightning objects created transient emitters");
+		bind_lightning_objects(source);
+		lightning_objects_frame();
+	}
 	++Objects[1].signature;
 	lightning_objects_frame();
 	require(!lightning_object_emitter(1) && !xl_lightning_object_set_enabled(1, 1), "Recycled native object inherited lightning");

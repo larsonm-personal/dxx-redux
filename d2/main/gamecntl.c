@@ -28,6 +28,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "pstypes.h"
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "slow_motion_runtime.h"
 #endif
 #include "window.h"
 #include "console.h"
@@ -1144,6 +1145,11 @@ int HandleSystemKey(int key)
 int HandleGameKey(int key)
 {
 	int new_obs = Current_obs_player;
+
+#ifdef DXX_XL_RUNTIME
+	if (key == (KEY_ALTED | KEY_S) || key == (KEY_ALTED | KEY_B))
+		return xl_slow_motion_request(key == (KEY_ALTED | KEY_B));
+#endif
 
 
 

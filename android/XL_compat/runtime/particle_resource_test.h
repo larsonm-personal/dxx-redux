@@ -31,7 +31,10 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 	object.render_data.resize(13);
 	object.render_data[11] = spray ? 1 : subtype;
 	if (lightning) {
-		object.render = 12;
+		level.segments.resize(1);
+		object.type = 20;
+		object.id = object.reader_id = 1;
+		object.render = object.reader_render = 12;
 		object.render_data = { 300, 50, 18, 5, 1, -1, 3, 0, 0, 8, 0, 2, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, 1 };
 	}
 	level.objects.push_back(object);

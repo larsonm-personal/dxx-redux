@@ -131,12 +131,18 @@ object TouchBindings {
     const val META_COOP_RESTART_LEVEL = 1044
     const val META_GUIDE_RECALL = 1045
 
+    // Native IDs mirror android_meta_actions.h; D2 uses Alt+S and Alt+B
+    const val META_SLOW_MOTION = 1046
+    const val META_BULLET_TIME = 1047
+
     /** Labels for meta actions, used in Extra button pickers. */
     val META_BUTTON_LABELS: Map<Int, String> =
         linkedMapOf(
             META_QUICK_SAVE to "Quick Save",
             META_QUICK_LOAD to "Quick Load",
             META_GAME_MENU to "Game Menu (ESC)",
+            META_SLOW_MOTION to "Slow Motion",
+            META_BULLET_TIME to "Bullet Time",
             META_MENU_CYCLE to "Menu",
             META_GUIDE_BOT_MENU to "Guide Bot Menu",
             META_GUIDE_FIND_ENERGY to "GB: Find Energy",
@@ -209,6 +215,8 @@ object TouchBindings {
             META_CYCLE_RIGHT_VIEW,
             META_DROP_FLAG,
             META_DROP_MARKER,
+            META_SLOW_MOTION,
+            META_BULLET_TIME,
         )
 
     // --- Radial menu preset IDs and segment templates ---

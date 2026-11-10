@@ -4,6 +4,7 @@
 #include "preview.h"
 #include "particle_resources.h"
 #include "particle_renderer.h"
+#include "fog.h"
 #include "lightning_renderer.h"
 #include "shield_renderer.h"
 #include "../camera_hit_render.h"

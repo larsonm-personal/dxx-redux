@@ -7,7 +7,7 @@
 
 namespace xl_compat
 {
-// Pinned default speedup=6 profile; no pickup or engine-clock admission
+// Pinned default speedup=6 profile shared by normal gameplay and source controls
 constexpr std::uint32_t slow_motion_equipment = 32768, bullet_time_equipment = 65536;
 struct SlowMotionClock {
 	float speed = 1;
@@ -34,6 +34,7 @@ struct SlowMotionInput {
 	int difficulty = 0;
 	std::int64_t now_ms = 0;
 	bool slow_pressed = false, bullet_pressed = false;
+	bool force_off = false;
 };
 struct SlowMotionOutput {
 	bool consumed_controls = false;

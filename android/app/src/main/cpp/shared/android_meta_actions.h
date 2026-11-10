@@ -59,6 +59,8 @@ struct window;
 #define META_GUIDE_FIND_UNEXPLORED 1043
 #define META_COOP_RESTART_LEVEL    1044
 #define META_GUIDE_RECALL          1045
+#define META_SLOW_MOTION           1046
+#define META_BULLET_TIME           1047
 
 /* Flags for dispatch table entries */
 #define META_FLAG_INSTANT 1 /* inject full press+release on button down, ignore up */

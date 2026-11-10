@@ -1,6 +1,7 @@
 // Geometry queries are explicit inputs; the actual pinned conversion is executed
 #include "particle_effect.h"
 #include <iostream>
+#include <sstream>
 #include <vector>
 namespace particle_reference
 {
@@ -306,8 +307,15 @@ void particle_emitter_position_controls()
 					object.info.position.vPos = { { { origin[0], origin[1], origin[2] } } };
 					const auto position = xl_compat::particle_emitter_position(effect, origin, actual);
 					DoStaticParticles(&object);
-					if (position != particleManager.position || actual.state != source.state || actual.trace != source.trace)
-						throw std::runtime_error("Pinned point emitter position or random call order differs");
+					if (position != particleManager.position || actual.state != source.state || actual.trace != source.trace) {
+						std::ostringstream detail;
+						detail << "Pinned point emitter position or random call order differs: drift=" << drift << " size=" << size << " seed=" << seed << " frame=" << frame;
+						for (const auto &draws : { actual.trace, source.trace }) {
+							detail << " draws=";
+							for (std::size_t i = draws.size() > 6 ? draws.size() - 6 : 0; i < draws.size(); ++i) detail << draws[i] << ',';
+						}
+						throw std::runtime_error(detail.str());
+					}
 					++comparisons;
 				}
 				const auto calls = source.trace.size();

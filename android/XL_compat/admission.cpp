@@ -180,7 +180,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	for (std::size_t row = 0; row < level.equipment.size(); ++row)
 		for (unsigned id = 0; id < 50; ++id)
 			if ((std::uint32_t(level.equipment[row][id / 32]) & (std::uint32_t(1) << (id % 32))) &&
-			    (id == 7 || id == 8 || id == 9 || id == 24 || id == 26 || id == 27 || id >= 46))
+			    (id == 7 || id == 8 || id == 9 || id == 24 || id == 26 || id == 27 || id == 46 || id == 47))
 				result.push_back({ "equipment item", static_cast<int>(row), "powerup " + std::to_string(id) + " requires unsupported multiplayer, addon or release pickup behavior" });
 	const auto producers = producer_layout(level);
 	limit(producers.robots.size() != level.matcens.size(), "generator assignment", "robotmaker segments and disk rows differ after source initialization");

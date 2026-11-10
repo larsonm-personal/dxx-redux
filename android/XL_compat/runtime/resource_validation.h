@@ -48,6 +48,7 @@ namespace xl_compat
 {
 struct Inventory;
 struct ParticleImageResource;
+struct AnimatedImageResource;
 class ModelHitboxTransform;
 struct RenderModelSphere;
 } // namespace xl_compat
@@ -79,6 +80,7 @@ class XlPreparedResources
 	const xl_compat::ParticleImageResource *particle_image(int subtype = 3) const;
 	const xl_compat::ParticleImageResource *lightning_image() const;
 	const xl_compat::ParticleImageResource *powerup_glare_image() const;
+	const xl_compat::AnimatedImageResource *time_equipment_image(unsigned index) const;
 
   private:
 	void validate_camera_query(const object &camera, const object &moving) const;
@@ -89,6 +91,7 @@ void xl_set_prepared_resources(const char *level_filename, std::unique_ptr<XlPre
 const xl_compat::ParticleImageResource *xl_prepared_particle_image(int subtype = 3);
 const xl_compat::ParticleImageResource *xl_prepared_lightning_image();
 const xl_compat::ParticleImageResource *xl_prepared_powerup_glare_image();
+const xl_compat::AnimatedImageResource *xl_prepared_time_equipment_image(unsigned index);
 #endif
 
 #endif

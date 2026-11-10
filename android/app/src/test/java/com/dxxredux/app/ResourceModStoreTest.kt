@@ -89,10 +89,12 @@ class ResourceModStoreTest {
         assertFalse("d2x.ham" in paths)
         assertTrue("textures/d2x-xl/smokingfire.png" in paths)
         assertTrue("sounds/d2x-xl/lightning.wav" in paths)
+        assertTrue("textures/d2/slowmotion#0.png" in paths)
+        assertTrue("textures/d2/bullettime#0.png" in paths)
         assertTrue(
             paths.all {
                 it == "d2x-xl.hog" || it.startsWith("textures/d2x-xl/") ||
-                    it.startsWith("sounds/d2x-xl/")
+                    it.startsWith("sounds/d2x-xl/") || it.startsWith("textures/d2/")
             },
         )
         assertTrue(pack.isDirectory)
@@ -107,13 +109,22 @@ class ResourceModStoreTest {
                 "D2X-XL\\data\\d2x-xl.hog",
                 "D2X-XL/textures/d2x-xl/smoke.png",
                 "D2X-XL/sounds/d2x-xl/lightning.wav",
+                "D2X-XL/textures/D2/slowmotion#0.png",
+                "D2X-XL/textures/D2/bullettime#0.png",
+                "D2X-XL/textures/D2/NHAS/slowmotion#0.png",
                 "D2X-XL/textures/hires/wall.png",
                 "data/exit.ham",
                 "extra.hog",
                 "descent2.ham",
             )
         assertEquals(
-            listOf("d2x-xl.hog", "sounds/d2x-xl/lightning.wav", "textures/d2x-xl/smoke.png"),
+            listOf(
+                "d2x-xl.hog",
+                "sounds/d2x-xl/lightning.wav",
+                "textures/d2/bullettime#0.png",
+                "textures/d2/slowmotion#0.png",
+                "textures/d2x-xl/smoke.png",
+            ),
             XL_RESOURCE_MOD.select(paths).map { it.target }.sorted(),
         )
         assertThrows(IllegalArgumentException::class.java) {

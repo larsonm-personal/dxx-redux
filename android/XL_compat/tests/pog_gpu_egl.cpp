@@ -15,6 +15,7 @@
 #include "../hog.h"
 #include "../runtime/pog_renderer.h"
 #include "../runtime/particle_renderer.h"
+#include "../runtime/fog.h"
 #include "../runtime/particle_resources.h"
 #include "../runtime/lightning_renderer.h"
 #include "../runtime/lightning_scene.h"

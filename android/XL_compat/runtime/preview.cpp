@@ -262,6 +262,7 @@ bool mission_has_companion(const char *extension)
 void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot, xl_assets::ObjectDependencies &graph)
 {
 	graph.xl_boss_spawning = true;
+	graph.xl_time_equipment = true;
 	auto blockers = xl_compat::runtime_blockers(level, water_pilot);
 	if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
 	if (multiplayer) throw std::runtime_error("multiplayer: XL synchronization is not implemented; use singleplayer");
@@ -402,7 +403,11 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 					throw std::runtime_error("static explosion requires a valid clip, positive timing and an in-range initial frame");
 				graph.clip(VCLIP_POWERUP_DISAPPEARANCE);
 			}
-			if (obj.type == OBJ_POWERUP) graph.powerup(obj.id);
+			if (obj.type == OBJ_POWERUP) {
+				if (xl_compat::time_equipment_powerup(obj.id))
+					xl_assets::asset_require(obj.render == RT_POWERUP && obj.size > 0, "time equipment requires an authored sprite and positive collision radius");
+				graph.powerup(obj.id);
+			}
 			if (obj.type == OBJ_WEAPON) graph.weapon(obj.id);
 			if (obj.type == OBJ_CNTRLCEN) {
 				if (obj.id >= Num_reactors || obj.id >= MAX_REACTORS) throw std::runtime_error("required reactor definition is missing");
@@ -436,7 +441,7 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 				const int texture = obj.render_data.back();
 				if (texture != -1) graph.texture(texture);
 			}
-			if (obj.render == RT_POWERUP || obj.render == RT_HOSTAGE || obj.render == RT_FIREBALL || obj.render == RT_WEAPON_VCLIP)
+			if ((obj.render == RT_POWERUP && !(obj.type == OBJ_POWERUP && xl_compat::time_equipment_powerup(obj.id))) || obj.render == RT_HOSTAGE || obj.render == RT_FIREBALL || obj.render == RT_WEAPON_VCLIP)
 				graph.clip(obj.render_data.at(0));
 		} catch (const std::exception &error) {
 			throw std::runtime_error("object " + std::to_string(i) + ": " + error.what());
@@ -1019,6 +1024,10 @@ extern "C" const char *xl_preview_level_path(const char *filename)
 extern "C" int xl_loading_extended_triggers(void)
 {
 	return loading_extended_triggers;
+}
+extern "C" int xl_loading_level_extensions(void)
+{
+	return loading_object_capacity != 0;
 }
 
 extern "C" int xl_preserve_effect_position(int object_type)

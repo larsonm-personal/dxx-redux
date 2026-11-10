@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "slow_motion_runtime.h"
 #include "gameplay_audio.h"
 #include "texture_pixels.h"
 #include "projectile.h"
@@ -2669,6 +2670,15 @@ void drop_player_eggs_remote(object *playerobj, ubyte remote)
 
 		if (Players[pnum].flags & PLAYER_FLAGS_CONVERTER)
 			call_object_create_egg(playerobj, 1, OBJ_POWERUP, POW_CONVERTER);
+
+#ifdef DXX_XL_RUNTIME
+		if (xl_level_extensions_active() && !(Game_mode & GM_MULTI)) {
+			if (Players[pnum].flags & XL_PLAYER_FLAGS_SLOW_MOTION)
+				call_object_create_egg(playerobj, 1, OBJ_POWERUP, 48);
+			if (Players[pnum].flags & XL_PLAYER_FLAGS_BULLET_TIME)
+				call_object_create_egg(playerobj, 1, OBJ_POWERUP, 49);
+		}
+#endif
 
 		if (Players[pnum].flags & PLAYER_FLAGS_HEADLIGHT)
 			call_object_create_egg(playerobj, 1, OBJ_POWERUP, POW_HEADLIGHT);

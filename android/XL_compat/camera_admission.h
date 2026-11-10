@@ -12,7 +12,8 @@ inline bool qualified_camera_object(const Object &object)
 inline bool qualified_camera_binding(const Inventory &level, const ObjectTrigger &record)
 {
 	return modern_runtime_layout(level) && record.action.type == 16 && record.object >= 0 && std::size_t(record.object) < level.objects.size() &&
-	       qualified_camera_object(level.objects[record.object]) && record.action.flags == 0 && record.action.time == -1 &&
+	       (qualified_camera_object(level.objects[record.object]) || level.objects[record.object].type == 2 || level.objects[record.object].type == 20) &&
+	       record.action.flags == 0 && record.action.time == -1 &&
 	       !record.action.targets.empty();
 }
 } // namespace xl_compat

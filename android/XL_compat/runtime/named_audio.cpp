@@ -1,4 +1,5 @@
 #include "named_audio.h"
+#include "slow_motion_runtime.h"
 #include "named_audio_state.h"
 #include "classic_audio.h"
 #include "shared_audio.h"
@@ -15,11 +16,13 @@
 #include "../ambient_sound.h"
 #include "../lightning_audio.h"
 #include "../lightning_effect.h"
+#include "../lightning_admission.h"
 #include "../particle_admission.h"
 #include "../named_sound.h"
 #include "../inventory.h"
 #include "../level_text.h"
 #include "../capacity.h"
+#include "../time_equipment.h"
 #include "picosha2.h"
 #include "save_epoch_format.h"
 #include <SDL.h>
@@ -42,6 +45,7 @@ extern "C" {
 #include "mission.h"
 #include "switch.h"
 #include "game.h"
+#include "player.h"
 #include "wall.h"
 #include "digi.h"
 #include "args.h"
@@ -102,6 +106,7 @@ std::array<AudioEvent, event_limit> events;
 bool resume_pending = false;
 unsigned output_rate = 44100;
 std::uint64_t callbacks = 0, output_frames = 0, failed_starts = 0;
+std::uint64_t transition_serial = 0;
 
 std::string external_key(const std::string &filename)
 {
@@ -251,6 +256,7 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 	std::size_t bytes = 0;
 	for (const auto &pcm : resources->sources) bytes += pcm.samples.size() * sizeof(std::int16_t);
 	std::string external_identity;
+	std::vector<std::string> external_names;
 	for (const auto &object : inventory.objects) {
 		std::string name;
 		if (object.render == 13) {
@@ -258,11 +264,19 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 			if (sound.volume < 0) throw std::runtime_error("XL ambient sound object has a negative playback volume");
 			if (sound.filename.empty()) throw std::runtime_error("XL ambient sound object has an empty filename");
 			name = sound.filename + ".wav";
-		} else if (object.render == 12 && lightning_definition(object, 2).sound)
+		} else if (object.render == 12 && authored_lightning_emits(object) && prepare_authored_lightning(inventory, object).sound)
 			name = lightning_sound_name;
 		else if (object.render == 11 && prepare_authored_particle(inventory, object).effect.kind == ParticleKind::bubbles)
 			name = bubble_sound_name;
 		else continue;
+		external_names.push_back(std::move(name));
+	}
+	// The source requests transition WAVs only with an enabled mixer
+	if (!GameArg.SndNoSound && xl_runtime::time_equipment_resources_required(inventory)) {
+		external_names.push_back("slowdown.wav");
+		external_names.push_back("speedup.wav");
+	}
+	for (const auto &name : external_names) {
 #ifndef USE_SDLMIXER
 		throw std::runtime_error("XL object sounds require the SDL_mixer backend");
 #endif
@@ -457,6 +471,42 @@ int xl_compat::audio_runtime::start_resource_sample(unsigned sample, int sound_c
 		return -1;
 	}
 }
+extern "C" int xl_named_audio_backend_ready(void)
+{
+	return backend_ready;
+}
+extern "C" void xl_named_audio_slow_motion_reset(void)
+{
+	AudioLock lock;
+	for (unsigned i = 0; i < mixer.voices.size(); ++i) {
+		if (transition_serial && mixer.voices[i].serial == transition_serial) mixer.stop(int(i));
+		mixer.voices[i].subframe = 0;
+	}
+	transition_serial = 0;
+	mixer.slowdown = 1;
+}
+bool xl_compat::slow_motion_audio_event(SlowMotionEvent event)
+{
+	if (event == SlowMotionEvent::play_slowdown || event == SlowMotionEvent::play_speedup) {
+		const int sample = external_sample(event == SlowMotionEvent::play_slowdown ? "slowdown.wav" : "speedup.wav");
+		const int slot = sample < 0 ? -1 : start_resource_sample(unsigned(sample), 0, 65536, 32768, 0, -1, -1);
+		if (slot < 0) return false;
+		AudioLock lock;
+		transition_serial = mixer.voices[unsigned(slot)].serial;
+		return true;
+	}
+	AudioLock lock;
+	if (event == SlowMotionEvent::stop_transition_sound) {
+		for (unsigned i = 0; i < mixer.voices.size(); ++i)
+			if (transition_serial && mixer.voices[i].serial == transition_serial) mixer.stop(int(i));
+		transition_serial = 0;
+	} else if (event == SlowMotionEvent::slow_audio || event == SlowMotionEvent::normal_audio) {
+		// All XL effects share this sample clock; keep SDL/device and music ownership
+		mixer.slowdown = event == SlowMotionEvent::slow_audio ? 3 : 1;
+		for (auto &voice : mixer.voices) voice.subframe = 0;
+	}
+	return true;
+}
 extern "C" int xl_audio_channel_playing(int slot)
 {
 	if (!xl_level_extensions_active()) return 0;
@@ -570,6 +620,7 @@ nlohmann::json named_audio_snapshot()
 	LoopingAudioState saved_loop;
 	std::uint64_t next;
 	unsigned cursor;
+	unsigned slowdown;
 	{
 		AudioLock lock;
 		owners.reconcile(mixer);
@@ -579,8 +630,11 @@ nlohmann::json named_audio_snapshot()
 		voices = mixer.voices;
 		next = mixer.next_serial;
 		cursor = mixer.cursor;
+		slowdown = mixer.slowdown;
 	}
 	nlohmann::json state = { { "source", bank ? bank->identity : "" }, { "rate", output_rate }, { "next", next }, { "cursor", cursor }, { "events", nlohmann::json::array() }, { "voices", nlohmann::json::array() } };
+	state["slowdown"] = slowdown;
+	state["transition"] = transition_serial;
 	state["linked"] = encode_linked_audio(saved_owners, deferred);
 	state["loop"] = saved_loop.channel < 0 ? nlohmann::json::array() : nlohmann::json{ saved_loop.channel, saved_loop.serial };
 	const auto seismic = bank ? seismic_audio_snapshot() : SeismicAudioState{ GameTime64, 0 };
@@ -594,7 +648,7 @@ nlohmann::json named_audio_snapshot()
 		}
 	for (unsigned slot = 0; slot < voices.size(); ++slot) {
 		const auto &voice = voices[slot];
-		if (voice.remaining) state["voices"].push_back({ slot, voice.serial, voice.sample, voice.position, voice.owner, voice.remaining, voice.priority.volume, int(voice.kind), voice.priority.sound_class, voice.priority.persistent, voice.output.volume, voice.output.pan[0], voice.output.pan[1] });
+		if (voice.remaining) state["voices"].push_back({ slot, voice.serial, voice.sample, voice.position, voice.owner, voice.remaining, voice.priority.volume, int(voice.kind), voice.priority.sound_class, voice.priority.persistent, voice.output.volume, voice.output.pan[0], voice.output.pan[1], voice.subframe });
 	}
 	return state;
 }
@@ -602,7 +656,7 @@ nlohmann::json named_audio_snapshot()
 bool restore_named_audio(const nlohmann::json &state, bool apply)
 {
 	try {
-		if (!state.is_object() || state.size() != 9 || !state.at("source").is_string() ||
+		if (!state.is_object() || state.size() != 11 || !state.at("source").is_string() ||
 		    state.at("source").get<std::string>() != (bank ? bank->identity : "") ||
 		    !state.at("events").is_array() || state.at("events").size() != (bank ? bank->actions.size() : 0) ||
 		    !state.at("voices").is_array() || state.at("voices").size() > audio_voice_limit)
@@ -610,6 +664,9 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 		const auto rate = unsigned(integer(state.at("rate"), 8000, 192000));
 		const auto next = std::uint64_t(integer(state.at("next"), 1, INT64_MAX));
 		const auto cursor = unsigned(integer(state.at("cursor"), 0, audio_voice_limit - 1));
+		const auto slowdown = unsigned(integer(state.at("slowdown"), 1, 3));
+		if (slowdown != 1 && slowdown != 3) throw std::runtime_error("Invalid saved XL effects sample clock");
+		const auto transition = std::uint64_t(integer(state.at("transition"), 0, std::int64_t(next - 1)));
 		std::array<AudioEvent, event_limit> restored_events;
 		std::set<unsigned> action_owners, slots;
 		std::set<std::uint64_t> serials, event_serials;
@@ -637,11 +694,12 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 		}
 		std::array<AudioVoice, audio_voice_limit> voices{};
 		for (const auto &row : state.at("voices")) {
-			if (!row.is_array() || row.size() != 13 || !bank || !row[9].is_boolean()) throw std::runtime_error("Invalid named-audio voice row");
+			if (!row.is_array() || row.size() != 14 || !bank || !row[9].is_boolean()) throw std::runtime_error("Invalid named-audio voice row");
 			const auto slot = unsigned(integer(row[0], 0, audio_voice_limit - 1));
 			if (!slots.insert(slot).second) throw std::runtime_error("Duplicate named-audio voice slot");
 			auto &voice = voices[slot];
 			voice.serial = std::uint64_t(integer(row[1], 1, std::int64_t(next - 1)));
+			voice.subframe = unsigned(integer(row[13], 0, slowdown - 1));
 			voice.sample = unsigned(integer(row[2], 0, std::int64_t(bank->sources.size() - 1)));
 			voice.owner = int(integer(row[4], -1, event_limit - 1));
 			voice.remaining = int(integer(row[5], -1, INT32_MAX));
@@ -702,6 +760,8 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 			mixer.voices = voices;
 			mixer.next_serial = next;
 			mixer.cursor = cursor;
+			mixer.slowdown = slowdown;
+			transition_serial = transition;
 			events = restored_events;
 			failure.clear();
 		}
@@ -724,6 +784,7 @@ nlohmann::json named_audio_diagnostics()
 	}
 	nlohmann::json result = { { "backend_ready", backend_ready }, { "rate", output_rate }, { "resources", bank ? bank->sources.size() : 0 }, { "actions", bank ? bank->actions.size() : 0 }, { "files", bank ? bank->names : std::vector<std::string>{} }, { "paused", copy.paused }, { "resume_pending", resume_pending }, { "effects_volume", priority_volume }, { "output_volume", copy.volume }, { "classic_samples", bank ? bank->classic.size() : 0 }, { "starts", copy.starts }, { "completions", copy.completions }, { "stops", copy.stops }, { "failed_starts", failed_starts }, { "output_callbacks", calls }, { "output_frames", delivered }, { "error", failure }, { "voices", nlohmann::json::array() } };
 	result["cursor"] = copy.cursor;
+	result["slowdown"] = copy.slowdown;
 	result["classic_playback"] = nlohmann::json::object();
 	if (bank)
 		for (unsigned physical = 0; physical < bank->classic.size(); ++physical) {

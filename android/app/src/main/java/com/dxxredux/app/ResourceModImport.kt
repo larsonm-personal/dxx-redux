@@ -3,10 +3,13 @@ package com.dxxredux.app
 import android.content.Context
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import android.os.SystemClock
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.commons.compress.archivers.sevenz.SevenZFile
 import java.io.File
+import java.io.FileInputStream
 import java.util.zip.ZipFile
 
 /** Resource packs share normal mod storage and activation, not retail game-file slots */
@@ -102,11 +105,48 @@ internal suspend fun importResourceMod(
                         return@withContext null
                     }
                     onProgress("Importing ${catalog.displayName}", 0, 0)
+                    val started = SystemClock.uptimeMillis()
+                    val files = entries.filterNot { entry -> entry.isDirectory }
+                    val selected = catalog.select(files.map { entry -> entry.name })
+                    val selectedEntries =
+                        selected.map { selection ->
+                            files.single { entry ->
+                                entry.name ==
+                                    selection.source
+                            }
+                        }
+                    val decoded = File(scratch, "selected-resources")
+                    val native =
+                        direct?.let { source ->
+                            extractSelectedSevenZResources(source.channel, entries, selectedEntries, decoded)
+                        } ?: FileInputStream(staged).use { source ->
+                            extractSelectedSevenZResources(source.channel, entries, selectedEntries, decoded)
+                        }
+                    Log.i(
+                        "DXX-ResourceImport",
+                        "selected_decode native=$native elapsed_ms=${SystemClock.uptimeMillis() - started}",
+                    )
                     manager
                         .importResourceMod(
                             catalog,
-                        ) { destination -> ResourceModStore.importSevenZ(catalog, destination, it) }
-                        .takeUnless { continueRetailImport }
+                        ) { destination ->
+                            if (native) {
+                                ResourceModStore.update(
+                                    catalog,
+                                    destination,
+                                    selectedEntries.map { entry ->
+                                        ResourceModStore.Source(entry.name, entry.size) {
+                                            File(
+                                                decoded,
+                                                checkNotNull(canonicalArchiveRelativePath(entry.name)),
+                                            ).inputStream()
+                                        }
+                                    },
+                                )
+                            } else {
+                                ResourceModStore.importSevenZ(catalog, destination, it)
+                            }
+                        }.takeUnless { continueRetailImport }
                 }
             } else {
                 ZipFile(staged).use { archive ->

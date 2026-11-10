@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include "slow_motion_runtime.h"
 #include "slow_motion_save.h"
+#include "named_audio.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #endif
@@ -64,6 +65,9 @@ extern "C" {
 #include "ai.h"
 #include "collide.h"
 #include "key.h"
+#include "gameseg.h"
+#include "fvi.h"
+#include "timer.h"
 #include "input_demo_hooks.h"
 #include "input_demo_newdemo_shared.h"
 #include "input_demo_hooks_shared.h"
@@ -72,6 +76,7 @@ void omega_charge_frame(void);
 void do_omega_stuff(object *, vms_vector *, object *);
 void game_render_frame(void);
 void game_render_frame_mono(int);
+int HandleGameKey(int);
 }
 #include "render_clock_probe.h"
 #include "omega_damage_probe.h"
@@ -114,7 +119,7 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 	proof["rendered_frames"] = 0;
 	proof["fixed_hz"] = ROUTE_CONFIRMATION_FIXED_HZ;
 	proof["seed"] = ROUTE_CONFIRMATION_CANONICAL_SEED;
-	proof["assisted"] = false;
+	proof["assisted"] = bool{ false };
 	const auto *renderer = glGetString(GL_RENDERER);
 	proof["renderer"] = renderer ? reinterpret_cast<const char *>(renderer) : "";
 	if (!renderer || !Game_wind || route_confirmation_get_summary()->status != ROUTE_CONFIRMATION_IDLE || game_is_time_paused() || !write_readiness(path, proof, "loaded"))
@@ -246,8 +251,9 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 #if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
 	const char *clock_probe = argument_value("-xl-render-clock-proof");
 	const char *omega_probe = argument_value("-xl-omega-damage-proof");
-	if (startup_find_cmd_arg("-xl-render-clock-proof") || startup_find_cmd_arg("-xl-omega-damage-proof")) {
-		if ((!clock_probe && !omega_probe) || (clock_probe && omega_probe) || !output || !argument_value("-route-confirm-user-dir")) {
+	const char *equipment_probe = argument_value("-xl-time-equipment-proof");
+	if (startup_find_cmd_arg("-xl-render-clock-proof") || startup_find_cmd_arg("-xl-omega-damage-proof") || startup_find_cmd_arg("-xl-time-equipment-proof")) {
+		if (int(clock_probe != nullptr) + int(omega_probe != nullptr) + int(equipment_probe != nullptr) != 1 || !output || !argument_value("-route-confirm-user-dir")) {
 			std::fprintf(stderr, "Render-clock probe requires proof/output paths and an isolated user directory\n");
 			return 1;
 		}
@@ -328,6 +334,16 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 #if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
 	if (clock_probe) return xl_render_clock_probe(clock_probe);
 	if (omega_probe) return xl_omega_damage_probe(omega_probe);
+	if (equipment_probe) {
+		int carried_level = 0;
+		if (const char *text = argument_value("-xl-time-equipment-carried-level")) {
+			if (!parse_level(text, &carried_level) || carried_level > Last_level || carried_level < Last_secret_level) {
+				std::fprintf(stderr, "Time-equipment carried level is outside the selected mission\n");
+				return 1;
+			}
+		}
+		return xl_time_equipment_probe(equipment_probe, startup_find_cmd_arg("-xl-time-equipment-resume") != 0, carried_level);
+	}
 #endif
 	State.active = 1;
 	event_toggle_focus(0);

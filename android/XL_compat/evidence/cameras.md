@@ -1,5 +1,24 @@
 # Authored camera foundations
 
+## General camera attachments - November 10, 2026
+
+Camera bindings can attach to already admitted robot and effect objects as well
+as CAMBOT. The shared controller retains the live object's type, ID and signature;
+the renderer uses that object's current pose. Only CAMBOT receives the source's
+camera rotation controller. Trigger firing remains independent of the binding
+
+An absent or reused owner detaches permanently for that lifetime. Context reset
+does not bind a replacement object. The typed XL save block validates all owner
+signatures before applying attachment state, preserving both live and detached
+bindings. Native lifecycle checks cover movement, trigger independence, rejected
+signature reuse, deletion, context reset and restore
+
+The existing monitor pixel cases exercise CAMBOT, robot and effect views through
+the same renderer and controller. Whole-suite GPU qualification and original
+mission results remain separate: Boiling Point 7 currently stops at its missing
+authored `lava-fall.wav`; Dinter still has unsupported particle/effect profiles.
+Lower inventory finding counts do not establish playable campaigns
+
 ## Current gameplay status - November 1, 2026
 
 Original Pumo PMC1/PMC2/PMC3 single-player camera gameplay is admitted with

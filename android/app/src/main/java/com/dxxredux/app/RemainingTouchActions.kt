@@ -29,6 +29,8 @@ private val remainingBaseActionBindings =
         TouchBindings.BTN_HEADLIGHT,
         TouchBindings.BTN_TOGGLE_BOMB,
         TouchBindings.BTN_ENERGY_SHIELD,
+        TouchBindings.META_SLOW_MOTION,
+        TouchBindings.META_BULLET_TIME,
         TouchBindings.META_DROP_MARKER,
         TouchBindings.META_DEMO_RECORD_TOGGLE,
         TouchBindings.META_REWIND,

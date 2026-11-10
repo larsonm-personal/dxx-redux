@@ -43,6 +43,7 @@ struct AudioVoice {
 	AudioPriority priority;
 	AudioOutput output;
 	AudioOwnerKind kind = AudioOwnerKind::action;
+	unsigned subframe = 0;
 };
 
 struct AudioPlayback {
@@ -61,6 +62,8 @@ class AudioVoices
 	unsigned cursor = 0;
 	bool paused = false;
 	int volume = 128;
+	// Default XL slow-motion profile lowers the effects sample clock by three
+	unsigned slowdown = 1;
 	int start(unsigned sample, int repetitions, int owner);
 	int start(unsigned sample, int repetitions, int owner, AudioPriority priority, AudioOutput output = {}, AudioOwnerKind kind = AudioOwnerKind::action, AudioVoice *retired = nullptr);
 	bool set_volume(int slot, int requested_volume, int effects_volume);

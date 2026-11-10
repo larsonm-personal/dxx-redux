@@ -49,6 +49,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "reactor_countdown.h"
+#include "slow_motion_runtime.h"
 #include "boss_spawn.h"
 #endif
 #include "d1_in_d2/d1_in_d2_semantics.h"
@@ -327,6 +328,9 @@ void do_controlcen_destroyed_stuff(object *objp)
 
 	// And start the countdown stuff.
 	Control_center_destroyed = 1;
+#ifdef DXX_XL_RUNTIME
+	xl_slow_motion_off();
+#endif
 	reactor_countdown_reset_pause();
 #ifdef __ANDROID__
 	escort_route_notify_reactor_changed();

@@ -5,6 +5,8 @@ extern "C" {
 #endif
 struct trigger;
 int xl_named_audio_backend_open(int rate, unsigned format, int channels);
+int xl_named_audio_backend_ready(void);
+void xl_named_audio_slow_motion_reset(void);
 void xl_named_audio_backend_close(void);
 void xl_named_audio_set_volume(int volume);
 void xl_named_audio_pause(int paused);
@@ -19,8 +21,10 @@ const char *xl_named_audio_error(void);
 }
 #include <memory>
 #include <string>
+#include "../slow_motion.h"
 namespace xl_compat
 {
+bool slow_motion_audio_event(SlowMotionEvent event);
 struct Inventory;
 struct AudioResources;
 std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal = 0);

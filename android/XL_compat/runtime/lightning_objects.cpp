@@ -28,7 +28,7 @@ namespace
 struct Entry {
 	xl_compat::LightningDefinition definition;
 	int signature;
-	int target = -1;
+	int authored_id = 0, target_id = 0, authored_length = 0;
 	bool alive = true;
 	std::optional<xl_compat::LightningEmitter> emitter;
 	std::vector<std::optional<xl_compat::LightningRenderFrame>> render_frames;
@@ -101,7 +101,7 @@ void xl_compat::bind_lightning_objects(const Inventory &level)
 		if (object.segment < 0 || std::size_t(object.segment) >= level.segments.size() || Objects[index].segnum != object.segment)
 			throw std::runtime_error("XL lightning object segment changed during native loading");
 		const auto definition = prepare_authored_lightning(level, object);
-		prepared.emplace(int(index), Entry{ definition, Objects[index].signature, authored_lightning_target(level, object) });
+		prepared.emplace(int(index), Entry{ definition, Objects[index].signature, object.render_data[7], object.render_data[8], object.render_data[2] });
 	}
 	auto geometry = prepared.empty() ? ParticleWorld{} : compile_particle_world(level);
 	xl_lightning_objects_clear();
@@ -253,17 +253,19 @@ void xl_compat::lightning_objects_frame()
 		}
 	}
 	for (auto &[index, entry] : entries) {
-		if (!bound(index, entry) || entry.emitter) continue;
+		if (!bound(index, entry) || entry.emitter || entry.definition.bolts <= 0) continue;
 		const auto &object = Objects[index];
 		std::optional<LightningPoint> endpoint;
-		if (entry.target >= 0) {
-			const auto target = entries.find(entry.target);
-			if (target == entries.end() || !bound(entry.target, target->second))
-				throw std::runtime_error("XL fixed lightning target identity changed before creation");
-			const auto &position = Objects[entry.target].pos;
-			endpoint = LightningPoint{ position.x, position.y, position.z };
-			entry.definition.length = authored_lightning_target_length({ object.pos.x, object.pos.y, object.pos.z }, *endpoint);
+		if (!entry.definition.random_end && entry.target_id) {
+			for (const auto &[target, candidate] : entries) {
+				if (target == index || candidate.authored_id != entry.target_id || !bound(target, candidate)) continue;
+				const auto &position = Objects[target].pos;
+				endpoint = LightningPoint{ position.x, position.y, position.z };
+				break;
+			}
 		}
+		endpoint = place_authored_lightning(entry.definition, { object.pos.x, object.pos.y, object.pos.z },
+		                                    { object.orient.fvec.x, object.orient.fvec.y, object.orient.fvec.z }, entry.authored_length, endpoint);
 		entry.emitter = create_lightning_emitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, random, object.segnum, endpoint);
 		entry.render_frames.resize(entry.emitter->bolts.size());
 		entry.sound = entry.definition.sound;

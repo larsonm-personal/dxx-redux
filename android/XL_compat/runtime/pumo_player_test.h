@@ -194,6 +194,7 @@ static Json snapshot()
 	// Copy packed mutable fields before JSON forwarding can bind references to them
 	Json state = { { "current_level_num", Current_level_num }, { "player_dead", Player_is_dead != 0 }, { "cheats_enabled", cheats.enabled != 0 } };
 	state["game_time_raw"] = GameTime64;
+	state["slow_motion"] = xl_runtime::slow_motion_diagnostics();
 	unsigned int rng_state = 0;
 	const bool rng_available = d_rand_get_state(&rng_state) != 0;
 	state["simulation_rng"] = { { "state_available", rng_available }, { "state", rng_available ? Json(rng_state) : Json{} }, { "call_count", d_rand_get_call_count() } };
