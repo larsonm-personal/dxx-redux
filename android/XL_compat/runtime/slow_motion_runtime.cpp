@@ -1,3 +1,6 @@
+#include <nlohmann/json.hpp>
+#include "slow_motion_save.h"
+#include "save_epoch_format.h"
 #include "slow_motion_runtime.h"
 #include "preview.h"
 extern "C" {
@@ -10,6 +13,7 @@ extern "C" {
 namespace
 {
 xl_compat::SlowMotionState state;
+int64_t last_missile;
 bool enabled()
 {
 	return xl_level_extensions_active() && !(Game_mode & GM_MULTI);
@@ -31,6 +35,7 @@ const xl_compat::SlowMotionState &slow_motion_state()
 extern "C" void xl_slow_motion_reset(void)
 {
 	state = {};
+	last_missile = 0;
 }
 extern "C" void xl_slow_motion_offset(const object *actor, vms_vector *offset)
 {
@@ -92,7 +97,7 @@ extern "C" int xl_slow_motion_ai_timers(ai_local *local, int secondary, int32_t 
 	return 1;
 }
 
-extern "C" int xl_slow_motion_primary_blocked(int64_t last, int64_t next, int64_t now)
+static int firing_blocked(int64_t last, int64_t next, int64_t now, int seconds)
 {
 	if (!enabled()) return next > now;
 	const float speed = state.clocks[0].speed;
@@ -111,7 +116,7 @@ extern "C" int xl_slow_motion_primary_blocked(int64_t last, int64_t next, int64_
 		deadline = last + delay;
 	}
 	// Compare remaining duration, not float absolute timestamps
-	return deadline > now && uint64_t(deadline) - uint64_t(now) < double(2 * F1_0 * speed);
+	return deadline > now && uint64_t(deadline) - uint64_t(now) < double(seconds * F1_0 * speed);
 }
 extern "C" int xl_slow_motion_flare_blocked(int64_t next, int64_t now)
 {
@@ -123,4 +128,41 @@ extern "C" int32_t xl_slow_motion_flare_delay(int enough_energy)
 	const float speed = enabled() ? state.clocks[0].speed : 1;
 	// F2X then integer division for sufficient energy; multiply for empty energy
 	return enough_energy ? int32_t(speed * F1_0) / 4 : int32_t(speed * (2 * F1_0));
+}
+
+extern "C" int xl_slow_motion_primary_blocked(int64_t last, int64_t next, int64_t now)
+{
+	return firing_blocked(last, next, now, 2);
+}
+extern "C" int xl_slow_motion_missile_blocked(int64_t next, int64_t now)
+{
+	return firing_blocked(last_missile, next, now, 5);
+}
+extern "C" void xl_slow_motion_missile_fired(void)
+{
+	if (enabled()) last_missile = GameTime64;
+}
+nlohmann::json xl_runtime::weapon_clock_snapshot()
+{
+	return nlohmann::json{ last_missile - GameTime64 };
+}
+bool xl_runtime::restore_weapon_clock(const nlohmann::json &saved, bool apply)
+{
+	try {
+		if (!save_epoch_valid(GameTime64) || !saved.is_array() || saved.size() != 1) return false;
+		const auto integer = [](const nlohmann::json &value, int64_t low, int64_t high) {
+			if (!value.is_number_integer() || (value.is_number_unsigned() && value.get<uint64_t>() > uint64_t(high))) throw std::runtime_error("Invalid weapon clock integer");
+			const auto result = value.get<int64_t>();
+			if (result < low || result > high) throw std::runtime_error("Weapon clock outside bounds");
+			return result;
+		};
+		const auto missile = GameTime64 + integer(saved[0], -SAVE_EPOCH_MAX, 0);
+		if (!save_timestamp_valid(missile)) return false;
+		if (apply) {
+			last_missile = missile;
+		}
+		return true;
+	} catch (const std::exception &) {
+		return false;
+	}
 }
