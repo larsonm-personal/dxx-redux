@@ -50,9 +50,11 @@ if(BUILD_TESTING)
     add_executable(xl_pumo_robot_damage_observer_test tests/pumo_robot_damage_observer_test.cpp)
     target_compile_features(xl_pumo_robot_damage_observer_test PRIVATE cxx_std_17)
     add_test(NAME xl_pumo_robot_damage_observer_contract COMMAND xl_pumo_robot_damage_observer_test)
-    add_executable(xl_pumo_weapon_lifecycle_observer_test tests/pumo_weapon_lifecycle_observer_test.cpp)
+    add_executable(xl_pumo_weapon_lifecycle_observer_test
+                   tests/pumo_weapon_lifecycle_observer_test.cpp)
     target_compile_features(xl_pumo_weapon_lifecycle_observer_test PRIVATE cxx_std_17)
-    add_test(NAME xl_pumo_weapon_lifecycle_observer_contract COMMAND xl_pumo_weapon_lifecycle_observer_test)
+    add_test(NAME xl_pumo_weapon_lifecycle_observer_contract
+             COMMAND xl_pumo_weapon_lifecycle_observer_test)
     add_executable(xl_pumo_player_fvi_observer_test tests/pumo_player_fvi_observer_test.cpp)
     target_compile_features(xl_pumo_player_fvi_observer_test PRIVATE cxx_std_17)
     add_test(NAME xl_pumo_player_fvi_observer_contract COMMAND xl_pumo_player_fvi_observer_test)
@@ -191,56 +193,6 @@ if(BUILD_TESTING)
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_receipt_contract.py
                 --cmake ${CMAKE_COMMAND})
     set_tests_properties(xl_pumo_receipt_contract PROPERTIES TIMEOUT 30)
-    add_test(
-        NAME xl_pumo_tulev1_spawn_contract
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_spawn_contract_test.py)
-    set_tests_properties(xl_pumo_tulev1_spawn_contract PROPERTIES TIMEOUT 30)
-    add_test(
-        NAME xl_pumo_tulev1_master5_contract
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_master5_contract_test.py)
-    set_tests_properties(xl_pumo_tulev1_master5_contract PROPERTIES TIMEOUT 30)
-    add_test(
-        NAME xl_pumo_tulev1_guard269_contract
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_guard269_contract_test.py)
-    set_tests_properties(xl_pumo_tulev1_guard269_contract PROPERTIES TIMEOUT 30)
-    add_test(
-        NAME xl_pumo_tulev1_quad_guard255_contract
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_quad_guard255_contract_test.py)
-    set_tests_properties(xl_pumo_tulev1_quad_guard255_contract PROPERTIES TIMEOUT 30)
-    add_test(
-        NAME xl_pumo_tulev1_guided_switch12_contract
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_guided_switch12_contract_test.py)
-    set_tests_properties(xl_pumo_tulev1_guided_switch12_contract PROPERTIES TIMEOUT 30)
-    add_test(
-        NAME xl_pumo_tulev1_blast136_contract
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_blast136_contract_test.py)
-    set_tests_properties(xl_pumo_tulev1_blast136_contract PROPERTIES TIMEOUT 30)
-    add_test(
-        NAME xl_pumo_tulev1_courtyard_guards_contract
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_courtyard_guards_contract_test.py)
-    set_tests_properties(xl_pumo_tulev1_courtyard_guards_contract PROPERTIES TIMEOUT 30)
-    add_test(
-        NAME xl_pumo_tulev1_supplies_contract
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_supplies_contract_test.py)
-    set_tests_properties(xl_pumo_tulev1_supplies_contract PROPERTIES TIMEOUT 30)
-    add_test(
-        NAME xl_pumo_tulev1_switch14_contract
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_switch14_contract_test.py)
-    set_tests_properties(xl_pumo_tulev1_switch14_contract PROPERTIES TIMEOUT 30)
-    add_test(
-        NAME xl_pumo_tulev1_switch13_contract
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_switch13_contract_test.py)
-    set_tests_properties(xl_pumo_tulev1_switch13_contract PROPERTIES TIMEOUT 30)
     add_test(
         NAME xl_wave_channels_reference
         COMMAND
@@ -968,7 +920,7 @@ if(BUILD_TESTING)
                 -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-coldrom-player -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_coldrom.cmake)
         set_tests_properties(xl_pumo_coldrom_player PROPERTIES TIMEOUT 300 FIXTURES_REQUIRED
-                                                                pumo_earned_iquaxel RUN_SERIAL TRUE)
+                                                               pumo_earned_iquaxel RUN_SERIAL TRUE)
         add_test(
             NAME xl_pumo_iquaxel_player
             COMMAND
@@ -990,197 +942,14 @@ if(BUILD_TESTING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_sophodo.cmake)
         set_tests_properties(xl_pumo_sophodo_player PROPERTIES TIMEOUT 300 FIXTURES_REQUIRED
                                                                pumo_earned_sophodo RUN_SERIAL TRUE)
-        set_tests_properties(xl_pumo_sophodo_player PROPERTIES FIXTURES_SETUP pumo_earned_tulev1_early)
         add_test(
-            NAME xl_pumo_tulev1_early_player
+            NAME xl_pumo_scenarios_player
             COMMAND
                 ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
                 -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
-                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/pumo-sophodo-player/preview-user/sophodo-main-level7.sav
-                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-sophodo-player/main-result.json
-                -DPYTHON=${Python3_EXECUTABLE}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-early-player -P
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_early.cmake)
-        # The aggregate bound is tighter than eight independent 150s phase ceilings.
-        set_tests_properties(xl_pumo_tulev1_early_player PROPERTIES TIMEOUT 300
-                             FIXTURES_REQUIRED pumo_earned_tulev1_early RUN_SERIAL TRUE)
-        set_tests_properties(xl_pumo_tulev1_early_player PROPERTIES FIXTURES_SETUP
-                                                              pumo_guided_inventory)
-        add_test(
-            NAME xl_pumo_tulev1_spawn_player
-            COMMAND
-                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
-                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
-                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/pumo-sophodo-player/preview-user/sophodo-main-level7.sav
-                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-sophodo-player/main-result.json
-                -DPYTHON=${Python3_EXECUTABLE}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-spawn-player -P
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_spawn.cmake)
-        set_tests_properties(xl_pumo_tulev1_spawn_player PROPERTIES TIMEOUT 300
-                             FIXTURES_REQUIRED pumo_earned_tulev1_early RUN_SERIAL TRUE)
-        set_tests_properties(xl_pumo_tulev1_spawn_player PROPERTIES FIXTURES_SETUP
-                                                              pumo_earned_tulev1_spawn)
-        add_test(
-            NAME xl_pumo_tulev1_master5_player
-            COMMAND
-                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
-                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
-                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-spawn-player/door138/door138-result.json
-                -DPYTHON=${Python3_EXECUTABLE}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-master5-player -P
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_master5.cmake)
-        # Three 150-second phase ceilings, but witnessed native work is much shorter.
-        set_tests_properties(xl_pumo_tulev1_master5_player PROPERTIES TIMEOUT 300
-                             FIXTURES_REQUIRED pumo_earned_tulev1_spawn RUN_SERIAL TRUE)
-        set_tests_properties(xl_pumo_tulev1_master5_player PROPERTIES FIXTURES_SETUP
-                                                              pumo_earned_tulev1_master5)
-        add_test(
-            NAME xl_pumo_tulev1_guard269_player
-            COMMAND
-                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
-                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
-                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-master5-player/blue/blue-result.json
-                -DPYTHON=${Python3_EXECUTABLE}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guard269-player -P
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_guard269.cmake)
-        set_tests_properties(xl_pumo_tulev1_guard269_player PROPERTIES TIMEOUT 300
-                             FIXTURES_REQUIRED pumo_earned_tulev1_master5 RUN_SERIAL TRUE)
-        set_tests_properties(xl_pumo_tulev1_guard269_player PROPERTIES FIXTURES_SETUP
-                                                              pumo_earned_tulev1_guard269)
-        add_test(
-            NAME xl_pumo_tulev1_quad_guard255_player
-            COMMAND
-                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
-                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
-                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guard269-player/ordinary/ordinary-result.json
-                -DBLUE=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-master5-player/blue/blue-result.json
-                -DPYTHON=${Python3_EXECUTABLE}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player -P
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_quad_guard255.cmake)
-        set_tests_properties(xl_pumo_tulev1_quad_guard255_player PROPERTIES TIMEOUT 300
-                             FIXTURES_REQUIRED pumo_earned_tulev1_guard269 RUN_SERIAL TRUE)
-        set_tests_properties(xl_pumo_tulev1_quad_guard255_player PROPERTIES FIXTURES_SETUP
-                                                              pumo_earned_tulev1_quad_guard255)
-        add_test(
-            NAME xl_pumo_tulev1_guided_switch12_player
-            COMMAND
-                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
-                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
-                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/guard255/guard255-result.json
-                -DQUAD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/quad/quad-result.json
-                -DGUARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guard269-player/ordinary/ordinary-result.json
-                -DBLUE=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-master5-player/blue/blue-result.json
-                -DPYTHON=${Python3_EXECUTABLE}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guided-switch12-player -P
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_guided_switch12.cmake)
-        set_tests_properties(xl_pumo_tulev1_guided_switch12_player PROPERTIES TIMEOUT 300
-                             FIXTURES_REQUIRED pumo_earned_tulev1_quad_guard255 RUN_SERIAL TRUE)
-        set_tests_properties(xl_pumo_tulev1_guided_switch12_player PROPERTIES FIXTURES_SETUP
-                                                              pumo_earned_tulev1_guided_switch12)
-        add_test(
-            NAME xl_pumo_tulev1_blast136_player
-            COMMAND
-                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
-                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
-                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guided-switch12-player/warm/warm-result.json
-                -DGUIDED_GUARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/guard255/guard255-result.json
-                -DQUAD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/quad/quad-result.json
-                -DGUARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guard269-player/ordinary/ordinary-result.json
-                -DBLUE=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-master5-player/blue/blue-result.json
-                -DPYTHON=${Python3_EXECUTABLE}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-blast136-player -P
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_blast136.cmake)
-        set_tests_properties(xl_pumo_tulev1_blast136_player PROPERTIES TIMEOUT 300
-                             FIXTURES_REQUIRED pumo_earned_tulev1_guided_switch12 RUN_SERIAL TRUE)
-        set_tests_properties(xl_pumo_tulev1_blast136_player PROPERTIES FIXTURES_SETUP
-                                                              pumo_earned_tulev1_blast136)
-        add_test(
-            NAME xl_pumo_tulev1_courtyard_guards_player
-            COMMAND
-                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
-                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
-                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-blast136-player/warm/warm-result.json
-                -DGUIDED_PRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guided-switch12-player/warm/warm-result.json
-                -DGUIDED_GUARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/guard255/guard255-result.json
-                -DQUAD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/quad/quad-result.json
-                -DGUARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guard269-player/ordinary/ordinary-result.json
-                -DBLUE=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-master5-player/blue/blue-result.json
-                -DPYTHON=${Python3_EXECUTABLE}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-courtyard-guards-player -P
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_courtyard_guards.cmake)
-        set_tests_properties(xl_pumo_tulev1_courtyard_guards_player PROPERTIES TIMEOUT 650
-                             FIXTURES_REQUIRED pumo_earned_tulev1_blast136 RUN_SERIAL TRUE)
-        set_tests_properties(xl_pumo_tulev1_courtyard_guards_player PROPERTIES FIXTURES_SETUP
-                                                                  pumo_earned_tulev1_courtyard_guards)
-        add_test(
-            NAME xl_pumo_tulev1_supplies_player
-            COMMAND
-                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
-                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
-                -DCOURTYARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-courtyard-guards-player
-                -DBLAST=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-blast136-player/warm/warm-result.json
-                -DGUIDED_PRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guided-switch12-player/warm/warm-result.json
-                -DGUIDED_GUARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/guard255/guard255-result.json
-                -DQUAD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/quad/quad-result.json
-                -DGUARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guard269-player/ordinary/ordinary-result.json
-                -DBLUE=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-master5-player/blue/blue-result.json
-                -DPYTHON=${Python3_EXECUTABLE}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-supplies-player -P
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_supplies.cmake)
-        set_tests_properties(xl_pumo_tulev1_supplies_player PROPERTIES TIMEOUT 300
-                             FIXTURES_REQUIRED pumo_earned_tulev1_courtyard_guards RUN_SERIAL TRUE)
-        set_tests_properties(xl_pumo_tulev1_supplies_player PROPERTIES FIXTURES_SETUP
-                                                             pumo_earned_tulev1_supplies)
-        add_test(
-            NAME xl_pumo_tulev1_switch14_player
-            COMMAND
-                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
-                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
-                -DSUPPLIES=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-supplies-player
-                -DCOURTYARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-courtyard-guards-player
-                -DBLAST=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-blast136-player/warm/warm-result.json
-                -DGUIDED_PRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guided-switch12-player/warm/warm-result.json
-                -DGUIDED_GUARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/guard255/guard255-result.json
-                -DQUAD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/quad/quad-result.json
-                -DGUARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guard269-player/ordinary/ordinary-result.json
-                -DBLUE=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-master5-player/blue/blue-result.json
-                -DPYTHON=${Python3_EXECUTABLE}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-switch14-player -P
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_switch14.cmake)
-        set_tests_properties(xl_pumo_tulev1_switch14_player PROPERTIES TIMEOUT 300
-                             FIXTURES_REQUIRED pumo_earned_tulev1_supplies RUN_SERIAL TRUE)
-        set_tests_properties(xl_pumo_tulev1_switch14_player PROPERTIES FIXTURES_SETUP
-                                                             pumo_earned_tulev1_switch14)
-        add_test(
-            NAME xl_pumo_tulev1_switch13_player
-            COMMAND
-                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
-                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
-                -DSWITCH14=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-switch14-player
-                -DSUPPLIES=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-supplies-player
-                -DCOURTYARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-courtyard-guards-player
-                -DBLAST=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-blast136-player/warm/warm-result.json
-                -DGUIDED_PRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guided-switch12-player/warm/warm-result.json
-                -DGUIDED_GUARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/guard255/guard255-result.json
-                -DQUAD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-quad-guard255-player/quad/quad-result.json
-                -DGUARD=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-guard269-player/ordinary/ordinary-result.json
-                -DBLUE=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-master5-player/blue/blue-result.json
-                -DPYTHON=${Python3_EXECUTABLE}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-switch13-player -P
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_switch13.cmake)
-        set_tests_properties(xl_pumo_tulev1_switch13_player PROPERTIES TIMEOUT 300
-                             FIXTURES_REQUIRED pumo_earned_tulev1_switch14 RUN_SERIAL TRUE)
-        add_test(
-            NAME xl_pumo_guided_input_player
-            COMMAND
-                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
-                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
-                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-early-player/guided_inventory/guided_inventory-result.json
-                -DPYTHON=${Python3_EXECUTABLE}
-                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-guided-input-player -P
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_guided_input.cmake)
-        set_tests_properties(xl_pumo_guided_input_player PROPERTIES TIMEOUT 120
-                             FIXTURES_REQUIRED pumo_guided_inventory RUN_SERIAL TRUE)
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-scenarios-player -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_scenarios.cmake)
+        set_tests_properties(xl_pumo_scenarios_player PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     endif()
     set(XL_ARENA_HOG "" CACHE FILEPATH "Original Robotech Arena HOG for private water coverage")
     set(XL_ARENA_DESCRIPTOR "" CACHE FILEPATH "Original Robotech Arena mission descriptor")

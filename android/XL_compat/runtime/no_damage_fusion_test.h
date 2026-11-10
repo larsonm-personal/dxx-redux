@@ -2,6 +2,7 @@ extern "C" void CyclePrimary(void);
 // Explicit selection refunds XL charge before availability/toggle checks; lower-level callers do not
 static void fusion_selection_refund_controls(bool xl)
 {
+	ScopedNetworkTest network;
 	const auto saved_player = Players[Player_num];
 	const auto saved_cfg = PlayerCfg;
 	const auto saved_charge = Fusion_charge;
@@ -49,6 +50,7 @@ static void fusion_selection_refund_controls(bool xl)
 				const bool explicit_primary = action <= 3;
 				const bool refunded = explicit_primary && xl && !multiplayer;
 				const bool changed_primary = action == 0 || action == 3 || action == 5 || action == 7;
+				const auto sounds_before = ScopedNetworkTest::sounds;
 				switch (action) {
 					case 0: do_weapon_select(LASER_INDEX, 0); break;
 					case 1: do_weapon_select(PLASMA_INDEX, 0); break; // Both requested variants unavailable
@@ -72,6 +74,8 @@ static void fusion_selection_refund_controls(bool xl)
 				        "Fusion refund changed selection availability or toggle disposition");
 				require(before_rng == after_rng && before_calls == d_rand_get_call_count(),
 				        "Fusion selection changed simulation RNG");
+				require(ScopedNetworkTest::sounds - sounds_before == unsigned(multiplayer && (action == 0 || action == 3 || action == 4 || action == 7)),
+				        "Fusion selection network sound dispatch differs");
 				if (explicit_primary) {
 					const auto energy = player.energy, remaining_charge = Fusion_charge;
 					const int queue = Global_laser_firing_count;

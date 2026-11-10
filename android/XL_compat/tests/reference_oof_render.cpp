@@ -10,6 +10,14 @@
 template <class T>
 struct Array : std::vector<T> {
 	using std::vector<T>::vector;
+	T &operator[](int index)
+	{
+		return this->data()[index];
+	}
+	const T &operator[](int index) const
+	{
+		return this->data()[index];
+	}
 	T *Buffer()
 	{
 		return this->data();

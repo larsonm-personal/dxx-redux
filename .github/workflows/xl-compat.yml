@@ -54,6 +54,29 @@ jobs:
           cmake --build temp/xl-boss-gameplay-cpu --parallel 2 --target xl_boss_gameplay_consumer
           ctest --test-dir temp/xl-boss-gameplay-cpu --output-on-failure -R '^xl_boss_gameplay_consumer$'
 
+  windows-developer-compile:
+    needs: stack
+    if: needs.stack.outputs.run == 'true'
+    name: XL developer source compile (Windows x86)
+    runs-on: windows-2022
+    timeout-minutes: 45
+    env:
+      VCPKG_BUILD_TYPE: release
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: x86
+      - name: Use runner vcpkg
+        shell: pwsh
+        run: Add-Content "$env:GITHUB_ENV" "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT"
+      - name: Configure the actual developer target
+        run: cmake --preset=x86-release -S d2 -B build-xl-developer-windows -DVCPKG_TARGET_TRIPLET=x86-windows -DDXX_XL_DEVELOPER_TESTS=ON -DOPENGL=ON
+      - name: Compile and link the developer target
+        run: cmake --build build-xl-developer-windows --parallel 4 --target dxx-redux-d2-headless-metadata
+
   # This proves the opt-in lifecycle source compiles and links, not gameplay or runtime behavior.
   developer-compile:
     needs: stack

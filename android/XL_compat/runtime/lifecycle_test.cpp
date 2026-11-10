@@ -1547,6 +1547,7 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 }
 } // namespace
 
+#include "network_test.h"
 #include "arena_test.h"
 #include "pog_test.h"
 #include "campaign_test.h"

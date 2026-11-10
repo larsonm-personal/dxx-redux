@@ -1,0 +1,524 @@
+{
+    "initial_level": 7,
+    "checkpoint_expect": {
+        "current_level_num": 7,
+        "position.segment": 449,
+        "player_dead": false,
+        "cheats_enabled": false,
+        "player.invulnerable": false,
+        "player.cloaked": false,
+        "player.primary_weapon": 0,
+        "player.laser_level": 0,
+        "player.quad_lasers": false,
+        "player.has_blue_key": false,
+        "player.has_red_key": false,
+        "player.has_gold_key": false,
+        "player.robots_killed_level": {
+            "gte": 1
+        },
+        "xl_pilot.wall_triggers.6.operated": false,
+        "xl_pilot.doorways.58.type": 5
+    },
+    "simulation_fps": 60,
+    "realtime": false,
+    "observe_weapon_wall_contacts": true,
+    "track_objects": [305],
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "position.segment": 449,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.invulnerable": false,
+                "player.cloaked": false,
+                "player.primary_weapon": 0,
+                "player.laser_level": 0,
+                "player.quad_lasers": false,
+                "player.has_blue_key": false,
+                "player.has_red_key": false,
+                "player.has_gold_key": false,
+                "player.robots_killed_level": {
+                    "gte": 1
+                },
+                "xl_pilot.wall_triggers.6.operated": false,
+                "xl_pilot.doorways.58.type": 5
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 0,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 2,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 3,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 4,
+            "axis_value": 0.0
+        },
+        {
+            "action": "pose_view",
+            "segment": 450,
+            "position_fixed": [-29216306, 12619118, -10993001],
+            "pitch": 285,
+            "bank": 0,
+            "heading": 4553
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "held": 1
+        },
+        {
+            "action": "wait_ms",
+            "ms": 16
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "held": 0
+        },
+        {
+            "action": "wait_ms",
+            "ms": 1484
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "position.segment": 450,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "player.primary_weapon": 0,
+                "player.laser_level": 0,
+                "player.quad_lasers": false,
+                "player.has_blue_key": false,
+                "player.has_red_key": false,
+                "player.has_gold_key": false,
+                "player.robots_killed_level": {
+                    "gte": 1
+                },
+                "xl_pilot.wall_triggers.6.operated": true,
+                "xl_pilot.wall_triggers.6.shot": 1,
+                "xl_pilot.doorways.55.type": 4,
+                "xl_pilot.doorways.56.type": 4,
+                "xl_pilot.doorways.57.type": 4,
+                "xl_pilot.doorways.58.type": 4
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 450,
+                "player.robots_killed_level": 1,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "xl_pilot.doorways.57.type": 4,
+                "xl_pilot.doorways.58.type": 4,
+                "level_scene.powerups": {
+                    "contains_object": {
+                        "object": 113,
+                        "id": 23,
+                        "segment": 457
+                    }
+                },
+                "player_dead": false,
+                "player.cloaked": false,
+                "cheats_enabled": false,
+                "player.invulnerable": false
+            }
+        },
+        {
+            "action": "pose_view",
+            "segment": 450,
+            "position_fixed": [-29053394, 12467372, -10693131],
+            "pitch": -2511,
+            "bank": 0,
+            "heading": 14515
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -1
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "position.segment": 457,
+                "player.cloaked": true,
+                "level_scene.powerups": {
+                    "not_contains_object": {
+                        "object": 113
+                    }
+                },
+                "player_dead": false
+            },
+            "timeout_ms": 5000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "position.segment": 457,
+                "player.cloaked": true,
+                "player.has_red_key": false,
+                "player.has_blue_key": false,
+                "player.has_gold_key": false,
+                "player.invulnerable": false,
+                "cheats_enabled": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "position.segment": 457,
+                "player.cloaked": true,
+                "player.has_red_key": false,
+                "player.robots_killed_level": 1,
+                "level_scene.powerups": {
+                    "contains_object": {
+                        "object": 51,
+                        "id": 5,
+                        "segment": 424
+                    }
+                },
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.invulnerable": false
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 427,
+            "side": 5,
+            "distance": 8
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 427,
+                "player.cloaked": true,
+                "player.has_red_key": false,
+                "level_scene.powerups": {
+                    "contains_object": {
+                        "object": 51,
+                        "id": 5,
+                        "segment": 424
+                    }
+                },
+                "player_dead": false
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -0.2
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "player.has_red_key": true,
+                "player.cloaked": true,
+                "level_scene.powerups": {
+                    "not_contains_object": {
+                        "object": 51
+                    }
+                },
+                "player_dead": false
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player.has_red_key": true,
+                "player.cloaked": true,
+                "player.has_blue_key": false,
+                "player.has_gold_key": false,
+                "player.invulnerable": false,
+                "cheats_enabled": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 424,
+                "player.has_red_key": true,
+                "player.cloaked": true,
+                "level_scene.powerups": {
+                    "not_contains_object": {
+                        "object": 51
+                    }
+                },
+                "xl_pilot.doorways.128.keys": 4,
+                "xl_pilot.doorways.128.state": 0,
+                "xl_pilot.doorways.129.state": 0,
+                "xl_pilot.wall_triggers.54.operated": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 1199,
+            "side": 5,
+            "distance": 8
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 1199,
+                "player.has_red_key": true,
+                "xl_pilot.doorways.128.type": 2,
+                "xl_pilot.doorways.128.keys": 4,
+                "xl_pilot.wall_triggers.54.operated": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -1
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "position.segment": 1188,
+                "xl_pilot.wall_triggers.54.operated": true,
+                "player.has_red_key": true,
+                "player_dead": false
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "position.segment": 1188,
+                "player.has_red_key": true,
+                "player.has_blue_key": false,
+                "player.has_gold_key": false,
+                "xl_pilot.wall_triggers.54.operated": true,
+                "cheats_enabled": false,
+                "player.invulnerable": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 1188,
+                "player.has_red_key": true,
+                "xl_pilot.doorways.128.flags": 18,
+                "xl_pilot.doorways.129.flags": 18,
+                "xl_pilot.wall_triggers.54.operated": true,
+                "xl_pilot.wall_triggers.61.operated": false,
+                "xl_pilot.wall_triggers.63.operated": false,
+                "xl_pilot.wall_triggers.64.operated": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 1188,
+            "side": 4,
+            "distance": 8
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -1
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "position.segment": 1199,
+                "player.has_red_key": true,
+                "player_dead": false
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "face_view",
+            "segment": 1199,
+            "side": 4,
+            "distance": 8
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 1199,
+                "xl_pilot.wall_triggers.61.operated": false,
+                "xl_pilot.wall_triggers.63.operated": false,
+                "xl_pilot.wall_triggers.64.operated": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -1
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "position.segment": 1149,
+                "xl_pilot.wall_triggers.61.operated": true,
+                "xl_pilot.wall_triggers.63.operated": true,
+                "xl_pilot.wall_triggers.64.operated": true,
+                "player.has_red_key": true,
+                "player_dead": false
+            },
+            "timeout_ms": 10000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "position.segment": 1149,
+                "player.has_red_key": true,
+                "xl_pilot.wall_triggers.61.operated": true,
+                "xl_pilot.wall_triggers.63.operated": true,
+                "xl_pilot.wall_triggers.64.operated": true,
+                "xl_pilot.remaining_objectives": 1,
+                "cheats_enabled": false,
+                "player.invulnerable": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 1149,
+                "player.cloaked": true,
+                "player.has_red_key": true,
+                "xl_pilot.wall_triggers.6.operated": true,
+                "xl_pilot.doorways.57.type": 4,
+                "xl_pilot.doorways.58.type": 4,
+                "level_scene.powerups": {
+                    "contains_object": {
+                        "object": 140,
+                        "id": 41,
+                        "segment": 458
+                    }
+                },
+                "player_dead": false
+            }
+        },
+        {
+            "action": "face_view",
+            "segment": 457,
+            "side": 4,
+            "distance": 8
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 457,
+                "player.cloaked": true,
+                "level_scene.powerups": {
+                    "contains_object": {
+                        "object": 140,
+                        "id": 41,
+                        "segment": 458
+                    }
+                },
+                "player_dead": false
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -0.2
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "position.segment": 458,
+                "level_scene.powerups": {
+                    "not_contains_object": {
+                        "object": 140
+                    }
+                },
+                "player.cloaked": true,
+                "player_dead": false
+            },
+            "timeout_ms": 5000
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "position.segment": 458,
+                "player.cloaked": true,
+                "player.has_red_key": true,
+                "player.has_blue_key": false,
+                "player.has_gold_key": false,
+                "level_scene.powerups": {
+                    "not_contains_object": {
+                        "object": 140
+                    }
+                },
+                "cheats_enabled": false,
+                "player.invulnerable": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ],
+    "qualification": "ASSISTED_LOCAL_PROGRESSION_NO_CONNECTED_TRAVEL"
+}

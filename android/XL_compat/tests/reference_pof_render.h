@@ -26,11 +26,13 @@ struct CArray {
 	{
 		return Buffer();
 	}
-	T *operator+(std::size_t i)
+	template <typename I>
+	T *operator+(I i)
 	{
 		return Buffer() + i;
 	}
-	T &operator[](std::size_t i)
+	template <typename I>
+	T &operator[](I i)
 	{
 		return values.at(i);
 	}

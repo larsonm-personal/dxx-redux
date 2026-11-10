@@ -5,6 +5,7 @@ import struct
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 from pathlib import Path
 
@@ -58,10 +59,7 @@ def packet():
             "developer_tests": True,
             "build_testing": False,
         },
-        "files": {
-            name: {"size": len(data), "sha256": sha256(data)}
-            for name, data in files.items()
-        },
+        "files": {name: {"size": len(data), "sha256": sha256(data)} for name, data in files.items()},
         "qualification": "source-compile-and-link-only; no engine execution or game assets",
         "workflow_binding": "runner comparison only; GitHub REST does not independently attest executed YAML bytes",
     }
@@ -73,17 +71,19 @@ class ArtifactTests(unittest.TestCase):
     def test_release_mode_is_caller_bound(self):
         files, receipt = packet()
         release = dict(receipt)
-        release["mode"] = {
-            **receipt["mode"], "build_type": "Release", "gl_preference": "LEGACY"
-        }
+        release["mode"] = {**receipt["mode"], "build_type": "Release", "gl_preference": "LEGACY"}
         release["compile"] = {
             **receipt["compile"],
             "macros": [*receipt["compile"]["macros"], "NDEBUG"],
         }
         files[RECEIPT] = json.dumps(release).encode()
         args = {
-            "repository": REPO, "workflow": WORKFLOW, "run_id": 123,
-            "run_attempt": 2, "head": HEAD, "tree": TREE,
+            "repository": REPO,
+            "workflow": WORKFLOW,
+            "run_id": 123,
+            "run_attempt": 2,
+            "head": HEAD,
+            "tree": TREE,
             "platform": "ubuntu-24.04",
         }
         check_files(files, release, **args, mode="Release")
@@ -114,12 +114,10 @@ class ArtifactTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 verify_zip(archive, **zip_args)
             with self.assertRaises(ValueError):
-                verify_zip(
-                    archive, **{**zip_args, "artifact_digest": "sha256:" + "0" * 64},
-                    mode="Release"
-                )
+                verify_zip(archive, **{**zip_args, "artifact_digest": "sha256:" + "0" * 64}, mode="Release")
 
-    def test_create_source_only_packet(self):
+    @patch("probe_artifact.platform.machine", return_value="x86_64")
+    def test_create_source_only_packet(self, _machine):
         with tempfile.TemporaryDirectory() as temp:
             build = Path(temp) / "build"
             (build / "main").mkdir(parents=True)
@@ -146,17 +144,11 @@ class ArtifactTests(unittest.TestCase):
                     ]
                 )
             )
-            head = subprocess.check_output(
-                ["git", "rev-parse", "HEAD"], text=True
-            ).strip()
+            head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
             output = Path(temp) / "packet"
             create(build, output, head, "123", "2")
             self.assertEqual(
-                {
-                    p.relative_to(output).as_posix()
-                    for p in output.rglob("*")
-                    if p.is_file()
-                },
+                {p.relative_to(output).as_posix() for p in output.rglob("*") if p.is_file()},
                 {BINARY, RECEIPT, *NOTICES},
             )
             self.assertEqual(json.loads((output / RECEIPT).read_text())["head"], head)
@@ -165,7 +157,8 @@ class ArtifactTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 create(build, Path(temp) / "over-limit", head, "123", "2")
 
-    def test_compiler_identity(self):
+    @patch("probe_artifact.platform.machine", return_value="x86_64")
+    def test_compiler_identity(self, _machine):
         with tempfile.TemporaryDirectory() as temp:
             build = Path(temp)
             compiler_dir = build / "CMakeFiles" / "3.31.6"
@@ -268,21 +261,15 @@ class ArtifactTests(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises(ValueError):
                 authenticate_metadata(run, [{**artifact, field: value}], jobs, **args)
         with self.assertRaises(ValueError):
-            authenticate_metadata(
-                run, [artifact], [{**jobs[0], "conclusion": "failure"}], **args
-            )
+            authenticate_metadata(run, [artifact], [{**jobs[0], "conclusion": "failure"}], **args)
         with self.assertRaises(ValueError):
-            authenticate_metadata(
-                run, [artifact], [{**jobs[0], "run_attempt": 1}], **args
-            )
+            authenticate_metadata(run, [artifact], [{**jobs[0], "run_attempt": 1}], **args)
         with self.assertRaises(ValueError):
             authenticate_metadata(run, [artifact, artifact], jobs, **args)
         with self.assertRaises(ValueError):
             authenticate_metadata(run, [artifact], jobs, **{**args, "pr_number": 51})
         with self.assertRaises(ValueError):
-            authenticate_metadata(
-                run, [artifact], jobs, **{**args, "executed_workflow": b"wrong"}
-            )
+            authenticate_metadata(run, [artifact], jobs, **{**args, "executed_workflow": b"wrong"})
         release_artifact = {**artifact, "name": packet_name(HEAD, 2, "Release")}
         release_job = {
             **jobs[0],
@@ -292,7 +279,10 @@ class ArtifactTests(unittest.TestCase):
         authenticate_metadata(run, [release_artifact], [release_job], **args, mode="Release")
         authenticate_metadata(
             {**run, "head_branch": "fix/pumo-accepted-robot-damage-20261108"},
-            [release_artifact], [release_job], **args, mode="Release"
+            [release_artifact],
+            [release_job],
+            **args,
+            mode="Release",
         )
         for bad_artifact, bad_job, bad_args in (
             (artifact, release_job, args),
@@ -301,13 +291,10 @@ class ArtifactTests(unittest.TestCase):
             (release_artifact, release_job, {**args, "reviewed_workflow": b"tampered"}),
         ):
             with self.assertRaises(ValueError):
-                authenticate_metadata(
-                    run, [bad_artifact], [bad_job], **bad_args, mode="Release"
-                )
+                authenticate_metadata(run, [bad_artifact], [bad_job], **bad_args, mode="Release")
         with self.assertRaises(ValueError):
             authenticate_metadata(
-                {**run, "head_branch": "other"}, [release_artifact],
-                [release_job], **args, mode="Release"
+                {**run, "head_branch": "other"}, [release_artifact], [release_job], **args, mode="Release"
             )
 
     def test_packet_negative_fields(self):
@@ -376,9 +363,7 @@ class ArtifactTests(unittest.TestCase):
                 with self.subTest(field=field), self.assertRaises(ValueError):
                     verify_zip(
                         archive, artifact_digest=digest, **{**args, field: bad}
-                    ) if field != "artifact_digest" else verify_zip(
-                        archive, artifact_digest=bad, **args
-                    )
+                    ) if field != "artifact_digest" else verify_zip(archive, artifact_digest=bad, **args)
             for member in ("../secret", "/absolute", "private.pig", NOTICES[0]):
                 with self.subTest(member=member), self.assertRaises(ValueError):
                     with zipfile.ZipFile(archive, "w") as z:
@@ -403,11 +388,7 @@ class ArtifactTests(unittest.TestCase):
             write()
             data = archive.read_bytes()
             eocd = data.rfind(b"PK\x05\x06")
-            archive.write_bytes(
-                data[:eocd]
-                + struct.pack("<4sLQL", b"PK\x06\x07", 0, 0, 1)
-                + data[eocd:]
-            )
+            archive.write_bytes(data[:eocd] + struct.pack("<4sLQL", b"PK\x06\x07", 0, 0, 1) + data[eocd:])
             with self.assertRaises(ValueError):
                 verify_zip(
                     archive,
@@ -419,12 +400,7 @@ class ArtifactTests(unittest.TestCase):
             eocd = data.rfind(b"PK\x05\x06")
             end = bytearray(data[eocd:])
             end[20:22] = struct.pack("<H", 65535)
-            archive.write_bytes(
-                data[:eocd]
-                + struct.pack("<4sLQL", b"PK\x06\x07", 0, 0, 1)
-                + end
-                + b"x" * 65535
-            )
+            archive.write_bytes(data[:eocd] + struct.pack("<4sLQL", b"PK\x06\x07", 0, 0, 1) + end + b"x" * 65535)
             with self.assertRaises(ValueError):
                 verify_zip(
                     archive,

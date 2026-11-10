@@ -1095,6 +1095,9 @@ def run_suite(suite, repo, build_root, output, timeout):
 
                 if code != 0 and stage == "native-tests":
                     result["xl_native_failures"] = xl_native_failures(work / "xl-originals/original-ctest.xml")
+                    result["xl_native_errors"] = xl_native_failures(
+                        work / "xl-originals/original-ctest.xml", details=True
+                    )
             status = "PASS" if code == 0 else "BLOCKED" if code == 2 else "FAIL"
             result["exclusions"] = [
                 {

@@ -1,6 +1,13 @@
 # Shared earned-save native phase receipt checks; original actions stay in JSON
 function(pumo_receipt_type receipt expected)
-    string(JSON actual ERROR_VARIABLE error TYPE "${receipt}" ${ARGN})
+    string(
+        JSON
+        actual
+        ERROR_VARIABLE
+        error
+        TYPE
+        "${receipt}"
+        ${ARGN})
     if(error OR NOT actual STREQUAL expected)
         message(FATAL_ERROR "Pumo receipt invalid JSON type at ${ARGN}: expected ${expected}")
     endif()
@@ -32,10 +39,27 @@ function(validate_pumo_player_receipt name initial destination step_count transi
     pumo_receipt_type("${receipt}" ARRAY transitions)
     pumo_receipt_type("${receipt}" OBJECT checkpoints)
     pumo_receipt_type("${receipt}" ARRAY checkpoint_history)
-    foreach(field receipt_version result steps final_level initial_level_setup
-                  resumed_earned_checkpoint process_id run_id plan_sha256 executable_sha256
-                  resume_sha256)
-        string(JSON ${field} ERROR_VARIABLE error GET "${receipt}" ${field})
+    foreach(
+        field
+        receipt_version
+        result
+        steps
+        final_level
+        initial_level_setup
+        resumed_earned_checkpoint
+        process_id
+        run_id
+        plan_sha256
+        executable_sha256
+        resume_sha256)
+        string(
+            JSON
+            ${field}
+            ERROR_VARIABLE
+            error
+            GET
+            "${receipt}"
+            ${field})
         if(error)
             message(FATAL_ERROR "Pumo ${name} invalid receipt ${field}: ${error}")
         endif()
@@ -51,29 +75,43 @@ function(validate_pumo_player_receipt name initial destination step_count transi
        OR NOT steps EQUAL step_count
        OR NOT initial_level_setup EQUAL initial
        OR NOT final_level EQUAL destination
-       OR NOT resumed_earned_checkpoint
+       OR (expected_resume_sha256 STREQUAL "" AND resumed_earned_checkpoint)
+       OR (NOT expected_resume_sha256 STREQUAL "" AND NOT resumed_earned_checkpoint)
        OR NOT process_id GREATER 0
        OR NOT count EQUAL transition_count)
         message(FATAL_ERROR "Pumo ${name} progression evidence incomplete")
     endif()
-    if(NOT run_id STREQUAL expected_run_id
-       OR NOT plan_sha256 STREQUAL expected_plan_sha256
-       OR NOT executable_sha256 STREQUAL expected_executable_sha256
-       OR NOT resume_sha256 STREQUAL expected_resume_sha256)
+    if(NOT run_id STREQUAL expected_run_id OR NOT plan_sha256 STREQUAL expected_plan_sha256
+       OR NOT executable_sha256 STREQUAL expected_executable_sha256 OR NOT resume_sha256 STREQUAL
+                                                                       expected_resume_sha256)
         message(FATAL_ERROR "Pumo ${name} receipt input/process identity mismatch")
     endif()
     file(SHA256 "${executed_plan}" current_plan_sha256)
     file(SHA256 "${ENGINE}" current_executable_sha256)
-    if(NOT current_plan_sha256 STREQUAL expected_plan_sha256
-       OR NOT current_executable_sha256 STREQUAL expected_executable_sha256)
+    if(NOT current_plan_sha256 STREQUAL expected_plan_sha256 OR NOT current_executable_sha256
+                                                                STREQUAL expected_executable_sha256)
         message(FATAL_ERROR "Pumo ${name} input changed during execution")
     endif()
     if(transition_count)
         pumo_receipt_type("${receipt}" OBJECT transitions 0)
         pumo_receipt_type("${receipt}" NUMBER transitions 0 from)
         pumo_receipt_type("${receipt}" NUMBER transitions 0 to)
-        string(JSON source GET "${receipt}" transitions 0 from)
-        string(JSON target GET "${receipt}" transitions 0 to)
+        string(
+            JSON
+            source
+            GET
+            "${receipt}"
+            transitions
+            0
+            from)
+        string(
+            JSON
+            target
+            GET
+            "${receipt}"
+            transitions
+            0
+            to)
         if(NOT source EQUAL initial OR NOT target EQUAL destination)
             message(FATAL_ERROR "Pumo ${name} transition mismatch")
         endif()
@@ -92,16 +130,23 @@ function(validate_pumo_player_receipt name initial destination step_count transi
     string(JSON checkpoint_count LENGTH "${receipt}" checkpoints)
     if(checkpoint_count GREATER 0)
         math(EXPR last_checkpoint "${checkpoint_count} - 1")
-        foreach(index RANGE 0 ${last_checkpoint})
+        foreach(index RANGE 0 ${last_checkpoint} 1)
             string(JSON level MEMBER "${receipt}" checkpoints ${index})
             pumo_receipt_type("${receipt}" OBJECT checkpoints "${level}")
             pumo_receipt_type("${receipt}" STRING checkpoints "${level}" file)
             pumo_receipt_type("${receipt}" STRING checkpoints "${level}" sha256)
-            string(JSON save GET "${receipt}" checkpoints "${level}" file)
+            string(
+                JSON
+                save
+                GET
+                "${receipt}"
+                checkpoints
+                "${level}"
+                file)
             string(JSON saved_sha256 GET "${receipt}" checkpoints "${level}" sha256)
             get_filename_component(filename "${save}" NAME)
-            if(NOT save STREQUAL filename OR save STREQUAL ""
-               OR NOT EXISTS "${OUTPUT}/preview-user/${save}")
+            if(NOT save STREQUAL filename OR save STREQUAL "" OR NOT EXISTS
+                                                                 "${OUTPUT}/preview-user/${save}")
                 message(FATAL_ERROR "Pumo ${name} checkpoint file missing or unsafe")
             endif()
             file(SHA256 "${OUTPUT}/preview-user/${save}" actual_sha256)
@@ -114,19 +159,36 @@ function(validate_pumo_player_receipt name initial destination step_count transi
     if(history_count GREATER 0)
         math(EXPR last_history "${history_count} - 1")
         set(history_files)
-        foreach(index RANGE 0 ${last_history})
+        foreach(index RANGE 0 ${last_history} 1)
             pumo_receipt_type("${receipt}" OBJECT checkpoint_history ${index})
             pumo_receipt_type("${receipt}" NUMBER checkpoint_history ${index} step)
             pumo_receipt_type("${receipt}" STRING checkpoint_history ${index} file)
             pumo_receipt_type("${receipt}" STRING checkpoint_history ${index} sha256)
             pumo_receipt_type("${receipt}" OBJECT checkpoint_history ${index} state)
-            string(JSON step GET "${receipt}" checkpoint_history ${index} step)
-            string(JSON save GET "${receipt}" checkpoint_history ${index} file)
+            string(
+                JSON
+                step
+                GET
+                "${receipt}"
+                checkpoint_history
+                ${index}
+                step)
+            string(
+                JSON
+                save
+                GET
+                "${receipt}"
+                checkpoint_history
+                ${index}
+                file)
             string(JSON saved_sha256 GET "${receipt}" checkpoint_history ${index} sha256)
             get_filename_component(filename "${save}" NAME)
             list(FIND history_files "${save}" duplicate_file)
-            if(NOT step MATCHES "^[0-9]+$" OR NOT step LESS steps
-               OR NOT save STREQUAL filename OR save STREQUAL "" OR NOT duplicate_file EQUAL -1
+            if(NOT step MATCHES "^[0-9]+$"
+               OR NOT step LESS steps
+               OR NOT save STREQUAL filename
+               OR save STREQUAL ""
+               OR NOT duplicate_file EQUAL -1
                OR NOT EXISTS "${OUTPUT}/preview-user/${save}")
                 message(FATAL_ERROR "Pumo ${name} checkpoint history incomplete or unsafe")
             endif()
@@ -148,25 +210,38 @@ function(run_pumo_player_phase name initial destination step_count transition_co
     file(WRITE "${executed_plan}" "${plan}\n")
     file(SHA256 "${executed_plan}" expected_plan_sha256)
     file(SHA256 "${ENGINE}" expected_executable_sha256)
-    string(JSON resume GET "${plan}" resume_checkpoint)
-    string(JSON expected_resume_sha256 GET "${plan}" resume_sha256)
-    get_filename_component(filename "${resume}" NAME)
-    if(NOT resume STREQUAL filename OR resume STREQUAL "")
-        message(FATAL_ERROR "Pumo ${name} unsafe earned checkpoint name")
-    endif()
-    file(SHA256 "${OUTPUT}/preview-user/${resume}" actual_resume_sha256)
-    if(NOT actual_resume_sha256 STREQUAL expected_resume_sha256)
-        message(FATAL_ERROR "Pumo ${name} earned checkpoint hash mismatch")
+    string(
+        JSON
+        resume_type
+        ERROR_VARIABLE
+        missing_resume
+        TYPE
+        "${plan}"
+        resume_checkpoint)
+    set(expected_resume_sha256 "")
+    if(NOT missing_resume)
+        if(NOT resume_type STREQUAL "STRING")
+            message(FATAL_ERROR "Pumo ${name} invalid checkpoint name type")
+        endif()
+        string(JSON resume GET "${plan}" resume_checkpoint)
+        string(JSON expected_resume_sha256 GET "${plan}" resume_sha256)
+        get_filename_component(filename "${resume}" NAME)
+        if(NOT resume STREQUAL filename OR resume STREQUAL "")
+            message(FATAL_ERROR "Pumo ${name} unsafe checkpoint name")
+        endif()
+        file(SHA256 "${OUTPUT}/preview-user/${resume}" actual_resume_sha256)
+        if(NOT actual_resume_sha256 STREQUAL expected_resume_sha256)
+            message(FATAL_ERROR "Pumo ${name} checkpoint hash mismatch")
+        endif()
     endif()
     # A successful old phase must never satisfy a missing new producer result
     file(REMOVE "${OUTPUT}/player-result.json" "${OUTPUT}/player-state.json"
-                "${OUTPUT}/player-trace.jsonl")
+         "${OUTPUT}/player-trace.jsonl")
     execute_process(
         COMMAND
             "${CMAKE_COMMAND}" -E env --unset=SDL_VIDEODRIVER SDL_AUDIODRIVER=dummy "${ENGINE}"
-            -pumo-player-test "${executed_plan}" -pumo-resource-root "${RESOURCES}"
-            -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nosound
-            -nomusic
+            -pumo-player-test "${executed_plan}" -pumo-resource-root "${RESOURCES}" -hogdir
+            "${DATA}" -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nosound -nomusic
         RESULT_VARIABLE exit_code
         OUTPUT_VARIABLE stdout
         ERROR_VARIABLE stderr
@@ -175,7 +250,8 @@ function(run_pumo_player_phase name initial destination step_count transition_co
     if(NOT "${exit_code}" STREQUAL "0")
         message(FATAL_ERROR "Pumo ${name} failed (${exit_code}): ${stdout}${stderr}")
     endif()
-    validate_pumo_player_receipt(${name} ${initial} ${destination} ${step_count} ${transition_count})
+    validate_pumo_player_receipt(${name} ${initial} ${destination} ${step_count}
+                                 ${transition_count})
     foreach(member result state)
         configure_file("${OUTPUT}/player-${member}.json" "${OUTPUT}/${name}-${member}.json"
                        COPYONLY)

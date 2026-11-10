@@ -412,6 +412,18 @@ class XlPrivateTests(unittest.TestCase):
             ET.ElementTree(root).write(report)
             expected = ["xl_fog_gpu", "xl_pog_gpu"]
             self.assertEqual(retail.xl_native_failures(report), expected)
+            codes = [{"test": name, "code": "native_test_failed"} for name in expected]
+            self.assertEqual(retail.xl_native_failures(report, details=True), codes)
+            self.assertEqual(retail.safe_xl_native_errors(codes + [{"test": "PRIVATE", "code": "PRIVATE"}]), codes)
+            self.assertNotIn("PRIVATE", json.dumps(retail.xl_native_failures(report, details=True)))
+            next(root.iter("system-out")).text = "PRIVATE Protocol handling missing in multi_send_data PRIVATE"
+            # The failed fog case, not the passing pilot case, owns this diagnostic
+            list(root.iter("system-out"))[1].text = "PRIVATE Protocol handling missing in multi_send_data PRIVATE"
+            ET.ElementTree(root).write(report)
+            self.assertEqual(
+                retail.xl_native_failures(report, details=True)[0],
+                {"test": "xl_fog_gpu", "code": "network_uninitialized"},
+            )
             row = {"id": "host-profile:retail-xl-fast", "xl_native_failures": expected + ["PRIVATE_NAME", {}]}
             clean = retail.public_diagnostics(row)
             self.assertEqual(clean["xl_native_failures"], expected)
@@ -613,7 +625,6 @@ class XlPrivateTests(unittest.TestCase):
                 pilot.validate_inventory(changed)
 
     def test_public_source_selection_rejects_omissions_private_tests_and_skips(self):
-        self.assertEqual(len(public.PUBLIC_TESTS), 66)
         self.assertEqual(
             public.GPU_TESTS, {"xl_fog_gpu", "xl_fog_gpu_direct", "xl_fog_gpu_copy16_fallback", "xl_pog_gpu"}
         )
@@ -627,16 +638,6 @@ class XlPrivateTests(unittest.TestCase):
                 "xl_pumo_robot_damage_observer_contract",
                 "xl_pumo_weapon_lifecycle_observer_contract",
                 "xl_pumo_receipt_contract",
-                "xl_pumo_tulev1_spawn_contract",
-                "xl_pumo_tulev1_master5_contract",
-                "xl_pumo_tulev1_guard269_contract",
-                "xl_pumo_tulev1_quad_guard255_contract",
-                "xl_pumo_tulev1_guided_switch12_contract",
-                "xl_pumo_tulev1_blast136_contract",
-                "xl_pumo_tulev1_courtyard_guards_contract",
-                "xl_pumo_tulev1_supplies_contract",
-                "xl_pumo_tulev1_switch14_contract",
-                "xl_pumo_tulev1_switch13_contract",
                 "xl_segment_damage_reference",
                 "xl_slow_motion_reference",
             },
@@ -680,14 +681,6 @@ class XlPrivateTests(unittest.TestCase):
                     "xl_pumo_weapon_lifecycle_observer_contract",
                     "xl_pumo_player_fvi_observer_contract",
                     "xl_pumo_receipt_contract",
-                    "xl_pumo_tulev1_spawn_contract",
-                    "xl_pumo_tulev1_master5_contract",
-                    "xl_pumo_tulev1_guard269_contract",
-                    "xl_pumo_tulev1_quad_guard255_contract",
-                    "xl_pumo_tulev1_guided_switch12_contract",
-                    "xl_pumo_tulev1_supplies_contract",
-                    "xl_pumo_tulev1_switch14_contract",
-                    "xl_pumo_tulev1_switch13_contract",
                 }:
                     for mode in ("omitted", "duplicate", "same-length-duplicate"):
                         changed = copy.deepcopy(listing)
@@ -745,14 +738,6 @@ class XlPrivateTests(unittest.TestCase):
                     "xl_pumo_weapon_lifecycle_observer_contract",
                     "xl_pumo_player_fvi_observer_contract",
                     "xl_pumo_receipt_contract",
-                    "xl_pumo_tulev1_spawn_contract",
-                    "xl_pumo_tulev1_master5_contract",
-                    "xl_pumo_tulev1_guard269_contract",
-                    "xl_pumo_tulev1_quad_guard255_contract",
-                    "xl_pumo_tulev1_guided_switch12_contract",
-                    "xl_pumo_tulev1_supplies_contract",
-                    "xl_pumo_tulev1_switch14_contract",
-                    "xl_pumo_tulev1_switch13_contract",
                 }:
                     for mode in ("missing", "duplicate", "same-length-duplicate", "skipped", "failure", "error"):
                         changed = copy.deepcopy(suite)

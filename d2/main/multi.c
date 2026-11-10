@@ -1622,6 +1622,11 @@ void multi_do_frame(void)
 	}
 }
 
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+// Native fixtures may record valid outbound packets without opening sockets
+void (*xl_test_network_send)(const unsigned char *, int, int) = NULL;
+#endif
+
 void multi_send_data(unsigned char* buf, int len, int priority)
 {
 	if (buf == multibuf)
@@ -1643,6 +1648,12 @@ void multi_send_data(unsigned char* buf, int len, int priority)
 
 	if (Game_mode & GM_NETWORK)
 	{
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+		if (xl_test_network_send) {
+			xl_test_network_send(buf, len, priority);
+			return;
+		}
+#endif
 		switch (multi_protocol)
 		{
 #ifdef USE_UDP
