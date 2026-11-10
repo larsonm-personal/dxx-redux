@@ -1,0 +1,7 @@
+# Registered assisted-local switch 13 owner
+
+This owner resumes only the dynamically verified registered switch 14 strict-cold normal save. It declares one developer-only player pose inside level-7 segment 1537 before simulation advances, then uses the already selected, ready ordinary Guided Missile. The source-screened oblique pose keeps the player outside the missile's wall-blast radius. One ordinary button press, one simulation frame, release, and a finite neutral tail are followed by an ordinary quick-save and a separate fresh-process cold resave.
+
+The warm oracle requires a player-owned Guide birth, the original wall 203 contact and sole operation 13, normal settlement of all eight target walls to OPEN4, and no unrelated gate operation. It checks the player is alive, healthy and unmodified, no collected pickups, persistent actor identities and health, and every saved actor and pickup slot rather than only the distance-filtered scene. The closeout requires the usual narrow inactive-slot cold-save normalization and an exact normal save lineage. Original indexed bitmap and source geometry screening remain private input qualification; native contact is not inferred from that screen.
+
+This is assisted-local mechanism evidence only. It does not qualify an earned body crossing, boss combat, objectives or exit to level 8. No engine, observer, original asset, or admission setting is changed.
