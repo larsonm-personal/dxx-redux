@@ -1892,6 +1892,9 @@ int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collisio
 					vm_vec_scale_add2(&vec_to_point, &weap_vec, -F1_0*2);
 					vm_vec_scale(&vec_to_point, speed/4);
 					Objects[new_obj].mtype.phys_info.velocity = vec_to_point;
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+					xl_weapon_lifecycle_emit(XL_WEAPON_REFLECTION, new_obj, weapon - Objects);
+#endif
 				}
 			}
 		}

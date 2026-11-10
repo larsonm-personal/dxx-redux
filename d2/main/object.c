@@ -114,6 +114,42 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "editor/editor.h"
 #endif
 
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+static void (*xl_weapon_lifecycle_observer)(const xl_weapon_lifecycle_sample *);
+void xl_weapon_lifecycle_set_observer(void (*observer)(const xl_weapon_lifecycle_sample *))
+{
+	xl_weapon_lifecycle_observer = observer;
+}
+void xl_weapon_lifecycle_emit(int kind, int object_num, int source_object)
+{
+	if (!xl_weapon_lifecycle_observer || object_num < 0 || object_num > Highest_object_index) return;
+	const object *weapon = &Objects[object_num];
+	if (weapon->type != OBJ_WEAPON) return;
+	xl_weapon_lifecycle_sample sample = { 0 };
+	sample.kind = kind;
+	sample.level = Current_level_num;
+	sample.object = object_num;
+	sample.signature = weapon->signature;
+	sample.weapon_id = weapon->id;
+	sample.segment = weapon->segnum;
+	sample.position[0] = weapon->pos.x;
+	sample.position[1] = weapon->pos.y;
+	sample.position[2] = weapon->pos.z;
+	sample.radius = weapon->size;
+	sample.movement_type = weapon->movement_type;
+	sample.flags = weapon->flags;
+	sample.lifeleft = weapon->lifeleft;
+	sample.parent_type = weapon->ctype.laser_info.parent_type;
+	sample.parent_object = weapon->ctype.laser_info.parent_num;
+	sample.parent_signature = weapon->ctype.laser_info.parent_signature;
+	sample.source_object = source_object;
+	sample.source_signature = source_object >= 0 && source_object <= Highest_object_index ? Objects[source_object].signature : -1;
+	sample.game_time_raw = GameTime64;
+	sample.creation_time_raw = weapon->ctype.laser_info.creation_time;
+	xl_weapon_lifecycle_observer(&sample);
+}
+#endif
+
 void obj_detach_all(object *parent);
 void obj_detach_one(object *sub);
 
@@ -1739,6 +1775,9 @@ int obj_create(enum object_type_t type,ubyte id,int segnum,const vms_vector *pos
 	#endif
 	input_demo_log_allocator_event("create", objnum, obj, obj->type,
 		obj->id, obj->signature, obj->segnum, obj->flags);
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+	if (type == OBJ_WEAPON) xl_weapon_lifecycle_emit(XL_WEAPON_BIRTH, objnum, -1);
+#endif
 
 	return objnum;
 }
@@ -1793,10 +1832,14 @@ void obj_delete(int objnum)
 	Assert(obj->type != OBJ_NONE);
 	Assert(obj != ConsoleObject);
 
-	#ifdef DXX_XL_RUNTIME
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+	if (obj->type == OBJ_WEAPON) xl_weapon_lifecycle_emit(XL_WEAPON_RETIRE, objnum, -1);
+#endif
+
+#ifdef DXX_XL_RUNTIME
 	xl_speed_boost_forget(objnum);
 	xl_projectile_forget(objnum);
-	#endif
+#endif
 	input_demo_log_robot_lifecycle_delete(objnum, obj);
 #ifdef __ANDROID__
 	escort_route_notify_object_changed(objnum);

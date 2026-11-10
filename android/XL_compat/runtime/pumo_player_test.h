@@ -5,6 +5,7 @@
 #include "route_confirmation.h"
 #include "pumo_ordinary_input_validation.h"
 #include "pumo_player_fvi_observer.h"
+#include "pumo_weapon_lifecycle_observer.h"
 #include "d1_in_d2/d1_in_d2.h"
 #include "newdemo.h"
 extern "C" {
@@ -40,6 +41,34 @@ static std::array<xl_player_fvi_sample, 4> player_fvi_first{}, player_fvi_last{}
 static unsigned player_fvi_count = 0;
 static pumo_player_fvi_observer::PlanBound<xl_player_fvi_sample> bound_player_fvi;
 static bool bound_player_fvi_enabled = false;
+static pumo_weapon_lifecycle_observer::PlanBound<xl_weapon_lifecycle_sample> bound_weapon_lifecycle;
+static bool bound_weapon_lifecycle_enabled = false;
+static void weapon_lifecycle_observed(const xl_weapon_lifecycle_sample *sample)
+{
+	bound_weapon_lifecycle.observe(*sample);
+}
+static Json weapon_lifecycle_identity_snapshot()
+{
+	Json slots = Json::array();
+	for (int index = 0; index <= Highest_object_index; ++index)
+		slots.push_back({ { "object", index }, { "signature", int(Objects[index].signature) }, { "type", int(Objects[index].type) }, { "id", int(Objects[index].id) }, { "flags", int(Objects[index].flags) }, { "should_be_dead", bool(Objects[index].flags & OF_SHOULD_BE_DEAD) } });
+	return { { "level", Current_level_num }, { "load_generation", combat_load_generation }, { "game_time_raw", GameTime64 }, { "highest_object_index", Highest_object_index }, { "slots", std::move(slots) } };
+}
+static Json weapon_lifecycle_result()
+{
+	Json events = Json::array();
+	Json frames = Json::array();
+	for (unsigned index = 0; index < bound_weapon_lifecycle.frame_count(); ++index) {
+		const auto &frame = bound_weapon_lifecycle.frame(index);
+		frames.push_back({ { "frame", index + 1 }, { "start_raw", frame.start_raw }, { "after_weapon_input_raw", frame.after_weapon_input_raw }, { "after_game_time_raw", frame.after_game_time_raw }, { "end_raw", frame.end_raw } });
+	}
+	for (unsigned index = 0; index < bound_weapon_lifecycle.count(); ++index) {
+		const auto &event = bound_weapon_lifecycle.event(index);
+		const auto &s = event.sample;
+		events.push_back({ { "frame", event.frame }, { "phase", int(event.phase) }, { "load_generation", event.load_generation }, { "bracket_start_raw", event.bracket_start_raw }, { "kind", s.kind }, { "level", s.level }, { "object", s.object }, { "signature", s.signature }, { "weapon_id", s.weapon_id }, { "segment", s.segment }, { "position_fixed", { s.position[0], s.position[1], s.position[2] } }, { "radius_raw", s.radius }, { "movement_type", s.movement_type }, { "flags", s.flags }, { "lifeleft_raw", s.lifeleft }, { "parent_type_raw", s.parent_type }, { "parent_object_raw", s.parent_object }, { "parent_signature_raw", s.parent_signature }, { "source_object", s.source_object }, { "source_signature", s.source_signature }, { "game_time_raw", s.game_time_raw }, { "creation_time_raw", s.creation_time_raw } });
+	}
+	return { { "kind", "bounded_weapon_lifecycle_source_events" }, { "valid", bound_weapon_lifecycle.valid() }, { "truncated", bound_weapon_lifecycle.truncated() }, { "event_limit", bound_weapon_lifecycle.event_limit() }, { "frame_limit", bound_weapon_lifecycle.frame_limit() }, { "contact_observed", false }, { "movement_observed", false }, { "damage_observed", false }, { "no_hit_complete", false }, { "swept_path_observed", false }, { "indirect_legs_observed", false }, { "frames", std::move(frames) }, { "events", std::move(events) } };
+}
 static void player_fvi_observed(const xl_player_fvi_sample *sample)
 {
 	if (bound_player_fvi_enabled) {
@@ -520,6 +549,8 @@ static int run(int argc, char **argv)
 		player_fvi_count = 0;
 		bound_player_fvi.reset();
 		bound_player_fvi_enabled = false;
+		bound_weapon_lifecycle.reset();
+		bound_weapon_lifecycle_enabled = false;
 		weapon_wall_contact_count = 0;
 		weapon_wall_pixels_used = false;
 #endif
@@ -576,6 +607,28 @@ static int run(int argc, char **argv)
 			        "bound player FVI limits or segments invalid");
 			bound_player_fvi_enabled = true;
 		}
+		if (plan.contains("weapon_lifecycle_plan")) {
+			const auto &binding = plan.at("weapon_lifecycle_plan");
+			require(binding.is_object() && binding.at("level").is_number_integer() &&
+			            binding.at("player_object").is_number_integer() && binding.at("player_signature").is_number_integer() &&
+			            binding.at("max_frames").is_number_unsigned() && binding.at("max_events").is_number_unsigned(),
+			        "weapon lifecycle plan requires integer source identity and limits");
+			require(ConsoleObject && binding.at("level") == Current_level_num &&
+			            binding.at("player_object") == Players[Player_num].objnum &&
+			            binding.at("player_signature") == ConsoleObject->signature &&
+			            binding.at("max_frames") >= 1 && binding.at("max_frames") <= 10000 &&
+			            binding.at("max_events") >= 1 && binding.at("max_events") <= 256,
+			        "weapon lifecycle source identity or limits mismatch");
+			require(bound_weapon_lifecycle.configure(Current_level_num, Players[Player_num].objnum,
+			                                         ConsoleObject->signature, combat_load_generation,
+			                                         binding.at("max_frames").get<unsigned>(), binding.at("max_events").get<unsigned>()),
+			        "weapon lifecycle configuration invalid");
+			for (int index = 0; index <= Highest_object_index; ++index)
+				if (Objects[index].type == OBJ_WEAPON)
+					require(bound_weapon_lifecycle.seed(index, Objects[index].signature),
+					        "weapon lifecycle source seed invalid");
+			bound_weapon_lifecycle_enabled = true;
+		}
 #endif
 		require_ordinary_secondary_input("after_resume");
 		if (plan.contains("track_objects")) {
@@ -612,6 +665,9 @@ static int run(int argc, char **argv)
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 		if (observe_weapon_wall_contacts) xl_weapon_wall_set_contact_observer(weapon_wall_contact_observed);
 		if (observe_player_fvi || bound_player_fvi_enabled) xl_player_fvi_set_observer(player_fvi_observed);
+		if (bound_weapon_lifecycle_enabled) xl_weapon_lifecycle_set_observer(weapon_lifecycle_observed);
+		if (bound_weapon_lifecycle_enabled)
+			trace << Json{ { "event", "weapon_lifecycle_source" }, { "state", weapon_lifecycle_identity_snapshot() } }.dump() << '\n';
 #endif
 		auto observed_state = trigger_observation();
 		const auto tick = [&] {
@@ -634,9 +690,20 @@ static int run(int argc, char **argv)
 			secondary_press_pending = false;
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 			if (bound_player_fvi_enabled) bound_player_fvi.begin_frame(unsigned(frame_count + 1), Current_level_num, combat_load_generation);
+			if (bound_weapon_lifecycle_enabled) bound_weapon_lifecycle.begin_frame(unsigned(frame_count + 1),
+				                                                                   Current_level_num, Players[Player_num].objnum, ConsoleObject ? ConsoleObject->signature : -1,
+				                                                                   combat_load_generation, GameTime64);
 #endif
 			do_weapon_n_item_stuff();
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+			if (bound_weapon_lifecycle_enabled) bound_weapon_lifecycle.set_phase(
+				decltype(bound_weapon_lifecycle)::game_time_advance, GameTime64);
+#endif
 			calc_game_time();
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+			if (bound_weapon_lifecycle_enabled) bound_weapon_lifecycle.set_phase(
+				decltype(bound_weapon_lifecycle)::world_update, GameTime64);
+#endif
 			// Presentation is outside this simulation probe, including later levels
 			input_demo_set_skip_level_intro(1);
 			const int before_level = Current_level_num;
@@ -644,6 +711,7 @@ static int run(int argc, char **argv)
 			GameProcessFrame();
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 			if (bound_player_fvi_enabled) bound_player_fvi.end_frame();
+			if (bound_weapon_lifecycle_enabled) bound_weapon_lifecycle.end_frame(GameTime64);
 #endif
 			++frame_count;
 			operation_frame_source = -1;
@@ -653,6 +721,10 @@ static int run(int argc, char **argv)
 				if (bound_player_fvi_enabled) {
 					bound_player_fvi.invalidate();
 					xl_player_fvi_set_observer(nullptr);
+				}
+				if (bound_weapon_lifecycle_enabled) {
+					bound_weapon_lifecycle.invalidate();
+					xl_weapon_lifecycle_set_observer(nullptr);
 				}
 #endif
 			}
@@ -780,6 +852,10 @@ static int run(int argc, char **argv)
 						bound_player_fvi.invalidate();
 						xl_player_fvi_set_observer(nullptr);
 					}
+					if (bound_weapon_lifecycle_enabled) {
+						bound_weapon_lifecycle.invalidate();
+						xl_weapon_lifecycle_set_observer(nullptr);
+					}
 #endif
 					operation_counts.fill(0);
 					operation_count_level = Current_level_num;
@@ -825,6 +901,12 @@ static int run(int argc, char **argv)
 			trace.flush();
 			require(bound_player_fvi.complete(), "bound player FVI observation incomplete or truncated");
 		}
+		if (bound_weapon_lifecycle_enabled) {
+			trace << Json{ { "event", "weapon_lifecycle_post" }, { "state", weapon_lifecycle_identity_snapshot() } }.dump() << '\n';
+			trace << Json{ { "event", "weapon_lifecycle" }, { "result", weapon_lifecycle_result() } }.dump() << '\n';
+			trace.flush();
+			require(bound_weapon_lifecycle.valid(), "weapon lifecycle observation invalid or truncated");
+		}
 #endif
 #ifdef _WIN32
 		const int process = _getpid();
@@ -836,6 +918,9 @@ static int run(int argc, char **argv)
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 		xl_weapon_wall_set_contact_observer(nullptr);
 		xl_player_fvi_set_observer(nullptr);
+		xl_weapon_lifecycle_set_observer(nullptr);
+		bound_weapon_lifecycle_enabled = false;
+		bound_weapon_lifecycle.reset();
 		bound_player_fvi_enabled = false;
 		bound_player_fvi.reset();
 #endif
@@ -846,6 +931,9 @@ static int run(int argc, char **argv)
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 		xl_weapon_wall_set_contact_observer(nullptr);
 		xl_player_fvi_set_observer(nullptr);
+		xl_weapon_lifecycle_set_observer(nullptr);
+		bound_weapon_lifecycle_enabled = false;
+		bound_weapon_lifecycle.reset();
 		bound_player_fvi_enabled = false;
 		bound_player_fvi.reset();
 #endif
