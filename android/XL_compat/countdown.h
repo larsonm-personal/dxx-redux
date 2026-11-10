@@ -66,12 +66,12 @@ CountdownOutput advance_countdown(Countdown &state, const CountdownInput &input,
 	const int seconds = (std::min) (state.seconds, 16);
 	const int scale = input.difficulty ? 1 : 4;
 	const int magnitude = 3 * countdown_unit / 16 + (16 - seconds) * countdown_unit / 32;
-	output.rotation_x = int((std::int64_t(random()) * magnitude) >> 16) / scale;
-	output.rotation_z = int((std::int64_t(random()) * magnitude) >> 16) / scale;
+	output.rotation_x = int((std::int64_t(random()) * magnitude) / countdown_unit) / scale;
+	output.rotation_z = int((std::int64_t(random()) * magnitude) / countdown_unit) / scale;
 	const int previous = state.timer;
 	if (!input.paused) state.timer = int((std::max) (std::int64_t(INT32_MIN), std::int64_t(state.timer) - state.pending));
 	state.pending = 0;
-	const auto rounded_seconds = [](int time) { return int((std::int64_t(time) + 7 * countdown_unit / 8) >> 16); };
+	const auto rounded_seconds = [](int time) { return int((std::int64_t(time) + 7 * countdown_unit / 8) / countdown_unit); };
 	state.seconds = rounded_seconds(state.timer);
 	// These IDs are checked against the pinned source sound constants
 	if (previous > 51 * countdown_unit / 4 && state.timer <= 51 * countdown_unit / 4) output.sound(113);

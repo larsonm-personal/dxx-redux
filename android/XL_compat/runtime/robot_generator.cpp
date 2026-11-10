@@ -1,4 +1,5 @@
 #include "robot_generator.h"
+#include "speed_boost.h"
 #include "preview.h"
 #include <array>
 #include <cmath>
@@ -194,7 +195,7 @@ extern "C" int xl_robot_generator_contact(int object_index)
 				normalize(direction);
 			}
 		}
-	if (actor.movement_type == MT_PHYSICS && actor.mtype.phys_info.mass && !(player && &actor == ConsoleObject && Automap_active)) {
+	if (actor.movement_type == MT_PHYSICS && actor.mtype.phys_info.mass && !(player && &actor == ConsoleObject && (Automap_active || xl_speed_boost_player_locked()))) {
 		const float scale = 1.0f / (float(actor.mtype.phys_info.mass) / 65536.0f);
 		const fix force = player ? 64 : 8;
 		auto &velocity = actor.mtype.phys_info.velocity;

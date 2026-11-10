@@ -428,10 +428,13 @@ extern "C" void xl_boss_teleport(int owner)
 			object.orient.rvec = { forward.z, 0, -forward.x };
 			normalize(object.orient.rvec);
 			const auto &right = object.orient.rvec;
+			const auto cross_component = [](std::int64_t value) {
+				return static_cast<fix>(value / F1_0 - (value % F1_0 < 0));
+			};
 			object.orient.uvec = {
-				static_cast<fix>((double(forward.y) * right.z - double(forward.z) * right.y) / 65536.0),
-				static_cast<fix>((double(forward.z) * right.x - double(forward.x) * right.z) / 65536.0),
-				static_cast<fix>((double(forward.x) * right.y - double(forward.y) * right.x) / 65536.0)
+				cross_component(std::int64_t(forward.y) * right.z - std::int64_t(forward.z) * right.y),
+				cross_component(std::int64_t(forward.z) * right.x - std::int64_t(forward.x) * right.z),
+				cross_component(std::int64_t(forward.x) * right.y - std::int64_t(forward.y) * right.x)
 			};
 		}
 	}
