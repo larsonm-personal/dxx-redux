@@ -1,0 +1,275 @@
+{
+    "initial_level": 7,
+    "checkpoint_expect": {
+        "current_level_num": 7,
+        "position.segment": 1156,
+        "player_dead": false,
+        "cheats_enabled": false,
+        "player.cloaked": true,
+        "player.invulnerable": false,
+        "player.has_blue_key": true,
+        "player.has_red_key": false,
+        "player.has_gold_key": false,
+        "player.primary_weapon": 0,
+        "player.laser_level": 0,
+        "player.quad_lasers": true,
+        "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+        "player.secondary_weapon_flags": 65,
+        "combat_observation.guided_control": null,
+        "combat_observation.owned_weapon_count": 0
+    },
+    "simulation_fps": 60,
+    "realtime": false,
+    "observe_weapon_wall_contacts": true,
+    "track_objects": [255],
+    "qualification": "ASSISTED_LOCAL_ORDINARY_GUARD255_QUAD_KILL_NO_CONNECTED_TRAVEL",
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "position.segment": 1156,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.cloaked": true,
+                "player.invulnerable": false,
+                "player.has_blue_key": true,
+                "player.has_red_key": false,
+                "player.has_gold_key": false,
+                "player.primary_weapon": 0,
+                "player.laser_level": 0,
+                "player.quad_lasers": true,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                "player.secondary_weapon_flags": 65,
+                "combat_observation.guided_control": null,
+                "combat_observation.owned_weapon_count": 0
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 0,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 2,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 3,
+            "axis_value": 0.0
+        },
+        {
+            "action": "send_axis",
+            "axis": 4,
+            "axis_value": 0.0
+        },
+        {
+            "action": "pose_view",
+            "segment": 647,
+            "position_fixed": [4569781, 1212416, 4495980],
+            "pitch": -2774,
+            "bank": 0,
+            "heading": 19453
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "held": 1
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "game_time_raw": {
+                    "gte": 0
+                }
+            },
+            "timeout_ms": 50,
+            "face_object": 255,
+            "face_interval_ms": 50
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "game_time_raw": {
+                    "gte": 0
+                }
+            },
+            "timeout_ms": 300,
+            "face_object": 255,
+            "face_interval_ms": 50
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "game_time_raw": {
+                    "gte": 0
+                }
+            },
+            "timeout_ms": 300,
+            "face_object": 255,
+            "face_interval_ms": 50
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "game_time_raw": {
+                    "gte": 0
+                }
+            },
+            "timeout_ms": 300,
+            "face_object": 255,
+            "face_interval_ms": 50
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "game_time_raw": {
+                    "gte": 0
+                }
+            },
+            "timeout_ms": 300,
+            "face_object": 255,
+            "face_interval_ms": 50
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "game_time_raw": {
+                    "gte": 0
+                }
+            },
+            "timeout_ms": 300,
+            "face_object": 255,
+            "face_interval_ms": 50
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "game_time_raw": {
+                    "gte": 0
+                }
+            },
+            "timeout_ms": 300,
+            "face_object": 255,
+            "face_interval_ms": 50
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "game_time_raw": {
+                    "gte": 0
+                }
+            },
+            "timeout_ms": 300,
+            "face_object": 255,
+            "face_interval_ms": 50
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "held": 0
+        },
+        {
+            "action": "wait_ms",
+            "ms": 67
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_ms",
+            "ms": 67
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_ms",
+            "ms": 67
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_ms",
+            "ms": 67
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_ms",
+            "ms": 67
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_ms",
+            "ms": 67
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_ms",
+            "ms": 67
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_ms",
+            "ms": 67
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "wait_ms",
+            "ms": 67
+        },
+        {
+            "action": "introspect"
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ]
+}

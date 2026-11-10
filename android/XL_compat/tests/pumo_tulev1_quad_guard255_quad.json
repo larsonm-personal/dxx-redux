@@ -1,0 +1,129 @@
+{
+    "initial_level": 7,
+    "simulation_fps": 60,
+    "realtime": false,
+    "qualification": "ASSISTED_LOCAL_ORDINARY_QUAD61_PROXIMITY_PICKUP_NO_CONNECTED_TRAVEL",
+    "checkpoint_expect": {
+        "current_level_num": 7,
+        "position.segment": 647,
+        "player_dead": false,
+        "cheats_enabled": false,
+        "player.invulnerable": false,
+        "player.cloaked": true,
+        "player.quad_lasers": false,
+        "player.laser_level": 0,
+        "player.primary_weapon": 0,
+        "player.robots_killed_level": 1,
+        "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+        "xl_pilot.doorways.148.type": 4,
+        "xl_pilot.doorways.149.type": 4,
+        "level_scene.powerups": {
+            "contains_object": {
+                "object": 61,
+                "id": 12,
+                "segment": 1156
+            }
+        }
+    },
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "position.segment": 647,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.invulnerable": false,
+                "player.cloaked": true,
+                "player.quad_lasers": false,
+                "player.laser_level": 0,
+                "player.primary_weapon": 0,
+                "player.robots_killed_level": 1,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                "xl_pilot.doorways.148.type": 4,
+                "xl_pilot.doorways.149.type": 4,
+                "level_scene.powerups": {
+                    "contains_object": {
+                        "object": 61,
+                        "id": 12,
+                        "segment": 1156
+                    }
+                }
+            }
+        },
+        {
+            "action": "pose_view",
+            "segment": 1156,
+            "position_fixed": [29816514, 5111808, -6301720],
+            "pitch": 16384,
+            "bank": 0,
+            "heading": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 1156,
+                "player_dead": false,
+                "player.quad_lasers": false,
+                "level_scene.powerups": {
+                    "contains_object": {
+                        "object": 61,
+                        "id": 12,
+                        "segment": 1156
+                    }
+                }
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -1.0
+        },
+        {
+            "action": "wait_for",
+            "expect": {
+                "player.quad_lasers": true,
+                "level_scene.powerups": {
+                    "not_contains_object": {
+                        "object": 61
+                    }
+                }
+            },
+            "timeout_ms": 1500
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 7,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.invulnerable": false,
+                "player.cloaked": true,
+                "player.quad_lasers": true,
+                "player.laser_level": 0,
+                "player.robots_killed_level": 1,
+                "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                "level_scene.powerups": {
+                    "not_contains_object": {
+                        "object": 61
+                    }
+                },
+                "xl_pilot.doorways.148.type": 4,
+                "xl_pilot.doorways.149.type": 4
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        },
+        {
+            "action": "introspect"
+        }
+    ]
+}
