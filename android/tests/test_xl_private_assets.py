@@ -631,6 +631,7 @@ class XlPrivateTests(unittest.TestCase):
                 "xl_pumo_tulev1_guided_switch12_contract",
                 "xl_pumo_tulev1_blast136_contract",
                 "xl_pumo_tulev1_courtyard_guards_contract",
+                "xl_pumo_tulev1_supplies_contract",
                 "xl_segment_damage_reference",
                 "xl_slow_motion_reference",
             },
@@ -676,6 +677,7 @@ class XlPrivateTests(unittest.TestCase):
                     "xl_pumo_tulev1_guard269_contract",
                     "xl_pumo_tulev1_quad_guard255_contract",
                     "xl_pumo_tulev1_guided_switch12_contract",
+                    "xl_pumo_tulev1_supplies_contract",
                 }:
                     for mode in ("omitted", "duplicate", "same-length-duplicate"):
                         changed = copy.deepcopy(listing)
@@ -735,6 +737,7 @@ class XlPrivateTests(unittest.TestCase):
                     "xl_pumo_tulev1_guard269_contract",
                     "xl_pumo_tulev1_quad_guard255_contract",
                     "xl_pumo_tulev1_guided_switch12_contract",
+                    "xl_pumo_tulev1_supplies_contract",
                 }:
                     for mode in ("missing", "duplicate", "same-length-duplicate", "skipped", "failure", "error"):
                         changed = copy.deepcopy(suite)
