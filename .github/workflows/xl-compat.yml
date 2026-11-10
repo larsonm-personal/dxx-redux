@@ -46,6 +46,14 @@ jobs:
       - name: Build source adapters and require every public contract
         run: python android/XL_compat/tests/public_contracts.py --work temp/xl-public-ci ${{ runner.os == 'Linux' && '--gpu --audio' || '' }}
 
+      - name: Run linked boss gameplay consumer check
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y nlohmann-json3-dev=3.11.3-1
+          cmake -S android/XL_compat/tests/boss_gameplay_cpu -B temp/xl-boss-gameplay-cpu
+          cmake --build temp/xl-boss-gameplay-cpu --parallel 2 --target xl_boss_gameplay_consumer
+          ctest --test-dir temp/xl-boss-gameplay-cpu --output-on-failure -R '^xl_boss_gameplay_consumer$'
+
   # This proves the opt-in lifecycle source compiles and links, not gameplay or runtime behavior.
   developer-compile:
     needs: stack
