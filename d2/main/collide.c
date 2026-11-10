@@ -353,7 +353,11 @@ void bump_this_object(object *objp, object *other_objp, vms_vector *force, int d
 				phys_apply_force(objp, force);
 				phys_apply_rot(objp, &force2);
 				if (damage_flag) {
+#ifdef DXX_XL_RUNTIME
+					force_mag = vm_vec_mag_quick(xl_level_extensions_active() && !(Game_mode & GM_MULTI) ? &force2 : force);
+#else
 					force_mag = vm_vec_mag_quick(force);
+#endif
 					apply_force_damage(objp, force_mag, other_objp);
 				}
 			}

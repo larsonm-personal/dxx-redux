@@ -282,6 +282,117 @@ static void ordinary_bump_boss_scope_controls(bool xl, bool protected_profile)
 	std::cout << "Actual clutter contact boss-scope controls passed; XL=" << xl << " protected=" << protected_profile << "\n";
 }
 
+// Actual dispatch: retain the full impulse but derive XL nonplayer damage from rotation force
+static void ordinary_nonplayer_force_damage_controls(bool xl, bool protected_profile)
+{
+	const auto saved_player = *ConsoleObject;
+	const auto saved_player_state = Players[Player_num];
+	const auto saved_robot = Robot_info[0];
+	const auto saved_cheats = cheats;
+	const auto saved_time = GameTime64, saved_delay = collide_get_collision_delay_last_play_time();
+	const auto saved_frame = FrameTime;
+	const int saved_mode = Game_mode, saved_difficulty = Difficulty_level, saved_dead = Player_is_dead, saved_endlevel = Endlevel_sequence;
+	const int saved_awareness = Num_awareness_events, saved_agitation = Overall_agitation;
+	std::array<awareness_event, MAX_AWARENESS_EVENTS> saved_events;
+	std::array<ai_cloak_info, MAX_AI_CLOAK_INFO> saved_cloak;
+	std::memcpy(saved_events.data(), Awareness_events, sizeof(Awareness_events));
+	std::memcpy(saved_cloak.data(), Ai_cloak_info, sizeof(Ai_cloak_info));
+	const auto saved_believed_pos = Believed_player_pos;
+	const auto saved_believed_seg = Believed_player_seg;
+	unsigned saved_rng = 0;
+	d_rand_get_state(&saved_rng);
+	const auto saved_calls = d_rand_get_call_count();
+	FrameTime = F1_0 / 60;
+	cheats.monsterdamage = 0;
+	cheats.robotfiringsuspended = 1;
+	Robot_info[0].strength = i2f(100);
+	Robot_info[0].companion = Robot_info[0].kamikaze = Robot_info[0].thief = Robot_info[0].attack_type = 0;
+	for (const int type : { OBJ_ROBOT, OBJ_CLUTTER }) {
+		Game_mode = 0;
+		const int index = obj_create(static_cast<object_type_t>(type), 0, ConsoleObject->segnum, &ConsoleObject->pos,
+		                             &vmd_identity_matrix, F1_0, type == OBJ_ROBOT ? CT_AI : CT_NONE, MT_PHYSICS, RT_NONE);
+		require(index >= 0, "cannot allocate nonplayer force-damage control");
+		auto &other = Objects[index];
+		GameTime64 += F1_0; // Production birth registry must admit a mature robot
+		for (const bool multiplayer : { false, true }) {
+			if (multiplayer && type == OBJ_ROBOT) continue; // No multiplayer robot ownership/synchronization claim
+			for (const bool reverse : { false, true })
+				for (const int direction : { -1, 1 })
+					for (const int difficulty : { 0, 4 })
+						for (const bool persistent : { false, true })
+							for (const bool boss : { false, true }) {
+								if (boss && type != OBJ_ROBOT) continue;
+								Game_mode = multiplayer ? GM_NETWORK : 0;
+								Difficulty_level = difficulty;
+								Player_is_dead = Endlevel_sequence = 0;
+								Players[Player_num].flags &= ~PLAYER_FLAGS_INVULNERABLE;
+								ConsoleObject->flags &= ~(OF_EXPLODING | OF_SHOULD_BE_DEAD);
+								ConsoleObject->movement_type = MT_PHYSICS;
+								ConsoleObject->mtype.phys_info = {};
+								ConsoleObject->mtype.phys_info.mass = F1_0;
+								ConsoleObject->mtype.phys_info.velocity = { direction * i2f(32), 0, 0 };
+								Players[Player_num].shields = ConsoleObject->shields = i2f(100);
+								other.flags = 0;
+								other.shields = i2f(100);
+								other.mtype.phys_info = {};
+								other.mtype.phys_info.mass = F1_0;
+								if (persistent) other.mtype.phys_info.flags = PF_PERSISTENT;
+								other.ctype.ai_info.behavior = AIB_NORMAL;
+								other.ctype.ai_info.SKIP_AI_COUNT = 127;
+								Robot_info[0].boss_flag = boss ? 1 : 0;
+								Num_awareness_events = Overall_agitation = 0;
+								const bool protected_contact = protected_profile && xl_preview_no_damage_segment(ConsoleObject->segnum);
+								const bool blocked_contact = type == OBJ_CLUTTER && protected_contact;
+								const bool blocked_other = blocked_contact || persistent || boss;
+								const fix magnitude = xl && !multiplayer ? i2f(32) / (4 + difficulty) : i2f(32);
+								fix expected_damage = blocked_other ? 0 : magnitude / 8;
+								if (type == OBJ_ROBOT) expected_damage /= 2;
+								collide_set_collision_delay_last_play_time(GameTime64); // Closed gate avoids collision-effect allocations
+								d_srand(9012);
+								d_rand_set_call_count(0);
+								unsigned expected_rng = 0, actual_rng = 0;
+								if (type == OBJ_ROBOT) (void) d_rand(); // Existing awareness agitation draw
+								d_rand_get_state(&expected_rng);
+								d_srand(9012);
+								d_rand_set_call_count(0);
+								auto point = ConsoleObject->pos;
+								collide_two_objects(reverse ? &other : ConsoleObject, reverse ? ConsoleObject : &other, &point);
+								d_rand_get_state(&actual_rng);
+								require(other.shields == i2f(100) - expected_damage,
+								        "nonplayer collision damage used the wrong XL rotation/full-force vector");
+								require(other.mtype.phys_info.velocity.x == (blocked_other ? 0 : direction * i2f(32)) &&
+								            ConsoleObject->mtype.phys_info.velocity.x == direction * i2f(blocked_contact ? 32 : 24) &&
+								            (other.mtype.phys_info.rotvel.y == 0) == blocked_other,
+								        "nonplayer damage-vector correction changed full impulse or rotation");
+								require(actual_rng == expected_rng && d_rand_get_call_count() == unsigned(type == OBJ_ROBOT ? 1 : 0) &&
+								            collide_get_collision_delay_last_play_time() == GameTime64,
+								        "nonplayer force-damage correction changed awareness RNG or closed sound gate");
+							}
+		}
+		obj_delete(index);
+	}
+	Robot_info[0] = saved_robot;
+	cheats = saved_cheats;
+	*ConsoleObject = saved_player;
+	Players[Player_num] = saved_player_state;
+	Game_mode = saved_mode;
+	Difficulty_level = saved_difficulty;
+	Player_is_dead = saved_dead;
+	Endlevel_sequence = saved_endlevel;
+	Num_awareness_events = saved_awareness;
+	Overall_agitation = saved_agitation;
+	std::memcpy(Awareness_events, saved_events.data(), sizeof(Awareness_events));
+	std::memcpy(Ai_cloak_info, saved_cloak.data(), sizeof(Ai_cloak_info));
+	Believed_player_pos = saved_believed_pos;
+	Believed_player_seg = saved_believed_seg;
+	FrameTime = saved_frame;
+	GameTime64 = saved_time;
+	collide_set_collision_delay_last_play_time(saved_delay);
+	d_rand_set_state(saved_rng);
+	d_rand_set_call_count(saved_calls);
+	std::cout << "Actual nonplayer scaled force-damage and full impulse controls passed; XL=" << xl << " protected=" << protected_profile << "\n";
+}
+
 // Controlled singleplayer dispatch; this does not qualify multiplayer synchronization
 static void no_damage_bump_test(const xl_compat::Inventory &source, int segment)
 {
@@ -304,10 +415,12 @@ static void no_damage_bump_test(const xl_compat::Inventory &source, int segment)
 	ordinary_nonphysical_bump_controls(active_xl, false);
 	ordinary_force_damage_controls(active_xl, false);
 	ordinary_bump_boss_scope_controls(active_xl, false);
+	ordinary_nonplayer_force_damage_controls(active_xl, false);
 	xl_test_bind_no_damage(source);
 	ordinary_nonphysical_bump_controls(active_xl, true);
 	ordinary_force_damage_controls(active_xl, true);
 	ordinary_bump_boss_scope_controls(active_xl, true);
+	ordinary_nonplayer_force_damage_controls(active_xl, true);
 	for (auto type : { OBJ_CLUTTER, OBJ_PLAYER }) {
 		const int id = type == OBJ_PLAYER ? (Player_num + 1) % MAX_PLAYERS : 0;
 		const int other_index = obj_create(type, id, segment, &ConsoleObject->pos, &ConsoleObject->orient,
