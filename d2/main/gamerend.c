@@ -17,6 +17,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  *
  */
 
+#ifdef DXX_XL_RUNTIME
+#include "slow_motion_runtime.h"
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -1140,6 +1143,9 @@ void game_render_frame()
 	set_screen_mode( SCREEN_GAME );
 	play_homing_warning();
 	game_render_frame_mono(GameArg.DbgUseDoubleBuffer);
+#ifdef DXX_XL_RUNTIME
+	xl_slow_motion_render_advance();
+#endif
 }
 
 //show a message in a nice little box

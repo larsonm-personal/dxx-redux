@@ -499,7 +499,12 @@ void create_omega_blobs(int firing_segnum, vms_vector *firing_pos, vms_vector *g
 
 			objp->size = Weapon_info[objp->id].blob_size;
 
-			objp->shields = fixmul(OMEGA_DAMAGE_SCALE*OMEGA_BASE_TIME, Weapon_info[objp->id].strength[Difficulty_level]);
+#ifdef DXX_XL_RUNTIME
+			const fix damage_time = xl_level_extensions_active() ? FrameTime : OMEGA_BASE_TIME;
+#else
+			const fix damage_time = OMEGA_BASE_TIME;
+#endif
+			objp->shields = fixmul(OMEGA_DAMAGE_SCALE*damage_time, Weapon_info[objp->id].strength[Difficulty_level]);
 
 			objp->ctype.laser_info.parent_type			= parent_objp->type;
 			objp->ctype.laser_info.parent_signature	= parent_objp->signature;
@@ -607,7 +612,12 @@ void omega_charge_frame(void)
 		return;
 
 	//	Don't charge while firing. Wait 1/3 second after firing before recharging
+#ifdef DXX_XL_RUNTIME
+	const int xl_charge_blocked = xl_slow_motion_omega_blocked();
+	if (xl_charge_blocked >= 0 ? xl_charge_blocked : Last_omega_fire_time + F1_0/3 > GameTime64)
+#else
 	if (Last_omega_fire_time + F1_0/3 > GameTime64)
+#endif
 		return;
 
 	if (Players[Player_num].energy) {
@@ -672,7 +682,12 @@ void do_omega_stuff(object *parent_objp, vms_vector *firing_pos, object *weapon_
 		if (debug_log_enabled[DLOG_GAME])
 			++Omega_debug_fired;
 #endif
+#ifdef DXX_XL_RUNTIME
+		const int xl_shot = xl_slow_motion_omega_fired();
+		Omega_charge -= xl_shot ? FrameTime : OMEGA_BASE_TIME;
+#else
 		Omega_charge -= OMEGA_BASE_TIME;
+#endif
 		if (Omega_charge < 0)
 			Omega_charge = 0;
 
@@ -680,7 +695,11 @@ void do_omega_stuff(object *parent_objp, vms_vector *firing_pos, object *weapon_
 		if (Last_omega_fire_time <= GameTime64 && GameTime64 - Last_omega_fire_time + OMEGA_BASE_TIME <= FrameTime) // if firing is prolonged by FrameTime overhead, let's try to fix that. Since Next_laser_firing_time is probably changed already (in do_laser_firing_player), we need to calculate the overhead slightly different.
 			fire_frame_overhead = GameTime64 - Last_omega_fire_time + OMEGA_BASE_TIME;
 
+#ifdef DXX_XL_RUNTIME
+		Next_laser_fire_time = xl_shot ? GameTime64 + 1 : GameTime64+OMEGA_BASE_TIME-fire_frame_overhead;
+#else
 		Next_laser_fire_time = GameTime64+OMEGA_BASE_TIME-fire_frame_overhead;
+#endif
 		Last_omega_fire_time = GameTime64;
 	}
 

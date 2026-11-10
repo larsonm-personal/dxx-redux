@@ -1,3 +1,6 @@
+#ifdef DXX_XL_RUNTIME
+#include "slow_motion_runtime.h"
+#endif
 #include "object_capacity.h"
 #include "input_demo_cheats.h"
 #include <stdint.h>
@@ -730,6 +733,14 @@ void input_demo_record_input_context(void)
 	char error[256] = "";
 	if (!input_demo_recorder_uses_ordered_input())
 		return;
+#ifdef DXX_XL_RUNTIME
+	const char *unsupported = xl_omega_input_demo_error();
+	if (unsupported) {
+		input_demo_cancel_input_capture(unsupported);
+		input_demo_stop_quick_recording_common();
+		return;
+	}
+#endif
 	if (!input_demo_validate_record_view_projection(error, sizeof(error))) return;
 	if (!d_rand_get_state(&state) ||
 	    !input_demo_recorder_begin_input_batch(state, d_rand_get_call_count(), FrameTime, error, sizeof(error))) {
@@ -776,6 +787,14 @@ int input_demo_record_finish_input_tail(char *error, size_t error_size)
 		return 1;
 	if (!input_demo_recorder_is_active())
 		return 0;
+#ifdef DXX_XL_RUNTIME
+	const char *unsupported = xl_omega_input_demo_error();
+	if (unsupported) {
+		if (error && error_size) snprintf(error, error_size, "%s", unsupported);
+		input_demo_cancel_input_capture(unsupported);
+		return 0;
+	}
+#endif
 	if (!input_demo_validate_record_view_projection(error, error_size)) return 0;
 	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
 	if (!d_rand_get_state(&rng_state))
@@ -926,6 +945,14 @@ void input_demo_record_game_frame(void)
 
 	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_recorder_is_active())
 		return;
+#ifdef DXX_XL_RUNTIME
+	const char *unsupported = xl_omega_input_demo_error();
+	if (unsupported) {
+		input_demo_cancel_input_capture(unsupported);
+		input_demo_stop_quick_recording_common();
+		return;
+	}
+#endif
 	if (!input_demo_validate_record_view_projection(error, sizeof(error))) return;
 	if (!d_rand_get_state(&rng_state)) {
 		con_printf(CON_NORMAL, "Input demo recording stopped: live recording requires an lcg_state RNG backend\n");
@@ -1044,6 +1071,8 @@ int input_demo_prepare_replay_frame_shared(
 	return 1;
 }
 
+static int input_demo_replay_clock_supported(void (*stop_replay)(int));
+
 void input_demo_stop_replay_shared(int write_result,
                                    fix64 *replay_last_timer_value,
                                    void (*write_replay_result)(void),
@@ -1085,8 +1114,10 @@ int input_demo_finish_replay_shared(int close_window,
 	 * advance_frame runs. Never silently discard remaining frames or input */
 	{
 		char error[256] = "";
-		if (input_demo_replay_next_frame_index() + 1 != input_demo_replay_frame_count() ||
-		    !input_demo_apply_ordered_input(input_demo_replay_frame_count(), error, sizeof(error))) {
+		if (!input_demo_replay_clock_supported(NULL) ||
+		    input_demo_replay_next_frame_index() + 1 != input_demo_replay_frame_count() ||
+		    !input_demo_apply_ordered_input(input_demo_replay_frame_count(), error, sizeof(error)) ||
+		    !input_demo_replay_clock_supported(NULL)) {
 			con_printf(CON_NORMAL, "Input demo replay stopped at early exit: %s\n",
 			           error[0] ? error : "unconsumed recorded simulation frames");
 			input_demo_trace_boundary("aborted");
@@ -1152,17 +1183,34 @@ int input_demo_process_fast_replay(void)
 #endif
 }
 
+static int input_demo_replay_clock_supported(void (*stop_replay)(int))
+{
+#ifdef DXX_XL_RUNTIME
+	const char *unsupported = xl_omega_input_demo_error();
+	if (unsupported) {
+		con_printf(CON_URGENT, "Input demo replay stopped: %s\n", unsupported);
+		if (stop_replay) stop_replay(0);
+		else input_demo_replay_unload();
+		return 0;
+	}
+#endif
+	return 1;
+}
+
 int input_demo_step_replay_frame_shared(int (*prepare_replay_frame)(void), void (*stop_replay)(int))
 {
+	if (!input_demo_replay_clock_supported(stop_replay)) return 0;
 	/* A background draw must not reapply a non-idempotent pending batch */
 	if (game_is_time_paused())
 		return 0;
 	input_demo_restore_replay_fp_environment();
 	if (!prepare_replay_frame || !prepare_replay_frame())
 		return 0;
+	if (!input_demo_replay_clock_supported(stop_replay)) return 0;
 	if (!game_is_time_paused()) {
 		calc_game_time();
 		GameProcessFrame();
+		if (!input_demo_replay_clock_supported(stop_replay)) return 0;
 		/* Ordinary live draw discovers the current camera after simulation and
 		 * before the next input poll, including a terminal input-only tail */
 		if (input_demo_replay_is_loaded() && !Endlevel_sequence && !render_update_game_view_automap()) {
@@ -1207,6 +1255,7 @@ void input_demo_advance_replay_frame_shared(
 			stop_replay(0);
 			return;
 		}
+		if (!input_demo_replay_clock_supported(stop_replay)) return;
 		stop_replay(1);
 	}
 }

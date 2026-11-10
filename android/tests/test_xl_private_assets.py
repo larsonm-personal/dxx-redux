@@ -22,6 +22,8 @@ import run_xl_navigation_smoke as smoke
 import public_contracts as public
 import pilot_archive as pilot
 import xl_private_assets as assets
+import xl_render_clock as render_clock
+import xl_omega_damage as omega_damage
 
 
 class RenderedReadinessTests(unittest.TestCase):
@@ -78,6 +80,158 @@ class RenderedReadinessTests(unittest.TestCase):
 
 
 class XlPrivateTests(unittest.TestCase):
+    def test_omega_damage_requires_actual_complete_controls(self):
+        for xl in (False, True):
+            policy = {
+                "omega_free_recording": True,
+                "xl": xl,
+                "rejected_paths": ["headless", "rendered", "paused"] if xl else [],
+            }
+            policy["acquired_recording_rejected" if xl else "classic_recording_allowed"] = True
+            if xl:
+                policy.update(simulation_exit_rejected=True, terminal_tail_rejected=True)
+            else:
+                policy["classic_completion_allowed"] = True
+            proof = {
+                "schema": "xl-omega-damage-v1",
+                "assisted": True,
+                "complete": True,
+                "renderer": "test fixture",
+                "mission": "fixture",
+                "input_policy": policy,
+                "cases": [],
+            }
+            for multi in (False, True):
+                for hz in (20, 30, 60, 120):
+                    active = xl and not multi
+                    shots = hz if active else (15 if hz == 30 else 20)
+                    charge = 65536 if active else shots * 3276
+                    damage = charge * 32 * 7
+                    proof["cases"].append(
+                        dict(
+                            hz=hz,
+                            multiplayer=multi,
+                            xl=active,
+                            shots=shots,
+                            charge_used=charge,
+                            target_damage=damage,
+                            charge_remaining=65536 - charge,
+                            target_remaining=10000 * 65536 - damage,
+                            strength=7 * 65536,
+                        )
+                    )
+            self.assertTrue(omega_damage.passed(0, proof, "fixture", 1, xl))
+            if xl:
+                for key in ("simulation_exit_rejected", "terminal_tail_rejected"):
+                    bad = copy.deepcopy(proof)
+                    bad["input_policy"].pop(key)
+                    self.assertFalse(omega_damage.passed(0, bad, "fixture", 1, xl))
+                    bad["input_policy"][key] = False
+                    self.assertFalse(omega_damage.passed(0, bad, "fixture", 1, xl))
+
+            for code in (1, None, False):
+                self.assertFalse(omega_damage.passed(code, proof, "fixture", 1, xl))
+            for index in range(8):
+                for field in (
+                    "hz",
+                    "shots",
+                    "charge_used",
+                    "target_damage",
+                    "charge_remaining",
+                    "target_remaining",
+                    "strength",
+                ):
+                    bad = copy.deepcopy(proof)
+                    bad["cases"][index][field] += 65536 if field == "strength" else 1
+                    self.assertFalse(omega_damage.passed(0, bad, "fixture", 1, xl), (index, field))
+            for mutation in ("missing", "duplicate", "policy", "extra", "assisted", "complete", "boolean_policy"):
+                bad = copy.deepcopy(proof)
+                if mutation == "missing":
+                    bad["cases"].pop()
+                elif mutation == "duplicate":
+                    bad["cases"][1] = bad["cases"][0]
+                elif mutation == "policy":
+                    bad["input_policy"]["rejected_paths"] = ["headless"]
+                elif mutation == "extra":
+                    bad["unexpected"] = True
+                elif mutation == "boolean_policy":
+                    bad["input_policy"]["omega_free_recording"] = 1
+                else:
+                    bad[mutation] = False
+                self.assertFalse(omega_damage.passed(0, bad, "fixture", 1, xl), mutation)
+
+    def test_render_clock_proof_is_strict_and_assisted(self):
+        for xl in (False, True):
+            proof = dict(
+                schema="xl-render-clock-v1",
+                assisted=True,
+                complete=True,
+                renderer="fixture",
+                xl_active=xl,
+                mission="fixture",
+                level=1,
+                reset_count=0,
+                shot_charge=32768 - (1092 if xl else 3276),
+                shot_delay=1 if xl else 3276,
+                events=[],
+            )
+            count = 0
+            for event, delta in render_clock.EVENTS:
+                if event == "restored":
+                    count = 1 if xl else 0
+                after = count + (delta if xl else 0)
+                proof["events"].append(
+                    dict(
+                        event=event,
+                        before=count,
+                        after=after,
+                        charge=32768 + (273 if xl and after not in (0, 1) else 0),
+                    )
+                )
+                count = after
+            self.assertTrue(render_clock.passed(0, proof, "fixture", 1, xl))
+            self.assertFalse(render_clock.passed(1, proof, "fixture", 1, xl))
+            self.assertFalse(render_clock.passed(False, proof, "fixture", 1, xl))
+            self.assertFalse(render_clock.passed(None, proof, "fixture", 1, xl))
+            for key, value in (
+                ("complete", False),
+                ("assisted", False),
+                ("renderer", ""),
+                ("xl_active", not xl),
+                ("level", True),
+                ("reset_count", True),
+                ("shot_charge", 0),
+                ("shot_delay", 0),
+                ("mission", "wrong"),
+                ("events", proof["events"][:-1]),
+                ("events", proof["events"] + [proof["events"][0]]),
+                ("unknown", 0),
+            ):
+                bad = copy.deepcopy(proof)
+                bad[key] = value
+                self.assertFalse(render_clock.passed(0, bad, "fixture", 1, xl), key)
+            for i in range(len(proof["events"])):
+                for key, value in (("event", "wrong"), ("after", 99), ("before", True), ("charge", 0), ("extra", 0)):
+                    bad = copy.deepcopy(proof)
+                    bad["events"][i][key] = value
+                    self.assertFalse(render_clock.passed(0, bad, "fixture", 1, xl))
+
+    def test_render_clock_pin_accepts_only_exact_representations(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            lf, crlf = b"first\nsecond\n", b"first\r\nsecond\r\n"
+            allowed = {hashlib.sha256(lf).hexdigest(), hashlib.sha256(crlf).hexdigest()}
+            with patch.object(render_clock, "PINS", {"fixture.cpp": allowed}):
+                for good in (lf, crlf):
+                    (root / "fixture.cpp").write_bytes(good)
+                    self.assertEqual(
+                        render_clock.verify_reference(root)["fixture.cpp"], hashlib.sha256(good).hexdigest()
+                    )
+                for bad in (b"first\nchanged\n", b"first\r\nsecond\n", b"unrelated", crlf + b" "):
+                    (root / "fixture.cpp").write_bytes(bad)
+                    with self.assertRaises(ValueError):
+                        render_clock.verify_reference(root)
+
     def test_reviewed_cohorts_are_independent_of_candidate_requirements(self):
         self.assertEqual(len(runner.HISTORICAL_FAST_TESTS), 111)
         self.assertEqual(
