@@ -1,0 +1,25 @@
+{
+    "initial_level": 7,
+    "checkpoint_expect": {
+        "current_level_num": 7,
+        "position.segment": 1315,
+        "player.has_blue_key": true,
+        "player.cloaked": true,
+        "player_dead": false,
+        "cheats_enabled": false,
+        "player.invulnerable": false,
+        "player.secondary_ammo": [7, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+        "xl_pilot.remaining_objectives": 1,
+        "level_scene.powerups": {
+            "not_contains_object": {
+                "object": 50
+            }
+        }
+    },
+    "steps": [
+        {
+            "action": "introspect"
+        }
+    ],
+    "qualification": "COLD_NOFRAME_FROM_VERSIONED_BLUE_KEY_SAVE"
+}

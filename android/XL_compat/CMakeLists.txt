@@ -188,6 +188,11 @@ if(BUILD_TESTING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_spawn_contract_test.py)
     set_tests_properties(xl_pumo_tulev1_spawn_contract PROPERTIES TIMEOUT 30)
     add_test(
+        NAME xl_pumo_tulev1_master5_contract
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_master5_contract_test.py)
+    set_tests_properties(xl_pumo_tulev1_master5_contract PROPERTIES TIMEOUT 30)
+    add_test(
         NAME xl_wave_channels_reference
         COMMAND
             ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/wave_channels_reference.py
@@ -964,6 +969,20 @@ if(BUILD_TESTING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_spawn.cmake)
         set_tests_properties(xl_pumo_tulev1_spawn_player PROPERTIES TIMEOUT 300
                              FIXTURES_REQUIRED pumo_earned_tulev1_early RUN_SERIAL TRUE)
+        set_tests_properties(xl_pumo_tulev1_spawn_player PROPERTIES FIXTURES_SETUP
+                                                              pumo_earned_tulev1_spawn)
+        add_test(
+            NAME xl_pumo_tulev1_master5_player
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
+                -DPRODUCER=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-spawn-player/door138/door138-result.json
+                -DPYTHON=${Python3_EXECUTABLE}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-tulev1-master5-player -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_tulev1_master5.cmake)
+        # Three 150-second phase ceilings, but witnessed native work is much shorter.
+        set_tests_properties(xl_pumo_tulev1_master5_player PROPERTIES TIMEOUT 300
+                             FIXTURES_REQUIRED pumo_earned_tulev1_spawn RUN_SERIAL TRUE)
         add_test(
             NAME xl_pumo_guided_input_player
             COMMAND
