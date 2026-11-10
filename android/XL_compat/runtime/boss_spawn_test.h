@@ -492,6 +492,7 @@ static int boss_spawn_test(int argc, char **argv)
 				break;
 			}
 		require(combat_robot >= 0, "linked boss robot missing for combat");
+		GameTime64 += F1_0; // Morph frame calls alone do not advance the game clock
 		FrameTime = F1_0 / 30;
 		for (int frame = 0; frame < 300 && Objects[combat_robot].control_type == CT_MORPH; ++frame) do_morph_frame(&Objects[combat_robot]);
 		require(Objects[combat_robot].control_type == CT_AI && apply_damage_to_robot(&Objects[combat_robot], Objects[combat_robot].shields + F1_0, ConsoleObject - Objects), "boss-created robot did not complete morphing and enter normal combat");

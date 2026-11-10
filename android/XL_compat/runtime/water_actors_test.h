@@ -96,6 +96,8 @@ static void water_actor_combat(int robot)
 	const auto shields = Players[Player_num].shields;
 	collide_player_and_weapon(ConsoleObject, &Objects[shot], &ConsoleObject->pos);
 	require(Players[Player_num].shields < shields, "wet robot projectile did not damage the player");
+	// AI may fire in its first frame; qualify damage with an explicitly mature actor
+	GameTime64 += F1_0;
 	const auto robot_shields = actor.shields;
 	vms_vector direction;
 	vm_vec_normalized_dir(&direction, &actor.pos, &ConsoleObject->pos);

@@ -186,6 +186,7 @@ static int trigger_flags_test(int argc, char **argv)
 		// Actual robot death/removal dispatch, with the new flags on its owned action
 		require(fire(5) == 0, "object cue reset failed");
 		const int robot = 49;
+		if (GameTime64 < F1_0) GameTime64 = F1_0;
 		require(Objects[robot].type == OBJ_ROBOT && apply_damage_to_robot(&Objects[robot], Objects[robot].shields + F1_0, ConsoleObject - Objects), "object cue combat did not kill authored owner");
 		for (int frame = 0; frame < 180; ++frame) {
 			for (int i = 0; i <= Highest_object_index; ++i)

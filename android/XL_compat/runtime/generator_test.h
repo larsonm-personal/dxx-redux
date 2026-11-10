@@ -18,6 +18,7 @@ static void generator_contact_samples(const std::filesystem::path &output)
 	compute_segment_center(&center, &Segments[20]);
 	auto *robot = create_morph_robot(&Segments[20], &center, 0);
 	require(robot, "cannot create generator contact actor");
+	GameTime64 += F1_0; // Contact samples compare mature-actor damage
 	std::ofstream samples(output / "generator-contact.txt");
 	for (bool player : { false, true })
 		for (int profile = 0; profile < 6; ++profile)
@@ -246,6 +247,7 @@ static void generator_behavior_controls(const std::filesystem::path &output)
 		object *actor = ConsoleObject;
 		if (robot) actor = create_morph_robot(&Segments[center.segnum], &center.Center, 0);
 		require(actor, "cannot create generator occupancy actor");
+		if (robot) GameTime64 += F1_0; // Keep this an occupied-generator damage control
 		obj_relink(actor - Objects, center.segnum);
 		actor->pos = center.Center;
 		actor->shields = i2f(100);

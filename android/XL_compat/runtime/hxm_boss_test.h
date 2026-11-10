@@ -56,6 +56,7 @@ static void hxm_boss_binding_controls(const std::filesystem::path &root, bool ve
 	StartNewGame(1);
 	require(Robot_info[3].boss_flag == 21 && Objects[100].id == 3, "Introduced HXM boss definition was not installed");
 	roles_match();
+	if (GameTime64 < F1_0) GameTime64 = F1_0;
 	const int objectives = xl_level_objectives_remaining();
 	require(objectives > 0 && apply_damage_to_robot(&Objects[100], Objects[100].shields + F1_0, ConsoleObject - Objects),
 	        "Introduced HXM boss did not receive lethal combat");
@@ -140,6 +141,7 @@ static void hxm_boss_binding_controls(const std::filesystem::path &root, bool ve
 	StartNewGame(1);
 	require(Objects[100].id == 31 && !Robot_info[31].boss_flag, "Removed HXM boss definition was not installed");
 	roles_match();
+	if (GameTime64 < F1_0) GameTime64 = F1_0;
 	const int ordinary_objectives = xl_level_objectives_remaining();
 	require(apply_damage_to_robot(&Objects[100], Objects[100].shields + F1_0, ConsoleObject - Objects) &&
 	            !xl_boss_is_dying(100) && xl_level_objectives_remaining() == ordinary_objectives && !Control_center_destroyed,

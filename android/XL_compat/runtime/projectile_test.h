@@ -136,6 +136,32 @@ static void projectile_sound_dependency_controls()
 	std::cout << "Original silent sound mappings and missing-sample rejection passed\n";
 }
 
+static void projectile_robot_damage_grace()
+{
+	const int victim = projectile_robot();
+	const auto born = GameTime64;
+	const int first = projectile_test_shot(ConsoleObject - Objects);
+	GameTime64 = born + F1_0 - 1;
+	collide_robot_and_weapon(&Objects[victim], &Objects[first], &Objects[victim].pos);
+	require(Objects[victim].shields == i2f(100) && xl_projectile_has_hit(first, victim),
+	        "newborn contact lost shield rejection or persistent history");
+	require(Objects[first].shields == i2f(15) && !(Objects[first].flags & OF_SHOULD_BE_DEAD),
+	        "newborn shield rejection bypassed projectile attrition");
+	++GameTime64;
+	collide_robot_and_weapon(&Objects[victim], &Objects[first], &Objects[victim].pos);
+	require(Objects[victim].shields == i2f(100) && Objects[first].shields == i2f(15),
+	        "maturing robot allowed a recorded duplicate hit");
+	const int fresh = projectile_test_shot(ConsoleObject - Objects);
+	collide_robot_and_weapon(&Objects[victim], &Objects[fresh], &Objects[victim].pos);
+	require(Objects[victim].shields == i2f(60) && xl_projectile_has_hit(fresh, victim) &&
+	            Objects[fresh].shields == i2f(25),
+	        "fresh boundary shot lost ordinary damage or disposition");
+	obj_delete(fresh);
+	obj_delete(first);
+	obj_delete(victim);
+	std::cout << "Native robot grace contact, retained history and boundary fresh shot passed\n";
+}
+
 static void projectile_static_robot_controls(bool xl)
 {
 	for (int behavior : { AIB_STILL, AIB_NORMAL, 135 }) {
@@ -145,6 +171,7 @@ static void projectile_static_robot_controls(bool xl)
 		const bool stationary = xl && behavior == 135;
 		require(robot.control_type == (stationary ? CT_NONE : CT_AI) && robot.movement_type == (stationary ? MT_NONE : MT_PHYSICS),
 		        "Static robot initialization changed ordinary or stock controls");
+		GameTime64 += F1_0; // Mature the target without changing its birth
 		const int shot = projectile_test_shot(ConsoleObject - Objects);
 		collide_robot_and_weapon(&robot, &Objects[shot], &robot.pos);
 		require(robot.shields == 60 * F1_0, "Static robot lost ordinary projectile damage");
@@ -157,6 +184,7 @@ static void projectile_static_robot_controls(bool xl)
 static void projectile_combat(bool xl)
 {
 	const int victim = projectile_robot();
+	GameTime64 += F1_0;
 	const int shot = projectile_test_shot(ConsoleObject - Objects);
 	auto &weapon = Objects[shot];
 	auto &robot = Objects[victim];
@@ -172,6 +200,7 @@ static void projectile_combat(bool xl)
 	const int signature = robot.signature;
 	obj_delete(victim);
 	const int reused = projectile_robot();
+	GameTime64 += F1_0;
 	require(reused == victim && Objects[reused].signature != signature, "Victim slot reuse control did not reuse its slot");
 	collide_robot_and_weapon(&Objects[reused], &weapon, &Objects[reused].pos);
 	require(Objects[reused].shields == i2f(100), "Victim slot reuse changed reference duplicate-hit identity");
@@ -224,6 +253,7 @@ static void projectile_physics()
 	}
 	require(room >= 0, "Cannot find empty room for controlled projectile physics");
 	const int a = projectile_robot(), b = projectile_robot();
+	GameTime64 += F1_0;
 	for (int target : { a, b }) {
 		obj_relink(target, room);
 		Objects[target].pos = center;
@@ -472,6 +502,7 @@ static int projectile_test(int argc, char **argv)
 		StartNewGame(1);
 		Game_suspended = SUSP_ROBOTS;
 		projectile_impacts(root);
+		projectile_robot_damage_grace();
 		projectile_combat(true);
 		projectile_physics();
 		StartNewGame(1);
@@ -484,6 +515,10 @@ static int projectile_test(int argc, char **argv)
 			const int victim = projectile_robot();
 			victims.push_back(victim);
 			if (!i) init_ai_object(victim, 135, -1);
+		}
+		// Batch creation preserves all recorded births at epoch seven
+		GameTime64 += F1_0;
+		for (const int victim : victims) {
 			Objects[first].shields = i2f(40);
 			collide_robot_and_weapon(&Objects[victim], &Objects[first], &Objects[victim].pos);
 			require(Objects[victim].shields == i2f(60), "Distinct victim did not take fusion damage");

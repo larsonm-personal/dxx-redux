@@ -40,6 +40,7 @@ static void static_robot_native_controls(const std::filesystem::path &root, bool
 		robot.mtype.phys_info.mass = Robot_info[id].mass;
 		robot.shields = 1000 * F1_0;
 		init_ai_object(owner, stationary ? 135 : AIB_NORMAL, -1);
+		GameTime64 += F1_0;
 		const int shot = projectile_test_shot(int(ConsoleObject - Objects), LASER_ID_L1);
 		Objects[shot].shields = 100 * F1_0;
 		unsigned children_before = 0;
