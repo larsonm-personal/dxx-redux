@@ -22,6 +22,7 @@ on:
             xl-textures,
             xl-originals,
             xl-fast,
+            pumo-stage,
             basic-use,
             online-preview,
             online-preview-d2,
@@ -193,7 +194,7 @@ jobs:
 
   plan:
     needs: stack
-    if: ${{ needs.stack.outputs.run == 'true' && !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'release-first-play') }}
+    if: ${{ needs.stack.outputs.run == 'true' && !(github.event_name == 'workflow_dispatch' && inputs.campaign == 'pumo-stage') && !inputs.evidence_run_id && (github.event.action != 'labeled' || github.event.label.name == 'release-first-play') }}
     name: Select tests
     permissions:
       contents: read
@@ -499,6 +500,89 @@ jobs:
             results/retail-verification.json
           retention-days: 14
           if-no-files-found: warn
+
+  pumo_stage:
+    name: Verify pinned Pumo staging
+    needs: stack
+    if: needs.stack.outputs.run == 'true' && github.event_name == 'workflow_dispatch' && inputs.campaign == 'pumo-stage'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    # The controller is trusted only after this exact workflow reaches cmake.
+    environment:
+      name: ${{ github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && 'retail-ci' || 'asset-free' }}
+      deployment: ${{ github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' }}
+    steps:
+      - name: Check out trusted controller
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - name: Reject candidate inputs and verify trusted gate
+        run: |
+          set -euo pipefail
+          python3 - <<'PYTHON'
+          import os, sys
+          sys.path.insert(0, 'control/android/tests')
+          import nightly_retail
+          assert os.environ['CANDIDATE_CAMPAIGN'] == 'pumo-stage'
+          assert not os.environ['CANDIDATE_PR'] and not os.environ['CANDIDATE_SHA']
+          assert nightly_retail.trusted_context()
+          PYTHON
+      - name: Install bounded extraction prerequisite
+        run: |
+          set -euo pipefail
+          python3 control/.github/scripts/prefer_ubuntu_archive.py
+          sudo apt-get -o Acquire::Retries=3 -o APT::Update::Error-Mode=any update
+          sudo apt-get -o Acquire::Retries=3 install -y --no-install-recommends libarchive13t64
+          python3 -m venv "$RUNNER_TEMP/pumo-stage-python"
+          "$RUNNER_TEMP/pumo-stage-python/bin/python" -m pip install 'libarchive-c==5.3'
+          "$RUNNER_TEMP/pumo-stage-python/bin/python" -m pip check
+      - name: Check private credential availability
+        env:
+          TOKEN_AVAILABLE: ${{ secrets.RETAIL_ASSETS_READ_TOKEN != '' }}
+        run: test "$TOKEN_AVAILABLE" = true
+      - name: Check out separate immutable full Pumo inputs
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          repository: larsonm-personal/dxx-redux-test-assets
+          ref: dc6565f6b5400d7c700fa8378e766b2354b6ceb6
+          token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
+          path: pumo-input
+          persist-credentials: false
+          sparse-checkout: |
+            pumo-full/
+            tools/pumo-full/archive.py
+            xl-resources/d2x-xl.hog
+            xl-resources/manifest.json
+          sparse-checkout-cone-mode: false
+      - name: Verify private pins and stage into fresh temporary storage
+        run: |
+          set -euo pipefail
+          test "$(git -C pumo-input rev-parse HEAD)" = dc6565f6b5400d7c700fa8378e766b2354b6ceb6
+          test "$(git -C pumo-input hash-object pumo-full/manifest.json)" = 0e9667afdab347338fe3e6f186530f435bfc66ad
+          test "$(git -C pumo-input hash-object tools/pumo-full/archive.py)" = 27c297f214437536b081fe3538d28d2a299e6939
+          test "$(git -C pumo-input hash-object xl-resources/d2x-xl.hog)" = e0ae5bf48bdc097838bd96f0e11df5f6abca14e4
+          test "$(git -C pumo-input hash-object xl-resources/manifest.json)" = f3d009587180a0c3fb96ab2d32b979c27b552029
+          mkdir "$RUNNER_TEMP/pumo-pinned-stage"
+          "$RUNNER_TEMP/pumo-stage-python/bin/python" control/android/tests/pumo_private_assets.py \
+            --root "$PWD/pumo-input" --archive "$RUNNER_TEMP/pumo-pinned-stage/pmines_v11.7z" \
+            --stage "$RUNNER_TEMP/pumo-pinned-stage/runtime"
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          root = Path(__import__('os').environ['RUNNER_TEMP']) / 'pumo-pinned-stage/runtime'
+          files = [path for path in root.rglob('*') if path.is_file()]
+          assert len(files) == 2670
+          assert sum(path.stat().st_size for path in files) == 1677395717
+          print('Pinned Pumo staging verified: 2670 files')
+          PYTHON
+      - name: Remove only owned temporary private copies
+        if: always()
+        run: |
+          rm -rf -- "$PWD/pumo-input" "$RUNNER_TEMP/pumo-pinned-stage" "$RUNNER_TEMP/pumo-stage-python"
+      # No candidate checkout, executable, original resource or private artifact is published.
 
   execution-stack:
     needs: plan
