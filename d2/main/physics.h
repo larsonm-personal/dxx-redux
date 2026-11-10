@@ -24,6 +24,18 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "vecmat.h"
 #include "fvi.h"
 
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+typedef struct xl_player_fvi_sample {
+	int level, player_object, player_signature;
+	long long game_time;
+	int start_segment, start[3], end[3], radius, flags;
+	int fate, hit_segment, hit_side_segment, hit_side, hit_object, hit_point[3];
+	int hit_object_type, hit_object_id, hit_object_signature, robot_energy_drain, robot_attack_type;
+	int hit_wall, hit_wall_type, hit_doorway;
+} xl_player_fvi_sample;
+void xl_player_fvi_set_observer(void (*observer)(const xl_player_fvi_sample *));
+#endif
+
 //#define FL_NORMAL  0
 //#define FL_TURBO   1
 //#define FL_HOVER   2

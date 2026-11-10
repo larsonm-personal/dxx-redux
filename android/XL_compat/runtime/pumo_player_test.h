@@ -4,6 +4,7 @@
 #include "input_demo_replay.h"
 extern "C" {
 #include "collide.h"
+#include "physics.h"
 }
 #include <limits>
 #include <chrono>
@@ -28,6 +29,32 @@ struct TrackedCombatObject {
 static std::vector<TrackedCombatObject> tracked_combat_objects;
 static unsigned combat_load_generation = 0;
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+static std::array<xl_player_fvi_sample, 4> player_fvi_first{}, player_fvi_last{};
+static unsigned player_fvi_count = 0;
+static void player_fvi_observed(const xl_player_fvi_sample *sample)
+{
+	if (sample->start_segment != 450 || sample->player_object != Players[Player_num].objnum ||
+	    !ConsoleObject || sample->player_signature != ConsoleObject->signature) return;
+	if (player_fvi_count < player_fvi_first.size()) player_fvi_first[player_fvi_count] = *sample;
+	player_fvi_last[player_fvi_count % player_fvi_last.size()] = *sample;
+	++player_fvi_count;
+}
+static Json player_fvi_value(const xl_player_fvi_sample &s)
+{
+	return { { "level", s.level }, { "player_object", s.player_object }, { "player_signature", s.player_signature }, { "game_time_raw", s.game_time }, { "start_segment", s.start_segment }, { "start_fixed", { s.start[0], s.start[1], s.start[2] } }, { "end_fixed", { s.end[0], s.end[1], s.end[2] } }, { "radius_raw", s.radius }, { "flags", s.flags }, { "fate", s.fate }, { "hit_segment", s.hit_segment }, { "hit_side_segment", s.hit_side_segment }, { "hit_side", s.hit_side }, { "hit_object", s.hit_object }, { "hit_point_fixed", { s.hit_point[0], s.hit_point[1], s.hit_point[2] } }, { "hit_object_type", s.hit_object_type }, { "hit_object_id", s.hit_object_id }, { "hit_object_signature", s.hit_object_signature }, { "robot_energy_drain", s.robot_energy_drain }, { "robot_attack_type", s.robot_attack_type }, { "hit_wall", s.hit_wall }, { "hit_wall_type", s.hit_wall_type }, { "hit_doorway", s.hit_doorway } };
+}
+static Json player_fvi_result()
+{
+	Json first = Json::array(), last = Json::array();
+	for (unsigned index = 0; index < std::min(player_fvi_count, unsigned(player_fvi_first.size())); ++index)
+		first.push_back(player_fvi_value(player_fvi_first[index]));
+	if (player_fvi_count > player_fvi_first.size()) {
+		const unsigned retained = std::min(player_fvi_count, unsigned(player_fvi_last.size()));
+		for (unsigned offset = 0; offset < retained; ++offset)
+			last.push_back(player_fvi_value(player_fvi_last[(player_fvi_count - retained + offset) % player_fvi_last.size()]));
+	}
+	return { { "kind", "actual_local_player_physics_fvi_source450" }, { "sample_count", player_fvi_count }, { "first_limit", player_fvi_first.size() }, { "last_limit", player_fvi_last.size() }, { "first", std::move(first) }, { "last", std::move(last) } };
+}
 static std::array<xl_weapon_wall_contact, 2> weapon_wall_contacts{};
 static unsigned weapon_wall_contact_count = 0;
 static bool weapon_wall_pixels_used = false;
@@ -405,6 +432,8 @@ static int run(int argc, char **argv)
 		input >> plan;
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 		const bool observe_weapon_wall_contacts = plan.value("observe_weapon_wall_contacts", false);
+		const bool observe_player_fvi = plan.value("observe_player_fvi", false);
+		player_fvi_count = 0;
 		weapon_wall_contact_count = 0;
 		weapon_wall_pixels_used = false;
 #endif
@@ -461,6 +490,7 @@ static int run(int argc, char **argv)
 		xl_wall_trigger_set_operation_observer(operation_observed);
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 		if (observe_weapon_wall_contacts) xl_weapon_wall_set_contact_observer(weapon_wall_contact_observed);
+		if (observe_player_fvi) xl_player_fvi_set_observer(player_fvi_observed);
 #endif
 		auto observed_state = trigger_observation();
 		const auto tick = [&] {
@@ -614,6 +644,7 @@ static int run(int argc, char **argv)
 		std::ofstream(root / "player-state.json") << snapshot().dump(2) << '\n';
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 		if (observe_weapon_wall_contacts) trace << Json{ { "event", "weapon_wall_contacts" }, { "result", weapon_wall_contact_result() } }.dump() << '\n';
+		if (observe_player_fvi) trace << Json{ { "event", "player_physics_fvi" }, { "result", player_fvi_result() } }.dump() << '\n';
 #endif
 #ifdef _WIN32
 		const int process = _getpid();
@@ -624,6 +655,7 @@ static int run(int argc, char **argv)
 		xl_wall_trigger_set_operation_observer(nullptr);
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 		xl_weapon_wall_set_contact_observer(nullptr);
+		xl_player_fvi_set_observer(nullptr);
 #endif
 		std::cout << "Original Pumo ordinary player controls passed: " << completed << " steps, initial level setup " << initial_level << " -> " << Current_level_num << "; unrendered\n";
 		return 0;
@@ -631,6 +663,7 @@ static int run(int argc, char **argv)
 		xl_wall_trigger_set_operation_observer(nullptr);
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 		xl_weapon_wall_set_contact_observer(nullptr);
+		xl_player_fvi_set_observer(nullptr);
 #endif
 		std::ofstream(root / "player-state.json") << (runtime_initialized ? snapshot() : Json::object()).dump(2) << '\n';
 		std::ofstream(root / "player-result.json") << Json{ { "result", "FAIL" }, { "steps", completed }, { "error", error.what() }, { "fixed_view_aim_events", view_aim_events }, { "position_assist_events", position_assist_events } }.dump(2) << '\n';
