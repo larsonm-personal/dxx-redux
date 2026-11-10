@@ -1,5 +1,9 @@
 #ifdef DXX_XL_RUNTIME
 #include "explosion_motion.h"
+#include "preview.h"
+#include "d1_in_d2/d1_in_d2.h"
+#include <math.h>
+#include <stdint.h>
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -83,6 +87,20 @@ fix	Flash_effect=0;
 
 int	PK1=1, PK2=8;
 
+// XL uses full distance for ordinary explosion admission and scalar falloff.
+// Keep differences in double so even out-of-fix-range separations are bounded.
+static fix explosion_damage_distance(const vms_vector *a, const vms_vector *b)
+{
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !d1_in_d2_use_d1_gameplay()) {
+		const double x = (double) a->x - b->x, y = (double) a->y - b->y, z = (double) a->z - b->z;
+		const double distance = floor(sqrt(x * x + y * y + z * z));
+		return distance >= INT32_MAX ? INT32_MAX : (fix) distance;
+	}
+#endif
+	return vm_vec_dist_quick(a, b);
+}
+
 object *object_create_explosion_sub(object *objp, short segnum, vms_vector * position, fix size, int vclip_type, fix maxdamage, fix maxdistance, fix maxforce, int parent )
 {
 	int objnum;
@@ -130,7 +148,7 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 					parent_check = 1;
 
 			if ( (obj0p!=objp) && !(obj0p->flags&OF_SHOULD_BE_DEAD) && ((obj0p->type==OBJ_WEAPON && (obj0p->id==PROXIMITY_ID || obj0p->id==SUPERPROX_ID || obj0p->id==PMINE_ID)) || (obj0p->type == OBJ_CNTRLCEN) || (obj0p->type==OBJ_PLAYER) || ((obj0p->type==OBJ_ROBOT) && parent_check))) {
-				dist = vm_vec_dist_quick( &obj0p->pos, &obj->pos );
+				dist = explosion_damage_distance(&obj0p->pos, &obj->pos);
 				// Make damage be from 'maxdamage' to 0.0, where 0.0 is 'maxdistance' away;
 				if ( dist < maxdistance ) {
 					if (object_to_object_visibility(obj, obj0p, FQ_TRANSWALL)) {
@@ -248,8 +266,19 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 								vforce2 = vforce;
 								if (parent > -1 ) {
 									killer = &Objects[parent];
+#ifdef DXX_XL_RUNTIME
+									if (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !d1_in_d2_use_d1_gameplay()) {
+										if (killer != ConsoleObject) {
+											vforce2.x /= 2;
+											vforce2.y /= 2;
+											vforce2.z /= 2;
+										}
+									} else
+#endif
+									{
 									if (killer != ConsoleObject)		// if someone else whacks you, cut force by 2x
 										vforce2.x /= 2;	vforce2.y /= 2;	vforce2.z /= 2;
+									}
 								}
 								vforce2.x /= 2;	vforce2.y /= 2;	vforce2.z /= 2;
 
