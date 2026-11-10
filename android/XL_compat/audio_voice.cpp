@@ -25,8 +25,8 @@ AudioSample prepare_audio_sample(const WaveChannels &source, unsigned rate)
 		const auto fraction = std::int64_t(phase % rate);
 		for (unsigned channel = 0; channel < 2; ++channel) {
 			const unsigned source_channel = source.source_channels == 1 ? 0 : channel;
-			const std::int64_t a = source.samples[first * source.source_channels + source_channel];
-			const std::int64_t b = source.samples[second * source.source_channels + source_channel];
+			const std::int64_t a = source.samples[std::size_t(first) * source.source_channels + source_channel];
+			const std::int64_t b = source.samples[std::size_t(second) * source.source_channels + source_channel];
 			result.stereo[std::size_t(frame) * 2 + channel] = std::int16_t((a * (rate - fraction) + b * fraction) / rate);
 		}
 	}

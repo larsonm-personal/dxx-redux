@@ -145,13 +145,7 @@ def run(cmake):
     checked = unittest.TextTestRunner(verbosity=0).run(suite)
     if not checked.wasSuccessful():
         raise AssertionError("Coldrom native witness controls failed")
-    import pumo_tulev1_early_contract_test
-
-    suite = unittest.defaultTestLoader.loadTestsFromModule(pumo_tulev1_early_contract_test)
-    checked = unittest.TextTestRunner(verbosity=0).run(suite)
-    if not checked.wasSuccessful():
-        raise AssertionError("Tulev1 early witness controls failed")
-    print("Pumo earned-phase receipt, Coldrom, and Tulev1 early witness controls passed")
+    print("Pumo shared receipt and Coldrom witness controls passed")
 
 
 if __name__ == "__main__":

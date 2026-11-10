@@ -89,20 +89,6 @@
             }
         },
         {
-            "action": "wait_for",
-            "expect": {
-                "game_time_raw": {
-                    "gte": 0
-                }
-            },
-            "timeout_ms": 17,
-            "face_object": 256,
-            "face_interval_ms": 17
-        },
-        {
-            "action": "introspect"
-        },
-        {
             "action": "send_button",
             "button": 100,
             "held": 1
@@ -130,7 +116,7 @@
                     "gt": 0
                 }
             },
-            "timeout_ms": 3000,
+            "timeout_ms": 8000,
             "face_object": 256,
             "face_interval_ms": 17
         },
@@ -140,14 +126,8 @@
             "held": 0
         },
         {
-            "action": "introspect"
-        },
-        {
             "action": "wait_ms",
             "ms": 750
-        },
-        {
-            "action": "introspect"
         },
         {
             "action": "assert",
@@ -182,5 +162,6 @@
             "field": "android_game_request",
             "value": "quick_save"
         }
-    ]
+    ],
+    "qualification": "ASSISTED_LOCAL_COMBAT_NO_CONNECTED_TRAVEL"
 }

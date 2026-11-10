@@ -1,0 +1,76 @@
+{
+    "initial_level": 7,
+    "simulation_fps": 60,
+    "realtime": false,
+    "qualification": "ORDINARY_INPUT_FROM_FRESH_LEVEL_START_NO_POSITION_ASSISTS",
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.invulnerable": false
+            }
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": -0.2
+        },
+        {
+            "action": "wait_ms",
+            "ms": 500
+        },
+        {
+            "action": "send_axis",
+            "axis": 1,
+            "axis_value": 0
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "held": 1
+        },
+        {
+            "action": "wait_ms",
+            "ms": 1000
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "combat_observation.owned_weapon_count": {
+                    "gt": 0
+                },
+                "player.energy": {
+                    "lt": 100
+                },
+                "player_dead": false
+            }
+        },
+        {
+            "action": "send_button",
+            "button": 100,
+            "held": 0
+        },
+        {
+            "action": "wait_ms",
+            "ms": 1500
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.invulnerable": false,
+                "player.energy": {
+                    "lt": 100
+                }
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ]
+}

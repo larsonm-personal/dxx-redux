@@ -23,7 +23,8 @@ extract_automation_fragment(load "\t/* Handle pending load request (from JNI thr
                             "\n\tif (!g_active || g_current_step >= (int) g_steps.size())")
 
 add_executable(test_game_automate_input "${CMAKE_CURRENT_LIST_DIR}/test_game_automate_input.cpp")
-target_include_directories(test_game_automate_input PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
-                                                            "${DXX_TEST_SHARED_SOURCE_DIR}")
+target_include_directories(
+    test_game_automate_input PRIVATE "${CMAKE_CURRENT_BINARY_DIR}" "${DXX_TEST_SHARED_SOURCE_DIR}"
+                                     ${SDL_INCLUDE_DIR})
 target_compile_features(test_game_automate_input PRIVATE cxx_std_17)
 target_link_libraries(test_game_automate_input PRIVATE nlohmann_json::nlohmann_json)

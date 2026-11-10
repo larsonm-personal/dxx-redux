@@ -8,6 +8,7 @@ void bump_two_objects(object *, object *, int);
 // Controlled native dispatch, not multiplayer synchronization
 static void ordinary_nonphysical_bump_controls(bool xl, bool protected_profile)
 {
+	ScopedNetworkTest network;
 	const auto saved_physics = ConsoleObject->mtype.phys_info;
 	const auto saved_movement = ConsoleObject->movement_type;
 	const fix saved_shields = ConsoleObject->shields, saved_player_shields = Players[Player_num].shields;
@@ -80,6 +81,7 @@ static void ordinary_nonphysical_bump_controls(bool xl, bool protected_profile)
 // Equal masses and a persistent counterpart isolate the real player force-damage consumer
 static void ordinary_force_damage_controls(bool xl, bool protected_profile)
 {
+	ScopedNetworkTest network;
 	const auto saved_physics = ConsoleObject->mtype.phys_info;
 	const auto saved_movement = ConsoleObject->movement_type;
 	const auto saved_object_flags = ConsoleObject->flags;
@@ -162,6 +164,7 @@ static void ordinary_force_damage_controls(bool xl, bool protected_profile)
 // Only robots inherit robot-definition boss immunity in XL singleplayer
 static void ordinary_bump_boss_scope_controls(bool xl, bool protected_profile)
 {
+	ScopedNetworkTest network;
 	const auto saved_player = *ConsoleObject;
 	const auto saved_player_state = Players[Player_num];
 	const auto saved_robot = Robot_info[0];
@@ -285,6 +288,7 @@ static void ordinary_bump_boss_scope_controls(bool xl, bool protected_profile)
 // Actual dispatch: retain the full impulse but derive XL nonplayer damage from rotation force
 static void ordinary_nonplayer_force_damage_controls(bool xl, bool protected_profile)
 {
+	ScopedNetworkTest network;
 	const auto saved_player = *ConsoleObject;
 	const auto saved_player_state = Players[Player_num];
 	const auto saved_robot = Robot_info[0];

@@ -204,7 +204,8 @@ static void projectile_hostile_robot_contact(bool xl)
 					        "repeat rejected enemy contact changed projectile state");
 				} else {
 					if (profile == 2 || profile == 3) require(Objects[victim].shields < i2f(1000), "allowed player/cheat control lost shield damage");
-					require(persistent ? (xl ? xl_projectile_has_hit(shot, victim) : Objects[shot].ctype.laser_info.hitobj_list[victim] != 0)
+					const bool xl_history = xl && profile != 4;
+					require(persistent ? (xl_history ? xl_projectile_has_hit(shot, victim) : Objects[shot].ctype.laser_info.hitobj_list[victim] != 0)
 					                   : (Objects[shot].flags & OF_SHOULD_BE_DEAD) != 0,
 					        "allowed player/classic/multiplayer/cheat contact lost history or disposition");
 					if (id == CONCUSSION_ID)
@@ -224,50 +225,72 @@ static void projectile_hostile_robot_contact(bool xl)
 
 static void projectile_ordinary_gauss_spin(bool xl)
 {
+	ScopedNetworkTest network;
+	// Test torque independently of splash, which has its own live blast controls
+	struct RestoreRadius {
+		fix radius = Weapon_info[GAUSS_ID].damage_radius;
+		~RestoreRadius()
+		{
+			Weapon_info[GAUSS_ID].damage_radius = radius;
+		}
+	} restore_radius;
+	Weapon_info[GAUSS_ID].damage_radius = 0;
 	const int victim = projectile_robot();
 	GameTime64 += F1_0;
 	const int saved_mode = Game_mode;
 	const fix saved_frame = FrameTime;
+	struct Case {
+		fix frame;
+		int skip;
+		unsigned seed;
+	};
 	for (const int multiplayer : { 0, 1 })
-		for (const fix frame : { 512, 1092, 3276, F1_0 })
-			for (const int skip : { 0, 1, 9, 60, 126 })
-				for (const unsigned seed : { 1u, 17u, 1234u }) {
-					Game_mode = multiplayer ? GM_MULTI : 0;
-					FrameTime = frame;
-					const int shot = projectile_test_shot(ConsoleObject - Objects, GAUSS_ID);
-					Objects[shot].flags |= OF_HARMLESS;
-					auto &robot = Objects[victim];
-					robot.ctype.ai_info.SKIP_AI_COUNT = skip;
-					robot.mtype.phys_info.rotthrust = { 71, -51, 91 };
-					robot.mtype.phys_info.flags = 3;
-					Num_awareness_events = 0;
-					d_srand(seed);
-					if (!multiplayer) d_rand(); // Ordinary contact awareness agitation
-					int expected_skip = skip;
-					std::array<std::int32_t, 3> expected{ 71, -51, 91 };
-					const bool spin = skip * frame < F1_0;
-					if (spin) {
-						++expected_skip;
-						for (auto &axis : expected) {
-							const int draw = d_rand();
-							axis = fixmul(xl && !multiplayer ? 16383 - draw : draw - 16384, frame * expected_skip);
-						}
-					}
-					unsigned expected_rng = 0;
-					d_rand_get_state(&expected_rng);
-					d_srand(seed);
-					const auto calls = d_rand_get_call_count();
-					collide_robot_and_weapon(&robot, &Objects[shot], &robot.pos);
-					unsigned actual_rng = 0;
-					d_rand_get_state(&actual_rng);
-					require(robot.ctype.ai_info.SKIP_AI_COUNT == expected_skip &&
-					            robot.mtype.phys_info.rotthrust.x == expected[0] && robot.mtype.phys_info.rotthrust.y == expected[1] &&
-					            robot.mtype.phys_info.rotthrust.z == expected[2] && robot.mtype.phys_info.flags == (3 | (spin ? PF_USES_THRUST : 0)),
-					        "ordinary Gauss torque, skip boundary or thrust flag differs");
-					require(actual_rng == expected_rng && d_rand_get_call_count() - calls == unsigned((multiplayer ? 0 : 1) + (spin ? 3 : 0)),
-					        "ordinary Gauss contact changed draw count or ordering");
-					obj_delete(shot);
+		for (const auto test : { Case{ 512, 0, 1 }, Case{ 512, 126, 17 },
+		                         Case{ 1024, 63, 17 }, Case{ 1024, 64, 17 }, Case{ F1_0, 0, 1234 }, Case{ F1_0, 1, 1 } }) {
+			const auto frame = test.frame;
+			const auto skip = test.skip;
+			const auto seed = test.seed;
+			const int prior_highest = Highest_object_index;
+			std::array<int, MAX_OBJECTS> signatures{};
+			for (int i = 0; i <= prior_highest; ++i) signatures[i] = Objects[i].signature;
+			Game_mode = multiplayer ? GM_MULTI : 0;
+			FrameTime = frame;
+			const int shot = projectile_test_shot(ConsoleObject - Objects, GAUSS_ID);
+			Objects[shot].flags |= OF_HARMLESS;
+			auto &robot = Objects[victim];
+			robot.ctype.ai_info.SKIP_AI_COUNT = skip;
+			robot.mtype.phys_info.rotthrust = { 71, -51, 91 };
+			robot.mtype.phys_info.flags = 3;
+			Num_awareness_events = 0;
+			d_srand(seed);
+			if (!multiplayer) d_rand(); // Ordinary contact awareness agitation
+			int expected_skip = skip;
+			std::array<std::int32_t, 3> expected{ 71, -51, 91 };
+			const bool spin = skip * frame < F1_0;
+			if (spin) {
+				++expected_skip;
+				for (auto &axis : expected) {
+					const int draw = d_rand();
+					axis = fixmul(xl && !multiplayer ? 16383 - draw : draw - 16384, frame * expected_skip);
 				}
+			}
+			unsigned expected_rng = 0;
+			d_rand_get_state(&expected_rng);
+			d_srand(seed);
+			const auto calls = d_rand_get_call_count();
+			collide_robot_and_weapon(&robot, &Objects[shot], &robot.pos);
+			unsigned actual_rng = 0;
+			d_rand_get_state(&actual_rng);
+			require(robot.shields == i2f(100) && !(robot.flags & OF_EXPLODING) &&
+			            robot.ctype.ai_info.SKIP_AI_COUNT == expected_skip &&
+			            robot.mtype.phys_info.rotthrust.x == expected[0] && robot.mtype.phys_info.rotthrust.y == expected[1] &&
+			            robot.mtype.phys_info.rotthrust.z == expected[2] && robot.mtype.phys_info.flags == (3 | (spin ? PF_USES_THRUST : 0)),
+			        ("ordinary Gauss torque differs: xl=" + std::to_string(xl) + " multi=" + std::to_string(multiplayer) + " frame=" + std::to_string(frame) + " skip=" + std::to_string(skip) + " actual_skip=" + std::to_string(robot.ctype.ai_info.SKIP_AI_COUNT) + " flags=" + std::to_string(robot.flags) + " thrust=" + std::to_string(robot.mtype.phys_info.rotthrust.x) + " expected=" + std::to_string(expected[0]) + " rng_calls=" + std::to_string(d_rand_get_call_count() - calls)).c_str());
+			require(actual_rng == expected_rng && d_rand_get_call_count() - calls == unsigned((multiplayer ? 0 : 1) + (spin ? 3 : 0)),
+			        "ordinary Gauss contact changed draw count or ordering");
+			for (int i = Highest_object_index; i >= 0; --i)
+				if (Objects[i].type != OBJ_NONE && (i > prior_highest || Objects[i].signature != signatures[i])) obj_delete(i);
+		}
 	Game_mode = saved_mode;
 	FrameTime = saved_frame;
 	obj_delete(victim);

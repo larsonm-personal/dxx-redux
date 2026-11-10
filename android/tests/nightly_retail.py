@@ -137,8 +137,17 @@ def xl_native_progress(path):
         return {}
 
 
-def xl_native_failures(path):
-    """Extract allowlisted test identities, never private JUnit output."""
+XL_NATIVE_ERRORS = {
+    "network_uninitialized": "Protocol handling missing in multi_send_data",
+    "countdown_display": "Countdown displayed seconds, duration or post-zero flash differs",
+    "projectile_history": "allowed player/classic/multiplayer/cheat contact lost history or disposition",
+    "gauss_torque": "ordinary Gauss torque",
+    "native_test_failed": "",
+}
+
+
+def xl_native_failures(path, details=False):
+    """Extract allowlisted identities and error codes, never private JUnit output."""
     import xml.etree.ElementTree as ET
     from run_xl_originals import CORE_TESTS, FAST_TESTS, EXPERIMENTAL_TESTS, REVIEWED_FAST_ADDITIONS
 
@@ -159,19 +168,25 @@ def xl_native_failures(path):
             return []
         cases = ET.fromstring(text).iter("testcase")
         allowed = CORE_TESTS | FAST_TESTS | EXPERIMENTAL_TESTS | REVIEWED_FAST_ADDITIONS
-        return sorted(
-            {
-                case.get("name")
-                for case in cases
-                if case.get("name") in allowed
-                and (
-                    case.find("failure") is not None
-                    or case.find("error") is not None
-                    or case.find("skipped") is not None
-                    or case.get("status") != "run"
-                )
-            }
-        )
+        failed = [
+            case
+            for case in cases
+            if case.get("name") in allowed
+            and (
+                case.find("failure") is not None
+                or case.find("error") is not None
+                or case.find("skipped") is not None
+                or case.get("status") != "run"
+            )
+        ]
+        if details:
+            found = []
+            for case in failed:
+                output = " ".join(case.itertext())
+                code = next(key for key, text in XL_NATIVE_ERRORS.items() if text in output)
+                found.append({"test": case.get("name"), "code": code})
+            return safe_xl_native_errors(found)
+        return sorted({case.get("name") for case in failed})
     except (OSError, ValueError, ET.ParseError):
         return []
 
@@ -183,6 +198,19 @@ def safe_xl_native_failures(value):
     if not isinstance(value, list) or len(value) > len(allowed):
         return []
     return sorted({name for name in value if isinstance(name, str) and name in allowed})
+
+
+def safe_xl_native_errors(value):
+    if not isinstance(value, list) or len(value) > 256:
+        return []
+    return [
+        {"test": item["test"], "code": item["code"]}
+        for item in value
+        if isinstance(item, dict)
+        and safe_xl_native_failures([item.get("test")])
+        and isinstance(item.get("code"), str)
+        and item["code"] in XL_NATIVE_ERRORS
+    ]
 
 
 def trusted_context(env=None):
@@ -527,6 +555,9 @@ def public_diagnostics(value):
         failures = safe_xl_native_failures(value.get("xl_native_failures"))
         if failures:
             clean["xl_native_failures"] = failures
+        errors = safe_xl_native_errors(value.get("xl_native_errors"))
+        if errors:
+            clean["xl_native_errors"] = errors
         counts = value.get("xl_checks", {})
         if isinstance(counts, dict) and all(
             type(counts.get(key)) is int and 0 <= counts[key] <= 1000

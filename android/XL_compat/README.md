@@ -398,6 +398,42 @@ from the assisted route diagnostic; reactor, exit and full branch coverage remai
 unverified. Run it with `ctest --test-dir <compat-build> -R xl_normal_red_key
 --output-on-failure`
 
+### Focused Pumo gameplay scenarios
+
+The Pumo native regression uses one entry point, `tests/pumo_scenarios.cmake`,
+instead of the former per-switch Tulev1 receipt and fixture chain. It runs ordinary
+movement and firing from a fresh level start, live combat, key/resource and switch
+progression, guided control through an actual wall contact, and cold save restores.
+The combat and progression scenarios use local positioning assists and do not
+qualify connected travel. The initial ordinary-input smoke uses no positioning assists.
+
+Run the asset-free selection with:
+
+```sh
+python android/XL_compat/tests/public_contracts.py --work temp/xl-public
+```
+
+For Linux rendering and audio controls, add `--gpu --audio`. Original source
+adapters remain pinned. The native scenarios require a developer lifecycle binary,
+retail game data and the original full Pumo missions/mods/data tree:
+
+```sh
+cmake -DENGINE=/path/to/xl-preview-lifecycle -DDATA=/path/to/retail-data \
+  -DRESOURCES=/path/to/original-pumo -DOUTPUT=temp/pumo-scenarios \
+  -P android/XL_compat/tests/pumo_scenarios.cmake
+```
+
+They are also registered as `xl_pumo_scenarios_player` when configuring this
+directory with `XL_PREVIEW_LIFECYCLE`, `XL_RETAIL_DATA` and `XL_PUMO_PLAYER_ROOT`.
+Shared receipt validation rejects stale results, mismatched inputs and altered saves.
+It checks process/run identity once per phase; scenario expectations check actual
+gameplay state rather than reproducing each intermediate trace in Python.
+
+Slow-motion pickup activation and an Omega input-demo render-clock timeline remain
+unfinished features. Owning Omega in an active XL level explicitly rejects those
+input demos; the guard must remain until the timeline is implemented. Existing
+campaign readiness failures remain unsupported cases, not passing gameplay claims.
+
 ### Separate rendering preview build
 
 Configure private diagnostics with `-DDXX_XL_DEVELOPER_TESTS=ON`.

@@ -427,6 +427,19 @@ void bump_two_objects(object *obj0,object *obj1,int damage_flag)
 		return;
 	}
 
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active() && !(Game_mode & GM_MULTI) && !d1_in_d2_use_d1_gameplay()) {
+		const double x = (double) obj1->pos.x - obj0->pos.x;
+		const double y = (double) obj1->pos.y - obj0->pos.y;
+		const double z = (double) obj1->pos.z - obj0->pos.z;
+		const double dot0 = obj0->mtype.phys_info.velocity.x * x + obj0->mtype.phys_info.velocity.y * y + obj0->mtype.phys_info.velocity.z * z;
+		const double dot1 = obj1->mtype.phys_info.velocity.x * x + obj1->mtype.phys_info.velocity.y * y + obj1->mtype.phys_info.velocity.z * z;
+		// Fixed Dot truncates toward zero; sub-unit signed sums are not separating.
+		if (dot0 <= -(double) F1_0 && dot1 >= (double) F1_0)
+			return;
+	}
+#endif
+
 	vm_vec_sub(&relative_velocity,&obj0->mtype.phys_info.velocity,&obj1->mtype.phys_info.velocity);
 	force = relative_velocity;
 	scale_num = 2*fixmul(obj0->mtype.phys_info.mass,obj1->mtype.phys_info.mass);

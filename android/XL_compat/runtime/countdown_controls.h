@@ -126,7 +126,8 @@ inline void frames()
 	xl_countdown_clear();
 	require(fire(7) == 0, "Cannot reset warning sequence");
 	for (int i = 0; i < 61; ++i) step(F1_0 / 4);
-	require(Countdown_timer == -5 * F1_0 / 4 && Countdown_seconds_left == -1 && snapshot().total == 14 && PaletteBlueAdd == 20,
+	// The pinned X2I conversion truncates (-1.25 + 0.875) toward zero
+	require(Countdown_timer == -5 * F1_0 / 4 && Countdown_seconds_left == 0 && snapshot().total == 14 && PaletteBlueAdd == 20,
 	        "Countdown displayed seconds, duration or post-zero flash differs");
 	require(xl_countdown_sound_queries(113) == old13 + 1 && xl_countdown_sound_queries(114) == old_start + 1 &&
 	            xl_countdown_sound_queries(32) > old_siren && xl_countdown_sound_queries(100) == old_zero + 1 && xl_countdown_sound_queries(33) == old_explosion + 1,

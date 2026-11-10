@@ -56,22 +56,9 @@ static Json robot_damage_result()
 	for (unsigned index = 0; index < bound_robot_damage.count(); ++index) {
 		const auto &event = bound_robot_damage.event(index);
 		const auto &s = event.sample;
-		events.push_back({ { "frame", event.frame }, { "load_generation", event.load_generation },
-		                   { "level", s.level }, { "game_time_raw", s.game_time_raw },
-		                   { "weapon", s.weapon }, { "weapon_signature", s.weapon_signature }, { "weapon_id", s.weapon_id },
-		                   { "weapon_valid", bool(s.weapon_valid) },
-		                   { "parent_type", s.parent_type }, { "parent_object", s.parent_object }, { "parent_signature", s.parent_signature },
-		                   { "parent_actual_type", s.parent_actual_type }, { "parent_actual_signature", s.parent_actual_signature },
-		                   { "parent_valid", bool(s.parent_valid) },
-		                   { "target", s.target }, { "target_signature", s.target_signature }, { "target_id", s.target_id },
-		                   { "target_valid", bool(s.target_valid) }, { "requested_raw", s.requested_raw },
-		                   { "before_raw", s.before_raw }, { "after_raw", s.after_raw },
-		                   { "accepted_delta_raw", s.accepted_delta_raw } });
+		events.push_back({ { "frame", event.frame }, { "load_generation", event.load_generation }, { "level", s.level }, { "game_time_raw", s.game_time_raw }, { "weapon", s.weapon }, { "weapon_signature", s.weapon_signature }, { "weapon_id", s.weapon_id }, { "weapon_valid", bool(s.weapon_valid) }, { "parent_type", s.parent_type }, { "parent_object", s.parent_object }, { "parent_signature", s.parent_signature }, { "parent_actual_type", s.parent_actual_type }, { "parent_actual_signature", s.parent_actual_signature }, { "parent_valid", bool(s.parent_valid) }, { "target", s.target }, { "target_signature", s.target_signature }, { "target_id", s.target_id }, { "target_valid", bool(s.target_valid) }, { "requested_raw", s.requested_raw }, { "before_raw", s.before_raw }, { "after_raw", s.after_raw }, { "accepted_delta_raw", s.accepted_delta_raw } });
 	}
-	return { { "kind", "plan_bound_robot_weapon_damage" }, { "complete", bound_robot_damage.complete() },
-	         { "truncated", bound_robot_damage.truncated() }, { "frame_count", bound_robot_damage.frame_count() },
-	         { "frame_limit", bound_robot_damage.frame_limit() }, { "event_limit", bound_robot_damage.event_limit() },
-	         { "events", std::move(events) } };
+	return { { "kind", "plan_bound_robot_weapon_damage" }, { "complete", bound_robot_damage.complete() }, { "truncated", bound_robot_damage.truncated() }, { "frame_count", bound_robot_damage.frame_count() }, { "frame_limit", bound_robot_damage.frame_limit() }, { "event_limit", bound_robot_damage.event_limit() }, { "events", std::move(events) } };
 }
 static void weapon_lifecycle_observed(const xl_weapon_lifecycle_sample *sample)
 {
@@ -356,7 +343,7 @@ static Json diagnostic_weapon_rays()
 		require(weapon.segnum >= 0 && weapon.segnum <= Highest_segment_index, "owned weapon ray has invalid segment");
 		vms_vector start = weapon.pos;
 		const vms_vector velocity = weapon.mtype.phys_info.velocity;
-		const auto endpoint = [](fix position, fix speed) {
+		const auto endpoint = [sweep_time](fix position, fix speed) {
 			const fix64 wide_delta = fixmul64(speed, sweep_time);
 			require(wide_delta >= std::numeric_limits<fix>::min() && wide_delta <= std::numeric_limits<fix>::max(), "owned weapon ray displacement overflows fixed coordinates");
 			const fix delta = fixmul(speed, sweep_time);
@@ -542,7 +529,7 @@ static int run(int argc, char **argv)
 		Json plan;
 		input >> plan;
 		const bool extended_input_plan = plan.contains("steps") && plan.at("steps").is_array() &&
-		                                 std::any_of(plan.at("steps").begin(), plan.at("steps").end(), [](const Json &step) {
+		                                 std::any_of(plan.at("steps").begin(), plan.at("steps").end(), [](const Json &step) -> bool {
 			                                 if (!step.is_object() || !step.contains("action") || !step.at("action").is_string()) return false;
 			                                 const std::string action = step.at("action");
 			                                 if (action == "select_secondary") return true;
@@ -565,9 +552,10 @@ static int run(int argc, char **argv)
 			const bool full_route_runner = false;
 #endif
 			if (ordinary_without_route && pumo_ordinary_input_validation::route_status_allowed(
-			        route_status, ROUTE_CONFIRMATION_IDLE, ROUTE_CONFIRMATION_UNSUPPORTED, full_route_runner)) return;
+			                                  route_status, ROUTE_CONFIRMATION_IDLE, ROUTE_CONFIRMATION_UNSUPPORTED, full_route_runner)) return;
 			const std::string detail = "native secondary controls require ordinary single-player without recorder, replay, or route confirmation"
-			                           " stage=" + std::string(stage) + " game_mode=" + std::to_string(game_mode) +
+			                           " stage=" +
+			                           std::string(stage) + " game_mode=" + std::to_string(game_mode) +
 			                           " d1_gameplay=" + std::to_string(d1_gameplay) + " newdemo_state=" + std::to_string(newdemo_state) +
 			                           " recorder_active=" + std::to_string(recorder_active) + " replay_loaded=" + std::to_string(replay_loaded) +
 			                           " route_status=" + (ordinary_without_route ? std::to_string(route_status) : "unobserved");
@@ -667,7 +655,8 @@ static int run(int argc, char **argv)
 			            binding.at("player_object").is_number_integer() && binding.at("player_signature").is_number_integer() &&
 			            binding.at("target_object").is_number_integer() && binding.at("target_signature").is_number_integer() &&
 			            binding.at("target_id").is_number_integer() && binding.at("max_frames").is_number_unsigned() &&
-			            binding.at("max_events").is_number_unsigned(), "robot damage plan requires integer source identity and limits");
+			            binding.at("max_events").is_number_unsigned(),
+			        "robot damage plan requires integer source identity and limits");
 			const int target = binding.at("target_object").get<int>();
 			require(ConsoleObject && binding.at("level") == Current_level_num &&
 			            binding.at("player_object") == Players[Player_num].objnum &&
@@ -680,9 +669,9 @@ static int run(int argc, char **argv)
 			            binding.at("max_events") >= 1 && binding.at("max_events") <= 64,
 			        "robot damage source identity or limits mismatch");
 			require(bound_robot_damage.configure(Current_level_num, Players[Player_num].objnum,
-			                                      ConsoleObject->signature, OBJ_PLAYER, target, Objects[target].signature,
-			                                      Objects[target].id, combat_load_generation,
-			                                      binding.at("max_frames").get<unsigned>(), binding.at("max_events").get<unsigned>()),
+			                                     ConsoleObject->signature, OBJ_PLAYER, target, Objects[target].signature,
+			                                     Objects[target].id, combat_load_generation,
+			                                     binding.at("max_frames").get<unsigned>(), binding.at("max_events").get<unsigned>()),
 			        "robot damage configuration invalid");
 			bound_robot_damage_enabled = true;
 		}
@@ -752,8 +741,8 @@ static int run(int argc, char **argv)
 				                                                                   Current_level_num, Players[Player_num].objnum, ConsoleObject ? ConsoleObject->signature : -1,
 				                                                                   combat_load_generation, GameTime64);
 			if (bound_robot_damage_enabled) bound_robot_damage.begin_frame(unsigned(frame_count + 1),
-				Current_level_num, Players[Player_num].objnum, ConsoleObject ? ConsoleObject->signature : -1,
-				combat_load_generation);
+				                                                           Current_level_num, Players[Player_num].objnum, ConsoleObject ? ConsoleObject->signature : -1,
+				                                                           combat_load_generation);
 #endif
 			do_weapon_n_item_stuff();
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
@@ -827,8 +816,7 @@ static int run(int argc, char **argv)
 				pose(step);
 				++position_assist_events;
 				trace << Json{ { "event", "position_assist" }, { "action", action }, { "step", completed }, { "position", snapshot().at("position") } }.dump() << '\n';
-			}
-			else if (action == "send_axis") {
+			} else if (action == "send_axis") {
 				require(pumo_ordinary_input_validation::integer_in_range(step.at("axis"), 0, 4), "native player probe supports sideways/forward thrust and heading/pitch/bank axes");
 				const int axis = step.at("axis");
 				if (axis >= 2) require_ordinary_secondary_input("axis_action");
