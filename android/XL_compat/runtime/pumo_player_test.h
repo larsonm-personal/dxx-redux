@@ -4,6 +4,7 @@
 #include "input_demo_replay.h"
 #include "route_confirmation.h"
 #include "pumo_ordinary_input_validation.h"
+#include "pumo_player_fvi_observer.h"
 #include "d1_in_d2/d1_in_d2.h"
 #include "newdemo.h"
 extern "C" {
@@ -37,8 +38,14 @@ static unsigned combat_load_generation = 0;
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 static std::array<xl_player_fvi_sample, 4> player_fvi_first{}, player_fvi_last{};
 static unsigned player_fvi_count = 0;
+static pumo_player_fvi_observer::PlanBound<xl_player_fvi_sample> bound_player_fvi;
+static bool bound_player_fvi_enabled = false;
 static void player_fvi_observed(const xl_player_fvi_sample *sample)
 {
+	if (bound_player_fvi_enabled) {
+		bound_player_fvi.observe(*sample);
+		return;
+	}
 	if (sample->start_segment != 450 || sample->player_object != Players[Player_num].objnum ||
 	    !ConsoleObject || sample->player_signature != ConsoleObject->signature) return;
 	if (player_fvi_count < player_fvi_first.size()) player_fvi_first[player_fvi_count] = *sample;
@@ -60,6 +67,15 @@ static Json player_fvi_result()
 			last.push_back(player_fvi_value(player_fvi_last[(player_fvi_count - retained + offset) % player_fvi_last.size()]));
 	}
 	return { { "kind", "actual_local_player_physics_fvi_source450" }, { "sample_count", player_fvi_count }, { "first_limit", player_fvi_first.size() }, { "last_limit", player_fvi_last.size() }, { "first", std::move(first) }, { "last", std::move(last) } };
+}
+static Json bound_player_fvi_result()
+{
+	Json events = Json::array();
+	for (unsigned index = 0; index < bound_player_fvi.count(); ++index) {
+		const auto &event = bound_player_fvi.event(index);
+		events.push_back({ { "frame", event.frame }, { "phase", "frame_weapon_input_through_world_update" }, { "load_generation", event.load_generation }, { "sample", player_fvi_value(event.sample) } });
+	}
+	return { { "kind", "plan_bound_player_physics_fvi" }, { "sample_count", bound_player_fvi.matched_count() }, { "sample_limit", bound_player_fvi.sample_limit() }, { "frame_limit", bound_player_fvi.frame_limit() }, { "truncated", bound_player_fvi.truncated() }, { "complete", bound_player_fvi.complete() }, { "events", std::move(events) } };
 }
 static std::array<xl_weapon_wall_contact, 2> weapon_wall_contacts{};
 static unsigned weapon_wall_contact_count = 0;
@@ -502,6 +518,8 @@ static int run(int argc, char **argv)
 		const bool observe_weapon_wall_contacts = plan.value("observe_weapon_wall_contacts", false);
 		const bool observe_player_fvi = plan.value("observe_player_fvi", false);
 		player_fvi_count = 0;
+		bound_player_fvi.reset();
+		bound_player_fvi_enabled = false;
 		weapon_wall_contact_count = 0;
 		weapon_wall_pixels_used = false;
 #endif
@@ -526,6 +544,39 @@ static int run(int argc, char **argv)
 			require(state_restore_all_sub(name.data(), 0), "native earned checkpoint failed to restore");
 			++combat_load_generation;
 		}
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+		if (plan.contains("player_fvi_plan")) {
+			require(!observe_player_fvi, "bound player FVI cannot also use the legacy observer");
+			const auto &binding = plan.at("player_fvi_plan");
+			require(binding.is_object() && binding.at("level").is_number_integer() &&
+			            binding.at("player_object").is_number_integer() && binding.at("player_signature").is_number_integer() &&
+			            binding.at("max_frames").is_number_unsigned() && binding.at("max_samples").is_number_unsigned(),
+			        "bound player FVI requires integer source identity and limits");
+			const auto &segments = binding.at("allowed_start_segments");
+			require(segments.is_array() && !segments.empty() && segments.size() <= 16, "bound player FVI requires 1 to 16 allowed segments");
+			std::array<int, 16> allowed{};
+			for (size_t index = 0; index < segments.size(); ++index) {
+				require(segments[index].is_number_integer() && segments[index] >= 0 &&
+				            segments[index] <= Highest_segment_index,
+				        "bound player FVI segment is outside the source level");
+				allowed[index] = segments[index].get<int>();
+			}
+			require(ConsoleObject && binding.at("level") == Current_level_num &&
+			            binding.at("player_object") == Players[Player_num].objnum &&
+			            binding.at("player_signature") == ConsoleObject->signature,
+			        "bound player FVI source identity mismatch");
+			require(binding.at("max_frames") >= 1 && binding.at("max_frames") <= 10000 &&
+			            binding.at("max_samples") >= 1 && binding.at("max_samples") <= 256,
+			        "bound player FVI limits invalid");
+			const unsigned max_frames = binding.at("max_frames").get<unsigned>();
+			const unsigned max_samples = binding.at("max_samples").get<unsigned>();
+			require(bound_player_fvi.configure(Current_level_num, Players[Player_num].objnum,
+			                                   ConsoleObject->signature, combat_load_generation, allowed.data(), unsigned(segments.size()),
+			                                   max_frames, max_samples),
+			        "bound player FVI limits or segments invalid");
+			bound_player_fvi_enabled = true;
+		}
+#endif
 		require_ordinary_secondary_input("after_resume");
 		if (plan.contains("track_objects")) {
 			const auto &targets = plan.at("track_objects");
@@ -560,7 +611,7 @@ static int run(int argc, char **argv)
 		xl_wall_trigger_set_operation_observer(operation_observed);
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 		if (observe_weapon_wall_contacts) xl_weapon_wall_set_contact_observer(weapon_wall_contact_observed);
-		if (observe_player_fvi) xl_player_fvi_set_observer(player_fvi_observed);
+		if (observe_player_fvi || bound_player_fvi_enabled) xl_player_fvi_set_observer(player_fvi_observed);
 #endif
 		auto observed_state = trigger_observation();
 		const auto tick = [&] {
@@ -581,6 +632,9 @@ static int run(int argc, char **argv)
 			Controls.fire_secondary_state = firing_secondary;
 			Controls.fire_secondary_count = secondary_press_pending ? 1 : 0;
 			secondary_press_pending = false;
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+			if (bound_player_fvi_enabled) bound_player_fvi.begin_frame(unsigned(frame_count + 1), Current_level_num, combat_load_generation);
+#endif
 			do_weapon_n_item_stuff();
 			calc_game_time();
 			// Presentation is outside this simulation probe, including later levels
@@ -588,9 +642,20 @@ static int run(int argc, char **argv)
 			const int before_level = Current_level_num;
 			operation_frame_source = before_level;
 			GameProcessFrame();
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+			if (bound_player_fvi_enabled) bound_player_fvi.end_frame();
+#endif
 			++frame_count;
 			operation_frame_source = -1;
-			if (before_level != Current_level_num) ++combat_load_generation;
+			if (before_level != Current_level_num) {
+				++combat_load_generation;
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+				if (bound_player_fvi_enabled) {
+					bound_player_fvi.invalidate();
+					xl_player_fvi_set_observer(nullptr);
+				}
+#endif
+			}
 			// Wall-trigger debounce uses the real timer, not GameTime64
 			if (plan.value("realtime", false)) std::this_thread::sleep_until(frame_started + std::chrono::microseconds(1000000 / fps));
 			if (operation_count_level != Current_level_num) {
@@ -710,6 +775,12 @@ static int run(int argc, char **argv)
 					secondary_press_pending = false;
 					// A load invalidates every prior target binding, even if its slot and signature recur
 					++combat_load_generation;
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+					if (bound_player_fvi_enabled) {
+						bound_player_fvi.invalidate();
+						xl_player_fvi_set_observer(nullptr);
+					}
+#endif
 					operation_counts.fill(0);
 					operation_count_level = Current_level_num;
 					last_activation = snapshot();
@@ -749,6 +820,11 @@ static int run(int argc, char **argv)
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 		if (observe_weapon_wall_contacts) trace << Json{ { "event", "weapon_wall_contacts" }, { "result", weapon_wall_contact_result() } }.dump() << '\n';
 		if (observe_player_fvi) trace << Json{ { "event", "player_physics_fvi" }, { "result", player_fvi_result() } }.dump() << '\n';
+		if (bound_player_fvi_enabled) {
+			trace << Json{ { "event", "player_physics_fvi" }, { "result", bound_player_fvi_result() } }.dump() << '\n';
+			trace.flush();
+			require(bound_player_fvi.complete(), "bound player FVI observation incomplete or truncated");
+		}
 #endif
 #ifdef _WIN32
 		const int process = _getpid();
@@ -760,6 +836,8 @@ static int run(int argc, char **argv)
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 		xl_weapon_wall_set_contact_observer(nullptr);
 		xl_player_fvi_set_observer(nullptr);
+		bound_player_fvi_enabled = false;
+		bound_player_fvi.reset();
 #endif
 		std::cout << "Original Pumo ordinary player controls passed: " << completed << " steps, initial level setup " << initial_level << " -> " << Current_level_num << "; unrendered\n";
 		return 0;
@@ -768,6 +846,8 @@ static int run(int argc, char **argv)
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 		xl_weapon_wall_set_contact_observer(nullptr);
 		xl_player_fvi_set_observer(nullptr);
+		bound_player_fvi_enabled = false;
+		bound_player_fvi.reset();
 #endif
 		std::ofstream(root / "player-state.json") << (runtime_initialized ? snapshot() : Json::object()).dump(2) << '\n';
 		std::ofstream(root / "player-result.json") << Json{ { "result", "FAIL" }, { "steps", completed }, { "error", error.what() }, { "fixed_view_aim_events", view_aim_events }, { "position_assist_events", position_assist_events } }.dump(2) << '\n';
