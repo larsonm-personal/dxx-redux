@@ -54,6 +54,7 @@ PUBLIC_TESTS = {
     "xl_pumo_receipt_contract",
     "xl_pumo_tulev1_spawn_contract",
     "xl_pumo_tulev1_master5_contract",
+    "xl_pumo_tulev1_guard269_contract",
     "xl_scoped_texture_contract",
     "xl_segment_flags_reference",
     "xl_segment_damage_reference",
