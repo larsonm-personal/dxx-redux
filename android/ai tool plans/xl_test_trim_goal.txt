@@ -1,0 +1,13 @@
+/goal Implement android/ai tool plans/xl_test_trim_execution_plan.md in C:\local\dxx-redux
+
+The objective is substantially less XL test/fixture machinery and working native/gameplay validation, not another review or a larger testing framework. Read the plan and prior review, then execute it through implementation and validation
+
+Continue from the existing reviewed-tip worktree at temp/xl-stack-review-20261109/source after verifying its state and preserving the six existing repairs. Do not apply their exported patches twice. Preserve my original checkout, branches and stashes
+
+Repair the native fixture failures, delete/consolidate the per-switch Pumo/Tulev1 validators and large repetitive scripts, reduce duplicate combat matrices, and update the remaining registrations together. Keep a small set of meaningful production-path, reference-arithmetic, integrity and save/restore checks. Run an actual ordinary gameplay smoke as described in the plan
+
+Make reasonable implementation decisions and keep going without permission questions for routine local work. Do not stop after planning, invent a general framework, add tests for each deletion, or preserve every existing assertion. Do not hide failures by deleting unique coverage or weakening production checks. Aim for a substantial net reduction; useful behavior matters more than a quota
+
+Use focused checks while editing and the agreed final suite once. If one environment-dependent check is unavailable, continue all independent work and identify the exact remaining blocker. No commits, pushes, published-history rewrites, merges, PR changes or external messages
+
+Finish with the reviewable local diff, concise before/after counts, what actually ran successfully, and any unresolved defects or validation limits
