@@ -1,3 +1,4 @@
+#include "camera_save.h"
 #include "camera_controller.h"
 #include "camera_renderer.h"
 #include "../camera_bindings.h"
@@ -5,6 +6,7 @@
 #include "resource_validation.h"
 #include <SDL.h>
 #include <vector>
+#include <limits>
 extern "C" {
 #include "inferno.h"
 #include "object.h"
@@ -30,8 +32,10 @@ xl_compat::CameraMatrix matrix(const vms_matrix &m)
 }
 bool live(const XlCameraControllerState &state)
 {
-	return state.owner >= 0 && state.owner <= Highest_object_index && Objects[state.owner].signature == state.signature &&
-	       Objects[state.owner].type == 16 && Objects[state.owner].control_type == 18 && Objects[state.owner].movement_type == MT_NONE;
+	if (state.owner < 0 || state.owner > Highest_object_index || state.signature < 0) return false;
+	const auto &actor = Objects[state.owner];
+	return actor.signature == state.signature && actor.type == state.type && actor.id == state.id &&
+	       (state.type != 16 || (actor.control_type == 18 && actor.movement_type == MT_NONE));
 }
 } // namespace
 extern "C" void xl_camera_controller_clear(void)
@@ -59,7 +63,11 @@ void xl_camera_controller_load(const xl_compat::Inventory &level)
 		if (state.owner >= 0) {
 			if (state.owner > Highest_object_index) throw std::runtime_error("Camera controller owner is missing");
 			const auto &actor = Objects[state.owner];
+			if (actor.type != 16 && actor.type != OBJ_ROBOT && actor.type != 20)
+				throw std::runtime_error("Camera attachment owner type is not qualified");
 			state.signature = actor.signature;
+			state.type = actor.type;
+			state.id = actor.id;
 			if (!live(state)) throw std::runtime_error("Camera controller owner exceeds qualified object profile");
 			state.original = matrix(actor.orient);
 			xl_compat::camera_orientation(state.original, 0);
@@ -94,7 +102,7 @@ extern "C" int xl_camera_controller_restore(int apply)
 		actor.mtype = source.actor.mtype;
 	}
 	for (auto &entry : cameras)
-		if (entry.owner >= 0) {
+		if (entry.owner >= 0 && entry.type == 16) {
 			entry.signature = Objects[entry.owner].signature;
 			entry.rotation = {};
 		}
@@ -103,10 +111,55 @@ extern "C" int xl_camera_controller_restore(int apply)
 bool xl_camera_controller_get(int owner, XlCameraControllerState &state)
 {
 	if (!xl_level_extensions_active() || owner < 0 || std::size_t(owner) >= owners.size() || owners[owner] < 0) return false;
-	const auto &entry = cameras[owners[owner]];
-	if (!live(entry)) return false;
+	auto &entry = cameras[owners[owner]];
+	if (!live(entry)) {
+		entry.signature = -1;
+		return false;
+	}
 	state = entry;
 	return true;
+}
+nlohmann::json xl_camera_attachments_snapshot()
+{
+	auto saved = nlohmann::json::array();
+	for (std::size_t owner = 0; owner < owners.size(); ++owner)
+		if (owners[owner] >= 0) {
+			XlCameraControllerState state;
+			saved.push_back({ int(owner), xl_camera_controller_get(int(owner), state) ? state.signature : -1 });
+		}
+	return saved;
+}
+bool xl_camera_attachments_restore(const nlohmann::json &saved, bool apply)
+{
+	try {
+		if (!saved.is_array()) return false;
+		std::size_t row_index = 0;
+		for (std::size_t owner = 0; owner < owners.size(); ++owner) {
+			if (owners[owner] < 0) continue;
+			if (row_index >= saved.size()) return false;
+			const auto &row = saved[row_index++];
+			if (!row.is_array() || row.size() != 2 || !row[0].is_number_integer() || row[0] != int(owner) || !row[1].is_number_integer() ||
+			    (row[1].is_number_unsigned() && row[1].get<std::uint64_t>() > (std::numeric_limits<int>::max)())) return false;
+			const auto signature = row[1].get<std::int64_t>();
+			if (signature < -1 || signature > (std::numeric_limits<int>::max)()) return false;
+			auto state = cameras[owners[owner]];
+			state.signature = int(signature);
+			if (signature >= 0 && !live(state)) return false;
+		}
+		if (row_index != saved.size()) return false;
+		if (apply) {
+			for (const auto &row : saved)
+				for (auto &entry : cameras)
+					if (entry.owner == row[0].get<int>()) {
+						entry.signature = row[1].get<int>();
+						entry.rotation = {};
+					}
+			xl_camera_renderer_reset();
+		}
+		return true;
+	} catch (const nlohmann::json::exception &) {
+		return false;
+	}
 }
 extern "C" void xl_camera_controller_begin_frame(void)
 {
@@ -121,6 +174,7 @@ extern "C" void xl_camera_controller_frame(int owner)
 {
 	if (!xl_level_extensions_active() || owner < 0 || std::size_t(owner) >= owners.size() || owners[owner] < 0) return;
 	auto &entry = cameras[owners[owner]];
+	if (entry.type != 16) return;
 	if (!live(entry)) Error("Camera controller identity changed outside qualified lifetime");
 	auto &actor = Objects[owner];
 	try {

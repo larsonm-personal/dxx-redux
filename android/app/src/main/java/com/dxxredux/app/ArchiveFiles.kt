@@ -4,6 +4,7 @@ import net.sf.sevenzipjbinding.ExtractAskMode
 import net.sf.sevenzipjbinding.ExtractOperationResult
 import net.sf.sevenzipjbinding.IArchiveExtractCallback
 import net.sf.sevenzipjbinding.IInArchive
+import net.sf.sevenzipjbinding.IInStream
 import net.sf.sevenzipjbinding.ISequentialOutStream
 import net.sf.sevenzipjbinding.PropID
 import net.sf.sevenzipjbinding.SevenZip
@@ -17,6 +18,8 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.RandomAccessFile
+import java.nio.ByteBuffer
+import java.nio.channels.SeekableByteChannel
 import java.text.Normalizer
 import java.util.Locale
 import java.util.zip.ZipEntry
@@ -484,6 +487,99 @@ private fun extractRarWithSevenZipBinding(
         } finally {
             input.close()
         }
+    }
+}
+
+// Use the existing native solid decoder for bounded LZMA2 resource folders
+// Unknown methods retain the Commons decoder and its configured memory limit
+internal fun extractSelectedSevenZResources(
+    channel: SeekableByteChannel,
+    entries: List<SevenZArchiveEntry>,
+    selected: List<SevenZArchiveEntry>,
+    root: File,
+): Boolean {
+    val expected =
+        selected.associate { entry ->
+            checkNotNull(canonicalArchiveRelativePath(entry.name)) to entry.size
+        }
+    val input =
+        object : IInStream {
+            // The importer owns this channel, including the Commons fallback
+            override fun close() = Unit
+
+            override fun read(data: ByteArray): Int = channel.read(ByteBuffer.wrap(data)).coerceAtLeast(0)
+
+            override fun seek(
+                offset: Long,
+                origin: Int,
+            ): Long {
+                val base =
+                    when (origin) {
+                        0 -> 0L
+                        1 -> channel.position()
+                        2 -> channel.size()
+                        else -> throw IOException("Invalid native archive seek origin")
+                    }
+                val position = Math.addExact(base, offset)
+                if (position < 0 || position > channel.size()) throw IOException("Native archive seek exceeds source")
+                channel.position(position)
+                return position
+            }
+        }
+    try {
+        channel.position(0)
+        val archive = SevenZip.openInArchive(null, input)
+        try {
+            check(archive.getNumberOfItems() == entries.size) { "Native resource catalog count differs" }
+            val source =
+                object : RarCatalogSource {
+                    override val itemCount = archive.getNumberOfItems()
+
+                    override fun path(index: Int): String? {
+                        val raw = archive.getStringProperty(index, PropID.PATH) ?: return null
+                        val path = canonicalArchiveRelativePath(raw) ?: return null
+                        return path.takeIf { it in expected }
+                    }
+
+                    override fun isDirectory(index: Int): Boolean =
+                        archive.getProperty(index, PropID.IS_FOLDER) as? Boolean ?: false
+
+                    override fun size(index: Int): Long {
+                        val size = (archive.getProperty(index, PropID.SIZE) as? Number)?.toLong() ?: -1L
+                        check(size == expected[path(index)]) { "Native resource catalog size differs" }
+                        return size
+                    }
+
+                    // A solid folder's packed size is not the compression ratio of each member
+                    override fun packedSize(index: Int): Long = -1L
+                }
+            enumerateRarCatalog(source).use { catalog ->
+                check(
+                    catalog.items.size == expected.size &&
+                        catalog.items.none {
+                            it.isDirectory
+                        },
+                ) { "Native resource selections differ" }
+                val methodPattern = Regex("(?:Delta:([0-9]{1,3}) )?LZMA2:([0-9]{1,2})")
+                for (item in catalog.items) {
+                    val method = archive.getStringProperty(item.index, PropID.METHOD) ?: return false
+                    val match = methodPattern.matchEntire(method) ?: return false
+                    val delta = match.groupValues[1].takeIf { it.isNotEmpty() }?.toInt()
+                    // The pinned 7-Zip method property reports the dictionary's power of two
+                    // Cap this fast path at 32 MiB; LZMA2 state and Delta history are bounded
+                    if (match.groupValues[2].toInt() !in 0..25 || (delta != null && delta !in 1..256)) return false
+                }
+                check(root.mkdirs() || root.isDirectory)
+                ImportStorageGuard.requireFreeSpace(root, expected.values.sum(), "extract selected resources")
+                extractSolidCatalog(archive, catalog, root.canonicalFile)
+            }
+            return true
+        } finally {
+            archive.close()
+        }
+    } catch (error: Throwable) {
+        if (nativeRarCapabilityFailure(error) != null) return false
+        throw error
     }
 }
 

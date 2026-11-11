@@ -32,6 +32,7 @@
 #include "seismic_gameplay.h"
 #include "robot_disarm_state.h"
 #include "camera_controller.h"
+#include "camera_save.h"
 #include "camera_collision.h"
 #include "camera_flash.h"
 extern "C" {
@@ -131,7 +132,10 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 32;
+		block["schema"] = 34;
+		block["camera_attachments"] = xl_camera_attachments_snapshot();
+		block["slow_motion"] = xl_runtime::slow_motion_snapshot();
+		require(xl_runtime::restore_slow_motion(block["slow_motion"], false), "Cannot capture XL slow-motion state");
 		block["weapon_clock"] = xl_runtime::weapon_clock_snapshot();
 		require(xl_runtime::restore_weapon_clock(block["weapon_clock"], false), "Cannot capture XL weapon clock");
 		block["mission_progress"] = xl_compat::mission_progress_snapshot();
@@ -236,10 +240,11 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 23u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 32 &&
+		require(saved.is_object() && saved.size() == 25u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 34 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
 		require(xl_runtime::restore_weapon_clock(saved.at("weapon_clock"), false), "Invalid XL weapon clock");
+		require(xl_runtime::restore_slow_motion(saved.at("slow_motion"), false), "Invalid XL slow-motion state");
 		require(xl_compat::restore_mission_progress(saved.at("mission_progress"), false), "Invalid XL mission progression state");
 		require(xl_compat::restore_named_audio(saved.at("audio"), false), "Invalid XL named-audio resource or playback state");
 		require(xl_compat::restore_seismic_gameplay(saved.at("seismic"), false), "Invalid XL seismic state");
@@ -437,8 +442,11 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		require(xl_robot_generator_validate(), "Invalid XL generator assignment or robot selection in save");
 		require(xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 0) && xl_speed_boost_restore(boosts.data(), static_cast<int>(boosts.size()), boost_speed, 0) && xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0) && xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 0) && xl_compat::restore_boss_routes(boss_routes, 0) && xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 0), "Invalid XL event state");
 		require(xl_camera_controller_restore(0), "Invalid XL camera restore identity");
+		require(xl_camera_attachments_restore(saved.at("camera_attachments"), false), "Invalid XL camera attachment identity");
 		xl_runtime::restore_weapon_clock(saved.at("weapon_clock"), true);
+		xl_runtime::restore_slow_motion(saved.at("slow_motion"), true);
 		xl_camera_controller_restore(1);
+		xl_camera_attachments_restore(saved.at("camera_attachments"), true);
 		xl_static_robot_restore_payloads();
 		xl_camera_hit_restore(camera_hits, true);
 		xl_camera_flash_restore(saved.at("camera_flash"), true);

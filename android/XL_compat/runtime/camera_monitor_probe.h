@@ -27,7 +27,6 @@ unsigned camera_monitor_device_controls()
 			require(d_rand_get_stream_state(D_RNG_FX, &fx), "Cannot preserve monitor effects RNG");
 			probe.sc_w = probe.sc_h = 64;
 			grd_curscreen = &probe;
-			actor->type = 16;
 		}
 		~Restore()
 		{
@@ -62,6 +61,26 @@ unsigned camera_monitor_device_controls()
 	unsigned cases = 0;
 	const int xy[4][2] = { { 0, 0 }, { 0, 1 }, { 1, 1 }, { 1, 0 } };
 	for (int orientation = 0; orientation < 4; ++orientation) {
+		// Reuse the existing pixel cases for CAMBOT, robot and effect attachments
+		auto &actor = *ConsoleObject;
+		actor = restore.saved_actor;
+		actor.type = orientation < 2 ? 16 : orientation == 2 ? OBJ_ROBOT
+		                                                     : 20;
+		actor.id = orientation == 3 ? 1 : 0;
+		actor.control_type = orientation < 2 ? 18 : orientation == 2 ? CT_AI
+		                                                             : CT_NONE;
+		actor.movement_type = orientation == 2 ? MT_PHYSICS : MT_NONE;
+		actor.render_type = orientation == 3 ? RT_NONE : RT_POLYOBJ;
+		if (orientation == 2) {
+			actor.rtype.pobj_info.model_num = Robot_info[0].model_num;
+			actor.pos.x += F1_0 / 4;
+		}
+		level.objects[owner].type = actor.type;
+		level.objects[owner].id = level.objects[owner].reader_id = actor.id;
+		xl_camera_controller_load(level);
+		XlCameraControllerState attachment;
+		require(xl_camera_controller_get(owner, attachment) && attachment.type == actor.type && attachment.id == actor.id,
+		        "Native monitor did not retain its actual owner profile");
 		std::array<CameraUV, 6> source_uv{};
 		for (int i = 0; i < 4; ++i) {
 			const int corner = (i + orientation) % 4;

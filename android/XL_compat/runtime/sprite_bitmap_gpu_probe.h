@@ -75,7 +75,7 @@ unsigned sprite_bitmap_device_controls()
 								for (unsigned c = 0; c < 4; ++c) {
 									const int expected = visible ? int(std::lround(255 * (c == 3 ? alpha : rgba[c] / 255. * coverage) * alpha)) : 0;
 									if (std::abs(int(pixels[(y * 64 + x) * 4 + c]) - expected) > 1)
-										throw std::runtime_error("Sprite body device pixels differ: width=" + std::to_string(shape[0]) + " height=" + std::to_string(shape[1]) + " filter=" + std::to_string(filter) + " size=" + std::to_string(size) + " x=" + std::to_string(x) + " y=" + std::to_string(y) + " expected=" + std::to_string(expected) + " actual=" + std::to_string(pixels[(y * 64 + x) * 4 + c]));
+										throw std::runtime_error("Sprite body device pixels differ: width=" + std::to_string(shape[0]) + " height=" + std::to_string(shape[1]) + " filter=" + std::to_string(filter) + " size=" + std::to_string(size) + " x=" + std::to_string(x) + " y=" + std::to_string(y) + " expected=" + std::to_string(expected) + " actual=" + std::to_string(pixels[(y * 64 + x) * 4 + c]) + " rgba=" + std::to_string(pixels[(y * 64 + x) * 4]) + "," + std::to_string(pixels[(y * 64 + x) * 4 + 1]) + "," + std::to_string(pixels[(y * 64 + x) * 4 + 2]) + "," + std::to_string(pixels[(y * 64 + x) * 4 + 3]));
 								}
 							}
 						require(glGetError() == GL_NO_ERROR, "Sprite body device control raised a GPU error");

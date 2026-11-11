@@ -36,6 +36,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "trigger_state.h"
 #include "preview.h"
+#include "slow_motion_runtime.h"
 #include "camera_collision.h"
 #include "doors.h"
 #include "cloak.h"
@@ -3474,7 +3475,23 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			COOPLOG("restore StartNewLevelSub begin: game=d2 saved_level=%d current_before=%d net_before=%d",
 			        current_level, Current_level_num, Netgame.levelnum);
 #endif
+#ifdef DXX_XL_RUNTIME
+		// Resource preparation runs before the player payload is installed
+		// Peek through the engine's existing native save layout, then restore the cursor
+		player_rw resource_player;
+		const PHYSFS_sint64 player_offset = PHYSFS_tell(fp);
+		if (player_offset < 0 || PHYSFS_read(fp, &resource_player, sizeof(resource_player), 1) != 1 ||
+		    !PHYSFS_seek(fp, player_offset)) {
+			PHYSFS_close(fp);
+			return 0;
+		}
+		player_rw_swap(&resource_player, swap);
+		const uint32_t previous_equipment_hint = xl_time_equipment_restore_hint(resource_player.flags);
+#endif
 		StartNewLevelSub(current_level, 1, secret_restore);
+#ifdef DXX_XL_RUNTIME
+		xl_time_equipment_restore_hint(previous_equipment_hint);
+#endif
 #ifdef __ANDROID__
 		if (multi_save_transfer_sync_poll(0)) {
 			android_restore_phase("co-op level synchronization interrupted");

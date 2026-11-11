@@ -1,6 +1,9 @@
 #!/usr/bin/env pwsh
-param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner)
+param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [string]$TimeEquipmentPilot)
 $ErrorActionPreference = 'Stop'
+if ($TimeEquipment -and ($PumoUiImport -or !$DistributionName -or !(Test-Path -LiteralPath $TimeEquipmentPilot -PathType Leaf))) {
+    throw 'TimeEquipment requires DistributionName and an engine-written pilot with original Warp Shock level6 unlocked, in its own mode'
+}
 if ($PumoUiCold -and !$PumoUiImport) { throw 'PumoUiCold requires PumoUiImport' }
 if ($PumoUiIsolation -and (!$PumoUiImport -or $PumoUiCold)) { throw 'PumoUiIsolation requires PumoUiImport in its own mode' }
 if ($PumoUiDisabledOwner -and (!$PumoUiImport -or $PumoUiCold -or $PumoUiIsolation)) { throw 'PumoUiDisabledOwner requires PumoUiImport in its own mode' }
@@ -14,6 +17,7 @@ if ($PumoUiImport) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-im
 if ($PumoUiCold) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-cold-android' }
 if ($PumoUiIsolation) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-isolation-android' }
 if ($PumoUiDisabledOwner) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-disabled-android' }
+if ($TimeEquipment) { $output = Join-Path $PSScriptRoot '../../temp/xl-time-equipment-android' }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 function Invoke-AddonAdb {
@@ -39,15 +43,24 @@ function Set-ImportedOwnerExpectations {
 }
 $backup = 'files/xl-addon-import-backup'
 $paths = @('shared_prefs', 'files/file_sets.json')
-if ($PumoUiImport) {
-    if ($DistributionName) { throw 'Pumo UI fixture imports its qualified raw addons separately' }
-    $paths += @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d2x-redux/d2x.ini',
+if ($PumoUiImport -or $TimeEquipment) {
+    $paths += @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d1x-redux/descent.cfg', 'files/d2x-redux/d2x.ini',
         'files/descent.cfg', 'files/graphics_safety.json', 'files/.graphics_safety.lock', 'files/d2x-redux/mod_usage.json',
         'files/d2x-redux/.active_mod_paths', 'files/d2x-redux/.active_set_path', 'files/d1x-redux/.active_set_path',
         'files/d2x-redux/.mission_assets', 'files/d2x-redux/.mission_assets.json',
-        'files/imported/sets/default',
+        'files/d2x-redux/missions/d2x-xl.hog', 'files/d2x-redux/missions/d2x.ham')
+}
+if ($PumoUiImport) {
+    if ($DistributionName) { throw 'Pumo UI fixture imports its qualified raw addons separately' }
+    $paths += @('files/imported/sets/default',
         'files/d2x-redux/missions/pmines.hog', 'files/d2x-redux/missions/pmines.mn2',
-        'files/d2x-redux/missions/d2x-xl.hog', 'files/d2x-redux/missions/d2x.ham', 'files/d2x-redux/mods/pmines')
+        'files/d2x-redux/mods/pmines')
+}
+if ($TimeEquipment) {
+    if (([string](Invoke-AddonPrivate 'if test -e files/imported/sets/xl-picker-check; then echo yes; fi')).Trim() -eq 'yes') {
+        throw 'Reserved disposable gameplay set already exists; inspect it before rerunning'
+    }
+    $paths += @('files/imported/sets/xl-picker-check', 'files/d2x-redux/missions/wshock20.hog', 'files/d2x-redux/missions/wshock20.mn2')
 }
 $ready = $false
 $hostBackup = $null
@@ -116,13 +129,102 @@ try {
     $suite = if ($PumoUiImport) { 'pumo_ui_import' } else { 'xl_addon_import' }
     $instrument = @('shell', 'am', 'instrument', '-w', '-e', 'suite', $suite)
     if ($DistributionName) { $instrument += @('-e', 'xl_addon_distribution', $DistributionName) }
+    if ($TimeEquipment) { $instrument += @('-e', 'xl_time_equipment', 'true') }
     $instrument += "$($script:PACKAGE).test/com.dxxredux.app.RecoveryInstrumentation"
     $result = Invoke-AddonAdb -Arguments $instrument
     $result | Set-Content "$output/instrumentation.txt" -Encoding utf8
     Write-Output $result
-    $expected = if ($PumoUiImport) { 'PASS: Original Pumo and raw addons imported' } else { 'PASS: XL addon selective import' }
+    $expected = if ($TimeEquipment) { 'PASS: Original XL resources and mission imported for gameplay' } elseif ($PumoUiImport) { 'PASS: Original Pumo and raw addons imported' } else { 'PASS: XL addon selective import' }
     if ($result -notmatch $expected -or $result -match 'FAIL:|INSTRUMENTATION_FAILED|Process crashed') {
         throw 'XL addon import checks failed'
+    }
+    if ($DistributionName) {
+        foreach ($artifact in @(@('xl-addon-picker-original.png', 'original-render.png'), @('xl-addon-original-inventory.json', 'resource-inventory.json'))) {
+            $external = "/sdcard/Android/data/$($script:PACKAGE)/files/$($artifact[0])"
+            Invoke-AddonAdb -Arguments @('pull', $external, "$output/$($artifact[1])") | Out-Null
+            Invoke-AddonAdb -Arguments @('shell', 'rm', '-f', $external) | Out-Null
+        }
+    }
+    if ($TimeEquipment) {
+        $phase = 'gameplay'
+        $pilotFile = [IO.Path]::GetFileName($TimeEquipmentPilot).ToLowerInvariant()
+        if ($pilotFile -notmatch '^[A-Za-z0-9_]{1,8}\.plr$') { throw 'Gameplay pilot must have a portable native callsign' }
+        $pilot = [IO.Path]::GetFileNameWithoutExtension($pilotFile)
+        $pilotTemporary = "/data/local/tmp/xl-time-pilot-$attemptId.plr"
+        Invoke-AddonAdb -Arguments @('push', (Resolve-Path -LiteralPath $TimeEquipmentPilot).Path, $pilotTemporary) | Out-Null
+        Invoke-AddonPrivate "mkdir -p files/d2x-redux/Players && cp $pilotTemporary files/d2x-redux/Players/$pilotFile" | Out-Null
+        Invoke-AddonAdb -Arguments @('shell', 'rm', '-f', $pilotTemporary) | Out-Null
+        Invoke-AddonAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
+        Invoke-AddonAdb -Arguments @('shell', 'am', 'start', '-n', "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
+        if (!(Wait-SetupActivityReady)) { throw 'Launcher did not restart after original import' }
+        foreach ($enabled in @($false, $true)) {
+            Invoke-AddonAdb -Arguments @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+                '--es', 'command', 'set_mod_enabled', '--es', 'filename', 'xl-resources', '--ez', 'enabled', $enabled.ToString().ToLowerInvariant()) | Out-Null
+            if (!(Wait-SetupCondition -TimeoutSeconds 20 -Predicate {
+                param($snapshot)
+                $entry = $snapshot.content_entries_by_id.'mod:xl-resources'
+                return $snapshot.active_set -eq 'xl-picker-check' -and $null -ne $entry -and $entry.enabled -eq $enabled
+            })) { throw "Resource enable toggle did not reach $enabled" }
+            Invoke-AddonPrivate 'cat files/setup_introspect.json' | Set-Content "$output/toggle-$enabled.json" -Encoding utf8
+        }
+        $scenario = Join-Path $PSScriptRoot '../game_scripts/test_xl_time_equipment_runtime.jsonc'
+        $steps = @(Get-Content $scenario -Raw | ConvertFrom-Json)
+        # Reuse startup, saved-state expectations and the normal bullet-time toggle
+        $bullet = -1
+        for ($i = 0; $i -lt $steps.Count; $i++) { if ($steps[$i].action -eq 'meta_action' -and $steps[$i].id -eq 1047) { $bullet = $i; break } }
+        if ($bullet -lt 0) { throw 'Missing shared time-equipment control phase' }
+        $newGame = 0
+        while ($newGame -lt $steps.Count -and !($steps[$newGame].action -eq 'select' -and $steps[$newGame].text -eq 'New game')) { $newGame++ }
+        if ($newGame -eq $steps.Count) { throw 'Missing shared time-equipment startup' }
+        $cold = @($steps[0..($newGame - 1)]) + @(
+            @{ action = 'select'; text = 'Load game'; timeout_ms = 15000 },
+            @{ action = 'select'; text = 'level 6'; timeout_ms = 15000 }
+        ) + @($steps[-1], $steps[$bullet], @{
+            action = 'wait_for'; timeout_ms = 60000
+            expect = @{ 'xl_pilot.slow_motion.world_speed' = @{ lte = 1 }; 'xl_pilot.slow_motion.player_speed' = @{ lte = 1 };
+                'xl_pilot.slow_motion.has_slow_motion' = $true; 'xl_pilot.slow_motion.has_bullet_time' = $true }
+        })
+        $coldScript = Join-Path $output 'time-equipment-cold.jsonc'
+        $cold | ConvertTo-Json -Depth 30 | Set-Content $coldScript -Encoding utf8
+        $pids = @{}
+        foreach ($run in @(@{ phase = 'warm'; script = $scenario }, @{ phase = 'cold'; script = $coldScript })) {
+            $phase = $run.phase
+            & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $run.script -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -TimeoutSeconds 240 -Params @{ PILOT = $pilot }
+            $runtimeExit = $LASTEXITCODE
+            Invoke-AddonPrivate 'cat files/automation_result.json' | Set-Content "$output/$phase-result.json" -Encoding utf8
+            Invoke-AddonPrivate 'cat files/automation_log.jsonl' | Set-Content "$output/$phase-steps.jsonl" -Encoding utf8
+            Invoke-AddonPrivate 'cat files/introspect.json' | Set-Content "$output/$phase-state.json" -Encoding utf8
+            $receipt = Get-Content "$output/$phase-result.json" -Raw | ConvertFrom-Json
+            if ($runtimeExit -or $receipt.result -ne 'PASS' -or $receipt.steps_completed -ne $receipt.total_steps) { throw "Original Android time-equipment $phase failed" }
+            if ($phase -eq 'warm') { $warmRun = $receipt.run_id } else { $coldRun = $receipt.run_id }
+            $pids[$phase] = ([string](Invoke-AddonAdb -Arguments @('shell', 'pidof', "$($script:PACKAGE):game"))).Trim()
+            if ($pids[$phase] -notmatch '^\d+$') { throw "Missing Android $phase game process" }
+            Invoke-AddonAdb -Arguments @('shell', 'screencap', '-p', "/data/local/tmp/xl-time-$phase.png") | Out-Null
+            Invoke-AddonAdb -Arguments @('pull', "/data/local/tmp/xl-time-$phase.png", "$output/$phase.png") | Out-Null
+            Invoke-AddonAdb -Arguments @('shell', 'rm', '-f', "/data/local/tmp/xl-time-$phase.png") | Out-Null
+            Invoke-AddonPrivate 'find files/d2x-redux/Players -type f -name *.sg* -exec sha256sum {} \;' | Set-Content "$output/$phase-saves.sha256" -Encoding utf8
+            Invoke-AddonAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
+        }
+        Invoke-AddonPrivate 'cat files/d2x-redux/.mission_assets.json' | Set-Content "$output/runtime-owner.json" -Encoding utf8
+        $owner = Get-Content "$output/runtime-owner.json" -Raw | ConvertFrom-Json
+        $installation = [string]$owner.installation_mounts[0]
+        if (@($owner.installation_mounts).Count -ne 1 -or !$installation.EndsWith('/files/imported/sets/xl-picker-check/.content/mods/xl-resources') -or
+            $installation -notmatch '^/data/[A-Za-z0-9_./-]+$') {
+            throw 'Native runtime did not use the enabled imported resource owner'
+        }
+        $inventory = Get-Content "$output/resource-inventory.json" -Raw | ConvertFrom-Json
+        $staged = @(Invoke-AddonPrivate "sha256sum $((@($inventory.files) | ForEach-Object { "$installation/$($_.path)" }) -join ' ')" | ForEach-Object { $_ -split '\r?\n' })
+        $staged | Set-Content "$output/native-resource-hashes.sha256" -Encoding utf8
+        foreach ($resource in $inventory.files) {
+            if ($staged -notcontains "$($resource.sha256)  $installation/$($resource.path)") { throw "Native imported resource differs: $($resource.path)" }
+        }
+        if ($pids.warm -eq $pids.cold -or !$warmRun -or !$coldRun -or $warmRun -eq $coldRun) { throw 'Cold continuation did not use a fresh complete game process' }
+        @{ warm_pid = $pids.warm; cold_pid = $pids.cold; fresh_process = $true; resources_verified = @($inventory.files).Count } |
+            ConvertTo-Json | Set-Content "$output/cold-proof.json" -Encoding utf8
+        if (Compare-Object @(Get-Content "$output/warm-saves.sha256") @(Get-Content "$output/cold-saves.sha256")) {
+            throw 'Cold continuation changed the saved checkpoint files'
+        }
+        Write-Output 'PASS: Original Android time pickups, touch controls, imported owner, energy, save and cold continuation'
     }
     if ($PumoUiImport) {
         foreach ($name in @('pumo-ui-import-proof.json', 'pumo-ui-import.png')) {
@@ -251,13 +353,10 @@ try {
             Write-Output 'PASS: UI-imported original Pumo normal firing, hub transition and save restoration'
         }
     } else {
-        $render = "/sdcard/Android/data/$($script:PACKAGE)/files/xl-addon-picker.png"
-        Invoke-AddonAdb -Arguments @('pull', $render, "$output/render.png") | Out-Null
-        Invoke-AddonAdb -Arguments @('shell', 'rm', '-f', $render) | Out-Null
-        if ($DistributionName) {
-            $originalRender = "/sdcard/Android/data/$($script:PACKAGE)/files/xl-addon-picker-original.png"
-            Invoke-AddonAdb -Arguments @('pull', $originalRender, "$output/original-render.png") | Out-Null
-            Invoke-AddonAdb -Arguments @('shell', 'rm', '-f', $originalRender) | Out-Null
+        if (!$TimeEquipment) {
+            $render = "/sdcard/Android/data/$($script:PACKAGE)/files/xl-addon-picker.png"
+            Invoke-AddonAdb -Arguments @('pull', $render, "$output/render.png") | Out-Null
+            Invoke-AddonAdb -Arguments @('shell', 'rm', '-f', $render) | Out-Null
         }
     }
     $completed = $true

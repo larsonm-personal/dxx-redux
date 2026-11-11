@@ -1,4 +1,5 @@
 #include "boss_profile.h"
+#include "../time_equipment.h"
 #ifndef DXX_XL_ASSET_DEPENDENCIES_H
 #define DXX_XL_ASSET_DEPENDENCIES_H
 #include <set>
@@ -28,6 +29,7 @@ inline void asset_require(bool condition, const char *message)
 }
 struct ObjectDependencies {
 	bool xl_boss_spawning = false;
+	bool xl_time_equipment = false;
 	int robot_count = N_robot_types, joint_count = N_robot_joints, model_count = N_polygon_models;
 	// Read-only views permit validating staged HXM definitions before installation
 	const robot_info *robot_data = Robot_info;
@@ -160,6 +162,12 @@ struct ObjectDependencies {
 	}
 	void powerup(int id)
 	{
+		if (xl_time_equipment && xl_compat::time_equipment_powerup(id)) {
+			powerups.insert(id);
+			// Addon items use their owned image strips and the afterburner pickup sound
+			sound(Powerup_info[POW_AFTERBURNER].hit_sound);
+			return;
+		}
 		asset_require(id >= 0 && id < N_powerup_types, "object dependency references missing powerup");
 		if (powerups.insert(id).second) {
 			clip(Powerup_info[id].vclip_num);
@@ -204,7 +212,8 @@ struct ObjectDependencies {
 		clip(r.exp2_vclip_num);
 		if (r.contains_count > 0) contents(r.contains_type, r.contains_id);
 		if (r.smart_blobs || r.energy_blobs) weapon(ROBOT_SMART_HOMING_ID);
-		asset_require(!r.boss_flag || (xl_boss_spawning && xl_compat::supported_boss_profile(r.boss_flag)), "boss profile requires an implemented XL boss runtime");
+		if (r.boss_flag && !(xl_boss_spawning && xl_compat::supported_boss_profile(r.boss_flag)))
+			throw std::runtime_error("boss profile " + std::to_string(int(r.boss_flag)) + " requires an implemented XL boss runtime");
 		// Pinned AIB_STATIC installs CT_NONE/MT_NONE, so no AI joint animation runs
 		if (!animated) return;
 		asset_require(r.n_guns >= 0 && r.n_guns <= MAX_GUNS, "robot gun count invalid");

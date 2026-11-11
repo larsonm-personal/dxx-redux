@@ -1,5 +1,6 @@
 #include "slow_motion.h"
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 namespace xl_compat
@@ -101,6 +102,15 @@ class Frame
 	}
 	void advance()
 	{
+		if (in.force_off) {
+			// InitCountdown calls SlowMotionOff separately from the normal frame
+			if (slow() && s.clocks[0].direction != -1) {
+				set(0, 1);
+				if (!bullet()) set(1, 1);
+				message();
+			}
+			return;
+		}
 		const bool notify = toggle();
 		for (std::size_t i = 0; i < s.clocks.size(); ++i) {
 			auto &clock = s.clocks[i];
@@ -125,7 +135,9 @@ class Frame
 SlowMotionOutput slow_motion_frame(SlowMotionState &state, const SlowMotionInput &input, const SlowMotionSink &sink)
 {
 	if (!input.xl || input.multiplayer || input.nostalgia) return {};
-	if (input.now_ms < 0 || input.frame < 0 || input.frame > 65536 || input.difficulty < 0 || input.difficulty > 4 ||
+	// Native frames are uncapped, including stalls after loading or first rendering
+	// Bound the source's largest (difficulty + 4) * frame * 2 energy expression
+	if (input.now_ms < 0 || input.frame < 0 || input.frame > (std::numeric_limits<std::int32_t>::max)() / 16 || input.difficulty < 0 || input.difficulty > 4 ||
 	    input.energy < -1 || input.energy > 200 * 65536)
 		throw std::invalid_argument("Unqualified slow-motion input");
 	for (const auto &clock : state.clocks)

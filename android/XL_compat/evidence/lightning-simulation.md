@@ -15,7 +15,7 @@ The current gameplay presentation profile selects the original engine's global
 style 0 and `bUseLightning=1`: erratic parent bolts without child branches.
 Authored metadata is preserved. Random, angle-zero effects can retain authored
 style 1/2, child counts and positive-amplitude clamp flags under that selection.
-Unique stationary fixed endpoints are also qualified as described below. Fixed
+Stationary fixed endpoints are also qualified as described below. Fixed
 planes, moving waypoints and single-layer glow remain guarded.
 See the November 1 audit below for the original PMC content and source evidence.
 
@@ -755,9 +755,12 @@ under `temp/xl-playtest-20261101`.
 Original PMC3 owners320/322 link IDs1/2 across75 units despite an authored length60.
 The pinned StaticFrame selects the target and replaces length with integer-unit
 endpoint distance; sub-unit distances retain the source Create fallback distance.
-Admission requires a unique stationary target. Missing/ambiguous targets, waypoint
-motion, angled and in-plane profiles remain gated. Global style0 and disabled
-child branches retain the previously qualified source presentation profile.
+The current shared owner accepts stationary targets, chooses the first live
+matching ID in authored object order, and uses live orientation/length when the
+target is zero or absent. Zero-bolt anchors retain identity without an emitter.
+Waypoint motion and in-plane profiles remain gated; directed cones follow the
+separately qualified endpoint profile. Global style0 and disabled child branches
+retain the previously qualified source presentation profile.
 
 Fixed Setup normalizes the retained endpoint, applies offsets to both ends, and
 preserves the source endpoint drift across restarts. It does not consume random

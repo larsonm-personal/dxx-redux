@@ -2,6 +2,7 @@
 #include "../producer_layout.h"
 #include "../inventory.h"
 #include "preview.h"
+#include "slow_motion_runtime.h"
 #include <array>
 #include <cstdint>
 #include <vector>
@@ -174,9 +175,11 @@ extern "C" void xl_equipment_frame(int first_segment, int end_segment)
 			if (index < 0) continue;
 			auto &object = Objects[index];
 			if (type == POW_VULCAN_AMMO) object.ctype.powerup_info.count = VULCAN_AMMO_AMOUNT;
-			object.rtype.vclip_info.vclip_num = Powerup_info[type].vclip_num;
-			object.rtype.vclip_info.frametime = Vclip[object.rtype.vclip_info.vclip_num].frame_time;
-			object.rtype.vclip_info.framenum = 0;
+			if (!xl_time_equipment_initialize(&object, 1)) {
+				object.rtype.vclip_info.vclip_num = Powerup_info[type].vclip_num;
+				object.rtype.vclip_info.frametime = Vclip[object.rtype.vclip_info.vclip_num].frame_time;
+				object.rtype.vclip_info.framenum = 0;
+			}
 			object.matcen_creator = maker.owner;
 			object.lifeleft = IMMORTAL_TIME;
 		}

@@ -33,8 +33,10 @@ static void slow_motion_firing_state_controls(std::ostream &samples, int profile
 	GameTime64 = 10 * F1_0;
 	const nlohmann::json baseline{ -123, 2, 0 };
 	require(xl_runtime::restore_weapon_clock(baseline, true), "Cannot seed save validation");
-	for (const auto &invalid : { nlohmann::json(nullptr), nlohmann::json::array(), nlohmann::json{ 1, 0, 0 }, nlohmann::json{ 0.0, 0, 0 }, nlohmann::json{ true, 0, 0 }, nlohmann::json{ UINT64_MAX, 0, 0 }, nlohmann::json{ INT64_MIN, 0, 0 }, nlohmann::json{ 0, UINT64_MAX, 0 }, nlohmann::json{ 0, 0, UINT64_MAX }, nlohmann::json{ 0, -1, 0 }, nlohmann::json{ 0, 0, true }, nlohmann::json{ 0, 1 } }) {
-		require(!xl_runtime::restore_weapon_clock(invalid, false) && !xl_runtime::restore_weapon_clock(invalid, true), "Malformed weapon state accepted");
+	// Windows loadgl.h defines true as an integer; retain actual JSON booleans
+	for (const auto &invalid : { nlohmann::json(nullptr), nlohmann::json::array(), nlohmann::json{ 1, 0, 0 }, nlohmann::json{ 0.0, 0, 0 }, nlohmann::json{ bool{ true }, 0, 0 }, nlohmann::json{ UINT64_MAX, 0, 0 }, nlohmann::json{ INT64_MIN, 0, 0 }, nlohmann::json{ 0, UINT64_MAX, 0 }, nlohmann::json{ 0, 0, UINT64_MAX }, nlohmann::json{ 0, -1, 0 }, nlohmann::json{ 0, 0, bool{ true } }, nlohmann::json{ 0, 1 } }) {
+		const auto diagnostic = "Malformed weapon state accepted: " + invalid.dump();
+		require(!xl_runtime::restore_weapon_clock(invalid, false) && !xl_runtime::restore_weapon_clock(invalid, true), diagnostic.c_str());
 		require(xl_runtime::weapon_clock_snapshot() == baseline, "Rejected weapon state partially published");
 	}
 	require(xl_runtime::restore_weapon_clock(nlohmann::json{ -456, 3, 1 }, false) && xl_runtime::weapon_clock_snapshot() == baseline, "Validation-only weapon restore mutated state");

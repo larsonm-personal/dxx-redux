@@ -23,6 +23,10 @@ unsigned lightning_line_device_controls()
 	const auto core = lightning_core_geometry(points, [](const LightningVertex &p) { return p[2]; });
 	const LightningGlow glow{};
 	const std::array<float, 4> color{ 0, .25f, .5f, .75f };
+	int subpixel_bits = 0;
+	glGetIntegerv(GL_SUBPIXEL_BITS, &subpixel_bits);
+	const double grid = std::ldexp(1.0, -subpixel_bits);
+	require(subpixel_bits >= 4 && grid > 0 && std::isfinite(grid), "Invalid native raster subpixel precision");
 	unsigned cases = 0;
 	for (float width : { 1.5f, 2.53125f, 3.f, 5.0625f, 10.f, 20.f, 40.f })
 		for (bool occluded : { false, true })
@@ -42,19 +46,39 @@ unsigned lightning_line_device_controls()
 				require(view == std::array<int, 4>{ 0, 0, 64, 64 } && box == std::array<int, 4>{ 9, 12, 35, 30 } && bool(glIsEnabled(GL_SCISSOR_TEST)) == scissored, "Wide lightning device control lost viewport/scissor state");
 				std::array<unsigned char, 64 * 64 * 4> pixels{};
 				glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-				for (unsigned y = 0; y < 64; ++y)
-					for (unsigned x = 0; x < 64; ++x) {
-						const float px = float(x) + .5f, py = float(y) + .5f;
-						const float along = (std::min) (px - 15.75f, 48.75f - px);
-						const float across = width * .5f + .5f - std::abs(py - 32.25f);
-						const bool visible = !occluded && along > 0 && across > 0 && (!scissored || (x >= 9 && x < 44 && y >= 12 && y < 42));
-						const float coverage = (std::min) (along, 1.f) * (std::min) (across, 1.f);
-						for (unsigned c = 0; c < 4; ++c) {
-							const int expected = visible ? int(std::lround(255.f * color[c] * (c == 3 ? coverage : 1.f))) : 0;
-							if (std::abs(int(pixels[(y * 64 + x) * 4 + c]) - expected) > 1)
-								throw std::runtime_error("Wide lightning device pixels differ: width=" + std::to_string(width) + " occluded=" + std::to_string(occluded) + " scissored=" + std::to_string(scissored) + " x=" + std::to_string(x) + " y=" + std::to_string(y) + " channel=" + std::to_string(c) + " expected=" + std::to_string(expected) + " actual=" + std::to_string(pixels[(y * 64 + x) * 4 + c]));
+				for (unsigned y = 0; y < 64; ++y) {
+					// X bounds are exact on every ES grid; Y edges can round to adjacent grid positions
+					const double half = double(width) * .5 + .5, py = double(y) + .5;
+					const double bottom = 32.25 - half, top = 32.25 + half;
+					double minimum = 1, maximum = 0;
+					bool possible = false, certain = true;
+					for (double lower : { std::floor(bottom / grid) * grid, std::ceil(bottom / grid) * grid })
+						for (double upper : { std::floor(top / grid) * grid, std::ceil(top / grid) * grid }) {
+							const bool inside = py >= lower && py <= upper;
+							possible |= inside;
+							certain &= py > lower && py < upper;
+							const double distance = -half + (py - lower) * (2 * half) / (upper - lower);
+							const double coverage = inside ? (std::clamp) (half - std::abs(distance), 0.0, 1.0) : 0;
+							minimum = (std::min) (minimum, coverage);
+							maximum = (std::max) (maximum, coverage);
 						}
+					for (unsigned x = 0; x < 64; ++x) {
+						const float px = float(x) + .5f;
+						const float along = (std::min) (px - 15.75f, 48.75f - px);
+						const bool visible = !occluded && along > 0 && possible && (!scissored || (x >= 9 && x < 44 && y >= 12 && y < 42));
+						const auto *pixel = pixels.data() + (y * 64 + x) * 4;
+						bool colored = true, blank = true;
+						for (unsigned c = 0; c < 3; ++c) {
+							colored &= std::abs(int(pixel[c]) - int(std::lround(255.f * color[c]))) <= 1;
+							blank &= pixel[c] <= 1;
+						}
+						const double alpha = 255.0 * color[3] * (std::clamp) (double(along), 0.0, 1.0);
+						const int lower_alpha = visible && colored ? int(std::floor(alpha * minimum)) : 0;
+						const int upper_alpha = visible && colored ? int(std::ceil(alpha * maximum)) : 0;
+						if (!(visible ? colored || (blank && !certain) : blank) || int(pixel[3]) < lower_alpha - 1 || int(pixel[3]) > upper_alpha + 1)
+							throw std::runtime_error("Wide lightning device pixels differ: width=" + std::to_string(width) + " occluded=" + std::to_string(occluded) + " scissored=" + std::to_string(scissored) + " x=" + std::to_string(x) + " y=" + std::to_string(y) + " alpha_range=" + std::to_string(lower_alpha) + "," + std::to_string(upper_alpha) + " actual_alpha=" + std::to_string(pixel[3]) + " subpixel_bits=" + std::to_string(subpixel_bits));
 					}
+				}
 				require(glGetError() == GL_NO_ERROR, "Wide lightning device control raised a GPU error");
 				++cases;
 			}
@@ -72,10 +96,11 @@ void lightning_gpu_probe(const char *operation)
 	require(Game_wind && ConsoleObject && !(Game_mode & GM_MULTI) && game_is_time_paused(), "Lightning GPU control requires paused singleplayer");
 	if (!std::strcmp(operation, "capture")) {
 		Inventory request;
+		request.segments.resize(1);
 		Object source{};
 		source.type = 20;
-		source.id = 1;
-		source.render = 12;
+		source.id = source.reader_id = 1;
+		source.render = source.reader_render = 12;
 		source.render_data = { 300, 50, 18, 5, 1, -1, 3, 0, 0, 8, 0, 2, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, 1 };
 		request.objects.push_back(source);
 		lightning_probe_image = prepare_lightning_image(request);

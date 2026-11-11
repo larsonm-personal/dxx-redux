@@ -1703,6 +1703,7 @@ int main(int argc, char **argv)
 			owner.reader_id = 1;
 			owner.render = owner.reader_render = 12;
 			owner.segment = 0;
+			owner.orientation = { 65536, 0, 0, 0, 65536, 0, 0, 0, 65536 };
 			// Original tulev4 object 307, with only its segment relocated into this fixture
 			owner.render_data = { 300, 50, 18, 5, 1, -1, 3, 0, 0, 8, 0, 2, 20, 0, 0, 0, 0, 1, 1, 1, 0, 0, 52, 149, 128, 1 };
 			lightning.objects.push_back(owner);
@@ -1713,12 +1714,19 @@ int main(int argc, char **argv)
 			// Original pmlev3 object 318, with only its segment relocated into this fixture
 			nonglow.objects.back().render_data = { 300, 50, 15, 5, 1, -1, 3, 0, 0, 6, 0, 2, 20, 0, 0, 0, 0, 0, 0, 1, 0, 160, 160, 0, 128, 1 };
 			check(xl_compat::runtime_blockers(nonglow).empty(), "Implemented original non-glowing lightning profile rejected");
-			for (const auto &change : std::vector<std::pair<unsigned, int>>{ { 0, 0 }, { 2, 0 }, { 5, 0 }, { 6, 0 }, { 9, 4 }, { 9, 640 }, { 11, 0 }, { 13, 1 }, { 14, 3 }, { 19, 0 }, { 20, 1 }, { 21, 256 } }) {
+			for (const auto &change : std::vector<std::pair<unsigned, int>>{ { 0, 0 }, { 2, 0 }, { 5, 0 }, { 9, 4 }, { 9, 640 }, { 11, 0 }, { 14, 3 }, { 20, 1 }, { 21, 256 } }) {
 				auto invalid = lightning;
 				invalid.objects.back().render_data[change.first] = change.second;
 				check(xl_compat::blocker_message(xl_compat::runtime_blockers(invalid)).find("effect_lightning at record") != std::string::npos,
 				      "Unsupported lightning profile lost its per-object rejection");
 			}
+			auto anchor = lightning;
+			anchor.objects.back().render_data[6] = 0;
+			anchor.objects.back().render_data[2] = 0;
+			check(xl_compat::runtime_blockers(anchor).empty(), "Target-only lightning required an emitter population");
+			auto fallback = lightning;
+			fallback.objects.back().render_data[19] = 0;
+			check(xl_compat::runtime_blockers(fallback).empty(), "Target-zero lightning rejected its orientation endpoint");
 			for (const auto &payload : std::vector<std::vector<int>>{
 			         { 2000, 0, 30, 5, 1, -1, 50, 0, 0, 50, 5, 3, 3, 0, 1, 1, 1, 0, 0, 1, 0, 32, 64, 255, 100, 1 },
 			         { 300, 50, 15, 5, 1, -1, 3, 4, 4, 6, 1, 2, 20, 0, 0, 0, 0, 0, 0, 1, 0, 129, 0, 215, 128, 1 } }) {
@@ -1759,12 +1767,15 @@ int main(int argc, char **argv)
 					auto invalid = cone;
 					auto &bad = invalid.objects.back();
 					if (variant == 0) bad.position = invalid.objects[invalid.objects.size() - 2].position;
-					if (variant == 1) bad.render_data[8] = 999;
+					if (variant == 1) {
+						bad.render_data[8] = 999;
+						bad.render_data[2] = 0;
+					}
 					if (variant == 2) bad.render_data[13] = 255;
 					if (variant == 3) bad.render_data[20] = 1;
 					if (variant == 4) bad.render_data[5] = 0;
 					if (variant == 5) bad.movement = 1;
-					if (variant == 6) invalid.objects.push_back(target);
+					if (variant == 6) bad.segment = -1;
 					check(!xl_compat::runtime_blockers(invalid).empty(), "Directed admission lost target/profile safety checks");
 				}
 			}
@@ -1892,7 +1903,9 @@ int main(int argc, char **argv)
 				bad_equipment = equipment;
 				patch(bad_equipment, table, id < 32 ? 1u << id : 0u);
 				patch(bad_equipment, table + 4, id >= 32 ? 1u << (id - 32) : 0u);
-				rejects([&] { xl_compat::prepare_gameplay_probe(bad_equipment); });
+				if (id < 48) rejects([&] { xl_compat::prepare_gameplay_probe(bad_equipment); });
+				else check(xl_compat::prepare_gameplay_probe(bad_equipment).source.equipment[0][1] == std::int32_t(1u << (id - 32)),
+					       "Time equipment producer was rejected or lost its authored item bit");
 			}
 			bad_equipment = equipment;
 			patch(bad_equipment, table + 4, 0x80000000u);

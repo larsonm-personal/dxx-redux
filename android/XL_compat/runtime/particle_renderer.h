@@ -28,6 +28,7 @@ class ParticleTexture
 	ParticleTexture(const PogBitmap &pixels, const char *name, bool require_soft_depth = true);
 	~ParticleTexture();
 	void draw(const ParticleQuad *quads, std::size_t count);
+	void draw_sprite(const ParticleQuad &quad);
 	// Source powerup corona: additive sprite, radius-5 soft depth, transparent border
 	void draw_soft_sprite(const ParticleQuad &quad, bool soft = true);
 	unsigned handle();

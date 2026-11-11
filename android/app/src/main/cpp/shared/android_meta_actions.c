@@ -128,6 +128,9 @@ static const meta_action_entry_t dispatch_table[] = {
 
 	/* Drop marker: instant F4 */
 	{ META_DROP_MARKER, META_FLAG_INSTANT, 1, { SDLK_F4 } },
+	/* Keep these shortcuts in sync with D2 HandleGameKey */
+	{ META_SLOW_MOTION, META_FLAG_INSTANT, 2, { SDLK_LALT, SDLK_s } },
+	{ META_BULLET_TIME, META_FLAG_INSTANT, 2, { SDLK_LALT, SDLK_b } },
 
 	/* Direct weapon selection: instant digit keys */
 	{ META_WEAPON_1, META_FLAG_INSTANT, 1, { SDLK_1 } },

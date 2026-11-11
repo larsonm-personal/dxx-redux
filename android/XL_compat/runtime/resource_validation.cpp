@@ -1,4 +1,5 @@
 #include "resource_validation.h"
+#include "slow_motion_runtime.h"
 #include "camera_collision.h"
 #include "level_messages.h"
 #include "../model_geometry.h"
@@ -31,6 +32,7 @@
 #include "../ase_mesh.h"
 #include "../model_names.h"
 #include "../particle_image.h"
+#include "../time_equipment.h"
 #include <utility>
 #ifdef __ANDROID__
 #include "../../app/src/main/cpp/shared/android_mission_assets.h"
@@ -823,6 +825,7 @@ struct XlPreparedResources::State {
 	std::shared_ptr<const xl_compat::ParticleImageResource> bubble_image;
 	std::shared_ptr<const xl_compat::ParticleImageResource> lightning_image;
 	std::shared_ptr<const xl_compat::ParticleImageResource> powerup_glare_image;
+	std::array<std::shared_ptr<const xl_compat::AnimatedImageResource>, 2> time_equipment_images;
 	std::vector<std::unique_ptr<NativeModel>> native_models;
 	struct CollisionModel {
 		xl_compat::RenderModelSphere sphere;
@@ -938,6 +941,8 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 		state->bubble_image = xl_compat::prepare_particle_image(*level, 2);
 		state->lightning_image = xl_compat::prepare_lightning_image(*level);
 		state->powerup_glare_image = xl_compat::prepare_powerup_glare_image();
+		if (xl_runtime::time_equipment_resources_required(*level))
+			for (unsigned i = 0; i < 2; ++i) state->time_equipment_images[i] = xl_compat::prepare_time_equipment_image(i);
 	}
 	std::string base = level_filename;
 	const auto dot = base.find_last_of('.');
@@ -1219,6 +1224,14 @@ const xl_compat::ParticleImageResource *XlPreparedResources::powerup_glare_image
 const xl_compat::ParticleImageResource *xl_prepared_powerup_glare_image()
 {
 	return prepared_resources ? prepared_resources->powerup_glare_image() : nullptr;
+}
+const xl_compat::AnimatedImageResource *XlPreparedResources::time_equipment_image(unsigned index) const
+{
+	return state->time_equipment_images.at(index).get();
+}
+const xl_compat::AnimatedImageResource *xl_prepared_time_equipment_image(unsigned index)
+{
+	return prepared_resources ? prepared_resources->time_equipment_image(index) : nullptr;
 }
 
 bool XlPreparedResources::texture_brightness(int texture, int &brightness) const

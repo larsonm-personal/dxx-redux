@@ -209,6 +209,8 @@ static int water_actors_test(int argc, char **argv)
 		auto &energy = Objects[items(20)[0]];
 		collide_player_and_powerup(ConsoleObject, &energy, &energy.pos);
 		require(Players[Player_num].energy > i2f(50) && (energy.flags & OF_SHOULD_BE_DEAD), "wet generated energy did not grant the ordinary pickup reward");
+		// This arithmetic control uses its own zero-based clock after disk restore
+		xl_slow_motion_reset();
 		xl_compat::SlowMotionInput slow_input;
 		slow_input.energy = 100 * F1_0;
 		slow_input.equipment = xl_compat::slow_motion_equipment;

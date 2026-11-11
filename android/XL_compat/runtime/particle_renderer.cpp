@@ -137,6 +137,12 @@ void ParticleTexture::draw(const ParticleQuad *quads, std::size_t count)
 		draw_particle_quads(state->bitmap, quads, count);
 }
 
+void ParticleTexture::draw_sprite(const ParticleQuad &quad)
+{
+	(void) handle();
+	draw_particle_quads(state->bitmap, &quad, 1);
+}
+
 void draw_multi_particle_quads(ParticleTexture &smoke, ParticleTexture &bubble, const ParticleQuad *quads, std::size_t count, bool soft)
 {
 	if (!count) return;

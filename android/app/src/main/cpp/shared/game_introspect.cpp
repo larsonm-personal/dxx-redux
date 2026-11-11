@@ -38,6 +38,7 @@
 #include "flicker.h"
 #include "level_messages.h"
 #include "named_audio_state.h"
+#include "slow_motion_save.h"
 #include "gameplay_audio.h"
 #include "named_audio_probe.h"
 #include "texture_action_probe.h"
@@ -2329,6 +2330,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["xl_fog"] = { { "active", xl_fog_active() != 0 }, { "preparations", fog.preparations }, { "volume_passes", fog.volume_passes }, { "composite_passes", fog.composite_passes }, { "boundaries", fog.boundaries }, { "context_rebuilds", fog.context_rebuilds }, { "failures", fog.failures }, { "width", fog.width }, { "height", fog.height }, { "depth_bits", fog.depth_bits }, { "types", fog.last_types }, { "direct_depth", fog.direct_depth != 0 }, { "direct_depth_bits", fog.direct_depth_bits }, { "direct_scenes", fog.direct_scenes }, { "depth_copy_bits", fog.depth_copy_bits }, { "depth_copy_value", fog.depth_copy_value }, { "gpu_probe", json::parse(xl_fog_probe_result()) }, { "scene_probe", { { "completed", scene.completed != 0 }, { "passed", scene.passed != 0 }, { "pixels", scene.pixels }, { "covered", scene.covered }, { "changed", scene.changed }, { "types", scene.types }, { "samples", scene.samples }, { "presentation_samples", scene.presentation_samples }, { "depth_bits", scene.depth_bits }, { "max_error", scene.max_error }, { "error", ogl_xl_fog_scene_error() }, { "center_depth", scene.center_depth }, { "center_caps", scene.center_caps }, { "max_length", scene.max_length }, { "center_before", scene.center_before }, { "center_after", scene.center_after }, { "center_expected", scene.center_expected } } } };
 	}
 	j["xl_pilot"]["flicker_count"] = xl_flicker_count();
+	j["xl_pilot"]["slow_motion"] = xl_runtime::slow_motion_diagnostics();
 	{
 		xl_message_state state{};
 		xl_message_state_get(&state);

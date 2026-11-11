@@ -31,6 +31,8 @@ internal class XlAddonImportChecks(
                         "other/hoard.ham" to "not requested",
                     )
                 SevenZOutputFile(source).use { archive ->
+                    // Exercise the portable fallback; the genuine distribution covers native LZMA2
+                    archive.setContentCompression(org.apache.commons.compress.archivers.sevenz.SevenZMethod.COPY)
                     for ((name, text) in fixtures) {
                         val file = File(root, "input").apply { writeText(text) }
                         val entry = archive.createArchiveEntry(file, name)

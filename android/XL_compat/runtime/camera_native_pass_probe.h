@@ -73,21 +73,36 @@ unsigned camera_native_pass_controls(std::vector<unsigned char> &retained)
 #endif
 		target.capture(spec, [&] {
 			GLint expected_fbo, actual_fbo, viewport[4];
+			int target_width = -1, target_height = -1;
+			const int active = xl_camera_target_active_dimensions(&target_width, &target_height);
 			glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &expected_fbo);
 			ogl_start_frame();
 			glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &actual_fbo);
 			glGetIntegerv(GL_VIEWPORT, viewport);
-			if (expected_fbo != actual_fbo || viewport[0] != 3 || viewport[1] != 4 || viewport[2] != Canvas_width || viewport[3] != Canvas_height)
-				throw std::runtime_error("Native frame setup replaced camera FBO or viewport");
+			int fog_width = 0, fog_height = 0;
+			const bool fog_target = ogl_xl_fog_direct_depth_dimensions(&fog_width, &fog_height) != 0;
+			// Native geometry may use the owned fog/depth intermediate until frame end
+			if ((expected_fbo != actual_fbo && (!fog_target || fog_width != 3 + Canvas_width || fog_height != 4 + Canvas_height)) ||
+			    viewport[0] != 3 || viewport[1] != 4 || viewport[2] != Canvas_width || viewport[3] != Canvas_height)
+				throw std::runtime_error("Native frame setup replaced camera FBO or viewport: fbo=" + std::to_string(expected_fbo) + "," + std::to_string(actual_fbo) + " viewport=" + std::to_string(viewport[0]) + "," + std::to_string(viewport[1]) + "," + std::to_string(viewport[2]) + "," + std::to_string(viewport[3]) + " canvas=" + std::to_string(Canvas_width) + "," + std::to_string(Canvas_height) + " capture=" + std::to_string(active) + "," + std::to_string(target_width) + "," + std::to_string(target_height));
+			const auto geometry_fbo = actual_fbo;
+			glDisable(GL_SCISSOR_TEST);
+			glClearColor(.2f, .4f, .6f, 1);
+			glClear(GL_COLOR_BUFFER_BIT);
 			ogl_prepare_framebuffer_readback();
 			glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &actual_fbo);
-			if (actual_fbo != expected_fbo) throw std::runtime_error("Native readback resolved the main framebuffer during camera capture");
-			pattern.paint(spec.width, spec.height, [&](int buffer) { target.select(buffer); });
+			if (actual_fbo != geometry_fbo) throw std::runtime_error("Native readback resolved the main framebuffer during camera capture");
 			ogl_end_frame();
 			glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &actual_fbo);
 			glGetIntegerv(GL_VIEWPORT, viewport);
 			if (actual_fbo != expected_fbo || viewport[0] || viewport[1] || viewport[2] != spec.width || viewport[3] != spec.height)
 				throw std::runtime_error("Native frame teardown lost camera target dimensions");
+			std::array<unsigned char, 4> presented{};
+			glReadPixels(3, 4, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, presented.data());
+			for (unsigned channel = 0; channel < 4; ++channel)
+				if (std::abs(int(presented[channel]) - std::array<int, 4>{ 51, 102, 153, 255 }[channel]) > 1)
+					throw std::runtime_error("Native camera pass did not present its geometry target");
+			pattern.paint(spec.width, spec.height, [&](int buffer) { target.select(buffer); });
 		});
 #ifdef ANDROID
 		ogl_msaa_get_diagnostics(&msaa_after);

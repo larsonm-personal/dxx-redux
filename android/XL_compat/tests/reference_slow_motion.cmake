@@ -25,6 +25,7 @@ foreach(
     "void InitSlowMotion ("
     "int32_t SlowMotionActive ("
     "int32_t BulletTimeActive ("
+    "void SlowMotionOff ("
     "int32_t ToggleSlowMotion ("
     "void DoSlowMotionFrame (")
     extract_face_function("${slow_motion_source}" "${signature}")

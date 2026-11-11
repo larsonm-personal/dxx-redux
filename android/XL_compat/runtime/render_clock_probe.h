@@ -1,5 +1,7 @@
 #ifndef XL_RENDER_CLOCK_PROBE_H
 #define XL_RENDER_CLOCK_PROBE_H
+#include "named_audio_state.h"
+#include "resource_validation.h"
 // Developer qualification only; this deliberately controls camera and end-level state
 static int xl_render_clock_probe(const char *path)
 {
@@ -115,6 +117,239 @@ static int xl_render_clock_probe(const char *path)
 		proof["error"] = error.what();
 		write();
 		std::fprintf(stderr, "XL render-clock probe failed: %s\n", error.what());
+		return 1;
+	}
+}
+// Reuse the rendered probe's ordinary startup, renderer and private save directory
+static int xl_time_equipment_probe(const char *path, bool resume, int carried_level)
+{
+	using nlohmann::ordered_json;
+	ordered_json proof = { { "schema", "xl-time-equipment-gameplay-v1" }, { "assisted", bool{ true } }, { "complete", bool{ false } }, { "cold_resume", resume }, { "position_assists", 0 }, { "level_load_assists", 0 }, { "carried_level", carried_level }, { "events", ordered_json::array() } };
+	const auto write = [&]() {
+		std::ofstream out(path);
+		out << proof.dump(2) << '\n';
+		return out.good();
+	};
+	try {
+		const auto require = [](bool ok, const char *message) {
+			if (!ok) throw std::runtime_error(message);
+		};
+		const auto *renderer = glGetString(GL_RENDERER);
+		require(renderer && Game_wind && xl_level_extensions_active() && !game_is_time_paused() &&
+		            route_confirmation_get_summary()->status == ROUTE_CONFIRMATION_IDLE,
+		        "Time equipment requires an initialized idle XL game");
+		proof["renderer"] = reinterpret_cast<const char *>(renderer);
+		proof["mission"] = Current_mission_filename;
+		proof["level"] = Current_level_num;
+		char driver[128]{};
+		proof["audio_driver"] = SDL_AudioDriverName(driver, sizeof(driver)) ? driver : "";
+		proof["audio_backend_ready"] = bool(xl_named_audio_backend_ready());
+		proof["sound_disabled"] = bool(GameArg.SndNoSound);
+		const int level = Current_level_num;
+		int running_level = level;
+		const auto initial = *ConsoleObject;
+		Controls = {};
+		const auto pose = [&](const object &actor) {
+			ConsoleObject->pos = ConsoleObject->last_pos = actor.pos;
+			ConsoleObject->orient = actor.orient;
+			ConsoleObject->mtype.phys_info.velocity = {};
+			obj_relink(int(ConsoleObject - Objects), actor.segnum);
+			proof["position_assists"] = proof["position_assists"].get<int>() + 1;
+		};
+		const auto frames = [&](int count, bool thrust = false) {
+			for (int i = 0; i < count; ++i) {
+				SDL_Delay(26);
+				timer_update();
+				FrameTime = F1_0 / 60;
+				Controls = {};
+				Controls.forward_thrust_time = thrust ? FrameTime : 0;
+				calc_game_time();
+				GameProcessFrame();
+				game_render_frame();
+				gr_flip();
+				require(glGetError() == GL_NO_ERROR && Current_level_num == running_level && !Player_is_dead,
+				        "Time equipment gameplay failed or changed level");
+			}
+		};
+		const auto sample = [&](const char *event) {
+			const auto audio = xl_compat::named_audio_diagnostics();
+			proof["events"].push_back({ { "event", event }, { "level", Current_level_num }, { "clocks", xl_runtime::slow_motion_diagnostics() }, { "energy", Players[Player_num].energy }, { "shields", Players[Player_num].shields }, { "elapsed_ms", SDL_GetTicks() }, { "audio", { { "slowdown", audio.at("slowdown") }, { "output_callbacks", audio.at("output_callbacks") }, { "output_frames", audio.at("output_frames") }, { "paused", audio.at("paused") }, { "resume_pending", audio.at("resume_pending") }, { "output_volume", audio.at("output_volume") }, { "effects_volume", audio.at("effects_volume") }, { "starts", audio.at("starts") }, { "completions", audio.at("completions") }, { "external_resources", audio.at("external_resources") } } }, { "position", { ConsoleObject->pos.x, ConsoleObject->pos.y, ConsoleObject->pos.z } } });
+			require(write(), "Cannot write time-equipment progress");
+			// Developer screenshots read the back buffer before it is swapped/cleared
+			game_render_frame();
+			save_screen_shot(0);
+			gr_flip();
+		};
+		char file[] = "time-equipment.sav", description[] = "Original time equipment";
+		if (resume) {
+			require(state_restore_all_sub(file, 0), "Cannot cold-restore earned time equipment");
+			if (game_is_time_paused()) start_time();
+			require((Players[Player_num].flags & (XL_PLAYER_FLAGS_SLOW_MOTION | XL_PLAYER_FLAGS_BULLET_TIME)) ==
+			                (XL_PLAYER_FLAGS_SLOW_MOTION | XL_PLAYER_FLAGS_BULLET_TIME) &&
+			            xl_runtime::slow_motion_state().clocks[0].speed == 3 && xl_runtime::slow_motion_state().clocks[1].speed == 1,
+			        "Cold restore lost equipment or active bullet-time clocks");
+			sample("cold_restored");
+			frames(12);
+		} else {
+			for (const int id : { 48, 49 }) {
+				int pickup = -1;
+				for (int i = 0; i <= Highest_object_index; ++i)
+					if (Objects[i].type == OBJ_POWERUP && Objects[i].id == id) {
+						pickup = i;
+						break;
+					}
+				require(pickup >= 0, "Original mission has no time-equipment pickup");
+				const auto actor = Objects[pickup];
+				auto approach = actor;
+				// Native pickup assistance reaches twice the combined collision radii
+				const fix distance = 2 * (actor.size + ConsoleObject->size) + F1_0;
+				vms_vector center, inward;
+				compute_segment_center(&center, &Segments[actor.segnum]);
+				vm_vec_sub(&inward, &center, &actor.pos);
+				vm_vec_normalize_quick(&inward);
+				bool found = false;
+				for (auto direction : { inward, actor.orient.fvec, actor.orient.rvec, actor.orient.uvec,
+				                        vms_vector{ -actor.orient.fvec.x, -actor.orient.fvec.y, -actor.orient.fvec.z },
+				                        vms_vector{ -actor.orient.rvec.x, -actor.orient.rvec.y, -actor.orient.rvec.z },
+				                        vms_vector{ -actor.orient.uvec.x, -actor.orient.uvec.y, -actor.orient.uvec.z } }) {
+					if (!vm_vec_mag_quick(&direction)) continue;
+					vm_vec_scale_add(&approach.pos, &actor.pos, &direction, distance);
+					auto origin = actor.pos;
+					fvi_query query{};
+					query.p0 = &origin;
+					query.p1 = &approach.pos;
+					query.startseg = actor.segnum;
+					query.rad = ConsoleObject->size;
+					query.thisobjnum = short(ConsoleObject - Objects);
+					fvi_info hit{};
+					if (find_vector_intersection(&query, &hit) != HIT_NONE || hit.hit_seg < 0) continue;
+					approach.segnum = short(hit.hit_seg);
+					inward = direction;
+					found = true;
+					break;
+				}
+				require(found, "Original time-equipment approach is obstructed");
+				vm_vec_negate(&inward);
+				vm_vector_2_matrix(&approach.orient, &inward, nullptr, nullptr);
+				pose(approach);
+				frames(2);
+				require(!(Players[Player_num].flags & (id == 48 ? XL_PLAYER_FLAGS_SLOW_MOTION : XL_PLAYER_FLAGS_BULLET_TIME)),
+				        "Time-equipment approach collected before its visible observation");
+				sample(id == 48 ? "visible_slow_motion_pickup" : "visible_bullet_time_pickup");
+				proof["events"].back()["pickup_id"] = id;
+				proof["events"].back()["pickup_frame"] = Objects[pickup].rtype.vclip_info.framenum;
+				for (unsigned frame = 0; frame < 90 && !(Players[Player_num].flags & (id == 48 ? XL_PLAYER_FLAGS_SLOW_MOTION : XL_PLAYER_FLAGS_BULLET_TIME)); ++frame)
+					frames(1, true);
+				require(Players[Player_num].flags & (id == 48 ? XL_PLAYER_FLAGS_SLOW_MOTION : XL_PLAYER_FLAGS_BULLET_TIME),
+				        "Normal collision did not collect the original time equipment");
+			}
+			// Original equipment rooms can replenish the energy being measured
+			pose(initial);
+			frames(2);
+			sample("earned_original_pickups");
+		}
+		const fix energy = Players[Player_num].energy;
+		require(HandleGameKey(KEY_ALTED | KEY_S), "Normal slow-motion key was not consumed");
+		frames(40);
+		const auto paused_clocks = xl_runtime::slow_motion_diagnostics();
+		const auto paused_energy = Players[Player_num].energy;
+		d_event deactivated{ EVENT_WINDOW_DEACTIVATED }, activated{ EVENT_WINDOW_ACTIVATED };
+		window_send_event(Game_wind, &deactivated);
+		require(game_is_time_paused(), "Normal window deactivation did not pause time equipment");
+		SDL_Delay(120);
+		require(xl_runtime::slow_motion_diagnostics() == paused_clocks && Players[Player_num].energy == paused_energy,
+		        "Paused time equipment changed clocks or energy");
+		window_send_event(Game_wind, &activated);
+		require(!game_is_time_paused(), "Normal window activation did not resume time equipment");
+		proof["pause_resume_preserved"] = bool{ true };
+		frames(44);
+		sample("ordinary_slow_motion");
+		require(xl_runtime::slow_motion_state().clocks[0].speed == 3 && xl_runtime::slow_motion_state().clocks[1].speed == 3 &&
+		            Players[Player_num].energy < energy,
+		        "Ordinary slow motion did not slow both clocks and spend energy");
+		// Same ordinary thrust interval from the same original pose, with live AI
+		const auto movement = [&](const char *event) {
+			pose(initial);
+			frames(24, true);
+			const auto distance = vm_vec_dist(&initial.pos, &ConsoleObject->pos);
+			sample(event);
+			require(distance > 0, "Ordinary player thrust did not move the ship");
+			return distance;
+		};
+		const auto slow_distance = movement("slow_motion_thrust");
+		require(HandleGameKey(KEY_ALTED | KEY_B), "Normal bullet-time key was not consumed");
+		frames(84);
+		sample("bullet_time");
+		require(xl_runtime::slow_motion_state().clocks[0].speed == 3 && xl_runtime::slow_motion_state().clocks[1].speed == 1,
+		        "Bullet time did not separate the player and world clocks");
+		const auto bullet_distance = movement("bullet_time_thrust");
+		require(bullet_distance > slow_distance, "Bullet time did not preserve faster ordinary player movement");
+		proof["same_input_movement"] = { { "frames", 24 }, { "slow_distance_raw", slow_distance }, { "bullet_distance_raw", bullet_distance } };
+		if (resume) {
+			require(HandleGameKey(KEY_ALTED | KEY_B), "Normal time-off key was not consumed");
+			frames(84);
+			sample("normal_time_after_resume");
+			require(xl_runtime::slow_motion_state().clocks[0].speed == 1 && xl_runtime::slow_motion_state().clocks[1].speed == 1,
+			        "Cold continuation did not return to normal time");
+		}
+		stop_time();
+		require(state_save_all_sub(file, description), "Cannot save active original time equipment");
+		if (resume && carried_level) {
+			// Explicit level-load assists qualify carried resources, not campaign travel
+			running_level = carried_level;
+			proof["phase"] = "carried_level_load";
+			require(write(), "Cannot write carried-level progress");
+			input_demo_set_skip_level_intro(1);
+			StartNewLevel(running_level);
+			const auto equipment = XL_PLAYER_FLAGS_SLOW_MOTION | XL_PLAYER_FLAGS_BULLET_TIME;
+			require(xl_level_extensions_active() && (Players[Player_num].flags & equipment) == equipment &&
+			            xl_runtime::slow_motion_state().clocks[0].speed == 1 && xl_runtime::slow_motion_state().clocks[1].speed == 1 &&
+			            xl_prepared_time_equipment_image(0) && xl_prepared_time_equipment_image(1),
+			        "Level transition lost carried devices/resources or retained active clocks");
+			if (game_is_time_paused()) start_time();
+			require(HandleGameKey(KEY_ALTED | KEY_B), "Carried bullet-time key was not consumed");
+			frames(84);
+			sample("carried_to_selected_level");
+			char carried[] = "time-equipment-carried.sav";
+			stop_time();
+			require(state_save_all_sub(carried, description), "Cannot save carried time equipment");
+			proof["phase"] = "carried_new_game";
+			require(write(), "Cannot write carried new-game progress");
+			input_demo_set_skip_level_intro(1);
+			// Same fresh negative-level entry as the existing rendered readiness probe
+			if (running_level < 0) Newdemo_state = ND_STATE_PLAYBACK;
+			StartNewGame(running_level);
+			if (running_level < 0) Newdemo_state = ND_STATE_NORMAL;
+			require(!(Players[Player_num].flags & equipment) && !xl_prepared_time_equipment_image(0) && !xl_prepared_time_equipment_image(1),
+			        "New game did not clear devices or carried-only resources");
+			sample("new_game_cleared_equipment");
+			char unequipped[] = "time-equipment-new-game.sav";
+			stop_time();
+			require(state_save_all_sub(unequipped, description), "Cannot save the unequipped new game");
+			proof["phase"] = "carried_restore";
+			require(write(), "Cannot write carried restore progress");
+			require(state_restore_all_sub(carried, 0) && (Players[Player_num].flags & equipment) == equipment &&
+			            xl_prepared_time_equipment_image(0) && xl_prepared_time_equipment_image(1) &&
+			            xl_runtime::slow_motion_state().clocks[0].speed == 3 && xl_runtime::slow_motion_state().clocks[1].speed == 1,
+			        "Carried save did not prepare resources before restoring devices and clocks");
+			if (game_is_time_paused()) start_time();
+			frames(12);
+			sample("carried_save_restored_after_new_game");
+			proof["phase"] = "unequipped_restore";
+			require(write(), "Cannot write unequipped restore progress");
+			require(state_restore_all_sub(unequipped, 0) && !(Players[Player_num].flags & equipment) &&
+			            !xl_prepared_time_equipment_image(0) && !xl_prepared_time_equipment_image(1),
+			        "Unequipped save retained the running game's carried resources");
+			sample("unequipped_save_restored_after_carried");
+			proof["level_load_assists"] = 4;
+		}
+		proof["phase"] = "complete";
+		proof["complete"] = bool{ true };
+		return write() ? 0 : 1;
+	} catch (const std::exception &error) {
+		proof["error"] = error.what();
+		write();
+		std::fprintf(stderr, "XL time-equipment gameplay failed: %s\n", error.what());
 		return 1;
 	}
 }

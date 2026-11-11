@@ -1,6 +1,7 @@
 #include "reactor_countdown.h"
 #include "../countdown.h"
 #include "preview.h"
+#include "slow_motion_runtime.h"
 #include "input_demo_hooks.h"
 extern "C" {
 #include "inferno.h"
@@ -48,6 +49,7 @@ extern "C" int xl_countdown_action(const trigger *action)
 	auto state = current();
 	if (!xl_compat::initialize_countdown(state, action->time, Base_control_center_explosion_time, Difficulty_level)) return 0;
 	publish(state);
+	xl_slow_motion_off();
 	reactor_countdown_reset_pause();
 	return 1;
 }

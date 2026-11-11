@@ -5,10 +5,11 @@ static void hxm_boss_binding_controls(const std::filesystem::path &root, bool ve
 {
 	std::ifstream file(root / "missions/hxmtest.hog", std::ios::binary);
 	const xl_compat::Bytes original{ std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
-	for (const int role : { 21, 0, -1, -23, -27 }) {
+	for (const int role : { 21, 1, 0, -1, -23, -27 }) {
 		const bool introduce = role != 0;
 		const std::string mission = role == -27 ? "hxmneg27" : role == -23 ? "hxmneg23"
 		                                                   : role == -1    ? "hxmnend"
+		                                                   : role == 1     ? "hxmend1"
 		                                                   : introduce     ? "hxmboss"
 		                                                                   : "hxmplain";
 		xl_compat::Bytes output{ 'D', 'H', 'F' };
@@ -51,30 +52,45 @@ static void hxm_boss_binding_controls(const std::filesystem::path &root, bool ve
 		require(authored == registered, "Boss bindings do not match final HXM definitions");
 	};
 	char error[256]{};
-	require(load_base_mission("hxmboss", error, sizeof(error)), error);
-	require(!Robot_info[3].boss_flag, "Introduced HXM boss already has a base boss role");
-	StartNewGame(1);
-	require(Robot_info[3].boss_flag == 21 && Objects[100].id == 3, "Introduced HXM boss definition was not installed");
-	roles_match();
-	if (GameTime64 < F1_0) GameTime64 = F1_0;
-	const int objectives = xl_level_objectives_remaining();
-	require(objectives > 0 && apply_damage_to_robot(&Objects[100], Objects[100].shields + F1_0, ConsoleObject - Objects),
-	        "Introduced HXM boss did not receive lethal combat");
-	require(xl_boss_is_dying(100) && xl_level_objectives_remaining() == objectives && !Control_center_destroyed,
-	        "Introduced HXM boss skipped its death roll or started countdown early");
 	char save[] = "hxm-boss.sav", description[] = "HXM boss death roll";
-	stop_time();
-	require(state_save_all_sub(save, description), "HXM boss rolling-death save failed");
-	require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_boss_spawn_count(),
-	        "HXM boss bindings leaked into stock level");
-	require(state_restore_all_sub(save, 0) && Robot_info[3].boss_flag == 21 && xl_boss_is_dying(100) &&
-	            xl_level_objectives_remaining() == objectives && !Control_center_destroyed,
-	        "HXM boss death roll or objectives lost through stock/disk restore");
-	GameTime64 += BOSS_DEATH_DURATION + 1;
-	xl_boss_deaths_frame();
-	require(!xl_boss_is_dying(100) && xl_level_objectives_remaining() == objectives - 1 &&
-	            bool(Control_center_destroyed) == (objectives == 1),
-	        "Restored HXM boss did not retire exactly one objective");
+	int objectives = 0;
+	for (const int ending_role : { 21, 1 }) {
+		require(load_base_mission(ending_role == 1 ? "hxmend1" : "hxmboss", error, sizeof(error)), error);
+		require(!Robot_info[3].boss_flag, "Introduced HXM boss already has a base boss role");
+		StartNewGame(1);
+		require(Robot_info[3].boss_flag == ending_role && Objects[100].id == 3, "Introduced HXM boss definition was not installed");
+		roles_match();
+		// Newly loaded robots keep the source's one-second damage immunity
+		if (GameTime64 < F1_0) GameTime64 = F1_0;
+		if (ending_role == 1) {
+			for (const int kind : { LASER_ID, VULCAN_ID }) {
+				const auto health = Objects[100].shields;
+				const int shot = Laser_create_new(&ConsoleObject->orient.fvec, &Objects[100].pos, Objects[100].segnum, ConsoleObject - Objects, kind, 0);
+				require(shot >= 0, "Terminal profile-one weapon creation failed");
+				auto hit = Objects[100].pos;
+				collide_robot_and_weapon(&Objects[100], &Objects[shot], &hit);
+				require(Objects[100].shields < health && !xl_boss_is_dying(100), "Terminal profile-one weapon vulnerability differs");
+				if (Objects[shot].type != OBJ_NONE) obj_delete(shot);
+			}
+		}
+		objectives = xl_level_objectives_remaining();
+		require(objectives > 0 && apply_damage_to_robot(&Objects[100], Objects[100].shields + F1_0, ConsoleObject - Objects),
+		        "Introduced HXM boss did not receive lethal combat");
+		require(xl_boss_is_dying(100) && xl_level_objectives_remaining() == objectives && !Control_center_destroyed,
+		        "Introduced HXM boss skipped its death roll or started countdown early");
+		stop_time();
+		require(state_save_all_sub(save, description), "HXM boss rolling-death save failed");
+		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_boss_spawn_count(),
+		        "HXM boss bindings leaked into stock level");
+		require(state_restore_all_sub(save, 0) && Robot_info[3].boss_flag == ending_role && xl_boss_is_dying(100) &&
+		            xl_level_objectives_remaining() == objectives && !Control_center_destroyed,
+		        "HXM boss death roll or objectives lost through stock/disk restore");
+		GameTime64 += BOSS_DEATH_DURATION + 1;
+		xl_boss_deaths_frame();
+		require(!xl_boss_is_dying(100) && xl_level_objectives_remaining() == objectives - 1 &&
+		            bool(Control_center_destroyed) == (objectives == 1),
+		        "Restored HXM boss did not retire exactly one objective");
+	}
 
 	// Signed roles preserve the profile while clearing the reference bEndsLevel bit
 	for (int signed_role : (vertigo ? std::vector<int>{ -1, -23, -27 } : std::vector<int>{ -1, -23 })) {

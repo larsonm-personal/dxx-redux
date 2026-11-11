@@ -78,6 +78,7 @@ const char *xl_preview_level_path(const char *filename);
 int xl_loading_wide_walls(void);
 int xl_preserve_effect_position(int object_type);
 int xl_loading_extended_triggers(void);
+int xl_loading_level_extensions(void);
 int xl_loading_inert_trigger(int type);
 void xl_wall_trigger_bind_effect_targets(void);
 unsigned xl_preview_unresolved_emitters(void);

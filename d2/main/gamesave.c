@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "slow_motion_runtime.h"
 #endif
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -289,12 +290,18 @@ int verify_object( object * obj )	{
 	}
 
 	if ( obj->type == OBJ_POWERUP ) {
+#ifdef DXX_XL_RUNTIME
+		if (!xl_time_equipment_initialize(obj, 0)) {
+#endif
 		if ( obj->id >= N_powerup_types )	{
 			obj->id = 0;
 			Assert( obj->render_type != RT_POLYOBJ );
 		}
 		obj->control_type = CT_POWERUP;
 		obj->size = Powerup_info[obj->id].size;
+#ifdef DXX_XL_RUNTIME
+		}
+#endif
 		obj->ctype.powerup_info.creation_time = 0;
 
 #ifdef NETWORK

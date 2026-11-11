@@ -1,4 +1,5 @@
 #include "lightning_emitter.h"
+#include "lightning_admission.h"
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -487,6 +488,16 @@ void lightning_bolt_controls()
 	lightning_cone_boundaries();
 	using namespace lightning_path_reference;
 	using namespace xl_compat;
+	const LightningPoint fallback_origin{ -2621440, -33182233, 6619136 };
+	const LightningPoint fallback_forward{ -17321, 28314, -56789 };
+	for (int length : { 18, -18 }) {
+		LightningDefinition definition{};
+		const auto endpoint = place_authored_lightning(definition, fallback_origin, fallback_forward, length, std::nullopt);
+		const auto expected = vector(fallback_origin) + vector(fallback_forward) * (length * 65536);
+		const int distance = CFixVector::Dist(vector(fallback_origin), expected);
+		if (endpoint != std::optional<LightningPoint>(point(expected)) || definition.length != (length > 0 ? length * 65536 : distance))
+			throw std::runtime_error("Authored lightning fallback differs from pinned fixed-vector placement");
+	}
 	unsigned ticks = 0;
 	for (unsigned seed : { 0u, 17u, 991u })
 		for (int frames : { 2, 3, 4, 7 })

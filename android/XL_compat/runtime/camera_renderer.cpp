@@ -37,7 +37,6 @@ namespace
 using namespace xl_compat;
 struct Monitor {
 	CameraBinding binding;
-	int signature = -1;
 	CameraTargetGpu target;
 	CameraAlignment alignment;
 	ogl_texture texture{};
@@ -70,11 +69,11 @@ void xl_camera_renderer_load(const xl_compat::Inventory &level)
 	std::vector<std::unique_ptr<Monitor>> prepared;
 	for (const auto &binding : bindings.cameras) {
 		if (binding.object < 0) throw std::runtime_error("Wall camera viewer placement remains unqualified");
-		if (binding.object > Highest_object_index || Objects[binding.object].type != 16)
-			throw std::runtime_error("Camera monitor owner is not an installed camera");
+		XlCameraControllerState state;
+		if (!xl_camera_controller_get(binding.object, state))
+			throw std::runtime_error("Camera monitor owner is not an installed attachment");
 		auto monitor = std::make_unique<Monitor>();
 		monitor->binding = binding;
-		monitor->signature = Objects[binding.object].signature;
 		prepared.push_back(std::move(monitor));
 	}
 	xl_camera_renderer_clear();
@@ -96,7 +95,6 @@ extern "C" void xl_camera_renderer_reset(void)
 	for (auto &monitor : monitors) {
 		monitor->target.discard(false);
 		monitor->alignment.invalidate();
-		monitor->signature = Objects[monitor->binding.object].signature;
 	}
 	schedules.assign(monitors.size(), {});
 }
@@ -113,10 +111,11 @@ extern "C" void xl_camera_renderer_frame(void)
 		}
 		for (std::size_t i = 0; i < monitors.size(); ++i) {
 			const auto &monitor = *monitors[i];
-			const auto &actor = Objects[monitor.binding.object];
-			if (actor.type != 16 || actor.signature != monitor.signature)
-				throw std::runtime_error("Camera monitor owner identity changed");
-			schedules[i].owner_flags = actor.flags;
+			XlCameraControllerState state;
+			// Source Ready freezes the last captured view when its owner dies
+			schedules[i].owner_flags = xl_camera_controller_get(monitor.binding.object, state)
+			                               ? Objects[monitor.binding.object].flags
+			                               : OF_SHOULD_BE_DEAD;
 		}
 		const auto ticks = SDL_GetTicks();
 		const int chosen = select_camera(schedules, ticks, ticks, 0, true, false);

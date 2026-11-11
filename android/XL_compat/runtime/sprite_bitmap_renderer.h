@@ -34,8 +34,9 @@ in vec2 spriteUV;
 in vec4 spriteColor;
 out vec4 pixel;
 vec4 bordered(ivec2 p, ivec2 size, int level) {
-    if (any(lessThan(p,ivec2(0))) || any(greaterThanEqual(p,size))) return vec4(0.0);
-    return texelFetch(image,p,level);
+    // Keep every fetch in range before selecting the legacy zero border
+    vec4 color=texelFetch(image,clamp(p,ivec2(0),size-1),level);
+    return (any(lessThan(p,ivec2(0))) || any(greaterThanEqual(p,size))) ? vec4(0.0) : color;
 }
 vec4 sampleLevel(int level, bool linear) {
     ivec2 size=textureSize(image,level);

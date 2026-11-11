@@ -8,7 +8,7 @@
 #include "../camera_orientation.h"
 #include "../inventory.h"
 struct XlCameraControllerState {
-	int monitor = -1, owner = -1, signature = -1;
+	int monitor = -1, owner = -1, signature = -1, type = -1, id = -1;
 	xl_compat::CameraRotation rotation;
 	xl_compat::CameraMatrix original{};
 };

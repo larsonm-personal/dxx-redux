@@ -60,6 +60,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "xmodel.h"
 #ifdef DXX_XL_RUNTIME
 #include "static_explosion_runtime.h"
+#include "slow_motion_runtime.h"
+#include "preview.h"
 #endif
 #ifdef ANDROID
 #include "android_visual_policy.h"
@@ -73,13 +75,14 @@ void do_powerup_frame(object *obj)
 {
 	fix fudge;
 	vclip_info *vci = &obj->rtype.vclip_info;
-	vclip *vc = &Vclip[vci->vclip_num];
 
 	if (
 #ifdef DXX_XL_RUNTIME
+		!xl_time_equipment_animate(obj) &&
 		!xl_static_explosion_animate(obj) &&
 #endif
 		!d1_in_d2_animate_powerup(obj)) {
+		vclip *vc = &Vclip[vci->vclip_num];
 		fudge = (FrameTime * ((obj-Objects)&3)) >> 4;
 
 		vci->frametime -= FrameTime+fudge;
@@ -133,6 +136,7 @@ void draw_blob_outline(void)
 void draw_powerup(object *obj)
 {
 #ifdef DXX_XL_RUNTIME
+	if (xl_time_equipment_draw(obj)) return;
 	if (xl_static_explosion_draw(obj)) return;
 #endif
 #ifdef OGL
@@ -801,6 +805,25 @@ int do_powerup(object *obj)
 //		case POW_HOARD_ORB:
 
 
+#ifdef DXX_XL_RUNTIME
+		case 48:
+		case 49:
+			if (xl_level_extensions_active()) {
+				const unsigned equipment = id == 48 ? XL_PLAYER_FLAGS_SLOW_MOTION : XL_PLAYER_FLAGS_BULLET_TIME;
+				const char *name = id == 48 ? "SLOW MOTION" : "BULLET TIME";
+				if (Players[Player_num].flags & equipment) {
+					HUD_init_message(HM_DEFAULT, "Already have %s!", name);
+					used = pick_up_energy();
+					id = POW_ENERGY;
+				} else {
+					Players[Player_num].flags |= equipment;
+					powerup_basic(15, 0, 15, 0, "%s!", name);
+					used = 1;
+					id = POW_AFTERBURNER;
+				}
+			}
+			break;
+#endif
 		default:
 			break;
 		}

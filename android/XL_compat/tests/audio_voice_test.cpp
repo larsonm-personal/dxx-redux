@@ -63,6 +63,18 @@ int main()
 		        "Per-sample receipt did not follow actual PCM completion");
 		require(paused_bank.playback[0].attempts == 1 && !paused_bank.playback[0].completed && paused_bank.playback[0].stopped == 1,
 		        "Paused bank retirement was misreported as completion");
+		{
+			AudioVoices slowed;
+			slowed.slowdown = 3;
+			const int slot = slowed.start(0, 1, 3);
+			std::array<std::int16_t, 24> pcm{};
+			slowed.mix(reinterpret_cast<unsigned char *>(pcm.data()), 5, bank);
+			require(slowed.voices[unsigned(slot)].position == 1 && slowed.voices[unsigned(slot)].subframe == 2 && !slowed.completions,
+			        "Slow audio lost fractional sample progress between callbacks");
+			slowed.mix(reinterpret_cast<unsigned char *>(pcm.data() + 10), 7, bank);
+			require(pcm[0] == repeated[0] && pcm[6] == repeated[2] && slowed.completions == 1 && !slowed.voices[unsigned(slot)].remaining,
+			        "Slow audio did not stretch one sample to three output frames");
+		}
 		for (const int repetitions : { 0, -1, -100 }) {
 			voices.clear();
 			const int loop_slot = voices.start(0, repetitions, 3);

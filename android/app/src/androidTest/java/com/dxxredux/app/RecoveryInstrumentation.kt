@@ -57,6 +57,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var enemyWithinImportOnly = false
     private var xlAddonImportOnly = false
     private var xlAddonDistributionName: String? = null
+    private var xlTimeEquipment = false
     private var pumoUiImportOnly = false
     private var controllerOverlayOnly = false
     private var installationWorkOnly = false
@@ -86,6 +87,7 @@ class RecoveryInstrumentation : Instrumentation() {
         enemyWithinImportOnly = arguments?.getString("suite") == "enemy_within_import"
         xlAddonImportOnly = arguments?.getString("suite") == "xl_addon_import"
         xlAddonDistributionName = arguments?.getString("xl_addon_distribution")
+        xlTimeEquipment = arguments?.getString("xl_time_equipment") == "true"
         pumoUiImportOnly = arguments?.getString("suite") == "pumo_ui_import"
         controllerOverlayOnly = arguments?.getString("suite") == "controller_overlay"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
@@ -107,16 +109,23 @@ class RecoveryInstrumentation : Instrumentation() {
                 return
             }
             if (xlAddonImportOnly) {
-                XlAddonImportChecks(this).run()
+                if (!xlTimeEquipment) XlAddonImportChecks(this).run()
+                check(!xlTimeEquipment || xlAddonDistributionName != null)
                 xlAddonDistributionName?.let { name ->
                     require(name.matches(Regex("[A-Za-z0-9_.-]+\\.7z")))
                     val source = File(targetContext.filesDir, "saf_provider_source/$name")
                     check(source.isFile) { "Original addon distribution source is missing" }
-                    XlAddonPickerChecks(this).run(source, originalDistribution = true)
+                    XlAddonPickerChecks(
+                        this,
+                    ).run(source, originalDistribution = true, retainForGameplay = xlTimeEquipment)
                 }
                 result.putString(
                     "stream",
-                    "PASS: XL addon selective import, raw publication, tracker and loading preference\n",
+                    if (xlTimeEquipment) {
+                        "PASS: Original XL resources and mission imported for gameplay\n"
+                    } else {
+                        "PASS: XL addon selective import, raw publication, tracker and loading preference\n"
+                    },
                 )
                 finish(Activity.RESULT_OK, result)
                 return

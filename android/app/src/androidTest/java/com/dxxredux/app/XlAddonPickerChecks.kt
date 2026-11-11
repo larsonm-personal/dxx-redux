@@ -116,6 +116,7 @@ internal class XlAddonPickerChecks(
     fun run(
         archive: File,
         originalDistribution: Boolean = false,
+        retainForGameplay: Boolean = false,
     ) {
         val context = instrumentation.targetContext
         val sets = FileSetManager(context.filesDir)
@@ -123,10 +124,24 @@ internal class XlAddonPickerChecks(
         val oldConfig = config.takeIf { it.exists() }?.readBytes()
         val active = sets.getActive()
         val setName = "xl-picker-check"
+        check(
+            !retainForGameplay ||
+                (originalDistribution && File(context.filesDir, "xl-addon-import-backup/state.tar").isFile),
+        ) {
+            "Gameplay import requires the protected host runner"
+        }
+        check(
+            !retainForGameplay ||
+                ImportLocationManager(context.filesDir).getActiveRoot().canonicalFile ==
+                File(context.filesDir, "imported").canonicalFile,
+        ) {
+            "Gameplay import requires internal disposable storage"
+        }
         check(sets.listSets().none { it.name == setName }) { "Previous picker check remains" }
         sets.createSet(setName)
         sets.setActive(setName)
         var launcher: SetupActivity? = null
+        var retained = false
         try {
             launcher =
                 instrumentation.startActivitySync(
@@ -155,6 +170,16 @@ internal class XlAddonPickerChecks(
                     check(!File(pack, "d2x.ham").exists())
                     check(File(pack, "textures/d2x-xl/smokingfire.png").isFile)
                     check(File(pack, "sounds/d2x-xl/lightning.wav").isFile)
+                    for ((name, hash) in mapOf(
+                        "slowmotion#0.png" to "3133036494c8ef656433842850598072ab4dadde58870389c41745f73977113e",
+                        "bullettime#0.png" to "6b0de9039a3a90312e0193d88f9aa804a50d2334454afc52e1a5c5e74eadc1c0",
+                    )) {
+                        check(MissionContentIdentity.compute(File(pack, "textures/d2/$name")).sha256 == hash)
+                    }
+                    File(pack, ".resource_inventory.json").copyTo(
+                        File(context.getExternalFilesDir(null), "xl-addon-original-inventory.json"),
+                        overwrite = true,
+                    )
                 } else {
                     check(File(pack, "d2x-xl.hog").readText() == "camera bytes")
                     check(File(pack, "d2x.ham").readText() == "vertigo bytes")
@@ -172,12 +197,64 @@ internal class XlAddonPickerChecks(
                     screenshot.recycle()
                 }
             }
+            if (retainForGameplay) {
+                val names =
+                    listOf(
+                        "descent2.ham",
+                        "descent2.hog",
+                        "descent2.s11",
+                        "descent2.s22",
+                        "groupa.pig",
+                        "alien1.pig",
+                        "alien2.pig",
+                        "fire.pig",
+                        "ice.pig",
+                        "water.pig",
+                        "wshock20.hog",
+                        "wshock20.mn2",
+                        "d2x.ham",
+                    )
+                val inputs = names.map { File(archive.parentFile, it) }
+                check(inputs.all { it.isFile }) { "Original gameplay inputs are missing" }
+                check(
+                    MissionContentIdentity.compute(inputs[names.indexOf("wshock20.hog")]).sha256 ==
+                        "2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c",
+                )
+                check(
+                    MissionContentIdentity.compute(inputs[names.indexOf("wshock20.mn2")]).sha256 ==
+                        "e4ee4da1dfc16b48b91be3409216e73cf43dd74e6e20d1be40b6bb310fe5a42a",
+                )
+                pickFiles(inputs) {
+                    click("Import All")
+                    val target = sets.getSetDir(setName)
+                    val deadline = SystemClock.uptimeMillis() + 30000
+
+                    fun ready(): Boolean =
+                        inputs.all { source ->
+                            target.walkTopDown().any {
+                                it.isFile && it.name == source.name && it.length() == source.length()
+                            }
+                        }
+                    while (!ready() && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(100)
+                    check(ready()) { "Ordinary retail/mission import did not finish" }
+                    val manager = ModManager.forActiveSet(context.filesDir, context)
+                    check(manager.listMods().any { it.filename == "xl-resources" && it.enabled })
+                    check(
+                        MissionContentIdentity.compute(File(manager.modFile("xl-resources"), "d2x.ham")).sha256 ==
+                            MissionContentIdentity.compute(File(archive.parentFile, "d2x.ham")).sha256,
+                    )
+                    instrumentation.waitForIdleSync()
+                }
+                retained = true
+            }
         } finally {
             launcher?.let { activity -> instrumentation.runOnMainSync { activity.finish() } }
             instrumentation.waitForIdleSync()
-            sets.setActive(active)
-            sets.deleteSet(setName, context)
-            if (oldConfig == null) config.delete() else config.writeBytes(oldConfig)
+            if (!retained) {
+                sets.setActive(active)
+                sets.deleteSet(setName, context)
+                if (oldConfig == null) config.delete() else config.writeBytes(oldConfig)
+            }
         }
     }
 }
