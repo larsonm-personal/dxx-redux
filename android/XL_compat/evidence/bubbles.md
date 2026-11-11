@@ -1,5 +1,40 @@
 # Authored bubble qualification
 
+## General stationary profiles (2026-11-10)
+
+The one-payload 27/40 admission gate has been replaced with the existing
+source-derived particle decoder, face geometry, emitter definition and bounded
+bubble creation limits. It retains stationary, uncontrolled, single-player
+ownership and the existing water, sound, 40 Hz, FX RNG and transient-cloud
+save behavior. Unsupported waterfall, snow and rain still reject with explicit
+subtype reasons. The normal inspector reports Dinter 12 findings, Boiling
+waterworks 2, and Boiling canyon/canyon2 0; duplicate unsupported-effect
+findings remain visible until each other subtype is implemented.
+
+Pinned source revision `2576a98b5de310e3ac7c9777df2677d1627b8bae`
+matches original 21/40 Dinter face-3, Boiling waterworks face-2 and canyon
+point shapes, plus the prior Pumo 27/40 profile. The source owner uses the
+actual Dinter and waterworks face areas (about 0.250002 and 0.557334 of the
+reference 20 by 20 quad), and the native owner exercises both 21/40 face and
+point emission with an invalid face control. MSVC evaluates the source's point
+jitter operands in the opposite order from GCC; the shared FX helper now follows
+the pinned source order for the active compiler. The three existing source,
+payload and native effect owners pass on Windows.
+
+The unchanged Boiling Point HOG SHA256
+`f0c7363c992bdcf0222873e63bcf7fff699c6f53ca28ab8ea9437f953b190ce2`
+and descriptor SHA256
+`a9e35d1ca3e77693c1bee2eab8e353a08ee108f9da0ac2b1e348b9107722433db`
+list `canyon.rl2` as level 3 and `canyon2.rl2` as level 6. Strict rendered
+loads of both stop during real audio preparation: canyon asks for
+`dripping-water3.wav`, canyon2 for `dripping-water2.wav`. Neither exact name
+exists in the mission HOG, mission sound folder or global addon folder. The
+authentic distribution contains `dripping-water-3.wav` and
+`dripping-water-2.wav`, which are different filenames; the pinned source addon
+table also uses the hyphenated names. No original canyon bubble render, warm
+save or cold restore is claimed. This content mismatch remains a W5 blocker;
+no mission bytes or resource names were altered to hide it.
+
 ## Current status - completed through tranche 122
 
 The original 27/40 object-316 point-emitter payload is now qualified in the

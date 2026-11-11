@@ -34,7 +34,7 @@ $helpersDir = Split-Path -Parent $PSCommandPath
 $scriptDir = Split-Path -Parent $helpersDir
 . (Join-Path $helpersDir "test_helpers.ps1")
 . (Join-Path $helpersDir "nightly_public_fixture_policy.ps1")
-Initialize-AndroidTestTarget -Serial $Serial | Out-Null
+$Serial = Initialize-AndroidTestTarget -Serial $Serial
 
 function Push-TestScriptToDevice {
     param(
@@ -445,11 +445,6 @@ try {
             } catch {
                 Write-Status "Graphics lifecycle evidence collection failed: $($_.Exception.Message)" 'Yellow'
             }
-            $failedGameState = Get-GameIntrospection -Serial $env:ANDROID_SERIAL
-            if ($failedGameState) {
-                Write-Status "--- game introspection at failure ---" "Yellow"
-                Write-Host ($failedGameState | ConvertTo-Json -Depth 10 -Compress)
-            }
             # Preserve the state observed by the failing step before the next test replaces it
             foreach ($introspectionFile in @('setup_introspect.json', 'introspect.json')) {
                 $failedState = Adb-Timeout -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', "files/$introspectionFile") -Seconds 3
@@ -457,6 +452,13 @@ try {
                     Write-Status "--- cached $introspectionFile at failure ---" "Yellow"
                     Write-Host $failedState
                 }
+            }
+            $failedGameState = Get-GameIntrospection -Serial $Serial -Fresh
+            if ($failedGameState) {
+                Write-Status "--- fresh game introspection at failure ---" "Yellow"
+                Write-Host ($failedGameState | ConvertTo-Json -Depth 10 -Compress)
+            } else {
+                Write-Status "Fresh game introspection unavailable at failure" "Yellow"
             }
             $allPassed = $false
             if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
@@ -466,9 +468,11 @@ try {
         # -- Step 7: Dump introspection -------------------------------
 
         Write-Status "Dumping final introspection state..."
-        $intro = Get-GameIntrospection
+        $intro = Get-GameIntrospection -Serial $Serial -Fresh
         if ($intro) {
             Write-Host ($intro | ConvertTo-Json -Depth 10 -Compress)
+        } else {
+            Write-Status "Fresh final game introspection unavailable" "Yellow"
         }
 
         if ($gameList.Count -gt 1) {

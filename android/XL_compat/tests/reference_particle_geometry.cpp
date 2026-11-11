@@ -1,4 +1,5 @@
 #include "particle_geometry.h"
+#include "particle_admission.h"
 #include "particle_fire.h"
 #include "particle_smoke.h"
 #include "particle_bubble.h"
@@ -650,15 +651,22 @@ void particle_smoke_source_controls()
 
 void particle_original_geometry_controls(const xl_compat::Inventory &level)
 {
-	unsigned count = 0;
+	unsigned count = 0, prepared = 0;
 	for (const auto &object : level.objects) {
 		if (object.render != 11 || object.render_data.size() != 13 || object.render_data[10] <= 0) continue;
 		const float area = particle_geometry_reference::compare_face(level, object.segment, object.render_data[10] - 1);
 		// Modern explicit spray subtype does not consult legacy water textures
 		if (level.level_version >= 18) particle_reference::compare(object.render_data, level.level_version, area, false);
+		if (xl_compat::authored_particle_shape(object)) {
+			const auto native = xl_compat::prepare_authored_particle(level, object);
+			if (!native.face || native.face->corners != xl_compat::particle_face(level, object.segment, object.render_data[10] - 1, false).corners ||
+			    native.effect.particles != xl_compat::decode_particle_effect(object, level.level_version, area).particles)
+				throw std::runtime_error("Original particle native preparation differs from source geometry");
+			++prepared;
+		}
 		++count;
 	}
-	std::cout << "Original particle faces: " << count << " density and emission geometries compared\n";
+	std::cout << "Original particle faces: " << count << " density and emission geometries compared, " << prepared << " stationary native owners prepared\n";
 }
 
 #include "reference_fire_emitter.h"

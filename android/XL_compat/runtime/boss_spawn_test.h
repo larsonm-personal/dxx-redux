@@ -1,4 +1,5 @@
 #include "boss_spawn.h"
+#include "boss_routes.h"
 extern "C" {
 #include "boss_health_shared.h"
 #include "morph.h"
@@ -156,13 +157,17 @@ static void boss_reference_samples(const std::filesystem::path &output, char *ba
 		file << robot.model_num << ' ' << robot.strength << ' ' << robot.mass << ' ' << robot.drag << ' ' << Polygon_models[robot.model_num].rad << ' ' << int(robot.behavior) << ' ' << int(robot.boss_flag) << ' ' << int(robot.companion) << ' ' << robot.score_value << '\n';
 	}
 	const auto vector = [&](const vms_vector &v) { file << ' ' << v.x << ' ' << v.y << ' ' << v.z; };
-	for (int difficulty = 0; difficulty < NDL; ++difficulty)
+	for (int difficulty = 0; difficulty < NDL; ++difficulty) {
+		require(state_restore_all_sub(baseline, 0), "reference difficulty reset failed");
+		const int baseline_level_robots = Players[Player_num].num_robots_level;
+		const int baseline_total_robots = Players[Player_num].num_robots_total;
 		for (int scenario = 0; scenario < 10; ++scenario) {
-			require(state_restore_all_sub(baseline, 0), "reference sample reset failed");
 			for (int i = 0; i <= Highest_object_index; ++i) {
 				if (Objects[i].type == OBJ_ROBOT && !Robot_info[Objects[i].id].boss_flag) obj_delete(i);
 				else if (Objects[i].type == OBJ_ROBOT) Objects[i].matcen_creator = 0;
 			}
+			Players[Player_num].num_robots_level = baseline_level_robots;
+			Players[Player_num].num_robots_total = baseline_total_robots;
 			Difficulty_level = difficulty;
 			xl_boss_spawn_load();
 			GameTime64 = i2f(20);
@@ -208,6 +213,7 @@ static void boss_reference_samples(const std::filesystem::path &output, char *ba
 				vector(Objects[i].pos);
 			}
 			const unsigned seed = 17u + difficulty * 107u + scenario * 31u;
+			d_rand_reset_call_count();
 			d_srand(seed);
 			const int before = Players[Player_num].num_robots_level;
 			const int created = xl_boss_spawn_robot(owner, requested, nullptr, attached);
@@ -231,6 +237,7 @@ static void boss_reference_samples(const std::filesystem::path &output, char *ba
 			require(final_state == replayed, "boss sample RNG transcript differs");
 			file << '\n';
 		}
+	}
 	file.close();
 	require(bool(file), "cannot write boss reference samples");
 	require(state_restore_all_sub(baseline, 0), "cannot restore after boss reference samples");
@@ -316,9 +323,10 @@ static void write_boss_fixture(const std::filesystem::path &root)
 		}
 	require(boss_type >= 0, "retail boss definition missing");
 	std::ifstream original(root / "events.hog", std::ios::binary);
-	xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(original), std::istreambuf_iterator<char>() }, output{ 'D', 'H', 'F' };
+	xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(original), std::istreambuf_iterator<char>() }, output{ 'D', 'H', 'F' }, maker_output{ 'D', 'H', 'F' };
 	std::vector<xl_compat::Member> invalid;
 	for (auto member : xl_compat::read_hog(bytes)) {
+		xl_compat::Bytes maker_level;
 		if (member.name == "neptunxl.rl2") {
 			auto level = xl_compat::inspect_level(member.bytes);
 			const auto patch = [&](std::size_t offset, std::uint32_t value, int width = 4) {
@@ -395,6 +403,10 @@ static void write_boss_fixture(const std::filesystem::path &root)
 			const auto final = xl_compat::inspect_level(member.bytes);
 			const auto blockers = xl_compat::runtime_blockers(final);
 			require(blockers.empty(), xl_compat::blocker_message(blockers).c_str());
+			require(boss_type < 64 && final.sections[6].count > 0, "robotmaker boss fixture needs a low-bit boss and authored maker");
+			maker_level = member.bytes;
+			for (int byte = 0; byte < 8; ++byte) maker_level.at(final.sections[6].offset + byte) = 0;
+			maker_level.at(final.sections[6].offset + boss_type / 8) = static_cast<unsigned char>(1u << (boss_type % 8));
 			invalid.push_back({ "badowner.rl2", member.bytes });
 			invalid.back().bytes.at(final.objects[owner].source_offset + 1) = 0;
 			invalid.push_back({ "badmaker.rl2", member.bytes });
@@ -407,6 +419,10 @@ static void write_boss_fixture(const std::filesystem::path &root)
 		output.insert(output.end(), name, name + sizeof(name));
 		for (int i = 0; i < 4; ++i) output.push_back(static_cast<unsigned char>(member.bytes.size() >> (i * 8)));
 		output.insert(output.end(), member.bytes.begin(), member.bytes.end());
+		maker_output.insert(maker_output.end(), name, name + sizeof(name));
+		const auto &maker_bytes = maker_level.empty() ? member.bytes : maker_level;
+		for (int i = 0; i < 4; ++i) maker_output.push_back(static_cast<unsigned char>(maker_bytes.size() >> (i * 8)));
+		maker_output.insert(maker_output.end(), maker_bytes.begin(), maker_bytes.end());
 	}
 	for (const auto &member : invalid) {
 		char name[13] = {};
@@ -416,8 +432,104 @@ static void write_boss_fixture(const std::filesystem::path &root)
 		output.insert(output.end(), member.bytes.begin(), member.bytes.end());
 	}
 	write_bytes((root / "bosses.hog").string().c_str(), output);
+	write_bytes((root / "bossmk.hog").string().c_str(), maker_output);
 	std::ofstream descriptor(root / "bosses.mn2");
 	descriptor << "d2x-name = Derived XL boss spawning\nnum_levels = 1\nneptunxl.rl2\n";
+	std::ofstream maker_descriptor(root / "bossmk.mn2");
+	maker_descriptor << "d2x-name = XL boss maker\nnum_levels = 1\nneptunxl.rl2\n";
+}
+
+static void robotmaker_boss_controls(const std::filesystem::path &root)
+{
+	write_boss_fixture(root);
+	std::ifstream file(root / "boss-fixture.json");
+	const auto fixture = nlohmann::json::parse(file);
+	char error[256] = {};
+	require(load_base_mission("bosses", error, sizeof(error)), error);
+	input_demo_set_skip_level_intro(1);
+	StartNewGame(1);
+	init_robots_for_level();
+	GameTime64 += i2f(2);
+	for (const int owner : fixture.at("owners").get<std::vector<int>>())
+		Objects[owner].shields = Robot_info[Objects[owner].id].strength / 4;
+	char baseline[] = "boss-reference-base.sav", description[] = "Boss reference";
+	stop_time();
+	require(state_save_all_sub(baseline, description), "boss reference baseline save failed");
+	boss_reactor_controls(fixture.at("owners").get<std::vector<int>>(), baseline, root.parent_path());
+	boss_reference_samples(root.parent_path(), baseline, fixture.at("owners")[0].get<int>());
+	require(load_base_mission("bossmk", error, sizeof(error)), error);
+	input_demo_set_skip_level_intro(1);
+	StartNewGame(1);
+	{
+		const int type = fixture.at("boss_type").get<int>();
+		const int center = 0, station = matcen_get_station_num(center);
+		require(type < 64 && station >= 0 && xl_boss_authored_count() == 2 &&
+		            std::uint32_t(RobotCenters[center].robot_flags[type / 32]) == std::uint32_t(1) << (type % 32),
+		        "robotmaker boss control needs an authored low-bit boss and valid maker");
+		auto &maker = Station[station];
+		maker.Enabled = 1;
+		maker.Flag = 1;
+		maker.Capacity = i2f(10);
+		maker.Timer = Vclip[VCLIP_MORPHING_ROBOT].play_time;
+		const auto identity = xl_level_trigger_identity();
+		robotmaker_proc(&maker);
+		int generated = -1;
+		for (int i = 0; i <= Highest_object_index; ++i)
+			if (Objects[i].type == OBJ_ROBOT && Objects[i].id == type &&
+			    static_cast<unsigned char>(Objects[i].matcen_creator) == (station | 0x80)) generated = i;
+		require(generated >= 0 && xl_boss_spawn_count() == 3 && xl_boss_authored_count() == 2 &&
+		            xl_level_trigger_identity() == identity && xl_compat::boss_routes().size() == 3,
+		        "live robotmaker boss did not acquire independent source-stable lifecycle and routes");
+		auto *trailer = PHYSFS_openWrite("boss-generated.bin");
+		require(trailer && xl_wall_trigger_write(trailer) && PHYSFS_close(trailer), "robotmaker boss trailer capture failed");
+		std::ifstream trailer_input(root.parent_path() / "preview-user" / "boss-generated.bin", std::ios::binary);
+		const xl_compat::Bytes encoded{ std::istreambuf_iterator<char>(trailer_input), std::istreambuf_iterator<char>() };
+		require(encoded.size() > 16, "robotmaker boss trailer missing");
+		auto bad = nlohmann::json::parse(encoded.begin() + 16, encoded.end());
+		bad["schema"] = 35;
+		const auto payload = bad.dump();
+		xl_compat::Bytes corrupt(encoded.begin(), encoded.begin() + 16);
+		corrupt.insert(corrupt.end(), payload.begin(), payload.end());
+		std::uint32_t checksum = 2166136261u;
+		for (unsigned char byte : payload) checksum = (checksum ^ byte) * 16777619u;
+		for (int byte = 0; byte < 4; ++byte) {
+			corrupt[8 + byte] = static_cast<unsigned char>(payload.size() >> (byte * 8));
+			corrupt[12 + byte] = static_cast<unsigned char>(checksum >> (byte * 8));
+		}
+		write_bytes((root.parent_path() / "preview-user" / "boss-generated-bad.bin").string().c_str(), corrupt);
+		xl_boss_spawn_load();
+		require(xl_boss_spawn_count() == 2, "robotmaker boss reset did not retain authored owners");
+		trailer = PHYSFS_openRead("boss-generated-bad.bin");
+		require(trailer && !xl_wall_trigger_read(trailer) && PHYSFS_close(trailer) && xl_boss_spawn_count() == 2,
+		        "invalid robotmaker boss trailer published generated state");
+		trailer = PHYSFS_openRead("boss-generated.bin");
+		require(trailer && xl_wall_trigger_read(trailer) && PHYSFS_close(trailer) && xl_boss_spawn_count() == 3,
+		        "valid robotmaker boss trailer did not rebind after rejection");
+		PHYSFS_delete("boss-generated.bin");
+		PHYSFS_delete("boss-generated-bad.bin");
+		char generated_save[] = "boss-generated.sav", description[] = "Robotmaker boss";
+		stop_time();
+		require(state_save_all_sub(generated_save, description), "robotmaker boss disk save failed");
+		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_boss_spawn_count(),
+		        "robotmaker boss leaked into stock mission");
+		require(state_restore_all_sub(generated_save, 0) && xl_boss_spawn_count() == 3 &&
+		            xl_boss_authored_count() == 2 && xl_level_trigger_identity() == identity &&
+		            Objects[generated].type == OBJ_ROBOT && Objects[generated].id == type,
+		        "cold robotmaker boss restore lost the generated owner or source identity");
+		bool rebound = false;
+		for (int i = 0; i < xl_boss_spawn_count(); ++i) {
+			xl_boss_spawn_state boss{};
+			require(xl_boss_spawn_state_get(i, &boss), "generated boss state missing");
+			rebound |= boss.owner == generated && boss.signature == Objects[generated].signature && boss.id == type;
+		}
+		require(rebound, "cold robotmaker boss route/state did not bind its saved signature");
+		obj_delete(generated);
+		require(xl_boss_spawn_count() == 2 && xl_boss_authored_count() == 2 && xl_compat::boss_routes().size() == 2,
+		        "deleted robotmaker boss retained its owner or routes");
+		require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0 && !xl_boss_spawn_count(),
+		        "robotmaker boss did not retire on stock transition");
+		std::cout << "XL robotmaker boss lifecycle passed: native creation, bounded owner/routes, source identity and cold disk restore\n";
+	}
 }
 
 static int boss_spawn_test(int argc, char **argv)
@@ -514,10 +626,8 @@ static int boss_spawn_test(int argc, char **argv)
 			require(!xl_boss_spawn_restore(corrupt, 2, 1) && state(0).elapsed == restored[0].elapsed, "malformed boss state accepted or partially published");
 		}
 		boss_lifecycle_controls(owners);
-		boss_reactor_controls(owners, snapshot, root.parent_path());
 		require(state_restore_all_sub(snapshot, 0), "boss source reset after lifecycle controls failed");
 		boss_restore_guards(root.parent_path());
-		boss_reference_samples(root.parent_path(), snapshot, owners[0]);
 		Difficulty_level = (Difficulty_level + 1) % NDL;
 		require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0 && !xl_boss_spawn_count(), "boss state leaked into stock mission");
 		init_robots_for_level();

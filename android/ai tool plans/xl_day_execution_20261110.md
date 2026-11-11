@@ -496,11 +496,408 @@ independent later work can continue without pretending that item succeeded.
 
 | Item | Status | Actual result / handoff |
 | --- | --- | --- |
-| W0 | Not started | Root build/source association and fresh dump |
-| W1 | Not started | Warp 5 HXM unused animation slots |
-| W2 | Not started | General original bubble profiles |
-| W3 | Not started | Waterfall behavior |
-| W4 | Not started | Snow/rain and genuine resource import |
-| W5 | Not started | Combined original-level play and cold restore |
-| W6 | Not started | Consolidation and final combined validation |
-| W7 | Not started | Local review handoff |
+| W0 | Done (Linux config pending) | `run_test.ps1` now uses the normalized serial and `-Fresh` for final/failure diagnostics; `test_xl_pog_runtime.ps1` re-requests fresh state, checks level/mission identity and permits a new output directory. Root D2 developer build and D1 configure point at this checkout. Protected secret-level owner passed 31/31 after level transitions: final Neptune level 1, mission generation 4, request generation 3, rather than seeded stale level 999; exact device restoration. Scene-only visual assertion failed and protected GPU owner hit its unchanged 480s timeout; both were restored and remain failures. WSL access denied/hung, so native Linux configuration is pending. Branch `d2xxl_nov10`, HEAD `ebf245302`, same file tree as reviewed overnight through merged parent `b3bb12cbe`; no original target level played in W0. See `temp/xl-day-20261110/HANDOFF.md`. W1 next; at 12:30 PST revised queue finish about 21:30 PST. |
+| W1 | Done | `d2_ham_validation.{c,h}` normalize only inactive XL HXM joint groups in a validated copy; `runtime/resource_validation.cpp` installs the same normalized native lists, leaving stock HXM strict. Extended `test_d2_ham_validation.c`, existing `xl_hxm_native` with a rendered original actor witness through `route_confirmation_desktop.cpp`, and `evidence/hxm-gameplay.md`. Pinned XL source `2576a98b5de310e3ac7c9777df2677d1627b8bae`; unchanged Warp HOG SHA256 `2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c`, original volcano HXM SHA256 `e132d223d44349742889658f501eaa52d28256319833551973f8754d431f8d99`. Original Warp 5 failed admission before, then passed a strict 120-frame unassisted rendered load; original robot 51 object 226 passed active animation/gun transforms, assisted live AI weapon 21, damage, normal warm save/restore, separate-process cold restore, and stock return in a real OpenGL renderer. Source authored segment 528 becomes runtime segment 1040 after normal relink. `xl_hxm_geometry_reference` and `xl_hxm_native` passed 2/2 (79.58s), root `test_d2_ham_validation` passed; `git diff --check` clean. This is a short controlled actor witness, not a whole-level playthrough. No external blocker for W1; W2 next. At 13:00 PST revised queue finish about 20:45 PST. |
+| W2 | Runtime implemented; original canyon play blocked by external audio names | `particle_admission.h` replaces the Pumo-only bubble tuple with source-derived decoded/geometry/emitter bounds while retaining stationary owner restrictions and subtype 4-6 guards; `admission.cpp` uses that shared preparation. `particle_effect.h` now matches the pinned source's MSVC FX point-jitter draw order. Extended existing `tests/reference_particles.cpp`, `tests/effect_layout_contract.h` (invalid subtype 7 instead of now-supported bubble 2), `runtime/particle_objects_test.h`, and `evidence/bubbles.md`. Pinned source `2576a98b5de310e3ac7c9777df2677d1627b8bae`; original Boiling HOG SHA256 `f0c7363c992bdcf0222873e63bcf7fff699c6f53ca28ab8ea9437f953b190ce2`, descriptor `a9e35d1ca3e77693c1bee2eab8e353a08ee108f9da0ac2b1e348b9107722433db`. Inspector findings Dinter 17->12, waterworks 5->2, canyon/canyon2 4->0. Existing `xl_effect_decode_reference`, `xl_effect_payloads`, `xl_effect_inspection_gate` passed 3/3 after rebuild (34.72s), with 21/40 face/point and 27/40 controls; invalid face remains rejected. Actual strict rendered Boiling canyon (descriptor level 3, despite the earlier plan's level-4 label) and canyon2 (level 6) both failed `level_load`: authored `dripping-water3.wav` / `dripping-water2.wav` absent from original HOG and owned folders; the genuine distribution has differently named `dripping-water-3.wav` / `dripping-water-2.wav`. No original canyon render or warm/cold save result. This is an external content-name blocker, so W3 proceeds without claiming the play acceptance. At 13:15 PST revised queue finish about 20:00 PST. |
+| W3 | Runtime/native fixture complete; original authored-geometry render pending | `particle_waterfall.h` adds source waterfall creation, decay-one directed movement, fade-2 opacity, collision/outside retirement and 8x8 animation; `fire_emitter.h` now shares the existing ring/lifecycle through an explicit `ParticleKind` policy. `runtime/particle_objects.{h,cpp}`, `particle_render.h`, `runtime/particle_resources.cpp`, `runtime/transparency_scene.cpp` dispatch serialized subtype 4 to image 6 and genuine owned smoke pixels with distinct drawing. `particle_admission.h` admits only stationary subtype 4 after dispatch; 5/6 remain gated. Extended existing `tests/reference_particles.cpp`, `tests/reference_fire_emitter.h`, and `runtime/particle_objects_test.h` with original Dinter face payloads, source image/fade checks, native frame/scene, disable and fresh-cloud restore. Pinned source `2576a98b5de310e3ac7c9777df2677d1627b8bae`; unchanged Dinter HOG SHA256 `b4dc0423e781de5b667093313e92ffdb582c5b75c45ec119f680b2613b31fb13`. Inspector Dinter findings 12->2, both snow owner 1492. Root D2 developer build passed; `xl_effect_decode_reference` and `xl_effect_inspection_gate` passed, with native waterfall receipt in `build-xl/effect-inspection/controls.log`; `git diff --check` clean. The existing native test uses original object 1488 payload on live Neptune geometry. Full original Dinter render cannot start until W4 snow behavior/resource is present, so original geometry and gameplay remain unproved here. W4 next; at 13:25 PST revised queue finish about 19:45 PST. |
+| W4 | Runtime and genuine import complete; production snow/rain frames pending | `particle_weather.h` supplies distinct snow/rain creation, decay-one motion, water/lava/collision retirement and source image policy through W3's shared emitter; `fire_emitter.h`, `runtime/particle_objects.{h,cpp}`, `particle_render.h`, `runtime/transparency_scene.cpp`, `particle_world.{h,cpp}`, `runtime/particle_resources.cpp`, `runtime/resource_validation.cpp`, `particle_image.h` own dispatch, draw, weather image preparation and lifetime. `particle_admission.h` admits stationary 5/6 only after runtime support. Existing reference/native owners use actual Dinter snow object 1492 and Boiling rain object 60 payloads, check scene/disable/fresh-cloud restoration, and `xl_effect_decode_reference` plus `xl_effect_inspection_gate` passed. Genuine distribution 2.1.8 `rain.png` SHA256 `2fa050b3cf433a363595a41e6604336d053b7d9d7e9e938540a844d7cde110d3`, `simplesmoke.png` `8c39135fddbc35dc85e2132ece9fb0449625ae9b86df3e3eae8cf7fa44bf8c48` are selected by `ResourceModCatalog.kt`; existing `ResourceModStoreTest.kt` passed and `XlAddonPickerChecks.kt` verifies imported hashes. x86 Android app/test builds passed; guarded `test_xl_addon_import.ps1 -DistributionName d2x-xl-2-1-8.7z` passed with exact profile hash restoration after fixing that owner's original-distribution adb wait from 180 to 420 seconds. Pinned source `2576a98b5de310e3ac7c9777df2677d1627b8bae`; unchanged Dinter/Boiling HOGs as W3/W2 hashes. Reinspection Dinter and Boiling waterworks has zero particle findings, which is admission only. Strict Dinter missing-snow control failed with explicit `simplesmoke` diagnostic; genuine-image attempt advanced to internal `dinter.POG` six-frame true-color animation rejection (three strips in that POG have 6/9/9 frames). Strict Boiling waterworks level 1 fails on absent authored POG despite `custom_textures=yes`; no original snow/rain frames or play claim. First guarded import run hit its old 180-second adb timeout, restored hashes, then the 420-second rerun passed. `git diff --check` clean. W5 next; at 13:59 PST revised queue finish about 20:00 PST, with POG investigation and required final validation determining actual finish. |
+| W5 | Combined candidate classified; original Warp 5 Android play passed; new-particle Android proof pending | Root binary `build-d2-reference/main/d2x-redux.exe` SHA256 `e8feecdf2c72346f3b7d85099878813660967fcf1076a2a2ace2b943b3f40a11` passed strict unassisted 120 simulated/rendered frames each for original Warp 5, Sphere 2 and Warp 6 (`temp/xl-day-20261110/w5-*/result.json`). Original Dinter with genuine snow/smoke images still rejects at `dinter.POG` bitmap 1333, a six-frame true-color animation (other strips 9/9); the installed POG registry has no animated-frame owner. Original Boiling waterworks needs absent authored POG, Boiling 2 rejects equipment IDs 7/8/9/24 plus two, Boiling 4 rejects movement layout 255 at object 4, and Boiling 6 lacks `dripping-water2.wav`; no rain/snow/waterfall original frames or gameplay claimed. Bounded Boiling 7 `lava-fall.wav` search checked additional authentic `d2x-xl-libraries.7z`, `lor-xl.7z`, older `d2x-xl-1.18.74-ar12.zip` and local manifests; absent. Existing native Warp 5 actor witness from W1 supplies assisted AI/combat/save/cold evidence. Extended the existing guarded `test_xl_addon_import.ps1` with original Warp 5 data selection and controller movement, and its Android picker wait to 240s for real 1.6 GiB import. On x86 emulator-5556, authentic import plus warm 20/20 and fresh-process cold 8/8 passed; actor object 226/ID 51/model 75/guns 2/weapon 21 survived, 64 imported resource hashes matched native owner, warm/cold save hashes matched, PIDs differed, profile hashes restored (`temp/xl-warp5-android/owner-result.json`). First generated script used fire axis and failed movement; corrected `LS_Y` passed. Next warm script passed but the shared final fresh introspection arrived after its five-second window; bounded owner retry recovered it. Endpoint loopback calibration with authentic `slowdown.wav` had nonzero 405 packets/correlation .997; original Warp 6 time-equipment game proof completed with five disclosed position assists and nonzero 1359-packet host audio capture, but named wave correlation was weak, so only game audio at output is claimed. Pinned source `2576a98b5de310e3ac7c9777df2677d1627b8bae`; original HOG hashes remain W1–W3. W6 next; at 14:39 PST revised queue finish about 20:30 PST, contingent on final platform checks. |
+| W6 | Prior-source validation done; affected gates need refresh after further production edits | Root diff reviewed; removed temporary diagnostic and duplicate admission checks, corrected HXM null-check order and source-reference particle count, and fixed MSVC Debug source comparison in `particle_effect.h`. Scoped mixed-language formatter/check and `git diff --check` pass; formatter's PSScriptAnalyzer `-Fix` crashed internally, so the changed import owner was formatted/check-run directly. Current tracked code/test diff: 29 paths, +771/-120 lines, plus two new policy headers (259 lines); nine existing test paths changed (+226/-33), with no new runner or lifecycle. Root-source developer Windows D2/D1 builds passed using prepared local dependencies after the normal vcpkg launcher could not fetch dependencies. Full D2 CTest 100 passed/one connectivity skip; D1 89 passed/one same skip; standalone affected native 3/3 and canonical Windows public 56/56 pass. Frozen original eight-case headless readiness, pinned asset commit `9dad21bd65ba05665ac6fe315f37fe7461e85725`, unchanged catalog/input/hashes: exact historical 4/8 `loaded_ticked`, four `load_failed`, all loaded rows `xl_active=false`. Strict original Warp 5, Sphere 2, Warp 6 rendered results remain separate; the exact packaged D2 EXE re-passed Warp 5 120/120 frames. Universal APK (arm64-v8a/armeabi-v7a/x86_64) built, genuine distribution Android unit owner 5/5 and both automation catalogs pass. Final APK protected original Warp 5 import/warm20/cold8 passed with original resource hashes and exact profile restoration. Final APK shared original Pumo smoke/skybox/GPU/save/context/stock owner passed 68/68 and exact 285-entry profile restoration. Full lightning/GPU owner passed its first GPU probe and context recreation but exceeded its unchanged 480s limit at step 29/33 second probe; no durable pass, exact restoration. Native Linux GPU/audio and private fast gates remain unverified: WSL denied/hung and Docker CLI absent. Source pinned to XL `2576a98b5de310e3ac7c9777df2677d1627b8bae`; original assets unchanged. Final package hashes and receipts in `temp/xl-day-20261110/HANDOFF.md`. W7 next; at 15:40 PST revised finish about 16:15 PST, with no deadline cutoff. |
+| W7 | Provisional handoff; refresh after remaining work | `temp/xl-day-20261110/HANDOFF.md` now names branch `d2xxl_nov10`, reviewed base `8fae81aa5d95cb6ef564a9abba7a11e42e346e31`, current HEAD `ebf245302817dc4bcdbd1b319b5412a2d204f5c9`, exact root review commands including both new untracked headers, and Windows D1/D2 folders plus universal APK paths/SHA256. Source remains visible as 34 modified tracked files and two new headers, uncommitted and unpublished; three pre-existing stashes and original bytes untouched. Ordinary `-hogdir` Windows launch and Android Setup import/menu steps are documented. Final receipts: packaged D2 original Warp 5 120/120 rendered, final APK original Warp 5 warm20/cold8 and Pumo shared particle/GPU/context 68/68 with protected restoration; full lightning/GPU owner timed out and native Linux/private fast gates remain unverified, clearly distinct from the unchanged 4/8 frozen headless cohort. Pinned XL source `2576a98b5de310e3ac7c9777df2677d1627b8bae`; genuine resource hashes, blocked Dinter/Boiling causes and deferred work are in the handoff/evidence. W7 elapsed about 5 minutes; final review at 15:45 PST, no estimate cutoff or merge-readiness claim. |
+
+### W3–W5 acceptance re-audit, 16:12 PST
+
+This correction supersedes the Dinter POG blocker in the historical rows above.
+The unchanged Dinter HOG (`b4dc0423e781de5b667093313e92ffdb582c5b75c45ec119f680b2613b31fb13`)
+contains a 92-entry POG with unclocked RGBA strips at bitmaps 1333, 1417 and
+1421 (6/9/9 frames). The pinned source `2576a98b5de310e3ac7c9777df2677d1627b8bae`
+initializes `CreateFrames`' current frame to zero. `runtime/pog_resources.{h,cpp}`
+retains the whole bounded pixel arena and frame metadata; `runtime/pog_install.h`
+exposes the first-frame native view and rejects strips referenced by live
+effects, wall clips or Vclips before changing resources. The preflight uses
+that same clock check. The existing `runtime/pog_test.h` owner passed with the
+original Dinter POG, first-frame dimensions/receipts, Arena restoration and a
+clocked negative control in both admission and direct installation
+(`temp/xl-day-20261110/pog-dinter-static-final.log`).
+
+| Item | Current acceptance status | Original-level outcome and next dependency |
+| --- | --- | --- |
+| W3 | Shared waterfall runtime and native fixture complete; original authored-geometry frame still unproved | Strict Dinter now passes POG preparation, then the existing generated-boss lifecycle guard rejects before a frame. The original object 1488 payload remains tested on Neptune geometry only. |
+| W4 | Shared snow/rain runtime and genuine image import complete; production frames still unproved | Dinter's genuine `simplesmoke.png` reaches the same boss guard. Boiling waterworks still lacks its authored POG. Zero particle inspection findings remain admission only. |
+| W5 | Target originals classified; Warp 5, Sphere 2 and Warp 6 rendered proofs and Android Warp 5 play retained | `temp/xl-day-20261110/dinter-static-pog-rendered/engine.log` shows `generator-created bosses require dynamic boss lifecycle support`. This is an unrelated campaign dependency and its admission guard remains. No original Dinter/Boiling new-particle frame, ordinary traversal or cold restore is claimed. |
+
+At 16:12 PST, the revised finish estimate is about 18:15 PST for affected W6
+validation and W7 handoff; 19:00 remains a soft estimate. No source asset or
+mission byte was altered. Android newly supported particle play remains
+unverified because these original levels stop before rendering.
+
+### W6–W7 final-source closeout, 16:49 PST
+
+| Item | Final status | Concrete handoff |
+| --- | --- | --- |
+| W6 | Consolidated and validated with explicit failed/unavailable gates | After the bounded POG correction in `runtime/pog_resources.{h,cpp}`, `runtime/pog_install.h`, `runtime/resource_validation.cpp` and the existing `runtime/pog_test.h`, root D2 full CTest passed 100 with one existing connectivity skip; Windows public XL contracts passed 56/56; the original Dinter POG native owner passed with clocked rejection, first-frame receipts and Arena cleanup. Scoped clang-format and `git diff --check` pass. The packaged D2 EXE SHA256 `4ce802729a0e54a6834b21784d871712ee42cf7a25e33c164dbbbf2a2a2927db` passed strict original Warp 5 120/120 rendered frames, then rejected original Dinter only at `generator-created bosses require dynamic boss lifecycle support` (`w7-package-{warp5,dinter}-pog`); no new Dinter particle frame is claimed. Frozen headless cohort reran unchanged at 4/8, all four loaded rows `xl_active=false`, exact same eight per-case results. The rebuilt universal APK SHA256 `ae09a674c498d7b7c327b1deb1145c207a28f7c8fba1d60306c49288d6c32c2d` contains arm64-v8a, armeabi-v7a and x86_64 D2 libraries. Final APK original Pumo hub owner passed 68/68 with EGL recreation and exact 285-entry profile restoration; original Warp 5 import/warm20/cold8 passed with 64 imported resource hashes, different PIDs and exact profile restoration. An unintended general Pumo mode failed its scene pixel assertion at 20/78 and restored exactly. The full lightning/GPU owner repeated its 480-second timeout at step 29/33 after first capture and EGL recreation; no full pass, fresh failure introspection unavailable, exact 285-entry restoration. Final Android unit owner ran four passes and one optional distribution skip because the host environment lacked `DXX_XL_DISTRIBUTION`; the earlier genuine-distribution 5/5 run remains a prior-source result. D1 executable unchanged by this D2 POG edit, with its prior 89-pass/one-skip CTest; native Linux GPU/audio and private fast remain unverified after WSL denial/hang and absent Docker CLI. Pinned XL source `2576a98b5de310e3ac7c9777df2677d1627b8bae`; original bytes untouched. W6 final re-audit elapsed about 48 minutes; W7 handoff next, revised finish about 17:00 PST. |
+| W7 | Local review handoff complete | `temp/xl-day-20261110/HANDOFF.md` names root `C:/local/dxx-redux`, branch `d2xxl_nov10`, reviewed base `8fae81aa5d95cb6ef564a9abba7a11e42e346e31`, actual HEAD, exact root diff commands, two untracked policy headers, packaged D1/D2 EXE and universal APK paths/hashes, normal Windows launch and Android import steps. It separates implemented runtime behavior, original-level blockers, the failed full GPU owner and unavailable Linux/private gates; no whole-stack merge-readiness claim. Source is left as the uncommitted root working diff, with no PR or merge, three pre-existing stashes preserved. Pinned source and original-level outcomes are as in W6. W7 closeout took about 3 minutes; final review at 16:51 PST, earlier than the nominal soft 19:00 estimate. |
+
+### Original geometry follow-up, 17:00 PST
+
+The W3–W5 rendered acceptance gaps remain. The Dinter generated-boss guard is
+not a harmless preflight check: `runtime/boss_spawn.cpp` registers a fixed set
+of authored bosses at level load, while its state and route restoration require
+the same owner count and identities. A boss created later by a matcen is not
+registered or restorable. The guard stays in place; dynamic boss lifecycle is
+a separate campaign dependency, not a stationary emitter change.
+
+Extended the existing `tests/reference_particle_geometry.cpp` owner to run
+`prepare_authored_particle` on the same original face geometry that it compares
+against pinned source face area, corners and random sampling. Using pinned XL
+source `2576a98b5de310e3ac7c9777df2677d1627b8bae`, the unchanged Dinter
+HOG SHA256 `b4dc0423e781de5b667093313e92ffdb582c5b75c45ec119f680b2613b31fb13`
+passed 41/41 face comparisons and 41/41 stationary native preparations;
+unchanged Boiling HOG SHA256
+`f0c7363c992bdcf0222873e63bcf7fff699c6f53ca28ab8ea9437f953b190ce2`
+passed five face comparisons/preparations on waterworks. The existing reader
+excluded `subzero.rl2` for unsupported movement 255. Receipts are
+`temp/xl-day-20261110/{dinter,boiling}-original-face-reference.log`.
+`xl_effect_decode_reference` CTest passed 1/1; scoped clang-format and
+`git diff --check` passed. This is original geometry and production preparation
+without loading the native Dinter mine or rendering a particle frame. Original
+Dinter/Boiling waterfall, snow and rain play, Android newly supported particle
+scenario and cold restore remain blocked/unverified as above. Only host test
+and evidence/ledger changed, so the prior EXE/APK bytes and hashes remain valid.
+Refresh W7 working-diff identity after this entry. Elapsed about nine minutes;
+the bounded follow-up is complete at 17:00 PST. The nominal 19:00 estimate is
+still soft and is not used as a completion claim.
+
+### Original Dinter runtime follow-up, 18:01 PST
+
+The independent generated-boss dependency is now implemented in
+`runtime/boss_spawn.{h,cpp}`, `runtime/trigger_save.cpp`, `runtime/preview.cpp`
+and `d2/main/fuelcen.c`: a genuine matcen-born boss acquires bounded per-owner
+state and routes, retires when its object disappears, and is rebound from the
+saved object table before trailer validation. Source identity hashes authored
+bosses only. Trailer rejection rolls the generated set back. The exact
+stationary Dinter admission guard was removed only after this lifecycle was
+working; contained-boss and unrelated guards remain. A derived Neptune
+fixture, not original mission bytes, supplies the boss-generating matcen.
+The existing `boss_spawn_test.h` and `boss_groups_test.h` owners retain all 50
+pinned reference scenarios, mixed reactor objective samples, malformed-save
+checks and their 80-second inner limits. The complete source reference and
+native controls pass 5/5 in 72.10 seconds total (`xl_effect_decode_reference`,
+`xl_effect_payloads`, `xl_boss_spawning`, `xl_boss_groups`,
+`xl_effect_inspection_gate`). The new generated case covers live creation,
+independent route/state, invalid trailer rollback, cold disk restore and stock
+isolation. The reference sample reset is once per difficulty with explicit
+scenario cleanup; all 50 rows still match the pinned executable exactly.
+
+Original unchanged Dinter HOG SHA256
+`b4dc0423e781de5b667093313e92ffdb582c5b75c45ec119f680b2613b31fb13`
+and pinned source `2576a98b5de310e3ac7c9777df2677d1627b8bae` now load
+past the boss guard. Its original fire objects exposed the pinned MSVC
+`ChangeDir` 32-bit intermediate wrap; `particle_fire.h` now preserves that
+arithmetic, with a boundary case in the existing `particle_objects_test.h`.
+`temp/xl-day-20261110/dinter-manual-120/load.json` records a separate normal
+engine run with 120 simulated and 120 rendered frames, XL active, original
+`dinter.rl2`, 6,744 segments, no assist and no GL error. The unchanged
+45-second supplemental script timed out at phase `loaded` on the same large
+level (`dinter-generated-boss-rendered-4`); the ordinary 120/120 run took
+about 71 seconds. This is a rendered load, not traversal, visible waterfall/
+snow proof, Android proof, or cold save proof. Boiling content blockers and
+the frozen headless 4/8 result remain unchanged. No original mission bytes
+or private criteria/timeouts changed. W6 revalidation, APK/EXE repackaging,
+Android guarded owners and W7 handoff are next; current estimate is about
+20:00 PST, with the nominal 19:00 time still soft.
+
+### Final W6 validation and W7 delivery, 18:39 PST
+
+This closeout supersedes earlier W6/W7 package hashes and the historical
+Dinter guard status above. Root checkout `C:/local/dxx-redux` remains on
+`d2xxl_nov10` at `ebf245302817dc4bcdbd1b319b5412a2d204f5c9`, with all
+source edits visible in its working diff; no commit, push, PR or merge was
+made. The reviewed base is `8fae81aa5d95cb6ef564a9abba7a11e42e346e31`.
+Pinned XL source is `2576a98b5de310e3ac7c9777df2677d1627b8bae`.
+Three pre-existing stashes and all original mission bytes are unchanged.
+
+| Item | Actual source and validation | Original outcome / remaining limit |
+| --- | --- | --- |
+| W6 | Final production changes are `runtime/boss_spawn.{h,cpp}`, `runtime/trigger_save.cpp`, `runtime/preview.cpp`, `d2/main/fuelcen.c`, `particle_fire.h`, `runtime/particle_objects.cpp`; existing `boss_spawn_test.h`, `boss_groups_test.h`, `particle_objects_test.h`, `tests/boss_{spawn,groups}.cmake` and `CMakeLists.txt` carry source-aligned controls. The five combined native/source owners passed 5/5 in 72.10 s; after the last deletion assertion, `xl_boss_groups` separately passed 1/1 in 35.12 s under its unchanged 90 s CTest limit. Root D2 CTest passed 100 with one documented connectivity skip and zero failures. Final-source Windows public contracts passed 56/56 (`public-windows-ninja-final.log`). The rebuilt universal APK contains arm64-v8a, armeabi-v7a and x86_64 D2 libraries. Its guarded original Pumo hub owner passed 68/68 and matched all 285 protected hashes. Its guarded original Warp 5 owner passed warm 20/20 and cold 8/8 in distinct processes, with exact protected-profile restoration. The first final-APK Warp 5 attempt timed out at its unchanged 240 s archive-import wait while a concurrent host build was active; it restored its profile exactly, and the serial retry imported the authentic archive and passed. | The exact final packaged D2 executable passed strict original Warp 5 level 5 at 120 unassisted simulated plus 120 OpenGL frames, XL active (`w7-package-warp5-generated-final/result.json`). Original Dinter now loads with XL active and 6,744 segments; a separate ordinary engine run reached 120/120 rendered frames (`dinter-manual-120/load.json`). The unchanged strict supplemental 45 s Dinter probe timed out at `loaded` before frames (`dinter-generated-boss-rendered-4/result.json`); this is not a strict pass or traversal proof. Frozen headless readiness remains 4/8, with loaded cases XL inactive. |
+| W7 | `temp/xl-day-20261110/HANDOFF.md` gives root review commands, package paths/hashes, ordinary run/import steps and precise implemented/blocked/deferred status. Packaged D1 EXE SHA256 `d59136a095e25574146ed6006e58a97c202c522c07ae43affa7e8036e784ac49`; D2 EXE `2f258dd123c11e5b0aa13824d43601791d4a3228d0dd302fdec6ee2e9483ad10`; universal APK `921f855b599fa0b51d27545a1eb81e52061757fd13c2c5a07c0ad8aaeb076243`; test APK `62e0ff8cc8e237774213b2bd0cfdcdd821ab0df24479df3dc1f4b7bd1d1c60fc`. D1 remains prior-source and previously passed 89 tests with one connectivity skip. | Dinter waterfall/snow scene frames, gameplay traversal and cold save remain unproved. Boiling waterworks lacks its authored POG; canyon/canyon2 and Boiling 7 lack exact authored wave names; Boiling 2 equipment IDs and Boiling 4 movement 255 remain unsupported. The full lightning/GPU owner timed out at its unchanged 480 s gate after initial capture/recreation, despite exact restoration; native Linux GPU/audio and private fast remain unavailable after WSL denial/hang and absent Docker. No whole-stack merge-readiness claim follows from local checks. |
+
+W6's final-source revalidation and W7 packaging/handoff completed around
+18:39 PST. The revised estimate is closeout by about 18:50 PST after the
+working-diff identity and handoff are verified; the nominal 19:00 time remains
+soft. No replay/admission guard was relaxed for a feature whose runtime is
+still unsupported, no private test timeout was changed, and no resource was
+fabricated.
+
+### W5 runtime follow-up and W6 revalidation, 19:39 PST
+
+The original Dinter strict rendered probe exposed a production performance
+defect after level load: `escort_route_monitor_completion()` repeatedly
+computed route certificates for a level with no live GuideBot. A one-off
+timing run measured 56.24 seconds in that function out of 56.67 seconds of
+simulation (`temp/xl-day-20261110/dinter-pre-timing/engine.log`). The bounded
+shared fix in `d2/main/guidebot_route.c` returns when `Buddy_objnum` is not a
+live companion object. The existing `android/tests/test_guidebot_live_navigation.cpp`
+owner now verifies that route work is deferred with no companion and resumes
+when a live one returns. Its two genuine mission cases passed twice
+(`android/temp/guidebot_live_navigation/run_e4dfbe500b234f359c31e9472e1d3e8e`).
+Temporary diagnostic timing and route-assist hooks were removed before the
+final builds. The source reference remains pinned at
+`2576a98b5de310e3ac7c9777df2677d1627b8bae`.
+
+The exact newly packaged Windows D2 executable SHA256
+`d4b673ee94a77b1769a6d1d2033e63cb0e774823ce76ba89e2e7e01748406c98`
+passes the unchanged 45-second supplemental rendered probe on original
+Dinter level 1 and Warp Shockwave level 5: both report 120 unassisted
+simulated frames, 120 OpenGL frames, XL active, and no GL error
+(`w7-package-dinter-companion-guard-authentic/result.json` and
+`w7-package-warp5-companion-guard/result.json`). Original Dinter HOG SHA256
+remains `b4dc0423e781de5b667093313e92ffdb582c5b75c45ec119f680b2613b31fb13`.
+Its spawn is separated from the authored waterfall/snow segments in the raw
+segment graph, so this load-and-tick result does not show those scenes or
+ordinary traversal and cold save. The failed preliminary probes in
+`w7-package-dinter-companion-guard*` used incomplete asset roots and failed
+source-aligned missing-sound/image checks; the passing probe uses the genuine
+retail data, unchanged original mission, and authentic XL sound and image.
+
+The full root D2 build passed, and final D2 CTest passed 100 with one
+existing connectivity skip and zero failures
+(`temp/xl-day-20261110/dinter-guard-full-ctest.log`). Scoped mixed-language
+code quality and `git diff --check` passed. The offline Android build passed
+in 1m49s (`dinter-guard-android-build.log`), and the universal APK SHA256
+`79a132a4e62b4e7fa669657193af1683078f7efacdc97ea7ccbf7ef8213f39bf`
+contains D2 libraries for arm64-v8a, armeabi-v7a and x86_64. It installed on
+emulator-5556. The guarded original Pumo hub owner passed 68/68 in 385502 ms,
+including EGL recreation and saved resources, then restored all 285 protected
+profile hashes exactly (`android-final-pumo-owner-after-guard`). The Warp 5
+Android owner is running serially after that restoration. W7 package and
+working-diff handoff will be updated after its result; estimate about 20:00
+PST. The frozen headless cohort remains 4/8 with loaded rows XL inactive.
+
+The user requested the repository cleanup utility as ordinary development
+practice. `AGENTS.md` now points to `android/clean-workspace.ps1`, preview,
+active-run/authentic-asset exclusions, the 50 GiB target, emulator workspace
+preservation and `android/CLEANUP.md`. With active assets and current runs
+excluded, the utility recovered 50.18 GiB free
+(`temp/xl-day-20261110/cleanup-narrow.log`). After final builds consumed
+scratch space, a second preview and guarded run recovered 50.04 GiB free
+(`cleanup-final-preview.log`, `cleanup-final.log`), with final packages,
+authentic assets, pinned source, owner receipts and emulator workspace excluded.
+
+### W7 final package and review closeout, 19:48 PST
+
+The rebuilt final APK's guarded original Warp 5 owner passed authentic
+archive/resource import, warm gameplay and save 20/20, and cold restore in a
+different process 8/8 (`android-final-warp5-owner-after-guard.log`,
+`temp/xl-warp5-android/owner-result.json`, attempt
+`8a8035fde9544658a377e5514edb3a0c`). All protected profile hashes were
+restored. This followed the serial Pumo 68/68 owner and its exact 285-hash
+restoration. No concurrent host build ran during either owner. Both packaged
+Windows D2 strict original Warp 5 and Dinter probes passed 120/120 at the
+unchanged 45-second gate. The final root D2 cache identifies
+`C:/local/dxx-redux/d2` as `CMAKE_HOME_DIRECTORY`.
+
+Runnable package SHA256 values: Windows D1
+`temp/xl-day-20261110/windows-runnable/d1/d1x-redux.exe`
+`d59136a095e25574146ed6006e58a97c202c522c07ae43affa7e8036e784ac49`;
+Windows D2 `temp/xl-day-20261110/windows-runnable/d2/d2x-redux.exe`
+`d4b673ee94a77b1769a6d1d2033e63cb0e774823ce76ba89e2e7e01748406c98`;
+universal APK `temp/xl-day-20261110/android-universal/app-debug.apk`
+`79a132a4e62b4e7fa669657193af1683078f7efacdc97ea7ccbf7ef8213f39bf`;
+test APK `temp/xl-day-20261110/android-universal/app-debug-androidTest.apk`
+`62e0ff8cc8e237774213b2bd0cfdcdd821ab0df24479df3dc1f4b7bd1d1c60fc`.
+The D1 result is prior-source; the D2 EXE and APK include the new no-companion
+route guard. The normal Windows run and Android import steps, exact root review
+commands, implemented/blocked/deferred limits and final source identity are in
+`temp/xl-day-20261110/HANDOFF.md`. The branch remains `d2xxl_nov10`, HEAD
+`ebf245302817dc4bcdbd1b319b5412a2d204f5c9`, with 53 tracked paths and
+two untracked policy headers visible in the main checkout, three pre-existing
+stashes preserved, no commit/PR/merge, and `git diff --check` clean. The work
+closed around 19:48 PST, past the nominal 19:00 estimate; no criterion was
+weakened for the schedule.
+
+### W3-W4 original Dinter geometry follow-up, 20:03 PST
+
+The first unfinished original-scene acceptance item was W3's actual authored
+geometry witness. `android/app/src/main/cpp/shared/route_confirmation_desktop.cpp`
+now adds read-only live particle owner and native scene-quad diagnostics after
+the unchanged 120 simulated/120 OpenGL frames. It uses the loaded mine's
+actual object position and segment, prepared resource dimensions, and the
+existing shared `particle_scene_items`/`particle_scene_quad` path. Each native
+scene calculation is marked `assisted_owner_position_segment_only` so it is
+not confused with the unassisted GL view from the normal player spawn. No new
+runner, resource substitute, admission relaxation, frame criterion or
+45-second timeout was added. The `NOMINMAX` include guard is required because
+the desktop Windows socket header otherwise defines `min`/`max` macros that
+break the shared particle headers.
+
+The exact packaged Windows D2 executable SHA256
+`997eb6e2f2fb20aa75a2eaac1c58403a61f3d3a4ce97a095191fc3db8b3b9c6e`
+passes the strict original Dinter level-1 rendered probe with XL active,
+6,744 segments, 120 unassisted simulated and 120 OpenGL frames, no GL error
+(`temp/xl-day-20261110/dinter-original-geometry-final/result.json`). Its
+proof records positive live particle counts and positive-alpha native scene
+quads in the authored segments for waterfall objects
+1483/1488/1508/1518/1520, bubbles 1486/1493/1495/1496/1504 and snow 1492.
+These are original content object identities, not synthetic payload copies.
+The same executable passes strict original Warp 5 120/120 as a regression
+control (`warp5-original-geometry-final/result.json`). Original Dinter HOG
+SHA256 remains `b4dc0423e781de5b667093313e92ffdb582c5b75c45ec119f680b2613b31fb13`;
+the pinned XL source remains `2576a98b5de310e3ac7c9777df2677d1627b8bae`.
+Scoped code quality passed; the root D2 build passed; root D2 CTest passed
+100 with the existing connectivity skip and zero failures in 70.96 seconds
+(`dinter-original-geometry-ctest.log`). This desktop-only diagnostic source
+is not part of the Android native library, so the prior Android APK/hash and
+its guarded owner results remain valid.
+
+W3's real original mine geometry and W4's snow native scene-quads are now
+observed, but this is not a GPU-visible waterfall/snow frame from a player
+camera, ordinary traversal, Android Dinter import/play, or a cold Dinter
+save. W2's canyon bubble play remains externally blocked by exact missing
+authored wave names, and Boiling waterworks still lacks its authored POG.
+W5's real-viewpoint and Android original-content steps remain the next work.
+At this checkpoint, revise the estimate to at least another 1-2 hours for
+one coherent W5 assisted-view/Android owner attempt and W6-W7 revalidation;
+the 19:00 nominal finish remains soft.
+
+### W5 original Dinter scene and Android follow-up, 20:47 PST
+
+The desktop-only rendered probe in
+`android/app/src/main/cpp/shared/route_confirmation_desktop.cpp` now accepts
+an optional `-xl-readiness-scene-object` for an assisted camera after its
+unchanged strict 120 unassisted simulated/120 OpenGL frame gate. It uses the
+loaded original object's actual position and segment, saves one particle frame,
+clears only transient particle systems, and saves two same-pose control frames.
+The output explicitly labels the camera assist. No original mission byte,
+private gate, frozen readiness cohort, production renderer or timeout changed.
+The exact packaged D2 executable SHA256
+`de40e9695e3b6f6fa5e0bc690af121f16b6a4919796488e0813b5d08114f2174`
+passed the strict original Dinter and Warp 5 120/120 probes with XL active and
+no GL error (`dinter-w5-camera-final-strict/result.json`,
+`warp5-w5-camera-final-strict/result.json`). In original Dinter level 1, the
+assisted object 1488 waterfall, 1492 snow and 1486 bubble scenes each retained
+positive live particles and yielded respectively 102,896, 1,825 and 9,992
+changed framebuffer pixels against their cleared-particle controls. Repeated
+controls changed zero pixels in each case. Exact captures, screenshot hashes
+and region `[100,20,540,280]` are in
+`temp/xl-day-20261110/dinter-scene-comparison.json`; source runs are
+`dinter-{waterfall,snow,bubble}-package-final`. This is particle-attributable
+GPU evidence with a position assist, not ordinary traversal from spawn.
+
+The existing protected Android import owner was extended in
+`android/tests/test_xl_addon_import.ps1`,
+`android/app/src/androidTest/java/com/dxxredux/app/RecoveryInstrumentation.kt`
+and `XlAddonPickerChecks.kt` to select and hash-check the unchanged original
+`dinter.hog` SHA256 `b4dc0423e781de5b667093313e92ffdb582c5b75c45ec119f680b2613b31fb13`
+and `dinter.mn2` SHA256
+`89ea5005ce971a3c7462dbfe727bbfa9b17b8766432e5f418e93c50c76ec72b1`.
+It reuses the same launcher/picker, retail D2 input list, XL resource owner,
+pilot, controller/save script, timeout and exact profile backup/restore. The
+first attempt reached Dinter's briefing before the shared Warp difficulty
+selection, failed at step 11, and restored every protected profile hash. The
+Dinter-only script order was corrected from that actual menu observation.
+The second serial run `temp/xl-dinter-android/owner-result.json` attempt
+`2557aeec0b3d4315ab8e318d29861e70` passed warm 19/19 on original Dinter
+level 1 with XL active, controller movement and normal save; cold 8/8 loaded
+the same saved level in a new game process (PIDs 20932/22042). It verified
+64 authentic imported XL resources, matching warm/cold save hashes and exact
+protected profile restoration. The temporary picker inputs were removed only
+after their hashes were reverified. The final formatted Android test APK was
+rebuilt offline; its SHA256 is
+`cdb5461d8bcb994f9c44d44b334e7bbea59500fa2b1e40a9e8c052ec4ba147b3`.
+The production universal APK remains SHA256
+`79a132a4e62b4e7fa669657193af1683078f7efacdc97ea7ccbf7ef8213f39bf`.
+
+W5 now has original Dinter bubble/waterfall/snow GPU scene evidence and Android
+warm/cold original-level play. Dinter's authored effect segments are disconnected
+from the spawn component in the raw segment graph, so ordinary traversal to
+those particular effects is still unproved. Boiling canyon/canyon2 are blocked
+by exact missing authored wave names, waterworks by its missing authored POG;
+no rain original-level frame is claimed. The pinned XL source remains
+`2576a98b5de310e3ac7c9777df2677d1627b8bae`. W6-W7 final-source checks
+and review identity follow; estimate 21:00 PST. The 19:00 finish was soft.
+
+### W6-W7 final-source validation and package checkpoint, 20:47 PST
+
+Root D2 full CTest on the final desktop source passed 100 with the one existing
+connectivity skip and zero failures in 70.36 seconds
+(`temp/xl-day-20261110/dinter-assisted-scene-final-ctest.log`). The scoped
+Kotlin/PowerShell code-quality run passed; the offline Android test APK build
+after formatting succeeded (`dinter-android-code-quality.log`,
+`dinter-android-test-final-build.log`). The protected Dinter owner ran the
+same logic before formatting; the final test APK was rebuilt from formatted
+source. Existing final production APK protected Pumo 68/68 and Warp 5 warm
+20/20, cold 8/8 results remain valid because only Android test and desktop
+probe sources changed after those runs. `git diff --check` is clean. The full
+lightning/GPU Android owner remains an unchanged 480-second timeout, and
+Linux GPU/audio and private fast gates remain unavailable. The frozen headless
+readiness result remains 4/8 with four loaded rows XL inactive. Do not infer
+whole-stack merge readiness from these local results.
+
+### W5 Android waterfall viewpoint and W6-W7 closeout, 21:30 PST
+
+The previous checkpoint's Android Dinter owner proved original play/save but
+its spawn screenshot did not show a particle scene. The existing desktop probe
+now records the exact assisted camera position and angles in
+`android/app/src/main/cpp/shared/route_confirmation_desktop.cpp`, using its
+loaded original object 1488/segment 2598. The existing guarded Android owner
+in `android/tests/test_xl_addon_import.ps1` uses that pose for a Dinter-only
+view after a normal save; it backs away from the authored face under ordinary
+controller input with the unchanged `position.speed > 0.05` threshold and
+10-second wait. The final owner preserves original-file hash checks, 240-second
+host runner setting, 64 imported XL resource hashes, fresh-process cold load,
+save equality and exact profile restoration. No per-level runner, production
+particle hook, fabricated asset, original byte edit or readiness relaxation
+was added. Two intermediate assisted attempts failed respectively at spawn
+movement and at a save request issued in the dense effect segment. Both
+restored protected profile hashes exactly; their results remain in
+`dinter-android-assisted-owner.log` and `...-third.log`. The final script saves
+before the assist, so cold restore is independent of camera placement.
+
+The final serial x86_64 owner attempt
+`976e72945e3743c9bc5fe849f16ddbad` passed original Dinter warm 22/22,
+cold 8/8 (`temp/xl-dinter-android/owner-result.json`). Warm process 26551
+loaded original level 1 with XL active, saved normally, then posed at authored
+waterfall segment 2598, passed ordinary thrust and captured
+`temp/xl-dinter-android/warm.png` SHA256
+`d420c8d1d8cb16d8dbe906f7a73b8c6105b317a64f2496b65532ff580a1338fa`.
+The screenshot visibly shows the blue original waterfall view, but it has no
+Android cleared-particle control, so pixel attribution relies on the separate
+desktop differential. Cold process 28319 restored the same saved level with
+XL active; warm/cold save hashes match, 64 native resource hashes match, and
+all protected profile hashes match. Warm automation elapsed 333264 ms in the
+dense segment despite the unchanged 240-second host runner setting; do not
+report it as a strict 240-second completion. The durable 22/22 result and
+owner PASS show that the existing runner did not abort this completion.
+Temporary picker inputs were removed after rechecking original hashes.
+
+The final root-associated D2 executable SHA256 is now
+`5fc562dfddb178d289291db56623598a996005d63e64b211e0963659abb64c9a`.
+It passed unchanged strict original Dinter and Warp 5 120/120 full-resource
+probes (`dinter-final-camera-pose-strict/result.json`,
+`warp5-final-camera-pose-strict/result.json`), XL active, no GL error. Its
+assisted original Dinter waterfall capture has 97,221 changed pixels versus
+the cleared-particle same-pose control, zero pixels between repeated controls
+(`dinter-camera-pose-probe/load.json` and screenshots). The same root D2
+source passed full CTest 100 with one existing connectivity skip and zero
+failures in 69.44 seconds (`dinter-camera-pose-final-ctest.log`). Scoped
+C++/PowerShell quality and `git diff --check` pass. Production universal APK
+SHA256 remains
+`79a132a4e62b4e7fa669657193af1683078f7efacdc97ea7ccbf7ef8213f39bf`;
+the final formatted Android test APK SHA256 remains
+`cdb5461d8bcb994f9c44d44b334e7bbea59500fa2b1e40a9e8c052ec4ba147b3`.
+The guarded assisted owner used the previously built test APK with the same
+logic before Kotlin-only formatting; the final test APK was built but not
+reinstalled for another full import.
+
+The pinned D2X-XL source remains
+`2576a98b5de310e3ac7c9777df2677d1627b8bae`; original Dinter HOG remains
+`b4dc0423e781de5b667093313e92ffdb582c5b75c45ec119f680b2613b31fb13`.
+W0-W7 accessible implementation, consolidated validation and review handoff
+are complete. Dinter effect-area traversal from spawn is still unproved
+because the raw authored graph disconnects it; Android particle-only pixels
+are not isolated. Boiling rain/waterworks/canyon blockers, the full GPU owner
+timeout, unavailable Linux/private gates and physical ARM execution remain
+blocked or deferred exactly as above. The final package/review identity is in
+`temp/xl-day-20261110/HANDOFF.md`; revised estimate is complete at this
+21:30 PST checkpoint, after the soft 19:00 target.

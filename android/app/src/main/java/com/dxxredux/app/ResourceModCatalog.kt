@@ -82,6 +82,8 @@ internal val XL_RESOURCE_MOD =
                         "smoke",
                         "smokingfire",
                         "bubble",
+                        "rain",
+                        "simplesmoke",
                         "corona",
                         "glare",
                         "forcefield",

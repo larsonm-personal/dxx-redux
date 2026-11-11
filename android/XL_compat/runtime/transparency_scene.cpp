@@ -193,24 +193,44 @@ void drain_buffered(DrawParticles draw_particles, DrawOther draw_other, Before b
 {
 	FireParticleBuffers buffers({ float(eye[0]) / 65536.f, float(eye[1]) / 65536.f, float(eye[2]) / 65536.f });
 	const auto submit = [&](const std::vector<std::size_t> &indices) {
-		std::vector<ParticleQuad> quads;
-		ParticleTexture *texture = nullptr;
-		const bool multi = std::any_of(indices.begin(), indices.end(), [](std::size_t index) { const auto &scene = std::get<Particle>(items[index]).scene; return scene.subtype == 2 || scene.quad.image >= 0; });
+		const auto flush_group = [&](const std::vector<std::size_t> &group) {
+			if (group.empty()) return;
+			std::vector<ParticleQuad> quads;
+			ParticleTexture *texture = nullptr;
+			const bool multi = std::any_of(group.begin(), group.end(), [](std::size_t index) {
+				const auto &scene = std::get<Particle>(items[index]).scene;
+				return scene.subtype == 2 || scene.quad.image >= 0;
+			});
+			for (auto index : group) {
+				const auto &particle = std::get<Particle>(items[index]);
+				if (!multi && texture != particle.texture && !quads.empty()) {
+					draw_particles(texture, quads);
+					quads.clear();
+				}
+				texture = particle.texture;
+				auto quad = particle_scene_quad(particle.scene);
+				if (multi) {
+					if (particle.scene.subtype != 0 && particle.scene.subtype != 2 && particle.scene.subtype != 4)
+						throw std::runtime_error("XL mixed particle buffer contains an incompatible image");
+					quad.image = particle.scene.subtype == 2 ? 2 : 1;
+				}
+				quads.push_back(std::move(quad));
+			}
+			if (!quads.empty()) draw_particles(texture, quads);
+		};
+		std::vector<std::size_t> group;
+		int kind = -1;
 		for (auto index : indices) {
-			const auto &particle = std::get<Particle>(items[index]);
-			if (!multi && texture != particle.texture && !quads.empty()) {
-				draw_particles(texture, quads);
-				quads.clear();
+			const int subtype = std::get<Particle>(items[index]).scene.subtype;
+			const int next = subtype == 5 || subtype == 6 ? subtype : 0;
+			if (!group.empty() && next != kind) {
+				flush_group(group);
+				group.clear();
 			}
-			texture = particle.texture;
-			auto quad = particle_scene_quad(particle.scene);
-			if (multi) {
-				if (particle.scene.subtype != 0 && particle.scene.subtype != 2) throw std::runtime_error("XL mixed particle buffer contains an incompatible image");
-				quad.image = particle.scene.subtype == 2 ? 2 : 1;
-			}
-			quads.push_back(std::move(quad));
+			kind = next;
+			group.push_back(index);
 		}
-		if (!quads.empty()) draw_particles(texture, quads);
+		flush_group(group);
 	};
 	drain([&](Item &item) {
 		before(item);

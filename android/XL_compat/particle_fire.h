@@ -4,6 +4,7 @@
 #include "lighting.h"
 #include "particle_effect.h"
 #include "particle_geometry.h"
+#include <string>
 
 #ifdef _MSC_VER
 #pragma pack(push, 8)
@@ -22,7 +23,8 @@ namespace particle_detail
 {
 inline int signed_checked(std::int64_t value)
 {
-	if (value < INT32_MIN || value > INT32_MAX) throw std::runtime_error("XL particle motion exceeds the source fixed-point range");
+	if (value < INT32_MIN || value > INT32_MAX)
+		throw std::runtime_error("XL particle motion exceeds the source fixed-point range: " + std::to_string(value));
 	return int(value);
 }
 inline ParticlePoint multiply(const ParticlePoint &value, int scale)
@@ -108,7 +110,11 @@ void move_fire_particle(FireParticle &particle, int time, Random &random, int di
 	particle.position = add(particle.position, multiply(particle.drift, elapsed));
 	for (auto &component : particle.drift) {
 		const int variation = component ? component / 2 - scaled_random(random, component) : 0;
-		component = signed_checked(std::int64_t(component) * 10 + variation) / 10;
+		// The pinned XL ChangeDir uses int32_t arithmetic before dividing.  MSVC
+		// wraps this intermediate on authentic high-speed fire emitters.
+		const auto wrapped = std::uint32_t(std::int64_t(component) * 10 + variation);
+		const auto source_sum = wrapped <= INT32_MAX ? std::int64_t(wrapped) : std::int64_t(wrapped) - (INT64_C(1) << 32);
+		component = int(source_sum / 10);
 	}
 	const auto drift = geometry_default_direction(particle.drift), direction = geometry_default_direction(particle.direction);
 	particle.position = add(particle.position, multiply(particle.direction, fixed_vector_dot(drift, direction) < 0 ? -direction_drag : direction_drag));

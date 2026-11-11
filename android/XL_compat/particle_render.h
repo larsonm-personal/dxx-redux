@@ -4,6 +4,8 @@
 #include "particle_image.h"
 #include "particle_smoke.h"
 #include "particle_bubble.h"
+#include "particle_waterfall.h"
+#include "particle_weather.h"
 
 #ifdef _MSC_VER
 #pragma pack(push, 8)
@@ -132,6 +134,84 @@ inline ParticleQuad smoke_particle_quad(const SmokeParticle &particle, const Par
 	float scale = particle.blow_up ? 1.0f / float(std::sqrt(decay)) : 1.0f;
 	if (decay > 0.9f) scale *= std::sqrt((1.0f - decay) / 0.1f);
 	return particle_billboard_quad(particle.motion, view, image_width, image_height, smoke_image_atlas_side, scale, particle.appearance.rendered, ParticleBlend::alpha, false);
+}
+
+inline bool prepare_waterfall_particle_draw(WaterfallParticle &particle, bool animate)
+{
+	if (particle.motion.life < 0) return false;
+	if (animate) particle.motion.frame = (particle.motion.frame + 1) % 64;
+	return true;
+}
+
+inline ParticleQuad waterfall_particle_quad(const WaterfallParticle &particle, const ParticleView &view, unsigned image_width, unsigned image_height)
+{
+	// Internal image 6 shares the smoke pixels, but retains its own frame,
+	// opacity, fixed direction and decay-one size policy.
+	auto quad = particle_billboard_quad(particle.motion, view, image_width, image_height,
+	                                    smoke_image_atlas_side, 1.0f, particle.rendered,
+	                                    ParticleBlend::alpha, false);
+	return quad;
+}
+
+inline bool prepare_weather_particle_draw(WeatherParticle &particle, bool animate)
+{
+	if (particle.motion.life < 0) return false;
+	if (animate && particle.snow) {
+		particle.rotation_phase <<= 1;
+		if (particle.rotation_phase == 4) {
+			particle.rotation_phase = 1;
+			particle.motion.rotation = (particle.motion.rotation + 1) % 64;
+		}
+	}
+	return true;
+}
+
+template <typename Random>
+ParticleQuad snow_particle_quad(const WeatherParticle &particle, const ParticleView &view, unsigned width, unsigned height, Random &random)
+{
+	if (!particle.snow) throw std::runtime_error("Rain particle selected snow draw");
+	// Source Setup consumes one FX draw for snow's frame-zero wiggle, even
+	// though sin(0) leaves its center unchanged.
+	(void) random.bounded(6);
+	return particle_billboard_quad(particle.motion, view, width, height, 1, 1.0f, particle.color, ParticleBlend::alpha, false);
+}
+
+inline ParticleQuad rain_particle_quad(const WeatherParticle &particle, const ParticlePoint &eye, unsigned width, unsigned height)
+{
+	if (particle.snow) throw std::runtime_error("Snow particle selected rain draw");
+	const auto &motion = particle.motion;
+	if (!width || !height || motion.orientation != 1 || motion.frame != 0) throw std::runtime_error("Invalid XL rain billboard state");
+	std::array<float, 3> center{}, viewer{}, up{}, right{};
+	for (unsigned axis = 0; axis < 3; ++axis) {
+		center[axis] = float(motion.position[axis]) / 65536.0f;
+		viewer[axis] = float(eye[axis]) / 65536.0f;
+		up[axis] = -float(motion.direction[axis]) / 65536.0f;
+	}
+	const auto normalize = [](std::array<float, 3> &value) {
+		const float length = std::sqrt(value[0] * value[0] + value[1] * value[1] + value[2] * value[2]);
+		if (length > 0)
+			for (auto &component : value) component /= length;
+	};
+	normalize(up);
+	std::array<float, 3> ray{};
+	for (unsigned axis = 0; axis < 3; ++axis) ray[axis] = up[axis] - viewer[axis];
+	normalize(ray);
+	right = { ray[1] * viewer[2] - ray[2] * viewer[1], ray[2] * viewer[0] - ray[0] * viewer[2], ray[0] * viewer[1] - ray[1] * viewer[0] };
+	ParticleQuad quad{};
+	quad.blend = ParticleBlend::alpha;
+	for (unsigned axis = 0; axis < 3; ++axis) {
+		const float r = right[axis] * motion.width, u = up[axis] * motion.height;
+		quad.vertices[0].position[axis] = center[axis] - r - u;
+		quad.vertices[1].position[axis] = center[axis] - r + u;
+		quad.vertices[2].position[axis] = center[axis] + r + u;
+		quad.vertices[3].position[axis] = center[axis] + r - u;
+	}
+	for (unsigned i = 0; i < 4; ++i) {
+		auto &vertex = quad.vertices[(unsigned(motion.orientation) + i) % 4];
+		vertex.uv = { i == 0 || i == 3 ? 0.0f : 1.0f, i < 2 ? 0.0f : 1.0f };
+		vertex.color = particle.color;
+	}
+	return quad;
 }
 
 inline bool prepare_bubble_particle_draw(BubbleParticle &particle, bool animate)

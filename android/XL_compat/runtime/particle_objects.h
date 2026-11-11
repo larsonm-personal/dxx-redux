@@ -12,7 +12,7 @@ namespace xl_compat
 {
 struct ParticleSystem {
 	int object, signature;
-	std::variant<FireEmitter, SmokeEmitter, BubbleEmitter> emitter;
+	std::variant<FireEmitter, SmokeEmitter, BubbleEmitter, WaterfallEmitter, RainEmitter, SnowEmitter> emitter;
 	const FireEmitter &fire_emitter() const
 	{
 		return std::get<FireEmitter>(emitter);
@@ -38,12 +38,21 @@ struct BubbleSceneDraw {
 	std::array<ParticlePoint, 3> camera{};
 	bool camera_space = false;
 };
+struct SnowSceneDraw {
+	const WeatherParticle *particle = nullptr;
+	unsigned width = 0, height = 0;
+	ParticleBasis basis;
+	ParticlePoint eye{};
+	std::array<ParticlePoint, 3> camera{};
+	bool camera_space = false;
+};
 struct ParticleSceneItem {
 	ParticlePoint position;
 	ParticleQuad quad;
 	float radius = 0;
 	int subtype = 3;
 	std::optional<BubbleSceneDraw> bubble;
+	std::optional<SnowSceneDraw> snow;
 };
 // Resolve only after the source buffer scheduler accepts a submitted batch
 ParticleQuad particle_scene_quad(const ParticleSceneItem &item);

@@ -21,7 +21,7 @@ struct ParticleSegment {
 	ParticlePoint center{};
 	std::array<ParticlePoint, 2> bounds{};
 	int inner_radius = 0, outer_radius = 0;
-	bool skybox = false, water = false;
+	bool skybox = false, water = false, lava = false;
 };
 
 inline ParticlePoint particle_difference(const ParticlePoint &a, const ParticlePoint &b)
@@ -100,6 +100,10 @@ class ParticleWorld
 	bool water(int segment) const
 	{
 		return segments.at(std::size_t(segment)).water;
+	}
+	bool lava(int segment) const
+	{
+		return segments.at(std::size_t(segment)).lava;
 	}
 	void build_grids()
 	{

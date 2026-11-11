@@ -40,6 +40,7 @@
 extern "C" {
 #include "inferno.h"
 #include "bm.h"
+#include "d2_ham_validation.h"
 #include "piggy.h"
 #include "physfsx.h"
 #include "d1_custom_validation.h"
@@ -207,6 +208,10 @@ std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefiniti
 			camera_ids.first = id;
 		}
 		robot_info_read_n(&robots.at(id), 1, file);
+		static_assert(sizeof(jointlist) == 4, "XL HXM joint-list storage must match the serialized pair");
+		if (!d2_ham_normalize_xl_unused_joint_lists(
+		        reinterpret_cast<uint8_t *>(&robots.at(id).anim_states[0][0]), robots.at(id).n_guns))
+			throw std::runtime_error("HXM robot gun count invalid");
 		changed_robots.insert(id);
 	}
 	count = PHYSFSX_readInt(file);
@@ -823,6 +828,8 @@ struct XlPreparedResources::State {
 	std::shared_ptr<const xl_compat::ParticleImageResource> particle_image;
 	std::shared_ptr<const xl_compat::ParticleImageResource> smoke_image;
 	std::shared_ptr<const xl_compat::ParticleImageResource> bubble_image;
+	std::shared_ptr<const xl_compat::ParticleImageResource> rain_image;
+	std::shared_ptr<const xl_compat::ParticleImageResource> snow_image;
 	std::shared_ptr<const xl_compat::ParticleImageResource> lightning_image;
 	std::shared_ptr<const xl_compat::ParticleImageResource> powerup_glare_image;
 	std::array<std::shared_ptr<const xl_compat::AnimatedImageResource>, 2> time_equipment_images;
@@ -939,6 +946,8 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 		state->particle_image = xl_compat::prepare_particle_image(*level);
 		state->smoke_image = xl_compat::prepare_particle_image(*level, 0);
 		state->bubble_image = xl_compat::prepare_particle_image(*level, 2);
+		state->rain_image = xl_compat::prepare_particle_image(*level, 5);
+		state->snow_image = xl_compat::prepare_particle_image(*level, 6);
 		state->lightning_image = xl_compat::prepare_lightning_image(*level);
 		state->powerup_glare_image = xl_compat::prepare_powerup_glare_image();
 		if (xl_runtime::time_equipment_resources_required(*level))
@@ -977,13 +986,19 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 		for (int i = 0; i < xl_pog_count(state->pog.get()); ++i) {
 			const auto *entry = xl_pog_entry(state->pog.get(), i);
 			if (!entry->rgba) continue;
+			if (entry->frames > 1) {
+				const int clock = xl_pog_strip_clock(entry->index);
+				if (clock < 0) throw std::runtime_error(pog_name + ": native bitmap animation tables exceed supported bounds");
+				if (clock) throw std::runtime_error(pog_name + ": RGBA bitmap " + std::to_string(entry->index) +
+					                                " has clocked animation frames; playback is not implemented");
+			}
 			bool cockpit = false;
 			for (const auto &bitmap : cockpit_bitmap) cockpit = cockpit || bitmap.index == entry->index;
 			for (int gauge = 0; gauge < MAX_GAUGE_BMS; ++gauge)
 				cockpit = cockpit || Gauges[gauge].index == entry->index || Gauges_hires[gauge].index == entry->index;
 			if (cockpit) throw std::runtime_error(pog_name + ": RGBA bitmap " + std::to_string(entry->index) +
 				                                  " replaces a cockpit/HUD image; true-color cockpit layout is not implemented");
-			if (const char *reason = ogl_xl_rgba_prepare(int(entry->width), int(entry->height)))
+			if (const char *reason = ogl_xl_rgba_prepare(int(entry->width), int(entry->frame_height)))
 				throw std::runtime_error(pog_name + ": " + reason);
 		}
 	}
@@ -1198,6 +1213,8 @@ const xl_compat::ParticleImageResource *XlPreparedResources::particle_image(int 
 {
 	return subtype == 3 ? state->particle_image.get() : subtype == 2 ? state->bubble_image.get()
 	                                                : subtype == 0   ? state->smoke_image.get()
+	                                                : subtype == 5   ? state->rain_image.get()
+	                                                : subtype == 6   ? state->snow_image.get()
 	                                                                 : nullptr;
 }
 

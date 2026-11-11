@@ -11,6 +11,7 @@ extern "C" {
 #include "game.h"
 #include "gameseg.h"
 #include "gameseq.h"
+#include "guidebot_extensions.h"
 #include "guidebot_route_internal.h"
 #include "guidebot_goal_message.h"
 #include "key.h"
@@ -360,6 +361,17 @@ int test_guidebot_live_navigation(const char *output, const char *return_target)
 	Buddy_messages_suppressed = 1;
 	escort_spawn_at_player();
 	if (Buddy_objnum < 0 || Buddy_objnum > Highest_object_index) return 1;
+	const int saved_buddy = Buddy_objnum;
+	escort_route_reset_navigation();
+	const auto rescans = escort_get_route_event_coalesced_rescan_count();
+	const auto certificates = escort_get_route_certificate_check_count();
+	Buddy_objnum = -1;
+	escort_route_monitor_completion();
+	check("missing_companion_defers_route_work", escort_get_route_event_coalesced_rescan_count() == rescans &&
+	                                                 escort_get_route_certificate_check_count() == certificates);
+	Buddy_objnum = saved_buddy;
+	escort_route_monitor_completion();
+	check("restored_companion_resumes_route_work", escort_get_route_event_coalesced_rescan_count() > rescans);
 	object *bot = &Objects[Buddy_objnum];
 	place(bot, ConsoleObject->segnum);
 	// Isolate navigation from combat and stationary unprocessed robot bodies

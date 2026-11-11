@@ -77,3 +77,60 @@ if(REFERENCE AND MODE STREQUAL "dispatch")
         message(FATAL_ERROR "Player-start source comparison failed: ${stdout}${stderr}")
     endif()
 endif()
+
+if(WARP_HOG AND WARP_DATA AND WARP_ENGINE AND MODE STREQUAL "dispatch")
+    file(SHA256 "${WARP_HOG}" warp_hash)
+    if(NOT warp_hash STREQUAL "2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c")
+        message(FATAL_ERROR "Warp 5 controls require the unchanged original Warp Shock 2.0 HOG")
+    endif()
+    get_filename_component(warp_dir "${WARP_HOG}" DIRECTORY)
+    set(warp_descriptor "${warp_dir}/wshock20.mn2")
+    file(SHA256 "${warp_descriptor}" descriptor_hash)
+    if(NOT descriptor_hash STREQUAL
+       "e4ee4da1dfc16b48b91be3409216e73cf43dd74e6e20d1be40b6bb310fe5a42a")
+        message(FATAL_ERROR "Warp 5 controls require the unchanged original descriptor")
+    endif()
+    configure_file("${WARP_HOG}" "${OUTPUT}/missions/wshock20.hog" COPYONLY)
+    configure_file("${warp_descriptor}" "${OUTPUT}/missions/wshock20.mn2" COPYONLY)
+    file(MAKE_DIRECTORY "${OUTPUT}/warp-user")
+    foreach(warp_mode IN ITEMS warp5-warm warp5-cold)
+        if(warp_mode STREQUAL "warp5-warm")
+            set(proof_mode warm)
+        else()
+            set(proof_mode cold)
+        endif()
+        execute_process(
+            COMMAND
+                "${WARP_ENGINE}" -mission wshock20 -level 5 -hogdir "${WARP_DATA}" -extra-dir
+                "${OUTPUT}" -route-confirm-user-dir "${OUTPUT}/warp-user" -route-confirm-json-out
+                "${OUTPUT}/${warp_mode}.json" -xl-hxm-actor-proof "${proof_mode}" -nosound -nomusic
+            RESULT_VARIABLE warp_result
+            OUTPUT_VARIABLE warp_stdout
+            ERROR_VARIABLE warp_stderr
+            TIMEOUT 90)
+        file(WRITE "${OUTPUT}/${warp_mode}.log" "${warp_stdout}${warp_stderr}")
+        if(NOT EXISTS "${OUTPUT}/${warp_mode}.json")
+            message(
+                FATAL_ERROR
+                    "Warp 5 ${warp_mode} emitted no proof: ${warp_result}: ${warp_stdout}${warp_stderr}"
+            )
+        endif()
+        file(READ "${OUTPUT}/${warp_mode}.json" warp_proof)
+        string(JSON warp_phase GET "${warp_proof}" phase)
+        string(JSON warp_shields GET "${warp_proof}" shields_after)
+        if(NOT warp_result EQUAL 0 OR NOT warp_phase STREQUAL "passed")
+            message(
+                FATAL_ERROR
+                    "Warp 5 ${warp_mode} failed: ${warp_result}: ${warp_stdout}${warp_stderr}")
+        endif()
+        if(warp_mode STREQUAL "warp5-warm")
+            set(warm_shields "${warp_shields}")
+        elseif(NOT warp_shields STREQUAL warm_shields)
+            message(FATAL_ERROR "Warp 5 fresh-process restore changed combat shields")
+        endif()
+    endforeach()
+    file(SHA256 "${WARP_HOG}" final_warp_hash)
+    if(NOT final_warp_hash STREQUAL warp_hash)
+        message(FATAL_ERROR "Original Warp Shock 2.0 HOG changed")
+    endif()
+endif()

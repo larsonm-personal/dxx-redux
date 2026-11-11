@@ -215,6 +215,18 @@ int main(int argc, char **argv)
 	put16(joint_hxm, 16 + 298, -1);
 	expect(!d2_ham_validate_xl_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166, &report),
 	       "XL HXM rejects negative nonempty animation ranges");
+	put16(joint_hxm, 16 + 296, 0);
+	put16(joint_hxm, 16 + 298, 0);
+	joint_hxm[16 + 118] = 2;
+	put16(joint_hxm, 16 + 296 + 6 * 5 * 4, 24942);
+	put16(joint_hxm, 16 + 296 + 7 * 5 * 4 + 2 * 4, -13824);
+	expect(!d2_ham_validate_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166, &report),
+	       "stock HXM still rejects malformed unused animation slots");
+	expect(d2_ham_validate_xl_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166, &report),
+	       "XL HXM normalizes only groups beyond n_guns");
+	put16(joint_hxm, 16 + 296 + 1 * 5 * 4, -1);
+	expect(!d2_ham_validate_xl_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166, &report),
+	       "XL HXM still rejects a malformed active gun group");
 	{
 		unsigned char xl_extra[512] = { 0 };
 		size_t size = 0;

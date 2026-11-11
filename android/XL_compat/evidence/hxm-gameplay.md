@@ -135,3 +135,30 @@ certify Alarlof's complete encounter/progression logic or the campaign. Fourteen
 other Apocalyptic Factor levels still fail their declared packed-light ranges.
 The static format candidate report remains a decoding report, not a gameplay
 qualification percentage
+
+## Warp Shock 2.0 level 5 animation slots (2026-11-10)
+
+The unchanged original `wshock20.hog` (SHA256 `2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c`)
+contains `volcano.hxm` at byte 8460823, length 13100 (SHA256 `e132d223d44349742889658f501eaa52d28256319833551973f8754d431f8d99`).
+Its 27 replacement robots contain no inert model `-1` record. Robot 51 uses
+model 75, two guns and submodels 2/4. Animation groups 0/1 have two joints,
+group 2 is empty, and unreachable groups 6/7 contain malformed data. The
+native and pinned XL consumers visit only groups 0 through `n_guns`.
+
+XL HXM validation now clears groups above `n_guns` in a local validated copy;
+the owned definition reader applies the same rule before dependency closure and
+installation. Stock HXM validation remains strict. `test_d2_ham_validation`
+accepts the inactive XL garbage while rejecting the same stock bytes and an
+invalid active group. The original Warp 5 loaded through the normal renderer
+and completed 120 unassisted simulated/rendered frames on the Intel Arc GPU.
+
+The optional original actor witness in `xl_hxm_native` uses the existing desktop
+route probe with a real OpenGL renderer. Authored object 226, robot 51, is
+relinked by the normal loader from authored segment 528 to runtime segment 1040. The probe checks all active animation lists and gun transforms, uses a
+disclosed player position assist to trigger production AI weapon 21, applies
+combat damage, saves and restores normally through stock content, then verifies
+the damaged actor in a separate process and returns to stock again. Warm and
+cold frames render without GL error. This is a short controlled actor witness,
+not a whole-level traversal. The headless HXM executable cannot load this
+fog/skybox level because it has no active OpenGL renderer; the rendered witness
+therefore runs in the normal desktop executable.

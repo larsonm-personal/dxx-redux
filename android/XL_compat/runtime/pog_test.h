@@ -211,9 +211,18 @@ static void rejection(const std::filesystem::path &root, const std::vector<xl_co
 	const auto path = root / "rtarena.POG";
 	const auto energy = Players[Player_num].energy;
 	const auto state = arena_state();
+	unsigned clocked_bitmap = 0;
+	for (int clip = 0; clip < Num_vclips && !clocked_bitmap; ++clip)
+		for (int frame = 0; frame < Vclip[clip].num_frames; ++frame)
+			if (Vclip[clip].frames[frame].index > 0 && Vclip[clip].frames[frame].index < Num_bitmap_files) {
+				clocked_bitmap = Vclip[clip].frames[frame].index;
+				break;
+			}
+	require(clocked_bitmap, "No stock vclip bitmap for clocked POG rejection");
 	for (int kind = 0; kind < 4; ++kind) {
 		auto image = solid(Textures[1].index, 0);
 		if (kind == 1) {
+			image.index = clocked_bitmap;
 			image.height = 2;
 			image.pixels.resize(8);
 		}
@@ -229,12 +238,16 @@ static void rejection(const std::filesystem::path &root, const std::vector<xl_co
 		if (accepted || !std::strstr(xl_level_rejection(), reason))
 			std::cerr << "POG rejection kind=" << kind << ": " << xl_level_rejection() << '\n';
 		require(!accepted && std::strstr(xl_level_rejection(), reason), "POG rejection omitted the actionable encoding reason");
+		if (kind == 1) {
+			auto resources = prepare("rtarena.POG");
+			require(!xl_pog_install(resources.get()), "Direct POG install accepted a clocked animation strip");
+		}
 		require(load_level("rtarena.rl2") != 0 && arena_state() == state && Players[Player_num].energy == energy, "Rejected POG changed active gameplay");
 		installed(images);
 	}
 	require(std::filesystem::remove(path), "Cannot remove private rejection fixture");
 	require(xl_level_supported("rtarena.rl2", 0), "Original POG did not recover after rejection");
-	std::cout << "POG admission: truncated pixels, unsupported strips/HUD and bad indices rejected before live mutation\n";
+	std::cout << "POG admission: truncated pixels, clocked strips, unsupported HUD and bad indices rejected before live mutation\n";
 }
 } // namespace pog_control
 
@@ -300,6 +313,37 @@ static int pog_test(int argc, char **argv)
 			}
 			require(PHYSFS_removeFromSearchPath(hog) && count == 26, "Original Pumo resource coverage incomplete");
 			std::cout << "Original Pumo POG resources: all five files and 26 replacements installed with source-normalized RGBA bytes; campaign not admitted\n";
+		}
+		if (const auto hog = find_arg_value(argc, argv, "-dinter-hog")) {
+			require(PHYSFS_addToSearchPath(hog, 0), "Cannot mount original Dinter resources");
+			const auto images = original("dinter.pog", 92);
+			auto resources = prepare("dinter.pog");
+			require(xl_pog_install(resources.get()), "Cannot install original Dinter POG");
+			unsigned strips = 0;
+			for (const auto &image : images) {
+				if (image.frames < 2) continue;
+				const auto *entry = [&] {
+					for (int row = 0; row < xl_pog_count(resources.get()); ++row)
+						if (xl_pog_entry(resources.get(), row)->index == image.index) return xl_pog_entry(resources.get(), row);
+					return static_cast<const xl_pog_bitmap *>(nullptr);
+				}();
+				const auto &bitmap = GameBitmaps[image.index];
+				unsigned bytes = 0, hash = 0, expected_hash = 2166136261u;
+				for (size_t i = 0; i < size_t(image.width) * image.frame_height() * 4; ++i)
+					expected_hash = (expected_hash ^ image.pixels[i]) * 16777619u;
+				require(entry && entry->frames == image.frames && entry->height == image.height &&
+				            entry->frame_height == image.frame_height() && bitmap.bm_type == BM_RGBA &&
+				            bitmap.bm_w == int(image.width) && bitmap.bm_h == int(image.frame_height()) &&
+				            xl_pog_bitmap_receipt(resources.get(), image.index, &bytes, &hash) &&
+				            bytes == image.width * image.frame_height() * 4 && hash == expected_hash,
+				        "Original Dinter static strip frame or owned pixel arena changed");
+				++strips;
+			}
+			require(strips == 3, "Original Dinter static POG strip count changed");
+			require(xl_pog_install(arena_resources.get()), "Cannot restore Arena after Dinter POG control");
+			require(PHYSFS_removeFromSearchPath(hog), "Cannot unmount original Dinter resources");
+			installed(arena);
+			std::cout << "Original Dinter POG: three unclocked RGBA strips retain all frames with source frame-zero native views\n";
 		}
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
