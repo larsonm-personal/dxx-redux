@@ -117,7 +117,9 @@ internal class XlAddonPickerChecks(
         archive: File,
         originalDistribution: Boolean = false,
         retainForGameplay: Boolean = false,
+        originalMission: String = "wshock20",
     ) {
+        require(originalMission == "wshock20" || originalMission == "dinter")
         val context = instrumentation.targetContext
         val sets = FileSetManager(context.filesDir)
         val config = File(context.filesDir, "file_sets.json")
@@ -152,7 +154,15 @@ internal class XlAddonPickerChecks(
                 ) as SetupActivity
             instrumentation.waitForIdleSync()
             pickFiles(listOf(archive)) {
-                val deadline = SystemClock.uptimeMillis() + if (originalDistribution) 120000 else 30000
+                val deadline =
+                    SystemClock.uptimeMillis() +
+                        if (retainForGameplay) {
+                            240000
+                        } else if (originalDistribution) {
+                            120000
+                        } else {
+                            30000
+                        }
                 while (ModManager.forActiveSet(context.filesDir, context).listMods().isEmpty() &&
                     SystemClock.uptimeMillis() < deadline
                 ) {
@@ -170,6 +180,12 @@ internal class XlAddonPickerChecks(
                     check(!File(pack, "d2x.ham").exists())
                     check(File(pack, "textures/d2x-xl/smokingfire.png").isFile)
                     check(File(pack, "sounds/d2x-xl/lightning.wav").isFile)
+                    for ((name, hash) in mapOf(
+                        "rain.png" to "2fa050b3cf433a363595a41e6604336d053b7d9d7e9e938540a844d7cde110d3",
+                        "simplesmoke.png" to "8c39135fddbc35dc85e2132ece9fb0449625ae9b86df3e3eae8cf7fa44bf8c48",
+                    )) {
+                        check(MissionContentIdentity.compute(File(pack, "textures/d2x-xl/$name")).sha256 == hash)
+                    }
                     for ((name, hash) in mapOf(
                         "slowmotion#0.png" to "3133036494c8ef656433842850598072ab4dadde58870389c41745f73977113e",
                         "bullettime#0.png" to "6b0de9039a3a90312e0193d88f9aa804a50d2334454afc52e1a5c5e74eadc1c0",
@@ -210,20 +226,30 @@ internal class XlAddonPickerChecks(
                         "fire.pig",
                         "ice.pig",
                         "water.pig",
-                        "wshock20.hog",
-                        "wshock20.mn2",
+                        "$originalMission.hog",
+                        "$originalMission.mn2",
                         "d2x.ham",
                     )
                 val inputs = names.map { File(archive.parentFile, it) }
                 check(inputs.all { it.isFile }) { "Original gameplay inputs are missing" }
-                check(
-                    MissionContentIdentity.compute(inputs[names.indexOf("wshock20.hog")]).sha256 ==
-                        "2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c",
-                )
-                check(
-                    MissionContentIdentity.compute(inputs[names.indexOf("wshock20.mn2")]).sha256 ==
-                        "e4ee4da1dfc16b48b91be3409216e73cf43dd74e6e20d1be40b6bb310fe5a42a",
-                )
+                val missionHashes =
+                    if (originalMission == "dinter") {
+                        listOf(
+                            "b4dc0423e781de5b667093313e92ffdb582c5b75c45ec119f680b2613b31fb13",
+                            "89ea5005ce971a3c7462dbfe727bbfa9b17b8766432e5f418e93c50c76ec72b1",
+                        )
+                    } else {
+                        listOf(
+                            "2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c",
+                            "e4ee4da1dfc16b48b91be3409216e73cf43dd74e6e20d1be40b6bb310fe5a42a",
+                        )
+                    }
+                for ((extension, hash) in listOf("hog", "mn2").zip(missionHashes)) {
+                    check(
+                        MissionContentIdentity.compute(inputs[names.indexOf("$originalMission.$extension")]).sha256 ==
+                            hash,
+                    )
+                }
                 pickFiles(inputs) {
                     click("Import All")
                     val target = sets.getSetDir(setName)

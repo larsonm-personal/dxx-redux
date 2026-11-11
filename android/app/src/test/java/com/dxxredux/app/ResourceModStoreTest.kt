@@ -9,6 +9,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.io.IOException
+import java.security.MessageDigest
 
 class ResourceModStoreTest {
     @get:Rule val temporary = TemporaryFolder()
@@ -88,6 +89,21 @@ class ResourceModStoreTest {
         assertTrue("d2x-xl.hog" in paths)
         assertFalse("d2x.ham" in paths)
         assertTrue("textures/d2x-xl/smokingfire.png" in paths)
+        assertTrue("textures/d2x-xl/rain.png" in paths)
+        assertTrue("textures/d2x-xl/simplesmoke.png" in paths)
+
+        fun sha256(path: String): String =
+            MessageDigest.getInstance("SHA-256").digest(pack.resolve(path).readBytes()).joinToString("") {
+                "%02x".format(it.toInt() and 0xff)
+            }
+        assertEquals(
+            "2fa050b3cf433a363595a41e6604336d053b7d9d7e9e938540a844d7cde110d3",
+            sha256("textures/d2x-xl/rain.png"),
+        )
+        assertEquals(
+            "8c39135fddbc35dc85e2132ece9fb0449625ae9b86df3e3eae8cf7fa44bf8c48",
+            sha256("textures/d2x-xl/simplesmoke.png"),
+        )
         assertTrue("sounds/d2x-xl/lightning.wav" in paths)
         assertTrue("textures/d2/slowmotion#0.png" in paths)
         assertTrue("textures/d2/bullettime#0.png" in paths)
@@ -108,6 +124,8 @@ class ResourceModStoreTest {
             listOf(
                 "D2X-XL\\data\\d2x-xl.hog",
                 "D2X-XL/textures/d2x-xl/smoke.png",
+                "D2X-XL/textures/d2x-xl/rain.png",
+                "D2X-XL/textures/d2x-xl/simplesmoke.png",
                 "D2X-XL/sounds/d2x-xl/lightning.wav",
                 "D2X-XL/textures/D2/slowmotion#0.png",
                 "D2X-XL/textures/D2/bullettime#0.png",
@@ -123,6 +141,8 @@ class ResourceModStoreTest {
                 "sounds/d2x-xl/lightning.wav",
                 "textures/d2/bullettime#0.png",
                 "textures/d2/slowmotion#0.png",
+                "textures/d2x-xl/rain.png",
+                "textures/d2x-xl/simplesmoke.png",
                 "textures/d2x-xl/smoke.png",
             ),
             XL_RESOURCE_MOD.select(paths).map { it.target }.sorted(),

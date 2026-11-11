@@ -12,18 +12,12 @@ namespace xl_compat
 inline bool authored_particle_shape(const Object &object)
 {
 	return object.type == 20 && object.reader_id == 0 && object.render == 11 && object.reader_render == 11 &&
-	       !object.control && !object.movement && !object.multiplayer && object.render_data.size() == 13 && object.render_data[11] >= 0 && object.render_data[11] <= 3;
+	       !object.control && !object.movement && !object.multiplayer && object.render_data.size() == 13 &&
+	       object.render_data[11] >= 0 && object.render_data[11] <= 6;
 }
 inline bool fire_particle_shape(const Object &object)
 {
 	return authored_particle_shape(object) && object.render_data[11] == 3;
-}
-inline bool qualified_bubble_profile(const Inventory &level, const Object &object)
-{
-	// Original pmlev3 object316, with activation allowed to start disabled
-	constexpr std::array<int, 12> payload{ 2, 2, 4, 2, 2, 9, 0, 0, 0, 100, 0, 2 };
-	return level.level_version == 27 && level.game_version == 40 && authored_particle_shape(object) &&
-	       std::equal(payload.begin(), payload.end(), object.render_data.begin()) && (object.render_data[12] == 0 || object.render_data[12] == 1);
 }
 struct PreparedFireParticle {
 	ParticleEffect effect;
@@ -32,7 +26,9 @@ struct PreparedFireParticle {
 };
 inline PreparedFireParticle prepare_authored_particle(const Inventory &level, const Object &object)
 {
-	if (!authored_particle_shape(object)) throw std::runtime_error("XL fire/smoke/spray/bubbles requires a stationary uncontrolled single-player particle object");
+	if (!authored_particle_shape(object)) {
+		throw std::runtime_error("XL particles require a stationary uncontrolled single-player particle object with a supported subtype");
+	}
 	if (object.segment < 0 || std::size_t(object.segment) >= level.segments.size())
 		throw std::runtime_error("XL particle object references an invalid segment");
 	PreparedFireParticle result;
@@ -44,6 +40,12 @@ inline PreparedFireParticle prepare_authored_particle(const Inventory &level, co
 	}
 	result.effect = decode_particle_effect(object, level.level_version, area);
 	result.definition = particle_emitter_definition(result.effect, { object.orientation[6], object.orientation[7], object.orientation[8] }, true);
+	if ((result.effect.kind == ParticleKind::bubbles || result.effect.kind >= ParticleKind::waterfall) &&
+	    (result.definition.count <= 0 || result.definition.life >= 0 || result.definition.life == INT32_MIN ||
+	     result.definition.speed < 0 || result.definition.speed > INT32_MAX / 65536 ||
+	     !(result.definition.scale < 0) || !std::isfinite(result.definition.scale) ||
+	     double(-result.definition.scale) > INT32_MAX))
+		throw std::runtime_error("XL authored particle emitter exceeds the bounded native creation range");
 	return result;
 }
 inline PreparedFireParticle prepare_fire_particle(const Inventory &level, const Object &object)

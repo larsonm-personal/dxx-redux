@@ -131,6 +131,7 @@ static int boss_groups_test(int argc, char **argv)
 			xl_boss_teleport(49);
 			require(Objects[49].segnum == 70, "restored AI crossed group boundary");
 		}
+		robotmaker_boss_controls(root);
 		std::cout << "XL boss group controls passed\n";
 		return 0;
 	} catch (const std::exception &error) {

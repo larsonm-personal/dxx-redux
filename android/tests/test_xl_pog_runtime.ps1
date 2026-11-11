@@ -6,6 +6,7 @@ param(
     [Parameter(Mandatory)][string]$Descriptor,
     [Parameter(Mandatory)][string]$FireImage,
     [string]$PumoMods = '',
+    [string]$OutputDirectory = '',
     [switch]$SceneOnly,
     [switch]$SecretFixture,
     [switch]$SkyboxFixture,
@@ -200,6 +201,7 @@ if ($LightningGpu) { $output = Join-Path $PSScriptRoot '../../temp/xl-lightning-
 if ($BubbleGpu) { $output = Join-Path $PSScriptRoot '../../temp/xl-bubble-gpu-android' }
 if ($MissingCamera) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-missing-camera' }
 if ($BriefingPages) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-briefing-pages' }
+if ($OutputDirectory) { $output = [IO.Path]::GetFullPath($OutputDirectory) }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 foreach ($name in @('result.json', 'state.json', 'steps.jsonl', 'logcat.txt', 'render.png')) {
@@ -220,6 +222,12 @@ function Get-PogAvdName {
     param([string]$Expected = '')
     $names = @(([string](Invoke-PogAdb -Arguments @('emu', 'avd', 'name'))) -split '[\r\n]+' |
             ForEach-Object { $_.Trim() } | Where-Object { $_ -and $_ -ne 'OK' })
+    if ($names.Count -eq 0) {
+        # Some emulator consoles return an empty successful response. The boot
+        # property is bound to this running AVD and is checked again on restore.
+        $bootName = ([string](Invoke-PogAdb -Arguments @('shell', 'getprop', 'ro.boot.qemu.avd_name'))).Trim()
+        if ($bootName -match '^[A-Za-z0-9_.-]+$') { $names = @($bootName) }
+    }
     if ($names.Count -ne 1 -or $names[0] -notmatch '^[A-Za-z0-9_.-]+$') { throw 'Cannot verify POG emulator identity' }
     if ($Expected -and $names[0] -cne $Expected) { throw "POG emulator changed from $Expected to $($names[0]); refusing app mutation and restoration on a different profile" }
     return $names[0]
@@ -479,10 +487,16 @@ try {
     Invoke-PogAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/logcat.txt" -Encoding utf8
     Invoke-PogPrivate 'cat files/automation_result.json' | Set-Content "$output/result.json" -Encoding utf8
     Invoke-PogPrivate 'cat files/automation_log.jsonl' | Set-Content "$output/steps.jsonl" -Encoding utf8
+    if (!(Get-GameIntrospection -Serial $Serial -Fresh)) { throw 'Fresh POG introspection unavailable' }
     Invoke-PogPrivate 'cat files/introspect.json' | Set-Content "$output/state.json" -Encoding utf8
     if ($testExit -ne 0) { throw "POG runtime failed ($testExit); see $output" }
     $result = Get-Content "$output/result.json" -Raw | ConvertFrom-Json
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete POG runtime result' }
+    $finalState = Get-Content "$output/state.json" -Raw | ConvertFrom-Json
+    if (!$finalState -or !$finalState.PSObject.Properties['current_level_num'] -or
+        !$finalState.PSObject.Properties['mission_asset_generation']) {
+        throw 'Fresh POG introspection is missing current level or mission identity'
+    }
     if ($SaveIsolation -or $PmcColdResume -or $PmcSwitchPlaytest -or $PmcOpeningGates -or $PmcInnerGates -or $MultiverseEscape) {
         if ($PmcBossCombat) {
             $initialState = Get-Content "$output/state.json" -Raw | ConvertFrom-Json
@@ -537,10 +551,15 @@ try {
         Invoke-PogAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/cold-logcat.txt" -Encoding utf8
         Invoke-PogPrivate 'cat files/automation_result.json' | Set-Content "$output/cold-result.json" -Encoding utf8
         Invoke-PogPrivate 'cat files/automation_log.jsonl' | Set-Content "$output/cold-steps.jsonl" -Encoding utf8
+        if (!(Get-GameIntrospection -Serial $Serial -Fresh)) { throw 'Fresh cold POG introspection unavailable' }
         Invoke-PogPrivate 'cat files/introspect.json' | Set-Content "$output/cold-state.json" -Encoding utf8
         if ($coldExit -ne 0) { throw "PMC cold restore failed ($coldExit); see $output" }
         $coldResult = Get-Content "$output/cold-result.json" -Raw | ConvertFrom-Json
         $coldState = Get-Content "$output/cold-state.json" -Raw | ConvertFrom-Json
+        if (!$coldState -or !$coldState.PSObject.Properties['current_level_num'] -or
+            !$coldState.PSObject.Properties['mission_asset_generation']) {
+            throw 'Fresh cold POG introspection is missing current level or mission identity'
+        }
         $newPid = ([string](Invoke-PogAdb -Arguments @('shell', 'pidof', $gameProcess))).Trim()
         if (!$newPid -or $newPid -eq $oldPid) { throw 'PMC cold restore did not use a fresh game process' }
         if ($coldResult.result -ne 'PASS' -or $coldResult.steps_completed -ne $coldResult.total_steps) { throw 'Incomplete PMC cold restore result' }

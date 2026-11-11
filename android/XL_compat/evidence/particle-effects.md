@@ -1,15 +1,15 @@
-# Authored particle effects: fire runtime and qualification
+# Authored particle effects: stationary runtime and qualification
 
-Current status: strict authored fire now uses normal source-owned admission;
-its former diagnostic bypass is removed. Normal-admission native and Android
-validation passes. Simulation, geometry, resources, saved activation,
-source buffering and soft rendering have passing source/native/GPU evidence.
-Original-Pumo controlled level-2 lifecycle and derived secret-save owners pass.
-Other particle kinds, moving/controlled/multiplayer effects and triangular
-emission faces remain rejected. Pumo's hub and campaign are NOT qualified playable.
-Work is committed on `xl_more_86_particle_rendering` through `55c937273`, based
-on current cmake, published as draft PR #238 after explicit user approval.
-Checkout: C:/local/dxx-redux.
+Current status (2026-11-10): stationary, uncontrolled single-player fire, smoke,
+bubbles, waterfall, snow and rain have source/native runtime owners. Pumo's
+original fire lifecycle, a derived smoke fixture, and Android original Warp 5
+with a replacement HXM actor have separate rendered evidence. Original Dinter
+snow/waterfall and Boiling rain/bubbles have no full-resource rendered play
+claim: Dinter stops at the generated-boss lifecycle guard; Boiling waterworks
+has no authored POG and canyon audio names are absent. Moving/controlled and
+multiplayer particle owners and triangular emission faces remain rejected.
+Pumo's hub and campaign are not qualified playable. Earlier branch/PR notes
+below are historical checkpoints, not the status of this root working diff.
 The sections below record successive checkpoints; later checkpoints supersede
 earlier lists of unimplemented work. Current process state and remaining actions
 are in `android/ai tool plans/mission metadata/xl_continuation_20261030.md`.
@@ -998,3 +998,51 @@ restore, existing automatic secret-save transitions, stock isolation and
 original hub rejection. Receipt: native-runtime/controls.log. Windows inventory
 and explicit Windows/Linux effects controls pass. Android evidence is reused:
 only a host assertion changed after its completed run.
+
+## Stationary bubble, waterfall and weather extension (2026-11-10)
+
+The pinned reference remains `2576a98b5de310e3ac7c9777df2677d1627b8bae`.
+The existing source comparison and native effect owners now cover authored
+stationary bubble (subtype 2), waterfall (4), snow (5) and rain (6) profiles.
+`AuthoredParticleEmitter<ParticleKind>` keeps one ring, allocation, retirement,
+activation and restoration lifecycle; each kind supplies its source creation,
+motion and draw policy. Admission uses decoded bounds, real face geometry and
+source demand, while preserving the unsupported owner/control/face guards.
+Invalid subtype, face, density and resource cases remain negative controls.
+
+Bubble image 2 has its own pixels and implicit linked audio. Waterfall image 6
+shares owned smoke pixels but retains directed motion, fade-2 alpha and 8-by-8
+animation. Snow image 4 uses genuine `simplesmoke.png`; rain image 3 uses genuine
+`rain.png`. The two weather kinds retain distinct orientation, size, alpha,
+collision and water/lava retirement. Resource preparation and the Android
+catalog import the authentic distribution files; no mission bytes or images
+were modified. Original Dinter object 1492 and Boiling rain object 60 payloads
+are cases in the existing reference/native owners. Those owners pass scene
+submission, disable/drain and fresh-cloud restoration checks. The Android
+import owner verifies the original image hashes and exact profile restoration.
+
+Original Dinter and Boiling waterworks have zero _particle_ inspection findings
+after these changes. The unchanged Dinter POG has three unclocked RGBA strips
+of 6/9/9 frames. A bounded native view of their first frames, with all strip
+pixels owned, now passes original POG installation and cleanup; clocked strips
+remain rejected. Strict original Dinter load with genuine images passes POG
+preparation and stops at the existing generated-boss lifecycle guard before
+any authored particle frame. That campaign dependency is outside this bounded
+stationary-particle queue.
+The existing pinned-source reference owner also reads the unchanged original
+HOG geometry directly. Its face-area, corner and sampling comparisons now
+exercise native stationary-particle preparation on those same faces: all 41
+Dinter face owners and all five Boiling waterworks face owners passed. This is
+an offline source/geometry check, not a native loaded mine or rendered frame.
+Strict waterworks level 1 needs a POG absent from the original package.
+Boiling canyon/canyon2 request the exact `dripping-water3.wav` and
+`dripping-water2.wav`, respectively, which are absent; the authentic
+distribution has differently named files. Thus no original snow/rain/waterfall
+production frame, ordinary traversal or cold save is claimed. Do not infer
+playability from the zero particle findings or native fixture results.
+
+W2–W5 receipts and source hashes are in
+`android/ai tool plans/xl_day_execution_20261110.md` and
+`temp/xl-day-20261110/HANDOFF.md`. The W5 root binary passes 120 rendered frames
+for original Warp 5, Sphere 2 and Warp 6; those are separate HXM/time-equipment
+controls, not particle rendering evidence.

@@ -237,6 +237,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		std::string payload(size, '\0');
 		require(xl_read(file, payload.data(), 1, size) == size && checksum(payload) == expected, "Corrupt XL trigger state payload");
 		const auto saved = json::parse(payload);
+		require(xl_boss_restore_robotmakers(), "Cannot rebind saved robotmaker bosses");
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
@@ -472,8 +473,10 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		xl_compat::restore_boss_routes(boss_routes, 1);
 		xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 1);
 		if (bosses) xl_robot_generator_restore_ready(ready_mask, 1);
+		xl_boss_restore_robotmakers_commit();
 		return 1;
 	} catch (const std::exception &error) {
+		xl_boss_restore_robotmakers_abort();
 		con_printf(CON_URGENT, "XL trigger restore rejected: %s\n", error.what());
 		return 0;
 	}

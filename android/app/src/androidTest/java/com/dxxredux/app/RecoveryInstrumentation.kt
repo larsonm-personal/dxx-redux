@@ -58,6 +58,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var xlAddonImportOnly = false
     private var xlAddonDistributionName: String? = null
     private var xlTimeEquipment = false
+    private var xlDinter = false
     private var pumoUiImportOnly = false
     private var controllerOverlayOnly = false
     private var installationWorkOnly = false
@@ -88,6 +89,7 @@ class RecoveryInstrumentation : Instrumentation() {
         xlAddonImportOnly = arguments?.getString("suite") == "xl_addon_import"
         xlAddonDistributionName = arguments?.getString("xl_addon_distribution")
         xlTimeEquipment = arguments?.getString("xl_time_equipment") == "true"
+        xlDinter = arguments?.getString("xl_dinter") == "true"
         pumoUiImportOnly = arguments?.getString("suite") == "pumo_ui_import"
         controllerOverlayOnly = arguments?.getString("suite") == "controller_overlay"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
@@ -117,7 +119,12 @@ class RecoveryInstrumentation : Instrumentation() {
                     check(source.isFile) { "Original addon distribution source is missing" }
                     XlAddonPickerChecks(
                         this,
-                    ).run(source, originalDistribution = true, retainForGameplay = xlTimeEquipment)
+                    ).run(
+                        source,
+                        originalDistribution = true,
+                        retainForGameplay = xlTimeEquipment,
+                        originalMission = if (xlDinter) "dinter" else "wshock20",
+                    )
                 }
                 result.putString(
                     "stream",

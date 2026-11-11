@@ -62,9 +62,11 @@ struct CParticleEmitter {
 };
 #include "xl_reference_fire_emitter.h"
 
-template <bool Smoke, bool Bubble>
-void compare_emitter(const xl_compat::AuthoredParticleEmitter<Smoke, Bubble> &actual, CParticleEmitter &source, const RandomInput &random, const WorldInput &world)
+template <xl_compat::ParticleKind Kind>
+void compare_emitter(const xl_compat::AuthoredParticleEmitter<Kind> &actual, CParticleEmitter &source, const RandomInput &random, const WorldInput &world)
 {
+	constexpr bool Smoke = Kind == xl_compat::ParticleKind::smoke;
+	constexpr bool Bubble = Kind == xl_compat::ParticleKind::bubbles;
 	if (actual.count != source.m_nParts || actual.first != source.m_nFirstPart || actual.ticks != source.m_nTicks || actual.moved != source.m_nMoved || actual.life != source.m_nLife || actual.rate != source.m_fPartsPerTick || actual.demand != source.m_nPartsPerPos || actual.previous != point(source.m_vPrevPos))
 		throw std::runtime_error("Pinned authored fire emitter scheduling differs");
 	if (random.state != source_random.state || random.trace != source_random.trace || world.lookups != source_world.lookups || world.collisions != source_world.collisions)
@@ -132,7 +134,9 @@ static void particle_emitter_controls(const xl_compat::Inventory *level, const x
 				if (!capacity) {
 					bool rejected = false;
 					try {
-						xl_compat::AuthoredParticleEmitter<Smoke, Bubble> invalid(definition, position, surface ? &face : nullptr, segment, skybox, 123);
+						xl_compat::AuthoredParticleEmitter<Bubble ? xl_compat::ParticleKind::bubbles : Smoke ? xl_compat::ParticleKind::smoke
+						                                                                                     : xl_compat::ParticleKind::fire>
+						    invalid(definition, position, surface ? &face : nullptr, segment, skybox, 123);
 					} catch (const std::runtime_error &) {
 						rejected = true;
 					}
@@ -141,7 +145,9 @@ static void particle_emitter_controls(const xl_compat::Inventory *level, const x
 					continue;
 				}
 				if (!created) throw std::runtime_error("Source fire emitter allocation failed");
-				xl_compat::AuthoredParticleEmitter<Smoke, Bubble> actual(definition, position, surface ? &face : nullptr, segment, skybox, 123);
+				xl_compat::AuthoredParticleEmitter<Bubble ? xl_compat::ParticleKind::bubbles : Smoke ? xl_compat::ParticleKind::smoke
+				                                                                                     : xl_compat::ParticleKind::fire>
+				    actual(definition, position, surface ? &face : nullptr, segment, skybox, 123);
 				source.m_nFadeType = Bubble ? -1 : Smoke ? 1
 				                                         : 3;
 				source.m_nDefBrightness = definition.brightness;

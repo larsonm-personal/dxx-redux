@@ -451,7 +451,6 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 		for (unsigned bit = 0; bit < 64; ++bit)
 			if (uint32_t(matcen[bit / 32]) & (uint32_t(1) << (bit % 32))) {
 				graph.robot(int(bit));
-				if (graph.robot_data[bit].boss_flag) throw std::runtime_error("generator-created bosses require dynamic boss lifecycle support");
 			}
 	if (!level.matcens.empty()) {
 		graph.clip(VCLIP_MORPHING_ROBOT);
@@ -1216,8 +1215,8 @@ extern "C" uint64_t xl_level_trigger_identity(void)
 	                    std::any_of(source->object_trigger_records.begin(), source->object_trigger_records.end(), [](const xl_compat::ObjectTrigger &record) { return record.action.type == 15; });
 	const bool spawns = std::any_of(source->triggers.begin(), source->triggers.end(), [](const xl_compat::Trigger &action) { return action.type == 28; }) ||
 	                    std::any_of(source->object_trigger_records.begin(), source->object_trigger_records.end(), [](const xl_compat::ObjectTrigger &record) { return record.action.type == 28; });
-	if (boosts || spawns || xl_boss_spawn_count() || !source->equipment.empty()) {
-		field(xl_boss_spawn_count());
+	if (boosts || spawns || xl_boss_authored_count() || !source->equipment.empty()) {
+		field(xl_boss_authored_count());
 		field(static_cast<int>(source->vertices.size()));
 		field(static_cast<int>(source->segments.size()));
 		field(static_cast<int>(source->walls.size()));

@@ -1,6 +1,6 @@
 # Owned true-color POG runtime
 
-Single-frame RGBA replacements now have an explicit native bitmap format and
+RGBA replacements now have an explicit native bitmap format and
 an XL renderer path. They no longer enter the indexed installer identified in
 the [earlier audit](truecolor-pog-admission.md). This is resource support, not
 Pumo campaign admission: every original Pumo level retains independent gameplay
@@ -18,8 +18,12 @@ source's RGBA flag, including its large-width height encoding. RGBA pixels
 retain their dimensions and four channels. Purple (120, 88, 128) retains its
 super-transparency identity with zero alpha; other zero-alpha pixels become
 black. The source's MIN_OPACITY conversion, flag thresholds and weighted average
-colors are reproduced. Parsing also retains frame masks, but runtime frame-strip
-animation remains rejected with the bitmap index and required frame count.
+colors are reproduced. Parsing retains frame masks and the complete owned RGBA
+strip. An unclocked replacement exposes a bounded first-frame native view: the
+pinned XL `CreateFrames` initializes the current frame to zero, and no effect
+or wall clip advances these replacements. Replacements referenced by
+live effect, wall-clip or Vclip clocks remain rejected before registry mutation;
+full timed strip playback is not implemented.
 
 Preparation owns normalized bytes before live replacement. Installation allocates
 fresh storage, retains the previous registry descriptors and restores normal PIG
@@ -34,6 +38,17 @@ resource receipt. Malformed bounds, indices, RLE/RGBA combinations and excessive
 storage are rejected. These checks apply to XL resource preparation; classic
 levels selected through the separate legacy loader are not newly qualified as
 XL solely by an unclassified companion resource.
+
+The unchanged original Dinter HOG (`b4dc0423e781de5b667093313e92ffdb582c5b75c45ec119f680b2613b31fb13`)
+contains a 92-entry POG with three unclocked RGBA strips: bitmap 1333 is
+128 by 768 over six frames; 1417 and 1421 are 512 by 4608 over nine frames.
+The existing native POG owner installs them, checks their retained frame counts,
+first-frame dimensions and pixel receipts, then restores the original Arena
+POG. A stock Vclip-linked strip is rejected by both admission and direct
+installation without changing the active Arena pixels. The pinned source is
+`2576a98b5de310e3ac7c9777df2677d1627b8bae`; neither source asset nor
+mission bytes changed. Strict Dinter rendering now reaches the separate
+generated-boss lifecycle guard, so this POG result is not a Dinter play claim.
 
 ## Rendering and gameplay consumers
 
@@ -56,8 +71,8 @@ wall/material features. Existing XL collision and wall gates remain in place.
 
 - Public parser/source tests cover indexed/RLE recovery, malformed input,
   source normalization, dimensions, frame masks, alpha thresholds and point
-  transparency. Unsupported frame strips are exercised as explicit native
-  admission failures, not discarded animation.
+  transparency. Clocked strips remain explicit native admission failures;
+  unclocked original Dinter strips have first-frame installation receipts.
 - The Linux EGL test links actual `ogl.c`, `oglprog.c` and the production RGBA
   uploader. Synthetic controls exercise mixed indexed/RGBA layers, key masks,
   all orientations, blending, alpha boundaries, non-square/non-power-of-two

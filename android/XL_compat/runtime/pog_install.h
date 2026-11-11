@@ -1,5 +1,42 @@
 /* Included by D2 piggy.c to install prepared pixels into its native registry */
 #include "pog_resources.h"
+#include "vclip.h"
+#include "wall.h"
+
+int xl_pog_strip_clock(unsigned bitmap)
+{
+	int i, frame;
+	if (Num_effects < 0 || Num_effects > MAX_EFFECTS || Num_wall_anims < 0 || Num_wall_anims > MAX_WALL_ANIMS ||
+	    Num_vclips < 0 || Num_vclips > VCLIP_MAXNUM || NumTextures < 0 || NumTextures > MAX_TEXTURES ||
+	    N_ObjBitmaps < 0 || N_ObjBitmaps > MAX_OBJ_BITMAPS) return -1;
+	for (i = 0; i < Num_effects; ++i) {
+		const eclip *effect = &Effects[i];
+		const int wall = effect->changing_wall_texture, object = effect->changing_object_texture;
+		if (wall == -1 && object == -1) continue;
+		if (effect->vc.num_frames < 1 || effect->vc.num_frames > VCLIP_MAX_FRAMES) return -1;
+		for (frame = 0; frame < effect->vc.num_frames; ++frame)
+			if (effect->vc.frames[frame].index == bitmap) return 1;
+		if (wall >= 0 && wall < NumTextures && Textures[wall].index == bitmap) return 1;
+		if (object >= 0 && object < N_ObjBitmaps && ObjBitmaps[object].index == bitmap) return 1;
+	}
+	for (i = 0; i < Num_wall_anims; ++i) {
+		const wclip *clip = &WallAnims[i];
+		if (clip->num_frames <= 0) continue;
+		if (clip->num_frames > MAX_CLIP_FRAMES) return -1;
+		for (frame = 0; frame < clip->num_frames; ++frame) {
+			const int texture = clip->frames[frame];
+			if (texture >= 0 && texture < NumTextures && Textures[texture].index == bitmap) return 1;
+		}
+	}
+	for (i = 0; i < Num_vclips; ++i) {
+		const vclip *clip = &Vclip[i];
+		if (clip->num_frames <= 0) continue;
+		if (clip->num_frames > VCLIP_MAX_FRAMES) return -1;
+		for (frame = 0; frame < clip->num_frames; ++frame)
+			if (clip->frames[frame].index == bitmap) return 1;
+	}
+	return 0;
+}
 
 static struct {
 	int present, offset, flags;
@@ -42,6 +79,10 @@ int xl_pog_install(struct xl_pog_resources *resources)
 	const unsigned char *source = xl_pog_pixels(resources, &size);
 	unsigned char *installed = NULL;
 	if (resources) {
+		for (i = 0; i < xl_pog_count(resources); ++i) {
+			const struct xl_pog_bitmap *entry = xl_pog_entry(resources, i);
+			if (entry->frames > 1 && xl_pog_strip_clock(entry->index)) return 0;
+		}
 		installed = d_malloc(size ? size : 1);
 		if (!installed) return 0;
 		if (size) memcpy(installed, source, size);
@@ -66,7 +107,7 @@ int xl_pog_install(struct xl_pog_resources *resources)
 		}
 		ogl_freebmtexture(bitmap);
 		gr_init_bitmap(bitmap, entry->rgba ? BM_RGBA : BM_LINEAR, 0, 0,
-		               entry->width, entry->height, entry->width * (entry->rgba ? 4 : 1), installed + entry->offset);
+		               entry->width, entry->frame_height, entry->width * (entry->rgba ? 4 : 1), installed + entry->offset);
 		bitmap->avg_color = entry->rgba ? gr_find_closest_color(entry->average_rgb[0] / 4, entry->average_rgb[1] / 4, entry->average_rgb[2] / 4)
 		                                : entry->average_index;
 		if (entry->rgba) {
@@ -107,10 +148,10 @@ int xl_pog_bitmap_receipt(const struct xl_pog_resources *resources, int index, u
 		unsigned hash = 2166136261u;
 		if (entry->index != (unsigned) index) continue;
 		if (bitmap->bm_data != Bitmap_replacement_data + entry->offset || GameBitmapOffset[index] != 0 ||
-		    bitmap->bm_type != (entry->rgba ? BM_RGBA : BM_LINEAR) || bitmap->bm_w != (int) entry->width || bitmap->bm_h != (int) entry->height)
+		    bitmap->bm_type != (entry->rgba ? BM_RGBA : BM_LINEAR) || bitmap->bm_w != (int) entry->width || bitmap->bm_h != (int) entry->frame_height)
 			return 0;
-		for (k = 0; k < entry->size; ++k) hash = (hash ^ bitmap->bm_data[k]) * 16777619u;
-		*bytes = (unsigned) entry->size;
+		for (k = 0; k < entry->size / entry->frames; ++k) hash = (hash ^ bitmap->bm_data[k]) * 16777619u;
+		*bytes = (unsigned) (entry->size / entry->frames);
 		*fnv1a = hash;
 		return 1;
 	}

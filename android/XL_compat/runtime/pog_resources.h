@@ -12,6 +12,7 @@ struct xl_pog_bitmap {
 	unsigned char average_rgb[4];
 	unsigned rgba, offset, size; /* The bounded owned pixel arena is at most 128 MiB */
 	unsigned palette_flags;
+	unsigned frames, frame_height; /* Source strip retained; static native view begins at frame zero */
 };
 /* Bounded preparation owns normalized pixels without changing live bitmaps */
 struct xl_pog_resources *xl_pog_prepare(PHYSFS_file *file, unsigned max_bitmaps, char *error, size_t error_size);
@@ -20,6 +21,8 @@ int xl_pog_count(const struct xl_pog_resources *resources);
 const struct xl_pog_bitmap *xl_pog_entry(const struct xl_pog_resources *resources, int row);
 const unsigned char *xl_pog_pixels(const struct xl_pog_resources *resources, size_t *size);
 int xl_pog_install(struct xl_pog_resources *resources);
+/* 0: unclocked static strip; 1: live animation clock; -1: invalid native table bounds */
+int xl_pog_strip_clock(unsigned bitmap);
 /* Diagnostic receipt for the live installed payload, not source-file metadata */
 int xl_pog_bitmap_receipt(const struct xl_pog_resources *resources, int bitmap, unsigned *bytes, unsigned *fnv1a);
 #ifdef __cplusplus

@@ -11,6 +11,8 @@ inline constexpr char smoke_image_name[] = "smoke";
 inline constexpr unsigned smoke_image_atlas_side = 8;
 inline constexpr char bubble_image_name[] = "bubble";
 inline constexpr unsigned bubble_image_atlas_side = 4;
+inline constexpr char rain_image_name[] = "rain";
+inline constexpr char snow_image_name[] = "simplesmoke";
 // Authored addon images use XL's raw CTGA path. Reuse the existing owned RGBA
 // bitmap and alpha/key normalization rather than adding a second pixel policy
 inline PogBitmap read_particle_image(const unsigned char *data, std::size_t size)
