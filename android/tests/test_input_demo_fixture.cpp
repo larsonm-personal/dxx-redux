@@ -816,6 +816,23 @@ static int expect_asset_fingerprints(void)
 	if (!input_demo_metadata_parse_header_line(header.dump(), &parsed, &error) || !input_demo_metadata_to_header_line(parsed, &line, &error) || json::parse(line)["asset_fingerprints"] != member)
 		return report_failure_string("container member round trip failed: " + error);
 	std::vector<json> invalid;
+	auto supplemental = assets;
+	supplemental["files"].push_back({ { "role", "d2_extra_0_hog" }, { "name", "extra.hog" }, { "size", 100 }, { "sha256", std::string(64, 'b') } });
+	supplemental["files"].push_back({ { "role", "d2_extra_0_ham" }, { "name", "extra.ham" }, { "size", 50 }, { "sha256", std::string(64, 'c') }, { "container", "d2_extra_0_hog" } });
+	if (d1) invalid.push_back(supplemental);
+	else {
+		header["asset_fingerprints"] = supplemental;
+		if (!input_demo_metadata_parse_header_line(header.dump(), &parsed, &error) || !input_demo_metadata_to_header_line(parsed, &line, &error) || json::parse(line)["asset_fingerprints"] != supplemental)
+			return report_failure_string("supplemental HAM fingerprint round trip failed: " + error);
+		for (const char *role : { "d2_extra_1_ham", "d2_extra_16_ham", "d2_extra_00_ham" }) {
+			auto bad = supplemental;
+			bad["files"].back()["role"] = role;
+			invalid.push_back(std::move(bad));
+		}
+		auto bad = supplemental;
+		bad["files"].erase(bad["files"].size() - 1);
+		invalid.push_back(std::move(bad));
+	}
 	auto invalid_container = member;
 	invalid_container["files"][1]["container"] = "mission_hog";
 	invalid.push_back(invalid_container);

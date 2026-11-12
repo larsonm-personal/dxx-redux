@@ -141,7 +141,7 @@ static void test_recording_asset_fingerprints(bool imported)
 	require(load_mission_from_current_dir(descriptor), "load test-owned custom mission");
 	input_demo_set_skip_level_intro(1);
 	StartNewGame(1);
-	const auto custom = json::parse(input_demo_assets_capture());
+	auto custom = json::parse(input_demo_assets_capture());
 	require(custom["status"] == "complete", "custom mission sources complete");
 	bool have_custom = false;
 	for (const auto &entry : custom["files"])
@@ -152,6 +152,41 @@ static void test_recording_asset_fingerprints(bool imported)
 	for (const auto &entry : custom["files"])
 		if (entry["role"] == (imported ? "d1_pig" : "d2_ham") && entry.contains("container") && entry["container"] == "mission_hog") have_member = true;
 	require(have_member, "archive member fingerprint records its exact verified HOG owner");
+	if (!imported) {
+		// Test-owned byte sources exercise provenance, not an extra gameplay loader
+		write_fixture("supplement.ham", member_bytes);
+		auto *extra = PHYSFS_openRead("supplement.ham");
+		require(extra && PHYSFS_seek(extra, 7), "open supplemental byte source");
+		input_demo_assets_extra_ham_loaded("supplement.ham", extra);
+		require(PHYSFS_tell(extra) == 7 && PHYSFS_close(extra), "supplemental hash changed loader cursor");
+		write_fixture("supplement.hog", hog);
+		auto *container = PHYSFS_openRead("supplement.hog");
+		constexpr const char *alias = "asset-control-container.hog";
+		require(container && PHYSFS_seek(container, 3), "open supplemental container");
+		input_demo_assets_note_container(alias, "supplement.hog", container);
+		require(PHYSFS_tell(container) == 3 && PHYSFS_seek(container, 0), "container hash changed loader cursor");
+		require(PHYSFS_mountHandle(container, alias, "asset-control", 0), "mount owned supplemental container");
+		const auto member_path = std::string("asset-control/") + member;
+		extra = PHYSFS_openRead(member_path.c_str());
+		require(extra != nullptr, "open temporary supplemental member");
+		input_demo_assets_extra_ham_loaded(member_path.c_str(), extra);
+		require(PHYSFS_close(extra) && PHYSFS_unmount(alias), "release temporary supplemental mount");
+		custom = json::parse(input_demo_assets_capture());
+		require(custom["status"] == "complete", "supplemental identities survive temporary unmount");
+		bool loose = false, archived = false, archive = false;
+		for (const auto &entry : custom["files"]) {
+			if (entry["role"] == "d2_extra_0_ham") loose = entry["name"] == "supplement.ham" && !entry.contains("container");
+			if (entry["role"] == "d2_extra_1_ham") archived = entry["container"] == "d2_extra_1_hog";
+			if (entry["role"] == "d2_extra_1_hog") archive = entry["name"] == "supplement.hog";
+		}
+		require(loose && archived && archive, "ordered supplemental source/container identity is missing");
+		auto altered = hog;
+		altered.back() ^= 1;
+		write_fixture("supplement.hog", altered);
+		require(json::parse(input_demo_assets_capture())["status"] == "unknown", "changed unmounted container falsely attested resident bytes");
+		write_fixture("supplement.hog", hog);
+		require(json::parse(input_demo_assets_capture()) == custom, "restored container bytes changed identities");
+	}
 #endif
 	require(maybe_start_input_demo_recording(0), "manual custom recording start");
 	input_demo_capture_current_result(&result);
@@ -182,7 +217,7 @@ static void test_recording_asset_fingerprints(bool imported)
 #endif
 #ifdef DXX_BUILD_DESCENT_II
 	if (!imported) {
-		input_demo_assets_extra_ham_loaded();
+		input_demo_assets_extra_ham_loaded(nullptr, nullptr);
 		const auto extra = json::parse(input_demo_assets_capture());
 		require(extra["status"] == "unknown" && extra["error"] == "additional mission HAM is not fingerprinted", "untracked extra HAM definitions cannot claim complete");
 	}

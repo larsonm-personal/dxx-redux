@@ -62,10 +62,15 @@ class asset_hash_trace
 
 struct source {
 	std::string path, origin, name, digest;
+	std::string physical_path, container_role;
 	uint64_t size = 0;
 	bool archive = false;
 };
 std::map<std::string, source> sources;
+std::map<std::string, source> container_aliases;
+unsigned extra_ham_count = 0;
+// Keep the numbered role domain synchronized with the native/Python validators
+constexpr unsigned extra_ham_max = 16;
 std::string captured;
 bool extra_ham_loaded;
 std::string source_path(const std::string &path)
@@ -134,10 +139,15 @@ bool hash_archive(const std::string &path, std::string &digest, uint64_t &size)
 bool unchanged(const source &entry)
 {
 	if (entry.digest.empty()) return false;
+	if (!entry.container_role.empty()) {
+		const auto container = sources.find(entry.container_role);
+		return container != sources.end() && container->second.archive && unchanged(container->second);
+	}
 	std::string digest;
 	uint64_t size = 0;
 	bool ok;
-	if (entry.archive) ok = hash_archive(entry.path, digest, size);
+	if (!entry.physical_path.empty()) ok = hash_archive(entry.physical_path, digest, size);
+	else if (entry.archive) ok = hash_archive(entry.path, digest, size);
 	else {
 		const char *origin = PHYSFS_getRealDir(entry.path.c_str());
 		if (!origin || entry.origin != origin) return false;
@@ -147,19 +157,8 @@ bool unchanged(const source &entry)
 	}
 	return ok && digest == entry.digest && size == entry.size;
 }
-} // namespace
-void input_demo_assets_extra_ham_loaded(void)
+source opened_source(const char *path, PHYSFS_file *file)
 {
-	extra_ham_loaded = true;
-	input_demo_recorder_invalidate_assets("additional mission HAM was loaded during recording");
-}
-void input_demo_assets_forget(const char *role)
-{
-	sources.erase(role);
-}
-void input_demo_assets_note_file(const char *role, const char *path, PHYSFS_file *file)
-{
-	input_demo_recorder_set_asset_provider(input_demo_assets_capture);
 	source entry;
 	char resolved[PATH_MAX];
 	std::snprintf(resolved, sizeof(resolved), "%s", path ? path : "");
@@ -169,9 +168,76 @@ void input_demo_assets_note_file(const char *role, const char *path, PHYSFS_file
 	const char *origin = path ? PHYSFS_getRealDir(resolved) : nullptr;
 	if (origin) entry.origin = origin;
 	if (origin && !hash_stream(file, entry.digest, entry.size)) entry.digest.clear();
+	return entry;
+}
+bool bind_physical_file(source &entry)
+{
+	struct stat info{};
+	if (stat(entry.origin.c_str(), &info) || (info.st_mode & S_IFMT) != S_IFDIR) return false;
+	const char *mount = PHYSFS_getMountPoint(entry.origin.c_str());
+	if (!mount) return false;
+	std::string prefix = mount;
+	while (!prefix.empty() && prefix.front() == '/') prefix.erase(prefix.begin());
+	if (entry.path.compare(0, prefix.size(), prefix)) return false;
+	entry.physical_path = source_path(entry.origin) + "/" + entry.path.substr(prefix.size());
+	return unchanged(entry);
+}
+} // namespace
+void input_demo_assets_note_container(const char *alias, const char *path, PHYSFS_file *file)
+{
+	if (!alias) return;
+	auto entry = opened_source(path, file);
+	if (!bind_physical_file(entry)) entry.digest.clear();
+	entry.archive = true;
+	container_aliases[alias] = std::move(entry);
+}
+void input_demo_assets_extra_ham_loaded(const char *path, PHYSFS_file *file)
+{
+	input_demo_recorder_invalidate_assets("additional mission HAM was loaded during recording");
+	if (extra_ham_count >= extra_ham_max) {
+		extra_ham_loaded = true;
+		return;
+	}
+	const auto prefix = std::string("d2_extra_") + std::to_string(extra_ham_count++);
+	const auto role = prefix + "_ham", container_role = prefix + "_hog";
+	input_demo_assets_note_file(role.c_str(), path, file);
+	auto &entry = sources[role];
+	if (bind_physical_file(entry)) return;
+	source container;
+	const auto alias = container_aliases.find(entry.origin);
+	if (alias != container_aliases.end()) container = alias->second;
+	else {
+		container.archive = true;
+		container.path = source_path(entry.origin);
+		container.name = basename(container.path);
+		if (!hash_archive(container.path, container.digest, container.size)) container.digest.clear();
+	}
+	if (entry.digest.empty() || container.digest.empty()) {
+		extra_ham_loaded = true;
+		return;
+	}
+	entry.container_role = container_role;
+	input_demo_recorder_note_asset(container_role.c_str(), container.digest.c_str(), container.size);
+	sources[container_role] = std::move(container);
+}
+void input_demo_assets_forget(const char *role)
+{
+	sources.erase(role);
+}
+void input_demo_assets_note_file(const char *role, const char *path, PHYSFS_file *file)
+{
+	input_demo_recorder_set_asset_provider(input_demo_assets_capture);
+	auto entry = opened_source(path, file);
 	input_demo_recorder_note_asset(role, entry.digest.c_str(), entry.size);
 	sources[role] = entry;
-	if (!std::strcmp(role, "d2_ham")) extra_ham_loaded = false;
+	if (!std::strcmp(role, "d2_ham")) {
+		extra_ham_loaded = false;
+		extra_ham_count = 0;
+		container_aliases.clear();
+		for (auto it = sources.begin(); it != sources.end();)
+			if (it->first.compare(0, 9, "d2_extra_") == 0) it = sources.erase(it);
+			else ++it;
+	}
 }
 void input_demo_assets_note_archive(const char *role, const char *path)
 {
@@ -222,7 +288,8 @@ const char *input_demo_assets_capture(void)
 		}
 		const auto &entry = it->second;
 		json file = { { "role", role }, { "name", entry.name }, { "size", entry.size }, { "sha256", entry.digest } };
-		if (!entry.archive) {
+		if (!entry.container_role.empty()) file["container"] = entry.container_role;
+		else if (!entry.archive && entry.physical_path.empty()) {
 			struct stat info;
 			if (stat(entry.origin.c_str(), &info) != 0 || (info.st_mode & S_IFMT) != S_IFDIR) {
 				// Only a verified HOG already in this snapshot can own a member fingerprint
@@ -246,6 +313,11 @@ const char *input_demo_assets_capture(void)
 	if (!d1 || companion) {
 		add("d2_pig");
 		add("d2_ham");
+		for (unsigned i = 0; i < extra_ham_count; ++i) {
+			const auto prefix = std::string("d2_extra_") + std::to_string(i);
+			if (sources.count(prefix + "_hog")) add((prefix + "_hog").c_str());
+			add((prefix + "_ham").c_str());
+		}
 	}
 	if (!Current_mission || !Current_level_num ||
 	    (Current_level_num > 0 && (!Level_names || Current_level_num > Last_level)) ||
@@ -264,7 +336,7 @@ const char *input_demo_assets_capture(void)
 			root["error"] = "level source is outside the recorded HOG";
 		}
 	}
-	if (!d1 && extra_ham_loaded) {
+	if ((!d1 || companion) && extra_ham_loaded) {
 		root["status"] = "unknown";
 		root["error"] = "additional mission HAM is not fingerprinted";
 	}

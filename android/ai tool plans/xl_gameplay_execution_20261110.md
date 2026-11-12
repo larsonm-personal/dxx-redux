@@ -1279,6 +1279,63 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   G2-G7, with substantial uncertainty and no cutoff. Full owner completeness,
   true-headless/platform proof and gameplay closure remain open.
 
+### G1 supplemental asset checkpoint, November 11 at 12:54 PST
+
+- G1 remains active/unaccepted on xl_gameplay_20261111_02_timeline. Source parent
+  is f50da0615045fb0fbcd9e800f7b982335b90b587 (tree
+  4f986da5fea541c3ffe3c4c7c253bb6285068329). This increment is local, with no
+  layer-02 PR or hosted CI claim. G0 publication and prerequisite remain unchanged.
+- The existing asset owner now records up to 16 ordered supplemental HAM/VHAM
+  loads, including main mod HAM replacement and Vertigo's temporary HOG mount.
+  Same-handle hashing preserves loader cursors; physical container provenance
+  survives unmounting and is rechecked before capture. Numbered roles carry
+  load order; gaps, orphan containers and mismatched container indices reject.
+  Base HAM reload resets the sequence. Unresolved/overflow sources stay unknown;
+  loading additional definitions during recording still invalidates the claim.
+- Extended the native codec, existing native asset fixture, and shared Python/
+  PowerShell preflight. ExtraDir supplies supplemental sources. Temporary mounts
+  do not incorrectly join the final base-file precedence check. Native post-load
+  comparison checks the actual sequence. Updated INPUT_DEMO_ASSETS.md. This is
+  HOG/PIG/HAM provenance only, not proof of all HXM/POG/settings dependencies.
+- Windows D2 desktop/asset fixture and Linux developer desktop/stock fixture
+  builds pass. The actual manual asset fixture passes on Windows and Linux,
+  including loose and temporary archive sources, cursor preservation, changed
+  bytes after unmount, restoration, and ordinary manual recorder capture.
+  Windows fixture ran in the private evidence parent (native.log); Linux ran in
+  g1-supplemental-assets-native/linux. Neither used an authentic asset directory
+  as its write root. An initial retention command used the wrong relative cwd;
+  the root helper was subsequently invoked successfully for planned outputs.
+- Windows D1 desktop builds; fixture/recorder/replay CTests pass 3/3 on D1
+  (7.96 s) and D2 (7.61 s). Linux codec fixture passes 1/1 (0.17 s). Python asset
+  tests pass 21 with one expected Windows case-alias skip (22 total, 0.601 s),
+  including renamed VHAM identity and malformed/container mismatch controls.
+  Scoped mixed-language quality and git diff --check pass. No test membership,
+  timeout, authentic input, expected fixture, or free-space reserve changed.
+- Fresh seven-event original Warp 6 time capture g1-live-time-capture-6 and clean
+  accelerated g1-time-replay-7 pass WITHOUT AllowUnverifiedAssets. Header includes
+  complete d2_extra_0_hog (authentic d2x.hog) and d2_extra_0_ham (d2x.ham), in
+  addition to base and mission identities. Demo
+  d2_wshock20_level6_20261111_125122.dximdemo SHA256:
+  `4ee0d3ebce503ef769c41d455bc4a030402128784b83abad010e00408f3d054e`.
+  Tested executable SHA256:
+  `2cd2eaf86e064859e6de39849f46acad769b5af162426fdbe233443dca9c5bed`.
+  Detailed live/replay comparison passes all 198 object frames, 202 world records,
+  811 SIM RNG events and 198 frame hashes. Results are in protected
+  temp/pr464-ci-fixes-20261110/g1-supplemental-assets-live-comparison.json.
+  The previously disclosed pre-recording approach pose remains; no new assist
+  occurs during recording. This is not connected progression or frozen corpus.
+- Authentic Warp HOG remains
+  2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c;
+  Vertigo HAM is faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f.
+  Reference source remains 2576a98b5de310e3ac7c9777df2677d1627b8bae. Free space
+  is about 5.7 GiB. Work/check interval was approximately 12:41-12:54 PST.
+- Next: commit this coherent asset increment, then inventory simulation-affecting
+  settings and pre-mutation admission in shared recorder/start/codec owners.
+  Ordinary Omega firing/damage/recharge capture, two clean repeat playbacks and
+  altered pacing remain required. G1 estimate remains 6-10 hours; G2-G7 roughly
+  17.5 hours with substantial uncertainty and no cutoff. Production guards stay
+  closed until qualification; no Android or whole-stack closure is claimed.
+
 Per-item handoff template:
 
     Item and status:

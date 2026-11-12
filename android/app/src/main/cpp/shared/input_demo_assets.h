@@ -8,7 +8,9 @@ extern "C" {
 void input_demo_assets_note_file(const char *role, const char *path, PHYSFS_file *file);
 void input_demo_assets_note_archive(const char *role, const char *path);
 void input_demo_assets_forget(const char *role);
-void input_demo_assets_extra_ham_loaded(void);
+void input_demo_assets_extra_ham_loaded(const char *path, PHYSFS_file *file);
+/* Bind a temporary mountHandle name to its actual opened HOG before ownership transfer */
+void input_demo_assets_note_container(const char *alias, const char *path, PHYSFS_file *file);
 int input_demo_assets_mount(const char *role, const char *path, int append);
 const char *input_demo_assets_capture(void);
 int input_demo_assets_check_replay(char *error, unsigned int capacity);

@@ -1659,7 +1659,7 @@ if ($ResolveDataDirOnly) {
     }
     exit 0
 }
-$assetCheck = Invoke-InputDemoAssetCheck -RepoRoot $repoRoot -Command verify -Paths @($resolvedDemoPath) -DataDir $resolvedDataDir -Game $resolvedGame -D1InD2:$D1InD2 -AllowUnverifiedAssets:$AllowUnverifiedAssets
+$assetCheck = Invoke-InputDemoAssetCheck -RepoRoot $repoRoot -Command verify -Paths @($resolvedDemoPath) -DataDir $resolvedDataDir -ExtraDir $ExtraDir -Game $resolvedGame -D1InD2:$D1InD2 -AllowUnverifiedAssets:$AllowUnverifiedAssets
 if ($assetCheck.status -eq 'unverified') { Write-Warning 'UNVERIFIED recording assets: explicit historical playback opt-in; this run is not verified shareware coverage' }
 $runnerPromptDefaults = Get-RunnerPromptDefaults -RequestedRunner $Runner -RequestedMode $Mode -RequestedProfile $RenderProfile
 $renderProfileSelection = Get-RenderProfile -RequestedProfile $runnerPromptDefaults.RenderProfile -RequestedMode $runnerPromptDefaults.Mode

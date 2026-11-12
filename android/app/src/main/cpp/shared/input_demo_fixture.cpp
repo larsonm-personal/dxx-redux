@@ -1308,6 +1308,17 @@ static bool checkpoint_record_to_json_line(const input_demo_checkpoint &checkpoi
 	return true;
 }
 
+static int supplemental_asset_index(const std::string &role, const char *extension)
+{
+	// Synchronized with input_demo_assets.cpp and input_demo_assets.py
+	for (int i = 0; i < 16; ++i)
+		if (role == "d2_extra_" + std::to_string(i) + extension) return i;
+	return -1;
+}
+static bool asset_hog_role(const std::string &role)
+{
+	return role == "d1_hog" || role == "d2_hog" || role == "mission_hog" || supplemental_asset_index(role, "_hog") >= 0;
+}
 static bool validate_asset_fingerprints(const ordered_json &value, std::string *error)
 {
 	if (!value.is_object() || !value.contains("status") || !value["status"].is_string())
@@ -1329,7 +1340,8 @@ static bool validate_asset_fingerprints(const ordered_json &value, std::string *
 		    !entry["role"].is_string() || !entry["name"].is_string() || !entry["sha256"].is_string() ||
 		    !entry["size"].is_number_unsigned() || entry["size"].get<uint64_t>() == 0) return fail(error, "invalid asset fingerprint");
 		const std::string role = entry["role"], hash = entry["sha256"], name = entry["name"];
-		if (role != "d1_hog" && role != "d1_pig" && role != "d2_hog" && role != "d2_pig" && role != "d2_ham" && role != "mission_hog") return fail(error, "unknown asset role");
+		if (role != "d1_hog" && role != "d1_pig" && role != "d2_hog" && role != "d2_pig" && role != "d2_ham" && role != "mission_hog" &&
+		    supplemental_asset_index(role, "_ham") < 0 && supplemental_asset_index(role, "_hog") < 0) return fail(error, "unknown asset role");
 		if ((mode == "native_d1" && role.compare(0, 3, "d2_") == 0) || (mode == "native_d2" && role.compare(0, 3, "d1_") == 0)) return fail(error, "asset role disagrees with mode");
 		if (std::find(roles.begin(), roles.end(), role) != roles.end() || hash.size() != 64 ||
 		    hash.find_first_not_of("0123456789abcdef") != std::string::npos || name.empty() || name == "." || name == ".." || name.find_first_of("/\\") != std::string::npos ||
@@ -1338,14 +1350,24 @@ static bool validate_asset_fingerprints(const ordered_json &value, std::string *
 		if (entry.contains("container")) {
 			if (!entry["container"].is_string()) return fail(error, "invalid asset container");
 			const std::string container = entry["container"];
-			if (role == "d1_hog" || role == "d2_hog" || role == "mission_hog" ||
-			    (container != "d1_hog" && container != "d2_hog" && container != "mission_hog")) return fail(error, "invalid asset container role");
+			const int extra_container = supplemental_asset_index(container, "_hog");
+			if (asset_hog_role(role) || !asset_hog_role(container) ||
+			    (extra_container >= 0 && supplemental_asset_index(role, "_ham") != extra_container)) return fail(error, "invalid asset container role");
 		}
 		roles.push_back(role);
 	}
 	for (const auto &entry : value["files"])
 		if (entry.contains("container") && std::find(roles.begin(), roles.end(), entry["container"].get<std::string>()) == roles.end()) return fail(error, "missing asset container fingerprint");
 	const auto has = [&](const char *role) { return std::find(roles.begin(), roles.end(), role) != roles.end(); };
+	if (status == "complete") {
+		bool gap = false;
+		for (int i = 0; i < 16; ++i) {
+			const auto prefix = "d2_extra_" + std::to_string(i);
+			const bool ham = has((prefix + "_ham").c_str());
+			if ((gap && ham) || (!ham && has((prefix + "_hog").c_str()))) return fail(error, "incomplete supplemental HAM sequence");
+			gap = gap || !ham;
+		}
+	}
 	if (status == "complete" && ((mode != "native_d2" && (!has("d1_hog") || !has("d1_pig"))) ||
 	                             (mode == "native_d2" && (!has("d2_hog") || !has("d2_pig") || !has("d2_ham"))))) return fail(error, "incomplete asset_fingerprints");
 	if (mode == "d1_in_d2" && status == "complete" && (has("d2_hog") || has("d2_pig") || has("d2_ham")) && (!has("d2_hog") || !has("d2_pig") || !has("d2_ham")))

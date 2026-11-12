@@ -160,6 +160,53 @@ class AssetPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(assets.AssetError, "Recorded asset mismatch"):
             assets.verify_header(header, self.data, "d2")
 
+    def test_supplemental_sequence_loose_and_temporary_container(self):
+        header = self.header("native_d2")
+        extra = self.root / "supplemental"
+        extra.mkdir()
+        loose = extra / "mission.vham"
+        loose.write_bytes(b"first loaded supplemental definitions")
+        self.bind_archive(header, "d2_extra_0_ham", loose)
+        payload = b"second loaded supplemental definitions"
+        archive = self.archive("temporary.hog", [("extra.ham", payload)])
+        archive = archive.rename(extra / archive.name)
+        self.bind_archive(header, "d2_extra_1_hog", archive)
+        header["asset_fingerprints"]["files"].append(
+            {
+                "role": "d2_extra_1_ham",
+                "name": "extra.ham",
+                "container": "d2_extra_1_hog",
+                "size": len(payload),
+                "sha256": hashlib.sha256(payload).hexdigest(),
+            }
+        )
+        with self.assertRaisesRegex(assets.AssetError, "Missing"):
+            assets.verify_header(header, self.data, "d2")
+        self.assertEqual(assets.verify_header(header, self.data, "d2", extra=extra)["status"], "verified")
+        loose.rename(extra / "renamed.vham")
+        self.assertEqual(assets.verify_header(header, self.data, "d2", extra=extra)["status"], "verified")
+        self.assertIsNone(assets.shareware_game(header))
+        archive.write_bytes(archive.read_bytes()[:-1] + b"!")
+        for allow in (False, True):
+            with self.assertRaisesRegex(assets.AssetError, "mismatch"):
+                assets.verify_header(header, self.data, "d2", extra=extra, allow_unverified=allow)
+
+    def test_supplemental_sequence_rejects_gaps_orphans_and_wrong_containers(self):
+        header = self.header("native_d2")
+        row = {"role": "d2_extra_0_ham", "name": "extra.ham", "size": 1, "sha256": "a" * 64}
+        header["asset_fingerprints"]["files"].append(row)
+        assets.fingerprints(header)
+        for role in ("d2_extra_1_ham", "d2_extra_16_ham", "d2_extra_00_ham", "d2_extra_0_hog"):
+            bad = copy.deepcopy(header)
+            bad["asset_fingerprints"]["files"][-1]["role"] = role
+            with self.assertRaises(assets.AssetError):
+                assets.fingerprints(bad)
+        for container in ("d2_extra_1_hog", "d2_extra_16_hog", [], True):
+            bad = copy.deepcopy(header)
+            bad["asset_fingerprints"]["files"][-1]["container"] = container
+            with self.assertRaises(assets.AssetError):
+                assets.fingerprints(bad)
+
     def test_mission_hog_member_overrides_loose_but_not_preferred_filename(self):
         header = self.header("native_d2")
         pig = next(row for row in header["asset_fingerprints"]["files"] if row["role"] == "d2_pig")

@@ -608,7 +608,7 @@ static int bm_read_extra_robots_internal(const char *fname, int type, int xl_sta
 	for (i = N_D2_OBJBITMAPPTRS; i < (N_D2_OBJBITMAPPTRS + t); i++)
 		ObjBitmapPtrs[i] = PHYSFSX_readShort(fp);
 
-	input_demo_assets_extra_ham_loaded();
+	input_demo_assets_extra_ham_loaded(fname, fp);
 	PHYSFS_close(fp);
 	return 1;
 }
