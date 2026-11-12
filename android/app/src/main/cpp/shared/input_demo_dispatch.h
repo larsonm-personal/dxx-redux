@@ -19,6 +19,7 @@ extern "C" {
 #define INPUT_DEMO_INPUT_AUTOMAP         6
 #define INPUT_DEMO_INPUT_REAR_VIEW       7
 #define INPUT_DEMO_INPUT_COCKPIT         8
+#define INPUT_DEMO_INPUT_PLAYER_CFG      9
 #define INPUT_DEMO_REAR_VIEW_ENTER       1
 #define INPUT_DEMO_REAR_VIEW_TOGGLE_OFF  2
 #define INPUT_DEMO_REAR_VIEW_ARM         3
@@ -66,6 +67,35 @@ static inline int input_demo_cockpit_mode_supported(int32_t mode)
 
 /* Shared C/C++ ABI must not inherit engine header packing */
 #pragma pack(push, 4)
+#define INPUT_DEMO_PLAYER_CFG_PRIMARY_ORDER_MAX   11
+#define INPUT_DEMO_PLAYER_CFG_SECONDARY_ORDER_MAX 11
+/* Native D1 order domains, also carried by D2 recordings of imported missions */
+#define INPUT_DEMO_D1_PRIMARY_ORDER_COUNT   7
+#define INPUT_DEMO_D1_SECONDARY_ORDER_COUNT 6
+
+typedef struct input_demo_player_cfg {
+	int32_t auto_leveling;
+	int32_t persistent_debris;
+	uint8_t has_headlight_active_default;
+	int32_t headlight_active_default;
+	uint8_t no_fire_autoselect;
+	uint8_t cycle_autoselect_only;
+	uint8_t select_after_fire;
+	uint8_t classic_autoselect_weapon;
+	uint8_t autoselect_only_once;
+	uint8_t original_homing;
+	/* D2 guidebot_routing.h values: Original 0, Enhanced 1 */
+	uint8_t guidebot_routing_mode;
+	uint8_t primary_order_count;
+	uint8_t primary_order[INPUT_DEMO_PLAYER_CFG_PRIMARY_ORDER_MAX];
+	uint8_t secondary_order_count;
+	uint8_t secondary_order[INPUT_DEMO_PLAYER_CFG_SECONDARY_ORDER_MAX];
+	uint8_t d1_primary_order_count;
+	uint8_t d1_primary_order[INPUT_DEMO_D1_PRIMARY_ORDER_COUNT];
+	uint8_t d1_secondary_order_count;
+	uint8_t d1_secondary_order[INPUT_DEMO_D1_SECONDARY_ORDER_COUNT];
+} input_demo_player_cfg;
+
 typedef struct input_demo_environment_clock {
 	int64_t clock_ms;
 	uint32_t pickup_ms;
@@ -171,6 +201,7 @@ typedef struct input_demo_input_operation {
 	int32_t rear_view_action;
 	int32_t current_cockpit;
 	int32_t preferred_cockpit;
+	input_demo_player_cfg player_cfg;
 } input_demo_input_operation;
 
 typedef struct input_demo_input_batch_info {
@@ -189,7 +220,8 @@ typedef struct input_demo_input_batch_info {
 typedef char input_demo_operation_command_offset[(offsetof(input_demo_input_operation, command) == 52) ? 1 : -1];
 typedef char input_demo_environment_clock_size[(sizeof(input_demo_environment_clock) == 20) ? 1 : -1];
 typedef char input_demo_projection_size[(sizeof(input_demo_view_projection) == 28) ? 1 : -1];
-typedef char input_demo_operation_size[(sizeof(input_demo_input_operation) == 124) ? 1 : -1];
+typedef char input_demo_player_cfg_size[(sizeof(input_demo_player_cfg) == 64) ? 1 : -1];
+typedef char input_demo_operation_size[(sizeof(input_demo_input_operation) == 188) ? 1 : -1];
 typedef char input_demo_batch_residual_offset[(offsetof(input_demo_input_batch_info, residual_state) == 24) ? 1 : -1];
 typedef char input_demo_batch_size[(sizeof(input_demo_input_batch_info) == 68) ? 1 : -1];
 

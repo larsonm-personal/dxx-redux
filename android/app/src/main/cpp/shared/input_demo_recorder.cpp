@@ -69,6 +69,7 @@ struct input_demo_recorder_session {
 	input_demo_level_start level_start{};
 	bool has_player_cfg;
 	input_demo_player_cfg player_cfg;
+	input_demo_player_cfg current_player_cfg{};
 	bool has_rear_view_baseline = false;
 	input_demo_rear_view_baseline rear_view_baseline = {};
 	bool has_view_projection = false;
@@ -667,6 +668,7 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 	g_input_demo_recorder_session.has_player_cfg = settings->has_player_cfg ? true : false;
 	if (settings->has_player_cfg)
 		g_input_demo_recorder_session.player_cfg = settings->player_cfg;
+	g_input_demo_recorder_session.current_player_cfg = g_input_demo_recorder_session.player_cfg;
 	g_input_demo_recorder_session.has_rear_view_baseline = settings->has_rear_view_baseline != 0;
 	g_input_demo_recorder_session.rear_view_baseline = settings->rear_view_baseline;
 	g_input_demo_recorder_session.has_view_projection = settings->has_view_projection != 0;
@@ -908,6 +910,26 @@ int input_demo_recorder_stage_input_cockpit(int32_t frame_time, int32_t current_
 	operation.preferred_cockpit = preferred_cockpit;
 	g_input_demo_recorder_session.input_frame_time = frame_time;
 	return input_demo_recorder_append_operation(operation, error, error_size);
+}
+
+int input_demo_recorder_observe_player_cfg(int32_t frame_time, const input_demo_player_cfg *cfg,
+                                           int allow_change, char *error, size_t error_size)
+{
+	auto &session = g_input_demo_recorder_session;
+	if (!input_demo_recorder_uses_environment()) return 1;
+	if (session.input_failed) return input_demo_recorder_copy_error(session.input_error, error, error_size);
+	if (!cfg || !session.has_player_cfg)
+		return input_demo_recorder_input_fail("missing captured player configuration", error, error_size);
+	if (!memcmp(cfg, &session.current_player_cfg, sizeof(*cfg))) return 1;
+	if (!allow_change)
+		return input_demo_recorder_input_fail("player configuration changed inside simulation", error, error_size);
+	input_demo_input_operation operation{};
+	operation.kind = INPUT_DEMO_INPUT_PLAYER_CFG;
+	operation.frame_time = frame_time;
+	operation.player_cfg = *cfg;
+	if (!input_demo_recorder_append_operation(operation, error, error_size)) return 0;
+	session.current_player_cfg = *cfg;
+	return 1;
 }
 
 static int input_demo_recorder_stage_control_operation(int kind, int32_t frame_time,

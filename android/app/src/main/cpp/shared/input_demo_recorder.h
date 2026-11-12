@@ -55,6 +55,8 @@ void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings);
 int input_demo_recorder_is_active(void);
 uint32_t input_demo_recorder_frame_count(void);
 uint32_t input_demo_recorder_pending_input_operation_count(void);
+int input_demo_recorder_observe_player_cfg(int32_t frame_time, const input_demo_player_cfg *cfg,
+                                           int allow_change, char *error, size_t error_size);
 int input_demo_recorder_get_view_projection(input_demo_view_projection *state);
 uint32_t input_demo_recorder_diagnostic_frame_index(void);
 int input_demo_recorder_truncate(uint32_t frame_count);

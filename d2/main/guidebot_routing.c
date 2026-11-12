@@ -2,6 +2,10 @@
 #include "guidebot_routing.h"
 #include "playsave.h"
 #include "input_demo_replay.h"
+#ifdef DXX_XL_RUNTIME
+#include "input_demo_hooks.h"
+#include "input_demo_recorder.h"
+#endif
 #include "ai.h"
 #include "guidebot_route_internal.h"
 
@@ -73,6 +77,10 @@ void guidebot_routing_set_mode(int mode)
 #ifdef NETWORK
 	if (Game_mode & GM_MULTI_COOP)
 		Netgame.GuidebotRouting = (ubyte) mode;
+#endif
+#ifdef DXX_XL_RUNTIME
+	/* Capture the resolved setting before its live AI routing side effects */
+	if (input_demo_recorder_uses_environment()) input_demo_record_input_context();
 #endif
 	escort_reset_routing();
 }

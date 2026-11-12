@@ -172,7 +172,7 @@ static unsigned int input_demo_replay_hash_u8_sequence(const ubyte *values, int 
 	return hash;
 }
 
-static void input_demo_apply_replay_player_cfg(const input_demo_player_cfg *player_cfg)
+void input_demo_apply_player_cfg(const input_demo_player_cfg *player_cfg)
 {
 	if (!player_cfg)
 		return;
@@ -219,7 +219,7 @@ void input_demo_apply_level_player_cfg(void)
 	/* Level-entry progress/window bookkeeping reloads the pilot. Recorded
 	 * settings remain authoritative for the simulation that starts afterward */
 	if (input_demo_replay_get_player_cfg(&cfg))
-		input_demo_apply_replay_player_cfg(&cfg);
+		input_demo_apply_player_cfg(&cfg);
 	else
 		input_demo_apply_legacy_replay_homing_default();
 }
@@ -589,7 +589,7 @@ static int input_demo_start_replay_new_level(
 	}
 	Difficulty_level = input_demo_replay_difficulty();
 	if (have_replay_player_cfg)
-		input_demo_apply_replay_player_cfg(replay_player_cfg);
+		input_demo_apply_player_cfg(replay_player_cfg);
 	else
 		input_demo_apply_legacy_replay_homing_default();
 	printf("Input demo replay starting: %s level %d, %u frames\n",
@@ -680,7 +680,7 @@ static int input_demo_restore_loaded_replay(void)
 		                           d1_checkpoint.difficulty_min,
 		                           d1_checkpoint.difficulty_max);
 		if (have_replay_player_cfg)
-			input_demo_apply_replay_player_cfg(replay_player_cfg);
+			input_demo_apply_player_cfg(replay_player_cfg);
 		else
 			input_demo_apply_legacy_replay_homing_default();
 		printf("Input demo replay starting: %s level %d, %u frames\n",
@@ -828,7 +828,7 @@ static void input_demo_capture_restored_player_diag(
 		diag->player_cfg_result = read_player_file();
 	}
 	if (have_replay_player_cfg)
-		input_demo_apply_replay_player_cfg(replay_player_cfg);
+		input_demo_apply_player_cfg(replay_player_cfg);
 	else {
 		if (diag->replay_auto_level >= 0)
 			PlayerCfg.AutoLeveling = diag->replay_auto_level;

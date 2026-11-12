@@ -1103,6 +1103,14 @@ WORLD_SCHEMA = {
 }
 
 
+XL_PLAYER_CFG_SCHEMA = integer_fields(
+    "auto_leveling persistent_debris headlight_active_default no_fire_autoselect cycle_autoselect_only "
+    "select_after_fire classic_autoselect_weapon autoselect_only_once original_homing guidebot_routing_mode",
+    primary_order=[int],
+    secondary_order=[int],
+)
+
+
 XL_TIME_SCHEMA = {
     "version": int,
     "bound": bool,
@@ -1170,8 +1178,22 @@ def validate_world_state(state, engine=None, xl=False):
     validate_world_value(state, WORLD_SCHEMA, "$.state")
     if xl:
         validate_world_value(
-            state, {"xl_time": XL_TIME_SCHEMA, "xl_cameras": XL_CAMERA_SCHEMA, "xl_triggers": [(int,) * 10]}, "$.state"
+            state,
+            {
+                "xl_time": XL_TIME_SCHEMA,
+                "xl_cameras": XL_CAMERA_SCHEMA,
+                "xl_triggers": [(int,) * 10],
+                "xl_player_cfg": XL_PLAYER_CFG_SCHEMA,
+            },
+            "$.state",
         )
+        cfg = state["xl_player_cfg"]
+        for key in XL_PLAYER_CFG_SCHEMA:
+            if key.endswith("_order"):
+                if sorted(cfg[key]) != list(range(10)) + [255]:
+                    raise EvidenceError("Invalid XL player weapon order")
+            elif cfg[key] not in (0, 1):
+                raise EvidenceError("Invalid XL player configuration boolean")
         time = state["xl_time"]
         clock, pickup_clock, rendered, cached_clock = time["anchor"]
         if (
@@ -1397,7 +1419,7 @@ def world_states(path, header, engine="d1"):
         if (
             not meta_seen
             or type(row.get("version")) is not int
-            or row["version"] != (2 if kind == "object_boundary" else 10)
+            or row["version"] != (2 if kind == "object_boundary" else 11 if xl else 10)
         ):
             raise EvidenceError("Missing world metadata or unsupported schema")
         if kind.endswith("boundary"):

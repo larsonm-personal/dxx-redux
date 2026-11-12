@@ -7,6 +7,7 @@
 #include "slow_motion_save.h"
 #include "camera_save.h"
 #include "trigger_state.h"
+#include "input_demo_fixture.h"
 #endif
 
 #include <string>
@@ -36,6 +37,7 @@ extern "C" {
 #include "textures.h"
 #include "wall.h"
 #include "weapon.h"
+#include "input_demo_newdemo_shared.h"
 extern int delayed_primary_autoselect_weapon_index;
 extern int delayed_secondary_autoselect_weapon_index;
 }
@@ -401,6 +403,13 @@ json world_state()
 		out["secrets"].push_back({ secrets->secrets[i].identity, secrets->found[i] });
 #ifdef DXX_XL_RUNTIME
 	if (xl_level_extensions_active()) {
+		input_demo_input_operation settings{};
+		settings.kind = INPUT_DEMO_INPUT_PLAYER_CFG;
+		input_demo_capture_player_cfg(&settings.player_cfg);
+		std::string encoded, error;
+		if (!input_demo_dispatch_operation_to_json(settings, INPUT_DEMO_GAME_D2, &encoded, &error))
+			throw std::runtime_error(error);
+		out["xl_player_cfg"] = json::parse(encoded).at("value");
 		out["xl_time"] = xl_runtime::slow_motion_trace_snapshot();
 		out["xl_cameras"] = xl_camera_trace_snapshot();
 		out["xl_triggers"] = json::array();
@@ -466,7 +475,7 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	static json previous;
 	json current = world_state();
 	const bool boundary = phase != nullptr;
-	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
+	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 11 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
 	record["state"].get_ref<json::object_t &>().reserve(current.size());
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)

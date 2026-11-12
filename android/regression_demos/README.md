@@ -405,7 +405,7 @@ qualification work, not implied support:
 | Setting/input                                                                                          | Existing ownership and remaining qualification                                                                                                                                                        |
 | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Difficulty                                                                                             | Header 0-4, restored before startup; ordered difficulty commands retain later changes                                                                                                                 |
-| Auto-leveling, persistent debris, headlight default, homing, weapon selection/order, Guide-Bot routing | Explicit player configuration captured at startup and applied after pilot reload; changing configuration during a recording still needs an ordered policy                                             |
+| Auto-leveling, persistent debris, headlight default, homing, weapon selection/order, Guide-Bot routing | Explicit startup configuration plus complete ordered `player_cfg` operations; Guide-Bot changes use the ordinary setter and retain its AI routing reset; the current profile survives pilot reload    |
 | Keyboard, joystick, mouse and touch scaling/bindings                                                   | Applied before captured control samples; playback dispatches those scaled samples, rather than reading current device bindings                                                                        |
 | Rear view/cockpit and projection/depth/missile view                                                    | Explicit startup baselines and ordered view operations; projection changes cancel capture, and incompatible playback projection rejects                                                               |
 | Extra/guided/camera render views                                                                       | Existing gameplay-view admission applies; broader renderer independence remains G3 work, since visibility and render counts can affect gameplay                                                       |
@@ -413,6 +413,32 @@ qualification work, not implied support:
 | RNG and floating point                                                                                 | Required `lcg_state`; D2 builds default to strict FP (`/fp:strict` or no fast math/contraction). Cross-build/architecture qualification and explicit rejection of unsupported build modes remain open |
 | Cheats and checkpoint globals                                                                          | Ordered cheat commands exist, but the baseline and disk-save owners do not yet prove every persistent cheat/global; complete continuation belongs to G2                                               |
 | Audio backend and optional visual effects                                                              | Some runtime state still depends on backend availability; G3 must establish simulation independence before treating these as presentation-only                                                        |
+
+Format 6 records configuration changes as `{k: "player_cfg", ft, value}` in the
+existing ordered dispatch list. `value` is the complete, validated D2 `player_cfg`
+field map, including both weapon orders. Missing fields, invalid booleans/orders,
+unknown keys, D1 operations and use in format 5 reject before execution. The
+initial header remains unchanged; playback retains the current ordered profile
+when a later pilot reload reapplies settings. Format-5 recording/playback behavior
+is unchanged.
+
+The recorder observes settings before input consumers and simulation, deduplicates
+unchanged snapshots, and captures a final change in the no-simulation stop tail.
+A preference mutation first discovered inside simulation cancels the companion
+rather than emitting an operation after its consequences. Guide-Bot routing is
+captured at its ordinary setter before resetting AI routing; two changes between
+frames remain two operations even when the final mode equals the original mode.
+Playback uses that same setter, not the save-restoration path that preserves AI.
+
+XL world observations use schema 11 and require `xl_player_cfg` at restored,
+per-frame and terminal boundaries. Stock world schema 10 is unchanged. Earlier XL
+schema-10 receipts retain their historical scope; they cannot prove the newly
+required settings observation. The Omega recording probe exercises menu-equivalent
+auto-leveling, homing and weapon-order changes, two ordinary routing setter calls
+at frame 40, preference restoration at frame 135, and routing in the stop tail.
+Its runner checks all four recorded operation sites without reducing the 180-frame
+combat/recharge workload. This is scripted settings qualification, not a UI menu
+or connected-progression playthrough.
 
 Every frame and the mandatory input tail carry `environment: {count, samples}`.
 Each sample has a contiguous zero-based `sequence`, `phase` (`input` or `sim`),

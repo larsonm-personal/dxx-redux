@@ -1379,6 +1379,8 @@ class ParityTests(unittest.TestCase):
 
         def convert(rows):
             for row in rows:
+                if row["type"] in ("world_state", "world_boundary"):
+                    row["version"] = 11
                 if row["type"] in ("object_state", "object_boundary"):
                     row["capacity"] = 1367
                     row["allocator"]["free_obj_list"] = list(range(1367))
@@ -1405,6 +1407,9 @@ class ParityTests(unittest.TestCase):
                     self.import_world_storage(state)
                     state["ai"]["local_capacity"] = 1367
                     state["effects"] = [{**schema_example(parity.WORLD_SCHEMA["effects"][0]), "segnum": -1}]
+                    state["xl_player_cfg"] = schema_example(parity.XL_PLAYER_CFG_SCHEMA)
+                    for key in ("primary_order", "secondary_order"):
+                        state["xl_player_cfg"][key] = list(range(10)) + [255]
                     state["xl_time"] = schema_example(parity.XL_TIME_SCHEMA)
                     state["xl_time"].update(version=1, bound=True, anchor=[26, 0, 0, 0])
                     state["xl_time"]["slow_motion"]["clocks"] = [[1.0, 0, 26, False]] * 2
@@ -1522,7 +1527,7 @@ class ParityTests(unittest.TestCase):
 
     def test_xl_clock_observation_is_required_typed_and_compared(self):
         path = self.native_d2_trace("xl-time", True)
-        for key in ("xl_time", "xl_cameras", "xl_triggers"):
+        for key in ("xl_time", "xl_cameras", "xl_triggers", "xl_player_cfg"):
             bad = self.write("xl-missing-time", list(parity.records(path)))
             self.mutate(bad, lambda rows: rows[2]["state"].pop(key))
             with self.assertRaisesRegex(parity.EvidenceError, "Missing world field"):
@@ -1544,6 +1549,22 @@ class ParityTests(unittest.TestCase):
                 list(parity.world_states(bad, self.header, "d2"))
         changed = self.write("xl-pending-time", list(parity.records(path)))
         self.mutate(changed, lambda rows: rows[2]["state"]["xl_time"]["slow_motion"].update(bullet_requested=True))
+        self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_player_settings_are_complete_and_compared(self):
+        path = self.native_d2_trace("xl-settings", True)
+        for key in parity.XL_PLAYER_CFG_SCHEMA:
+            bad = self.write("xl-settings-missing", list(parity.records(path)))
+            self.mutate(bad, lambda rows: rows[2]["state"]["xl_player_cfg"].pop(key))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        for value in (True, 2, -1):
+            bad = self.write("xl-settings-bad-boolean", list(parity.records(path)))
+            self.mutate(bad, lambda rows: rows[2]["state"]["xl_player_cfg"].update(original_homing=value))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        changed = self.write("xl-settings-changed", list(parity.records(path)))
+        self.mutate(changed, lambda rows: rows[2]["state"]["xl_player_cfg"].update(original_homing=1))
         self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
 
     def test_xl_trigger_cooldown_is_required_and_compared(self):

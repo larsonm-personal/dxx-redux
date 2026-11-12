@@ -179,15 +179,15 @@ static void input_demo_capture_checkpoint_extra(
 }
 
 static void input_demo_fill_extra_player_cfg(
-    input_demo_recorder_settings *settings)
+    input_demo_player_cfg *cfg)
 {
 #ifdef DXX_BUILD_DESCENT_II
-	settings->player_cfg.has_headlight_active_default = 1;
-	settings->player_cfg.guidebot_routing_mode = (uint8_t) guidebot_routing_mode();
-	settings->player_cfg.headlight_active_default =
+	cfg->has_headlight_active_default = 1;
+	cfg->guidebot_routing_mode = (uint8_t) guidebot_routing_mode();
+	cfg->headlight_active_default =
 	    PlayerCfg.HeadlightActiveDefault;
 #else
-	(void) settings;
+	(void) cfg;
 #endif
 }
 
@@ -333,35 +333,35 @@ static int input_demo_ascii_equal_ignore_case(char lhs, char rhs)
 	return lhs == rhs;
 }
 
-static void input_demo_fill_recorder_player_cfg(input_demo_recorder_settings *settings)
+void input_demo_capture_player_cfg(input_demo_player_cfg *cfg)
 {
 	int i;
 
-	if (!settings)
+	if (!cfg)
 		return;
-	settings->has_player_cfg = 1;
-	settings->player_cfg.auto_leveling = PlayerCfg.AutoLeveling;
-	settings->player_cfg.persistent_debris = PlayerCfg.PersistentDebris;
-	input_demo_fill_extra_player_cfg(settings);
-	settings->player_cfg.no_fire_autoselect = PlayerCfg.NoFireAutoselect;
-	settings->player_cfg.cycle_autoselect_only = PlayerCfg.CycleAutoselectOnly;
-	settings->player_cfg.select_after_fire = PlayerCfg.SelectAfterFire;
-	settings->player_cfg.classic_autoselect_weapon = PlayerCfg.ClassicAutoselectWeapon;
-	settings->player_cfg.autoselect_only_once = PlayerCfg.AutoselectOnlyOnce;
-	settings->player_cfg.original_homing = PlayerCfg.OriginalHoming;
-	settings->player_cfg.primary_order_count =
+	input_demo_player_cfg_clear(cfg);
+	cfg->auto_leveling = PlayerCfg.AutoLeveling;
+	cfg->persistent_debris = PlayerCfg.PersistentDebris;
+	input_demo_fill_extra_player_cfg(cfg);
+	cfg->no_fire_autoselect = PlayerCfg.NoFireAutoselect;
+	cfg->cycle_autoselect_only = PlayerCfg.CycleAutoselectOnly;
+	cfg->select_after_fire = PlayerCfg.SelectAfterFire;
+	cfg->classic_autoselect_weapon = PlayerCfg.ClassicAutoselectWeapon;
+	cfg->autoselect_only_once = PlayerCfg.AutoselectOnlyOnce;
+	cfg->original_homing = PlayerCfg.OriginalHoming;
+	cfg->primary_order_count =
 	    input_demo_primary_order_count();
-	settings->player_cfg.secondary_order_count = MAX_SECONDARY_WEAPONS + 1;
+	cfg->secondary_order_count = MAX_SECONDARY_WEAPONS + 1;
 	for (i = 0; i < (int) input_demo_primary_order_count(); i++)
-		settings->player_cfg.primary_order[i] = PlayerCfg.PrimaryOrder[i];
+		cfg->primary_order[i] = PlayerCfg.PrimaryOrder[i];
 	for (i = 0; i < MAX_SECONDARY_WEAPONS + 1; i++)
-		settings->player_cfg.secondary_order[i] = PlayerCfg.SecondaryOrder[i];
+		cfg->secondary_order[i] = PlayerCfg.SecondaryOrder[i];
 #ifdef DXX_BUILD_DESCENT_II
 	if (EMULATING_D1) {
-		settings->player_cfg.d1_primary_order_count = D1_IN_D2_PRIMARY_ORDER_COUNT;
-		settings->player_cfg.d1_secondary_order_count = D1_IN_D2_SECONDARY_ORDER_COUNT;
-		memcpy(settings->player_cfg.d1_primary_order, d1_in_d2_weapon_order(0), D1_IN_D2_PRIMARY_ORDER_COUNT);
-		memcpy(settings->player_cfg.d1_secondary_order, d1_in_d2_weapon_order(1), D1_IN_D2_SECONDARY_ORDER_COUNT);
+		cfg->d1_primary_order_count = D1_IN_D2_PRIMARY_ORDER_COUNT;
+		cfg->d1_secondary_order_count = D1_IN_D2_SECONDARY_ORDER_COUNT;
+		memcpy(cfg->d1_primary_order, d1_in_d2_weapon_order(0), D1_IN_D2_PRIMARY_ORDER_COUNT);
+		memcpy(cfg->d1_secondary_order, d1_in_d2_weapon_order(1), D1_IN_D2_SECONDARY_ORDER_COUNT);
 	}
 #endif
 }
@@ -479,7 +479,8 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 #if defined(__ANDROID__)
 		settings->record_per_frame_state = g_demo_record_per_frame_state ? 1 : 0;
 #endif
-		input_demo_fill_recorder_player_cfg(settings);
+		settings->has_player_cfg = 1;
+		input_demo_capture_player_cfg(&settings->player_cfg);
 		settings->level_start = input_demo_recording_level_start();
 #ifdef DXX_XL_DEVELOPER_PROBE
 		settings->has_environment = xl_level_extensions_active() != 0;

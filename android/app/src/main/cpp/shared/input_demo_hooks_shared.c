@@ -27,6 +27,10 @@
 #include "input_demo_fp_env.h"
 #include "input_demo_hooks.h"
 #include "input_demo_newdemo_shared.h"
+#include "input_demo_start_shared.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "guidebot_routing.h"
+#endif
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #include "input_demo_result.h"
@@ -725,6 +729,8 @@ int input_demo_stop_quick_recording_after_frame(void)
 
 void input_demo_run_game_process_frame(void (*process)(void))
 {
+	if (!input_demo_record_simulation_active && input_demo_recorder_uses_environment())
+		input_demo_record_input_context();
 	/* The wrapper also resets the guard on every ordinary early return */
 	++input_demo_record_simulation_active;
 	process();
@@ -769,6 +775,14 @@ void input_demo_record_input_context(void)
 	    !input_demo_recorder_begin_input_batch(state, d_rand_get_call_count(), FrameTime, error, sizeof(error))) {
 		input_demo_cancel_input_capture(error[0] ? error : "could not capture pre-input SIM RNG");
 		return;
+	}
+	if (input_demo_recorder_uses_environment()) {
+		input_demo_player_cfg cfg;
+		input_demo_capture_player_cfg(&cfg);
+		if (!input_demo_recorder_observe_player_cfg(FrameTime, &cfg, 1, error, sizeof(error))) {
+			input_demo_cancel_input_capture(error);
+			return;
+		}
 	}
 	input_demo_rng_trace_set_context(input_demo_recorder_frame_count(), GameTime64);
 }
@@ -819,6 +833,10 @@ int input_demo_record_finish_input_tail(char *error, size_t error_size)
 	}
 #endif
 	if (!input_demo_validate_record_view_projection(error, error_size)) return 0;
+	if (input_demo_recorder_uses_environment()) {
+		input_demo_record_input_context();
+		if (!input_demo_recorder_is_active()) return 0;
+	}
 	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
 	if (!d_rand_get_state(&rng_state))
 		return 0;
@@ -901,6 +919,16 @@ static int input_demo_apply_ordered_input(uint32_t frame, char *error, size_t er
 					snprintf(error, error_size, "rear-view decision has an invalid native precondition");
 					goto failed;
 				}
+				break;
+			case INPUT_DEMO_INPUT_PLAYER_CFG:
+				if (!input_demo_replay_update_player_cfg(&operation.player_cfg)) {
+					snprintf(error, error_size, "ordered player configuration is unavailable");
+					goto failed;
+				}
+				input_demo_apply_player_cfg(&operation.player_cfg);
+#ifdef DXX_BUILD_DESCENT_II
+				guidebot_routing_set_mode(operation.player_cfg.guidebot_routing_mode);
+#endif
 				break;
 			case INPUT_DEMO_INPUT_COCKPIT:
 				if (Rear_view || Player_is_dead) {
@@ -991,6 +1019,14 @@ void input_demo_record_game_frame(void)
 	}
 #endif
 	if (!input_demo_validate_record_view_projection(error, sizeof(error))) return;
+	if (input_demo_recorder_uses_environment()) {
+		input_demo_player_cfg cfg;
+		input_demo_capture_player_cfg(&cfg);
+		if (!input_demo_recorder_observe_player_cfg(FrameTime, &cfg, 0, error, sizeof(error))) {
+			input_demo_cancel_input_capture(error);
+			return;
+		}
+	}
 	if (!d_rand_get_state(&rng_state)) {
 		con_printf(CON_NORMAL, "Input demo recording stopped: live recording requires an lcg_state RNG backend\n");
 		input_demo_recorder_cancel();

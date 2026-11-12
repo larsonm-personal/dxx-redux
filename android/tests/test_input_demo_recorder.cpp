@@ -2223,6 +2223,78 @@ static int expect_environment_recording(void)
 	if (input_demo_recorder_finish_input_tail(&state, &pulse, 1, 0, error, sizeof(error)) ||
 	    input_demo_recorder_flush(path, error, sizeof(error))) return report_failure("invalid captured environment was published");
 	input_demo_recorder_cancel();
+	// Settings changes retain their order around samples and in a no-SIM stop tail
+	if (!check(input_demo_recorder_start(&settings, error, sizeof(error))) ||
+	    !check(input_demo_recorder_begin_input_batch(1, 0, 1092, error, sizeof(error)))) return 1;
+	auto changed = settings.player_cfg;
+	changed.auto_leveling = changed.original_homing = 1;
+	std::swap(changed.primary_order[0], changed.primary_order[1]);
+	if (!check(input_demo_recorder_observe_player_cfg(1092, &changed, 1, error, sizeof(error))) ||
+	    !check(input_demo_recorder_observe_player_cfg(1092, &changed, 1, error, sizeof(error))) ||
+	    !check(input_demo_recorder_stage_input_sample(1092, &state, &pulse, error, sizeof(error))) ||
+	    !check(input_demo_recorder_observe_player_cfg(1092, &settings.player_cfg, 1, error, sizeof(error))) ||
+	    !check(input_demo_recorder_observe_environment("input_end", -1, 0, &settings.environment, error, sizeof(error))) ||
+	    !check(input_demo_recorder_capture_frame(1092, &state, &pulse, 1, 1, 0, nullptr, nullptr, error, sizeof(error))) ||
+	    !check(input_demo_recorder_begin_input_batch(1, 0, 1092, error, sizeof(error))) ||
+	    !check(input_demo_recorder_observe_player_cfg(1092, &changed, 1, error, sizeof(error))) ||
+	    !check(input_demo_recorder_observe_environment("tail_end", -1, 0, &settings.environment, error, sizeof(error))) ||
+	    !check(input_demo_recorder_finish_input_tail(&state, &pulse, 1, 0, error, sizeof(error))) ||
+	    !check(input_demo_recorder_flush(path, error, sizeof(error)))) return 1;
+	if (!input_demo_file_read(path, &recorded, &detail)) return report_failure_string(detail);
+	const auto &ops = recorded.frames[0].dispatch.operations;
+	if (recorded.metadata.player_cfg.auto_leveling || ops.size() != 3 ||
+	    ops[0].kind != INPUT_DEMO_INPUT_PLAYER_CFG || !ops[0].player_cfg.auto_leveling ||
+	    ops[0].player_cfg.primary_order[0] != 1 || ops[1].kind != INPUT_DEMO_INPUT_SAMPLE ||
+	    ops[2].kind != INPUT_DEMO_INPUT_PLAYER_CFG || ops[2].player_cfg.auto_leveling ||
+	    recorded.input_tail.dispatch.operations.size() != 1 ||
+	    !recorded.input_tail.dispatch.operations[0].player_cfg.original_homing)
+		return report_failure("ordered configuration changed its baseline, order, deduplication or tail");
+	if (!check(input_demo_replay_load(path, error, sizeof(error))) ||
+	    !input_demo_replay_update_player_cfg(&changed)) return 1;
+	input_demo_player_cfg latest{};
+	if (!input_demo_replay_get_player_cfg(&latest) || memcmp(&latest, &changed, sizeof(latest)))
+		return report_failure("replay lost its current configuration across pilot reload");
+	input_demo_replay_unload();
+	if (!input_demo_file_to_text(recorded, &text, &detail)) return report_failure_string(detail);
+	std::vector<nlohmann::ordered_json> rows;
+	std::istringstream stream(text);
+	for (std::string line; std::getline(stream, line);) rows.push_back(nlohmann::ordered_json::parse(line));
+	const auto rejects = [&](const auto &mutate) {
+		auto bad = rows;
+		mutate(bad[1]["dispatch"]["ops"][0]["value"]);
+		std::string encoded;
+		for (const auto &row : bad) encoded += row.dump() + "\n";
+		input_demo_file parsed;
+		return !input_demo_file_parse_text(encoded, &parsed, &detail);
+	};
+	for (const auto &item : rows[1]["dispatch"]["ops"][0]["value"].items())
+		if (!rejects([&](auto &value) { value.erase(item.key()); })) return report_failure("incomplete settings operation accepted");
+	if (!rejects([](auto &value) { value["original_homing"] = true; }) ||
+	    !rejects([](auto &value) { value["auto_leveling"] = 2; }) ||
+	    !rejects([](auto &value) { value["primary_order"][0] = 255; }) ||
+	    !rejects([](auto &value) { value["future_setting"] = 1; })) return report_failure("invalid settings operation accepted");
+	recorded.metadata.version = 5;
+	recorded.metadata.has_environment = false;
+	recorded.metadata.level_start.has_xl_clock = 0;
+	for (auto *frame : { &recorded.frames[0], &recorded.input_tail }) {
+		frame->has_environment = false;
+		frame->environment.clear();
+	}
+	if (input_demo_file_to_text(recorded, &text, &detail)) return report_failure("format 5 accepted ordered settings");
+	for (int bad = 0; bad < 3; ++bad) {
+		if (!check(input_demo_recorder_start(&settings, error, sizeof(error))) ||
+		    !check(input_demo_recorder_begin_input_batch(1, 0, 1092, error, sizeof(error)))) return 1;
+		auto invalid_cfg = changed;
+		if (bad == 0) invalid_cfg.original_homing = 2;
+		if (bad == 1) invalid_cfg.primary_order_count = 255;
+		if (input_demo_recorder_observe_player_cfg(1092, &invalid_cfg, bad != 2, error, sizeof(error)) ||
+		    input_demo_recorder_finish_input_tail(&state, &pulse, 1, 0, error, sizeof(error)))
+			return report_failure("invalid or simulation-time settings mutation was not sticky");
+		input_demo_recorder_cancel();
+	}
+	remove(path);
+	remove((std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+
 	return 0;
 }
 

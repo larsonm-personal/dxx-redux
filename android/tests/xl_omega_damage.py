@@ -96,6 +96,7 @@ def recording_passed(code, proof, mission, level):
         position_assists=1,
         inventory_assists=1,
         assists_during_recording=0,
+        configuration_changes=4,
     )
     if any(type(proof.get(key)) is not type(value) or proof[key] != value for key, value in expected.items()):
         return False
@@ -170,11 +171,20 @@ def main():
         for demo in recordings:
             with demo.open(encoding="utf-8") as stream:
                 header = json.loads(next(stream))
+                sites = [
+                    [row["type"], row["f"]]
+                    for line in stream
+                    for row in [json.loads(line)]
+                    for operation in row.get("dispatch", {}).get("ops", [])
+                    if operation.get("k") == "player_cfg"
+                ]
+            proof["recorded_configuration_sites"] = sites
             success = (
                 success
                 and header.get("version") == 6
                 and header.get("start_mode") == "save_checkpoint"
                 and header.get("frame_count") == 180
+                and sites == [["frame", 40], ["frame", 40], ["frame", 135], ["input_tail", 180]]
             )
     else:
         success = passed(code, proof, args.mission, args.level, args.xl)

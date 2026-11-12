@@ -92,6 +92,7 @@ class XlPrivateTests(unittest.TestCase):
             position_assists=1,
             inventory_assists=1,
             assists_during_recording=0,
+            configuration_changes=4,
             charge_before=65536,
             charge_after_fire=17000,
             charge_after_recharge=42000,
@@ -112,6 +113,7 @@ class XlPrivateTests(unittest.TestCase):
             self.assertFalse(omega_damage.recording_passed(0, bad, "fixture", 5), key)
         for key, value in dict(
             assists_during_recording=1,
+            configuration_changes=3,
             inventory_assists=True,
             complete=1,
             charge_after_fire=65536,

@@ -798,6 +798,14 @@ int input_demo_replay_get_player_cfg(input_demo_player_cfg *player_cfg)
 	return 1;
 }
 
+int input_demo_replay_update_player_cfg(const input_demo_player_cfg *cfg)
+{
+	auto &session = g_input_demo_replay_session;
+	if (!session.loaded || session.format_version != 6 || !session.has_player_cfg || !cfg) return 0;
+	session.player_cfg = *cfg;
+	return 1;
+}
+
 int input_demo_replay_get_rear_view_baseline(input_demo_rear_view_baseline *state)
 {
 	const auto &session = g_input_demo_replay_session;

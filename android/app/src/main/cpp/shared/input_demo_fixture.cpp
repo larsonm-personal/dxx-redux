@@ -329,6 +329,25 @@ static bool validate_player_cfg(const input_demo_player_cfg &player_cfg,
 	                                 "metadata player_cfg secondary_order");
 }
 
+static bool validate_complete_player_cfg(const input_demo_player_cfg &cfg, std::string *error)
+{
+	if (cfg.has_headlight_active_default != 1) return fail(error, "complete D2 player settings require a headlight default");
+	for (const int value : { cfg.auto_leveling, cfg.persistent_debris, cfg.headlight_active_default,
+	                         int(cfg.no_fire_autoselect), int(cfg.cycle_autoselect_only), int(cfg.select_after_fire),
+	                         int(cfg.classic_autoselect_weapon), int(cfg.autoselect_only_once), int(cfg.original_homing) })
+		if (value < 0 || value > 1) return fail(error, "complete player settings require boolean integer values");
+	return true;
+}
+
+static bool complete_player_cfg_keys(const ordered_json &value, std::string *error)
+{
+	for (const char *key : { "auto_leveling", "persistent_debris", "headlight_active_default", "no_fire_autoselect",
+	                         "cycle_autoselect_only", "select_after_fire", "classic_autoselect_weapon", "autoselect_only_once",
+	                         "original_homing", "guidebot_routing_mode", "primary_order", "secondary_order" })
+		if (!value.contains(key)) return fail(error, std::string("complete player settings require ") + key);
+	return true;
+}
+
 static void player_cfg_to_json(const input_demo_player_cfg &player_cfg,
                                ordered_json *json)
 {
@@ -733,10 +752,7 @@ static bool validate_metadata(const input_demo_metadata &metadata, std::string *
 		    !metadata.has_view_projection || !metadata.has_rear_view_baseline || metadata.rng_mode != "lcg_state" ||
 		    (metadata.start_mode == "new_level" && !metadata.has_level_start))
 			return fail(error, "format 6 requires complete XL startup settings and clock state");
-		for (const int value : { cfg.auto_leveling, cfg.persistent_debris, cfg.headlight_active_default,
-		                         int(cfg.no_fire_autoselect), int(cfg.cycle_autoselect_only), int(cfg.select_after_fire),
-		                         int(cfg.classic_autoselect_weapon), int(cfg.autoselect_only_once), int(cfg.original_homing) })
-			if (value < 0 || value > 1) return fail(error, "format 6 player settings require boolean integer values");
+		if (!validate_complete_player_cfg(cfg, error)) return false;
 	}
 	if (metadata.has_rear_view_baseline && (metadata.version < 5 || !input_demo_rear_view_baseline_supported(&metadata.rear_view_baseline)))
 		return fail(error, "invalid or mis-versioned rear-view baseline");
@@ -1003,6 +1019,15 @@ static bool dispatch_operation_parse(const ordered_json &root, int game,
 			if (root["action"] == dispatch_rear_view_actions[i]) operation->rear_view_action = static_cast<int32_t>(i);
 		return operation->rear_view_action != 0 || fail(error, "unsupported rear-view action");
 	}
+	if (root["k"] == "player_cfg") {
+		if (game != INPUT_DEMO_GAME_D2) return fail(error, "ordered player configuration requires D2");
+		operation->kind = INPUT_DEMO_INPUT_PLAYER_CFG;
+		return exact_keys(root, { "k", "ft", "value" }, error, "player configuration operation") &&
+		       complete_player_cfg_keys(root["value"], error) &&
+		       parse_player_cfg(root["value"], &operation->player_cfg, error) &&
+		       validate_player_cfg(operation->player_cfg, "d2", error) &&
+		       validate_complete_player_cfg(operation->player_cfg, error);
+	}
 	if (root["k"] == "cockpit") {
 		if (!exact_keys(root, { "k", "ft", "current_cockpit", "preferred_cockpit" }, error, "cockpit operation") ||
 		    !parse_int_field(root["current_cockpit"], &operation->current_cockpit, error, "current_cockpit") ||
@@ -1049,6 +1074,12 @@ bool input_demo_dispatch_operation_to_json(const input_demo_input_operation &ope
 		root["k"] = "cockpit";
 		root["current_cockpit"] = operation.current_cockpit;
 		root["preferred_cockpit"] = operation.preferred_cockpit;
+	} else if (operation.kind == INPUT_DEMO_INPUT_PLAYER_CFG) {
+		if (game != INPUT_DEMO_GAME_D2) return fail(error, "ordered player configuration requires D2");
+		if (!validate_player_cfg(operation.player_cfg, "d2", error) ||
+		    !validate_complete_player_cfg(operation.player_cfg, error)) return false;
+		root["k"] = "player_cfg";
+		player_cfg_to_json(operation.player_cfg, &root["value"]);
 	} else if (operation.kind == INPUT_DEMO_INPUT_COMMAND) {
 		root["k"] = "command";
 		if (!dispatch_command_json(operation.command, game, &root["event"], error)) return false;
@@ -1505,13 +1536,8 @@ bool input_demo_metadata_parse_header_line(const std::string &line,
 	}
 	if (!validate_metadata(parsed, error))
 		return false;
-	if (parsed.version == 6) {
-		// Legacy readers may default omitted fields; qualified XL input cannot
-		for (const char *key : { "auto_leveling", "persistent_debris", "headlight_active_default", "no_fire_autoselect",
-		                         "cycle_autoselect_only", "select_after_fire", "classic_autoselect_weapon", "autoselect_only_once",
-		                         "original_homing", "guidebot_routing_mode", "primary_order", "secondary_order" })
-			if (!root.at("player_cfg").contains(key)) return fail(error, std::string("format 6 requires player_cfg ") + key);
-	}
+	if (parsed.version == 6 && !complete_player_cfg_keys(root.at("player_cfg"), error)) return false;
+
 	if (!parsed.asset_fingerprints.empty()) {
 		const auto mode = ordered_json::parse(parsed.asset_fingerprints)["mode"];
 		if ((mode == "native_d1" ? "d1" : "d2") != parsed.game) return fail(error, "asset mode disagrees with recorded engine");
@@ -1610,10 +1636,13 @@ static bool validate_dispatch_version(const input_demo_file_frame &frame, int ve
 		return true;
 	}
 	if (!frame.rng.has_call_count) return fail(error, "ordered input requires post-input RNG count");
-	for (const auto &operation : frame.dispatch.operations)
+	for (const auto &operation : frame.dispatch.operations) {
+		if (operation.kind == INPUT_DEMO_INPUT_PLAYER_CFG && version != 6)
+			return fail(error, "ordered player configuration requires format 6");
 		if (operation.kind == INPUT_DEMO_INPUT_COMMAND &&
 		    operation.command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_XL_TIME_CONTROL && version != 6)
 			return fail(error, "XL time commands require format 6 environment input");
+	}
 	ordered_json checked;
 	if (!dispatch_batch_json(frame.dispatch, game, &checked, error)) return false;
 	for (const auto &event : frame.events) {

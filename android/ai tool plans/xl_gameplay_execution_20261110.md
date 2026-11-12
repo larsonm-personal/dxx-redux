@@ -1860,6 +1860,91 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   stock format5 and existing ordered commands. Continue the remaining clock,
   cheat/global, full-state, headless and original gameplay queue afterward.
 
+### 2026-11-11 16:23 PST - G1 ordered player configuration
+
+- Parent870309152e91975ccd35724ef02a84f00eaf4052, tree2729baf5dbbaa010841272896c0c362a89194502;
+  layer02 remains local/unpublished and G1 active. The previous turn made progress
+  by committing lossless tracing and a faithful time-equipment witness. This
+  increment closes the missing configuration-change timeline without forbidding
+  ordinary preference changes. No production guard was relaxed.
+- Reused startup capture/application owners and the existing ordered dispatch.
+  Format6 now carries complete typed player_cfg operations, with the same fields
+  as startup metadata. Settings are observed before input consumers and simulation,
+  deduplicated, and included in the no-SIM stop tail. Header settings stay immutable;
+  playback retains its current profile when pilot reload reapplies preferences.
+  A preference first discovered changing inside simulation cancels capture instead
+  of publishing a late operation. Stock format5 behavior is retained; it rejects
+  the new operation. No second dispatcher or replay-only world repair was added.
+- Guide-Bot routing required a real owner hook: guidebot_routing_set_mode resets
+  live AI routing, whereas restore_mode intentionally preserves saved AI. The
+  ordinary setter records its resolved mode before its routing reset. Playback
+  calls that setter after applying the other preferences. Two changes between
+  frames therefore remain ordered even if their final mode equals the original.
+- Moved the shared player_cfg value type into the dispatch header's explicit
+  pack(4) ABI. Compile-time checks require64-byte settings and188-byte operations,
+  including existing enclosing-pack1/pack16 controls. JSON remains the wire format.
+  Full settings/key/range/order validation precedes encoding and file execution,
+  including before array traversal. Missing/unknown fields, noninteger or invalid
+  boolean values, duplicate/invalid orders and use in D1/format5 reject.
+- XL world diagnostic schema11 adds required full xl_player_cfg observations at
+  restored, per-frame and terminal boundaries; stock world schema10 is unchanged.
+  The comparator requires and compares every settings field, preserving unknown
+  fields. Older XL schema10 receipts retain historical scope and do not qualify
+  this larger observation. No prior immutable stock fixture was changed.
+- Expanded the existing Omega recording probe, preserving its66-frame warmup,
+  180-frame combat/recharge workload and45-second limit. It changes auto-leveling,
+  original homing and primary weapon order, calls the ordinary routing setter
+  twice at frame40, restores preferences at135, and changes routing in the stop
+  tail. Runner checks all four operation sites in the actual demo. These are
+  scripted menu-equivalent preferences/setter actions, not UI-menu interaction.
+- Fresh Warp5 capture10 passes39.250 s. Probe phase endpoints2427 ms at recording
+  start,23054 frames finished,24784 finalized. The original robot117/signature118/
+  id7 goes16384000 ->6844288 while Omega selected ->3419776 after firing, no kill.
+  Charge65536 ->17488 ->42058. Same one pre-record pose and one inventory assist,
+  zero during recording. No connected progression or level-completion claim.
+  Demo d2_wshock20_level5_20261111_155624.dximdemo SHA256
+  65d7946bb4e5562fcb44b999c2a6f478be40b8d7836589da1e8f694c039778e0.
+- Immediate accelerated replay9, clean accelerated replay10 and real-time replay11
+  each pass asset verification, strict terminal result and natural clean exit.
+  EACH full comparison passes180 object frames,184 world/boundary records,
+  180 frame checks,1059 SIM and364 FX events. This includes current preferences
+  and AI routing changes. Presentation RNG differs and remains a complete separate
+  diagnostic failure; no SIM/FX difference is excluded. No corpus was frozen.
+- Windows D1/D2 and Linux D2 desktop builds pass. Fixture/recorder/replay CTests
+  pass3/3 on each, zero skips. Recorder cases cover same-batch order, deduplication,
+  unchanged startup header, tail changes, current replay profile, invalid complete
+  snapshots, oversized counts, wrong format and sticky in-simulation rejection.
+  Comparator tests75/75 and Omega receipt test1/1 pass. First Windows build failed
+  because the new test supplied an extra argument to input_demo_replay_load; fixed
+  the test call and reran affected targets/tests. No new compiler warning remains.
+- D2 Windows EXE2a168e2a74f7471589bb9b800aa4163046f375bf9b6e144978dcfa4dea42d3c5;
+  D1a0a71b367077d3e07600532e476f66234aa03869aae8ffeddda892c38ca213f2;
+  LinuxD217d7e80dca2a1c3a35ec558dbc75c6754501b8819c14d6023942f9ad13aeccc3.
+  Same root-bound caches and strict-FP flags. These are desktop builds, not refreshed
+  metadata/headless executables or release packages. Source is parent plus this
+  working patch; cached build Git labels are provenance limits, not admission keys.
+- Scoped mixed-language quality passes; both catalogs pass99 standalone JSON,
+  315 PowerShell,547 support and428 top-level integration entries. Full unchanged
+  public graphics suite exits0: all34/34 native runs pass, with pinned assets,
+  unchanged live oracles, strict SIM/diagnostic/terminal checks and natural exit.
+  Existing imported-D1 flight gameplay-state/SIM-RNG scope passes. The four other
+  imported probes and full diagnostic/object/world qualification remain incomplete;
+  raw paired exit1/differences and three declared imported exclusions are retained.
+  No membership or deadline changed. Report:
+  temp/pr464-ci-fixes-20261110/g1-settings-public-graphics/report.json.
+  Evidence logs use g1-settings-*;
+  original capture/replays and full comparison JSON are protected in that parent.
+- Actual start15:44, validation ended16:23 PST. Warp HOG fingerprint remains
+  2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c;
+  reference2576a98b5de310e3ac7c9777df2677d1627b8bae verified by the original owner.
+  No WSL restart, Android operation or cleanup beyond zero-eligible retention.
+  No external blocker. Independent untracked review remains untouched.
+- Next: commit this coherent change, then enforce the supported floating-point build profile at format6
+  admission using existing FP/build owners. Continue remaining external clocks,
+  cheat/global and complete state audit; G2-G7 and final platform/CI/stack gates
+  remain open. Estimated G1 remainder4-8 h; G2-G7 roughly17.5 h, shared prerequisites
+  credited once accepted. No cutoff, no reduced scope and no full-gameplay claim.
+
 Per-item handoff template:
 
     Item and status:

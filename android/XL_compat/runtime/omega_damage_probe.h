@@ -6,6 +6,7 @@
 #endif
 extern "C" {
 #include "render_gameplay_view.h"
+#include "guidebot_routing.h"
 int allowed_to_fire_laser(void);
 extern fix64 Last_omega_fire_time;
 void collide_robot_and_weapon(object *, object *, vms_vector *);
@@ -236,11 +237,19 @@ static int xl_omega_recording_probe(const char *path)
 		proof["charge_before"] = Omega_charge;
 		mark("recording_started");
 
+		input_demo_player_cfg initial_cfg{};
+		input_demo_capture_player_cfg(&initial_cfg);
 		recording = true;
 		frames(40, true);
 		require(Players[Player_num].primary_weapon == OMEGA_INDEX && Objects[target].signature == signature && Objects[target].shields < shields,
 		        "Selected Omega did not damage the original target before autoselection");
 		proof["target"]["shields_after_omega"] = int(Objects[target].shields);
+		// Menu-equivalent preferences plus two ordinary routing setter changes
+		PlayerCfg.AutoLeveling = !initial_cfg.auto_leveling;
+		PlayerCfg.OriginalHoming = !initial_cfg.original_homing;
+		std::swap(PlayerCfg.PrimaryOrder[0], PlayerCfg.PrimaryOrder[1]);
+		guidebot_routing_set_mode(!initial_cfg.guidebot_routing_mode);
+		guidebot_routing_set_mode(initial_cfg.guidebot_routing_mode);
 		frames(50, true);
 		proof["charge_after_fire"] = Omega_charge;
 		const bool same_target = Objects[target].type == OBJ_ROBOT && Objects[target].signature == signature;
@@ -249,10 +258,16 @@ static int xl_omega_recording_probe(const char *path)
 		require(Omega_charge < proof["charge_before"].get<int>() &&
 		            (!same_target || Objects[target].shields < shields),
 		        "Ordinary Omega fire did not consume charge and damage the original target");
-		frames(90, false);
+		frames(45, false);
+		PlayerCfg.AutoLeveling = initial_cfg.auto_leveling;
+		PlayerCfg.OriginalHoming = initial_cfg.original_homing;
+		std::swap(PlayerCfg.PrimaryOrder[0], PlayerCfg.PrimaryOrder[1]);
+		frames(45, false);
 		proof["charge_after_recharge"] = Omega_charge;
 		require(Omega_charge > proof["charge_after_fire"].get<int>(), "Ordinary Omega did not recharge after releasing fire");
 		mark("frames_finished");
+		guidebot_routing_set_mode(!initial_cfg.guidebot_routing_mode);
+		proof["configuration_changes"] = 4;
 		require(input_demo_state_trace_is_active() && input_demo_stop_quick_recording_common(), "Ordinary Omega recording did not finish");
 		mark("recording_finalized");
 		proof["frames"] = 180;
