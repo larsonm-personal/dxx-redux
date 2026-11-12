@@ -480,7 +480,7 @@ captured at its ordinary setter before resetting AI routing; two changes between
 frames remain two operations even when the final mode equals the original mode.
 Playback uses that same setter, not the save-restoration path that preserves AI.
 
-XL world observations use schema 18 and require `xl_player_cfg`, `xl_births` and `xl_native`
+XL world observations use schema 19 and require `xl_player_cfg`, `xl_births` and `xl_native`
 at restored, per-frame and terminal boundaries. Birth observations contain every
 live slot/signature, birth time, creation order and the next creation counter;
 the reader checks live object identities at both boundaries and validates the
@@ -533,7 +533,17 @@ Native pause/save preserves the cached gameplay sample until the next genuine
 input poll or unpaused `calc_frame_time`. Paused frame calculation and automatic
 rear-view reset retain it; native restore reinstates it before finalization. The
 next source sampling boundary observes uptime again, including time in menus.
-Earlier XL schema-10/11/12/13/14/15/16/17 receipts retain their historical scope; they cannot
+The native `environment` section observes fluid scrape and repair cue elapsed
+times, countdown pending time/phase/fraction, and every flicker row including
+disabled timers and full uint32 patterns. Fluid cadence gates physical turbulence
+and SIM draws; countdown cadence gates rocking, warnings and death. Repair cue
+timing also remains observed while audio's future event effects are qualified.
+Existing segment fields already observe every corner's light and ambient light,
+so the extension does not duplicate changing-light results. Existing pure owner
+getters supply these fields without running frames or repairing state. Authored
+light tables and prepared brightness remain bound to the admitted source/assets;
+runtime phases and resulting light values must agree independently.
+Earlier XL schema-10/11/12/13/14/15/16/17/18 receipts retain their historical scope; they cannot
 prove the newly required native-state observation. The Omega recording probe exercises menu-equivalent
 auto-leveling, homing and weapon-order changes, two ordinary routing setter calls
 at frame 102, preference restoration at frame 197, and routing in the stop tail.

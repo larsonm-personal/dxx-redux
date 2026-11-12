@@ -109,6 +109,8 @@ static int countdown_test(int argc, char **argv)
 				require(!xl_level_supported(bad, 0) && std::strstr(xl_level_rejection(), "countdown") && load_level(bad) != 0 && equal(before, snapshot()), "Invalid countdown admission lacks reason or changed active state");
 			}
 			const auto earned = prepare();
+			require(native_environment_observation().at("countdown") == nlohmann::json::array({ earned.pending, earned.phase, earned.fraction }),
+			        "Environment observation lost pending or fractional countdown cadence");
 			stop_time();
 			countdown_corruption(root / "preview-user");
 			char save[] = "xl-countdown.sav", description[] = "XL countdown continuation";

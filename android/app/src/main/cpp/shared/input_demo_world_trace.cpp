@@ -15,6 +15,10 @@
 #include "robot_generator.h"
 #include "motion_state.h"
 #include "mission_progress.h"
+#include "fluids.h"
+#include "repair.h"
+#include "reactor_countdown.h"
+#include "flicker.h"
 #include "input_demo_fixture.h"
 #endif
 
@@ -279,6 +283,21 @@ json metadata_xl_state()
 #undef METADATA_TRACE_GB_DOUBLE
 #undef METADATA_TRACE_GB_LONG_DOUBLE
 
+json environment_xl_state()
+{
+	// These existing owner getters are pure; save codecs retain their validation
+	xl_countdown_state countdown{};
+	xl_countdown_get(&countdown);
+	json out = { { "version", 1 }, { "fluid_scrape_elapsed", xl_fluid_scrape_elapsed() }, { "repair_elapsed", xl_repair_elapsed() }, { "countdown", { countdown.pending, countdown.phase, countdown.fraction } }, { "flickers", json::array() } };
+	for (int index = 0; index < xl_flicker_count(); ++index) {
+		xl_flicker_state state{};
+		if (!xl_flicker_get(index, &state)) throw std::runtime_error("Missing XL flicker observation");
+		out["flickers"].push_back({ state.segment, state.side, state.delay, state.timer, state.mask });
+	}
+	// Native reactor fields and all ambient/corner lighting already live in world_state
+	return out;
+}
+
 json native_xl_state()
 {
 	json out = { { "version", 1 }, { "omega_charge", Omega_charge }, { "wiggle_phase", controls_get_wiggle_phase() }, { "afterburner_charge", json::array() }, { "afterburner_times", json::array() }, { "guided", json::array() } };
@@ -349,6 +368,7 @@ json native_xl_state()
 	out["metadata"] = metadata_xl_state();
 	out["events"] = { { "version", 1 }, { "objects", xl_compat::object_trigger_snapshot() }, { "bosses", xl_compat::boss_spawn_snapshot() }, { "equipment", xl_compat::equipment_snapshot() }, { "producers", xl_compat::robot_generator_snapshot() } };
 	out["motion"] = { { "version", 1 }, { "boosts", xl_compat::speed_boost_snapshot() }, { "spawns", xl_compat::spawn_points_snapshot() }, { "progression", xl_compat::mission_progress_trace_snapshot() }, { "projectiles", xl_compat::projectile_snapshot() } };
+	out["environment"] = environment_xl_state();
 	for (const auto &entry : seismic[3])
 		out["seismic"]["detonations"].push_back({ !entry[0].is_null(), entry[0].is_null() ? json(0) : json(entry[0]), entry[1] });
 	return out;
@@ -696,7 +716,7 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	static json previous;
 	json current = world_state();
 	const bool boundary = phase != nullptr;
-	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 18 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
+	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 19 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
 	record["state"].get_ref<json::object_t &>().reserve(current.size());
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)

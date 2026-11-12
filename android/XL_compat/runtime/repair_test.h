@@ -84,6 +84,8 @@ static void repair_lifecycle(const std::filesystem::path &output, int repair)
 	ConsoleObject->mtype.phys_info.velocity = {};
 	Players[Player_num].shields = i2f(50);
 	require(xl_repair_restore(F1_0 / 8, 1), "Repair clock setup failed");
+	require(native_environment_observation().at("repair_elapsed") == F1_0 / 8,
+	        "Environment observation lost the pending repair cue");
 	char save[] = "repair-earned.sav", description[] = "XL repair clock";
 	stop_time();
 	require(state_save_all_sub(save, description), "Repair disk save failed");

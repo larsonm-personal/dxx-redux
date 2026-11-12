@@ -1384,7 +1384,7 @@ class ParityTests(unittest.TestCase):
         def convert(rows):
             for row in rows:
                 if row["type"] in ("world_state", "world_boundary"):
-                    row["version"] = 18
+                    row["version"] = 19
                 if row["type"] in ("object_state", "object_boundary"):
                     row["capacity"] = 1367
                     row["allocator"]["free_obj_list"] = list(range(1367))
@@ -1894,6 +1894,61 @@ class ParityTests(unittest.TestCase):
         paths = {difference["path"] for difference in report["first_field_differences"].values()}
         for _, _, suffix in changes:
             self.assertIn(f"$.state.xl_native.events.{suffix}", paths)
+
+    def test_xl_environment_cadence_bindings_and_full_patterns_are_checked(self):
+        path = self.native_d2_trace("xl-environment", True)
+
+        def populate(rows):
+            for row in rows:
+                state = row.get("state", {})
+                if "xl_native" not in state:
+                    continue
+                state["segments"] = [schema_example(parity.WORLD_SCHEMA["segments"][0])]
+                state["xl_native"]["environment"].update(
+                    fluid_scrape_elapsed=-1,
+                    repair_elapsed=65536 // 8,
+                    countdown=[65536 // 100, 9, 65535],
+                    flickers=[[0, 5, 16384, -(2**31), 2**31]],
+                )
+
+        self.mutate(path, populate)
+        state = next(row["state"] for row in parity.records(path) if "xl_native" in row.get("state", {}))
+        parity.validate_world_state(state, "d2", True)
+        for mutation in (
+            lambda e: e.update(version=2),
+            lambda e: e.update(fluid_scrape_elapsed=2**63),
+            lambda e: e.update(repair_elapsed=True),
+            lambda e: e["countdown"].pop(),
+            lambda e: e["countdown"].__setitem__(0, 65536 * 25 // 1000 + 1),
+            lambda e: e["countdown"].__setitem__(1, 25),
+            lambda e: e["countdown"].__setitem__(2, 65536),
+            lambda e: e["flickers"][0].__setitem__(0, 1),
+            lambda e: e["flickers"][0].__setitem__(1, 6),
+            lambda e: e["flickers"][0].__setitem__(2, -1),
+            lambda e: e["flickers"][0].__setitem__(3, -(2**31) - 1),
+            lambda e: e["flickers"][0].__setitem__(4, 2**32),
+            lambda e: e["flickers"][0].pop(),
+        ):
+            changed = copy.deepcopy(state)
+            mutation(changed["xl_native"]["environment"])
+            with self.assertRaises(parity.EvidenceError):
+                parity.validate_world_state(changed, "d2", True)
+        changed = self.write("xl-environment-changed", list(parity.records(path)))
+
+        def change(rows):
+            environment = rows[2]["state"]["xl_native"]["environment"]
+            environment["fluid_scrape_elapsed"] = 0
+            environment["repair_elapsed"] += 1
+            environment["countdown"][2] -= 1
+            environment["flickers"][0][4] += 1
+            environment["unknown_owner"] = 1
+
+        self.mutate(changed, change)
+        report = parity.compare_world(path, changed, self.header, "d2", "d2")
+        self.assertEqual(report["status"], "fail")
+        paths = {difference["path"] for difference in report["first_field_differences"].values()}
+        for suffix in ("fluid_scrape_elapsed", "repair_elapsed", "countdown[2]", "flickers[0][4]", "unknown_owner"):
+            self.assertIn(f"$.state.xl_native.environment.{suffix}", paths)
 
     def test_xl_motion_raw_owners_vectors_history_and_campaign_are_checked(self):
         path = self.native_d2_trace("xl-motion", True)

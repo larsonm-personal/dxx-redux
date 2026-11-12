@@ -1240,6 +1240,7 @@ XL_ROUTE_SCHEMA = integer_fields(
 # Typed metadata contract mirrors guidebot_metadata_fields.h and the native capacities
 METADATA_I32 = range(-2147483648, 2147483648)
 METADATA_U32 = range(0, 4294967296)
+METADATA_I64 = range(-(2**63), 2**63)
 METADATA_U64 = range(0, 18446744073709551616)
 METADATA_BYTE = range(0, 256)
 METADATA_LONG_DOUBLE_SCHEMA = {"negative": bool, "bits": [range(0, 2)], "exponent": range(-16494, 16385)}
@@ -1614,6 +1615,13 @@ XL_MOTION_SCHEMA = {
     },
     "projectiles": [XL_PROJECTILE_SCHEMA],
 }
+XL_ENVIRONMENT_SCHEMA = {
+    "version": range(1, 2),
+    "fluid_scrape_elapsed": METADATA_I64,
+    "repair_elapsed": METADATA_I64,
+    "countdown": (range(0, 65536 * 25 // 1000 + 1), range(0, 25), range(0, 65536)),
+    "flickers": [(METADATA_I32, range(0, 6), range(0, 2**31), METADATA_I32, METADATA_U32)],
+}
 XL_NATIVE_SCHEMA = integer_fields(
     "version omega_charge wiggle_phase",
     afterburner_charge=[int],
@@ -1622,6 +1630,7 @@ XL_NATIVE_SCHEMA = integer_fields(
     metadata=XL_METADATA_SCHEMA,
     events=XL_EVENTS_SCHEMA,
     motion=XL_MOTION_SCHEMA,
+    environment=XL_ENVIRONMENT_SCHEMA,
     escort=XL_ESCORT_SCHEMA,
     route={"version": int, "enabled": bool},
     seismic=integer_fields(
@@ -1704,6 +1713,9 @@ def validate_world_state(state, engine=None, xl=False, objects=None):
         metadata = native["metadata"]
         events = native["events"]
         motion = native["motion"]
+        environment = native["environment"]
+        if any(not 0 <= row[0] < len(state["segments"]) for row in environment["flickers"]):
+            raise EvidenceError("Invalid XL environment segment binding")
         for rows in (motion["boosts"]["states"], motion["projectiles"]):
             slots = [row["slot"] for row in rows]
             if len(rows) > capacity or slots != sorted(set(slots)) or any(not 0 <= slot < capacity for slot in slots):
@@ -2078,7 +2090,7 @@ def world_states(path, header, engine="d1"):
         if (
             not meta_seen
             or type(row.get("version")) is not int
-            or row["version"] != (2 if kind == "object_boundary" else 18 if xl else 10)
+            or row["version"] != (2 if kind == "object_boundary" else 19 if xl else 10)
         ):
             raise EvidenceError("Missing world metadata or unsupported schema")
         if kind.endswith("boundary"):

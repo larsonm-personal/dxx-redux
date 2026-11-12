@@ -3559,6 +3559,104 @@ G2 raw event and mixed-producer checkpoint, November 12 at 03:57 PST:
   G3-G7 gates remain open. Actual05:34 PST November12; estimated G2 remainder
   8-14h and later work approximately14.5h, substantial uncertainty, no cutoff.
 
+### G2 environment observation checkpoint, November 12 05:52 PST
+
+- Continues local layer03 `xl_gameplay_20261111_03_continuation` after committed
+  motion/clock checkpoint3e7c71ff55af619d06c68403a46f5e24df547c97, tree
+  f844231f1e98b480f6acbb1ac3927f971e868e9c. No layer03 push/PR/CI claim.
+  G0/G1 accepted; G2-G7 remain open. Work sequential, assets/stashes/independent
+  PR464 review preserved. Actual start approximately05:34 PST November12.
+- XL world schema19 adds `xl_native.environment`: exact signed64 fluid scrape
+  and repair cue elapsed times, countdown pending/phase/fraction and all flicker
+  segment/side/delay/timer/full uint32 pattern rows. Existing pure C getters are
+  reused; no save decoder, new owner, frame advance or binding repair in the
+  observer. Native reactor fields and all changing-light ambient/corner values
+  already exist in the generic world trace and are not duplicated. Stock
+  world10/object2/input6 unchanged. README documents the expanded contract.
+- Existing lava/repair/countdown/flicker owners now prove the composite observer
+  preserves actual stored cadence and RNG. Positive cases include pending repair
+  and fluid intervals, nonzero countdown phase/fraction and all130 flickers,
+  duplicate owners, disabled INT32_MIN timers and bit31 patterns. Strict reader
+  validation rejects wrong widths/types, bad segment/side bindings and cadence
+  bounds; unknown fields remain compared. No skip/deadline changes or new owner.
+- Windows/Linux root-bound strict-FP developer builds pass, as do ordinary
+  developer-OFF Windows D2 and D1. Existing native controls pass both hosts:
+  lava Win6.593s/Linux2.594s, repair4.766s/1.922s, flicker8.109s/2.969s,
+  countdown8.031s/3.328s and full spawn17.750s/8.578s. Actual extracted-source
+  lava/repair/flicker/spawn reference executables run; retained native malformed,
+  stock isolation and save/restore cases remain. Countdown exercises layouts23/27
+  with its existing authored controls and15 malformed trailers per layout.
+  g2-environment-controls-{windows,linux}.json retains commands/results.
+- All six native spawn uninterrupted/warm/cold receipts match, now including the
+  environment owner, full world/objects/allocator/clocks and SIM/FX. The existing
+  reader validates base/native schemas and complete object storage. Native
+  xl_time remains explicitly unbound; no ordered-time claim or reader relaxation.
+  g2-environment-cold-compare.json. Derived authored setup and frame advancement
+  are not connected original-level navigation/combat/completion evidence.
+- Existing water owner passes Linux57.906s and Windows under its original
+  90s capture/60s replay subprocess limits. The initial Windows attempt hit an
+  additional scratch controller120s aggregate limit and truncated replay gzip;
+  that attempt remains failed in controls-windows.json and its evidence root.
+  The repeat invokes the existing bounded CMake owner directly; no source/test
+  deadline was raised. Complete successful repeat lives in
+  g2-environment-water-windows-bounded. Isolated Linux playback of that Windows
+  recording passes its original60s deadline with embedded-result match.
+  Detailed comparisons now all PASS: Windows live/replay, Linux live/replay and
+  Windows live/isolated Linux replay, each1235 object frames/1239 world-boundary
+  records and all observed fields/RNG, including unknown fields. All five first
+  world records explicitly carry schema19 and every environment member.
+  g2-environment-water-compare.json is the canonical valid aggregate. Original
+  Windows input and isolated copy SHA256
+  d72c60092c5cfef483513d08cde6438e022fa6fc46307ce0ccf8d98be95c28a7;
+  Linux independent input013b71665aed15123913963fdff8effbbc5e199905adb9fcd94a5200fd180d46.
+- Comparison-policy owner passes85 tests91.802s plus PowerShell assertions;
+  automation catalogs pass99 JSON/315 PowerShell/547 support and428 top-level/547
+  support. g2-environment-{comparison-policy,catalog,master-catalog}.log.
+  Scoped mixed quality and whitespace pass. Final ledger formatting/review and
+  commit follow this ledger update; no source edits during runs. All owned build,
+  native-control and comparison processes have reached terminal success except
+  the explicitly retained initial scratch aggregate timeout.
+- g2-environment-build-identities.json pins source paths and patch SHA256
+  2a2daa305995bee970df11590fdb4cba00f6314c231445b39350debcdfcf3298.
+  Windows lifecycle6256dcba6951e250dffe03b12cbdec8e80ebaeab59851332c671e3d45fdaa1c7,
+  Linuxf87b377821d9f0b85afe13e534053b28c6f50b46b2c5cab9e2cdd79c88f3f720,
+  ordinary D2777673e97332aa3e9c82b26beadfeaf864b55301539f9be8af3bb551058ad26d,
+  D144272c30df6e097222acc06e078958263aec0f0a9c31401938e582764939448c.
+  All prior Neptune/Arena/WShock20/PIG/camera/Vertigo asset hashes rechecked
+  unchanged, reference2576a98b5de310e3ac7c9777df2677d1627b8bae. Validation
+  binaries only; no final packages, Android run or true-headless qualification.
+- Consumer audit: fluids.cpp last_scrape gates physical turbulence/SIM RNG;
+  reactor_countdown.cpp fractional cadence gates countdown/rocking/death.
+  repair.cpp cues/map_calls counters have no gameplay reader (getters feed
+  introspection/tests), but cue elapsed time stays observed while audio branches
+  remain unqualified. flicker.cpp mutable timers/masks feed native light changes;
+  its ordered lookup/brightness are derived only during source/asset bind/clear.
+  camera_collision.cpp ActorHitState has no current external gameplay reader:
+  its getter feeds save/tests; register_hit return values are ignored by both
+  runtime query/unstick call sites. Save preserves repaired age; its visual hit
+  arrays reset by source save policy. static_restore_slots is populated afresh
+  after native level load and consumed only to restore source-omitted object
+  unions; ordinary simulation never reads that map. None of this relaxes required
+  collision geometry, contact forces, camera rotation or flash/RNG coverage.
+- Next after this checkpoint: qualify a real cold active time transition with
+  existing render_clock_probe.h time-equipment and android/tests/xl_render_clock.py
+  owners. Current fresh-process control covers fully active bullet time3/1,
+  rather than an in-flight direction/fraction/age with full future comparison.
+  Verify native disk state before any replay/environment admission can repair
+  omitted state, then use identical external inputs; retain strict recorded timeline
+  binding. Complete pure audio/event ownership audit (named_audio_snapshot
+  mutates and output success currently affects future wall-trigger disablement).
+  Whole-save invalid XL trailer still changes energy91->100: state.c publishes
+  the base world before state_validate_runtime_state/xl_wall_trigger_read.
+  Existing false/apply owner validation depends on the candidate world/resources;
+  fixing only trailer checksum/shape before loading is insufficient. Design a
+  complete staged native restore using existing codecs/owners, with no duplicate
+  decoder or naive serialize-and-rollback. Guide-Bot async/cache/Android budget
+  remains unqualified. G2 acceptance and layer03 publication are not complete.
+  Actual end05:52 PST, approximately18min including validation/comparison.
+  Revised remaining G2 estimate12-18h, later approximately14.5h, high uncertainty;
+  no cutoff and no reduction in the gameplay closure gate.
+
 Per-item handoff template:
 
     Item and status:

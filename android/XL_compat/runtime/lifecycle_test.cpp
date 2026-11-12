@@ -1,6 +1,7 @@
 // Exercise the real loader wrapper; no renderer or gameplay certification
 // The fixture codec has C++ linkage and types; include before packed C engine headers
 #include "input_demo_fixture.h"
+#include "input_demo_world_trace.h"
 #include "native_crash_diagnostic.h"
 #include "slow_motion_runtime.h"
 #include "slow_motion_save.h"
@@ -1552,6 +1553,16 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 	std::cout << "Mission isolation: pilot -> stock -> pilot restores fresh lighting/materials and robot/weapon/powerup/joint definitions; distinct custom override rollback unverified\n";
 }
 } // namespace
+
+static nlohmann::json native_environment_observation()
+{
+	const auto sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
+	const nlohmann::json state = input_demo_native_xl_trace_snapshot().at("environment");
+	require(state == nlohmann::json(input_demo_native_xl_trace_snapshot().at("environment")) &&
+	            sim == d_rand_get_call_count() && fx == d_rand_get_stream_call_count(D_RNG_FX),
+	        "Environment observation changed stored phase, clocks or RNG");
+	return state;
+}
 
 static nlohmann::json native_continuation_semantic(nlohmann::json state)
 {

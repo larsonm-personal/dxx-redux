@@ -236,6 +236,13 @@ static int flicker_test(int argc, char **argv)
 		disable_flicker(phase[0].segment, phase[0].side);
 		const auto earned = flicker_snapshot();
 		require(earned[0].timer == INT32_MIN && earned[1].timer == phase[1].timer, "Flicker disable did not select first duplicate only");
+		const auto observed = native_environment_observation().at("flickers");
+		require(observed.size() == earned.size(), "Environment observation narrowed the owned flicker table");
+		for (std::size_t index = 0; index < earned.size(); ++index) {
+			const auto &entry = earned[index];
+			require(observed[index] == nlohmann::json::array({ entry.segment, entry.side, entry.delay, entry.timer, entry.mask }),
+			        "Environment observation lost a flicker owner, disabled timer or high pattern bit");
+		}
 		char save[] = "flicker-earned.sav", description[] = "XL flicker phase";
 		stop_time();
 		require(state_save_all_sub(save, description), "Cannot save earned flicker phase");
