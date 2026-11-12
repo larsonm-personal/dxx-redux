@@ -241,6 +241,51 @@ def message_passed(code, proof, mission, level, xl, resume_ms):
     )
 
 
+def time_continuation_capture_passed(code, proof, mission, level):
+    expected = {
+        "schema": "xl-time-equipment-gameplay-v1",
+        "complete": True,
+        "assisted": True,
+        "cold_resume": False,
+        "mission": mission,
+        "level": level,
+        "recorded_frames": 12,
+        "inventory_assists": 0,
+        "assists_during_recording": 0,
+    }
+    clock = proof.get("transition_checkpoint", {}) if isinstance(proof, dict) else {}
+    return (
+        type(code) is int
+        and code == 0
+        and isinstance(proof, dict)
+        and all(type(proof.get(key)) is type(value) and proof[key] == value for key, value in expected.items())
+        and isinstance(clock, dict)
+        and type(clock.get("speed")) in (int, float)
+        and 1 < clock["speed"] < 3
+        and type(clock.get("direction")) is int
+        and clock["direction"] == -1
+        and clock.get("active") is True
+    )
+
+
+def time_continuation_resume_passed(code, proof, matched, actual_exists):
+    expected = {
+        "phase": "native_restored",
+        "cold_resume": True,
+        "native_save_restores": 1,
+        "native_save_rejections": 1,
+        "recorded_frames": 12,
+    }
+    return (
+        type(code) is int
+        and code == 0
+        and isinstance(proof, dict)
+        and matched is True
+        and actual_exists is True
+        and all(type(proof.get(key)) is type(value) and proof[key] == value for key, value in expected.items())
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("engine", "data", "extra", "work", "reference-root"):
@@ -248,6 +293,11 @@ def main():
     parser.add_argument("--mission", required=True)
     parser.add_argument("--level", required=True, type=int)
     parser.add_argument("--xl", action="store_true")
+    parser.add_argument(
+        "--native-continuation",
+        action="store_true",
+        help="Compare an active time transition through one native disk restore and identical recorded future inputs",
+    )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
         "--time-equipment", action="store_true", help="Exercise the existing ordinary time-pickup/control/save probe"
@@ -256,6 +306,8 @@ def main():
         "--message-modal", action="store_true", help="Record the existing derived message fixture's modal/timed chain"
     )
     args = parser.parse_args()
+    if args.native_continuation and not (args.time_equipment and args.xl):
+        parser.error("--native-continuation requires --time-equipment --xl")
     pins = verify_reference(args.reference_root)
     work = args.work.resolve()
     work.mkdir(parents=True, exist_ok=False)
@@ -264,6 +316,7 @@ def main():
     engine = args.engine.resolve()
     command = [
         str(engine),
+        "-window",
         "-mission",
         args.mission,
         "-level",
@@ -289,14 +342,121 @@ def main():
         started = time.monotonic()
         try:
             code = subprocess.run(
-                command, cwd=work, stdout=log, stderr=subprocess.STDOUT, timeout=45, check=False
+                command + (["-xl-time-equipment-transition", "capture"] if args.native_continuation else []),
+                cwd=work,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                timeout=45,
+                check=False,
             ).returncode
         except subprocess.TimeoutExpired:
             code = None
         elapsed = time.monotonic() - started
     proof = json.loads(proof_path.read_text()) if proof_path.exists() else {}
     recordings = []
-    if args.time_equipment:
+    if args.native_continuation:
+        success = time_continuation_capture_passed(code, proof, args.mission, args.level)
+        demos = sorted((work / "user").rglob("*.dximdemo"))
+        success = success and len(demos) == 1
+        comparisons = {}
+        if success:
+            demo = demos[0]
+            header = next(parity.records(demo))
+            success = (
+                success
+                and header.get("version") == 6
+                and header.get("frame_count") == 12
+                and header.get("start_mode") == "save_checkpoint"
+                and header.get("asset_fingerprints", {}).get("status") == "complete"
+            )
+            before = json.loads(Path(str(proof_path) + ".native-before.json").read_text())
+            for name in ("warm", "cold-a", "cold-b"):
+                replay_code = code
+                resumed = Path(str(proof_path) + ".warm") if name == "warm" else work / f"{name}.json"
+                if name != "warm":
+                    replay_command = command.copy()
+                    replay_command[replay_command.index(str(proof_path))] = str(resumed)
+                    replay_command += ["-xl-time-equipment-resume", "-xl-time-equipment-transition", str(demo)]
+                    with (work / f"{name}.log").open("wb") as log:
+                        try:
+                            replay_code = subprocess.run(
+                                replay_command, cwd=work, stdout=log, stderr=subprocess.STDOUT, timeout=45, check=False
+                            ).returncode
+                        except subprocess.TimeoutExpired:
+                            replay_code = None
+                    success = success and replay_code == 0
+                if not all(
+                    file.exists()
+                    for file in (
+                        resumed,
+                        Path(str(resumed) + ".native-restored.json"),
+                        Path(str(resumed) + ".replay.jsonl.gz"),
+                        Path(str(resumed) + ".rng.jsonl"),
+                    )
+                ):
+                    comparisons[name] = {
+                        "execution": {"status": "fail", "error": "Native resume did not produce complete receipts"}
+                    }
+                    success = False
+                    continue
+                resume_proof = json.loads(resumed.read_text()) if resumed.exists() else {}
+                actual_path = Path(str(resumed) + ".actual.json")
+                replay_log = work / ("engine.log" if name == "warm" else f"{name}.log")
+                matched = "Input demo replay result matched embedded trailer" in replay_log.read_text(errors="replace")
+                success = success and time_continuation_resume_passed(
+                    replay_code, resume_proof, matched, actual_path.exists()
+                )
+                after = json.loads(Path(str(resumed) + ".native-restored.json").read_text())
+                for state in (before, after):
+                    world, pool, objects = state["world"], state["pool"], state["objects"]
+                    parity.validate_world_state(world, "d2", True, objects)
+                    parity.validate_object_storage(
+                        {
+                            "type": "object_boundary",
+                            "reset": True,
+                            "capacity": len(pool["allocator"]["free_obj_list"]),
+                            "slots": objects,
+                            **pool,
+                        },
+                        "d2",
+                        True,
+                    )
+
+                def semantic(state):
+                    return {
+                        **state,
+                        "world": parity.semantic_d2_world({"type": "world_state", "state": state["world"]})["state"],
+                        "objects": {slot: parity.semantic_d2_object(value) for slot, value in state["objects"].items()},
+                    }
+
+                native_differences = list(parity.field_differences(semantic(before), semantic(after)))
+                trace = Path(str(resumed) + ".replay.jsonl.gz")
+                capture = Path(str(proof_path) + ".capture.jsonl.gz")
+                comparisons[name] = {
+                    "native_restore": {
+                        "status": "fail" if native_differences else "pass",
+                        "first_field_differences": native_differences[:20],
+                    },
+                    "objects": parity.compare_objects(capture, trace, header, "d2", "d2"),
+                    "world": parity.compare_world(capture, trace, header, "d2", "d2"),
+                    "sim_rng": parity.compare_rng(
+                        Path(str(demo) + ".rngtrace.jsonl"), Path(str(resumed) + ".rng.jsonl"), 0
+                    ),
+                    "fx_rng": parity.compare_rng(
+                        Path(str(demo) + ".rngtrace.jsonl"), Path(str(resumed) + ".rng.jsonl"), 1
+                    ),
+                }
+                success = success and all(check["status"] == "pass" for check in comparisons[name].values())
+            recordings.append(
+                {
+                    "path": str(demo),
+                    "sha256": hashlib.sha256(demo.read_bytes()).hexdigest(),
+                    "frame_count": header.get("frame_count"),
+                    "native_save_sha256": hashlib.sha256((work / "user/time-transition.sav").read_bytes()).hexdigest(),
+                    "comparisons": comparisons,
+                }
+            )
+    elif args.time_equipment:
         required_events = {
             "visible_slow_motion_pickup",
             "visible_bullet_time_pickup",

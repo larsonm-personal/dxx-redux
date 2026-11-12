@@ -53,6 +53,8 @@ void input_demo_recorder_note_asset(const char *role, const char *sha256, uint64
 void input_demo_recorder_invalidate_assets(const char *reason);
 void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings);
 int input_demo_recorder_is_active(void);
+/* Original native save bytes remain owned by the active session */
+const uint8_t *input_demo_recorder_checkpoint_data(size_t *size);
 uint32_t input_demo_recorder_frame_count(void);
 uint32_t input_demo_recorder_pending_input_operation_count(void);
 int input_demo_recorder_observe_player_cfg(int32_t frame_time, const input_demo_player_cfg *cfg,

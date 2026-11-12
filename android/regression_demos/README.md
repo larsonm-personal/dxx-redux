@@ -543,6 +543,16 @@ so the extension does not duplicate changing-light results. Existing pure owner
 getters supply these fields without running frames or repairing state. Authored
 light tables and prepared brightness remain bound to the admitted source/assets;
 runtime phases and resulting light values must agree independently.
+The existing time-equipment owner accepts `--native-continuation` together with
+`--time-equipment --xl`. It retains the ordinary recorder's native disk-save bytes
+at a fractional reversing transition, then drives a warm load and two fresh
+processes with the same recorded future inputs. Shared replay startup accepts the
+identical native file and restores it once; an observer captures full native state
+before replay metadata is applied. Native checkpoint equality and detailed future
+world/object/RNG comparisons are independent requirements. A differing file must
+be rejected before restore without changing live state. This byte-identity guard
+qualifies the recorded input's initial condition; it does not establish atomic
+rejection of malformed native saves by the ordinary loader.
 Earlier XL schema-10/11/12/13/14/15/16/17/18 receipts retain their historical scope; they cannot
 prove the newly required native-state observation. The Omega recording probe exercises menu-equivalent
 auto-leveling, homing and weapon-order changes, two ordinary routing setter calls

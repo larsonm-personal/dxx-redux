@@ -3657,6 +3657,94 @@ G2 raw event and mixed-producer checkpoint, November 12 at 03:57 PST:
   Revised remaining G2 estimate12-18h, later approximately14.5h, high uncertainty;
   no cutoff and no reduction in the gameplay closure gate.
 
+### G2 native time-continuation checkpoint, November 12 07:20 PST
+
+- Continues local layer03 `xl_gameplay_20261111_03_continuation` from parent
+  3dbb88c6ba98360ede6407fe63feb4ff2c11c579, tree
+  747f70654d81a93303118dcc377cfa07f0c93184. Work began approximately05:53 PST.
+  G0/G1 accepted; G2-G7 open. No layer03 push, PR or current-tip CI claim.
+  Existing stashes, independent untracked review and authentic inputs preserved.
+- Extends existing render_clock_probe.h time-equipment/xl_render_clock.py owners
+  with --time-equipment --xl --native-continuation. Retains actual original
+  WShock20 level6 pickups48/49, warmup, pause and same-input slow/bullet movement.
+  Ordinary Alt+B reverses the earned transition. After seven actual frames,
+  ordinary quick recording retains its native checkpoint bytes and records12
+  thrust/laser frames. No second serializer, decoder, replay loop or state repair.
+- Shared startup accepts only the identical native disk checkpoint, invokes the
+  existing native restore once and observes its result before replay metadata
+  overlays. Existing schema19 strictly validates bound fractional time, objects,
+  pool/segment lists and world. Wrong-file control rejects before native restore
+  and preserves full observed world/pool/RNG. This initial-condition identity
+  guard does NOT fix ordinary malformed-save atomicity; that defect remains open.
+- Windows/Linux each pass capture, same-process warm and two clean-process cold
+  continuations. Initial capture+warm process21.844s/17.106s, unchanged45s limit.
+  Each of six relationships matches native state before metadata,12 detailed
+  object frames,16 world/boundary records,21 SIM draws and12 FX draws including
+  order/context. A real Windows disk save also passes the identical checks in a
+  clean Linux process. Natural exits, embedded terminal matches and typed proof
+  counters each require exactly one actual restore and one wrong-file rejection.
+  g2-time-native-summary.json and g2-time-cross-compare.json are canonical.
+- Checkpoint has362 live objects; world factor2.84999942779541, direction-1,
+  active true, actual saved update age5ms Windows/7ms Linux (below25ms), player
+  factor1. SIM calls1318/state574828266, FX1829/state3249882325. Five position
+  assists prepare original pickups/approach, zero inventory assists and zero
+  assists during recording. These are assisted mechanics, not connected level
+  progression/completion. Both old default time-equipment owners also pass their
+  complete231-frame combat workload, Windows36.875s/Linux28.134s, including real
+  laser damage in slowed simulation; no retained workload was shortened.
+- Windows input SHA962de56f3c885240b6cfa8c46817e5f8c150416681599d817606bde752b98089,
+  native save8365420eecde87bb7682172545b82ac5fb616c90a1fa9a0e588d74edefaf40fa.
+  Linux input2764ec4bbb1e60db807463cdaaf572360632510890ec9b8548465351837bbc77,
+  save64548efe2de2dc670ecc8cfe104f76270eebfde261c1d44384bfea4ecc9da539.
+  Complete authentic169-file/144060897-byte data root was copied to native Linux
+  storage and every file SHA-verified; g2-time-native-data.json. Reading the same
+  inputs through /mnt/c had exceeded the existing first-process45s deadline.
+  No timeout increase, missing-resource waiver or WSL restart in this increment.
+- Real Mesa validation exposed stale GL_INVALID_OPERATION from developer
+  screenshot glReadBuffer(GL_BACK). d2/arch/ogl/gr.c now reads the rendered draw
+  framebuffer with its valid attachment/default buffer and restores both read
+  framebuffer selections. No GL error draining/suppression. Existing time owner
+  verifies error-free screenshot and preserved read state on both real drivers.
+  Ordinary -window selection fixes WSLg fullscreen BadRROutput; rendering remains
+  enabled. OGLES path and D1 screenshot source unchanged.
+- Ordinary developer-OFF Windows D2 final checkpoint replay passes strict assets,
+  clean exit,12 object/16 world records and21 SIM/12 FX draws via the existing
+  embedded temporary-save path; g2-time-default-final-compare.json. Immutable
+  stock D1/D2 final flight controls pass360 live-oracle frames each,96/778 SIM
+  events, actual weapons/movement/wall-contact; g2-time-stock-final-compare.json.
+  Required private-asset unit owner49 tests4.667s, zero skips. Catalogs pass99
+  JSON/315 PowerShell/547 support and428 top-level/547 support. Earlier raw unit
+  errors came from absent CMake/CTest PATH; rerun with installed pinned tools.
+  Earlier stock invocation wrongly requested absent inline fixture state;
+  corrected existing compact oracle owner passes without modifying expectations.
+  Relative/absolute duplicate data-root aliases caused one asset preflight error;
+  identical absolute DataDir/ExtraDir corrects invocation, with no validator waiver.
+  All failed attempts retained separately. Final scoped mixed quality/review follow.
+- Root-bound strict-FP ordinary Windows developer ON/OFF, Linux developer ON and
+  Windows D1 builds pass. Source patch SHA
+  7312b8dce381a786438c4a5d36e198a5c8ff96e86d7137769e572ec187fe19cd,
+  nine non-Markdown paths in g2-time-build-identities.json. Windows developer
+  dd21435534c92afb1b2d0b87597bfccd7814e20640e7ac6a3fc8df241bba6dec,
+  Linux8f44bc3fef9a6ee673433e1f08b553ffccf97c3f35891ac2308c6e47d4aeebd2,
+  ordinary D22fcd08fcc6644ff90728d618a174574a8985a9396719caa0469799105e889442,
+  D1367b7316ad701af50637a783b1da80f729ddfcfc5f877d3fb974a439889fc6b9.
+  Cached git stamp predates edits; source patch and actual binary hashes identify
+  tested code. Pinned XL reference remains2576a98b5de310e3ac7c9777df2677d1627b8bae.
+  No current lifecycle-binary/full private corpus CI, Android, true-headless or
+  final executable/APK delivery claim. Validation outputs remain under
+  temp/pr464-ci-fixes-20261110, with complete commands/logs and input identities.
+- Next main G2 defect: ordinary rejected XL trailer still changes energy91->100.
+  state.c installs mission/level/base world before state_validate_runtime_state
+  and xl_wall_trigger_read; owner validation depends on candidate world/resources.
+  Implement complete staged native restore using the existing codecs/owners,
+  not checksum-only preflight, guessed second decoder or serialize/rollback.
+  Pure named-audio/event observation and Guide-Bot async/cache/Android2000us
+  behavior remain unqualified. Audio output success currently changes future
+  wall disablement; G3 must separate deterministic logical event ownership.
+  G2 acceptance/layer03 publication remain incomplete. Actual approximately07:20
+  PST November12; remaining G2 estimated11-17h, later14.5-20h, high uncertainty.
+  No cutoff or reduction in the gameplay closure gate.
+
 Per-item handoff template:
 
     Item and status:
