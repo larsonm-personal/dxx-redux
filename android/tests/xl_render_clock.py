@@ -221,6 +221,7 @@ def message_passed(code, proof, mission, level, xl, resume_ms):
         "message_id": 3,
         "recorded_frames": 60,
         "terminal_message": 0,
+        "rejected_profiles": 22,
     }
     return (
         type(code) is int

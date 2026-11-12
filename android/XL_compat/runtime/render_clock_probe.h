@@ -30,6 +30,59 @@ static int xl_message_clock_probe(const char *path)
 		proof["xl_active"] = bool(xl_level_extensions_active());
 		proof["renderer"] = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
 		require(SDL_InitSubSystem(SDL_INIT_TIMER) == 0, "Cannot initialize modal acknowledgement timer");
+		const auto original_cheats = cheats;
+		const auto original_player = Players[Player_num];
+		const auto original_controls = Controls;
+		const auto original_rng = d_rand_get_stream_call_count(D_RNG_SIM);
+		int rejections = 0;
+		const auto reject_profile = [&]() {
+			require(xl_input_demo_profile_error() && !input_demo_start_quick_recording_common() &&
+			            !input_demo_recorder_is_active() && Newdemo_state == ND_STATE_NORMAL &&
+			            !std::memcmp(&Players[Player_num], &original_player, sizeof(original_player)) &&
+			            !std::memcmp(&Controls, &original_controls, sizeof(original_controls)) &&
+			            d_rand_get_stream_call_count(D_RNG_SIM) == original_rng,
+			        "Unsupported startup profile changed gameplay or started a recording");
+			++rejections;
+		};
+#define REJECT_CHEAT(field) \
+	cheats.field = 1;       \
+	reject_profile();       \
+	cheats = original_cheats
+		REJECT_CHEAT(lamer);
+		REJECT_CHEAT(allkeys);
+		REJECT_CHEAT(accessory);
+		REJECT_CHEAT(invul);
+		REJECT_CHEAT(shields);
+		REJECT_CHEAT(killreactor);
+		REJECT_CHEAT(exitpath);
+		REJECT_CHEAT(levelwarp);
+		REJECT_CHEAT(fullautomap);
+		REJECT_CHEAT(ghostphysics);
+		REJECT_CHEAT(rapidfire);
+		REJECT_CHEAT(bouncyfire);
+		REJECT_CHEAT(turbo);
+		REJECT_CHEAT(robotfiringsuspended);
+		REJECT_CHEAT(killallrobots);
+		REJECT_CHEAT(robotskillrobots);
+		REJECT_CHEAT(monsterdamage);
+		REJECT_CHEAT(buddyclone);
+		REJECT_CHEAT(buddyangry);
+		REJECT_CHEAT(acid);
+#undef REJECT_CHEAT
+		const auto suspended = Game_suspended;
+		Game_suspended = SUSP_ROBOTS;
+		reject_profile();
+		const auto endlevel = Endlevel_sequence;
+		Endlevel_sequence = 1;
+		require(!xl_input_demo_profile_error(), "Ordinary endlevel robot suspension was rejected");
+		Endlevel_sequence = endlevel;
+		Game_suspended = suspended;
+		const auto low_memory = GameArg.SysLowMem;
+		GameArg.SysLowMem = 1;
+		reject_profile();
+		GameArg.SysLowMem = low_memory;
+		require(!xl_input_demo_profile_error(), "Ordinary startup profile did not recover");
+		proof["rejected_profiles"] = rejections;
 		const auto before = xl_message_modal_shows();
 		require(input_demo_start_quick_recording_common() && input_demo_recorder_uses_environment(), "Cannot record modal chain");
 		char error[256]{};

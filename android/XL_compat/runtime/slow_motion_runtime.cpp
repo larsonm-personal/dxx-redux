@@ -15,6 +15,7 @@ extern "C" {
 #include "inferno.h"
 #include "object.h"
 #include "game.h"
+#include "endlevel.h"
 #include "vecmat.h"
 #include "aistruct.h"
 #include "weapon.h"
@@ -498,8 +499,26 @@ extern "C" int xl_slow_motion_omega_fired(void)
 	return 1;
 }
 
+extern "C" const char *xl_input_demo_profile_error(void)
+{
+	if (!enabled()) return nullptr;
+	// Low-memory bitmap substitution can change transparency collision pixels
+	if (GameArg.SysLowMem) return "XL input demos require low-memory bitmap substitution to be disabled";
+	// Only the enabled/all-weapons flags have an ordered startup/input contract
+	if (cheats.lamer || cheats.allkeys || cheats.accessory || cheats.invul || cheats.shields ||
+	    cheats.killreactor || cheats.exitpath || cheats.levelwarp || cheats.fullautomap ||
+	    cheats.ghostphysics || cheats.rapidfire || cheats.bouncyfire || cheats.turbo ||
+	    cheats.robotfiringsuspended || cheats.killallrobots || cheats.robotskillrobots ||
+	    cheats.monsterdamage || cheats.buddyclone || cheats.buddyangry || cheats.acid)
+		return "XL input demos do not support an active cheat outside the ordered all-weapons contract";
+	// The ordinary escape sequence suspends robots as part of its native lifecycle
+	if (Game_suspended & ~(Endlevel_sequence ? SUSP_ROBOTS : 0))
+		return "XL input demos do not support suspended simulation subsystems";
+	return nullptr;
+}
 extern "C" const char *xl_omega_input_demo_error(void)
 {
+	if (const auto *error = xl_input_demo_profile_error()) return error;
 #ifdef DXX_XL_DEVELOPER_PROBE
 	if (input_demo_recorder_uses_environment() || input_demo_replay_format_version() == 6) return nullptr;
 #endif

@@ -740,6 +740,11 @@ int input_demo_start_loaded_replay_common(void)
 	char projection_error[256] = "";
 	/* Keep world admission closed until the XL runtime consumes this contract */
 	if (input_demo_replay_format_version() == 6) {
+		if (GameArg.SysLowMem) {
+			con_printf(CON_URGENT, "Input demo replay could not start: XL input demos require low-memory bitmap substitution to be disabled\n");
+			input_demo_replay_unload();
+			return 1;
+		}
 		if (!input_demo_validate_xl_fp_environment(projection_error, sizeof(projection_error))) {
 			printf("Input demo replay could not start: %s\n", projection_error);
 			input_demo_replay_unload();

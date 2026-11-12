@@ -440,7 +440,7 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 	unsupported_view = xl_omega_input_demo_error();
 #ifdef DXX_XL_DEVELOPER_PROBE
 	/* Ordinary startup is exercised in the developer build before qualification */
-	if (xl_level_extensions_active()) unsupported_view = NULL;
+	if (xl_level_extensions_active()) unsupported_view = xl_input_demo_profile_error();
 #endif
 	if (unsupported_view) {
 		if (error && error_size) snprintf(error, error_size, "%s", unsupported_view);

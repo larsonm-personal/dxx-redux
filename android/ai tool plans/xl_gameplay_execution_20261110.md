@@ -2323,6 +2323,78 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   production admission and publish layer02. Linux original Warp45s save/restore
   deadline remains unresolved; this derived pass does not replace it.
 
+### November 11, 19:18 PST: startup profile audit and public replay refresh
+
+- G1 remains active/unaccepted on xl_gameplay_20261111_02_timeline. Modal work
+  committed as c7c6ebc3b98b2e355b37bc58b756b312dcfadee4, tree
+  561208526e457e377a7439112bcdc01f46cf4c09; this is the current increment's parent.
+  No layer02 push/PR/hosted-CI claim. Independent PR464 review remains untracked.
+- Found a real startup gap: unsupported native cheat commands already cancelled
+  active capture, but startup accepted their existing uncaptured flags. The XL
+  profile now rejects20 flags outside the ordered enabled/all-weapons contract
+  and unsupported Game_suspended bits. Ordinary Endlevel_sequence/SUSP_ROBOTS
+  remains allowed. Source consumers include physics.c/fvi.c ghost passage,
+  laser.c bounce/rapid fire/robot targeting and ai2.c firing suspension.
+- Low-memory mode also lacked a startup contract. piggy.c:1481/1598 substitutes
+  GameBitmaps through GameBitmapXlat; fvi.c:1317 consumes those pixels for
+  transparency collision. Capture now rejects -lowmem before checkpoint creation;
+  format6 playback rejects before world restoration. Stock format5 stays unchanged.
+  Developer admission no longer wipes these profile errors. Runtime guard calls
+  retain the same profile checks; production timeline guards are still closed.
+- Existing modal owner exercises22 rejected startup profiles, verifies unchanged
+  player bytes/controls/SIM count and inactive recorder/classic-demo state, checks
+  normal endlevel admission, restores settings and records60 ordinary frames.
+  Windows capture14 passed19.734s and Linux capture13 passed14.152s. Their demo
+  hashes are2d10ec27736047d37bed1d90e369e863350630a310de65b358bc792ad14e7934
+  and77171d9920d62820c5083c4a0562c382d85d02d4f90e45cd2f9cd98c3ff1ea51.
+  Linux replay9 of capture13 passed strict assets/terminal/natural exit and all
+  detailed comparisons:60 objects/frames,64 world records,60 FX draws,zero SIM
+  and presentation draws,zero differences. This remains a derived robot-free
+  modal control, not original progression/combat or true-headless acceptance.
+- Negative lowmem replay1 on Linux and replay3 on Windows rejected the valid
+  capture7 before world restoration, with only a meta trace and no actual result.
+  Failed Windows attempt2 is retained: engine exited1 before world restore but
+  its printf reopened CON, leaving captured stdout empty. The new diagnostic now
+  uses con_printf and persists in gamelog.txt; replay3 verified that exact reason.
+  Captures10-12 retain the earlier21-profile controls. No failed receipt replaced.
+- Full unchanged public graphics owner exited0. Native17 scenes twice passed34/34
+  with pinned assets, live-capture frame/diagnostic/terminal/SIM fidelity and natural
+  exit. Required imported D1 flight gameplay/SIM scope passed; four other imported
+  probes remain unqualified, raw paired exit1 and three existing exclusions retained.
+  Report: temp/pr464-ci-fixes-20261110/g1-profile-public-graphics/report.json.
+  This run used D2 SHA8f43d8d1f064e971d8d1ef874c5b0fe4166e16dc931c0706b8279965e0193822
+  and D1c90c5ba7e57281f890717d1450e497d87e61bdcc14298a7624344973ae88a020,
+  before the lowmem rejection/logging additions. Imported tests used frozen binary
+  copies; originals rebuilt only after native runs and copy ownership were verified.
+  This is explicit scoped evidence, not final published-head CI.
+- Windows D1 desktop/D2 desktop+metadata and Linux D2 desktop+metadata build.
+  Source slow-motion/contact/text controls pass3/3 on each host (0.24s/0.03s).
+  Python clock controls pass3/3; catalogs pass99 JSON/315 PowerShell/547 support
+  scripts and428 master entries. No membership, timeouts, stock fixtures or
+  proprietary inputs changed. Existing unrelated metadata compiler warnings remain.
+- Final Windows desktop887f36520ae417cde11995063f9a759783bb9de9ded7a6a9dc4d94ce154cb0cc;
+  metadataff8f9d2f1ee728105dcf563c5bd66a853e8ff5f8eaac8fa55653bf830e994840;
+  D1 desktop51f0b08647f024a30256651cf3ec4c4fa4e9f0553482374c07d5f4934c6b7211.
+  Linux desktop203492509c65034d80af710213a47340b2b46051aa73a212f782d7fb94a04e1e;
+  metadata88b430f7c3e270ba547ac53f18844d5a94892a9af0e2e128f64eaafb992c96b1.
+  Capture13/14 precede only the con_printf diagnostic change; final Windows
+  negative3 exercises the final desktop. Root-bound cache locations unchanged.
+- Clock audit: rear-view/automap decisions are ordered operations; device scaling
+  precedes captured controls; Guide-Bot pending-cache polling returns during
+  capture/replay. Shield warning timers only select HUD/sound output. Muzzle light,
+  OOF spin, camera capture/visibility, particles/lightning and backend-driven audio
+  state still require the G3 independence controls; no omission from comparison
+  or presentation-only acceptance follows from this static inventory.
+- Work18:33-19:18 PST, free51325734912 bytes at19:18. No additional WSL restart,
+  Android run, cleanup deletion or external publication. Next coherent G1 action:
+  extend existing omega_damage_probe.h/xl_omega_damage.py so its assisted combat
+  recording acquires Omega through ordinary pickup during capture (current witness
+  grants ownership before capture). Preserve its original target, label any derived
+  pickup setup, and compare live/immediate/repeated/pacing-varied playback. Then
+  finish supported production admission, final G1 gates and layer02 publication.
+  G1 estimate2-4h; G2-G7 approximately17.5h, no cutoff. Linux Warp45s save/restore
+  performance gate and Android full-GPU timeout remain open; no new external blocker.
+
 Per-item handoff template:
 
     Item and status:

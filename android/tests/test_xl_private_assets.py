@@ -357,6 +357,7 @@ class XlPrivateTests(unittest.TestCase):
             post_frame_cached_ms=1001,
             recorded_frames=60,
             terminal_message=0,
+            rejected_profiles=22,
         )
         self.assertTrue(render_clock.message_passed(0, proof, "fixture", 1, True, 1000))
         for code in (None, False, 1):
@@ -373,6 +374,7 @@ class XlPrivateTests(unittest.TestCase):
             ("post_frame_cached_ms", 1000),
             ("post_frame_cached_ms", True),
             ("recorded_frames", 59),
+            ("rejected_profiles", 20),
             ("complete", 1),
             ("renderer", ""),
         ):
