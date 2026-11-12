@@ -2573,6 +2573,35 @@ G1 publication checkpoint, November 11 at 21:09 PST:
   Apply correctly failed its50GiB target;36.90GiB remains. No files deleted.
   Continue within reserve; do not discard required evidence to satisfy the target.
 
+G1 CI repair checkpoint, November 11 at 21:26 PST:
+
+- Direct-head ef0e4e100daaf897c6f4c735768ebca4453cbc69 exposed three test
+  integration gaps. XL run43159537011 passed61 Linux/56 Windows public contracts
+  and both developer builds, then the Linux standalone boss consumer failed to
+  link the new timeline endpoints. Its bounded harness now supplies the live
+  trigger clock endpoints while preserving the real trigger/cooldown code and
+  the existing timer-event assertion. Linux consumer build/CTest passes1/1.
+- Tooling run43159557730 failed its public-effect synthetic trace tests because
+  the fixture omitted AI/object capacities now checked by the detailed reader;
+  corrected fixture fields/order without weakening validation. Its replay-menu
+  test also failed because extracted wrapper functions had no ExtraDir parameter
+  initialization. Initialize it and verify both omitted and explicit paths with
+  spaces. No production guard, required test membership or timeout changed.
+- Full public D1 fault-tools owner passes on Windows/Linux:110 tests across six
+  modules,109 passed/one expected missing-retained-capture skip per platform.
+  Menu owner passes Windows/Linux. Initial WSL menu invocation reached the final
+  suite-cancellation check then failed reading this shared checkout's Windows
+  dependency_base.txt; rerun with process-local c: PSDrive mapped to /mnt/c passes.
+  No tracked dependency configuration changed. Scoped mixed-language quality
+  and git diff --check pass. Evidence prefix temp/pr464-ci-fixes-20261110/g1-ci-.
+- Both Linux engine D1/D2 jobs in43159529751 pass. ASan, public-save43159533419,
+  trusted private and final frozen-binary local graphics owner remain pending;
+  pending checks are not accepted coverage. This test-only repair requires new
+  published-head CI. G1 remains open until those gates and any failures resolve.
+  Actual time21:26 PST; revise G1 remaining to1-2h, G2-G7 approximately17.5h.
+  Next publish this coherent harness repair, inspect exact-head CI, and finish
+  the unchanged-binary graphics run before accepting G1 or creating layer03.
+
 Per-item handoff template:
 
     Item and status:

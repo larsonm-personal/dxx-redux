@@ -17,6 +17,7 @@
 #include "spawn_points.h"
 #include "speed_boost.h"
 #include "slow_motion_runtime.h"
+#include "input_demo_replay.h"
 #include <nlohmann/json.hpp>
 #include "gameplay_audio.h"
 #include <cstdlib>
@@ -5197,6 +5198,23 @@ fix64 timer_query(void)
 	}
 	require(disarm_trace, "unexpected timer boundary");
 	return disarm_clock;
+}
+int input_demo_replay_peek_environment(input_demo_environment_clock *)
+{
+	// This consumer exercises live trigger dispatch, not replay timeline admission
+	return 0;
+}
+uint32_t xl_input_demo_cached_clock(void)
+{
+	// Reading a trigger snapshot must not consume another external timer event
+	return static_cast<uint32_t>((disarm_trace ? disarm_clock : GameTime64) * 1000 / F1_0);
+}
+void xl_input_demo_observe(const char *consumer, int subject, input_demo_environment_clock *clock)
+{
+	require(!std::strcmp(consumer, "wall_trigger") && subject >= 0 && subject < Num_triggers && clock,
+	        "unexpected clock consumer boundary");
+	const auto ticks = timer_query() * 1000 / F1_0;
+	*clock = { ticks, static_cast<uint32_t>(ticks), 0, static_cast<uint32_t>(ticks) };
 }
 int xl_preview_no_damage_segment(int segment)
 {
