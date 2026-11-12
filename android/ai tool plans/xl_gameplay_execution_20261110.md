@@ -2964,6 +2964,61 @@ G2 birth observer checkpoint, November 12 at 00:11 PST:
   no G2-G7 acceptance. Actual00:11 PST; revised G2 estimate4-6h remains uncertain,
   with approximately14.5h afterward. Continue sequentially without a cutoff.
 
+G2 native observer fidelity checkpoint, November 12 at 00:22 PST:
+
+- Birth observer committed locally as5cb81839aae90bca7263667f748bfa5b6a18da6d,
+  treec3a6d641436be5c0e3be264fbe5a6a293f0928d4. This follow-up adds the ordinary
+  render_update_game_view_automap boundary after arena_frame simulation. The
+  existing live fixture now discovers the view at the same ordinary phase as
+  playback; no pose, expected-state injection or production replay compensation.
+- Native D2 semantic comparison preserves raw awareness storage, comparing only
+  the active queue's known fields while retaining inactive unknown fields. Source
+  ai.c create_awareness_event writes segment/type/position before incrementing
+  Num_awareness_events; process_awareness_events reads only that active prefix,
+  then clears its count; ai_save_state writes the same prefix. This is a bounded
+  inactive-storage classification, not an exclusion of active AI state. Active
+  entries with equal queue counts still differ in regression controls, and a
+  future field in an inactive row still fails. Existing D1/imported comparison
+  semantics, raw traces, capacity/count validation and all other fields remain.
+- Full existing water-arena owner passes on Windows and Linux-native storage,
+  with unchanged90/60/120s deadlines and authentic source pins. Detailed semantic
+  live-to-cold-replay comparisons now pass on BOTH hosts:1235 object frames and
+  1239 world/boundary records, all compared fields and both frame RNG streams.
+  A separate Linux process also replays the Windows recording and matches its
+  embedded trailer plus all1235 object/1239 world observations. Windows demo
+  SHA25619fa28531c364671f8de5071bddd91c60095819b76d460d52fadbed2008cc8bf.
+  This validates the currently observed field set, not complete G2 state or
+  strict per-draw RNG-event/corpus qualification. Prior failed traces retained.
+- Evidence g2-water-semantic-{windows,linux-native,cross-replay} and respective
+  logs; detailed JSON receipts g2-water-semantic-{windows,linux,cross}-compare.json.
+  Linux original workspaces /var/tmp/dxx-pr464-20261111/private/g2-water-semantic
+  and g2-water-semantic-cross; selected traces/logs copied into repository temp.
+  Cross-process metadata g2-water-semantic-cross-replay.json records actual args,
+  executable and input hashes. The default output path placed its generated
+  terminal JSON and scheduling diagnostic beside the Windows input, overwriting
+  earlier generated derivatives. Input demo and detailed Windows traces remained
+  unchanged. Moved these Linux-generated derivatives into cross-replay with
+  explicit windows-demo.linux-generated names; Windows terminal evidence is its
+  own successful process log and captured detailed trace. Future cross probes
+  must stage a separate input copy so defaults cannot overwrite earlier outputs.
+- Windows developer EXE SHA256
+  e19a16aaf2a969c53ca60e2ac999ec63ae2d0ce6f4f6407b25f1250967c861f1;
+  Linuxd5a3c6e0d6a19b13bd19c19e0cd38681e50da9517f78a498931b00071db17ca2.
+  Verified root-bound strict-FP developer caches built5cb plus this working
+  patch. Normal-game/Android binaries have not been rebuilt or qualified here.
+- Reader77 tests pass34.532s, final scoped mixed-language quality/whitespace pass,
+  catalogs pass99 JSON/315 PowerShell/547 support and428 top-level/547 support.
+  Logs g2-water-semantic-{reader,final-quality,catalog,master-catalog}.log. Both
+  native builds pass with the previously noted unrelated warnings unchanged.
+- Commit this coherent owner/comparison fix locally on layer03. No push/PR or
+  G2 acceptance yet. Complete native/XL owner observation, real combined cold
+  continuations and atomic whole-save rejection remain. The energy91->100 failed
+  restore is still open. Next extend the existing typed native/XL owner snapshots
+  (Omega/afterburner, guided/wiggle, complete escort/route metadata and XL owners),
+  then implement loader transaction/rejection through existing save/rewind
+  ownership. G0/G1 accepted; G2-G7 open. Actual00:22 PST; G2 remaining4-6h and
+  later items approximately14.5h still uncertain. Continue with no cutoff.
+
 Per-item handoff template:
 
     Item and status:

@@ -679,7 +679,16 @@ def semantic_d2_world(row):
         else effect
         for effect in row["state"]["effects"]
     ]
-    return {**row, "state": {**row["state"], "effects": effects}}
+    ai = row["state"]["ai"]
+    # ai.c processes and saves only [0, Num_awareness_events); enqueue writes
+    # every known field before increasing the count. Retain raw trailing storage
+    # in the trace and unknown fields in the comparison, but ignore stale values
+    # of those three known fields outside the active queue
+    awareness = [
+        entry if index < ai["Num_awareness_events"] else {**entry, "segment": 0, "type": 0, "position": [0, 0, 0]}
+        for index, entry in enumerate(ai["awareness"])
+    ]
+    return {**row, "state": {**row["state"], "effects": effects, "ai": {**ai, "awareness": awareness}}}
 
 
 def canonical_d1_ai_storage(value, fields):

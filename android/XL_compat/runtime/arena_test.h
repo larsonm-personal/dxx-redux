@@ -2,6 +2,7 @@
 #include "input_demo_replay.h"
 #include "input_demo_state_trace.h"
 #include "input_demo_world_trace.h"
+#include "render_gameplay_view.h"
 #include "xl_animation_phase.h"
 #include "effects.h"
 #include <map>
@@ -65,6 +66,8 @@ static void arena_frame(const vms_vector *target)
 	if (arena_recording) input_demo_record_input_sample();
 	calc_game_time();
 	GameProcessFrame();
+	// Ordinary live draws discover the current view after simulation
+	require(render_update_game_view_automap(), "arena traversal has no initialized gameplay view");
 	require(!Player_is_dead && Players[Player_num].shields > 0, "arena traversal killed player");
 }
 

@@ -493,6 +493,15 @@ Its runner checks all four recorded operation sites alongside the pickup, rearm,
 combat and recharge workload. This is scripted settings qualification, not a UI menu
 or connected-progression playthrough.
 
+Native D2 comparisons retain the full raw awareness buffer in the trace. Only
+the known segment/type/position fields beyond `Num_awareness_events` are ignored
+semantically: `ai.c` processes and saves only the active queue, and enqueue
+overwrites all three fields before increasing its count. Active entries, the
+count, storage length and unknown fields remain compared. Automap discovery
+remains gameplay state because Guide-Bot unexplored routing consumes it; the
+native live traversal owner invokes the ordinary view-discovery boundary after
+simulation, as playback and interactive drawing do.
+
 Every frame and the mandatory input tail carry `environment: {count, samples}`.
 Each sample has a contiguous zero-based `sequence`, `phase` (`input` or `sim`),
 `operation`, `consumer`, `subject`, and the four clock values. Input operation

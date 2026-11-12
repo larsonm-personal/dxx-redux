@@ -1455,6 +1455,50 @@ class ParityTests(unittest.TestCase):
                 self.mutate(bad, change)
                 self.assertEqual(compare(left, bad, self.header, "d2", "d2")["status"], "fail")
 
+    def test_native_d2_awareness_compares_active_entries_and_unknown_inactive_fields(self):
+        left = self.native_d2_trace("awareness-left", True)
+        right = self.write("awareness-right", list(parity.records(left)))
+
+        def stale(rows):
+            for row in rows:
+                if "ai" in row.get("state", {}):
+                    row["state"]["ai"]["awareness"][0].update(segment=1, type=2, position=[3, 4, 5])
+
+        self.mutate(right, stale)
+        raw = right.read_bytes()
+        self.assertEqual(parity.compare_world(left, right, self.header, "d2", "d2")["status"], "pass")
+        self.assertEqual(right.read_bytes(), raw)
+        for kind in ("active", "unknown"):
+            bad = self.write("awareness-bad", list(parity.records(right)))
+            expected = left
+            if kind == "active":
+                expected = self.write("awareness-active", list(parity.records(left)))
+                self.mutate(
+                    expected,
+                    lambda rows: [
+                        row["state"]["ai"].update(Num_awareness_events=1)
+                        for row in rows
+                        if "ai" in row.get("state", {})
+                    ],
+                )
+
+            def change(rows):
+                for row in rows:
+                    if "ai" in row.get("state", {}):
+                        ai = row["state"]["ai"]
+                        if kind == "active":
+                            ai["Num_awareness_events"] = 1
+                        else:
+                            ai["awareness"][0]["future_gameplay"] = 7
+
+            self.mutate(bad, change)
+            report = parity.compare_world(expected, bad, self.header, "d2", "d2")
+            self.assertEqual(report["status"], "fail")
+            if kind == "active":
+                self.assertIn(
+                    "world_boundary:restored:$.state.ai.awareness[0].position[0]", report["first_field_differences"]
+                )
+
     def test_native_d2_active_effect_sides_are_never_normalized(self):
         left = self.native_d2_trace("effect-left", True)
         self.mutate(
