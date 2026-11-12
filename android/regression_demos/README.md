@@ -498,6 +498,15 @@ Save schema 40 retains cooldown activation and its age clamped at the source's
 750 ms threshold. Loading rebases that age onto the restored cached clock or
 admitted replay origin. The unqualified format-6 drafts lacking `cached_ms`
 reject; they are diagnostic evidence, not a released compatibility contract.
+Timed level messages also consume this cached clock, matching the pinned
+`ShowGameMessage` use of `nSDLTicks[0]`. Message age, text and opacity no longer
+read host wall time. Save/trace readers derive effective age and expiry directly
+without mutating the message owner or depending on a prior draw/update call.
+Native message controls record ordinary frames, reload their timeline, hold its
+clock while host time advances, then verify age and expiry as recorded samples
+are consumed. This is a derived clock-consumer test, not a whole-level replay;
+modal input/clock ordering and optional output independence remain open G1/G3
+audit work.
 The schema also persists both signed texture coordinates at all four corners of
 every segment face. Scrolling UVs feed hit-point transparency as well as drawing;
 restoring only texture IDs changes collision. All rows and coordinates validate

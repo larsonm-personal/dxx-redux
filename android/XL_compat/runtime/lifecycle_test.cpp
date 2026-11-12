@@ -1,4 +1,6 @@
 // Exercise the real loader wrapper; no renderer or gameplay certification
+// The fixture codec has C++ linkage and types; include before packed C engine headers
+#include "input_demo_fixture.h"
 #include "native_crash_diagnostic.h"
 #include "slow_motion_runtime.h"
 #include "slow_motion_save.h"

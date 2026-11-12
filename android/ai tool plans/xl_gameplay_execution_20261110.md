@@ -2112,6 +2112,83 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   admission remain open. G1 remainder estimated3-6h; G2-G7 roughly17.5h with shared
   prerequisites credited once accepted. No cutoff or reduced scope.
 
+### 2026-11-11 17:40 PST - G1 level-message clock owner
+
+- G1 remains active/unaccepted; G0 accepted, G2-G7 open. Branch
+  xl_gameplay_20261111_02_timeline now has the preceding combat witness committed
+  as b625aa268accfbdac718f8d6b1f5f3c5128c86ef, tree
+  76594f6e57134aaf3661dc3674e04c3dbe0159fa. The commit hook printed another hash;
+  these identities were reread from HEAD. No layer-02 publication or guard removal.
+- level_messages.cpp used steady_clock for source cached SDL time. It now reads
+  the existing qualified cached clock, which returns recorded cached_ms while
+  replay is loaded. No new time format, wall-clock repair or extra sampling.
+  A second cached message clock was also removed: save/trace readers derive
+  effective age/expiry directly, without requiring a draw/update or mutating the
+  message owner. Normal frame/action/draw paths still retire expired messages.
+  Ordinary restore rebases elapsed age on the saved cached domain already restored
+  by trigger_save.cpp; the serialized message layout and strict validation remain.
+- Exact source anchor: pinned main/textdata.cpp ShowGameMessage consumes
+  gameStates.app.nSDLTicks[0] for start/end/fade/expiry; SHA256
+  d6172ffd9c3e94162358228ce168dd005d03feba231f45165b97f9b4ff1c0c5c,
+  reference revision2576a98b5de310e3ac7c9777df2677d1627b8bae. Its negative-duration
+  modal pause/resume branch remains unchanged. Modal input/clock ordering and
+  no-device operation are not newly qualified; they remain explicit G1/G3 audit
+  work, along with optional message output policy.
+- Existing level_message_test.h now checks that a host delay without timer_update
+  cannot advance the cached message clock. For each derived version23/27 fixture,
+  it records two ordinary frames, reloads that actual format-6 stream, establishes
+  a labeled near-expiry message control, waits/updates the host timer and verifies
+  its age remains950ms. Consuming the original recorded samples then advances and
+  expires the message, observed directly without drawing. This is a clock-consumer
+  control, not a full world replay, original route or new frozen corpus.
+  The fixtures still derive from unchanged audited Neptune geometry
+  4016618d24238803135dabf2b33daee2a2c34a670c3f016d94ae4639c8887303.
+- Retained failed attempts: first Windows native run failed a pre-existing Boolean
+  negative because loadgl.h's true macro serialized integer1, not a Boolean. The
+  test now uses bool{true}, preserving the intended malformed-type rejection.
+  A later build failed linking the newly used C++ input_demo_file_read API because
+  lifecycle_test.cpp first included its header through packed extern-C engine
+  headers. The fixture codec is now explicitly included before those headers,
+  preserving C++ linkage and native struct layout. Finally the stronger direct
+  save/trace observation control failed on the duplicate frame_clock before its
+  removal (g1-message-clock-boundary-before.log). All failures remain evidence.
+- Final Windows desktop/metadata and Linux desktop/metadata builds pass. Native
+  message and pinned text reference tests pass2/2 on each host, zero skips:
+  Windows11.99s; Linux5.59s. Each derived version retains14 malformed-trailer
+  atomic rejections, wall/master/object/autoplay dispatch, ownership rejection,
+  duration/expiry and disk-through-stock restore. Extracted reference controls
+  cover52 expiry/fade cases, three modal cases,2061 tables and6159 exact row/lookup
+  comparisons. Raw logs are g1-message-clock-* under the protected evidence root.
+  The existing Windows C4805 in changing_light_test_records.h and Linux packed
+  member warnings remain outside this change; no new edited-owner warning.
+- Windows desktop SHA256
+  6667a4cde2e7e6547d78bd00fe050ebd62c39a06861fe855c52beeb2a12d8af8;
+  metadata SHA256
+  1fee2869ba4400e13cadd8f931ff25ce860cde7be1c7ef397206ef2057775cea.
+  Linux desktop SHA256
+  aa91e4f8be8fafbb1d6fa847e586bd8cbe7a07534f5a963d051ac89dbfc2a44f;
+  metadata SHA256
+  cbe37ebc18a22e323924692dc4f3aac2f04aa8dd89acd84b525840f429b4a703.
+  Existing root-bound cache paths are unchanged. No Android operation/package,
+  production whole-level message replay or final-source hosted CI is claimed.
+- A current-engine replay21 of the unchanged accepted time-combat capture15 is
+  running as the scoped original regression check; finish its terminal and full
+  semantic comparison before committing. Source quality and final doc/diff checks
+  must pass. Catalog inputs are unchanged from the preceding passed99/315/547 and
+  428-entry checks; no test registration or deadline is changed.
+- Actual work approximately17:22-17:42 PST, sequential in the root checkout.
+  No WSL restart, independent worker, device operation or asset mutation. Free
+  bytes52380295168 at17:41. Next: commit this coherent increment, then continue the
+  G1 clock/input/global audit, including modal/nested message clock ordering.
+  Remaining renderer owners use SDL ticks for camera scheduling, OOF spin and
+  particle/lightning output; their full simulation independence is still G3 work.
+  Main-engine timer audit confirms network spawn/drop reseeds are multiplayer-only,
+  Guide-Bot asynchronous cache polling already returns during recording/replay,
+  and Omega debug timer only throttles diagnostics. Muzzle-light/shield-warning
+  output and remaining persistent globals still require their owning G2/G3 audit.
+  G1 remainder estimated3-5h, G2-G7 roughly17.5h with shared prerequisites credited
+  once accepted. No cutoff or reduced gameplay/platform scope.
+
 Per-item handoff template:
 
     Item and status:

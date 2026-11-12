@@ -1,11 +1,11 @@
 #include "level_messages.h"
+#include "slow_motion_runtime.h"
 #include "preview.h"
 #include "../level_text.h"
 #include "../message_time.h"
 #include "../inventory.h"
 #include "picosha2.h"
 #include <algorithm>
-#include <chrono>
 #include <memory>
 #include <set>
 #include <stdexcept>
@@ -36,14 +36,15 @@ namespace
 {
 std::shared_ptr<const xl_compat::MessageResources> bank;
 int message_id = 0, duration = 0;
-std::int64_t started = 0, frame_clock = 0;
+std::int64_t started = 0;
 std::uint64_t draws = 0, modals = 0;
 int drawn_id = 0;
 float drawn_alpha = 0;
 std::int64_t milliseconds()
 {
-	// Like the source SDL clock, this advances while game simulation is paused
-	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+	// Source ShowGameMessage consumes nSDLTicks[0], sampled before the frame
+	// Replay owns that same cached clock independently of host waits and redraws
+	return xl_input_demo_cached_clock();
 }
 void clear_message()
 {
@@ -53,12 +54,7 @@ void clear_message()
 std::int64_t age()
 {
 	if (!message_id) return 0;
-	const auto elapsed = (std::max) (std::int64_t(0), frame_clock - started);
-	if (elapsed >= std::int64_t(duration) * 1000) {
-		clear_message();
-		return 0;
-	}
-	return elapsed;
+	return (std::max) (std::int64_t(0), milliseconds() - started);
 }
 } // namespace
 
@@ -102,7 +98,6 @@ std::shared_ptr<const MessageResources> prepare_messages(const char *level, cons
 void install_messages(std::shared_ptr<const MessageResources> resources)
 {
 	clear_message();
-	frame_clock = milliseconds();
 	bank = std::move(resources);
 }
 } // namespace xl_compat
@@ -145,7 +140,7 @@ extern "C" int xl_message_action(const trigger *action)
 	} else {
 		message_id = id;
 		duration = action->time;
-		started = frame_clock;
+		started = milliseconds();
 	}
 	return 1;
 }
@@ -157,22 +152,22 @@ extern "C" const char *xl_message_identity(void)
 
 extern "C" const char *xl_message_text(void)
 {
-	age();
-	const auto *row = bank && message_id ? xl_compat::find_level_text(bank->table, message_id) : nullptr;
+	const auto *row = bank && message_id && age() < std::int64_t(duration) * 1000 ? xl_compat::find_level_text(bank->table, message_id) : nullptr;
 	return row ? row->text.c_str() : "";
 }
 
 extern "C" float xl_message_alpha(void)
 {
 	const auto elapsed = age();
-	return message_id ? xl_compat::message_opacity(elapsed, std::int64_t(duration) * 1000 - elapsed) : 0;
+	return message_id && elapsed < std::int64_t(duration) * 1000 ? xl_compat::message_opacity(elapsed, std::int64_t(duration) * 1000 - elapsed) : 0;
 }
 
 extern "C" void xl_message_state_get(xl_message_state *state)
 {
 	if (!state) return;
 	const auto elapsed = age();
-	*state = { elapsed, message_id, duration };
+	// Reading a save/trace must not depend on a draw or mutate the message owner
+	*state = message_id && elapsed < std::int64_t(duration) * 1000 ? xl_message_state{ elapsed, message_id, duration } : xl_message_state{};
 }
 
 extern "C" int xl_message_restore(const xl_message_state *state, int apply)
@@ -182,20 +177,16 @@ extern "C" int xl_message_restore(const xl_message_state *state, int apply)
 		if (state->elapsed_ms || state->duration) return 0;
 	} else if (!bank || !bank->authored.count({ state->id, state->duration }) || state->elapsed_ms >= std::int64_t(state->duration) * 1000) return 0;
 	if (apply) {
-		frame_clock = milliseconds();
 		message_id = state->id;
 		duration = state->duration;
-		started = message_id ? frame_clock - state->elapsed_ms : 0;
+		started = message_id ? milliseconds() - state->elapsed_ms : 0;
 	}
 	return 1;
 }
 
 extern "C" void xl_message_frame(void)
 {
-	// XL samples SDL ticks before its frame. Serializers read that frame's state;
-	// resampling inside a write would give detached and synchronous saves different clocks
-	frame_clock = milliseconds();
-	age();
+	if (message_id && age() >= std::int64_t(duration) * 1000) clear_message();
 }
 
 extern "C" void xl_message_draw(void)
