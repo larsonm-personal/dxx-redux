@@ -1,3 +1,56 @@
+#include "input_demo_object_trace.h"
+
+static void spawn_points_respawn()
+{
+	Players[Player_num].flags &= ~PLAYER_FLAGS_INVULNERABLE;
+	Players[Player_num].lives = 5;
+	Players[Player_num].shields = F1_0;
+	apply_damage_to_player(ConsoleObject, ConsoleObject, i2f(200), 0);
+	require(ConsoleObject->flags & OF_SHOULD_BE_DEAD, "lethal damage did not enter death path");
+	obj_delete_all_that_should_be_dead();
+	require(Player_is_dead, "lethal damage did not start player death");
+	DoPlayerDead();
+	require(!Player_is_dead && Players[Player_num].lives == 4 && !vm_vec_mag(&ConsoleObject->mtype.phys_info.velocity), "ordinary death did not respawn a fresh ship");
+}
+
+static nlohmann::json spawn_points_future()
+{
+	require(Game_suspended == 0 && xl_spawn_state_count() == XL_SPAWN_SLOTS, "Spawn continuation requires ordinary active earned state");
+	xl_trigger_state pending{};
+	require(xl_wall_trigger_state(5, &pending) && pending.operated && pending.delay_ms == 1000 && pending.elapsed == 0,
+	        "Spawn continuation did not retain its pending authored trigger");
+	const auto capture_objects = [] {
+		auto objects = nlohmann::json::object();
+		for (int slot = 0; slot < object_capacity(); ++slot)
+			if (Objects[slot].type != OBJ_NONE) objects[std::to_string(slot)] = nlohmann::json(input_demo_object_trace_snapshot(Objects[slot], slot));
+		return objects;
+	};
+	const auto objects_before = capture_objects();
+	const auto world_before = input_demo_world_trace_snapshot(), pool_before = input_demo_object_pool_trace_snapshot();
+	const auto before_calls = d_rand_get_call_count(), before_fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	require(world_before == input_demo_world_trace_snapshot() && pool_before == input_demo_object_pool_trace_snapshot() &&
+	            before_calls == d_rand_get_call_count() && before_fx_calls == d_rand_get_stream_call_count(D_RNG_FX),
+	        "Full continuation observation changed world, allocator or RNG");
+	const auto boosts = capture_boosts();
+	require(!boosts.empty() && boosts[0].steps == 9 && boosts[0].boosted, "Spawn continuation lost its active boost turn");
+	FrameTime = F1_0;
+	GameTime64 += FrameTime;
+	// The ordinary trigger frame advances the delay and the source's one turn tick
+	triggers_frame_process();
+	require(capture_spawns()[0].segment == 30 && capture_boosts()[0].steps == 8,
+	        "Identical future did not release the authored spawn change and advance boost orientation");
+	spawn_points_respawn();
+	require(ConsoleObject->segnum == 30, "Earned delayed spawn did not govern real death/respawn");
+	return { { "world_before", world_before }, { "pool_before", pool_before }, { "world_after", input_demo_world_trace_snapshot() }, { "pool_after", input_demo_object_pool_trace_snapshot() }, { "objects_before", objects_before }, { "objects", capture_objects() } };
+}
+
+static void spawn_points_compare(const nlohmann::json &expected, const nlohmann::json &actual)
+{
+	const auto wanted = native_continuation_semantic(expected), observed = native_continuation_semantic(actual);
+	if (wanted != observed) std::cerr << "Spawn continuation differences=" << nlohmann::json::diff(wanted, observed).dump() << '\n';
+	require(wanted == observed, "Spawn/boost disk continuation changed world, objects, allocator or RNG");
+}
+
 static void spawn_points_lifecycle_test(const std::filesystem::path &root)
 {
 	char error[256]{};
@@ -39,18 +92,7 @@ static void spawn_points_lifecycle_test(const std::filesystem::path &root)
 	object_move_one(ConsoleObject);
 	const auto earned = capture_spawns();
 	require(ConsoleObject->segnum == child && earned.size() == XL_SPAWN_SLOTS && earned[0].segment == 60 && earned[1].segment == 84 && earned[2].segment == 30 && earned[15].segment == 60, "real wall crossing failed to configure cyclic spawn points");
-	const auto respawn = [&] {
-		Players[Player_num].flags &= ~PLAYER_FLAGS_INVULNERABLE;
-		Players[Player_num].lives = 5;
-		Players[Player_num].shields = F1_0;
-		apply_damage_to_player(ConsoleObject, ConsoleObject, i2f(200), 0);
-		require(ConsoleObject->flags & OF_SHOULD_BE_DEAD, "lethal damage did not enter death path");
-		obj_delete_all_that_should_be_dead();
-		require(Player_is_dead, "lethal damage did not start player death");
-		DoPlayerDead();
-		require(!Player_is_dead && Players[Player_num].lives == 4 && !vm_vec_mag(&ConsoleObject->mtype.phys_info.velocity), "ordinary death did not respawn a fresh ship");
-	};
-	respawn();
+	spawn_points_respawn();
 	require(ConsoleObject->segnum == 60 && !std::memcmp(&ConsoleObject->pos, earned[0].position, sizeof(ConsoleObject->pos)) && !std::memcmp(&ConsoleObject->orient, earned[0].orientation, sizeof(ConsoleObject->orient)) && same_spawns(earned, capture_spawns()), "death lost authored spawn transform or persistent configuration");
 	char placement_site[] = "spawn lifecycle";
 	require(get_seg_masks(&ConsoleObject->pos, ConsoleObject->segnum, ConsoleObject->size, placement_site, 0).sidemask == 0, "spawn fixture does not fit the player sphere");
@@ -70,13 +112,13 @@ static void spawn_points_lifecycle_test(const std::filesystem::path &root)
 	stop_time();
 	require(state_save_all_sub(marker_save, marker_description), "named spawn marker save failed");
 	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
-	respawn();
+	spawn_points_respawn();
 	require(ConsoleObject->segnum == 92 && !std::memcmp(&ConsoleObject->pos, &marker_position, sizeof(marker_position)) && !std::memcmp(&ConsoleObject->orient, &marker_orientation, sizeof(marker_orientation)), "named SPAWN marker did not override authored respawn");
 	require(!check_trigger_sub(1, Player_num, 0) && MarkerObject[4] == -1 && MarkerObject[2] == lower_marker && Objects[lower_marker].id == 2, "spawn action failed to remove only the prior SPAWN marker");
-	respawn();
+	spawn_points_respawn();
 	require(ConsoleObject->segnum == 84, "lowercase marker overrode new authored spawn");
 	require(state_restore_all_sub(marker_save, 0) && MarkerObject[4] >= 0 && same_spawns(earned, capture_spawns()), "saved marker or authored spawn table was lost");
-	respawn();
+	spawn_points_respawn();
 	require(ConsoleObject->segnum == 92 && !std::memcmp(&ConsoleObject->pos, &marker_position, sizeof(marker_position)), "restored named marker did not govern actual respawn");
 	xl_wall_trigger_reset();
 	require(!check_trigger_sub(0, Player_num, 1) && same_spawns(earned, capture_spawns()), "authored multi-target spawn reactivation failed");
@@ -86,6 +128,13 @@ static void spawn_points_lifecycle_test(const std::filesystem::path &root)
 	char save[] = "spawn-earned.sav", description[] = "Earned XL spawn points";
 	stop_time();
 	require(state_save_all_sub(save, description), "spawn disk save failed");
+	const auto future = spawn_points_future();
+	native_continuation_receipt(root.parent_path() / "spawn-future.json", future);
+	require(state_restore_all_sub(save, 0), "Cannot warm restore earned spawn/boost state");
+	const auto restored = spawn_points_future();
+	native_continuation_receipt(root.parent_path() / "spawn-restored.json", restored);
+	spawn_points_compare(future, restored);
+	require(state_restore_all_sub(save, 0), "Cannot restore spawn lifecycle baseline");
 	auto *file = PHYSFS_openWrite("spawn-state.bin");
 	require(file && xl_wall_trigger_write(file) && PHYSFS_close(file), "spawn trailer write failed");
 	const auto user = root.parent_path() / "preview-user";
@@ -126,11 +175,17 @@ static void spawn_points_lifecycle_test(const std::filesystem::path &root)
 	require(!std::memcmp(&classic, &Player_init[0], sizeof(classic)), "XL spawn actions modified Redux spawn table");
 	require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0, "spawn stock recovery failed");
 	require(!xl_spawn_state_count(), "XL spawns leaked into stock level");
+	const auto stock_spawns = xl_compat::spawn_points_snapshot();
+	require(!stock_spawns.at("configured").get<bool>(), "Raw spawn configuration leaked into stock level");
+	for (const auto &point : stock_spawns.at("points"))
+		require(point.at("segment") == 0 && point.at("side") == 0 && point.at("position") == nlohmann::json::array({ 0, 0, 0 }) &&
+		            point.at("orientation") == nlohmann::json::array({ 0, 0, 0, 0, 0, 0, 0, 0, 0 }),
+		        "Raw spawn storage leaked into stock level");
 	const auto stock_position = ConsoleObject->pos;
 	input_demo_apply_recorded_marker_drop(4, "SPAWN");
 	require(!xl_spawn_apply(Player_num, ConsoleObject - Objects) && !std::memcmp(&stock_position, &ConsoleObject->pos, sizeof(stock_position)), "XL marker override modified Redux player");
 	require(state_restore_all_sub(save, 0) && same_spawns(earned, capture_spawns()) && same_boosts(boosts, capture_boosts()), "disk restore through stock lost spawn or boost state");
-	respawn();
+	spawn_points_respawn();
 	require(ConsoleObject->segnum == 60, "restored authored points did not survive actual death");
 	// A removed master owner can still change level state, never move its replacement
 	require(state_restore_all_sub(save, 0), "removed owner setup restore failed");

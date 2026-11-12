@@ -19,7 +19,9 @@ void input_demo_trace_boundary(const char *phase);
 #include <nlohmann/json_fwd.hpp>
 nlohmann::ordered_json input_demo_endlevel_trace_snapshot();
 nlohmann::ordered_json input_demo_producer_trace_snapshot();
+nlohmann::ordered_json input_demo_world_trace_snapshot();
 #ifdef DXX_XL_RUNTIME
+nlohmann::ordered_json input_demo_trigger_trace_snapshot();
 nlohmann::ordered_json input_demo_native_xl_trace_snapshot();
 #endif
 #endif

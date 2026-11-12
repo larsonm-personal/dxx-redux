@@ -450,33 +450,9 @@ static nlohmann::json equipment_pending_future()
 	return { { "native_before", before }, { "native_after", input_demo_native_xl_trace_snapshot() }, { "producers_before", producers_before }, { "producers_after", input_demo_producer_trace_snapshot() }, { "robots_level", int(Players[Player_num].num_robots_level) }, { "robots_total", int(Players[Player_num].num_robots_total) }, { "objects", objects }, { "births", xl_object_birth_snapshot() }, { "time", GameTime64 }, { "frame_time", FrameTime }, { "rng", rng } };
 }
 
-static nlohmann::json equipment_pending_semantic(nlohmann::json state)
-{
-	// Retain raw receipts; use the existing D2 observer's two known equivalences
-	for (auto &object : state.at("objects"))
-		if (object.contains("polyobj")) {
-			auto &value = object.at("polyobj").at("alt_textures");
-			if (value == 0 || value == -1) value = 0;
-		}
-	for (const char *phase : { "native_before", "native_after" }) {
-		auto &route = state.at(phase).at("route");
-		if (route.at("enabled").get<bool>()) route["Escort_route_cache_poll_time"] = route.at("cache_poll_wait");
-	}
-	return state;
-}
-
-static void equipment_pending_receipt(const std::filesystem::path &path, const nlohmann::json &state)
-{
-	const auto text = state.dump(2) + '\n';
-	std::ifstream previous(path, std::ios::binary);
-	const std::string existing{ std::istreambuf_iterator<char>(previous), std::istreambuf_iterator<char>() };
-	if (text == existing) return;
-	write_bytes(path.string().c_str(), xl_compat::Bytes(text.begin(), text.end()));
-}
-
 static void equipment_pending_compare(const nlohmann::json &expected, const nlohmann::json &actual)
 {
-	const auto wanted = equipment_pending_semantic(expected), observed = equipment_pending_semantic(actual);
+	const auto wanted = native_continuation_semantic(expected), observed = native_continuation_semantic(actual);
 	if (wanted != observed) std::cerr << "Equipment continuation differences=" << nlohmann::json::diff(wanted, observed).dump() << '\n';
 	require(wanted == observed, "Pending equipment continuation changed native state, objects, births or RNG");
 }
@@ -497,7 +473,7 @@ static int equipment_test(int argc, char **argv)
 			nlohmann::json expected;
 			input >> expected;
 			const auto actual = equipment_pending_future();
-			equipment_pending_receipt(root.parent_path() / "equipment-cold.json", actual);
+			native_continuation_receipt(root.parent_path() / "equipment-cold.json", actual);
 			equipment_pending_compare(expected, actual);
 			std::cout << "Pending equipment cold continuation: native items, owner state, births and SIM/FX RNG passed\n";
 			return 0;
@@ -556,10 +532,10 @@ static int equipment_test(int argc, char **argv)
 		require(state_save_all_sub(pending, description), "pending equipment save failed");
 		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		const auto pending_future = equipment_pending_future();
-		equipment_pending_receipt(root.parent_path() / "equipment-future.json", pending_future);
+		native_continuation_receipt(root.parent_path() / "equipment-future.json", pending_future);
 		require(state_restore_all_sub(pending, 0), "Cannot warm restore pending equipment");
 		const auto pending_restored = equipment_pending_future();
-		equipment_pending_receipt(root.parent_path() / "equipment-restored.json", pending_restored);
+		native_continuation_receipt(root.parent_path() / "equipment-restored.json", pending_restored);
 		equipment_pending_compare(pending_future, pending_restored);
 		require(state_restore_all_sub(pending, 0), "Cannot restore equipment production baseline");
 		require(xl_equipment_trigger(20) == 2, "equipment disable failed");

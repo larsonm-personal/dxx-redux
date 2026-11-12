@@ -1553,6 +1553,48 @@ void mission_isolation(const xl_compat::Inventory &source, int vertex)
 }
 } // namespace
 
+static nlohmann::json native_continuation_semantic(nlohmann::json state)
+{
+	// Preserve raw receipts; mirror only the existing D2 observer equivalences
+	for (const char *phase : { "objects", "objects_before" })
+		if (state.contains(phase))
+			for (auto &object : state.at(phase))
+				if (object.contains("polyobj")) {
+					auto &value = object.at("polyobj").at("alt_textures");
+					if (value == 0 || value == -1) value = 0;
+				}
+	const auto route = [](nlohmann::json &native) {
+		auto &value = native.at("route");
+		if (value.at("enabled").get<bool>()) value["Escort_route_cache_poll_time"] = value.at("cache_poll_wait");
+	};
+	for (const char *phase : { "native_before", "native_after" })
+		if (state.contains(phase)) route(state.at(phase));
+	for (const char *phase : { "world_before", "world_after" }) {
+		if (!state.contains(phase)) continue;
+		auto &world = state.at(phase);
+		route(world.at("xl_native"));
+		for (auto &effect : world.at("effects"))
+			if (effect.at("segnum") == -1 && !(effect.at("flags").get<int>() & 2) &&
+			    (effect.at("sidenum") == -1 || effect.at("sidenum") == 0)) effect["sidenum"] = -1;
+		auto &ai = world.at("ai");
+		for (std::size_t index = ai.at("Num_awareness_events").get<unsigned>(); index < ai.at("awareness").size(); ++index) {
+			auto &entry = ai.at("awareness")[index];
+			entry["segment"] = entry["type"] = 0;
+			entry["position"] = { 0, 0, 0 };
+		}
+	}
+	return state;
+}
+
+static void native_continuation_receipt(const std::filesystem::path &path, const nlohmann::json &state)
+{
+	const auto text = state.dump(2) + '\n';
+	std::ifstream previous(path, std::ios::binary);
+	const std::string existing{ std::istreambuf_iterator<char>(previous), std::istreambuf_iterator<char>() };
+	if (text == existing) return;
+	write_bytes(path.string().c_str(), xl_compat::Bytes(text.begin(), text.end()));
+}
+
 #include "network_test.h"
 #include "arena_test.h"
 #include "pog_test.h"

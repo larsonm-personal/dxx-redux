@@ -19,6 +19,7 @@ void xl_mission_progress_mark(int level, int state);
 namespace xl_compat
 {
 nlohmann::json mission_progress_snapshot();
+nlohmann::json mission_progress_trace_snapshot();
 bool restore_mission_progress(const nlohmann::json &saved, bool apply);
 void mission_progress_native_controls();
 } // namespace xl_compat

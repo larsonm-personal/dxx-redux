@@ -1,5 +1,7 @@
 #include "spawn_points.h"
 #include "spawn_points_fixture.h"
+#include "input_demo_world_trace.h"
+#include "motion_state.h"
 extern "C" {
 #include "hudmsg.h"
 }
@@ -14,15 +16,30 @@ static bool same_spawns(const std::vector<xl_spawn_point> &a, const std::vector<
 	return a.size() == b.size() && (a.empty() || !std::memcmp(a.data(), b.data(), a.size() * sizeof(a[0])));
 }
 static void spawn_points_lifecycle_test(const std::filesystem::path &root);
+static nlohmann::json spawn_points_future();
+static void spawn_points_compare(const nlohmann::json &expected, const nlohmann::json &actual);
 static int spawn_points_test(int argc, char **argv)
 {
 	try {
 		char error[256]{};
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
-		require(load_base_mission("neptunxl", error, sizeof(error)), error);
 		std::strcpy(Players[Player_num].callsign, "XLTest");
 		input_demo_set_skip_level_intro(1);
+		if (!std::strcmp(find_arg_value(argc, argv, "-spawn-points-test"), "resume")) {
+			const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir"));
+			char save[] = "spawn-earned.sav";
+			require(state_restore_all_sub(save, 0), "Cannot cold restore earned spawn/boost state");
+			std::ifstream input(root / "spawn-future.json");
+			nlohmann::json expected;
+			input >> expected;
+			const auto actual = spawn_points_future();
+			native_continuation_receipt(root / "spawn-cold.json", actual);
+			spawn_points_compare(expected, actual);
+			std::cout << "Spawn cold continuation: delayed authored change, active boost turn, death/respawn, world, objects and RNG passed\n";
+			return 0;
+		}
+		require(load_base_mission("neptunxl", error, sizeof(error)), error);
 		StartNewGame(1);
 		const auto position = ConsoleObject->pos, velocity = ConsoleObject->mtype.phys_info.velocity;
 		const auto orientation = ConsoleObject->orient;

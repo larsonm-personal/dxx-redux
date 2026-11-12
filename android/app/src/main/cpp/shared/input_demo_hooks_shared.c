@@ -647,6 +647,8 @@ static int input_demo_validate_record_view_projection(char *error, size_t error_
 	return 0;
 }
 
+static void input_demo_record_input_context_impl(int begin_clock);
+
 void input_demo_record_input_cockpit(void)
 {
 	char error[256] = "";
@@ -687,7 +689,8 @@ void input_demo_record_input_rear_view(int action)
 	/* Normal simulation resets reproduce themselves during playback */
 	if (input_demo_record_simulation_active)
 		return;
-	input_demo_record_input_context();
+	/* Automatic view reset does not sample the source's GetSlowTicks clock */
+	input_demo_record_input_context_impl(action != INPUT_DEMO_REAR_VIEW_RESET);
 	if (input_demo_recorder_uses_ordered_input() &&
 	    !input_demo_recorder_stage_input_rear_view(FrameTime, action, error, sizeof(error)))
 		input_demo_cancel_input_capture(error);
@@ -755,10 +758,12 @@ void input_demo_record_input_clear(void)
 		input_demo_cancel_input_capture(error);
 }
 
-void input_demo_record_input_context(void)
+static void input_demo_record_input_context_impl(int begin_clock)
 {
 #ifdef DXX_XL_RUNTIME
-	if (!input_demo_record_simulation_active) xl_input_demo_begin_input_clock();
+	if (begin_clock && !input_demo_record_simulation_active) xl_input_demo_begin_input_clock();
+#else
+	(void) begin_clock;
 #endif
 	if (input_demo_record_simulation_active && input_demo_recorder_uses_ordered_input()) {
 		input_demo_cancel_input_capture("ordered recording does not support input dispatch inside simulation");
@@ -795,6 +800,11 @@ void input_demo_record_input_context(void)
 		}
 	}
 	input_demo_rng_trace_set_context(input_demo_recorder_frame_count(), GameTime64);
+}
+
+void input_demo_record_input_context(void)
+{
+	input_demo_record_input_context_impl(1);
 }
 
 void input_demo_record_input_reset(void)

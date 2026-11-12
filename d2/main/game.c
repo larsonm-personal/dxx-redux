@@ -399,6 +399,10 @@ void stop_time()
 {
 	if (time_paused==0) {
 		fix64 time;
+#ifdef DXX_XL_RUNTIME
+		/* StopTime/StartTime do not sample XL's GetSlowTicks gameplay clock */
+		if (xl_level_extensions_active()) xl_input_demo_hold_cached_clock();
+#endif
 		timer_update();
 		time = timer_query();
 	}
@@ -549,10 +553,13 @@ void calc_frame_time()
 #ifdef DXX_XL_RUNTIME
 	/* XL CalcFrameTime gives paused menu redraws zero simulation duration */
 	if (xl_level_extensions_active() && game_is_time_paused()) {
+		xl_input_demo_hold_cached_clock();
 		reset_time();
 		FrameTime = 0;
 		return;
 	}
+	/* Unpaused CalcFrameTime samples GetSlowTicks in the pinned source */
+	if (xl_level_extensions_active()) xl_input_demo_begin_input_clock();
 #endif
 
 	timer_update();

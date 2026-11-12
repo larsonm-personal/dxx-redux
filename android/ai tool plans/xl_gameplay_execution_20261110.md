@@ -3439,6 +3439,126 @@ G2 raw event and mixed-producer checkpoint, November 12 at 03:57 PST:
   is insufficient. G0/G1 accepted, G2-G7 open. Actual03:57 PST; revise G2 remainder
   to8-14h and later work approximately14.5h, with substantial uncertainty. No cutoff.
 
+### G2 motion/contact observation and paused-clock checkpoint, November 12 05:34 PST
+
+- G2 remains in progress. Sequential work since the 03:57 checkpoint extends
+  local layer03 `xl_gameplay_20261111_03_continuation`, parent
+  705033a5bc016e69f3c71e72f59bff76aad34b30, parent tree
+  8cada089155af8eebfbb67183f544a3288747e7f. This checkpoint is not pushed and
+  has no layer03 PR or hosted-CI result. G0/G1 retain their recorded acceptance;
+  G2-G7 remain open. Independent PR464 review, three stashes and assets preserved.
+- XL world schema18 adds a typed motion owner: raw boost bindings, turn phase,
+  six vectors and shared last speed; all16 configured/unconfigured spawn slots;
+  raw mission progression and revisit policy; projectile contact count and all20
+  victim slots. Readers retain unknown fields and reject invalid widths, owners,
+  booleans, capacities and mission tables. Stock world10/object2/input6 unchanged.
+  Pure snapshots read private storage without binding repair. Positive owner
+  tests invalidate real boost/projectile signatures and verify no mutation or
+  SIM/FX draw. Shared speed intentionally survives clears, as in pinned source.
+  JSON declarations live in motion_state.h, before packed engine definitions.
+- Existing world/object writers now share their exact encoding with continuation
+  receipts: all world fields, live objects, allocator/free slots, segment heads,
+  clocks and both RNG streams. g2-motion-layout-check.json verifies the lifted
+  object-pool and ten-field trigger encoding is unchanged. Existing equipment
+  receipt/semantic helpers were reused. Only previously documented inactive
+  alt-texture/effect/awareness and host route-deadline equivalences apply; raw
+  receipts are retained and unknown fields remain compared.
+- Existing spawn owner now saves configured spawns, an active boost turn and a
+  delayed authored spawn action. Identical future production trigger processing
+  advances one second and one turn tick, then actual lethal damage/death/respawn
+  uses segment30. Uninterrupted, warm and fresh-process cold receipts match on
+  Windows/Linux: six receipts,44 objects before/after, all world/object/pool
+  state and SIM/FX. g2-motion-cross-receipts.json records all six comparisons.
+  Native xl_time is explicitly unbound; this is derived mechanics with authored
+  setup/frame advances, not ordered-time or connected original-play proof.
+- Full cold comparison exposed real clock drift through save/load and respawn.
+  Pinned main/gametime.cpp StopTime/StartTime do not call GetSlowTicks; paused
+  CalcFrameTime returns before it, while unpaused frames and input CapSampleRate
+  do sample uptime. Outer pause now holds the consumed tick; native clock
+  restore holds it through loader finalization; automatic rear-view RESET does
+  not start a clock poll. Next actual input/unpaused frame releases the hold and
+  observes elapsed uptime, including menus. Nested pause/reset controls retain
+  exact equality and next-input advancement. The existing cold camera fixture
+  now advances an actual calc_frame_time rather than timer_update alone.
+  Existing reference_level_text pins/extracts CalcFrameTime; no copied oracle.
+- Final root-bound strict-FP developer builds pass Windows/Linux; ordinary D2
+  targets pass Windows with developer tests ON and OFF; ordinary D1 builds pass.
+  Final native owners: projectile/camera both hosts (Linux9.953s), spawn
+  Win18.781s/Linux11.313s, boost27.594s/8.734s, equipment layout23
+  28.766s/11.640s, water100.797s/45.016s. Genuine camera-addon checks execute;
+  projectile retains75 malformed/source cases and boost1944 crossings.
+  Actual pinned projectile/effect/HXM/spawn/boost/equipment source oracles run.
+  Layout25/27 passed the preceding event checkpoint and were not rerun here.
+  Linked CPU consumer passes1/1 in0.69s. Original subprocess deadlines unchanged.
+  Evidence g2-motion-final-controls.json and named g2-motion-* logs.
+- Schema18 detailed water comparisons pass Windows live/replay, Linux
+  live/replay and Windows live/isolated Linux replay: each1235 object frames and
+  1239 world/boundary records, all observed state/unknown fields and RNG. All five
+  initial world records explicitly contain schema18 and the motion owner.
+  Canonical valid aggregate: g2-motion-water-compare.json. Two scratch individual
+  JSON reports accidentally have a literal trailing newline escape; retained as
+  diagnostics and decoded without altering comparison payloads for the aggregate.
+  Original and isolated input SHA256
+  2d3dd99dca10be6844e3274d88d2335ecd5002afee114a9f2e6ea64095975bed.
+- Fresh original WShock20 level5 Omega recording passes the existing owner:
+  acquisition, actual robot damage, discharge/recharge and ordered configuration
+  sites;242 frames, two position/one inventory setup assists, zero during recording.
+  Capture41.063s, recording finalized28.325s, original45s budget unchanged.
+  Single authentic asset root avoids ambiguous duplicate PIG provenance. Demo
+  g2-motion-omega-owned/user/input_demo_recordings/new/
+  d2_wshock20_level5_20261112_050255.dximdemo SHA256
+  33de03a42fbabb2b759f1e01d6342c0105114d9e87c81330501bdf20765412b3.
+  Two strict fresh-process replays, ordinary developer-OFF and developer-ON D2,
+  both pass242 state frames, per-draw RNG, result, clean exit and60s engine
+  deadline. Detailed reader compares242 object/246 world-boundary records to
+  capture for both, PASS; g2-motion-omega-compare.json and owned-{a,b} logs.
+  Asset fingerprints complete; no unverified-assets override. These are Windows
+  rendered mechanics, not connected progression/Linux/Android/headless Omega.
+- Retained unsuccessful probes: packed JSON placement caused Windows runtime
+  corruption/GCC min-macro errors, fixed by JSON-independent C gameplay headers
+  and early full JSON include; pause/clock experiments narrowed the real cause
+  to rear-view RESET plus loader hold release, with speculative gameplay edits
+  reverted and temporary CLOCK logging removed. Earlier nondeveloper probe CLI
+  did not record Omega, and a duplicate-root capture had unknown PIG provenance;
+  neither counts as evidence. Final strict single-root capture replaces those
+  attempts without weakening any reader, expected result, comparison or timeout.
+- g2-motion-build-identities.json pins parent, source-patch SHA256
+  ff7212373a722163eae2f8ec0d067768a2213dcf52cbe2e52ab29a9dec8a2056 and
+  new-header b40a3434d4687c9f7efb63a8a6c93098505fe9ee3b06667c146628bdd616aadb.
+  Win lifecycle EXE4a46455a87e4aba0542fc213341cdfe73116e45a2841196ea14ced13a675f59d,
+  Linux3402ea87b4e990177d79d70c1f334c5291742300e954bc71df68926fc523b892;
+  ordinary Win developer-ONa1cdd58d07e73cb16a8f650337fd37dcf11cb22f9fff57fe00a1847a34bee77c,
+  OFF498813c850c7ef66bd0e5957ff7fe94cbd61e502233bd2a619829a11da149caf,
+  D131901cdcd4f8fd6b9fb6d590bc255ca63cfc6b62bfad82d1dd5eb8d85968bfd0.
+  Cached stamp predates these edits; identities use actual source patch and binary
+  hashes. The final native/test patch excludes Markdown and adds only reader
+  alignment comments after builds; paths and prior hash retained in the report.
+  These are validation outputs, not final executable/APK packages.
+  Authentic inputs unchanged; full Neptune/Arena/camera/Vertigo identities in
+  that report. WShock20 HOG2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c,
+  PIGfacdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b.
+  Reference remains2576a98b5de310e3ac7c9777df2677d1627b8bae.
+- Comparison-policy owner passes84 tests97.033s plus PowerShell assertions;
+  required catalogs pass99 JSON/315 PowerShell/547 support and428 top-level/547
+  support. Final scoped mixed quality/whitespace pass, including the ledger;
+  g2-motion-checkpoint-quality.log. No new top-level owner/skip/budget.
+  Windows/Linux rendered runs use existing owners, Linux outputs on native WSL
+  filesystem. No Android run/profile changes or true-headless qualification.
+- Official cleanup preview then TemporaryOnly apply preserved emulator workspaces,
+  all active/current evidence, authentic asset roots and reference. After owned
+  jobs ended it removed two eligible artifacts1.9MiB; C:22.18GiB remains, below
+  requested50GiB because protected material is retained. Both emulators preserved.
+  g2-motion-cleanup-{preview,apply}.log; no manual cache deletion.
+- Next: finish scoped quality/review and commit this local checkpoint, then audit
+  remaining environment/contact/audio and unbound-time consumers. named_audio_snapshot
+  mutates stale links/owner/loop state and cannot serve a trace; implement a pure
+  locked observation if gameplay consequences remain. Full-save invalid XL
+  trailer still changes live energy91->100: repair via existing native staged
+  validation/transaction, not checksum-only preflight, guessed decoder or naive
+  rollback. Guide-Bot async/cache/Android budget, whole-state completion and all
+  G3-G7 gates remain open. Actual05:34 PST November12; estimated G2 remainder
+  8-14h and later work approximately14.5h, substantial uncertainty, no cutoff.
+
 Per-item handoff template:
 
     Item and status:

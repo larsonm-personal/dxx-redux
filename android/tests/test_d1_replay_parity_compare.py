@@ -15,6 +15,8 @@ import d1_replay_parity as parity
 
 
 def schema_example(schema):
+    if schema is str:
+        return ""
     if schema is int:
         return 0
     if schema is bool:
@@ -1382,7 +1384,7 @@ class ParityTests(unittest.TestCase):
         def convert(rows):
             for row in rows:
                 if row["type"] in ("world_state", "world_boundary"):
-                    row["version"] = 17
+                    row["version"] = 18
                 if row["type"] in ("object_state", "object_boundary"):
                     row["capacity"] = 1367
                     row["allocator"]["free_obj_list"] = list(range(1367))
@@ -1892,6 +1894,75 @@ class ParityTests(unittest.TestCase):
         paths = {difference["path"] for difference in report["first_field_differences"].values()}
         for _, _, suffix in changes:
             self.assertIn(f"$.state.xl_native.events.{suffix}", paths)
+
+    def test_xl_motion_raw_owners_vectors_history_and_campaign_are_checked(self):
+        path = self.native_d2_trace("xl-motion", True)
+
+        def populate(rows):
+            for row in rows:
+                motion = row.get("state", {}).get("xl_native", {}).get("motion")
+                if motion is None:
+                    continue
+                boost = schema_example(parity.XL_BOOST_SCHEMA)
+                boost.update(slot=3, owner=3, signature=7, boosted=1, speed=5, steps=9, phase=40000)
+                motion["boosts"].update(last_speed=7, states=[boost])
+                motion["spawns"]["configured"] = True
+                motion["spawns"]["points"][15].update(segment=9, side=5, orientation=list(range(9)))
+                motion["progression"].update(mission="earned", states=[0, 1, -1], next=2, bound=True)
+                shot = schema_example(parity.XL_PROJECTILE_SCHEMA)
+                shot.update(slot=4, owner=4, signature=11, count=1, victims=[3] + [0] * 19)
+                motion["projectiles"] = [shot]
+
+        self.mutate(path, populate)
+        state = next(row["state"] for row in parity.records(path) if "xl_native" in row.get("state", {}))
+        parity.validate_world_state(state, "d2", True)
+        for mutation in (
+            lambda m: m.update(version=2),
+            lambda m: m["boosts"]["states"][0].update(slot=1367),
+            lambda m: m["boosts"]["states"].append(copy.deepcopy(m["boosts"]["states"][0])),
+            lambda m: m["boosts"]["states"][0]["velocity"].pop(),
+            lambda m: m["boosts"]["states"][0].update(phase=65536),
+            lambda m: m["spawns"].update(configured=1),
+            lambda m: m["spawns"]["points"].pop(),
+            lambda m: m["spawns"]["points"][0]["orientation"].pop(),
+            lambda m: m["progression"].update(mission=1),
+            lambda m: m["progression"].update(states=[0] * 129),
+            lambda m: m["progression"].update(states=[1, 1]),
+            lambda m: m["progression"].update(mission=""),
+            lambda m: m["projectiles"][0].update(count=21),
+            lambda m: m["projectiles"][0]["victims"].pop(),
+        ):
+            changed = copy.deepcopy(state)
+            mutation(changed["xl_native"]["motion"])
+            with self.assertRaises(parity.EvidenceError):
+                parity.validate_world_state(changed, "d2", True)
+        changes = (
+            (("boosts", "last_speed"), 8, "boosts.last_speed"),
+            (("boosts", "states", 0, "signature"), 12, "boosts.states[0].signature"),
+            (("boosts", "states", 0, "phase"), 40001, "boosts.states[0].phase"),
+            (("boosts", "states", 0, "maximum", 2), 1, "boosts.states[0].maximum[2]"),
+            (("spawns", "points", 15, "orientation", 8), 9, "spawns.points[15].orientation[8]"),
+            (("progression", "states", 2), 1, "progression.states[2]"),
+            (("progression", "cache_restore"), True, "progression.cache_restore"),
+            (("projectiles", 0, "victims", 19), 2, "projectiles[0].victims[19]"),
+            (("unknown_owner",), 1, "unknown_owner"),
+        )
+        changed = self.write("xl-motion-changed", list(parity.records(path)))
+
+        def change(rows):
+            motion = rows[2]["state"]["xl_native"]["motion"]
+            for keys, value, _ in changes:
+                target = motion
+                for key in keys[:-1]:
+                    target = target[key]
+                target[keys[-1]] = value
+
+        self.mutate(changed, change)
+        report = parity.compare_world(path, changed, self.header, "d2", "d2")
+        self.assertEqual(report["status"], "fail")
+        paths = {difference["path"] for difference in report["first_field_differences"].values()}
+        for _, _, suffix in changes:
+            self.assertIn(f"$.state.xl_native.motion.{suffix}", paths)
 
     def test_xl_births_are_bound_to_objects_and_compared(self):
         path = self.native_d2_trace("xl-births", True)

@@ -13,6 +13,8 @@
 #include "boss_spawn.h"
 #include "equipment.h"
 #include "robot_generator.h"
+#include "motion_state.h"
+#include "mission_progress.h"
 #include "input_demo_fixture.h"
 #endif
 
@@ -346,9 +348,22 @@ json native_xl_state()
 	out["seismic"] = { { "strength", seismic[0] }, { "pending", seismic[1] }, { "magnitude", seismic[4] }, { "phase", seismic[5] }, { "fraction", seismic[6] }, { "interval", seismic[2].is_null() ? json::array() : json(seismic[2]) }, { "detonations", json::array() } };
 	out["metadata"] = metadata_xl_state();
 	out["events"] = { { "version", 1 }, { "objects", xl_compat::object_trigger_snapshot() }, { "bosses", xl_compat::boss_spawn_snapshot() }, { "equipment", xl_compat::equipment_snapshot() }, { "producers", xl_compat::robot_generator_snapshot() } };
+	out["motion"] = { { "version", 1 }, { "boosts", xl_compat::speed_boost_snapshot() }, { "spawns", xl_compat::spawn_points_snapshot() }, { "progression", xl_compat::mission_progress_trace_snapshot() }, { "projectiles", xl_compat::projectile_snapshot() } };
 	for (const auto &entry : seismic[3])
 		out["seismic"]["detonations"].push_back({ !entry[0].is_null(), entry[0].is_null() ? json(0) : json(entry[0]), entry[1] });
 	return out;
+}
+
+json trigger_state_snapshot()
+{
+	auto rows = json::array();
+	for (int i = 0; i < Num_triggers; ++i) {
+		xl_trigger_state state{};
+		if (!xl_wall_trigger_state(i, &state)) throw std::runtime_error("Missing XL trigger observation");
+		rows.push_back({ state.elapsed, state.delay_ms, state.object, state.shot, state.operated,
+		                 state.destination, state.attached, state.signature, state.cooldown_active, state.cooldown_age_ms });
+	}
+	return rows;
 }
 #endif
 
@@ -602,13 +617,7 @@ json world_state()
 		out["xl_births"] = xl_object_birth_snapshot();
 		out["xl_native"] = native_xl_state();
 		out["xl_cameras"] = xl_camera_trace_snapshot();
-		out["xl_triggers"] = json::array();
-		for (int i = 0; i < Num_triggers; ++i) {
-			xl_trigger_state state{};
-			if (!xl_wall_trigger_state(i, &state)) throw std::runtime_error("Missing XL trigger observation");
-			out["xl_triggers"].push_back({ state.elapsed, state.delay_ms, state.object, state.shot, state.operated,
-			                               state.destination, state.attached, state.signature, state.cooldown_active, state.cooldown_age_ms });
-		}
+		out["xl_triggers"] = trigger_state_snapshot();
 	}
 #endif
 	return out;
@@ -622,12 +631,22 @@ nlohmann::ordered_json input_demo_producer_trace_snapshot()
 	return producer_state();
 }
 
+nlohmann::ordered_json input_demo_world_trace_snapshot()
+{
+	return world_state();
+}
+
 nlohmann::ordered_json input_demo_endlevel_trace_snapshot()
 {
 	return endlevel_state();
 }
 
 #ifdef DXX_XL_RUNTIME
+nlohmann::ordered_json input_demo_trigger_trace_snapshot()
+{
+	return trigger_state_snapshot();
+}
+
 nlohmann::ordered_json input_demo_native_xl_trace_snapshot()
 {
 	return native_xl_state();
@@ -677,7 +696,7 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	static json previous;
 	json current = world_state();
 	const bool boundary = phase != nullptr;
-	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 17 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
+	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 18 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
 	record["state"].get_ref<json::object_t &>().reserve(current.size());
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)

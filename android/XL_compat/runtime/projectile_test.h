@@ -1,4 +1,5 @@
 #include "projectile.h"
+#include "motion_state.h"
 #include "object_birth.h"
 #include "input_demo_world_trace.h"
 #include "input_demo_object_trace.h"
@@ -378,6 +379,16 @@ static nlohmann::json projectile_birth_future(int victim, int shot, int thief)
 	require(std::memcmp(&orientation_before, &guided->orient, sizeof(orientation_before)) != 0,
 	        "Identical future guided controls did not steer the retained missile");
 	collide_robot_and_weapon(&Objects[victim], &Objects[shot], &Objects[victim].pos);
+	const auto raw_history = xl_compat::projectile_snapshot();
+	require(!raw_history.empty() && xl_projectile_has_hit(shot, victim), "Actual contact did not create projectile history for observation");
+	const int raw_signature = Objects[shot].signature;
+	const auto raw_sim_calls = d_rand_get_call_count(), raw_fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	Objects[shot].signature = raw_signature ^ 0x40000000;
+	require(raw_history == xl_compat::projectile_snapshot() &&
+	            raw_history == nlohmann::json(input_demo_native_xl_trace_snapshot().at("motion").at("projectiles")),
+	        "Projectile observation discarded stale ownership or changed hit history");
+	Objects[shot].signature = raw_signature;
+	require(raw_sim_calls == d_rand_get_call_count() && raw_fx_calls == d_rand_get_stream_call_count(D_RNG_FX), "Projectile history observation consumed RNG");
 	const int transient = projectile_robot();
 	const auto transient_order = xl_object_birth_order(transient);
 	obj_delete(transient);
@@ -919,7 +930,8 @@ static void camera_hit_cold_controls(const std::filesystem::path &root)
 	require(restored == expected, "Cold camera hit restore changed clocks, elapsed repair, flash or children");
 	const auto cached = xl_input_demo_cached_clock();
 	SDL_Delay(2);
-	timer_update();
+	// The ordinary unpaused frame samples GetSlowTicks after native restore
+	calc_frame_time();
 	xl_camera_controller_begin_frame();
 	require(xl_camera_controller_ticks() > cached && xl_camera_controller_ticks() == xl_input_demo_cached_clock(),
 	        "Cold camera continuation did not advance in the saved clock domain");

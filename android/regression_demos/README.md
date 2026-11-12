@@ -480,7 +480,7 @@ captured at its ordinary setter before resetting AI routing; two changes between
 frames remain two operations even when the final mode equals the original mode.
 Playback uses that same setter, not the save-restoration path that preserves AI.
 
-XL world observations use schema 17 and require `xl_player_cfg`, `xl_births` and `xl_native`
+XL world observations use schema 18 and require `xl_player_cfg`, `xl_births` and `xl_native`
 at restored, per-frame and terminal boundaries. Birth observations contain every
 live slot/signature, birth time, creation order and the next creation counter;
 the reader checks live object identities at both boundaries and validates the
@@ -523,7 +523,17 @@ snapshots read owner storage directly. The older object/boss getters may retire
 stale bindings, refresh an interval or prune generated bosses, so they cannot
 supply a pure observation. Existing object/boss tests deliberately make bindings
 stale and verify that observation preserves them without mutation or RNG draws.
-Earlier XL schema-10/11/12/13/14/15/16 receipts retain their historical scope; they cannot
+The native `motion` section captures boost ownership, turn phase, velocity bounds,
+directions and shared last speed; all sixteen raw spawn transforms/configuration;
+mission progression and revisit policy; and complete projectile history rows.
+Observation preserves stale signatures instead of invoking binding repair. Empty
+boost/history rows are excluded only where every consumer ignores them. The source
+last speed survives a level clear and remains visible even with no active rows.
+Native pause/save preserves the cached gameplay sample until the next genuine
+input poll or unpaused `calc_frame_time`. Paused frame calculation and automatic
+rear-view reset retain it; native restore reinstates it before finalization. The
+next source sampling boundary observes uptime again, including time in menus.
+Earlier XL schema-10/11/12/13/14/15/16/17 receipts retain their historical scope; they cannot
 prove the newly required native-state observation. The Omega recording probe exercises menu-equivalent
 auto-leveling, homing and weapon-order changes, two ordinary routing setter calls
 at frame 102, preference restoration at frame 197, and routing in the stop tail.
@@ -612,6 +622,15 @@ robot after uninterrupted, warm and fresh-process execution. It compares live
 slots, birth order, native owner/producer tables, robot counters and SIM/FX RNG.
 Its setup ends robot suspension before saving; normal level resume clears that
 debug/endlevel flag. This is a derived producer control, not connected original play.
+The existing spawn owner combines an active boost turn and pending authored spawn
+change with actual lethal damage/respawn. Uninterrupted, warm and fresh-process
+disk continuation compare the full observed world, object slots, allocator,
+segment links and both RNG streams before and after. It uses derived authored
+controls and explicit frame intervals. Its `xl_time` is explicitly unbound: this
+native mechanics case does not qualify an ordered Omega/time timeline or replace
+original connected-play evidence. Raw receipts retain the known inactive effect/
+awareness storage and route host deadline; comparison applies the same specific
+equivalences as the existing detailed D2 reader.
 Timed level messages also consume this cached clock, matching the pinned
 `ShowGameMessage` use of `nSDLTicks[0]`. Message age, text and opacity no longer
 read host wall time. Save/trace readers derive effective age and expiry directly

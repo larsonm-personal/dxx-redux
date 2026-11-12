@@ -1582,6 +1582,38 @@ XL_EVENTS_SCHEMA = {
         "authored": [(METADATA_U32, METADATA_U32, METADATA_I32, METADATA_I32)],
     },
 }
+XL_BOOST_SCHEMA = {
+    **dict.fromkeys("slot owner signature".split(), METADATA_I32),
+    "boosted": range(-1, 2),
+    "speed": range(0, 11),
+    "steps": range(0, 10),
+    "phase": range(0, 65536),
+    **dict.fromkeys("velocity minimum maximum source destination direction".split(), (METADATA_I32,) * 3),
+}
+XL_SPAWN_SCHEMA = {
+    **dict.fromkeys("segment side".split(), METADATA_I32),
+    "position": (METADATA_I32,) * 3,
+    "orientation": (METADATA_I32,) * 9,
+}
+# Keep fixed storage aligned with runtime/projectile.h (20 hits) and spawn_points.h (16 slots)
+XL_PROJECTILE_SCHEMA = {
+    **dict.fromkeys("slot owner signature".split(), METADATA_I32),
+    "count": range(1, 21),
+    "victims": (METADATA_I32,) * 20,
+}
+XL_MOTION_SCHEMA = {
+    "version": range(1, 2),
+    "boosts": {"last_speed": range(0, 11), "states": [XL_BOOST_SCHEMA]},
+    "spawns": {"configured": bool, "points": (XL_SPAWN_SCHEMA,) * 16},
+    "progression": {
+        "mission": str,
+        "states": [range(-1, 2)],
+        "next": range(-32768, 32768),
+        "cache_restore": bool,
+        "bound": bool,
+    },
+    "projectiles": [XL_PROJECTILE_SCHEMA],
+}
 XL_NATIVE_SCHEMA = integer_fields(
     "version omega_charge wiggle_phase",
     afterburner_charge=[int],
@@ -1589,6 +1621,7 @@ XL_NATIVE_SCHEMA = integer_fields(
     guided=((int, int),) * 8,
     metadata=XL_METADATA_SCHEMA,
     events=XL_EVENTS_SCHEMA,
+    motion=XL_MOTION_SCHEMA,
     escort=XL_ESCORT_SCHEMA,
     route={"version": int, "enabled": bool},
     seismic=integer_fields(
@@ -1598,7 +1631,10 @@ XL_NATIVE_SCHEMA = integer_fields(
 
 
 def validate_world_value(value, schema, path):
-    if schema is int:
+    if schema is str:
+        if type(value) is not str:
+            raise EvidenceError(f"World field must be a string: {path}")
+    elif schema is int:
         if type(value) is not int:
             raise EvidenceError(f"World field must be an integer: {path}")
     elif schema is bool:
@@ -1667,6 +1703,17 @@ def validate_world_state(state, engine=None, xl=False, objects=None):
         native = state["xl_native"]
         metadata = native["metadata"]
         events = native["events"]
+        motion = native["motion"]
+        for rows in (motion["boosts"]["states"], motion["projectiles"]):
+            slots = [row["slot"] for row in rows]
+            if len(rows) > capacity or slots != sorted(set(slots)) or any(not 0 <= slot < capacity for slot in slots):
+                raise EvidenceError("Invalid XL motion owner slots or capacity")
+        progress = motion["progression"]
+        # d2/main/mission.h: 127 mission levels, plus the unused level-zero sentinel
+        if len(progress["states"]) > 128 or (progress["states"] and progress["states"][0] != 0):
+            raise EvidenceError("Invalid XL progression level table")
+        if progress["bound"] and (len(progress["states"]) < 2 or not progress["mission"]):
+            raise EvidenceError("Missing bound XL progression source or levels")
         if not events["bosses"]["restore_pending"] and events["bosses"]["checkpoint"]:
             raise EvidenceError("Inactive XL boss restore checkpoint has live storage")
         if len(events["producers"]["authored"]) > 20 or events["producers"]["ready_mask"] >> len(
@@ -2031,7 +2078,7 @@ def world_states(path, header, engine="d1"):
         if (
             not meta_seen
             or type(row.get("version")) is not int
-            or row["version"] != (2 if kind == "object_boundary" else 17 if xl else 10)
+            or row["version"] != (2 if kind == "object_boundary" else 18 if xl else 10)
         ):
             raise EvidenceError("Missing world metadata or unsupported schema")
         if kind.endswith("boundary"):

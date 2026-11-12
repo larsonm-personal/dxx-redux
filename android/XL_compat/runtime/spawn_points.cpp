@@ -1,4 +1,6 @@
 #include "spawn_points.h"
+#include "motion_state.h"
+#include <nlohmann/json.hpp>
 #include "preview.h"
 #include <algorithm>
 #include <array>
@@ -117,6 +119,13 @@ extern "C" int xl_spawn_apply(int player, int object_index)
 extern "C" int xl_spawn_state_count(void)
 {
 	return xl_level_extensions_active() && configured ? XL_SPAWN_SLOTS : 0;
+}
+nlohmann::json xl_compat::spawn_points_snapshot()
+{
+	auto rows = nlohmann::json::array();
+	for (const auto &point : points)
+		rows.push_back({ { "segment", point.segment }, { "side", point.side }, { "position", point.position }, { "orientation", point.orientation } });
+	return { { "configured", configured }, { "points", rows } };
 }
 extern "C" int xl_spawn_state_get(int index, xl_spawn_point *result)
 {
