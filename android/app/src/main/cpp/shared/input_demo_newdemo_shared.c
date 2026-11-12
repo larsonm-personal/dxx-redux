@@ -437,11 +437,8 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 	}
 #ifdef DXX_XL_RUNTIME
 	if (xl_level_extensions_active() && !input_demo_validate_xl_fp_environment(error, error_size)) return 0;
-	unsupported_view = xl_omega_input_demo_error();
-#ifdef DXX_XL_DEVELOPER_PROBE
-	/* Ordinary startup is exercised in the developer build before qualification */
-	if (xl_level_extensions_active()) unsupported_view = xl_input_demo_profile_error();
-#endif
+	/* New XL captures always carry the validated clock/input profile */
+	unsupported_view = xl_input_demo_profile_error();
 	if (unsupported_view) {
 		if (error && error_size) snprintf(error, error_size, "%s", unsupported_view);
 		return 0;
@@ -484,7 +481,7 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 		settings->has_player_cfg = 1;
 		input_demo_capture_player_cfg(&settings->player_cfg);
 		settings->level_start = input_demo_recording_level_start();
-#ifdef DXX_XL_DEVELOPER_PROBE
+#ifdef DXX_XL_RUNTIME
 		settings->has_environment = xl_level_extensions_active() != 0;
 		if (settings->has_environment) settings->record_per_frame_state = 1;
 		if (settings->has_environment && settings->level_start)

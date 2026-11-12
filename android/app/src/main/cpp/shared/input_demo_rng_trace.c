@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
+#include <sys/types.h>
+#endif
 
 enum {
 	INPUT_DEMO_RNG_TRACE_KIND_RAND = 1,
@@ -43,6 +46,8 @@ typedef struct input_demo_rng_trace_session {
 	int32_t object_signature;
 	int32_t object_id;
 	char *output_path;
+	char *spool_path;
+	FILE *spool;
 	input_demo_rng_trace_event *events;
 	size_t count;
 	size_t capacity;
@@ -99,6 +104,15 @@ static void append_event(const input_demo_rng_trace_event *event)
 {
 	if (!g_input_demo_rng_trace_session.active || !event)
 		return;
+	if (g_input_demo_rng_trace_session.spool) {
+		if (fwrite(event, sizeof(*event), 1, g_input_demo_rng_trace_session.spool) != 1) {
+			g_input_demo_rng_trace_session.truncated = 1;
+			g_input_demo_rng_trace_session.active = 0;
+			return;
+		}
+		++g_input_demo_rng_trace_session.count;
+		return;
+	}
 	if (!ensure_capacity(g_input_demo_rng_trace_session.count + 1))
 		return;
 	g_input_demo_rng_trace_session.events[g_input_demo_rng_trace_session.count++] = *event;
@@ -214,12 +228,28 @@ static int write_trace_file(const char *path, char *error, size_t error_size)
 	out = fopen(path, "wb");
 	if (!out)
 		return copy_error("could not open rng trace file", error, error_size);
+	if (g_input_demo_rng_trace_session.spool &&
+	    (fflush(g_input_demo_rng_trace_session.spool) || fseek(g_input_demo_rng_trace_session.spool, 0, SEEK_SET))) {
+		fclose(out);
+		return copy_error("could not rewind rng trace spool", error, error_size);
+	}
 	fprintf(out,
 	        "{\"type\":\"meta\",\"version\":1,\"events\":%llu,\"truncated\":%s}\n",
 	        (unsigned long long) g_input_demo_rng_trace_session.count,
 	        g_input_demo_rng_trace_session.truncated ? "true" : "false");
 	for (i = 0; i < g_input_demo_rng_trace_session.count; ++i) {
-		const input_demo_rng_trace_event *event = &g_input_demo_rng_trace_session.events[i];
+		input_demo_rng_trace_event spooled_event;
+		const input_demo_rng_trace_event *event;
+		if (g_input_demo_rng_trace_session.spool) {
+			if (fread(&spooled_event, sizeof(spooled_event), 1, g_input_demo_rng_trace_session.spool) != 1) {
+				g_input_demo_rng_trace_session.truncated = 1;
+				g_input_demo_rng_trace_session.active = 0;
+				fclose(out);
+				return copy_error("could not read rng trace spool", error, error_size);
+			}
+			event = &spooled_event;
+		} else
+			event = &g_input_demo_rng_trace_session.events[i];
 
 		fprintf(out,
 		        "{\"type\":\"%s\",\"seq\":%llu,\"frame\":%u,\"gt\":%lld,\"call_count\":%u",
@@ -251,8 +281,15 @@ static int write_trace_file(const char *path, char *error, size_t error_size)
 		write_json_string(out, event->func);
 		fputs("}\n", out);
 	}
-	if (fclose(out) != 0)
+	const int write_failed = ferror(out);
+	const int close_failed = fclose(out);
+	// A non-final export may be followed by more draws on this update stream
+	if (g_input_demo_rng_trace_session.spool && fseek(g_input_demo_rng_trace_session.spool, 0, SEEK_CUR))
+		return copy_error("could not resume rng trace spool", error, error_size);
+	if (close_failed != 0 || write_failed)
 		return copy_error("could not finish rng trace file", error, error_size);
+	if (g_input_demo_rng_trace_session.truncated)
+		return copy_error("rng trace is truncated", error, error_size);
 	return 1;
 }
 
@@ -270,6 +307,21 @@ int input_demo_rng_trace_start_replay(const char *path, char *error, size_t erro
 	g_input_demo_rng_trace_session.output_path = copy_string(path);
 	if (!g_input_demo_rng_trace_session.output_path)
 		return copy_error("could not allocate rng trace path", error, error_size);
+	// Replay already knows its owned output path. Spool fixed-size events beside
+	// it instead of retaining millions of presentation draws in the 32-bit heap
+	const size_t spool_size = strlen(path) + sizeof(".events.tmp");
+	g_input_demo_rng_trace_session.spool_path = (char *) malloc(spool_size);
+	if (!g_input_demo_rng_trace_session.spool_path) {
+		input_demo_rng_trace_reset();
+		return copy_error("could not allocate rng trace spool path", error, error_size);
+	}
+	snprintf(g_input_demo_rng_trace_session.spool_path, spool_size, "%s.events.tmp", path);
+	g_input_demo_rng_trace_session.spool = fopen(g_input_demo_rng_trace_session.spool_path, "wb+");
+	if (!g_input_demo_rng_trace_session.spool) {
+		input_demo_rng_trace_reset();
+		return copy_error("could not open rng trace spool", error, error_size);
+	}
+	setvbuf(g_input_demo_rng_trace_session.spool, NULL, _IOFBF, 65536);
 	g_input_demo_rng_trace_session.active = 1;
 	g_input_demo_rng_trace_session.write_on_stop = 1;
 	return 1;
@@ -277,6 +329,11 @@ int input_demo_rng_trace_start_replay(const char *path, char *error, size_t erro
 
 void input_demo_rng_trace_reset(void)
 {
+	if (g_input_demo_rng_trace_session.spool) {
+		fclose(g_input_demo_rng_trace_session.spool);
+		remove(g_input_demo_rng_trace_session.spool_path);
+	}
+	free(g_input_demo_rng_trace_session.spool_path);
 	free(g_input_demo_rng_trace_session.events);
 	free(g_input_demo_rng_trace_session.output_path);
 	memset(&g_input_demo_rng_trace_session, 0, sizeof(g_input_demo_rng_trace_session));
@@ -407,6 +464,16 @@ int input_demo_rng_trace_truncate(size_t event_count)
 		return 0;
 	if (event_count > g_input_demo_rng_trace_session.count)
 		return 0;
+	if (g_input_demo_rng_trace_session.spool) {
+		if (event_count > INT64_MAX / sizeof(input_demo_rng_trace_event)) return 0;
+		const int64_t offset = (int64_t) event_count * sizeof(input_demo_rng_trace_event);
+#ifdef _WIN32
+		if (_fseeki64(g_input_demo_rng_trace_session.spool, offset, SEEK_SET)) return 0;
+#else
+		if ((int64_t) (off_t) offset != offset) return 0;
+		if (fseeko(g_input_demo_rng_trace_session.spool, offset, SEEK_SET)) return 0;
+#endif
+	}
 	g_input_demo_rng_trace_session.count = event_count;
 	return 1;
 }

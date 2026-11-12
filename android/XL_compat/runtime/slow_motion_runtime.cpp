@@ -499,9 +499,25 @@ extern "C" int xl_slow_motion_omega_fired(void)
 	return 1;
 }
 
+extern "C" const char *xl_input_demo_backend_error(void)
+{
+#if defined(DXX_XL_DEVELOPER_PROBE)
+	// Other backends remain available to the existing qualification owners
+	return nullptr;
+#elif defined(DXX_HEADLESS_CONSOLE)
+	return "XL clock/input timeline playback requires rendered backend qualification; true headless is not yet qualified";
+#elif defined(__ANDROID__)
+	return "XL clock/input timeline recording and playback on Android are not yet qualified";
+#elif defined(OGL) && (defined(_WIN32) || defined(__linux__))
+	return nullptr;
+#else
+	return "XL clock/input timelines require a qualified Windows or Linux OpenGL backend";
+#endif
+}
 extern "C" const char *xl_input_demo_profile_error(void)
 {
 	if (!enabled()) return nullptr;
+	if (const auto *error = xl_input_demo_backend_error()) return error;
 	// Low-memory bitmap substitution can change transparency collision pixels
 	if (GameArg.SysLowMem) return "XL input demos require low-memory bitmap substitution to be disabled";
 	// Only the enabled/all-weapons flags have an ordered startup/input contract
@@ -519,12 +535,10 @@ extern "C" const char *xl_input_demo_profile_error(void)
 extern "C" const char *xl_omega_input_demo_error(void)
 {
 	if (const auto *error = xl_input_demo_profile_error()) return error;
-#ifdef DXX_XL_DEVELOPER_PROBE
 	if (input_demo_recorder_uses_environment() || input_demo_replay_format_version() == 6) return nullptr;
-#endif
 	if (enabled() && (xl_prepared_time_equipment_image(0) || (Players[Player_num].flags & (xl_compat::slow_motion_equipment | xl_compat::bullet_time_equipment))))
-		return "XL time-equipment input demos require an unimplemented real-time clock timeline";
+		return "XL time-equipment input demos require a recorded real-time clock timeline";
 	return enabled() && (Players[Player_num].primary_weapon_flags & (1 << OMEGA_INDEX))
-	           ? "XL Omega input demos require an unimplemented render-clock timeline"
+	           ? "XL Omega input demos require a recorded render-clock timeline"
 	           : nullptr;
 }

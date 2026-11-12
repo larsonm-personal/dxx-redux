@@ -785,6 +785,11 @@ int input_demo_replay_write_actual_result(const input_demo_result *result,
 	const auto &session = g_input_demo_replay_session;
 	if (!session.loaded || session.actual_result_path.empty())
 		return copy_error("replay has no active result output path", error, error_size);
+	// The result signals completion to process owners; finish buffered traces
+	// first so large RNG exports cannot be mistaken for a shutdown hang
+	if (!input_demo_rng_trace_stop(error, error_size))
+		return 0;
+	input_demo_state_trace_stop();
 	if (!input_demo_result_write_json_file(session.actual_result_path.c_str(), result, error, error_size))
 		return 0;
 	g_input_demo_actual_result_written = true;

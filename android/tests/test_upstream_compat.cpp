@@ -9715,6 +9715,26 @@ static void finish_campaign_game(int death)
 	}
 }
 
+static void test_campaign_menu_resume()
+{
+	const int no_render = GameArg.SysInputDemoNoRender;
+	GameArg.SysInputDemoNoRender = 0;
+	// Start from the menu each time, including the startup case with no menu
+	// Keep the longjmp landing frame free of C++ objects needing destruction
+	for (int iteration = 0; iteration != 2; ++iteration) {
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(1);
+		require(Game_wind && window_is_visible(Game_wind) && !game_is_time_paused(),
+		        "ordinary game creation and return from menu resume simulation");
+		if (!setjmp(LeaveEvents)) {
+			window_close(Game_wind);
+			require(false, "game-window closure returns to the event loop");
+		}
+		require(!Game_wind && window_get_front(), "game closure restores a menu after unlinking its window");
+	}
+	GameArg.SysInputDemoNoRender = no_render;
+}
+
 static void test_incomplete_endlevel_data()
 {
 	input_demo_set_skip_level_intro(1);
@@ -10175,6 +10195,7 @@ static void write_campaign_trace(const char *directory, const char *d2_directory
 		SDL_RemoveTimer(timer);
 		return;
 	}
+	test_campaign_menu_resume();
 	json trace = json::array();
 	const auto clocks = [] {
 		return json::array({ game_get_fusion_next_sound_time(), fuelcen_get_last_sound_time(), collide_get_collision_delay_last_play_time() });
@@ -10227,11 +10248,12 @@ static void write_campaign_trace(const char *directory, const char *d2_directory
 		require(station >= 0, "campaign mine has a real refueling center");
 		require(fuelcen_give_fuel(&Segments[station], F1_0) == fixmul(FrameTime, 25 * F1_0), "transition retains actual refueling energy rate");
 		require(check_collision_delayfunc_exec() == (expired ? 1 : 0), "transition retains native collision first-use spawning gate");
-		// Warmup awareness draws once for agitation, then the collision gate draws
+		// Warmup awareness, its next gameplay deadline and the collision gate
+		// each draw from SIM; the warmup deadline also gates overcharge damage
 		const auto sim_draws = d_rand_get_call_count() - sim, fx_draws = d_rand_get_stream_call_count(D_RNG_FX) - fx;
-		if (sim_draws != (expired ? 2u : 0u) || fx_draws != (expired ? 1u : 0u))
+		if (sim_draws != (expired ? 3u : 0u) || fx_draws != 0)
 			std::fprintf(stderr, "First-use RNG: phase=%s expired=%d SIM=%u FX=%u clock=%lld\n", trace.back()["phase"].get<std::string>().c_str(), expired, sim_draws, fx_draws, static_cast<long long>(GameTime64));
-		require(sim_draws == (expired ? 2u : 0u) && fx_draws == (expired ? 1u : 0u), "transition first-use cadence consumes exactly the native RNG draws");
+		require(sim_draws == (expired ? 3u : 0u) && fx_draws == 0, "transition first-use cadence consumes exactly the native RNG draws");
 		require(expired ? fuelcen_get_last_sound_time() == GameTime64 : clocks() == before, "transition either restarts expired cadence or preserves unexpired deadlines");
 		trace.back()["first_use"] = { { "clocks", clocks() }, { "awareness", Num_awareness_events }, { "sim_draws", sim_draws }, { "fx_draws", fx_draws } };
 		Players[0] = saved_player;
@@ -10354,6 +10376,7 @@ static void write_campaign_trace(const char *directory, const char *d2_directory
 		require(Num_awareness_events == 0, "D1 to D2 session switch retires pending awareness from the previous mine");
 		for (int scenario = 0; scenario < 3; ++scenario) {
 			GameTime64 = 20 * F1_0 + scenario;
+			const fix64 saved_epoch = GameTime64;
 			const fix64 wide = (1LL << 40) + scenario;
 			const cadence_runtime_state saved = { GameTime64 + (scenario ? -wide : F1_0 / 8),
 				                                  GameTime64 + (scenario ? wide : -F1_0 / 4), GameTime64 - wide };
@@ -10364,9 +10387,11 @@ static void write_campaign_trace(const char *directory, const char *d2_directory
 			const cadence_runtime_state contaminated = { 123, 456, 789 };
 			cadence_runtime_apply(&contaminated);
 			GameTime64 = 80 * F1_0;
-			require(state_restore_all_sub(name, 0) && GameTime64 == 0 && !d1_in_d2_use_d1_gameplay(), "restore actual ordinary D2 save at its rebased epoch");
-			require(clocks() == expected, "ordinary D2 restores all three full-width cadence deadlines");
-			control.push_back({ { "scenario", scenario }, { "level", Current_level_num }, { "objects", Highest_object_index + 1 }, { "clock_deltas", clocks() } });
+			require(state_restore_all_sub(name, 0) && GameTime64 == saved_epoch && !d1_in_d2_use_d1_gameplay(), "restore actual ordinary D2 save at its persisted epoch");
+			const json restored = { game_get_fusion_next_sound_time() - GameTime64,
+				                    fuelcen_get_last_sound_time() - GameTime64, collide_get_collision_delay_last_play_time() - GameTime64 };
+			require(restored == expected, "ordinary D2 restores all three full-width cadence deadlines");
+			control.push_back({ { "scenario", scenario }, { "level", Current_level_num }, { "objects", Highest_object_index + 1 }, { "clock_deltas", restored } });
 		}
 		const std::string result = control.dump(2) + "\n";
 		write_fixture("cadence-d2.json", bytes(result.begin(), result.end()));

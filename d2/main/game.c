@@ -1693,13 +1693,6 @@ int game_handler(window *wind, d_event *event, void *data)
 			if (GameArg.GameLogSplit)
 				con_switch_log(NULL); // switch back to default log
 #endif
-#ifndef __ANDROID__
-#ifdef EDITOR
-			if (!EditorWindow)		// have to do it this way because of the necessary longjmp. Yuck.
-#endif
-				if (!input_demo_replay_should_exit())
-					restore_game_menus();
-#endif
 			Game_wind = NULL;
 #ifdef __ANDROID__
 			android_pause_new_session();
@@ -1714,10 +1707,16 @@ int game_handler(window *wind, d_event *event, void *data)
 #endif
 			#ifdef __ANDROID__
 			coop_travel_reset();
+			#endif
 			/* Startup resume has no hidden menu; creating one before the old
 			 * window is unlinked would deactivate it twice and leak a pause */
-			restore_game_menus();
-			#endif
+#ifndef __ANDROID__
+#ifdef EDITOR
+			if (!EditorWindow)		// have to do it this way because of the necessary longjmp. Yuck.
+#endif
+				if (!input_demo_replay_should_exit())
+#endif
+					restore_game_menus();
 			input_demo_record_reset_input_phase();
 			longjmp(LeaveEvents, 0);
 			break;

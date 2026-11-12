@@ -176,6 +176,14 @@ The shared reader accepts recordings up to 1 GiB and reads bounded JSON lines
 limit remains 2 MiB. Parsed frame data still occupies memory until replay setup
 finishes; this is not a constant-memory replay engine
 
+Replay RNG tracing spools fixed-size events beside the requested trace as
+`<trace>.events.tmp`, then writes the existing JSONL format and removes the
+temporary file on normal cleanup. This bounds replay trace memory even when
+presentation generates millions of draws. Recording still retains its trace
+until a destination is chosen. Truncated traces fail finalization explicitly.
+The native result is published after RNG and state traces are finalized, so a
+large export does not appear to the runner as a result followed by a hung exit.
+
 # D1-in-D2 verification
 
 From the repository root, the existing runner can execute the D1 corpus in
@@ -335,11 +343,15 @@ disposable copies; checked-in fixtures stay byte-identical.
 
 ## XL environmental timeline (format 6, under qualification)
 
-The codec recognizes a required `xl-clock-input-v1` capability for D2. Production
-playback still rejects this format before loading a world, and production capture
-does not yet emit it. Developer builds exercise ordinary checkpoint recording
-and playback while qualification is incomplete. This section describes the developing contract, not accepted
-Omega/time-equipment replay support. Existing format-5 stock fixtures are unchanged.
+The codec recognizes a required `xl-clock-input-v1` capability for D2. Normal
+Windows and Linux OpenGL builds record and replay this format for the bounded
+profile below, including Omega and time equipment. Ordinary F5 recording and
+level-start recording use the same ordered timeline. Android, true-headless and
+other production backends remain rejected pending their qualification; developer
+probes retain access for that work. This does not establish complete XL gameplay,
+campaign progression or presentation independence. Existing format-5 stock
+fixtures are unchanged; legacy XL playback without the required equipment
+timeline remains rejected.
 
 The existing `android/tests/xl_omega_damage.py` owner accepts `--recording`
 for a developer-only live Omega witness. It warms the original level for 66
@@ -558,8 +570,8 @@ for ordered-input validation; it does not choose random values. Frame duration
 can be consumed before the next time calculation and is the fallback for a bad
 timer delta. Ordinary XL disk restores retain both instead of inheriting startup
 zeros. Malformed durations/counters reject before any trailer state is applied.
-This is still an unqualified developer
-contract; adding these observations does not establish complete XL owner coverage.
+These observations do not establish complete XL owner coverage; that remains a
+separate save/continuation qualification gate.
 
 The current bounded profile uses nondecreasing signed 64-bit transition-clock
 milliseconds, starting at least at 26 and leaving INT32_MAX overflow headroom.
@@ -571,8 +583,9 @@ UINT32_MAX to zero. There are at most 16,384 samples per frame/tail, within the
 existing record/file byte limits. No clock is inferred from display rate or
 substituted for elapsed time. The recorder and replay owners now preserve and
 consume this stream, including exact consumer/phase/operation checks and a
-fully consumed tail. Native world admission remains closed while checkpoint
-origin binding and live/replay fidelity are qualified.
+fully consumed tail. Native world admission requires the complete supported
+profile and origin binding before restoration; unsupported backends reject
+before loading the checkpoint or level.
 
 The D2-only ordered command `xl_time_control` carries one boolean `bullet_time`.
 Each ordinary Alt+S/Alt+B request is retained, including repeated requests in a

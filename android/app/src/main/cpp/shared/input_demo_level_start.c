@@ -106,7 +106,7 @@ static void capture_runtime(input_demo_level_start *s)
 	s->difficulty_min = Difficulty_level_min_seen;
 	s->difficulty_max = Difficulty_level_max_seen;
 	s->matcen_mode = matcen_mode_get();
-#ifdef DXX_XL_DEVELOPER_PROBE
+#ifdef DXX_XL_RUNTIME
 	s->has_xl_clock = xl_level_extensions_active() != 0;
 	s->xl_last_omega_frame = xl_slow_motion_last_omega_frame();
 	s->xl_camera_ticks = xl_camera_controller_ticks();

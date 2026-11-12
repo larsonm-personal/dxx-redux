@@ -21,6 +21,7 @@
 #include "input_demo_rng_trace.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
+#include "input_demo_state_trace.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -521,6 +522,8 @@ static int expect_actual_result_write_verdict(void)
 	const char *dir = "test_input_demo_result_verdict_fixture";
 	const std::string path = std::string(dir) + "/verdict.dximdemo";
 	const std::string result_path = path + ".actual.json";
+	const std::string rng_path = path + ".actual_rngtrace.jsonl";
+	const std::string state_path = path + ".state.jsonl";
 	char error[256] = "";
 	input_demo_result actual, loaded;
 	fill_test_frame_state(&actual, 0);
@@ -539,10 +542,24 @@ static int expect_actual_result_write_verdict(void)
 		return report_failure("failed buffered result write claimed success");
 #endif
 	input_demo_replay_set_actual_result_path(result_path.c_str());
+	// Trace output must be complete before the result publishes completion
+	if (!input_demo_rng_trace_start_replay(dir, error, sizeof(error))) return report_failure(error);
+	(void) d_rand();
+	if (input_demo_replay_write_actual_result(&actual, error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("failed trace output claimed a terminal result");
+	std::string trace;
+	if (read_text_file(result_path.c_str(), &trace)) return report_failure("result published before failed trace finalization");
+	if (!input_demo_rng_trace_start_replay(rng_path.c_str(), error, sizeof(error)) ||
+	    !input_demo_state_trace_start_replay(state_path.c_str(), error, sizeof(error))) return report_failure(error);
+	(void) d_rand();
 	if (!input_demo_replay_write_actual_result(&actual, error, sizeof(error)) || !input_demo_replay_actual_result_written() ||
 	    !input_demo_result_read_json_file(result_path.c_str(), &loaded, error, sizeof(error)) ||
 	    !input_demo_result_compare(&actual, &loaded, error, sizeof(error)))
 		return report_failure_string(std::string("successful terminal result write: ") + error);
+	if (input_demo_rng_trace_is_active() || input_demo_state_trace_is_active() ||
+	    !read_text_file(rng_path.c_str(), &trace) || trace.find("\"events\":1") == std::string::npos ||
+	    !read_text_file(state_path.c_str(), &trace) || trace.find("\"type\":\"meta\"") == std::string::npos)
+		return report_failure("terminal result left unfinished trace output");
 	input_demo_replay_unload();
 	if (!input_demo_replay_actual_result_written()) return report_failure("unload erased successful terminal write");
 	if (input_demo_replay_load(nullptr, error, sizeof(error)) || input_demo_replay_actual_result_written())
@@ -563,6 +580,8 @@ static int expect_actual_result_write_verdict(void)
 	remove(path.c_str());
 	remove((path + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
 	remove(result_path.c_str());
+	remove(rng_path.c_str());
+	remove(state_path.c_str());
 	remove_test_dir(dir);
 	return 0;
 }
@@ -1337,8 +1356,61 @@ static int expect_unload_preserves_recording_rng_trace(void)
 	return 0;
 }
 
+static int expect_replay_rng_spool()
+{
+	const char *path = "test_input_demo_rng_spool.jsonl";
+	char error[256] = "";
+	std::string expected;
+	for (int replay = 0; replay != 2; ++replay) {
+		d_srand(77);
+		d_rand_reset_call_count();
+		if (replay) {
+			if (!input_demo_rng_trace_start_replay(path, error, sizeof(error))) return report_failure(error);
+		} else
+			input_demo_rng_trace_start();
+		input_demo_rng_trace_set_context(7, 123);
+		input_demo_rng_trace_set_object_context(2, 3, 4);
+		d_srand(1234);
+		// Cross several file-buffer boundaries, export while active, then replace
+		// the tail through the recorder's existing rollback operation
+		for (int i = 0; i != 4096; ++i) (void) d_rand();
+		if (!input_demo_rng_trace_write_to_path(path, error, sizeof(error))) return report_failure(error);
+		(void) d_rand();
+		if (!input_demo_rng_trace_truncate(4096)) return report_failure("could not truncate RNG trace tail");
+		const int last = d_rand();
+		if (!input_demo_rng_trace_write_to_path(path, error, sizeof(error)) ||
+		    !input_demo_rng_trace_stop(error, sizeof(error))) return report_failure(error);
+		std::string text;
+		if (!read_text_file(path, &text)) return report_failure("could not read completed RNG spool");
+		if (!replay)
+			expected = text;
+		else if (text != expected)
+			return report_failure("spooled RNG trace differs from the in-memory recording trace");
+		std::istringstream lines(text);
+		std::string line;
+		std::getline(lines, line);
+		const auto meta = nlohmann::json::parse(line);
+		if (meta["events"] != 4097 || meta["truncated"] != false)
+			return report_failure("RNG spool retained a discarded tail");
+		int count = 0;
+		while (std::getline(lines, line)) {
+			const auto event = nlohmann::json::parse(line);
+			if (event["seq"] != count++) return report_failure("RNG spool lost event ordering");
+			if (count == 4097 && (event["result"] != last || event["call_count"] != 4098))
+				return report_failure("RNG spool lost the replacement draw");
+		}
+		if (count != 4097) return report_failure("RNG spool event count is incomplete");
+		if (read_text_file("test_input_demo_rng_spool.jsonl.events.tmp", &text))
+			return report_failure("completed RNG trace retained its temporary spool");
+		remove(path);
+	}
+	return 0;
+}
+
 int main(void)
 {
+	if (expect_replay_rng_spool())
+		return 1;
 	if (expect_unload_preserves_recording_rng_trace())
 		return 1;
 	if (expect_cheat_commands())

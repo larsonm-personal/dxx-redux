@@ -738,7 +738,7 @@ int input_demo_start_loaded_replay_common(void)
 	int result;
 	input_demo_rear_view_baseline view;
 	char projection_error[256] = "";
-	/* Keep world admission closed until the XL runtime consumes this contract */
+	/* Validate the complete qualified profile before loading any world */
 	if (input_demo_replay_format_version() == 6) {
 		if (GameArg.SysLowMem) {
 			con_printf(CON_URGENT, "Input demo replay could not start: XL input demos require low-memory bitmap substitution to be disabled\n");
@@ -750,7 +750,13 @@ int input_demo_start_loaded_replay_common(void)
 			input_demo_replay_unload();
 			return 1;
 		}
-#ifdef DXX_XL_DEVELOPER_PROBE
+#ifdef DXX_XL_RUNTIME
+		const char *backend_error = xl_input_demo_backend_error();
+		if (backend_error) {
+			con_printf(CON_URGENT, "Input demo replay could not start: %s\n", backend_error);
+			input_demo_replay_unload();
+			return 1;
+		}
 		input_demo_view_projection projection;
 		if (!input_demo_replay_has_player_cfg() ||
 		    !input_demo_replay_get_view_projection(&projection) ||
@@ -763,7 +769,7 @@ int input_demo_start_loaded_replay_common(void)
 			return 1;
 		}
 #else
-		printf("Input demo replay could not start: XL clock/input timeline playback is not yet qualified\n");
+		con_printf(CON_URGENT, "Input demo replay could not start: XL clock/input timelines require the XL runtime\n");
 		input_demo_replay_unload();
 		return 1;
 #endif

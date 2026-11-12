@@ -2455,6 +2455,92 @@ G1 Omega acquisition checkpoint, November 11 at 19:48 PST (November 12 03:48 UTC
   and G7 delivery remain open. Linux Warp45s save/restore and prior Android GPU
   timeout remain failures, not reclassified by this assisted witness.
 
+G1 normal desktop admission checkpoint, November 11 at 21:06 PST
+(November 12 05:06 UTC), continued from ab67cd3008dac6d97106ec0ebd6bff5ba5a3f425:
+
+- Normal Windows/Linux OpenGL builds now admit the validated format6 clock/input
+  profile through the existing recorder, level-start and replay startup owners.
+  Complete player/settings/view/FP checks remain; legacy, malformed, low-memory,
+  unsupported cheats and unqualified backends still reject. True headless and
+  Android remain closed outside developer qualification. This is bounded G1
+  admission, not G2 state completeness or G3 presentation independence.
+- Ordinary UI exposed a real shared D1/D2 lifecycle bug: restoring the menu before
+  unlinking a startup-resumed game window deactivated that window twice. The next
+  game retained pause depth1, froze physics and eventually overflowed the ordered
+  input batch. Both game handlers now restore menus in EVENT_WINDOW_CLOSED,
+  following the existing Android ordering. No pause reset or batch-limit increase.
+  Existing campaign owner now runs two real game/menu lifecycle cycles. Negative
+  ui3 and positive ui4 logs retain the observed depth transitions.
+- Replay completion now finalizes RNG and state traces before publishing the
+  terminal result. Previously a large RNG export exceeded the wrapper's unchanged
+  two-second shutdown grace after a matching result, leaving incomplete evidence.
+  Replay RNG events now spool beside the owned output instead of growing a
+  contiguous 32-bit allocation. Same JSON schema, ordering and full SIM/FX/
+  presentation streams; truncated exports fail. Existing codec owner checks
+  failed-finalization admission, active exports, tail rollback, replacement draws,
+  exact memory/spool byte equality and cleanup. Recording still buffers in memory;
+  parsed replay frames are not constant-memory. No unlimited-recording claim.
+- Real normal UI ui2 recorded1614 frames on original Warp5. Replay1 failed clean
+  exit with partial RNG/gzip; replay4 passes natural exit and1614 frame states,
+  18836 SIM/1618 FX events after finalization fix. ui4 starts from an unchanged
+  assisted checkpoint (SHA cac10e1ef70f15556990e0eb0c3490d36d2e4fa8dd4e660a405d78c6dec2ff15),
+  returns to menu, loads again, acquires Omega through collision and records normal
+  primary input with F5. No state assists during capture; high-resource checkpoint
+  origin remains assisted. No connected route, kill or level-completion claim.
+- ui4 recording SHA ccae0e4e263a719f299c4ba6fb8ab20cd536dac691ff1a72177f7ec08e87db5b,
+  2549 frames. Capture executable d2f54addcb3d1d34d095bb2b71314631017c09474b02ebb6c6abcb81020919ac
+  included four temporary pause diagnostics, removed from final source. Windows
+  replay5 matched state but truncated at4194304 RNG events; not accepted for RNG.
+  Linux replay6 and final Windows replay7 pass strict assets, terminal state,
+  natural exit and full traces within the unchanged300-second owner deadline.
+  Both match12067 SIM/5103 FX events and2549 live frame states. Complete world/
+  object trace payloads are byte-identical across the two replay platforms; gzip
+  OS header differs. This is not a live-capture full-world claim. Presentation RNG
+  differs and remains unqualified. Linux4,890,287 and Windows4,502,949 trace events
+  are complete, truncated=false; temporary spools removed. Final Windows memory
+  stayed approximately473MB. Comparisons/identity receipts use prefix
+  temp/pr464-ci-fixes-20261110/g1-admission-ui-replay-.
+- Compact assisted Omega capture15 additionally passes normal Linux replay21:
+  242 frames/objects,246 world boundaries,1616 SIM/488 FX events. Normal Windows
+  time replay22 passes terminal/clean-exit,231 frames/objects,235 world records,
+  1193 SIM/236 FX events with zero differences; no presentation draws in this case.
+  No authentic mission bytes changed: Warp HOG SHA
+  2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c.
+  Pinned reference remains2576a98b5de310e3ac7c9777df2677d1627b8bae.
+- Windows D1/D2 and Linux D2 normal desktop builds pass. Final Windows D2 SHA
+  5d35bb2240fddaf4b84bb0509fb355cafb7149a43d52a89e8428b2b4a6e803c1;
+  metadata5eb9b3fa2c6547d6b77de0e870affd76272b42f5db4ee66d08e2edce2a152000;
+  D1 desktop2a8fba60ea3214e8dcc7b6c743a08648c60f778981d0654f4489ae3b0bf2c300.
+  Linux D2 desktop88661d0785b65a45d749752531617bfd5345113fd94d0f437041e3e756ec8099;
+  metadata2487d0ae997197c749d9d22dc1bb98aba8c45acfe1eaf404c216271f03d6f4f8.
+  Root-bound caches unchanged; normal D2 developer probe OFF, strict FP ON.
+- Final Windows D2 CTest103 pass/1 expected skip of104: connectivity diagnostics
+  are absent in this release profile. Codecs3/3 pass on Windows D1, Windows D2
+  and Linux D2. Campaign integration passes21 native/imported D1 observations,
+  three ordinary D2 cadence and12 death cases; Linux campaign JSON byte-identical
+  (SHA3c3dedfb6292c4cd40b0076e80f58a7e7d070912b3919bbc144083fa09ad4607).
+  Two stale campaign assertions corrected against prior implementations: Fusion
+  cadence already draws SIM, and saves already preserve GameTime64. No immutable
+  fixture changed. Intermediate failed attempts retained, final campaign-6 passes.
+- Full public graphics owner passes34/34 native replays and required imported
+  flight scope. Four other imported cases remain unqualified; three existing
+  exclusions and raw paired failure remain visible. Native runs overlapped the
+  trace-storage rebuild, so this is explicitly not final-binary qualification.
+  Final-source codecs/CTest/large replays pass; exact published-head public CI
+  remains required. Reports/logs use g1-admission- under the evidence root.
+  Catalogs pass99 JSON/315 PowerShell/547 support and428 master entries. Scoped
+  quality passes; no required membership, deadline or private asset was changed.
+- Work19:50-21:06 PST, continued publication/CI pending. PR464 remains open at
+  e87f4bfaeec60fd7a9697488413e02cc88230ade; PR465 draft G0 head
+  96ce2f8be5f917178024298cf51272781abc0caa. Layer02 still local at this checkpoint.
+  No Android run/APK or further WSL restart. Free space about37GiB; official
+  cleanup preview in progress with evidence/assets/build dependencies protected.
+  Next: finish time comparison, quality/commit, push layer02, create immediate-
+  parent draft PR and native stack link, inspect exact-head CI. G1 estimate1-2h;
+  G2-G7 approximately17.5h, no cutoff. Linux Warp45s save/restore and prior Android
+  GPU deadline remain failures; G2 completeness, G3 headless/presentation, G5
+  connected play, G6 Android/corpus and G7 delivery remain open.
+
 Per-item handoff template:
 
     Item and status:

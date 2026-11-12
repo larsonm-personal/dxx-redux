@@ -446,9 +446,10 @@ Shared receipt validation rejects stale results, mismatched inputs and altered s
 It checks process/run identity once per phase; scenario expectations check actual
 gameplay state rather than reproducing each intermediate trace in Python.
 
-Slow-motion pickup activation and an Omega input-demo render-clock timeline remain
-unfinished features. Owning Omega in an active XL level explicitly rejects those
-input demos; the guard must remain until the timeline is implemented. Existing
+Omega and time-equipment input demos use the format-6 ordered clock/input
+timeline on the bounded Windows/Linux OpenGL profile documented in
+[the recording contract](../regression_demos/README.md#xl-environmental-timeline-format-6-under-qualification).
+Legacy timelines and unqualified production backends remain guarded. Existing
 campaign readiness failures remain unsupported cases, not passing gameplay claims.
 
 ### Separate rendering preview build
