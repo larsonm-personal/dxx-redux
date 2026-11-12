@@ -816,16 +816,99 @@ and "accepted" are separate facts. A blocked item names the exact dependency and
 what independent item can proceed. An internal regression is repaired before
 retaining the change. All statuses below are planning statuses, not completed work.
 
-| Item | Status                                                                                   | Branch / commit / PR                                              | Evidence, limits and revised estimate                                                                                       |
-| ---- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| G0   | In progress: baseline repairs implemented; Linux validation and capability audit running | xl_gameplay_20261111_01_baseline; parent e87f4bfae; not published | Windows 100 pass / 1 expected skip; targeted original Warp checks pass; WSL recovered, fresh root-bound GCC builds required |
-| G1   | Not started                                                                              | 02_timeline                                                       | Omega and time-equipment record/replay guards still active                                                                  |
-| G2   | Not started                                                                              | 03_continuation                                                   | Complete XL observer/cold-continuation audit required                                                                       |
-| G3   | Not started                                                                              | 04_runtime                                                        | True-headless XL and optional presentation independence unqualified                                                         |
-| G4   | Not started                                                                              | 04_runtime                                                        | Source no-op smoke, makers, subzero and wider gameplay predicates require decisions                                         |
-| G5   | Not started                                                                              | 05_progression                                                    | Existing assisted views do not prove connected original play                                                                |
-| G6   | Not started                                                                              | 06_qualification                                                  | No newly frozen forward-compatible XL corpus yet                                                                            |
-| G7   | Not started                                                                              | 06_qualification                                                  | No new packages/branches/PRs created by this plan                                                                           |
+| Item | Status                                                                           | Branch / commit / PR                                                              | Evidence, limits and revised estimate                                                                                       |
+| ---- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| G0   | Accepted baseline repair; remaining hosted checks and Android limitation tracked | xl_gameplay_20261111_01_baseline; implementation a5db8d739; draft #465, base #464 | Windows/Linux native each 100 pass / 1 expected skip; Linux public 61/61; canonical private 113/113 and hosted private PASS |
+| G1   | Not started                                                                      | 02_timeline                                                                       | Omega and time-equipment record/replay guards still active                                                                  |
+| G2   | Not started                                                                      | 03_continuation                                                                   | Complete XL observer/cold-continuation audit required                                                                       |
+| G3   | Not started                                                                      | 04_runtime                                                                        | True-headless XL and optional presentation independence unqualified                                                         |
+| G4   | Not started                                                                      | 04_runtime                                                                        | Source no-op smoke, makers, subzero and wider gameplay predicates require decisions                                         |
+| G5   | Not started                                                                      | 05_progression                                                                    | Existing assisted views do not prove connected original play                                                                |
+| G6   | Not started                                                                      | 06_qualification                                                                  | No newly frozen forward-compatible XL corpus yet                                                                            |
+| G7   | Not started                                                                      | 06_qualification                                                                  | Layer 01 draft published; final packages and remaining layers not created                                                   |
+
+G0 publication checkpoint, November 11 at 08:37 PST (16:37 UTC):
+
+- Draft [#465](https://github.com/larsonm-personal/dxx-redux/pull/465) targets
+  `d2xxl_nov10`, parent `e87f4bfaeec60fd7a9697488413e02cc88230ade`.
+  Published commit `a5db8d739dbf9ce7e526e474f0f28bd60e79123f`, tree
+  `cfe0a0d495a83eb9b089fecc775e2f94bcab8a62`. The local post-commit hook
+  adjusts commit timestamps; the wall-clock checkpoint here is the actual time.
+  No child or native stack exists yet. Prerequisite branch, stashes and independent
+  review remain unchanged.
+- Repairs and precise validation scope are in `pr464_ci_fixes_20261110.md`.
+  The 19-category capability audit and fixed witnesses are complete for G0;
+  unresolved valid/unknown gameplay predicates remain explicit G1-G5 work.
+- Linux public GPU/audio contracts pass 61/61 with zero skips; the linked boss
+  consumer passes 1/1. Fresh root-bound GCC developer desktop and metadata link.
+  Their SHA256 values are respectively
+  `5c764bccdc92ef784488dca670c8cad0f6796b9e7ca7c3cf39a5a2e34f846e16` and
+  `2ad4fe57553064f5484c8f9b20aa2a8b61275631a4e9b848a636e81308fd3454`.
+  Cache source is `/mnt/c/local/dxx-redux/d2`; implementation matches the
+  published commit, with compilation begun before publication.
+- Normal full-target Linux build uses the same root source and separate stock
+  cache. Its initial two-job build was deliberately interrupted and resumed with
+  four jobs after checking 14 GiB available RAM; interrupted logs are retained.
+  This changes no test timeout or assertion. The canonical private owner awaits
+  that cache; its 113-test cohort remains unchanged.
+- Hosted engine `43059713354`, generic sample `43059713325`, XL contracts
+  `43059713245` and private controller `43059766693` are pending. The generic
+  sample now executes test selection. The private controller's own SHA is the
+  trusted trunk, not the candidate; its title pins `a5db8d739`.
+- Android full GPU owner still fails the unchanged timeout, with exact protected
+  restoration documented in the fix plan. No new connected original gameplay or
+  durable XL input demo is claimed by this layer.
+- Elapsed wall time since the nominal November 10 21:55 start is 10h42m,
+  including WSL unavailability and overnight idle intervals, not 10h42m of
+  productive implementation. G0 needs roughly another 30-90 minutes of build/CI
+  validation if no new failure appears. G1-G7 retain approximately 22.5 hours of
+  work with substantial uncertainty; the original Wednesday-evening estimate
+  is no longer credible. There is no cutoff or scope reduction.
+- Next: finish stock build/CTest, run the unchanged canonical private fast owner,
+  inspect exact-head hosted failures, fix any deterministic regression, then
+  complete G0 and create layer 02 for the ordered clock/input contract.
+
+G0 acceptance checkpoint, November 11 at 09:23 PST (17:23 UTC):
+
+- The actual GCC normal desktop, replay, metadata and route targets and the
+  developer desktop/metadata targets compile and link. Full remaining native
+  build passed; CTest has 100 passes, zero failures and one expected NDEBUG
+  connectivity-warning skip, 51.32 seconds. Windows has the same pass/skip count.
+  All Linux caches bind to `/mnt/c/local/dxx-redux/d2`, not an older scratch tree.
+- Canonical unmodified private fast CLI completed: 113/113 required tests,
+  zero skips, 16 format witnesses, three modern source levels and four navigation
+  anchors. Camera-addon subchecks are explicitly not run and level-two completion
+  remains unqualified. Optional rendered Warp is excluded from this owner; the
+  separate Windows warm/cold actor witness is assisted mechanics, not traversal.
+- Nine immutable D2 shareware demos passed headless and nine passed rendered
+  under Xvfb/software GL. These are terminal-summary and clean-exit controls,
+  not G6 detailed XL SIM/RNG qualification. Full command/log/JUnit receipts are
+  under `temp/pr464-ci-fixes-20261110/`.
+- Published implementation remains `a5db8d739`, tree `cfe0a0d495a83eb9b089fecc775e2f94bcab8a62`.
+  The documentation follow-up changes only this ledger and the fix evidence.
+  Normal desktop SHA256 is `d78bfb153aedddec5dac79771cd78e697f67e655ffa5c704fbe9dad2648bf419`;
+  headless replay is `070c25535993d5831ad6281e82820a484d79f0e13688c0582fecdf8326a30c1f`.
+  Remaining binary hashes are in `linux-required-binary-hashes.json`.
+- Hosted XL compatibility, scripts/CI, LAN and generic Linux/JVM/Android sample
+  pass. Trusted private controller `43059766693` completed its host owner,
+  finalizer and exact-head publication for `a5db8d739`. Its frozen readiness
+  report remains the historical 4/8 measurement. Public save integrity passed;
+  downstream replay and ASan workloads remain active. Engine D1/D2 failures are
+  inspected apt DNS failures before compilation; retry after that run terminates.
+  Exact job IDs and skip predicates are in `pr464_ci_fixes_20261110.md`.
+- Android full GPU timeout remains unresolved with exact protected restoration;
+  sparse timings are diagnosis only. No gameplay guard is relaxed by G0. No new
+  connected original route, forward-compatible XL demo or full gameplay claim.
+- Actual elapsed wall time since the nominal start is 11h28m, including overnight
+  idle/WSL unavailability. G0 is accepted for its stated repair/audit scope.
+  G1 now needs roughly 5-8 hours because the checkpoint clock-origin boundary
+  must be solved alongside ordered clocks; G2-G7 retain about 17.5 hours, with
+  substantial uncertainty. There is no cutoff or reduced scope.
+- Next: commit the two evidence updates, create layer 02 from this layer, define
+  and implement the bounded version-6 clock/input extension in existing owners,
+  preserve format-5 stock recordings, and keep Omega/time guards until faithful
+  live/immediate/repeated replay passes. Continue monitoring outstanding G0 CI
+  without replacing pending results with passes.
 
 Per-item handoff template:
 
