@@ -80,6 +80,71 @@ class RenderedReadinessTests(unittest.TestCase):
 
 
 class XlPrivateTests(unittest.TestCase):
+    def test_time_combat_requires_player_damage_in_the_observed_slowed_frame(self):
+        target = dict(
+            object=188,
+            signature=189,
+            robot_id=27,
+            player=0,
+            player_signature=0,
+            primary_weapon=0,
+            shields_before=3000000,
+            shields_after=2000000,
+            first_damage_frame=40,
+            firing_frames=84,
+            aiming_frames=47,
+            world_speed_at_damage=1.5,
+            player_speed_at_damage=1.5,
+        )
+        proof = dict(
+            combat=target, recorded_frames=198, warmup_frames=66, inventory_assists=0, assists_during_recording=0
+        )
+        damage = dict(
+            type="robot_damage",
+            version=1,
+            f=40,
+            robot=188,
+            robot_signature=189,
+            robot_id=27,
+            parent=0,
+            parent_type=4,
+            parent_signature=0,
+            old_shields=3000000,
+            new_shields=2000000,
+            damage=1000000,
+        )
+        clocks = [[1.5, 1, 0, False], [1.5, 1, 0, False]]
+        self.assertTrue(render_clock.time_combat_passed(proof, [damage], clocks))
+        self.assertFalse(render_clock.time_combat_passed(proof, [], clocks))
+        self.assertFalse(render_clock.time_combat_passed(proof, [None, {**damage, "version": True}], clocks))
+        for key, value in dict(
+            f=41,
+            robot=187,
+            robot_signature=190,
+            parent=1,
+            parent_type=2,
+            parent_signature=1,
+            damage=0,
+            new_shields=3000000,
+        ).items():
+            self.assertFalse(render_clock.time_combat_passed(proof, [{**damage, key: value}], clocks), key)
+        for key, value in dict(
+            first_damage_frame=True,
+            aiming_frames=90,
+            primary_weapon=1,
+            world_speed_at_damage=1,
+            player_speed_at_damage=3,
+            shields_after=3000000,
+        ).items():
+            self.assertFalse(
+                render_clock.time_combat_passed({**proof, "combat": {**target, key: value}}, [damage], clocks), key
+            )
+        for key in proof:
+            self.assertFalse(
+                render_clock.time_combat_passed({k: v for k, v in proof.items() if k != key}, [damage], clocks), key
+            )
+        self.assertFalse(render_clock.time_combat_passed(proof, [damage], [[1, 0, 0, False], [1, 0, 0, False]]))
+
     def test_omega_recording_requires_damage_recharge_and_no_mid_capture_assists(self):
         proof = dict(
             schema="xl-omega-recording-v1",

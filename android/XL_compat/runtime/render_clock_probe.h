@@ -139,7 +139,7 @@ static int xl_render_clock_probe(const char *path)
 static int xl_time_equipment_probe(const char *path, bool resume, int carried_level)
 {
 	using nlohmann::ordered_json;
-	ordered_json proof = { { "schema", "xl-time-equipment-gameplay-v1" }, { "assisted", bool{ true } }, { "complete", bool{ false } }, { "cold_resume", resume }, { "position_assists", 0 }, { "level_load_assists", 0 }, { "carried_level", carried_level }, { "events", ordered_json::array() } };
+	ordered_json proof = { { "schema", "xl-time-equipment-gameplay-v1" }, { "assisted", bool{ true } }, { "complete", bool{ false } }, { "cold_resume", resume }, { "position_assists", 0 }, { "inventory_assists", 0 }, { "assists_during_recording", 0 }, { "level_load_assists", 0 }, { "carried_level", carried_level }, { "events", ordered_json::array() } };
 	struct frame_timing {
 		uint64_t count{}, delay{}, simulation{}, render{}, flip{};
 	} timings[2];
@@ -173,16 +173,24 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 		const int level = Current_level_num;
 		int running_level = level;
 		const auto initial = *ConsoleObject;
+		std::vector<int> original_robots(Highest_object_index + 1, -1);
+		for (int i = 0; i <= Highest_object_index; ++i)
+			if (Objects[i].type == OBJ_ROBOT) original_robots[i] = Objects[i].signature;
+		int combat_target = -1, combat_signature = -1;
 		Controls = {};
 		const auto pose = [&](const object &actor) {
+			require(!input_demo_recorder_is_active(), "Time-equipment probe cannot relocate during recording");
 			ConsoleObject->pos = ConsoleObject->last_pos = actor.pos;
 			ConsoleObject->orient = actor.orient;
 			ConsoleObject->mtype.phys_info.velocity = {};
+			ConsoleObject->mtype.phys_info.rotvel = {};
 			obj_relink(int(ConsoleObject - Objects), actor.segnum);
 			proof["position_assists"] = proof["position_assists"].get<int>() + 1;
 		};
-		const auto frames = [&](int count, bool thrust = false) {
+		const auto frames = [&](int count, bool thrust = false, bool firing = false, bool aiming = false) {
 			for (int i = 0; i < count; ++i) {
+				const bool original_target = combat_target >= 0 && Objects[combat_target].type == OBJ_ROBOT && Objects[combat_target].signature == combat_signature;
+				const fix target_shields = original_target ? Objects[combat_target].shields : 0;
 				auto &timing = timings[input_demo_recorder_is_active() ? 1 : 0];
 				// Observe wall time without refreshing the simulation's cached clock
 				const auto before_delay = SDL_GetTicks();
@@ -192,9 +200,30 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 				FrameTime = F1_0 / 60;
 				Controls = {};
 				Controls.forward_thrust_time = thrust ? FrameTime : 0;
+				Controls.fire_primary_state = firing;
+				if (aiming && original_target) {
+					vms_vector aim;
+					vm_vec_sub(&aim, &Objects[combat_target].pos, &ConsoleObject->pos);
+					vm_vec_normalize(&aim);
+					const auto &orientation = ConsoleObject->orient;
+					const double x = double(vm_vec_dot(&aim, &orientation.rvec)) / F1_0;
+					const double y = double(vm_vec_dot(&aim, &orientation.uvec)) / F1_0;
+					const double z = double(vm_vec_dot(&aim, &orientation.fvec)) / F1_0;
+					const auto input = [&](double value) { return fix(std::clamp(value, -1.0, 1.0) * FrameTime); };
+					Controls.heading_time = input(std::atan2(x, z) * 8 - double(ConsoleObject->mtype.phys_info.rotvel.y) / F1_0 * 1.5);
+					Controls.pitch_time = input(-std::atan2(y, std::hypot(x, z)) * 8 - double(ConsoleObject->mtype.phys_info.rotvel.x) / F1_0 * 1.5);
+				}
 				do_weapon_n_item_stuff();
 				calc_game_time();
 				GameProcessFrame();
+				if (firing && original_target && input_demo_recorder_is_active() &&
+				    !proof["combat"].contains("first_damage_frame") &&
+				    (Objects[combat_target].signature != combat_signature || Objects[combat_target].shields < target_shields)) {
+					const auto &clocks = xl_runtime::slow_motion_state().clocks;
+					proof["combat"]["first_damage_frame"] = input_demo_recorder_frame_count() - 1;
+					proof["combat"]["world_speed_at_damage"] = clocks[0].speed;
+					proof["combat"]["player_speed_at_damage"] = clocks[1].speed;
+				}
 				const auto before_render = SDL_GetTicks();
 				game_render_frame();
 				const auto before_flip = SDL_GetTicks();
@@ -229,6 +258,9 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 			sample("cold_restored");
 			frames(12);
 		} else {
+			// Expire source robot spawn protection through ordinary simulation
+			frames(66);
+			proof["warmup_frames"] = 66;
 			for (const int id : { 48, 49 }) {
 				int pickup = -1;
 				for (int i = 0; i <= Highest_object_index; ++i)
@@ -246,12 +278,26 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 				vm_vec_sub(&inward, &center, &actor.pos);
 				vm_vec_normalize_quick(&inward);
 				bool found = false;
-				for (auto direction : { inward, actor.orient.fvec, actor.orient.rvec, actor.orient.uvec,
-				                        vms_vector{ -actor.orient.fvec.x, -actor.orient.fvec.y, -actor.orient.fvec.z },
-				                        vms_vector{ -actor.orient.rvec.x, -actor.orient.rvec.y, -actor.orient.rvec.z },
-				                        vms_vector{ -actor.orient.uvec.x, -actor.orient.uvec.y, -actor.orient.uvec.z } }) {
+				proof["approaches"] = ordered_json::array();
+				std::vector<vms_vector> directions{ inward, actor.orient.fvec, actor.orient.rvec, actor.orient.uvec,
+					                                vms_vector{ -actor.orient.fvec.x, -actor.orient.fvec.y, -actor.orient.fvec.z },
+					                                vms_vector{ -actor.orient.rvec.x, -actor.orient.rvec.y, -actor.orient.rvec.z },
+					                                vms_vector{ -actor.orient.uvec.x, -actor.orient.uvec.y, -actor.orient.uvec.z } };
+				// Search nearby clear approaches without changing the authored objects
+				for (unsigned axis = 1; axis < 7; ++axis)
+					for (unsigned lateral = 1; lateral < 7; ++lateral) {
+						if (std::abs(vm_vec_dot(&directions[axis], &directions[lateral])) > F1_0 / 2) continue;
+						vms_vector direction;
+						vm_vec_scale_add(&direction, &directions[axis], &directions[lateral], F1_0 / 2);
+						vm_vec_normalize(&direction);
+						directions.push_back(direction);
+					}
+				for (unsigned candidate = 0; candidate < directions.size() * 3; ++candidate) {
+					auto direction = directions[candidate % directions.size()];
 					if (!vm_vec_mag_quick(&direction)) continue;
-					vm_vec_scale_add(&approach.pos, &actor.pos, &direction, distance);
+					vm_vec_scale_add(&approach.pos, &actor.pos, &direction, distance + (candidate / directions.size()) * distance / 2);
+					proof["approaches"].push_back({ { "pickup", pickup }, { "position", { int(approach.pos.x), int(approach.pos.y), int(approach.pos.z) } } });
+					auto &attempt = proof["approaches"].back();
 					auto origin = actor.pos;
 					fvi_query query{};
 					query.p0 = &origin;
@@ -260,13 +306,60 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 					query.rad = ConsoleObject->size;
 					query.thisobjnum = short(ConsoleObject - Objects);
 					fvi_info hit{};
-					if (find_vector_intersection(&query, &hit) != HIT_NONE || hit.hit_seg < 0) continue;
+					const int geometry = find_vector_intersection(&query, &hit);
+					attempt["geometry_hit"] = geometry;
+					attempt["segment"] = int(hit.hit_seg);
+					if (geometry != HIT_NONE || hit.hit_seg < 0) continue;
 					approach.segnum = short(hit.hit_seg);
+					bool occupied = false;
+					for (int robot = 0; robot <= Highest_object_index; ++robot)
+						if (Objects[robot].type == OBJ_ROBOT && vm_vec_dist(&approach.pos, &Objects[robot].pos) < ConsoleObject->size + Objects[robot].size + F1_0) {
+							occupied = true;
+							attempt["overlapping_robots"].push_back(robot);
+						}
+					if (occupied) continue;
+					if (id == 48) {
+						vms_vector toward_pickup;
+						vm_vec_sub(&toward_pickup, &actor.pos, &approach.pos);
+						vm_vec_normalize_quick(&toward_pickup);
+						fix nearest = 120 * F1_0;
+						combat_target = -1;
+						for (unsigned robot = 0; robot < original_robots.size(); ++robot) {
+							const auto &target = Objects[robot];
+							if (target.type == OBJ_ROBOT && vm_vec_dist(&approach.pos, &target.pos) < 120 * F1_0)
+								attempt["nearby_robots"].push_back({ { "object", robot }, { "id", int(target.id) }, { "cloaked", int(target.ctype.ai_info.CLOAKED) }, { "cloak_type", int(Robot_info[target.id].cloak_type) }, { "boss", int(Robot_info[target.id].boss_flag) }, { "companion", int(Robot_info[target.id].companion) }, { "thief", int(Robot_info[target.id].thief) } });
+							if (target.type != OBJ_ROBOT || target.signature != original_robots[robot] || target.shields <= 0 ||
+							    target.ctype.ai_info.CLOAKED || Robot_info[target.id].cloak_type || Robot_info[target.id].boss_flag ||
+							    Robot_info[target.id].companion || Robot_info[target.id].thief) continue;
+							vms_vector toward_target;
+							vm_vec_sub(&toward_target, &target.pos, &approach.pos);
+							const fix distance_to_target = vm_vec_normalize_quick(&toward_target);
+							const fix dot = vm_vec_dot(&toward_pickup, &toward_target);
+							if (distance_to_target <= 120 * F1_0)
+								attempt["target_lines"].push_back({ { "object", robot }, { "distance", distance_to_target }, { "alignment", dot } });
+							if (distance_to_target >= nearest) continue;
+							auto target_position = target.pos;
+							query.p0 = &approach.pos;
+							query.p1 = &target_position;
+							query.startseg = approach.segnum;
+							query.rad = 0;
+							const int target_hit = find_vector_intersection(&query, &hit);
+							attempt["target_lines"].back()["geometry_hit"] = target_hit;
+							if (target_hit != HIT_NONE) continue;
+							combat_target = int(robot);
+							nearest = distance_to_target;
+						}
+						if (combat_target < 0) continue;
+					}
 					inward = direction;
 					found = true;
 					break;
 				}
-				require(found, "Original time-equipment approach is obstructed");
+				require(found, "Original time-equipment approach has no clear pickup/combat line");
+				if (id == 48) {
+					combat_signature = Objects[combat_target].signature;
+					proof["combat"] = { { "object", combat_target }, { "signature", combat_signature }, { "robot_id", int(Objects[combat_target].id) }, { "player", int(ConsoleObject - Objects) }, { "player_signature", int(ConsoleObject->signature) }, { "primary_weapon", int(Players[Player_num].primary_weapon) } };
+				}
 				vm_vec_negate(&inward);
 				vm_vector_2_matrix(&approach.orient, &inward, nullptr, nullptr);
 				pose(approach);
@@ -304,12 +397,32 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 				require(Players[Player_num].flags & (id == 48 ? XL_PLAYER_FLAGS_SLOW_MOTION : XL_PLAYER_FLAGS_BULLET_TIME),
 				        "Normal collision did not collect the original time equipment");
 				if (id == 48) {
+					require(Objects[combat_target].type == OBJ_ROBOT && Objects[combat_target].signature == combat_signature && Objects[combat_target].shields > 0 &&
+					            Players[Player_num].primary_weapon == LASER_INDEX,
+					        "Original time-equipment combat target or starting laser changed");
+					unsigned aiming_frames = 0;
+					for (; aiming_frames < 90; ++aiming_frames) {
+						vms_vector aim;
+						vm_vec_sub(&aim, &Objects[combat_target].pos, &ConsoleObject->pos);
+						vm_vec_normalize(&aim);
+						if (vm_vec_dot(&aim, &ConsoleObject->orient.fvec) > 63 * F1_0 / 64) break;
+						frames(1, false, false, true);
+					}
+					proof["combat"]["aiming_frames"] = aiming_frames;
+					require(aiming_frames < 90, "Ordinary controls did not aim at the original robot");
+					proof["combat"]["shields_before"] = int(Objects[combat_target].shields);
 					require(HandleGameKey(KEY_ALTED | KEY_S), "Earned slow-motion control was not consumed");
-					frames(84);
+					frames(84, false, true, true);
+					require(proof["combat"].contains("first_damage_frame") && proof["combat"]["world_speed_at_damage"].get<float>() > 1 &&
+					            proof["combat"]["player_speed_at_damage"].get<float>() > 1,
+					        "Ordinary laser did not damage the original robot during slow motion");
+					proof["combat"]["shields_after"] = Objects[combat_target].signature == combat_signature ? int(Objects[combat_target].shields) : 0;
+					proof["combat"]["firing_frames"] = 84;
 					require(HandleGameKey(KEY_ALTED | KEY_S), "Earned slow-motion reversal was not consumed");
 					frames(84);
 					require(input_demo_state_trace_is_active(), "Live XL observation stopped early");
 					proof["timing_ms"]["recording_frames_finished"] = SDL_GetTicks();
+					proof["recorded_frames"] = input_demo_recorder_frame_count();
 					require(input_demo_recorder_is_active() && input_demo_stop_quick_recording_common(), "Ordinary XL pickup recording stopped early");
 					proof["timing_ms"]["recording_finalized"] = SDL_GetTicks();
 				}

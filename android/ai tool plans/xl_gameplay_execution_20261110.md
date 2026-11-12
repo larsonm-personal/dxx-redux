@@ -2034,6 +2034,84 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   estimated3-6 h after this increment; G2-G7 roughly17.5 h with shared prerequisites
   credited once accepted. No cutoff or reduced gameplay/validation scope.
 
+### 2026-11-11 17:20 PST - G1 recorded slow-motion combat
+
+- G1 remains active and unaccepted; G0 remains accepted, G2-G7 remain open.
+  This coherent increment closes the missing deliberate combat inside the time
+  pickup recording. Production format-6/Omega/time guards remain closed.
+  Branch xl_gameplay_20261111_02_timeline; parent commit
+  0997c253c889c75b5cb773877456fe6f45a4d2f8, tree
+  1657d2dbd3b054ede2ae8158a8fa74caf0b5e957. No layer-02 push or PR yet.
+- Existing render_clock_probe.h, xl_render_clock.py and test_xl_private_assets.py
+  own the change; README documents the stronger witness. The probe advances 66
+  ordinary warmup frames, searches geometry-clear approaches outside original
+  robots, records the actual original pickup, steers through normal Controls,
+  then holds the starting laser for 84 slowed frames and reverses time for 84.
+  Original robot signatures, player projectile attribution and both actual slow
+  factors are required. The existing robot_damage trace supplies collision
+  evidence; the next pre-frame world row supplies the completed frame's factors.
+  No damage injection, changed mission data, new framework or reduced deadline.
+- Failed attempts are retained under temp/pr464-ci-fixes-20261110. Captures11/12
+  rejected every original approach before recording: only one was wall-clear,
+  and that pose overlapped original robot189. Expanded generic approach search
+  found a clear diagonal. Capture13 recorded real slowed damage, then failed the
+  later unrecorded bullet pickup. That approach also overlapped a robot; the same
+  occupancy check now applies to both pickups, and outside-recording poses reset
+  residual angular velocity as well as linear velocity. Capture14 native passed
+  in31.828 seconds, but the new Python verifier failed because it compared an
+  in-frame collision with that frame's pre-simulation state. The correction uses
+  the next boundary; the failed receipt is not rewritten or claimed as passing.
+- Fresh capture15 passes native and independent collision/world verification in
+  32.703 seconds against unchanged45. Demo
+  d2_wshock20_level6_20261111_171519.dximdemo SHA256
+  0d58407d888253359724313cc042314e84a88e9bf3ba3232206826dedeb776b8.
+  It records231 frames including47 ordinary aiming frames. Original robot189,
+  signature190, id27 falls from2949120 to2359296 shields during firing. First
+  attributed player-laser damage is frame105, world/player factors both
+  2.049999237060547. Both subsequent factors and exact projectile parent/signature
+  are read from native trace records, not inferred from a terminal score.
+  Timing: entry3405ms, recording entry5374/start5561, initial boundary5621,
+  frames finished24615/finalized24906, ordinary save32416-32433.
+- One pose assist precedes capture; five total outside-recording pose assists
+  include later bullet/movement checks. Zero inventory, in-record pose or
+  level-load assists. Original Warp HOG remains
+  2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c;
+  existing render/automap/Omega/loadgame reference pins and revision
+  2576a98b5de310e3ac7c9777df2677d1627b8bae are verified by the runner.
+  This is assisted mechanics/combat evidence, not a connected route, completed
+  level, cold continuation, frozen corpus or cross-platform gameplay claim.
+- Windows desktop and Linux desktop builds pass. Windows EXE SHA256
+  252f2ae32c4a053a257f9bfad6768e703ed522d27eb5360b45478296ed6e35bd;
+  Linux /var/tmp/dxx-pr464-20261111/private/preview/main/d2x-redux SHA256
+  1c6cada3e364def02e7ec715895f4af3d686993819a1e3c97b8523a19b9587bb.
+  Root-bound cache/source associations are unchanged. Linux retains known packed
+  member warnings outside this probe; no new probe warning. No new metadata,
+  Android package or device proof is claimed.
+- Focused Python tests pass3/3, including wrong parent/signature/frame, ordinary
+  clock factors, missing fields and invalid type/aiming bounds. Scoped mixed
+  quality and diff checks pass. Automation catalog passes99 JSON/315 PowerShell/
+  547 support; master integration passes428 entries. Full public34-run evidence
+  remains the preceding settings increment; this probe-only increment does not
+  claim a fresh complete public suite.
+- Immediate accelerated replay18 and repeated accelerated/realtime replays19/20
+  verify authentic assets, strict terminal expectations and natural exit. Detailed
+  comparison18/19/20 each pass231 object/frame records,235 world/boundary records,
+  1193 SIM and236 FX events, zero differences; presentation events0 on both sides.
+  Full receipts remain in g1-time-replay-*; all three comparisons finished before
+  committing this increment.
+- WSL responds normally; the user's restart permission was not needed. No device
+  operations, timeout/membership changes or cleanup deletions. Free bytes
+  53167173632 at17:14 PST. Actual work approximately17:03-17:21 PST.
+- Next: commit this coherent witness, then
+  continue the external-clock/input audit. Concrete remaining clock owner:
+  level_messages.cpp samples steady_clock in xl_message_frame and again during
+  draw; its age() mutates saved message identity. Pinned main/textdata.cpp samples
+  cached nSDLTicks[0], and negative duration pauses through a modal. This requires
+  a deliberate timeline/presentation boundary decision and tests, not an assumed
+  cosmetic exclusion. Camera/effect/model consumers and remaining global-state
+  admission remain open. G1 remainder estimated3-6h; G2-G7 roughly17.5h with shared
+  prerequisites credited once accepted. No cutoff or reduced scope.
+
 Per-item handoff template:
 
     Item and status:

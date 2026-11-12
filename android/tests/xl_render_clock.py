@@ -7,6 +7,8 @@ from pathlib import Path
 import subprocess
 import time
 
+import d1_replay_parity as parity
+
 REVISION = "2576a98b5de310e3ac7c9777df2677d1627b8bae"
 PINS = {
     "render/renderframe.cpp": {
@@ -110,6 +112,76 @@ def passed(code, proof, mission, level, xl):
     return True
 
 
+def time_combat_passed(proof, damage_rows, clocks):
+    """Require native player-projectile attribution at the observed slowed frame."""
+    try:
+        target = proof["combat"]
+        fields = (
+            "object",
+            "signature",
+            "robot_id",
+            "player",
+            "player_signature",
+            "primary_weapon",
+            "shields_before",
+            "shields_after",
+            "first_damage_frame",
+            "firing_frames",
+            "aiming_frames",
+        )
+        if any(type(target[key]) is not int for key in fields):
+            return False
+        if (
+            any(target[key] < 0 for key in ("object", "signature", "robot_id", "player", "player_signature"))
+            or target["primary_weapon"] != 0
+            or target["shields_before"] <= 0
+            or target["shields_after"] >= target["shields_before"]
+            or target["firing_frames"] != 84
+            or not 0 <= target["aiming_frames"] < 90
+            or type(proof["recorded_frames"]) is not int
+            or not 0 <= target["first_damage_frame"] < proof["recorded_frames"]
+            or type(proof["warmup_frames"]) is not int
+            or proof["warmup_frames"] != 66
+            or type(proof["inventory_assists"]) is not int
+            or proof["inventory_assists"] != 0
+            or type(proof["assists_during_recording"]) is not int
+            or proof["assists_during_recording"] != 0
+            or len(clocks) != 2
+        ):
+            return False
+        for index, name in enumerate(("world_speed_at_damage", "player_speed_at_damage")):
+            if (
+                len(clocks[index]) != 4
+                or type(target[name]) not in (int, float)
+                or not 1 < target[name] <= 3
+                or clocks[index][0] != target[name]
+            ):
+                return False
+        expected = {
+            "f": target["first_damage_frame"],
+            "robot": target["object"],
+            "robot_id": target["robot_id"],
+            "robot_signature": target["signature"],
+            "parent": target["player"],
+            "parent_signature": target["player_signature"],
+            "parent_type": 4,
+        }
+        return any(
+            isinstance(row, dict)
+            and row.get("type") == "robot_damage"
+            and type(row.get("version")) is int
+            and row.get("version") == 1
+            and all(type(row.get(key)) is int and row[key] == value for key, value in expected.items())
+            and all(type(row.get(key)) is int for key in ("old_shields", "new_shields", "damage"))
+            and row["damage"] > 0
+            and row["old_shields"] > row["new_shields"]
+            and row["new_shields"] < target["shields_before"]
+            for row in damage_rows
+        )
+    except (KeyError, TypeError):
+        return False
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("engine", "data", "extra", "work", "reference-root"):
@@ -191,6 +263,25 @@ def main():
                 }
             )
         success = success and len(recordings) == 1
+        if success:
+            try:
+                trace = Path(str(proof_path) + ".capture.jsonl.gz")
+                damage = [row for row in parity.records(trace) if row.get("type") == "robot_damage"]
+                frame = proof.get("combat", {}).get("first_damage_frame")
+                # World rows describe the start of a frame; damage is inside it.
+                # The next boundary observes the factors after that simulation.
+                clocks = next(
+                    (
+                        row["state"]["xl_time"]["slow_motion"]["clocks"]
+                        for row in parity.world_states(trace, header, "d2")
+                        if row["type"] == "world_state" and row["f"] == frame + 1
+                    ),
+                    None,
+                )
+                success = proof["combat_trace_verified"] = time_combat_passed(proof, damage, clocks)
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                proof["combat_trace_error"] = str(error)
+                success = False
     else:
         success = passed(code, proof, args.mission, args.level, args.xl)
     result = {

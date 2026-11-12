@@ -360,17 +360,24 @@ total process time; its 45-second clean-exit deadline remains unchanged.
 
 The existing `xl_render_clock.py --time-equipment` probe now reports startup,
 recording/save phase endpoints and aggregate delay/simulation/render/flip costs.
-A fresh original Warp 6 capture exits cleanly in 43.47 seconds and matches immediate,
-repeated accelerated and real-time playback: 198 object/frame observations,
-202 world/boundary records, 811 SIM RNG events and 201 FX RNG events each.
-The recorded portion includes one approach-pose assist before capture, ordinary
-pickup acquisition and slow-motion activation/reversal. Later bullet-time controls
-and movement are live probe checks outside that recording; five total pose assists
-prevent a connected-progression claim. The full world observer avoids deep-copying
+A fresh original Warp 6 combat capture exits cleanly in 32.70 seconds against the
+unchanged 45-second deadline. Immediate and repeated accelerated/realtime replays
+each match 231 object/frame observations, 235 world/boundary records, 1193 SIM RNG
+events and 236 FX RNG events.
+The probe warms the level for 66 ordinary frames, finds a wall-clear approach
+outside original robots, then records the actual pickup, ordinary steering and
+84 firing frames during slow motion, followed by reversal. The existing damage
+trace must attribute a shield decrease to a player projectile in the observed
+slowed frame; a shield drop alone is insufficient. World observations describe
+frame starts, so the following boundary verifies the factors after the collision.
+One approach-pose assist precedes recording; inventory and in-record assists are
+zero. Later bullet-time controls and movement remain live checks outside that
+recording; five total pose assists prevent a connected-progression claim.
+The full world observer avoids deep-copying
 changed JSON sections before serialization. All 724 decoded trace records from a
 fixed before/after replay are byte-identical; no field, delta or flush was removed.
-Earlier timed-out captures remain failures, and the successful capture's deadline
-margin is narrow. These Windows results do not establish cross-platform acceptance.
+Earlier timed-out captures and failed setup/verifier attempts remain failed
+evidence. These Windows results do not establish cross-platform acceptance.
 
 XL transient particles, lightning bolt/draw geometry and flare illumination use
 RNG stream 2 (`D_RNG_PRESENTATION`). These owners previously consumed stream 1
