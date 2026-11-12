@@ -345,6 +345,84 @@ static void projectile_robot_attacker_blast()
 	std::cout << "Native hostile/guidebot/player/cheat radial damage and force controls passed\n";
 }
 
+static nlohmann::json projectile_birth_future(int victim, int shot)
+{
+	GameTime64 += F1_0 / 4;
+	collide_robot_and_weapon(&Objects[victim], &Objects[shot], &Objects[victim].pos);
+	const int transient = projectile_robot();
+	const auto transient_order = xl_object_birth_order(transient);
+	obj_delete(transient);
+	const int replacement = projectile_robot();
+	const auto replacement_order = xl_object_birth_order(replacement);
+	require(replacement == transient && replacement_order > transient_order &&
+	            xl_object_birth_time(replacement) == GameTime64,
+	        "Reused slot lost its new birth or monotonic creation order");
+	obj_delete(replacement);
+	unsigned sim = 0;
+	require(d_rand_get_state(&sim), "Cannot observe birth continuation SIM state");
+	return { { "victim", victim }, { "shot", shot }, { "time", GameTime64 }, { "victim_shields", int(Objects[victim].shields) }, { "shot_shields", int(Objects[shot].shields) }, { "hit", bool(xl_projectile_has_hit(shot, victim)) }, { "birth_time", xl_object_birth_time(victim) }, { "birth_order", xl_object_birth_order(victim) }, { "transient_order", transient_order }, { "replacement_order", replacement_order }, { "sim", sim }, { "calls", d_rand_get_call_count() } };
+}
+
+static void projectile_birth_continuation(const std::filesystem::path &root, bool cold)
+{
+	char save[] = "projectile-birth.sav", description[] = "XL newborn damage";
+	nlohmann::json expected;
+	if (cold) {
+		std::ifstream input(root / "birth-future.json");
+		input >> expected;
+		require(state_restore_all_sub(save, 0), "Cannot cold restore newborn collision save");
+	} else {
+		// Derived setup isolates the real newborn collision gate; no gameplay assist claim
+		GameTime64 += 2 * F1_0;
+		const int victim = projectile_robot();
+		const int shot = projectile_test_shot(ConsoleObject - Objects);
+		GameTime64 += F1_0 / 2;
+		stop_time();
+		require(state_save_all_sub(save, description), "Cannot save newborn collision state");
+		expected = projectile_birth_future(victim, shot);
+		require(expected.at("victim_shields").get<int>() == i2f(100) && expected.at("hit").get<bool>(),
+		        "Uninterrupted newborn did not reject damage while retaining projectile history");
+		std::ofstream output(root / "birth-future.json");
+		output << expected.dump(2) << '\n';
+		output.close();
+		require(bool(output), "Cannot write uninterrupted newborn collision receipt");
+		require(state_restore_all_sub(save, 0), "Cannot restore newborn collision save");
+	}
+	const auto actual = projectile_birth_future(expected.at("victim").get<int>(), expected.at("shot").get<int>());
+	std::ofstream output(root / (cold ? "birth-cold.json" : "birth-restored.json"));
+	output << actual.dump(2) << '\n';
+	output.close();
+	require(bool(output), "Cannot write restored newborn collision receipt");
+	if (actual != expected) std::cerr << "Newborn collision expected=" << expected.dump() << " actual=" << actual.dump() << '\n';
+	require(actual == expected, "Disk continuation changed newborn damage, projectile disposition or SIM state");
+	std::cout << "Newborn collision uninterrupted/disk continuation passed; cold=" << cold << '\n';
+}
+
+static void projectile_invalid_disk_restore(const std::filesystem::path &root)
+{
+	const auto user = root / "preview-user";
+	std::ifstream input(user / "projectile-birth.sav", std::ios::binary);
+	xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
+	constexpr char tag[] = "DXXLTR01";
+	const auto found = std::search(bytes.begin(), bytes.end(), tag, tag + 8);
+	require(found != bytes.end() && bytes.end() - found >= 16, "Cannot locate complete XL trailer in newborn save");
+	// Corrupt only the derived save checksum; authentic mission bytes stay untouched
+	*(found + 12) ^= 1;
+	write_bytes((user / "birth-invalid.sav").string().c_str(), bytes);
+	Players[Player_num].energy = i2f(91);
+	const int before = Players[Player_num].energy;
+	char save[] = "birth-invalid.sav";
+	const bool accepted = state_restore_all_sub(save, 0);
+	const int after = Players[Player_num].energy;
+	const nlohmann::json result = { { "accepted", accepted }, { "energy_before", before }, { "energy_after", after } };
+	std::ofstream output(root / "birth-invalid-restore.json");
+	output << result.dump(2) << '\n';
+	output.close();
+	require(bool(output), "Cannot write invalid disk restore receipt");
+	std::cout << "Invalid whole-save restore: " << result.dump() << '\n';
+	require(!accepted && before == after, "Invalid XL trailer replaced live native player resources before rejection");
+}
+
 static void projectile_robot_damage_grace()
 {
 	const int victim = projectile_robot();
@@ -502,6 +580,7 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 	std::ifstream input(user / "projectile-state.bin", std::ios::binary);
 	const xl_compat::Bytes encoded{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
 	const auto before = projectile_capture();
+	const auto births_before = xl_object_birth_snapshot();
 	require(before.size() >= 2, "Need multiple projectile owners for malformed-state controls");
 	const auto hits_before = xl_camera_hit_snapshot();
 	const auto motion_before = xl_camera_motion_snapshot();
@@ -511,7 +590,7 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 	std::vector<xl_compat::CameraHitState> live_hits(hits_before.size());
 	std::vector<bool> had_hits;
 	for (std::size_t i = 0; i < hits_before.size(); ++i) had_hits.push_back(xl_camera_hit_state_get(hits_before[i].owner, live_hits[i]));
-	for (int variant = 0; variant < 56; ++variant) {
+	for (int variant = 0; variant < 75; ++variant) {
 		auto block = nlohmann::json::parse(encoded.begin() + 16, encoded.end());
 		auto &rows = block["projectiles"];
 		if (variant == 0) rows[0][0] = MAX_OBJECTS;
@@ -571,6 +650,30 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 		if (variant == 53) block["sim_rng_calls"] = UINT64_MAX;
 		if (variant == 54) block["sim_rng_calls"] = 0.5;
 		if (variant == 55) block["sim_rng_calls"] = nlohmann::json::boolean_t(true);
+		if (variant == 56) block.erase("births");
+		if (variant == 57) block["births"]["unknown"] = 0;
+		if (variant == 58) block["births"]["version"] = 2;
+		if (variant == 59) block["births"]["objects"].erase(block["births"]["objects"].begin());
+		if (variant == 60) block["births"]["objects"][1] = block["births"]["objects"][0];
+		if (variant == 61) block["births"]["objects"][0][0] = MAX_OBJECTS;
+		if (variant == 62) block["births"]["objects"][0][1] = INT32_MAX;
+		if (variant == 63) block["births"]["objects"][0][2] = GameTime64 + 1;
+		if (variant == 64) block["births"]["objects"][0][2] = -1;
+		if (variant == 65) block["births"]["objects"][0][3] = UINT64_MAX;
+		if (variant == 66) {
+			block["births"]["objects"][0][3] = block["births"]["objects"][1][3] = 1;
+		}
+		if (variant == 67) block["births"]["objects"][0][3] = nlohmann::json::boolean_t(false);
+		if (variant == 68) block["births"]["next"] = -1;
+		if (variant == 69) block["births"]["next"] = UINT64_MAX;
+		if (variant == 70) block["births"]["next"] = 1.5;
+		if (variant == 71) block["births"]["objects"][0][0] = 0.5;
+		if (variant == 72) block["births"]["objects"].push_back(block["births"]["objects"][0]);
+		if (variant == 73) {
+			block["births"]["objects"][0][2] = 1;
+			block["births"]["objects"][0][3] = 0;
+		}
+		if (variant == 74) block["births"]["version"] = nlohmann::json::boolean_t(true);
 		const auto text = block.dump();
 		xl_compat::Bytes bad(encoded.begin(), encoded.begin() + 16);
 		bad.insert(bad.end(), text.begin(), text.end());
@@ -582,9 +685,15 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 		}
 		write_bytes((user / "projectile-bad.bin").string().c_str(), bad);
 		file = PHYSFS_openRead("projectile-bad.bin");
-		const bool rejected = file && !xl_wall_trigger_read(file) && PHYSFS_close(file) && projectile_same(before, projectile_capture());
-		if (!rejected) std::cerr << "Malformed projectile variant=" << variant << "\n";
+		const bool opened = file != nullptr;
+		const bool accepted = file && xl_wall_trigger_read(file);
+		const bool closed = file && PHYSFS_close(file);
+		const bool unchanged = projectile_same(before, projectile_capture());
+		const bool rejected = opened && !accepted && closed && unchanged;
+		if (!rejected) std::cerr << "Malformed projectile variant=" << variant << " opened=" << opened
+			                     << " accepted=" << accepted << " closed=" << closed << " unchanged=" << unchanged << '\n';
 		require(rejected, "Malformed projectile trailer was accepted or changed live history");
+		require(xl_object_birth_snapshot() == births_before, "Malformed trailer published object birth state");
 		require(xl_camera_flash_snapshot() == flash_before, "Malformed trailer published flash state");
 		require(FrameTime == frame_before && d_rand_get_call_count() == calls_before, "Malformed trailer published frame time or SIM count");
 		require(xl_camera_motion_snapshot() == motion_before && xl_input_demo_cached_clock() == clock_before,
@@ -601,7 +710,7 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 	xl_projectile_clear();
 	file = PHYSFS_openRead("projectile-state.bin");
 	require(file && xl_wall_trigger_read(file) && PHYSFS_close(file) && projectile_same(before, projectile_capture()), "Valid projectile trailer did not recover");
-	std::cout << "Fifty-six malformed projectile/camera hit/flash/clock trailers rejected before table publication; valid recovery passed\n";
+	std::cout << "Seventy-five malformed projectile/birth/camera hit/flash/clock trailers rejected before table publication; valid recovery passed\n";
 }
 
 static nlohmann::json camera_hit_continuation_snapshot()
@@ -610,7 +719,7 @@ static nlohmann::json camera_hit_continuation_snapshot()
 	require(d_rand_get_state(&sim_state), "Cannot capture SIM state for cold continuation");
 	auto hits = nlohmann::json::array();
 	for (const auto &hit : xl_camera_hit_snapshot()) hits.push_back({ hit.owner, hit.signature, hit.type, hit.elapsed });
-	return { { "motion", xl_camera_motion_snapshot() }, { "cached_clock", xl_input_demo_cached_clock() }, { "hits", hits }, { "flash", xl_camera_flash_snapshot() }, { "children", camera_children_capture() }, { "frame_time", FrameTime }, { "sim_rng_calls", d_rand_get_call_count() }, { "sim_rng_state", sim_state } };
+	return { { "births", xl_object_birth_snapshot() }, { "motion", xl_camera_motion_snapshot() }, { "cached_clock", xl_input_demo_cached_clock() }, { "hits", hits }, { "flash", xl_camera_flash_snapshot() }, { "children", camera_children_capture() }, { "frame_time", FrameTime }, { "sim_rng_calls", d_rand_get_call_count() }, { "sim_rng_state", sim_state } };
 }
 static void camera_hit_disk_controls(const std::filesystem::path &root)
 {
@@ -657,7 +766,6 @@ static void camera_hit_disk_controls(const std::filesystem::path &root)
 	require(xl_camera_controller_ticks() == unsigned(saved_ticks), "Camera disk restore lost its cached frame clock");
 	require(xl_camera_flash_snapshot() == saved_flash, "Full disk restore lost impact-earned flash delay/color");
 	require(camera_children_capture() == saved_children, "Full disk restore lost smart child ownership, target or motion");
-	for (const auto &child : saved_children) require(!xl_object_birth_order(child[0]), "Restored smart child retained omitted source creation order");
 	xl_compat::CameraHitState restored;
 	require(xl_camera_hit_state_get(owner, restored) && restored.repaired == int64_t(saved_ticks) - elapsed &&
 	            !restored.next && !restored.shield_time && !restored.critical_time &&
@@ -704,6 +812,19 @@ static int projectile_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir"));
+		const auto mode = std::string(find_arg_value(argc, argv, "-projectile-test"));
+		if (mode == "birth" || mode == "birth-resume" || mode == "birth-atomic") {
+			std::strcpy(Players[Player_num].callsign, "XLTest");
+			input_demo_set_skip_level_intro(1);
+			if (mode != "birth-resume") {
+				require(load_base_mission("neptunxl", error, sizeof(error)), error);
+				StartNewGame(1);
+				Game_suspended = SUSP_ROBOTS;
+			}
+			if (mode == "birth-atomic") projectile_invalid_disk_restore(root);
+			else projectile_birth_continuation(root, mode == "birth-resume");
+			return 0;
+		}
 		if (!std::strcmp(find_arg_value(argc, argv, "-projectile-test"), "resume")) {
 			std::strcpy(Players[Player_num].callsign, "XLTest");
 			input_demo_set_skip_level_intro(1);
@@ -830,6 +951,7 @@ static int projectile_test(int argc, char **argv)
 		do_explosion_sequence(saved_effect);
 		const auto effect_position = saved_effect->pos;
 		const auto saved = projectile_capture();
+		const auto saved_births = xl_object_birth_snapshot();
 		char save[] = "projectiles.sav", description[] = "XL projectile history";
 		stop_time();
 		require(state_save_all_sub(save, description), "Cannot save earned projectile histories");
@@ -842,7 +964,8 @@ static int projectile_test(int argc, char **argv)
 		require(state_restore_all_sub(save, 0) && projectile_same(saved, projectile_capture()), "Disk through stock lost full projectile histories");
 		require(Objects[evicted].control_type == CT_NONE && Objects[evicted].movement_type == MT_NONE,
 		        "Full save through stock reactivated a static robot");
-		require(xl_object_birth_time(first) == 0 && xl_object_birth_time(retained) == 0, "Disk restore did not reset private creation times like source level reload");
+		require(xl_object_birth_snapshot() == saved_births && xl_object_birth_time(first) == 7 * F1_0 && xl_object_birth_time(retained) == 7 * F1_0,
+		        "Forward disk restore lost earned object birth time or append order");
 		auto *saved_viewer = Viewer;
 		auto restore_viewer = *ConsoleObject;
 		restore_viewer.pos.x += 10 * F1_0;
@@ -851,7 +974,7 @@ static int projectile_test(int argc, char **argv)
 		Viewer = saved_viewer;
 		require(Objects[effect_slot].type == OBJ_FIREBALL && !std::memcmp(&effect_position, &Objects[effect_slot].pos, sizeof(effect_position)),
 		        "Restored explosion inherited unsaved source motion state");
-		std::cout << "XL object birth and explosion motion disk reset passed\n";
+		std::cout << "XL forward object birth preservation and source explosion motion reset passed\n";
 		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		const auto shields = Objects[retained].shields;
 		collide_robot_and_weapon(&Objects[retained], &Objects[first], &Objects[retained].pos);

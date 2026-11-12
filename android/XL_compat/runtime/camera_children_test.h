@@ -4,7 +4,6 @@ static void camera_children_native_controls(object &camera, bool custom = false)
 {
 	const auto saved_player = *ConsoleObject;
 	const auto saved_pilot = Players[Player_num];
-	const auto saved_time = GameTime64;
 	std::vector<std::pair<int, int>> hidden;
 	for (int i = 0; i <= Highest_object_index; ++i)
 		if (Objects[i].type != OBJ_NONE && &Objects[i] != ConsoleObject && &Objects[i] != &camera) {
@@ -125,7 +124,7 @@ static void camera_children_native_controls(object &camera, bool custom = false)
 	for (const auto &entry : hidden) Objects[entry.first].type = entry.second;
 	*ConsoleObject = saved_player;
 	Players[Player_num] = saved_pilot;
-	GameTime64 = saved_time;
+	// Retained children and impact effects must remain in their creation clock domain
 	require(repeats > 0 && damaged > 0, "Native smart child controls missed repeated targets or damage");
 	std::cout << "Native camera smart children: " << cases << " profiles, " << births << " births, " << repeats << " repeated targets, " << damaged << " damaging child contacts passed\n";
 	for (int id : { PROXIMITY_ID, SMART_ID, MEGA_ID, SUPERPROX_ID, EARTHSHAKER_ID, PLAYER_SMART_HOMING_ID, SMART_MINE_HOMING_ID, EARTHSHAKER_MEGA_ID })

@@ -521,10 +521,22 @@ sample, including the checkpoint origin before frame zero; they never sample a
 timer, advance a consumer or update the save clock cache. The detailed trace
 retains time factors/directions/threshold ages, pending controls, weapon markers,
 pickup ages, camera-controller state and pending wall-trigger/cooldown state.
-Save schema 40 retains cooldown activation and its age clamped at the source's
+Save schema 41 retains cooldown activation and its age clamped at the source's
 750 ms threshold. Loading rebases that age onto the restored cached clock or
 admitted replay origin. The unqualified format-6 drafts lacking `cached_ms`
 reject; they are diagnostic evidence, not a released compatibility contract.
+Schema 41 also preserves runtime object birth time and append order, including
+the next creation counter after deleted objects. These values control newborn
+robot damage protection and the order of smart-weapon/radial target selection.
+The pinned XL save omits them; the forward Redux continuation contract deliberately
+preserves them so loading an earned save does not change identical future play.
+Authored objects retain zero birth time/order. Every live slot/signature must
+appear exactly once, in slot order; nonzero creation orders must be unique and
+bounded by the saved counter, and birth times cannot exceed the saved game epoch.
+The complete birth table validates before that table is published. Earlier
+development XL schema-40 saves reject explicitly; stock saves and classic demos
+keep their existing layouts. This table guarantee alone does not establish
+atomicity of the surrounding native whole-save loader.
 Timed level messages also consume this cached clock, matching the pinned
 `ShowGameMessage` use of `nSDLTicks[0]`. Message age, text and opacity no longer
 read host wall time. Save/trace readers derive effective age and expiry directly
@@ -555,7 +567,7 @@ The schema also persists both signed texture coordinates at all four corners of
 every segment face. Scrolling UVs feed hit-point transparency as well as drawing;
 restoring only texture IDs changes collision. All rows and coordinates validate
 before any UV is applied. The bounded trailer allowance adds the maximum encoded
-UV array to the prior 8 MiB owner allowance. Older development XL saves lack this
+UV array and bounded birth rows to the prior 8 MiB owner allowance. Older development XL saves lack this
 state and reject; stock save layouts remain unchanged.
 Camera scan angle, direction, per-owner brake time and the cached frame boundary
 are saved separately from attachment identity. All monitor rows validate before

@@ -10,5 +10,8 @@ int64_t xl_object_birth_time(int owner);
 uint64_t xl_object_birth_order(int owner);
 #ifdef __cplusplus
 }
+#include <nlohmann/json_fwd.hpp>
+nlohmann::json xl_object_birth_snapshot();
+bool xl_object_birth_restore(const nlohmann::json &saved, bool apply);
 #endif
 #endif

@@ -21,6 +21,7 @@
 #include "fluids.h"
 #include "repair.h"
 #include "projectile.h"
+#include "object_birth.h"
 #include "changing_light.h"
 #include "flicker.h"
 #include "level_messages.h"
@@ -64,7 +65,8 @@ using nlohmann::json;
 constexpr char tag[8] = { 'D', 'X', 'X', 'L', 'T', 'R', '0', '1' };
 // Existing events/lifecycle bound plus 48 signed UV coordinates per segment
 // Each int32 needs at most 11 characters and a comma, plus row/field delimiters
-constexpr std::uint32_t maximum = 8 * 1024 * 1024 + MAX_SEGMENTS * (48 * 12 + 3) + 64;
+// Birth rows bound slot/signature, int64 time and uint64 order with delimiters
+constexpr std::uint32_t maximum = 8 * 1024 * 1024 + MAX_SEGMENTS * (48 * 12 + 3) + MAX_OBJECTS * 72 + 64;
 void require(bool result, const char *message)
 {
 	if (!result) throw std::runtime_error(message);
@@ -136,7 +138,9 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 40;
+		block["schema"] = 41;
+		block["births"] = xl_object_birth_snapshot();
+		require(xl_object_birth_restore(block["births"], false), "Cannot capture XL object birth identity, time or order");
 		require(FrameTime >= 0, "Cannot capture negative XL frame time");
 		block["frame_time"] = FrameTime;
 		block["sim_rng_calls"] = d_rand_get_call_count();
@@ -266,9 +270,10 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 31u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 40 &&
+		require(saved.is_object() && saved.size() == 32u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 41 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
+		require(xl_object_birth_restore(saved.at("births"), false), "Invalid XL object birth identity, time or order");
 		const auto &frame_time = saved.at("frame_time"), &sim_rng_calls = saved.at("sim_rng_calls");
 		require(frame_time.is_number_integer() && (!frame_time.is_number_unsigned() || frame_time.get<uint64_t>() <= INT32_MAX) && frame_time.get<int64_t>() >= 0 && frame_time.get<int64_t>() <= INT32_MAX, "Invalid XL frame time");
 		require(sim_rng_calls.is_number_integer() && (!sim_rng_calls.is_number_unsigned() || sim_rng_calls.get<uint64_t>() <= UINT32_MAX) && sim_rng_calls.get<int64_t>() >= 0 && sim_rng_calls.get<int64_t>() <= UINT32_MAX, "Invalid XL SIM call count");
@@ -496,6 +501,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 					uvl.v = texture_uv[segment][field++];
 				}
 		}
+		xl_object_birth_restore(saved.at("births"), true);
 		xl_runtime::restore_weapon_clock(saved.at("weapon_clock"), true);
 		xl_input_demo_restore_cached_clock(cached_clock.get<uint32_t>());
 		Do_appearance_effect = saved.at("appearance_pending").get<bool>();

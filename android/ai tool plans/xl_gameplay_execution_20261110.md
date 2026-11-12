@@ -2688,6 +2688,226 @@ G1 public door-observer repair checkpoint, November 11 at 22:00 PST:
   exact-head validation again. G1 remains open; G2 audit only, no child branch.
   Work21:54-22:00 PST; remaining G1 approximately1-2h, G2-G7 approximately17.5h.
 
+G1 validation checkpoint, November 11 at 22:41 PST:
+
+- Current published head0a2df4aebc4e87be3d1ae802f05c2fce64b55072 remains on
+  layer02/PR467, immediate parent465, server stack466. No source changes in this
+  checkpoint. Independent review remains untracked; existing stashes preserved.
+- Literal-head engine43165269464 passes D1/D2 and ASan. XL43165276558 passes
+  public contracts and both developer builds; tooling43165280117 passes both
+  hosts. Public-save43165272925 build/save job131005721865 now passes, including
+  the immutable door screenshots. Native131013301146 and headed131013301158
+  downstream replay jobs are executing; no aggregate replay conclusion yet.
+- Trusted private43165315754 passes the complete canonical owner at current0a2:
+  113 required tests,16 format witnesses,3 modern source levels,4 fixed navigation
+  anchors in4858ms; owner927.189s. Check-results and exact-head publisher both
+  pass. Sanitized receipt: temp/pr464-ci-fixes-20261110/g1-private-0a2-ci/results.json.
+  Earlierf93 run43164491258 also passed its complete owner; its publisher rejected
+  the superseded head. Keep that provenance rejection separate from test results.
+- Local canonical native cohort passes113/113, zero CTest skips,279.07s. Its
+  invocation then failed on a previously existing navigation output directory.
+  Preserving that evidence, resumed unchanged canonical functions in a fresh
+  directory:16 formats,3 source levels,4 anchors22.927s, asset re-verification and
+  strict summary validator pass. Composite receipt/provenance are under
+  g1-private-postchecks-0a2-final; this is not an exit-zero claim for the original
+  invocation. Canonical freshly rebuilt developer executable SHA256
+  8dae8f10efdd67ef555a290d9c945d9fba65c45f9ebb6416b866ec908b0ebadf;
+  normal headless metadata3fce8feef542f0f2970a1cd6d8e678ec78733a2d152a6475abd442040e231a4d,
+  route8a28c2cc1164220cc0e913ced3d54b5e4638afd887373c70d054d87f8f46029c.
+  Build source is9c81 plus the private fixes committed asf93; later0a2 changes
+  only the public capture fixture/ledger. Full receipts retain this distinction.
+- Standard private camera_subchecks explicitly not_run_missing_addon; rendered
+  full-resource Warp actor checks are outside this owner. Supplemental current
+  developer projectile CMake owner with pinned addon df69c62a and Vertigo
+  faa67189 passes all camera subchecks, fresh-process continuation and source
+  comparisons under unchanged150s outer limit. Source comparisons:history1650,
+  controller10800,motion2160,rotation32448,each model hitbox7560. Evidence prefix
+  g1-camera-supplement-0a2; genuine inputs remain byte-identical.
+- Broader sample43165276576 host/JVM pass. JVM1322 executed,12 skips:8 optional
+  private-content inputs and4 owned live-service/auth prerequisites. Host extractor
+  retains sow_real_media_tests skip and hfs/sti2/stuffit real-media exclusions.
+  Android reviewed test selection, final job and aggregate result check pass
+  (confirmed22:44 PST). This sample does not certify authentic XL
+  Android gameplay. Receipts/plan/reports use g1-sample-0a2- prefixes.
+  Final summary confirms11 selected owners PASS and none selected without a
+  pass; only2 owners provide complete leaf coverage. Its outcome remains
+  incomplete with3128 catalog owners pending, not a full-catalog qualification.
+  Compact final receipts are in g1-sample-0a2-summary.
+- Frozen readiness remains4/8 with its expected red status, distinct from actual
+  rendered XL. Format6 Android/true-headless guards remain closed. G2 state/cold
+  continuation, G3 presentation independence, G5 connected play and G6 platform
+  qualification remain open. G2 read-only notes identify birth time/order loss,
+  missing native/XL semantic fields and whole-save atomicity to reproduce; no
+  G2 source implementation or child branch yet.
+- Work22:00-22:41 PST. G1 remaining estimate30-60min for replay/Android closure
+  and any failures; G2-G7 at least17.5h, with increased G2 uncertainty from the
+  full-state/atomicity audit. No cutoff. Free space35.21GiB; no cleanup deletion.
+  Next inspect the live replay and Android jobs, fix deterministic failures, then
+  accept G1, create layer03 from its unchanged published parent and reproduce the
+  object-birth cold-continuation gap in the existing projectile owner.
+
+G2 preparatory reproduction, November 11 at 22:55 PST:
+
+- G1 hosted native replay job131013301146 now passes; headed job131013301158
+  remains live in43165272925. Published parent0a2 is unchanged; no layer03 branch
+  or production persistence change yet. This is preparatory regression evidence
+  while the final G1 job runs, not G2 acceptance or whole-stack readiness.
+- Extended existing projectile_test.h with unpublished opt-in birth/birth-resume
+  modes. Derived setup creates one native robot/weapon, saves at age0.5s, then
+  compares the same real collide_robot_and_weapon call at age0.75s uninterrupted,
+  after same-process disk restore, and after a fresh process loads that save.
+  Default canonical owner behavior and membership are unchanged by these modes.
+- Both disk paths reproduce the material defect: uninterrupted victim100 shields
+  and projectile15; restored victim60 and projectile25. Hit history remains true;
+  SIM state3554416254 and call count2 agree. Thus this is not merely a missing
+  diagnostic counter. Save SHA256
+  4fb3448e28ec7e8c77f28913e90260381a8eb5935c4acbc2efccad52fd8dc644.
+  Evidence: temp/pr464-ci-fixes-20261110/g2-birth-repro/{birth-future,birth-restored,
+  birth-cold}.json and g2-birth-{repro,cold-repro}.log. Both commands exit1 as
+  expected for the unfixed defect; failed evidence is retained.
+- Root-bound Linux developer target rebuilt successfully with the opt-in test
+  patch over0a2; normal games and published CI binaries unchanged. Existing GCC
+  string-literal warnings remain. No authentic input or expected fixture edited.
+  Developer EXE SHA256b8a9e4e25ca0c76c87926561970582077b245e861da7e8d21083031eb4110d49.
+  Scoped mixed-language quality and diff whitespace checks pass. Formatter-only
+  line wrapping followed execution; retained test patch SHA256
+  4e84c15f8247df8beacfa0aac92ec099bfae29395006d4e066abf3580559dd7c,
+  g2-birth-repro-working.patch. No current canonical executable identity claim.
+  Next: finish G1 hosted headed result, create layer03 once G1 closes, preserve
+  born time/order through the shared save owner, extend invalid/slot reuse/order
+  controls and integrate these cold-process checks into the existing owner.
+
+G1 native replay receipt, November 11 at 22:58 PST:
+
+- Literal0a2 native replay job131013301146 passes34/34 runs across17 scenarios;
+  every run has exit0, status pass and fidelity pass. Wrong-oracle/bad-input
+  controls reject with exit1, and no-collect control passes its authored-loot
+  scope. Report qualification remains incomplete and paired imported-D1 parity
+  explicitly not_run; that requires the separate headed job131013301158, still
+  live. No native/XL headless equivalence claim follows from stock-only results.
+- Compact reports: temp/pr464-ci-fixes-20261110/g1-public-replay-0a2-headless.
+  Large725MB raw artifact was not downloaded. Published parent remains0a2;
+  current unpublished diff is the preparatory projectile regression and ledger.
+
+G1 acceptance and G2 entry, November 11 at 23:04 PST:
+
+- G1 ACCEPTED for the bounded normal Windows/Linux OpenGL Omega/time timeline
+  profile at published0a2df4aebc4e87be3d1ae802f05c2fce64b55072, tree
+  16f41c900c030b49c62a3dd410e9dc9df3410ea9, PR467. All required current-commit
+  dispatched series now pass:engine/ASan43165269464,XL43165276558,
+  tooling43165280117,public save/replay43165272925 and trusted private43165315754.
+  Broader sample43165276576 and public LAN also pass. No merge performed.
+- Final hosted headed131013301158 passes34/34 native runs and required imported
+  D1 flight gameplay/SIM scope. Four imported scenarios remain unqualified,
+  three exclusions and raw paired exit1 remain visible, detailed diagnostic/
+  object/world parity incomplete. All three real-engine negative controls pass.
+  Thus existing retained scope passes; no whole-simulation/imported parity claim.
+  Compact reports:g1-public-replay-0a2-headed;853MB raw artifact not downloaded.
+- Fork refresh confirms origin/02 equals0a2 and cmake remainsb3bb12cb. PR464
+  remains open at e87f4bfa; server stack466 still464/465/467, tip position3/3.
+  Three original stashes and independent review preserved. G1 final acceptance
+  ledger is carried into the next coherent layer without changing the already
+  tested parent commit or rerunning CI for a documentation-only parent push.
+- Created xl_gameplay_20261111_03_continuation from refreshed origin/02 at0a2,
+  carrying the unpublished preparatory test and ledger. No layer03 commit, push
+  or PR yet. G2 remains OPEN; no production state fix has been applied.
+- Second G2 regression now reproduced in an isolated fresh process: corrupt
+  only the checksum of the derived newborn save. Native restore returns false
+  with Corrupt XL trigger state payload, but player energy changes91 to saved100
+  before rejection. Receipt g2-birth-repro/birth-invalid-restore.json and log
+  g2-atomic-repro.log. This confirms whole-save atomicity is weaker than existing
+  trailer-only tests. Opt-in birth-atomic mode retains that failed evidence;
+  default canonical owner/membership still unchanged. No authentic input edited.
+- G1 work exceeded its estimate because real live/cold/CI integration failures
+  required repair. Actual checkpoint23:04 PST; G2 estimate revised to4-6h for
+  complete observation, forward persistence and atomic cold continuation, with
+  G3-G7 approximately14.5h afterward. No cutoff or scope reduction. G0/G1
+  accepted; G2-G7 open. Normal Android/true-headless format6 guards stay closed;
+  frozen readiness remains4/8. Next finish the shared birth snapshot/validation/
+  restore contract and its cold/order/reuse controls, then the remaining state
+  map and whole-save rejection behavior through existing save/rewind owners.
+
+G2 birth-state implementation checkpoint, November 11 at 23:24 PST:
+
+- Added shared read-only birth snapshot and validated restore in object_birth.*;
+  schema41 in trigger_save.cpp preserves every live slot/signature, creation time,
+  append order and next counter. Bound rows/fields, exact live membership, unique
+  nonzero orders, nonnegative times no later than GameTime64, and counter overflow
+  reject before birth-table publication. Expanded storage stays on the heap.
+  Authored objects retain zero births; deleted rows have no future effect and the
+  counter still preserves their consumed append positions. No source-order/RNG
+  compensation or old-development-save compatibility reader was introduced.
+- The original derived damage regression now passes both same-process disk and
+  fresh-process load. Extended it to compare new allocations, deleted/reused slots
+  and monotonic next orders. Integrated both modes into the existing projectile
+  CMake owner. Added19 malformed birth cases, preserving all56 prior cases, with
+  explicit unchanged birth-table checks. Camera cold snapshots now include births.
+  Historical source hit-state/reset controls remain; forward birth semantics are
+  documented explicitly in regression_demos/README.md as a deliberate extension.
+- Full Linux projectile owner with authentic pinned addon/Vertigo and all existing
+  source references passes under unchanged150s outer deadline. Camera subchecks
+  executed;75 malformed cases, valid recovery, native/stock collision controls,
+  full camera save-through-stock/cold process, and newborn warm/cold continuation
+  all pass. Evidence:g2-projectile-contract-fixed and its log. Linux developer EXE
+  SHA256e6d25309bd6b486e4b2ab6e2c3830a3a44a36a115aa2120033bc6bc42ec305e7.
+- Initial expanded owner rejected the camera fixture because its smart-child
+  helper retained actors/effects created at later times, then rewound GameTime64.
+  Removed that fixture clock rewind so retained runtime actors stay in their
+  creation domain; validation was not weakened. Failed evidence remains in
+  g2-projectile-contract. A temporary all-row diagnostic exceeded con_printf's
+  buffer and aborted the diagnostic attempt; it identified the future rows and
+  was removed. That failed attempt remains g2-projectile-diagnostic, never a pass.
+- Windows developer cache verified CMAKE_HOME_DIRECTORY=C:/local/dxx-redux/d2,
+  x86 MSVC14.44, developer ON, strict FP ON. First invocation incorrectly used
+  output name xl-preview-lifecycle; current CMake requires target
+  dxx-redux-d2-headless-metadata. Corrected build is live, log
+  g2-birth-windows-metadata-build.log. Never ran its stale November4 executable.
+- Source remains uncommitted on layer03; no push/PR yet. Earlier scoped quality
+  passed; final quality after the fixture/validation edits still required.
+  Whole-save malformed-trailer atomicity remains reproduced and unfixed, as do
+  the remaining complete-state observation/cold-continuation gates. Next finish
+  Windows build and existing-owner runtime validation, then continue G2 state
+  completeness and whole-save rejection using existing owners. No G2 acceptance.
+
+G2 birth-state validation checkpoint, November 11 at 23:38 PST:
+
+- Final shared projectile owner passes on Windows x86 and Linux with authentic
+  addon/Vertigo, all camera/source comparisons,75 malformed cases, valid recovery,
+  save-through-stock/cold camera state, and newborn uninterrupted/warm/cold future
+  collisions including new allocation and deleted/reused slots. Windows19.647s;
+  Linux completed under enforced150s outer limit. No required test or deadline
+  removed. Logs/directories:g2-projectile-final-{windows,linux}.
+- Newborn observations match across hosts:birth_time131072,birth_order1,
+  GameTime180224,victim100 shields,projectile15,hit historytrue,transient order4,
+  replacement order5,SIM3554416254,calls2. This compares actual native collision
+  results, not a replacement expected fixture or replay-only repair.
+- Windows first failed new case67 because legacy loadgl.h defines false as0:
+  the fixture emitted valid integer0 instead of a JSON boolean. A subsequent
+  test assertion likewise compared JSON true with macro-expanded integer1.
+  Corrected the new cases to explicit json::boolean_t and get<bool>, preserving
+  validation. Both failures retained under g2-projectile-windows[-fixed]; final
+  runs above pass. Error reporting now distinguishes opened/accepted/closed/
+  unchanged and always closes an unexpectedly accepted malformed file.
+- Final developer EXE hashes:Windows
+  c3aba7447a1e4c254dcd074f2ab329c4ea8406cf61ff1a32447e1a4f01913909;
+  Linux3b8d7abc4204bb33af00f57af0da068d1c889ad1e28e41fa2e96a96257c2ad68.
+  Both built0a2 plus this working source patch, with strict FP and developer
+  probes. These are developer validation binaries, not new normal-game packages.
+- Scoped mixed-language final quality and whitespace pass. Automation catalog
+  passes99 JSON/315 PowerShell/547 support; runner catalog passes428 top-level/
+  547 support. Logs:g2-birth-final-quality,g2-birth-catalog,g2-birth-master-catalog.
+  Existing compiler warnings unchanged; no new warning identified.
+- Repeated whole-save atomicity probe on fresh schema41 save still fails as
+  expected:restorefalse,live energy91 replaced by saved100. Evidence
+  g2-atomic-after-birth.log and g2-projectile-final-linux/birth-invalid-restore.json.
+  This is an explicit remaining G2 defect, not a passing rejection control.
+- Commit this coherent birth preservation change locally on layer03; do not
+  publish/accept G2 yet. Whole-save atomic restore and complete semantic/native/XL
+  observation/continuation remain open. Continue through the existing save/rewind
+  owners; Android's state_save_to_memory/state_restore_from_memory and file
+  adapter are existing reuse anchors, not permission to enable Android-specific
+  policy on desktop. G3-G7 remain open. No merge or private asset publication.
+
 Per-item handoff template:
 
     Item and status:
