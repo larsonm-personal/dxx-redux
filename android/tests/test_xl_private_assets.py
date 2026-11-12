@@ -80,6 +80,50 @@ class RenderedReadinessTests(unittest.TestCase):
 
 
 class XlPrivateTests(unittest.TestCase):
+    def test_omega_recording_requires_damage_recharge_and_no_mid_capture_assists(self):
+        proof = dict(
+            schema="xl-omega-recording-v1",
+            complete=True,
+            assisted=True,
+            mission="fixture",
+            level=5,
+            frames=180,
+            warmup_frames=66,
+            position_assists=1,
+            inventory_assists=1,
+            assists_during_recording=0,
+            charge_before=65536,
+            charge_after_fire=17000,
+            charge_after_recharge=42000,
+            target=dict(
+                object=117,
+                signature=118,
+                robot_id=7,
+                shields_before=16000000,
+                shields_after_omega=6800000,
+                shields_after_fire=3400000,
+                destroyed=False,
+            ),
+        )
+        self.assertTrue(omega_damage.recording_passed(0, proof, "fixture", 5))
+        for key in proof:
+            bad = copy.deepcopy(proof)
+            del bad[key]
+            self.assertFalse(omega_damage.recording_passed(0, bad, "fixture", 5), key)
+        for key, value in dict(
+            assists_during_recording=1,
+            inventory_assists=True,
+            complete=1,
+            charge_after_fire=65536,
+            charge_after_recharge=17000,
+        ).items():
+            self.assertFalse(omega_damage.recording_passed(0, {**proof, key: value}, "fixture", 5), key)
+        bad = copy.deepcopy(proof)
+        bad["target"]["shields_after_omega"] = bad["target"]["shields_before"]
+        self.assertFalse(omega_damage.recording_passed(0, bad, "fixture", 5))
+        for code in (1, None, False):
+            self.assertFalse(omega_damage.recording_passed(code, proof, "fixture", 5))
+
     def test_omega_damage_requires_actual_complete_controls(self):
         for xl in (False, True):
             policy = {

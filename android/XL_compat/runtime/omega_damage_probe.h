@@ -4,6 +4,7 @@
 #error Omega damage controls require a developer build
 #endif
 extern "C" {
+#include "render_gameplay_view.h"
 int allowed_to_fire_laser(void);
 extern fix64 Last_omega_fire_time;
 void collide_robot_and_weapon(object *, object *, vms_vector *);
@@ -135,6 +136,123 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 	}
 	Players[Player_num].primary_weapon_flags = flags;
 	return results;
+}
+// Ordinary recording with setup assists confined to the checkpoint boundary
+static int xl_omega_recording_probe(const char *path)
+{
+	using nlohmann::ordered_json;
+	ordered_json proof = { { "schema", "xl-omega-recording-v1" }, { "assisted", bool{ true } }, { "complete", bool{ false } }, { "mission", Current_mission_filename }, { "level", Current_level_num }, { "position_assists", 0 }, { "inventory_assists", 0 }, { "assists_during_recording", 0 } };
+	try {
+		const auto require = [](bool ok, const char *message) { if (!ok) throw std::runtime_error(message); };
+		require(Game_wind && xl_level_extensions_active() && !game_is_time_paused() && !(Game_mode & GM_MULTI),
+		        "Omega recording requires an ordinary single-player XL world");
+		bool recording = false;
+		const auto frames = [&](int count, bool firing) {
+			for (int i = 0; i < count; ++i) {
+				SDL_Delay(17);
+				timer_update();
+				FrameTime = F1_0 / 60;
+				Controls = {};
+				Controls.fire_primary_state = firing;
+				do_weapon_n_item_stuff();
+				calc_game_time();
+				GameProcessFrame();
+				game_render_frame();
+				gr_flip();
+				require(glGetError() == GL_NO_ERROR && Current_level_num == proof["level"] && !Player_is_dead && (!recording || input_demo_recorder_is_active()),
+				        "Ordinary Omega capture stopped, died or changed level");
+			}
+		};
+		// Let the source one-second robot spawn protection expire through normal simulation
+		frames(66, false);
+		proof["warmup_frames"] = 66;
+		// Find an original ordinary robot with room for an unobstructed firing pose
+		int target = -1;
+		vms_vector approach{}, forward{};
+		short approach_segment = -1;
+		for (int i = 0; i <= Highest_object_index && target < 0; ++i) {
+			const auto &actor = Objects[i];
+			if (actor.type != OBJ_ROBOT || actor.shields <= 0 || actor.ctype.ai_info.CLOAKED || Robot_info[actor.id].cloak_type || Robot_info[actor.id].boss_flag ||
+			    Robot_info[actor.id].companion || Robot_info[actor.id].thief) continue;
+			vms_vector center, inward;
+			compute_segment_center(&center, &Segments[actor.segnum]);
+			vm_vec_sub(&inward, &center, &actor.pos);
+			vm_vec_normalize_quick(&inward);
+			for (auto direction : { inward, actor.orient.fvec, actor.orient.rvec, actor.orient.uvec,
+			                        vms_vector{ -actor.orient.fvec.x, -actor.orient.fvec.y, -actor.orient.fvec.z } }) {
+				if (!vm_vec_mag_quick(&direction)) continue;
+				vm_vec_scale_add(&approach, &actor.pos, &direction, 25 * F1_0);
+				auto origin = actor.pos;
+				fvi_query query{};
+				query.p0 = &origin;
+				query.p1 = &approach;
+				query.startseg = actor.segnum;
+				query.rad = ConsoleObject->size;
+				query.thisobjnum = short(ConsoleObject - Objects);
+				fvi_info hit{};
+				if (find_vector_intersection(&query, &hit) != HIT_NONE || hit.hit_seg < 0) continue;
+				target = i;
+				approach_segment = short(hit.hit_seg);
+				forward = direction;
+				vm_vec_negate(&forward);
+				break;
+			}
+		}
+		require(target >= 0, "No original robot with an unobstructed Omega approach");
+		ConsoleObject->pos = ConsoleObject->last_pos = approach;
+		ConsoleObject->mtype.phys_info.velocity = {};
+		vm_vector_2_matrix(&ConsoleObject->orient, &forward, nullptr, nullptr);
+		obj_relink(int(ConsoleObject - Objects), approach_segment);
+		// Match ordinary assisted relocation: the prior view belonged to the old pose
+		render_reset_gameplay_view_objects();
+		proof["position_assists"] = 1;
+		Players[Player_num].primary_weapon_flags |= 1 << OMEGA_INDEX;
+		Players[Player_num].primary_weapon = OMEGA_INDEX;
+		Players[Player_num].energy = Players[Player_num].shields = 200 * F1_0;
+		Omega_charge = MAX_OMEGA_CHARGE;
+		proof["inventory_assists"] = 1;
+		proof["setup"] = "Original robot and live AI; approach pose, Omega ownership/selection/full charge, energy and shields before recording";
+		const int signature = Objects[target].signature;
+		const fix shields = Objects[target].shields;
+		proof["target"] = { { "object", target }, { "signature", signature }, { "robot_id", int(Objects[target].id) }, { "shields_before", shields } };
+		Controls = {};
+		require(input_demo_start_quick_recording_common() && input_demo_recorder_uses_environment(), "Cannot start ordinary Omega recording");
+		char error[256]{};
+		const auto observation = std::string(path) + ".capture.jsonl.gz";
+		require(input_demo_state_trace_start(observation.c_str(), "record", "d2", Current_mission_filename,
+		                                     Current_level_num, Difficulty_level, "save_checkpoint", 0, error, sizeof(error)),
+		        error);
+		input_demo_trace_boundary("restored");
+		proof["charge_before"] = Omega_charge;
+
+		recording = true;
+		frames(40, true);
+		require(Players[Player_num].primary_weapon == OMEGA_INDEX && Objects[target].signature == signature && Objects[target].shields < shields,
+		        "Selected Omega did not damage the original target before autoselection");
+		proof["target"]["shields_after_omega"] = int(Objects[target].shields);
+		frames(50, true);
+		proof["charge_after_fire"] = Omega_charge;
+		const bool same_target = Objects[target].type == OBJ_ROBOT && Objects[target].signature == signature;
+		proof["target"]["shields_after_fire"] = same_target ? int(Objects[target].shields) : 0;
+		proof["target"]["destroyed"] = !same_target || (Objects[target].flags & OF_EXPLODING) != 0;
+		require(Omega_charge < proof["charge_before"].get<int>() &&
+		            (!same_target || Objects[target].shields < shields),
+		        "Ordinary Omega fire did not consume charge and damage the original target");
+		frames(90, false);
+		proof["charge_after_recharge"] = Omega_charge;
+		require(Omega_charge > proof["charge_after_fire"].get<int>(), "Ordinary Omega did not recharge after releasing fire");
+		require(input_demo_state_trace_is_active() && input_demo_stop_quick_recording_common(), "Ordinary Omega recording did not finish");
+		proof["frames"] = 180;
+		proof["complete"] = bool{ true };
+	} catch (const std::exception &e) {
+		proof["error"] = e.what();
+		input_demo_cancel_unsupported_input_capture(e.what());
+		input_demo_state_trace_stop();
+	}
+	std::ofstream output(path);
+	output << proof.dump(2) << '\n';
+	output.flush();
+	return output.good() && proof["complete"].get<bool>() ? 0 : 1;
 }
 // Assisted component controls: actual firing, blob construction and robot collision
 static int xl_omega_damage_probe(const char *path)

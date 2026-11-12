@@ -500,6 +500,10 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 #if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
 	const char *clock_probe = argument_value("-xl-render-clock-proof");
 	const char *omega_probe = argument_value("-xl-omega-damage-proof");
+	if (startup_find_cmd_arg("-xl-omega-recording") && !omega_probe) {
+		std::fprintf(stderr, "Omega recording requires the existing isolated damage-probe owner\n");
+		return 1;
+	}
 	const char *equipment_probe = argument_value("-xl-time-equipment-proof");
 	const char *hxm_actor_probe = argument_value("-xl-hxm-actor-proof");
 	const char *scene_object = argument_value("-xl-readiness-scene-object");
@@ -610,7 +614,7 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 #if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
 	if (hxm_actor_probe) return original_hxm_actor_proof(hxm_actor_probe, output);
 	if (clock_probe) return xl_render_clock_probe(clock_probe);
-	if (omega_probe) return xl_omega_damage_probe(omega_probe);
+	if (omega_probe) return startup_find_cmd_arg("-xl-omega-recording") ? xl_omega_recording_probe(omega_probe) : xl_omega_damage_probe(omega_probe);
 	if (equipment_probe) {
 		int carried_level = 0;
 		if (const char *text = argument_value("-xl-time-equipment-carried-level")) {

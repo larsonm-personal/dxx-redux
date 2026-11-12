@@ -341,6 +341,18 @@ does not yet emit it. Developer builds exercise ordinary checkpoint recording
 and playback while qualification is incomplete. This section describes the developing contract, not accepted
 Omega/time-equipment replay support. Existing format-5 stock fixtures are unchanged.
 
+The existing `android/tests/xl_omega_damage.py` owner accepts `--recording`
+for a developer-only live Omega witness. It warms the original level for 66
+ordinary frames, sets an approach pose and initial inventory before capture,
+then records 90 held-fire and 90 released-fire frames through the ordinary
+input/simulation path. The receipt requires damage while Omega is still selected,
+charge consumption and recharge. It discloses both setup assists and requires
+zero assists during recording. The original eight component/rate controls remain
+the default mode. A passing capture receipt does not qualify playback: compare
+the recorded detailed state and SIM RNG with clean-process replay before freezing
+the demo. Current Warp 5 evidence matches frame hashes and SIM RNG but still
+exposes checkpoint UV/clock state and FX-driven chatter differences.
+
 The header `environment` object contains `required: ["xl-clock-input-v1"]`,
 `slow_motion_speedup: 6`, `clock_ms`, `pickup_ms`, `cached_ms` and `render_frame`. Unknown or
 duplicate required capabilities and unsupported profiles reject. Build identity

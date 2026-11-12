@@ -1387,6 +1387,68 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   Estimate remains 6-10 hours for G1 and roughly 17.5 hours G2-G7, with high
   uncertainty and no cutoff. No closure/package/whole-stack readiness claim.
 
+### G1 Omega live-recording checkpoint, November 11 at 13:21 PST
+
+- Previous increment committed as 64b09d9fc5de9b6edff208730edb709ef214232b,
+  tree 83a4ecebb32bae72610571b8591279da47f85071. This turn made progress;
+  layer02 remains local and G1 unaccepted. No new PR or pushed SHA.
+- Extended the existing Omega damage owner with --recording, retaining its eight
+  default rate/component controls. Native dispatch remains developer-only and
+  requires the existing isolated output/user directory. After 66 ordinary warmup
+  frames, the probe chooses an original uncloaked robot, assists only the approach
+  pose and initial inventory, invalidates the old pose's gameplay-view cache,
+  then records 90 held-fire plus 90 released-fire frames. It requires damage
+  while Omega is still selected, consumed charge, recharge and zero capture-time
+  assists. Python checks the receipt and the single format-6 checkpoint demo;
+  it explicitly reports live_replay_qualified=false. README documents scope.
+- Retained capture attempts 1/2 failed: first selected a cloaked robot; second
+  fired during source one-second robot spawn protection (collide.c). A JSON bool
+  macro mistake in the first failure receipt was corrected to bool{true/false}.
+  Warmup now expires protection through actual simulation rather than injecting
+  time. Capture3 passed live, but replay1 failed first-shot RNG: pre-record pose
+  relocation retained the old gameplay-view list. Existing relocation owners
+  reset that cache; applying the same reset resolves this probe defect.
+- Capture4 passes on original Warp 5, robot117/signature118/id7. Shields fall
+  16384000 -> 6844288 while Omega remains selected, then 3419776 after held fire;
+  charge 65536 -> 17488 -> 42058. No robot kill or connected progression claim.
+  Demo d2_wshock20_level5_20261111_131446.dximdemo SHA256
+  16f8a232552ed07ced84abca75f6a2d69431f5130a57a055ea182313305c7366;
+  EXE SHA256 5bc66695b999d696129f8c867d59ada04f175abecf9fdd7b4bf152d09e9e6c6b.
+- Clean accelerated replay2 with verified assets and required clean exit passes
+  terminal comparison, all 180 frame/diagnostic comparisons and 1059 SIM events.
+  Detailed object/world comparison FAILS across 180 frames/184 records. Preserve
+  g1-omega-replay-2-comparison.json, not a frozen regression recording. Differences:
+  checkpoint FrameTime1092 vs0, SIM calls453 vs0, camera ticks12941 vs0; scrolling
+  UV offsets lost at restore and persisting thereafter; FX state/count and robot
+  next_misc_sound_time at frames98/138. AI2 consumers of that timer schedule
+  chatter via FX RNG, but audio independence is not yet qualified. No comparison
+  fields were removed. UVs are material: fvi.c find_hitpoint_uv computes them for
+  check_trans_wall, which calls xl_side_pixel_transparency for XL collision.
+  These require owner repairs/audits, not repeated playback
+  of the same known mismatch. Cache fix does not establish checkpoint completeness.
+- Windows verified D2 desktop build passes. Latest native source also builds in
+  Linux /var/tmp/dxx-pr464-20261111/private/preview (2/2). Existing Python private
+  owner plus new receipt negative controls: 46/46 pass, zero skips in 4.426 s.
+  First Python invocation lacked CMake on PATH (10 subtest errors, one skip);
+  sourcing the established MSVC/CMake environment fixed the invocation. No
+  timeout or required membership changes. Scoped quality passes; automation
+  catalog validates 99 JSON, 315 PowerShell and 547 support scripts. Run-all
+  catalog passes including its scheduling/guard controls. Logs are under
+  protected temp/pr464-ci-fixes-20261110.
+- Work approximately 13:03-13:21 PST. Authentic Warp HOG rehashed unchanged:
+  2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c.
+  Reference remains 2576a98b5de310e3ac7c9777df2677d1627b8bae. Free space about
+  4.3 GiB; preserve the 4 GiB reserve and use official cleanup before further
+  large captures if needed. No Android worker or WSL process interrupted.
+- Next: commit the coherent probe/evidence increment, then restore scrolling UV
+  state through the existing XL save owner with atomic validation and real cold
+  save tests. Audit camera controller angle/delta/t0 plus clock epoch restoration
+  and detailed boundary FrameTime/SIM counters. These G2 prerequisites are needed
+  for G1 live-vs-replay acceptance. Then qualify FX/audio independence and make a
+  fresh Omega capture for immediate/repeated/altered-pacing comparisons. G1 still
+  estimated 6-10 hours; G2-G7 roughly 17.5 hours, overlapping prerequisite work
+  to be subtracted once accepted. No cutoff or gameplay-closure claim.
+
 Per-item handoff template:
 
     Item and status:
