@@ -42,6 +42,7 @@ extern "C" {
 #include "segment.h"
 #include "object.h"
 #include "console.h"
+#include "rng_shared.h"
 extern int Do_appearance_effect;
 }
 
@@ -135,7 +136,10 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 39;
+		block["schema"] = 40;
+		require(FrameTime >= 0, "Cannot capture negative XL frame time");
+		block["frame_time"] = FrameTime;
+		block["sim_rng_calls"] = d_rand_get_call_count();
 		block["cached_clock"] = xl_input_demo_cached_clock();
 		block["camera_motion"] = xl_camera_motion_snapshot();
 		require(xl_camera_motion_restore(block["camera_motion"], false) && block["camera_motion"]["ticks"] <= block["cached_clock"], "Cannot capture XL camera motion clock");
@@ -262,9 +266,12 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 29u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 39 &&
+		require(saved.is_object() && saved.size() == 31u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 40 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
+		const auto &frame_time = saved.at("frame_time"), &sim_rng_calls = saved.at("sim_rng_calls");
+		require(frame_time.is_number_integer() && (!frame_time.is_number_unsigned() || frame_time.get<uint64_t>() <= INT32_MAX) && frame_time.get<int64_t>() >= 0 && frame_time.get<int64_t>() <= INT32_MAX, "Invalid XL frame time");
+		require(sim_rng_calls.is_number_integer() && (!sim_rng_calls.is_number_unsigned() || sim_rng_calls.get<uint64_t>() <= UINT32_MAX) && sim_rng_calls.get<int64_t>() >= 0 && sim_rng_calls.get<int64_t>() <= UINT32_MAX, "Invalid XL SIM call count");
 		const auto &cached_clock = saved.at("cached_clock");
 		require(cached_clock.is_number_integer() && (!cached_clock.is_number_unsigned() || cached_clock.get<uint64_t>() <= INT32_MAX) && cached_clock.get<int64_t>() >= 0 && cached_clock.get<int64_t>() <= INT32_MAX, "Invalid XL cached clock");
 		require(xl_camera_motion_restore(saved.at("camera_motion"), false) && saved.at("camera_motion").at("ticks") <= cached_clock, "Invalid XL camera motion clock");
@@ -522,6 +529,9 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 1);
 		if (bosses) xl_robot_generator_restore_ready(ready_mask, 1);
 		xl_boss_restore_robotmakers_commit();
+		// Continue ordinary saves in the same frame and RNG diagnostic domain
+		FrameTime = frame_time.get<int32_t>();
+		d_rand_set_call_count(sim_rng_calls.get<uint32_t>());
 		return 1;
 	} catch (const std::exception &error) {
 		xl_boss_restore_robotmakers_abort();

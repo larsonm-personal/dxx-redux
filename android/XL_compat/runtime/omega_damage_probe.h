@@ -1,5 +1,6 @@
 #ifndef XL_OMEGA_DAMAGE_PROBE_H
 #define XL_OMEGA_DAMAGE_PROBE_H
+#include <iostream>
 #ifndef DXX_XL_DEVELOPER_PROBE
 #error Omega damage controls require a developer build
 #endif
@@ -142,6 +143,13 @@ static int xl_omega_recording_probe(const char *path)
 {
 	using nlohmann::ordered_json;
 	ordered_json proof = { { "schema", "xl-omega-recording-v1" }, { "assisted", bool{ true } }, { "complete", bool{ false } }, { "mission", Current_mission_filename }, { "level", Current_level_num }, { "position_assists", 0 }, { "inventory_assists", 0 }, { "assists_during_recording", 0 } };
+	const auto started = SDL_GetTicks();
+	const auto mark = [&](const char *stage) {
+		const auto elapsed = SDL_GetTicks() - started;
+		proof["timing_ms"][stage] = elapsed;
+		std::cout << "Omega recording timing: " << stage << '=' << elapsed << " ms\n"
+		          << std::flush;
+	};
 	try {
 		const auto require = [](bool ok, const char *message) { if (!ok) throw std::runtime_error(message); };
 		require(Game_wind && xl_level_extensions_active() && !game_is_time_paused() && !(Game_mode & GM_MULTI),
@@ -165,6 +173,7 @@ static int xl_omega_recording_probe(const char *path)
 		};
 		// Let the source one-second robot spawn protection expire through normal simulation
 		frames(66, false);
+		mark("warmup_finished");
 		proof["warmup_frames"] = 66;
 		// Find an original ordinary robot with room for an unobstructed firing pose
 		int target = -1;
@@ -216,6 +225,7 @@ static int xl_omega_recording_probe(const char *path)
 		const fix shields = Objects[target].shields;
 		proof["target"] = { { "object", target }, { "signature", signature }, { "robot_id", int(Objects[target].id) }, { "shields_before", shields } };
 		Controls = {};
+		mark("setup_finished");
 		require(input_demo_start_quick_recording_common() && input_demo_recorder_uses_environment(), "Cannot start ordinary Omega recording");
 		char error[256]{};
 		const auto observation = std::string(path) + ".capture.jsonl.gz";
@@ -224,6 +234,7 @@ static int xl_omega_recording_probe(const char *path)
 		        error);
 		input_demo_trace_boundary("restored");
 		proof["charge_before"] = Omega_charge;
+		mark("recording_started");
 
 		recording = true;
 		frames(40, true);
@@ -241,7 +252,9 @@ static int xl_omega_recording_probe(const char *path)
 		frames(90, false);
 		proof["charge_after_recharge"] = Omega_charge;
 		require(Omega_charge > proof["charge_after_fire"].get<int>(), "Ordinary Omega did not recharge after releasing fire");
+		mark("frames_finished");
 		require(input_demo_state_trace_is_active() && input_demo_stop_quick_recording_common(), "Ordinary Omega recording did not finish");
+		mark("recording_finalized");
 		proof["frames"] = 180;
 		proof["complete"] = bool{ true };
 	} catch (const std::exception &e) {

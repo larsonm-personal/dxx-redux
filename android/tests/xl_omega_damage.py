@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import time
 from xl_render_clock import REVISION, verify_reference
 
 
@@ -153,6 +154,7 @@ def main():
     ]
     if args.recording:
         command.append("-xl-omega-recording")
+    started = time.monotonic()
     with (work / "engine.log").open("wb") as log:
         try:
             code = subprocess.run(
@@ -160,6 +162,7 @@ def main():
             ).returncode
         except subprocess.TimeoutExpired:
             code = None
+    elapsed = time.monotonic() - started
     proof = json.loads(proof_path.read_text()) if proof_path.exists() else {}
     if args.recording:
         recordings = list((work / "user").rglob("*.dximdemo"))
@@ -178,6 +181,7 @@ def main():
     result = {
         "passed": success,
         "exit_code": code,
+        "elapsed_seconds": round(elapsed, 3),
         "proof": proof,
         "reference_revision": REVISION,
         "reference_hashes": pins,

@@ -1619,6 +1619,90 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   Also investigate capture deadline cost before attempting qualification; do
   not extend deadlines, hide state differences or bless the failed capture.
 
+### 2026-11-11 14:43 PST - G1 checkpoint frame/RNG origins and capture timing
+
+- Previous goal turn made progress: camera continuation committed as
+  4d4237147700304bd3a702949fa30698dadfbc01, tree304940e47e027d3f41eb9ea2dc3ff64b67ed07bf.
+  This turn continues local layer02, G1 active/unaccepted. No new PR/push or
+  exact-tip CI claim. Intended commit: "Preserve XL frame time and SIM counter on
+  restore"; resulting identity is reported in the handoff. G0 PR465 remains the
+  accepted baseline; all G2-G7 closure requirements remain in scope.
+- Ordinary XL save schema40 adds FrameTime and the SIM call counter. The stock
+  runtime already saves the SIM seed but resets its counter during restore;
+  FrameTime was omitted. XL now validates both fields before publishing any
+  trailer state and restores them after the other owners. FrameTime must be a
+  nonnegative signed32 value, the counter an unsigned32 value; missing, boolean,
+  float, negative and overflow values reject. This preserves normal disk saves,
+  with no replay-only branch and no changes to stock save layouts. The counter
+  affects diagnostic/ordered-input validation, not the chosen random values;
+  FrameTime is also the fallback in the native time calculation.
+- Existing native projectile/camera corruption controls now cover56 cases,
+  including12 new field corruptions, and assert no mutation of frame/count state.
+  Expanded warm/cold receipts compare frame time, SIM seed/count and all prior
+  camera fields. The first stronger test correctly failed because its fixture
+  had reset FrameTime to zero after its physics controls. The fixture now uses
+  reset_time/calc_frame_time to earn a real positive duration before saving;
+  the failed run log is retained as g1-checkpoint-native-windows-fixture-failure.log.
+- Windows and Linux developer desktop/metadata builds pass after correcting
+  diagnostic compile mistakes (iostream include and RNG output-parameter API).
+  Only the previously recorded MSVC int/bool and GCC string-literal warnings
+  remain. Full original-addon/Vertigo native camera runs pass on both hosts,
+  including all pinned references, 5400 resumed frames, 153 malformed-motion
+  controls and cold saves. Both cold receipts match exactly: SIM seed159418783,
+  count40808; earned FrameTime2622 Windows and2621 Linux, each restored exactly
+  within its own process pair. This is native mechanics evidence, not original
+  connected progression or an authored moving-camera cold witness.
+- Changing-light, invalid-row and boss save CTests pass3/3 on each host, zero
+  skips. Private Python checks46/46 pass. Automation catalog99 JSON/315 PS/547
+  support and runner catalog428 top-level/547 support pass. Scoped mixed quality
+  and git diff checks pass. No shared codec or D1 code changed in this item;
+  prior D1/D2 codec evidence remains applicable to those unchanged files.
+- Tested Windows EXE f469c5d8e75f913d85f05e97c99ba67e76e44e958fe7412a7d68f420616da5c9;
+  metadataa8f44d490852e6f32e79e0c6ece6ed0ca5c56f5ef8650fbf39d91332db036f02.
+  Linux desktop047bc82a4355af22a45c2e2ad49387a577667fa911bd6a1c3aaf7c8951887795;
+  metadatac9f2ae7b0ae3d320bce4f543d7c5de70839ad9b0007b6588b1d01eb055e9c357.
+  Same verified root-bound Windows/Linux caches as the preceding item.
+- Existing Omega probe/runner now expose observational phase milliseconds and
+  total monotonic process duration. No deadline, frame count, prerequisite,
+  comparison field or gameplay path was relaxed. Fresh capture8 passes with
+  exit0 in41.406 seconds against the unchanged45-second deadline, without build
+  or native-test overlap. Probe phase endpoints: warmup/setup1901ms,
+  recording-start2180ms, frames-finished27450ms, finalization28966ms. Recorded
+  frames occupy25.270 seconds; finalization1.516 seconds; startup plus remaining
+  shutdown outside the probe approximately12.440 seconds. This distinguishes
+  the measured phases; it does not yet isolate rendering from trace work inside
+  those180 frames. Trace writes currently gzflush each record. Timing margin is
+  still only3.594 seconds, and earlier failed captures remain failed evidence.
+- Original Warp5 target117/signature118/id7 again receives real Omega damage:
+  shields16384000 ->6844288 while selected ->3419776, no kill; charge65536
+  ->17488 ->42058. Warmup66 normal frames, one pose and one inventory assist
+  before recording, zero during180 frames. Demo
+  d2_wshock20_level5_20261111_143755.dximdemo SHA256
+  5c258634bb75b3969e30ff4cdc41b97279df3091f7e8970191d72490463ab1c0.
+  Warp HOG rehashed unchanged2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c.
+  Native addon/Neptune/Vertigo gates and source references retain their recorded
+  exact identities. Reference2576a98b5de310e3ac7c9777df2677d1627b8bae unchanged.
+- Replay5 verifies assets, strict terminal state and clean exit. Detailed
+  comparisons:180 frame checks and1059 SIM events PASS; restored boundary now
+  fully matches, including FrameTime1092 and SIM count453. UV/camera differences
+  remain zero. Object scope still fails3 paths (FX count/state and chatter),
+  world fails8 paths (two chatter timers at frames122/149 and terminal,
+  terminal FX count/state). No fields were filtered. Thus G1 and capture8 remain
+  unqualified; no corpus was frozen. Evidence: protected g1-checkpoint-* logs
+  and native directories, g1-live-omega-capture-8, g1-omega-replay-5 and full
+  g1-omega-replay-5-comparison.json under temp/pr464-ci-fixes-20261110.
+- Actual work approximately14:23-14:43 PST. Free space about46 GiB; retention
+  previews found zero eligible and no other cleanup occurred. No WSL restart or
+  Android interference. Revised G1 estimate remains6-10 h, G2-G7 roughly17.5 h;
+  shared prerequisites count once accepted, not twice. No external blocker.
+- Next: commit this validated repair, then trace FX RNG producers/consumers and
+  robot chatter ownership through simulation versus presentation. Current raw
+  mismatches cannot simply be filtered as cosmetic: prove independence with
+  counterfactual runs and retain complete diagnostics. Separately measure the
+  recorded-frame trace/render costs and improve margin without losing fields or
+  raising deadlines. Keep production guards until full live/repeat/cross-platform
+  and headless acceptance; continue the remaining original plan afterward.
+
 Per-item handoff template:
 
     Item and status:

@@ -351,7 +351,9 @@ zero assists during recording. The original eight component/rate controls remain
 the default mode. A passing capture receipt does not qualify playback: compare
 the recorded detailed state and SIM RNG with clean-process replay before freezing
 the demo. Current Warp 5 evidence matches frame hashes, SIM RNG and restored
-texture UVs but still exposes checkpoint clock and FX-driven chatter differences.
+checkpoint clocks/counters and texture UVs, but FX RNG and chatter timers still
+diverge. The recording probe reports phase timings and the runner reports total
+process time; its 45-second clean-exit deadline remains unchanged.
 
 The header `environment` object contains `required: ["xl-clock-input-v1"]`,
 `slow_motion_speedup: 6`, `clock_ms`, `pickup_ms`, `cached_ms` and `render_frame`. Unknown or
@@ -411,7 +413,7 @@ sample, including the checkpoint origin before frame zero; they never sample a
 timer, advance a consumer or update the save clock cache. The detailed trace
 retains time factors/directions/threshold ages, pending controls, weapon markers,
 pickup ages, camera-controller state and pending wall-trigger/cooldown state.
-Save schema 39 retains cooldown activation and its age clamped at the source's
+Save schema 40 retains cooldown activation and its age clamped at the source's
 750 ms threshold. Loading rebases that age onto the restored cached clock or
 admitted replay origin. The unqualified format-6 drafts lacking `cached_ms`
 reject; they are diagnostic evidence, not a released compatibility contract.
@@ -428,6 +430,12 @@ source's unused `t0` field remains zero. New-level format-6 baselines explicitly
 carry `xl_camera_ticks`, bounded by the header's cached-clock origin. These fields
 preserve ordinary save continuation as well as checkpoint playback; they do not
 add playback-only camera corrections.
+It also preserves the nonnegative fixed-point frame duration and SIM RNG call
+counter alongside the stock save's SIM seed. The counter is diagnostic and used
+for ordered-input validation; it does not choose random values. Frame duration
+can be consumed before the next time calculation and is the fallback for a bad
+timer delta. Ordinary XL disk restores retain both instead of inheriting startup
+zeros. Malformed durations/counters reject before any trailer state is applied.
 This is still an unqualified developer
 contract; adding these observations does not establish complete XL owner coverage.
 
