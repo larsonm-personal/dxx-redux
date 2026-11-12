@@ -91,14 +91,29 @@ def recording_passed(code, proof, mission, level):
         assisted=True,
         mission=mission,
         level=level,
-        frames=180,
+        frames=242,
+        rearm_frames=61,
         warmup_frames=66,
-        position_assists=1,
+        position_assists=2,
         inventory_assists=1,
         assists_during_recording=0,
         configuration_changes=4,
+        owned_before=False,
+        owned_after=True,
     )
     if any(type(proof.get(key)) is not type(value) or proof[key] != value for key, value in expected.items()):
+        return False
+    pickup = proof.get("pickup")
+    if (
+        not isinstance(pickup, dict)
+        or set(pickup) != {"object", "signature", "original_segment", "charge", "frame", "consumed"}
+        or any(type(pickup[key]) is not int or pickup[key] < 0 for key in ("object", "signature", "original_segment"))
+        or type(pickup["charge"]) is not int
+        or pickup["charge"] != 65536
+        or type(pickup["frame"]) is not int
+        or pickup["frame"] != 0
+        or pickup["consumed"] is not True
+    ):
         return False
     target = proof.get("target")
     if not isinstance(target, dict):
@@ -183,8 +198,8 @@ def main():
                 success
                 and header.get("version") == 6
                 and header.get("start_mode") == "save_checkpoint"
-                and header.get("frame_count") == 180
-                and sites == [["frame", 40], ["frame", 40], ["frame", 135], ["input_tail", 180]]
+                and header.get("frame_count") == 242
+                and sites == [["frame", 102], ["frame", 102], ["frame", 197], ["input_tail", 242]]
             )
     else:
         success = passed(code, proof, args.mission, args.level, args.xl)

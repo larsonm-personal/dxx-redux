@@ -152,12 +152,16 @@ class XlPrivateTests(unittest.TestCase):
             assisted=True,
             mission="fixture",
             level=5,
-            frames=180,
+            frames=242,
+            rearm_frames=61,
             warmup_frames=66,
-            position_assists=1,
+            position_assists=2,
             inventory_assists=1,
             assists_during_recording=0,
             configuration_changes=4,
+            owned_before=False,
+            owned_after=True,
+            pickup=dict(object=73, signature=74, original_segment=763, charge=65536, frame=0, consumed=True),
             charge_before=65536,
             charge_after_fire=17000,
             charge_after_recharge=42000,
@@ -183,11 +187,17 @@ class XlPrivateTests(unittest.TestCase):
             complete=1,
             charge_after_fire=65536,
             charge_after_recharge=17000,
+            owned_before=True,
+            owned_after=False,
         ).items():
             self.assertFalse(omega_damage.recording_passed(0, {**proof, key: value}, "fixture", 5), key)
         bad = copy.deepcopy(proof)
         bad["target"]["shields_after_omega"] = bad["target"]["shields_before"]
         self.assertFalse(omega_damage.recording_passed(0, bad, "fixture", 5))
+        for key, value in (("object", -1), ("signature", True), ("frame", 1), ("consumed", False), ("charge", 0)):
+            bad = copy.deepcopy(proof)
+            bad["pickup"][key] = value
+            self.assertFalse(omega_damage.recording_passed(0, bad, "fixture", 5), key)
         for code in (1, None, False):
             self.assertFalse(omega_damage.recording_passed(code, proof, "fixture", 5))
 

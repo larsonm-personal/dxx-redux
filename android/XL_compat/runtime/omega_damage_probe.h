@@ -5,6 +5,7 @@
 #error Omega damage controls require a developer build
 #endif
 extern "C" {
+#include "powerup.h"
 #include "render_gameplay_view.h"
 #include "guidebot_routing.h"
 int allowed_to_fire_laser(void);
@@ -216,12 +217,26 @@ static int xl_omega_recording_probe(const char *path)
 		// Match ordinary assisted relocation: the prior view belonged to the old pose
 		render_reset_gameplay_view_objects();
 		proof["position_assists"] = 1;
-		Players[Player_num].primary_weapon_flags |= 1 << OMEGA_INDEX;
-		Players[Player_num].primary_weapon = OMEGA_INDEX;
+		int pickup = -1;
+		for (int i = 0; i <= Highest_object_index; ++i)
+			if (Objects[i].type == OBJ_POWERUP && Objects[i].id == POW_OMEGA_WEAPON && !(Objects[i].flags & OF_SHOULD_BE_DEAD)) {
+				pickup = i;
+				break;
+			}
+		require(pickup >= 0, "No original Omega pickup for recorded acquisition");
+		auto &item = Objects[pickup];
+		const int pickup_signature = item.signature;
+		proof["pickup"] = { { "object", pickup }, { "signature", pickup_signature }, { "original_segment", int(item.segnum) }, { "charge", int(item.ctype.powerup_info.count) } };
+		require(item.ctype.powerup_info.count == MAX_OMEGA_CHARGE, "Original Omega pickup has unexpected charge");
+		item.pos = item.last_pos = ConsoleObject->pos;
+		obj_relink(pickup, approach_segment);
+		proof["position_assists"] = 2;
+		Players[Player_num].primary_weapon_flags &= ~(1 << OMEGA_INDEX);
+		Players[Player_num].primary_weapon = LASER_INDEX;
 		Players[Player_num].energy = Players[Player_num].shields = 200 * F1_0;
-		Omega_charge = MAX_OMEGA_CHARGE;
+		Omega_charge = 0;
 		proof["inventory_assists"] = 1;
-		proof["setup"] = "Original robot and live AI; approach pose, Omega ownership/selection/full charge, energy and shields before recording";
+		proof["setup"] = "Original robot and Omega pickup; player approach and pickup relocation, cleared Omega ownership/charge, laser selection, energy and shields before recording";
 		const int signature = Objects[target].signature;
 		const fix shields = Objects[target].shields;
 		proof["target"] = { { "object", target }, { "signature", signature }, { "robot_id", int(Objects[target].id) }, { "shields_before", shields } };
@@ -234,12 +249,27 @@ static int xl_omega_recording_probe(const char *path)
 		                                     Current_level_num, Difficulty_level, "save_checkpoint", 0, error, sizeof(error)),
 		        error);
 		input_demo_trace_boundary("restored");
-		proof["charge_before"] = Omega_charge;
+		proof["owned_before"] = bool(Players[Player_num].primary_weapon_flags & (1 << OMEGA_INDEX));
 		mark("recording_started");
 
 		input_demo_player_cfg initial_cfg{};
 		input_demo_capture_player_cfg(&initial_cfg);
 		recording = true;
+		frames(1, false);
+		proof["pickup"]["frame"] = input_demo_recorder_frame_count() - 1;
+		proof["pickup"]["consumed"] = bool(Objects[pickup].signature != pickup_signature || Objects[pickup].type != OBJ_POWERUP || (Objects[pickup].flags & OF_SHOULD_BE_DEAD));
+		proof["owned_after"] = bool(Players[Player_num].primary_weapon_flags & (1 << OMEGA_INDEX));
+		proof["charge_before"] = Omega_charge;
+		require(!proof["owned_before"].get<bool>() && proof["owned_after"].get<bool>() &&
+		            proof["pickup"]["frame"] == 0 && proof["pickup"]["consumed"].get<bool>() &&
+		            Players[Player_num].primary_weapon == OMEGA_INDEX && Omega_charge == MAX_OMEGA_CHARGE,
+		        "Ordinary recorded pickup did not acquire, select and charge Omega");
+		// Ordinary pickup selection rearms for one second before firing is allowed
+		const int rearm_frames = (REARM_TIME + F1_0 / 60 - 1) / (F1_0 / 60);
+		frames(rearm_frames, false);
+		proof["rearm_frames"] = rearm_frames;
+		require(Next_laser_fire_time <= GameTime64 && Omega_charge == MAX_OMEGA_CHARGE,
+		        "Ordinary pickup rearm did not expire with full Omega charge");
 		frames(40, true);
 		require(Players[Player_num].primary_weapon == OMEGA_INDEX && Objects[target].signature == signature && Objects[target].shields < shields,
 		        "Selected Omega did not damage the original target before autoselection");
@@ -270,7 +300,7 @@ static int xl_omega_recording_probe(const char *path)
 		proof["configuration_changes"] = 4;
 		require(input_demo_state_trace_is_active() && input_demo_stop_quick_recording_common(), "Ordinary Omega recording did not finish");
 		mark("recording_finalized");
-		proof["frames"] = 180;
+		proof["frames"] = 181 + rearm_frames;
 		proof["complete"] = bool{ true };
 	} catch (const std::exception &e) {
 		proof["error"] = e.what();

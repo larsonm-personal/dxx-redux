@@ -344,15 +344,20 @@ Omega/time-equipment replay support. Existing format-5 stock fixtures are unchan
 The existing `android/tests/xl_omega_damage.py` owner accepts `--recording`
 for a developer-only live Omega witness. It warms the original level for 66
 ordinary frames, sets an approach pose and initial inventory before capture,
-then records 90 held-fire and 90 released-fire frames through the ordinary
-input/simulation path. The receipt requires damage while Omega is still selected,
-charge consumption and recharge. It discloses both setup assists and requires
+and moves an original Omega pickup to that approach. Capture starts without Omega
+ownership or charge. The first ordinary frame acquires and selects the pickup;
+61 released-fire frames then let the one-second selection rearm delay expire.
+The remaining 90 held-fire and 90 released-fire frames exercise ordinary damage
+and recharge, for 242 recorded frames total. The receipt requires damage while
+Omega is still selected, charge consumption and recharge. It discloses the two
+position assists and one inventory setup assist and requires
 zero assists during recording. The original eight component/rate controls remain
 the default mode. A passing capture receipt does not qualify playback: compare
 the recorded detailed state and SIM RNG with clean-process replay before freezing
-the demo. A fresh Warp 5 capture now matches all 180 object/frame observations,
-184 world/boundary records, 1059 SIM RNG events and 364 FX RNG events against
-clean-process playback. This includes restored clocks/counters, texture UVs and
+the demo. The acquisition Warp 5 capture matches all 242 object/frame observations,
+246 world/boundary records, 1616 SIM RNG events and 488 FX RNG events against
+three clean-process playbacks, including accelerated and realtime pacing.
+This includes restored clocks/counters, texture UVs and
 AI chatter timers. Presentation RNG differs and remains reported separately.
 This bounded assisted witness is not complete XL state/platform qualification or
 a frozen corpus. The recording probe reports phase timings and the runner reports
@@ -468,9 +473,9 @@ per-frame and terminal boundaries. Stock world schema 10 is unchanged. Earlier X
 schema-10 receipts retain their historical scope; they cannot prove the newly
 required settings observation. The Omega recording probe exercises menu-equivalent
 auto-leveling, homing and weapon-order changes, two ordinary routing setter calls
-at frame 40, preference restoration at frame 135, and routing in the stop tail.
-Its runner checks all four recorded operation sites without reducing the 180-frame
-combat/recharge workload. This is scripted settings qualification, not a UI menu
+at frame 102, preference restoration at frame 197, and routing in the stop tail.
+Its runner checks all four recorded operation sites alongside the pickup, rearm,
+combat and recharge workload. This is scripted settings qualification, not a UI menu
 or connected-progression playthrough.
 
 Every frame and the mandatory input tail carry `environment: {count, samples}`.
