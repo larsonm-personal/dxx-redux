@@ -688,7 +688,19 @@ def semantic_d2_world(row):
         entry if index < ai["Num_awareness_events"] else {**entry, "segment": 0, "type": 0, "position": [0, 0, 0]}
         for index, entry in enumerate(ai["awareness"])
     ]
-    return {**row, "state": {**row["state"], "effects": effects, "ai": {**ai, "awareness": awareness}}}
+    state = {**row["state"], "effects": effects, "ai": {**ai, "awareness": awareness}}
+    if "xl_native" in state:
+        native = state["xl_native"]
+        route = native["route"]
+        if route["enabled"]:
+            # guidebot_route.c shares this exact bounded wait with its poll consumer.
+            # The codec rebases the raw host deadline; preserve it in the receipt
+            # while comparing the remaining wait, including immediate eligibility.
+            state["xl_native"] = {
+                **native,
+                "route": {**route, "Escort_route_cache_poll_time": route["cache_poll_wait"]},
+            }
+    return {**row, "state": state}
 
 
 def canonical_d1_ai_storage(value, fields):
@@ -1161,12 +1173,77 @@ XL_ESCORT_SCHEMA = integer_fields(
     stolen=(int,) * 10,
     Escort_goal_message_text=(int,) * 150,
 )
+ROUTE_SIGNED_FIELDS = (
+    "Escort_route_goal_active Escort_route_goal_target_seg Escort_route_goal_objective_kind "
+    "Escort_route_goal_activation_kind Escort_route_goal_requires_guided_missile "
+    "Escort_route_goal_objective_seg Escort_route_goal_objective_side Escort_route_goal_objective_wall "
+    "Escort_route_goal_objective_trigger Escort_route_goal_objective_object "
+    "Escort_route_goal_objective_key_index Escort_route_goal_guidance_mode Escort_route_goal_guidance_seg "
+    "Escort_route_goal_frontier_player_openable_door Escort_unexplored_route_target_active "
+    "Escort_unexplored_route_target_component_size Escort_unexplored_route_target_target_seg "
+    "Escort_unexplored_route_target_waypoint_seg Escort_unexplored_route_target_direct_reachable "
+    "Escort_hostage_object Escort_hostage_signature Escort_route_target_mode Escort_route_metadata_dirty "
+    "Escort_route_cache_improvement_pending Escort_route_dirty_notification_time_valid "
+    "Escort_route_last_audit_rescan_time_valid Escort_route_goal_request_pending Escort_nav_trace_last_pos_x "
+    "Escort_nav_trace_last_pos_y Escort_nav_trace_last_pos_z Escort_nav_trace_last_signature "
+    "Escort_nav_trace_last_goal Escort_nav_trace_last_path_index Escort_nav_trace_stall_samples "
+    "Escort_nav_liveness_anchor_x Escort_nav_liveness_anchor_y Escort_nav_liveness_anchor_z "
+    "Escort_nav_liveness_signature Escort_route_avoid_from_seg Escort_route_avoid_seg "
+    "Escort_route_avoid_from_seg2 Escort_route_avoid_seg2 Escort_route_avoid_trigger Escort_route_avoid_wall "
+    "Escort_route_progress_signature Escort_route_progress_seg Escort_route_progress_path_index "
+    "Escort_route_progress_target_seg Escort_route_progress_stall_samples Escort_route_path_recalc_pending "
+    "Escort_route_path_recalc_goal_kind Escort_route_path_recalc_goal_seg "
+    "Escort_route_path_recalc_goal_trigger Escort_route_path_recalc_goal_wall Escort_route_logged_readiness"
+).split()
+ROUTE_UNSIGNED_FIELDS = (
+    "Escort_route_seen_revision Escort_route_metadata_rescan_count Escort_route_guidance_full_search_count "
+    "Escort_route_ignored_nonowner_key_change_count Escort_route_boss_move_invalidation_count "
+    "Escort_route_wall_generation Escort_route_trigger_generation Escort_route_object_generation "
+    "Escort_route_reactor_generation Escort_route_automap_generation Escort_route_pending_event_mask "
+    "Escort_route_pending_audit_mask Escort_route_deferred_live_event_mask "
+    "Escort_route_event_notification_count Escort_route_notification_coalesced_count "
+    "Escort_route_redundant_dirty_domain_count Escort_route_event_coalesced_rescan_count "
+    "Escort_route_publish_latency_sample_count Escort_route_publish_latency_last_ticks "
+    "Escort_route_publish_latency_max_ticks Escort_route_ignored_nonowner_event_count "
+    "Escort_route_audit_check_count Escort_route_audit_discovery_count Escort_route_audit_only_discovery_count "
+    "Escort_route_audit_work_total Escort_route_audit_work_max Escort_route_audit_deferred_count "
+    "Escort_route_certificate_check_count Escort_route_certificate_failure_count "
+    "Escort_route_certificate_work_total Escort_route_certificate_work_max Escort_route_path_retained_count "
+    "Escort_route_path_replaced_count Escort_route_invalid_path_stopped_count Escort_route_audit_domain_cursor "
+    "Escort_route_stall_recovery_count Escort_route_path_recalc_limiter_count "
+    "Escort_route_path_recalc_suppressed_count"
+).split()
+ROUTE_CLOCK_FIELDS = (
+    "Escort_hostage_next_plan Escort_route_first_dirty_notification_time Escort_route_audit_next_time "
+    "Escort_route_last_audit_rescan_time Escort_route_completion_check_time Escort_nav_trace_next_time "
+    "Escort_nav_liveness_last_progress_time Escort_route_progress_next_time "
+    "Escort_route_path_recalc_requested_time Escort_route_path_recalc_due_time Escort_route_cache_poll_time"
+).split()
+# Shared guidebot_route_state capacities: label64, recalc4, native trigger pool
+XL_ROUTE_SCHEMA = integer_fields(
+    " ".join(
+        (
+            "trigger_capacity",
+            "restore_pending",
+            "cache_poll_wait",
+            *ROUTE_SIGNED_FIELDS,
+            *ROUTE_UNSIGNED_FIELDS,
+            *ROUTE_CLOCK_FIELDS,
+        )
+    ),
+    version=int,
+    enabled=bool,
+    Escort_route_goal_label=(int,) * 64,
+    Escort_route_path_recalc_limiter_timestamps=(int,) * 4,
+    Escort_route_activated_triggers=[int],
+)
 XL_NATIVE_SCHEMA = integer_fields(
     "version omega_charge wiggle_phase",
     afterburner_charge=[int],
     afterburner_times=[int],
     guided=((int, int),) * 8,
     escort=XL_ESCORT_SCHEMA,
+    route={"version": int, "enabled": bool},
     seismic=integer_fields(
         "strength pending magnitude phase fraction", interval=[int], detonations=((bool, int, float),) * 4
     ),
@@ -1232,6 +1309,32 @@ def validate_world_state(state, engine=None, xl=False, objects=None):
         births = state["xl_births"]
         capacity = state["ai"]["local_capacity"]
         native = state["xl_native"]
+        route = native["route"]
+        if route["version"] != 1:
+            raise EvidenceError("Unsupported XL route observation")
+        if route["enabled"]:
+            validate_world_value(route, XL_ROUTE_SCHEMA, "$.state.xl_native.route")
+            if (
+                route["trigger_capacity"] != 254
+                or route["restore_pending"] not in (0, 1)
+                or not 0 <= route["cache_poll_wait"] < 2 * 65536
+                or any(not -2147483648 <= route[key] <= 2147483647 for key in ROUTE_SIGNED_FIELDS)
+                or any(not 0 <= route[key] <= 4294967295 for key in ROUTE_UNSIGNED_FIELDS)
+                or any(not -9223372036854775808 <= route[key] <= 9223372036854775807 for key in ROUTE_CLOCK_FIELDS)
+                or not 0 <= route["Escort_route_target_mode"] <= 2
+                or not 0 <= route["Escort_route_path_recalc_limiter_count"] <= 4
+                or len(route["Escort_route_activated_triggers"]) != route["trigger_capacity"]
+                or any(
+                    not 0 <= value <= 255
+                    for value in (*route["Escort_route_goal_label"], *route["Escort_route_activated_triggers"])
+                )
+                or 0 not in route["Escort_route_goal_label"]
+                or any(
+                    not -9223372036854775808 <= value <= 9223372036854775807
+                    for value in route["Escort_route_path_recalc_limiter_timestamps"]
+                )
+            ):
+                raise EvidenceError("Invalid XL route field, timer or array storage")
         escort = native["escort"]
         if (
             escort["version"] != 1
@@ -1546,7 +1649,7 @@ def world_states(path, header, engine="d1"):
         if (
             not meta_seen
             or type(row.get("version")) is not int
-            or row["version"] != (2 if kind == "object_boundary" else 14 if xl else 10)
+            or row["version"] != (2 if kind == "object_boundary" else 15 if xl else 10)
         ):
             raise EvidenceError("Missing world metadata or unsupported schema")
         if kind.endswith("boundary"):

@@ -1380,7 +1380,7 @@ class ParityTests(unittest.TestCase):
         def convert(rows):
             for row in rows:
                 if row["type"] in ("world_state", "world_boundary"):
-                    row["version"] = 14
+                    row["version"] = 15
                 if row["type"] in ("object_state", "object_boundary"):
                     row["capacity"] = 1367
                     row["allocator"]["free_obj_list"] = list(range(1367))
@@ -1421,6 +1421,10 @@ class ParityTests(unittest.TestCase):
                         version=1, afterburner_charge=[0], afterburner_times=[0] * 1367, guided=[[-1, -1]] * 8
                     )
                     state["xl_native"]["escort"]["version"] = 1
+                    state["xl_native"]["route"] = schema_example(parity.XL_ROUTE_SCHEMA)
+                    state["xl_native"]["route"].update(
+                        version=1, enabled=True, trigger_capacity=254, Escort_route_activated_triggers=[0] * 254
+                    )
 
         self.mutate(path, convert)
         return path
@@ -1689,6 +1693,76 @@ class ParityTests(unittest.TestCase):
             changed = self.write("xl-escort-buffer-changed", list(parity.records(path)))
             self.mutate(changed, lambda rows: mutation(rows[2]["state"]["xl_native"]["escort"]))
             self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_route_fields_pending_work_and_arrays_are_required_and_compared(self):
+        path = self.native_d2_trace("xl-route", True)
+        invalid = (
+            lambda route: route.pop("Escort_route_path_recalc_due_time"),
+            lambda route: route.update(version=2),
+            lambda route: route.update(enabled=1),
+            lambda route: route.update(trigger_capacity=100),
+            lambda route: route.update(restore_pending=2),
+            lambda route: route.pop("cache_poll_wait"),
+            lambda route: route.update(cache_poll_wait=-1),
+            lambda route: route.update(cache_poll_wait=131072),
+            lambda route: route.update(Escort_route_target_mode=3),
+            lambda route: route.update(Escort_route_path_recalc_limiter_count=5),
+            lambda route: route.update(Escort_route_pending_event_mask=-1),
+            lambda route: route.update(Escort_route_cache_poll_time=9223372036854775808),
+            lambda route: route["Escort_route_activated_triggers"].pop(),
+            lambda route: route["Escort_route_activated_triggers"].__setitem__(0, 256),
+            lambda route: route["Escort_route_path_recalc_limiter_timestamps"].pop(),
+            lambda route: route["Escort_route_goal_label"].pop(),
+            lambda route: route.update(Escort_route_goal_label=[65] * 64),
+        )
+        for mutation in invalid:
+            bad = self.write("xl-route-invalid", list(parity.records(path)))
+            self.mutate(bad, lambda rows: mutation(rows[2]["state"]["xl_native"]["route"]))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        for field in (
+            *parity.ROUTE_SIGNED_FIELDS,
+            *parity.ROUTE_UNSIGNED_FIELDS,
+            *parity.ROUTE_CLOCK_FIELDS,
+            "restore_pending",
+            "cache_poll_wait",
+        ):
+            if field == "Escort_route_cache_poll_time":
+                continue  # Its host epoch is represented by the exact remaining wait
+            changed = self.write("xl-route-changed", list(parity.records(path)))
+            self.mutate(changed, lambda rows: rows[2]["state"]["xl_native"]["route"].__setitem__(field, 1))
+            self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+        for field, index in (
+            ("Escort_route_activated_triggers", 253),
+            ("Escort_route_path_recalc_limiter_timestamps", 3),
+            ("Escort_route_goal_label", 63),
+        ):
+            changed = self.write("xl-route-array-changed", list(parity.records(path)))
+            self.mutate(changed, lambda rows: rows[2]["state"]["xl_native"]["route"][field].__setitem__(index, 1))
+            self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+        disabled = self.write("xl-route-disabled", list(parity.records(path)))
+        self.mutate(
+            disabled,
+            lambda rows: [
+                row["state"]["xl_native"].update(route={"version": 1, "enabled": False})
+                for row in rows
+                if "xl_native" in row.get("state", {})
+            ],
+        )
+        list(parity.world_states(disabled, self.header, "d2"))
+
+    def test_xl_route_cache_host_epoch_preserves_poll_wait_and_unknown_fields(self):
+        path = self.native_d2_trace("xl-route-host-epoch", True)
+        changed = self.write("xl-route-rebased", list(parity.records(path)))
+        self.mutate(
+            changed,
+            lambda rows: rows[2]["state"]["xl_native"]["route"].update(Escort_route_cache_poll_time=82314),
+        )
+        self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "pass")
+        raw = list(parity.records(changed))
+        self.assertEqual(raw[2]["state"]["xl_native"]["route"]["Escort_route_cache_poll_time"], 82314)
+        self.mutate(changed, lambda rows: rows[2]["state"]["xl_native"]["route"].update(unknown_owner=1))
+        self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
 
     def test_xl_births_are_bound_to_objects_and_compared(self):
         path = self.native_d2_trace("xl-births", True)

@@ -480,7 +480,7 @@ captured at its ordinary setter before resetting AI routing; two changes between
 frames remain two operations even when the final mode equals the original mode.
 Playback uses that same setter, not the save-restoration path that preserves AI.
 
-XL world observations use schema 14 and require `xl_player_cfg`, `xl_births` and `xl_native`
+XL world observations use schema 15 and require `xl_player_cfg`, `xl_births` and `xl_native`
 at restored, per-frame and terminal boundaries. Birth observations contain every
 live slot/signature, birth time, creation order and the next creation counter;
 the reader checks live object identities at both boundaries and validates the
@@ -498,8 +498,19 @@ fields through one shared field list, plus all ten stolen-item bytes and the
 persistent-message preference. Its 150-byte message buffer is an explicit byte
 array, preserving both native text encoding and trailing storage without a
 Unicode conversion. Capture performs no save encoding, cache polling, owner
-repair or timer sampling. Route/metadata coverage is still incomplete.
-Earlier XL schema-10/11/12/13 receipts retain their historical scope; they cannot
+repair or timer sampling. Route state uses the same approach for its 107 save
+operations: goal/unexplored targets, pending recalc and notifications, liveness,
+avoidance, limiter timestamps, trigger activation bytes and counters. Capture
+also retains the pending restore marker. The raw cache-poll deadline remains in
+its native cached-host-clock domain in receipts. Semantic comparison uses its
+remaining wait from the same predicate as the real poll consumer: a future deadline
+less than two seconds away delays polling; other values permit an immediate poll.
+The codec intentionally rebases this deadline to the restoring process's cached
+clock. Capture reads that existing cached value without sampling or advancing time.
+The remaining wait is required and compared; unknown fields remain compared.
+Active cache loading and full routing are still unqualified. Disabled compiled route support is explicit.
+Metadata coverage and active-route qualification remain incomplete.
+Earlier XL schema-10/11/12/13/14 receipts retain their historical scope; they cannot
 prove the newly required native-state observation. The Omega recording probe exercises menu-equivalent
 auto-leveling, homing and weapon-order changes, two ordinary routing setter calls
 at frame 102, preference restoration at frame 197, and routing in the stop tail.
@@ -572,7 +583,13 @@ with a live guided missile, Omega charge, afterburner input/resources, wiggle,
 object clocks, a pending seismic event and derived stolen inventory on an authentic
 thief definition. Identical future native controls steer
 the missile and recharge the afterburner across uninterrupted, warm and cold
-execution; ordinary stolen-item drops create actual loot, with an empty-inventory
+execution. A derived route goal fills the normal recalc limiter, saves its pending
+request and verifies identical rejection before expiry and release at its deadline.
+The fixture persists its Enhanced routing preference through the normal player
+profile writer, since ordinary level restore reloads that preference from disk.
+The developer lifecycle target includes the game's planner and live escort code.
+This exercises the limiter rather than a complete active route or metadata load.
+Ordinary stolen-item drops create actual loot, with an empty-inventory
 control that consumes no RNG or object slots. This is an explicitly derived
 mechanic case with seeded inventory, not proof of actual theft or connected original
 play or proof of whole-save atomicity.

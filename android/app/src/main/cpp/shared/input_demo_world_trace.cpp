@@ -23,6 +23,7 @@ extern "C" {
 #ifdef DXX_XL_RUNTIME
 #include "controls.h"
 #include "guidebot_escort_state.h"
+#include "guidebot_route_state.h"
 #endif
 #include "effects.h"
 #include "endlevel.h"
@@ -215,6 +216,34 @@ json native_xl_state()
 #undef ESCORT_TEXT
 	escort_state["stolen"] = scalars(escort.stolen);
 	escort_state["persistent_message"] = escort.persistent_message;
+	guidebot_route_state route{};
+	escort_route_capture_runtime_state(&route);
+	auto &route_state = out["route"];
+	route_state = { { "version", 1 }, { "enabled", bool(route.enabled) } };
+	if (route.enabled) {
+		route_state["trigger_capacity"] = route.trigger_capacity;
+		route_state["restore_pending"] = route.restore_pending;
+		route_state["cache_poll_wait"] = route.cache_poll_wait;
+#define ROUTE_FIELD(type, name, source, kind)            FIELD(route_state, route, name);
+#define ROUTE_LIMIT(type, name, source, kind, low, high) ROUTE_FIELD(type, name, source, kind)
+#define ROUTE_HOST_CLOCK(type, name, source, kind)       ROUTE_FIELD(type, name, source, kind)
+#define ROUTE_ARRAY(type, name, source, capacity, kind)  route_state[#name] = scalars(route.name);
+#define ROUTE_TEXT(name, source, capacity)      \
+	route_state[#name] = json::array();         \
+	for (const unsigned char byte : route.name) \
+		route_state[#name].push_back(static_cast<int>(byte));
+#define ROUTE_TRIGGER_BYTES(name, source)            \
+	route_state[#name] = json::array();              \
+	for (int i = 0; i < route.trigger_capacity; ++i) \
+		route_state[#name].push_back(int(route.name[i]));
+#include "guidebot_route_state_members.h"
+#undef ROUTE_FIELD
+#undef ROUTE_LIMIT
+#undef ROUTE_HOST_CLOCK
+#undef ROUTE_ARRAY
+#undef ROUTE_TEXT
+#undef ROUTE_TRIGGER_BYTES
+	}
 	// The native save compatibility getter deliberately returns zeros under XL
 	// Observe the actual seismic owner, including the magnitude used by guidance
 	const auto seismic = xl_compat::seismic_gameplay_snapshot();
@@ -536,7 +565,7 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	static json previous;
 	json current = world_state();
 	const bool boundary = phase != nullptr;
-	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 14 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
+	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 15 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
 	record["state"].get_ref<json::object_t &>().reserve(current.size());
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)

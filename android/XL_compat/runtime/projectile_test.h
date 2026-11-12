@@ -5,6 +5,7 @@
 #include "seismic_gameplay.h"
 #include "../tests/hog_fixture.h"
 extern "C" {
+#include "guidebot_route_internal.h"
 void maybe_kill_weapon(object *, object *);
 void collide_weapon_and_controlcen(object *, object *, vms_vector *);
 void drop_stolen_items(object *, int);
@@ -361,6 +362,9 @@ static nlohmann::json projectile_birth_future(int victim, int shot, int thief)
 	const auto orientation_before = guided_before->orient;
 	FrameTime = F1_0 / 4;
 	GameTime64 += FrameTime;
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	require(!escort_route_path_recalc_begin("continuation_before_due"), "Restored route limiter allowed recalc before its saved deadline");
+#endif
 	require(xl_seismic_frame(), "Cannot advance saved seismic gameplay");
 	Controls = {};
 	Controls.pitch_time = F1_0 / 32;
@@ -403,6 +407,10 @@ static nlohmann::json projectile_birth_future(int victim, int shot, int thief)
 		live += Objects[i].type != OBJ_NONE;
 	require(live == std::size_t(std::count_if(prior.begin(), prior.end(), [](int signature) { return signature != -1; })) + 2,
 	        "Empty stolen inventory created extra objects");
+	GameTime64 += F1_0 / 4;
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	require(escort_route_path_recalc_begin("continuation_due"), "Restored route limiter did not release at its saved deadline");
+#endif
 	unsigned sim = 0;
 	require(d_rand_get_state(&sim), "Cannot observe birth continuation SIM state");
 	auto result = nlohmann::json{ { "victim", victim }, { "shot", shot }, { "time", GameTime64 }, { "victim_shields", int(Objects[victim].shields) }, { "shot_shields", int(Objects[shot].shields) }, { "hit", bool(xl_projectile_has_hit(shot, victim)) }, { "birth_time", xl_object_birth_time(victim) }, { "birth_order", xl_object_birth_order(victim) }, { "transient_order", transient_order }, { "replacement_order", replacement_order }, { "sim", sim }, { "calls", d_rand_get_call_count() }, { "native_before", native_before }, { "native_after", input_demo_native_xl_trace_snapshot() }, { "guided", input_demo_object_trace_snapshot(*guided, int(guided - Objects)) }, { "player", input_demo_object_trace_snapshot(*ConsoleObject, int(ConsoleObject - Objects)) }, { "player_energy", int(Players[Player_num].energy) }, { "player_flags", unsigned(Players[Player_num].flags) } };
@@ -420,6 +428,12 @@ static nlohmann::json projectile_birth_semantic(nlohmann::json state)
 		auto &value = state.at(actor).at("polyobj").at("alt_textures");
 		if (value == 0 || value == -1) value = 0;
 	}
+	// The native codec rebases this host-clock deadline; compare its exact poll wait
+	// Raw deadlines remain in the separately written expected/actual receipts
+	for (const char *boundary : { "native_before", "native_after" }) {
+		auto &route = state.at(boundary).at("route");
+		if (route.at("enabled").get<bool>()) route["Escort_route_cache_poll_time"] = route.at("cache_poll_wait");
+	}
 	return state;
 }
 
@@ -432,6 +446,11 @@ static void projectile_birth_continuation(const std::filesystem::path &root, boo
 		input >> expected;
 		require(state_restore_all_sub(save, 0), "Cannot cold restore newborn collision save");
 	} else {
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		// Level restore reloads the real player profile before applying its preference
+		guidebot_routing_set_default(GUIDEBOT_ROUTING_ENHANCED);
+		require(write_player_file() == 0, "Cannot persist derived route preference");
+#endif
 		// Derived setup isolates the real newborn collision gate; no gameplay assist claim
 		GameTime64 += 2 * F1_0;
 		const int victim = projectile_robot();
@@ -467,6 +486,17 @@ static void projectile_birth_continuation(const std::filesystem::path &root, boo
 		Controls = {};
 		Controls.afterburner_state = 1;
 		object_move_one(ConsoleObject);
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		guidebot_routing_set_mode(GUIDEBOT_ROUTING_ENHANCED);
+		Escort_route_goal = {};
+		Escort_route_goal.active = 1;
+		Escort_route_goal.target_seg = ConsoleObject->segnum;
+		Escort_route_goal.objective_kind = LEVEL_METADATA_ROUTE_EXIT;
+		for (int i = 0; i < 4; ++i) require(escort_route_path_recalc_begin("continuation_prepare"), "Cannot fill native route recalc window");
+		require(!escort_route_path_recalc_begin("continuation_pending"), "Native route limiter did not retain a pending request");
+#else
+		require(false, "Combined route continuation requires the compiled planner");
+#endif
 		GameTime64 += F1_0 / 2;
 		stop_time();
 		require(state_save_all_sub(save, description), "Cannot save newborn collision state");

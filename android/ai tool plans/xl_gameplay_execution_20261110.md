@@ -819,13 +819,13 @@ retaining the change. All statuses below are planning statuses, not completed wo
 | Item | Status                                                                           | Branch / commit / PR                                                              | Evidence, limits and revised estimate                                                                                       |
 | ---- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | G0   | Accepted baseline repair; remaining hosted checks and Android limitation tracked | xl_gameplay_20261111_01_baseline; implementation a5db8d739; draft #465, base #464 | Windows/Linux native each 100 pass / 1 expected skip; Linux public 61/61; canonical private 113/113 and hosted private PASS |
-| G1   | In progress: Omega acquisition/combat, time/settings and modal fidelity pass     | xl_gameplay_20261111_02_timeline; parent 96ce2f8be; not published                 | Latest: Omega242 frames/246 world records/1616 SIM/488 FX match three clean plays; production admission remains closed      |
-| G2   | Not started                                                                      | 03_continuation                                                                   | Complete XL observer/cold-continuation audit required                                                                       |
+| G1   | Accepted bounded normal GL timeline; further platform gates remain G3/G6         | xl_gameplay_20261111_02_timeline; 0a2df4aeb; draft #467, base #465                | Windows/Linux ordered timeline qualification and exact-candidate CI pass; true headless and Android remain open             |
+| G2   | In progress: birth, native controls, fixed escort and route observation          | xl_gameplay_20261111_03_continuation; local only, parent 0a2df4aeb                | Metadata/remaining owners and whole-save atomic rejection incomplete; no layer03 PR or G2 acceptance                        |
 | G3   | Not started                                                                      | 04_runtime                                                                        | True-headless XL and optional presentation independence unqualified                                                         |
 | G4   | Not started                                                                      | 04_runtime                                                                        | Source no-op smoke, makers, subzero and wider gameplay predicates require decisions                                         |
 | G5   | Not started                                                                      | 05_progression                                                                    | Existing assisted views do not prove connected original play                                                                |
 | G6   | Not started                                                                      | 06_qualification                                                                  | No newly frozen forward-compatible XL corpus yet                                                                            |
-| G7   | Not started                                                                      | 06_qualification                                                                  | Layer 01 draft published; final packages and remaining layers not created                                                   |
+| G7   | Not started                                                                      | 06_qualification                                                                  | Layers 01/02 published; final packages and remaining layers not created                                                     |
 
 G0 publication checkpoint, November 11 at 08:37 PST (16:37 UTC):
 
@@ -3164,6 +3164,85 @@ G2 fixed escort/thief state checkpoint, November 12 at 01:33 PST:
   G0/G1 accepted; G2-G7 open. Actual01:33 PST; G2 remaining estimate revised6-10h
   for this expanded state/loader scope, later items approximately14.5h uncertain.
   Continue sequentially with no cutoff or scope reduction.
+
+G2 route-state observation checkpoint, November 12 at 02:20 PST:
+
+- Parent cad22640b27e88abe2d9bb082e6699dd9ae43ddb, tree
+  0995542361a4fdcfd141113ac383da25f9b54ab9. Added pointer-free
+  guidebot_route_state and shared guidebot_route_state_members.h. The existing
+  codec and pure capture use the same ordered 107 operations, including 104
+  scalars, the full 64-byte label, four limiter timestamps and 254 trigger bytes.
+  Capture adds the restore-pending marker and bounded cache-poll wait. Independent
+  g2-route-layout-check.json confirms the flattened original save field sources,
+  order, kinds and bounds are identical. Trigger framing and the host-clock epoch
+  adapter are unchanged; no save schema change. The last-replan-reason string is
+  diagnostic only: source consumers are logging and game_introspect.cpp, not
+  planner decisions. Metadata remains separately open.
+- XL world schema15 requires this typed route section. The reader validates all
+  field storage, capacities, text termination, target mode, limiter count and wait;
+  pending SIM deadlines and unknown fields remain compared. Raw cache deadlines
+  stay in receipts. Semantic comparison uses the production poll predicate's
+  exact remaining wait: future deadlines less than two seconds away delay the
+  poll; all other values permit an immediate poll. timer_query only reads cached
+  F64_RunTime and does not sample/advance it. The codec intentionally rebases the
+  raw host deadline, so comparing that absolute number across processes was an
+  invalid witness. The same helper now supplies both production eligibility and
+  capture, preserving the original predicate. Active cache loading/full routing
+  remain unqualified. Disabled compiled support is explicit. Stock world10,
+  object2, input format6 and existing native/XL save layouts are unchanged.
+- The real developer lifecycle target previously extended metadata-only behavior
+  without the planner/live escort. Enabled those existing sources through its
+  compile definitions, matching the game and replay targets; ordinary metadata
+  builds retain their prior configuration. The existing combined projectile owner
+  now fills four recalc slots, saves a pending fifth request, rejects future work
+  at 2.75 seconds and permits it at 3 seconds after uninterrupted/warm/cold loads.
+  The derived fixture persists Enhanced routing using write_player_file, because
+  StartNewLevelSub -> set_highest_level rereads the player profile on restore.
+  An in-memory-only setting was insufficient. No forced post-load route state or
+  new test framework/owner was added. This proves the limiter, not a real route.
+- Failed evidence is preserved: g2-route-projectile-* fail with the old disabled
+  planner; g2-route-planner-projectile-windows and g2-route-owner-projectile-windows
+  fail due to the derived profile requesting Original routing. Targeted
+  g2-route-{policy,restore}-probe logs confirm mode/default0 and reset route.
+  g2-route-profile-projectile-windows then differs only in the rebased cache
+  deadline. None is classified as a gameplay save defect or hidden by a skip.
+- Final full projectile owners pass both hosts, authentic Neptune/addon/Vertigo,
+  camera subchecks executed, all75 malformed cases and source comparisons kept,
+  unchanged120s subprocess/150s Linux outer deadlines. Six uninterrupted/warm/cold
+  receipts agree across hosts under the documented native alt-texture and host
+  epoch semantics; raw receipts retained. g2-route-projectile-cross.json records
+  GameTime196608, victim shields100, SIM3866696494/calls18, replacement order11,
+  thief slot4. Existing guided input, recharge, seismic, loot and collision checks
+  remain. This is derived mechanics, not theft, combat or connected original play.
+- Fresh water owners pass both hosts. Full schema15 semantic comparisons pass
+  Windows live/replay, Linux live/replay and Windows live/isolated Linux replay:
+  each1235 object frames/1239 world and boundary records, including both observed
+  frame RNG streams. All five trace starts explicitly have route.enabled=true.
+  Evidence g2-route-water-{windows,linux}, g2-route-cross, their logs/metadata,
+  g2-route-water-compare.json. Windows input and isolated copy SHA256
+  0b79342318c635612ace1d36f33daee32ce8d6373e973e5c651937a8dfd84826.
+  Cross-generated derivatives remain beside their own staged input. A collection
+  assertion initially used the wrong key world_version after comparisons passed;
+  corrected to the actual version key and collected without rerunning comparisons.
+  No true-headless Omega/time, Android or strict per-draw corpus claim.
+- Root-bound strict-FP developer builds pass, source parent plus this owned patch.
+  Windows EXE SHA25653bacc2ac0b6a68b8f9bcaa9eae4f20cea89907dc2e927b3129be1a2f96bc5f5;
+  Linux b6ce1f322433ba04420a4bfa4853f1a8b06dbe80c4aee2719f6289d5a61c6a9d.
+  Identities in g2-route-build-identities.json; prior unrelated warnings remain.
+  Quality/whitespace pass; reader81 tests passes55.650s. Catalogs pass99 JSON/
+  315 PowerShell/547 support and428 top-level/547 support. Logs
+  g2-route-clock-{quality,reader,windows-build,linux-build,projectile-*}.log,
+  g2-route-{catalog,master-catalog}.log. No authentic input or public oracle edited.
+- Commit this coherent change locally on layer03; no push/PR or G2 acceptance.
+  Next: extend the existing pure guidebot_metadata_snapshot through shared typed
+  field lists, preserving codec order/width, then audit remaining XL owners and
+  combined pending trigger/generator/time/progression continuation. Whole-save
+  corrupt-trailer rejection still changes energy91->100 and remains a real,
+  unfixed loader defect. G0/G1 accepted; G2-G7 open. Actual02:20 PST, G2 remaining
+  estimate8-14h for expanded state/transaction work; later items approximately
+  14.5h with substantial uncertainty. Continue sequentially without a cutoff or
+  scope reduction. No WSL restart needed; the previously authorized recovery is
+  already complete and Linux validation is working.
 
 Per-item handoff template:
 
