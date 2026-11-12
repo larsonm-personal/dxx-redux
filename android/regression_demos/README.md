@@ -350,8 +350,8 @@ charge consumption and recharge. It discloses both setup assists and requires
 zero assists during recording. The original eight component/rate controls remain
 the default mode. A passing capture receipt does not qualify playback: compare
 the recorded detailed state and SIM RNG with clean-process replay before freezing
-the demo. Current Warp 5 evidence matches frame hashes and SIM RNG but still
-exposes checkpoint UV/clock state and FX-driven chatter differences.
+the demo. Current Warp 5 evidence matches frame hashes, SIM RNG and restored
+texture UVs but still exposes checkpoint clock and FX-driven chatter differences.
 
 The header `environment` object contains `required: ["xl-clock-input-v1"]`,
 `slow_motion_speedup: 6`, `clock_ms`, `pickup_ms`, `cached_ms` and `render_frame`. Unknown or
@@ -409,10 +409,16 @@ sample, including the checkpoint origin before frame zero; they never sample a
 timer, advance a consumer or update the save clock cache. The detailed trace
 retains time factors/directions/threshold ages, pending controls, weapon markers,
 pickup ages, camera-controller state and pending wall-trigger/cooldown state.
-Save schema 37 retains cooldown activation and its age clamped at the source's
+Save schema 38 retains cooldown activation and its age clamped at the source's
 750 ms threshold. Loading rebases that age onto the current cached clock or
 admitted replay origin. The unqualified format-6 drafts lacking `cached_ms`
 reject; they are diagnostic evidence, not a released compatibility contract.
+Schema 38 also persists both signed texture coordinates at all four corners of
+every segment face. Scrolling UVs feed hit-point transparency as well as drawing;
+restoring only texture IDs changes collision. All rows and coordinates validate
+before any UV is applied. The bounded trailer allowance adds the maximum encoded
+UV array to the prior 8 MiB owner allowance. Older development XL saves lack this
+state and reject; stock save layouts remain unchanged.
 This is still an unqualified developer
 contract; adding these observations does not establish complete XL owner coverage.
 

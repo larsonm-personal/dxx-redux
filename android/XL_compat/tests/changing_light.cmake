@@ -20,6 +20,19 @@ string(FIND "${stdout}" "XL changing-light controls passed" witness)
 if(NOT result EQUAL 0 OR witness LESS 0)
     message(FATAL_ERROR "Changing-light controls failed (${result}): ${stdout}${stderr}")
 endif()
+execute_process(
+    COMMAND "${ENGINE}" -changing-light-test resume -hogdir "${DATA}" -extra-dir "${OUTPUT}"
+            -userdir "${OUTPUT}/preview-user" -nosound -nomusic
+    RESULT_VARIABLE cold_result
+    OUTPUT_VARIABLE cold_stdout
+    ERROR_VARIABLE cold_stderr
+    TIMEOUT 120)
+file(WRITE "${OUTPUT}/cold-uv.log" "${cold_stdout}${cold_stderr}")
+string(FIND "${cold_stdout}" "XL cold texture UV restore passed" cold_witness)
+if(NOT cold_result EQUAL 0 OR cold_witness LESS 0)
+    message(
+        FATAL_ERROR "Cold texture UV restore failed (${cold_result}): ${cold_stdout}${cold_stderr}")
+endif()
 if(REFERENCE)
     execute_process(
         COMMAND "${REFERENCE}" "${OUTPUT}/light-samples.txt" RESULT_VARIABLE reference_result

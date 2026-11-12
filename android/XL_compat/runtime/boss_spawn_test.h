@@ -486,7 +486,7 @@ static void robotmaker_boss_controls(const std::filesystem::path &root)
 		const xl_compat::Bytes encoded{ std::istreambuf_iterator<char>(trailer_input), std::istreambuf_iterator<char>() };
 		require(encoded.size() > 16, "robotmaker boss trailer missing");
 		auto bad = nlohmann::json::parse(encoded.begin() + 16, encoded.end());
-		bad["schema"] = 38;
+		bad["schema"] = 39;
 		const auto payload = bad.dump();
 		xl_compat::Bytes corrupt(encoded.begin(), encoded.begin() + 16);
 		corrupt.insert(corrupt.end(), payload.begin(), payload.end());

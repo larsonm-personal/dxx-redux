@@ -60,8 +60,9 @@ namespace
 {
 using nlohmann::json;
 constexpr char tag[8] = { 'D', 'X', 'X', 'L', 'T', 'R', '0', '1' };
-// Bounded events/lifecycle plus up to 1000 destinations per native boss slot
-constexpr std::uint32_t maximum = 8 * 1024 * 1024;
+// Existing events/lifecycle bound plus 48 signed UV coordinates per segment
+// Each int32 needs at most 11 characters and a comma, plus row/field delimiters
+constexpr std::uint32_t maximum = 8 * 1024 * 1024 + MAX_SEGMENTS * (48 * 12 + 3) + 64;
 void require(bool result, const char *message)
 {
 	if (!result) throw std::runtime_error(message);
@@ -133,7 +134,20 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 37;
+		block["schema"] = 38;
+		// UVs also feed hit-point transparency; preserve earned scrolling on every
+		// face, including faces whose texture has since changed to a static one
+		require(Num_segments > 0 && Num_segments <= MAX_SEGMENTS, "Invalid XL UV segment count");
+		block["texture_uv"] = json::array();
+		for (int segment = 0; segment < Num_segments; ++segment) {
+			json row = json::array();
+			for (const auto &side : Segments[segment].sides)
+				for (const auto &uvl : side.uvls) {
+					row.push_back(int(uvl.u));
+					row.push_back(int(uvl.v));
+				}
+			block["texture_uv"].push_back(std::move(row));
+		}
 		// Pending spawn effects allocate ordinary objects and draw SIM RNG
 		block["appearance_pending"] = bool(Do_appearance_effect);
 		block["camera_attachments"] = xl_camera_attachments_snapshot();
@@ -244,9 +258,21 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 26u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 37 &&
+		require(saved.is_object() && saved.size() == 27u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 38 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
+		const auto &uv_rows = saved.at("texture_uv");
+		require(Num_segments > 0 && Num_segments <= MAX_SEGMENTS && uv_rows.is_array() && uv_rows.size() == static_cast<std::size_t>(Num_segments), "Invalid XL UV segment count");
+		std::vector<std::array<int32_t, 48>> texture_uv(Num_segments);
+		for (std::size_t segment = 0; segment < uv_rows.size(); ++segment) {
+			const auto &row = uv_rows[segment];
+			require(row.is_array() && row.size() == 48, "Invalid XL UV row");
+			for (std::size_t field = 0; field < row.size(); ++field) {
+				const auto &value = row[field];
+				require(value.is_number_integer() && (!value.is_number_unsigned() || value.get<std::uint64_t>() <= INT32_MAX) && value.get<std::int64_t>() >= INT32_MIN && value.get<std::int64_t>() <= INT32_MAX, "Invalid XL UV coordinate");
+				texture_uv[segment][field] = value.get<int32_t>();
+			}
+		}
 		require(saved.at("appearance_pending").is_boolean(), "Invalid XL pending appearance effect");
 		require(xl_runtime::restore_weapon_clock(saved.at("weapon_clock"), false), "Invalid XL weapon clock");
 		require(xl_runtime::restore_slow_motion(saved.at("slow_motion"), false), "Invalid XL slow-motion state");
@@ -448,6 +474,14 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		require(xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 0) && xl_speed_boost_restore(boosts.data(), static_cast<int>(boosts.size()), boost_speed, 0) && xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0) && xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 0) && xl_compat::restore_boss_routes(boss_routes, 0) && xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 0), "Invalid XL event state");
 		require(xl_camera_controller_restore(0), "Invalid XL camera restore identity");
 		require(xl_camera_attachments_restore(saved.at("camera_attachments"), false), "Invalid XL camera attachment identity");
+		for (int segment = 0; segment < Num_segments; ++segment) {
+			std::size_t field = 0;
+			for (auto &side : Segments[segment].sides)
+				for (auto &uvl : side.uvls) {
+					uvl.u = texture_uv[segment][field++];
+					uvl.v = texture_uv[segment][field++];
+				}
+		}
 		xl_runtime::restore_weapon_clock(saved.at("weapon_clock"), true);
 		Do_appearance_effect = saved.at("appearance_pending").get<bool>();
 		xl_runtime::restore_slow_motion(saved.at("slow_motion"), true);

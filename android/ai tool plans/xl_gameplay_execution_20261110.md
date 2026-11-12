@@ -1449,6 +1449,80 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   estimated 6-10 hours; G2-G7 roughly 17.5 hours, overlapping prerequisite work
   to be subtracted once accepted. No cutoff or gameplay-closure claim.
 
+### G1 checkpoint UV repair, November 11 at 13:48 PST
+
+- Previous goal turn made progress: ordinary Omega witness committed as
+  64dd2731aef14092d6f09ba962a275ec0197f955, tree
+  6f1c8b5715733702119245d4deac9af2d83049f8. This increment fixes the concrete
+  save-state loss discovered by that witness. Layer02 remains local/unaccepted.
+- Existing trigger_save.cpp advances development schema 37 to 38 and captures all
+  48 signed UV values per segment, independently of current texture scrolling.
+  Entire geometry-sized arrays validate before publication; L remains owned by
+  the existing lighting state. Maximum trailer bytes add the worst-case encoded
+  UV array to the previous 8 MiB allowance. No stock save-format change or legacy
+  development-save migration. Actual consumers are game.c slide_textures and
+  fvi.c find_hitpoint_uv/check_trans_wall -> xl_side_pixel_transparency.
+- Existing changing-light native owner now earns both UV coordinates using actual
+  texture scrolling, saves to disk, transitions through stock and restores every
+  coordinate plus the collision UV interpolation. Existing CMake owner adds a
+  fresh-process resume of the same save against the captured UV receipt. Both
+  dispatch/invalid-row variants cover 93 segments; nineteen malformed light/UV
+  payloads reject without partial UV publication. Boss malformed-schema control
+  now uses 39. No test membership/timeouts or immutable fixtures changed.
+- Windows developer desktop/metadata builds pass. Both changing-light owners
+  pass (2/2,22.72 s), including cold resume; boss spawning passes (1/1,23.62 s).
+  Rebuild emits the pre-existing changing_light_test_records.h:18 int/bool C4805
+  warning; no new warning in the modified save owner. Linux desktop/metadata
+  build passes (91 steps); its existing test-header write-strings warnings remain
+  outside the edited code. Linux owners pass 3/3 in 18.74 s, including both fresh
+  process UV restores. Zero skips. Both automation catalogs pass: 99 JSON,
+  315 PowerShell, 428 top-level entries and 547 support scripts.
+- Original Warp 5 capture5 reaches all 180 frames, complete gameplay proof,
+  exported input/classic demos and terminal trace, but the 45s process timeout
+  fails it (exit_code=null). It overlapped Linux compilation. Preserve this
+  failed outcome; a quiet rerun after compilation tests the load hypothesis
+  without increasing the timeout. Do not qualify/freeze this recording.
+- Quiet capture6 passes with the unchanged 45 s limit, same original robot117,
+  damage and recharge, and the same two pre-recording setup assists (zero during
+  capture). Clean accelerated replay3 passes terminal comparison and required
+  clean exit with verified assets. Detailed comparison confirms ZERO UV
+  differences across 184 world/boundary records; all 180 frame comparisons and
+  1059 SIM RNG events pass. Object/world scope still fails on the retained
+  FrameTime1092/0, SIM-call453/0 and camera-tick14077/0 checkpoint differences,
+  plus FX RNG and chatter timers (objects200/117, frames82/129). Nothing was
+  filtered from comparison. G1 remains unaccepted, no corpus frozen.
+  Demo d2_wshock20_level5_20261111_134420.dximdemo SHA256
+  0a16b5970c8d7976ca9eae231e0d3c90c9577a24992137002086111844f440c2;
+  tested Windows EXE SHA256
+  fb540f070971ea7431f1f6832ea51e8009b0460f4307254f4838e7940298ed74.
+  Detailed evidence: g1-omega-replay-3-comparison.json, native cold/controls logs
+  and platform CTest logs under protected temp/pr464-ci-fixes-20261110.
+- Scoped mixed-language quality and git diff checks pass. Authentic Warp HOG
+  rehashed unchanged (2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c),
+  as did original Neptune HOG (4016618d24238803135dabf2b33daee2a2c34a670c3f016d94ae4639c8887303).
+  Reference remains 2576a98b5de310e3ac7c9777df2677d1627b8bae. Actual work
+  approximately 13:23-13:48 PST, including cleanup and Linux rebuild waits.
+- Space maintenance: official temporary cleanup with exclusions/emulator
+  preservation found 0 eligible, so target 50 GiB was unmet. Existing replay
+  compress_trace then losslessly compressed 25 completed RNG traces and 2 crash
+  dumps, verifying decoded SHA256 before replacement (385998285 bytes saved).
+  g1-uv-evidence-compression.json records original/encoded hashes and paths;
+  older direct raw-RNG paths now have .gz siblings. A refined official preview
+  and cleanup removed 181 byte-identical replay runtime copies (60347392 bytes),
+  retaining at least one copy of all 28 distinct binary hashes and every result,
+  save, trace and crash artifact. Manifest g1-uv-duplicate-binaries.json and
+  cleanup-exclusions-uv.json preserve the exact choices. Target 50 GiB remained
+  unmet then. Free space subsequently rose to about 48 GiB; the logged cleanup
+  does not account for that larger recovery. The 4 GiB reserve is unchanged.
+- Next: commit this validated UV owner repair, then continue camera controller
+  rotation/timing and checkpoint clock-boundary restoration in their real save
+  owners. Preserve cold epoch semantics, reject malformed state atomically and
+  qualify actual resumed camera movement. Audit FrameTime/SIM diagnostic origins
+  and audio/FX independence before changing semantic comparisons. G1
+  estimate remains 6-10 h and G2-G7 roughly 17.5 h, with shared prerequisite work
+  credited only once accepted. No Android interruption, external blocker or
+  gameplay-closure claim.
+
 Per-item handoff template:
 
     Item and status:
