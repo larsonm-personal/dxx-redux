@@ -1945,6 +1945,95 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   remain open. Estimated G1 remainder4-8 h; G2-G7 roughly17.5 h, shared prerequisites
   credited once accepted. No cutoff, no reduced scope and no full-gameplay claim.
 
+### 2026-11-11 16:47 PST - G1 floating-point admission
+
+- Ordered-settings increment committed as661b6ace2bf444956e51a4dc4809d5c7b89e3521,
+  treef978e65f35b1a57d0e0c74f69359fac69a59e031. Layer02 remains local/unaccepted;
+  no pushed SHA, PR or current-tip hosted CI claim. G0/PR465 remains the published
+  baseline. Independent untracked CI review is untouched.
+- Existing input_demo_fp_env and build-metadata owners now declare/check the
+  supported strict C/C++ profile. Recorder startup and replay load reject an
+  unsupported translation-unit profile before publishing a new session. Native
+  capture checks before checkpoint creation; playback checks before and after
+  world restore. Live input/frame boundaries and replay steps reject changed FP
+  controls. Format6 stops using the Windows replay-only reset; stock5 retains it.
+  No replay-only state correction or new timeline field was added.
+- Runtime checks require nearest rounding, masked traps and gradual underflow;
+  MSVC x86 also requires53-bit x87 precision. GCC/Clang SSE paths check x87 trap
+  masks separately. ARM checks FPCR/FPSCR control bits, leaving accrued status
+  alone. Unknown build/hardware profiles reject. This is admission, not proof
+  of cross-ABI numerical equivalence. Compiler basis: existing /fp:strict and
+  -ffp-contract=off/-fno-fast-math; official documentation reviewed at
+  https://learn.microsoft.com/en-us/cpp/build/reference/fp-specify-floating-point-behavior
+  and https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html. ARM register fields
+  checked against Arm's FPSCR/FPCR manuals. Production gameplay guards stay closed.
+- Windows D1 and D2 desktop builds pass. Each selected fixture/recorder/replay/FP
+  suite passes6/6, zero skips. Added x87 precision controls then reran each FP
+  group3/3. Linux D2 build and selected tests pass6/6; after adding the independent
+  x87-mask check, affected tests pass5/5. Default/unqualified/actual-fast-math C
+  and C++ builds, three non-nearest modes, denormal controls, masked exceptions,
+  accrued inexact status and no-mutation rejection are covered. Recorder/replay
+  negative tests verify refusal without replacing the active session. Existing
+  weapon return and packed-member warnings recur on the broader rebuild; no new
+  warning was reported for changed production/test code.
+- Windows evidence EXE9b972d0c8f1484978f87eea8be12a27b0d6481ec091187c01b41c2ea480b6e7b;
+  D189a2d1ef49919c5cbe0ff108c8f717d7e8d184781bcdf8ca85662fbb2fe63a8d;
+  Linux after its x87 check8688aa9ae5f2a3d9c742d2f01e1f361f7102e6495c56f51eaa0ff5b7da21f622.
+  Root-bound caches, Windows x86 MSVC14.44 and Linux x86-64 GCC. Windows binaries
+  precede only the subsequent non-MSVC x87 branch/test addition, which is excluded
+  from their compiled runtime. Metadata executables and packages not refreshed.
+- NDKr30 actual/pinned30.0.16248370/API24 C and C++ compile checks pass for ARM32,
+  ARM64, x86 and x86-64; strict and fast-math preprocessor admission checks pass
+  in each language. Refreshed all four after the final non-MSVC x87 assertion;
+  g1-fp-android-compile/result.json records final source hashes and each result.
+  These are compile-only probes, not an APK/device pass.
+- Fresh Warp5 Omega capture11 passes in23.953 seconds against unchanged45. Demo
+  d2_wshock20_level5_20261111_163413.dximdemo SHA256
+  f27c146bfb14afb34b025ff0bc646fd2d782262099cec4cee4f6e5d29b8e7ca2.
+  Same180 frames/66 warmup, original robot117/signature118, one pre-pose and one
+  pre-inventory assist, zero in-record assists. Damage/recharge and all four
+  configuration sites pass. Process timing is one measurement, not a new SLA.
+  Immediate/repeated accelerated and realtime playbacks12/13/14 all pass strict
+  terminal/verified assets/natural exit. EACH detailed comparison passes180 objects,
+  184 world/boundary records,180 frame checks,1059 SIM and364 FX events, zero
+  differences. Presentation RNG remains diagnostic and raw: each comparison
+  reports174025 events compared and differences, without excluding SIM/FX fields.
+- Fresh Warp6 time capture10 passes in27.781 seconds against unchanged45. Demo
+  d2_wshock20_level6_20261111_164118.dximdemo SHA256
+  dae7e520880f654116f9d7ca24aeb8125f8d69363678e47f307cc2b2eb35e0d1.
+  Same198 captured frames, original slow pickup/activation/reversal, one pre-record
+  approach pose and five total pose assists across the entire probe; no in-record
+  pose changes or level-load assists. Bullet pickup/control/thrust remains outside
+  the recording. Probe enter3402 ms, record start3608, frames finished19419,
+  finalized19698, ordinary save27540-27556. The earlier45-second failures remain
+  failed evidence; this faster run does not establish a general timing guarantee.
+  Immediate/repeated accelerated and realtime playbacks15/16/17 all verify assets,
+  strict terminal and natural exit. EACH matches198 object/frame records,
+  202 world/boundary records,811 SIM and201 FX events, zero differences, including
+  schema11 settings observation. Presentation events0 on both sides. These are
+  Windows bounded mechanics witnesses, not connected progression or a frozen corpus.
+- Fresh immutable stock D1/D2 flight controls each pass360 live-oracle frames,
+  terminal/diagnostic fidelity and ordinary action checks; SIM counts96/778.
+  These two controls supplement, not replace, the full34-run public pass on the
+  preceding settings increment. Both catalogs pass99 JSON/315 PowerShell/547
+  support and428 integration entries. Scoped mixed-language quality passes.
+- Evidence uses g1-fp-* logs/probes and capture11/replays12-14 under protected
+  temp/pr464-ci-fixes-20261110; time capture10/replays15-17 and g1-fp-stock-d1/d2
+  retain full new receipts. Actual work approximately16:25-16:47 PST. No WSL restart, Android device operation, timeout
+  or membership reduction. Retention previews had zero eligible artifacts;
+  free bytes46014091264 at16:38, unchanged4 GiB producer reserve.
+- Next: commit this coherent admission change. Continue remaining clock/global
+  audit and explicitly close the time-equipment combat witness gap before G1
+  acceptance; the existing time capture proves pickup/controls/movement, not
+  deliberate recorded time-equipment combat. Review existing render_clock_probe
+  and original-level inputs before extending that owner, without extra in-record
+  pose/inventory assists or relaxed deadlines. Remaining external clocks include
+  message/camera/effect/model consumers;
+  message rendering mutates saved message age and remains an explicit G3 owner
+  review, not presumed simulation-independent. No external blocker. G1 remainder
+  estimated3-6 h after this increment; G2-G7 roughly17.5 h with shared prerequisites
+  credited once accepted. No cutoff or reduced gameplay/validation scope.
+
 Per-item handoff template:
 
     Item and status:

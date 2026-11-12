@@ -34,6 +34,13 @@ function(dxx_input_demo_get_build_metadata out_build_number out_git_version)
 endfunction()
 
 function(dxx_input_demo_apply_build_metadata target)
+    # The flag owner lives in d1/d2 CMakeLists and applies to C and C++ together
+    set(strict_fp_profile 0)
+    if(DXX_STRICT_FP AND CMAKE_C_COMPILER_ID MATCHES "^(MSVC|GNU|Clang|AppleClang)$"
+       AND CMAKE_CXX_COMPILER_ID MATCHES "^(MSVC|GNU|Clang|AppleClang)$")
+        set(strict_fp_profile 1)
+    endif()
+    target_compile_definitions(${target} PRIVATE DXX_INPUT_DEMO_STRICT_FP=${strict_fp_profile})
     dxx_input_demo_get_build_metadata(build_number git_version)
     string(REPLACE "\\" "\\\\" escaped_git_version "${git_version}")
     string(REPLACE "\"" "\\\"" escaped_git_version "${escaped_git_version}")

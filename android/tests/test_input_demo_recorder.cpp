@@ -21,6 +21,8 @@
 #include "input_demo_codec.h"
 #include "input_demo_limits.h"
 #include "input_demo_recorder.h"
+#include "input_demo_fp_env.h"
+#include <fenv.h>
 #include "input_demo_rng_trace.h"
 #include "input_demo_result.h"
 #include "input_demo_state_trace.h"
@@ -2086,6 +2088,17 @@ static int expect_environment_recording(void)
 	input_demo_control_pulse pulse = {};
 	char error[256] = "";
 	const auto check = [&](int result) { return result || !report_failure(error); };
+	if (!INPUT_DEMO_STRICT_FP_BUILD) {
+		if (input_demo_recorder_start(&settings, error, sizeof(error)) || input_demo_recorder_is_active() ||
+		    !strstr(error, "strict floating point")) return report_failure("unsupported FP build started XL capture");
+		return 0;
+	}
+	const int original_rounding = fegetround();
+	if (fesetround(FE_DOWNWARD) != 0) return report_failure("could not set negative capture FP mode");
+	const bool admitted = input_demo_recorder_start(&settings, error, sizeof(error)) != 0;
+	const bool repaired = fegetround() != FE_DOWNWARD;
+	if (fesetround(original_rounding) != 0) return report_failure("could not restore capture FP mode");
+	if (admitted || repaired || input_demo_recorder_is_active()) return report_failure("invalid FP capture was admitted or repaired");
 	for (int missing = 0; missing < 6; ++missing) {
 		auto incomplete = settings;
 		if (missing == 0) incomplete.has_player_cfg = 0;
@@ -2141,6 +2154,12 @@ static int expect_environment_recording(void)
 	    !check(input_demo_recorder_flush(path, error, sizeof(error))) ||
 	    !check(input_demo_replay_load(path, error, sizeof(error)))) return 1;
 	input_demo_environment_clock actual = {};
+	if (fesetround(FE_UPWARD) != 0) return report_failure("could not set negative playback FP mode");
+	const bool replay_admitted = input_demo_replay_load(path, error, sizeof(error)) != 0;
+	const bool replay_repaired = fegetround() != FE_UPWARD;
+	if (fesetround(original_rounding) != 0) return report_failure("could not restore playback FP mode");
+	if (replay_admitted || replay_repaired || !input_demo_replay_is_loaded())
+		return report_failure("invalid FP playback was admitted, repaired or replaced the loaded session");
 	if (!input_demo_replay_get_environment_origin(&actual) || memcmp(&actual, &settings.environment, sizeof(actual)))
 		return report_failure("recording lost its environment origin");
 	if (input_demo_replay_environment_running() || input_demo_replay_consume_environment("omega_fired", -1, 0, 1, &actual, error, sizeof(error)))

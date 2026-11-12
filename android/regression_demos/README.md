@@ -402,17 +402,34 @@ format-5 stock/default behavior remains unchanged.
 The settings audit currently distinguishes these owners. Open rows are
 qualification work, not implied support:
 
-| Setting/input                                                                                          | Existing ownership and remaining qualification                                                                                                                                                        |
-| ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Difficulty                                                                                             | Header 0-4, restored before startup; ordered difficulty commands retain later changes                                                                                                                 |
-| Auto-leveling, persistent debris, headlight default, homing, weapon selection/order, Guide-Bot routing | Explicit startup configuration plus complete ordered `player_cfg` operations; Guide-Bot changes use the ordinary setter and retain its AI routing reset; the current profile survives pilot reload    |
-| Keyboard, joystick, mouse and touch scaling/bindings                                                   | Applied before captured control samples; playback dispatches those scaled samples, rather than reading current device bindings                                                                        |
-| Rear view/cockpit and projection/depth/missile view                                                    | Explicit startup baselines and ordered view operations; projection changes cancel capture, and incompatible playback projection rejects                                                               |
-| Extra/guided/camera render views                                                                       | Existing gameplay-view admission applies; broader renderer independence remains G3 work, since visibility and render counts can affect gameplay                                                       |
-| XL speedup and process clocks                                                                          | Required speedup 6, bounded recorded transition/pickup/cached clocks and render-event count; no configurable alternate speedup is currently implemented                                               |
-| RNG and floating point                                                                                 | Required `lcg_state`; D2 builds default to strict FP (`/fp:strict` or no fast math/contraction). Cross-build/architecture qualification and explicit rejection of unsupported build modes remain open |
-| Cheats and checkpoint globals                                                                          | Ordered cheat commands exist, but the baseline and disk-save owners do not yet prove every persistent cheat/global; complete continuation belongs to G2                                               |
-| Audio backend and optional visual effects                                                              | Some runtime state still depends on backend availability; G3 must establish simulation independence before treating these as presentation-only                                                        |
+| Setting/input                                                                                          | Existing ownership and remaining qualification                                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Difficulty                                                                                             | Header 0-4, restored before startup; ordered difficulty commands retain later changes                                                                                                              |
+| Auto-leveling, persistent debris, headlight default, homing, weapon selection/order, Guide-Bot routing | Explicit startup configuration plus complete ordered `player_cfg` operations; Guide-Bot changes use the ordinary setter and retain its AI routing reset; the current profile survives pilot reload |
+| Keyboard, joystick, mouse and touch scaling/bindings                                                   | Applied before captured control samples; playback dispatches those scaled samples, rather than reading current device bindings                                                                     |
+| Rear view/cockpit and projection/depth/missile view                                                    | Explicit startup baselines and ordered view operations; projection changes cancel capture, and incompatible playback projection rejects                                                            |
+| Extra/guided/camera render views                                                                       | Existing gameplay-view admission applies; broader renderer independence remains G3 work, since visibility and render counts can affect gameplay                                                    |
+| XL speedup and process clocks                                                                          | Required speedup 6, bounded recorded transition/pickup/cached clocks and render-event count; no configurable alternate speedup is currently implemented                                            |
+| RNG and floating point                                                                                 | Required `lcg_state` and supported strict C/C++ build profile; altered runtime FP controls reject without replay-only repair. Cross-build/architecture gameplay qualification remains open         |
+| Cheats and checkpoint globals                                                                          | Ordered cheat commands exist, but the baseline and disk-save owners do not yet prove every persistent cheat/global; complete continuation belongs to G2                                            |
+| Audio backend and optional visual effects                                                              | Some runtime state still depends on backend availability; G3 must establish simulation independence before treating these as presentation-only                                                     |
+
+Format 6 admission requires the existing CMake strict-FP profile in both C and
+C++: MSVC `/fp:strict`, or GCC/Clang no fast math and no contraction. Compiler
+markers additionally reject fast-math overrides and excess-precision evaluation.
+The checked hardware profiles are SSE2 (plus 53-bit x87 on MSVC x86) and ARM
+hardware floating point. Unknown compiler/hardware profiles reject. These are
+admission prerequisites, not cross-platform gameplay qualification.
+
+Capture startup checks FP controls before checkpoint capture; replay checks before
+session publication and world restore, then again after restore. Live input/frame
+boundaries and replay steps require nearest rounding, masked exceptions and
+gradual underflow. ARM also requires its default NaN/vector controls. Accrued
+exception status is not a control change. A changed control mode cancels the
+companion capture or stops playback with a diagnostic; it is not silently repaired.
+Format 6 no longer uses the historical Windows replay-only FP reset. Stock format
+5 retains that behavior. The build profile is part of the format-6 contract;
+changing its numerical semantics requires renewed fidelity qualification.
 
 Format 6 records configuration changes as `{k: "player_cfg", ft, value}` in the
 existing ordered dispatch list. `value` is the complete, validated D2 `player_cfg`

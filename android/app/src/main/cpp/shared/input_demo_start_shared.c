@@ -18,6 +18,7 @@
 #include "gameseq.h"
 #include "input_demo_debug_logging.h"
 #include "input_demo_hooks.h"
+#include "input_demo_fp_env.h"
 #include "input_demo_hooks_shared.h"
 #include "input_demo_limits.h"
 #include "input_demo_replay.h"
@@ -739,6 +740,11 @@ int input_demo_start_loaded_replay_common(void)
 	char projection_error[256] = "";
 	/* Keep world admission closed until the XL runtime consumes this contract */
 	if (input_demo_replay_format_version() == 6) {
+		if (!input_demo_validate_xl_fp_environment(projection_error, sizeof(projection_error))) {
+			printf("Input demo replay could not start: %s\n", projection_error);
+			input_demo_replay_unload();
+			return 1;
+		}
 #ifdef DXX_XL_DEVELOPER_PROBE
 		input_demo_view_projection projection;
 		if (!input_demo_replay_has_player_cfg() ||
@@ -766,6 +772,12 @@ int input_demo_start_loaded_replay_common(void)
 	input_demo_reset_replay_input_state();
 	result = input_demo_restore_loaded_replay();
 	if (!result) {
+		if (input_demo_replay_format_version() == 6 &&
+		    !input_demo_validate_xl_fp_environment(projection_error, sizeof(projection_error))) {
+			printf("Input demo replay could not start after restore: %s\n", projection_error);
+			input_demo_replay_unload();
+			return 1;
+		}
 #ifdef DXX_XL_RUNTIME
 		const char *unsupported = xl_omega_input_demo_error();
 		if (unsupported) {

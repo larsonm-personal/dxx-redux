@@ -762,6 +762,10 @@ void input_demo_record_input_context(void)
 	char error[256] = "";
 	if (!input_demo_recorder_uses_ordered_input())
 		return;
+	if (input_demo_recorder_uses_environment() && !input_demo_validate_xl_fp_environment(error, sizeof(error))) {
+		input_demo_cancel_input_capture(error);
+		return;
+	}
 #ifdef DXX_XL_RUNTIME
 	const char *unsupported = xl_omega_input_demo_error();
 	if (unsupported) {
@@ -1010,6 +1014,10 @@ void input_demo_record_game_frame(void)
 
 	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_recorder_is_active())
 		return;
+	if (input_demo_recorder_uses_environment() && !input_demo_validate_xl_fp_environment(error, sizeof(error))) {
+		input_demo_cancel_input_capture(error);
+		return;
+	}
 #ifdef DXX_XL_RUNTIME
 	const char *unsupported = xl_omega_input_demo_error();
 	if (unsupported) {
@@ -1275,6 +1283,13 @@ int input_demo_process_fast_replay(void)
 
 static int input_demo_replay_clock_supported(void (*stop_replay)(int))
 {
+	char error[256] = "";
+	if (input_demo_replay_format_version() == 6 && !input_demo_validate_xl_fp_environment(error, sizeof(error))) {
+		con_printf(CON_URGENT, "Input demo replay stopped: %s\n", error);
+		if (stop_replay) stop_replay(0);
+		else input_demo_replay_unload();
+		return 0;
+	}
 #ifdef DXX_XL_RUNTIME
 	const char *unsupported = xl_omega_input_demo_error();
 	if (unsupported) {
@@ -1293,7 +1308,8 @@ int input_demo_step_replay_frame_shared(int (*prepare_replay_frame)(void), void 
 	/* A background draw must not reapply a non-idempotent pending batch */
 	if (game_is_time_paused())
 		return 0;
-	input_demo_restore_replay_fp_environment();
+	/* Format 6 validates the same environment as live capture instead of repairing it */
+	if (input_demo_replay_format_version() != 6) input_demo_restore_replay_fp_environment();
 	if (!prepare_replay_frame || !prepare_replay_frame())
 		return 0;
 	if (!input_demo_replay_clock_supported(stop_replay)) return 0;

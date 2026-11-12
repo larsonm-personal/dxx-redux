@@ -17,6 +17,7 @@
 #include "gameseg.h"
 #include "gr.h"
 #include "input_demo_hooks.h"
+#include "input_demo_fp_env.h"
 #include "input_demo_hooks_shared.h"
 #include "input_demo_limits.h"
 #include "input_demo_recorder.h"
@@ -435,6 +436,7 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 		return 0;
 	}
 #ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active() && !input_demo_validate_xl_fp_environment(error, error_size)) return 0;
 	unsupported_view = xl_omega_input_demo_error();
 #ifdef DXX_XL_DEVELOPER_PROBE
 	/* Ordinary startup is exercised in the developer build before qualification */

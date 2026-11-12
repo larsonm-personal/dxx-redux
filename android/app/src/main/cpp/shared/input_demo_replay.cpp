@@ -1,5 +1,6 @@
 #include "input_demo_cheats.h"
 #include "input_demo_replay.h"
+#include "input_demo_fp_env.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -590,6 +591,11 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 		return copy_error("missing replay demo file path", error, error_size);
 	if (!input_demo_file_read(demo_path, &demo, &replay_error))
 		return copy_error(replay_error, error, error_size);
+	if (demo.metadata.version == 6) {
+		if (!INPUT_DEMO_STRICT_FP_BUILD)
+			return copy_error("XL input demos require a supported strict floating point C++ build", error, error_size);
+		if (!input_demo_validate_xl_fp_environment(error, error_size)) return 0;
+	}
 	game = game_id_from_name(demo.metadata.game);
 	if (!game)
 		return copy_error("metadata game must be d1 or d2", error, error_size);

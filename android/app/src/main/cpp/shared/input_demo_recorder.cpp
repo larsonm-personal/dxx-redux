@@ -1,5 +1,6 @@
 #include "input_demo_cheats.h"
 #include "input_demo_recorder.h"
+#include "input_demo_fp_env.h"
 
 #include <stdio.h>
 
@@ -626,6 +627,9 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 	if (have_checkpoint && settings->level_start)
 		return input_demo_recorder_copy_error("level start cannot contain a checkpoint", error, error_size);
 	if (settings->has_environment) {
+		if (!INPUT_DEMO_STRICT_FP_BUILD)
+			return input_demo_recorder_copy_error("XL input demos require a supported strict floating point C++ build", error, error_size);
+		if (!input_demo_validate_xl_fp_environment(error, error_size)) return 0;
 		// Use the same admission contract before starting or replacing any capture
 		input_demo_metadata metadata;
 		metadata.version = 6;
