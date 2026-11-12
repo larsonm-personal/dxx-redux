@@ -286,6 +286,9 @@ class XlPrivateTests(unittest.TestCase):
                 reset_count=0,
                 shot_charge=32768 - (1092 if xl else 3276),
                 shot_delay=1 if xl else 3276,
+                paused_frame_time=0 if xl else 1092,
+                paused_game_time_unchanged=True,
+                paused_sim_rng_unchanged=True,
                 events=[],
             )
             count = 0
@@ -315,6 +318,10 @@ class XlPrivateTests(unittest.TestCase):
                 ("reset_count", True),
                 ("shot_charge", 0),
                 ("shot_delay", 0),
+                ("paused_frame_time", True),
+                ("paused_frame_time", -1),
+                ("paused_game_time_unchanged", False),
+                ("paused_sim_rng_unchanged", 1),
                 ("mission", "wrong"),
                 ("events", proof["events"][:-1]),
                 ("events", proof["events"] + [proof["events"][0]]),
@@ -323,6 +330,10 @@ class XlPrivateTests(unittest.TestCase):
                 bad = copy.deepcopy(proof)
                 bad[key] = value
                 self.assertFalse(render_clock.passed(0, bad, "fixture", 1, xl), key)
+            if xl:
+                bad = copy.deepcopy(proof)
+                bad["paused_frame_time"] = 1092
+                self.assertFalse(render_clock.passed(0, bad, "fixture", 1, xl))
             for i in range(len(proof["events"])):
                 for key, value in (("event", "wrong"), ("after", 99), ("before", True), ("charge", 0), ("extra", 0)):
                     bad = copy.deepcopy(proof)

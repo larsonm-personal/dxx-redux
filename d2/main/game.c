@@ -546,6 +546,15 @@ void calc_frame_time()
 	fix64 timer_value;
 	fix last_frametime = FrameTime;
 
+#ifdef DXX_XL_RUNTIME
+	/* XL CalcFrameTime gives paused menu redraws zero simulation duration */
+	if (xl_level_extensions_active() && game_is_time_paused()) {
+		reset_time();
+		FrameTime = 0;
+		return;
+	}
+#endif
+
 	timer_update();
 	timer_value = timer_query();
 	FrameTime = timer_value - last_timer_value;

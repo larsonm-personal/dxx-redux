@@ -507,6 +507,13 @@ clock while host time advances, then verify age and expiry as recorded samples
 are consumed. This is a derived clock-consumer test, not a whole-level replay;
 modal input/clock ordering and optional output independence remain open G1/G3
 audit work.
+Paused XL menu draws now give `FrameTime` zero and reset the next frame's host
+timer origin, matching the paused branch of pinned `CalcFrameTime`. Stock timing
+is unchanged. The existing rendered clock probe opens a real menu, processes
+three event loops and checks zero XL duration, unchanged game time/SIM RNG and
+the three actual render-counter contributions. This does not yet qualify a modal
+trigger inside a recorded simulation frame: its resume clock, input flush and
+continuation still need full live-versus-replay evidence.
 The schema also persists both signed texture coordinates at all four corners of
 every segment face. Scrolling UVs feed hit-point transparency as well as drawing;
 restoring only texture IDs changes collision. All rows and coordinates validate

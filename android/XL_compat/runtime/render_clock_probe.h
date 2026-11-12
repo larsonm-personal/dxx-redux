@@ -3,6 +3,9 @@
 #include "named_audio_state.h"
 #include "resource_validation.h"
 #include "camera_save.h"
+extern "C" {
+#include "newmenu.h"
+}
 // Developer qualification only; this deliberately controls camera and end-level state
 static int xl_render_clock_probe(const char *path)
 {
@@ -88,6 +91,26 @@ static int xl_render_clock_probe(const char *path)
 		before = xl_slow_motion_render_clock();
 		game_render_frame_mono(0);
 		sample("auxiliary_mono", before, 0);
+		before = xl_slow_motion_render_clock();
+		const auto paused_time = GameTime64;
+		const auto paused_sim = d_rand_get_stream_call_count(D_RNG_SIM);
+		newmenu_item close{};
+		close.type = NM_TYPE_MENU;
+		char close_text[] = "Close";
+		close.text = close_text;
+		auto *menu = newmenu_do3(nullptr, nullptr, 1, &close, nullptr, nullptr, 0, nullptr);
+		require(menu && window_get_front() != Game_wind && game_is_time_paused(), "Cannot open paused menu control");
+		auto *menu_window = newmenu_get_window(menu);
+		FrameTime = F1_0 / 60;
+		for (int i = 0; i < 3; ++i) event_process();
+		proof["paused_frame_time"] = FrameTime;
+		proof["paused_game_time_unchanged"] = bool(GameTime64 == paused_time);
+		proof["paused_sim_rng_unchanged"] = bool(d_rand_get_stream_call_count(D_RNG_SIM) == paused_sim);
+		window_close(menu_window);
+		require(write(), "Cannot write paused menu evidence");
+		require((!xl || FrameTime == 0) && GameTime64 == paused_time && d_rand_get_stream_call_count(D_RNG_SIM) == paused_sim,
+		        "Paused menu changed simulation time, frame duration or SIM RNG");
+		sample("paused_menu", before, 3);
 		before = xl_slow_motion_render_clock();
 		do_automap();
 		auto *map = window_get_front();

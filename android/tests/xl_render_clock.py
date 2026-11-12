@@ -11,6 +11,14 @@ import d1_replay_parity as parity
 
 REVISION = "2576a98b5de310e3ac7c9777df2677d1627b8bae"
 PINS = {
+    "main/gametime.cpp": {
+        "758b4a92b3800c0407c659f2829792e64cdabba7a818b27a64e6e267446d269b",
+        "4f342faeffa71ce7adc0d7792491704674c65b7fe41ec8f4b82831f1bdede45f",
+    },
+    "menus/menu.cpp": {
+        "7d622b4dbcbe6bf0d725c89e6df5265d64227b14a439cac93d98e303fd2244e1",
+        "ccbb31001e3e69807e4c132097c2220fb95a6e5285f3bd5259de4c525f255c62",
+    },
     "render/renderframe.cpp": {
         "56f059e9f02903cece0da2b95acbb2469bd65c9046d0a8539ee0708c632e3bbf",
         "9d09dbc8597c8c02ed738c73ba89f964bfcede1730eef54feb10f20a66f5e7c1",
@@ -34,6 +42,7 @@ EVENTS = (
     ("simulation_only", 0),
     ("main", 1),
     ("auxiliary_mono", 0),
+    ("paused_menu", 3),
     ("automap", 1),
     ("endlevel_main", 2),
     ("endlevel_auxiliary", 1),
@@ -67,6 +76,9 @@ def passed(code, proof, mission, level, xl):
         "reset_count",
         "shot_charge",
         "shot_delay",
+        "paused_frame_time",
+        "paused_game_time_unchanged",
+        "paused_sim_rng_unchanged",
     }
     if (
         type(code) is not int
@@ -88,6 +100,11 @@ def passed(code, proof, mission, level, xl):
         or proof["shot_charge"] != 32768 - (1092 if xl else 3276)
         or type(proof["shot_delay"]) is not int
         or proof["shot_delay"] != (1 if xl else 3276)
+        or type(proof["paused_frame_time"]) is not int
+        or proof["paused_frame_time"] < 0
+        or (xl and proof["paused_frame_time"] != 0)
+        or proof["paused_game_time_unchanged"] is not True
+        or proof["paused_sim_rng_unchanged"] is not True
         or not isinstance(proof["events"], list)
         or len(proof["events"]) != len(EVENTS)
     ):

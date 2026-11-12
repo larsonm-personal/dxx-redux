@@ -2189,6 +2189,75 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   G1 remainder estimated3-5h, G2-G7 roughly17.5h with shared prerequisites credited
   once accepted. No cutoff or reduced gameplay/platform scope.
 
+### 2026-11-11 17:56 PST - G1 paused menu frame duration
+
+- G1 remains active/unaccepted; G0 accepted, G2-G7 open. Sequential root checkout
+  on xl_gameplay_20261111_02_timeline, parent
+  6e77e6a2ea4908f8a8bd46c1c4ddc3ead62fcce3, tree
+  d6da16981436b17a212e1cf2975ca8f98b845214. No layer-02 push, PR or guard removal.
+  The preceding message-clock replay21 finished successfully before that commit:
+  strict assets, terminal state and natural exit passed; all231 object/frame,
+  235 world,1193 SIM and236 FX comparisons had zero differences, presentation0.
+- Audit corrected an initial suspicion: input_demo_step_replay_frame_shared
+  already rejects stepping while game_is_time_paused, before preparing/reapplying
+  an input batch. The actual live defect was calc_frame_time running during
+  background menu draws with an ordinary nonzero duration. The pinned source's
+  menus/menu.cpp RenderMenuGameFrame calls CalcFrameTime while paused; its
+  main/gametime.cpp paused branch sets frame and real-frame time to zero and
+  resets the host timer origin. Source revision remains2576a98; SHA256 values
+  7d622b4dbcbe6bf0d725c89e6df5265d64227b14a439cac93d98e303fd2244e1 and
+  758b4a92b3800c0407c659f2829792e64cdabba7a818b27a64e6e267446d269b respectively.
+  Both exact CRLF/LF forms are now pinned by the existing render-clock owner.
+- d2/main/game.c now gives paused XL draws FrameTime0 and resets their timer
+  origin. Stock D2 and D1 behavior is unchanged; no replay-specific world repair.
+  Existing render_clock_probe.h opens a real newmenu window and processes three
+  full event loops while paused. It checks FrameTime, GameTime64, SIM RNG count
+  and actual render-counter contributions before continuing the existing
+  automap/endlevel/save/restore sequence. xl_render_clock.py and its existing
+  negative controls require these receipts; no new runner, test membership or
+  timeout. README explicitly preserves the unfinished modal continuation gate.
+- Before-fix Windows Warp6 run failed with FrameTime1442, despite unchanged game
+  time and SIM RNG. After-fix Windows Warp6 passed all11 clock events in6.625s,
+  with FrameTime0 and three real render increments. Windows retail D2 level1
+  stock control passed all11 in3.844s, retaining nonzero paused duration1507.
+  An initial stock invocation used mission d2 against shareware data and failed
+  mission lookup before any probe event; retained, corrected with retail data.
+- Linux desktop/metadata built without new warnings. Linux Warp6 reached all
+  nine events through main_again, including the new paused-menu assertions, then
+  hit the existing45s deadline during save/restore. This is a retained failure,
+  not Linux original-level acceptance or an excuse to increase the timeout.
+  The same unchanged11-event probe passed on the existing derived xmessage
+  fixture in13.999s and on stock retail D2 level1 in4.376s. Linux uses Xvfb and
+  llvmpipe, explicitly rendered rather than headless. Derived message geometry
+  remains the audited Neptune input4016618d24238803135dabf2b33daee2a2c34a670c3f016d94ae4639c8887303;
+  original Warp HOG remains2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c.
+- Native message plus pinned text-reference tests passed2/2 with zero skips on
+  Windows13.27s and Linux5.47s. Two Python render-clock acceptance/pin tests
+  passed. Raw receipts and failed attempts are g1-paused-menu-* under
+  temp/pr464-ci-fixes-20261110. The native probe is deliberately assisted
+  (Omega inventory/projectile, controlled clocks, views and endlevel state);
+  it proves no connected route, completion, cold-process resume or new demo.
+- Current Windows desktop SHA256
+  a06e661ac79c19a1f2219cc2443dd9a3b545e89d40615ec5d30306c26fae52a0;
+  metadata c490ef7b35beb0eb8b7df4398082496168a44120f816dd1972e2ea4b881f63ce.
+  Linux desktop64710604ac20f9caea2c7f00b9780fd339c004c0dbcb862871a6c371598f0f10;
+  metadata2bb849427f081b3c195cba4c49d6835c1f0fe69f5b8c8ca0956da8f29ff22b88.
+  Root-bound caches unchanged. Final mixed-language quality and diff checks passed.
+  Catalogs passed99 JSON/315 PowerShell/547 support scripts and428 master entries.
+  Free space52121845760 bytes at17:55 PST. No Android, WSL restart,
+  asset edits, external publication or new hosted-CI claim.
+- Next coherent item remains G1 modal trigger continuation. Pinned PauseGame and
+  ResumeGame flush controls; current newmenu activation also flushes them. Modal
+  source return has no choice-dependent gameplay result. Audit and prove the
+  cached-clock/render-counter/FrameTime boundary when a modal interrupts SIM,
+  including replay acknowledgement and subsequent actions in that same frame.
+  Do not infer output independence from the menu test or silently bypass the UI.
+  Reuse the message fixture, ordered dispatcher and existing rendered owner;
+  production format6 guards remain until full live/replay acceptance.
+  Work17:44-17:56 PST; G1 remaining3-5h and G2-G7 roughly17.5h, with shared
+  prerequisites credited once. The Linux Warp save/restore deadline remains an
+  explicit performance gate. No cutoff or reduction of required scope.
+
 Per-item handoff template:
 
     Item and status:
