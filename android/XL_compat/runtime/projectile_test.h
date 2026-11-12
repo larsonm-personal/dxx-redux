@@ -7,6 +7,8 @@
 extern "C" {
 void maybe_kill_weapon(object *, object *);
 void collide_weapon_and_controlcen(object *, object *, vms_vector *);
+void drop_stolen_items(object *, int);
+extern int Stolen_item_index;
 }
 
 static int projectile_test_shot(int parent, int weapon = FUSION_ID)
@@ -69,14 +71,14 @@ static void projectile_impacts(const std::filesystem::path &root)
 	std::cout << count << " actual projectile impact samples exported\n";
 }
 
-static int projectile_robot()
+static int projectile_robot(int id = 0)
 {
-	const int victim = obj_create(OBJ_ROBOT, 0, ConsoleObject->segnum, &ConsoleObject->pos, &vmd_identity_matrix, F1_0, CT_AI, MT_PHYSICS, RT_POLYOBJ);
+	const int victim = obj_create(OBJ_ROBOT, id, ConsoleObject->segnum, &ConsoleObject->pos, &vmd_identity_matrix, F1_0, CT_AI, MT_PHYSICS, RT_POLYOBJ);
 	require(victim >= 0, "Cannot allocate combat target");
 	auto &robot = Objects[victim];
-	robot.rtype.pobj_info.model_num = Robot_info[0].model_num;
-	robot.mtype.phys_info.mass = Robot_info[0].mass;
-	robot.mtype.phys_info.drag = Robot_info[0].drag;
+	robot.rtype.pobj_info.model_num = Robot_info[id].model_num;
+	robot.mtype.phys_info.mass = Robot_info[id].mass;
+	robot.mtype.phys_info.drag = Robot_info[id].drag;
 	robot.shields = i2f(100);
 	init_ai_object(victim, AIB_NORMAL, -1);
 	return victim;
@@ -348,7 +350,7 @@ static void projectile_robot_attacker_blast()
 	std::cout << "Native hostile/guidebot/player/cheat radial damage and force controls passed\n";
 }
 
-static nlohmann::json projectile_birth_future(int victim, int shot)
+static nlohmann::json projectile_birth_future(int victim, int shot, int thief)
 {
 	const auto native_before = input_demo_native_xl_trace_snapshot();
 	const auto before_calls = d_rand_get_call_count();
@@ -381,16 +383,40 @@ static nlohmann::json projectile_birth_future(int victim, int shot)
 	            xl_object_birth_time(replacement) == GameTime64,
 	        "Reused slot lost its new birth or monotonic creation order");
 	obj_delete(replacement);
+	std::vector<int> prior(object_capacity(), -1);
+	for (int i = 0; i <= Highest_object_index; ++i)
+		if (Objects[i].type != OBJ_NONE) prior[i] = Objects[i].signature;
+	drop_stolen_items(&Objects[thief], 0);
+	auto loot = nlohmann::json::array();
+	for (int i = 0; i <= Highest_object_index; ++i)
+		if (Objects[i].type != OBJ_NONE && prior[i] != Objects[i].signature)
+			loot.push_back({ i, input_demo_object_trace_snapshot(Objects[i], i) });
+	require(loot.size() == 2 && Objects[loot[0][0].get<int>()].type == OBJ_POWERUP && Objects[loot[1][0].get<int>()].type == OBJ_POWERUP,
+	        "Saved thief inventory did not create its two actual loot objects");
+	const auto loot_calls = d_rand_get_call_count();
+	const auto loot_fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	drop_stolen_items(&Objects[thief], 0);
+	require(loot_calls == d_rand_get_call_count() && loot_fx_calls == d_rand_get_stream_call_count(D_RNG_FX),
+	        "Empty stolen inventory consumed RNG draws");
+	std::size_t live = 0;
+	for (int i = 0; i <= Highest_object_index; ++i)
+		live += Objects[i].type != OBJ_NONE;
+	require(live == std::size_t(std::count_if(prior.begin(), prior.end(), [](int signature) { return signature != -1; })) + 2,
+	        "Empty stolen inventory created extra objects");
 	unsigned sim = 0;
 	require(d_rand_get_state(&sim), "Cannot observe birth continuation SIM state");
-	return { { "victim", victim }, { "shot", shot }, { "time", GameTime64 }, { "victim_shields", int(Objects[victim].shields) }, { "shot_shields", int(Objects[shot].shields) }, { "hit", bool(xl_projectile_has_hit(shot, victim)) }, { "birth_time", xl_object_birth_time(victim) }, { "birth_order", xl_object_birth_order(victim) }, { "transient_order", transient_order }, { "replacement_order", replacement_order }, { "sim", sim }, { "calls", d_rand_get_call_count() }, { "native_before", native_before }, { "native_after", input_demo_native_xl_trace_snapshot() }, { "guided", input_demo_object_trace_snapshot(*guided, int(guided - Objects)) }, { "player", input_demo_object_trace_snapshot(*ConsoleObject, int(ConsoleObject - Objects)) }, { "player_energy", int(Players[Player_num].energy) }, { "player_flags", unsigned(Players[Player_num].flags) } };
+	auto result = nlohmann::json{ { "victim", victim }, { "shot", shot }, { "time", GameTime64 }, { "victim_shields", int(Objects[victim].shields) }, { "shot_shields", int(Objects[shot].shields) }, { "hit", bool(xl_projectile_has_hit(shot, victim)) }, { "birth_time", xl_object_birth_time(victim) }, { "birth_order", xl_object_birth_order(victim) }, { "transient_order", transient_order }, { "replacement_order", replacement_order }, { "sim", sim }, { "calls", d_rand_get_call_count() }, { "native_before", native_before }, { "native_after", input_demo_native_xl_trace_snapshot() }, { "guided", input_demo_object_trace_snapshot(*guided, int(guided - Objects)) }, { "player", input_demo_object_trace_snapshot(*ConsoleObject, int(ConsoleObject - Objects)) }, { "player_energy", int(Players[Player_num].energy) }, { "player_flags", unsigned(Players[Player_num].flags) } };
+	result["thief_slot"] = thief;
+	result["thief"] = input_demo_object_trace_snapshot(Objects[thief], thief);
+	result["loot"] = std::move(loot);
+	return result;
 }
 
 static nlohmann::json projectile_birth_semantic(nlohmann::json state)
 {
 	// Match the existing D2 observer policy: 0/-1 both mean no alternate texture
 	// Raw actor values stay in the separately written expected/actual receipts
-	for (const char *actor : { "guided", "player" }) {
+	for (const char *actor : { "guided", "player", "thief" }) {
 		auto &value = state.at(actor).at("polyobj").at("alt_textures");
 		if (value == 0 || value == -1) value = 0;
 	}
@@ -412,6 +438,21 @@ static void projectile_birth_continuation(const std::filesystem::path &root, boo
 		const int shot = projectile_test_shot(ConsoleObject - Objects);
 		const int guided = projectile_test_shot(ConsoleObject - Objects, GUIDEDMISS_ID);
 		require(Guided_missile[Player_num] == &Objects[guided], "Derived guided shot did not acquire its normal native owner");
+		int thief_id = -1;
+		for (int i = 0; i < N_robot_types && thief_id < 0; ++i)
+			if (Robot_info[i].thief) thief_id = i;
+		require(thief_id >= 0, "Derived continuation requires an authentic thief definition");
+		const int thief = projectile_robot(thief_id);
+		const int thief_segment = (ConsoleObject->segnum + 1) % Num_segments;
+		compute_segment_center(&Objects[thief].pos, &Segments[thief_segment]);
+		obj_relink(thief, thief_segment);
+		// Derived already-stolen inventory; future drops use the ordinary native owner
+		std::fill(std::begin(Stolen_items), std::end(Stolen_items), 255);
+		Stolen_items[0] = POW_ENERGY;
+		Stolen_items[1] = POW_SHIELD_BOOST;
+		Stolen_item_index = 2;
+		Max_escort_length = 117;
+		Escort_last_path_created = GameTime64 - F1_0 / 8;
 		Omega_charge = F1_0 / 2;
 		Players[Player_num].flags |= PLAYER_FLAGS_AFTERBURNER;
 		Players[Player_num].afterburner_charge = F1_0 / 2;
@@ -429,7 +470,7 @@ static void projectile_birth_continuation(const std::filesystem::path &root, boo
 		GameTime64 += F1_0 / 2;
 		stop_time();
 		require(state_save_all_sub(save, description), "Cannot save newborn collision state");
-		expected = projectile_birth_future(victim, shot);
+		expected = projectile_birth_future(victim, shot, thief);
 		require(expected.at("victim_shields").get<int>() == i2f(100) && expected.at("hit").get<bool>(),
 		        "Uninterrupted newborn did not reject damage while retaining projectile history");
 		std::ofstream output(root / "birth-future.json");
@@ -438,7 +479,7 @@ static void projectile_birth_continuation(const std::filesystem::path &root, boo
 		require(bool(output), "Cannot write uninterrupted newborn collision receipt");
 		require(state_restore_all_sub(save, 0), "Cannot restore newborn collision save");
 	}
-	const auto actual = projectile_birth_future(expected.at("victim").get<int>(), expected.at("shot").get<int>());
+	const auto actual = projectile_birth_future(expected.at("victim").get<int>(), expected.at("shot").get<int>(), expected.at("thief_slot").get<int>());
 	std::ofstream output(root / (cold ? "birth-cold.json" : "birth-restored.json"));
 	output << actual.dump(2) << '\n';
 	output.close();

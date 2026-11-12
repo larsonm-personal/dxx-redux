@@ -480,7 +480,7 @@ captured at its ordinary setter before resetting AI routing; two changes between
 frames remain two operations even when the final mode equals the original mode.
 Playback uses that same setter, not the save-restoration path that preserves AI.
 
-XL world observations use schema 13 and require `xl_player_cfg`, `xl_births` and `xl_native`
+XL world observations use schema 14 and require `xl_player_cfg`, `xl_births` and `xl_native`
 at restored, per-frame and terminal boundaries. Birth observations contain every
 live slot/signature, birth time, creation order and the next creation counter;
 the reader checks live object identities at both boundaries and validates the
@@ -493,7 +493,13 @@ save compatibility getter returns zeros under XL and cannot supply that observat
 A null guided pointer is represented as `[-1, -1]`: every consumer checks that pointer before
 its signature. Non-null bindings retain their raw signature even if stale, and
 an out-of-pool pointer is emitted as slot `-2` and rejected by the reader.
-Earlier XL schema-10/11/12 receipts retain their historical scope; they cannot
+The native extension also captures the base escort owner's complete fixed save
+fields through one shared field list, plus all ten stolen-item bytes and the
+persistent-message preference. Its 150-byte message buffer is an explicit byte
+array, preserving both native text encoding and trailing storage without a
+Unicode conversion. Capture performs no save encoding, cache polling, owner
+repair or timer sampling. Route/metadata coverage is still incomplete.
+Earlier XL schema-10/11/12/13 receipts retain their historical scope; they cannot
 prove the newly required native-state observation. The Omega recording probe exercises menu-equivalent
 auto-leveling, homing and weapon-order changes, two ordinary routing setter calls
 at frame 102, preference restoration at frame 197, and routing in the stop tail.
@@ -563,9 +569,12 @@ cross-frame/save persistence. The continuation case uses this complete owner;
 calling `read_flying_controls` alone can create an irrelevant stale-flag difference.
 The existing projectile continuation owner combines newborn damage/order/reuse
 with a live guided missile, Omega charge, afterburner input/resources, wiggle,
-object clocks and a pending seismic event. Identical future native controls steer
+object clocks, a pending seismic event and derived stolen inventory on an authentic
+thief definition. Identical future native controls steer
 the missile and recharge the afterburner across uninterrupted, warm and cold
-execution. This is an explicitly derived mechanic case, not connected original
+execution; ordinary stolen-item drops create actual loot, with an empty-inventory
+control that consumes no RNG or object slots. This is an explicitly derived
+mechanic case with seeded inventory, not proof of actual theft or connected original
 play or proof of whole-save atomicity.
 Timed level messages also consume this cached clock, matching the pinned
 `ShowGameMessage` use of `nSDLTicks[0]`. Message age, text and opacity no longer

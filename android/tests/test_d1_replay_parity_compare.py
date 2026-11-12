@@ -1380,7 +1380,7 @@ class ParityTests(unittest.TestCase):
         def convert(rows):
             for row in rows:
                 if row["type"] in ("world_state", "world_boundary"):
-                    row["version"] = 13
+                    row["version"] = 14
                 if row["type"] in ("object_state", "object_boundary"):
                     row["capacity"] = 1367
                     row["allocator"]["free_obj_list"] = list(range(1367))
@@ -1420,6 +1420,7 @@ class ParityTests(unittest.TestCase):
                     state["xl_native"].update(
                         version=1, afterburner_charge=[0], afterburner_times=[0] * 1367, guided=[[-1, -1]] * 8
                     )
+                    state["xl_native"]["escort"]["version"] = 1
 
         self.mutate(path, convert)
         return path
@@ -1647,6 +1648,46 @@ class ParityTests(unittest.TestCase):
         for mutation in changes:
             changed = self.write("xl-native-changed", list(parity.records(path)))
             self.mutate(changed, lambda rows: mutation(rows[2]["state"]["xl_native"]))
+            self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_escort_fields_inventory_and_text_storage_are_required_and_compared(self):
+        path = self.native_d2_trace("xl-escort", True)
+        invalid = (
+            lambda escort: escort.pop("Escort_last_path_created"),
+            lambda escort: escort.update(version=2),
+            lambda escort: escort.update(Buddy_objnum=1367),
+            lambda escort: escort.update(Stolen_item_index=10),
+            lambda escort: escort.update(Escort_goal_message_generation=-1),
+            lambda escort: escort.update(Escort_goal_message_sequence=4294967296),
+            lambda escort: escort.update(Buddy_sorry_time=9223372036854775808),
+            lambda escort: escort["stolen"].pop(),
+            lambda escort: escort["stolen"].__setitem__(0, 256),
+            lambda escort: escort["stolen"].__setitem__(0, True),
+            lambda escort: escort["Escort_goal_message_text"].pop(),
+            lambda escort: escort.update(Escort_goal_message_text=[65] * 150),
+        )
+        for mutation in invalid:
+            bad = self.write("xl-escort-invalid", list(parity.records(path)))
+            self.mutate(bad, lambda rows: mutation(rows[2]["state"]["xl_native"]["escort"]))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        for field in (
+            *parity.ESCORT_SIGNED_FIELDS,
+            *parity.ESCORT_UNSIGNED_FIELDS,
+            *parity.ESCORT_CLOCK_FIELDS,
+            "persistent_message",
+        ):
+            changed = self.write("xl-escort-changed", list(parity.records(path)))
+            self.mutate(changed, lambda rows: rows[2]["state"]["xl_native"]["escort"].__setitem__(field, 1))
+            self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+        for mutation in (
+            lambda escort: escort["stolen"].__setitem__(0, 1),
+            lambda escort: escort["Escort_goal_message_text"].__setitem__(0, 65),
+            lambda escort: escort["Escort_goal_message_text"].__setitem__(149, 255),
+            lambda escort: escort.update(future_gameplay=1),
+        ):
+            changed = self.write("xl-escort-buffer-changed", list(parity.records(path)))
+            self.mutate(changed, lambda rows: mutation(rows[2]["state"]["xl_native"]["escort"]))
             self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
 
     def test_xl_births_are_bound_to_objects_and_compared(self):

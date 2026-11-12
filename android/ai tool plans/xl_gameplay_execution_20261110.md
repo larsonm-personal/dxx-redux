@@ -3098,6 +3098,73 @@ G2 native state observation checkpoint, November 12 at 01:01 PST:
   Actual01:01 PST; G2 estimate revised5-8h because complete-state/loader work
   remains uncertain; later items approximately14.5h. No cutoff or scope reduction.
 
+G2 fixed escort/thief state checkpoint, November 12 at 01:33 PST:
+
+- Parentbb513f9e77f4053e12ae0535b726c106b29f8d15, tree
+  e4d1dc090efd02fc6b83fee99a05f9972730bf39. Added pointer-free
+  guidebot_escort_state and shared guidebot_escort_state_members.h, containing
+  exactly the original28 fixed escort save operations. escort.c now uses that
+  same list for its existing codec and a pure game-thread capture function.
+  No codec calls, cache polling, timer sampling, owner repair or simulation
+  mutation occur during capture. The captured state adds ten stolen-item bytes
+  and the persistent-message preference; all150 message-buffer bytes are observed
+  explicitly, including native encoding and trailing storage. Multiplayer-only
+  owner protocol state is outside this single-player scope; route/metadata remains
+  separately open. This is complete fixed-save-field observation, not proof that
+  every state owner or active Guide-Bot route is qualified.
+- XL world schema14 requires the fixed escort section inside xl_native; its
+  scalar bounds, unsigned counters, clock storage, object/index bounds, message
+  termination and full buffer/inventory sizes/types validate. Every scalar and
+  buffer, including trailing text bytes and unknown fields, remains compared.
+  Stock world10/object2, input format6 and native/XL save layouts are unchanged.
+  Source comparison g2-escort-layout-check.json confirms the original28 operation
+  names, order, kinds and bound expressions match exactly; framing is unchanged.
+- Extended the existing combined native projectile continuation case using the
+  authentic loaded thief definition42, a derived separate-segment starting pose,
+  seeded energy/shield inventory and nondefault escort length117/path clock.
+  Future native drop_stolen_items creates two actual powerups (IDs1/2), clears
+  inventory and index, and a second empty drop allocates nothing or consumes
+  either RNG stream. Guided steering/physics, recharge, seismic, newborn collision
+  and slot reuse remain exercised. Raw thief object/AI and loot objects are kept
+  in receipts. Only the existing0/-1 alternate-texture absence equivalence applies
+  to the new thief actor too; unknown/active fields remain. This derived seeded
+  inventory proves cold loot continuation, not actual theft or original combat.
+- Full projectile owner passes Windows and Linux with authentic pinned Neptune,
+  addon and Vertigo, camera subchecks executed, all75 malformed cases/source
+  comparisons retained, original120s subprocess/150s outer deadlines unchanged.
+  Uninterrupted, warm and cold receipts match exactly across hosts. Evidence
+  g2-escort-projectile-{windows,linux}, associated logs and
+  g2-escort-projectile-cross.json. Native metrics:thief slot4/id42,inventory
+  [1,2,255x8]->[255x10],index2->0,escort length117,SIM3866696494,calls18,
+  replacement order11. No expected public fixture or authentic input edited.
+- Fresh water owner passes both hosts; full schema14 comparisons pass Windows
+  live/replay,Linux live/replay,and Windows live to isolated Linux replay:
+  1235 object frames and1239 world/boundary records each, both observed frame RNG
+  streams and all current fields. Evidence g2-escort-water-{windows,linux},
+  g2-escort-cross, their logs/metadata, and g2-escort-water-compare.json. Original
+  and isolated Windows input hashes remain
+  326fde4420a06f4c368fd9daafc04c85c5c7d62878f93b6d4505d3f93563e604.
+  Cross probe generated outputs only beside its own staged input. No true-headless
+  Omega/time, strict per-draw corpus or complete G2 qualification claim.
+- Verified root-bound strict-FP developer caches builtbb513 plus this working
+  patch. Windows EXE SHA256
+  8c8ced08f199ad2524723c3e5dd479ce542deb530e943bfa4f1648117afef150;
+  Linux3acb0c6416facfcc88eecc0047aac447a46befdf7d664d1644ebd816cd44ab67.
+  Both builds pass with prior unrelated warnings unchanged. Scoped quality and
+  whitespace pass; reader79 tests passes40.343s; automation catalog99 JSON/
+  315 PowerShell/547 support and runner428 top-level/547 support pass. Logs
+  g2-escort-{quality,reader,catalog,master-catalog}.log. No new top-level owner.
+- Commit this coherent fixed-owner observation locally on layer03. No push/PR
+  or G2 acceptance. Remaining route/metadata typed observation is substantially
+  larger, including shared structs, pending planner state and cache clocks;
+  preserve all gameplay fields and audit clock/budget consumers before assigning
+  diagnostic-only semantics. Then finish other XL owners, combined pending
+  trigger/generator/time/progression cold cases and atomic whole-save rejection.
+  Rejected corrupt-trailer energy91->100 remains a real unfixed loader defect.
+  G0/G1 accepted; G2-G7 open. Actual01:33 PST; G2 remaining estimate revised6-10h
+  for this expanded state/loader scope, later items approximately14.5h uncertain.
+  Continue sequentially with no cutoff or scope reduction.
+
 Per-item handoff template:
 
     Item and status:

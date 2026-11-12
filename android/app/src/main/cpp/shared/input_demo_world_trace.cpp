@@ -22,6 +22,7 @@ extern "C" {
 #include "collide.h"
 #ifdef DXX_XL_RUNTIME
 #include "controls.h"
+#include "guidebot_escort_state.h"
 #endif
 #include "effects.h"
 #include "endlevel.h"
@@ -198,6 +199,22 @@ json native_xl_state()
 		// Every consumer tests the pointer first; a null pointer's old signature is inert
 		out["guided"].push_back({ slot, slot == -1 ? -1 : Guided_missile_sig[player] });
 	}
+	guidebot_escort_state escort{};
+	escort_capture_runtime_state(&escort);
+	auto &escort_state = out["escort"];
+	escort_state["version"] = 1;
+#define ESCORT_FIELD(type, name, kind)            FIELD(escort_state, escort, name);
+#define ESCORT_LIMIT(type, name, kind, low, high) ESCORT_FIELD(type, name, kind)
+#define ESCORT_TEXT(name, capacity)              \
+	escort_state[#name] = json::array();         \
+	for (const unsigned char byte : escort.name) \
+		escort_state[#name].push_back(static_cast<int>(byte));
+#include "guidebot_escort_state_members.h"
+#undef ESCORT_FIELD
+#undef ESCORT_LIMIT
+#undef ESCORT_TEXT
+	escort_state["stolen"] = scalars(escort.stolen);
+	escort_state["persistent_message"] = escort.persistent_message;
 	// The native save compatibility getter deliberately returns zeros under XL
 	// Observe the actual seismic owner, including the magnitude used by guidance
 	const auto seismic = xl_compat::seismic_gameplay_snapshot();
@@ -519,7 +536,7 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	static json previous;
 	json current = world_state();
 	const bool boundary = phase != nullptr;
-	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 13 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
+	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 14 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
 	record["state"].get_ref<json::object_t &>().reserve(current.size());
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)

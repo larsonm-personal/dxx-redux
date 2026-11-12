@@ -1143,11 +1143,30 @@ XL_CAMERA_SCHEMA = integer_fields(
 )
 # D2 controls.h/player.h/weapon.h: 16-bit wiggle phase, 8 guided player slots,
 # and 4 XL-owned seismic detonation slots; object clocks use the observed pool size
+ESCORT_SIGNED_FIELDS = (
+    "Max_escort_length Escort_kill_object Escort_goal_object Escort_special_goal Escort_goal_index "
+    "Buddy_messages_suppressed Escort_goal_secret_seg Escort_goal_secret_side Buddy_objnum Buddy_allowed_to_talk "
+    "Looking_for_marker Last_buddy_key Stolen_item_index Escort_goal_message_signature Escort_goal_message_owner"
+).split()
+ESCORT_UNSIGNED_FIELDS = "Escort_goal_message_generation Escort_goal_message_sequence".split()
+ESCORT_CLOCK_FIELDS = (
+    "Escort_goal_message_next_send Escort_last_path_created Buddy_sorry_time Last_buddy_message_time "
+    "Buddy_last_seen_player Buddy_last_player_path_created Last_come_back_message_time Buddy_last_missile_time "
+    "Re_init_thief_time Last_thief_hit_time"
+).split()
+# guidebot_escort_state.h / guidebot_goal_message.h: ten stolen-item bytes and
+# the complete 150-byte message buffer, including native trailing storage
+XL_ESCORT_SCHEMA = integer_fields(
+    " ".join(("version", "persistent_message", *ESCORT_SIGNED_FIELDS, *ESCORT_UNSIGNED_FIELDS, *ESCORT_CLOCK_FIELDS)),
+    stolen=(int,) * 10,
+    Escort_goal_message_text=(int,) * 150,
+)
 XL_NATIVE_SCHEMA = integer_fields(
     "version omega_charge wiggle_phase",
     afterburner_charge=[int],
     afterburner_times=[int],
     guided=((int, int),) * 8,
+    escort=XL_ESCORT_SCHEMA,
     seismic=integer_fields(
         "strength pending magnitude phase fraction", interval=[int], detonations=((bool, int, float),) * 4
     ),
@@ -1213,6 +1232,19 @@ def validate_world_state(state, engine=None, xl=False, objects=None):
         births = state["xl_births"]
         capacity = state["ai"]["local_capacity"]
         native = state["xl_native"]
+        escort = native["escort"]
+        if (
+            escort["version"] != 1
+            or escort["persistent_message"] not in (0, 1)
+            or any(not -2147483648 <= escort[key] <= 2147483647 for key in ESCORT_SIGNED_FIELDS)
+            or any(not 0 <= escort[key] <= 4294967295 for key in ESCORT_UNSIGNED_FIELDS)
+            or any(not -9223372036854775808 <= escort[key] <= 9223372036854775807 for key in ESCORT_CLOCK_FIELDS)
+            or not -1 <= escort["Buddy_objnum"] < capacity
+            or not 0 <= escort["Stolen_item_index"] < 10
+            or any(not 0 <= value <= 255 for value in (*escort["stolen"], *escort["Escort_goal_message_text"]))
+            or 0 not in escort["Escort_goal_message_text"]
+        ):
+            raise EvidenceError("Invalid XL escort/thief observation")
         if (
             native["version"] != 1
             or not 0 <= native["omega_charge"] <= 65536
@@ -1514,7 +1546,7 @@ def world_states(path, header, engine="d1"):
         if (
             not meta_seen
             or type(row.get("version")) is not int
-            or row["version"] != (2 if kind == "object_boundary" else 13 if xl else 10)
+            or row["version"] != (2 if kind == "object_boundary" else 14 if xl else 10)
         ):
             raise EvidenceError("Missing world metadata or unsupported schema")
         if kind.endswith("boundary"):
