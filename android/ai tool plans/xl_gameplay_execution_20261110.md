@@ -3019,6 +3019,85 @@ G2 native observer fidelity checkpoint, November 12 at 00:22 PST:
   ownership. G0/G1 accepted; G2-G7 open. Actual00:22 PST; G2 remaining4-6h and
   later items approximately14.5h still uncertain. Continue with no cutoff.
 
+G2 native state observation checkpoint, November 12 at 01:01 PST:
+
+- Work on layer03 parent83474bc1d9e25b270114294dceb81cd218930272, adding
+  input_demo_world_trace native_xl_state and its pure C++ snapshot entry point.
+  XL world schema13 requires xl_native version1:Omega charge, per-player
+  afterburner charge,16-bit wiggle phase, all object-pool afterburner clocks,
+  eight guided slot/signature bindings, and named typed XL seismic state.
+  Null guided pointers normalize only their unread signature to-1; live/stale
+  pointers retain raw signatures, foreign pointers emit-2 and fail validation.
+  Stock world10/object2 and native save schema41 remain unchanged.
+- The native seismic save getter deliberately returns zeros whenever XL owns
+  the world. Observer uses the existing pure seismic_gameplay_snapshot instead,
+  preserving strength/pending duration, interval, four detonation ages/scales,
+  actual guidance magnitude, phase/fraction. Reader validates all required types,
+  counts, bounds, timer epochs and activity representation; unknown fields stay
+  compared. Earlier schema12 private traces retain their historical scope.
+- Extended the existing newborn/projectile owner into a combined DERIVED case:
+  production-created guided shot, setup Omega/afterburner grants, explicit wiggle
+  and object-clock setup, pending source seismic action, actual object_move_one
+  afterburner activation before save, then identical future steering/recharge and
+  physics, newborn collision, deletion/reuse and SIM observation. Pure snapshots
+  are repeated with unchanged state/RNG. Raw guided/player objects remain in
+  receipt files; comparison uses only the existing audited0/-1 alt-texture absence
+  equivalence. Unknown/active fields are retained. No original progression claim.
+- Full projectile CMake owner passes on BOTH hosts with authentic pinned addon
+  and Vertigo, all75 pre-existing malformed cases, camera subchecks, source/native
+  collision controls, warm/cold camera saves and combined native continuation.
+  Original120s subprocess/150s outer deadlines unchanged. All three raw future,
+  restored and cold JSON receipts match exactly between Windows and Linux.
+  Evidence g2-native-owner-projectile-{windows,linux}, their logs, and
+  g2-native-owner-projectile-cross.json. Linux source work in
+  /var/tmp/dxx-pr464-20261111/private/g2-native-owner-projectile.
+- Combined future metrics on both hosts:GameTime180224,SIM551188310,calls10,
+  guided slot5,Omega32768,afterburner31403->33451,wiggle34002->50386,
+  energy6533120,victim shields6553600,replacement birth order10. Seismic advances
+  into interval[0,131072],strength32768,magnitude-538. This proves the named
+  derived continuation; active time-equipment, pending generator/trigger and
+  earned-progression cold cases remain separately open.
+- Existing water owner also passes on both hosts. Full schema13 semantic trace
+  comparisons pass Windows live/replay,Linux live/replay,and Windows live to an
+  isolated Linux process:1235 object frames and1239 world/boundary records each,
+  both observed frame RNG streams, all currently emitted fields. Receipt
+  g2-native-owner-water-compare.json; outputs g2-native-owner-water-{windows,linux}
+  and g2-native-owner-cross, logs/metadata alongside. Cross probe copied the input
+  into its own private user directory before replay; generated derivatives stay
+  there. Original and isolated Windows input hashes still equal
+   8783572d58d31896e11bd5fa981c35697a3f2d1a8e507ddc28dacb38a0b9a825.
+  No strict per-draw/corpus or true-headless Omega/time qualification claim.
+- Both verified root-bound developer caches keep strict FP ON. Windows EXE
+  SHA2566de4dc417c71f6239dc7e5ecd194859685c52f4b8dd2ff774234ae78fc0b13fd;
+  Linux7f8fa55aa8bd03723e79ed9b79713c2d90f85607c3b6f245b3da91e5c9bac1ea.
+  Built83474 plus this working source patch, not normal production/Android packages.
+  Final quality and whitespace pass; reader78 tests passes38.141s. Catalogs pass
+  99 JSON/315 PowerShell/547 support and428 top-level/547 support. Evidence
+  g2-native-owner-{scoped-quality,reader,catalog,master-catalog}.log.
+- Initial reader extension missed its synthetic player's afterburner array;
+  rejected with10 errors in g2-native-observer-reader.log. Corrected the fixture,
+  preserving strict production validation. GCC caught new packed player energy
+  forwarding in the test receipt; scalar copies fixed it. Failed build retained
+  g2-native-continuation-fixed-linux-build.log; final *-owner-*-build logs pass.
+  Existing unrelated compiler warnings unchanged.
+- IMPORTANT corrected invalid witness: direct read_flying_controls left
+  Drop_afterburner_blob_flag1 in the warm process,0 cold, plus known0/-1 texture
+  sentinels (g2-native-continuation-{repro,cold-repro}.log; original failed Linux
+  directory private/g2-native-continuation-repro). This is NOT a gameplay save
+  defect: object_move_one resets that scratch flag before every control dispatch,
+  then consumes it in the same movement. A temporary uncommitted schema42 patch
+  was removed; trigger_save.cpp matches HEAD byte-for-byte and schema41 remains.
+  Corrected fixture uses object_move_one; no useless persistence/normalization of
+  unknown state retained. Failed evidence is preserved with this classification.
+- Commit this coherent observer/continuation coverage locally. No layer03 push
+  or PR, no G2 acceptance. Full escort/route/metadata and remaining XL owner
+  observations, combined cold cases and whole-save invalid-restore atomicity
+  remain open. Native energy91->100 failure on rejected corrupt trailer is still
+  real and unfixed. Next continue pure owner-side/shared typed observation for
+  those states, then transaction/validation via existing save/rewind owners.
+  Actual01:01 PST; G2 estimate revised5-8h because complete-state/loader work
+  remains uncertain; later items approximately14.5h. No cutoff or scope reduction.
+
 Per-item handoff template:
 
     Item and status:

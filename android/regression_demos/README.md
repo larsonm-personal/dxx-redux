@@ -480,13 +480,21 @@ captured at its ordinary setter before resetting AI routing; two changes between
 frames remain two operations even when the final mode equals the original mode.
 Playback uses that same setter, not the save-restoration path that preserves AI.
 
-XL world observations use schema 12 and require `xl_player_cfg` and `xl_births`
+XL world observations use schema 13 and require `xl_player_cfg`, `xl_births` and `xl_native`
 at restored, per-frame and terminal boundaries. Birth observations contain every
 live slot/signature, birth time, creation order and the next creation counter;
 the reader checks live object identities at both boundaries and validates the
 times, orders and bounds on every frame. Stock world schema 10 is unchanged.
-Earlier XL schema-10/11 receipts retain their historical scope; they cannot prove
-the newly required birth observation. The Omega recording probe exercises menu-equivalent
+The native extension observes Omega and afterburner charge, the 16-bit wiggle
+phase, every object-slot afterburner clock, all eight guided-missile pointer/slot
+and signature associations, and the actual XL seismic
+owner's interval, detonation scales/ages, magnitude and cadence. The native seismic
+save compatibility getter returns zeros under XL and cannot supply that observation.
+A null guided pointer is represented as `[-1, -1]`: every consumer checks that pointer before
+its signature. Non-null bindings retain their raw signature even if stale, and
+an out-of-pool pointer is emitted as slot `-2` and rejected by the reader.
+Earlier XL schema-10/11/12 receipts retain their historical scope; they cannot
+prove the newly required native-state observation. The Omega recording probe exercises menu-equivalent
 auto-leveling, homing and weapon-order changes, two ordinary routing setter calls
 at frame 102, preference restoration at frame 197, and routing in the stop tail.
 Its runner checks all four recorded operation sites alongside the pickup, rearm,
@@ -549,6 +557,16 @@ The complete birth table validates before that table is published. Earlier
 development XL schema-40 saves reject explicitly; stock saves and classic demos
 keep their existing layouts. This table guarantee alone does not establish
 atomicity of the surrounding native whole-save loader.
+`Drop_afterburner_blob_flag` is scratch within `object_move_one`: that owner
+clears it before reading controls and consumes it before returning. It needs no
+cross-frame/save persistence. The continuation case uses this complete owner;
+calling `read_flying_controls` alone can create an irrelevant stale-flag difference.
+The existing projectile continuation owner combines newborn damage/order/reuse
+with a live guided missile, Omega charge, afterburner input/resources, wiggle,
+object clocks and a pending seismic event. Identical future native controls steer
+the missile and recharge the afterburner across uninterrupted, warm and cold
+execution. This is an explicitly derived mechanic case, not connected original
+play or proof of whole-save atomicity.
 Timed level messages also consume this cached clock, matching the pinned
 `ShowGameMessage` use of `nSDLTicks[0]`. Message age, text and opacity no longer
 read host wall time. Save/trace readers derive effective age and expiry directly

@@ -1,5 +1,8 @@
 #include "projectile.h"
 #include "object_birth.h"
+#include "input_demo_world_trace.h"
+#include "input_demo_object_trace.h"
+#include "seismic_gameplay.h"
 #include "../tests/hog_fixture.h"
 extern "C" {
 void maybe_kill_weapon(object *, object *);
@@ -347,7 +350,27 @@ static void projectile_robot_attacker_blast()
 
 static nlohmann::json projectile_birth_future(int victim, int shot)
 {
-	GameTime64 += F1_0 / 4;
+	const auto native_before = input_demo_native_xl_trace_snapshot();
+	const auto before_calls = d_rand_get_call_count();
+	require(native_before == input_demo_native_xl_trace_snapshot() && before_calls == d_rand_get_call_count(),
+	        "Native continuation observation changed state or RNG");
+	const auto *guided_before = Guided_missile[Player_num];
+	require(guided_before && guided_before->signature == Guided_missile_sig[Player_num], "Missing guided continuation owner before input");
+	const auto orientation_before = guided_before->orient;
+	FrameTime = F1_0 / 4;
+	GameTime64 += FrameTime;
+	require(xl_seismic_frame(), "Cannot advance saved seismic gameplay");
+	Controls = {};
+	Controls.pitch_time = F1_0 / 32;
+	Controls.heading_time = F1_0 / 24;
+	Controls.bank_time = F1_0 / 64;
+	Controls.forward_thrust_time = F1_0 / 8;
+	object_move_one(ConsoleObject);
+	const auto *guided = Guided_missile[Player_num];
+	require(guided && guided->type == OBJ_WEAPON && guided->id == GUIDEDMISS_ID && guided->signature == Guided_missile_sig[Player_num],
+	        "Saved guided missile did not retain native steering ownership");
+	require(std::memcmp(&orientation_before, &guided->orient, sizeof(orientation_before)) != 0,
+	        "Identical future guided controls did not steer the retained missile");
 	collide_robot_and_weapon(&Objects[victim], &Objects[shot], &Objects[victim].pos);
 	const int transient = projectile_robot();
 	const auto transient_order = xl_object_birth_order(transient);
@@ -360,7 +383,18 @@ static nlohmann::json projectile_birth_future(int victim, int shot)
 	obj_delete(replacement);
 	unsigned sim = 0;
 	require(d_rand_get_state(&sim), "Cannot observe birth continuation SIM state");
-	return { { "victim", victim }, { "shot", shot }, { "time", GameTime64 }, { "victim_shields", int(Objects[victim].shields) }, { "shot_shields", int(Objects[shot].shields) }, { "hit", bool(xl_projectile_has_hit(shot, victim)) }, { "birth_time", xl_object_birth_time(victim) }, { "birth_order", xl_object_birth_order(victim) }, { "transient_order", transient_order }, { "replacement_order", replacement_order }, { "sim", sim }, { "calls", d_rand_get_call_count() } };
+	return { { "victim", victim }, { "shot", shot }, { "time", GameTime64 }, { "victim_shields", int(Objects[victim].shields) }, { "shot_shields", int(Objects[shot].shields) }, { "hit", bool(xl_projectile_has_hit(shot, victim)) }, { "birth_time", xl_object_birth_time(victim) }, { "birth_order", xl_object_birth_order(victim) }, { "transient_order", transient_order }, { "replacement_order", replacement_order }, { "sim", sim }, { "calls", d_rand_get_call_count() }, { "native_before", native_before }, { "native_after", input_demo_native_xl_trace_snapshot() }, { "guided", input_demo_object_trace_snapshot(*guided, int(guided - Objects)) }, { "player", input_demo_object_trace_snapshot(*ConsoleObject, int(ConsoleObject - Objects)) }, { "player_energy", int(Players[Player_num].energy) }, { "player_flags", unsigned(Players[Player_num].flags) } };
+}
+
+static nlohmann::json projectile_birth_semantic(nlohmann::json state)
+{
+	// Match the existing D2 observer policy: 0/-1 both mean no alternate texture
+	// Raw actor values stay in the separately written expected/actual receipts
+	for (const char *actor : { "guided", "player" }) {
+		auto &value = state.at(actor).at("polyobj").at("alt_textures");
+		if (value == 0 || value == -1) value = 0;
+	}
+	return state;
 }
 
 static void projectile_birth_continuation(const std::filesystem::path &root, bool cold)
@@ -376,6 +410,22 @@ static void projectile_birth_continuation(const std::filesystem::path &root, boo
 		GameTime64 += 2 * F1_0;
 		const int victim = projectile_robot();
 		const int shot = projectile_test_shot(ConsoleObject - Objects);
+		const int guided = projectile_test_shot(ConsoleObject - Objects, GUIDEDMISS_ID);
+		require(Guided_missile[Player_num] == &Objects[guided], "Derived guided shot did not acquire its normal native owner");
+		Omega_charge = F1_0 / 2;
+		Players[Player_num].flags |= PLAYER_FLAGS_AFTERBURNER;
+		Players[Player_num].afterburner_charge = F1_0 / 2;
+		controls_restore_wiggle_phase(1234);
+		Last_afterburner_time[guided] = GameTime64 - F1_0 / 32;
+		trigger seismic{};
+		seismic.type = 36;
+		seismic.value = F1_0 / 2;
+		seismic.time = 2;
+		require(xl_seismic_action(&seismic), "Cannot prepare derived active seismic continuation");
+		FrameTime = F1_0 / 16;
+		Controls = {};
+		Controls.afterburner_state = 1;
+		object_move_one(ConsoleObject);
 		GameTime64 += F1_0 / 2;
 		stop_time();
 		require(state_save_all_sub(save, description), "Cannot save newborn collision state");
@@ -393,8 +443,9 @@ static void projectile_birth_continuation(const std::filesystem::path &root, boo
 	output << actual.dump(2) << '\n';
 	output.close();
 	require(bool(output), "Cannot write restored newborn collision receipt");
-	if (actual != expected) std::cerr << "Newborn collision expected=" << expected.dump() << " actual=" << actual.dump() << '\n';
-	require(actual == expected, "Disk continuation changed newborn damage, projectile disposition or SIM state");
+	const auto wanted = projectile_birth_semantic(expected), observed = projectile_birth_semantic(actual);
+	if (observed != wanted) std::cerr << "Newborn collision differences=" << nlohmann::json::diff(wanted, observed).dump() << '\n';
+	require(observed == wanted, "Disk continuation changed newborn damage, projectile disposition or SIM state");
 	std::cout << "Newborn collision uninterrupted/disk continuation passed; cold=" << cold << '\n';
 }
 

@@ -1380,7 +1380,7 @@ class ParityTests(unittest.TestCase):
         def convert(rows):
             for row in rows:
                 if row["type"] in ("world_state", "world_boundary"):
-                    row["version"] = 12
+                    row["version"] = 13
                 if row["type"] in ("object_state", "object_boundary"):
                     row["capacity"] = 1367
                     row["allocator"]["free_obj_list"] = list(range(1367))
@@ -1416,6 +1416,10 @@ class ParityTests(unittest.TestCase):
                     state["xl_triggers"] = [[0, -1, -1, 0, 0, 0, 0, 0, 0, 0] for _ in state["triggers"]]
                     state["xl_cameras"] = {"version": 1, "ticks": 0, "states": []}
                     state["xl_births"] = {"version": 1, "next": 0, "objects": [[3, 0, 0, 0]]}
+                    state["xl_native"] = schema_example(parity.XL_NATIVE_SCHEMA)
+                    state["xl_native"].update(
+                        version=1, afterburner_charge=[0], afterburner_times=[0] * 1367, guided=[[-1, -1]] * 8
+                    )
 
         self.mutate(path, convert)
         return path
@@ -1572,7 +1576,7 @@ class ParityTests(unittest.TestCase):
 
     def test_xl_clock_observation_is_required_typed_and_compared(self):
         path = self.native_d2_trace("xl-time", True)
-        for key in ("xl_time", "xl_cameras", "xl_triggers", "xl_player_cfg", "xl_births"):
+        for key in ("xl_time", "xl_cameras", "xl_triggers", "xl_player_cfg", "xl_births", "xl_native"):
             bad = self.write("xl-missing-time", list(parity.records(path)))
             self.mutate(bad, lambda rows: rows[2]["state"].pop(key))
             with self.assertRaisesRegex(parity.EvidenceError, "Missing world field"):
@@ -1595,6 +1599,55 @@ class ParityTests(unittest.TestCase):
         changed = self.write("xl-pending-time", list(parity.records(path)))
         self.mutate(changed, lambda rows: rows[2]["state"]["xl_time"]["slow_motion"].update(bullet_requested=True))
         self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_native_state_is_bounded_and_compared(self):
+        path = self.native_d2_trace("xl-native", True)
+        list(parity.world_states(path, self.header, "d2"))
+        invalid = (
+            lambda native: native.pop("omega_charge"),
+            lambda native: native.update(version=2),
+            lambda native: native.update(omega_charge=65537),
+            lambda native: native.update(omega_charge=True),
+            lambda native: native.update(wiggle_phase=65536),
+            lambda native: native.update(afterburner_charge=[65537]),
+            lambda native: native.update(afterburner_charge=[]),
+            lambda native: native["afterburner_times"].pop(),
+            lambda native: native["afterburner_times"].__setitem__(0, 9223372036854775808),
+            lambda native: native["guided"].pop(),
+            lambda native: native["guided"].__setitem__(0, [-2, -1]),
+            lambda native: native["guided"].__setitem__(0, [1367, 0]),
+            lambda native: native["guided"].__setitem__(0, [-1, 0]),
+            lambda native: native["guided"].__setitem__(0, [3, 2147483648]),
+            lambda native: native["seismic"].update(magnitude=2147483648),
+            lambda native: native["seismic"]["detonations"].pop(),
+            lambda native: native["seismic"].update(phase=25),
+            lambda native: native["seismic"].update(interval=[1, 2]),
+            lambda native: native["seismic"]["detonations"].__setitem__(0, [False, -1, 0.5]),
+        )
+        for mutation in invalid:
+            bad = self.write("xl-native-invalid", list(parity.records(path)))
+            self.mutate(bad, lambda rows: mutation(rows[2]["state"]["xl_native"]))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        changes = (
+            lambda native: native.update(omega_charge=1),
+            lambda native: native.update(wiggle_phase=1),
+            lambda native: native["afterburner_charge"].__setitem__(0, 1),
+            lambda native: native["afterburner_times"].__setitem__(0, 1),
+            lambda native: native["guided"].__setitem__(0, [3, 0]),
+            lambda native: native["seismic"]["detonations"].__setitem__(0, [True, 0, 0.5]),
+            lambda native: native["seismic"].update(interval=[0, 1]),
+            lambda native: native["seismic"].update(magnitude=1),
+            lambda native: native["seismic"].update(strength=1),
+            lambda native: native["seismic"].update(pending=1),
+            lambda native: native["seismic"].update(phase=1),
+            lambda native: native["seismic"].update(fraction=1),
+            lambda native: native.update(future_gameplay=1),
+        )
+        for mutation in changes:
+            changed = self.write("xl-native-changed", list(parity.records(path)))
+            self.mutate(changed, lambda rows: mutation(rows[2]["state"]["xl_native"]))
+            self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
 
     def test_xl_births_are_bound_to_objects_and_compared(self):
         path = self.native_d2_trace("xl-births", True)

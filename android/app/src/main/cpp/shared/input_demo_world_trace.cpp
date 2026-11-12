@@ -8,6 +8,7 @@
 #include "camera_save.h"
 #include "trigger_state.h"
 #include "object_birth.h"
+#include "seismic_gameplay.h"
 #include "input_demo_fixture.h"
 #endif
 
@@ -19,6 +20,9 @@ extern "C" {
 #include "bm.h"
 #include "cntrlcen.h"
 #include "collide.h"
+#ifdef DXX_XL_RUNTIME
+#include "controls.h"
+#endif
 #include "effects.h"
 #include "endlevel.h"
 #include "endlevel_runtime.h"
@@ -173,6 +177,36 @@ json player_state(const player &p)
 	FIELD(out, p, hours_total);
 	return out;
 }
+
+#ifdef DXX_XL_RUNTIME
+json native_xl_state()
+{
+	json out = { { "version", 1 }, { "omega_charge", Omega_charge }, { "wiggle_phase", controls_get_wiggle_phase() }, { "afterburner_charge", json::array() }, { "afterburner_times", json::array() }, { "guided", json::array() } };
+	for (int i = 0; i < N_players; ++i) out["afterburner_charge"].push_back(static_cast<int>(Players[i].afterburner_charge));
+	for (int i = 0; i < object_capacity(); ++i) out["afterburner_times"].push_back(Last_afterburner_time[i]);
+	for (int player = 0; player < MAX_PLAYERS; ++player) {
+		int slot = -1;
+		if (Guided_missile[player]) {
+			// Pointer equality also handles stale native bindings without dereferencing them
+			slot = -2;
+			for (int i = 0; i < object_capacity(); ++i)
+				if (Guided_missile[player] == &Objects[i]) {
+					slot = i;
+					break;
+				}
+		}
+		// Every consumer tests the pointer first; a null pointer's old signature is inert
+		out["guided"].push_back({ slot, slot == -1 ? -1 : Guided_missile_sig[player] });
+	}
+	// The native save compatibility getter deliberately returns zeros under XL
+	// Observe the actual seismic owner, including the magnitude used by guidance
+	const auto seismic = xl_compat::seismic_gameplay_snapshot();
+	out["seismic"] = { { "strength", seismic[0] }, { "pending", seismic[1] }, { "magnitude", seismic[4] }, { "phase", seismic[5] }, { "fraction", seismic[6] }, { "interval", seismic[2].is_null() ? json::array() : json(seismic[2]) }, { "detonations", json::array() } };
+	for (const auto &entry : seismic[3])
+		out["seismic"]["detonations"].push_back({ !entry[0].is_null(), entry[0].is_null() ? json(0) : json(entry[0]), entry[1] });
+	return out;
+}
+#endif
 
 json world_state()
 {
@@ -413,6 +447,7 @@ json world_state()
 		out["xl_player_cfg"] = json::parse(encoded).at("value");
 		out["xl_time"] = xl_runtime::slow_motion_trace_snapshot();
 		out["xl_births"] = xl_object_birth_snapshot();
+		out["xl_native"] = native_xl_state();
 		out["xl_cameras"] = xl_camera_trace_snapshot();
 		out["xl_triggers"] = json::array();
 		for (int i = 0; i < Num_triggers; ++i) {
@@ -433,6 +468,13 @@ nlohmann::ordered_json input_demo_endlevel_trace_snapshot()
 {
 	return endlevel_state();
 }
+
+#ifdef DXX_XL_RUNTIME
+nlohmann::ordered_json input_demo_native_xl_trace_snapshot()
+{
+	return native_xl_state();
+}
+#endif
 
 // Separate read-only observations preserve the immutable world schema and hashes
 int input_demo_door_trace_write(uint32_t frame, const char *phase, char *error, size_t error_size)
@@ -477,7 +519,7 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	static json previous;
 	json current = world_state();
 	const bool boundary = phase != nullptr;
-	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 12 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
+	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 13 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
 	record["state"].get_ref<json::object_t &>().reserve(current.size());
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)

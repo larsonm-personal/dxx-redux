@@ -1141,6 +1141,17 @@ XL_CAMERA_SCHEMA = integer_fields(
         )
     ],
 )
+# D2 controls.h/player.h/weapon.h: 16-bit wiggle phase, 8 guided player slots,
+# and 4 XL-owned seismic detonation slots; object clocks use the observed pool size
+XL_NATIVE_SCHEMA = integer_fields(
+    "version omega_charge wiggle_phase",
+    afterburner_charge=[int],
+    afterburner_times=[int],
+    guided=((int, int),) * 8,
+    seismic=integer_fields(
+        "strength pending magnitude phase fraction", interval=[int], detonations=((bool, int, float),) * 4
+    ),
+)
 
 
 def validate_world_value(value, schema, path):
@@ -1194,12 +1205,57 @@ def validate_world_state(state, engine=None, xl=False, objects=None):
                 "xl_triggers": [(int,) * 10],
                 "xl_player_cfg": XL_PLAYER_CFG_SCHEMA,
                 "xl_births": {"version": int, "next": int, "objects": [(int,) * 4]},
+                "xl_native": XL_NATIVE_SCHEMA,
             },
             "$.state",
         )
         cfg = state["xl_player_cfg"]
         births = state["xl_births"]
         capacity = state["ai"]["local_capacity"]
+        native = state["xl_native"]
+        if (
+            native["version"] != 1
+            or not 0 <= native["omega_charge"] <= 65536
+            or not 0 <= native["wiggle_phase"] <= 65535
+            or len(native["afterburner_charge"]) != len(state["players"])
+            or any(not 0 <= charge <= 65536 for charge in native["afterburner_charge"])
+            or len(native["afterburner_times"]) != capacity
+            or any(not -9223372036854775808 <= time <= 9223372036854775807 for time in native["afterburner_times"])
+            or any(
+                not -1 <= slot < capacity or not -1 <= signature <= 2147483647 or (slot == -1 and signature != -1)
+                for slot, signature in native["guided"]
+            )
+        ):
+            raise EvidenceError("Invalid XL native weapon, control or object-clock observation")
+        seismic = native["seismic"]
+        epoch = state["globals"]["GameTime64"]
+        maximum_epoch = 72057594037927935  # save_epoch_format.h: INT64_MAX / 128
+        interval = seismic["interval"]
+        if (
+            not -2147483648 <= seismic["strength"] <= 2147483647
+            or not -2147483648 <= seismic["pending"] <= 2147418112
+            or not -2147483648 <= seismic["magnitude"] <= 2147483647
+            or not 0 <= seismic["phase"] <= 24
+            or not 0 <= seismic["fraction"] <= 65535
+            or len(interval) not in (0, 2)
+            or (
+                interval
+                and (
+                    not -maximum_epoch <= interval[0] <= 0
+                    or not interval[0] < interval[1] <= 2147483647
+                    or interval[1] - interval[0] > 2147483647
+                    or any(not -maximum_epoch <= epoch + time <= maximum_epoch for time in interval)
+                )
+            )
+            or any(
+                not 0.0 <= scale <= 1.0
+                or not -2147483647 <= age <= 0
+                or (not active and age != 0)
+                or not -maximum_epoch <= epoch + age <= maximum_epoch
+                for active, age, scale in seismic["detonations"]
+            )
+        ):
+            raise EvidenceError("Invalid XL native seismic observation")
         if (
             set(births) != {"version", "next", "objects"}
             or births["version"] != 1
@@ -1458,7 +1514,7 @@ def world_states(path, header, engine="d1"):
         if (
             not meta_seen
             or type(row.get("version")) is not int
-            or row["version"] != (2 if kind == "object_boundary" else 12 if xl else 10)
+            or row["version"] != (2 if kind == "object_boundary" else 13 if xl else 10)
         ):
             raise EvidenceError("Missing world metadata or unsupported schema")
         if kind.endswith("boundary"):
