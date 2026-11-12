@@ -1351,6 +1351,153 @@ class ParityTests(unittest.TestCase):
             with self.assertRaises(parity.EvidenceError):
                 list(parity.world_states(path, self.header, engine))
 
+    def native_d2_trace(self, name, world):
+        self.header.update(
+            game="d2",
+            mission="native-test",
+            version=6,
+            environment={"required": ["xl-clock-input-v1"], "slow_motion_speedup": 6},
+        )
+        path = self.world_trace(name) if world else self.object_trace(name)
+
+        def convert(rows):
+            for row in rows:
+                if row["type"] in ("object_state", "object_boundary"):
+                    row["capacity"] = 1367
+                    row["allocator"]["free_obj_list"] = list(range(1367))
+                    if world:
+                        row["slots"]["3"] = self.robot_object()
+                        self.import_robot(row["slots"]["3"])
+                        row["allocator"].update(num_objects=1, highest_object_index=3)
+                    obj = row["slots"]["3"]
+                    if obj["control_type"] == 9:
+                        obj["weapon"].pop("hitobj_list")
+                        obj["weapon"].update(xl_hit_order=[0, 1], last_hitobj=1)
+                    obj.update(
+                        render_type=1,
+                        polyobj={
+                            "model_num": 1,
+                            "subobj_flags": 0,
+                            "tmap_override": -1,
+                            "alt_textures": 0,
+                            "anim_angles": [[0, 0, 0]] * 10,
+                        },
+                    )
+                state = row.get("state", {})
+                if "ai" in state:
+                    self.import_world_storage(state)
+                    state["ai"]["local_capacity"] = 1367
+                    state["effects"] = [{**schema_example(parity.WORLD_SCHEMA["effects"][0]), "segnum": -1}]
+
+        self.mutate(path, convert)
+        return path
+
+    def test_native_d2_compares_full_storage_and_only_audited_absence_sentinels(self):
+        for world in (False, True):
+            left = self.native_d2_trace("native-d2-left", world)
+            right = self.write("native-d2-right", list(parity.records(left)))
+            compare = parity.compare_world if world else parity.compare_objects
+
+            def absent(rows):
+                for row in rows:
+                    if "slots" in row:
+                        row["slots"]["3"]["polyobj"]["alt_textures"] = -1
+                    if "effects" in row.get("state", {}):
+                        row["state"]["effects"][0]["sidenum"] = -1
+
+            self.mutate(right, absent)
+            original = right.read_bytes()
+            self.assertEqual(compare(left, right, self.header, "d2", "d2")["status"], "pass")
+            self.assertEqual(right.read_bytes(), original)
+            with self.assertRaises(parity.EvidenceError):
+                compare(left, right, self.header, "d2")
+            # Positive overrides, unknown fields and FX histories remain compared
+            for kind in ("override", "unknown", "fx"):
+                bad = self.write("native-d2-bad", list(parity.records(right)))
+
+                def change(rows):
+                    row = next(row for row in rows if "slots" in row)
+                    if kind == "override":
+                        row["slots"]["3"]["polyobj"]["alt_textures"] = 1
+                    elif kind == "unknown":
+                        row["slots"]["3"]["future_gameplay"] = 7
+                    else:
+                        row["rng"][1]["calls"] += 1
+
+                self.mutate(bad, change)
+                self.assertEqual(compare(left, bad, self.header, "d2", "d2")["status"], "fail")
+
+    def test_native_d2_active_effect_sides_are_never_normalized(self):
+        left = self.native_d2_trace("effect-left", True)
+        self.mutate(
+            left,
+            lambda rows: [
+                row["state"]["effects"][0].update(flags=2) for row in rows if "effects" in row.get("state", {})
+            ],
+        )
+        right = self.write("effect-right", list(parity.records(left)))
+        self.mutate(
+            right,
+            lambda rows: [
+                row["state"]["effects"][0].update(sidenum=-1) for row in rows if "effects" in row.get("state", {})
+            ],
+        )
+        self.assertEqual(parity.compare_world(left, right, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_storage_requires_profile_complete_pool_and_consistent_ai_capacity(self):
+        path = self.native_d2_trace("xl-pool", True)
+        list(parity.world_states(path, self.header, "d2"))
+        for environment in ({}, None, {"required": ["future"], "slow_motion_speedup": 6}):
+            header = {**self.header, "environment": environment}
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(path, header, "d2"))
+        for kind in ("capacity", "allocator", "ai", "terminal"):
+            bad = self.write("xl-bad-pool", list(parity.records(path)))
+
+            def change(rows):
+                if kind == "capacity":
+                    rows[1]["capacity"] = 32769
+                elif kind == "allocator":
+                    rows[1]["allocator"]["free_obj_list"].pop()
+                elif kind == "ai":
+                    rows[2]["state"]["ai"]["local_capacity"] -= 1
+                else:
+                    rows[-2]["capacity"] = 1368
+                    rows[-2]["allocator"]["free_obj_list"].append(1367)
+
+            self.mutate(bad, change)
+            with self.subTest(kind=kind), self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+
+    def test_xl_projectile_history_is_ordered_bounded_and_required(self):
+        path = self.native_d2_trace("xl-hits", False)
+        for invalid in ([0, 0], [-1], [1367], list(range(21)), [0], [True]):
+            bad = self.write("xl-bad-hits", list(parity.records(path)))
+            self.mutate(bad, lambda rows: rows[1]["slots"]["3"]["weapon"].update(xl_hit_order=invalid))
+            with self.subTest(hits=invalid), self.assertRaises(parity.EvidenceError):
+                list(parity.object_states(bad, self.header, "d2"))
+        bad = self.write("xl-mixed-hits", list(parity.records(path)))
+        self.mutate(bad, lambda rows: rows[1]["slots"]["3"]["weapon"].update(hitobj_list=[0] * 1000))
+        with self.assertRaises(parity.EvidenceError):
+            list(parity.object_states(bad, self.header, "d2"))
+        changed = self.write("xl-reordered-hits", list(parity.records(path)))
+        self.mutate(changed, lambda rows: rows[1]["slots"]["3"]["weapon"].update(xl_hit_order=[1, 0], last_hitobj=0))
+        report = parity.compare_objects(path, changed, self.header, "d2", "d2")
+        self.assertEqual(report["status"], "fail")
+
+    def test_xl_camera_requires_static_ai_used_by_collision_admission(self):
+        path = self.native_d2_trace("xl-camera", True)
+        self.mutate(
+            path, lambda rows: [row["slots"]["3"].update(type=16, control_type=18) for row in rows if "slots" in row]
+        )
+        list(parity.world_states(path, self.header, "d2"))
+        changed = self.write("xl-camera-change", list(parity.records(path)))
+        self.mutate(changed, lambda rows: rows[1]["slots"]["3"]["ai"].update(behavior=129))
+        self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+        self.mutate(changed, lambda rows: rows[1]["slots"]["3"].pop("ai"))
+        with self.assertRaisesRegex(parity.EvidenceError, "Missing world field"):
+            list(parity.world_states(changed, self.header, "d2"))
+
     def test_world_engine_identity_is_checked_before_mapping_empty_object_boundaries(self):
         a = self.world_trace("native-world-identity")
         with self.assertRaisesRegex(parity.EvidenceError, "declared executable"):

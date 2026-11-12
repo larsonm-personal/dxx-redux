@@ -1091,6 +1091,76 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   restore/observer differences through existing owners, then perform immediate
   and repeated faithful Omega/time recordings before publishing layer 02.
 
+### G1 detailed-observer checkpoint, November 11 at 11:59 PST
+
+- Previous turn/increment classification: progress. The ordinary-startup/save
+  increment is committed locally as `0890fce0f9057f9ac8ca8a369cc6c4a8ee8f6f05`,
+  tree `a08472b8ac0f511e6aef3dfe09f607abca75e49d`. No layer-02 publication,
+  downstream branch or merge. G1 remains unaccepted.
+- Extended the existing comparator with explicit native D2 left/right engine
+  identity. D1 mappings remain on the D1 path. XL format-6 capability permits
+  1000-32768 object/AI slots and at most 254 triggers; complete allocator arrays,
+  stable capacities and matching AI/object capacities are still required.
+  Projectile history uses the existing source's ordered twenty-victim list,
+  enforcing unique bounded slots and the newest-hit mirror. Classic storage
+  and unknown/mixed union data are not silently accepted as XL history.
+- Audited `object.c` draw consumers and `endlevel_multi_impl.h`: alternate
+  texture values 0 and -1 both mean no override. Audited `effects.c`,
+  `effect_runtime_shared.c`, `collide.c` and `camera_glass.cpp`: inactive effect
+  side 0/-1 is unused when segment is -1 and EF_ONE_SHOT is clear; activation
+  assigns it before use. Native comparison normalizes only these two sentinel
+  pairs and preserves the raw traces. Positive overrides, active effect sides,
+  all RNG streams, endlevel storage and unknown fields remain compared.
+- This audit exposed omitted static AI on XL camera objects. The collision
+  admission predicate in `XlPreparedResources::validate_camera_query` reads
+  `ctype.ai_info.behavior`; the existing object observer now includes that AI
+  storage for control 18/type 16. The comparator requires it. The earlier live
+  capture and replay lack it and now fail closed as incomplete at slot 331,
+  recorded in `g1-time-replay-3/native-detailed-comparison.json`. Matching coarse
+  hashes did not establish full state coverage. No original bytes or expected
+  results were changed. Full typed XL time/owner state remains unfinished.
+- Five new focused comparator controls pass, including malformed capacity,
+  missing camera AI, hit ordering and active-side negative cases. Windows and
+  Linux root-bound developer desktop builds pass. Scoped mixed-language quality
+  and diff checks pass. Final comparator suite: 70/71 pass, with frozen-runner
+  integration failing before its expected receipt at the 4 GiB reserve. After
+  cleanup restored space, that sole failed test passed on retry in 2.03 seconds.
+  The failed runs remain archived; no test was skipped or reserve lowered.
+- Official protected cleanup preview and apply found zero eligible artifacts
+  and failed to reach 50 GiB. The initially identified 193 MiB replay wrapper
+  contains the retained crash dump and is now explicitly excluded. About
+  3.8 GiB remained. The documented builds-only mode subsequently removed one
+  obsolete 928.6 MiB Android native configuration from the old registered
+  `temp/xl-stack-review-20261109/source` worktree, after a scoped preview with
+  the current cleaner and resolved absolute build root. Source changes, APKs,
+  reports and current dependency caches remain preserved. Free space reached
+  5.27 GiB; the 50 GiB target still was not reached. Other workers/emulators
+  were left running. A fresh capture/replay is now possible at the normal reserve.
+- Fresh seven-event capture `g1-live-time-capture-3` and clean accelerated
+  playback `g1-time-replay-4` pass. Demo
+  `d2_wshock20_level6_20261111_120259.dximdemo` has SHA256
+  `c3172bcdb284b5563d3142cb1a5eb3a466e92a521493866fff8c38b441a0dfd4`;
+  Windows executable SHA256 is
+  `36bf654976d16d603e514332b38f698a1867d63e8832afa0ce0bd7eafa1470bc`.
+  Detailed comparison passes all 198 object frames and 202 world/boundary
+  records and all 198 frame hashes, with all 811 strict SIM RNG events matching.
+  Final verification ended November 11 at 12:05 PST (20:05 UTC). This covers emitted
+  generic state plus the camera AI addition, not all XL owner state. Supplemental
+  HAM remains unverified, so playback still uses explicit `AllowUnverifiedAssets`
+  and this is not a frozen corpus. The pre-recording approach assist is unchanged.
+- Further source audit found `camera_controller_begin_frame` reading SDL ticks
+  directly for camera rotation. Its controller angle/delta/t0 and physics-union
+  brakes also need typed observation/persistence review. This remains a G1
+  external-clock gap even though the current witnessed cameras did not diverge.
+  Include it in the ordered environment stream rather than declaring cameras
+  cosmetic: orientation participates in installed geometry/visibility behavior.
+- Next: finish this comparator/observer increment's scoped checks, then add a
+  nonmutating typed XL time observation, fingerprint supplemental HAM sources
+  through existing asset ownership, and qualify fresh immediate/two-clean-run
+  Omega/time recordings when sufficient disk space is available. G1 estimate
+  remains roughly 5-8 hours and G2-G7 roughly 17.5 hours, with high uncertainty
+  and no cutoff. This checkpoint is not gameplay or corpus acceptance.
+
 Per-item handoff template:
 
     Item and status:

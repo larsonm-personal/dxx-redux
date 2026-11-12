@@ -98,6 +98,11 @@ json object_state(const object &o, int slot)
 	} else if (o.movement_type == MT_SPINNING)
 		out["spin_rate"] = vector(o.mtype.spin_rate);
 	switch (o.control_type) {
+#ifdef DXX_XL_RUNTIME
+		case 18: // XL camera collision admission reads the static AI behavior
+			if (xl_level_extensions_active() && o.type == 16) out["ai"] = ai_state(o.ctype.ai_info);
+			break;
+#endif
 		case CT_AI:
 		case CT_MORPH:
 			out["ai"] = ai_state(o.ctype.ai_info);

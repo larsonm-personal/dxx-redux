@@ -494,7 +494,7 @@ def object_states(path, header, engine="d1"):
             or row.get("reset") is not (count == 0)
         ):
             raise EvidenceError("Invalid object trace schema, reset or frame sequence")
-        validate_object_storage(row, engine)
+        validate_object_storage(row, engine, xl_storage_profile(header, engine))
         if capacity is not None and capacity != row["capacity"]:
             raise EvidenceError("Object trace capacity changed")
         capacity = row["capacity"]
@@ -546,25 +546,29 @@ def simulation_rng_storage(rng):
     return [rng[0], {key: value for key, value in rng[1].items() if key not in ("state", "calls")}]
 
 
-def compare_objects(left, right, header, right_engine="d1"):
-    validate_comparison_content(header, right_engine)
+def compare_objects(left, right, header, right_engine="d1", left_engine="d1"):
+    validate_comparison_engines(header, left_engine, right_engine)
     first = {}
     count = 0
-    for a, b in itertools.zip_longest(object_states(left, header), object_states(right, header, right_engine)):
+    for a, b in itertools.zip_longest(
+        object_states(left, header, left_engine), object_states(right, header, right_engine)
+    ):
         if a is None or b is None:
             raise EvidenceError("Unequal object trace lengths")
         # Name fields independently of slot, while preserving the first concrete
         # slot/frame in each example. All raw values remain in the archived trace
         for group in ("capacity", "allocator", "segment_heads", "clock", "rng"):
             expected, actual = a[group], b[group]
-            if group == "rng":
+            if group == "rng" and left_engine == "d1":
                 expected, actual = simulation_rng_storage(expected), simulation_rng_storage(actual)
             for found in field_differences(expected, actual, f"$.{group}"):
                 first.setdefault(found["path"], {"frame": count, **found})
         for slot in sorted(a["objects"].keys() | b["objects"].keys(), key=int):
             expected = a["objects"].get(slot)
             actual = b["objects"].get(slot)
-            if right_engine == "d2":
+            if left_engine == "d2":
+                expected, actual = semantic_d2_object(expected), semantic_d2_object(actual)
+            elif right_engine == "d2":
                 if expected is not None:
                     expected = canonical_native_d1_object(expected)
                 if actual is not None:
@@ -629,6 +633,52 @@ AI_SAVED_STATIC_FIELDS = "follow_path_start_seg follow_path_end_seg".split()
 def validate_comparison_content(header, engine):
     if header.get("game") != "d1" or engine not in ("d1", "d2"):
         raise EvidenceError("D1 storage mappings require D1 content and a known executable")
+
+
+def validate_comparison_engines(header, left_engine, right_engine):
+    if left_engine == "d1":
+        validate_comparison_content(header, right_engine)
+    elif left_engine != "d2" or right_engine != "d2" or header.get("game") != "d2":
+        raise EvidenceError("Native D2 comparison requires D2 content on both sides")
+
+
+def xl_storage_profile(header, engine):
+    # Capacity bounds mirror XL_compat/capacity.h. A D1 import cannot opt into XL
+    environment = header.get("environment", {})
+    return (
+        engine == "d2"
+        and header.get("game") == "d2"
+        and header.get("version") == 6
+        and isinstance(environment, dict)
+        and environment.get("required") == ["xl-clock-input-v1"]
+        and type(environment.get("slow_motion_speedup")) is int
+        and environment["slow_motion_speedup"] == 6
+    )
+
+
+def semantic_d2_object(value):
+    if value is None or "polyobj" not in value:
+        return value
+    # object.c's two draws and endlevel_multi_impl.h select overrides only >0
+    # Normalize only the two observed absence sentinels; preserve other values
+    poly = value["polyobj"]
+    if poly["alt_textures"] in (-1, 0):
+        return {**value, "polyobj": {**poly, "alt_textures": 0}}
+    return value
+
+
+def semantic_d2_world(row):
+    if row["type"] == "object_boundary":
+        return {**row, "slots": {slot: semantic_d2_object(obj) for slot, obj in row["slots"].items()}}
+    # effects.c reads sidenum only under EF_ONE_SHOT; collide.c/camera_glass.cpp
+    # assign it before setting that flag. Save restore clears the inactive side
+    effects = [
+        {**effect, "sidenum": -1}
+        if effect["segnum"] == -1 and not effect["flags"] & 2 and effect["sidenum"] in (-1, 0)
+        else effect
+        for effect in row["state"]["effects"]
+    ]
+    return {**row, "state": {**row["state"], "effects": effects}}
 
 
 def canonical_d1_ai_storage(value, fields):
@@ -822,14 +872,18 @@ def validate_ai_local(local, engine, path):
             raise EvidenceError(f"Incomplete AI submodel state: {path}.{key}")
 
 
-def validate_object(value, engine, path):
+def validate_object(value, engine, path, xl=False, capacity=1000):
     validate_world_value(value, OBJECT_SCHEMA, path)
-    if not 0 <= value["type"] <= (15 if engine == "d2" else 14):
+    if not (
+        0 <= value["type"] <= (15 if engine == "d2" else 14)
+        or (xl and engine == "d2" and value["type"] in (16, 18, 19, 20))
+    ):
         raise EvidenceError(f"Unsupported live object type: {path}")
     movement, control, render = (value[key] for key in ("movement_type", "control_type", "render_type"))
+    camera = xl and engine == "d2" and value["type"] == 16 and control == 18
     if (
         movement not in (0, 1, 3)
-        or control not in (0, 1, 2, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15, 16)
+        or (control not in (0, 1, 2, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15, 16) and not camera)
         or not 0 <= render <= 7
     ):
         raise EvidenceError(f"Unsupported object union discriminator: {path}")
@@ -838,7 +892,7 @@ def validate_object(value, engine, path):
         required["physics"] = PHYSICS_SCHEMA
     elif movement == 3:
         required["spin_rate"] = VECTOR_SCHEMA
-    if control in (1, 11):
+    if control in (1, 11) or camera:
         variant = (
             "dying_sound_playing dying_start_time" if engine == "d2" else "follow_path_start_seg follow_path_end_seg"
         )
@@ -853,8 +907,8 @@ def validate_object(value, engine, path):
         required["weapon"] = integer_fields(
             "parent_type parent_num parent_signature creation_time last_hitobj track_goal "
             "multiplier creation_framecount",
-            hitobj_list=(int,) * 1000,
         )
+        required["weapon"].update({"xl_hit_order": [int]} if xl else {"hitobj_list": (int,) * 1000})
     elif control == 2:
         required["explosion"] = integer_fields(
             "spawn_time delete_time delete_objnum attach_parent prev_attach next_attach"
@@ -874,7 +928,23 @@ def validate_object(value, engine, path):
     if value["type"] == 2:
         required["ai_local"] = AI_LOCAL_SCHEMA
     validate_world_value(value, required, path)
-    if control in (1, 11):
+    if control == 9:
+        weapon = value["weapon"]
+        if ("hitobj_list" if xl else "xl_hit_order") in weapon:
+            raise EvidenceError(f"Mixed classic and XL projectile storage: {path}")
+        if xl:
+            hits = weapon["xl_hit_order"]
+            # runtime/projectile.h and projectile.cpp: ordered, distinct slots,
+            # including deleted/reused victims, with the newest hit mirrored
+            if (
+                len(hits) > 20
+                or len(set(hits)) != len(hits)
+                or any(not 0 <= victim < capacity for victim in hits)
+                or (hits and weapon["last_hitobj"] != hits[-1])
+                or (not hits and weapon["last_hitobj"] != -1)
+            ):
+                raise EvidenceError(f"Invalid XL projectile hit order: {path}")
+    if control in (1, 11) or camera:
         incompatible = (
             AI_SAVED_STATIC_FIELDS if engine == "d2" else ("d1_saved", "dying_sound_playing", "dying_start_time")
         )
@@ -884,11 +954,12 @@ def validate_object(value, engine, path):
         validate_ai_local(value["ai_local"], engine, path + ".ai_local")
 
 
-def validate_object_storage(row, engine):
+def validate_object_storage(row, engine, xl=False):
     if engine not in ("d1", "d2"):
         raise EvidenceError("Unknown object storage engine")
     validate_world_value(row, OBJECT_STORAGE_SCHEMA, "$.object_storage")
-    if row["capacity"] != 1000 or len(row["allocator"]["free_obj_list"]) != row["capacity"]:
+    valid_capacity = 1000 <= row["capacity"] <= 32768 if xl and engine == "d2" else row["capacity"] == 1000
+    if not valid_capacity or len(row["allocator"]["free_obj_list"]) != row["capacity"]:
         raise EvidenceError("Incomplete object allocator storage")
     for slot, value in row["slots"].items():
         if not slot.isdecimal() or str(int(slot)) != slot or not 0 <= int(slot) < row["capacity"]:
@@ -897,7 +968,7 @@ def validate_object_storage(row, engine):
             if row["type"] == "object_boundary" or row["reset"]:
                 raise EvidenceError("Object snapshot cannot delete a slot")
         else:
-            validate_object(value, engine, f"$.slots.{slot}")
+            validate_object(value, engine, f"$.slots.{slot}", xl, row["capacity"])
     if row["type"] == "object_boundary":
         validate_object_cardinality(row, row["slots"])
 
@@ -1065,7 +1136,7 @@ def validate_world_value(value, schema, path):
                 validate_world_value(item, child, f"{path}[{index}]")
 
 
-def validate_world_state(state, engine=None):
+def validate_world_state(state, engine=None, xl=False):
     validate_world_value(state, WORLD_SCHEMA, "$.state")
     weapons = state["weapons"]
     if (
@@ -1101,7 +1172,7 @@ def validate_world_state(state, engine=None):
     if len(endlevel["explosion"]) != int(bool(endlevel["explosion_playing"])):
         raise EvidenceError("Missing or inactive external endlevel explosion")
     for explosion in endlevel["explosion"]:
-        validate_object(explosion, engine, "$.state.endlevel.explosion[0]")
+        validate_object(explosion, engine, "$.state.endlevel.explosion[0]", xl, state["ai"]["local_capacity"])
     ai = state["ai"]
     # Fixed source pools are emitted in full, even beyond their live ranges
     if len(ai["paths"]) != 2500 or len(ai["cloak"]) != 8 or len(ai["awareness"]) != 64:
@@ -1110,7 +1181,7 @@ def validate_world_state(state, engine=None):
         ai["awareness"]
     ):
         raise EvidenceError("Invalid AI path allocator or awareness count")
-    if ai["local_capacity"] != 1000:
+    if not (1000 <= ai["local_capacity"] <= 32768 if xl and engine == "d2" else ai["local_capacity"] == 1000):
         raise EvidenceError("Invalid AI local capacity")
     # Both engines expose these source pools with fixed capacities
     boss = ai["boss"]
@@ -1138,7 +1209,7 @@ def validate_world_state(state, engine=None):
             validate_world_value(wall, integer_fields("cloak_value controlling_trigger"), "$.state.wall")
         elif {"cloak_value", "controlling_trigger"} & wall.keys():
             raise EvidenceError("D2-only wall fields in native storage")
-    if len(state["triggers"]) > 100:
+    if len(state["triggers"]) > (254 if xl and engine == "d2" else 100):
         raise EvidenceError("Trigger count exceeds its source capacity")
     for trigger in state["triggers"]:
         if len(trigger["segments"]) != 10 or len(trigger["sides"]) != 10 or not 0 <= trigger["num_links"] <= 10:
@@ -1219,6 +1290,8 @@ def world_states(path, header, engine="d1"):
     boundaries = set()
     meta_seen = False
     terminal = False
+    xl = xl_storage_profile(header, engine)
+    object_capacity = None
     for row in records(path):
         kind = row.get("type")
         if kind == "meta":
@@ -1254,9 +1327,14 @@ def world_states(path, header, engine="d1"):
             if kind == "world_boundary":
                 if not isinstance(row.get("state"), dict) or not all(group in row["state"] for group in WORLD_GROUPS):
                     raise EvidenceError("Incomplete world boundary")
-                validate_world_state(row["state"], engine)
+                validate_world_state(row["state"], engine, xl)
+                if row["state"]["ai"]["local_capacity"] != object_capacity:
+                    raise EvidenceError("AI and object capacities disagree")
             else:
-                validate_object_storage(row, engine)
+                validate_object_storage(row, engine, xl)
+                if object_capacity is not None and object_capacity != row["capacity"]:
+                    raise EvidenceError("Object boundary capacity changed")
+                object_capacity = row["capacity"]
             yield row
         else:
             if terminal or type(row.get("f")) is not int or count != row["f"] or row.get("reset") is not (count == 0):
@@ -1268,7 +1346,9 @@ def world_states(path, header, engine="d1"):
             state.update(row["state"])
             if not all(group in state for group in WORLD_GROUPS):
                 raise EvidenceError("Incomplete per-frame world state")
-            validate_world_state(state, engine)
+            validate_world_state(state, engine, xl)
+            if state["ai"]["local_capacity"] != object_capacity:
+                raise EvidenceError("AI and object capacities disagree")
             count += 1
             yield {**row, "state": state}
     required = {(kind, phase) for kind in ("object_boundary", "world_boundary") for phase in ("restored", "terminal")}
@@ -1276,14 +1356,18 @@ def world_states(path, header, engine="d1"):
         raise EvidenceError("Missing complete world frames or restore/terminal boundaries")
 
 
-def compare_world(left, right, header, right_engine="d1"):
-    validate_comparison_content(header, right_engine)
+def compare_world(left, right, header, right_engine="d1", left_engine="d1"):
+    validate_comparison_engines(header, left_engine, right_engine)
     first = {}
     count = 0
-    for a, b in itertools.zip_longest(world_states(left, header), world_states(right, header, right_engine)):
+    for a, b in itertools.zip_longest(
+        world_states(left, header, left_engine), world_states(right, header, right_engine)
+    ):
         if a is None or b is None:
             raise EvidenceError("Unequal world/boundary trace lengths")
-        if right_engine == "d2":
+        if left_engine == "d2":
+            a, b = semantic_d2_world(a), semantic_d2_world(b)
+        elif right_engine == "d2":
             b = canonical_d1_world(b)
             if a["type"] == "object_boundary":
                 a = {**a, "slots": {slot: canonical_native_d1_object(value) for slot, value in a["slots"].items()}}
@@ -1291,6 +1375,11 @@ def compare_world(left, right, header, right_engine="d1"):
         # Keep sequence ownership and unknown fields; retain the full raw trace
         compared = []
         for row in (a, b):
+            if left_engine == "d2":
+                # XL presentation independence is still unqualified: compare
+                # all RNG streams, endlevel state and unknown extension fields
+                compared.append(row)
+                continue
             if row["type"] == "object_boundary":
                 row = {**row, "rng": simulation_rng_storage(row["rng"])}
             else:
