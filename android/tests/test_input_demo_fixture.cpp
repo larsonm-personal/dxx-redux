@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include <string>
+#include <sstream>
 #include <vector>
 #include <nlohmann/json.hpp>
 
@@ -845,8 +846,108 @@ static int expect_asset_fingerprints(void)
 	return 0;
 }
 
+static int expect_environment_timeline(void)
+{
+	using json = nlohmann::ordered_json;
+	input_demo_file demo;
+	demo.metadata.version = 6;
+	demo.metadata.game = "d2";
+	demo.metadata.mission = "clock-contract";
+	demo.metadata.git_version = "provenance-only";
+	demo.metadata.arch = "x86_64";
+	demo.metadata.level = 1;
+	demo.metadata.start_mode = "new_level";
+	demo.metadata.rng_mode = input_demo_rng_mode_name(d_rand_get_replay_mode());
+	demo.metadata.frame_count = 1;
+	demo.metadata.has_environment = true;
+	demo.metadata.environment = { 100, 100, UINT32_MAX - 1 };
+	demo.frames.resize(1);
+	auto &frame = demo.frames[0];
+	frame.input.has_frame_time = 1;
+	frame.input.frame_time = 1092;
+	frame.rng.has_call_count = 1;
+	frame.dispatch.present = true;
+	frame.dispatch.pre_rng_is_post = true;
+	input_demo_input_operation sample = {};
+	sample.kind = INPUT_DEMO_INPUT_SAMPLE;
+	sample.frame_time = 1092;
+	frame.dispatch.operations = { sample, sample };
+	frame.has_environment = true;
+	frame.environment = {
+		{ 0, false, 1, "omega_fired", -1, { 100, 100, UINT32_MAX - 1 } },
+		{ 1, false, 2, "omega_blocked", -1, { 126, 126, 0 } },
+		{ 2, false, 2, "input_end", -1, { 126, 126, 0 } },
+		{ 3, true, 0, "slow_frame", -1, { 126, 126, 0 } },
+		{ 4, true, 0, "pickup", 4, { 126, 126, 0 } }
+	};
+	demo.has_input_tail = true;
+	demo.input_tail.input.frame = demo.input_tail.rng.frame = 1;
+	demo.input_tail.rng.has_call_count = 1;
+	demo.input_tail.dispatch.present = true;
+	demo.input_tail.dispatch.pre_rng_is_post = true;
+	demo.input_tail.has_environment = true;
+	demo.input_tail.environment = { { 0, false, 0, "tail_end", -1, { 152, 152, 2 } } };
+	demo.has_result = true;
+	snprintf(demo.result.game, sizeof(demo.result.game), "d2");
+	snprintf(demo.result.mission, sizeof(demo.result.mission), "clock-contract");
+	demo.result.level = 1;
+	demo.result.frame_count = 1;
+	std::string text, error;
+	if (!input_demo_file_to_text(demo, &text, &error)) return report_failure_string("environment fixture: " + error);
+	if (expect_streaming_demo(text, text, true)) return 1;
+	std::vector<json> rows;
+	std::istringstream stream(text);
+	for (std::string line; std::getline(stream, line);) rows.push_back(json::parse(line));
+	const auto reject = [&](auto mutate) {
+		auto changed = rows;
+		mutate(changed);
+		std::string invalid;
+		for (const auto &row : changed) invalid += row.dump() + "\n";
+		return expect_streaming_demo(invalid, text, false);
+	};
+	if (reject([](auto &r) { r[0]["environment"]["required"] = json::array({ "future-clock" }); }) ||
+	    reject([](auto &r) { r[0]["environment"]["required"].push_back("xl-clock-input-v1"); }) ||
+	    reject([](auto &r) { r[0]["environment"]["slow_motion_speedup"] = 7; }) ||
+	    reject([](auto &r) { r[0]["environment"]["slow_motion_speedup"] = 6.0; }) ||
+	    reject([](auto &r) { r[0].erase("environment"); }) ||
+	    reject([](auto &r) { r[0]["version"] = 5; }) ||
+	    reject([](auto &r) { r[0]["game"] = "d1"; }) ||
+	    reject([](auto &r) { r[0]["environment"]["clock_ms"] = -1; }) ||
+	    reject([](auto &r) { r[0]["environment"]["clock_ms"] = UINT64_MAX; }) ||
+	    reject([](auto &r) { r[1].erase("environment"); }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"].erase(4); }) ||
+	    reject([](auto &r) { r[1]["environment"]["count"] = INPUT_DEMO_ENVIRONMENT_SAMPLE_MAX + 1; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["sequence"] = 0; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["clock_ms"] = 99; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["pickup_ms"] = 99; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["pickup_ms"] = UINT32_MAX; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["render_frame"] = UINT32_MAX - 2; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["operation"] = 3; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["consumer"] = "unknown"; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][2]["consumer"] = "omega_fired"; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][3]["phase"] = "input"; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][4]["subject"] = -1; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["unknown"] = true; }) ||
+	    reject([](auto &r) { r[2]["environment"]["samples"][0]["phase"] = "sim"; }) ||
+	    reject([](auto &r) { r[2].erase("environment"); }) ||
+	    reject([](auto &r) { r.erase(r.begin() + 2); })) return 1;
+	const auto key = text.find("\"sequence\":0");
+	if (key == std::string::npos || expect_streaming_demo(text.substr(0, key) + "\"sequence\":0," + text.substr(key), text, false)) return 1;
+	// Version 5 stock files retain their existing contract and no environment data
+	demo.metadata.version = 5;
+	demo.metadata.has_environment = false;
+	for (auto *item : { &demo.frames[0], &demo.input_tail }) {
+		item->has_environment = false;
+		item->environment.clear();
+	}
+	if (!input_demo_file_to_text(demo, &text, &error) || expect_streaming_demo(text, text, true))
+		return report_failure_string("stock ordered-input compatibility: " + error);
+	return 0;
+}
+
 int main(void)
 {
+	if (expect_environment_timeline()) return 1;
 	if (expect_asset_fingerprints()) return 1;
 	if (expect_level_start_metadata())
 		return 1;

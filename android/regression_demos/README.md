@@ -333,6 +333,47 @@ parity `not_run`, avoiding two redundant imported investigations. The positive
 graphics pass still requires the existing paired scope once. All mutations are
 disposable copies; checked-in fixtures stay byte-identical.
 
+## XL environmental timeline (format 6, under qualification)
+
+The codec recognizes a required `xl-clock-input-v1` capability for D2. Runtime
+playback still rejects this format before loading a world, and production capture
+does not yet emit it. This section describes the developing contract, not accepted
+Omega/time-equipment replay support. Existing format-5 stock fixtures are unchanged.
+
+The header `environment` object contains `required: ["xl-clock-input-v1"]`,
+`slow_motion_speedup: 6`, `clock_ms`, `pickup_ms` and `render_frame`. Unknown or
+duplicate required capabilities and unsupported profiles reject. Build identity
+remains provenance rather than an exact-commit playback whitelist. The existing
+difficulty and player-settings metadata retain their own validation.
+
+Every frame and the mandatory input tail carry `environment: {count, samples}`.
+Each sample has a contiguous zero-based `sequence`, `phase` (`input` or `sim`),
+`operation`, `consumer`, `subject`, and the three clock values. Input operation
+numbers are one-based: a consumer inside the second dispatched operation has
+`operation: 2`. Simulation samples have `operation: 0`. A single `input_end`
+sample follows all input operations before any simulation samples; a tail instead
+ends with `tail_end` and cannot contain simulation samples. Empty input batches
+still have their boundary sample. This preserves multiple interleaved operations
+and the record-stop tail without assuming one render per simulation frame.
+
+Consumers are closed: `slow_frame`, `slow_off`, `pickup`, `omega_blocked` and
+`omega_fired`, plus the two boundary names. Pickup samples identify the object
+slot in `subject`; other consumers require `subject: -1`. Slow-frame and pickup
+consumers belong to simulation. Counts, phases, ordering, required boundaries,
+unknown fields and duplicate JSON keys reject during complete-file admission,
+without replacing an already parsed recording.
+
+The current bounded profile uses nondecreasing signed 64-bit transition-clock
+milliseconds, starting at least at 26 and leaving INT32_MAX overflow headroom.
+Pickup milliseconds are nondecreasing in 0..INT32_MAX, matching the currently
+qualified signed native animation-clock domain; a longer process lifetime is
+not silently wrapped into that profile. Render frames use unsigned 32-bit modulo
+arithmetic: each observed forward difference is at most INT32_MAX, including
+UINT32_MAX to zero. There are at most 16,384 samples per frame/tail, within the
+existing record/file byte limits. No clock is inferred from display rate or
+substituted for elapsed time. Checkpoint-origin binding and production stream
+consumption still require implementation and live/replay qualification.
+
 ## Ordered input recording (format 5)
 
 New captures preserve native pre-simulation dispatch order and input-time frame

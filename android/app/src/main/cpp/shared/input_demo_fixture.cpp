@@ -649,12 +649,12 @@ static bool parse_level_start(const ordered_json &json, input_demo_level_start *
 	INPUT_DEMO_LEVEL_ARRAY_FIELDS(READ_ARRAY)
 #undef READ_ARRAY
 	/* Old level-start recordings had no offset, not an effective phase of zero */
-	parsed.wiggle_phase = (uint32_t)parsed.game_time & 0xffffu;
+	parsed.wiggle_phase = (uint32_t) parsed.game_time & 0xffffu;
 	if (json.contains("wiggle_phase")) {
 		if (!parse_int64_field(json.at("wiggle_phase"), &value, error, "wiggle_phase") ||
 		    value < 0 || value > 65535)
 			return fail(error, "invalid level_start wiggle_phase");
-		parsed.wiggle_phase = (uint32_t)value;
+		parsed.wiggle_phase = (uint32_t) value;
 		++fields;
 	}
 	if (json.size() != fields || parsed.difficulty_min > parsed.difficulty_max)
@@ -665,8 +665,12 @@ static bool parse_level_start(const ordered_json &json, input_demo_level_start *
 
 static bool validate_metadata(const input_demo_metadata &metadata, std::string *error)
 {
-	if (metadata.version != 2 && metadata.version != 3 && metadata.version != 4 && metadata.version != 5)
-		return fail(error, "metadata version must be 2, 3, 4, or 5");
+	if (metadata.version < 2 || metadata.version > 6)
+		return fail(error, "metadata version must be between 2 and 6");
+	if ((metadata.version == 6) != metadata.has_environment ||
+	    (metadata.has_environment && (metadata.game != "d2" || metadata.environment.clock_ms < 26 ||
+	                                  metadata.environment.clock_ms > INT64_MAX - INT32_MAX || metadata.environment.pickup_ms > INT32_MAX)))
+		return fail(error, "format 6 requires a bounded D2 XL environment origin");
 	if (metadata.game != "d1" && metadata.game != "d2")
 		return fail(error, "metadata game must be d1 or d2");
 	if (metadata.mission.empty())
@@ -703,9 +707,9 @@ static bool validate_metadata(const input_demo_metadata &metadata, std::string *
 	}
 	if (metadata.has_player_cfg && !validate_player_cfg(metadata.player_cfg, metadata.game, error))
 		return false;
-	if (metadata.has_rear_view_baseline && (metadata.version != 5 || !input_demo_rear_view_baseline_supported(&metadata.rear_view_baseline)))
+	if (metadata.has_rear_view_baseline && (metadata.version < 5 || !input_demo_rear_view_baseline_supported(&metadata.rear_view_baseline)))
 		return fail(error, "invalid or mis-versioned rear-view baseline");
-	if (metadata.has_view_projection && (metadata.version != 5 || !input_demo_view_projection_supported(&metadata.view_projection) ||
+	if (metadata.has_view_projection && (metadata.version < 5 || !input_demo_view_projection_supported(&metadata.view_projection) ||
 	                                     (metadata.game == "d1" && metadata.view_projection.missile_view_enabled)))
 		return fail(error, "invalid or mis-versioned view projection");
 	return true;
@@ -751,6 +755,56 @@ static bool exact_keys(const ordered_json &value, std::initializer_list<const ch
 		return fail(error, std::string(label) + " has missing or unknown keys");
 	for (const char *key : keys)
 		if (!value.contains(key)) return fail(error, std::string(label) + " is missing " + key);
+	return true;
+}
+
+static bool environment_clock_parse(const ordered_json &value, input_demo_environment_clock *clock, std::string *error)
+{
+	return parse_int64_field(value.at("clock_ms"), &clock->clock_ms, error, "environment clock_ms") &&
+	       parse_uint32_field(value.at("pickup_ms"), &clock->pickup_ms, error, "environment pickup_ms") &&
+	       parse_uint32_field(value.at("render_frame"), &clock->render_frame, error, "environment render_frame");
+}
+
+static ordered_json environment_clock_json(const input_demo_environment_clock &clock)
+{
+	return { { "clock_ms", clock.clock_ms }, { "pickup_ms", clock.pickup_ms }, { "render_frame", clock.render_frame } };
+}
+
+static ordered_json environment_json(const std::vector<input_demo_environment_sample> &samples)
+{
+	auto rows = ordered_json::array();
+	for (const auto &sample : samples) {
+		auto row = environment_clock_json(sample.clock);
+		row["sequence"] = sample.sequence;
+		row["phase"] = sample.simulation ? "sim" : "input";
+		row["operation"] = sample.operation;
+		row["consumer"] = sample.consumer;
+		row["subject"] = sample.subject;
+		rows.push_back(std::move(row));
+	}
+	return { { "count", samples.size() }, { "samples", std::move(rows) } };
+}
+
+static bool environment_parse(const ordered_json &value, std::vector<input_demo_environment_sample> *samples, std::string *error)
+{
+	uint32_t count;
+	if (!exact_keys(value, { "count", "samples" }, error, "environment") ||
+	    !parse_uint32_field(value.at("count"), &count, error, "environment count") || !count ||
+	    count > INPUT_DEMO_ENVIRONMENT_SAMPLE_MAX || !value.at("samples").is_array() || value.at("samples").size() != count)
+		return fail(error, "environment count is missing, truncated or outside bounds");
+	for (const auto &row : value.at("samples")) {
+		input_demo_environment_sample sample;
+		if (!exact_keys(row, { "sequence", "phase", "operation", "consumer", "subject", "clock_ms", "pickup_ms", "render_frame" }, error, "environment sample") ||
+		    !parse_uint32_field(row.at("sequence"), &sample.sequence, error, "environment sequence") ||
+		    !parse_uint32_field(row.at("operation"), &sample.operation, error, "environment operation") ||
+		    !parse_int_field(row.at("subject"), &sample.subject, error, "environment subject") ||
+		    !row.at("phase").is_string() || !row.at("consumer").is_string() ||
+		    !environment_clock_parse(row, &sample.clock, error)) return false;
+		if (row.at("phase") != "input" && row.at("phase") != "sim") return fail(error, "unknown environment phase");
+		sample.simulation = row.at("phase") == "sim";
+		sample.consumer = row.at("consumer").get<std::string>();
+		samples->push_back(std::move(sample));
+	}
 	return true;
 }
 
@@ -1376,6 +1430,14 @@ bool input_demo_metadata_parse_header_line(const std::string &line,
 			    !parse_int_field(value["classic_depth"], &state.classic_depth, error, "view classic_depth") ||
 			    !parse_int_field(value["missile_view_enabled"], &state.missile_view_enabled, error, "view missile_view_enabled")) return false;
 			parsed.has_view_projection = true;
+		} else if (name == "environment") {
+			const auto &value = it.value();
+			if (!exact_keys(value, { "required", "slow_motion_speedup", "clock_ms", "pickup_ms", "render_frame" }, error, "environment origin") ||
+			    value.at("required") != ordered_json::array({ "xl-clock-input-v1" }) ||
+			    !value.at("slow_motion_speedup").is_number_integer() || value.at("slow_motion_speedup") != 6 ||
+			    !environment_clock_parse(value, &parsed.environment, error))
+				return fail(error, "unsupported or malformed required environment capability/profile");
+			parsed.has_environment = true;
 		} else {
 			return fail(error, "unknown metadata key: " + name);
 		}
@@ -1436,6 +1498,11 @@ bool input_demo_metadata_to_header_line(const input_demo_metadata &metadata,
 		const auto &state = metadata.view_projection;
 		root["view_projection"] = { { "screen_width", state.screen_width }, { "screen_height", state.screen_height }, { "aspect", state.aspect }, { "zoom", state.zoom }, { "depth", state.depth }, { "classic_depth", state.classic_depth }, { "missile_view_enabled", state.missile_view_enabled } };
 	}
+	if (metadata.has_environment) {
+		root["environment"] = environment_clock_json(metadata.environment);
+		root["environment"]["required"] = ordered_json::array({ "xl-clock-input-v1" });
+		root["environment"]["slow_motion_speedup"] = 6;
+	}
 	*line = root.dump();
 	return true;
 }
@@ -1458,9 +1525,11 @@ static bool validate_frame_record(const input_demo_file_frame &frame, uint32_t e
 
 static bool validate_dispatch_version(const input_demo_file_frame &frame, int version, int game, std::string *error)
 {
-	if ((version == 5) != frame.dispatch.present)
-		return fail(error, "format 5 requires ordered input on every frame; legacy frames forbid it");
-	if (version != 5) {
+	if ((version >= 5) != frame.dispatch.present)
+		return fail(error, "formats 5 and 6 require ordered input on every frame; legacy frames forbid it");
+	if ((version == 6) != frame.has_environment || (!frame.has_environment && !frame.environment.empty()))
+		return fail(error, "format 6 requires environment samples; other formats forbid them");
+	if (version < 5) {
 		for (const auto &event : frame.events) {
 			ordered_json parsed;
 			if (!parse_json_line(event, "frame event", &parsed, error)) return false;
@@ -1497,11 +1566,11 @@ static bool validate_demo_envelope(const input_demo_file &demo, size_t frame_cou
 		return fail(error, "demo frame count does not match header");
 	if (!demo.has_result)
 		return fail(error, "demo file is missing result trailer");
-	if ((demo.metadata.version == 5) != demo.has_input_tail)
-		return fail(error, "format 5 requires exactly one input tail; legacy formats forbid it");
+	if ((demo.metadata.version >= 5) != demo.has_input_tail)
+		return fail(error, "formats 5 and 6 require exactly one input tail; legacy formats forbid it");
 	if (demo.has_input_tail) {
 		if (!validate_frame_record(demo.input_tail, demo.metadata.frame_count, game_id_from_name(demo.metadata.game), error) ||
-		    !validate_dispatch_version(demo.input_tail, 5, game_id_from_name(demo.metadata.game), error)) return false;
+		    !validate_dispatch_version(demo.input_tail, demo.metadata.version, game_id_from_name(demo.metadata.game), error)) return false;
 		if (demo.input_tail.has_state || demo.input_tail.has_diag)
 			return fail(error, "input tail must not contain simulation state or diagnostics");
 	}
@@ -1510,11 +1579,49 @@ static bool validate_demo_envelope(const input_demo_file &demo, size_t frame_cou
 	return true;
 }
 
+static bool validate_environment(const input_demo_file_frame &frame, bool tail,
+                                 input_demo_environment_clock *previous, std::string *error)
+{
+	if (!frame.has_environment || frame.environment.empty() || frame.environment.size() > INPUT_DEMO_ENVIRONMENT_SAMPLE_MAX)
+		return fail(error, "missing or excessive environment samples");
+	uint32_t operation = 0;
+	bool boundary = false;
+	for (size_t index = 0; index < frame.environment.size(); ++index) {
+		const auto &sample = frame.environment[index];
+		const auto &clock = sample.clock;
+		if (sample.sequence != index || clock.clock_ms < previous->clock_ms ||
+		    clock.clock_ms > INT64_MAX - INT32_MAX || clock.pickup_ms < previous->pickup_ms || clock.pickup_ms > INT32_MAX ||
+		    uint32_t(clock.render_frame - previous->render_frame) > INT32_MAX)
+			return fail(error, "environment sequence or clocks are nonmonotonic or outside bounds");
+		const bool end = sample.consumer == (tail ? "tail_end" : "input_end");
+		if (end) {
+			if (boundary || sample.simulation || sample.operation != frame.dispatch.operations.size())
+				return fail(error, "duplicate or misplaced environment input boundary");
+			boundary = true;
+		} else if (sample.simulation) {
+			if (!boundary || tail || sample.operation)
+				return fail(error, "environment simulation sample is outside its phase");
+		} else if (boundary || !sample.operation || sample.operation < operation || sample.operation > frame.dispatch.operations.size())
+			return fail(error, "environment input sample is outside its operation");
+		if (!end && sample.consumer != "slow_frame" && sample.consumer != "slow_off" && sample.consumer != "pickup" &&
+		    sample.consumer != "omega_blocked" && sample.consumer != "omega_fired")
+			return fail(error, "unknown required environment consumer");
+		if ((sample.consumer == "slow_frame" || sample.consumer == "pickup") && !sample.simulation)
+			return fail(error, "environment consumer requires simulation phase");
+		if (sample.consumer == "pickup" ? (sample.subject < 0 || sample.subject > 65535) : sample.subject != -1)
+			return fail(error, "invalid environment subject");
+		operation = sample.operation;
+		*previous = clock;
+	}
+	return boundary || fail(error, "environment input boundary is missing");
+}
+
 static bool validate_demo_file(const input_demo_file &demo, std::string *error)
 {
 	if (!validate_demo_envelope(demo, demo.frames.size(), error))
 		return false;
 	const int game = game_id_from_name(demo.metadata.game);
+	auto environment = demo.metadata.environment;
 	int automap_phase = 0;
 	const auto validate_modal_batch = [&](const input_demo_input_batch &batch, bool is_tail) {
 		for (const auto &operation : batch.operations) {
@@ -1529,10 +1636,12 @@ static bool validate_demo_file(const input_demo_file &demo, std::string *error)
 	for (i = 0; i != demo.frames.size(); ++i) {
 		if (!validate_frame_record(demo.frames[i], static_cast<uint32_t>(i), game, error) ||
 		    !validate_dispatch_version(demo.frames[i], demo.metadata.version, game, error) ||
-		    !validate_modal_batch(demo.frames[i].dispatch, false))
+		    !validate_modal_batch(demo.frames[i].dispatch, false) ||
+		    (demo.metadata.has_environment && !validate_environment(demo.frames[i], false, &environment, error)))
 			return false;
 	}
 	if (demo.has_input_tail && !validate_modal_batch(demo.input_tail.dispatch, true)) return false;
+	if (demo.metadata.has_environment && !validate_environment(demo.input_tail, true, &environment, error)) return false;
 	return true;
 }
 
@@ -1599,6 +1708,9 @@ static bool parse_frame_record(const ordered_json &root, int game, uint32_t expe
 			have_diag = true;
 		} else if (name == "dispatch") {
 			if (!dispatch_batch_parse(it.value(), game, &frame->dispatch, error)) return false;
+		} else if (name == "environment") {
+			if (!environment_parse(it.value(), &frame->environment, error)) return false;
+			frame->has_environment = true;
 		} else if (name == "events") {
 			size_t event_index;
 
@@ -1696,6 +1808,7 @@ bool input_demo_frame_to_json_line(const input_demo_file_frame &frame, int game,
 		rng["c"] = rng_record.at("c");
 	root["rng"] = std::move(rng);
 	if (frame.dispatch.present && !dispatch_batch_json(frame.dispatch, game, &root["dispatch"], error)) return false;
+	if (frame.has_environment) root["environment"] = environment_json(frame.environment);
 	if (frame.has_state) {
 		state = std::move(state_record);
 		root["state"] = std::move(state);
@@ -1798,9 +1911,10 @@ static bool input_demo_file_parse_stream(std::istream &input,
 			parsed.frames.push_back(std::move(frame));
 			expected_frame++;
 		} else if (record_type == "input_tail") {
-			if (parsed.metadata.version != 5 || parsed.has_input_tail || expected_frame != parsed.metadata.frame_count)
+			if (parsed.metadata.version < 5 || parsed.has_input_tail || expected_frame != parsed.metadata.frame_count)
 				return fail(error, "mis-versioned, duplicate or misplaced input tail");
-			if (root.contains("events") ? !exact_keys(root, { "type", "f", "input", "rng", "dispatch", "events" }, error, "input tail") : !exact_keys(root, { "type", "f", "input", "rng", "dispatch" }, error, "input tail")) return false;
+			// Frame parsing rejects unknown keys; tails additionally forbid SIM fields
+			if (root.contains("ft") || root.contains("state") || root.contains("diag")) return fail(error, "input tail contains simulation fields");
 			root["type"] = "frame";
 			root["ft"] = 1;
 			if (!parse_frame_record(root, game_id_from_name(parsed.metadata.game), expected_frame, &parsed.input_tail, &line_error))

@@ -537,6 +537,9 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 		return copy_error("missing replay demo file path", error, error_size);
 	if (!input_demo_file_read(demo_path, &demo, &replay_error))
 		return copy_error(replay_error, error, error_size);
+	// Keep admission closed until the runtime consumes the required clock stream
+	if (demo.metadata.has_environment)
+		return copy_error("XL clock/input timeline playback is not yet qualified", error, error_size);
 	game = game_id_from_name(demo.metadata.game);
 	if (!game)
 		return copy_error("metadata game must be d1 or d2", error, error_size);

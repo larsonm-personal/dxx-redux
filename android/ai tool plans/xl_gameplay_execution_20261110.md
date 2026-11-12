@@ -819,7 +819,7 @@ retaining the change. All statuses below are planning statuses, not completed wo
 | Item | Status                                                                           | Branch / commit / PR                                                              | Evidence, limits and revised estimate                                                                                       |
 | ---- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | G0   | Accepted baseline repair; remaining hosted checks and Android limitation tracked | xl_gameplay_20261111_01_baseline; implementation a5db8d739; draft #465, base #464 | Windows/Linux native each 100 pass / 1 expected skip; Linux public 61/61; canonical private 113/113 and hosted private PASS |
-| G1   | Not started                                                                      | 02_timeline                                                                       | Omega and time-equipment record/replay guards still active                                                                  |
+| G1   | In progress: bounded environment codec; runtime/capture qualification pending    | xl_gameplay_20261111_02_timeline; parent 96ce2f8be; not published                 | Codec/recorder/replay CTest 3/3 PASS; new format explicitly rejected by playback; all runtime guards remain active          |
 | G2   | Not started                                                                      | 03_continuation                                                                   | Complete XL observer/cold-continuation audit required                                                                       |
 | G3   | Not started                                                                      | 04_runtime                                                                        | True-headless XL and optional presentation independence unqualified                                                         |
 | G4   | Not started                                                                      | 04_runtime                                                                        | Source no-op smoke, makers, subzero and wider gameplay predicates require decisions                                         |
@@ -909,6 +909,33 @@ G0 acceptance checkpoint, November 11 at 09:23 PST (17:23 UTC):
   preserve format-5 stock recordings, and keep Omega/time guards until faithful
   live/immediate/repeated replay passes. Continue monitoring outstanding G0 CI
   without replacing pending results with passes.
+
+G1 implementation checkpoint, November 11, after G0:
+
+- Layer 01 evidence follow-up is committed and pushed as
+  `96ce2f8be5f917178024298cf51272781abc0caa`, tree
+  `efa492e4869ae526b69c9a0f25fc0ab27e58d411`. It changes only the two evidence
+  documents relative to tested implementation `a5db8d739`. New exact-head CI
+  started normally; results from the prior head remain identified as such.
+- Local layer 02 starts at that commit. The existing codec now models an explicit
+  version-6 environment origin/capability and per-consumer input/SIM samples.
+  It validates sequence, phase/operation, closed consumer names, integer bounds,
+  monotonic clocks, modulo render-counter progression, required input/tail
+  boundaries and complete sample counts. Failed parse preserves the prior demo.
+  Existing format-5 stock behavior remains supported.
+- This is an unqualified contract under implementation. Existing readers reject
+  unknown fields, so a capability extension could also reject safely; version 6
+  makes the semantic boundary explicit. Playback currently rejects version 6
+  before replacing its loaded session. No recorder emits it yet, and Omega/time
+  guards are unchanged. Initial checkpoint clock origin, runtime consumption,
+  ordinary controls and live/replay evidence remain required before acceptance.
+- Root-bound Linux fixture/recorder/replay targets build; their three existing
+  CTests pass in 2.76 seconds, including new valid wrap/interleaving and malformed
+  timeline cases in the existing fixture owner. Logs are `g1-codec-build.log`
+  and `g1-codec-ctest.{log,xml}` under the baseline artifact directory.
+- Next: wire the environment stream through existing recorder/replay owners and
+  ordinary simulation consumers, bind the saved clock origin before restore,
+  then qualify actual control capture before relaxing any gameplay guard.
 
 Per-item handoff template:
 

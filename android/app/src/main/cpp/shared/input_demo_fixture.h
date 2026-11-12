@@ -114,6 +114,24 @@ void input_demo_checkpoint_thief_state_clear(input_demo_checkpoint_thief_state *
 #include "input_demo_controls.h"
 #include "input_demo_result.h"
 
+// Version 6 records external inputs at their consumers, independently of drawing
+struct input_demo_environment_clock {
+	int64_t clock_ms = 0;
+	uint32_t pickup_ms = 0;
+	uint32_t render_frame = 0;
+};
+
+struct input_demo_environment_sample {
+	uint32_t sequence = 0;
+	bool simulation = false;
+	uint32_t operation = 0;
+	std::string consumer;
+	int subject = -1;
+	input_demo_environment_clock clock;
+};
+
+#define INPUT_DEMO_ENVIRONMENT_SAMPLE_MAX 16384u
+
 struct input_demo_metadata {
 	int version;
 	std::string game;
@@ -137,6 +155,8 @@ struct input_demo_metadata {
 	input_demo_rear_view_baseline rear_view_baseline = {};
 	bool has_view_projection = false;
 	input_demo_view_projection view_projection = {};
+	bool has_environment = false;
+	input_demo_environment_clock environment;
 
 	input_demo_metadata()
 	    : version(0), build_number(0), level(0), difficulty(0), frame_count(0), has_player_cfg(false)
@@ -187,6 +207,8 @@ struct input_demo_file_frame {
 	std::string diag_json;
 	std::vector<std::string> events;
 	input_demo_input_batch dispatch;
+	bool has_environment = false;
+	std::vector<input_demo_environment_sample> environment;
 
 	input_demo_file_frame()
 	    : has_state(false), has_diag(false)
