@@ -345,7 +345,29 @@ The header `environment` object contains `required: ["xl-clock-input-v1"]`,
 `slow_motion_speedup: 6`, `clock_ms`, `pickup_ms`, `cached_ms` and `render_frame`. Unknown or
 duplicate required capabilities and unsupported profiles reject. Build identity
 remains provenance rather than an exact-commit playback whitelist. The existing
-difficulty and player-settings metadata retain their own validation.
+difficulty metadata retains its range validation. Format 6 requires `lcg_state`,
+explicit `player_cfg`, `view_projection` and `rear_view` objects, plus an XL clock
+baseline for `new_level`. Every ordinary D2 player-config field emitted by the
+recorder must be present, including headlight default, homing, Guide-Bot routing,
+autoselection options and both weapon orders. Boolean settings require integer
+0 or 1. Missing settings do not inherit legacy defaults. Both complete-file
+admission and recorder startup enforce this contract before activating a session;
+format-5 stock/default behavior remains unchanged.
+
+The settings audit currently distinguishes these owners. Open rows are
+qualification work, not implied support:
+
+| Setting/input                                                                                          | Existing ownership and remaining qualification                                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Difficulty                                                                                             | Header 0-4, restored before startup; ordered difficulty commands retain later changes                                                                                                                 |
+| Auto-leveling, persistent debris, headlight default, homing, weapon selection/order, Guide-Bot routing | Explicit player configuration captured at startup and applied after pilot reload; changing configuration during a recording still needs an ordered policy                                             |
+| Keyboard, joystick, mouse and touch scaling/bindings                                                   | Applied before captured control samples; playback dispatches those scaled samples, rather than reading current device bindings                                                                        |
+| Rear view/cockpit and projection/depth/missile view                                                    | Explicit startup baselines and ordered view operations; projection changes cancel capture, and incompatible playback projection rejects                                                               |
+| Extra/guided/camera render views                                                                       | Existing gameplay-view admission applies; broader renderer independence remains G3 work, since visibility and render counts can affect gameplay                                                       |
+| XL speedup and process clocks                                                                          | Required speedup 6, bounded recorded transition/pickup/cached clocks and render-event count; no configurable alternate speedup is currently implemented                                               |
+| RNG and floating point                                                                                 | Required `lcg_state`; D2 builds default to strict FP (`/fp:strict` or no fast math/contraction). Cross-build/architecture qualification and explicit rejection of unsupported build modes remain open |
+| Cheats and checkpoint globals                                                                          | Ordered cheat commands exist, but the baseline and disk-save owners do not yet prove every persistent cheat/global; complete continuation belongs to G2                                               |
+| Audio backend and optional visual effects                                                              | Some runtime state still depends on backend availability; G3 must establish simulation independence before treating these as presentation-only                                                        |
 
 Every frame and the mandatory input tail carry `environment: {count, samples}`.
 Each sample has a contiguous zero-based `sequence`, `phase` (`input` or `sim`),

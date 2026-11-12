@@ -703,6 +703,17 @@ static int expect_metadata_level_validation(void)
 	return 0;
 }
 
+static void fill_xl_startup_settings(input_demo_metadata &metadata)
+{
+	metadata.has_player_cfg = true;
+	metadata.player_cfg.has_headlight_active_default = 1;
+	metadata.player_cfg.primary_order_count = metadata.player_cfg.secondary_order_count = 11;
+	for (int i = 0; i < 11; ++i)
+		metadata.player_cfg.primary_order[i] = metadata.player_cfg.secondary_order[i] = i == 10 ? 255 : i;
+	metadata.has_view_projection = metadata.has_rear_view_baseline = true;
+	metadata.view_projection = { 640, 480, 65536, 65536, 20, 0, 1 };
+}
+
 static int expect_level_start_metadata(void)
 {
 	input_demo_metadata metadata, parsed;
@@ -743,6 +754,7 @@ static int expect_level_start_metadata(void)
 		auto xl = metadata;
 		xl.version = 6;
 		xl.game = "d2";
+		fill_xl_startup_settings(xl);
 		xl.has_environment = true;
 		xl.environment = { 26, 0, 0, 0 };
 		xl.level_start.has_xl_clock = 1;
@@ -899,6 +911,9 @@ static int expect_environment_timeline(void)
 	demo.metadata.frame_count = 1;
 	demo.metadata.has_environment = true;
 	demo.metadata.environment = { 100, 100, UINT32_MAX - 1, 100 };
+	fill_xl_startup_settings(demo.metadata);
+	demo.metadata.has_level_start = true;
+	demo.metadata.level_start.has_xl_clock = 1;
 	demo.frames.resize(1);
 	auto &frame = demo.frames[0];
 	frame.input.has_frame_time = 1;
@@ -946,7 +961,16 @@ static int expect_environment_timeline(void)
 		for (const auto &row : changed) invalid += row.dump() + "\n";
 		return expect_streaming_demo(invalid, text, false);
 	};
-	if (reject([](auto &r) { r[0]["environment"]["required"] = json::array({ "future-clock" }); }) ||
+	for (const char *key : { "player_cfg", "view_projection", "rear_view", "level_start" })
+		if (reject([&](auto &r) { r[0].erase(key); })) return 1;
+	for (const auto &entry : rows[0]["player_cfg"].items()) {
+		if (reject([&](auto &r) { r[0]["player_cfg"].erase(entry.key()); })) return 1;
+		if (!entry.value().is_array())
+			for (const auto bad : { json(-1), json(2), json(true), json(0.5) })
+				if (reject([&](auto &r) { r[0]["player_cfg"][entry.key()] = bad; })) return 1;
+	}
+	if (reject([](auto &r) { r[0]["rng_mode"] = "per_frame_seed"; }) ||
+	    reject([](auto &r) { r[0]["environment"]["required"] = json::array({ "future-clock" }); }) ||
 	    reject([](auto &r) { r[0]["environment"]["required"].push_back("xl-clock-input-v1"); }) ||
 	    reject([](auto &r) { r[0]["environment"]["slow_motion_speedup"] = 7; }) ||
 	    reject([](auto &r) { r[0]["environment"]["slow_motion_speedup"] = 6.0; }) ||
@@ -986,6 +1010,7 @@ static int expect_environment_timeline(void)
 	// Version 5 stock files retain their existing contract and no environment data
 	demo.metadata.version = 5;
 	demo.metadata.has_environment = false;
+	demo.metadata.level_start.has_xl_clock = 0;
 	for (auto *item : { &demo.frames[0], &demo.input_tail }) {
 		item->has_environment = false;
 		item->environment.clear();

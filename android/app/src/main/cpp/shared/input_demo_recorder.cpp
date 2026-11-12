@@ -624,6 +624,34 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 
 	if (have_checkpoint && settings->level_start)
 		return input_demo_recorder_copy_error("level start cannot contain a checkpoint", error, error_size);
+	if (settings->has_environment) {
+		// Use the same admission contract before starting or replacing any capture
+		input_demo_metadata metadata;
+		metadata.version = 6;
+		metadata.game = "d2";
+		metadata.mission = settings->mission;
+		metadata.git_version = input_demo_recorder_git_version();
+		metadata.arch = input_demo_recorder_arch();
+		metadata.level = settings->level;
+		metadata.difficulty = settings->difficulty;
+		metadata.start_mode = have_checkpoint ? "save_checkpoint" : "new_level";
+		if (have_checkpoint) metadata.start_save = settings->checkpoint_save_name;
+		metadata.rng_mode = settings->rng_mode;
+		metadata.frame_count = 1;
+		metadata.has_level_start = settings->level_start != nullptr;
+		if (settings->level_start) metadata.level_start = *settings->level_start;
+		metadata.has_player_cfg = settings->has_player_cfg != 0;
+		metadata.player_cfg = settings->player_cfg;
+		metadata.has_view_projection = settings->has_view_projection != 0;
+		metadata.view_projection = settings->view_projection;
+		metadata.has_rear_view_baseline = settings->has_rear_view_baseline != 0;
+		metadata.rear_view_baseline = settings->rear_view_baseline;
+		metadata.has_environment = true;
+		metadata.environment = settings->environment;
+		std::string encoded, detail;
+		if (!input_demo_metadata_to_header_line(metadata, &encoded, &detail))
+			return input_demo_recorder_copy_error(detail, error, error_size);
+	}
 	input_demo_recorder_reset_session();
 	input_demo_rng_trace_start();
 	g_input_demo_recorder_session.has_level_start = settings->level_start != NULL;

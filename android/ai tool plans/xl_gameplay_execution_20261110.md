@@ -1336,6 +1336,57 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   17.5 hours with substantial uncertainty and no cutoff. Production guards stay
   closed until qualification; no Android or whole-stack closure is claimed.
 
+### G1 startup-profile checkpoint, November 11 at 13:03 PST
+
+- Previous goal turn made progress: supplemental identity increment committed
+  as f0095687a4c0447c0ad79a688dc0a51e6545f2c4, tree
+  9e8012c8c3a3626d66ef1984180885171276aa95. Current work stays on layer 02;
+  G1 remains active/unaccepted, no layer-02 push/PR/CI claim.
+- Found and repaired a real admission gap: format-6 headers could omit startup
+  settings and receive legacy defaults, with only some omissions rejected later
+  by the developer runtime. Codec admission now requires explicit player config,
+  projection, rear-view baseline, lcg_state, and XL level-start clock state when
+  starting a new level. Every ordinary emitted D2 config field is required;
+  boolean integers must be 0/1. Recorder startup uses the same codec validator
+  before resetting/activating the capture. Existing format-5 stock behavior is
+  preserved. Production XL guards remain closed.
+- Extended existing codec/recorder tests with missing-field, noncanonical flag,
+  wrong RNG and startup-baseline controls. File/text parse rejection preserves
+  the prior parsed recording; invalid recorder settings leave it inactive.
+  Windows D2 desktop and tests build, focused CTests pass 3/3 in 8.82 s;
+  Linux developer desktop/tests build, CTests pass 3/3 in 2.92 s; Windows D1
+  desktop/tests build, CTests pass 3/3 in 8.12 s. Zero skips in these runs.
+  Scoped quality and diff checks pass. Automation catalog passes (99 JSON,
+  315 PowerShell standalone, 547 support); run-all catalog passes (428 top-level,
+  547 support). No test membership or timeouts changed. One Linux test invocation
+  hit shell regex quoting; corrected with WSL --exec and ran to completion.
+- Retained complete capture g1-live-time-capture-6 replays cleanly with verified
+  assets on the new executable: g1-time-replay-8 accelerated and
+  g1-time-replay-9 realtime. Both detailed comparisons pass all 198 object frames,
+  202 world/boundary records, 811 SIM RNG events and 198 frame hashes. Together
+  with immediate replay-7, this capture has two clean repeats and altered pacing.
+  EXE SHA256 0f3267b03c1c32c463b8fa7d3fd8ded8919bf489a22dd8ab4be80b5f9c4df3ca.
+  Demo identity is unchanged from the preceding entry. Authentic Warp HOG was
+  rehashed unchanged (2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c).
+  No new capture assists; existing pre-record approach pose remains disclosed.
+  This does not prove connected gameplay, ordinary Omega, or cross-platform replay.
+- Added a settings ownership table to regression_demos/README.md: captured
+  difficulty/config/input scaling/view/clock/RNG versus still-open configuration
+  changes during capture, strict-FP build admission, complete cheat/global cold
+  state, and audio/effect simulation independence. Strict FP is ON in the tested
+  Windows cache. Do not interpret this partial audit as settings closure.
+- Evidence uses protected temp/pr464-ci-fixes-20261110/g1-startup-profile-*.
+  Work interval approximately 12:55-13:03 PST; free space about 5.3 GiB with the
+  4 GiB reserve unchanged. Pinned reference/assets remain unchanged. No Android
+  worker or WSL process was interrupted.
+- Next: commit this admission increment, then extend the existing ordinary
+  gameplay probe to capture Omega firing, actual damage and subsequent recharge
+  through ordinary input/recording. Keep setup assists explicit and compare live
+  detail against immediate/repeated playback. G1 still needs the open settings,
+  remaining external-clock/state audit and qualification before publication.
+  Estimate remains 6-10 hours for G1 and roughly 17.5 hours G2-G7, with high
+  uncertainty and no cutoff. No closure/package/whole-stack readiness claim.
+
 Per-item handoff template:
 
     Item and status:

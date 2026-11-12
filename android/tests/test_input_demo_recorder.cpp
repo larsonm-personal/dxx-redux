@@ -2072,10 +2072,31 @@ static int expect_environment_recording(void)
 	settings.rng_mode = input_demo_test_rng_mode();
 	settings.has_environment = 1;
 	settings.environment = { 100, 100, UINT32_MAX - 1, 100 };
+	input_demo_level_start level_start{};
+	level_start.has_xl_clock = 1;
+	settings.level_start = &level_start;
+	settings.has_player_cfg = 1;
+	settings.player_cfg.has_headlight_active_default = 1;
+	settings.player_cfg.primary_order_count = settings.player_cfg.secondary_order_count = 11;
+	for (int i = 0; i < 11; ++i)
+		settings.player_cfg.primary_order[i] = settings.player_cfg.secondary_order[i] = i == 10 ? 255 : i;
+	settings.has_view_projection = settings.has_rear_view_baseline = 1;
+	settings.view_projection = { 640, 480, 65536, 65536, 20, 0, 1 };
 	input_demo_control_state state = {};
 	input_demo_control_pulse pulse = {};
 	char error[256] = "";
 	const auto check = [&](int result) { return result || !report_failure(error); };
+	for (int missing = 0; missing < 6; ++missing) {
+		auto incomplete = settings;
+		if (missing == 0) incomplete.has_player_cfg = 0;
+		if (missing == 1) incomplete.has_view_projection = 0;
+		if (missing == 2) incomplete.has_rear_view_baseline = 0;
+		if (missing == 3) incomplete.level_start = nullptr;
+		if (missing == 4) incomplete.player_cfg.original_homing = 2;
+		if (missing == 5) incomplete.rng_mode = "per_frame_seed";
+		if (input_demo_recorder_start(&incomplete, error, sizeof(error)) || input_demo_recorder_is_active())
+			return report_failure("incomplete XL startup settings started a recording");
+	}
 	if (!check(input_demo_recorder_start(&settings, error, sizeof(error)))) return 1;
 	if (!input_demo_recorder_uses_environment() || input_demo_recorder_truncate(0))
 		return report_failure("environment capture did not retain its clock basis");

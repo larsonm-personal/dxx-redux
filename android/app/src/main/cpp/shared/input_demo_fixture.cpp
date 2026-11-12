@@ -719,6 +719,17 @@ static bool validate_metadata(const input_demo_metadata &metadata, std::string *
 	}
 	if (metadata.has_player_cfg && !validate_player_cfg(metadata.player_cfg, metadata.game, error))
 		return false;
+	if (metadata.version == 6) {
+		const auto &cfg = metadata.player_cfg;
+		if (!metadata.has_player_cfg || !cfg.has_headlight_active_default ||
+		    !metadata.has_view_projection || !metadata.has_rear_view_baseline || metadata.rng_mode != "lcg_state" ||
+		    (metadata.start_mode == "new_level" && !metadata.has_level_start))
+			return fail(error, "format 6 requires complete XL startup settings and clock state");
+		for (const int value : { cfg.auto_leveling, cfg.persistent_debris, cfg.headlight_active_default,
+		                         int(cfg.no_fire_autoselect), int(cfg.cycle_autoselect_only), int(cfg.select_after_fire),
+		                         int(cfg.classic_autoselect_weapon), int(cfg.autoselect_only_once), int(cfg.original_homing) })
+			if (value < 0 || value > 1) return fail(error, "format 6 player settings require boolean integer values");
+	}
 	if (metadata.has_rear_view_baseline && (metadata.version < 5 || !input_demo_rear_view_baseline_supported(&metadata.rear_view_baseline)))
 		return fail(error, "invalid or mis-versioned rear-view baseline");
 	if (metadata.has_view_projection && (metadata.version < 5 || !input_demo_view_projection_supported(&metadata.view_projection) ||
@@ -1486,6 +1497,13 @@ bool input_demo_metadata_parse_header_line(const std::string &line,
 	}
 	if (!validate_metadata(parsed, error))
 		return false;
+	if (parsed.version == 6) {
+		// Legacy readers may default omitted fields; qualified XL input cannot
+		for (const char *key : { "auto_leveling", "persistent_debris", "headlight_active_default", "no_fire_autoselect",
+		                         "cycle_autoselect_only", "select_after_fire", "classic_autoselect_weapon", "autoselect_only_once",
+		                         "original_homing", "guidebot_routing_mode", "primary_order", "secondary_order" })
+			if (!root.at("player_cfg").contains(key)) return fail(error, std::string("format 6 requires player_cfg ") + key);
+	}
 	if (!parsed.asset_fingerprints.empty()) {
 		const auto mode = ordered_json::parse(parsed.asset_fingerprints)["mode"];
 		if ((mode == "native_d1" ? "d1" : "d2") != parsed.game) return fail(error, "asset mode disagrees with recorded engine");
