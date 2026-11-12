@@ -152,14 +152,14 @@ static int trigger_scheduler_test(int argc, char **argv)
 		require(state(5).operated && Triggers[6].value == 4, "autoplay did not rearm on a later frame");
 		const auto random_pending = state(5);
 		d_rand_get_state(&before_rng);
+		const auto saved_calls = d_rand_get_call_count();
 		char random_save[] = "xl-random.sav";
 		stop_time();
 		require(state_save_all_sub(random_save, description) != 0, "random timer save failed");
 		advance(i2f(2));
 		require(state_restore_all_sub(random_save, 0) != 0 && state(5).delay_ms == random_pending.delay_ms && state(5).elapsed == random_pending.elapsed, "restore lost selected randomized delay");
 		d_rand_get_state(&actual_rng);
-		// Native restore resets the SIM diagnostic count while restoring its seed
-		require(actual_rng == before_rng && d_rand_get_call_count() == 0, "randomized restore rerolled simulation RNG");
+		require(actual_rng == before_rng && d_rand_get_call_count() == saved_calls, "randomized restore changed simulation RNG seed or draw count");
 		// All malformed records are rejected before publishing scheduler arrays
 		std::array<xl_trigger_state, MAX_TRIGGERS> snapshot{};
 		for (int i = 0; i < Num_triggers; ++i) snapshot[i] = state(i);

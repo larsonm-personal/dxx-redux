@@ -2602,6 +2602,55 @@ G1 CI repair checkpoint, November 11 at 21:26 PST:
   Next publish this coherent harness repair, inspect exact-head CI, and finish
   the unchanged-binary graphics run before accepting G1 or creating layer03.
 
+G1 private-owner repair checkpoint, November 11 at 21:53 PST:
+
+- Trusted private run43161281763 tested head9c81a6b67cb4f9e2096ac59632f9b4eeb9bc13af
+  and failed exactly xl_wall_trigger_scheduler, xl_doorways and xl_water_arena.
+  Its sanitized receipt reports710.917s elapsed, native-tests entered458.291s,
+  attempted_tests=true and coverage_complete=false. Earlier119fa3 private run
+  43159215256 reported the same three failures. These are actual native failures,
+  distinct from its stale-head readiness publication rejection. Current readiness
+  measurement/reporting completed the unchanged frozen4/8 result.
+- Reproduced all three on Linux before editing. Scheduler expected restore to
+  reset the SIM diagnostic count; it now checks the saved count and seed. Arena
+  likewise verifies preserved count and the subsequent draw delta, and requires
+  the new XL save_checkpoint origin instead of the old new_level assumption.
+  Doorway's animation-only loop does not advance the host clock; wait800ms and
+  update the clock before retrying the restored trigger. Keep the existing
+  closing-door reversal assertion and all later physical/visibility checks.
+  No production code, immutable fixture, required membership or deadline changed.
+- Rebuilt developer metadata from9c81 plus these three test-owner changes;
+  focused CTest passes3/3 in25.12s (scheduler6.98,doorway2.71,arena15.43).
+  Arena ordinary-control dry-spawn traversal/replay matches1235frames; saved
+  water-exit continuation matches90frames and position/orientation/velocity,
+  player/time/SIM state. Scoped quality and diff whitespace checks pass.
+  Evidence: temp/pr464-ci-fixes-20261110/g1-private-three-{repro,fixed}.log,
+  g1-private-owner-{build,quality}.log and g1-private-9c81-ci/results.json.
+- Full canonical run_xl_originals.py --fast is now running locally against the
+  root-bound /var/tmp/dxx-pr464-20261111/private caches and pinned reference.
+  Developer rebuild passed; normal stock targets are rebuilding. Its final
+  result remains pending. Log g1-private-canonical-fixed.log; raw native logs
+  remain in that private work directory. Publish the focused repair now so its
+  fresh hosted validation can run while this complete local owner finishes.
+- Frozen-binary public graphics owner has now completed:34/34 native pass and
+  required imported-D1 flight gameplay/SIM comparison pass. Four other imported
+  cases remain unqualified; three retained exclusions and raw paired exit1 remain
+  visible. Sourceef0 normal binaries stayed unchanged through end checkout9c81;
+  only harness/ledger changed. g1-published-public-graphics-final.json verifies
+  both D1/D2 hashes. This supersedes the earlier mixed-build graphics limitation.
+- Literal9c81 CI: XL43161285272 passes61 Linux/56 Windows public contracts, linked
+  boss consumer and both developer builds. Tooling43161288560 passes both hosts.
+  Engine43161277834 D1/D2 pass; ASan still running. Public-save43161281866 passed
+  ordered-input phases and reached ordinary-save persistence; still pending.
+  New repair requires new exact-head runs. Expected historical/manual/platform
+  omissions remain skips, not runtime coverage. No Android/APK change here.
+- G1 remains open. Work21:36-21:53 PST; allow another1-2h for complete private and
+  current-head CI, G2-G7 approximately17.5h with no cutoff. Read-only G2 audit
+  identifies lost runtime object birth time/order and pure-observer requirements;
+  no G2 branch or implementation yet. Next: publish this coherent test repair,
+  complete canonical/private and exact-head public gates, then accept G1 and
+  continue layer03. Independent untracked review and existing stashes preserved.
+
 Per-item handoff template:
 
     Item and status:
