@@ -1237,11 +1237,317 @@ XL_ROUTE_SCHEMA = integer_fields(
     Escort_route_path_recalc_limiter_timestamps=(int,) * 4,
     Escort_route_activated_triggers=[int],
 )
+# Typed metadata contract mirrors guidebot_metadata_fields.h and the native capacities
+METADATA_I32 = range(-2147483648, 2147483648)
+METADATA_U32 = range(0, 4294967296)
+METADATA_U64 = range(0, 18446744073709551616)
+METADATA_BYTE = range(0, 256)
+METADATA_LONG_DOUBLE_SCHEMA = {"negative": bool, "bits": [range(0, 2)], "exponent": range(-16494, 16385)}
+
+METADATA_LEVEL_METADATA_ROUTE_STEP_SCHEMA = {
+    "kind": METADATA_I32,
+    "seg": METADATA_I32,
+    "side": METADATA_I32,
+    "wall_num": METADATA_I32,
+    "trigger_num": METADATA_I32,
+    "trigger_type": METADATA_I32,
+    "key_index": METADATA_I32,
+    "key_carrier_objnum": METADATA_I32,
+    "can_be_bypassed": METADATA_I32,
+    "activation_kind": METADATA_I32,
+    "requires_guided_missile": METADATA_I32,
+    "guided_missile_point_count": METADATA_I32,
+    "is_switch_restorer": METADATA_I32,
+    "restored_wall_num": METADATA_I32,
+    "switch_shot_quality": METADATA_I32,
+    "switch_shot_incidence_cosine": METADATA_I32,
+    "switch_guidance_candidate_count": range(0, 17),
+    "switch_guidance_candidate_seg": (METADATA_I32,) * 16,
+    "switch_guidance_candidate_pos": ((METADATA_I32,) * 3,) * 16,
+    "switch_guidance_candidate_quality": (METADATA_I32,) * 16,
+    "switch_guidance_candidate_incidence": (METADATA_I32,) * 16,
+    "path_segment_count": METADATA_I32,
+    "path_terminal_segment": METADATA_I32,
+    "activation_pos_valid": METADATA_I32,
+    "activation_pos": (METADATA_I32,) * 3,
+    "aim_pos_valid": METADATA_I32,
+    "aim_pos": (METADATA_I32,) * 3,
+    "label_pos_valid": METADATA_I32,
+    "label_pos": (METADATA_I32,) * 3,
+    "distance_from_previous": float,
+    "label": (METADATA_BYTE,) * 64,
+    "trigger_type_name": (METADATA_BYTE,) * 96,
+    "opened_link_count": range(0, 11),
+    "opened_link_seg": (METADATA_I32,) * 10,
+    "opened_link_side": (METADATA_I32,) * 10,
+    "opened_link_wall": (METADATA_I32,) * 10,
+}
+
+METADATA_LEVEL_METADATA_STATE_SCHEMA = {
+    "energy_center_segment_count": METADATA_I32,
+    "energy_center_raw_count": METADATA_I32,
+    "energy_center_count": METADATA_I32,
+    "energy_center_group_distance": METADATA_I32,
+    "energy_center_nearest_raw_distance": METADATA_I32,
+    "matcen_segment_count": METADATA_I32,
+    "matcen_raw_count": METADATA_I32,
+    "matcen_count": METADATA_I32,
+    "mine_volume": float,
+    "mine_volume_normalized": float,
+    "travel_distance": float,
+    "travel_time_seconds": METADATA_I32,
+    "guidebot_count": METADATA_I32,
+    "guidebot_placed": METADATA_I32,
+    "guidebot_accessible": METADATA_I32,
+    "guidebot_placement_note": (METADATA_BYTE,) * 128,
+    "guidebot_note": (METADATA_BYTE,) * 128,
+    "route_status": METADATA_I32,
+    "route_problem": (METADATA_BYTE,) * 128,
+    "route_note": (METADATA_BYTE,) * 128,
+    "route_required_key_mask": METADATA_I32,
+    "route_completing_key_mask_set": METADATA_I32,
+    "unnecessary_key_mask": METADATA_I32,
+    "route_step_count": range(0, 97),
+    "route_steps": (METADATA_LEVEL_METADATA_ROUTE_STEP_SCHEMA,) * 96,
+}
+
+METADATA_ROUTE_PLANNER_PLAN_SUMMARY_SCHEMA = {
+    "endpoint_kind": METADATA_I32,
+    "route_step_count": range(0, 97),
+    "first_pending_step": range(-1, 96),
+    "first_pending_path_segment_count": METADATA_I32,
+    "first_pending_path_terminal_segment": METADATA_I32,
+    "partial_frontier_segment": METADATA_I32,
+}
+
+METADATA_ROUTE_SNAPSHOT_SUMMARY_SCHEMA = {
+    "topology_hash": METADATA_U64,
+    "state_hash": METADATA_U64,
+    "start_hash": METADATA_U64,
+    "progression_hash": METADATA_U64,
+    "navigation_hash": METADATA_U64,
+    "trigger_hash": METADATA_U64,
+    "object_hash": METADATA_U64,
+    "automap_hash": METADATA_U64,
+    "actor_hash": METADATA_U64,
+    "segment_count": METADATA_I32,
+    "wall_count": METADATA_I32,
+    "trigger_count": METADATA_I32,
+    "object_count": METADATA_I32,
+    "start_segment": METADATA_I32,
+    "key_mask": METADATA_I32,
+    "control_center_destroyed": METADATA_I32,
+    "topology_generation": METADATA_U32,
+    "start_generation": METADATA_U32,
+    "progression_generation": METADATA_U32,
+    "navigation_generation": METADATA_U32,
+    "trigger_generation": METADATA_U32,
+    "object_generation": METADATA_U32,
+    "automap_generation": METADATA_U32,
+    "actor_generation": METADATA_U32,
+}
+
+METADATA_GUIDEBOT_ROUTE_VALIDITY_CERTIFICATE_SCHEMA = {
+    "status": METADATA_I32,
+    "source_trigger": METADATA_I32,
+    "source_wall": METADATA_I32,
+    "source_object": METADATA_I32,
+    "frontier_segment": METADATA_I32,
+}
+
+METADATA_GUIDEBOT_ROUTE_DECISION_SCHEMA = {
+    "version": METADATA_U32,
+    "status": METADATA_I32,
+    "target_policy": METADATA_I32,
+    "requested_target_segment": METADATA_I32,
+    "objective_kind": METADATA_I32,
+    "activation_kind": METADATA_I32,
+    "requires_guided_missile": METADATA_I32,
+    "objective_trigger": METADATA_I32,
+    "objective_wall": METADATA_I32,
+    "objective_key": METADATA_I32,
+    "objective_object": METADATA_I32,
+    "objective_segment": METADATA_I32,
+    "objective_side": METADATA_I32,
+    "guidance_position_valid": METADATA_I32,
+    "guidance_position": (METADATA_I32,) * 3,
+    "path_terminal_segment": METADATA_I32,
+    "partial_frontier_segment": METADATA_I32,
+    "dependency_mask": METADATA_U32,
+    "topology_hash": METADATA_U64,
+    "state_hash": METADATA_U64,
+    "start_hash": METADATA_U64,
+    "progression_hash": METADATA_U64,
+    "navigation_hash": METADATA_U64,
+    "trigger_hash": METADATA_U64,
+    "object_hash": METADATA_U64,
+    "automap_hash": METADATA_U64,
+    "actor_hash": METADATA_U64,
+    "input_hash": METADATA_U64,
+    "semantic_hash": METADATA_U64,
+    "guidance_hash": METADATA_U64,
+    "decision_hash": METADATA_U64,
+    "certificate": METADATA_GUIDEBOT_ROUTE_VALIDITY_CERTIFICATE_SCHEMA,
+}
+
+METADATA_GUIDEBOT_ROUTE_CERTIFIER_WORKSPACE_SCHEMA = {
+    "reachable": (METADATA_BYTE,) * 9000,
+    "queue": (METADATA_I32,) * 9000,
+    "strategic_distance": (METADATA_I32,) * 9000,
+    "physical_distance": (METADATA_I32,) * 9000,
+    "firing_cache_valid": METADATA_I32,
+    "firing_cache_num_segments": range(0, 9001),
+    "firing_cache_num_walls": METADATA_I32,
+    "firing_cache_trigger": METADATA_I32,
+    "firing_cache_wall": METADATA_I32,
+    "firing_cache_aim": (METADATA_I32,) * 3,
+    "firing_cache_segment": METADATA_I32,
+    "firing_cache_path_segment_count": METADATA_I32,
+    "firing_cache_position": (METADATA_I32,) * 3,
+    "firing_cache_shot_quality": METADATA_I32,
+    "firing_cache_incidence_cosine": METADATA_I32,
+    "job_active": METADATA_I32,
+    "job_start_segment": METADATA_I32,
+    "job_num_segments": range(0, 9001),
+    "reach_head": range(0, 9001),
+    "reach_tail": range(0, 9001),
+    "reach_side": range(0, 7),
+    "reach_complete": METADATA_I32,
+    "job_visited_segments": METADATA_U32,
+    "job_evaluated_edges": METADATA_U32,
+    "job_evaluated_firing_positions": METADATA_U32,
+    "firing_search_active": METADATA_I32,
+    "firing_search_pass": METADATA_I32,
+    "firing_search_segment": METADATA_I32,
+    "firing_search_detailed_count": range(0, 9),
+    "firing_search_selection_segment": METADATA_I32,
+    "firing_search_selection_complete": METADATA_I32,
+    "firing_search_detailed_index": range(0, 9),
+    "firing_search_detailed_sample": METADATA_I32,
+    "firing_search_detailed_segments": (METADATA_I32,) * 8,
+    "firing_search_detailed_scores": (METADATA_LONG_DOUBLE_SCHEMA,) * 8,
+    "firing_search_original_segment": METADATA_I32,
+    "firing_search_original_position": (METADATA_I32,) * 3,
+    "firing_search_best_segment": METADATA_I32,
+    "firing_search_best_path_distance": METADATA_I32,
+    "firing_search_best_position": (METADATA_I32,) * 3,
+    "firing_search_best_quality": METADATA_I32,
+    "firing_search_best_incidence": METADATA_I32,
+    "firing_search_best_score": METADATA_LONG_DOUBLE_SCHEMA,
+    "firing_frontier_active": METADATA_I32,
+    "firing_frontier_phase": METADATA_I32,
+    "firing_frontier_goal_segment": METADATA_I32,
+    "firing_frontier_init_segment": METADATA_I32,
+    "firing_frontier_head": range(0, 9001),
+    "firing_frontier_tail": range(0, 9001),
+    "firing_frontier_side": METADATA_I32,
+    "firing_frontier_scan_segment": METADATA_I32,
+    "firing_frontier_best_segment": METADATA_I32,
+    "firing_frontier_best_remaining": METADATA_I32,
+    "firing_frontier_best_incidence": METADATA_I32,
+    "unexplored_active": METADATA_I32,
+    "unexplored_init_segment": METADATA_I32,
+    "unexplored_scan_segment": METADATA_I32,
+    "unexplored_component_head": range(0, 9001),
+    "unexplored_component_tail": range(0, 9001),
+    "unexplored_component_side": METADATA_I32,
+    "unexplored_component_size": METADATA_I32,
+    "unexplored_component_target": METADATA_I32,
+    "unexplored_component_distance": METADATA_I32,
+    "unexplored_best_size": METADATA_I32,
+    "unexplored_best_target": METADATA_I32,
+    "unexplored_best_distance": METADATA_I32,
+}
+
+METADATA_GUIDEBOT_ROUTE_CERTIFIER_SUMMARY_SCHEMA = {
+    "selected_step": METADATA_I32,
+    "selected_segment": METADATA_I32,
+    "blocking_step": METADATA_I32,
+    "blocking_segment": METADATA_I32,
+    "blocking_reason": METADATA_I32,
+    "used_prepared_fallback": METADATA_I32,
+    "required_steps_low": METADATA_U64,
+    "visited_segments": METADATA_U32,
+    "evaluated_edges": METADATA_U32,
+    "evaluated_actions": METADATA_U32,
+    "rejected_actions": METADATA_U32,
+    "evaluated_firing_positions": METADATA_U32,
+    "reranked_firing_position": METADATA_I32,
+    "firing_cache_hit": METADATA_I32,
+    "approximate_firing_position": METADATA_I32,
+    "steep_firing_position": METADATA_I32,
+}
+
+METADATA_LEVEL_METADATA_LIVE_WORK_SUMMARY_SCHEMA = {
+    "full_plan_calls": METADATA_U32,
+    "blocked_full_plan_calls": METADATA_U32,
+    "deferred_refreshes": METADATA_U32,
+    "retained_incumbents": METADATA_U32,
+    "deferred_without_incumbent": METADATA_U32,
+    "route_ticks": METADATA_U32,
+    "deferred_ticks": METADATA_U32,
+    "completed_ticks": METADATA_U32,
+    "tick_overruns": METADATA_U32,
+    "compiled_selector_calls": METADATA_U32,
+    "compiled_selector_successes": METADATA_U32,
+    "compiled_selector_failures": METADATA_U32,
+    "compiled_selector_max_evaluated_actions": METADATA_U32,
+    "pending_event_mask": METADATA_U32,
+    "pending": METADATA_I32,
+    "reachability_cursor": METADATA_I32,
+    "firing_candidate_cursor": METADATA_I32,
+    "firing_candidate_pass": METADATA_I32,
+    "unexplored_candidate_cursor": METADATA_I32,
+    "last_tick_us": METADATA_U64,
+    "max_tick_us": METADATA_U64,
+    "last_refresh_us": METADATA_U64,
+    "max_refresh_us": METADATA_U64,
+    "refresh_overruns": METADATA_U32,
+}
+
+XL_METADATA_SCHEMA = {
+    "version": range(1, 2),
+    "canonical_state": METADATA_LEVEL_METADATA_STATE_SCHEMA,
+    "canonical_plan_summary": METADATA_ROUTE_PLANNER_PLAN_SUMMARY_SCHEMA,
+    "canonical_plan_summary_valid": METADATA_I32,
+    "live_route_state": METADATA_LEVEL_METADATA_STATE_SCHEMA,
+    "live_route_state_valid": METADATA_I32,
+    "live_plan_summary": METADATA_ROUTE_PLANNER_PLAN_SUMMARY_SCHEMA,
+    "live_plan_summary_valid": METADATA_I32,
+    "live_candidate_state": METADATA_LEVEL_METADATA_STATE_SCHEMA,
+    "live_candidate_summary": METADATA_ROUTE_PLANNER_PLAN_SUMMARY_SCHEMA,
+    "live_candidate_certificate": METADATA_GUIDEBOT_ROUTE_VALIDITY_CERTIFICATE_SCHEMA,
+    "canonical_snapshot": METADATA_ROUTE_SNAPSHOT_SUMMARY_SCHEMA,
+    "canonical_snapshot_valid": METADATA_I32,
+    "canonical_analysis_profile_hash": METADATA_U64,
+    "live_snapshot": METADATA_ROUTE_SNAPSHOT_SUMMARY_SCHEMA,
+    "live_snapshot_valid": METADATA_I32,
+    "progression_object_audit_hash": METADATA_U64,
+    "progression_object_audit_hash_valid": METADATA_I32,
+    "navigation_access_audit_hash": METADATA_U64,
+    "navigation_access_audit_hash_valid": METADATA_I32,
+    "route_start_objnum": METADATA_I32,
+    "route_start_seg": METADATA_I32,
+    "live_route_target_seg": METADATA_I32,
+    "route_readiness": METADATA_I32,
+    "route_revision": METADATA_U32,
+    "route_certifier_workspace": METADATA_GUIDEBOT_ROUTE_CERTIFIER_WORKSPACE_SCHEMA,
+    "route_frontier_workspace": METADATA_GUIDEBOT_ROUTE_CERTIFIER_WORKSPACE_SCHEMA,
+    "route_certifier_summary": METADATA_GUIDEBOT_ROUTE_CERTIFIER_SUMMARY_SCHEMA,
+    "live_certificate": METADATA_GUIDEBOT_ROUTE_VALIDITY_CERTIFICATE_SCHEMA,
+    "published_route_decision": METADATA_GUIDEBOT_ROUTE_DECISION_SCHEMA,
+    "published_route_decision_valid": METADATA_I32,
+    "live_route_provenance": METADATA_I32,
+    "live_work_summary": METADATA_LEVEL_METADATA_LIVE_WORK_SUMMARY_SCHEMA,
+    "live_route_work_pending": METADATA_I32,
+}
+
 XL_NATIVE_SCHEMA = integer_fields(
     "version omega_charge wiggle_phase",
     afterburner_charge=[int],
     afterburner_times=[int],
     guided=((int, int),) * 8,
+    metadata=XL_METADATA_SCHEMA,
     escort=XL_ESCORT_SCHEMA,
     route={"version": int, "enabled": bool},
     seismic=integer_fields(
@@ -1260,6 +1566,9 @@ def validate_world_value(value, schema, path):
     elif schema is float:
         if type(value) is not float or not math.isfinite(value):
             raise EvidenceError(f"World field must be a finite float: {path}")
+    elif isinstance(schema, range):
+        if type(value) is not int or value not in schema:
+            raise EvidenceError(f"World integer is outside its native range: {path}")
     elif isinstance(schema, dict):
         if not isinstance(value, dict):
             raise EvidenceError(f"World field must be an object: {path}")
@@ -1275,6 +1584,9 @@ def validate_world_value(value, schema, path):
                 if child is int:
                     if type(value[key]) is not int:
                         raise EvidenceError(f"World field must be an integer: {path}.{key}")
+                elif isinstance(child, range):
+                    if type(value[key]) is not int or value[key] not in child:
+                        raise EvidenceError(f"World integer is outside its native range: {path}.{key}")
                 else:
                     validate_world_value(value[key], child, f"{path}.{key}")
     else:
@@ -1286,6 +1598,9 @@ def validate_world_value(value, schema, path):
             if child is int:
                 if type(item) is not int:
                     raise EvidenceError(f"World field must be an integer: {path}[{index}]")
+            elif isinstance(child, range):
+                if type(item) is not int or item not in child:
+                    raise EvidenceError(f"World integer is outside its native range: {path}[{index}]")
             else:
                 validate_world_value(item, child, f"{path}[{index}]")
 
@@ -1309,6 +1624,25 @@ def validate_world_state(state, engine=None, xl=False, objects=None):
         births = state["xl_births"]
         capacity = state["ai"]["local_capacity"]
         native = state["xl_native"]
+        metadata = native["metadata"]
+        for owner in ("canonical_state", "live_route_state", "live_candidate_state"):
+            value = metadata[owner]
+            for key in ("guidebot_placement_note", "guidebot_note", "route_problem", "route_note"):
+                if 0 not in value[key]:
+                    raise EvidenceError("Unterminated Guide-Bot metadata text")
+            for step in value["route_steps"]:
+                if 0 not in step["label"] or 0 not in step["trigger_type_name"]:
+                    raise EvidenceError("Unterminated Guide-Bot metadata step text")
+        for owner in ("route_certifier_workspace", "route_frontier_workspace"):
+            value = metadata[owner]
+            for score in (value["firing_search_best_score"], *value["firing_search_detailed_scores"]):
+                bits = score["bits"]
+                if (
+                    len(bits) > 113
+                    or (bits and (bits[0] != 1 or bits[-1] != 1))
+                    or (not bits and score["exponent"] != 0)
+                ):
+                    raise EvidenceError("Noncanonical Guide-Bot metadata binary score")
         route = native["route"]
         if route["version"] != 1:
             raise EvidenceError("Unsupported XL route observation")
@@ -1649,7 +1983,7 @@ def world_states(path, header, engine="d1"):
         if (
             not meta_seen
             or type(row.get("version")) is not int
-            or row["version"] != (2 if kind == "object_boundary" else 15 if xl else 10)
+            or row["version"] != (2 if kind == "object_boundary" else 16 if xl else 10)
         ):
             raise EvidenceError("Missing world metadata or unsupported schema")
         if kind.endswith("boundary"):

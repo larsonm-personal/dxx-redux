@@ -480,7 +480,7 @@ captured at its ordinary setter before resetting AI routing; two changes between
 frames remain two operations even when the final mode equals the original mode.
 Playback uses that same setter, not the save-restoration path that preserves AI.
 
-XL world observations use schema 15 and require `xl_player_cfg`, `xl_births` and `xl_native`
+XL world observations use schema 16 and require `xl_player_cfg`, `xl_births` and `xl_native`
 at restored, per-frame and terminal boundaries. Birth observations contain every
 live slot/signature, birth time, creation order and the next creation counter;
 the reader checks live object identities at both boundaries and validates the
@@ -509,8 +509,14 @@ The codec intentionally rebases this deadline to the restoring process's cached
 clock. Capture reads that existing cached value without sampling or advancing time.
 The remaining wait is required and compared; unknown fields remain compared.
 Active cache loading and full routing are still unqualified. Disabled compiled route support is explicit.
-Metadata coverage and active-route qualification remain incomplete.
-Earlier XL schema-10/11/12/13/14 receipts retain their historical scope; they cannot
+Metadata captures the existing detached typed snapshot: all canonical/live/candidate
+plans, hashes and generations, decisions, certificates, both full workspaces and
+pending work summaries. Its shared field list also drives the unchanged native
+codec. Full fixed arrays and text storage remain visible. Long-double scores use
+an exact sign, binary significand and exponent, preserving native precision and
+negative zero without copying ABI padding or narrowing to double. Metadata and
+active-route qualification remain incomplete.
+Earlier XL schema-10/11/12/13/14/15 receipts retain their historical scope; they cannot
 prove the newly required native-state observation. The Omega recording probe exercises menu-equivalent
 auto-leveling, homing and weapon-order changes, two ordinary routing setter calls
 at frame 102, preference restoration at frame 197, and routing in the stop tail.

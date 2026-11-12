@@ -14,6 +14,9 @@
 
 #include <string>
 #include <stdexcept>
+#include <cmath>
+#include <limits>
+#include <memory>
 #include <nlohmann/json.hpp>
 
 extern "C" {
@@ -24,6 +27,7 @@ extern "C" {
 #include "controls.h"
 #include "guidebot_escort_state.h"
 #include "guidebot_route_state.h"
+#include "guidebot_metadata_snapshot.h"
 #endif
 #include "effects.h"
 #include "endlevel.h"
@@ -181,6 +185,94 @@ json player_state(const player &p)
 }
 
 #ifdef DXX_XL_RUNTIME
+json metadata_long_double(long double value)
+{
+	if (!std::isfinite(value)) throw std::runtime_error("Nonfinite Guide-Bot metadata score");
+	int exponent = 0;
+	long double fraction = std::frexp(std::fabs(value), &exponent);
+	json bits = json::array();
+	// Canonical exact binary value, independent of native long-double padding/width
+	while (fraction != 0) {
+		fraction *= 2;
+		const int bit = fraction >= 1;
+		bits.push_back(bit);
+		fraction -= bit;
+		if (bits.size() > std::numeric_limits<long double>::digits)
+			throw std::runtime_error("Nonbinary Guide-Bot metadata score");
+	}
+	return { { "negative", std::signbit(value) }, { "bits", bits }, { "exponent", exponent - static_cast<int>(bits.size()) } };
+}
+
+#define METADATA_TRACE_GB_SIGNED(value)      static_cast<int64_t>(value)
+#define METADATA_TRACE_GB_UNSIGNED(value)    static_cast<uint64_t>(value)
+#define METADATA_TRACE_GB_BYTES(value)       static_cast<int>(value)
+#define METADATA_TRACE_GB_DOUBLE(value)      static_cast<double>(value)
+#define METADATA_TRACE_GB_LONG_DOUBLE(value) metadata_long_double(value)
+#define METADATA_BEGIN(type)                  \
+	json metadata_trace_##type(const type &v) \
+	{                                         \
+		json out = json::object();            \
+		out.get_ref<json::object_t &>().reserve(96);
+#define METADATA_END() \
+	return out;        \
+	}
+#define METADATA_FIELD(name, kind)            out[#name] = METADATA_TRACE_##kind(v.name);
+#define METADATA_LIMIT(name, kind, low, high) METADATA_FIELD(name, kind)
+#define METADATA_TEXT(name)                                                              \
+	{                                                                                    \
+		auto &array = out[#name];                                                        \
+		array = json::array();                                                           \
+		for (const unsigned char byte : v.name) array.push_back(static_cast<int>(byte)); \
+	}
+#define METADATA_ARRAY(name, count, kind)                                                         \
+	{                                                                                             \
+		auto &array = out[#name];                                                                 \
+		array = json::array();                                                                    \
+		for (size_t i0 = 0; i0 < count; ++i0) array.push_back(METADATA_TRACE_##kind(v.name[i0])); \
+	}
+#define METADATA_MATRIX(name, rows, columns, kind)                                                    \
+	out[#name] = json::array();                                                                       \
+	for (size_t i0 = 0; i0 < rows; ++i0) {                                                            \
+		json row = json::array();                                                                     \
+		for (size_t i1 = 0; i1 < columns; ++i1) row.push_back(METADATA_TRACE_##kind(v.name[i0][i1])); \
+		out[#name].push_back(std::move(row));                                                         \
+	}
+#define METADATA_STRUCT(name, type) out[#name] = metadata_trace_##type(v.name);
+#define METADATA_STRUCT_ARRAY(name, type, count) \
+	out[#name] = json::array();                  \
+	for (size_t i0 = 0; i0 < count; ++i0) out[#name].push_back(metadata_trace_##type(v.name[i0]));
+#include "guidebot_metadata_fields.h"
+#undef METADATA_BEGIN
+#undef METADATA_END
+#undef METADATA_FIELD
+#undef METADATA_LIMIT
+#undef METADATA_TEXT
+#undef METADATA_ARRAY
+#undef METADATA_MATRIX
+#undef METADATA_STRUCT
+#undef METADATA_STRUCT_ARRAY
+
+json metadata_xl_state()
+{
+	// This snapshot contains full fixed workspaces; keep it off the native stack
+	std::unique_ptr<guidebot_metadata_snapshot> snapshot(new guidebot_metadata_snapshot{});
+	level_metadata_capture_snapshot(snapshot.get());
+	json out = { { "version", 1 } };
+	// ordered_json otherwise copies prior full arrays when its key vector grows
+	out.get_ref<json::object_t &>().reserve(64);
+#define METADATA_STRUCT(type, name, serializer) out[#name] = metadata_trace_##type(snapshot->name);
+#define METADATA_VALUE(type, name, kind)        out[#name] = METADATA_TRACE_##kind(snapshot->name);
+#include "guidebot_metadata_save_members.h"
+#undef METADATA_STRUCT
+#undef METADATA_VALUE
+	return out;
+}
+#undef METADATA_TRACE_GB_SIGNED
+#undef METADATA_TRACE_GB_UNSIGNED
+#undef METADATA_TRACE_GB_BYTES
+#undef METADATA_TRACE_GB_DOUBLE
+#undef METADATA_TRACE_GB_LONG_DOUBLE
+
 json native_xl_state()
 {
 	json out = { { "version", 1 }, { "omega_charge", Omega_charge }, { "wiggle_phase", controls_get_wiggle_phase() }, { "afterburner_charge", json::array() }, { "afterburner_times", json::array() }, { "guided", json::array() } };
@@ -248,6 +340,7 @@ json native_xl_state()
 	// Observe the actual seismic owner, including the magnitude used by guidance
 	const auto seismic = xl_compat::seismic_gameplay_snapshot();
 	out["seismic"] = { { "strength", seismic[0] }, { "pending", seismic[1] }, { "magnitude", seismic[4] }, { "phase", seismic[5] }, { "fraction", seismic[6] }, { "interval", seismic[2].is_null() ? json::array() : json(seismic[2]) }, { "detonations", json::array() } };
+	out["metadata"] = metadata_xl_state();
 	for (const auto &entry : seismic[3])
 		out["seismic"]["detonations"].push_back({ !entry[0].is_null(), entry[0].is_null() ? json(0) : json(entry[0]), entry[1] });
 	return out;
@@ -565,7 +658,7 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	static json previous;
 	json current = world_state();
 	const bool boundary = phase != nullptr;
-	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 15 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
+	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 16 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
 	record["state"].get_ref<json::object_t &>().reserve(current.size());
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)

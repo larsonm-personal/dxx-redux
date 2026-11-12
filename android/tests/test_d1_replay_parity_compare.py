@@ -21,6 +21,8 @@ def schema_example(schema):
         return False
     if schema is float:
         return 0.0
+    if isinstance(schema, range):
+        return 0 if 0 in schema else schema.start
     if isinstance(schema, dict):
         return {key: schema_example(child) for key, child in schema.items() if key != "*"}
     if isinstance(schema, tuple):
@@ -1380,7 +1382,7 @@ class ParityTests(unittest.TestCase):
         def convert(rows):
             for row in rows:
                 if row["type"] in ("world_state", "world_boundary"):
-                    row["version"] = 15
+                    row["version"] = 16
                 if row["type"] in ("object_state", "object_boundary"):
                     row["capacity"] = 1367
                     row["allocator"]["free_obj_list"] = list(range(1367))
@@ -1675,15 +1677,19 @@ class ParityTests(unittest.TestCase):
             self.mutate(bad, lambda rows: mutation(rows[2]["state"]["xl_native"]["escort"]))
             with self.assertRaises(parity.EvidenceError):
                 list(parity.world_states(bad, self.header, "d2"))
-        for field in (
+        fields = (
             *parity.ESCORT_SIGNED_FIELDS,
             *parity.ESCORT_UNSIGNED_FIELDS,
             *parity.ESCORT_CLOCK_FIELDS,
             "persistent_message",
-        ):
-            changed = self.write("xl-escort-changed", list(parity.records(path)))
-            self.mutate(changed, lambda rows: rows[2]["state"]["xl_native"]["escort"].__setitem__(field, 1))
-            self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+        )
+        changed = self.write("xl-escort-changed", list(parity.records(path)))
+        self.mutate(changed, lambda rows: rows[2]["state"]["xl_native"]["escort"].update(dict.fromkeys(fields, 1)))
+        report = parity.compare_world(path, changed, self.header, "d2", "d2")
+        self.assertEqual(report["status"], "fail")
+        paths = {difference["path"] for difference in report["first_field_differences"].values()}
+        for field in fields:
+            self.assertIn(f"$.state.xl_native.escort.{field}", paths)
         for mutation in (
             lambda escort: escort["stolen"].__setitem__(0, 1),
             lambda escort: escort["Escort_goal_message_text"].__setitem__(0, 65),
@@ -1720,18 +1726,26 @@ class ParityTests(unittest.TestCase):
             self.mutate(bad, lambda rows: mutation(rows[2]["state"]["xl_native"]["route"]))
             with self.assertRaises(parity.EvidenceError):
                 list(parity.world_states(bad, self.header, "d2"))
-        for field in (
-            *parity.ROUTE_SIGNED_FIELDS,
-            *parity.ROUTE_UNSIGNED_FIELDS,
-            *parity.ROUTE_CLOCK_FIELDS,
-            "restore_pending",
-            "cache_poll_wait",
-        ):
-            if field == "Escort_route_cache_poll_time":
-                continue  # Its host epoch is represented by the exact remaining wait
-            changed = self.write("xl-route-changed", list(parity.records(path)))
-            self.mutate(changed, lambda rows: rows[2]["state"]["xl_native"]["route"].__setitem__(field, 1))
-            self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+        fields = tuple(
+            field
+            for field in (
+                *parity.ROUTE_SIGNED_FIELDS,
+                *parity.ROUTE_UNSIGNED_FIELDS,
+                *parity.ROUTE_CLOCK_FIELDS,
+                "restore_pending",
+                "cache_poll_wait",
+            )
+            if field != "Escort_route_cache_poll_time"
+        )
+        # One comparison must report every mutated field, including unrelated ones
+        # Avoid parsing the full fixed metadata pools once per scalar
+        changed = self.write("xl-route-changed", list(parity.records(path)))
+        self.mutate(changed, lambda rows: rows[2]["state"]["xl_native"]["route"].update(dict.fromkeys(fields, 1)))
+        report = parity.compare_world(path, changed, self.header, "d2", "d2")
+        self.assertEqual(report["status"], "fail")
+        paths = {difference["path"] for difference in report["first_field_differences"].values()}
+        for field in fields:
+            self.assertIn(f"$.state.xl_native.route.{field}", paths)
         for field, index in (
             ("Escort_route_activated_triggers", 253),
             ("Escort_route_path_recalc_limiter_timestamps", 3),
@@ -1763,6 +1777,53 @@ class ParityTests(unittest.TestCase):
         self.assertEqual(raw[2]["state"]["xl_native"]["route"]["Escort_route_cache_poll_time"], 82314)
         self.mutate(changed, lambda rows: rows[2]["state"]["xl_native"]["route"].update(unknown_owner=1))
         self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_metadata_full_typed_snapshot_is_required_validated_and_compared(self):
+        path = self.native_d2_trace("xl-metadata", True)
+        rows = list(parity.records(path))
+        state = next(row["state"] for row in rows if "xl_native" in row.get("state", {}))
+        metadata = state["xl_native"]["metadata"]
+        invalid = (
+            lambda m: m.update(version=2),
+            lambda m: m.pop("canonical_state"),
+            lambda m: m.update(canonical_analysis_profile_hash=1 << 64),
+            lambda m: m["canonical_snapshot"].update(topology_hash=True),
+            lambda m: m["live_work_summary"].update(last_tick_us=-1),
+            lambda m: m["canonical_state"].update(guidebot_note=[65] * 128),
+            lambda m: m["canonical_state"].update(route_step_count=97),
+            lambda m: m["route_certifier_workspace"]["queue"].pop(),
+            lambda m: m["route_frontier_workspace"]["reachable"].__setitem__(8999, 256),
+            lambda m: m["route_certifier_workspace"].update(
+                firing_search_best_score={"negative": False, "bits": [1, 0], "exponent": 0}
+            ),
+            lambda m: m["route_certifier_workspace"].update(
+                firing_search_best_score={"negative": False, "bits": [1] * 114, "exponent": 0}
+            ),
+            lambda m: m["route_certifier_workspace"].update(
+                firing_search_best_score={"negative": False, "bits": [], "exponent": 1}
+            ),
+        )
+        for mutation in invalid:
+            changed = copy.deepcopy(state)
+            mutation(changed["xl_native"]["metadata"])
+            with self.assertRaises(parity.EvidenceError):
+                parity.validate_world_state(changed, "d2", True)
+        # Hashes and microsecond counters retain all unsigned 64 bits
+        metadata["canonical_analysis_profile_hash"] = (1 << 64) - 1
+        metadata["live_work_summary"]["last_tick_us"] = (1 << 64) - 1
+        parity.validate_world_state(state, "d2", True)
+        mutations = (
+            lambda m: m.update(live_route_work_pending=1),
+            lambda m: m["route_frontier_workspace"]["queue"].__setitem__(8999, 1),
+            lambda m: m["live_candidate_state"]["route_steps"][95]["label"].__setitem__(63, 1),
+            lambda m: m["route_certifier_workspace"]["firing_search_best_score"].update(bits=[1], exponent=-1),
+            lambda m: m["published_route_decision"].update(semantic_hash=(1 << 64) - 1),
+            lambda m: m.update(unknown_owner=1),
+        )
+        for mutation in mutations:
+            changed = self.write("xl-metadata-changed", list(parity.records(path)))
+            self.mutate(changed, lambda items: mutation(items[2]["state"]["xl_native"]["metadata"]))
+            self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
 
     def test_xl_births_are_bound_to_objects_and_compared(self):
         path = self.native_d2_trace("xl-births", True)

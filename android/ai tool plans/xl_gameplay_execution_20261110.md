@@ -820,7 +820,7 @@ retaining the change. All statuses below are planning statuses, not completed wo
 | ---- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | G0   | Accepted baseline repair; remaining hosted checks and Android limitation tracked | xl_gameplay_20261111_01_baseline; implementation a5db8d739; draft #465, base #464 | Windows/Linux native each 100 pass / 1 expected skip; Linux public 61/61; canonical private 113/113 and hosted private PASS |
 | G1   | Accepted bounded normal GL timeline; further platform gates remain G3/G6         | xl_gameplay_20261111_02_timeline; 0a2df4aeb; draft #467, base #465                | Windows/Linux ordered timeline qualification and exact-candidate CI pass; true headless and Android remain open             |
-| G2   | In progress: birth, native controls, fixed escort and route observation          | xl_gameplay_20261111_03_continuation; local only, parent 0a2df4aeb                | Metadata/remaining owners and whole-save atomic rejection incomplete; no layer03 PR or G2 acceptance                        |
+| G2   | In progress: birth, native controls, fixed escort, route and saved metadata      | xl_gameplay_20261111_03_continuation; local only, parent 0a2df4aeb                | Remaining mutable owners and whole-save atomic rejection incomplete; no layer03 PR or G2 acceptance                         |
 | G3   | Not started                                                                      | 04_runtime                                                                        | True-headless XL and optional presentation independence unqualified                                                         |
 | G4   | Not started                                                                      | 04_runtime                                                                        | Source no-op smoke, makers, subzero and wider gameplay predicates require decisions                                         |
 | G5   | Not started                                                                      | 05_progression                                                                    | Existing assisted views do not prove connected original play                                                                |
@@ -3243,6 +3243,95 @@ G2 route-state observation checkpoint, November 12 at 02:20 PST:
   14.5h with substantial uncertainty. Continue sequentially without a cutoff or
   scope reduction. No WSL restart needed; the previously authorized recovery is
   already complete and Linux validation is working.
+
+G2 typed saved-metadata checkpoint, November 12 at 02:47 PST:
+
+- Parent e6de0a23d8ecae157844b7abf3b36885446c8306, tree
+  bb7e8d4aafedb4e1bc14847e8aeaf9adee1c0993. Added shared
+  guidebot_metadata_fields.h and retained the existing nine native codec helper
+  signatures through macros in guidebot_metadata_save_fields.h. The list has
+  234 field/array/text/child operations, including16 bounds,20 arrays,one matrix
+  and six text buffers. Independent g2-metadata-layout-check.json proves all nine
+  original helper bodies reexpand identically, ignoring whitespace, including
+  field sources, loop bounds and order. No native/XL save schema or framing change.
+- The existing pure level_metadata_capture_snapshot now supplies detailed XL
+  observation. All33 saved members are observed under xl_native.metadata/version1:
+  canonical/live/candidate plans, summaries, snapshots and hashes, decisions,
+  certificates, both full workspaces, pending work and counters. Each workspace
+  retains all9000 entries in reachable/queue/strategic/physical arrays. Text uses
+  complete byte arrays, not Unicode conversion. Unsigned hashes/counters preserve
+  all64 bits. Long-double scores use canonical exact sign/binary-bits/exponent,
+  preserving negative zero and native precision without ABI padding or narrowing
+  to double. The reader rejects malformed types, widths, bounds, missing fields,
+  array sizes, text termination and noncanonical binary scores; unknown fields
+  remain compared. All captured timing counters remain present and compared.
+- XL world schema16 requires this extension. Stock world10, object2 and input
+  format6 remain unchanged. Older schema15 evidence retains its scope. Capture
+  uses a heap snapshot and typed fields only, with no codec call or native owner
+  mutation. Reserving the ordered JSON key storage avoids copying full prior
+  workspace arrays during construction. No opaque snapshot hash or decoder was
+  introduced. README documents this saved-field coverage and its current limits.
+- Verified root-bound Windows/Linux strict-FP developer builds pass with no new
+  warnings. The existing test_guidebot_metadata_snapshot passes on both hosts
+  (Windows0.21s/Linux0.06s): detached ownership,32 exact roundtrips including
+  nontrivial doubles/long doubles/negative zero and high unsigned hashes, rejected
+  truncation and unterminated text without destination mutation. This validates
+  the retained codec; it does not qualify an active planner's cross-ABI arithmetic.
+- Both full projectile owners pass with original Neptune/addon/Vertigo, camera
+  subchecks executed, all75 malformed/source cases and120s subprocess/150s Linux
+  outer deadlines retained. All six uninterrupted/warm/cold receipts match across
+  hosts with every new metadata field included, under only the already documented
+  empty-texture and route host-epoch semantics. g2-metadata-projectile-cross.json
+  and collected raw receipts preserve the result. The witness has canonical
+  three-step metadata/readiness2 and live_route_work_pending0. It is a derived
+  mechanics/limiter case, not pending planner execution or original route proof.
+- Both water owners pass under their original90/60s subprocess deadlines and
+  Linux120s outer deadline. Full schema16 comparisons pass Windows live/replay,
+  Linux live/replay and Windows live/isolated Linux replay: each1235 object frames
+  and1239 world/boundary records, both observed frame RNG streams and all metadata
+  fields. All five trace starts explicitly contain the34-key metadata object.
+  Evidence g2-metadata-water-{windows,linux}, g2-metadata-cross, associated logs,
+  g2-metadata-water-compare.json. Input and isolated-copy SHA256
+  5f8494f7ab6777e5d76d4c4a48bc35fce683073cc20e84982c4604c9aa3b2dc8.
+  Cross-generated derivatives remain beside their own copied input. No Android,
+  true-headless Omega/time or strict per-draw/corpus qualification claim.
+- Windows developer EXE SHA256
+  b0ed3da3ab7c4b1a094f6542ce1f1dd8a2d838c9e0fa84eac9fb65ace58318e6;
+  Linux27317b0407e520df80b21a5a691616d2b2894d7fa51f5eaf76e6a1ce2376ab92.
+  g2-metadata-build-identities.json records source parent plus this working patch.
+  These are developer validation binaries, not the final normal game packages.
+  Quality/whitespace and both catalogs pass (99 JSON/315 PowerShell/547 support;
+  428 top-level/547 support). The complete comparison-policy owner passes82 reader
+  tests in78.316s plus its PowerShell assertions. Initial82-test run passed in
+  133.756s, beyond that owner's default budget. Batched the escort/route scalar
+  differences into one comparison each, asserting every individual field path is
+  reported. All previous negative and difference assertions remain; no timeout
+  increase or test skip. Final logs g2-metadata-{comparison-policy,policy-quality,
+  quality,reserve-quality,catalog,master-catalog,codec-_,_-build}.log.
+- Saved-field observation is not a complete runtime-owner audit. secretarea.c
+  also owns async/cache and planning policy state outside the existing saved list.
+  Active pending jobs and cache residency still need continuation evidence. Its
+  Android branch uses a2000us clock budget/work_limit512 around the certifier,
+  whereas desktop selection supplies no budget. See the existing compiled-route
+  selection and level_metadata_live_work_clock_us. Do not label these decisions
+  presentation-only or infer Android/cross-ABI qualification from completed host
+  metadata. The native original-navigation owner already has an opt-in ordinary
+  save-continuity audit; reuse that owner for any further route qualification.
+- Commit locally on layer03, no push/PR or G2 acceptance. Next audit and observe
+  remaining XL owners through existing pure typed APIs in trigger_save.cpp and
+  their owners, including pending generator/trigger, time/progression, spawn/boost
+  and relevant camera/resource state; avoid invoking serializers that repair or
+  sample clocks. The next audit already found xl_object_trigger_state_get clears
+  an unbound owner, and xl_boss_spawn_state_get clears an unbound owner and writes
+  gate_interval into the live boss. Add pure owner-side observation before using
+  those getters in a trace. xl_equipment_state_get and the producer ready-mask
+  getter only copy/read their state. Wall trigger state already appears in full
+  in the current ten-column observer. Then finish combined cold cases and
+  transaction/staged validation.
+  Whole-save rejection of a corrupt XL trailer still changes energy91->100 and
+  remains a real unfixed loader defect. G0/G1 accepted, G2-G7 open. Actual02:47 PST;
+  G2 remaining estimate8-14h, later items approximately14.5h, substantial uncertainty.
+  Continue sequentially; no cutoff or scope reduction.
 
 Per-item handoff template:
 
