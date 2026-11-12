@@ -11,6 +11,14 @@ import d1_replay_parity as parity
 
 REVISION = "2576a98b5de310e3ac7c9777df2677d1627b8bae"
 PINS = {
+    "main/textdata.cpp": {
+        "d6172ffd9c3e94162358228ce168dd005d03feba231f45165b97f9b4ff1c0c5c",
+        "deb07823a0c0b94be95201d880d36b9fead089eddb21893c83f0dab08bf57a74",
+    },
+    "main/gamecntl.cpp": {
+        "53f7dc5dbb4e325e6f7ef12b48398fb4d27cbfcfc8bb90a61f7842f915f49d20",
+        "afd11b13c5cad394c53d2edbab12d62ec1dfffb527b4ffee6853be6978b5723e",
+    },
     "main/gametime.cpp": {
         "758b4a92b3800c0407c659f2829792e64cdabba7a818b27a64e6e267446d269b",
         "4f342faeffa71ce7adc0d7792491704674c65b7fe41ec8f4b82831f1bdede45f",
@@ -199,6 +207,39 @@ def time_combat_passed(proof, damage_rows, clocks):
         return False
 
 
+def message_passed(code, proof, mission, level, xl, resume_ms):
+    expected = {
+        "schema": "xl-message-clock-v1",
+        "derived": True,
+        "complete": True,
+        "mission": mission,
+        "level": level,
+        "xl_active": True,
+        "modal_count": 1,
+        "resumed_frame_time": 0,
+        "resumed_heading": 0,
+        "message_id": 3,
+        "recorded_frames": 60,
+        "terminal_message": 0,
+    }
+    return (
+        type(code) is int
+        and code == 0
+        and xl is True
+        and isinstance(proof, dict)
+        and set(proof) == set(expected) | {"renderer", "message_elapsed", "post_frame_cached_ms"}
+        and isinstance(proof["renderer"], str)
+        and bool(proof["renderer"].strip())
+        and type(resume_ms) is int
+        and 0 <= resume_ms <= 2147483647
+        and type(proof["post_frame_cached_ms"]) is int
+        and type(proof["message_elapsed"]) is int
+        and 0 <= proof["message_elapsed"] < 1000
+        and proof["message_elapsed"] == proof["post_frame_cached_ms"] - resume_ms
+        and all(type(proof[key]) is type(value) and proof[key] == value for key, value in expected.items())
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("engine", "data", "extra", "work", "reference-root"):
@@ -206,8 +247,12 @@ def main():
     parser.add_argument("--mission", required=True)
     parser.add_argument("--level", required=True, type=int)
     parser.add_argument("--xl", action="store_true")
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--time-equipment", action="store_true", help="Exercise the existing ordinary time-pickup/control/save probe"
+    )
+    mode.add_argument(
+        "--message-modal", action="store_true", help="Record the existing derived message fixture's modal/timed chain"
     )
     args = parser.parse_args()
     pins = verify_reference(args.reference_root)
@@ -230,7 +275,11 @@ def main():
         str(work / "user"),
         "-route-confirm-json-out",
         str(work / "unused-route.json"),
-        "-xl-time-equipment-proof" if args.time_equipment else "-xl-render-clock-proof",
+        "-xl-message-clock-proof"
+        if args.message_modal
+        else "-xl-time-equipment-proof"
+        if args.time_equipment
+        else "-xl-render-clock-proof",
         str(proof_path),
         "-nosound",
         "-nomusic",
@@ -299,6 +348,42 @@ def main():
             except (OSError, ValueError, KeyError, TypeError) as error:
                 proof["combat_trace_error"] = str(error)
                 success = False
+    elif args.message_modal:
+        success = True
+        for demo in sorted((work / "user").rglob("*.dximdemo")):
+            with demo.open(encoding="utf-8") as stream:
+                header = json.loads(next(stream))
+            success = (
+                success
+                and header.get("version") == 6
+                and header.get("start_mode") == "save_checkpoint"
+                and header.get("frame_count") == 60
+            )
+            first = next((row for row in parity.records(demo) if row.get("type") == "frame" and row.get("f") == 0), {})
+            resumes = [
+                sample
+                for sample in first.get("environment", {}).get("samples", [])
+                if sample.get("consumer") == "message_resume"
+            ]
+            success = (
+                success
+                and len(resumes) == 1
+                and resumes[0].get("subject") == 4
+                and resumes[0].get("phase") == "sim"
+                and resumes[0].get("operation") == 0
+            )
+            success = success and message_passed(
+                code, proof, args.mission, args.level, args.xl, resumes[0].get("cached_ms")
+            )
+            recordings.append(
+                {
+                    "path": str(demo),
+                    "sha256": hashlib.sha256(demo.read_bytes()).hexdigest(),
+                    "frame_count": header.get("frame_count"),
+                    "live_replay_qualified": False,
+                }
+            )
+        success = success and len(recordings) == 1
     else:
         success = passed(code, proof, args.mission, args.level, args.xl)
     result = {
@@ -311,7 +396,7 @@ def main():
         "engine_sha256": hashlib.sha256(engine.read_bytes()).hexdigest(),
         "official_readiness_status_updated": False,
     }
-    if args.time_equipment:
+    if args.time_equipment or args.message_modal:
         result["recordings"] = recordings
     (work / "result.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({"passed": success, "exit_code": code, "events": len(proof.get("events", []))}))

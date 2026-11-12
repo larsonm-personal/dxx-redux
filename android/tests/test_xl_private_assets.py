@@ -340,6 +340,49 @@ class XlPrivateTests(unittest.TestCase):
                     bad["events"][i][key] = value
                     self.assertFalse(render_clock.passed(0, bad, "fixture", 1, xl))
 
+    def test_message_clock_proof_requires_actual_modal_and_timed_continuation(self):
+        proof = dict(
+            schema="xl-message-clock-v1",
+            derived=True,
+            complete=True,
+            mission="fixture",
+            level=1,
+            xl_active=True,
+            renderer="fixture",
+            modal_count=1,
+            resumed_frame_time=0,
+            resumed_heading=0,
+            message_id=3,
+            message_elapsed=1,
+            post_frame_cached_ms=1001,
+            recorded_frames=60,
+            terminal_message=0,
+        )
+        self.assertTrue(render_clock.message_passed(0, proof, "fixture", 1, True, 1000))
+        for code in (None, False, 1):
+            self.assertFalse(render_clock.message_passed(code, proof, "fixture", 1, True, 1000))
+        for key, value in (
+            ("modal_count", 0),
+            ("resumed_frame_time", 1092),
+            ("resumed_heading", 546),
+            ("message_id", 0),
+            ("message_elapsed", 0),
+            ("message_elapsed", -1),
+            ("message_elapsed", 1000),
+            ("terminal_message", 3),
+            ("post_frame_cached_ms", 1000),
+            ("post_frame_cached_ms", True),
+            ("recorded_frames", 59),
+            ("complete", 1),
+            ("renderer", ""),
+        ):
+            changed = {**proof, key: value}
+            self.assertFalse(render_clock.message_passed(0, changed, "fixture", 1, True, 1000), key)
+        for key in proof:
+            changed = dict(proof)
+            del changed[key]
+            self.assertFalse(render_clock.message_passed(0, changed, "fixture", 1, True, 1000), key)
+
     def test_render_clock_pin_accepts_only_exact_representations(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

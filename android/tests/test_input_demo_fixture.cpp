@@ -943,7 +943,8 @@ static int expect_environment_timeline(void)
 		{ 3, true, 0, "slow_frame", -1, { 126, 126, 0, 0 } },
 		{ 4, true, 0, "pickup", 4, { 126, 126, 0, 0 } },
 		{ 5, true, 0, "camera_frame", -1, { 127, 127, 0, 0 } },
-		{ 6, true, 0, "wall_trigger", 253, { 127, 127, 0, 0 } }
+		{ 6, true, 0, "wall_trigger", 253, { 127, 127, 0, 0 } },
+		{ 7, true, 0, "message_resume", 32767, { 128, 128, 1, 0 } }
 	};
 	for (auto &entry : frame.environment) entry.clock.cached_ms = 100 + entry.sequence;
 	demo.has_input_tail = true;
@@ -1003,6 +1004,10 @@ static int expect_environment_timeline(void)
 	    reject([](auto &r) { r[1]["environment"]["samples"][1].erase("cached_ms"); }) ||
 	    reject([](auto &r) { r[1]["environment"]["samples"][6]["subject"] = 254; }) ||
 	    reject([](auto &r) { r[1]["environment"]["samples"][6]["subject"] = -1; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][7]["subject"] = 0; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][7]["subject"] = 32768; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][7]["subject"] = true; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][7]["phase"] = "input"; }) ||
 	    reject([](auto &r) { r[1]["environment"]["samples"][1]["render_frame"] = UINT32_MAX - 2; }) ||
 	    reject([](auto &r) { r[1]["environment"]["samples"][1]["operation"] = 3; }) ||
 	    reject([](auto &r) { r[1]["environment"]["samples"][1]["consumer"] = "unknown"; }) ||

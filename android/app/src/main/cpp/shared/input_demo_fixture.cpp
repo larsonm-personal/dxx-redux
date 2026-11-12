@@ -1708,11 +1708,12 @@ static bool validate_environment(const std::vector<input_demo_environment_sample
 		} else if (boundary || !sample.operation || sample.operation < operation || sample.operation > operation_count)
 			return fail(error, "environment input sample is outside its operation");
 		if (!end && sample.consumer != "slow_frame" && sample.consumer != "slow_off" && sample.consumer != "pickup" &&
-		    sample.consumer != "omega_blocked" && sample.consumer != "omega_fired" && sample.consumer != "camera_frame" && sample.consumer != "wall_trigger")
+		    sample.consumer != "omega_blocked" && sample.consumer != "omega_fired" && sample.consumer != "camera_frame" && sample.consumer != "wall_trigger" && sample.consumer != "message_resume")
 			return fail(error, "unknown required environment consumer");
 		if ((sample.consumer == "slow_frame" || sample.consumer == "pickup" || sample.consumer == "camera_frame") && !sample.simulation)
 			return fail(error, "environment consumer requires simulation phase");
 		if (sample.consumer == "pickup" ? (sample.subject < 0 || sample.subject > 65535) : sample.consumer == "wall_trigger" ? (sample.subject < 0 || sample.subject >= 254)
+		                                                                               : sample.consumer == "message_resume" ? (sample.subject < 1 || sample.subject > 32767)
 		                                                                                                                     : sample.subject != -1)
 			return fail(error, "invalid environment subject");
 		operation = sample.operation;

@@ -729,6 +729,9 @@ int input_demo_stop_quick_recording_after_frame(void)
 
 void input_demo_run_game_process_frame(void (*process)(void))
 {
+#ifdef DXX_XL_RUNTIME
+	if (!input_demo_record_simulation_active) xl_input_demo_begin_input_clock();
+#endif
 	if (!input_demo_record_simulation_active && input_demo_recorder_uses_environment())
 		input_demo_record_input_context();
 	/* The wrapper also resets the guard on every ordinary early return */
@@ -754,6 +757,9 @@ void input_demo_record_input_clear(void)
 
 void input_demo_record_input_context(void)
 {
+#ifdef DXX_XL_RUNTIME
+	if (!input_demo_record_simulation_active) xl_input_demo_begin_input_clock();
+#endif
 	if (input_demo_record_simulation_active && input_demo_recorder_uses_ordered_input()) {
 		input_demo_cancel_input_capture("ordered recording does not support input dispatch inside simulation");
 		return;

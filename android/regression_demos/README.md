@@ -474,9 +474,10 @@ ends with `tail_end` and cannot contain simulation samples. Empty input batches
 still have their boundary sample. This preserves multiple interleaved operations
 and the record-stop tail without assuming one render per simulation frame.
 
-Consumers are closed: `slow_frame`, `slow_off`, `pickup`, `camera_frame`, `wall_trigger`, `omega_blocked` and
+Consumers are closed: `slow_frame`, `slow_off`, `pickup`, `camera_frame`, `wall_trigger`, `message_resume`, `omega_blocked` and
 `omega_fired`, plus the two boundary names. Pickup samples identify the object
-slot in `subject`; wall-trigger samples identify an index in 0..253. Other
+slot in `subject`; wall-trigger samples identify an index in 0..253. Message-resume
+samples identify the acknowledged text ID in 1..32767. Other
 consumers require `subject: -1`. Slow-frame, camera-frame and pickup
 consumers belong to simulation. Counts, phases, ordering, required boundaries,
 unknown fields and duplicate JSON keys reject during complete-file admission,
@@ -504,16 +505,26 @@ read host wall time. Save/trace readers derive effective age and expiry directly
 without mutating the message owner or depending on a prior draw/update call.
 Native message controls record ordinary frames, reload their timeline, hold its
 clock while host time advances, then verify age and expiry as recorded samples
-are consumed. This is a derived clock-consumer test, not a whole-level replay;
-modal input/clock ordering and optional output independence remain open G1/G3
-audit work.
+are consumed. These derived controls do not prove original navigation or completion.
 Paused XL menu draws now give `FrameTime` zero and reset the next frame's host
 timer origin, matching the paused branch of pinned `CalcFrameTime`. Stock timing
 is unchanged. The existing rendered clock probe opens a real menu, processes
 three event loops and checks zero XL duration, unchanged game time/SIM RNG and
-the three actual render-counter contributions. This does not yet qualify a modal
-trigger inside a recorded simulation frame: its resume clock, input flush and
-continuation still need full live-versus-replay evidence.
+the three actual render-counter contributions.
+An XL modal also holds the cached gameplay tick through the interrupted frame,
+matching the source's return before `GetSlowTicks`. The next input/frame boundary
+releases it; restore and level reset clear the temporary hold. `message_resume`
+observes real elapsed clocks and render counts after the normal pause/window
+lifecycle, while retaining that cached tick for chained actions in the same frame.
+Both live play and replay establish zero paused duration before opening the menu.
+Replay displays and automatically acknowledges this source-defined single-button
+message, whose return value never selects a gameplay action. Normal window
+activation still clears controls; no recorded control or world state is injected.
+The existing derived message fixture exercises an autoplay master, a modal and
+a following timed child inside SIM. Live captures and repeated clean-process
+rendered playback compare full objects/world/frames and RNG, including message
+expiry on the next sampled clock. This qualifies the tested modal continuation;
+true-headless message output and broader presentation independence remain G3 work.
 The schema also persists both signed texture coordinates at all four corners of
 every segment face. Scrolling UVs feed hit-point transparency as well as drawing;
 restoring only texture IDs changes collision. All rows and coordinates validate

@@ -485,7 +485,8 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	                                                    startup_find_cmd_arg("-route-confirm-checkpoint") || startup_find_cmd_arg("-route-confirm-checkpoint-out") ||
 	                                                    startup_find_cmd_arg("-route-confirm-key") || startup_find_cmd_arg("-route-confirm-segment") ||
 	                                                    startup_find_cmd_arg("-route-confirm-native-transition") || startup_find_cmd_arg("-route-confirm-load-proof") ||
-	                                                    startup_find_cmd_arg("-xl-render-clock-proof") || startup_find_cmd_arg("-xl-omega-damage-proof"))) {
+	                                                    startup_find_cmd_arg("-xl-render-clock-proof") || startup_find_cmd_arg("-xl-omega-damage-proof") ||
+	                                                    startup_find_cmd_arg("-xl-time-equipment-proof") || startup_find_cmd_arg("-xl-message-clock-proof"))) {
 		fprintf(stderr, "Rendered readiness requires proof/output paths and no assisted route options\n");
 		return 1;
 	}
@@ -505,6 +506,7 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 		return 1;
 	}
 	const char *equipment_probe = argument_value("-xl-time-equipment-proof");
+	const char *message_probe = argument_value("-xl-message-clock-proof");
 	const char *hxm_actor_probe = argument_value("-xl-hxm-actor-proof");
 	const char *scene_object = argument_value("-xl-readiness-scene-object");
 	if (startup_find_cmd_arg("-xl-readiness-scene-object") &&
@@ -522,8 +524,8 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 		error_init(nullptr);
 		set_warn_func(warn_printf);
 	}
-	if (startup_find_cmd_arg("-xl-render-clock-proof") || startup_find_cmd_arg("-xl-omega-damage-proof") || startup_find_cmd_arg("-xl-time-equipment-proof")) {
-		if (int(clock_probe != nullptr) + int(omega_probe != nullptr) + int(equipment_probe != nullptr) != 1 || !output || !argument_value("-route-confirm-user-dir")) {
+	if (startup_find_cmd_arg("-xl-render-clock-proof") || startup_find_cmd_arg("-xl-omega-damage-proof") || startup_find_cmd_arg("-xl-time-equipment-proof") || startup_find_cmd_arg("-xl-message-clock-proof")) {
+		if (int(clock_probe != nullptr) + int(omega_probe != nullptr) + int(equipment_probe != nullptr) + int(message_probe != nullptr) != 1 || !output || !argument_value("-route-confirm-user-dir")) {
 			std::fprintf(stderr, "Render-clock probe requires proof/output paths and an isolated user directory\n");
 			return 1;
 		}
@@ -614,6 +616,7 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 #if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
 	if (hxm_actor_probe) return original_hxm_actor_proof(hxm_actor_probe, output);
 	if (clock_probe) return xl_render_clock_probe(clock_probe);
+	if (message_probe) return xl_message_clock_probe(message_probe);
 	if (omega_probe) return startup_find_cmd_arg("-xl-omega-recording") ? xl_omega_recording_probe(omega_probe) : xl_omega_damage_probe(omega_probe);
 	if (equipment_probe) {
 		int carried_level = 0;

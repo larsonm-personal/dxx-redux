@@ -2258,6 +2258,71 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   prerequisites credited once. The Linux Warp save/restore deadline remains an
   explicit performance gate. No cutoff or reduction of required scope.
 
+### November 11, 18:33 PST: modal continuation qualified on rendered hosts
+
+- G1 remains active. This coherent increment extends the existing message,
+  clock, codec and rendered-probe owners; no new runner or production guard
+  relaxation. Branch xl_gameplay_20261111_02_timeline, parent
+  04b1ee17f4df7503c05ba30eb8174bd7a4d0ae1c, parent tree
+  ae5788e443b9cf86c84d00188524122dbaa6e320. No layer02 PR/push yet.
+- Pinned source2576a98b5de310e3ac7c9777df2677d1627b8bae shows that paused
+  CalcFrameTime returns before GetSlowTicks. The modal holds that cached tick
+  through the interrupted frame, releases at the next input/frame boundary,
+  and clears on restore/reset. Its single acknowledgement has no action-result
+  branch. Live/replay use the real pause/window/input-clear lifecycle, zero
+  paused FrameTime, and an ordered message_resume sample after closing. Replay
+  automatically acknowledges after displaying; elapsed real clocks/render count
+  come from the recorded timeline. True-headless output remains G3 work.
+- The existing reference adapter now executes extracted CalcFrameTime during
+  the three negative-duration message cases, then checks the chained timed
+  message's cached start/expiry. Existing fade/table controls remain. Codec
+  validation requires message IDs1..32767 and preserves phase/order bounds.
+- Existing derived Neptune fixture now supplies modal23/modal27: an autoplay
+  master invokes a modal and then a timed child in the same SIM frame. Source
+  geometry hash4016618d24238803135dabf2b33daee2a2c34a670c3f016d94ae4639c8887303
+  unchanged. Ordinary quick recording, fixed flight input and real SDL Return
+  acknowledgement produce60 frames, cleared heading/zero resumed duration and
+  timed-child expiry. No in-record pose, inventory, trigger or clock-state writes.
+  Derived setup and input pacing are explicit; this proves no original route,
+  combat, completion or true-headless behavior.
+- Windows captures7/8 passed both23/27 layouts. Capture7 demo SHA256
+  04d3a9d89faf8c46253017e8c46e4128d73e6c4cc6cd554f9a64719cf7d0adb1;
+  capture8 8243a19527ca80e3591ff025153094218e9a533dc734def94ccf2beda370331a
+  (19.578s). Linux live capture9 passed11.992s, demo
+  52226838c75fe28e8832a57e35543f724c50156d061b5dde26f58868778ddf5e.
+  Windows replays3/4/5 of capture7 (accelerated/accelerated/realtime), replay6
+  of capture8, Linux replay7 of Windows capture7 and replay8 of Linux capture9
+  all passed strict asset/terminal/natural-exit checks. Each detailed comparison
+  passed60 objects/frames,64 world records,60 FX draws,zero SIM/presentation
+  draws with zero differences. Zero SIM draws reflect this robot-free fixture;
+  they are not combat coverage. Linux uses rendered Xvfb/llvmpipe.
+- Evidence is g1-modal-* under temp/pr464-ci-fixes-20261110. Failed attempts
+  retained: timer subsystem initialization; derived master incorrectly inherited
+  positive semaphore value and was source-correctly disabled; initial receipt
+  asserted zero age before the source cached-hold fix. Replay1 rejected strict
+  mission asset lookup before launch. Later runs used isolated g1-modal-data
+  with unchanged authentic data and generated mission files; no asset bypass.
+- Windows D2 desktop/metadata and D1 desktop built; codecs passed3/3 on each
+  (8.66s/11.79s). Linux desktop/metadata/codecs built and codecs passed3/3 in2.88s.
+  Native/source message tests passed2/2 on Windows17.03s and Linux6.00s; Python
+  clock controls passed3/3. Catalogs passed99 JSON/315 PowerShell/547 support
+  scripts and428 master entries. No test membership or timeout changes.
+- Windows desktop SHA256
+  cf3990b0a93ffde66a626ec265311192b2e6c617b79dfc29b05b9fa944c4d4ab;
+  metadata0a60ebee4ceaef62f132feadf23a49c7e0f9ad39c42fa4980de088c4a08d87ec;
+  D1 desktop55d035e22b599d064bcce12361bda09ec75916a9af0d48da7e9785541a1da237.
+  Linux desktop30ccc1c77abcd38dc183a6e81b39f177fd1cbb1813e4849a1572590a8b35a51c;
+  metadata5567c332f9a5a2148b47491994902656a9ac11d02e425d2aaa977fd9352a966c.
+  Root-bound caches unchanged. First Linux launch failed Wsl/Service/E_UNEXPECTED
+  before building. One user-authorized WSL shutdown/restart recovered it; both
+  failed and recovered build logs retained. No active work was preserved by
+  request. No Android, new hosted CI, authentic asset edits or cleanup deletions.
+- Work17:56-18:33 PST. G1 remaining estimate3-5h, G2-G7 approximately17.5h;
+  estimates remain uncertain and are not a cutoff. Next: finish the remaining
+  input/clock audit, run the final G1 public/source gates, then qualify supported
+  production admission and publish layer02. Linux original Warp45s save/restore
+  deadline remains unresolved; this derived pass does not replace it.
+
 Per-item handoff template:
 
     Item and status:

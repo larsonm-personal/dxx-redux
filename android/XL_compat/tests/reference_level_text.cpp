@@ -68,6 +68,9 @@ struct {
 	struct {
 		std::int32_t nSDLTicks[1]{};
 		bool bD2XLevel = true;
+		struct {
+			bool bTurboMode = false;
+		} cheats;
 	} app;
 	struct {
 		int nWindow[1]{};
@@ -76,7 +79,44 @@ struct {
 class CTextData;
 struct {
 	CTextData *messages = nullptr;
+	struct {
+		bool bGamePaused = false;
+	} appData;
+	struct {
+		int32_t xLast = 0, xFrame = 0, xRealFrame = 0, tLast = 0;
+		void SetTime(int32_t value)
+		{
+			xFrame = value;
+		}
+	} timeData;
 } gameData;
+using fix = int32_t;
+int32_t host_ticks = 0;
+int32_t TimerGetFixedSeconds()
+{
+	return host_ticks * 65536 / 1000;
+}
+int32_t SDL_GetTicks()
+{
+	return host_ticks;
+}
+void GetSlowTicks()
+{
+	gameStates.app.nSDLTicks[0] = host_ticks;
+}
+int MaxFPS()
+{
+	return 60;
+}
+void G3_SLEEP(int)
+{
+	++host_ticks;
+}
+int32_t I2X(int value)
+{
+	return value * 65536;
+}
+void CalcFrameTime(int32_t fps = 0);
 CBitmap *CreateStringBitmap(const char *, int, int, void *, int, int, int, int)
 {
 	return new CBitmap;
@@ -84,14 +124,22 @@ CBitmap *CreateStringBitmap(const char *, int, int, void *, int, int, int, int)
 void PauseGame()
 {
 	++paused;
+	gameData.appData.bGamePaused = true;
 }
 void ResumeGame()
 {
 	--paused;
+	gameData.appData.bGamePaused = false;
 }
 void TextBox(void *, int, int, const char *, const char *)
 {
 	if (paused != 1) throw std::runtime_error("Source modal did not pause gameplay");
+	const auto cached = gameStates.app.nSDLTicks[0];
+	gameData.timeData.xFrame = gameData.timeData.xRealFrame = 1092;
+	host_ticks += 350;
+	CalcFrameTime();
+	if (gameData.timeData.xFrame || gameData.timeData.xRealFrame || gameStates.app.nSDLTicks[0] != cached)
+		throw std::runtime_error("Source paused menu changed cached ticks or retained simulation duration");
 	++modal;
 }
 class CTrigger
@@ -181,9 +229,15 @@ void timing()
 		gameData.messages = &table;
 		CTrigger action;
 		action.duration = seconds;
+		host_ticks = gameStates.app.nSDLTicks[0] = 1000;
 		modal = 0;
 		if (action.IsDelayed() || action.DoShowMessage() != 1 || modal != 1 || paused || table.currentMsg)
 			throw std::runtime_error("Source modal lifecycle differs");
+		if (ShowGameMessage(&table, 1, 1) != 1 || table.nStartTime != 1000 || table.nEndTime != 2000)
+			throw std::runtime_error("Source chained message lost the paused cached tick");
+		gameStates.app.nSDLTicks[0] = 2000;
+		if (ShowGameMessage(&table, -1, 0) != 0 || table.currentMsg)
+			throw std::runtime_error("Source chained message did not expire on the next sampled tick");
 		FreeTextData(&table);
 	}
 	gameData.messages = nullptr;

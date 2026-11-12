@@ -4,6 +4,7 @@
 #include "../level_text.h"
 #include "../message_time.h"
 #include "../inventory.h"
+#include "input_demo_replay.h"
 #include "picosha2.h"
 #include <algorithm>
 #include <memory>
@@ -125,18 +126,38 @@ extern "C" int xl_message_action(const trigger *action)
 		struct Paused {
 			Paused()
 			{
+				xl_input_demo_hold_cached_clock();
 				stop_time();
+				// Match the source's paused frame even if acknowledgement precedes a draw
+				calc_frame_time();
 			}
 			~Paused()
 			{
 				start_time();
 			}
-		} paused;
+		};
 		newmenu_item close{};
 		close.type = NM_TYPE_MENU;
 		close.text = TXT_OK;
-		// MSG text is owned and bounded; avoid the fixed messagebox printf buffer
-		newmenu_do(nullptr, text.data(), 1, &close, nullptr, nullptr);
+		{
+			Paused paused;
+			bool drawn = false;
+			// This source dialog has one acknowledgement and no result-dependent action
+			// Replay retains its normal pause/window/input lifecycle, then acknowledges it
+			const auto acknowledge = [](newmenu *, d_event *event, void *data) -> int {
+				if (event->type != EVENT_WINDOW_DRAW) return 0;
+				auto &shown = *static_cast<bool *>(data);
+				if (shown) return -2;
+				shown = true;
+				return 0;
+			};
+			// MSG text is owned and bounded; avoid the fixed messagebox printf buffer
+			newmenu_do(nullptr, text.data(), 1, &close,
+			           input_demo_replay_environment_running() ? +acknowledge : nullptr, &drawn);
+		}
+		// A nested modal can advance real clocks and render counts before more SIM
+		input_demo_environment_clock clock{};
+		xl_input_demo_observe("message_resume", id, &clock);
 	} else {
 		message_id = id;
 		duration = action->time;

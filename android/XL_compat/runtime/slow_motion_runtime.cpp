@@ -48,8 +48,11 @@ bool saved_environment_valid = false;
 // Keep the cached gameplay clock in its saved domain across cold continuation
 // Level changes preserve this process clock, just as they preserve SDL uptime
 int64_t cached_clock_offset = 0;
+bool cached_clock_held = false;
+uint32_t held_cached_clock = 0;
 uint32_t cached_clock_now()
 {
+	if (cached_clock_held) return held_cached_clock;
 	const auto now = int64_t(timer_query_milliseconds()) + cached_clock_offset;
 	if (now < 0 || now > INT32_MAX) Error("XL cached gameplay clock exceeds qualified signed range");
 	return uint32_t(now);
@@ -87,9 +90,21 @@ extern "C" uint32_t xl_input_demo_cached_clock(void)
 	input_demo_environment_clock clock{};
 	return input_demo_replay_peek_environment(&clock) ? clock.cached_ms : cached_clock_now();
 }
+extern "C" void xl_input_demo_hold_cached_clock(void)
+{
+	// Source paused CalcFrameTime returns before GetSlowTicks
+	// Keep that tick through the interrupted frame, including chained messages
+	held_cached_clock = xl_input_demo_cached_clock();
+	cached_clock_held = true;
+}
+extern "C" void xl_input_demo_begin_input_clock(void)
+{
+	cached_clock_held = false;
+}
 extern "C" int xl_input_demo_restore_cached_clock(uint32_t ticks)
 {
 	if (ticks > INT32_MAX) return 0;
+	cached_clock_held = false;
 	cached_clock_offset = int64_t(ticks) - timer_query_milliseconds();
 	return 1;
 }
@@ -167,6 +182,7 @@ extern "C" int xl_time_equipment_animate(object *actor)
 }
 extern "C" void xl_slow_motion_reset(void)
 {
+	cached_clock_held = false;
 	state = {};
 	slow_requested = bullet_requested = false;
 	xl_named_audio_slow_motion_reset();

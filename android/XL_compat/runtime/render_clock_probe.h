@@ -3,8 +3,93 @@
 #include "named_audio_state.h"
 #include "resource_validation.h"
 #include "camera_save.h"
+#include "level_messages.h"
 extern "C" {
 #include "newmenu.h"
+#include "switch.h"
+#include "wall.h"
+}
+// The existing derived message owner supplies an autoplay modal/timed chain
+static int xl_message_clock_probe(const char *path)
+{
+	using nlohmann::ordered_json;
+	ordered_json proof = { { "schema", "xl-message-clock-v1" }, { "derived", bool{ true } }, { "complete", bool{ false } } };
+	const auto write = [&]() {
+		std::ofstream out(path);
+		out << proof.dump(2) << '\n';
+		return out.good();
+	};
+	SDL_TimerID dismiss = nullptr;
+	try {
+		const auto require = [](bool valid, const char *reason) { if (!valid) throw std::runtime_error(reason); };
+		require(Game_wind && !game_is_time_paused() && xl_level_extensions_active() && Num_triggers == 10 &&
+		            Triggers[4].type == 31 && Triggers[4].num_links == 2 && Triggers[4].flags == 128,
+		        "Message clock control requires the derived autoplay modal chain");
+		proof["mission"] = Current_mission_filename;
+		proof["level"] = Current_level_num;
+		proof["xl_active"] = bool(xl_level_extensions_active());
+		proof["renderer"] = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
+		require(SDL_InitSubSystem(SDL_INIT_TIMER) == 0, "Cannot initialize modal acknowledgement timer");
+		const auto before = xl_message_modal_shows();
+		require(input_demo_start_quick_recording_common() && input_demo_recorder_uses_environment(), "Cannot record modal chain");
+		char error[256]{};
+		const auto trace = std::string(path) + ".capture.jsonl.gz";
+		require(input_demo_state_trace_start(trace.c_str(), "record", "d2", Current_mission_filename,
+		                                     Current_level_num, Difficulty_level, "save_checkpoint", 60, error, sizeof(error)),
+		        error);
+		input_demo_trace_boundary("restored");
+		// Real SDL input acknowledges the live UI; no simulation or trigger mutation
+		dismiss = SDL_AddTimer(1000, [](Uint32, void *) -> Uint32 {
+			SDL_Event event{};
+			event.type = SDL_KEYDOWN;
+			event.key.keysym.sym = SDLK_RETURN;
+			event.key.state = SDL_PRESSED;
+			SDL_PushEvent(&event);
+			event.type = SDL_KEYUP;
+			event.key.state = SDL_RELEASED;
+			SDL_PushEvent(&event);
+			return 0; }, nullptr);
+		require(dismiss != nullptr, "Cannot schedule live modal acknowledgement");
+		for (int frame = 0; frame < 60; ++frame) {
+			SDL_Delay(26);
+			timer_update();
+			FrameTime = F1_0 / 60;
+			Controls = {};
+			Controls.heading_time = FrameTime / 2;
+			do_weapon_n_item_stuff();
+			calc_game_time();
+			GameProcessFrame();
+			if (!frame) {
+				xl_message_state message{};
+				xl_message_state_get(&message);
+				proof["modal_count"] = xl_message_modal_shows() - before;
+				proof["resumed_frame_time"] = FrameTime;
+				proof["resumed_heading"] = Controls.heading_time;
+				proof["message_id"] = message.id;
+				proof["message_elapsed"] = message.elapsed_ms;
+				proof["post_frame_cached_ms"] = xl_input_demo_cached_clock();
+				require(write(), "Cannot write resumed modal evidence");
+				require(proof["modal_count"] == 1 && !game_is_time_paused() && FrameTime == 0 && !Controls.heading_time && message.id == 3,
+				        "Modal chain did not resume with cleared controls, zero duration and its timed child");
+			}
+			game_render_frame();
+			gr_flip();
+			require(input_demo_recorder_is_active() && Current_level_num == proof["level"].get<int>() && !Player_is_dead, "Modal capture stopped or changed levels");
+		}
+		proof["recorded_frames"] = input_demo_recorder_frame_count();
+		xl_message_state terminal{};
+		xl_message_state_get(&terminal);
+		proof["terminal_message"] = terminal.id;
+		require(!terminal.id && input_demo_stop_quick_recording_common(), "Timed child did not expire or capture did not finalize");
+		SDL_RemoveTimer(dismiss);
+		proof["complete"] = bool{ true };
+		return write() ? 0 : 1;
+	} catch (const std::exception &error) {
+		if (dismiss) SDL_RemoveTimer(dismiss);
+		proof["error"] = error.what();
+		write();
+		return 1;
+	}
 }
 // Developer qualification only; this deliberately controls camera and end-level state
 static int xl_render_clock_probe(const char *path)

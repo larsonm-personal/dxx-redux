@@ -2141,6 +2141,7 @@ static int expect_environment_recording(void)
 		++clock.pickup_ms;
 		if (!check(input_demo_recorder_observe_environment("camera_frame", -1, 1, &clock, error, sizeof(error))) ||
 		    !check(input_demo_recorder_observe_environment("wall_trigger", 0, 1, &clock, error, sizeof(error))) ||
+		    !check(input_demo_recorder_observe_environment("message_resume", 4, 1, &clock, error, sizeof(error))) ||
 		    !input_demo_recorder_peek_environment(&observed) || memcmp(&observed, &clock, sizeof(observed)))
 			return report_failure("observer lost the current simulation clock");
 	}
@@ -2189,6 +2190,7 @@ static int expect_environment_recording(void)
 		    !check(input_demo_replay_consume_environment("camera_frame", -1, 1, 0, &actual, error, sizeof(error))) ||
 		    actual.clock_ms != 127 + frame * 52 ||
 		    !check(input_demo_replay_consume_environment("wall_trigger", 0, 1, 0, &actual, error, sizeof(error))) ||
+		    !check(input_demo_replay_consume_environment("message_resume", 4, 1, 0, &actual, error, sizeof(error))) ||
 		    actual.cached_ms != uint32_t(126 + frame * 52) ||
 		    !check(input_demo_replay_advance_frame(error, sizeof(error)))) return 1;
 	}
