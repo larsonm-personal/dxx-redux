@@ -3745,6 +3745,92 @@ G2 raw event and mixed-producer checkpoint, November 12 at 03:57 PST:
   PST November12; remaining G2 estimated11-17h, later14.5-20h, high uncertainty.
   No cutoff or reduction in the gameplay closure gate.
 
+### G2 staged AI decoder checkpoint, November 12 07:42 PST
+
+- Local layer03 remains `xl_gameplay_20261111_03_continuation`, parent
+  6a696086152ed87807aa33a2c752e628603faa8c, tree
+  ff85fd3373b97d91cb3202ab1e261c77d13a96d2. That parent committed the preceding
+  native time-continuation/screenshot checkpoint after final quality passed.
+  Current work began approximately07:20 PST. No push, PR or current-tip CI claim;
+  G0/G1 accepted, G2-G7 open. All three original stashes and independent review
+  remain untouched. No Android state/profile changes or WSL restart.
+- Begins actual native restore staging in d2/main/ai.c and ai.h. Replaces the
+  separate discarded preflight decode plus live decode with one retained opaque
+  ai_restore_candidate. Existing native local/path/cloak codecs take an explicit
+  candidate epoch/capacity/segment limit. The candidate owns all decoded AI,
+  boss, escort and awareness fields until explicit application; discard is inert.
+  Apply checks target capacity/geometry/epoch before publishing any fields.
+  Ordinary ai_restore_state now uses this same prepare/apply/discard owner.
+  Save writer/layout remain unchanged. Original D1 extension locals are preserved;
+  D1 boss damage/history helpers run only at commit, not during preparation.
+- Checked scalar reads reject short data before interpreting it. Bounded native
+  tables reject truncation before legacy byte readers can abort; appended vectors
+  retain their explicit little endian independently of save-header byte order.
+  Epoch bounds prevent signed64 overflow when rebasing native signed32 offsets.
+  No second save decoder, alternate lifecycle, checksum-only fix or rollback.
+- Existing test_upstream_compat owner passes Windows61.92s and Linux30.14s,
+  one complete CTest entry each, zero skips. Its existing180-case sound-storage
+  matrix (D2/D1/D2 profiles, versions31/34/35, both header byte orders, ten full
+  signed sound values) now also proves pure preparation, full observed AI
+  preservation on rejection, changed epoch/geometry guards, commit after source
+  close and explicit-endian nonzero vectors. Independent candidate epochs and
+  seven truncation boundaries exercise retained ownership, clock rebasing and
+  short header/local/path/cloak/tail rejection. All older compatibility cases
+  remain in the same full owner. Initial run caught my use of a fatal legacy
+  vector EOF reader; fixed before the successful strengthened full-owner runs.
+- Ordinary developer-OFF strict-FP Windows and Linux builds pass. Each replays
+  the preceding Windows native-save time-transition recording through ordinary
+  embedded-checkpoint startup, strict asset validation and clean natural exit.
+  Full comparisons against the unchanged live capture pass on both hosts:
+  12 object frames,16 world/boundary records,21 SIM events and12 FX events with
+  value/order/context. g2-ai-staging-replay-{windows,linux}-compare.json are the
+  canonical detailed receipts. Successful Linux owner root is
+  g2-ai-staging-replay-linux-qualified, with verified actual sandbox binary hash.
+  The original recording's five setup position assists, zero inventory assists
+  and zero in-record assists remain; no new recording, expectation or input edit.
+  These are saved mechanics controls, not connected original-level progression.
+- Failed Linux attempts remain: my first command had cross-shell variable
+  expansion and never launched an engine; the next copied the old binary before
+  the active build linked (old SHA88661d0785b65a45d749752531617bfd5345113fd94d0f437041e3e756ec8099)
+  and correctly rejected the newer XL schema. After waiting for terminal build,
+  replay matched state/terminal but its owner failed because the prior cross-save
+  folder lacked the RNG sidecar. The complete original three-file recording
+  bundle was then copied and every byte SHA-verified; the entire strict owner
+  passed with current binary. g2-ai-staging-input-manifest.json pins demo
+  962de56f3c885240b6cfa8c46817e5f8c150416681599d817606bde752b98089
+  and unchanged sidecars. No timeout/skip/asset waiver or expected-result change.
+- g2-ai-staging-build-identities.json pins three non-Markdown source paths and
+  patch SHAe62468186dd2dc2a776019e18495408c5bee03640c54cbc75a35affb2a7c2ab7.
+  Windows engine4ddb33af515e9360e458a9920df8458ce2f9d1f53169fd121f23d458aa08d65e,
+  compatibilitydef4bf23a44222c50b150ff26b859360f594b4738044f77d9ac1b1b81cb22314;
+  Linux engineca82e6622dd7c896af07e76032351517e0b80378dfd7b8af027648c261d1bc02,
+  compatibilitydf44757a81fd91599564e9a56f91d4c108caaa2a71d1cfbe1becd38d616af6c1.
+  Actual Linux sandbox engine matches the source binary. Root-bound caches,
+  strict FP ON, existing baseline warnings only; no new warnings in owned code.
+  One initial Windows build requested the test target in the developer cache
+  that does not define it; corrected cache build and all terminal results retained.
+  This is local qualification, not a current full private corpus/Android or CI run.
+- Both required catalogs pass99 JSON/315 PowerShell/547 support and428 top-level/
+  547 support. Scoped mixed quality passed; final ledger quality/review precede
+  commit. Authentic169-file runtime data mirror and pinned XL reference remain
+  unchanged. Cleanup preview uses official TemporaryOnly/50GiB/emulator-preserve
+  policy and retained exclusions plus replay sandboxes; zero eligible artifacts,
+  approximately17.97GiB free at preview. After all owned jobs finished, official
+  apply removed zero eligible artifacts;17.60GiB remains, below50GiB because
+  protected assets, reference, builds and evidence are retained. Both emulators
+  preserved. g2-ai-cleanup-{preview,apply}.log; no manual cache deletion.
+- Next: finish whole native save staging before state.c publishes mission, player,
+  object, wall or runtime state. AI now supplies a retained candidate for this;
+  whole-save invalid XL trailer still changes energy91->100 and is NOT fixed.
+  state_object_rw_to_object and state_player_rw_to_player still consume live
+  GameTime64, XL/D1 mode and reactor definitions; make their existing codecs
+  accept candidate context, then stage native/runtime and source-bound XL owners
+  through the same validation before commit. Do not substitute a checksum guard
+  or serialize/rollback. Guide-Bot async/cache/Android2000us audit and pure
+  audio/event ownership remain open, as do all G3-G7 gates. Actual approximately
+  07:42 PST November12; revised remaining G2 estimate11-17h and later14.5-20h,
+  high uncertainty, no cutoff or scope reduction.
+
 Per-item handoff template:
 
     Item and status:

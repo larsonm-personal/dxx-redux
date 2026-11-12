@@ -4589,8 +4589,8 @@ static void test_boss_sound_storage()
 {
 	Mission mission = {};
 	Current_mission = &mission;
-	// All other fields are zero, so both byte orders describe the same valid
-	// AI block, with no path allocation, boss destinations or awareness events
+	// Header-selected fields other than sound are zero; appended vectors always
+	// use little endian, with no path allocation, boss destinations or awareness events
 	const size_t boss_start = 8 + classic_object_capacity * 200 + MAX_POINT_SEGS * 16 + MAX_AI_CLOAK_INFO * 20;
 	const size_t sound_offset = boss_start + 10 * 4;
 	const size_t state_size = boss_start + 12 * 4 + 5 * 4 + MAX_STOLEN_ITEMS + 4 + 8 + 4 + 28;
@@ -4603,16 +4603,35 @@ static void test_boss_sound_storage()
 					bytes state(state_size);
 					set_int(state, sound_offset, value);
 					if (swap) std::reverse(state.begin() + sound_offset, state.begin() + sound_offset + 4);
+					set_int(state, state_size - 28, 0x123456);
+					set_int(state, state_size - 24, -0x234567);
+					set_int(state, state_size - 20, 0x345678);
 					write_fixture("boss-sound-state.bin", state);
 					Boss_dying_sound_playing = 42;
 					// Match production save I/O instead of issuing a filesystem call for each AI field
 					PHYSFS_file *handle = PHYSFSX_openReadBuffered("boss-sound-state.bin");
 					REWIND_PHYSFS_FILE(reader, handle);
-					require(handle && ai_restore_state(reader, version, swap) && PHYSFS_tell(handle) == static_cast<PHYSFS_sint64>(state_size) && PHYSFS_close(handle),
-					        "restore a complete AI core in either byte order without changing its layout");
+					const auto before = input_demo_ai_trace_snapshot();
+					auto *candidate = handle ? ai_prepare_restore(reader, version, swap, classic_object_capacity, Highest_segment_index, GameTime64) : nullptr;
+					require(candidate && PHYSFS_tell(handle) == static_cast<PHYSFS_sint64>(state_size) &&
+					            PHYSFS_close(handle) && input_demo_ai_trace_snapshot() == before,
+					        "decode a complete retained AI candidate without publishing globals or D1 markers");
+					const auto epoch = GameTime64;
+					GameTime64 += F1_0;
+					require(!ai_apply_restore(candidate) && input_demo_ai_trace_snapshot() == before,
+					        "reject a changed candidate epoch without partial publication");
+					GameTime64 = epoch;
+					const int geometry = Highest_segment_index;
+					Highest_segment_index = geometry + 1;
+					require(!ai_apply_restore(candidate) && input_demo_ai_trace_snapshot() == before,
+					        "reject changed candidate geometry without publishing AI tables");
+					Highest_segment_index = geometry;
+					require(ai_apply_restore(candidate), "publish the decoded candidate after closing its source stream");
 					const int expected = version < 35 ? static_cast<sbyte>(value) : value;
 					require(Boss_dying_sound_playing == expected,
 					        "current saves preserve full integers; old saves retain signed-byte decoding");
+					require(Believed_player_pos.x == 0x123456 && Believed_player_pos.y == -0x234567 && Believed_player_pos.z == 0x345678,
+					        "appended vectors retain explicit little endian in either header byte order");
 					if (version == 35 && !swap) {
 						require(input_demo_ai_trace_snapshot()["boss"]["Boss_dying_sound_playing"] == expected,
 						        "raw observation preserves full-width boss sound state");
@@ -4623,13 +4642,40 @@ static void test_boss_sound_storage()
 						require(handle && PHYSFS_seek(handle, sound_offset) && PHYSFSX_readSXE32(handle, 0) == value && PHYSFS_close(handle),
 						        "actual AI writer serializes exactly the full boss sound integer");
 					}
+					if (profile == 2 && version == 35 && !swap && value == 1) {
+						const auto published = input_demo_ai_trace_snapshot();
+						handle = PHYSFSX_openReadBuffered("boss-sound-state.bin");
+						REWIND_PHYSFS_FILE(other_reader, handle);
+						auto *other = ai_prepare_restore(other_reader, version, swap, classic_object_capacity, geometry, epoch + 1234);
+						require(other && PHYSFS_close(handle) && input_demo_ai_trace_snapshot() == published && !ai_apply_restore(other),
+						        "prepare against a future candidate epoch without using or changing the live epoch");
+						GameTime64 = epoch + 1234;
+						require(ai_apply_restore(other) && Ai_local_info[0].time_player_seen == GameTime64 &&
+						            Ai_cloak_info[0].last_time == GameTime64 && Boss_cloak_start_time == GameTime64,
+						        "retained native clock offsets bind to the explicit candidate epoch");
+						ai_discard_restore(other);
+						GameTime64 = epoch;
+						require(ai_apply_restore(candidate) && input_demo_ai_trace_snapshot() == published,
+						        "candidate application retains its decoded state independently of other candidates");
+						for (const size_t cut : { size_t(0), size_t(1), size_t(7), size_t(8), boss_start - 1, boss_start + 4, state_size - 1 }) {
+							write_fixture("ai-candidate-short.bin", bytes(state.begin(), state.begin() + cut));
+							handle = PHYSFSX_openReadBuffered("ai-candidate-short.bin");
+							REWIND_PHYSFS_FILE(short_reader, handle);
+							require(handle && !ai_prepare_restore(short_reader, version, swap, classic_object_capacity, geometry, epoch) &&
+							            PHYSFS_tell(handle) == 0 && PHYSFS_close(handle) && input_demo_ai_trace_snapshot() == published,
+							        "short scalar, local-byte, path, cloak and trailing records reject without publication or fatal EOF");
+						}
+					}
+					ai_discard_restore(candidate);
 					state.pop_back();
 					write_fixture("boss-sound-truncated.bin", state);
 					Boss_dying_sound_playing = 42;
 					handle = PHYSFSX_openReadBuffered("boss-sound-truncated.bin");
 					REWIND_PHYSFS_FILE(invalid, handle);
-					require(handle && !ai_restore_state(invalid, version, swap) && PHYSFS_close(handle) && Boss_dying_sound_playing == 42,
-					        "truncated AI input cannot partially overwrite boss sound state");
+					const auto before_invalid = input_demo_ai_trace_snapshot();
+					require(handle && !ai_restore_state(invalid, version, swap) && PHYSFS_tell(handle) == 0 &&
+					            PHYSFS_close(handle) && input_demo_ai_trace_snapshot() == before_invalid,
+					        "truncated AI input restores its cursor without changing any observed AI state");
 				}
 			}
 			if (profile == 2) {
