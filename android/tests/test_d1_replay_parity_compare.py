@@ -17,6 +17,10 @@ import d1_replay_parity as parity
 def schema_example(schema):
     if schema is int:
         return 0
+    if schema is bool:
+        return False
+    if schema is float:
+        return 0.0
     if isinstance(schema, dict):
         return {key: schema_example(child) for key, child in schema.items() if key != "*"}
     if isinstance(schema, tuple):
@@ -1388,6 +1392,10 @@ class ParityTests(unittest.TestCase):
                     self.import_world_storage(state)
                     state["ai"]["local_capacity"] = 1367
                     state["effects"] = [{**schema_example(parity.WORLD_SCHEMA["effects"][0]), "segnum": -1}]
+                    state["xl_time"] = schema_example(parity.XL_TIME_SCHEMA)
+                    state["xl_time"].update(version=1, bound=True, anchor=[26, 0, 0])
+                    state["xl_time"]["slow_motion"]["clocks"] = [[1.0, 0, 26, False]] * 2
+                    state["xl_cameras"] = {"version": 1, "ticks": 0, "states": []}
 
         self.mutate(path, convert)
         return path
@@ -1497,6 +1505,31 @@ class ParityTests(unittest.TestCase):
         self.mutate(changed, lambda rows: rows[1]["slots"]["3"].pop("ai"))
         with self.assertRaisesRegex(parity.EvidenceError, "Missing world field"):
             list(parity.world_states(changed, self.header, "d2"))
+
+    def test_xl_clock_observation_is_required_typed_and_compared(self):
+        path = self.native_d2_trace("xl-time", True)
+        for key in ("xl_time", "xl_cameras"):
+            bad = self.write("xl-missing-time", list(parity.records(path)))
+            self.mutate(bad, lambda rows: rows[2]["state"].pop(key))
+            with self.assertRaisesRegex(parity.EvidenceError, "Missing world field"):
+                list(parity.world_states(bad, self.header, "d2"))
+        mutations = (
+            lambda time: time.update(bound=False),
+            lambda time: time.update(bound=1),
+            lambda time: time.update(anchor=[25, 0, 0]),
+            lambda time: time["slow_motion"]["clocks"][0].__setitem__(0, True),
+            lambda time: time["slow_motion"]["clocks"][0].__setitem__(0, float("nan")),
+            lambda time: time["slow_motion"]["clocks"][0].__setitem__(2, 27),
+            lambda time: time["slow_motion"].update(pickups=[[3, 48, 0], [3, 49, 0]]),
+        )
+        for mutate in mutations:
+            bad = self.write("xl-invalid-time", list(parity.records(path)))
+            self.mutate(bad, lambda rows: mutate(rows[2]["state"]["xl_time"]))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        changed = self.write("xl-pending-time", list(parity.records(path)))
+        self.mutate(changed, lambda rows: rows[2]["state"]["xl_time"]["slow_motion"].update(bullet_requested=True))
+        self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
 
     def test_world_engine_identity_is_checked_before_mapping_empty_object_boundaries(self):
         a = self.world_trace("native-world-identity")

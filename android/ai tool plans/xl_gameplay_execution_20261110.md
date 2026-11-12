@@ -1161,6 +1161,60 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   remains roughly 5-8 hours and G2-G7 roughly 17.5 hours, with high uncertainty
   and no cutoff. This checkpoint is not gameplay or corpus acceptance.
 
+### G1 camera/time observation checkpoint, November 11 at 12:22 PST
+
+- Increment classification: progress; G1 remains unaccepted. Previous increment
+  is local commit `aaeb3a3a23048e61f503a350d1a1a40cebeadca4`, tree
+  `a51634dfc3922923bb4d1ea8c9f441e533a68e7e`, on layer 02. This increment is based
+  on that commit. Layer 02 is not published; no downstream branch or merge.
+- Camera simulation now consumes an ordered `camera_frame` environment sample
+  at its existing begin-frame boundary. Closed consumer/phase validation and
+  recorder/replay tests cover it. Typed XL time and camera observations extend
+  the existing world trace and strict comparator. Their clock basis is the last
+  consumed sample; querying them does not consume samples, refresh the save
+  origin or retire stale camera identities. The native live capture checks that
+  purity. Complete owner coverage and active-camera cold continuation remain open.
+- Ordinary recorder finalization emits the terminal observation after finishing
+  the input tail, while recorder state is still available. Previously the probe
+  emitted it before the tail while replay emitted it afterward. The shared owner
+  now controls that boundary; the probe's duplicate emission was removed.
+- Windows D2 desktop and Linux developer desktop builds pass. Six focused
+  input-demo CTests pass on Windows in 9.21 seconds and Linux in 2.95 seconds.
+  All 72 comparator tests pass in 36.656 seconds, zero skips. The root-bound
+  Windows D1 desktop builds successfully too; existing scanline function-pointer
+  warnings remain. Scoped mixed-language formatting/lint passes. No fixture,
+  required test membership, timeout or producer reserve was weakened.
+- Fresh seven-event native capture `g1-live-time-capture-4` passes. Demo
+  `d2_wshock20_level6_20261111_121905.dximdemo` has SHA256
+  `b312b1a25338f6fff5e612e17af07795f9ee14dba2410c425dfe7ac1f3ff4eb8`;
+  tested executable SHA256 is
+  `db6f4f58621a020814884adc345a2d34847ce5ebe9e35167fc5e66cb0777990f`.
+  Clean accelerated replay `g1-time-replay-5` exits naturally and matches all
+  198 detailed object frames, 202 world/boundary records including XL time and
+  cameras, 811 strict SIM RNG events and all 198 frame hashes. The original
+  pre-recording approach assist remains disclosed; no pose changes occur during
+  the recorded interval. This is not connected original progression, complete
+  XL coverage, immediate replay or two clean repeats. Supplemental HAM identity
+  remains unknown, with explicit `AllowUnverifiedAssets`; no corpus freeze.
+- Pinned reference remains `2576a98b5de310e3ac7c9777df2677d1627b8bae`; authentic
+  Warp bytes are unchanged. The camera owner preserves the existing pinned
+  rotation predicates. Further audit confirms trigger.cpp's cooldown reads
+  timer_query directly, while the reference uses cached SDL ticks and a 750 ms
+  threshold. Audit cached-clock ordering before integrating that consumer;
+  restore currently also clears cooldown activation, requiring persistence work.
+- After active jobs completed, the documented scoped builds-only cleanup preview
+  and apply removed obsolete `.cxx/Debug/3j749a1m` under the registered old
+  `temp/xl-implementation-20261109/source` worktree, reclaiming 2.66 GiB. Current
+  dependency caches, modified worktree sources, authentic assets, reports and
+  running foreign workers were preserved. The 50 GiB target was not reached;
+  free space was about 6.3 GiB at 12:20 PST. Cleanup logs and all validation
+  receipts remain under `temp/pr464-ci-fixes-20261110` with protected exclusions.
+- Next: commit this validated observer increment, then integrate source-qualified
+  trigger cooldown timing/persistence through existing owners and resolve
+  supplemental HAM identity. Complete ordinary Omega/time recording qualification
+  before publishing layer 02. G1 estimate remains 5-8 hours, G2-G7 about 17.5 hours,
+  highly uncertain; no cutoff and no gameplay-readiness claim.
+
 Per-item handoff template:
 
     Item and status:

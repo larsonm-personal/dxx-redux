@@ -223,11 +223,8 @@ nlohmann::json xl_runtime::slow_motion_diagnostics()
 		     { "world_active", state.clocks[0].active },
 		     { "player_active", state.clocks[1].active } };
 }
-nlohmann::json xl_runtime::slow_motion_snapshot()
+static nlohmann::json slow_motion_state_snapshot(const input_demo_environment_clock &environment)
 {
-	const auto environment = environment_now();
-	saved_environment = environment;
-	saved_environment_valid = true;
 	const auto now = environment.clock_ms;
 	nlohmann::json saved = { { "clocks", nlohmann::json::array() }, { "transition_sound", state.transition_sound }, { "pickups", nlohmann::json::array() }, { "slow_requested", slow_requested }, { "bullet_requested", bullet_requested } };
 	for (const auto &clock : state.clocks)
@@ -239,6 +236,20 @@ nlohmann::json xl_runtime::slow_motion_snapshot()
 			saved["pickups"].push_back({ i, actor.id, std::int64_t(environment.pickup_ms) - actor.rtype.vclip_info.frametime });
 	}
 	return saved;
+}
+nlohmann::json xl_runtime::slow_motion_snapshot()
+{
+	saved_environment = environment_now();
+	saved_environment_valid = true;
+	return slow_motion_state_snapshot(saved_environment);
+}
+nlohmann::json xl_runtime::slow_motion_trace_snapshot()
+{
+	input_demo_environment_clock anchor{};
+	// Observe the last consumed sample, never a fresh timer query or save snapshot
+	if (!input_demo_recorder_peek_environment(&anchor) && !input_demo_replay_peek_environment(&anchor))
+		return { { "bound", bool{ false } } };
+	return { { "bound", bool{ true } }, { "version", 1 }, { "anchor", { anchor.clock_ms, anchor.pickup_ms, anchor.render_frame } }, { "slow_motion", slow_motion_state_snapshot(anchor) }, { "weapon_clock", { last_missile - GameTime64, last_omega_frame } } };
 }
 bool xl_runtime::restore_slow_motion(const nlohmann::json &saved, bool apply)
 {

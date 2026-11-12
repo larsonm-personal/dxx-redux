@@ -93,8 +93,18 @@ A subsequent fresh Windows capture with camera AI included matches 198 detailed
 object frames, 202 world/boundary observations and 811 strict SIM RNG events in
 one clean accelerated playback. This compares the emitted generic state only;
 XL owner coverage, supplemental HAM identity and repeated-platform qualification
-are still incomplete. Camera rotation's direct SDL clock is a further audited
-timeline consumer requiring integration. The recording remains diagnostic
+are still incomplete. Camera rotation now consumes an ordered `camera_frame`
+environment sample. Read-only typed time/camera observations use the last consumed
+sample and never advance a clock, refresh a save snapshot or retire a camera
+attachment. Ordinary record finalization emits its terminal observation after
+the input tail, matching the replay boundary
+
+Fresh `g1-live-time-capture-4` and `g1-time-replay-5` match 198 object frames,
+202 world/boundary observations including these XL fields, 811 strict SIM RNG
+events and all 198 frame hashes. The native capture also verifies observer
+purity. Trigger cooldown still uses an unrecorded external timer, and complete
+owner-state/cold-continuation coverage remains unfinished. This recording remains
+diagnostic and uses explicit unverified-asset playback for supplemental HAM
 
 Native XL save schema 36 preserves pending slow-motion and bullet-time
 requests. Restoring between an ordinary key press and its next simulation step

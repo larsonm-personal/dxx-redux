@@ -2,6 +2,11 @@
 #include "input_demo_state_trace.h"
 #include "input_demo_ai_trace.h"
 #include "input_demo_object_trace.h"
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#include "slow_motion_save.h"
+#include "camera_save.h"
+#endif
 
 #include <string>
 #include <nlohmann/json.hpp>
@@ -392,6 +397,12 @@ json world_state()
 	out["secrets"] = json::array();
 	for (int i = 0; i < secret_area_total(secrets); ++i)
 		out["secrets"].push_back({ secrets->secrets[i].identity, secrets->found[i] });
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		out["xl_time"] = xl_runtime::slow_motion_trace_snapshot();
+		out["xl_cameras"] = xl_camera_trace_snapshot();
+	}
+#endif
 	return out;
 }
 #undef FIELD

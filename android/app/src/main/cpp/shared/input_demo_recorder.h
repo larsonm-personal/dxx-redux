@@ -73,6 +73,7 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
                                       char *error, size_t error_size);
 int input_demo_recorder_uses_ordered_input(void);
 int input_demo_recorder_uses_environment(void);
+int input_demo_recorder_peek_environment(input_demo_environment_clock *clock);
 int input_demo_recorder_observe_environment(const char *consumer, int subject, int simulation,
                                             const input_demo_environment_clock *clock, char *error, size_t error_size);
 int input_demo_recorder_begin_input_batch(uint32_t rng_state, uint32_t rng_count,

@@ -10,6 +10,7 @@ import gzip
 import hashlib
 import itertools
 import json
+import math
 import platform
 import shutil
 import struct
@@ -1102,10 +1103,39 @@ WORLD_SCHEMA = {
 }
 
 
+XL_TIME_SCHEMA = {
+    "version": int,
+    "bound": bool,
+    "anchor": (int, int, int),
+    "slow_motion": {
+        "clocks": ((float, int, int, bool),) * 2,
+        "transition_sound": bool,
+        "slow_requested": bool,
+        "bullet_requested": bool,
+        "pickups": [(int, int, int)],
+    },
+    "weapon_clock": (int, int),
+}
+XL_CAMERA_SCHEMA = integer_fields(
+    "version ticks",
+    states=[
+        integer_fields(
+            "monitor owner signature type id angle delta t0 brakes", live=bool, original=(VECTOR_SCHEMA,) * 3
+        )
+    ],
+)
+
+
 def validate_world_value(value, schema, path):
     if schema is int:
         if type(value) is not int:
             raise EvidenceError(f"World field must be an integer: {path}")
+    elif schema is bool:
+        if type(value) is not bool:
+            raise EvidenceError(f"World field must be a boolean: {path}")
+    elif schema is float:
+        if type(value) is not float or not math.isfinite(value):
+            raise EvidenceError(f"World field must be a finite float: {path}")
     elif isinstance(schema, dict):
         if not isinstance(value, dict):
             raise EvidenceError(f"World field must be an object: {path}")
@@ -1138,6 +1168,44 @@ def validate_world_value(value, schema, path):
 
 def validate_world_state(state, engine=None, xl=False):
     validate_world_value(state, WORLD_SCHEMA, "$.state")
+    if xl:
+        validate_world_value(state, {"xl_time": XL_TIME_SCHEMA, "xl_cameras": XL_CAMERA_SCHEMA}, "$.state")
+        time = state["xl_time"]
+        clock, pickup_clock, rendered = time["anchor"]
+        if (
+            time["version"] != 1
+            or not time["bound"]
+            or not 26 <= clock <= 9223372034707292160
+            or not 0 <= pickup_clock <= 2147483647
+            or not 0 <= rendered <= 4294967295
+            or not -9223372036854775808 <= time["weapon_clock"][0] <= 9223372036854775807
+            or not 0 <= time["weapon_clock"][1] <= 4294967295
+        ):
+            raise EvidenceError("Invalid or unbound XL clock observation")
+        for speed, direction, age, active in time["slow_motion"]["clocks"]:
+            if not 1 <= speed <= 3 or direction not in (-1, 0, 1) or not 0 <= age <= 26:
+                raise EvidenceError("Invalid XL transition clock")
+        previous = -1
+        capacity = state["ai"]["local_capacity"]
+        for slot, identity, age in time["slow_motion"]["pickups"]:
+            if not previous < slot < capacity or identity not in (48, 49) or not 0 <= age <= 2147483647:
+                raise EvidenceError("Invalid XL pickup clock observation")
+            previous = slot
+        cameras = state["xl_cameras"]
+        # camera_bindings.h keeps the pinned source's one hundred monitors
+        if cameras["version"] != 1 or not 0 <= cameras["ticks"] <= 2147483647 or len(cameras["states"]) > 100:
+            raise EvidenceError("Invalid XL camera observation")
+        for monitor, camera in enumerate(cameras["states"]):
+            if (
+                camera["monitor"] != monitor
+                or not -1 <= camera["owner"] < capacity
+                or camera["signature"] < -1
+                or not -32768 <= camera["angle"] <= 32767
+                or not -32768 <= camera["delta"] <= 32767
+                or not -1 <= camera["t0"] <= 2147483647
+                or not -2147483648 <= camera["brakes"] <= 2147483647
+            ):
+                raise EvidenceError("Invalid XL camera controller state")
     weapons = state["weapons"]
     if (
         weapons["PrimaryWeaponPickedUp"] not in (0, 1)

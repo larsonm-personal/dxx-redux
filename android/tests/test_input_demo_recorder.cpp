@@ -2079,11 +2079,16 @@ static int expect_environment_recording(void)
 	if (!check(input_demo_recorder_start(&settings, error, sizeof(error)))) return 1;
 	if (!input_demo_recorder_uses_environment() || input_demo_recorder_truncate(0))
 		return report_failure("environment capture did not retain its clock basis");
+	input_demo_environment_clock observed{};
+	if (!input_demo_recorder_peek_environment(&observed) || memcmp(&observed, &settings.environment, sizeof(observed)))
+		return report_failure("observer did not expose the capture origin");
 	for (int frame = 0; frame < 2; ++frame) {
 		input_demo_environment_clock clock = { 100 + frame * 52, uint32_t(100 + frame * 52), uint32_t(UINT32_MAX - 1 + frame * 4) };
 		if (!check(input_demo_recorder_begin_input_batch(1, 0, 1092, error, sizeof(error))) ||
 		    !check(input_demo_recorder_stage_input_sample(1092, &state, &pulse, error, sizeof(error))) ||
 		    !check(input_demo_recorder_observe_environment("omega_fired", -1, 0, &clock, error, sizeof(error)))) return 1;
+		if (!input_demo_recorder_peek_environment(&observed) || memcmp(&observed, &clock, sizeof(observed)))
+			return report_failure("observer lost pending input clock");
 		clock.clock_ms += 26;
 		clock.pickup_ms += 26;
 		clock.render_frame += 2;
@@ -2096,6 +2101,11 @@ static int expect_environment_recording(void)
 		    !check(input_demo_recorder_capture_frame(1092, &state, &pulse, 1, 1, 0, nullptr, nullptr, error, sizeof(error))) ||
 		    !check(input_demo_recorder_observe_environment("slow_frame", -1, 1, &clock, error, sizeof(error))) ||
 		    !check(input_demo_recorder_observe_environment("pickup", 4, 1, &clock, error, sizeof(error)))) return 1;
+		++clock.clock_ms;
+		++clock.pickup_ms;
+		if (!check(input_demo_recorder_observe_environment("camera_frame", -1, 1, &clock, error, sizeof(error))) ||
+		    !input_demo_recorder_peek_environment(&observed) || memcmp(&observed, &clock, sizeof(observed)))
+			return report_failure("observer lost the current simulation clock");
 	}
 	input_demo_environment_clock tail = { 204, 204, 6 };
 	if (!check(input_demo_recorder_begin_input_batch(1, 0, 0, error, sizeof(error))) ||
@@ -2103,6 +2113,7 @@ static int expect_environment_recording(void)
 	    !check(input_demo_recorder_stage_direct_command_xl_time_control(0, error, sizeof(error))) ||
 	    !check(input_demo_recorder_observe_environment("tail_end", -1, 0, &tail, error, sizeof(error))) ||
 	    !check(input_demo_recorder_finish_input_tail(&state, &pulse, 1, 0, error, sizeof(error))) ||
+	    !input_demo_recorder_peek_environment(&observed) || memcmp(&observed, &tail, sizeof(observed)) ||
 	    !check(input_demo_recorder_flush(path, error, sizeof(error))) ||
 	    !check(input_demo_replay_load(path, error, sizeof(error)))) return 1;
 	input_demo_environment_clock actual = {};
@@ -2130,6 +2141,8 @@ static int expect_environment_recording(void)
 		    !check(input_demo_replay_consume_environment("input_end", -1, 0, 5, &actual, error, sizeof(error))) ||
 		    !check(input_demo_replay_consume_environment("slow_frame", -1, 1, 0, &actual, error, sizeof(error))) ||
 		    !check(input_demo_replay_consume_environment("pickup", 4, 1, 0, &actual, error, sizeof(error))) ||
+		    !check(input_demo_replay_consume_environment("camera_frame", -1, 1, 0, &actual, error, sizeof(error))) ||
+		    actual.clock_ms != 127 + frame * 52 ||
 		    !check(input_demo_replay_advance_frame(error, sizeof(error)))) return 1;
 	}
 	input_demo_result expected;

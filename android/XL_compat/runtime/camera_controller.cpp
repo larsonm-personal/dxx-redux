@@ -4,6 +4,7 @@
 #include "../camera_bindings.h"
 #include "preview.h"
 #include "resource_validation.h"
+#include "slow_motion_runtime.h"
 #include <SDL.h>
 #include <vector>
 #include <limits>
@@ -129,6 +130,17 @@ nlohmann::json xl_camera_attachments_snapshot()
 		}
 	return saved;
 }
+nlohmann::json xl_camera_trace_snapshot()
+{
+	// The save/get helpers may retire stale signatures. Diagnostics never do
+	auto rows = nlohmann::json::array();
+	for (const auto &entry : cameras) {
+		const bool valid = live(entry);
+		const int brakes = valid && entry.type == 16 ? Objects[entry.owner].mtype.phys_info.brakes : 0;
+		rows.push_back({ { "monitor", entry.monitor }, { "owner", entry.owner }, { "signature", entry.signature }, { "type", entry.type }, { "id", entry.id }, { "live", valid }, { "original", entry.original }, { "angle", entry.rotation.angle }, { "delta", entry.rotation.delta }, { "t0", entry.rotation.t0 }, { "brakes", brakes } });
+	}
+	return { { "version", 1 }, { "ticks", frame_ticks }, { "states", rows } };
+}
 bool xl_camera_attachments_restore(const nlohmann::json &saved, bool apply)
 {
 	try {
@@ -164,7 +176,11 @@ bool xl_camera_attachments_restore(const nlohmann::json &saved, bool apply)
 extern "C" void xl_camera_controller_begin_frame(void)
 {
 	xl_hitbox_begin_frame();
-	frame_ticks = SDL_GetTicks();
+	if (xl_level_extensions_active()) {
+		input_demo_environment_clock clock{};
+		xl_input_demo_observe("camera_frame", -1, &clock);
+		frame_ticks = clock.pickup_ms;
+	} else frame_ticks = SDL_GetTicks();
 }
 extern "C" unsigned xl_camera_controller_ticks(void)
 {

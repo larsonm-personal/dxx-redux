@@ -356,12 +356,21 @@ ends with `tail_end` and cannot contain simulation samples. Empty input batches
 still have their boundary sample. This preserves multiple interleaved operations
 and the record-stop tail without assuming one render per simulation frame.
 
-Consumers are closed: `slow_frame`, `slow_off`, `pickup`, `omega_blocked` and
+Consumers are closed: `slow_frame`, `slow_off`, `pickup`, `camera_frame`, `omega_blocked` and
 `omega_fired`, plus the two boundary names. Pickup samples identify the object
-slot in `subject`; other consumers require `subject: -1`. Slow-frame and pickup
+slot in `subject`; other consumers require `subject: -1`. Slow-frame, camera-frame and pickup
 consumers belong to simulation. Counts, phases, ordering, required boundaries,
 unknown fields and duplicate JSON keys reject during complete-file admission,
 without replacing an already parsed recording.
+
+`camera_frame` supplies the cached SDL millisecond clock at the ordinary object
+simulation boundary, using `pickup_ms` from that ordered sample. It does not use
+the replay renderer's clock. Detailed XL time observations read the last consumed
+sample, including the checkpoint origin before frame zero; they never sample a
+timer, advance a consumer or update the save clock cache. The detailed trace
+retains time factors/directions/threshold ages, pending controls, weapon markers,
+pickup ages and camera-controller state. This is still an unqualified developer
+contract; adding these observations does not establish complete XL owner coverage.
 
 The current bounded profile uses nondecreasing signed 64-bit transition-clock
 milliseconds, starting at least at 26 and leaving INT32_MAX overflow headroom.

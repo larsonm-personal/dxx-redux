@@ -899,7 +899,8 @@ static int expect_environment_timeline(void)
 		{ 1, false, 2, "omega_blocked", -1, { 126, 126, 0 } },
 		{ 2, false, 2, "input_end", -1, { 126, 126, 0 } },
 		{ 3, true, 0, "slow_frame", -1, { 126, 126, 0 } },
-		{ 4, true, 0, "pickup", 4, { 126, 126, 0 } }
+		{ 4, true, 0, "pickup", 4, { 126, 126, 0 } },
+		{ 5, true, 0, "camera_frame", -1, { 127, 127, 0 } }
 	};
 	demo.has_input_tail = true;
 	demo.input_tail.input.frame = demo.input_tail.rng.frame = 1;
@@ -948,6 +949,8 @@ static int expect_environment_timeline(void)
 	    reject([](auto &r) { r[1]["environment"]["samples"][2]["consumer"] = "omega_fired"; }) ||
 	    reject([](auto &r) { r[1]["environment"]["samples"][3]["phase"] = "input"; }) ||
 	    reject([](auto &r) { r[1]["environment"]["samples"][4]["subject"] = -1; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][5]["subject"] = 0; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["consumer"] = "camera_frame"; }) ||
 	    reject([](auto &r) { r[1]["environment"]["samples"][1]["unknown"] = true; }) ||
 	    reject([](auto &r) { r[2]["environment"]["samples"][0]["phase"] = "sim"; }) ||
 	    reject([](auto &r) { r[2].erase("environment"); }) ||

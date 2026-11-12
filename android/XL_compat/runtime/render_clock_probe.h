@@ -2,6 +2,7 @@
 #define XL_RENDER_CLOCK_PROBE_H
 #include "named_audio_state.h"
 #include "resource_validation.h"
+#include "camera_save.h"
 // Developer qualification only; this deliberately controls camera and end-level state
 static int xl_render_clock_probe(const char *path)
 {
@@ -249,6 +250,16 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 				pose(approach);
 				if (id == 48) {
 					require(input_demo_start_quick_recording_common() && input_demo_recorder_uses_environment(), "Cannot start ordinary XL pickup recording");
+					input_demo_environment_clock saved_before{}, saved_after{}, consumed_before{}, consumed_after{};
+					require(xl_input_demo_saved_environment(&saved_before) && input_demo_recorder_peek_environment(&consumed_before), "Missing captured XL clock origin");
+					const auto observed_time = xl_runtime::slow_motion_trace_snapshot();
+					const auto observed_cameras = xl_camera_trace_snapshot();
+					require(observed_time.at("bound").get<bool>() && observed_time == xl_runtime::slow_motion_trace_snapshot() &&
+					            observed_cameras == xl_camera_trace_snapshot() && xl_input_demo_saved_environment(&saved_after) &&
+					            input_demo_recorder_peek_environment(&consumed_after) &&
+					            !std::memcmp(&saved_before, &saved_after, sizeof(saved_before)) &&
+					            !std::memcmp(&consumed_before, &consumed_after, sizeof(consumed_before)),
+					        "Detailed XL observation changed its state or clock basis");
 					char error[256]{};
 					const std::string observation = std::string(path) + ".capture.jsonl.gz";
 					// The physical pickup determines the horizon; zero means not known yet
@@ -273,8 +284,6 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 					require(HandleGameKey(KEY_ALTED | KEY_S), "Earned slow-motion reversal was not consumed");
 					frames(84);
 					require(input_demo_state_trace_is_active(), "Live XL observation stopped early");
-					input_demo_trace_boundary("terminal");
-					input_demo_state_trace_stop();
 					require(input_demo_recorder_is_active() && input_demo_stop_quick_recording_common(), "Ordinary XL pickup recording stopped early");
 				}
 			}

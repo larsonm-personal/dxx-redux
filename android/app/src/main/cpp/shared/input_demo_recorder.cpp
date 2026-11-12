@@ -785,6 +785,16 @@ int input_demo_recorder_uses_environment(void)
 	return g_input_demo_recorder_session.active && g_input_demo_recorder_session.has_environment;
 }
 
+int input_demo_recorder_peek_environment(input_demo_environment_clock *clock)
+{
+	const auto &session = g_input_demo_recorder_session;
+	if (!clock || !input_demo_recorder_uses_environment() || session.input_failed) return 0;
+	// Pending input follows the last SIM frame; finalized storage is the fallback
+	*clock = !session.pending_environment.empty() ? session.pending_environment.back().clock : !session.current_environment.empty() ? session.current_environment.back().clock
+	                                                                                                                                : session.last_environment;
+	return 1;
+}
+
 int input_demo_recorder_observe_environment(const char *consumer, int subject, int simulation,
                                             const input_demo_environment_clock *clock, char *error, size_t error_size)
 {

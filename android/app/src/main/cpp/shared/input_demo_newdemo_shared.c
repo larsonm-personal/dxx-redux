@@ -24,6 +24,8 @@
 #include "input_demo_result.h"
 #include "input_demo_rng_mode.h"
 #include "input_demo_rng_trace.h"
+#include "input_demo_state_trace.h"
+#include "input_demo_world_trace.h"
 #include "menu.h"
 #include "mission.h"
 #include "newdemo.h"
@@ -653,8 +655,17 @@ static void maybe_flush_input_demo_recording(const char *demo_name, int use_new_
 		return;
 	}
 	input_demo_capture_current_result(&result);
-	if (!input_demo_record_finish_input_tail(error, sizeof(error)) ||
-	    !input_demo_recorder_flush_with_result(absolute_path, &result, error, sizeof(error))) {
+	if (!input_demo_record_finish_input_tail(error, sizeof(error))) {
+		input_demo_trace_boundary("aborted");
+		input_demo_state_trace_stop();
+		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
+		input_demo_recorder_cancel();
+		return;
+	}
+	// The live terminal boundary includes the same input tail consumed by replay
+	input_demo_trace_boundary("terminal");
+	input_demo_state_trace_stop();
+	if (!input_demo_recorder_flush_with_result(absolute_path, &result, error, sizeof(error))) {
 		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
 		input_demo_recorder_cancel();
 		return;
