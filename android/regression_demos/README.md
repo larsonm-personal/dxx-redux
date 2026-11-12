@@ -371,8 +371,17 @@ not silently wrapped into that profile. Render frames use unsigned 32-bit modulo
 arithmetic: each observed forward difference is at most INT32_MAX, including
 UINT32_MAX to zero. There are at most 16,384 samples per frame/tail, within the
 existing record/file byte limits. No clock is inferred from display rate or
-substituted for elapsed time. Checkpoint-origin binding and production stream
-consumption still require implementation and live/replay qualification.
+substituted for elapsed time. The recorder and replay owners now preserve and
+consume this stream, including exact consumer/phase/operation checks and a
+fully consumed tail. Native world admission remains closed while checkpoint
+origin binding and live/replay fidelity are qualified.
+
+The D2-only ordered command `xl_time_control` carries one boolean `bullet_time`.
+Each ordinary Alt+S/Alt+B request is retained, including repeated requests in a
+single batch. The runtime retains the source's pending-boolean coalescing until
+the next simulation step. Formats before 6 reject this command. Android Extra
+actions reach the same ordinary key handler. These code paths are not yet an
+accepted live recording or Android qualification.
 
 ## Ordered input recording (format 5)
 

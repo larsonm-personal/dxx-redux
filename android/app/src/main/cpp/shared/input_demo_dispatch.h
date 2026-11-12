@@ -66,6 +66,12 @@ static inline int input_demo_cockpit_mode_supported(int32_t mode)
 
 /* Shared C/C++ ABI must not inherit engine header packing */
 #pragma pack(push, 4)
+typedef struct input_demo_environment_clock {
+	int64_t clock_ms;
+	uint32_t pickup_ms;
+	uint32_t render_frame;
+} input_demo_environment_clock;
+
 typedef struct input_demo_rear_view_baseline {
 	int32_t active;
 	int32_t leave_mode;
@@ -124,6 +130,7 @@ static inline int input_demo_rear_view_baseline_supported(const input_demo_rear_
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS            15
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS        16
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHEAT                    17
+#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_XL_TIME_CONTROL          18
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_TEXT_SIZE                40
 
 #define INPUT_DEMO_GRANT_ALL_WEAPONS_D1_SCOURGE   1
@@ -179,6 +186,7 @@ typedef struct input_demo_input_batch_info {
 
 /* Verify the engine/C++ boundary even under enclosing pack(1) headers */
 typedef char input_demo_operation_command_offset[(offsetof(input_demo_input_operation, command) == 52) ? 1 : -1];
+typedef char input_demo_environment_clock_size[(sizeof(input_demo_environment_clock) == 16) ? 1 : -1];
 typedef char input_demo_projection_size[(sizeof(input_demo_view_projection) == 28) ? 1 : -1];
 typedef char input_demo_operation_size[(sizeof(input_demo_input_operation) == 124) ? 1 : -1];
 typedef char input_demo_batch_residual_offset[(offsetof(input_demo_input_batch_info, residual_state) == 24) ? 1 : -1];

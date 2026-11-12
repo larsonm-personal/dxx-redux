@@ -816,16 +816,16 @@ and "accepted" are separate facts. A blocked item names the exact dependency and
 what independent item can proceed. An internal regression is repaired before
 retaining the change. All statuses below are planning statuses, not completed work.
 
-| Item | Status                                                                           | Branch / commit / PR                                                              | Evidence, limits and revised estimate                                                                                       |
-| ---- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| G0   | Accepted baseline repair; remaining hosted checks and Android limitation tracked | xl_gameplay_20261111_01_baseline; implementation a5db8d739; draft #465, base #464 | Windows/Linux native each 100 pass / 1 expected skip; Linux public 61/61; canonical private 113/113 and hosted private PASS |
-| G1   | In progress: bounded environment codec; runtime/capture qualification pending    | xl_gameplay_20261111_02_timeline; parent 96ce2f8be; not published                 | Codec/recorder/replay CTest 3/3 PASS; new format explicitly rejected by playback; all runtime guards remain active          |
-| G2   | Not started                                                                      | 03_continuation                                                                   | Complete XL observer/cold-continuation audit required                                                                       |
-| G3   | Not started                                                                      | 04_runtime                                                                        | True-headless XL and optional presentation independence unqualified                                                         |
-| G4   | Not started                                                                      | 04_runtime                                                                        | Source no-op smoke, makers, subzero and wider gameplay predicates require decisions                                         |
-| G5   | Not started                                                                      | 05_progression                                                                    | Existing assisted views do not prove connected original play                                                                |
-| G6   | Not started                                                                      | 06_qualification                                                                  | No newly frozen forward-compatible XL corpus yet                                                                            |
-| G7   | Not started                                                                      | 06_qualification                                                                  | Layer 01 draft published; final packages and remaining layers not created                                                   |
+| Item | Status                                                                                          | Branch / commit / PR                                                              | Evidence, limits and revised estimate                                                                                                                          |
+| ---- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| G0   | Accepted baseline repair; remaining hosted checks and Android limitation tracked                | xl_gameplay_20261111_01_baseline; implementation a5db8d739; draft #465, base #464 | Windows/Linux native each 100 pass / 1 expected skip; Linux public 61/61; canonical private 113/113 and hosted private PASS                                    |
+| G1   | In progress: environment stream and ordered time controls; native startup qualification pending | xl_gameplay_20261111_02_timeline; parent 96ce2f8be; not published                 | Input-demo CTests 6/6 on Windows/Linux; Windows native pending-control save passes; Linux rendered restore times out; native format-6 admission remains closed |
+| G2   | Not started                                                                                     | 03_continuation                                                                   | Complete XL observer/cold-continuation audit required                                                                                                          |
+| G3   | Not started                                                                                     | 04_runtime                                                                        | True-headless XL and optional presentation independence unqualified                                                                                            |
+| G4   | Not started                                                                                     | 04_runtime                                                                        | Source no-op smoke, makers, subzero and wider gameplay predicates require decisions                                                                            |
+| G5   | Not started                                                                                     | 05_progression                                                                    | Existing assisted views do not prove connected original play                                                                                                   |
+| G6   | Not started                                                                                     | 06_qualification                                                                  | No newly frozen forward-compatible XL corpus yet                                                                                                               |
+| G7   | Not started                                                                                     | 06_qualification                                                                  | Layer 01 draft published; final packages and remaining layers not created                                                                                      |
 
 G0 publication checkpoint, November 11 at 08:37 PST (16:37 UTC):
 
@@ -936,6 +936,76 @@ G1 implementation checkpoint, November 11, after G0:
 - Next: wire the environment stream through existing recorder/replay owners and
   ordinary simulation consumers, bind the saved clock origin before restore,
   then qualify actual control capture before relaxing any gameplay guard.
+
+G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
+
+- The preceding codec checkpoint is historical. Local codec commit is
+  `98c5f6bfe6b50aff03c11c4541ad3972b1c986eb`; this follow-up remains on layer 02,
+  with no child branch, second PR or native stack yet. The independent review,
+  prerequisite branch, three stashes and authentic assets remain preserved.
+- Shared recorder/replay now carry the ordered per-consumer environment stream,
+  including interleaved input and SIM observations, mandatory boundaries, wrap,
+  exact consumer identity and unconsumed-tail rejection. Playback must be armed
+  explicitly after world initialization. Stream validation fails without advancing
+  its cursor; invalid capture remains unpublishable. Recorded output enforces the
+  existing record/file limits before opening the destination.
+- Runtime consumers use the same transition, pickup and Omega observations.
+  `GameProcessFrame` already wraps its body in the shared phase owner on D1/D2;
+  its pre-SIM capture hook is explicitly an input boundary inside that wrapper.
+  The terminal-exit path verifies consumption before advancing to the input tail.
+  Ordinary Alt+S/Alt+B requests use the existing typed command owner; repeated
+  requests remain ordered while runtime pending booleans retain source coalescing.
+  Android Extra routes through that existing key handler; no new Android proof.
+- Native world admission still rejects format 6 before restoration. Production
+  settings do not enable environment capture yet. The library can load/consume
+  v6 for contract tests; this is not accepted gameplay playback. Saved-origin
+  handoff, new-level inherited Omega state, complete required settings and real
+  live/immediate/two-clean-process SIM/RNG fidelity remain unfinished G1 work.
+- Native XL schema 35 preserves pending slow/bullet requests. One clock sample
+  supplies save transition/pickup ages; the typed captured origin is available to
+  recorder setup. The existing rendered clock probe now checks ordinary pending
+  requests across a real disk save and rejects malformed pending booleans without
+  changing runtime state. Its unknown-schema negative advances to 36.
+- Final Windows input-demo CTests pass 6/6 in 8.55 seconds; Linux pass 6/6 in
+  3.11 seconds, including repeated/tail commands and oversized-output rejection.
+  Final root-bound Windows desktop and Linux desktop/headless/metadata builds
+  pass without new warnings. The Linux developer desktop also links. No gameplay qualification
+  is inferred from compilation. Logs are `g1-*.log` in the protected baseline
+  artifact directory.
+- Windows actual-GL Warp 5 rendered probe passes all 10 events and clean exit in
+  `g1-pending-control-save-windows-final/result.json` on final source. Its EXE SHA256
+  is `0103457716a9940952c79eb7f59ed08cf978150f6293ed4e908cc488b328ca76`.
+  The initial attempt exposed an
+  inherited `loadgl.h` true/false macro affecting JSON boolean comparisons and
+  receipt types; fixed with explicit bool values. A stock Linux binary without
+  developer probes produced no receipt and was correctly rejected. The proper
+  developer Linux/llvmpipe attempt times out at the unchanged 45-second limit;
+  its instrumented repeat reaches 8 events through `main_again`, then times out
+  during disk restoration. This is an unresolved Linux result, not a skip/pass.
+  Receipts retain both failures. These are assisted clock/save mechanics, not
+  connected travel, live input-demo fidelity or original completion.
+- Authentic Warp HOG remains
+  `2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c`;
+  pinned source remains `2576a98b5de310e3ac7c9777df2677d1627b8bae`. No fixture
+  expectations, original bytes, required test membership or timeouts changed.
+- All remaining hosted baseline checks now pass at `96ce2f8be`: D1/D2/ASan
+  `43067970513`, public save/headless/rendered replay `43067970602`, generic
+  Linux/JVM/Android `43067970565`, LAN `43067970833`, plus XL/scripts and trusted
+  private controller `43068003067`. The latter pins candidate 96ce while running
+  trusted trunk b3bb. PR #465's body now reflects these exact-head results. The
+  local Android full-GPU timeout and historical 4/8 readiness remain unchanged.
+- Official temporary-cleanup preview, with active assets/caches/reports and
+  emulator workspaces protected, finds only 11 MiB reclaimable at about 12 GiB
+  free. After owned jobs finished, apply removed those 276 artifacts and reported
+  failure to reach the 50 GiB target; 11.96 GiB remained. No hand-deleted caches
+  or WSL restart. Scoped mixed-language quality passes; final validation ended
+  November 11 at 10:33 PST (18:33 UTC).
+- Revised estimate: G1 still needs roughly 5-8 hours; G2-G7 remain roughly 17.5
+  hours with substantial uncertainty. This checkpoint completes a contract/runtime
+  plumbing increment, not G1 acceptance. Next: commit the guarded increment,
+  bind successful checkpoint origin into ordinary recorder startup, implement the
+  new-level initial clock state, and extend existing native capture/replay owners
+  for live versus repeated detailed SIM/RNG comparison before opening admission.
 
 Per-item handoff template:
 

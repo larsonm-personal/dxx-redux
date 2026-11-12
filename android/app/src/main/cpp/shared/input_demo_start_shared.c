@@ -737,6 +737,12 @@ int input_demo_start_loaded_replay_common(void)
 	int result;
 	input_demo_rear_view_baseline view;
 	char projection_error[256] = "";
+	/* Keep world admission closed until the XL runtime consumes this contract */
+	if (input_demo_replay_format_version() == 6) {
+		printf("Input demo replay could not start: XL clock/input timeline playback is not yet qualified\n");
+		input_demo_replay_unload();
+		return 1;
+	}
 	if (!input_demo_validate_replay_view_projection(projection_error, sizeof(projection_error))) {
 		INPUT_DEMO_CRUMB_V("input_demo: startup projection rejected: %s", projection_error);
 		printf("Input demo replay could not start: %s\n", projection_error);

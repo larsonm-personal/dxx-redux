@@ -6,7 +6,7 @@
 static int xl_render_clock_probe(const char *path)
 {
 	using nlohmann::ordered_json;
-	ordered_json proof = { { "schema", "xl-render-clock-v1" }, { "assisted", true }, { "complete", false }, { "events", ordered_json::array() } };
+	ordered_json proof = { { "schema", "xl-render-clock-v1" }, { "assisted", bool{ true } }, { "complete", bool{ false } }, { "events", ordered_json::array() } };
 	const auto write = [&]() {
 		std::ofstream out(path);
 		out << proof.dump(2) << '\n';
@@ -56,6 +56,7 @@ static int xl_render_clock_probe(const char *path)
 			require(Omega_charge == F1_0 / 2 + (charge_allowed ? FrameTime / 4 : 0), "Rendered Omega recharge gate differs");
 			require(after - before == (xl ? expected : 0), "Native render-clock contribution differs");
 			require(Current_level_num == level && !Player_is_dead, "Render fixture died or changed levels");
+			require(write(), "Cannot write render-clock progress");
 		};
 		auto before = xl_slow_motion_render_clock();
 		for (int i = 0; i < 3; ++i) GameProcessFrame();
@@ -71,6 +72,15 @@ static int xl_render_clock_probe(const char *path)
 		do_omega_stuff(ConsoleObject, &firing_position, &Objects[rejected]);
 		require(Omega_charge == 0 && Next_laser_fire_time == next_shot && xl_runtime::weapon_clock_snapshot() == before_rejection, "Rejected Omega shot changed firing state");
 		Omega_charge = F1_0 / 2;
+		if (xl) {
+			require(HandleGameKey(KEY_ALTED | KEY_S) && HandleGameKey(KEY_ALTED | KEY_B), "Cannot queue ordinary time controls before save");
+			const auto pending = xl_runtime::slow_motion_snapshot();
+			require(pending.at("slow_requested").get<bool>() && pending.at("bullet_requested").get<bool>(), "Time requests were consumed before simulation");
+			auto invalid = pending;
+			invalid["slow_requested"] = 1;
+			require(!xl_runtime::restore_slow_motion(invalid, true) && xl_runtime::slow_motion_snapshot() == pending,
+			        "Malformed pending time controls partially changed runtime state");
+		}
 		char save_name[] = "omega-render.sav", description[] = "Omega render clock";
 		stop_time();
 		require(state_save_all_sub(save_name, description), "Cannot save rendered Omega phase");
@@ -102,6 +112,10 @@ static int xl_render_clock_probe(const char *path)
 		game_render_frame();
 		sample("main_again", before, 1);
 		require(state_restore_all_sub(save_name, 0), "Cannot restore rendered Omega phase");
+		if (xl) {
+			const auto pending = xl_runtime::slow_motion_snapshot();
+			require(pending.at("slow_requested").get<bool>() && pending.at("bullet_requested").get<bool>(), "Ordinary save lost pending time controls");
+		}
 		require(xl_slow_motion_render_clock() == (xl ? 1u : 0u), "Saved render counter identity changed");
 		before = xl_slow_motion_render_clock();
 		sample("restored", before, 0);
@@ -111,7 +125,7 @@ static int xl_render_clock_probe(const char *path)
 		xl_slow_motion_reset();
 		require(xl_slow_motion_render_clock() == 0, "Level-clear render counter did not reset");
 		proof["reset_count"] = xl_slow_motion_render_clock();
-		proof["complete"] = true;
+		proof["complete"] = bool{ true };
 		return write() ? 0 : 1;
 	} catch (const std::exception &error) {
 		proof["error"] = error.what();

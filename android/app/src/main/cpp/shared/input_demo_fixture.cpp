@@ -812,7 +812,7 @@ static const char *const dispatch_command_names[] = {
 	"", "guidebot_goal", "drop_marker", "drop_current_weapon", "drop_secondary_weapon",
 	"drop_flag", "escort_release_control", "death_abort", "change_difficulty",
 	"guidebot_spawn", "guidebot_find_secret", "guidebot_warp_to_me",
-	"guidebot_find_unexplored", "select_weapon_exact", "delete_marker", "enable_cheats", "grant_all_weapons", "cheat"
+	"guidebot_find_unexplored", "select_weapon_exact", "delete_marker", "enable_cheats", "grant_all_weapons", "cheat", "xl_time_control"
 };
 
 static const char *const dispatch_all_weapons_grants[] = { "", "d1_scourge", "d1_bigred", "d2_honestbob" };
@@ -858,6 +858,10 @@ bool input_demo_dispatch_command_from_json(const std::string &text, int game,
 		    !input_demo_player_marker_supported(a) ||
 		    !parse_int_field(root["expected_signature"], &b, error, "expected_signature") || b < 0)
 			return fail(error, "invalid delete marker command arguments");
+	} else if (command->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_XL_TIME_CONTROL) {
+		if (!exact_keys(root, { "kind", "command", "bullet_time" }, error, "XL time command") ||
+		    !root["bullet_time"].is_boolean()) return fail(error, "invalid XL time command");
+		a = root["bullet_time"].get<bool>();
 	} else if (command->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY) {
 		if (!exact_keys(root, { "kind", "command", "difficulty" }, error, "difficulty command") ||
 		    !parse_int_field(root["difficulty"], &a, error, "difficulty") || a < 0 || a > 4)
@@ -903,6 +907,9 @@ static bool dispatch_command_json(const input_demo_replay_direct_command_event &
 	} else if (command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_DELETE_MARKER) {
 		(*root)["player_marker_num"] = command.value0;
 		(*root)["expected_signature"] = command.value1;
+	} else if (command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_XL_TIME_CONTROL) {
+		if (command.value0 < 0 || command.value0 > 1 || command.value1 || command.text[0]) return fail(error, "invalid XL time command");
+		(*root)["bullet_time"] = command.value0 != 0;
 	} else if (command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY) {
 		(*root)["difficulty"] = command.value0;
 	} else if (command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT) {
@@ -1536,10 +1543,16 @@ static bool validate_dispatch_version(const input_demo_file_frame &frame, int ve
 			if (parsed.contains("kind") && parsed["kind"] == "direct_command" && parsed.contains("command") &&
 			    (parsed["command"] == "enable_cheats" || parsed["command"] == "grant_all_weapons"))
 				return fail(error, "all-weapons commands require ordered input format 5");
+			if (parsed.contains("kind") && parsed["kind"] == "direct_command" && parsed.contains("command") && parsed["command"] == "xl_time_control")
+				return fail(error, "XL time commands require format 6 environment input");
 		}
 		return true;
 	}
 	if (!frame.rng.has_call_count) return fail(error, "ordered input requires post-input RNG count");
+	for (const auto &operation : frame.dispatch.operations)
+		if (operation.kind == INPUT_DEMO_INPUT_COMMAND &&
+		    operation.command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_XL_TIME_CONTROL && version != 6)
+			return fail(error, "XL time commands require format 6 environment input");
 	ordered_json checked;
 	if (!dispatch_batch_json(frame.dispatch, game, &checked, error)) return false;
 	for (const auto &event : frame.events) {
@@ -1579,15 +1592,15 @@ static bool validate_demo_envelope(const input_demo_file &demo, size_t frame_cou
 	return true;
 }
 
-static bool validate_environment(const input_demo_file_frame &frame, bool tail,
+static bool validate_environment(const std::vector<input_demo_environment_sample> &samples, size_t operation_count, bool tail,
                                  input_demo_environment_clock *previous, std::string *error)
 {
-	if (!frame.has_environment || frame.environment.empty() || frame.environment.size() > INPUT_DEMO_ENVIRONMENT_SAMPLE_MAX)
+	if (samples.empty() || samples.size() > INPUT_DEMO_ENVIRONMENT_SAMPLE_MAX)
 		return fail(error, "missing or excessive environment samples");
 	uint32_t operation = 0;
 	bool boundary = false;
-	for (size_t index = 0; index < frame.environment.size(); ++index) {
-		const auto &sample = frame.environment[index];
+	for (size_t index = 0; index < samples.size(); ++index) {
+		const auto &sample = samples[index];
 		const auto &clock = sample.clock;
 		if (sample.sequence != index || clock.clock_ms < previous->clock_ms ||
 		    clock.clock_ms > INT64_MAX - INT32_MAX || clock.pickup_ms < previous->pickup_ms || clock.pickup_ms > INT32_MAX ||
@@ -1595,13 +1608,13 @@ static bool validate_environment(const input_demo_file_frame &frame, bool tail,
 			return fail(error, "environment sequence or clocks are nonmonotonic or outside bounds");
 		const bool end = sample.consumer == (tail ? "tail_end" : "input_end");
 		if (end) {
-			if (boundary || sample.simulation || sample.operation != frame.dispatch.operations.size())
+			if (boundary || sample.simulation || sample.operation != operation_count)
 				return fail(error, "duplicate or misplaced environment input boundary");
 			boundary = true;
 		} else if (sample.simulation) {
 			if (!boundary || tail || sample.operation)
 				return fail(error, "environment simulation sample is outside its phase");
-		} else if (boundary || !sample.operation || sample.operation < operation || sample.operation > frame.dispatch.operations.size())
+		} else if (boundary || !sample.operation || sample.operation < operation || sample.operation > operation_count)
 			return fail(error, "environment input sample is outside its operation");
 		if (!end && sample.consumer != "slow_frame" && sample.consumer != "slow_off" && sample.consumer != "pickup" &&
 		    sample.consumer != "omega_blocked" && sample.consumer != "omega_fired")
@@ -1614,6 +1627,18 @@ static bool validate_environment(const input_demo_file_frame &frame, bool tail,
 		*previous = clock;
 	}
 	return boundary || fail(error, "environment input boundary is missing");
+}
+
+bool input_demo_environment_to_json(const std::vector<input_demo_environment_sample> &samples,
+                                    size_t operation_count, bool tail, input_demo_environment_clock *previous,
+                                    std::string *line, std::string *error)
+{
+	if (!previous || !line) return fail(error, "missing environment encoding output");
+	auto checked = *previous;
+	if (!validate_environment(samples, operation_count, tail, &checked, error)) return false;
+	*line = environment_json(samples).dump();
+	*previous = checked;
+	return true;
 }
 
 static bool validate_demo_file(const input_demo_file &demo, std::string *error)
@@ -1637,11 +1662,11 @@ static bool validate_demo_file(const input_demo_file &demo, std::string *error)
 		if (!validate_frame_record(demo.frames[i], static_cast<uint32_t>(i), game, error) ||
 		    !validate_dispatch_version(demo.frames[i], demo.metadata.version, game, error) ||
 		    !validate_modal_batch(demo.frames[i].dispatch, false) ||
-		    (demo.metadata.has_environment && !validate_environment(demo.frames[i], false, &environment, error)))
+		    (demo.metadata.has_environment && !validate_environment(demo.frames[i].environment, demo.frames[i].dispatch.operations.size(), false, &environment, error)))
 			return false;
 	}
 	if (demo.has_input_tail && !validate_modal_batch(demo.input_tail.dispatch, true)) return false;
-	if (demo.metadata.has_environment && !validate_environment(demo.input_tail, true, &environment, error)) return false;
+	if (demo.metadata.has_environment && !validate_environment(demo.input_tail.environment, demo.input_tail.dispatch.operations.size(), true, &environment, error)) return false;
 	return true;
 }
 
@@ -2055,6 +2080,13 @@ bool input_demo_file_write_recorded(const char *path, const input_demo_file &env
 		return fail(error, "recorded demo envelope must not contain frames");
 	if (!input_demo_file_bookends(envelope, frame_lines.size(), &prefix, &suffix, error))
 		return false;
+	uint64_t bytes = uint64_t(prefix.size()) + suffix.size();
+	if (!input_demo_file_size_supported(bytes)) return fail(error, "recorded demo exceeds the file limit");
+	for (const auto &line : frame_lines) {
+		if (!input_demo_record_size_supported(line.size())) return fail(error, "recorded frame exceeds the record limit");
+		bytes += uint64_t(line.size()) + 1;
+		if (!input_demo_file_size_supported(bytes)) return fail(error, "recorded demo exceeds the file limit");
+	}
 	std::ofstream out(path, std::ios::out | std::ios::trunc | std::ios::binary);
 	if (!out)
 		return fail(error, std::string("could not open demo file: ") + path);

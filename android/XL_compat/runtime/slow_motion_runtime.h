@@ -1,6 +1,7 @@
 #ifndef XL_SLOW_MOTION_RUNTIME_H
 #define XL_SLOW_MOTION_RUNTIME_H
 #include <stdint.h>
+#include "input_demo_dispatch.h"
 struct object;
 struct vms_vector;
 struct vms_angvec;
@@ -20,6 +21,8 @@ int xl_time_equipment_animate(struct object *actor);
 int xl_time_equipment_draw(struct object *actor);
 uint32_t xl_time_equipment_restore_hint(uint32_t equipment);
 const char *xl_omega_input_demo_error(void);
+void xl_input_demo_observe(const char *consumer, int subject, input_demo_environment_clock *clock);
+int xl_input_demo_saved_environment(input_demo_environment_clock *clock);
 void xl_slow_motion_render_advance(void);
 uint32_t xl_slow_motion_render_clock(void);
 int xl_slow_motion_omega_blocked(void);

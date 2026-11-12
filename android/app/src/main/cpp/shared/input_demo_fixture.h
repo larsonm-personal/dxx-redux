@@ -115,19 +115,13 @@ void input_demo_checkpoint_thief_state_clear(input_demo_checkpoint_thief_state *
 #include "input_demo_result.h"
 
 // Version 6 records external inputs at their consumers, independently of drawing
-struct input_demo_environment_clock {
-	int64_t clock_ms = 0;
-	uint32_t pickup_ms = 0;
-	uint32_t render_frame = 0;
-};
-
 struct input_demo_environment_sample {
 	uint32_t sequence = 0;
 	bool simulation = false;
 	uint32_t operation = 0;
 	std::string consumer;
 	int subject = -1;
-	input_demo_environment_clock clock;
+	input_demo_environment_clock clock{};
 };
 
 #define INPUT_DEMO_ENVIRONMENT_SAMPLE_MAX 16384u
@@ -156,7 +150,7 @@ struct input_demo_metadata {
 	bool has_view_projection = false;
 	input_demo_view_projection view_projection = {};
 	bool has_environment = false;
-	input_demo_environment_clock environment;
+	input_demo_environment_clock environment{};
 
 	input_demo_metadata()
 	    : version(0), build_number(0), level(0), difficulty(0), frame_count(0), has_player_cfg(false)
@@ -238,6 +232,9 @@ struct input_demo_file {
 
 bool input_demo_dispatch_command_from_json(const std::string &text, int game,
                                            input_demo_replay_direct_command_event *command, std::string *error);
+bool input_demo_environment_to_json(const std::vector<input_demo_environment_sample> &samples,
+                                    size_t operation_count, bool tail, input_demo_environment_clock *previous,
+                                    std::string *line, std::string *error);
 bool input_demo_dispatch_operation_to_json(const input_demo_input_operation &operation, int game,
                                            std::string *text, std::string *error);
 

@@ -64,9 +64,16 @@ the source's energy expression within its checked integer bound
   simulation stepping. Exhausted energy and reactor countdown use the source
   transition rules
 
-Input-demo recording/replay still rejects these controls because its real-time
-render-clock timeline is not implemented. The Omega replay limitation remains
-explicit; no rejection guard was removed
+Production input-demo recording/replay remains guarded while the format-6
+environment stream is integrated and qualified. Its codec, recorder/replay
+owners and runtime consumers are implemented, but this does not yet establish
+faithful live capture. See the developing contract in
+[the input-demo README](../../regression_demos/README.md#xl-environmental-timeline-format-6-under-qualification)
+
+Native XL save schema 35 also preserves pending slow-motion and bullet-time
+requests. Restoring between an ordinary key press and its next simulation step
+must not discard that input. The existing rendered clock probe checks actual
+disk save/restore and atomic rejection of malformed pending-request fields
 
 ## Current demonstrations and limits
 

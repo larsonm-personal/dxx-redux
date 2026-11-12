@@ -41,12 +41,14 @@ typedef struct input_demo_recorder_settings {
 	input_demo_rear_view_baseline rear_view_baseline;
 	int has_view_projection;
 	input_demo_view_projection view_projection;
+	int has_environment;
+	input_demo_environment_clock environment;
 } input_demo_recorder_settings;
 #if defined(_MSC_VER)
 #pragma pack(pop)
 #endif
 
-void input_demo_recorder_set_asset_provider(const char *(*provider)(void));
+void input_demo_recorder_set_asset_provider(const char *(*provider)(void) );
 void input_demo_recorder_note_asset(const char *role, const char *sha256, uint64_t size);
 void input_demo_recorder_invalidate_assets(const char *reason);
 void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings);
@@ -70,6 +72,9 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
                                       const input_demo_state_trace_diag *frame_diag,
                                       char *error, size_t error_size);
 int input_demo_recorder_uses_ordered_input(void);
+int input_demo_recorder_uses_environment(void);
+int input_demo_recorder_observe_environment(const char *consumer, int subject, int simulation,
+                                            const input_demo_environment_clock *clock, char *error, size_t error_size);
 int input_demo_recorder_begin_input_batch(uint32_t rng_state, uint32_t rng_count,
                                           int32_t input_frame_time, char *error, size_t error_size);
 int input_demo_recorder_stage_input_reset(int32_t frame_time, char *error, size_t error_size);
@@ -131,6 +136,7 @@ int input_demo_recorder_stage_direct_command_select_weapon_exact(int weapon_clas
                                                                  char *error,
                                                                  size_t error_size);
 int input_demo_recorder_stage_direct_command_enable_cheats(char *error, size_t error_size);
+int input_demo_recorder_stage_direct_command_xl_time_control(int bullet_time, char *error, size_t error_size);
 int input_demo_recorder_stage_direct_command_grant_all_weapons(int grant, char *error, size_t error_size);
 int input_demo_recorder_flush_with_result(const char *demo_path,
                                           const input_demo_result *result,

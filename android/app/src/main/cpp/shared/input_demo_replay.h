@@ -37,6 +37,12 @@ typedef struct input_demo_replay_frame {
 void input_demo_replay_frame_clear(input_demo_replay_frame *frame);
 void input_demo_replay_direct_command_event_clear(input_demo_replay_direct_command_event *event);
 int input_demo_replay_format_version(void);
+int input_demo_replay_get_environment_origin(input_demo_environment_clock *clock);
+int input_demo_replay_peek_environment(input_demo_environment_clock *clock);
+int input_demo_replay_environment_running(void);
+int input_demo_replay_begin_environment(char *error, size_t error_size);
+int input_demo_replay_consume_environment(const char *consumer, int subject, int simulation, uint32_t operation,
+                                          input_demo_environment_clock *clock, char *error, size_t error_size);
 int input_demo_replay_get_input_batch_info(uint32_t frame_index, input_demo_input_batch_info *info,
                                            char *error, size_t error_size);
 int input_demo_replay_get_input_operation(uint32_t frame_index, uint32_t operation_index,
