@@ -2651,6 +2651,43 @@ G1 private-owner repair checkpoint, November 11 at 21:53 PST:
   complete canonical/private and exact-head public gates, then accept G1 and
   continue layer03. Independent untracked review and existing stashes preserved.
 
+G1 public door-observer repair checkpoint, November 11 at 22:00 PST:
+
+- Published private-owner repairf93ad24ac513f726caae7f0831a51c5d46d1fa70, tree
+  7ef63189a9ca8daa45e457fe2c6e91e6fcb41cf4, to the same layer02/PR467. Native
+  stack466 and immediate parent465 unchanged. Canonical local private run still
+  active: preview and stock metadata built, stock route target now compiling.
+  No native cohort conclusion yet. Preserve that process/session and its logs.
+- Prior-head9c81 engine43161277834 completed successfully including ASan.
+  Both direct public-save43161281866 and PR-merge43161265041 then failed the
+  compact door screenshot check. The immutable D1 door_observations differed,
+  while frame count/hashes, SIM count/hash and terminal hash matched. Dependent
+  replay jobs were skipped because of this failure; they supplied no coverage.
+- Root cause is duplicate diagnostic emission introduced by the new ordinary
+  recording observer. public_level_replay_fixture.hpp emitted its own pre-frame
+  door probe, then shared input_demo_record_game_frame emitted it again through
+  input_demo_world_trace_write. Local pre-fix D1 capture has437 records, every
+  duplicated record identical. One copy of each reproduces the immutable219-
+  record SHA b0d4d60ab37ff1ecad2a89ab7b1c777253fefe9642c9dd3d1fc7efbbafc35d07.
+- Remove the fixture's redundant per-frame call; retain explicit restored and
+  terminal observations and the shared ordinary recorder. No filtering or
+  deduplication was added to validation; no oracle or gameplay code changed.
+  Rebuilt Windows D1/D2 test_upstream_compat targets and ran fresh screenshot
+  captures. Both match all six immutable oracle fields and screenshot checks:
+  D1 244frames/219door records/19images, D2 362frames/315door records/26images.
+  D2 door SHA80a12f84351320d7c910ab1173d9964c7f81b58c890189439e7b57896767e23a.
+- Evidence prefix temp/pr464-ci-fixes-20261110/g1-door-; comparison JSON records
+  current sourcef93 plus this one-line fixture change and executable hashes.
+  Cached build stamps are older (D1 04b1ee17f,D2 ab67cd300); these are explicit
+  incremental local comparisons, not new fixture admission/provenance claims.
+  Hosted Linux exact-head capture remains required. Downloaded prior CI reports
+  are under g1-public-save-9c81-ci; no large raw artifact download was needed.
+- Currentf93 direct runs engine43164486453,public-save43164489124,
+  XL43164491695,tooling43164495098 and trusted private43164491258 started before
+  this newly diagnosed fixture repair. Publish this coherent correction and run
+  exact-head validation again. G1 remains open; G2 audit only, no child branch.
+  Work21:54-22:00 PST; remaining G1 approximately1-2h, G2-G7 approximately17.5h.
+
 Per-item handoff template:
 
     Item and status:

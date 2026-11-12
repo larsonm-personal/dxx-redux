@@ -430,7 +430,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	}
 	if (door_lifecycle) require(input_demo_door_trace_write(0, "restored", error, sizeof(error)), error);
 	for (int frame = 0; frame < frame_count; ++frame) {
-		if (door_lifecycle) require(input_demo_door_trace_write(frame, nullptr, error, sizeof(error)), error);
+		// The shared recorder emits the pre-simulation door probe once per frame
 		FrameTime = F1_0 / (flight ? 60 : door_lifecycle ? 20
 		                                                 : 30);
 		Controls = {};
