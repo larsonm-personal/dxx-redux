@@ -44,6 +44,6 @@ struct XlCameraHitSave {
 	int32_t elapsed;
 };
 std::vector<XlCameraHitSave> xl_camera_hit_snapshot();
-bool xl_camera_hit_restore(const std::vector<XlCameraHitSave> &saved, bool apply);
+bool xl_camera_hit_restore(const std::vector<XlCameraHitSave> &saved, bool apply, uint32_t ticks = UINT32_MAX);
 #endif
 #endif

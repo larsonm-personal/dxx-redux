@@ -45,6 +45,19 @@ if(CAMERA_HOG AND NOT camera_coverage STREQUAL "executed")
 endif()
 message("XL_CAMERA_SUBCHECKS: ${camera_coverage}")
 if(CAMERA_HOG)
+    execute_process(
+        COMMAND "${ENGINE}" -projectile-test resume -hogdir "${DATA}" -extra-dir "${OUTPUT}"
+                -userdir "${OUTPUT}/preview-user" -nosound -nomusic
+        RESULT_VARIABLE cold_result
+        OUTPUT_VARIABLE cold_stdout
+        ERROR_VARIABLE cold_stderr
+        TIMEOUT 120)
+    file(WRITE "${OUTPUT}/cold-camera.log" "${cold_stdout}${cold_stderr}")
+    if(NOT cold_result EQUAL 0 OR NOT cold_stdout MATCHES "Cold camera hit continuation:.*passed")
+        message(
+            FATAL_ERROR
+                "Cold camera continuation failed (${cold_result}): ${cold_stdout}${cold_stderr}")
+    endif()
     if(NOT stdout MATCHES "Native static camera: 8 player gates, 44 primary contacts")
         message(FATAL_ERROR "Static camera contact and physics controls were not exercised")
     endif()

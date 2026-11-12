@@ -8,6 +8,7 @@
 #include <vector>
 #include "trigger_state.h"
 #include "slow_motion_save.h"
+#include "slow_motion_runtime.h"
 #include "mission_progress.h"
 #include "object_trigger.h"
 #include "robot_generator.h"
@@ -134,7 +135,10 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 38;
+		block["schema"] = 39;
+		block["cached_clock"] = xl_input_demo_cached_clock();
+		block["camera_motion"] = xl_camera_motion_snapshot();
+		require(xl_camera_motion_restore(block["camera_motion"], false) && block["camera_motion"]["ticks"] <= block["cached_clock"], "Cannot capture XL camera motion clock");
 		// UVs also feed hit-point transparency; preserve earned scrolling on every
 		// face, including faces whose texture has since changed to a static one
 		require(Num_segments > 0 && Num_segments <= MAX_SEGMENTS, "Invalid XL UV segment count");
@@ -258,9 +262,12 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 27u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 38 &&
+		require(saved.is_object() && saved.size() == 29u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 39 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
+		const auto &cached_clock = saved.at("cached_clock");
+		require(cached_clock.is_number_integer() && (!cached_clock.is_number_unsigned() || cached_clock.get<uint64_t>() <= INT32_MAX) && cached_clock.get<int64_t>() >= 0 && cached_clock.get<int64_t>() <= INT32_MAX, "Invalid XL cached clock");
+		require(xl_camera_motion_restore(saved.at("camera_motion"), false) && saved.at("camera_motion").at("ticks") <= cached_clock, "Invalid XL camera motion clock");
 		const auto &uv_rows = saved.at("texture_uv");
 		require(Num_segments > 0 && Num_segments <= MAX_SEGMENTS && uv_rows.is_array() && uv_rows.size() == static_cast<std::size_t>(Num_segments), "Invalid XL UV segment count");
 		std::vector<std::array<int32_t, 48>> texture_uv(Num_segments);
@@ -355,7 +362,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 				        "Invalid XL camera hit field");
 			camera_hits.push_back({ row[0].get<int>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int32_t>() });
 		}
-		require(xl_camera_hit_restore(camera_hits, false), "Invalid XL camera hit identity or repair time");
+		require(xl_camera_hit_restore(camera_hits, false, saved.at("camera_motion").at("ticks").get<uint32_t>()), "Invalid XL camera hit identity or repair time");
 		require(xl_camera_flash_restore(saved.at("camera_flash"), false), "Invalid XL camera flash state");
 		const auto &fluid = saved.at("fluid_scrape_elapsed");
 		require(fluid.is_number_integer() && (!fluid.is_number_unsigned() || fluid.get<std::uint64_t>() <= INT64_MAX) && xl_fluid_restore(fluid.get<std::int64_t>(), 0), "Invalid XL fluid scrape clock");
@@ -483,10 +490,12 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 				}
 		}
 		xl_runtime::restore_weapon_clock(saved.at("weapon_clock"), true);
+		xl_input_demo_restore_cached_clock(cached_clock.get<uint32_t>());
 		Do_appearance_effect = saved.at("appearance_pending").get<bool>();
 		xl_runtime::restore_slow_motion(saved.at("slow_motion"), true);
 		xl_camera_controller_restore(1);
 		xl_camera_attachments_restore(saved.at("camera_attachments"), true);
+		xl_camera_motion_restore(saved.at("camera_motion"), true);
 		xl_static_robot_restore_payloads();
 		xl_camera_hit_restore(camera_hits, true);
 		xl_camera_flash_restore(saved.at("camera_flash"), true);

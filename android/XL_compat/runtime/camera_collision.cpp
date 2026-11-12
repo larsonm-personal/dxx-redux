@@ -191,9 +191,10 @@ std::vector<XlCameraHitSave> xl_camera_hit_snapshot()
 	}
 	return result;
 }
-bool xl_camera_hit_restore(const std::vector<XlCameraHitSave> &saved, bool apply)
+bool xl_camera_hit_restore(const std::vector<XlCameraHitSave> &saved, bool apply, uint32_t ticks)
 {
-	if (!xl_level_extensions_active() || saved.size() > MAX_OBJECTS || xl_camera_controller_ticks() > INT32_MAX) return false;
+	if (ticks == UINT32_MAX) ticks = xl_camera_controller_ticks();
+	if (!xl_level_extensions_active() || saved.size() > MAX_OBJECTS || ticks > INT32_MAX) return false;
 	try {
 		std::vector<ActorHitState> prepared(MAX_OBJECTS);
 		std::size_t row = 0;
@@ -206,7 +207,7 @@ bool xl_camera_hit_restore(const std::vector<XlCameraHitSave> &saved, bool apply
 			auto &state = prepared[owner];
 			state.signature = entry.signature;
 			state.type = entry.type;
-			state.hits.restore_repaired(int32_t(xl_camera_controller_ticks()), entry.elapsed);
+			state.hits.restore_repaired(int32_t(ticks), entry.elapsed);
 		}
 		if (row != saved.size()) return false;
 		if (apply) std::copy(prepared.begin(), prepared.end(), actor_hits.begin());

@@ -403,22 +403,31 @@ without replacing an already parsed recording.
 simulation boundary, using `cached_ms` from that ordered sample. Wall-trigger
 cooldowns consume the same cached integer clock at activation, including input
 dispatch and simulation. The timer owner exposes its last SDL sample without a
-new timer read or conversion from fixed point. Neither consumer uses
+new timer read or conversion from fixed point. XL adds a constant saved-domain
+offset after ordinary disk restoration, so subsequent cached samples advance
+from the saved origin instead of the new process's uptime. Neither consumer uses
 the replay renderer's clock. Detailed XL time observations read the last consumed
 sample, including the checkpoint origin before frame zero; they never sample a
 timer, advance a consumer or update the save clock cache. The detailed trace
 retains time factors/directions/threshold ages, pending controls, weapon markers,
 pickup ages, camera-controller state and pending wall-trigger/cooldown state.
-Save schema 38 retains cooldown activation and its age clamped at the source's
-750 ms threshold. Loading rebases that age onto the current cached clock or
+Save schema 39 retains cooldown activation and its age clamped at the source's
+750 ms threshold. Loading rebases that age onto the restored cached clock or
 admitted replay origin. The unqualified format-6 drafts lacking `cached_ms`
 reject; they are diagnostic evidence, not a released compatibility contract.
-Schema 38 also persists both signed texture coordinates at all four corners of
+The schema also persists both signed texture coordinates at all four corners of
 every segment face. Scrolling UVs feed hit-point transparency as well as drawing;
 restoring only texture IDs changes collision. All rows and coordinates validate
 before any UV is applied. The bounded trailer allowance adds the maximum encoded
 UV array to the prior 8 MiB owner allowance. Older development XL saves lack this
 state and reject; stock save layouts remain unchanged.
+Camera scan angle, direction, per-owner brake time and the cached frame boundary
+are saved separately from attachment identity. All monitor rows validate before
+publication, including agreement between monitors sharing an owner. The pinned
+source's unused `t0` field remains zero. New-level format-6 baselines explicitly
+carry `xl_camera_ticks`, bounded by the header's cached-clock origin. These fields
+preserve ordinary save continuation as well as checkpoint playback; they do not
+add playback-only camera corrections.
 This is still an unqualified developer
 contract; adding these observations does not establish complete XL owner coverage.
 

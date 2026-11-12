@@ -21,6 +21,7 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "slow_motion_runtime.h"
+#include "camera_controller.h"
 #endif
 
 static int record_each_level;
@@ -108,6 +109,7 @@ static void capture_runtime(input_demo_level_start *s)
 #ifdef DXX_XL_DEVELOPER_PROBE
 	s->has_xl_clock = xl_level_extensions_active() != 0;
 	s->xl_last_omega_frame = xl_slow_motion_last_omega_frame();
+	s->xl_camera_ticks = xl_camera_controller_ticks();
 #endif
 #ifdef DXX_BUILD_DESCENT_II
 	s->afterburner_charge = Players[Player_num].afterburner_charge;
@@ -159,7 +161,10 @@ static void apply_runtime(const input_demo_level_start *s)
 	difficulty_restore_history(s->difficulty_changed, s->difficulty_min, s->difficulty_max);
 	matcen_mode_set(s->matcen_mode);
 #ifdef DXX_XL_RUNTIME
-	if (s->has_xl_clock) xl_slow_motion_initial_omega_frame(s->xl_last_omega_frame);
+	if (s->has_xl_clock) {
+		xl_slow_motion_initial_omega_frame(s->xl_last_omega_frame);
+		xl_camera_controller_initial_ticks(s->xl_camera_ticks);
+	}
 #endif
 }
 

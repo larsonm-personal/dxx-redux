@@ -504,10 +504,12 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 	const auto before = projectile_capture();
 	require(before.size() >= 2, "Need multiple projectile owners for malformed-state controls");
 	const auto hits_before = xl_camera_hit_snapshot();
+	const auto motion_before = xl_camera_motion_snapshot();
+	const auto clock_before = xl_input_demo_cached_clock();
 	std::vector<xl_compat::CameraHitState> live_hits(hits_before.size());
 	std::vector<bool> had_hits;
 	for (std::size_t i = 0; i < hits_before.size(); ++i) had_hits.push_back(xl_camera_hit_state_get(hits_before[i].owner, live_hits[i]));
-	for (int variant = 0; variant < 34; ++variant) {
+	for (int variant = 0; variant < 44; ++variant) {
 		auto block = nlohmann::json::parse(encoded.begin() + 16, encoded.end());
 		auto &rows = block["projectiles"];
 		if (variant == 0) rows[0][0] = MAX_OBJECTS;
@@ -545,6 +547,16 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 		if (variant == 31) block["camera_flash"][2][0] = 65;
 		if (variant == 32) block["camera_flash"][2][0] = nlohmann::json::boolean_t(1);
 		if (variant == 33) block["camera_flash"].push_back(0);
+		if (variant == 34) block.erase("cached_clock");
+		if (variant == 35) block["cached_clock"] = -1;
+		if (variant == 36) block["cached_clock"] = UINT64_MAX;
+		if (variant == 37) block["cached_clock"] = 0.5;
+		if (variant == 38) block["cached_clock"] = nlohmann::json::boolean_t(true);
+		if (variant == 39) block.erase("camera_motion");
+		if (variant == 40) block["camera_motion"]["ticks"] = block["cached_clock"].get<uint32_t>() + 1;
+		if (variant == 41) block["camera_motion"]["ticks"] = -1;
+		if (variant == 42) block["camera_motion"]["states"].push_back(nlohmann::json::array());
+		if (variant == 43) block["camera_motion"]["version"] = 2;
 		const auto text = block.dump();
 		xl_compat::Bytes bad(encoded.begin(), encoded.begin() + 16);
 		bad.insert(bad.end(), text.begin(), text.end());
@@ -560,6 +572,8 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 		if (!rejected) std::cerr << "Malformed projectile variant=" << variant << "\n";
 		require(rejected, "Malformed projectile trailer was accepted or changed live history");
 		require(xl_camera_flash_snapshot() == flash_before, "Malformed trailer published flash state");
+		require(xl_camera_motion_snapshot() == motion_before && xl_input_demo_cached_clock() == clock_before,
+		        "Malformed trailer published camera motion or clock state");
 		for (std::size_t i = 0; i < hits_before.size(); ++i) {
 			xl_compat::CameraHitState current;
 			require(xl_camera_hit_state_get(hits_before[i].owner, current) == had_hits[i] &&
@@ -572,15 +586,22 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 	xl_projectile_clear();
 	file = PHYSFS_openRead("projectile-state.bin");
 	require(file && xl_wall_trigger_read(file) && PHYSFS_close(file) && projectile_same(before, projectile_capture()), "Valid projectile trailer did not recover");
-	std::cout << "Thirty-four malformed projectile/camera hit/flash trailers rejected before table publication; valid recovery passed\n";
+	std::cout << "Forty-four malformed projectile/camera hit/flash/clock trailers rejected before table publication; valid recovery passed\n";
 }
 
-static void camera_hit_disk_controls()
+static nlohmann::json camera_hit_continuation_snapshot()
+{
+	auto hits = nlohmann::json::array();
+	for (const auto &hit : xl_camera_hit_snapshot()) hits.push_back({ hit.owner, hit.signature, hit.type, hit.elapsed });
+	return { { "motion", xl_camera_motion_snapshot() }, { "cached_clock", xl_input_demo_cached_clock() }, { "hits", hits }, { "flash", xl_camera_flash_snapshot() }, { "children", camera_children_capture() } };
+}
+static void camera_hit_disk_controls(const std::filesystem::path &root)
 {
 	const int owner = int(ConsoleObject - Objects);
 	xl_compat::CameraHitState earned;
 	require(xl_camera_hit_state_get(owner, earned) && earned.repaired > 0, "Full camera hit save requires earned physical state");
 	SDL_Delay(2);
+	timer_update();
 	xl_camera_controller_begin_frame();
 	const auto saved_ticks = int32_t(xl_camera_controller_ticks());
 	const int32_t elapsed = earned.repaired_elapsed(saved_ticks);
@@ -599,20 +620,26 @@ static void camera_hit_disk_controls()
 	require(elapsed > 0, "Camera hit disk save did not exercise elapsed repair time");
 	char save[] = "camera-hits.sav", description[] = "XL camera hit state", error[256]{};
 	stop_time();
+	const auto saved_continuation = camera_hit_continuation_snapshot();
 	require(state_save_all_sub(save, description), "Cannot save earned camera hit state");
+	std::ofstream receipt(root / "camera-hit-continuation.json");
+	receipt << saved_continuation.dump(2) << '\n';
+	receipt.close();
+	require(bool(receipt), "Cannot write camera hit cold continuation receipt");
 	require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active() &&
 	            xl_camera_hit_snapshot().empty() && !xl_camera_hit_state_get(owner, earned) && xl_camera_flash_snapshot().is_null() && !xl_camera_flash_frame(),
 	        "Camera hit state leaked into stock");
 	SDL_Delay(2);
+	timer_update();
 	xl_camera_controller_begin_frame();
-	const auto restored_ticks = int32_t(xl_camera_controller_ticks());
-	require(restored_ticks > saved_ticks, "Camera hit disk restore did not exercise clock rebasing");
+	require(int32_t(xl_camera_controller_ticks()) > saved_ticks, "Camera hit disk restore did not advance the host clock");
 	require(state_restore_all_sub(save, 0), "Cannot restore camera hit save through stock");
+	require(xl_camera_controller_ticks() == unsigned(saved_ticks), "Camera disk restore lost its cached frame clock");
 	require(xl_camera_flash_snapshot() == saved_flash, "Full disk restore lost impact-earned flash delay/color");
 	require(camera_children_capture() == saved_children, "Full disk restore lost smart child ownership, target or motion");
 	for (const auto &child : saved_children) require(!xl_object_birth_order(child[0]), "Restored smart child retained omitted source creation order");
 	xl_compat::CameraHitState restored;
-	require(xl_camera_hit_state_get(owner, restored) && restored.repaired == int64_t(restored_ticks) - elapsed &&
+	require(xl_camera_hit_state_get(owner, restored) && restored.repaired == int64_t(saved_ticks) - elapsed &&
 	            !restored.next && !restored.shield_time && !restored.critical_time &&
 	            restored.points == decltype(restored.points){} && restored.times == decltype(restored.times){},
 	        "Full camera hit restore lost elapsed repair time or retained omitted hit history");
@@ -627,6 +654,28 @@ static void camera_hit_disk_controls()
 	std::cout << "Physics-earned player/robot camera hit state disk restore through stock passed\n";
 }
 
+static void camera_hit_cold_controls(const std::filesystem::path &root)
+{
+	nlohmann::json expected;
+	std::ifstream receipt(root / "camera-hit-continuation.json");
+	receipt >> expected;
+	char save[] = "camera-hits.sav";
+	require(state_restore_all_sub(save, 0), "Cannot cold restore camera hit save");
+	const auto restored = camera_hit_continuation_snapshot();
+	std::ofstream actual(root / "camera-hit-cold.json");
+	actual << restored.dump(2) << '\n';
+	actual.close();
+	require(bool(actual), "Cannot write cold camera state receipt");
+	require(restored == expected, "Cold camera hit restore changed clocks, elapsed repair, flash or children");
+	const auto cached = xl_input_demo_cached_clock();
+	SDL_Delay(2);
+	timer_update();
+	xl_camera_controller_begin_frame();
+	require(xl_camera_controller_ticks() > cached && xl_camera_controller_ticks() == xl_input_demo_cached_clock(),
+	        "Cold camera continuation did not advance in the saved clock domain");
+	std::cout << "Cold camera hit continuation: cached clocks, repair ages, flash, children and next frame passed\n";
+}
+
 static int projectile_test(int argc, char **argv)
 {
 	std::setvbuf(stdout, nullptr, _IONBF, 0);
@@ -635,6 +684,12 @@ static int projectile_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir"));
+		if (!std::strcmp(find_arg_value(argc, argv, "-projectile-test"), "resume")) {
+			std::strcpy(Players[Player_num].callsign, "XLTest");
+			input_demo_set_skip_level_intro(1);
+			camera_hit_cold_controls(root);
+			return 0;
+		}
 		require(load_base_mission("neptunxl", error, sizeof(error)), error);
 		const bool vertigo = std::filesystem::exists(root / "data/d2x.ham");
 		if (vertigo) require(N_robot_types == 78 && Robot_info[68].model_num == 168 && Robot_info[76].model_num >= 0,
@@ -705,7 +760,7 @@ static int projectile_test(int argc, char **argv)
 		Game_suspended = SUSP_ROBOTS;
 		const bool camera_controls = camera_weapon_controls(root);
 		projectile_static_robot_controls(true);
-		if (camera_controls) camera_hit_disk_controls();
+		if (camera_controls) camera_hit_disk_controls(root);
 		else std::cout << "Camera disk controls not run: optional original XL addon absent\n";
 		std::cout << "XL_CAMERA_SUBCHECKS: " << (camera_controls ? "executed" : "not_run_missing_addon") << '\n';
 		StartNewGame(1);

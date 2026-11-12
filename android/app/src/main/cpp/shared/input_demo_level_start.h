@@ -87,6 +87,7 @@ typedef struct input_demo_level_start {
 	/* XL preserves its last Omega render marker across genuine level loads */
 	uint32_t has_xl_clock;
 	uint32_t xl_last_omega_frame;
+	uint32_t xl_camera_ticks;
 } input_demo_level_start;
 #pragma pack(pop)
 

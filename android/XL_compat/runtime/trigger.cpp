@@ -50,7 +50,7 @@ std::array<bool, MAX_TRIGGERS> activated{};
 std::int64_t cooldown_clock()
 {
 	input_demo_environment_clock clock{};
-	return input_demo_replay_peek_environment(&clock) ? clock.cached_ms : timer_query_milliseconds();
+	return input_demo_replay_peek_environment(&clock) ? clock.cached_ms : xl_input_demo_cached_clock();
 }
 struct ScheduledTrigger {
 	bool operated = false;

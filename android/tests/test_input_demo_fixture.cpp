@@ -756,18 +756,28 @@ static int expect_level_start_metadata(void)
 		xl.game = "d2";
 		fill_xl_startup_settings(xl);
 		xl.has_environment = true;
-		xl.environment = { 26, 0, 0, 0 };
+		xl.environment = { 26, 0, 0, 1234 };
 		xl.level_start.has_xl_clock = 1;
 		xl.level_start.xl_last_omega_frame = UINT32_MAX;
+		xl.level_start.xl_camera_ticks = 1230;
 		xl.level_start.flags = 32768 | 65536;
 		std::string encoded;
 		if (!input_demo_metadata_to_header_line(xl, &encoded, &error) ||
 		    !input_demo_metadata_parse_header_line(encoded, &parsed, &error) ||
 		    !parsed.level_start.has_xl_clock || parsed.level_start.xl_last_omega_frame != UINT32_MAX ||
+		    parsed.level_start.xl_camera_ticks != 1230 ||
 		    parsed.level_start.flags != xl.level_start.flags) return report_failure_string("XL initial clock round trip: " + error);
 		auto missing_clock = nlohmann::ordered_json::parse(encoded);
 		missing_clock["level_start"].erase("xl_last_omega_frame");
 		if (input_demo_metadata_parse_header_line(missing_clock.dump(), &parsed, &error)) return report_failure("XL initial clock omission accepted");
+		missing_clock = nlohmann::ordered_json::parse(encoded);
+		missing_clock["level_start"].erase("xl_camera_ticks");
+		if (input_demo_metadata_parse_header_line(missing_clock.dump(), &parsed, &error)) return report_failure("XL camera clock omission accepted");
+		for (const auto &bad : nlohmann::json::array({ -1, 1235, UINT64_MAX, 0.5, true })) {
+			auto invalid_clock = nlohmann::ordered_json::parse(encoded);
+			invalid_clock["level_start"]["xl_camera_ticks"] = bad;
+			if (input_demo_metadata_parse_header_line(invalid_clock.dump(), &parsed, &error)) return report_failure("Invalid XL camera clock accepted");
+		}
 		xl.version = 5;
 		xl.has_environment = false;
 		if (input_demo_metadata_to_header_line(xl, &encoded, &error)) return report_failure("legacy level start accepted XL clock state");

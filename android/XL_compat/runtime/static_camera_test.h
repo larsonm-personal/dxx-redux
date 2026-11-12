@@ -78,6 +78,7 @@ static void static_camera_native_controls(object &camera)
 	xl_camera_hit_state_created(int(ConsoleObject - Objects));
 	const auto ticks = SDL_GetTicks();
 	if (ticks < 500) SDL_Delay(500 - ticks);
+	timer_update();
 	xl_camera_controller_begin_frame();
 	do_physics_sim(ConsoleObject);
 	xl_compat::CameraHitState hit;

@@ -45,11 +45,20 @@ int64_t last_missile;
 uint32_t render_clock, last_omega_frame;
 input_demo_environment_clock saved_environment{};
 bool saved_environment_valid = false;
+// Keep the cached gameplay clock in its saved domain across cold continuation
+// Level changes preserve this process clock, just as they preserve SDL uptime
+int64_t cached_clock_offset = 0;
+uint32_t cached_clock_now()
+{
+	const auto now = int64_t(timer_query_milliseconds()) + cached_clock_offset;
+	if (now < 0 || now > INT32_MAX) Error("XL cached gameplay clock exceeds qualified signed range");
+	return uint32_t(now);
+}
 input_demo_environment_clock environment_now()
 {
 	input_demo_environment_clock clock{};
 	if (input_demo_replay_peek_environment(&clock)) return clock;
-	return { clock_ms(), SDL_GetTicks(), render_clock, timer_query_milliseconds() };
+	return { clock_ms(), SDL_GetTicks(), render_clock, cached_clock_now() };
 }
 input_demo_environment_clock observe(const char *consumer, int subject = -1)
 {
@@ -67,7 +76,22 @@ extern "C" void xl_input_demo_observe(const char *consumer, int subject, input_d
 	*clock = environment_now();
 	if (!input_demo_observe_environment(consumer, subject, clock)) Error("XL input-demo environment: %s", consumer);
 	// This counter is an environmental input; actual replay draws do not advance it
-	if (input_demo_replay_format_version() == 6) render_clock = clock->render_frame;
+	if (input_demo_replay_format_version() == 6) {
+		render_clock = clock->render_frame;
+		// Ending playback can return to ordinary play in the last consumed domain
+		cached_clock_offset = int64_t(clock->cached_ms) - timer_query_milliseconds();
+	}
+}
+extern "C" uint32_t xl_input_demo_cached_clock(void)
+{
+	input_demo_environment_clock clock{};
+	return input_demo_replay_peek_environment(&clock) ? clock.cached_ms : cached_clock_now();
+}
+extern "C" int xl_input_demo_restore_cached_clock(uint32_t ticks)
+{
+	if (ticks > INT32_MAX) return 0;
+	cached_clock_offset = int64_t(ticks) - timer_query_milliseconds();
+	return 1;
 }
 extern "C" int xl_input_demo_saved_environment(input_demo_environment_clock *clock)
 {

@@ -1523,6 +1523,102 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   credited only once accepted. No Android interruption, external blocker or
   gameplay-closure claim.
 
+### 2026-11-11 14:21 PST - G1 camera motion and cached-clock continuation
+
+- G1 remains active and unaccepted. Layer02 remains local on
+  xl_gameplay_20261111_02_timeline, parent e0da21fac888ed1fbc76e88ddcf56d0a59b34892
+  (tree46e84f2b62d7ff02a5ebe16ba43d7c203a22dd91). This tested change is being
+  committed as "Preserve XL camera motion and cached clocks across saves";
+  resulting commit identity is reported in the handoff. No new PR, push or CI
+  result is claimed for layer02. G0 PR465 acceptance remains the earlier entry.
+- Save schema39 adds the logical cached-clock origin and every camera monitor's
+  scan angle/direction, pinned-zero t0 and shared-owner brake time. Validation
+  rejects malformed rows, owner/monitor mismatches and inconsistent shared-owner
+  brake times before publication. Restore applies motion after authored payload
+  and attachment restoration, which previously reset the scan. New-level v6
+  metadata carries xl_camera_ticks, bounded by its cached environment origin.
+- The existing environment owner adds a constant offset to the stock cached
+  timer after disk restoration; wall-trigger cooldowns and camera frames use
+  that domain. The offset survives level transitions. Accepted replay samples
+  update the domain for subsequent ordinary play. The stock timer is unchanged.
+  Hit-repair validation uses the saved frame clock, avoiding cold-process epoch
+  errors. A real cold-process test initially found an extra 12 ms from the final
+  reset_time during load. The ordinary state restore now anchors the saved clock
+  after that reset, excluding load finalization from elapsed gameplay time.
+- Existing projectile/camera owners now compare 5400 resumed native object
+  frames across nine orientation/behavior profiles and reject 153 malformed
+  motion snapshots atomically. Existing source receipts still cover 10800
+  controller frames, plus the retained contact/rotation/motion/hitbox references.
+  Trailer controls expanded from34 to44; new cached-clock/motion corruption must
+  leave live clocks, hit histories, flash and projectile state unchanged.
+  Manual native frame drivers now call timer_update before camera_begin_frame,
+  matching the ordinary producer of the cached clock.
+- The same existing CMake projectile owner runs a second process against its
+  physics-earned disk save, comparing cached/frame clocks, all hit repair ages,
+  flash and six smart-child states, then advances the next cached frame. This
+  passes on Windows and Linux with the original addon and Vertigo present:
+  camera subchecks explicitly executed, no optional-asset omission. Motion
+  continuation uses the existing constructed native bindings/two monitors per
+  owner; full cold continuation of an authored moving camera in an original
+  mission still needs its own G2 witness. These are assisted mechanism controls,
+  not connected campaign progress.
+- Windows developer desktop/metadata builds pass. D1 and D2 fixture/recorder/
+  replay CTests each pass3/3, zero skips. Windows changing-light, invalid-row and
+  boss save owners pass3/3, including retained UV cold restores. Linux developer
+  desktop/metadata builds and final incremental state rebuild pass; codec3/3
+  and those save owners3/3 pass, zero skips. Both full native camera CMake runs
+  pass their pinned source comparisons and cold process. Prior unchanged MSVC
+  int/bool and GCC string-literal warnings remain; no new warning was found.
+  Scoped quality, git diff check, automation catalog (99 JSON/315 PS/547 support)
+  and runner catalog (428 top-level/547 support) pass.
+- Windows EXE SHA256
+  24a0e8c683575528cffb1c5e69becdb2c9a54f6b659d6219354f4a4b745be24a;
+  metadata88c259a4242b197df18da45b7eccdcb619d62cab553810ca429fa9cd1d33cab7.
+  Linux desktop e12bcc4114e53fa914c421e131e72fe0350651cb3f468e182a494096f1227c67;
+  metadata32f0411bc85243a0574142aef9697097a18bc83b3e8480fca47a5b1b4a60c2a8.
+  Root-bound caches remain the prior Windows build-d2-reference/build-d1/build-xl
+  and Linux /var/tmp/dxx-pr464-20261111/private preview/contracts caches.
+- Native assets rehashed unchanged: Neptune4016618d24238803135dabf2b33daee2a2c34a670c3f016d94ae4639c8887303,
+  addon df69c62aad949f2d92bc1bbea4b597623cd29d0a0f594cdcc3d66568d6ce482a,
+  Vertigo faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f.
+  The initial test command chose the different e7351d66 addon variant and failed
+  the unchanged hash gate; rerun used the preserved pinned original. Reference
+  remains2576a98b5de310e3ac7c9777df2677d1627b8bae, especially cameras.cpp Rotate
+  and the existing extracted source references. No authentic bytes changed.
+- Fresh capture7 FAILED its unchanged45-second clean-exit deadline, despite all
+  180 frames, complete proof and demo/terminal traces being written. No build
+  overlapped this capture, so prior build contention does not explain this run.
+  It is preserved as failed evidence, not retried unchanged or qualified.
+  Original Warp5 robot117/signature118/id7: shields16384000 ->6844288 while
+  Omega selected ->3419776; charge65536 ->17488 ->42058. Warmup66 normal frames,
+  one pre-record pose assist and one inventory assist, zero during recording,
+  no kill. Demo d2_wshock20_level5_20261111_141718.dximdemo SHA256
+  49794e328bc56cdfe6955956cfe156263c1fa622c882439617278b7051e32956.
+- Diagnostic replay4 from that failed capture has verified assets, strict
+  terminal PASS and clean exit. Detailed comparison:180 frame checks PASS,
+  1059 SIM events PASS; zero camera differences across184 world/boundary records
+  (the previous two camera clock paths are fixed), UVs remain equal. Objects
+  still fail3 paths: FX calls/state and robot chatter. World still fails11 paths:
+  restored FrameTime1092/0 and SIM calls453/0, chatter timers for objects200/117
+  at frames163/177 and terminal, and terminal FX state/count. No field was
+  filtered. G1 and the recording remain unqualified.
+- Evidence under protected temp/pr464-ci-fixes-20261110: g1-camera-* build,
+  CTest, quality/catalog logs and Windows/Linux native continuation directories;
+  g1-live-omega-capture-7, g1-omega-replay-4 and its full comparison JSON. WSL
+  responded normally on entry; no restart was needed or performed. Android
+  devices were not interrupted. Free space about47 GiB; no cleanup beyond the
+  required retention previews (zero eligible) occurred in this item.
+- Actual work approximately13:56-14:21 PST. Revised G1 estimate remains6-10 h;
+  G2-G7 roughly17.5 h, crediting overlapping prerequisites only once accepted.
+  Next: commit this bounded repair, then audit/preserve ordinary checkpoint
+  FrameTime and SIM counter origins. d2/main/state.c resets SIM calls after
+  restoring the seed; world trace retains FrameTime and object trace retains
+  frame_time. Audit FX/chatter separately: ai2.c lines1553-1596 reads/writes
+  next_misc_sound_time for sound gates, but complete simulation independence
+  still requires all consumers/FX stream users and counterfactual tests.
+  Also investigate capture deadline cost before attempting qualification; do
+  not extend deadlines, hide state differences or bless the failed capture.
+
 Per-item handoff template:
 
     Item and status:

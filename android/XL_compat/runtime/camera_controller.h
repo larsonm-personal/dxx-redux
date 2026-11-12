@@ -23,6 +23,7 @@ void xl_camera_controller_clear(void);
 void xl_camera_controller_bind_level(void);
 void xl_camera_controller_begin_frame(void);
 unsigned xl_camera_controller_ticks(void);
+void xl_camera_controller_initial_ticks(unsigned ticks);
 void xl_camera_controller_frame(int owner);
 int xl_camera_controller_restore(int apply);
 #ifdef __cplusplus

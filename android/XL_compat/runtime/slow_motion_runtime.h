@@ -24,6 +24,8 @@ const char *xl_omega_input_demo_error(void);
 void xl_input_demo_observe(const char *consumer, int subject, input_demo_environment_clock *clock);
 int xl_input_demo_saved_environment(input_demo_environment_clock *clock);
 void xl_input_demo_current_environment(input_demo_environment_clock *clock);
+uint32_t xl_input_demo_cached_clock(void);
+int xl_input_demo_restore_cached_clock(uint32_t ticks);
 uint32_t xl_slow_motion_last_omega_frame(void);
 void xl_slow_motion_initial_omega_frame(uint32_t frame);
 void xl_slow_motion_render_advance(void);
