@@ -572,6 +572,13 @@ def main():
     if any(not value.exists() for value in parameters.values()):
         raise ValueError("Required XL native fixture or executable missing")
     mark_stage(work, "contracts-configure", owner_started)
+    # This owner has retail inputs, but not the complete XL image/sound resources
+    # or rendered desktop engine needed by the optional original Warp actor probe
+    print(
+        "Coverage exclusion: rendered Warp 5 warm/cold actor checks NOT RUN; "
+        "this owner does not stage complete XL resources or XL_WARP_ENGINE",
+        flush=True,
+    )
     run(
         [
             "cmake",
@@ -583,6 +590,9 @@ def main():
             "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
             "-DXL_FOG_GPU_TESTS=" + ("ON" if args.fast else "OFF"),
             "-DXL_AUDIO_MIXER_TESTS=" + ("ON" if args.fast else "OFF"),
+            "-DXL_WARP_HOG=",
+            "-DXL_WARP_DATA=",
+            "-DXL_WARP_ENGINE=",
             *["-D" + key + "=" + str(value) for key, value in parameters.items()],
         ]
     )

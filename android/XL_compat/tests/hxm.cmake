@@ -4,6 +4,20 @@ endif()
 if(NOT MODE STREQUAL "dispatch" AND NOT MODE STREQUAL "signed27")
     message(FATAL_ERROR "Unknown HXM test mode")
 endif()
+if(MODE STREQUAL "dispatch")
+    if(WARP_HOG OR WARP_DATA OR WARP_ENGINE)
+        if(NOT (WARP_HOG AND WARP_DATA AND WARP_ENGINE))
+            message(
+                FATAL_ERROR
+                    "Warp 5 actor coverage requires WARP_HOG, WARP_DATA and WARP_ENGINE together")
+        endif()
+    else()
+        message(
+            WARNING
+                "Warp 5 actor coverage NOT RUN: supply XL_WARP_HOG, XL_WARP_DATA and XL_WARP_ENGINE; a passing xl_hxm_native alone does not cover Warp 5"
+        )
+    endif()
+endif()
 file(SHA256 "${HOG}" original_hash)
 if(NOT original_hash STREQUAL "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db")
     message(FATAL_ERROR "HXM controls require original Apocalyptic Factor XL")
@@ -99,6 +113,7 @@ if(WARP_HOG AND WARP_DATA AND WARP_ENGINE AND MODE STREQUAL "dispatch")
         else()
             set(proof_mode cold)
         endif()
+        file(REMOVE "${OUTPUT}/${warp_mode}.json")
         execute_process(
             COMMAND
                 "${WARP_ENGINE}" -mission wshock20 -level 5 -hogdir "${WARP_DATA}" -extra-dir

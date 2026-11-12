@@ -21,19 +21,13 @@ def require(condition, message):
 
 def check_workflow(contents):
     require("  developer-compile:\n" in contents, "developer compile job missing")
-    job = contents.split("  developer-compile:\n", 1)[1].split(
-        "  developer-release-compile:\n", 1
-    )[0]
+    job = contents.split("  developer-compile:\n", 1)[1].split("  developer-release-compile:\n", 1)[0]
     require("    needs: stack\n" in job, "stack gate missing")
     require("if: needs.stack.outputs.run == 'true'" in job, "XL profile gate missing")
     require("runs-on: ubuntu-24.04" in job, "hosted Linux runner missing")
     require("timeout-minutes: 45" in job, "job timeout missing")
-    require(
-        "permissions:\n  contents: read" in contents, "read-only permissions missing"
-    )
-    require(
-        "persist-credentials: false" in job, "checkout credentials must not persist"
-    )
+    require("permissions:\n  contents: read" in contents, "read-only permissions missing")
+    require("persist-credentials: false" in job, "checkout credentials must not persist")
     require(
         job.count("persist-credentials: false") == 2,
         "both checkouts must drop credentials",
@@ -49,30 +43,24 @@ def check_workflow(contents):
         "executed workflow SHA not checked",
     )
     require(
-        'test "$(sha256sum .github/workflows/xl-compat.yml | cut -d\' \' -f1)" = "$EXECUTED_WORKFLOW_HASH"'
-        in job,
+        'test "$(sha256sum .github/workflows/xl-compat.yml | cut -d\' \' -f1)" = "$EXECUTED_WORKFLOW_HASH"' in job,
         "merge-ref and head workflow content not compared",
     )
     head = "${{ github.event.pull_request.head.sha || github.sha }}"
-    require(
-        job.count(head) == 3, "candidate head must bind checkout, receipt and artifact"
-    )
-    require(
-        'test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"' in job, "head receipt missing"
-    )
+    require(job.count(head) == 3, "candidate head must bind checkout, receipt and artifact")
+    require('test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"' in job, "head receipt missing")
     require("-DDXX_XL_DEVELOPER_TESTS=ON" in job, "developer option missing")
     require("-DCMAKE_BUILD_TYPE=Debug" in job, "debug build option missing")
     require("test_probe_artifact.py" in job, "artifact policy tests missing")
     require("-DOPENGL=ON" in job, "production renderer option missing")
     require("-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" in job, "compile receipt missing")
-    require("--parallel 2 --target " + TARGET in job, "bounded target build missing")
     require(
-        "--verify-build build-xl-developer-ci" in job, "build receipt check missing"
+        "--parallel 2 --target " + TARGET + " dxx-redux-d2\n" in job,
+        "bounded metadata and desktop target build missing",
     )
+    require("--verify-build build-xl-developer-ci" in job, "build receipt check missing")
     require(
-        "libphysfs-dev" in job
-        and "libsdl-mixer1.2-dev" in job
-        and "libglew-dev" in job,
+        "libphysfs-dev" in job and "libsdl-mixer1.2-dev" in job and "libglew-dev" in job,
         "production dependencies missing",
     )
     forbidden = (
@@ -89,8 +77,7 @@ def check_workflow(contents):
         "runtime, fixture, secret or artifact route in job",
     )
     require(
-        job.count("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02")
-        == 1,
+        job.count("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02") == 1,
         "pinned official artifact uploader missing",
     )
     for token in (
@@ -151,12 +138,9 @@ def check_release_workflow(contents):
         "libglew-dev",
     ):
         require(token in job, f"Release policy missing: {token}")
+    require(job.count("persist-credentials: false") == 2, "Release checkout credentials")
     require(
-        job.count("persist-credentials: false") == 2, "Release checkout credentials"
-    )
-    require(
-        job.count("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02")
-        == 1,
+        job.count("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02") == 1,
         "Release uploader missing",
     )
     require(
@@ -186,8 +170,7 @@ def verify_build(build, mode="Debug"):
         ("CMAKE_EXPORT_COMPILE_COMMANDS", "(?:BOOL|UNINITIALIZED)", "ON"),
     ):
         require(
-            re.search(rf"^{key}:{cache_type}={value}$", cache, re.MULTILINE)
-            is not None,
+            re.search(rf"^{key}:{cache_type}={value}$", cache, re.MULTILINE) is not None,
             f"{key} must be {value}",
         )
     if mode == "Release":
@@ -201,9 +184,7 @@ def verify_build(build, mode="Debug"):
             "Release OpenGL preference must be LEGACY",
         )
     commands = json.loads((build / "compile_commands.json").read_text())
-    entries = [
-        entry for entry in commands if Path(entry["file"]).as_posix().endswith(SOURCE)
-    ]
+    entries = [entry for entry in commands if Path(entry["file"]).as_posix().endswith(SOURCE)]
     require(len(entries) == 1, "expected exactly one lifecycle source compile")
     command = entries[0]["command"]
     require(

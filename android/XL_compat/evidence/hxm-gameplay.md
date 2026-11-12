@@ -162,3 +162,14 @@ cold frames render without GL error. This is a short controlled actor witness,
 not a whole-level traversal. The headless HXM executable cannot load this
 fog/skybox level because it has no active OpenGL renderer; the rendered witness
 therefore runs in the normal desktop executable.
+
+The canonical `run_xl_originals.py --fast` owner does not execute this optional
+Warp witness: its staged retail fixtures lack the complete XL image/sound
+resources, and it builds the headless engine. It prints this exclusion explicitly
+and clears the three optional Warp cache inputs so an old local configuration
+cannot change its coverage. A passing `xl_hxm_native` in that owner proves the
+Apocalyptic Factor controls above, not Warp 5. The HXM script also reports absent
+Warp inputs and rejects partial configuration. To run the witness locally, supply
+all of `XL_WARP_HOG`, `XL_WARP_DATA` and `XL_WARP_ENGINE` and use a working OpenGL
+display. CI coverage of the rendered witness still requires staging those
+authentic resources and selecting the rendered engine.

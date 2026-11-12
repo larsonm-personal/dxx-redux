@@ -128,8 +128,16 @@ void lightning_gpu_probe(const char *operation)
 	}
 	require(!std::strcmp(operation, "gpu") && lightning_probe_image && lightning_probe_glare && gl_initialized, "Lightning GPU control lacks its original corona/glare");
 	require(glGetError() == GL_NO_ERROR, "Lightning GPU control requires a clean context");
+	const auto started = std::chrono::steady_clock::now();
+	const auto progress = [&](const char *stage) {
+		const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started).count();
+		debug_log_force(DLOG_PROFILING, "XL GPU control %s after %lld ms", stage, static_cast<long long>(milliseconds));
+	};
+	progress("start");
 	const unsigned camera_scene_cases = camera_scene_device_controls();
+	progress("camera scene");
 	const unsigned camera_monitor_cases = camera_monitor_device_controls();
+	progress("camera monitor");
 	std::vector<unsigned char> pixels(64 * 64 * 4);
 	unsigned changed = 0;
 	unsigned line_cases = 0, bitmap_cases = 0, outline_cases = 0, wall_cases = 0, shield_cases = 0, original_shield_cases = 0, camera_target_cases = 0, camera_native_pass_cases = 0;
@@ -185,12 +193,19 @@ void lightning_gpu_probe(const char *operation)
 		} native;
 		require(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Lightning GPU control target is incomplete");
 		line_cases = lightning_line_device_controls();
+		progress("lines");
 		bitmap_cases = sprite_bitmap_device_controls();
+		progress("bitmaps");
 		wall_cases = additive_wall_device_controls();
+		progress("walls");
 		camera_target_cases = camera_target_device_controls(shield_pixels);
+		progress("camera target");
 		camera_native_pass_cases = camera_native_pass_controls(shield_pixels);
+		progress("camera native pass");
 		shield_cases = shield_device_controls(shield_pixels, &shield_overlap_rounding);
+		progress("analytical shields");
 		original_shield_cases = shield_original_device_controls(lightning_probe_shields, lightning_probe_shield_addons, lightning_probe_shield_ticks, shield_pixels);
+		progress("original shields");
 		lightning_probe_shield_ticks += 1000;
 		glViewport(3, 5, 48, 43);
 		const GLfloat projection[16] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -5001.f / 4999.f, -1, 0, 0, -10000.f / 4999.f, 0 };
@@ -273,6 +288,7 @@ void lightning_gpu_probe(const char *operation)
 	pixels.insert(pixels.end(), shield_pixels.begin(), shield_pixels.end());
 	if (!lightning_probe_pixels.empty()) require(pixels == lightning_probe_pixels, "Lightning/shield pixels changed across graphics context recreation");
 	lightning_probe_pixels = std::move(pixels);
+	progress("complete");
 	++checks;
 	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "shield_cases", shield_cases }, { "original_shield_cases", original_shield_cases }, { "camera_target_cases", camera_target_cases }, { "camera_native_pass_cases", camera_native_pass_cases }, { "camera_scene_cases", camera_scene_cases }, { "camera_monitor_cases", camera_monitor_cases }, { "shield_overlap_rounding", shield_overlap_rounding }, { "wall_cases", wall_cases }, { "outline_cases", outline_cases }, { "line_cases", line_cases }, { "sprite_cases", 1 }, { "bitmap_cases", bitmap_cases }, { "glare_width", lightning_probe_glare->bitmap.width }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
 }

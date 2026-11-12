@@ -26,6 +26,7 @@
 #include "../inventory.h"
 #include "../particle_render.h"
 #include <nlohmann/json.hpp>
+#include <chrono>
 #include <cstring>
 #include <stdexcept>
 #include <string>
@@ -65,6 +66,7 @@ extern "C" {
 #include "automap.h"
 #include "render_gameplay_view.h"
 #include "rng_shared.h"
+#include "android_log.h"
 #include "../../../d2/3d/globvars.h"
 #include "robot.h"
 void ogl_loadbmtexture(grs_bitmap *bitmap);

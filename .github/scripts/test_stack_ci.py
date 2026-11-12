@@ -219,6 +219,25 @@ class StackPolicyTests(unittest.TestCase):
         pr["stack"]["size"] = 3
         self.assertFalse(stack_ci.refresh(12, "owner/repo", fetch, "extended", pr))
 
+    def test_runtime_and_importer_changes_select_extended_sample(self):
+        pr = {"number": 12, "state": "open", "head": {"sha": "b" * 40}, "base": {"sha": "a" * 40}}
+        for path in (
+            "android/XL_compat/runtime/boss_spawn.cpp",
+            "android/app/src/main/java/com/dxxredux/app/ResourceModCatalog.kt",
+            "android/app/src/test/java/com/dxxredux/app/ResourceModStoreTest.kt",
+            "android/app/src/androidTest/java/com/dxxredux/app/XlAddonPickerChecks.kt",
+            "android/app/src/main/cpp/shared/route_confirmation_desktop.cpp",
+            "android/tests/test_xl_addon_import.ps1",
+            "android/helpers/run_test.ps1",
+        ):
+            for file in ({"filename": path}, {"filename": "removed.txt", "previous_filename": path}):
+                with self.subTest(file=file):
+
+                    def fetch(url, file=file):
+                        return {"files": [file]} if "/compare/" in url else pr
+
+                    self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "extended", pr))
+
     def test_scripts_and_xl_selection(self):
         for profile in ("scripts", "xl"):
             pr = {"number": 12, "state": "open", "head": {"sha": "b" * 40}, "base": {"sha": "a" * 40}}
@@ -280,16 +299,29 @@ class StackPolicyTests(unittest.TestCase):
 
     def test_xl_developer_engine_paths_and_renames_run_standalone(self):
         pr = {"number": 12, "state": "open", "head": {"sha": "b" * 40}, "base": {"sha": "a" * 40}}
-        for path in ("android/XL_compat/runtime/lifecycle_test.cpp", "d2/CMakeLists.txt",
-                     "d2/main/CMakeLists.txt", "d2/main/weapon.c", "cmake/dxx-headless-targets.cmake"):
+        for path in (
+            "android/XL_compat/runtime/lifecycle_test.cpp",
+            "d2/CMakeLists.txt",
+            "d2/main/CMakeLists.txt",
+            "d2/main/weapon.c",
+            "cmake/dxx-headless-targets.cmake",
+        ):
             for file in ({"filename": path}, {"filename": "removed.txt", "previous_filename": path}):
                 with self.subTest(file=file):
+
                     def fetch(url, file=file):
                         return {"files": [file]} if "/compare/" in url else pr
 
                     self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "xl", pr))
-        self.assertFalse(stack_ci.refresh(12, "owner/repo", lambda url: {"files": [{"filename": "README.md"}]}
-                                          if "/compare/" in url else pr, "xl", pr))
+        self.assertFalse(
+            stack_ci.refresh(
+                12,
+                "owner/repo",
+                lambda url: {"files": [{"filename": "README.md"}]} if "/compare/" in url else pr,
+                "xl",
+                pr,
+            )
+        )
 
     def test_scripts_uncertainty_keeps_coverage(self):
         pr = {"number": 12, "state": "open", "head": {"sha": "b" * 40}, "base": {"sha": "a" * 40}, "stack": None}

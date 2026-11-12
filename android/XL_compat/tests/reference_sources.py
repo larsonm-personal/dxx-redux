@@ -37,7 +37,7 @@ SOURCE_ARGUMENTS = {
         "xl_repair_centers",
         "xl_water_actors",
         "xl_generator_assignment_runtime",
-        "xl_boss_spawning",
+        "xl_boss_groups",
         "xl_boss_transport",
         "xl_equipment_generators",
         "xl_modern_equipment_25",
