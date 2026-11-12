@@ -41,6 +41,7 @@ extern "C" {
 #include "segment.h"
 #include "object.h"
 #include "console.h"
+extern int Do_appearance_effect;
 }
 
 #if REWIND_FILE_USES_WRAPPER
@@ -132,7 +133,9 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 35;
+		block["schema"] = 36;
+		// Pending spawn effects allocate ordinary objects and draw SIM RNG
+		block["appearance_pending"] = bool(Do_appearance_effect);
 		block["camera_attachments"] = xl_camera_attachments_snapshot();
 		block["slow_motion"] = xl_runtime::slow_motion_snapshot();
 		require(xl_runtime::restore_slow_motion(block["slow_motion"], false), "Cannot capture XL slow-motion state");
@@ -241,9 +244,10 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 25u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 35 &&
+		require(saved.is_object() && saved.size() == 26u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 36 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
+		require(saved.at("appearance_pending").is_boolean(), "Invalid XL pending appearance effect");
 		require(xl_runtime::restore_weapon_clock(saved.at("weapon_clock"), false), "Invalid XL weapon clock");
 		require(xl_runtime::restore_slow_motion(saved.at("slow_motion"), false), "Invalid XL slow-motion state");
 		require(xl_compat::restore_mission_progress(saved.at("mission_progress"), false), "Invalid XL mission progression state");
@@ -445,6 +449,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		require(xl_camera_controller_restore(0), "Invalid XL camera restore identity");
 		require(xl_camera_attachments_restore(saved.at("camera_attachments"), false), "Invalid XL camera attachment identity");
 		xl_runtime::restore_weapon_clock(saved.at("weapon_clock"), true);
+		Do_appearance_effect = saved.at("appearance_pending").get<bool>();
 		xl_runtime::restore_slow_motion(saved.at("slow_motion"), true);
 		xl_camera_controller_restore(1);
 		xl_camera_attachments_restore(saved.at("camera_attachments"), true);

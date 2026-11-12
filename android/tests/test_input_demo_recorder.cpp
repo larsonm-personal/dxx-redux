@@ -2187,6 +2187,13 @@ static int expect_environment_recording(void)
 
 int main(void)
 {
+	// Checkpoint hashing must retain the SHA contract across multiple bounded chunks
+	std::vector<unsigned char> checkpoint(INPUT_DEMO_CHECKPOINT_MAX_BYTES);
+	for (size_t i = 0; i < checkpoint.size(); ++i) checkpoint[i] = static_cast<unsigned char>(i);
+	std::string hash, hash_error;
+	if (!input_demo_sha256_hex(checkpoint.data(), checkpoint.size(), &hash, &hash_error) ||
+	    hash != "91d3beb88a9b2f778a6c44a1c53b63d3c79931845a9aef84b3fb414610bd1938")
+		return report_failure("bounded checkpoint SHA-256 differs");
 	if (expect_environment_recording()) return 1;
 	if (expect_ordered_input_codec()) return 1;
 	if (expect_ordered_automap_codec()) return 1;

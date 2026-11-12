@@ -209,6 +209,31 @@ class AssetPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(assets.AssetError, "container must"):
             assets.fingerprints(header)
 
+    def test_extended_hog_names_payload_and_rejections(self):
+        # Match the shared native hog_format.h dialect, including DHF long names
+        path = self.data / "extended.hog"
+        payload = b"owned supplemental asset"
+        long_name = b"a-resource-name-longer-than-thirteen.ham"
+        prefix = b"alias.ham".ljust(13, b"\0") + struct.pack("<i", -len(payload))
+        entry = prefix + long_name.ljust(256, b"\0") + payload
+        for signature in (b"DHF", b"D2X"):
+            path.write_bytes(signature + entry)
+            self.assertEqual(
+                assets._hog_member(path, [long_name.decode()])[1:], (len(payload), hashlib.sha256(payload).hexdigest())
+            )
+            self.assertIsNone(assets._hog_member(path, ["alias.ham"]))
+        for bad in (
+            prefix + b"short",
+            prefix + b"x" * 256 + payload,
+            prefix + b"../escape".ljust(256, b"\0") + payload,
+            prefix + long_name.ljust(256, b"\0") + payload[:-1],
+            entry + entry,
+            b"bad".ljust(13, b"\0") + struct.pack("<i", -2147483648),
+        ):
+            path.write_bytes(b"D2X" + bad)
+            with self.assertRaises(assets.AssetError):
+                assets._hog_member(path, [long_name.decode()])
+
     def test_malformed_and_incomplete_cannot_be_bypassed(self):
         original = self.header()
         variants = []

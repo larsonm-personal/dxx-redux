@@ -89,7 +89,9 @@ class XlPrivateTests(unittest.TestCase):
             }
             policy["acquired_recording_rejected" if xl else "classic_recording_allowed"] = True
             if xl:
-                policy.update(simulation_exit_rejected=True, terminal_tail_rejected=True)
+                policy.update(
+                    simulation_exit_rejected=True, terminal_tail_rejected=True, developer_timeline_recording=True
+                )
             else:
                 policy["classic_completion_allowed"] = True
             proof = {

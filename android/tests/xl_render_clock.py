@@ -116,6 +116,9 @@ def main():
     parser.add_argument("--mission", required=True)
     parser.add_argument("--level", required=True, type=int)
     parser.add_argument("--xl", action="store_true")
+    parser.add_argument(
+        "--time-equipment", action="store_true", help="Exercise the existing ordinary time-pickup/control/save probe"
+    )
     args = parser.parse_args()
     pins = verify_reference(args.reference_root)
     work = args.work.resolve()
@@ -137,7 +140,7 @@ def main():
         str(work / "user"),
         "-route-confirm-json-out",
         str(work / "unused-route.json"),
-        "-xl-render-clock-proof",
+        "-xl-time-equipment-proof" if args.time_equipment else "-xl-render-clock-proof",
         str(proof_path),
         "-nosound",
         "-nomusic",
@@ -150,7 +153,43 @@ def main():
         except subprocess.TimeoutExpired:
             code = None
     proof = json.loads(proof_path.read_text()) if proof_path.exists() else {}
-    success = passed(code, proof, args.mission, args.level, args.xl)
+    recordings = []
+    if args.time_equipment:
+        required_events = {
+            "visible_slow_motion_pickup",
+            "visible_bullet_time_pickup",
+            "earned_original_pickups",
+            "ordinary_slow_motion",
+            "slow_motion_thrust",
+            "bullet_time",
+            "bullet_time_thrust",
+        }
+        success = (
+            code == 0
+            and proof.get("schema") == "xl-time-equipment-gameplay-v1"
+            and proof.get("complete") is True
+            and proof.get("assisted") is True
+            and proof.get("cold_resume") is False
+            and proof.get("mission") == args.mission
+            and proof.get("level") == args.level
+            and args.xl
+            and required_events <= {event.get("event") for event in proof.get("events", [])}
+        )
+        for demo in sorted((work / "user").rglob("*.dximdemo")):
+            with demo.open(encoding="utf-8") as stream:
+                header = json.loads(next(stream))
+            success = success and header.get("version") == 6 and header.get("start_mode") == "save_checkpoint"
+            recordings.append(
+                {
+                    "path": str(demo),
+                    "sha256": hashlib.sha256(demo.read_bytes()).hexdigest(),
+                    "frame_count": header.get("frame_count"),
+                    "live_replay_qualified": False,
+                }
+            )
+        success = success and len(recordings) == 1
+    else:
+        success = passed(code, proof, args.mission, args.level, args.xl)
     result = {
         "passed": success,
         "exit_code": code,
@@ -160,6 +199,8 @@ def main():
         "engine_sha256": hashlib.sha256(engine.read_bytes()).hexdigest(),
         "official_readiness_status_updated": False,
     }
+    if args.time_equipment:
+        result["recordings"] = recordings
     (work / "result.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({"passed": success, "exit_code": code, "events": len(proof.get("events", []))}))
     return 0 if success else 1

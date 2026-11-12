@@ -66,14 +66,24 @@ the source's energy expression within its checked integer bound
 
 Production input-demo recording/replay remains guarded while the format-6
 environment stream is integrated and qualified. Its codec, recorder/replay
-owners and runtime consumers are implemented, but this does not yet establish
-faithful live capture. See the developing contract in
+owners and runtime consumers are implemented. A developer Windows capture of
+the original Warp 6 slow-motion pickup, activation, reversal and live combat now
+matches 198 frame diagnostics and 811 SIM RNG events in one clean-process replay.
+Detailed restore fields still differ; immediate/repeated playback and complete
+XL semantic coverage remain unqualified. See the developing contract in
 [the input-demo README](../../regression_demos/README.md#xl-environmental-timeline-format-6-under-qualification)
 
-Native XL save schema 35 also preserves pending slow-motion and bullet-time
+Native XL save schema 36 preserves pending slow-motion and bullet-time
 requests. Restoring between an ordinary key press and its next simulation step
 must not discard that input. The existing rendered clock probe checks actual
 disk save/restore and atomic rejection of malformed pending-request fields
+
+The same save owner retains the pending player-appearance effect. A checkpoint
+before the first simulation step previously lost this effect on restore, changing
+object allocation and SIM RNG context even while terminal player state matched.
+The new live capture retains this startup boundary; no pose changes occur during
+its recorded interval. Its approach pose is assisted before recording, and it
+does not establish connected original progression
 
 ## Current demonstrations and limits
 

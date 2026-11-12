@@ -177,6 +177,7 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 				FrameTime = F1_0 / 60;
 				Controls = {};
 				Controls.forward_thrust_time = thrust ? FrameTime : 0;
+				do_weapon_n_item_stuff();
 				calc_game_time();
 				GameProcessFrame();
 				game_render_frame();
@@ -246,6 +247,16 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 				vm_vec_negate(&inward);
 				vm_vector_2_matrix(&approach.orient, &inward, nullptr, nullptr);
 				pose(approach);
+				if (id == 48) {
+					require(input_demo_start_quick_recording_common() && input_demo_recorder_uses_environment(), "Cannot start ordinary XL pickup recording");
+					char error[256]{};
+					const std::string observation = std::string(path) + ".capture.jsonl.gz";
+					// The physical pickup determines the horizon; zero means not known yet
+					require(input_demo_state_trace_start(observation.c_str(), "record", "d2", Current_mission_filename,
+					                                     Current_level_num, Difficulty_level, "save_checkpoint", 0, error, sizeof(error)),
+					        error);
+					input_demo_trace_boundary("restored");
+				}
 				frames(2);
 				require(!(Players[Player_num].flags & (id == 48 ? XL_PLAYER_FLAGS_SLOW_MOTION : XL_PLAYER_FLAGS_BULLET_TIME)),
 				        "Time-equipment approach collected before its visible observation");
@@ -256,6 +267,16 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 					frames(1, true);
 				require(Players[Player_num].flags & (id == 48 ? XL_PLAYER_FLAGS_SLOW_MOTION : XL_PLAYER_FLAGS_BULLET_TIME),
 				        "Normal collision did not collect the original time equipment");
+				if (id == 48) {
+					require(HandleGameKey(KEY_ALTED | KEY_S), "Earned slow-motion control was not consumed");
+					frames(84);
+					require(HandleGameKey(KEY_ALTED | KEY_S), "Earned slow-motion reversal was not consumed");
+					frames(84);
+					require(input_demo_state_trace_is_active(), "Live XL observation stopped early");
+					input_demo_trace_boundary("terminal");
+					input_demo_state_trace_stop();
+					require(input_demo_recorder_is_active() && input_demo_stop_quick_recording_common(), "Ordinary XL pickup recording stopped early");
+				}
 			}
 			// Original equipment rooms can replenish the energy being measured
 			pose(initial);

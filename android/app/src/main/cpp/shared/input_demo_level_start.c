@@ -18,6 +18,10 @@
 #include "controls.h"
 #include "player.h"
 #include "weapon.h"
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#include "slow_motion_runtime.h"
+#endif
 
 static int record_each_level;
 static int pending_level;
@@ -101,6 +105,10 @@ static void capture_runtime(input_demo_level_start *s)
 	s->difficulty_min = Difficulty_level_min_seen;
 	s->difficulty_max = Difficulty_level_max_seen;
 	s->matcen_mode = matcen_mode_get();
+#ifdef DXX_XL_DEVELOPER_PROBE
+	s->has_xl_clock = xl_level_extensions_active() != 0;
+	s->xl_last_omega_frame = xl_slow_motion_last_omega_frame();
+#endif
 #ifdef DXX_BUILD_DESCENT_II
 	s->afterburner_charge = Players[Player_num].afterburner_charge;
 	s->omega_charge = Omega_charge;
@@ -150,6 +158,9 @@ static void apply_runtime(const input_demo_level_start *s)
 	collide_set_collision_delay_last_play_time(s->collision_sound_time);
 	difficulty_restore_history(s->difficulty_changed, s->difficulty_min, s->difficulty_max);
 	matcen_mode_set(s->matcen_mode);
+#ifdef DXX_XL_RUNTIME
+	if (s->has_xl_clock) xl_slow_motion_initial_omega_frame(s->xl_last_omega_frame);
+#endif
 }
 
 void input_demo_begin_new_level(int level)

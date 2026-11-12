@@ -23,9 +23,22 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 	const auto require = [](bool ok, const char *message) { if (!ok) throw std::runtime_error(message); };
 	const auto flags = Players[Player_num].primary_weapon_flags;
 	const bool xl = xl_level_extensions_active();
+	char error[256]{};
+	// Keep the legacy rejection controls even while developer format 6 is exercised
+	const auto start_legacy = [&]() {
+		input_demo_recorder_settings settings;
+		input_demo_recorder_settings_clear(&settings);
+		settings.game = INPUT_DEMO_GAME_D2;
+		settings.mission = Current_mission_filename;
+		settings.level = Current_level_num;
+		settings.difficulty = Difficulty_level;
+		settings.rng_mode = "lcg_state";
+		require(input_demo_recorder_start(&settings, error, sizeof(error)), error);
+	};
 	Players[Player_num].primary_weapon_flags &= ~(1 << OMEGA_INDEX);
 	require(!xl_omega_input_demo_error(), "Omega-free input was rejected");
-	require(maybe_start_input_demo_recording(0), "Actual Omega-free recorder did not start");
+	if (xl) start_legacy();
+	else require(maybe_start_input_demo_recording(0), "Actual Omega-free recorder did not start");
 	input_demo_control_state controls{};
 	input_demo_control_pulse pulse{};
 	input_demo_result result{};
@@ -33,7 +46,6 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 	result.frame_count = 1;
 	unsigned seed = 0;
 	d_rand_get_stream_state(D_RNG_SIM, &seed);
-	char error[256]{};
 	require(input_demo_recorder_capture_frame(F1_0 / 60, &controls, &pulse, seed, 1, d_rand_get_call_count(), nullptr, nullptr, error, sizeof(error)), error);
 	require(input_demo_record_finish_input_tail(error, sizeof(error)), error);
 	const std::string replay_path = std::string(path) + ".dximdemo";
@@ -41,9 +53,11 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 	input_demo_recorder_cancel();
 	Players[Player_num].primary_weapon_flags |= 1 << OMEGA_INDEX;
 	require(bool(xl_omega_input_demo_error()) == xl, "Omega input admission crossed the classic boundary");
-	nlohmann::ordered_json results = { { "omega_free_recording", true }, { "xl", xl }, { "rejected_paths", nlohmann::ordered_json::array() } };
+	nlohmann::ordered_json results = { { "omega_free_recording", bool{ true } }, { "xl", xl }, { "rejected_paths", nlohmann::ordered_json::array() } };
 	if (xl) {
-		require(!maybe_start_input_demo_recording(0) && !input_demo_recorder_is_active(), "Owned Omega recording was accepted");
+		require(maybe_start_input_demo_recording(0) && input_demo_recorder_uses_environment(), "Developer Omega recording lacks its timeline");
+		input_demo_recorder_cancel();
+		results["developer_timeline_recording"] = bool{ true };
 		for (int route = 0; route < 3; ++route) {
 			require(input_demo_replay_load(replay_path.c_str(), error, sizeof(error)), error);
 			const auto before = xl_runtime::weapon_clock_snapshot();
@@ -70,22 +84,22 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 			                                                                         : "paused");
 		}
 		Players[Player_num].primary_weapon_flags &= ~(1 << OMEGA_INDEX);
-		require(maybe_start_input_demo_recording(0), "Acquisition recording did not start");
+		start_legacy();
 		Players[Player_num].primary_weapon_flags |= 1 << OMEGA_INDEX;
 		require(!input_demo_record_finish_input_tail(error, sizeof(error)) && !input_demo_recorder_is_active(), "Acquired Omega recording was accepted");
-		results["acquired_recording_rejected"] = true;
+		results["acquired_recording_rejected"] = bool{ true };
 		// Exercise the final-step exit entry before the outer post-step gate runs.
 		require(input_demo_replay_load(replay_path.c_str(), error, sizeof(error)), error);
 		omega_completion_writes = 0;
 		fix64 timer = 1;
 		require(input_demo_finish_replay_shared(0, &timer, nullptr, omega_completion_write), "Final-step exit was not handled");
 		require(!omega_completion_writes && !input_demo_replay_is_loaded() && timer == 0, "Final-step exit published unsupported Omega success");
-		results["simulation_exit_rejected"] = true;
+		results["simulation_exit_rejected"] = bool{ true };
 
 		// Build a legacy terminal tail containing a real authored all-weapons command.
 		// Low-level recorder APIs intentionally bypass the new live-capture admission.
 		Players[Player_num].primary_weapon_flags &= ~(1 << OMEGA_INDEX);
-		require(maybe_start_input_demo_recording(0), "Terminal-tail fixture recorder did not start");
+		start_legacy();
 		d_rand_get_stream_state(D_RNG_SIM, &seed);
 		require(input_demo_recorder_capture_frame(F1_0 / 60, &controls, &pulse, seed, 1, d_rand_get_call_count(), nullptr, nullptr, error, sizeof(error)), error);
 		require(input_demo_recorder_begin_input_batch(seed, d_rand_get_call_count(), FrameTime, error, sizeof(error)), error);
@@ -103,12 +117,12 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 			require(Players[Player_num].primary_weapon_flags & (1 << OMEGA_INDEX), "Authored terminal tail did not acquire Omega");
 			require(!omega_completion_writes && !input_demo_replay_is_loaded(), "Terminal-tail Omega published success");
 		}
-		results["terminal_tail_rejected"] = true;
+		results["terminal_tail_rejected"] = bool{ true };
 
 	} else {
 		require(maybe_start_input_demo_recording(0), "Classic Omega recording was rejected");
 		input_demo_recorder_cancel();
-		results["classic_recording_allowed"] = true;
+		results["classic_recording_allowed"] = bool{ true };
 		for (bool early_exit : { false, true }) {
 			require(input_demo_replay_load(replay_path.c_str(), error, sizeof(error)), error);
 			omega_completion_writes = 0;
@@ -117,7 +131,7 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 			else input_demo_advance_replay_frame_shared(nullptr, omega_completion_stop);
 			require(omega_completion_writes == 1 && !input_demo_replay_is_loaded(), "Classic Omega completion was rejected");
 		}
-		results["classic_completion_allowed"] = true;
+		results["classic_completion_allowed"] = bool{ true };
 	}
 	Players[Player_num].primary_weapon_flags = flags;
 	return results;
@@ -126,7 +140,7 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 static int xl_omega_damage_probe(const char *path)
 {
 	using nlohmann::ordered_json;
-	ordered_json proof = { { "schema", "xl-omega-damage-v1" }, { "assisted", true }, { "complete", false }, { "cases", ordered_json::array() } };
+	ordered_json proof = { { "schema", "xl-omega-damage-v1" }, { "assisted", bool{ true } }, { "complete", bool{ false } }, { "cases", ordered_json::array() } };
 	try {
 		const auto require = [](bool ok, const char *message) { if (!ok) throw std::runtime_error(message); };
 		const auto *renderer = glGetString(GL_RENDERER);
@@ -161,6 +175,9 @@ static int xl_omega_damage_probe(const char *path)
 				const int target = obj_create(OBJ_ROBOT, robot_id, ConsoleObject->segnum, &ConsoleObject->pos, &ConsoleObject->orient, F1_0, CT_NONE, MT_NONE, RT_NONE);
 				require(target >= 0, "Cannot allocate damage target");
 				Objects[target].shields = 10000 * F1_0;
+				// The XL damage owner protects newly spawned robots for one second
+				GameTime64 += F1_0;
+				Next_laser_fire_time = GameTime64;
 				std::vector<int> existing;
 				for (int i = 0; i <= Highest_object_index; ++i) existing.push_back(Objects[i].type == OBJ_NONE ? -1 : Objects[i].signature);
 				int shots = 0, remainder = 0;
@@ -198,13 +215,13 @@ static int xl_omega_damage_probe(const char *path)
 				obj_delete(target);
 			}
 		Game_mode = original_mode;
-		proof["complete"] = true;
+		proof["complete"] = bool{ true };
 	} catch (const std::exception &e) {
 		proof["error"] = e.what();
 	}
 	std::ofstream output(path);
 	output << proof.dump(2) << '\n';
 	output.flush();
-	return output.good() && proof["complete"] == true ? 0 : 1;
+	return output.good() && proof["complete"].get<bool>() ? 0 : 1;
 }
 #endif

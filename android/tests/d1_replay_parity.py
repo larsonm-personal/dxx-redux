@@ -127,6 +127,16 @@ def validate_identity(value, header, engine):
         ("difficulty", header["difficulty"]),
         ("frame_count", header["frame_count"]),
     ):
+        # Live observations start before the player's eventual stop is known.
+        # Each reader still requires the exact contiguous horizon at EOF.
+        if (
+            key == "frame_count"
+            and value.get("type") == "meta"
+            and value.get("source") == "record"
+            and type(value.get(key)) is int
+            and value[key] == 0
+        ):
+            continue
         if value.get(key) != expected:
             raise EvidenceError(f"Unexpected {key}: {value.get(key)!r}; expected {expected!r}")
 

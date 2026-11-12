@@ -405,6 +405,19 @@ class ParityTests(unittest.TestCase):
         self.assertEqual(report["status"], "fail")
         self.assertIn("diag", report["first_differences"])
 
+    def test_live_unknown_horizon_still_requires_complete_frames(self):
+        live = self.trace("live")
+        self.mutate(live, lambda rows: rows[0].update(source="record", frame_count=0))
+        self.assertEqual(len(list(parity.frames(live, self.header, "d1"))), 2)
+        self.mutate(live, lambda rows: rows.pop())
+        with self.assertRaisesRegex(parity.EvidenceError, "Missing frame evidence"):
+            list(parity.frames(live, self.header, "d1"))
+        for source in ("replay", "unknown"):
+            trace = self.trace(source)
+            self.mutate(trace, lambda rows: rows[0].update(source=source, frame_count=0))
+            with self.assertRaisesRegex(parity.EvidenceError, "Unexpected frame_count"):
+                list(parity.frames(trace, self.header, "d1"))
+
     def test_diagnostic_contract_covers_the_complete_producer(self):
         shared = Path(__file__).resolve().parents[1] / "app/src/main/cpp/shared"
         source = (shared / "input_demo_state_trace.cpp").read_text()

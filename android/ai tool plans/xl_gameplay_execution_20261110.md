@@ -1007,6 +1007,90 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   new-level initial clock state, and extend existing native capture/replay owners
   for live versus repeated detailed SIM/RNG comparison before opening admission.
 
+### G1 checkpoint: ordinary capture and first live comparison, November 11 11:55 PST
+
+- Previous goal turn classification: progress. Layer 02 remains local on
+  `xl_gameplay_20261111_02_timeline`, parent/last committed head
+  `5b56b2ffe1d880b36a2c609bb09461c8dafae57e`. This increment is not G1 acceptance
+  and is not published. PR #465 remains the accepted G0 baseline; no other PR,
+  stack link, upstream write or merge was performed.
+- Developer builds now start ordinary XL format-6 recordings through the existing
+  checkpoint/new-level owners, capture the save's actual clock origin, and retain
+  the initial Omega marker and carried time flags for natural level entry.
+  Replay checks its required startup profile before restoration and arms the
+  timeline afterward. Production guards remain closed. Full asset/profile and
+  pre-mutation world admission still require qualification before opening them.
+- Extended the existing original time-equipment probe to record its physical
+  slow-motion pickup, Alt+S activation/reversal and intervening live AI/combat.
+  Its approach pose is disclosed and occurs before recording. The later assisted
+  second pickup/save controls are outside the captured interval. The probe still
+  runs its complete existing seven-event scenario with the unchanged 45-second
+  timeout. Both captures completed; neither is a frozen gameplay oracle.
+- First capture `g1-live-time-capture-1` wrote 198 frames. The existing replay
+  runner exposed unsupported D2X asset preflight and unverified supplemental HAM
+  ownership. Its bounded HOG checker now accepts the shared DHF/D2X directory
+  dialect, including long names, while rejecting malformed headers, aliases and
+  duplicate/truncated members. The same runner accepts an explicit owned
+  `ExtraDir`. Supplemental HAM identity is still unverified; diagnostic playback
+  used the existing explicit `AllowUnverifiedAssets` switch and cannot be counted
+  as accepted corpus evidence.
+- The first native attempt crashed in checkpoint SHA hashing with an uncaught
+  `std::bad_alloc`; its failure receipt and dump remain under
+  `g1-time-replay-1` and the wrapper sandbox. The SHA helper now streams 64 KiB
+  chunks and returns allocation errors. A maximum-size checkpoint digest test
+  retains the independently computed SHA-256. Playback then completed, but its
+  frame-1 object allocation and SIM caller context differed despite matching
+  terminal state and random values.
+- Root cause: the ordinary save lost `Do_appearance_effect` before the initial
+  simulation frame. XL save schema 36 retains this pending effect, with strict
+  boolean validation; restore uses the ordinary save owner. No expected values,
+  RNG forcing or replay-specific world patch was introduced. The unknown-schema
+  negative now uses 37. Generic recording diagnostics can emit existing detailed
+  object/world observations; live metadata may declare an unknown horizon of zero
+  while the comparator still requires every actual frame at EOF.
+- New capture `g1-live-time-capture-2`, demo
+  `d2_wshock20_level6_20261111_105632.dximdemo`, and clean replay
+  `g1-time-replay-3` match all 198 frame state/RNG/diagnostic hashes and all 811 SIM
+  RNG events, including caller context. Both replay terminal checks passed.
+  Detailed raw observations remain different: player `polyobj.alt_textures` is
+  0 live versus -1 restored, and an effect's `sidenum` is 0 versus -1. The existing
+  strict world validator also assumes a 1000-slot pool and rejects this XL pool.
+  These are unresolved audit findings, not excluded fields. Full XL state, an
+  immediate in-process replay, two clean repeats, Omega live capture and platform
+  qualification are still outstanding.
+- Retained Omega policy controls explicitly construct legacy format-5 inputs
+  and still exercise rendered/headless/paused, acquisition and terminal-tail
+  rejection. The developer ordinary recorder separately proves a timeline is
+  selected. The first damage probe failed because its synthetic target was less
+  than one second old, inside the implemented source birth-protection gate;
+  the setup now advances its explicit test clock past that grace period. JSON
+  booleans use explicit bool types because engine headers define true/false as
+  integer macros. `g1-retained-omega-2` passes all eight existing rate/mode cases.
+- Windows native build and six focused input-demo CTests pass (8.60 seconds).
+  Asset checker tests: 19 pass, one expected Windows case-alias skip. Comparator:
+  66 pass. XL asset/receipt tests: 45 pass with the MSVC/CMake environment loaded;
+  the earlier bare-shell run lacked cmake/ctest and its ten errors are retained.
+  Linux developer desktop and stock headless/test builds pass; all six focused
+  Linux CTests pass in 2.93 seconds. Retained Windows boss spawning, transport
+  and groups pass 3/3 in 81.13 seconds on the rebuilt metadata executable.
+  Scoped mixed-language formatting/lint and `git diff --check` pass. The metadata
+  build retains the existing int/bool comparison warning in
+  `changing_light_test_records.h:18`; no new warning was found. No required
+  cohort or timeout was changed.
+- Authentic Warp HOG remains
+  `2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c` and the pinned
+  XL source remains `2576a98b5de310e3ac7c9777df2677d1627b8bae`. Reports and private
+  checkpoint bytes remain in `temp/pr464-ci-fixes-20261110`. C: has fallen to
+  about 3.94 GiB, below the 4 GiB producer reserve. Official cleanup preview
+  found only 193 MiB in the replay wrapper, including the retained crash dump;
+  that evidence is now explicitly excluded. No protected evidence was deleted.
+  Large captures must wait for sufficient actual free space; source work continues.
+- Revised estimate: G1 still roughly 5-8 hours; G2-G7 about 17.5 hours with large
+  uncertainty. No time cutoff. Next: finish scoped checks/formatting and commit
+  this guarded increment; resolve supplemental HAM identity and the detailed
+  restore/observer differences through existing owners, then perform immediate
+  and repeated faithful Omega/time recordings before publishing layer 02.
+
 Per-item handoff template:
 
     Item and status:

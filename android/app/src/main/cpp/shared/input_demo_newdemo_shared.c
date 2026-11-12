@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "slow_motion_runtime.h"
+#include "preview.h"
 #endif
 #include <limits.h>
 #include <stdint.h>
@@ -242,6 +243,13 @@ static int input_demo_capture_recorder_checkpoint(input_demo_recorder_settings *
 			snprintf(error, error_size, "%s", "could not create input demo checkpoint save");
 		return 0;
 	}
+#ifdef DXX_XL_RUNTIME
+	if (settings->has_environment && !xl_input_demo_saved_environment(&settings->environment)) {
+		if (error && error_size) snprintf(error, error_size, "%s", "checkpoint did not capture an XL environment origin");
+		PHYSFS_delete(logical_path);
+		return 0;
+	}
+#endif
 	fp = PHYSFS_openRead(logical_path);
 	if (!fp) {
 		if (error && error_size)
@@ -426,6 +434,10 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 	}
 #ifdef DXX_XL_RUNTIME
 	unsupported_view = xl_omega_input_demo_error();
+#ifdef DXX_XL_DEVELOPER_PROBE
+	/* Ordinary startup is exercised in the developer build before qualification */
+	if (xl_level_extensions_active()) unsupported_view = NULL;
+#endif
 	if (unsupported_view) {
 		if (error && error_size) snprintf(error, error_size, "%s", unsupported_view);
 		return 0;
@@ -467,6 +479,12 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 #endif
 		input_demo_fill_recorder_player_cfg(settings);
 		settings->level_start = input_demo_recording_level_start();
+#ifdef DXX_XL_DEVELOPER_PROBE
+		settings->has_environment = xl_level_extensions_active() != 0;
+		if (settings->has_environment) settings->record_per_frame_state = 1;
+		if (settings->has_environment && settings->level_start)
+			xl_input_demo_current_environment(&settings->environment);
+#endif
 		settings->has_view_projection = 1;
 		input_demo_capture_view_projection(&settings->view_projection);
 		settings->has_rear_view_baseline = 1;
@@ -474,7 +492,9 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 		                               &settings->rear_view_baseline.leave_mode, &settings->rear_view_baseline.current_cockpit,
 		                               &settings->rear_view_baseline.preferred_cockpit);
 	}
-	if (!input_demo_recording_level_start() && input_demo_is_mid_level_record_start() && !input_demo_capture_recorder_checkpoint(settings, error, error_size))
+	if (!input_demo_recording_level_start() &&
+	    (input_demo_is_mid_level_record_start() || (settings && settings->has_environment)) &&
+	    !input_demo_capture_recorder_checkpoint(settings, error, error_size))
 		return 0;
 	return 1;
 }

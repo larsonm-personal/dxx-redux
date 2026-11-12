@@ -617,6 +617,7 @@ static ordered_json level_start_to_json(const input_demo_level_start &state)
 	INPUT_DEMO_LEVEL_ARRAY_FIELDS(WRITE_ARRAY)
 #undef WRITE_ARRAY
 	json["wiggle_phase"] = state.wiggle_phase;
+	if (state.has_xl_clock) json["xl_last_omega_frame"] = state.xl_last_omega_frame;
 	return json;
 }
 
@@ -657,7 +658,15 @@ static bool parse_level_start(const ordered_json &json, input_demo_level_start *
 		parsed.wiggle_phase = (uint32_t) value;
 		++fields;
 	}
-	if (json.size() != fields || parsed.difficulty_min > parsed.difficulty_max)
+	if (json.contains("xl_last_omega_frame")) {
+		if (!parse_int64_field(json.at("xl_last_omega_frame"), &value, error, "xl_last_omega_frame") || value < 0 || value > UINT32_MAX)
+			return fail(error, "invalid level_start XL Omega marker");
+		parsed.has_xl_clock = 1;
+		parsed.xl_last_omega_frame = (uint32_t) value;
+		++fields;
+	}
+	if (json.size() != fields || parsed.difficulty_min > parsed.difficulty_max ||
+	    (parsed.flags > 32767 && !parsed.has_xl_clock))
 		return fail(error, "invalid level_start fields");
 	*state = parsed;
 	return true;
@@ -697,6 +706,9 @@ static bool validate_metadata(const input_demo_metadata &metadata, std::string *
 		return fail(error, "metadata frame_count must be positive");
 	if (metadata.has_level_start) {
 		input_demo_level_start checked{};
+		if (metadata.level_start.has_xl_clock > 1 ||
+		    bool(metadata.level_start.has_xl_clock) != metadata.has_environment)
+			return fail(error, "XL level-start clock requires format 6 environment input");
 		if (metadata.start_mode != "new_level" ||
 		    !parse_level_start(level_start_to_json(metadata.level_start), &checked, error))
 			return fail(error, "invalid level_start metadata");

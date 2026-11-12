@@ -739,9 +739,23 @@ int input_demo_start_loaded_replay_common(void)
 	char projection_error[256] = "";
 	/* Keep world admission closed until the XL runtime consumes this contract */
 	if (input_demo_replay_format_version() == 6) {
+#ifdef DXX_XL_DEVELOPER_PROBE
+		input_demo_view_projection projection;
+		if (!input_demo_replay_has_player_cfg() ||
+		    !input_demo_replay_get_view_projection(&projection) ||
+		    !input_demo_replay_get_rear_view_baseline(&view) ||
+		    strcmp(input_demo_replay_rng_mode(), "lcg_state") ||
+		    (!input_demo_replay_has_checkpoint() &&
+		     (!input_demo_replay_level_start() || !input_demo_replay_level_start()->has_xl_clock))) {
+			printf("Input demo replay could not start: incomplete XL clock/input startup profile\n");
+			input_demo_replay_unload();
+			return 1;
+		}
+#else
 		printf("Input demo replay could not start: XL clock/input timeline playback is not yet qualified\n");
 		input_demo_replay_unload();
 		return 1;
+#endif
 	}
 	if (!input_demo_validate_replay_view_projection(projection_error, sizeof(projection_error))) {
 		INPUT_DEMO_CRUMB_V("input_demo: startup projection rejected: %s", projection_error);
@@ -779,6 +793,12 @@ int input_demo_start_loaded_replay_common(void)
 				collide_set_collision_delay_last_play_time((fix64) collision_delay_last_play_time);
 		}
 		input_demo_trace_boundary("restored");
+		if (input_demo_replay_format_version() == 6 &&
+		    !input_demo_replay_begin_environment(projection_error, sizeof(projection_error))) {
+			printf("Input demo replay could not start: %s\n", projection_error);
+			input_demo_replay_unload();
+			return 1;
+		}
 	}
 	return result;
 }

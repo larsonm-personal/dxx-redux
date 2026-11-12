@@ -21,6 +21,8 @@
 #include "named_audio.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
+#include "input_demo_state_trace.h"
+#include "input_demo_world_trace.h"
 #endif
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
@@ -84,6 +86,7 @@ void do_omega_stuff(object *, vms_vector *, object *);
 void game_render_frame(void);
 void game_render_frame_mono(int);
 int HandleGameKey(int);
+void do_weapon_n_item_stuff(void);
 void set_robot_state(object *, int);
 void ai_fire_laser_at_player(object *, vms_vector *, int, vms_vector *);
 }

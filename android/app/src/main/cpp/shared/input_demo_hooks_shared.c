@@ -1010,6 +1010,16 @@ void input_demo_record_game_frame(void)
 	if (input_demo_recorder_frame_count() == 0)
 		input_demo_reset_object_state_diag_history();
 	input_demo_capture_state_trace_diag(&diag);
+	if (input_demo_state_trace_is_active()) {
+		const uint32_t frame = input_demo_recorder_frame_count();
+		if (!input_demo_state_trace_write_frame(frame, FrameTime, rng_state, 1, rng_call_count,
+		                                        &diag, &frame_state, error, sizeof(error)) ||
+		    !input_demo_object_trace_write(frame, error, sizeof(error)) ||
+		    !input_demo_world_trace_write(frame, NULL, error, sizeof(error))) {
+			con_printf(CON_NORMAL, "Input demo recording state trace failed: %s\n", error);
+			input_demo_state_trace_stop();
+		}
+	}
 	if (!input_demo_recorder_capture_frame((int32_t) FrameTime, &state, &pulse,
 	                                       rng_state, 1, rng_call_count,
 	                                       &frame_state, &diag,
@@ -1340,7 +1350,7 @@ void input_demo_write_replay_frame_state_trace_shared(
 void input_demo_trace_boundary(const char *phase)
 {
 	char error[256] = "";
-	const uint32_t frame = input_demo_replay_next_frame_index();
+	const uint32_t frame = input_demo_recorder_is_active() ? input_demo_recorder_frame_count() : input_demo_replay_next_frame_index();
 	if (!input_demo_state_trace_is_active())
 		return;
 	if (input_demo_object_trace_boundary(frame, phase, error, sizeof(error)) &&

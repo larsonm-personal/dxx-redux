@@ -186,20 +186,33 @@ def _loose_path(row, data, children):
 
 
 def _hog_member(path, names, expected=None):
-    """Bounded DHF directory/member hashing, never extraction or game-format parsing."""
+    """Bounded DHF/D2X hashing; directory layout follows XL_compat/hog_format.h."""
     names = [name.lower() for name in names]
     matches, identical, seen = {}, [], set()
     length = path.stat().st_size
     with path.open("rb") as stream:
-        if stream.read(3) != b"DHF":
-            raise AssetError("Unsupported asset container (requires DHF HOG): " + str(path))
+        if stream.read(3) not in (b"DHF", b"D2X"):
+            raise AssetError("Unsupported asset container (requires DHF or D2X HOG): " + str(path))
         while stream.tell() < length:
             header = stream.read(17)
             if len(header) != 17 or len(seen) >= 65536:
                 raise AssetError("Truncated or oversized HOG directory")
-            name = header[:13].split(b"\0", 1)[0].decode("ascii").lower()
-            size = struct.unpack_from("<I", header, 13)[0]
-            if not name or name in seen or size > 128 * 1024 * 1024 or size > length - stream.tell():
+            size = struct.unpack_from("<i", header, 13)[0]
+            raw_name = header[:13]
+            if size < 0:
+                raw_name = stream.read(256)
+                if size == -2147483648 or len(raw_name) != 256 or b"\0" not in raw_name:
+                    raise AssetError("Invalid or truncated extended HOG header")
+                size = -size
+            name = raw_name.split(b"\0", 1)[0].lower().decode("latin-1")
+            if (
+                not name
+                or name in (".", "..")
+                or name in seen
+                or any(c in "/\\:" or ord(c) < 32 or ord(c) == 127 for c in name)
+                or size > 128 * 1024 * 1024
+                or size > length - stream.tell()
+            ):
                 raise AssetError("Ambiguous, truncated or oversized HOG member")
             seen.add(name)
             if name in names or (expected is not None and size == expected["size"]):

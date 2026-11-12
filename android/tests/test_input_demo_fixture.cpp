@@ -739,6 +739,27 @@ static int expect_level_start_metadata(void)
 	    parsed.level_start.collision_sound_time != -1234567890123LL || parsed.level_start.wiggle_phase != 65001)
 		return report_failure("level-start fields changed during round trip");
 	std::string old_phase = text;
+	{
+		auto xl = metadata;
+		xl.version = 6;
+		xl.game = "d2";
+		xl.has_environment = true;
+		xl.environment = { 26, 0, 0 };
+		xl.level_start.has_xl_clock = 1;
+		xl.level_start.xl_last_omega_frame = UINT32_MAX;
+		xl.level_start.flags = 32768 | 65536;
+		std::string encoded;
+		if (!input_demo_metadata_to_header_line(xl, &encoded, &error) ||
+		    !input_demo_metadata_parse_header_line(encoded, &parsed, &error) ||
+		    !parsed.level_start.has_xl_clock || parsed.level_start.xl_last_omega_frame != UINT32_MAX ||
+		    parsed.level_start.flags != xl.level_start.flags) return report_failure_string("XL initial clock round trip: " + error);
+		auto missing_clock = nlohmann::ordered_json::parse(encoded);
+		missing_clock["level_start"].erase("xl_last_omega_frame");
+		if (input_demo_metadata_parse_header_line(missing_clock.dump(), &parsed, &error)) return report_failure("XL initial clock omission accepted");
+		xl.version = 5;
+		xl.has_environment = false;
+		if (input_demo_metadata_to_header_line(xl, &encoded, &error)) return report_failure("legacy level start accepted XL clock state");
+	}
 	const size_t phase_offset = old_phase.find(",\"wiggle_phase\":65001");
 	if (phase_offset == std::string::npos)
 		return report_failure("missing level-start phase test field");

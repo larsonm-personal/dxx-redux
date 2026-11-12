@@ -30,7 +30,9 @@ def passed(code, proof, mission, level, xl):
     }
     expected_policy["acquired_recording_rejected" if xl else "classic_recording_allowed"] = True
     if xl:
-        expected_policy.update(simulation_exit_rejected=True, terminal_tail_rejected=True)
+        expected_policy.update(
+            simulation_exit_rejected=True, terminal_tail_rejected=True, developer_timeline_recording=True
+        )
     else:
         expected_policy["classic_completion_allowed"] = True
     if proof["input_policy"] != expected_policy or any(

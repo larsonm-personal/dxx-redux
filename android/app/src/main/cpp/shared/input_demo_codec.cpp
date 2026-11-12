@@ -1,5 +1,6 @@
 #include "input_demo_codec.h"
 
+#include <algorithm>
 #include <exception>
 
 #include "base64.h"
@@ -58,10 +59,18 @@ bool input_demo_sha256_hex(const unsigned char *data,
 		return fail(error, "missing sha256 output");
 	if (data_size && !data)
 		return fail(error, "missing sha256 input");
-	if (!data_size) {
-		*hex = picosha2::hash256_hex_string(std::string());
-		return true;
+	try {
+		// The pointer convenience overload buffers the entire checkpoint
+		picosha2::hash256_one_by_one hash;
+		for (size_t offset = 0; offset < data_size;) {
+			const size_t count = std::min<size_t>(65536, data_size - offset);
+			hash.process(data + offset, data + offset + count);
+			offset += count;
+		}
+		hash.finish();
+		*hex = picosha2::get_hash_hex_string(hash);
+	} catch (const std::exception &exception) {
+		return fail(error, std::string("sha256 failed: ") + exception.what());
 	}
-	*hex = picosha2::hash256_hex_string(data, data + data_size);
 	return true;
 }

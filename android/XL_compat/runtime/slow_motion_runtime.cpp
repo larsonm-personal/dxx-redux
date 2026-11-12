@@ -75,6 +75,18 @@ extern "C" int xl_input_demo_saved_environment(input_demo_environment_clock *clo
 	*clock = saved_environment;
 	return 1;
 }
+extern "C" void xl_input_demo_current_environment(input_demo_environment_clock *clock)
+{
+	*clock = environment_now();
+}
+extern "C" uint32_t xl_slow_motion_last_omega_frame(void)
+{
+	return last_omega_frame;
+}
+extern "C" void xl_slow_motion_initial_omega_frame(uint32_t frame)
+{
+	last_omega_frame = frame;
+}
 namespace xl_runtime
 {
 bool time_equipment_resources_required(const xl_compat::Inventory &level)
@@ -437,6 +449,9 @@ extern "C" int xl_slow_motion_omega_fired(void)
 
 extern "C" const char *xl_omega_input_demo_error(void)
 {
+#ifdef DXX_XL_DEVELOPER_PROBE
+	if (input_demo_recorder_uses_environment() || input_demo_replay_format_version() == 6) return nullptr;
+#endif
 	if (enabled() && (xl_prepared_time_equipment_image(0) || (Players[Player_num].flags & (xl_compat::slow_motion_equipment | xl_compat::bullet_time_equipment))))
 		return "XL time-equipment input demos require an unimplemented real-time clock timeline";
 	return enabled() && (Players[Player_num].primary_weapon_flags & (1 << OMEGA_INDEX))
