@@ -8,6 +8,8 @@
 typedef enum d_rng_stream {
 	D_RNG_SIM = 0,
 	D_RNG_FX = 1,
+	/* XL transient clouds, bolt geometry and draw intensity; never gameplay */
+	D_RNG_PRESENTATION = 2,
 	D_RNG_STREAM_COUNT
 } d_rng_stream;
 
@@ -39,10 +41,11 @@ void d_rand_reset_stream_call_count(d_rng_stream stream);
 #endif
 
 #ifndef DXX_D_RAND_NO_ANNOTATION
-#define d_rand()         d_rand_annotated(DXX_RNG_DEFAULT_STREAM, __FILE__, DXX_RAND_CALLER_FUNCTION, __LINE__)
-#define d_srand(seed)    d_srand_annotated(DXX_RNG_DEFAULT_STREAM, (seed), __FILE__, DXX_RAND_CALLER_FUNCTION, __LINE__)
-#define d_rand_fx()      d_rand_annotated(D_RNG_FX, __FILE__, DXX_RAND_CALLER_FUNCTION, __LINE__)
-#define d_srand_fx(seed) d_srand_annotated(D_RNG_FX, (seed), __FILE__, DXX_RAND_CALLER_FUNCTION, __LINE__)
+#define d_rand()              d_rand_annotated(DXX_RNG_DEFAULT_STREAM, __FILE__, DXX_RAND_CALLER_FUNCTION, __LINE__)
+#define d_srand(seed)         d_srand_annotated(DXX_RNG_DEFAULT_STREAM, (seed), __FILE__, DXX_RAND_CALLER_FUNCTION, __LINE__)
+#define d_rand_fx()           d_rand_annotated(D_RNG_FX, __FILE__, DXX_RAND_CALLER_FUNCTION, __LINE__)
+#define d_srand_fx(seed)      d_srand_annotated(D_RNG_FX, (seed), __FILE__, DXX_RAND_CALLER_FUNCTION, __LINE__)
+#define d_rand_presentation() d_rand_annotated(D_RNG_PRESENTATION, __FILE__, DXX_RAND_CALLER_FUNCTION, __LINE__)
 #endif
 
 #endif

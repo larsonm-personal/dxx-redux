@@ -51,7 +51,7 @@ static void particle_saved_state_case()
 	};
 	const auto *cloud = &particle_systems().front();
 	const int count = cloud->fire_emitter().count;
-	const auto fx = d_rand_get_stream_call_count(D_RNG_FX);
+	const auto fx = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 	for (int variant = 0; variant < 12; ++variant) {
 		auto changed = original;
 		auto &rows = changed["particle_objects"];
@@ -79,10 +79,10 @@ static void particle_saved_state_case()
 		require(!restore(bytes), "Malformed particle state passed full trailer restoration");
 		require(capture() == encoded && &particle_systems().front() == cloud && cloud->fire_emitter().count == count, "Rejected particle state changed owned runtime state or live cloud");
 	}
-	require(d_rand_get_stream_call_count(D_RNG_FX) == fx, "Particle save validation consumed effects RNG");
+	require(d_rand_get_stream_call_count(D_RNG_PRESENTATION) == fx, "Particle save validation consumed effects RNG");
 	require(xl_particle_object_set_enabled(1, 0) && xl_particle_object_set_enabled(2, 1), "Cannot disturb saved particle activation");
 	require(restore(encoded) && particle_objects_snapshot() == earned && particle_systems().empty(), "Particle restore lost authored activation or retained transient clouds");
-	require(d_rand_get_stream_call_count(D_RNG_FX) == fx && d_rand_get_stream_call_count(D_RNG_SIM) == sim, "Particle restore consumed RNG");
+	require(d_rand_get_stream_call_count(D_RNG_PRESENTATION) == fx && d_rand_get_stream_call_count(D_RNG_SIM) == sim, "Particle restore consumed RNG");
 	particle_objects_frame(0);
 	require(particle_systems().size() == 1 && particle_systems().front().object == 1 && particle_systems().front().fire_emitter().count == 0, "Restored activation did not create one fresh owner");
 	particle_objects_frame(25);
@@ -121,11 +121,11 @@ static void bubble_objects_native_case(xl_compat::Inventory source)
 		for (auto &segment : source.segments)
 			segment.properties = (segment.properties & ~segment_water) | (wet ? segment_water : 0);
 		bind_particle_objects(source);
-		const auto before = d_rand_get_stream_call_count(D_RNG_FX);
+		const auto before = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 		particle_objects_frame(0);
 		require(particle_systems().size() == 1 && std::holds_alternative<BubbleEmitter>(particle_systems().front().emitter), "Native bubble selected a different particle emitter");
 		const auto &emitter = std::get<BubbleEmitter>(particle_systems().front().emitter);
-		require(emitter.orientation == orientation && !emitter.count && d_rand_get_stream_call_count(D_RNG_FX) == before + 12, "Native bubble lost full orientation, cadence or point jitter");
+		require(emitter.orientation == orientation && !emitter.count && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == before + 12, "Native bubble lost full orientation, cadence or point jitter");
 		particle_objects_frame(100);
 		require(emitter.count > 0 && emitter.definition.image == 2 && emitter.definition.fade == -1, "Native bubble failed to emit its source profile");
 		for (int i = 0; i < emitter.count; ++i) {
@@ -136,17 +136,17 @@ static void bubble_objects_native_case(xl_compat::Inventory source)
 		require(xl_particle_object_set_enabled(1, 0), "Cannot disable native bubble owner");
 		particle_objects_frame(101);
 		require(emitter.life == 0 && emitter.count > 0, "Bubble disable removed its live cloud instead of draining");
-		const auto paused_calls = d_rand_get_stream_call_count(D_RNG_FX);
+		const auto paused_calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 		stop_time();
 		particle_objects_frame(1000);
 		start_time();
-		require(emitter.moved == 100 && d_rand_get_stream_call_count(D_RNG_FX) == paused_calls, "Paused bubble advanced its clock or FX stream");
+		require(emitter.moved == 100 && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == paused_calls, "Paused bubble advanced its clock or FX stream");
 		for (int time = 125; time <= 600; time += 25) particle_objects_frame(time);
 		if (wet) require(!particle_systems().empty() && particle_systems().front().count() > 0, "Wet native geometry retired every bubble prematurely");
 		else require(particle_systems().empty(), "Dry native geometry retained bubbles after water lookup and retirement");
-		const auto restore_calls = d_rand_get_stream_call_count(D_RNG_FX);
+		const auto restore_calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 		require(restore_particle_objects(saved, true) && particle_systems().empty() && particle_objects_snapshot() == saved, "Bubble activation restore retained transient particles or lost state");
-		require(d_rand_get_stream_call_count(D_RNG_FX) == restore_calls, "Bubble restore consumed FX RNG");
+		require(d_rand_get_stream_call_count(D_RNG_PRESENTATION) == restore_calls, "Bubble restore consumed FX RNG");
 		particle_objects_frame(0);
 		particle_objects_frame(100);
 		require(particle_systems().size() == 1 && particle_systems().front().count() > 0 && std::get<BubbleEmitter>(particle_systems().front().emitter).orientation == orientation, "Restored bubble owner did not create a fresh correctly oriented cloud");
@@ -164,12 +164,12 @@ static void bubble_objects_native_case(xl_compat::Inventory source)
 	         std::vector<int>{ 5, 3, 3, 4, 2, 1, 0, 0, 0, 0, 0, 2, 1 } }) {
 		source.objects[1].render_data = payload;
 		bind_particle_objects(source);
-		const auto before = d_rand_get_stream_call_count(D_RNG_FX);
+		const auto before = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 		particle_objects_frame(0);
 		require(particle_systems().size() == 1 && std::holds_alternative<BubbleEmitter>(particle_systems().front().emitter), "Original 21/40 bubble profile chose the wrong native emitter");
 		particle_objects_frame(100);
 		require(particle_systems().front().count() > 0 &&
-		            d_rand_get_stream_call_count(D_RNG_FX) >= before + (payload[10] ? 0 : 12),
+		            d_rand_get_stream_call_count(D_RNG_PRESENTATION) >= before + (payload[10] ? 0 : 12),
 		        "Original 21/40 face or point bubble did not emit with source FX cadence");
 	}
 	source.objects[1].render_data[10] = 7;
@@ -275,7 +275,10 @@ static void weather_objects_native_case(xl_compat::Inventory source)
 static void particle_objects_native_case(bool active)
 {
 	using namespace xl_compat;
-	const auto sim_before = d_rand_get_stream_call_count(D_RNG_SIM), fx_before = d_rand_get_stream_call_count(D_RNG_FX);
+	const auto sim_before = d_rand_get_stream_call_count(D_RNG_SIM), fx_before = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
+	unsigned effects_state = 0, effects_after = 0;
+	const auto effects_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	require(d_rand_get_stream_state(D_RNG_FX, &effects_state), "Cannot inspect FX isolation");
 	xl_transparency_test_controls(active);
 	if (!active) {
 		require(!xl_preserve_effect_position(20), "XL effect position policy leaked into stock");
@@ -284,14 +287,17 @@ static void particle_objects_native_case(bool active)
 		xl_particle_render_scene(nullptr, 0);
 		require(particle_scene({}, {}, {}, 1000, 128, 128).empty(), "Stock level produced an XL particle scene");
 		require(!xl_particle_object_set_enabled(1, 1) && particle_systems().empty(), "Stock level accepted an XL particle owner");
-		require(d_rand_get_stream_call_count(D_RNG_SIM) == sim_before && d_rand_get_stream_call_count(D_RNG_FX) == fx_before, "Stock particle hooks consumed RNG");
+		require(d_rand_get_stream_call_count(D_RNG_SIM) == sim_before && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == fx_before, "Stock particle hooks consumed RNG");
 		return;
 	}
 	require(!game_is_time_paused() && Highest_object_index >= 3 && Num_triggers > 0 && Players[Player_num].objnum == 0, "Particle owner controls require live unpaused Neptune");
 	// Pinned XL ChangeDir performs its multiply in signed 32-bit arithmetic.
 	// Original Dinter fire reaches this wrap boundary during normal frames.
 	struct HalfRandom {
-		float unit() { return 0.5f; }
+		float unit()
+		{
+			return 0.5f;
+		}
 	} half_random;
 	FireParticle boundary{};
 	boundary.drift = { 218000000, 0, 0 };
@@ -352,7 +358,7 @@ static void particle_objects_native_case(bool active)
 		Objects[1].pos = position;
 	}
 	particle_objects_frame(0);
-	require(particle_systems().empty() && d_rand_get_stream_call_count(D_RNG_FX) == fx_before, "Disabled authored particles allocated systems or consumed RNG");
+	require(particle_systems().empty() && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == fx_before, "Disabled authored particles allocated systems or consumed RNG");
 	const auto wall = [&](int type, int count) {
 		Triggers[0] = {};
 		Triggers[0].type = static_cast<ubyte>(type);
@@ -369,10 +375,10 @@ static void particle_objects_native_case(bool active)
 	particle_objects_frame(0);
 	require(particle_systems().size() == 2 && particle_systems().front().object == 2, "Authored particle systems lost newest-first source order");
 	particle_objects_frame(24);
-	require(particle_systems().front().fire_emitter().moved == 0 && d_rand_get_stream_call_count(D_RNG_FX) == fx_before, "Particle manager bypassed the 25-ms update gate");
+	require(particle_systems().front().fire_emitter().moved == 0 && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == fx_before, "Particle manager bypassed the 25-ms update gate");
 	particle_objects_frame(25);
-	require(particle_systems().front().fire_emitter().count > 0 && d_rand_get_stream_call_count(D_RNG_FX) > fx_before, "Enabled native emitter produced no particles");
-	const auto render_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	require(particle_systems().front().fire_emitter().count > 0 && d_rand_get_stream_call_count(D_RNG_PRESENTATION) > fx_before, "Enabled native emitter produced no particles");
+	const auto render_calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 	const auto &first_emitter = particle_systems().front().fire_emitter();
 	const auto &first_particle = first_emitter.slots[std::size_t(first_emitter.first)];
 	const int rotation_before = first_particle.rotation;
@@ -391,7 +397,7 @@ static void particle_objects_native_case(bool active)
 	particle_scene({ 0 }, eye, camera, 66, 128, 128);
 	require(clipped.rotation == unclipped_rotation, "Depth-rejected particle advanced render animation");
 	clipped.position = unclipped_position;
-	require(d_rand_get_stream_call_count(D_RNG_FX) == render_calls && d_rand_get_stream_call_count(D_RNG_SIM) == sim_before, "Particle scene construction consumed RNG");
+	require(d_rand_get_stream_call_count(D_RNG_PRESENTATION) == render_calls && d_rand_get_stream_call_count(D_RNG_SIM) == sim_before, "Particle scene construction consumed RNG");
 	const auto *old = &particle_systems().back();
 	wall(33, 1);
 	particle_objects_frame(26);
@@ -400,12 +406,12 @@ static void particle_objects_native_case(bool active)
 	particle_objects_frame(27);
 	require(particle_systems().size() == 3 && &particle_systems().front() != old && particle_systems().front().object == 1 && particle_systems().front().fire_emitter().life < 0, "Re-enable did not allocate a fresh emitter beside the draining one");
 	const auto *replacement = &particle_systems().front();
-	const auto pause_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	const auto pause_calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 	stop_time();
 	particle_objects_frame(3000);
 	xl_particle_objects_frame();
 	start_time();
-	require(!game_is_time_paused() && particle_systems().front().fire_emitter().moved == 27 && d_rand_get_stream_call_count(D_RNG_FX) == pause_calls, "Paused particles advanced or consumed RNG");
+	require(!game_is_time_paused() && particle_systems().front().fire_emitter().moved == 27 && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == pause_calls, "Paused particles advanced or consumed RNG");
 	for (int time = 3000; time <= 6000; time += 25) particle_objects_frame(time);
 	require(particle_systems().size() == 2 && &particle_systems().front() == replacement, "Draining old emitter unbound or recreated its replacement");
 	++Objects[2].signature;
@@ -438,9 +444,9 @@ static void particle_objects_native_case(bool active)
 	source.objects[1].render_data[10] = 0;
 	source.objects[1].render_data[12] = 1;
 	bind_particle_objects(source);
-	const auto jitter_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	const auto jitter_calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 	particle_objects_frame(0);
-	require(particle_systems().size() == 1 && d_rand_get_stream_call_count(D_RNG_FX) == jitter_calls + 12, "Native point emitter lost one of the source's two jitter visits");
+	require(particle_systems().size() == 1 && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == jitter_calls + 12, "Native point emitter lost one of the source's two jitter visits");
 	const auto *preserved = &particle_systems().front();
 	auto malformed = source;
 	malformed.objects[1].render_data[11] = 7;
@@ -490,5 +496,6 @@ static void particle_objects_native_case(bool active)
 	xl_particle_objects_clear();
 	require(particle_systems().empty() && !xl_particle_object_set_enabled(1, 1), "Particle clear left a system or activation binding");
 	require(d_rand_get_stream_call_count(D_RNG_SIM) == sim_before, "Particle lifecycle or activation consumed simulation RNG");
+	require(d_rand_get_stream_state(D_RNG_FX, &effects_after) && effects_after == effects_state && d_rand_get_stream_call_count(D_RNG_FX) == effects_calls, "Transient effects changed simulation-owned FX RNG");
 	std::cout << "XL particle native ownership: wall/object activation, cadence, drain/re-enable, recycled signatures, pause, point jitter, visible scene/render cadence, atomic binding and SIM isolation passed\n";
 }

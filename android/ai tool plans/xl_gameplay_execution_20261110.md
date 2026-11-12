@@ -816,16 +816,16 @@ and "accepted" are separate facts. A blocked item names the exact dependency and
 what independent item can proceed. An internal regression is repaired before
 retaining the change. All statuses below are planning statuses, not completed work.
 
-| Item | Status                                                                                          | Branch / commit / PR                                                              | Evidence, limits and revised estimate                                                                                                                          |
-| ---- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| G0   | Accepted baseline repair; remaining hosted checks and Android limitation tracked                | xl_gameplay_20261111_01_baseline; implementation a5db8d739; draft #465, base #464 | Windows/Linux native each 100 pass / 1 expected skip; Linux public 61/61; canonical private 113/113 and hosted private PASS                                    |
-| G1   | In progress: environment stream and ordered time controls; native startup qualification pending | xl_gameplay_20261111_02_timeline; parent 96ce2f8be; not published                 | Input-demo CTests 6/6 on Windows/Linux; Windows native pending-control save passes; Linux rendered restore times out; native format-6 admission remains closed |
-| G2   | Not started                                                                                     | 03_continuation                                                                   | Complete XL observer/cold-continuation audit required                                                                                                          |
-| G3   | Not started                                                                                     | 04_runtime                                                                        | True-headless XL and optional presentation independence unqualified                                                                                            |
-| G4   | Not started                                                                                     | 04_runtime                                                                        | Source no-op smoke, makers, subzero and wider gameplay predicates require decisions                                                                            |
-| G5   | Not started                                                                                     | 05_progression                                                                    | Existing assisted views do not prove connected original play                                                                                                   |
-| G6   | Not started                                                                                     | 06_qualification                                                                  | No newly frozen forward-compatible XL corpus yet                                                                                                               |
-| G7   | Not started                                                                                     | 06_qualification                                                                  | Layer 01 draft published; final packages and remaining layers not created                                                                                      |
+| Item | Status                                                                                | Branch / commit / PR                                                              | Evidence, limits and revised estimate                                                                                       |
+| ---- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| G0   | Accepted baseline repair; remaining hosted checks and Android limitation tracked      | xl_gameplay_20261111_01_baseline; implementation a5db8d739; draft #465, base #464 | Windows/Linux native each 100 pass / 1 expected skip; Linux public 61/61; canonical private 113/113 and hosted private PASS |
+| G1   | In progress: Omega live/repeated fidelity passes; time/settings qualification remains | xl_gameplay_20261111_02_timeline; parent 96ce2f8be; not published                 | Latest: Omega180 frames/184 world records/1059 SIM/364 FX match three clean plays; production admission remains closed      |
+| G2   | Not started                                                                           | 03_continuation                                                                   | Complete XL observer/cold-continuation audit required                                                                       |
+| G3   | Not started                                                                           | 04_runtime                                                                        | True-headless XL and optional presentation independence unqualified                                                         |
+| G4   | Not started                                                                           | 04_runtime                                                                        | Source no-op smoke, makers, subzero and wider gameplay predicates require decisions                                         |
+| G5   | Not started                                                                           | 05_progression                                                                    | Existing assisted views do not prove connected original play                                                                |
+| G6   | Not started                                                                           | 06_qualification                                                                  | No newly frozen forward-compatible XL corpus yet                                                                            |
+| G7   | Not started                                                                           | 06_qualification                                                                  | Layer 01 draft published; final packages and remaining layers not created                                                   |
 
 G0 publication checkpoint, November 11 at 08:37 PST (16:37 UTC):
 
@@ -1702,6 +1702,92 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   recorded-frame trace/render costs and improve margin without losing fields or
   raising deadlines. Keep production guards until full live/repeat/cross-platform
   and headless acceptance; continue the remaining original plan afterward.
+
+### 2026-11-11 15:22 PST - G1 presentation RNG isolation and faithful Omega replay
+
+- Previous increment is local commit 4bea763a5705d2108dc4fe528211d9d3a54a392b,
+  tree 9ddc89f710591a06bf65fc2e823156ec40367481. This increment made progress on
+  layer 02; G1 remains active/unaccepted. Intended commit: "Isolate XL presentation
+  randomness from simulation effects". No layer 02 push, PR or current-head CI claim.
+- The retained failed capture 8 consumed 233682 particle FX draws versus 126056 in
+  replay 5. Other FX consumers had identical call counts: ambient 181, palette 180,
+  chatter 4. Source audit found transient particle storage and lightning bolt/draw
+  geometry outside the game object allocator. Lightning/flare illumination feeds
+  preview.cpp's private dynamic vertex buffer and shading; no AI/collision reader
+  of that buffer was found. Lightning linked-sound allocation remains a separate
+  G3 dependency, not blanket proof that missing audio/rendering is safe.
+- Shared RNG now has stream 2, D_RNG_PRESENTATION, for XL particles, lightning and
+  XL flare illumination. It uses the existing LCG and remains independent even
+  with NO_WATCOM_RAND; stock SIM/FX libc behavior and stock flare draws are retained.
+  AI chatter, palette, ambient/seismic sound timing, endlevel object effects and
+  other FX consumers stay on stream 1. No gameplay/world field or FX history was
+  removed from native D2 comparisons. Transient presentation state is rebuilt,
+  not saved. Complete draw/reseed diagnostics remain in the raw RNG trace and a
+  separate presentation comparison; missing events/fields still reject.
+- Existing RNG tests now cover interleaved presentation reseeds/draws, independent
+  counters/restoration and all three trace streams, including libc builds. Native
+  particle/lightning lifecycle and flare tests additionally require unchanged FX
+  state/count, preserving SIM isolation and exact draw/lighting assertions. Camera,
+  deferred bubble and GPU controls follow the actual presentation stream; no
+  source oracle, test membership, deadline or authentic input was weakened.
+- Windows D1/D2 and Linux developer desktop/metadata builds pass. RNG CTests pass
+  3/3 on each of Windows D1, Windows D2 and Linux D2, zero skips. Comparator tests
+  pass 74/74. Native effect-inspection and Neptune lighting/features pass 2/2 on each
+  host: final Windows 36.80 s, Linux 16.08 s. Final Windows metadata rebuild includes
+  the removal of an unnecessary test-route presentation seed; its two native
+  controls were rerun afterward. Existing compiler warnings outside the edited
+  owners remain; no new warning was introduced by this change.
+- Linux GPU test first timed out at 60.07 s while compilation was active and software
+  GL was not explicitly selected. Retained g1-presentation-rng-linux-gpu.log is a
+  failure. A quiet run with LIBGL_ALWAYS_SOFTWARE=1 and GALLIUM_DRIVER=llvmpipe
+  passes1/1 in 26.83 s against the unchanged 60 s limit. Because both load and driver
+  selection changed, this does not isolate which condition caused the timeout.
+  It is rendered EGL evidence, not true-headless gameplay. Quality/diff checks
+  and both catalogs pass: 99 JSON/315 PS/547 support and 428 top-level/547 support.
+- Fresh original Warp5 capture 9 passes cleanly in 28.344 s against 45 s. Phase endpoints:
+  warmup/setup 1814 ms, recording-start 2092 ms, frames-finished 22608 ms, finalized 24017 ms.
+  Recorded frames took 20.516 s and finalization 1.409 s. No other build/native job ran
+  during capture. Earlier failed captures remain failed; timing improvement is an
+  observation, not proof of a particular performance cause. The prior capture 8
+  trace contains about 322 MB decoded JSON, mostly world records; stage-level trace
+  profiling remains the next step if performance margin needs further work.
+- Same original robot 117/signature 118/id 7: shields 16384000 ->6844288 while Omega
+  selected ->3419776, no kill; charge 65536 ->17488 ->42058. Warmup 66 normal frames,
+  one approach-pose and one inventory assist before recording, zero during 180
+  captured frames. No connected progression claim. Demo
+  d2_wshock20_level5_20261111_151308.dximdemo SHA256
+  67ac36c3c9d598b012429ae8b18f9d012736bce41cfec0ded21f83a52fc62836.
+- Immediate clean accelerated replay 6, independent accelerated replay 7 and real-time
+  replay 8 (maxfps 60) all verify assets, strict terminal state and natural clean exit.
+  EACH matches 180 object frames, 184 world/boundary records, 180 frame checks,
+  1059 SIM events and364 FX events, with zero field differences. This includes
+  the formerly divergent chatter timers. Presentation draws differ: live 199287;
+  replays 173430/165743/182226. They remain complete diagnostic differences. Thus
+  this assisted Windows Omega witness now satisfies live/immediate/two-repeat
+  fidelity under altered pacing; it is not a frozen or cross-platform corpus.
+- Windows D2 EXE 1879ba7d15ed9a51c9e9a86c93913b0a494f727d24ea4344d50f307ef43b3fd4;
+  final metadata 611180190d934c65c5ba1f230e4d60f2ba9319fd9a8d27c7f030e48df8e7b515;
+  D1 EXE 7bd5f1c365520893dbbcdbc00907c71c80ab83c47f6695ee914bcb90313d9ecb.
+  Linux desktop 56fd402d5028663a1e40b05d9880b8f756afdd53f1e2af3e60ee55e67f9720cc;
+  metadata 63ebc72a741fc5166795abd84fa59712a5f55ba98a66708c59265a31a63e84f4.
+  Same verified root-bound caches. Warp HOG rehashed unchanged 2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c;
+  pinned reference 2576a98b5de310e3ac7c9777df2677d1627b8bae and native input gates unchanged.
+- Evidence under protected temp/pr464-ci-fixes-20261110: g1-presentation-rng-* logs,
+  g1-fx-consumer-counts.json, capture 9, replays 6/7/8 and their full comparison JSON.
+  Actual work approximately 14:47-15:22 PST, with documentation/commit following.
+  WSL was stopped on entry and started successfully; no forced restart was needed.
+  No Android interruption or cleanup beyond zero-eligible retention previews.
+  Free space about 45.8 GiB; producer reserve 4 GiB unchanged. No external blocker.
+- Next: commit this coherent fix, then refresh Warp6's ordinary time-equipment
+  witness against schema 40/current runtime using xl_render_clock.py --time-equipment
+  --mission wshock20 --level 6 --xl, new g1-live-time-capture-7 output, followed by
+  immediate and repeated detailed playback. Prior Warp6 evidence used older save
+  schemas and is not current-tip qualification. Continue the remaining settings/
+  configuration-change, strict-FP, cheat/global and external-clock/state audit.
+  Keep production guards closed until G1 acceptance; G2 complete owner/cold-state,
+  G3 true-headless/audio independence, G4-G7 gameplay/platform/CI closure remain.
+  Revised estimate: G1 roughly 5-9 h, G2-G7 roughly 17.5 h with overlapping prerequisites
+  credited once accepted. No cutoff, scope reduction or full-gameplay claim.
 
 Per-item handoff template:
 

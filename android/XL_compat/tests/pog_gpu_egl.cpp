@@ -82,7 +82,7 @@ vms_matrix View_matrix{};
 static unsigned lightning_random_calls = 0;
 int d_rand_annotated(d_rng_stream stream, const char *, const char *, int)
 {
-	if (stream != D_RNG_FX) throw std::runtime_error("Lightning rendering consumed simulation RNG");
+	if (stream != D_RNG_PRESENTATION) throw std::runtime_error("Lightning rendering consumed simulation RNG");
 	++lightning_random_calls;
 	return 12345;
 }

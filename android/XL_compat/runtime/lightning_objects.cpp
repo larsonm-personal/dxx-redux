@@ -41,11 +41,11 @@ int clock_time = 0, last_tick = 0, tick_time = 0;
 struct EffectsRandom {
 	int bounded(int limit) const
 	{
-		return d_rand_fx() % limit;
+		return d_rand_presentation() % limit;
 	}
 	double unit() const
 	{
-		return double(d_rand_fx()) / 32767.0;
+		return double(d_rand_presentation()) / 32767.0;
 	}
 };
 bool native_lightning(int index)

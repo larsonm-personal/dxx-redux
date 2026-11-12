@@ -13,9 +13,12 @@
 
 static unsigned int d_rand_call_count[D_RNG_STREAM_COUNT];
 
-#ifndef NO_WATCOM_RAND
 static unsigned int d_rand_state[D_RNG_STREAM_COUNT];
-#endif
+
+static int d_rand_lcg(d_rng_stream stream)
+{
+	return ((d_rand_state[stream] = d_rand_state[stream] * 0x41c64e6d + 0x3039) >> 16) & 0x7fff;
+}
 
 static int d_rng_stream_is_valid(d_rng_stream stream)
 {
@@ -26,7 +29,10 @@ static int d_rng_stream_is_valid(d_rng_stream stream)
 
 static void d_srand_internal(d_rng_stream stream, unsigned int seed)
 {
-	(void) stream;
+	if (stream == D_RNG_PRESENTATION) {
+		d_rand_state[stream] = seed;
+		return;
+	}
 	srand(seed);
 }
 
@@ -37,6 +43,8 @@ int d_rand_get_replay_mode(void)
 
 int d_rand_get_replay_mode_for_stream(d_rng_stream stream)
 {
+	if (stream == D_RNG_PRESENTATION)
+		return D_RAND_REPLAY_MODE_LCG_STATE;
 	if (!d_rng_stream_is_valid(stream))
 		return D_RAND_REPLAY_MODE_LIBC_RESEED;
 	return D_RAND_REPLAY_MODE_LIBC_RESEED;
@@ -47,20 +55,26 @@ static int d_rand_internal(d_rng_stream stream)
 	if (!d_rng_stream_is_valid(stream))
 		stream = D_RNG_SIM;
 	d_rand_call_count[stream]++;
+	if (stream == D_RNG_PRESENTATION)
+		return d_rand_lcg(stream);
 	return rand() & 0x7fff;
 }
 
 int d_rand_get_stream_state(d_rng_stream stream, unsigned int *state)
 {
-	(void) stream;
-	(void) state;
+	if (stream == D_RNG_PRESENTATION && state) {
+		*state = d_rand_state[stream];
+		return 1;
+	}
 	return 0;
 }
 
 int d_rand_set_stream_state(d_rng_stream stream, unsigned int state)
 {
-	(void) stream;
-	(void) state;
+	if (stream == D_RNG_PRESENTATION) {
+		d_rand_state[stream] = state;
+		return 1;
+	}
 	return 0;
 }
 
@@ -83,7 +97,7 @@ static int d_rand_internal(d_rng_stream stream)
 	if (!d_rng_stream_is_valid(stream))
 		stream = D_RNG_SIM;
 	d_rand_call_count[stream]++;
-	return ((d_rand_state[stream] = d_rand_state[stream] * 0x41c64e6d + 0x3039) >> 16) & 0x7fff;
+	return d_rand_lcg(stream);
 }
 
 static void d_srand_internal(d_rng_stream stream, unsigned int seed)

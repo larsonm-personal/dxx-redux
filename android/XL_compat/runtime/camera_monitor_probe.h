@@ -18,13 +18,15 @@ unsigned camera_monitor_device_controls()
 		ubyte fade = canvas->cv_fade_level, blend = canvas->cv_blend_func;
 		std::array<float, 16> projection, modelview;
 		int mode = gles3_shim_get_matrix_mode();
-		unsigned fx = 0, fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+		unsigned fx = 0, fx_calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
+		unsigned legacy_fx = 0, legacy_fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
 		Restore(int s) : segment(s)
 		{
 			std::copy_n(Segments[s].sides[0].uvls, 4, uv.begin());
 			std::copy_n(gles3_shim_get_projection(), 16, projection.begin());
 			std::copy_n(gles3_shim_get_modelview(), 16, modelview.begin());
-			require(d_rand_get_stream_state(D_RNG_FX, &fx), "Cannot preserve monitor effects RNG");
+			require(d_rand_get_stream_state(D_RNG_FX, &legacy_fx), "Cannot preserve camera simulation-owned FX RNG");
+			require(d_rand_get_stream_state(D_RNG_PRESENTATION, &fx), "Cannot preserve monitor effects RNG");
 			probe.sc_w = probe.sc_h = 64;
 			grd_curscreen = &probe;
 		}
@@ -41,8 +43,10 @@ unsigned camera_monitor_device_controls()
 			glMatrixMode(GL_MODELVIEW);
 			glLoadMatrixf(modelview.data());
 			glMatrixMode(mode);
-			d_rand_set_stream_state(D_RNG_FX, fx);
-			d_rand_set_stream_call_count(D_RNG_FX, fx_calls);
+			d_rand_set_stream_state(D_RNG_PRESENTATION, fx);
+			d_rand_set_stream_call_count(D_RNG_PRESENTATION, fx_calls);
+			d_rand_set_stream_state(D_RNG_FX, legacy_fx);
+			d_rand_set_stream_call_count(D_RNG_FX, legacy_fx_calls);
 			xl_camera_controller_bind_level();
 		}
 	} restore(segment);

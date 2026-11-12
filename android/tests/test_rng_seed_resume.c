@@ -8,6 +8,40 @@ static int report_failure(const char *message)
 	return 1;
 }
 
+static int presentation_isolation(void)
+{
+	int expected[64], i;
+	unsigned int state = 0, calls;
+	d_srand_stream(D_RNG_SIM, 12345);
+	d_srand_stream(D_RNG_FX, 67890);
+	for (i = 0; i < 64; ++i)
+		expected[i] = d_rand_stream(i & 1 ? D_RNG_FX : D_RNG_SIM);
+	d_srand_stream(D_RNG_SIM, 12345);
+	d_srand_stream(D_RNG_FX, 67890);
+	d_rand_reset_call_count();
+	d_rand_reset_stream_call_count(D_RNG_FX);
+	d_rand_reset_stream_call_count(D_RNG_PRESENTATION);
+	for (i = 0; i < 64; ++i) {
+		int draw;
+		d_srand_stream(D_RNG_PRESENTATION, (unsigned int) i);
+		for (draw = 0; draw <= i; ++draw) d_rand_presentation();
+		if (expected[i] != d_rand_stream(i & 1 ? D_RNG_FX : D_RNG_SIM))
+			return report_failure("presentation rendering changed the SIM/FX sequence");
+	}
+	if (d_rand_get_call_count() != 32 || d_rand_get_stream_call_count(D_RNG_FX) != 32 ||
+	    d_rand_get_stream_call_count(D_RNG_PRESENTATION) != 2080)
+		return report_failure("presentation calls crossed stream counters");
+	if (d_rand_get_replay_mode_for_stream(D_RNG_PRESENTATION) != D_RAND_REPLAY_MODE_LCG_STATE ||
+	    !d_rand_get_stream_state(D_RNG_PRESENTATION, &state))
+		return report_failure("presentation RNG lost diagnostic state");
+	i = d_rand_presentation();
+	calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
+	if (!d_rand_set_stream_state(D_RNG_PRESENTATION, state) || i != d_rand_presentation() ||
+	    d_rand_get_stream_call_count(D_RNG_PRESENTATION) != calls + 1)
+		return report_failure("presentation state did not resume independently");
+	return 0;
+}
+
 int main(void)
 {
 	const unsigned int base_seed = 0x12345678u;
@@ -31,6 +65,8 @@ int main(void)
 	int sim_after_fx;
 	int replayed_sim_after_fx;
 	int replayed_fx_first;
+
+	if (presentation_isolation()) return 1;
 
 	replay_mode = d_rand_get_replay_mode();
 	if (replay_mode != D_RAND_REPLAY_MODE_LCG_STATE &&

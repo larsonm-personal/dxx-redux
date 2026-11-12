@@ -161,10 +161,10 @@ void lightning_gpu_probe(const char *operation)
 			grs_canvas *canvas = grd_curcanv;
 			grs_canvas probe_canvas = *canvas;
 			GLuint depth = 0;
-			unsigned random_state = 0, random_calls = d_rand_get_stream_call_count(D_RNG_FX);
+			unsigned random_state = 0, random_calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 			NativeState()
 			{
-				require(d_rand_get_stream_state(D_RNG_FX, &random_state) != 0, "Lightning control cannot preserve effects RNG");
+				require(d_rand_get_stream_state(D_RNG_PRESENTATION, &random_state) != 0, "Lightning control cannot preserve effects RNG");
 				probe.sc_w = probe.sc_h = 64;
 				grd_curscreen = &probe;
 				probe_viewer.size = 65536;
@@ -177,7 +177,7 @@ void lightning_gpu_probe(const char *operation)
 				glBindRenderbuffer(GL_RENDERBUFFER, depth);
 				glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 64, 64);
 				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth);
-				d_srand_stream(D_RNG_FX, 12345);
+				d_srand_stream(D_RNG_PRESENTATION, 12345);
 			}
 			~NativeState()
 			{
@@ -186,8 +186,8 @@ void lightning_gpu_probe(const char *operation)
 				grd_curscreen = screen;
 				Viewer = viewer;
 				grd_curcanv = canvas;
-				d_rand_set_stream_state(D_RNG_FX, random_state);
-				d_rand_set_stream_call_count(D_RNG_FX, random_calls);
+				d_rand_set_stream_state(D_RNG_PRESENTATION, random_state);
+				d_rand_set_stream_call_count(D_RNG_PRESENTATION, random_calls);
 				glDeleteRenderbuffers(1, &depth);
 			}
 		} native;
@@ -223,7 +223,7 @@ void lightning_gpu_probe(const char *operation)
 		item.random_nodes = 1;
 		item.width = .7f;
 		item.color = { 0, 52.f / 255.f, 149.f / 255.f, 128.f / 255.f };
-		const auto calls = d_rand_get_stream_call_count(D_RNG_FX);
+		const auto calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 		draw_lightning_scene_item(item, lightning_probe_image->texture.get());
 		ParticleQuad quad{};
 		quad.blend = ParticleBlend::additive;
@@ -243,7 +243,7 @@ void lightning_gpu_probe(const char *operation)
 		glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pending.data());
 		require(sprite_scene == pending, "Original glare prematurely flushed pending lightning");
 		finish_lightning_batch();
-		require(d_rand_get_stream_call_count(D_RNG_FX) == calls + 6, "Mixed lightning/sprite draw used the wrong effects RNG count");
+		require(d_rand_get_stream_call_count(D_RNG_PRESENTATION) == calls + 6, "Mixed lightning/sprite draw used the wrong effects RNG count");
 		GLint framebuffer, view[4];
 		glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &framebuffer);
 		glGetIntegerv(GL_VIEWPORT, view);
@@ -263,15 +263,15 @@ void lightning_gpu_probe(const char *operation)
 				item.frame.glow.distance_scale = scale;
 				glDepthMask(GL_TRUE);
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-				d_srand_stream(D_RNG_FX, 12345);
-				const auto outline_calls = d_rand_get_stream_call_count(D_RNG_FX);
+				d_srand_stream(D_RNG_PRESENTATION, 12345);
+				const auto outline_calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 				draw_lightning_scene_item(item, nullptr);
 				std::vector<unsigned char> immediate(64 * 64 * 4), finished(immediate.size());
 				glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, immediate.data());
 				finish_lightning_batch();
 				glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, finished.data());
 				require(immediate == finished, "Non-glowing lightning deferred its direct device draw");
-				require(d_rand_get_stream_call_count(D_RNG_FX) == outline_calls + 3, "Non-glowing lightning consumed the wrong effects RNG count");
+				require(d_rand_get_stream_call_count(D_RNG_PRESENTATION) == outline_calls + 3, "Non-glowing lightning consumed the wrong effects RNG count");
 				unsigned visible = 0;
 				for (unsigned p = 0; p < 64 * 64; ++p) visible += finished[p * 4 + 2] != 0;
 				require(visible > 0 && visible < 64 * 64, "Non-glowing lightning produced no bounded device outline");

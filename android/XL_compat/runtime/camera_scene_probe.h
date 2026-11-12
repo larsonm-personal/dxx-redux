@@ -10,7 +10,8 @@ unsigned camera_scene_device_controls()
 		int rear = Rear_view;
 		GLuint sentinels[3]{};
 		GLint textures[3]{};
-		unsigned fx = 0, fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+		unsigned fx = 0, fx_calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
+		unsigned legacy_fx = 0, legacy_fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
 		State()
 		{
 			glGenTextures(3, sentinels);
@@ -20,7 +21,8 @@ unsigned camera_scene_device_controls()
 				glBindTexture(GL_TEXTURE_2D, sentinels[i]);
 			}
 			glActiveTexture(GL_TEXTURE0);
-			require(d_rand_get_stream_state(D_RNG_FX, &fx), "Cannot preserve camera control effects RNG");
+			require(d_rand_get_stream_state(D_RNG_FX, &legacy_fx), "Cannot preserve camera simulation-owned FX RNG");
+			require(d_rand_get_stream_state(D_RNG_PRESENTATION, &fx), "Cannot preserve camera control effects RNG");
 		}
 		~State()
 		{
@@ -31,8 +33,10 @@ unsigned camera_scene_device_controls()
 			glDeleteTextures(3, sentinels);
 			glActiveTexture(GL_TEXTURE0);
 			Rear_view = rear;
-			d_rand_set_stream_state(D_RNG_FX, fx);
-			d_rand_set_stream_call_count(D_RNG_FX, fx_calls);
+			d_rand_set_stream_state(D_RNG_PRESENTATION, fx);
+			d_rand_set_stream_call_count(D_RNG_PRESENTATION, fx_calls);
+			d_rand_set_stream_state(D_RNG_FX, legacy_fx);
+			d_rand_set_stream_call_count(D_RNG_FX, legacy_fx_calls);
 		}
 	} restore;
 	static std::array<CameraTargetGpu, 2> targets;
@@ -57,7 +61,7 @@ unsigned camera_scene_device_controls()
 		std::vector<unsigned char> first;
 		for (int rear : { 0, 1 }) {
 			Rear_view = rear;
-			d_srand_stream(D_RNG_FX, 12345);
+			d_srand_stream(D_RNG_PRESENTATION, 12345);
 			glActiveTexture(GL_TEXTURE3);
 			const auto graphics = camera_target_gl_state();
 			std::array<float, 16> projection, modelview;

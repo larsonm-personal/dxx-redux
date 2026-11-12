@@ -1910,7 +1910,7 @@ extern "C" void xl_preview_dynamic_frame(void)
 						break;
 					}
 					intensity = Weapon_info[obj.id].light;
-					if (obj.id == FLARE_ID) intensity = xl_compat::flare_intensity(intensity, obj.lifeleft, unsigned(d_rand_fx()));
+					if (obj.id == FLARE_ID) intensity = xl_compat::flare_intensity(intensity, obj.lifeleft, unsigned(source ? d_rand_presentation() : d_rand_fx()));
 					// CWeaponData::Create initializes all non-missile colors to white
 					if (missile_light(obj.id)) color = { 1, 0.3f, 0 };
 					has_color = force_color = true;

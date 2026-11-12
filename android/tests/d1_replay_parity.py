@@ -419,11 +419,9 @@ def rng_events(path, stream=0):
         if record.get("seq") != count:
             raise EvidenceError("RNG event sequence is incomplete")
         count += 1
-        # SIM and FX are independently seeded, but both traces must be complete
-        if record.get("stream", 0) not in (0, 1):
+        # Preserve complete SIM, FX and XL presentation traces, including interleaving
+        if type(record.get("stream", 0)) is not int or record.get("stream", 0) not in (0, 1, 2):
             raise EvidenceError("Unsupported RNG stream")
-        if record.get("stream", 0) != stream:
-            continue
         required = (
             "frame",
             "gt",
@@ -434,6 +432,8 @@ def rng_events(path, stream=0):
         )
         if not all(key in record for key in required):
             raise EvidenceError("Incomplete RNG event")
+        if record.get("stream", 0) != stream:
+            continue
         # Global seq interleaves FX; source function/path/line are engine labels
         yield {key: value for key, value in record.items() if key not in ("seq", "file", "func", "line", "stream")}
     if meta is None or count != meta.get("events"):
@@ -461,7 +461,7 @@ def compare_rng(left, right, stream=0):
             if found:
                 first_values = {"event": count, **found}
         count += 1
-    count_key = "simulation_events_compared" if stream == 0 else "effects_events_compared"
+    count_key = ("simulation_events_compared", "effects_events_compared", "presentation_events_compared")[stream]
     return {
         "status": "fail" if first else "pass",
         count_key: count,
@@ -1514,7 +1514,10 @@ def compare_pair(demo, left, right, engine, recorded=False):
     return {
         "status": "fail" if "fail" in statuses else "incomplete" if "incomplete" in statuses else "pass",
         "checks": checks,
-        "diagnostics": {"effects_rng": safe_check(lambda: compare_rng(left["rng"], right["rng"], stream=1))},
+        "diagnostics": {
+            "effects_rng": safe_check(lambda: compare_rng(left["rng"], right["rng"], stream=1)),
+            "presentation_rng": safe_check(lambda: compare_rng(left["rng"], right["rng"], stream=2)),
+        },
     }
 
 

@@ -947,11 +947,24 @@ class ParityTests(unittest.TestCase):
             parity.compare_rng(a, b, stream=1)
 
     def test_missing_rng_values_and_unknown_streams_are_incomplete(self):
-        for mutation in (lambda rows: rows[1].pop("result"), lambda rows: rows[1].update(stream=2)):
+        for mutation in (lambda rows: rows[1].pop("result"), lambda rows: rows[1].update(stream=3)):
             path = self.rng("rng")
             self.mutate(path, mutation)
             with self.assertRaises(parity.EvidenceError):
                 list(parity.rng_events(path))
+
+    def test_presentation_rng_retains_differences_and_requires_complete_diagnostics(self):
+        a, b = self.rng("presentation-a"), self.rng("presentation-b")
+        for path in (a, b):
+            self.mutate(path, lambda rows: rows[2].update(stream=2))
+        self.mutate(b, lambda rows: rows[2].update(result=3))
+        self.assertEqual(parity.compare_rng(a, b)["status"], "pass")
+        report = parity.compare_rng(a, b, stream=2)
+        self.assertEqual(report["presentation_events_compared"], 1)
+        self.assertEqual(report["status"], "fail")
+        self.mutate(b, lambda rows: rows[2].pop("result"))
+        with self.assertRaises(parity.EvidenceError):
+            parity.compare_rng(a, b)
 
     def test_effects_rng_does_not_set_the_gameplay_verdict(self):
         a, b = self.rng("rng-a"), self.rng("rng-b")

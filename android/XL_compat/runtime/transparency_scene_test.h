@@ -141,19 +141,19 @@ extern "C" void xl_transparency_test_controls(int active)
 	check(particle_visits == 3 && rendered_objects.empty(), "Particle visitation skipped a singleton or retained owner visibility");
 	{
 		unsigned random_state = 0;
-		check(d_rand_get_stream_state(D_RNG_FX, &random_state), "Deferred bubble control requires restorable effects RNG");
-		const auto random_calls = d_rand_get_stream_call_count(D_RNG_FX);
+		check(d_rand_get_stream_state(D_RNG_PRESENTATION, &random_state), "Deferred bubble control requires restorable effects RNG");
+		const auto random_calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 		struct RandomRestore {
 			unsigned state, calls;
 			~RandomRestore()
 			{
-				d_rand_set_stream_state(D_RNG_FX, state);
-				d_rand_set_stream_call_count(D_RNG_FX, calls);
+				d_rand_set_stream_state(D_RNG_PRESENTATION, state);
+				d_rand_set_stream_call_count(D_RNG_PRESENTATION, calls);
 			}
 		} random_restore{ random_state, random_calls };
-		const int denominators[]{ 10 + d_rand_fx() % 6, 10 + d_rand_fx() % 6 };
-		check(d_rand_set_stream_state(D_RNG_FX, random_state), "Cannot rewind bubble control RNG");
-		d_rand_set_stream_call_count(D_RNG_FX, random_calls);
+		const int denominators[]{ 10 + d_rand_presentation() % 6, 10 + d_rand_presentation() % 6 };
+		check(d_rand_set_stream_state(D_RNG_PRESENTATION, random_state), "Cannot rewind bubble control RNG");
+		d_rand_set_stream_call_count(D_RNG_PRESENTATION, random_calls);
 		std::array<BubbleParticle, 3> bubbles{};
 		for (unsigned i = 0; i < bubbles.size(); ++i) {
 			bubbles[i].motion.position = particle_position;
@@ -186,7 +186,7 @@ extern "C" void xl_transparency_test_controls(int active)
 		smoke.scene.quad.blend = ParticleBlend::alpha;
 		add(smoke, particle_position, 10 * 65536);
 		enqueue_bubble(0);
-		check(d_rand_get_stream_call_count(D_RNG_FX) == random_calls, "Bubble queue insertion consumed wiggle randomness");
+		check(d_rand_get_stream_call_count(D_RNG_PRESENTATION) == random_calls, "Bubble queue insertion consumed wiggle randomness");
 		unsigned batches = 0, boundaries = 0;
 		drain_buffered([&](ParticleTexture *, const std::vector<ParticleQuad> &quads) {
 			++batches;
@@ -200,7 +200,7 @@ extern "C" void xl_transparency_test_controls(int active)
 			} }, [&](Item &item) {
 			check(std::holds_alternative<QueuedObject>(item) && batches == 1, "Bubble batch crossed a native object boundary");
 			++boundaries; });
-		check(batches == 1 && boundaries == 1 && d_rand_get_stream_call_count(D_RNG_FX) == random_calls + 2, "Suppressed bubble singleton consumed wiggle RNG or escaped its buffer");
+		check(batches == 1 && boundaries == 1 && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == random_calls + 2, "Suppressed bubble singleton consumed wiggle RNG or escaped its buffer");
 		std::cout << "XL bubble deferred queue: mixed source order, queued-frame world-X wiggle, live atlas, boundary flush and singleton RNG suppression passed\n";
 	}
 	xl_transparency_begin(&segment, 1);

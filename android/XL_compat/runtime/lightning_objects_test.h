@@ -46,7 +46,7 @@ static void lightning_native_light_case()
 	std::vector<DynamicVertexLight> expected;
 	for (int i = 0; i < Num_vertices; ++i) expected.push_back(read(i));
 	xl_lightning_object_set_enabled(1, 1);
-	const auto rng = d_rand_get_stream_call_count(D_RNG_FX);
+	const auto rng = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 	const auto lights = lightning_object_lights();
 	require(!lights.empty(), "Native lightning fixture produced no located segment light");
 	const auto visible = lights.find(Render_list[0]);
@@ -65,7 +65,7 @@ static void lightning_native_light_case()
 		require(actual.intensity == expected[vertex].intensity && actual.color == expected[vertex].color && actual.has_color == expected[vertex].has_color,
 		        "Lightning light did not reach exactly the rendered native vertices");
 	}
-	require(d_rand_get_stream_call_count(D_RNG_FX) == rng, "Lightning light collection consumed RNG");
+	require(d_rand_get_stream_call_count(D_RNG_PRESENTATION) == rng, "Lightning light collection consumed RNG");
 	N_render_segs = 0;
 	xl_preview_dynamic_frame();
 	for (int vertex = 0; vertex < Num_vertices; ++vertex) require(read(vertex).intensity == 0, "Invisible lightning retained vertex illumination");
@@ -77,12 +77,15 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 	const bool nonglow = profile == 1 || profile == 2 || profile == 4;
 	using namespace xl_compat;
 	const auto sim = d_rand_get_stream_call_count(D_RNG_SIM);
-	const auto fx = d_rand_get_stream_call_count(D_RNG_FX);
+	unsigned effects_state = 0, effects_after = 0;
+	const auto effects_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	require(d_rand_get_stream_state(D_RNG_FX, &effects_state), "Cannot inspect FX isolation");
+	const auto fx = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 	if (!active) {
 		xl_lightning_objects_clock();
 		xl_lightning_objects_frame();
 		require(lightning_objects_snapshot().empty() && !lightning_object_emitter(1) && !xl_lightning_object_set_enabled(1, 1), "Stock level accepted an XL lightning owner");
-		require(d_rand_get_stream_call_count(D_RNG_SIM) == sim && d_rand_get_stream_call_count(D_RNG_FX) == fx, "Stock lightning hook consumed RNG");
+		require(d_rand_get_stream_call_count(D_RNG_SIM) == sim && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == fx, "Stock lightning hook consumed RNG");
 		return;
 	}
 	PHYSFS_file *file = PHYSFS_openRead(Gamesave_current_filename);
@@ -138,7 +141,7 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 		if (profile == 4) authored.render_data = { 300, 30, 20, 6, 2, -1, 3, index, 3 - index, 30, 5, 4, 3, 4, 1, 1, 1, 0, 0, 1, 0, 115, 25, 25, 200, index == 1 };
 	}
 	bind_lightning_objects(source);
-	require(!lightning_object_emitter(1) && !lightning_object_emitter(2) && d_rand_get_stream_call_count(D_RNG_FX) == fx, "Lightning bind allocated transient bolts or consumed RNG");
+	require(!lightning_object_emitter(1) && !lightning_object_emitter(2) && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == fx, "Lightning bind allocated transient bolts or consumed RNG");
 	const auto saved = lightning_objects_snapshot();
 	auto invalid = source;
 	invalid.objects[2].segment = -1;
@@ -207,7 +210,7 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 	const auto frozen_core = frame->core.vertices, frozen_glow = frame->glow.vertices;
 	lightning_native_light_case();
 	const LightningPoint scene_eye{ Objects[1].pos.x, Objects[1].pos.y, Objects[1].pos.z };
-	const auto scene_rng = d_rand_get_stream_call_count(D_RNG_FX);
+	const auto scene_rng = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 	auto queued = lightning_scene_items({ 0 }, {}, scene_eye, INT32_MAX);
 	require(queued.size() == emitter->bolts.size(), "Visible lightning did not collect every active bolt");
 	require(lightning_scene_items({}, {}, scene_eye, INT32_MAX).empty(), "Hidden lightning entered the scene");
@@ -220,16 +223,16 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 	++Objects[1].signature;
 	require(!lightning_scene_item_valid(queued[0]), "Queued lightning followed a recycled native object");
 	--Objects[1].signature;
-	require(d_rand_get_stream_call_count(D_RNG_FX) == scene_rng, "Lightning collection consumed draw-time RNG");
+	require(d_rand_get_stream_call_count(D_RNG_PRESENTATION) == scene_rng, "Lightning collection consumed draw-time RNG");
 	if (emitter->bolts[0].lifetime.nodes > 0)
 		require(emitter->bolts[0].position == LightningPoint{ Objects[1].pos.x, Objects[1].pos.y, Objects[1].pos.z }, "Lightning did not follow its native owner");
-	const auto before_validation = d_rand_get_stream_call_count(D_RNG_FX);
+	const auto before_validation = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 	const int before_pause = emitter->updated;
 	stop_time();
 	lightning_objects_clock(epoch + 60);
 	lightning_objects_frame();
 	start_time();
-	require(emitter->updated == before_pause && d_rand_get_stream_call_count(D_RNG_FX) == before_validation, "Paused lightning advanced or consumed RNG");
+	require(emitter->updated == before_pause && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == before_validation, "Paused lightning advanced or consumed RNG");
 	require(lightning_object_render_frame(1, 0)->core.vertices == frozen_core && lightning_object_render_frame(1, 0)->glow.vertices == frozen_glow, "Paused lightning replaced its render snapshot");
 	for (int variant = 0; variant < 7; ++variant) {
 		auto state = saved;
@@ -246,7 +249,7 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 	require(restore_lightning_objects(saved, true) && lightning_objects_snapshot() == saved && !lightning_object_emitter(1), "Lightning restore retained transient bolts or lost activation");
 	require(!lightning_object_render_frame(1, 0), "Lightning restore retained stale camera geometry");
 	require(lightning_scene_items({ 0 }, { 1 }, scene_eye, INT32_MAX).empty(), "Lightning restore retained queued render geometry");
-	require(d_rand_get_stream_call_count(D_RNG_FX) == before_validation, "Lightning restore consumed effects RNG");
+	require(d_rand_get_stream_call_count(D_RNG_PRESENTATION) == before_validation, "Lightning restore consumed effects RNG");
 	Triggers[0] = {};
 	Triggers[0].type = 32;
 	Triggers[0].time = -1;
@@ -332,13 +335,13 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 		anchors.objects[1].render_data[2] = 0;
 		bind_lightning_objects(anchors);
 		const auto anchor_state = lightning_objects_snapshot();
-		const auto anchor_rng = d_rand_get_stream_call_count(D_RNG_FX);
+		const auto anchor_rng = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 		lightning_objects_frame();
-		require(!lightning_object_emitter(1) && !lightning_object_emitter(2) && d_rand_get_stream_call_count(D_RNG_FX) == anchor_rng,
+		require(!lightning_object_emitter(1) && !lightning_object_emitter(2) && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == anchor_rng,
 		        "Target-only lightning objects emitted bolts or consumed effects RNG");
 		require(restore_lightning_objects(anchor_state, true), "Target-only lightning activation did not restore");
 		lightning_objects_frame();
-		require(!lightning_object_emitter(1) && !lightning_object_emitter(2) && d_rand_get_stream_call_count(D_RNG_FX) == anchor_rng,
+		require(!lightning_object_emitter(1) && !lightning_object_emitter(2) && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == anchor_rng,
 		        "Restored target-only lightning objects created transient emitters");
 		bind_lightning_objects(source);
 		lightning_objects_frame();
@@ -350,6 +353,7 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 	lightning_objects_frame();
 	require(!lightning_object_emitter(2), "Deleted object retained lightning");
 	require(d_rand_get_stream_call_count(D_RNG_SIM) == sim, "Lightning used simulation RNG");
+	require(d_rand_get_stream_state(D_RNG_FX, &effects_after) && effects_after == effects_state && d_rand_get_stream_call_count(D_RNG_FX) == effects_calls, "Transient effects changed simulation-owned FX RNG");
 	std::cout << "XL lightning native ownership (" << (profile == 4 ? "Sphere directed cone" : profile == 3 ? "PMC fixed-target"
 	                                                                                       : profile == 2   ? "PMC parent-bolt"
 	                                                                                       : nonglow        ? "non-glowing"

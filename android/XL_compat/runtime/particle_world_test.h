@@ -11,6 +11,7 @@ static void particle_world_native_case(std::ostream &out, const char *filename, 
 		       Gamesave_current_filename;
 	};
 	const auto before = native_state();
+	const auto presentation_calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 	const auto simulation_calls = d_rand_get_stream_call_count(D_RNG_SIM), effects_calls = d_rand_get_stream_call_count(D_RNG_FX);
 	PHYSFS_File *file = PHYSFS_openRead(filename);
 	require(file && PHYSFS_fileLength(file) > 0 && PHYSFS_fileLength(file) <= 64 * 1024 * 1024, "Particle world source missing or oversized");
@@ -83,7 +84,7 @@ static void particle_world_native_case(std::ostream &out, const char *filename, 
 		}
 	}
 	require(native_state() == before, "Particle world compilation changed live engine state");
-	require(d_rand_get_stream_call_count(D_RNG_SIM) == simulation_calls && d_rand_get_stream_call_count(D_RNG_FX) == effects_calls, "Particle world compilation consumed simulation or effects RNG");
+	require(d_rand_get_stream_call_count(D_RNG_PRESENTATION) == presentation_calls && d_rand_get_stream_call_count(D_RNG_SIM) == simulation_calls && d_rand_get_stream_call_count(D_RNG_FX) == effects_calls, "Particle world compilation consumed simulation or effects RNG");
 	out << "case " << ordinal << '\n';
 	xl_particle_world_receipt::write(out, receipt);
 	require(bool(out), "Particle world receipt write failed");

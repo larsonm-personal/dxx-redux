@@ -350,10 +350,27 @@ charge consumption and recharge. It discloses both setup assists and requires
 zero assists during recording. The original eight component/rate controls remain
 the default mode. A passing capture receipt does not qualify playback: compare
 the recorded detailed state and SIM RNG with clean-process replay before freezing
-the demo. Current Warp 5 evidence matches frame hashes, SIM RNG and restored
-checkpoint clocks/counters and texture UVs, but FX RNG and chatter timers still
-diverge. The recording probe reports phase timings and the runner reports total
-process time; its 45-second clean-exit deadline remains unchanged.
+the demo. A fresh Warp 5 capture now matches all 180 object/frame observations,
+184 world/boundary records, 1059 SIM RNG events and 364 FX RNG events against
+clean-process playback. This includes restored clocks/counters, texture UVs and
+AI chatter timers. Presentation RNG differs and remains reported separately.
+This bounded assisted witness is not complete XL state/platform qualification or
+a frozen corpus. The recording probe reports phase timings and the runner reports
+total process time; its 45-second clean-exit deadline remains unchanged.
+
+XL transient particles, lightning bolt/draw geometry and flare illumination use
+RNG stream 2 (`D_RNG_PRESENTATION`). These owners previously consumed stream 1
+(`D_RNG_FX`), which also drives simulation-owned sound deadlines and some stock
+object effects. Rendering extra views or rebuilding clouds could therefore change
+later FX decisions. The new stream uses the existing LCG, independently even in
+libc RNG builds. Stock SIM/FX sequences and stock flare selection are unchanged.
+Every presentation draw/reseed remains in the complete RNG trace, with a separate
+`presentation_rng` comparison report. The two-entry object/boundary `rng` array
+continues to describe SIM and FX; native D2 comparison retains both exactly.
+Presentation sequence/state is not saved: transient clouds and bolts already
+rebuild on ordinary restoration. This is an RNG ownership boundary, not blanket
+qualification of optional graphics/audio. Lightning linked-sound ownership and
+all other gameplay dependencies still require the G3 audit and no-device proof.
 
 The header `environment` object contains `required: ["xl-clock-input-v1"]`,
 `slow_motion_speedup: 6`, `clock_ms`, `pickup_ms`, `cached_ms` and `render_frame`. Unknown or

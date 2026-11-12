@@ -20,9 +20,21 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	const unsigned int seeds[] = { 0u, 1u, 0x80000000u, 0xffffffffu };
+	// Exercise libc builds too: presentation reseeds/draws must not reach rand()
+	for (auto stream : { D_RNG_SIM, D_RNG_FX }) {
+		d_srand_stream(stream, 12345);
+		const int first = d_rand_stream(stream), second = d_rand_stream(stream);
+		d_srand_stream(stream, 12345);
+		const int actual_first = d_rand_stream(stream);
+		d_srand_stream(D_RNG_PRESENTATION, 67890);
+		for (unsigned i = 0; i < 100; ++i) d_rand_presentation();
+		if (first != actual_first || second != d_rand_stream(stream)) {
+			std::cerr << "Presentation randomness changed SIM/FX sequence\n";
+			return 1;
+		}
+	}
 	std::vector<json> expected;
-	unsigned int counts[D_RNG_STREAM_COUNT] = { 100u, 200u };
-	const bool has_state = d_rand_get_replay_mode() == D_RAND_REPLAY_MODE_LCG_STATE;
+	unsigned int counts[D_RNG_STREAM_COUNT] = { 100u, 200u, 300u };
 	for (int stream = 0; stream < D_RNG_STREAM_COUNT; ++stream) {
 		d_rand_set_stream_state(static_cast<d_rng_stream>(stream), 0x12345678u + stream);
 		d_rand_set_stream_call_count(static_cast<d_rng_stream>(stream), counts[stream]);
@@ -32,6 +44,7 @@ int main(int argc, char **argv)
 	for (unsigned int seed : seeds) {
 		for (int stream = 0; stream < D_RNG_STREAM_COUNT; ++stream) {
 			const auto selected = static_cast<d_rng_stream>(stream);
+			const bool has_state = d_rand_get_replay_mode_for_stream(selected) == D_RAND_REPLAY_MODE_LCG_STATE;
 			unsigned int before = 0;
 			d_rand_get_stream_state(selected, &before);
 			d_srand_annotated(selected, seed, "rng-seed-test", "seed", 42);
@@ -72,7 +85,7 @@ int main(int argc, char **argv)
 			if (actual.value("stream", 0) == 0) actual["stream"] = 0;
 			if (actual.at("seq") != i || actual.at("frame") != 7 || actual.at("gt") != 123456 || actual.at("file") != "rng-seed-test")
 				throw std::runtime_error("Incorrect event context");
-			if (actual.contains("state_before") != has_state || actual.contains("state_after") != has_state)
+			if (actual.contains("state_before") != expected[i].contains("state_before") || actual.contains("state_after") != expected[i].contains("state_after"))
 				throw std::runtime_error("Incorrect state availability");
 			for (auto field = expected[i].begin(); field != expected[i].end(); ++field) {
 				if (actual.at(field.key()) != field.value()) {
@@ -86,6 +99,6 @@ int main(int argc, char **argv)
 		std::cerr << error.what() << '\n';
 		return 1;
 	}
-	std::cout << "PASS: SIM/FX reseed and draw trace fields (" << (has_state ? "LCG" : "libc") << ")\n";
+	std::cout << "PASS: SIM/FX/presentation reseed and draw trace fields\n";
 	return 0;
 }
