@@ -480,7 +480,7 @@ captured at its ordinary setter before resetting AI routing; two changes between
 frames remain two operations even when the final mode equals the original mode.
 Playback uses that same setter, not the save-restoration path that preserves AI.
 
-XL world observations use schema 16 and require `xl_player_cfg`, `xl_births` and `xl_native`
+XL world observations use schema 17 and require `xl_player_cfg`, `xl_births` and `xl_native`
 at restored, per-frame and terminal boundaries. Birth observations contain every
 live slot/signature, birth time, creation order and the next creation counter;
 the reader checks live object identities at both boundaries and validates the
@@ -516,7 +516,14 @@ codec. Full fixed arrays and text storage remain visible. Long-double scores use
 an exact sign, binary significand and exponent, preserving native precision and
 negative zero without copying ABI padding or narrowing to double. Metadata and
 active-route qualification remain incomplete.
-Earlier XL schema-10/11/12/13/14/15 receipts retain their historical scope; they cannot
+The native `events` section captures raw object actions and bindings, all live boss
+fields/routes and any pending restore checkpoint, equipment state/selection flags/
+station links, and producer implicit/ready masks and authored ownership. These
+snapshots read owner storage directly. The older object/boss getters may retire
+stale bindings, refresh an interval or prune generated bosses, so they cannot
+supply a pure observation. Existing object/boss tests deliberately make bindings
+stale and verify that observation preserves them without mutation or RNG draws.
+Earlier XL schema-10/11/12/13/14/15/16 receipts retain their historical scope; they cannot
 prove the newly required native-state observation. The Omega recording probe exercises menu-equivalent
 auto-leveling, homing and weapon-order changes, two ordinary routing setter calls
 at frame 102, preference restoration at frame 197, and routing in the stop tail.
@@ -599,6 +606,12 @@ Ordinary stolen-item drops create actual loot, with an empty-inventory
 control that consumes no RNG or object slots. This is an explicitly derived
 mechanic case with seeded inventory, not proof of actual theft or connected original
 play or proof of whole-save atomicity.
+The existing equipment owner also saves two pending item morphs and a pending
+ordinary robot maker. Identical future intervals produce two actual items and a
+robot after uninterrupted, warm and fresh-process execution. It compares live
+slots, birth order, native owner/producer tables, robot counters and SIM/FX RNG.
+Its setup ends robot suspension before saving; normal level resume clears that
+debug/endlevel flag. This is a derived producer control, not connected original play.
 Timed level messages also consume this cached clock, matching the pinned
 `ShowGameMessage` use of `nSDLTicks[0]`. Message age, text and opacity no longer
 read host wall time. Save/trace readers derive effective age and expiry directly

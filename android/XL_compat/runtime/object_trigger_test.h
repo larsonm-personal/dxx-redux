@@ -1,5 +1,6 @@
 #include "object_trigger.h"
 #include "trigger_state.h"
+#include "input_demo_world_trace.h"
 extern "C" {
 #include "collide.h"
 #include "cntrlcen.h"
@@ -192,6 +193,18 @@ static int object_trigger_test(int argc, char **argv)
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
 		require(xl_level_extensions_active() && xl_object_trigger_count() == 10 && Objects[robot].type == OBJ_ROBOT, "object source did not start");
+		// A stale binding must remain raw until its gameplay/codec owner retires it
+		const auto observed_actions = xl_compat::object_trigger_snapshot();
+		const int observed_signature = Objects[robot].signature;
+		const auto observed_calls = d_rand_get_call_count(), observed_fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+		Objects[robot].signature = observed_signature ^ 0x40000000;
+		const auto observed_native = input_demo_native_xl_trace_snapshot();
+		require(observed_actions == nlohmann::json(observed_native.at("events").at("objects")) && observed_actions == xl_compat::object_trigger_snapshot(),
+		        "Object observation repaired a stale binding or lost raw action state");
+		Objects[robot].signature = observed_signature;
+		require(observed_calls == d_rand_get_call_count() && observed_fx_calls == d_rand_get_stream_call_count(D_RNG_FX),
+		        "Object observation consumed RNG");
+		std::cout << "Object event raw observation: stale binding preserved without mutation or RNG\n";
 		const auto state = [](int index) { xl_object_trigger_state result; require(xl_object_trigger_state_get(index, &result), "missing object state"); return result; };
 		const auto find = [&](int owner, int type, int flags) {
 			for (int i = 0; i < xl_object_trigger_count(); ++i) {
@@ -272,7 +285,7 @@ static int object_trigger_test(int argc, char **argv)
 		require(state(death).owner == -1 && state(death).type == TT_ILLUSION_ON && (Walls[8].flags & WALL_ILLUSION_OFF), "death action did not alternate and consume owner");
 		require(state_restore_all_sub(snapshot, 0) != 0 && state(repeat).destination == saved_destination && state(death).owner == robot && state(pickup).owner == -1, "disk restore lost live or consumed object state");
 		require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0, "object stock transition failed");
-		require(xl_object_trigger_count() == 0, "object bindings leaked into stock");
+		require(xl_object_trigger_count() == 0 && xl_compat::object_trigger_snapshot().empty(), "object bindings leaked into stock");
 		require(Num_triggers > 0 && Num_walls > 0, "stock leaf control lacks authored geometry");
 		Triggers[0].type = TT_ILLUSION_OFF;
 		Triggers[0].flags = 0;

@@ -1382,7 +1382,7 @@ class ParityTests(unittest.TestCase):
         def convert(rows):
             for row in rows:
                 if row["type"] in ("world_state", "world_boundary"):
-                    row["version"] = 16
+                    row["version"] = 17
                 if row["type"] in ("object_state", "object_boundary"):
                     row["capacity"] = 1367
                     row["allocator"]["free_obj_list"] = list(range(1367))
@@ -1824,6 +1824,74 @@ class ParityTests(unittest.TestCase):
             changed = self.write("xl-metadata-changed", list(parity.records(path)))
             self.mutate(changed, lambda items: mutation(items[2]["state"]["xl_native"]["metadata"]))
             self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_event_owners_raw_bindings_pending_state_and_source_tables_are_compared(self):
+        path = self.native_d2_trace("xl-events", True)
+
+        def populate(rows):
+            for row in rows:
+                events = row.get("state", {}).get("xl_native", {}).get("events")
+                if events is None:
+                    continue
+                events["objects"] = [schema_example(parity.XL_OBJECT_EVENT_SCHEMA)]
+                events["bosses"]["live"] = [schema_example(parity.XL_BOSS_EVENT_SCHEMA)]
+                events["bosses"]["live"][0]["teleport_segments"] = [0, 1]
+                maker = schema_example(parity.XL_EVENTS_SCHEMA["equipment"]["makers"][0])
+                maker.update(timer=3, segment=1, enabled=1, pending=1, flags=[2147483648, 65536])
+                events["equipment"].update(makers=[maker], station_links=[[4, 1]])
+                events["producers"].update(implicit_flags=2147483648, ready_mask=1, authored=[[0, 0, 1, 0]])
+
+        self.mutate(path, populate)
+        state = next(row["state"] for row in parity.records(path) if "xl_native" in row.get("state", {}))
+        parity.validate_world_state(state, "d2", True)
+        invalid = (
+            lambda e: e.update(version=2),
+            lambda e: e.pop("objects"),
+            lambda e: e["objects"][0].update(num_links=11),
+            lambda e: e["objects"][0]["segments"].pop(),
+            lambda e: e["objects"][0].update(operated=1),
+            lambda e: e["bosses"]["live"][0].update(last=9223372036854775808),
+            lambda e: e["bosses"].update(checkpoint=[schema_example(parity.XL_BOSS_EVENT_SCHEMA)]),
+            lambda e: e["equipment"]["makers"][0].update(pending=2),
+            lambda e: e["equipment"]["makers"][0]["flags"].__setitem__(1, 4294967296),
+            lambda e: e["equipment"]["station_links"][0].pop(),
+            lambda e: e["producers"].update(ready_mask=2),
+            lambda e: e["producers"].update(authored=[[0, 0, 0, 0]] * 21),
+        )
+        for mutation in invalid:
+            changed = copy.deepcopy(state)
+            mutation(changed["xl_native"]["events"])
+            with self.assertRaises(parity.EvidenceError):
+                parity.validate_world_state(changed, "d2", True)
+        changes = (
+            (("objects", 0, "owner"), 1, "objects[0].owner"),
+            (("objects", 0, "segments", 9), 1, "objects[0].segments[9]"),
+            (("bosses", "live", 0, "death_start"), 1, "bosses.live[0].death_start"),
+            (("bosses", "live", 0, "generated"), True, "bosses.live[0].generated"),
+            (("bosses", "live", 0, "teleport_segments", 1), 2, "bosses.live[0].teleport_segments[1]"),
+            (("equipment", "makers", 0, "pending"), 0, "equipment.makers[0].pending"),
+            (("equipment", "makers", 0, "flags", 1), 65537, "equipment.makers[0].flags[1]"),
+            (("equipment", "station_links", 0, 1), 2, "equipment.station_links[0][1]"),
+            (("producers", "implicit_flags"), 2147483649, "producers.implicit_flags"),
+            (("producers", "ready_mask"), 0, "producers.ready_mask"),
+            (("unknown_owner",), 1, "unknown_owner"),
+        )
+        changed = self.write("xl-events-changed", list(parity.records(path)))
+
+        def change(rows):
+            events = rows[2]["state"]["xl_native"]["events"]
+            for keys, value, _ in changes:
+                target = events
+                for key in keys[:-1]:
+                    target = target[key]
+                target[keys[-1]] = value
+
+        self.mutate(changed, change)
+        report = parity.compare_world(path, changed, self.header, "d2", "d2")
+        self.assertEqual(report["status"], "fail")
+        paths = {difference["path"] for difference in report["first_field_differences"].values()}
+        for _, _, suffix in changes:
+            self.assertIn(f"$.state.xl_native.events.{suffix}", paths)
 
     def test_xl_births_are_bound_to_objects_and_compared(self):
         path = self.native_d2_trace("xl-births", True)

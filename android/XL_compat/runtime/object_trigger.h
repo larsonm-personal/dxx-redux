@@ -1,7 +1,13 @@
 #ifndef XL_OBJECT_TRIGGER_H
 #define XL_OBJECT_TRIGGER_H
 #ifdef __cplusplus
+#include <nlohmann/json_fwd.hpp>
 #include "../inventory.h"
+namespace xl_compat
+{
+// Pure raw ownership/action state, without retiring stale bindings
+nlohmann::json object_trigger_snapshot();
+} // namespace xl_compat
 void xl_object_trigger_load(const xl_compat::Inventory &level);
 struct trigger;
 extern "C" int xl_object_teleport_action(const trigger *action, int object, int *destination);

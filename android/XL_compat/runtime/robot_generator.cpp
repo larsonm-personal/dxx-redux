@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <nlohmann/json.hpp>
 extern "C" {
 #include "inferno.h"
 #include "object.h"
@@ -103,6 +104,16 @@ extern "C" int xl_robot_generator_has_types(int center)
 extern "C" std::uint32_t xl_robot_generator_ready_mask(void)
 {
 	return ready_mask;
+}
+
+nlohmann::json xl_compat::robot_generator_snapshot()
+{
+	auto rows = nlohmann::json::array();
+	for (int index = 0; index < authored_count; ++index) {
+		const auto &center = authored[index];
+		rows.push_back({ std::uint32_t(center.robot_flags[0]), std::uint32_t(center.robot_flags[1]), int(center.segnum), int(center.fuelcen_num) });
+	}
+	return { { "implicit_flags", implicit_flags }, { "ready_mask", ready_mask }, { "authored", rows } };
 }
 extern "C" int xl_robot_generator_restore_ready(std::uint32_t mask, int apply)
 {

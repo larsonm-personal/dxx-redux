@@ -3065,7 +3065,7 @@ G2 native state observation checkpoint, November 12 at 01:01 PST:
   and g2-native-owner-cross, logs/metadata alongside. Cross probe copied the input
   into its own private user directory before replay; generated derivatives stay
   there. Original and isolated Windows input hashes still equal
-   8783572d58d31896e11bd5fa981c35697a3f2d1a8e507ddc28dacb38a0b9a825.
+  8783572d58d31896e11bd5fa981c35697a3f2d1a8e507ddc28dacb38a0b9a825.
   No strict per-draw/corpus or true-headless Omega/time qualification claim.
 - Both verified root-bound developer caches keep strict FP ON. Windows EXE
   SHA2566de4dc417c71f6239dc7e5ecd194859685c52f4b8dd2ff774234ae78fc0b13fd;
@@ -3078,7 +3078,7 @@ G2 native state observation checkpoint, November 12 at 01:01 PST:
   rejected with10 errors in g2-native-observer-reader.log. Corrected the fixture,
   preserving strict production validation. GCC caught new packed player energy
   forwarding in the test receipt; scalar copies fixed it. Failed build retained
-  g2-native-continuation-fixed-linux-build.log; final *-owner-*-build logs pass.
+  g2-native-continuation-fixed-linux-build.log; final _-owner-_-build logs pass.
   Existing unrelated compiler warnings unchanged.
 - IMPORTANT corrected invalid witness: direct read_flying_controls left
   Drop_afterburner_blob_flag1 in the warm process,0 cold, plus known0/-1 texture
@@ -3332,6 +3332,112 @@ G2 typed saved-metadata checkpoint, November 12 at 02:47 PST:
   remains a real unfixed loader defect. G0/G1 accepted, G2-G7 open. Actual02:47 PST;
   G2 remaining estimate8-14h, later items approximately14.5h, substantial uncertainty.
   Continue sequentially; no cutoff or scope reduction.
+
+G2 raw event and mixed-producer checkpoint, November 12 at 03:57 PST:
+
+- Layer03 remains local on xl_gameplay_20261111_03_continuation. Parent
+  b7f79086b129b3a6fccf27fe24ba3723f7453d80, tree
+  5302b008d19693a9b4dab31b11f5431a12ae7587. This checkpoint includes this ledger,
+  the four existing object/boss/equipment/robot-generator owners and headers,
+  their existing native tests/CMake owners, shared world trace/header, comparison
+  reader/tests and README, and the existing linked CPU fixture. No push or PR03.
+  Independent untracked PR464 review and existing stashes remain untouched.
+- Added pure owner-side raw observations of every stored object action field,
+  including tail target arrays and bindings; live/generated boss fields/routes
+  and an active restore checkpoint; equipment timers/phase, selection masks,
+  owners and station links; producer implicit/ready masks and authored rows.
+  Existing save getters remain unchanged. In particular, object/boss getters
+  retire stale bindings, boss enumeration prunes generated entries and its getter
+  recomputes the stored gate interval. A trace must not invoke those operations.
+  Positive existing-owner tests deliberately invalidate actual bindings, change
+  difficulty for the generated-boss case, and verify composite observation neither
+  repairs/prunes state nor consumes SIM/FX RNG. Stock transitions inspect raw
+  empty storage rather than relying only on XL-gated counts.
+- XL world schema17 requires the typed events extension. Stock world10, object2
+  and input6 remain unchanged. The reader validates widths, strict booleans,
+  ten-element target tails, uint32 selection flags, at most20 authored native
+  robot centers, readiness bits within that count and checkpoint lifetime. Unknown
+  fields remain compared. No event field is normalized away. Existing native
+  producer-table encoding was lifted unchanged to one helper shared by the world
+  observer and continuation receipt; g2-events-producer-layout.json verifies the
+  old/new field loops agree. No parallel save decoder or lifecycle was added.
+- Extended the existing equipment owner with a real mixed pending checkpoint:
+  two item morphs plus an ordinary robot maker in its pending morph phase.
+  Production fuelcen_update_all advances exact future intervals and creates two
+  actual pickups and one actual robot. Uninterrupted, warm and new-process disk
+  load agree across Windows/Linux for layouts23/25/27:18 raw receipts,49 live
+  objects each, birth counter7, SIM state468395383/calls107 and FX
+  state4262131764/calls1500. Includes complete objects/slots, birth order, producer
+  tables before/after, raw XL owners and robot counters. Only existing absent
+  alt-texture0/-1 and route host-epoch deadline/remaining-wait semantics apply.
+  Evidence g2-events-mixed-cross.json and raw g2-events-mixed-equipment* roots.
+  This uses derived authored controls and frame advances, not ordinary connected
+  original navigation/combat. No new top-level test owner or timeout increase.
+- Retained failed witnesses and corrected their causes: initial GCC compilation
+  rejected ordered_json conversion in a JSON push_back; explicit JSON conversion
+  fixed the receipt. An initial equipment checkpoint saved SUSP_ROBOTS, which
+  normal level resume clears. End suspension before saving and prepare the robot
+  morph through production fuelcen_update_all; no post-load forcing/repair.
+  The new generated-boss purity assertion belongs to boss_groups, not the basic
+  boss owner. The retained malformed boss test used schema41, now valid after
+  birth persistence; use always-unsupported schema0, keeping rejection/rollback
+  assertions. The existing linked CPU consumer exposed an unresolved Error from
+  the retained birth-order exhaustion guard. Added its fatal boundary to that
+  fixture using the production declaration, formatted message and abort; kept
+  the real guard. Final linked consumer build/CTest passes1/1 in0.57s.
+- Verified root-bound strict-FP Windows/Linux developer builds and ordinary D1
+  Windows build pass. Existing object-event and basic-boss owners pass both hosts;
+  final mixed equipment23/25/27 and boss-groups owners pass both hosts, with actual
+  xl_object_decode_reference/xl_equipment_reference/xl_boss_reference execution.
+  Final full projectile owners pass Windows19.688s/Linux9.968s, genuine camera
+  addon subchecks executed, all75 malformed/source controls retained. All six
+  birth uninterrupted/warm/cold semantic receipts match across hosts with events
+  included. Water owners pass Windows97.094s/Linux51.234s. Existing subprocess
+  and outer deadlines are unchanged. Final owner reports/logs use g2-events*.
+- Complete schema17 detailed comparisons pass Windows live/replay, Linux
+  live/replay and Windows live/isolated Linux replay: each1235 object frames and
+  1239 world/boundary records, observed RNG streams and every event field.
+  All five first world records contain schema17 and all five events members.
+  Original Windows input and isolated copy SHA256
+  300c1df4111e5d5e75647242ecc74a13794bd59f110ab9c2d00b43048975c3b5.
+  Raw traces and copied input/profile remain separate. Evidence
+  g2-events-water-compare.json and g2-events-{water-windows,water-linux,cross}.
+  WSL is healthy; runs use its native filesystem. These are rendered WSLg/Windows
+  results, not true-headless or Android qualification.
+- Authentic Neptune SHA4016618d24238803135dabf2b33daee2a2c34a670c3f016d94ae4639c8887303,
+  Arena HOG adbfea019c1ac29ac922e15876c22ca6ce30eb02d598a98e6ef7dfdce2b2dd3e,
+  descriptor14150755f14e210b284aa03c45d75e1b2f96be7b567bbc324bf4986b96928a71,
+  camera addon df69c62aad949f2d92bc1bbea4b597623cd29d0a0f594cdcc3d66568d6ce482a
+  and Vertigo faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f
+  are unchanged. Pinned XL reference remains2576a98b5de310e3ac7c9777df2677d1627b8bae;
+  existing extracted-source oracles remain the authority for their mechanics.
+  Windows developer EXE SHA256
+  bc33a1b2dba3a62184b1eb3840f4155fdc6f42b93c1cfef00df88033133c3799;
+  Linux312ccca82814bd52eaa2e65410a51daf7389b83363863e11edab30f1d6aa6c69.
+  g2-events-build-identities.json pins parent plus this working patch and D1 EXE.
+  These remain developer validation binaries, not final delivery packages.
+- Scoped mixed quality/whitespace pass; comparison-policy owner passes83 tests
+  in83.613s plus PowerShell assertions, no skip/budget changes. Both required
+  catalogs pass:99 JSON/315 PowerShell/547 support;428 top-level/547 support.
+  See g2-events-{comparison-policy,final-quality,catalog,master-catalog}.log.
+  CI acceptance remains the previously recorded exact0a2 layer02 result; these
+  local layer03 changes have not been published or tested by hosted CI.
+- Next coherent G2 item: continue the remaining owner audit and add pure typed
+  observation for progression/spawn/boost, projectile/contact history and relevant
+  environment/camera/resource owners. xl_speed_boost_state_count/get call
+  state_for, which clears stale signatures; named_audio_snapshot destroys stale
+  object links, reconciles owners and resets looping state. Do not call either
+  from a trace. Camera trace is already pure, attachments/save helpers can mutate.
+  Audit clock and allocator consequences rather than omitting whole owners.
+  Speed-boost last_speed intentionally survives its clear function and the pinned
+  source also owns global speedBoostSpeed; qualify that lifetime before changing
+  it. Pending Guide-Bot async/cache/Android budget remains unqualified.
+  Whole-save invalid XL-trailer restore still changes live energy91->100 and is
+  a real unfixed loader defect: d2/main/state.c installs the world before runtime
+  validation and xl_wall_trigger_read. Reuse native codecs with complete staged
+  validation/transaction; a checksum-only preflight or naive serialize/rollback
+  is insufficient. G0/G1 accepted, G2-G7 open. Actual03:57 PST; revise G2 remainder
+  to8-14h and later work approximately14.5h, with substantial uncertainty. No cutoff.
 
 Per-item handoff template:
 

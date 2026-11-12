@@ -6,6 +6,7 @@
 #include <array>
 #include <cstdint>
 #include <vector>
+#include <nlohmann/json.hpp>
 extern "C" {
 #include "inferno.h"
 #include "object.h"
@@ -105,6 +106,14 @@ extern "C" int xl_equipment_state_get(int index, xl_equipment_state *state)
 	if (!state || index < 0 || index >= xl_equipment_count()) return 0;
 	*state = makers[index].state;
 	return 1;
+}
+
+nlohmann::json xl_compat::equipment_snapshot()
+{
+	auto rows = nlohmann::json::array();
+	for (const auto &maker : makers)
+		rows.push_back({ { "timer", maker.state.timer }, { "segment", maker.state.segment }, { "enabled", maker.state.enabled }, { "pending", maker.state.pending }, { "flags", maker.flags }, { "owner", maker.owner } });
+	return { { "makers", rows }, { "station_links", station_links } };
 }
 extern "C" int xl_equipment_restore(const xl_equipment_state *states, int count, int apply)
 {

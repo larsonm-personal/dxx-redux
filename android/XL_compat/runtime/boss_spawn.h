@@ -2,6 +2,12 @@
 #define XL_BOSS_SPAWN_H
 #include <stdint.h>
 #ifdef __cplusplus
+#include <nlohmann/json_fwd.hpp>
+namespace xl_compat
+{
+// Pure live and pending-restore state, including unpruned generated bindings
+nlohmann::json boss_spawn_snapshot();
+} // namespace xl_compat
 extern "C" {
 #endif
 struct vms_vector;

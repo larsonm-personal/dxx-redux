@@ -13,7 +13,10 @@ execute_process(
     TIMEOUT 80)
 file(WRITE "${OUTPUT}/controls.log" "${log}${error}")
 string(FIND "${log}" "XL boss group controls passed" witness)
-if(NOT result EQUAL 0 OR witness LESS 0)
+if(NOT result EQUAL 0 OR witness LESS 0
+   OR NOT log MATCHES
+      "Boss raw observation: stale generated binding and interval preserved without mutation or RNG"
+)
     message(FATAL_ERROR "Boss group controls failed (${result}): ${log}${error}")
 endif()
 if(REFERENCE)

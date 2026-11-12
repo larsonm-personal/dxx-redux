@@ -1,5 +1,6 @@
 #include "boss_spawn.h"
 #include "boss_routes.h"
+#include "input_demo_world_trace.h"
 extern "C" {
 #include "boss_health_shared.h"
 #include "morph.h"
@@ -480,13 +481,27 @@ static void robotmaker_boss_controls(const std::filesystem::path &root)
 		require(generated >= 0 && xl_boss_spawn_count() == 3 && xl_boss_authored_count() == 2 &&
 		            xl_level_trigger_identity() == identity && xl_compat::boss_routes().size() == 3,
 		        "live robotmaker boss did not acquire independent source-stable lifecycle and routes");
+		const auto observed_bosses = xl_compat::boss_spawn_snapshot();
+		const int observed_signature = Objects[generated].signature, observed_difficulty = Difficulty_level;
+		const auto observed_calls = d_rand_get_call_count(), observed_fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+		Objects[generated].signature = observed_signature ^ 0x40000000;
+		Difficulty_level = (observed_difficulty + 1) % NDL;
+		const auto observed_native = input_demo_native_xl_trace_snapshot();
+		require(observed_bosses.at("live").size() == 3 && observed_bosses == nlohmann::json(observed_native.at("events").at("bosses")) &&
+		            observed_bosses == xl_compat::boss_spawn_snapshot(),
+		        "Boss observation pruned a stale generated binding or rewrote the stored interval");
+		Objects[generated].signature = observed_signature;
+		Difficulty_level = observed_difficulty;
+		require(observed_calls == d_rand_get_call_count() && observed_fx_calls == d_rand_get_stream_call_count(D_RNG_FX),
+		        "Boss observation consumed RNG");
+		std::cout << "Boss raw observation: stale generated binding and interval preserved without mutation or RNG\n";
 		auto *trailer = PHYSFS_openWrite("boss-generated.bin");
 		require(trailer && xl_wall_trigger_write(trailer) && PHYSFS_close(trailer), "robotmaker boss trailer capture failed");
 		std::ifstream trailer_input(root.parent_path() / "preview-user" / "boss-generated.bin", std::ios::binary);
 		const xl_compat::Bytes encoded{ std::istreambuf_iterator<char>(trailer_input), std::istreambuf_iterator<char>() };
 		require(encoded.size() > 16, "robotmaker boss trailer missing");
 		auto bad = nlohmann::json::parse(encoded.begin() + 16, encoded.end());
-		bad["schema"] = 41;
+		bad["schema"] = 0; // Unsupported even as the current schema advances
 		const auto payload = bad.dump();
 		xl_compat::Bytes corrupt(encoded.begin(), encoded.begin() + 16);
 		corrupt.insert(corrupt.end(), payload.begin(), payload.end());
@@ -630,6 +645,9 @@ static int boss_spawn_test(int argc, char **argv)
 		boss_restore_guards(root.parent_path());
 		Difficulty_level = (Difficulty_level + 1) % NDL;
 		require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0 && !xl_boss_spawn_count(), "boss state leaked into stock mission");
+		const auto stock_bosses = xl_compat::boss_spawn_snapshot();
+		require(stock_bosses.at("live").empty() && stock_bosses.at("checkpoint").empty() && !stock_bosses.at("restore_pending").get<bool>(),
+		        "Raw boss ownership or restore checkpoint leaked into stock mission");
 		init_robots_for_level();
 		require(Boss_invulnerable_dot == 0, "XL boss vulnerability leaked into stock mission");
 		for (int i = 0; i <= Highest_object_index; ++i)

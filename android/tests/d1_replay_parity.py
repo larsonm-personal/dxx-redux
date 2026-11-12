@@ -1542,12 +1542,53 @@ XL_METADATA_SCHEMA = {
     "live_route_work_pending": METADATA_I32,
 }
 
+XL_OBJECT_EVENT_SCHEMA = {
+    **dict.fromkeys("authored_owner owner signature destination audio_key value time".split(), METADATA_I32),
+    "operated": bool,
+    "type": METADATA_BYTE,
+    "flags": METADATA_BYTE,
+    "num_links": range(0, 11),
+    "pad": range(-128, 128),
+    "segments": (range(-32768, 32768),) * 10,
+    "sides": (range(-32768, 32768),) * 10,
+}
+XL_BOSS_EVENT_SCHEMA = {
+    **dict.fromkeys("authored_owner owner signature id interval dying sound home".split(), METADATA_I32),
+    **dict.fromkeys(
+        "last cloak_start cloak_end teleport hit death_start".split(), range(-9223372036854775808, 9223372036854775808)
+    ),
+    "generated": bool,
+    "teleport_segments": [METADATA_I32],
+}
+XL_EVENTS_SCHEMA = {
+    "version": range(1, 2),
+    "objects": [XL_OBJECT_EVENT_SCHEMA],
+    "bosses": {"live": [XL_BOSS_EVENT_SCHEMA], "restore_pending": bool, "checkpoint": [XL_BOSS_EVENT_SCHEMA]},
+    "equipment": {
+        "makers": [
+            {
+                **dict.fromkeys("segment owner".split(), METADATA_I32),
+                "timer": range(-9223372036854775808, 9223372036854775808),
+                "enabled": range(0, 2),
+                "pending": range(0, 2),
+                "flags": (METADATA_U32,) * 2,
+            }
+        ],
+        "station_links": [(METADATA_I32,) * 2],
+    },
+    "producers": {
+        "implicit_flags": METADATA_U32,
+        "ready_mask": METADATA_U32,
+        "authored": [(METADATA_U32, METADATA_U32, METADATA_I32, METADATA_I32)],
+    },
+}
 XL_NATIVE_SCHEMA = integer_fields(
     "version omega_charge wiggle_phase",
     afterburner_charge=[int],
     afterburner_times=[int],
     guided=((int, int),) * 8,
     metadata=XL_METADATA_SCHEMA,
+    events=XL_EVENTS_SCHEMA,
     escort=XL_ESCORT_SCHEMA,
     route={"version": int, "enabled": bool},
     seismic=integer_fields(
@@ -1625,6 +1666,13 @@ def validate_world_state(state, engine=None, xl=False, objects=None):
         capacity = state["ai"]["local_capacity"]
         native = state["xl_native"]
         metadata = native["metadata"]
+        events = native["events"]
+        if not events["bosses"]["restore_pending"] and events["bosses"]["checkpoint"]:
+            raise EvidenceError("Inactive XL boss restore checkpoint has live storage")
+        if len(events["producers"]["authored"]) > 20 or events["producers"]["ready_mask"] >> len(
+            events["producers"]["authored"]
+        ):
+            raise EvidenceError("Invalid XL producer readiness or source count")
         for owner in ("canonical_state", "live_route_state", "live_candidate_state"):
             value = metadata[owner]
             for key in ("guidebot_placement_note", "guidebot_note", "route_problem", "route_note"):
@@ -1983,7 +2031,7 @@ def world_states(path, header, engine="d1"):
         if (
             not meta_seen
             or type(row.get("version")) is not int
-            or row["version"] != (2 if kind == "object_boundary" else 16 if xl else 10)
+            or row["version"] != (2 if kind == "object_boundary" else 17 if xl else 10)
         ):
             raise EvidenceError("Missing world metadata or unsupported schema")
         if kind.endswith("boundary"):

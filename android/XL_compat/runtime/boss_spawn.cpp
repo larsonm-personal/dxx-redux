@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <exception>
 #include <vector>
+#include <nlohmann/json.hpp>
 extern "C" {
 #include "inferno.h"
 #include "object.h"
@@ -303,6 +304,17 @@ std::vector<xl_compat::BossRoutes> xl_compat::boss_routes()
 	if (xl_level_extensions_active())
 		for (const auto &boss : bosses) result.push_back({ boss.home, boss.teleport_segments });
 	return result;
+}
+
+nlohmann::json xl_compat::boss_spawn_snapshot()
+{
+	const auto rows = [](const std::vector<Boss> &items) {
+		auto result = nlohmann::json::array();
+		for (const auto &boss : items)
+			result.push_back({ { "authored_owner", boss.authored_owner }, { "owner", boss.owner }, { "signature", boss.signature }, { "id", boss.id }, { "interval", boss.interval }, { "generated", boss.generated }, { "last", boss.last }, { "cloak_start", boss.cloak_start }, { "cloak_end", boss.cloak_end }, { "teleport", boss.teleport }, { "hit", boss.hit }, { "death_start", boss.death_start }, { "dying", boss.dying }, { "sound", boss.sound }, { "home", boss.home }, { "teleport_segments", boss.teleport_segments } });
+		return result;
+	};
+	return { { "live", rows(bosses) }, { "restore_pending", restore_checkpoint_active }, { "checkpoint", restore_checkpoint_active ? rows(restore_checkpoint) : nlohmann::json::array() } };
 }
 
 bool xl_compat::restore_boss_routes(std::vector<BossRoutes> &states, int apply)

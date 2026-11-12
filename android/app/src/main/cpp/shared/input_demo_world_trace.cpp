@@ -9,6 +9,10 @@
 #include "trigger_state.h"
 #include "object_birth.h"
 #include "seismic_gameplay.h"
+#include "object_trigger.h"
+#include "boss_spawn.h"
+#include "equipment.h"
+#include "robot_generator.h"
 #include "input_demo_fixture.h"
 #endif
 
@@ -341,11 +345,45 @@ json native_xl_state()
 	const auto seismic = xl_compat::seismic_gameplay_snapshot();
 	out["seismic"] = { { "strength", seismic[0] }, { "pending", seismic[1] }, { "magnitude", seismic[4] }, { "phase", seismic[5] }, { "fraction", seismic[6] }, { "interval", seismic[2].is_null() ? json::array() : json(seismic[2]) }, { "detonations", json::array() } };
 	out["metadata"] = metadata_xl_state();
+	out["events"] = { { "version", 1 }, { "objects", xl_compat::object_trigger_snapshot() }, { "bosses", xl_compat::boss_spawn_snapshot() }, { "equipment", xl_compat::equipment_snapshot() }, { "producers", xl_compat::robot_generator_snapshot() } };
 	for (const auto &entry : seismic[3])
 		out["seismic"]["detonations"].push_back({ !entry[0].is_null(), entry[0].is_null() ? json(0) : json(entry[0]), entry[1] });
 	return out;
 }
 #endif
+
+json producer_state()
+{
+	json out = json::object();
+	out["fuelcenters"] = json::array();
+	for (int i = 0; i < Num_fuelcenters; ++i) {
+		const auto &s = Station[i];
+		json row = json::object();
+		FIELD(row, s, Type);
+		FIELD(row, s, segnum);
+		FIELD(row, s, Flag);
+		FIELD(row, s, Enabled);
+		FIELD(row, s, Lives);
+		FIELD(row, s, Capacity);
+		FIELD(row, s, MaxCapacity);
+		FIELD(row, s, Timer);
+		FIELD(row, s, Disable_time);
+		row["center"] = vector(s.Center);
+		out["fuelcenters"].push_back(std::move(row));
+	}
+	out["robotcenters"] = json::array();
+	for (int i = 0; i < Num_robot_centers; ++i) {
+		const auto &r = RobotCenters[i];
+		json row = json::object();
+		FIELD(row, r, hit_points);
+		FIELD(row, r, interval);
+		FIELD(row, r, segnum);
+		FIELD(row, r, fuelcen_num);
+		row["robot_flags"] = scalars(r.robot_flags);
+		out["robotcenters"].push_back(std::move(row));
+	}
+	return out;
+}
 
 json world_state()
 {
@@ -499,33 +537,9 @@ json world_state()
 	FIELD(reactor, ControlCenterTriggers, num_links);
 	reactor["segments"] = scalars(ControlCenterTriggers.seg);
 	reactor["sides"] = scalars(ControlCenterTriggers.side);
-	out["fuelcenters"] = json::array();
-	for (int i = 0; i < Num_fuelcenters; ++i) {
-		const auto &s = Station[i];
-		json row = json::object();
-		FIELD(row, s, Type);
-		FIELD(row, s, segnum);
-		FIELD(row, s, Flag);
-		FIELD(row, s, Enabled);
-		FIELD(row, s, Lives);
-		FIELD(row, s, Capacity);
-		FIELD(row, s, MaxCapacity);
-		FIELD(row, s, Timer);
-		FIELD(row, s, Disable_time);
-		row["center"] = vector(s.Center);
-		out["fuelcenters"].push_back(std::move(row));
-	}
-	out["robotcenters"] = json::array();
-	for (int i = 0; i < Num_robot_centers; ++i) {
-		const auto &r = RobotCenters[i];
-		json row = json::object();
-		FIELD(row, r, hit_points);
-		FIELD(row, r, interval);
-		FIELD(row, r, segnum);
-		FIELD(row, r, fuelcen_num);
-		row["robot_flags"] = scalars(r.robot_flags);
-		out["robotcenters"].push_back(std::move(row));
-	}
+	auto producers = producer_state();
+	out["fuelcenters"] = std::move(producers["fuelcenters"]);
+	out["robotcenters"] = std::move(producers["robotcenters"]);
 	out["effects"] = json::array();
 	for (int i = 0; i < Num_effects; ++i) {
 		const auto &e = Effects[i];
@@ -603,6 +617,11 @@ json world_state()
 #undef GLOBAL
 } // namespace
 
+nlohmann::ordered_json input_demo_producer_trace_snapshot()
+{
+	return producer_state();
+}
+
 nlohmann::ordered_json input_demo_endlevel_trace_snapshot()
 {
 	return endlevel_state();
@@ -658,7 +677,7 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	static json previous;
 	json current = world_state();
 	const bool boundary = phase != nullptr;
-	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 16 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
+	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 17 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
 	record["state"].get_ref<json::object_t &>().reserve(current.size());
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)

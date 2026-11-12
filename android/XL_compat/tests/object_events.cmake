@@ -13,7 +13,9 @@ execute_process(
     TIMEOUT 80)
 file(WRITE "${OUTPUT}/controls.log" "${stdout}${stderr}")
 string(FIND "${stdout}" "XL object event controls passed" witness)
-if(NOT result EQUAL 0 OR witness LESS 0)
+if(NOT result EQUAL 0 OR witness LESS 0
+   OR NOT stdout MATCHES
+      "Object event raw observation: stale binding preserved without mutation or RNG")
     message(FATAL_ERROR "Object event controls failed (${result}): ${stdout}${stderr}")
 endif()
 if(REFERENCE)
