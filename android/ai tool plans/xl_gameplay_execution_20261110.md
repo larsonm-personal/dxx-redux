@@ -2541,6 +2541,38 @@ G1 normal desktop admission checkpoint, November 11 at 21:06 PST
   GPU deadline remain failures; G2 completeness, G3 headless/presentation, G5
   connected play, G6 Android/corpus and G7 delivery remain open.
 
+G1 publication checkpoint, November 11 at 21:09 PST:
+
+- Published implementation119fa3afef61f887a646ca2b0c8935a5ff70d860, tree
+  879ac6a41e83261102f1c130c87d8787c1c67c38, as draft PR467 based on PR465.
+  Commit hook displays an intermediate hash/future timestamp; identities here
+  are reread from Git and time is actual UTC/PST. Independent review stays untracked.
+- Initial native link of465/467 correctly refused to remove464: server metadata
+  now has existing stack466 containing464/465, based on cmake b3bb12cb. Preserve
+  that user-established topology and append467 to stack466 instead of removing
+  or reparenting464. This is the explicit reason for retaining the prerequisite
+  in the existing stack, superseding the plan's proposed new tranche-only stack.
+  All PR branch bases remain their immediate parents; no branch rewrite or merge.
+  Append succeeded: PR467 is position3/size3 in server stack466. Local gh stack
+  view has no tracking record; server REST metadata verifies the result. Avoid
+  importing the stack locally because its prerequisite branch has preserved local
+  ancestry. Connector metadata and explicit fork REST/CLI remain authoritative.
+- Head119fa3 CI started: public save43159195448, engine43159195485,
+  XL43159195590, scripts43159195514, sample43159195615, LAN43159195421.
+  Private request43159195454 succeeded; actual qualification still pending.
+  Runs are pending evidence, not accepted coverage. Expected manual/historical
+  jobs and no-Rust-change omission remain distinct from executed checks.
+  Checkout audit identifies merge9518a725 in default PR jobs, distinct from
+  head119fa3. Do not label those jobs literal head execution. Native developer,
+  trusted private and selected sample owners bind the candidate explicitly;
+  dispatch branch-specific engine/public-save/XL workflows for literal-head
+  execution after this publication-only ledger update. Their exact run/head
+  results will be reported in PR metadata and the next acceptance checkpoint.
+- Official temporary cleanup preview/apply found zero eligible artifacts with
+  active evidence, authentic assets, reference and dependencies protected.
+  Apply correctly failed its50GiB target;36.90GiB remains. No files deleted.
+  Continue within reserve; do not discard required evidence to satisfy the target.
+
 Per-item handoff template:
 
     Item and status:
