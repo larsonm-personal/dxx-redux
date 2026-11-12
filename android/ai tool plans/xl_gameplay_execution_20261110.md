@@ -1789,6 +1789,77 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   Revised estimate: G1 roughly 5-9 h, G2-G7 roughly 17.5 h with overlapping prerequisites
   credited once accepted. No cutoff, scope reduction or full-gameplay claim.
 
+### 2026-11-11 15:43 PST - G1 lossless world tracing and refreshed time witness
+
+- Previous increment is a8ea3bf30068a4029ed34cfb399e556f7f53ac3f, tree
+  cce5a014197711c9aa9e82413fff4da064af68be. Layer 02 remains active/unaccepted,
+  with no push/PR or exact-head hosted CI claim. This is progress, not a blocked
+  turn or full gameplay completion. Independent untracked review is untouched.
+- Current-runtime time capture 7 failed its unchanged 45-second clean-exit bound.
+  Diagnostic capture 8 also failed at 45.219 seconds, despite completing all seven
+  events and its final save. Both remain failed evidence. Added observational
+  SDL tick timings to the existing time probe, plus monotonic process duration in
+  xl_render_clock.py; no frame count, pacing, assertion or deadline changed.
+- Capture 8 entered the probe at 9811 ms, started recording at 10049, finished its
+  198 frames at 31862 and finalized at 32259. Recorded frame totals: delay6771 ms,
+  simulation/tracing14558, rendering256, flip101. The 248 unrecorded frames spent
+  only74 ms in simulation, with delay7307/render634/flip115. Startup and trace
+  production are material costs; rendering alone does not explain the timeout.
+- input_demo_world_trace.cpp now moves changed JSON sections into the record for
+  serialization, then returns them to the previous-state cache. This removes a
+  deep clone of large AI/segment subtrees while preserving complete values, key
+  order, delta/reset rules and per-record flushes. No diagnostic field is filtered.
+  A fixed failed-capture-8 recording was replayed before (replay10) and after
+  (replay11): both strict terminal/asset/clean-exit checks pass, and all724 decoded
+  trace records are byte-identical, including198 object/frame records each and
+  200 world records. World-byte SHA256
+  bd5eb7a1e2e4529053b5f4640ab6c8ae60347da209b61878c589bf1b8630de19.
+  Replay elapsed27.762 ->22.735 seconds is one measured pair, not a latency SLA.
+- Fresh original Warp6 capture9 passes in43.469 seconds against45. Probe entry9439,
+  recording start9678, initial boundary9743, frames finished29073, finalized29468,
+  save entered38280/finished38300 ms. Recorded simulation/tracing12266 ms versus
+  diagnostic capture8's14558; delay6640/render263/flip114. The deadline margin
+  remains narrow; startup/shutdown costs are not fully resolved by this change.
+- New demo d2_wshock20_level6_20261111_153632.dximdemo SHA256
+  43f764f2821b2feee4c84a908343a311ea035e638954d087b92575665e4adba3.
+  One pre-record approach-pose assist; no pose changes during198 captured frames.
+  The ordinary original slow-motion pickup plus activation/reversal is recorded.
+  Original bullet-time pickup/control and movement checks occur afterward, outside
+  the captured portion. Five total pose assists, zero level-load assists; ordinary
+  24-frame thrust distances170752 slow and432955 bullet. This is not connected
+  progression or original-level completion. Production guards remain closed.
+- Immediate accelerated replay12, independent accelerated replay13 and real-time
+  replay14 all pass verified assets, strict terminal result and natural clean exit.
+  EACH detailed comparison passes198 object frames,202 world/boundary records,
+  198 frame checks,811 SIM events and201 FX events, with zero differences.
+  This level emits zero presentation RNG events in both capture and these replays.
+  No corpus was frozen. Evidence is g1-live-time-capture-{7,8,9},
+  g1-time-replay-{10,11,12,13,14}, full replay12/13/14 comparison JSON and
+  g1-trace-copy-comparison.json under protected temp/pr464-ci-fixes-20261110.
+- Windows D1/D2 and Linux D2 desktop builds pass with the changed shared observer.
+  D2 Windows EXE f9b0bec6f14399a3f0ac0e9df55d98e66ea19cd379575d60bf34d4745d48b50b;
+  D1 99fa548f2bfc55534b3422f97feac62d86e1feaf90921360f99e5f647965525e;
+  Linux D2 c59bb24f3d7190bf647ed8164a42188cb3cbf392ba6c76948db12670e8993d22.
+  Root-bound RelWithDebInfo caches and strict-FP options remain unchanged. Metadata
+  executables were not rebuilt for this observation-only change and retain their
+  prior identities. Two render-clock runner/pin tests pass, zero skips. Scoped
+  code quality and diff checks pass. Both catalogs pass:99 standalone JSON,
+  315 PowerShell,547 support scripts;428 top-level integration entries.
+- Authentic Warp HOG remains2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c;
+  reference2576a98b5de310e3ac7c9777df2677d1627b8bae and all source pins unchanged.
+  WSL responds normally; the user's restart authorization did not need to be used.
+  No Android interruption or cleanup beyond zero-eligible retention calls.
+  Free space about45 GiB; producer reserve4 GiB retained. No external blocker.
+- Actual work approximately15:26-15:43 PST, with catalog/commit finalization
+  following. Revised remaining G1 estimate5-9 h; G2-G7 roughly17.5 h, with shared
+  prerequisites credited once accepted. No cutoff or reduced scope.
+- Next: finish this coherent commit, then inventory/capture the ordinary player
+  configuration-change policy and reject unsupported floating-point build modes
+  explicitly. Existing startup player_cfg capture alone cannot certify changes
+  during recording. Reuse shared dispatch/start/newdemo/recorder owners; preserve
+  stock format5 and existing ordered commands. Continue the remaining clock,
+  cheat/global, full-state, headless and original gameplay queue afterward.
+
 Per-item handoff template:
 
     Item and status:

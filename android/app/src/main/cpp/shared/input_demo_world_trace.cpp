@@ -470,7 +470,13 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	record["state"].get_ref<json::object_t &>().reserve(current.size());
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)
-		if (boundary || frame == 0 || !previous.contains(it.key()) || previous[it.key()] != it.value()) record["state"][it.key()] = it.value();
-	if (!boundary) previous = std::move(current);
-	return input_demo_state_trace_write_json(record.dump().c_str(), error, error_size) && input_demo_door_trace_write(frame, phase, error, error_size);
+		if (boundary || frame == 0 || !previous.contains(it.key()) || previous[it.key()] != it.value()) record["state"][it.key()] = std::move(it.value());
+	// Serialize the complete changed sections without cloning their large subtrees
+	const std::string encoded = record.dump();
+	if (!boundary) {
+		for (auto it = record["state"].begin(); it != record["state"].end(); ++it)
+			current[it.key()] = std::move(it.value());
+		previous = std::move(current);
+	}
+	return input_demo_state_trace_write_json(encoded.c_str(), error, error_size) && input_demo_door_trace_write(frame, phase, error, error_size);
 }

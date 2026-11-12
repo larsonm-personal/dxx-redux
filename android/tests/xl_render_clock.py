@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import time
 
 REVISION = "2576a98b5de310e3ac7c9777df2677d1627b8bae"
 PINS = {
@@ -146,12 +147,14 @@ def main():
         "-nomusic",
     ]
     with (work / "engine.log").open("wb") as log:
+        started = time.monotonic()
         try:
             code = subprocess.run(
                 command, cwd=work, stdout=log, stderr=subprocess.STDOUT, timeout=45, check=False
             ).returncode
         except subprocess.TimeoutExpired:
             code = None
+        elapsed = time.monotonic() - started
     proof = json.loads(proof_path.read_text()) if proof_path.exists() else {}
     recordings = []
     if args.time_equipment:
@@ -193,6 +196,7 @@ def main():
     result = {
         "passed": success,
         "exit_code": code,
+        "elapsed_seconds": elapsed,
         "proof": proof,
         "reference_revision": REVISION,
         "reference_hashes": pins,

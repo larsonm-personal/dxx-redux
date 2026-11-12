@@ -140,7 +140,17 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 {
 	using nlohmann::ordered_json;
 	ordered_json proof = { { "schema", "xl-time-equipment-gameplay-v1" }, { "assisted", bool{ true } }, { "complete", bool{ false } }, { "cold_resume", resume }, { "position_assists", 0 }, { "level_load_assists", 0 }, { "carried_level", carried_level }, { "events", ordered_json::array() } };
+	struct frame_timing {
+		uint64_t count{}, delay{}, simulation{}, render{}, flip{};
+	} timings[2];
+	proof["timing_ms"]["probe_entered"] = SDL_GetTicks();
 	const auto write = [&]() {
+		for (int i = 0; i < 2; ++i) {
+			const auto &t = timings[i];
+			proof["frame_timing_ms"][i ? "recording" : "ordinary"] = {
+				{ "frames", t.count }, { "delay", t.delay }, { "simulation", t.simulation }, { "render", t.render }, { "flip", t.flip }
+			};
+		}
 		std::ofstream out(path);
 		out << proof.dump(2) << '\n';
 		return out.good();
@@ -173,7 +183,11 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 		};
 		const auto frames = [&](int count, bool thrust = false) {
 			for (int i = 0; i < count; ++i) {
+				auto &timing = timings[input_demo_recorder_is_active() ? 1 : 0];
+				// Observe wall time without refreshing the simulation's cached clock
+				const auto before_delay = SDL_GetTicks();
 				SDL_Delay(26);
+				const auto before_simulation = SDL_GetTicks();
 				timer_update();
 				FrameTime = F1_0 / 60;
 				Controls = {};
@@ -181,8 +195,16 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 				do_weapon_n_item_stuff();
 				calc_game_time();
 				GameProcessFrame();
+				const auto before_render = SDL_GetTicks();
 				game_render_frame();
+				const auto before_flip = SDL_GetTicks();
 				gr_flip();
+				const auto after_flip = SDL_GetTicks();
+				++timing.count;
+				timing.delay += Uint32(before_simulation - before_delay);
+				timing.simulation += Uint32(before_render - before_simulation);
+				timing.render += Uint32(before_flip - before_render);
+				timing.flip += Uint32(after_flip - before_flip);
 				require(glGetError() == GL_NO_ERROR && Current_level_num == running_level && !Player_is_dead,
 				        "Time equipment gameplay failed or changed level");
 			}
@@ -249,7 +271,9 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 				vm_vector_2_matrix(&approach.orient, &inward, nullptr, nullptr);
 				pose(approach);
 				if (id == 48) {
+					proof["timing_ms"]["recording_start_entered"] = SDL_GetTicks();
 					require(input_demo_start_quick_recording_common() && input_demo_recorder_uses_environment(), "Cannot start ordinary XL pickup recording");
+					proof["timing_ms"]["recording_started"] = SDL_GetTicks();
 					input_demo_environment_clock saved_before{}, saved_after{}, consumed_before{}, consumed_after{};
 					require(xl_input_demo_saved_environment(&saved_before) && input_demo_recorder_peek_environment(&consumed_before), "Missing captured XL clock origin");
 					const auto observed_time = xl_runtime::slow_motion_trace_snapshot();
@@ -267,6 +291,7 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 					                                     Current_level_num, Difficulty_level, "save_checkpoint", 0, error, sizeof(error)),
 					        error);
 					input_demo_trace_boundary("restored");
+					proof["timing_ms"]["initial_boundary_written"] = SDL_GetTicks();
 				}
 				frames(2);
 				require(!(Players[Player_num].flags & (id == 48 ? XL_PLAYER_FLAGS_SLOW_MOTION : XL_PLAYER_FLAGS_BULLET_TIME)),
@@ -284,7 +309,9 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 					require(HandleGameKey(KEY_ALTED | KEY_S), "Earned slow-motion reversal was not consumed");
 					frames(84);
 					require(input_demo_state_trace_is_active(), "Live XL observation stopped early");
+					proof["timing_ms"]["recording_frames_finished"] = SDL_GetTicks();
 					require(input_demo_recorder_is_active() && input_demo_stop_quick_recording_common(), "Ordinary XL pickup recording stopped early");
+					proof["timing_ms"]["recording_finalized"] = SDL_GetTicks();
 				}
 			}
 			// Original equipment rooms can replenish the energy being measured
@@ -337,7 +364,9 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 			        "Cold continuation did not return to normal time");
 		}
 		stop_time();
+		proof["timing_ms"]["save_entered"] = SDL_GetTicks();
 		require(state_save_all_sub(file, description), "Cannot save active original time equipment");
+		proof["timing_ms"]["save_finished"] = SDL_GetTicks();
 		if (resume && carried_level) {
 			// Explicit level-load assists qualify carried resources, not campaign travel
 			running_level = carried_level;
