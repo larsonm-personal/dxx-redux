@@ -26,6 +26,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 void timer_update();
 fix64 timer_query();
+unsigned int timer_query_milliseconds(void);
 void timer_delay(fix seconds);
 void timer_delay2(int fps);
 

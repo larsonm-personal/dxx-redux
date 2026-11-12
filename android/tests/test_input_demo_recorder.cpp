@@ -2071,7 +2071,7 @@ static int expect_environment_recording(void)
 	settings.level = 1;
 	settings.rng_mode = input_demo_test_rng_mode();
 	settings.has_environment = 1;
-	settings.environment = { 100, 100, UINT32_MAX - 1 };
+	settings.environment = { 100, 100, UINT32_MAX - 1, 100 };
 	input_demo_control_state state = {};
 	input_demo_control_pulse pulse = {};
 	char error[256] = "";
@@ -2083,14 +2083,16 @@ static int expect_environment_recording(void)
 	if (!input_demo_recorder_peek_environment(&observed) || memcmp(&observed, &settings.environment, sizeof(observed)))
 		return report_failure("observer did not expose the capture origin");
 	for (int frame = 0; frame < 2; ++frame) {
-		input_demo_environment_clock clock = { 100 + frame * 52, uint32_t(100 + frame * 52), uint32_t(UINT32_MAX - 1 + frame * 4) };
+		input_demo_environment_clock clock = { 100 + frame * 52, uint32_t(100 + frame * 52), uint32_t(UINT32_MAX - 1 + frame * 4), uint32_t(100 + frame * 52) };
 		if (!check(input_demo_recorder_begin_input_batch(1, 0, 1092, error, sizeof(error))) ||
 		    !check(input_demo_recorder_stage_input_sample(1092, &state, &pulse, error, sizeof(error))) ||
-		    !check(input_demo_recorder_observe_environment("omega_fired", -1, 0, &clock, error, sizeof(error)))) return 1;
+		    !check(input_demo_recorder_observe_environment("omega_fired", -1, 0, &clock, error, sizeof(error))) ||
+		    !check(input_demo_recorder_observe_environment("wall_trigger", 253, 0, &clock, error, sizeof(error)))) return 1;
 		if (!input_demo_recorder_peek_environment(&observed) || memcmp(&observed, &clock, sizeof(observed)))
 			return report_failure("observer lost pending input clock");
 		clock.clock_ms += 26;
 		clock.pickup_ms += 26;
+		clock.cached_ms += 26;
 		clock.render_frame += 2;
 		if (!check(input_demo_recorder_stage_input_sample(1092, &state, &pulse, error, sizeof(error))) ||
 		    !check(input_demo_recorder_observe_environment("omega_blocked", -1, 0, &clock, error, sizeof(error))) ||
@@ -2104,10 +2106,11 @@ static int expect_environment_recording(void)
 		++clock.clock_ms;
 		++clock.pickup_ms;
 		if (!check(input_demo_recorder_observe_environment("camera_frame", -1, 1, &clock, error, sizeof(error))) ||
+		    !check(input_demo_recorder_observe_environment("wall_trigger", 0, 1, &clock, error, sizeof(error))) ||
 		    !input_demo_recorder_peek_environment(&observed) || memcmp(&observed, &clock, sizeof(observed)))
 			return report_failure("observer lost the current simulation clock");
 	}
-	input_demo_environment_clock tail = { 204, 204, 6 };
+	input_demo_environment_clock tail = { 204, 204, 6, 204 };
 	if (!check(input_demo_recorder_begin_input_batch(1, 0, 0, error, sizeof(error))) ||
 	    !check(input_demo_recorder_stage_direct_command_xl_time_control(1, error, sizeof(error))) ||
 	    !check(input_demo_recorder_stage_direct_command_xl_time_control(0, error, sizeof(error))) ||
@@ -2136,6 +2139,8 @@ static int expect_environment_recording(void)
 			return report_failure("incorrect environment consumption changed playback");
 		if (!check(input_demo_replay_consume_environment("omega_fired", -1, 0, 1, &actual, error, sizeof(error))) ||
 		    actual.clock_ms != 100 + frame * 52 || actual.render_frame != uint32_t(UINT32_MAX - 1 + frame * 4) ||
+		    !check(input_demo_replay_consume_environment("wall_trigger", 253, 0, 1, &actual, error, sizeof(error))) ||
+		    actual.cached_ms != uint32_t(100 + frame * 52) ||
 		    !check(input_demo_replay_consume_environment("omega_blocked", -1, 0, 2, &actual, error, sizeof(error))) ||
 		    actual.clock_ms != 126 + frame * 52 || actual.render_frame != uint32_t(frame * 4) ||
 		    !check(input_demo_replay_consume_environment("input_end", -1, 0, 5, &actual, error, sizeof(error))) ||
@@ -2143,6 +2148,8 @@ static int expect_environment_recording(void)
 		    !check(input_demo_replay_consume_environment("pickup", 4, 1, 0, &actual, error, sizeof(error))) ||
 		    !check(input_demo_replay_consume_environment("camera_frame", -1, 1, 0, &actual, error, sizeof(error))) ||
 		    actual.clock_ms != 127 + frame * 52 ||
+		    !check(input_demo_replay_consume_environment("wall_trigger", 0, 1, 0, &actual, error, sizeof(error))) ||
+		    actual.cached_ms != uint32_t(126 + frame * 52) ||
 		    !check(input_demo_replay_advance_frame(error, sizeof(error)))) return 1;
 	}
 	input_demo_result expected;
@@ -2189,7 +2196,7 @@ static int expect_environment_recording(void)
 	remove((std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
 	// Invalid clock order is sticky and cannot be flushed as a shorter success
 	if (!check(input_demo_recorder_start(&settings, error, sizeof(error)))) return 1;
-	input_demo_environment_clock invalid = { 99, 99, 0 };
+	input_demo_environment_clock invalid = { 99, 99, 0, 0 };
 	if (!check(input_demo_recorder_observe_environment("input_end", -1, 0, &invalid, error, sizeof(error))) ||
 	    !check(input_demo_recorder_capture_frame(1092, &state, &pulse, 1, 1, 0, nullptr, nullptr, error, sizeof(error)))) return 1;
 	if (input_demo_recorder_finish_input_tail(&state, &pulse, 1, 0, error, sizeof(error)) ||

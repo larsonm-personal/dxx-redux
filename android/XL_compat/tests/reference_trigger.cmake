@@ -8,6 +8,22 @@ foreach(signature IN
               "int32_t CTrigger::DoDisableTrigger (" "void CTrigger::Read (")
     extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp" "${signature}")
 endforeach()
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/main/trigger.cpp" trigger_source)
+string(
+    FIND "${trigger_source}"
+         "if (!nDepth && !bObjTrigger && (Type () != TT_TELEPORT) && (Type () != TT_SPEEDBOOST)) {"
+         cooldown_start)
+string(FIND "${trigger_source}" "if (m_info.tOperated < 0) {" cooldown_end)
+if(cooldown_start LESS 0 OR cooldown_end LESS cooldown_start)
+    message(FATAL_ERROR "Pinned trigger cooldown block is missing")
+endif()
+math(EXPR cooldown_size "${cooldown_end} - ${cooldown_start}")
+string(SUBSTRING "${trigger_source}" ${cooldown_start} ${cooldown_size} cooldown_source)
+string(
+    APPEND
+    extracted
+    "\nint source_trigger_cooldown(int nDepth, bool bObjTrigger, int type, int ticks, int32_t &last) {\nconst int nTrigger = 0;\nauto Type = [type] { return type; };\nstruct { struct { int32_t nSDLTicks[1]; } app; } gameStates{{{ticks}}};\nstruct { struct { int32_t *delay; } trigData; } gameData{{&last}};\n${cooldown_source}\nreturn 0;\n}\n"
+)
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_trigger.h" CONTENT "${extracted}")
 add_executable(xl_trigger_reference tests/reference_trigger.cpp)
 target_include_directories(xl_trigger_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")

@@ -678,7 +678,7 @@ static bool validate_metadata(const input_demo_metadata &metadata, std::string *
 		return fail(error, "metadata version must be between 2 and 6");
 	if ((metadata.version == 6) != metadata.has_environment ||
 	    (metadata.has_environment && (metadata.game != "d2" || metadata.environment.clock_ms < 26 ||
-	                                  metadata.environment.clock_ms > INT64_MAX - INT32_MAX || metadata.environment.pickup_ms > INT32_MAX)))
+	                                  metadata.environment.clock_ms > INT64_MAX - INT32_MAX || metadata.environment.pickup_ms > INT32_MAX || metadata.environment.cached_ms > INT32_MAX)))
 		return fail(error, "format 6 requires a bounded D2 XL environment origin");
 	if (metadata.game != "d1" && metadata.game != "d2")
 		return fail(error, "metadata game must be d1 or d2");
@@ -774,12 +774,13 @@ static bool environment_clock_parse(const ordered_json &value, input_demo_enviro
 {
 	return parse_int64_field(value.at("clock_ms"), &clock->clock_ms, error, "environment clock_ms") &&
 	       parse_uint32_field(value.at("pickup_ms"), &clock->pickup_ms, error, "environment pickup_ms") &&
+	       parse_uint32_field(value.at("cached_ms"), &clock->cached_ms, error, "environment cached_ms") &&
 	       parse_uint32_field(value.at("render_frame"), &clock->render_frame, error, "environment render_frame");
 }
 
 static ordered_json environment_clock_json(const input_demo_environment_clock &clock)
 {
-	return { { "clock_ms", clock.clock_ms }, { "pickup_ms", clock.pickup_ms }, { "render_frame", clock.render_frame } };
+	return { { "clock_ms", clock.clock_ms }, { "pickup_ms", clock.pickup_ms }, { "render_frame", clock.render_frame }, { "cached_ms", clock.cached_ms } };
 }
 
 static ordered_json environment_json(const std::vector<input_demo_environment_sample> &samples)
@@ -806,7 +807,7 @@ static bool environment_parse(const ordered_json &value, std::vector<input_demo_
 		return fail(error, "environment count is missing, truncated or outside bounds");
 	for (const auto &row : value.at("samples")) {
 		input_demo_environment_sample sample;
-		if (!exact_keys(row, { "sequence", "phase", "operation", "consumer", "subject", "clock_ms", "pickup_ms", "render_frame" }, error, "environment sample") ||
+		if (!exact_keys(row, { "sequence", "phase", "operation", "consumer", "subject", "clock_ms", "pickup_ms", "render_frame", "cached_ms" }, error, "environment sample") ||
 		    !parse_uint32_field(row.at("sequence"), &sample.sequence, error, "environment sequence") ||
 		    !parse_uint32_field(row.at("operation"), &sample.operation, error, "environment operation") ||
 		    !parse_int_field(row.at("subject"), &sample.subject, error, "environment subject") ||
@@ -1451,7 +1452,7 @@ bool input_demo_metadata_parse_header_line(const std::string &line,
 			parsed.has_view_projection = true;
 		} else if (name == "environment") {
 			const auto &value = it.value();
-			if (!exact_keys(value, { "required", "slow_motion_speedup", "clock_ms", "pickup_ms", "render_frame" }, error, "environment origin") ||
+			if (!exact_keys(value, { "required", "slow_motion_speedup", "clock_ms", "pickup_ms", "render_frame", "cached_ms" }, error, "environment origin") ||
 			    value.at("required") != ordered_json::array({ "xl-clock-input-v1" }) ||
 			    !value.at("slow_motion_speedup").is_number_integer() || value.at("slow_motion_speedup") != 6 ||
 			    !environment_clock_parse(value, &parsed.environment, error))
@@ -1616,6 +1617,7 @@ static bool validate_environment(const std::vector<input_demo_environment_sample
 		const auto &clock = sample.clock;
 		if (sample.sequence != index || clock.clock_ms < previous->clock_ms ||
 		    clock.clock_ms > INT64_MAX - INT32_MAX || clock.pickup_ms < previous->pickup_ms || clock.pickup_ms > INT32_MAX ||
+		    clock.cached_ms < previous->cached_ms || clock.cached_ms > INT32_MAX ||
 		    uint32_t(clock.render_frame - previous->render_frame) > INT32_MAX)
 			return fail(error, "environment sequence or clocks are nonmonotonic or outside bounds");
 		const bool end = sample.consumer == (tail ? "tail_end" : "input_end");
@@ -1629,11 +1631,12 @@ static bool validate_environment(const std::vector<input_demo_environment_sample
 		} else if (boundary || !sample.operation || sample.operation < operation || sample.operation > operation_count)
 			return fail(error, "environment input sample is outside its operation");
 		if (!end && sample.consumer != "slow_frame" && sample.consumer != "slow_off" && sample.consumer != "pickup" &&
-		    sample.consumer != "omega_blocked" && sample.consumer != "omega_fired" && sample.consumer != "camera_frame")
+		    sample.consumer != "omega_blocked" && sample.consumer != "omega_fired" && sample.consumer != "camera_frame" && sample.consumer != "wall_trigger")
 			return fail(error, "unknown required environment consumer");
 		if ((sample.consumer == "slow_frame" || sample.consumer == "pickup" || sample.consumer == "camera_frame") && !sample.simulation)
 			return fail(error, "environment consumer requires simulation phase");
-		if (sample.consumer == "pickup" ? (sample.subject < 0 || sample.subject > 65535) : sample.subject != -1)
+		if (sample.consumer == "pickup" ? (sample.subject < 0 || sample.subject > 65535) : sample.consumer == "wall_trigger" ? (sample.subject < 0 || sample.subject >= 254)
+		                                                                                                                     : sample.subject != -1)
 			return fail(error, "invalid environment subject");
 		operation = sample.operation;
 		*previous = clock;

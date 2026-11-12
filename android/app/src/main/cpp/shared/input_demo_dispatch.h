@@ -70,6 +70,7 @@ typedef struct input_demo_environment_clock {
 	int64_t clock_ms;
 	uint32_t pickup_ms;
 	uint32_t render_frame;
+	uint32_t cached_ms;
 } input_demo_environment_clock;
 
 typedef struct input_demo_rear_view_baseline {
@@ -186,7 +187,7 @@ typedef struct input_demo_input_batch_info {
 
 /* Verify the engine/C++ boundary even under enclosing pack(1) headers */
 typedef char input_demo_operation_command_offset[(offsetof(input_demo_input_operation, command) == 52) ? 1 : -1];
-typedef char input_demo_environment_clock_size[(sizeof(input_demo_environment_clock) == 16) ? 1 : -1];
+typedef char input_demo_environment_clock_size[(sizeof(input_demo_environment_clock) == 20) ? 1 : -1];
 typedef char input_demo_projection_size[(sizeof(input_demo_view_projection) == 28) ? 1 : -1];
 typedef char input_demo_operation_size[(sizeof(input_demo_input_operation) == 124) ? 1 : -1];
 typedef char input_demo_batch_residual_offset[(offsetof(input_demo_input_batch_info, residual_state) == 24) ? 1 : -1];

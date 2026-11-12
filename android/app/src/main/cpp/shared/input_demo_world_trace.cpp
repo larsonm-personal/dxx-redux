@@ -6,9 +6,11 @@
 #include "preview.h"
 #include "slow_motion_save.h"
 #include "camera_save.h"
+#include "trigger_state.h"
 #endif
 
 #include <string>
+#include <stdexcept>
 #include <nlohmann/json.hpp>
 
 extern "C" {
@@ -401,6 +403,13 @@ json world_state()
 	if (xl_level_extensions_active()) {
 		out["xl_time"] = xl_runtime::slow_motion_trace_snapshot();
 		out["xl_cameras"] = xl_camera_trace_snapshot();
+		out["xl_triggers"] = json::array();
+		for (int i = 0; i < Num_triggers; ++i) {
+			xl_trigger_state state{};
+			if (!xl_wall_trigger_state(i, &state)) throw std::runtime_error("Missing XL trigger observation");
+			out["xl_triggers"].push_back({ state.elapsed, state.delay_ms, state.object, state.shot, state.operated,
+			                               state.destination, state.attached, state.signature, state.cooldown_active, state.cooldown_age_ms });
+		}
 	}
 #endif
 	return out;

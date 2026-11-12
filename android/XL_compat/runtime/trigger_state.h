@@ -12,6 +12,7 @@ extern "C" {
 typedef struct xl_trigger_state {
 	int64_t elapsed;
 	int32_t delay_ms, object, shot, operated, destination, attached, signature;
+	int32_t cooldown_active, cooldown_age_ms;
 } xl_trigger_state;
 #ifdef _MSC_VER
 #pragma pack(pop)

@@ -1215,6 +1215,70 @@ G1 stream/controls checkpoint, November 11 at 10:30 PST (18:30 UTC):
   before publishing layer 02. G1 estimate remains 5-8 hours, G2-G7 about 17.5 hours,
   highly uncertain; no cutoff and no gameplay-readiness claim.
 
+### G1 trigger-clock checkpoint, November 11 at 12:37 PST
+
+- Previous increment was progress: `bab60e4697c5d2215c6717381c662a92d2051862`,
+  tree `fad3c5c58ac282810afd2138a80b15c41638fa8b`, records camera timing and typed
+  XL observations. This increment is based on that local layer-02 commit.
+  G1 remains unaccepted; no layer-02 publication or downstream branch.
+- Audited the clock owner: timer_query returns cached fixed-point elapsed time,
+  not a fresh timer read. The pinned reference uses cached integer SDL ticks in
+  CTrigger::Operate, with a strict elapsed <750 ms rejection. Its default
+  PHYSICS_FPS=-1/PHYSICS_IN_BACKGROUND=0 path samples GetSlowTicks from
+  CalcFrameTime before controls and simulation. Redux keeps its existing event
+  and frame timer-update boundaries, exposing the exact last SDL sample through
+  timer_query_milliseconds without another read or fixed-point conversion.
+- The guarded format-6 environment now carries bounded, nondecreasing cached_ms.
+  Wall activation consumes a wall_trigger sample with its trigger index in input
+  or SIM order; nested, attached, teleport and speedboost exemptions remain.
+  Camera rotation now uses this cached value too, as pinned cameras.cpp does.
+  Old unqualified format-6 drafts missing this field reject; stock format 5 and
+  immutable fixtures are unchanged. The C/C++ ABI assertion is updated to 20
+  bytes and validated by existing packed-header compilation controls.
+- Save schema 37 retains cooldown activation and age clamped at the source's
+  750 ms threshold, rebasing onto current cached time or admitted replay origin.
+  All rows validate before applying. Existing detailed world traces now contain
+  scheduled trigger/actor/destination and cooldown state, with strict typed
+  comparison. Reads do not advance the clock or consume environment samples.
+- Extended the existing native chain owner and hash-pinned trigger adapter:
+  eight active/inactive 0/1/749/750 ms runtime samples match the extracted source
+  cooldown block; source eligibility controls cover nesting/attachment and exempt
+  types. Native checks prove invalid restore is atomic and an active cooldown
+  survives real disk save/load across a stock transition. Delayed object-chain
+  trailer negatives include malformed cooldown fields. This is not yet a fresh
+  process cold-continuation or live original-content wall-trigger recording.
+- Windows D2 desktop/metadata and Linux developer desktop builds pass. Six
+  focused input-demo CTests pass on Windows in 8.71 seconds and Linux in 2.94
+  seconds. All 73 comparator tests pass in 38.886 seconds, zero skips. Windows
+  D1 desktop also builds. Native chains, delayed object chains, boss spawning
+  and trigger flags pass 4/4 in 33.28 seconds. The existing metadata int/bool
+  warning in changing_light_test_records.h remains; no new warning was found.
+  Initial builds caught the old ABI-size assertion and a missing native-test
+  include; both were fixed before these successful runs. Scoped mixed-language
+  quality passes. No membership, expected fixture, timeout or reserve changed.
+- Fresh seven-event capture g1-live-time-capture-5 and clean accelerated replay
+  g1-time-replay-6 pass. Demo d2_wshock20_level6_20261111_123330.dximdemo SHA256:
+  `f1ae6cb566255bc2c96ce657876a929c042c54cf237e1f857f18af97e9c7f8b3`.
+  Tested Windows executable SHA256:
+  `d99f7268beadd540c716ebd519cac7cfdb6d68e5a3f20812c48b5baf879d9d98`.
+  All 198 object frames, 202 world/boundary records including time/camera/trigger
+  state, 811 strict SIM RNG events and 198 frame hashes match. This sequence
+  contains no wall_trigger consumption; activation behavior is covered by the
+  derived native and codec controls above. The pre-recording approach assist is
+  unchanged. Supplemental HAM still requires explicit AllowUnverifiedAssets;
+  these are diagnostic receipts, not frozen or connected-progression evidence.
+- Reference remains `2576a98b5de310e3ac7c9777df2677d1627b8bae`; no source or
+  authentic mission bytes were edited. Reports remain protected under
+  temp/pr464-ci-fixes-20261110. Free space is about 5.8 GiB. Current elapsed
+  implementation/check interval was roughly 12:25-12:37 PST.
+- Next: commit this timing/persistence increment, then fingerprint supplemental
+  HAM sources through the existing asset owner, including stacked loads and
+  temporary container mounts. G1 still needs the complete settings/admission
+  audit, ordinary Omega capture, immediate/two-clean-run and altered-pacing
+  evidence. Revised estimate is 6-10 hours for G1 and roughly 17.5 hours for
+  G2-G7, with substantial uncertainty and no cutoff. Full owner completeness,
+  true-headless/platform proof and gameplay closure remain open.
+
 Per-item handoff template:
 
     Item and status:

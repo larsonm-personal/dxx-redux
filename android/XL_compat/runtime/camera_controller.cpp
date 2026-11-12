@@ -179,7 +179,7 @@ extern "C" void xl_camera_controller_begin_frame(void)
 	if (xl_level_extensions_active()) {
 		input_demo_environment_clock clock{};
 		xl_input_demo_observe("camera_frame", -1, &clock);
-		frame_ticks = clock.pickup_ms;
+		frame_ticks = clock.cached_ms;
 	} else frame_ticks = SDL_GetTicks();
 }
 extern "C" unsigned xl_camera_controller_ticks(void)

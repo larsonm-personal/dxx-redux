@@ -49,7 +49,7 @@ input_demo_environment_clock environment_now()
 {
 	input_demo_environment_clock clock{};
 	if (input_demo_replay_peek_environment(&clock)) return clock;
-	return { clock_ms(), SDL_GetTicks(), render_clock };
+	return { clock_ms(), SDL_GetTicks(), render_clock, timer_query_milliseconds() };
 }
 input_demo_environment_clock observe(const char *consumer, int subject = -1)
 {
@@ -249,7 +249,7 @@ nlohmann::json xl_runtime::slow_motion_trace_snapshot()
 	// Observe the last consumed sample, never a fresh timer query or save snapshot
 	if (!input_demo_recorder_peek_environment(&anchor) && !input_demo_replay_peek_environment(&anchor))
 		return { { "bound", bool{ false } } };
-	return { { "bound", bool{ true } }, { "version", 1 }, { "anchor", { anchor.clock_ms, anchor.pickup_ms, anchor.render_frame } }, { "slow_motion", slow_motion_state_snapshot(anchor) }, { "weapon_clock", { last_missile - GameTime64, last_omega_frame } } };
+	return { { "bound", bool{ true } }, { "version", 1 }, { "anchor", { anchor.clock_ms, anchor.pickup_ms, anchor.render_frame, anchor.cached_ms } }, { "slow_motion", slow_motion_state_snapshot(anchor) }, { "weapon_clock", { last_missile - GameTime64, last_omega_frame } } };
 }
 bool xl_runtime::restore_slow_motion(const nlohmann::json &saved, bool apply)
 {

@@ -744,7 +744,7 @@ static int expect_level_start_metadata(void)
 		xl.version = 6;
 		xl.game = "d2";
 		xl.has_environment = true;
-		xl.environment = { 26, 0, 0 };
+		xl.environment = { 26, 0, 0, 0 };
 		xl.level_start.has_xl_clock = 1;
 		xl.level_start.xl_last_omega_frame = UINT32_MAX;
 		xl.level_start.flags = 32768 | 65536;
@@ -881,7 +881,7 @@ static int expect_environment_timeline(void)
 	demo.metadata.rng_mode = input_demo_rng_mode_name(d_rand_get_replay_mode());
 	demo.metadata.frame_count = 1;
 	demo.metadata.has_environment = true;
-	demo.metadata.environment = { 100, 100, UINT32_MAX - 1 };
+	demo.metadata.environment = { 100, 100, UINT32_MAX - 1, 100 };
 	demo.frames.resize(1);
 	auto &frame = demo.frames[0];
 	frame.input.has_frame_time = 1;
@@ -895,20 +895,22 @@ static int expect_environment_timeline(void)
 	frame.dispatch.operations = { sample, sample };
 	frame.has_environment = true;
 	frame.environment = {
-		{ 0, false, 1, "omega_fired", -1, { 100, 100, UINT32_MAX - 1 } },
-		{ 1, false, 2, "omega_blocked", -1, { 126, 126, 0 } },
-		{ 2, false, 2, "input_end", -1, { 126, 126, 0 } },
-		{ 3, true, 0, "slow_frame", -1, { 126, 126, 0 } },
-		{ 4, true, 0, "pickup", 4, { 126, 126, 0 } },
-		{ 5, true, 0, "camera_frame", -1, { 127, 127, 0 } }
+		{ 0, false, 1, "omega_fired", -1, { 100, 100, UINT32_MAX - 1, 0 } },
+		{ 1, false, 2, "omega_blocked", -1, { 126, 126, 0, 0 } },
+		{ 2, false, 2, "input_end", -1, { 126, 126, 0, 0 } },
+		{ 3, true, 0, "slow_frame", -1, { 126, 126, 0, 0 } },
+		{ 4, true, 0, "pickup", 4, { 126, 126, 0, 0 } },
+		{ 5, true, 0, "camera_frame", -1, { 127, 127, 0, 0 } },
+		{ 6, true, 0, "wall_trigger", 253, { 127, 127, 0, 0 } }
 	};
+	for (auto &entry : frame.environment) entry.clock.cached_ms = 100 + entry.sequence;
 	demo.has_input_tail = true;
 	demo.input_tail.input.frame = demo.input_tail.rng.frame = 1;
 	demo.input_tail.rng.has_call_count = 1;
 	demo.input_tail.dispatch.present = true;
 	demo.input_tail.dispatch.pre_rng_is_post = true;
 	demo.input_tail.has_environment = true;
-	demo.input_tail.environment = { { 0, false, 0, "tail_end", -1, { 152, 152, 2 } } };
+	demo.input_tail.environment = { { 0, false, 0, "tail_end", -1, { 152, 152, 2, 152 } } };
 	demo.has_result = true;
 	snprintf(demo.result.game, sizeof(demo.result.game), "d2");
 	snprintf(demo.result.mission, sizeof(demo.result.mission), "clock-contract");
@@ -936,6 +938,8 @@ static int expect_environment_timeline(void)
 	    reject([](auto &r) { r[0]["game"] = "d1"; }) ||
 	    reject([](auto &r) { r[0]["environment"]["clock_ms"] = -1; }) ||
 	    reject([](auto &r) { r[0]["environment"]["clock_ms"] = UINT64_MAX; }) ||
+	    reject([](auto &r) { r[0]["environment"].erase("cached_ms"); }) ||
+	    reject([](auto &r) { r[0]["environment"]["cached_ms"] = UINT32_MAX; }) ||
 	    reject([](auto &r) { r[1].erase("environment"); }) ||
 	    reject([](auto &r) { r[1]["environment"]["samples"].erase(4); }) ||
 	    reject([](auto &r) { r[1]["environment"]["count"] = INPUT_DEMO_ENVIRONMENT_SAMPLE_MAX + 1; }) ||
@@ -943,6 +947,11 @@ static int expect_environment_timeline(void)
 	    reject([](auto &r) { r[1]["environment"]["samples"][1]["clock_ms"] = 99; }) ||
 	    reject([](auto &r) { r[1]["environment"]["samples"][1]["pickup_ms"] = 99; }) ||
 	    reject([](auto &r) { r[1]["environment"]["samples"][1]["pickup_ms"] = UINT32_MAX; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["cached_ms"] = 99; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["cached_ms"] = -1; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1].erase("cached_ms"); }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][6]["subject"] = 254; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][6]["subject"] = -1; }) ||
 	    reject([](auto &r) { r[1]["environment"]["samples"][1]["render_frame"] = UINT32_MAX - 2; }) ||
 	    reject([](auto &r) { r[1]["environment"]["samples"][1]["operation"] = 3; }) ||
 	    reject([](auto &r) { r[1]["environment"]["samples"][1]["consumer"] = "unknown"; }) ||

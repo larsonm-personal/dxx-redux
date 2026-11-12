@@ -4,18 +4,20 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
-#define TF_DISABLED  4
-#define TF_PERMANENT 8
-#define TF_AUTOPLAY  128
-#define TT_MASTER    31
-#define TT_COUNTDOWN 25
-#define TT_MESSAGE   29
-#define TT_SOUND     30
-#define X2I(value)   ((value) >> 16)
-#define OBJ_EFFECT   20
-#define PARTICLE_ID  0
-#define LIGHTNING_ID 1
-#define SOUND_ID     2
+#define TF_DISABLED   4
+#define TF_PERMANENT  8
+#define TF_AUTOPLAY   128
+#define TT_MASTER     31
+#define TT_COUNTDOWN  25
+#define TT_MESSAGE    29
+#define TT_SOUND      30
+#define TT_TELEPORT   14
+#define TT_SPEEDBOOST 15
+#define X2I(value)    ((value) >> 16)
+#define OBJ_EFFECT    20
+#define PARTICLE_ID   0
+#define LIGHTNING_ID  1
+#define SOUND_ID      2
 std::vector<int> calls;
 bool expected_attached = false;
 int expected_player = 2;
@@ -130,7 +132,7 @@ struct Lightning {
 int main(int argc, char **argv)
 {
 	try {
-		if (argc != 2) throw std::runtime_error("Requires runtime counter samples");
+		if (argc != 3) throw std::runtime_error("Requires runtime counter and cooldown samples");
 		std::ifstream samples(argv[1]);
 		int value, disabled, operation, expected_value, expected_flags, count = 0;
 		while (samples >> value >> disabled >> operation >> expected_value >> expected_flags) {
@@ -145,6 +147,22 @@ int main(int argc, char **argv)
 			++count;
 		}
 		if (!samples.eof() || count != 40) throw std::runtime_error("Missing or malformed runtime samples");
+		std::ifstream cooldown_samples(argv[2]);
+		int active, age, result, cooldown_count = 0;
+		while (cooldown_samples >> active >> age >> result) {
+			int32_t last = active ? 1000 - age : -1;
+			if (source_trigger_cooldown(0, false, TT_MASTER, 1000, last) != result || last != (result ? 1000 - age : 1000))
+				throw std::runtime_error("Reference cached-clock cooldown differs from runtime");
+			++cooldown_count;
+		}
+		if (!cooldown_samples.eof() || cooldown_count != 8) throw std::runtime_error("Missing runtime cooldown samples");
+		for (int type : { TT_MASTER, TT_TELEPORT, TT_SPEEDBOOST })
+			for (int depth : { 0, 1 })
+				for (bool attached : { false, true }) {
+					int32_t last = 1000;
+					if (source_trigger_cooldown(depth, attached, type, 1000, last) != int(!depth && !attached && type == TT_MASTER))
+						throw std::runtime_error("Reference trigger cooldown eligibility changed");
+				}
 		for (int version : { 33, 36, 40 })
 			for (int value : { -65536, 0, 1, 65535, 65536, 131072 })
 				for (int flags : { 0, 8, 128, 136 }) {

@@ -17,6 +17,8 @@
 #include <algorithm>
 #include "object_trigger.h"
 #include "trigger_state.h"
+#include "slow_motion_runtime.h"
+#include "input_demo_replay.h"
 #include "../trigger_flags.h"
 #include "../player_resources.h"
 #include "save_epoch_format.h"
@@ -43,8 +45,13 @@ namespace
 {
 int depth = -1;
 std::uint64_t exit_generation = 0;
-std::array<fix64, MAX_TRIGGERS> last_activation{};
+std::array<std::int64_t, MAX_TRIGGERS> last_activation{};
 std::array<bool, MAX_TRIGGERS> activated{};
+std::int64_t cooldown_clock()
+{
+	input_demo_environment_clock clock{};
+	return input_demo_replay_peek_environment(&clock) ? clock.cached_ms : timer_query_milliseconds();
+}
 struct ScheduledTrigger {
 	bool operated = false;
 	fix64 started = 0;
@@ -277,8 +284,11 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 	TriggerDepth scope;
 	const auto entry_exit = exit_generation;
 	if (!depth && !attached && action.type != 14 && action.type != 15) {
-		const auto now = timer_query();
-		if (activated[index] && now - last_activation[index] < F1_0 * 3 / 4) return 1;
+		input_demo_environment_clock clock{};
+		xl_input_demo_observe("wall_trigger", index, &clock);
+		// Pinned CTrigger::Operate consumes cached integer SDL milliseconds
+		const auto now = std::int64_t(clock.cached_ms);
+		if (activated[index] && now - last_activation[index] < 750) return 1;
 		activated[index] = true;
 		last_activation[index] = now;
 	}
@@ -470,6 +480,9 @@ extern "C" int xl_wall_trigger_state(int index, xl_trigger_state *result)
 	result->destination = object_destinations[index];
 	result->attached = state.operated && state.attached;
 	result->signature = state.operated ? state.signature : 0;
+	result->cooldown_active = activated[index];
+	// All ages at or above 750 ms have the same next-activation behavior
+	result->cooldown_age_ms = activated[index] ? int(std::clamp(cooldown_clock() - last_activation[index], std::int64_t(0), std::int64_t(750))) : 0;
 	return 1;
 }
 
@@ -504,6 +517,8 @@ extern "C" int xl_wall_trigger_restore_mode(const xl_trigger_state *states, int 
 		if (state.attached < 0 || state.attached > 1 || state.signature < 0 || (state.attached && !xl_object_trigger_count())) return 0;
 		if (!state.operated && (state.attached || state.signature)) return 0;
 		if (!state.operated && (state.elapsed || state.delay_ms != -1 || state.object != -1 || state.shot)) return 0;
+		if (state.cooldown_active < 0 || state.cooldown_active > 1 || state.cooldown_age_ms < 0 || state.cooldown_age_ms > 750 ||
+		    (!state.cooldown_active && state.cooldown_age_ms)) return 0;
 		if (state.operated && state.object < 0) return 0;
 		if (state.operated && delayed(action)) {
 			if (action.time > 0 && state.delay_ms != action.time) return 0;
@@ -514,11 +529,13 @@ extern "C" int xl_wall_trigger_restore_mode(const xl_trigger_state *states, int 
 		}
 	}
 	if (!apply) return 1;
+	const auto now = cooldown_clock();
 	for (int i = 0; i < count; ++i) {
 		const auto &state = states[i];
 		scheduled[i] = { state.operated != 0, GameTime64 - state.elapsed, state.delay_ms, state.object, state.shot, state.attached != 0, state.signature };
 		object_destinations[i] = state.destination;
+		activated[i] = state.cooldown_active != 0;
+		last_activation[i] = now - state.cooldown_age_ms;
 	}
-	activated.fill(false);
 	return 1;
 }

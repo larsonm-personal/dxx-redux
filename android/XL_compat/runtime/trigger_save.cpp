@@ -97,7 +97,7 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			require(xl_wall_trigger_state(index, &state), "Cannot capture XL trigger state");
 			rows.push_back({ state.elapsed, state.delay_ms, state.object, state.shot, state.operated });
 			if (xl_object_trigger_count()) rows.back().push_back(state.destination);
-			actors.push_back({ state.attached, state.signature });
+			actors.push_back({ state.attached, state.signature, state.cooldown_active, state.cooldown_age_ms });
 		}
 		json block = { { "schema", 1 }, { "source", xl_level_trigger_identity() }, { "states", rows } };
 		if (xl_object_trigger_count()) {
@@ -133,7 +133,7 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 36;
+		block["schema"] = 37;
 		// Pending spawn effects allocate ordinary objects and draw SIM RNG
 		block["appearance_pending"] = bool(Do_appearance_effect);
 		block["camera_attachments"] = xl_camera_attachments_snapshot();
@@ -244,7 +244,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 26u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 36 &&
+		require(saved.is_object() && saved.size() == 26u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 37 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
 		require(saved.at("appearance_pending").is_boolean(), "Invalid XL pending appearance effect");
@@ -439,10 +439,10 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 				require(!field || (value.get<std::int64_t>() >= INT32_MIN && value.get<std::int64_t>() <= INT32_MAX), "XL trigger state field overflow");
 			}
 			const auto &actor = actors[states.size()];
-			require(actor.is_array() && actor.size() == 2, "Invalid XL pending actor row");
+			require(actor.is_array() && actor.size() == 4, "Invalid XL pending actor row");
 			for (const auto &field : actor)
 				require(field.is_number_integer() && (!field.is_number_unsigned() || field.get<std::uint64_t>() <= INT32_MAX) && field.get<std::int64_t>() >= 0 && field.get<std::int64_t>() <= INT32_MAX, "Invalid XL pending actor field");
-			states.push_back({ row[0].get<std::int64_t>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int>(), row[4].get<int>(), objects ? row[5].get<int>() : 0, actor[0].get<int>(), actor[1].get<int>() });
+			states.push_back({ row[0].get<std::int64_t>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int>(), row[4].get<int>(), objects ? row[5].get<int>() : 0, actor[0].get<int>(), actor[1].get<int>(), actor[2].get<int>(), actor[3].get<int>() });
 		}
 		require(xl_robot_generator_validate(), "Invalid XL generator assignment or robot selection in save");
 		require(xl_spawn_restore(spawns.data(), static_cast<int>(spawns.size()), 0) && xl_speed_boost_restore(boosts.data(), static_cast<int>(boosts.size()), boost_speed, 0) && xl_wall_trigger_restore_mode(states.data(), static_cast<int>(states.size()), 0) && xl_object_trigger_restore(object_states.data(), static_cast<int>(object_states.size()), 0) && xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 0) && xl_compat::restore_boss_routes(boss_routes, 0) && xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 0), "Invalid XL event state");

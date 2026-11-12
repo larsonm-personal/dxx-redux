@@ -609,7 +609,7 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 		return input_demo_recorder_copy_error("invalid or legacy view projection", error, error_size);
 	if (settings->has_environment && (!settings->ordered_input || settings->game != INPUT_DEMO_GAME_D2 ||
 	                                  settings->environment.clock_ms < 26 || settings->environment.clock_ms > INT64_MAX - INT32_MAX ||
-	                                  settings->environment.pickup_ms > INT32_MAX))
+	                                  settings->environment.pickup_ms > INT32_MAX || settings->environment.cached_ms > INT32_MAX))
 		return input_demo_recorder_copy_error("invalid or legacy XL environment origin", error, error_size);
 	if (have_checkpoint) {
 		if (!settings->checkpoint_save_name || !settings->checkpoint_save_name[0])

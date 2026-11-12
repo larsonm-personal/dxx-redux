@@ -1393,8 +1393,9 @@ class ParityTests(unittest.TestCase):
                     state["ai"]["local_capacity"] = 1367
                     state["effects"] = [{**schema_example(parity.WORLD_SCHEMA["effects"][0]), "segnum": -1}]
                     state["xl_time"] = schema_example(parity.XL_TIME_SCHEMA)
-                    state["xl_time"].update(version=1, bound=True, anchor=[26, 0, 0])
+                    state["xl_time"].update(version=1, bound=True, anchor=[26, 0, 0, 0])
                     state["xl_time"]["slow_motion"]["clocks"] = [[1.0, 0, 26, False]] * 2
+                    state["xl_triggers"] = [[0, -1, -1, 0, 0, 0, 0, 0, 0, 0] for _ in state["triggers"]]
                     state["xl_cameras"] = {"version": 1, "ticks": 0, "states": []}
 
         self.mutate(path, convert)
@@ -1508,7 +1509,7 @@ class ParityTests(unittest.TestCase):
 
     def test_xl_clock_observation_is_required_typed_and_compared(self):
         path = self.native_d2_trace("xl-time", True)
-        for key in ("xl_time", "xl_cameras"):
+        for key in ("xl_time", "xl_cameras", "xl_triggers"):
             bad = self.write("xl-missing-time", list(parity.records(path)))
             self.mutate(bad, lambda rows: rows[2]["state"].pop(key))
             with self.assertRaisesRegex(parity.EvidenceError, "Missing world field"):
@@ -1516,7 +1517,8 @@ class ParityTests(unittest.TestCase):
         mutations = (
             lambda time: time.update(bound=False),
             lambda time: time.update(bound=1),
-            lambda time: time.update(anchor=[25, 0, 0]),
+            lambda time: time.update(anchor=[25, 0, 0, 0]),
+            lambda time: time.update(anchor=[26, 0, 0, -1]),
             lambda time: time["slow_motion"]["clocks"][0].__setitem__(0, True),
             lambda time: time["slow_motion"]["clocks"][0].__setitem__(0, float("nan")),
             lambda time: time["slow_motion"]["clocks"][0].__setitem__(2, 27),
@@ -1529,6 +1531,29 @@ class ParityTests(unittest.TestCase):
                 list(parity.world_states(bad, self.header, "d2"))
         changed = self.write("xl-pending-time", list(parity.records(path)))
         self.mutate(changed, lambda rows: rows[2]["state"]["xl_time"]["slow_motion"].update(bullet_requested=True))
+        self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_trigger_cooldown_is_required_and_compared(self):
+        path = self.native_d2_trace("xl-trigger", True)
+
+        def populate(rows):
+            for row in rows:
+                if "ai" in row.get("state", {}):
+                    row["state"]["triggers"] = [schema_example(parity.WORLD_SCHEMA["triggers"][0])]
+                    row["state"]["triggers"][0].update(
+                        segments=[0] * 10, sides=[0] * 10, pad=0, d1_saved={"type": 0, "link_num": 0}
+                    )
+                    row["state"]["xl_triggers"] = [[0, -1, -1, 0, 0, 0, 0, 0, 1, 749]]
+
+        self.mutate(path, populate)
+        list(parity.world_states(path, self.header, "d2"))
+        for active, age in ((2, 0), (0, 1), (1, -1), (1, 751), (True, 0)):
+            bad = self.write("xl-invalid-trigger", list(parity.records(path)))
+            self.mutate(bad, lambda rows: rows[2]["state"]["xl_triggers"][0].__setitem__(slice(8, 10), [active, age]))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        changed = self.write("xl-expired-trigger", list(parity.records(path)))
+        self.mutate(changed, lambda rows: rows[2]["state"]["xl_triggers"][0].__setitem__(9, 750))
         self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
 
     def test_world_engine_identity_is_checked_before_mapping_empty_object_boundaries(self):

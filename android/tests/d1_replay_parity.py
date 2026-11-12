@@ -1106,7 +1106,7 @@ WORLD_SCHEMA = {
 XL_TIME_SCHEMA = {
     "version": int,
     "bound": bool,
-    "anchor": (int, int, int),
+    "anchor": (int, int, int, int),
     "slow_motion": {
         "clocks": ((float, int, int, bool),) * 2,
         "transition_sound": bool,
@@ -1169,15 +1169,18 @@ def validate_world_value(value, schema, path):
 def validate_world_state(state, engine=None, xl=False):
     validate_world_value(state, WORLD_SCHEMA, "$.state")
     if xl:
-        validate_world_value(state, {"xl_time": XL_TIME_SCHEMA, "xl_cameras": XL_CAMERA_SCHEMA}, "$.state")
+        validate_world_value(
+            state, {"xl_time": XL_TIME_SCHEMA, "xl_cameras": XL_CAMERA_SCHEMA, "xl_triggers": [(int,) * 10]}, "$.state"
+        )
         time = state["xl_time"]
-        clock, pickup_clock, rendered = time["anchor"]
+        clock, pickup_clock, rendered, cached_clock = time["anchor"]
         if (
             time["version"] != 1
             or not time["bound"]
             or not 26 <= clock <= 9223372034707292160
             or not 0 <= pickup_clock <= 2147483647
             or not 0 <= rendered <= 4294967295
+            or not 0 <= cached_clock <= 2147483647
             or not -9223372036854775808 <= time["weapon_clock"][0] <= 9223372036854775807
             or not 0 <= time["weapon_clock"][1] <= 4294967295
         ):
@@ -1206,6 +1209,26 @@ def validate_world_state(state, engine=None, xl=False):
                 or not -2147483648 <= camera["brakes"] <= 2147483647
             ):
                 raise EvidenceError("Invalid XL camera controller state")
+        if len(state["xl_triggers"]) != len(state["triggers"]):
+            raise EvidenceError("Missing XL trigger observations")
+        for elapsed, delay, actor, shot, operated, destination, attached, signature, active, age in state[
+            "xl_triggers"
+        ]:
+            if (
+                not 0 <= elapsed <= 72057594037927935
+                or not -1 <= delay <= 900000
+                or not -1 <= actor < capacity
+                or shot not in (0, 1)
+                or operated not in (0, 1)
+                or destination < 0
+                or attached not in (0, 1)
+                or signature < 0
+                or active not in (0, 1)
+                or not 0 <= age <= 750
+                or (not active and age)
+                or (not operated and (elapsed or delay != -1 or actor != -1 or shot or attached or signature))
+            ):
+                raise EvidenceError("Invalid XL trigger observation")
     weapons = state["weapons"]
     if (
         weapons["PrimaryWeaponPickedUp"] not in (0, 1)

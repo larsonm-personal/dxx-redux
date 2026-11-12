@@ -335,20 +335,21 @@ disposable copies; checked-in fixtures stay byte-identical.
 
 ## XL environmental timeline (format 6, under qualification)
 
-The codec recognizes a required `xl-clock-input-v1` capability for D2. Runtime
+The codec recognizes a required `xl-clock-input-v1` capability for D2. Production
 playback still rejects this format before loading a world, and production capture
-does not yet emit it. This section describes the developing contract, not accepted
+does not yet emit it. Developer builds exercise ordinary checkpoint recording
+and playback while qualification is incomplete. This section describes the developing contract, not accepted
 Omega/time-equipment replay support. Existing format-5 stock fixtures are unchanged.
 
 The header `environment` object contains `required: ["xl-clock-input-v1"]`,
-`slow_motion_speedup: 6`, `clock_ms`, `pickup_ms` and `render_frame`. Unknown or
+`slow_motion_speedup: 6`, `clock_ms`, `pickup_ms`, `cached_ms` and `render_frame`. Unknown or
 duplicate required capabilities and unsupported profiles reject. Build identity
 remains provenance rather than an exact-commit playback whitelist. The existing
 difficulty and player-settings metadata retain their own validation.
 
 Every frame and the mandatory input tail carry `environment: {count, samples}`.
 Each sample has a contiguous zero-based `sequence`, `phase` (`input` or `sim`),
-`operation`, `consumer`, `subject`, and the three clock values. Input operation
+`operation`, `consumer`, `subject`, and the four clock values. Input operation
 numbers are one-based: a consumer inside the second dispatched operation has
 `operation: 2`. Simulation samples have `operation: 0`. A single `input_end`
 sample follows all input operations before any simulation samples; a tail instead
@@ -356,25 +357,34 @@ ends with `tail_end` and cannot contain simulation samples. Empty input batches
 still have their boundary sample. This preserves multiple interleaved operations
 and the record-stop tail without assuming one render per simulation frame.
 
-Consumers are closed: `slow_frame`, `slow_off`, `pickup`, `camera_frame`, `omega_blocked` and
+Consumers are closed: `slow_frame`, `slow_off`, `pickup`, `camera_frame`, `wall_trigger`, `omega_blocked` and
 `omega_fired`, plus the two boundary names. Pickup samples identify the object
-slot in `subject`; other consumers require `subject: -1`. Slow-frame, camera-frame and pickup
+slot in `subject`; wall-trigger samples identify an index in 0..253. Other
+consumers require `subject: -1`. Slow-frame, camera-frame and pickup
 consumers belong to simulation. Counts, phases, ordering, required boundaries,
 unknown fields and duplicate JSON keys reject during complete-file admission,
 without replacing an already parsed recording.
 
 `camera_frame` supplies the cached SDL millisecond clock at the ordinary object
-simulation boundary, using `pickup_ms` from that ordered sample. It does not use
+simulation boundary, using `cached_ms` from that ordered sample. Wall-trigger
+cooldowns consume the same cached integer clock at activation, including input
+dispatch and simulation. The timer owner exposes its last SDL sample without a
+new timer read or conversion from fixed point. Neither consumer uses
 the replay renderer's clock. Detailed XL time observations read the last consumed
 sample, including the checkpoint origin before frame zero; they never sample a
 timer, advance a consumer or update the save clock cache. The detailed trace
 retains time factors/directions/threshold ages, pending controls, weapon markers,
-pickup ages and camera-controller state. This is still an unqualified developer
+pickup ages, camera-controller state and pending wall-trigger/cooldown state.
+Save schema 37 retains cooldown activation and its age clamped at the source's
+750 ms threshold. Loading rebases that age onto the current cached clock or
+admitted replay origin. The unqualified format-6 drafts lacking `cached_ms`
+reject; they are diagnostic evidence, not a released compatibility contract.
+This is still an unqualified developer
 contract; adding these observations does not establish complete XL owner coverage.
 
 The current bounded profile uses nondecreasing signed 64-bit transition-clock
 milliseconds, starting at least at 26 and leaving INT32_MAX overflow headroom.
-Pickup milliseconds are nondecreasing in 0..INT32_MAX, matching the currently
+Pickup and cached milliseconds are separately nondecreasing in 0..INT32_MAX, matching the currently
 qualified signed native animation-clock domain; a longer process lifetime is
 not silently wrapped into that profile. Render frames use unsigned 32-bit modulo
 arithmetic: each observed forward difference is at most INT32_MAX, including
