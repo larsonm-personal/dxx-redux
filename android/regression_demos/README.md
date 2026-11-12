@@ -480,10 +480,13 @@ captured at its ordinary setter before resetting AI routing; two changes between
 frames remain two operations even when the final mode equals the original mode.
 Playback uses that same setter, not the save-restoration path that preserves AI.
 
-XL world observations use schema 11 and require `xl_player_cfg` at restored,
-per-frame and terminal boundaries. Stock world schema 10 is unchanged. Earlier XL
-schema-10 receipts retain their historical scope; they cannot prove the newly
-required settings observation. The Omega recording probe exercises menu-equivalent
+XL world observations use schema 12 and require `xl_player_cfg` and `xl_births`
+at restored, per-frame and terminal boundaries. Birth observations contain every
+live slot/signature, birth time, creation order and the next creation counter;
+the reader checks live object identities at both boundaries and validates the
+times, orders and bounds on every frame. Stock world schema 10 is unchanged.
+Earlier XL schema-10/11 receipts retain their historical scope; they cannot prove
+the newly required birth observation. The Omega recording probe exercises menu-equivalent
 auto-leveling, homing and weapon-order changes, two ordinary routing setter calls
 at frame 102, preference restoration at frame 197, and routing in the stop tail.
 Its runner checks all four recorded operation sites alongside the pickup, rearm,

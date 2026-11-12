@@ -1,5 +1,7 @@
 #include "resource_validation.h"
 #include "input_demo_replay.h"
+#include "input_demo_state_trace.h"
+#include "input_demo_world_trace.h"
 #include "xl_animation_phase.h"
 #include "effects.h"
 #include <map>
@@ -273,6 +275,8 @@ static int arena_test(int argc, char **argv)
 			std::strcpy(Players[Player_num].callsign, "XLWater");
 			input_demo_set_skip_level_intro(1);
 			require(input_demo_load_replay_from_path(replay, error, sizeof(error)), error);
+			const auto trace = (std::filesystem::path(PHYSFS_getWriteDir()) / "xl-water-replay.jsonl.gz").string();
+			require(input_demo_state_trace_start_replay(trace.c_str(), error, sizeof(error)), error);
 			const auto frames = input_demo_replay_frame_count();
 			require(frames > 0 && frames < 18000 && input_demo_start_loaded_replay() == 0, "cannot start bounded arena input replay");
 			require(!xl_preview_water_segment(ConsoleObject->segnum), "arena replay did not start at dry spawn");
@@ -638,6 +642,14 @@ static int arena_test(int argc, char **argv)
 		const int paused = game_is_time_paused();
 		require(input_demo_start_quick_recording_common() != 0 && game_is_time_paused() == paused,
 		        "cannot record water traversal without changing pause state");
+		{
+			char error[256]{};
+			const auto trace = (std::filesystem::path(PHYSFS_getWriteDir()) / "xl-water-capture.jsonl.gz").string();
+			require(input_demo_state_trace_start(trace.c_str(), "record", "d2", Current_mission_filename,
+			                                     Current_level_num, Difficulty_level, "save_checkpoint", 0, error, sizeof(error)),
+			        error);
+			input_demo_trace_boundary("restored");
+		}
 		arena_recording = true;
 		const int into = arena_traverse(187);
 		arena_recording = false;

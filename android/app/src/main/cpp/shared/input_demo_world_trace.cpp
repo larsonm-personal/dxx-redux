@@ -7,6 +7,7 @@
 #include "slow_motion_save.h"
 #include "camera_save.h"
 #include "trigger_state.h"
+#include "object_birth.h"
 #include "input_demo_fixture.h"
 #endif
 
@@ -411,6 +412,7 @@ json world_state()
 			throw std::runtime_error(error);
 		out["xl_player_cfg"] = json::parse(encoded).at("value");
 		out["xl_time"] = xl_runtime::slow_motion_trace_snapshot();
+		out["xl_births"] = xl_object_birth_snapshot();
 		out["xl_cameras"] = xl_camera_trace_snapshot();
 		out["xl_triggers"] = json::array();
 		for (int i = 0; i < Num_triggers; ++i) {
@@ -475,7 +477,7 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	static json previous;
 	json current = world_state();
 	const bool boundary = phase != nullptr;
-	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 11 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
+	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 12 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
 	record["state"].get_ref<json::object_t &>().reserve(current.size());
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)

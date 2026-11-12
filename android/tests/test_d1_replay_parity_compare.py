@@ -1380,7 +1380,7 @@ class ParityTests(unittest.TestCase):
         def convert(rows):
             for row in rows:
                 if row["type"] in ("world_state", "world_boundary"):
-                    row["version"] = 11
+                    row["version"] = 12
                 if row["type"] in ("object_state", "object_boundary"):
                     row["capacity"] = 1367
                     row["allocator"]["free_obj_list"] = list(range(1367))
@@ -1415,6 +1415,7 @@ class ParityTests(unittest.TestCase):
                     state["xl_time"]["slow_motion"]["clocks"] = [[1.0, 0, 26, False]] * 2
                     state["xl_triggers"] = [[0, -1, -1, 0, 0, 0, 0, 0, 0, 0] for _ in state["triggers"]]
                     state["xl_cameras"] = {"version": 1, "ticks": 0, "states": []}
+                    state["xl_births"] = {"version": 1, "next": 0, "objects": [[3, 0, 0, 0]]}
 
         self.mutate(path, convert)
         return path
@@ -1527,7 +1528,7 @@ class ParityTests(unittest.TestCase):
 
     def test_xl_clock_observation_is_required_typed_and_compared(self):
         path = self.native_d2_trace("xl-time", True)
-        for key in ("xl_time", "xl_cameras", "xl_triggers", "xl_player_cfg"):
+        for key in ("xl_time", "xl_cameras", "xl_triggers", "xl_player_cfg", "xl_births"):
             bad = self.write("xl-missing-time", list(parity.records(path)))
             self.mutate(bad, lambda rows: rows[2]["state"].pop(key))
             with self.assertRaisesRegex(parity.EvidenceError, "Missing world field"):
@@ -1550,6 +1551,49 @@ class ParityTests(unittest.TestCase):
         changed = self.write("xl-pending-time", list(parity.records(path)))
         self.mutate(changed, lambda rows: rows[2]["state"]["xl_time"]["slow_motion"].update(bullet_requested=True))
         self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_births_are_bound_to_objects_and_compared(self):
+        path = self.native_d2_trace("xl-births", True)
+
+        def populate(rows):
+            for row in rows:
+                state = row.get("state", {})
+                if "ai" in state:
+                    state["globals"]["GameTime64"] = 100
+                    state["xl_births"] = {"version": 1, "next": 5, "objects": [[3, 0, 50, 2]]}
+
+        self.mutate(path, populate)
+        list(parity.world_states(path, self.header, "d2"))
+        mutations = (
+            lambda births: births.update(version=2),
+            lambda births: births.update(next=-1),
+            lambda births: births.update(next=18446744073709551615),
+            lambda births: births.update(objects=[]),
+            lambda births: births["objects"].append([4, 1, 50, 2]),
+            lambda births: births["objects"][0].__setitem__(0, 1367),
+            lambda births: births["objects"][0].__setitem__(1, 1),
+            lambda births: births["objects"][0].__setitem__(2, 101),
+            lambda births: births["objects"][0].__setitem__(3, 6),
+            lambda births: births["objects"][0].__setitem__(3, True),
+            lambda births: births.update(unknown=0),
+        )
+        for mutation in mutations:
+            bad = self.write("xl-births-invalid", list(parity.records(path)))
+            self.mutate(bad, lambda rows: mutation(rows[2]["state"]["xl_births"]))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        for field, value in (("next", 6), ("birth_time", 51), ("birth_order", 3)):
+            changed = self.write("xl-births-changed", list(parity.records(path)))
+
+            def change(rows):
+                births = rows[2]["state"]["xl_births"]
+                if field == "next":
+                    births["next"] = value
+                else:
+                    births["objects"][0][2 if field == "birth_time" else 3] = value
+
+            self.mutate(changed, change)
+            self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
 
     def test_xl_player_settings_are_complete_and_compared(self):
         path = self.native_d2_trace("xl-settings", True)

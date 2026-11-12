@@ -1174,7 +1174,7 @@ def validate_world_value(value, schema, path):
                 validate_world_value(item, child, f"{path}[{index}]")
 
 
-def validate_world_state(state, engine=None, xl=False):
+def validate_world_state(state, engine=None, xl=False, objects=None):
     validate_world_value(state, WORLD_SCHEMA, "$.state")
     if xl:
         validate_world_value(
@@ -1184,10 +1184,39 @@ def validate_world_state(state, engine=None, xl=False):
                 "xl_cameras": XL_CAMERA_SCHEMA,
                 "xl_triggers": [(int,) * 10],
                 "xl_player_cfg": XL_PLAYER_CFG_SCHEMA,
+                "xl_births": {"version": int, "next": int, "objects": [(int,) * 4]},
             },
             "$.state",
         )
         cfg = state["xl_player_cfg"]
+        births = state["xl_births"]
+        capacity = state["ai"]["local_capacity"]
+        if (
+            set(births) != {"version", "next", "objects"}
+            or births["version"] != 1
+            or not 0 <= births["next"] < 18446744073709551615
+            or len(births["objects"]) > capacity
+        ):
+            raise EvidenceError("Invalid XL birth observation header")
+        previous = -1
+        orders = set()
+        for slot, signature, born, order in births["objects"]:
+            if (
+                not previous < slot < capacity
+                or not 0 <= signature <= 2147483647
+                or not 0 <= born <= state["globals"]["GameTime64"]
+                or not 0 <= order <= births["next"]
+                or (not order and born)
+                or (order and order in orders)
+            ):
+                raise EvidenceError("Invalid XL birth identity, time or order")
+            previous = slot
+            if order:
+                orders.add(order)
+        if objects is not None and [(slot, signature) for slot, signature, _, _ in births["objects"]] != [
+            (int(slot), value["signature"]) for slot, value in sorted(objects.items(), key=lambda item: int(item[0]))
+        ]:
+            raise EvidenceError("XL births do not match live object identities")
         for key in XL_PLAYER_CFG_SCHEMA:
             if key.endswith("_order"):
                 if sorted(cfg[key]) != list(range(10)) + [255]:
@@ -1405,6 +1434,7 @@ def world_states(path, header, engine="d1"):
     terminal = False
     xl = xl_storage_profile(header, engine)
     object_capacity = None
+    boundary_objects = None
     for row in records(path):
         kind = row.get("type")
         if kind == "meta":
@@ -1419,7 +1449,7 @@ def world_states(path, header, engine="d1"):
         if (
             not meta_seen
             or type(row.get("version")) is not int
-            or row["version"] != (2 if kind == "object_boundary" else 11 if xl else 10)
+            or row["version"] != (2 if kind == "object_boundary" else 12 if xl else 10)
         ):
             raise EvidenceError("Missing world metadata or unsupported schema")
         if kind.endswith("boundary"):
@@ -1440,7 +1470,7 @@ def world_states(path, header, engine="d1"):
             if kind == "world_boundary":
                 if not isinstance(row.get("state"), dict) or not all(group in row["state"] for group in WORLD_GROUPS):
                     raise EvidenceError("Incomplete world boundary")
-                validate_world_state(row["state"], engine, xl)
+                validate_world_state(row["state"], engine, xl, boundary_objects)
                 if row["state"]["ai"]["local_capacity"] != object_capacity:
                     raise EvidenceError("AI and object capacities disagree")
             else:
@@ -1448,6 +1478,7 @@ def world_states(path, header, engine="d1"):
                 if object_capacity is not None and object_capacity != row["capacity"]:
                     raise EvidenceError("Object boundary capacity changed")
                 object_capacity = row["capacity"]
+                boundary_objects = row["slots"]
             yield row
         else:
             if terminal or type(row.get("f")) is not int or count != row["f"] or row.get("reset") is not (count == 0):

@@ -2908,6 +2908,62 @@ G2 birth-state validation checkpoint, November 11 at 23:38 PST:
   adapter are existing reuse anchors, not permission to enable Android-specific
   policy on desktop. G3-G7 remain open. No merge or private asset publication.
 
+G2 birth observer checkpoint, November 12 at 00:11 PST:
+
+- Layer03 local birth persistence commit2e66171309e85b881c7d874ce9281e74b3bcfc51
+  has not been pushed. Added pure xl_births to the existing detailed world
+  observer; XL world schema12 requires every live slot/signature, birth time,
+  append order and next counter. Stock world10/object2 stay unchanged. Reader
+  validates bounded typed rows, counter/order uniqueness and time domain each
+  frame, plus exact live membership/signatures at restored/terminal boundaries.
+  Per-frame object identity cross-validation remains in the separate object
+  reader/comparison; do not claim the birth reader checks that each frame.
+- Existing water-arena owner now emits ordinary live and fresh-process replay
+  traces. Both Linux-native and Windows owners pass with the original HOG and
+  descriptor pins and unchanged90/60s subprocess/120s outer deadlines. Each
+  trace has1235 frames,1237 birth observations; birth observations match across
+  all four host/capture/replay paths. This bounded recording observes one runtime
+  birth and next counter1; the earlier projectile continuation owner separately
+  covers creation/deletion/reuse and next order5. No original inputs/oracles edited.
+- Full object comparisons pass1235/1235 on both hosts, including allocator and
+  both RNG streams. Full world comparisons FAIL on both hosts:303 named first
+  differences, restricted to inactive awareness-buffer rows and automap discovery.
+  ai.c reads awareness only below Num_awareness_events and fully overwrites an
+  appended entry; its save writes only active rows. Keep the raw differing data.
+  arena_frame omits ordinary post-simulation render_update_game_view_automap,
+  which shared playback invokes. These observations do not establish full world
+  fidelity, true-headless qualification or G2 acceptance. Next repair the live
+  owner boundary and define/test semantic inactive-queue comparison with explicit
+  source/consumer evidence, retaining unknown and active fields.
+- First Linux owner on the Windows-mounted output timed out before recording
+  during existing graphics rejection/recovery checks. Retained as
+  g2-birth-observer-linux and its log. Fresh Linux-native output passes the same
+  deadlines; copied traces/logs are g2-birth-observer-linux-native. Windows output
+  g2-birth-observer-windows passes. Comparisons are *-compare-header.json (Linux)
+  and *-windows-compare.json; cross-host birth-only receipt
+  g2-birth-observer-cross-host.json explicitly retains the full-world failure.
+  Initial analysis called the D1-only read_demo helper on D2 and failed; retained
+  g2-birth-observer-linux-compare.json. Correct analysis reads the native header.
+- Windows developer executable SHA256
+  57f20b7e9fb0fe7e3038a6cec39c9fccf456a2b9cd71b5b89f0612b3745980f2;
+  Linux53fded705a0d73af617661e8d2f438cd3cc15ea4f79e65ec3b133fe30b5e4683.
+  Both verified root-bound caches built2e66 plus this observer patch. Linux first
+  build caught a missing input_demo_world_trace.h include in the arena owner;
+  fixed rebuild passes. Existing unrelated compiler warnings remain unchanged.
+- Reader suite76 tests passes32.146s. Scoped mixed-language quality and whitespace
+  pass. Automation catalog99 JSON/315 PowerShell/547 support and runner catalog
+  428 top-level/547 support pass. Evidence g2-birth-observer-{reader-final,
+  final-quality,catalog,master-catalog}.log. No new top-level owner or timeout.
+- Audit correction: timer_query_milliseconds returns cached_ticks populated by
+  timer_update. xl_input_demo_cached_clock therefore does not freshly sample host
+  time; wall-trigger cooldown getter needs no clock change. Earlier scratch audit
+  wording is superseded; other mutating save getters retain their separate issues.
+- G2 remains OPEN: complete native/XL semantics, cold continuation and whole-save
+  rejection atomicity still required. Corrupt trailer still returnsfalse after
+  changing energy91 to100; no rollback fix has been applied. No layer03 PR/push,
+  no G2-G7 acceptance. Actual00:11 PST; revised G2 estimate4-6h remains uncertain,
+  with approximately14.5h afterward. Continue sequentially without a cutoff.
+
 Per-item handoff template:
 
     Item and status:
