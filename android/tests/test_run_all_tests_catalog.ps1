@@ -495,6 +495,36 @@ try {
     }
     if (-not @($catalogs[0].tests | Where-Object name -like '*graphics_canary').Count -or @($catalogs[1].tests | Where-Object name -like '*graphics_canary').Count) { throw 'Extended replay matrix did not replace canaries' }
 
+    # Configure both native profiles from the recorded projection before playback
+    $replayAst = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'run_input_demo_replay.ps1'), [ref]$null, [ref]$null)
+    foreach ($name in @('Write-AsciiFile', 'Write-ReplayConfig')) {
+        $function = $replayAst.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name }, $false)
+        . ([scriptblock]::Create($function.Extent.Text))
+    }
+    $projectionConfig = Join-Path $fixtureRoot 'projection.cfg'
+    foreach ($projectionCase in @(
+            @{ Header = @{}; Width = 640; Height = 480; Aspect = 65536 },
+            @{ Header = @{ view_projection = @{ screen_width = 1920; screen_height = 1080; aspect = 65536 } }; Width = 1920; Height = 1080; Aspect = 65536 },
+            @{ Header = @{ view_projection = @{ screen_width = 1280; screen_height = 720; aspect = 87381 } }; Width = 1280; Height = 720; Aspect = 87381 }
+        )) {
+        Write-ReplayConfig -Path $projectionConfig -Header $projectionCase.Header
+        $configured = ConvertFrom-StringData (Get-Content -LiteralPath $projectionConfig -Raw)
+        $nativeAspect = [long]([decimal]$configured.ResolutionX * [long]$configured.AspectX * 65536 / ([long]$configured.ResolutionY * [long]$configured.AspectY))
+        if ([int]$configured.ResolutionX -ne $projectionCase.Width -or [int]$configured.ResolutionY -ne $projectionCase.Height -or $nativeAspect -ne $projectionCase.Aspect) {
+            throw 'Replay configuration changed the recorded projection'
+        }
+    }
+    foreach ($invalidProjection in @(
+            @{ screen_width = 0; screen_height = 480; aspect = 65536 },
+            @{ screen_width = 1920; screen_height = 1080; aspect = '65536' },
+            @{ screen_width = 16384; screen_height = 16383; aspect = 2147483647 }
+        )) {
+        $rejected = $false
+        try { Write-ReplayConfig -Path $projectionConfig -Header @{ view_projection = $invalidProjection } } catch { $rejected = $true }
+        if (-not $rejected) { throw 'Malformed or overflowing replay projection was accepted' }
+    }
+    Write-Host 'Replay profiles preserve recorded dimensions and fixed-point aspect'
+
     # Execute the real replay wrapper chain with only the native build and replay mocked
     $batchRoot = Join-Path $fixtureRoot 'replay_batch_repository'
     $batchTests = Join-Path $batchRoot 'android/tests'
