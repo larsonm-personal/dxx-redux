@@ -4101,6 +4101,37 @@ G2 raw event and mixed-producer checkpoint, November 12 at 03:57 PST:
   native caches, all replay sandboxes and emulator workspaces were excluded or
   protected. No manual cache deletion or new WSL restart.
 
+### User-requested wind-down - November 12, 09:19 PST request
+
+- The user requested stopping after the next coherent chunk and producing a
+  what-was-done report, remaining work/estimate for90% playable levels, and a
+  high-level outline for another12 hours. This supersedes immediate autonomous
+  continuation through the unfinished G2-G7 queue. No new HAM-reader edits were
+  started; the last tested implementation remains3660e9a14b9c7651c5f686ce7b4ceeefd779172d,
+  tree89ae4d157132c115d973846eb6be38037b40ab7b. The handoff adds documentation only.
+- Current summary: [what was done](xl_gameplay_what_was_done_20261112.md).
+  Future outline: [next12 hours](xl_gameplay_next_12_hours_20261112.md).
+  G0/G1 are accepted for their recorded bounded scopes. G2 remains unfinished and
+  local/unpublished; G3-G7 remain open. The known invalid-restore energy91->100
+  defect is still open. No90% playable claim or current-tip hosted CI claim.
+- Fresh GitHub metadata confirms#464/#465/#467 open, unmerged, ready for review,
+  with unchanged published heads. The nine returned PR-triggered workflow runs
+  associated with0a2df4aeb completed successfully; conditional job execution and
+  exact-candidate dispatch receipts retain their separate scopes. Local03 is not
+  part of the published stack. No remote mutation or merge during wind-down.
+- The90% denominator and playable numerator have not been established. Preserve
+  the full1111-entry catalog accounting and historical4/8 load/tick series.
+  Proposed future single-player eligibility needs explicit exclusions and an
+  actual per-entry blocker matrix. The report budgets45-80 further engineering
+  hours with low confidence, plus any required individual-level playthrough
+  workload; this replaces treating the earlier remaining-item estimates as a
+  credible90% forecast. The next12-hour outline is a proposal, not a started run.
+- Source/binary hashes and detailed final tests remain in the preceding checkpoint.
+  Independent untracked review, all three stashes and authentic inputs are
+  preserved. About15.5GiB free; official cleanup could not reach50GiB without
+  touching protected material. Finish documentation quality/review, commit the
+  handoff locally and leave no owned build/test/formatter running.
+
 Per-item handoff template:
 
     Item and status:
