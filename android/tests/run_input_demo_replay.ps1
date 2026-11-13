@@ -99,20 +99,19 @@ function Write-ReplayConfig {
         if ($width -lt 320 -or $width -gt 16384 -or $height -lt 200 -or $height -gt 16384 -or $aspect -le 0 -or $aspect -gt [int]::MaxValue) {
             throw 'Recorded view projection exceeds native replay configuration bounds'
         }
-        # Native projection is fixdiv(width * AspectX, height * AspectY)
-        $numerator = $aspect * $height
-        $denominator = 65536L * $width
-        $a = $numerator
-        $b = $denominator
-        while ($b) {
-            $remainder = $a % $b
-            $a = $b
-            $b = $remainder
-        }
-        $aspectX = [long]($numerator / $a)
-        $aspectY = [long]($denominator / $a)
-        if ($width * $aspectX -gt [int]::MaxValue -or $height * $aspectY -gt [int]::MaxValue) {
-            throw 'Recorded aspect ratio cannot be represented by native configuration products'
+        # Support the normalized projection used by native widescreen captures
+        # Other projections retain the native 3:4 profile and its strict check
+        # Do not tune arbitrary aspect values to satisfy corrupted replay metadata
+        if ($aspect -eq 65536) {
+            $a = $height
+            $b = $width
+            while ($b) {
+                $remainder = $a % $b
+                $a = $b
+                $b = $remainder
+            }
+            $aspectX = [long]($height / $a)
+            $aspectY = [long]($width / $a)
         }
     }
 

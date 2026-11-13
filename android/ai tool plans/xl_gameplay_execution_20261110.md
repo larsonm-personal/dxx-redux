@@ -4351,8 +4351,8 @@ remain in the conservative denominator and none has complete playability proof.
 Validation exposed a wrapper defect: `run_input_demo_replay.ps1` always wrote a
 640x480 configuration, while the retained water recording requires 1920x1080.
 The native reader correctly rejected that projection mismatch. The wrapper now
-uses recorded dimensions and derives the native integer aspect ratio from the
-fixed-point projection. Missing projection metadata keeps the legacy 640x480
+uses recorded dimensions and selects the established normalized or native 3:4
+aspect profile. Arbitrary aspect values remain subject to native mismatch checks. Missing projection metadata keeps the legacy 640x480
 configuration; malformed or overflowing configuration values fail before launch.
 Both the Windows sandbox and Linux HOME profile receive the same configuration.
 No checkpoint, expected result or native projection comparison was changed.
@@ -4386,3 +4386,43 @@ Checkpoint 04 is published as fork PR 469, head
 Hosted Linux XL developer compilation and both asset-free XL lanes pass. Other
 required owners are still running; sampled readiness remains at its known failed
 baseline and is not reclassified as playable. Final CI receipts remain pending.
+
+### Checkpoint 05 CI correction and recovered Linux validation
+
+PR 470 at `c493bffdc21190deb4fbaafb31153e3ccad8cea3` failed the required public
+ordered-input owner in run 43377071734: configuring any requested aspect also
+configured its intentionally corrupted `65537` value. That defeated the native
+pre-restore mismatch negative. The correction only selects the established
+normalized projection for an exact `65536`; other values retain native 3:4
+configuration and the unchanged strict native check. No existing ordered-input
+assertion, expected recording, membership or timeout was modified.
+
+The exact hosted negative recording now exits 1 naturally with expected aspect
+65537 versus actual 65536, no object boundary, and no result. Its unmodified
+16-frame counterpart passes strict terminal/SIM comparison and exits zero.
+Receipts: `projection-negative-ci-repro`, `projection-positive-ci-repro`.
+Both Windows and Linux master-catalog integration pass after this correction,
+including the new nearby-aspect control and original catalog requirements.
+
+User confirmed that the WSL image was retained and authorized recovery/use.
+Ubuntu remained registered to its original image; shutdown/restart recovered it
+without re-import or image replacement. Local Linux developer-ON and ordinary-OFF
+runtime builds pass. Upstream compatibility passes 1/1 in 38.53 seconds. Full
+Observatory passes on the native Linux filesystem with all 12 pinned firing and
+four contact comparisons (`ham-owner-linux-native.log`). The first WSL run wrote
+its fixture on the mounted Windows filesystem and exceeded the unchanged
+60-second deadline; that failure remains retained. Native workspace evidence was
+copied into the repository receipt directory.
+
+The main checkout's Windows dependency configuration prevented Linux catalog
+setup. Drive mapping did not propagate to child processes, and Windows worktree
+metadata cannot be used by Linux Git. An isolated native-Git local clone of the
+published head, with the two corrected scripts copied and `/mnt/c/local` as its
+local dependency root, ran the full owner successfully. All failed setup receipts
+remain; the main dependency file and unrelated work are untouched.
+
+PR 469's public selected owners and private 113-required-test XL lane have now
+finished successfully on `b00c75304`; private run 43375288766 attempt 1 retains
+16 format witnesses and three modern source levels. Sampled readiness still
+reports failure (four of eight); it is not suppressed or counted as playable.
+PR 470's corrective candidate must still complete hosted qualification.

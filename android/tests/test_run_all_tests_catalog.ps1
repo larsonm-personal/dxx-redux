@@ -505,7 +505,8 @@ try {
     foreach ($projectionCase in @(
             @{ Header = @{}; Width = 640; Height = 480; Aspect = 65536 },
             @{ Header = @{ view_projection = @{ screen_width = 1920; screen_height = 1080; aspect = 65536 } }; Width = 1920; Height = 1080; Aspect = 65536 },
-            @{ Header = @{ view_projection = @{ screen_width = 1280; screen_height = 720; aspect = 87381 } }; Width = 1280; Height = 720; Aspect = 87381 }
+            @{ Header = @{ view_projection = @{ screen_width = 1280; screen_height = 720; aspect = 87381 } }; Width = 1280; Height = 720; Aspect = 87381 },
+            @{ Header = @{ view_projection = @{ screen_width = 640; screen_height = 480; aspect = 65537 } }; Width = 640; Height = 480; Aspect = 65536 }
         )) {
         Write-ReplayConfig -Path $projectionConfig -Header $projectionCase.Header
         $configured = ConvertFrom-StringData (Get-Content -LiteralPath $projectionConfig -Raw)
@@ -517,7 +518,7 @@ try {
     foreach ($invalidProjection in @(
             @{ screen_width = 0; screen_height = 480; aspect = 65536 },
             @{ screen_width = 1920; screen_height = 1080; aspect = '65536' },
-            @{ screen_width = 16384; screen_height = 16383; aspect = 2147483647 }
+            @{ screen_width = 2147483647; screen_height = 16383; aspect = 65536 }
         )) {
         $rejected = $false
         try { Write-ReplayConfig -Path $projectionConfig -Header @{ view_projection = $invalidProjection } } catch { $rejected = $true }
