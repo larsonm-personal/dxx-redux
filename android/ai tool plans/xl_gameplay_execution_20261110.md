@@ -223,10 +223,12 @@ discovered independent feature genuinely improves review, and record why.
 | xl_gameplay_20261111_05_progression   | G5: connected navigation, combat and mission lifecycle              | 04_runtime                                          |
 | xl_gameplay_20261111_06_qualification | G6-G7: durable corpus, platform proof and delivery                  | 05_progression                                      |
 
-Each branch builds and has meaningful scoped tests before publication. A draft
-can honestly carry an unmet external/platform gate; it cannot claim implemented
-behavior with a known implementation failure. Complete the current layer before
-creating its child, so lower-layer rewrites are uncommon.
+Each branch builds and has meaningful scoped tests before publication. Publish
+coherent partial milestones early as non-draft fork PRs, with unmet gameplay or
+external gates stated accurately. Do not defer the first push until the whole
+layer is complete: obtaining and repairing hosted CI is part of implementation.
+Complete the current layer before creating its child, so lower-layer rewrites
+are uncommon. A partial checkpoint does not close its unfinished gameplay gate.
 
 Installed gh 2.102.0 supports native stacks. The GitHub connector can create/edit
 ordinary PRs but does not expose native stack linking; use gh for that step.
@@ -242,13 +244,13 @@ Recommended publication procedure:
    Stage explicit owned paths only; never git add -A or gh stack add -A.
 3. Format once, run scoped gates, inspect staged diff, commit and push that branch
    to origin. Record pushed commit and tree. Preserve local d2xxl_nov10 unchanged.
-4. Create the PR in larsonm-personal/dxx-redux with the table's immediate base.
+4. Create/update a non-draft PR in larsonm-personal/dxx-redux with the table's immediate base.
    State the concrete behavior, dependency PR, tests, current limits and source
    identity. Do not create six independent cmake-based PRs with cumulative diffs.
 5. Once two layers exist, link only this tranche's PRs using native stacks.
    With GH_REPO set to larsonm-personal/dxx-redux, the verified CLI shape is:
 
-       gh stack link --remote origin --base <verified-trunk> <first-PR-URL> <second-PR-URL>
+       gh stack link --open --remote origin --base <verified-trunk> <first-PR-URL> <second-PR-URL>
 
    Append new PRs using the returned stack number and full fork PR URL. Inspect
    gh stack view --json and server PR metadata afterward. Do not include #464
@@ -261,10 +263,14 @@ Recommended publication procedure:
    runs tests. The current tip must receive full required aggregate coverage,
    including lower-layer changes. Do not add skip labels or change eligibility
    merely to get green checks.
-7. Review exact-head CI after each published layer while doing safe local work.
-   Fix deterministic failures before adding dependent work. A run for an old
-   head, a PR merge ref, a queued job or a skipped job is not current-head success.
-   Record which source identity a workflow actually tested.
+7. Monitor CI after every published checkpoint while continuing independent work.
+   Inspect failed logs/artifacts, fix causes, retest and push again. Require
+   terminal passing applicable public/private checks before accepting the
+   checkpoint. A run for an old head, a queued job or a skipped required owner is
+   not success. For normal PR merge-ref checks, record the tested merge SHA and
+   confirm it incorporates the current head and intended base. For private
+   controllers record the actual candidate SHA separately from the controller.
+   Reserve time for a feedback/fix cycle; do not leave avoidable red CI to the user.
 8. Prefer fixup commits over history rewriting after publication. If a rebase is
    necessary, preserve all later fixes, record old refs and use explicit
    --force-with-lease=refs/heads/<owned-branch>:<observed-old-sha> only for these
@@ -279,7 +285,7 @@ Useful explicit commands, with placeholders resolved from the ledger:
     git rev-parse 'origin/d2xxl_nov10^{tree}'
     git switch -c xl_gameplay_20261111_01_baseline origin/d2xxl_nov10
     git push -u origin xl_gameplay_20261111_01_baseline
-    gh pr create --repo larsonm-personal/dxx-redux --base <parent> --head <branch> --draft --title <title> --body-file <body-file>
+    gh pr create --repo larsonm-personal/dxx-redux --base <parent> --head <branch> --title <title> --body-file <body-file>
 
 These are sequential examples, not a script to run blindly. If branch names
 already exist, inspect and continue them. Commit this plan and the goal prompt
@@ -733,9 +739,14 @@ Final handoff must contain:
   checks alone.
 - The exact next unfinished gameplay item if the full closure gate is not met,
   with evidence, source anchors and revised work estimate.
+- A dated what-was-done report, corrected next-window plan and replacement
+  copy/paste kickoff prompt carrying the same fork-only, stacked non-draft PR,
+  active CI monitoring, final-candidate acceptance and no-merge requirements.
 
-Acceptance: coherent stack published to the fork with accurate descriptions,
-final-source packages and verification, honest unresolved gates, clean handoff.
+Acceptance: coherent non-draft stack published to the fork with accurate
+descriptions, passing applicable final-candidate CI, final-source packages and
+verification, honest unresolved gates, and the report/plan/prompt handoff.
+Unavailable required CI is an explicit incomplete external gate, never a pass.
 This closes delivery, not an unfinished gameplay category by renaming it deferred.
 
 ## 6. Shared validation and command anchors
