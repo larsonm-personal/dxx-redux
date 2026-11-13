@@ -80,11 +80,46 @@ function Write-AsciiFile {
 }
 
 function Write-ReplayConfig {
-    param([string]$Path)
+    param([string]$Path, [hashtable]$Header)
+
+    $width = 640
+    $height = 480
+    $aspectX = 3
+    $aspectY = 4
+    if ($Header -and $Header.ContainsKey('view_projection')) {
+        $projection = $Header.view_projection
+        foreach ($field in @('screen_width', 'screen_height', 'aspect')) {
+            if ($projection[$field] -isnot [int] -and $projection[$field] -isnot [long]) {
+                throw "Recorded view projection requires an integer $field"
+            }
+        }
+        $width = [long]$projection.screen_width
+        $height = [long]$projection.screen_height
+        $aspect = [long]$projection.aspect
+        if ($width -lt 320 -or $width -gt 16384 -or $height -lt 200 -or $height -gt 16384 -or $aspect -le 0 -or $aspect -gt [int]::MaxValue) {
+            throw 'Recorded view projection exceeds native replay configuration bounds'
+        }
+        # Support the normalized projection used by native widescreen captures
+        # Other projections retain the native 3:4 profile and its strict check
+        # Do not tune arbitrary aspect values to satisfy corrupted replay metadata
+        if ($aspect -eq 65536) {
+            $a = $height
+            $b = $width
+            while ($b) {
+                $remainder = $a % $b
+                $a = $b
+                $b = $remainder
+            }
+            $aspectX = [long]($height / $a)
+            $aspectY = [long]($width / $a)
+        }
+    }
 
     $configText = @"
-ResolutionX=640
-ResolutionY=480
+ResolutionX=$width
+ResolutionY=$height
+AspectX=$aspectX
+AspectY=$aspectY
 WindowMode=1
 BorderlessWindow=0
 GrabInput=0
@@ -701,6 +736,7 @@ function Copy-RequestedReplayPilot {
 function New-LaunchSandbox {
     param(
         [hashtable]$Config,
+        [hashtable]$Header,
         [string]$SandboxName,
         [switch]$ReuseSandbox,
         [switch]$SkipExecutableCopy
@@ -734,7 +770,7 @@ function New-LaunchSandbox {
         }
     }
 
-    Write-ReplayConfig -Path (Join-Path $sandboxDir 'descent.cfg')
+    Write-ReplayConfig -Path (Join-Path $sandboxDir 'descent.cfg') -Header $Header
 
     $nativeHome = $null
     $profileDirectory = $null
@@ -743,7 +779,7 @@ function New-LaunchSandbox {
         $nativeHome = Join-Path $sandboxDir ('home-' + [guid]::NewGuid().ToString('N'))
         $profileDirectory = Get-NativeReplayProfileDirectory -HomeDirectory $nativeHome -GameName $Config.Name
         New-Item -ItemType Directory -Path $profileDirectory -Force | Out-Null
-        Write-ReplayConfig -Path (Join-Path $profileDirectory 'descent.cfg')
+        Write-ReplayConfig -Path (Join-Path $profileDirectory 'descent.cfg') -Header $Header
     }
 
     return @{
@@ -1749,7 +1785,7 @@ Assert-OutputDiskSpace -Paths $script:replayOutputPaths -MinimumFreeGB $MinimumF
 $sandboxConfig = $config.Clone()
 if ($useHeadlessConsole) { $sandboxConfig.Exe = $headlessConsoleExe }
 # Windows PhysFS uses the executable directory for profiles, including console runs
-$sandbox = New-LaunchSandbox -Config $sandboxConfig -SandboxName $sandboxName -ReuseSandbox:$ReuseSandbox
+$sandbox = New-LaunchSandbox -Config $sandboxConfig -Header $header -SandboxName $sandboxName -ReuseSandbox:$ReuseSandbox
 $replaySucceeded = $false
 $replayFailure = 'Replay did not complete'
 $lastWindowTitle = $null

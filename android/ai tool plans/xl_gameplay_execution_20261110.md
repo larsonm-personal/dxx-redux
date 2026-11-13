@@ -4345,3 +4345,84 @@ Local receipts under `temp/xl-g2-window-20261112`:
 Authentic inputs and failed receipts retained. Current catalog accounting is
 linked in `android/XL_compat/evidence/catalog-accounting-20261112.md`; 1,111 IDs
 remain in the conservative denominator and none has complete playability proof.
+
+## Checkpoint 05: preserve the recording's view in ordinary playback
+
+Validation exposed a wrapper defect: `run_input_demo_replay.ps1` always wrote a
+640x480 configuration, while the retained water recording requires 1920x1080.
+The native reader correctly rejected that projection mismatch. The wrapper now
+uses recorded dimensions and selects the established normalized or native 3:4
+aspect profile. Arbitrary aspect values remain subject to native mismatch checks. Missing projection metadata keeps the legacy 640x480
+configuration; malformed or overflowing configuration values fail before launch.
+Both the Windows sandbox and Linux HOME profile receive the same configuration.
+No checkpoint, expected result or native projection comparison was changed.
+
+The existing master catalog integration owner exercises default, widescreen and
+non-unit aspect configurations plus malformed/overflow rejection. Both catalog
+owners pass after scoped formatting. Ordinary strict short playback and detailed
+object/world/SIM/FX comparison pass again (`replay-short-projection`).
+
+Longer evidence is deliberately separated:
+
+- The old water recording passes all 1,235 frames in the current native arena
+  owner with its original experimental fluid profile. Ordinary developer-OFF
+  playback with that explicitly enabled profile also exits zero and matches the
+  terminal result. Its 1,235 object frames, 196 SIM and 1,808 FX events match, but
+  the old capture's world schema is unsupported by the current comparator.
+- Without that experimental profile, ordinary playback now reaches the intended
+  water admission rejection. The error dialog was read and retained; only that
+  failed owned process was stopped. This is not general water acceptance.
+- The current canonical water owner passes and exports a fresh capture. Its fresh
+  ordinary developer-OFF continuation passes terminal comparison and exits zero;
+  detailed comparison passes 1,235 object frames, 1,239 world/XL records, 196 SIM and 1,808 FX events (`replay-water-current/comparison.json`).
+
+Receipts remain under `temp/xl-g2-window-20261112`; original arena HOG and
+descriptor hashes are unchanged. The water owner uses controlled navigation,
+setup and experimental-fluid selection, so this is a bounded assisted
+continuation, not sustained unassisted connected gameplay or Android proof.
+
+Checkpoint 04 is published as fork PR 469, head
+`b00c75304b41a84241d9038c4898f3c84a46997d`, immediate parent `bf40de9bc`.
+Hosted Linux XL developer compilation and both asset-free XL lanes pass. Other
+required owners are still running; sampled readiness remains at its known failed
+baseline and is not reclassified as playable. Final CI receipts remain pending.
+
+### Checkpoint 05 CI correction and recovered Linux validation
+
+PR 470 at `c493bffdc21190deb4fbaafb31153e3ccad8cea3` failed the required public
+ordered-input owner in run 43377071734: configuring any requested aspect also
+configured its intentionally corrupted `65537` value. That defeated the native
+pre-restore mismatch negative. The correction only selects the established
+normalized projection for an exact `65536`; other values retain native 3:4
+configuration and the unchanged strict native check. No existing ordered-input
+assertion, expected recording, membership or timeout was modified.
+
+The exact hosted negative recording now exits 1 naturally with expected aspect
+65537 versus actual 65536, no object boundary, and no result. Its unmodified
+16-frame counterpart passes strict terminal/SIM comparison and exits zero.
+Receipts: `projection-negative-ci-repro`, `projection-positive-ci-repro`.
+Both Windows and Linux master-catalog integration pass after this correction,
+including the new nearby-aspect control and original catalog requirements.
+
+User confirmed that the WSL image was retained and authorized recovery/use.
+Ubuntu remained registered to its original image; shutdown/restart recovered it
+without re-import or image replacement. Local Linux developer-ON and ordinary-OFF
+runtime builds pass. Upstream compatibility passes 1/1 in 38.53 seconds. Full
+Observatory passes on the native Linux filesystem with all 12 pinned firing and
+four contact comparisons (`ham-owner-linux-native.log`). The first WSL run wrote
+its fixture on the mounted Windows filesystem and exceeded the unchanged
+60-second deadline; that failure remains retained. Native workspace evidence was
+copied into the repository receipt directory.
+
+The main checkout's Windows dependency configuration prevented Linux catalog
+setup. Drive mapping did not propagate to child processes, and Windows worktree
+metadata cannot be used by Linux Git. An isolated native-Git local clone of the
+published head, with the two corrected scripts copied and `/mnt/c/local` as its
+local dependency root, ran the full owner successfully. All failed setup receipts
+remain; the main dependency file and unrelated work are untouched.
+
+PR 469's public selected owners and private 113-required-test XL lane have now
+finished successfully on `b00c75304`; private run 43375288766 attempt 1 retains
+16 format witnesses and three modern source levels. Sampled readiness still
+reports failure (four of eight); it is not suppressed or counted as playable.
+PR 470's corrective candidate must still complete hosted qualification.
