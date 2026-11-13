@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <exception>
 #include <vector>
 extern "C" {
 #include "inferno.h"
@@ -47,6 +48,7 @@ namespace
 struct Boss {
 	int authored_owner, owner, signature, id;
 	fix interval;
+	bool generated = false;
 	fix64 last = 0;
 	fix64 cloak_start = 0, cloak_end = 0, teleport = 0, hit = 0, death_start = 0;
 	int dying = 0, sound = 0;
@@ -57,6 +59,9 @@ struct Boss {
 #pragma pack(pop)
 #endif
 std::vector<Boss> bosses;
+std::vector<Boss> restore_checkpoint;
+bool restore_checkpoint_active = false;
+std::vector<int> teleport_segments(int owner);
 constexpr int spew[8][3] = {
 	{ 38, 40, -1 }, { 37, -1, -1 }, { 43, 57, -1 }, { 26, 27, 58 }, { 59, 58, 54 }, { 60, 61, 54 }, { 69, 29, 24 }, { 72, 60, 73 }
 };
@@ -71,6 +76,37 @@ bool bound(const Boss &boss)
 	return boss.owner >= 0 && boss.owner <= Highest_object_index &&
 	       Objects[boss.owner].type == OBJ_ROBOT && Objects[boss.owner].id == boss.id &&
 	       Objects[boss.owner].signature == boss.signature;
+}
+void prune_generated(std::vector<Boss> &items)
+{
+	items.erase(std::remove_if(items.begin(), items.end(), [](const Boss &boss) { return boss.generated && !bound(boss); }), items.end());
+}
+bool robotmaker_boss(int owner)
+{
+	if (owner < 0 || owner > Highest_object_index) return false;
+	const auto &object = Objects[owner];
+	const unsigned creator = static_cast<unsigned char>(object.matcen_creator);
+	return object.type == OBJ_ROBOT && robot_info_is_usable(object.id) && Robot_info[object.id].boss_flag &&
+	       (creator & 0x80u) && (creator & 0x7fu) < static_cast<unsigned>(Num_fuelcenters) &&
+	       Station[creator & 0x7fu].Type == SEGMENT_IS_ROBOTMAKER;
+}
+bool add_robotmaker(std::vector<Boss> &items, int owner)
+{
+	if (!robotmaker_boss(owner)) return false;
+	const auto &object = Objects[owner];
+	for (const auto &boss : items)
+		if (boss.owner == owner && bound(boss)) return boss.signature == object.signature && boss.id == object.id;
+	// The pinned source keeps at most MAX_BOSS_COUNT boss records
+	if (items.size() >= 50) return false;
+	Boss boss{ owner, owner, object.signature, object.id, gate_interval() };
+	boss.generated = true;
+	boss.home = object.segnum;
+	boss.teleport_segments = teleport_segments(owner);
+	const auto position = std::lower_bound(items.begin(), items.end(), boss, [](const Boss &a, const Boss &b) {
+		return a.authored_owner < b.authored_owner || (a.authored_owner == b.authored_owner && a.generated < b.generated);
+	});
+	items.insert(position, std::move(boss));
+	return true;
 }
 Boss *find(int owner)
 {
@@ -182,6 +218,55 @@ int gated_robot(Boss &boss, int type, int segment, const vms_vector &initial)
 extern "C" void xl_boss_spawn_clear(void)
 {
 	bosses.clear();
+	restore_checkpoint.clear();
+	restore_checkpoint_active = false;
+}
+extern "C" int xl_boss_authored_count(void)
+{
+	return static_cast<int>(std::count_if(bosses.begin(), bosses.end(), [](const Boss &boss) { return !boss.generated; }));
+}
+extern "C" int xl_boss_robotmaker_available(int type)
+{
+	if (!xl_level_extensions_active() || !robot_info_is_usable(type) || !Robot_info[type].boss_flag) return 1;
+	prune_generated(bosses);
+	return bosses.size() < 50;
+}
+extern "C" int xl_boss_robotmaker_created(int owner)
+{
+	if (!xl_level_extensions_active()) return 0;
+	try {
+		prune_generated(bosses);
+		return add_robotmaker(bosses, owner);
+	} catch (const std::exception &) {
+		return 0;
+	}
+}
+extern "C" int xl_boss_restore_robotmakers(void)
+{
+	if (!xl_level_extensions_active()) return 1;
+	try {
+		auto prepared = bosses;
+		prune_generated(prepared);
+		for (int i = 0; i <= Highest_object_index; ++i)
+			if (robotmaker_boss(i) && !add_robotmaker(prepared, i)) return 0;
+		restore_checkpoint = bosses;
+		bosses.swap(prepared);
+		restore_checkpoint_active = true;
+		return 1;
+	} catch (const std::exception &) {
+		return 0;
+	}
+}
+extern "C" void xl_boss_restore_robotmakers_commit(void)
+{
+	restore_checkpoint.clear();
+	restore_checkpoint_active = false;
+}
+extern "C" void xl_boss_restore_robotmakers_abort(void)
+{
+	if (restore_checkpoint_active) bosses.swap(restore_checkpoint);
+	restore_checkpoint.clear();
+	restore_checkpoint_active = false;
 }
 extern "C" int xl_boss_spawn_default_type(int flag, int index)
 {
@@ -194,7 +279,8 @@ extern "C" void xl_boss_spawn_load(void)
 	bosses.clear();
 	for (int i = 0; i <= Highest_object_index; ++i) {
 		const auto &object = Objects[i];
-		if (object.type == OBJ_ROBOT && robot_info_is_usable(object.id) && Robot_info[object.id].boss_flag)
+		if (object.type == OBJ_ROBOT && robot_info_is_usable(object.id) && Robot_info[object.id].boss_flag &&
+		    !(static_cast<unsigned char>(object.matcen_creator) & 0x80u))
 			bosses.push_back({ i, i, object.signature, object.id, gate_interval(), 0 });
 	}
 	for (auto &boss : bosses) {
@@ -240,6 +326,7 @@ bool xl_compat::restore_boss_routes(std::vector<BossRoutes> &states, int apply)
 }
 extern "C" int xl_boss_spawn_count(void)
 {
+	prune_generated(bosses);
 	return xl_level_extensions_active() ? static_cast<int>(bosses.size()) : 0;
 }
 extern "C" int xl_level_objectives_remaining(void)
@@ -509,4 +596,5 @@ extern "C" void xl_boss_deaths_frame(void)
 			explode_object(&object, F1_0 / 4);
 		}
 	}
+	prune_generated(bosses);
 }

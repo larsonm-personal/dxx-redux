@@ -400,6 +400,18 @@ void particle_source_controls()
 							particle_reference::compare({ value, value, value, value, value, value, 255, 128, 17, 0, side, kind, value % 2 }, version, area, water);
 							++count;
 						}
+	// Original 21/40 face areas from Dinter 1486 and waterworks 58 geometry
+	particle_reference::compare({ 2, 3, 3, 5, 4, 9, 0, 0, 0, 0, 3, 2, 1 }, 21, 0.2500019f, false);
+	particle_reference::compare({ 3, 6, 2, 5, 3, 9, 0, 0, 0, 0, 2, 2, 1 }, 21, 0.5573336f, false);
+	particle_reference::compare({ 5, 3, 3, 4, 2, 1, 0, 0, 0, 0, 0, 2, 1 }, 21, 1.0f, false);
+	particle_reference::compare({ 2, 2, 4, 2, 2, 9, 0, 0, 0, 100, 0, 2, 1 }, 27, 1.0f, false);
+	// Original Dinter face emitters: serialized 4 maps to source image 6,
+	// internal waterfall type 3 and fade profile 2.
+	particle_reference::compare({ 1, 4, 7, 6, 1, 10, 180, 200, 255, 60, 5, 4, 1 }, 21, 1.0f, false);
+	particle_reference::compare({ 1, 4, 7, 8, 1, 10, 180, 200, 255, 60, 2, 4, 1 }, 21, 1.0f, false);
+	particle_reference::compare({ 4, 2, 5, 4, 1, 10, 0, 0, 0, 0, 2, 6, 1 }, 21, 1.0f, false);
+	particle_reference::compare({ 10, 6, 10, 6, 1, 10, 255, 255, 255, 128, 5, 5, 1 }, 21, 1.0f, false);
+	count += 8;
 	for (const auto &change : std::vector<std::pair<unsigned, int>>{ { 0, -1 }, { 0, INT32_MAX }, { 1, INT32_MAX }, { 2, 11 }, { 3, 31 }, { 4, INT32_MAX }, { 5, INT32_MAX }, { 6, 256 }, { 10, 7 }, { 11, 7 } }) {
 		xl_compat::Object object{};
 		object.render = 11;

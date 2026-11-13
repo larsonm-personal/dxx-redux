@@ -29,6 +29,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "robot_generator.h"
+#include "boss_spawn.h"
 #include "equipment.h"
 #endif
 #include "matcen_regression_capture.h"
@@ -616,6 +617,9 @@ void robotmaker_proc( FuelCenter * robotcen )
 					// SIM RNG: this chooses which real robot the matcen spawns
 					type = legal_types[(d_rand() * num_types) / 32768];
 
+#ifdef DXX_XL_RUNTIME
+				if (!xl_boss_robotmaker_available(type)) return;
+#endif
 				obj = create_morph_robot(&Segments[robotcen->segnum], &cur_object_loc, type );
 				if (obj != NULL) {
 #ifndef SHAREWARE
@@ -625,6 +629,14 @@ void robotmaker_proc( FuelCenter * robotcen )
 #endif
 #endif
 					obj->matcen_creator = (robotcen-Station) | 0x80;
+#ifdef DXX_XL_RUNTIME
+					if (xl_level_extensions_active() && Robot_info[obj->id].boss_flag && !xl_boss_robotmaker_created(obj - Objects)) {
+						obj_delete(obj - Objects);
+						--Players[Player_num].num_robots_level;
+						--Players[Player_num].num_robots_total;
+						return;
+					}
+#endif
 
 					// Make object faces player...
 					vm_vec_sub( &direction, &ConsoleObject->pos,&obj->pos );

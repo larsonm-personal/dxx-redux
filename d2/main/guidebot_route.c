@@ -2371,6 +2371,9 @@ void escort_route_monitor_completion(void)
 		return;
 	if (Escort_special_goal == ESCORT_GOAL_HOSTAGE)
 		return;
+	/* Route certificates have no consumer until a live companion exists */
+	if (!escort_is_companion_object(Buddy_objnum))
+		return;
 	escort_route_goal previous_goal;
 	guidebot_route_decision previous_decision;
 	guidebot_route_decision next_decision;

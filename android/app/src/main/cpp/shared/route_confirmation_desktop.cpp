@@ -1,6 +1,9 @@
 #include "route_confirmation_desktop.h"
 
 #ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <winsock2.h>
 #endif
 
@@ -21,6 +24,9 @@
 #endif
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "particle_objects.h"
+#include "particle_resources.h"
+#include "resource_validation.h"
 #endif
 
 #include <physfs.h>
@@ -68,6 +74,7 @@ extern "C" {
 #include "gameseg.h"
 #include "fvi.h"
 #include "timer.h"
+#include "robot.h"
 #include "input_demo_hooks.h"
 #include "input_demo_newdemo_shared.h"
 #include "input_demo_hooks_shared.h"
@@ -77,6 +84,8 @@ void do_omega_stuff(object *, vms_vector *, object *);
 void game_render_frame(void);
 void game_render_frame_mono(int);
 int HandleGameKey(int);
+void set_robot_state(object *, int);
+void ai_fire_laser_at_player(object *, vms_vector *, int, vms_vector *);
 }
 #include "render_clock_probe.h"
 #include "omega_damage_probe.h"
@@ -88,6 +97,7 @@ struct desktop_route_state {
 	const char *output;
 	const char *mission;
 	int level;
+	int scene_object = -1;
 	int active;
 	unsigned int reported_frame;
 };
@@ -146,6 +156,143 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 		}
 		proof["rendered_frames"] = frame + 1;
 	}
+#if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
+#ifdef HAVE_LIBPNG
+	const char *screenshot_extension = "png";
+#else
+	const char *screenshot_extension = "tga";
+#endif
+	const std::string effect_screenshot = std::string("screenshots/scrn0000.") + screenshot_extension;
+	const std::string empty_screenshot = std::string("screenshots/scrn0001.") + screenshot_extension;
+	const std::string repeat_screenshot = std::string("screenshots/scrn0002.") + screenshot_extension;
+	if (State.scene_object >= 0) {
+		const int index = State.scene_object;
+		if (index > Highest_object_index || Objects[index].type == OBJ_NONE || Objects[index].segnum < 0 || Objects[index].segnum >= Num_segments) {
+			write_readiness(path, proof, "scene_failed");
+			return 1;
+		}
+		int particles = 0;
+		std::optional<xl_compat::ParticleFace> surface;
+		std::optional<xl_compat::ParticlePoint> snow_point;
+		for (const auto &system : xl_compat::particle_systems())
+			if (system.object == index) {
+				particles = system.count();
+				std::visit([&](const auto &emitter) { surface = emitter.face; }, system.emitter);
+				if (const auto *snow = std::get_if<xl_compat::SnowEmitter>(&system.emitter))
+					if (snow->count) snow_point = snow->slots[std::size_t(snow->first)].motion.position;
+			}
+		if (!particles) {
+			write_readiness(path, proof, "scene_failed");
+			return 1;
+		}
+		const int segment = Objects[index].segnum;
+		vms_vector center, forward, target, camera;
+		compute_segment_center(&center, &Segments[segment]);
+		target = Objects[index].pos;
+		if (surface && surface->count >= 3 && surface->count <= 4)
+			for (unsigned axis = 0; axis < 3; ++axis) {
+				std::int64_t sum = 0;
+				for (unsigned corner = 0; corner < surface->count; ++corner) sum += surface->corners[corner][axis];
+				const int value = int(sum / surface->count);
+				if (axis == 0) target.x = value;
+				else if (axis == 1) target.y = value;
+				else target.z = value;
+			}
+		if (snow_point) target = { (*snow_point)[0], (*snow_point)[1], (*snow_point)[2] };
+		vm_vec_sub(&forward, &target, &center);
+		if (vm_vec_normalize_quick(&forward) <= 0) {
+			write_readiness(path, proof, "scene_failed");
+			return 1;
+		}
+		for (int fraction : { snow_point ? 9 : 5, 7, 5, 0 }) {
+			camera = { int((std::int64_t(center.x) * (10 - fraction) + std::int64_t(target.x) * fraction) / 10),
+				       int((std::int64_t(center.y) * (10 - fraction) + std::int64_t(target.y) * fraction) / 10),
+				       int((std::int64_t(center.z) * (10 - fraction) + std::int64_t(target.z) * fraction) / 10) };
+			if (find_point_seg(&camera, segment) == segment) break;
+		}
+		ConsoleObject->pos = ConsoleObject->last_pos = camera;
+		obj_relink(int(ConsoleObject - Objects), segment);
+		vm_vector_2_matrix(&ConsoleObject->orient, &forward, nullptr, nullptr);
+		vms_angvec camera_angles;
+		vm_extract_angles_matrix(&camera_angles, &ConsoleObject->orient);
+		vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
+		vm_vec_zero(&ConsoleObject->mtype.phys_info.rotvel);
+		game_render_frame_mono(0);
+		save_screen_shot(1);
+		gr_flip();
+		const auto effect_error = glGetError();
+		if (!PHYSFS_exists(effect_screenshot.c_str())) {
+			write_readiness(path, proof, "scene_failed");
+			return 1;
+		}
+		proof["assisted_scene"] = { { "object", index }, { "segment", segment }, { "particles", particles }, { "assisted", bool{ true } }, { "view", snow_point ? "near_live_snow_particle" : "mid_segment_toward_authored_face" }, { "camera_position_fixed", { camera.x, camera.y, camera.z } }, { "camera_pitch", camera_angles.p }, { "camera_bank", camera_angles.b }, { "camera_heading", camera_angles.h }, { "face_corners", surface ? surface->count : 0 }, { "effect_screenshot", effect_screenshot }, { "empty_particle_control", empty_screenshot }, { "effect_gl_error", effect_error } };
+		if (effect_error != GL_NO_ERROR) {
+			write_readiness(path, proof, "scene_failed");
+			return 1;
+		}
+	}
+#endif
+#ifdef DXX_XL_RUNTIME
+	static constexpr const char *kinds[] = { "fire", "smoke", "bubble", "waterfall", "rain", "snow" };
+	static constexpr int subtypes[] = { 3, 0, 2, 4, 5, 6 };
+	const auto *fire = xl_prepared_particle_image(), *smoke = xl_prepared_particle_image(0), *bubble = xl_prepared_particle_image(2);
+	const auto *rain = xl_prepared_particle_image(5), *snow = xl_prepared_particle_image(6);
+	const auto *image = fire ? fire : smoke ? smoke
+	                              : bubble  ? bubble
+	                              : rain    ? rain
+	                                        : snow;
+	const xl_compat::ParticleBasis basis{ { 65536, 0, 0 }, { 0, 65536, 0 } };
+	proof["particle_systems"] = nlohmann::ordered_json::array();
+	for (const auto &system : xl_compat::particle_systems()) {
+		const int index = system.object;
+		if (index < 0 || index > Highest_object_index || !system.count()) continue;
+		nlohmann::ordered_json owner = { { "object", index }, { "segment", Objects[index].segnum }, { "kind", kinds[system.emitter.index()] }, { "particles", system.count() } };
+		const int segment = Objects[index].segnum;
+		if (image && segment >= 0 && segment < Num_segments &&
+		    (system.emitter.index() == 2 || system.emitter.index() == 3 || system.emitter.index() == 5)) {
+			owner["scene_view"] = "assisted_owner_position_segment_only";
+			owner["scene_method"] = "native_geometry_quad";
+			const auto &position = Objects[index].pos;
+			const xl_compat::ParticlePoint eye{ position.x, position.y, position.z };
+			const auto items = xl_compat::particle_scene_items({ segment }, eye, basis, int(SDL_GetTicks()),
+			                                                   image->bitmap.width, image->bitmap.height,
+			                                                   smoke ? smoke->bitmap.width : 0, smoke ? smoke->bitmap.height : 0,
+			                                                   bubble ? bubble->bitmap.width : 0, bubble ? bubble->bitmap.height : 0);
+			int matching = 0;
+			for (const auto &item : items)
+				if (item.subtype == subtypes[system.emitter.index()]) {
+					++matching;
+					if (matching == 1) {
+						const auto quad = xl_compat::particle_scene_quad(item);
+						owner["scene_alpha"] = quad.vertices[0].color[3];
+						owner["scene_image"] = quad.image;
+					}
+				}
+			owner["scene_items"] = matching;
+		}
+		proof["particle_systems"].push_back(std::move(owner));
+	}
+#endif
+#if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
+	if (State.scene_object >= 0) {
+		xl_particle_objects_clear();
+		game_render_frame_mono(0);
+		save_screen_shot(1);
+		gr_flip();
+		proof["assisted_scene"]["control_gl_error"] = glGetError();
+		game_render_frame_mono(0);
+		save_screen_shot(1);
+		gr_flip();
+		proof["assisted_scene"]["repeat_control"] = repeat_screenshot;
+		proof["assisted_scene"]["repeat_gl_error"] = glGetError();
+		if (!PHYSFS_exists(empty_screenshot.c_str()) || !PHYSFS_exists(repeat_screenshot.c_str()) ||
+		    proof["assisted_scene"]["control_gl_error"] != GL_NO_ERROR ||
+		    proof["assisted_scene"]["repeat_gl_error"] != GL_NO_ERROR) {
+			write_readiness(path, proof, "scene_failed");
+			return 1;
+		}
+	}
+#endif
 	return write_readiness(path, proof, "loaded_ticked") ? 0 : 1;
 }
 
@@ -192,6 +339,105 @@ int parse_level(const char *text, int *level)
 	*level = static_cast<int>(value);
 	return 1;
 }
+
+int parse_scene_object(const char *text, int *index)
+{
+	char *end = nullptr;
+	const long value = text ? strtol(text, &end, 10) : -1;
+	if (!text || !end || *end || value < 0 || value > 100000) return 0;
+	*index = int(value);
+	return 1;
+}
+
+#if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
+int original_hxm_actor_proof(const char *mode, const char *path)
+{
+	nlohmann::ordered_json proof = {
+		{ "schema", "dxx-xl-original-hxm-actor-v1" }, { "mission", Current_mission_filename }, { "level", Current_level_num }, { "assisted", !strcmp(mode, "warm") }
+	};
+	const auto fail = [&](const char *reason) {
+		proof["error"] = reason;
+		write_readiness(path, proof, "failed");
+		return 1;
+	};
+	// Source object 226 is authored in segment 528. The normal loader can relink
+	// its position into another segment, so keep its object identity as the witness.
+	constexpr int actor_index = 226;
+	if (strcmp(Current_mission_filename, "wshock20") || Current_level_num != 5 ||
+	    !xl_level_extensions_active() || Highest_object_index < actor_index ||
+	    Objects[actor_index].type != OBJ_ROBOT || Objects[actor_index].id != 51)
+		return fail("Original Warp 5 robot 51 object 226 is absent");
+	proof["actor_index"] = actor_index;
+	object *actor = &Objects[actor_index];
+	proof["authored_segment"] = 528;
+	proof["runtime_segment"] = actor->segnum;
+	const auto &robot = Robot_info[51];
+	if (robot.model_num != 75 || robot.n_guns != 2 || robot.gun_submodels[0] != 2 ||
+	    robot.gun_submodels[1] != 4 || robot.weapon_type != 21)
+		return fail("Original Warp 5 robot replacement was not installed");
+	for (int gun = 0; gun <= MAX_GUNS; ++gun)
+		for (int state = 0; state < N_ANIM_STATES; ++state) {
+			const auto &list = robot.anim_states[gun][state];
+			if ((gun < 2 && list.n_joints != 2) || (gun >= 2 && list.n_joints != 0) ||
+			    (gun > 2 && list.offset != 0)) return fail("Warp 5 animation groups were not normalized correctly");
+		}
+	for (int state = 0; state < N_ANIM_STATES; ++state) {
+		set_robot_state(actor, state);
+		for (int gun = 0; gun < robot.n_guns; ++gun) {
+			vms_vector muzzle;
+			calc_gun_point(&muzzle, actor, gun);
+			if (find_point_seg(&muzzle, actor->segnum) < 0) return fail("Warp 5 gun transform left the mine");
+		}
+	}
+	if (!strcmp(mode, "warm")) {
+		// Position assist is explicit in the proof; production AI and damage paths remain live.
+		compute_segment_center(&ConsoleObject->pos, &Segments[actor->segnum]);
+		ConsoleObject->last_pos = ConsoleObject->pos;
+		obj_relink(int(ConsoleObject - Objects), actor->segnum);
+		vms_vector muzzle;
+		calc_gun_point(&muzzle, actor, 1);
+		Ai_local_info[actor_index].next_fire = Ai_local_info[actor_index].next_fire2 = 0;
+		ai_fire_laser_at_player(actor, &muzzle, 1, &ConsoleObject->pos);
+		int shot = -1;
+		for (int i = 0; i <= Highest_object_index; ++i)
+			if (Objects[i].type == OBJ_WEAPON && Objects[i].id == 21 &&
+			    Objects[i].ctype.laser_info.parent_num == actor_index) {
+				if (shot >= 0) return fail("Warp 5 robot fired duplicate projectiles");
+				shot = i;
+			}
+		if (shot < 0 || Ai_local_info[actor_index].next_fire <= 0) return fail("Warp 5 robot did not fire its replacement weapon");
+		obj_delete(shot);
+		if (GameTime64 < F1_0) GameTime64 = F1_0;
+		const fix shields = actor->shields;
+		if (shields <= i2f(7) || apply_damage_to_robot(actor, i2f(7), ConsoleObject - Objects) ||
+		    actor->shields != shields - i2f(7)) return fail("Warp 5 robot did not take combat damage");
+		proof["shot_weapon"] = 21;
+		proof["shields_before"] = shields;
+		proof["shields_after"] = actor->shields;
+		stop_time();
+		char save[] = "warp5.sav", description[] = "Original Warp 5 combat";
+		if (!state_save_all_sub(save, description)) return fail("Warp 5 normal save failed");
+		char stock[] = "d2";
+		if (!load_mission_by_name(stock) || load_level("d2leva-1.rl2") || xl_level_extensions_active())
+			return fail("Warp 5 stock transition failed");
+		if (!state_restore_all_sub(save, 0) || Current_level_num != 5 || !xl_level_extensions_active() ||
+		    Objects[actor_index].shields != shields - i2f(7)) return fail("Warp 5 warm restore lost combat state");
+	} else {
+		proof["shields_after"] = actor->shields;
+		if (actor->shields <= 0 || game_is_time_paused()) return fail("Warp 5 cold restore did not resume combat state");
+	}
+	game_render_frame_mono(0);
+	gr_flip();
+	if (glGetError() != GL_NO_ERROR) return fail("Warp 5 rendered combat frame failed");
+	proof["rendered_frame"] = true;
+	if (!strcmp(mode, "cold")) {
+		char stock[] = "d2";
+		if (!load_mission_by_name(stock) || load_level("d2leva-1.rl2") || xl_level_extensions_active())
+			return fail("Warp 5 cold stock transition failed");
+	}
+	return write_readiness(path, proof, "passed") ? 0 : 1;
+}
+#endif
 
 int configure_time_limit(const char *text)
 {
@@ -252,6 +498,23 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	const char *clock_probe = argument_value("-xl-render-clock-proof");
 	const char *omega_probe = argument_value("-xl-omega-damage-proof");
 	const char *equipment_probe = argument_value("-xl-time-equipment-proof");
+	const char *hxm_actor_probe = argument_value("-xl-hxm-actor-proof");
+	const char *scene_object = argument_value("-xl-readiness-scene-object");
+	if (startup_find_cmd_arg("-xl-readiness-scene-object") &&
+	    (!readiness || !scene_object || !parse_scene_object(scene_object, &State.scene_object))) {
+		std::fprintf(stderr, "Original effect scene assist requires rendered readiness and a bounded object index\n");
+		return 1;
+	}
+	if (startup_find_cmd_arg("-xl-hxm-actor-proof") &&
+	    (!hxm_actor_probe || (strcmp(hxm_actor_probe, "warm") && strcmp(hxm_actor_probe, "cold")) ||
+	     !output || !argument_value("-route-confirm-user-dir"))) {
+		std::fprintf(stderr, "Original HXM actor proof requires warm/cold mode, output and isolated user directory\n");
+		return 1;
+	}
+	if (hxm_actor_probe) {
+		error_init(nullptr);
+		set_warn_func(warn_printf);
+	}
 	if (startup_find_cmd_arg("-xl-render-clock-proof") || startup_find_cmd_arg("-xl-omega-damage-proof") || startup_find_cmd_arg("-xl-time-equipment-proof")) {
 		if (int(clock_probe != nullptr) + int(omega_probe != nullptr) + int(equipment_probe != nullptr) != 1 || !output || !argument_value("-route-confirm-user-dir")) {
 			std::fprintf(stderr, "Render-clock probe requires proof/output paths and an isolated user directory\n");
@@ -324,6 +587,16 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	}
 	if (State.level < 0)
 		Newdemo_state = ND_STATE_PLAYBACK;
+#if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
+	if (hxm_actor_probe && !strcmp(hxm_actor_probe, "cold")) {
+		char save[] = "warp5.sav";
+		if (!state_restore_all_sub(save, 0)) {
+			std::fprintf(stderr, "Original HXM actor proof could not restore saved game\n");
+			return 1;
+		}
+		return original_hxm_actor_proof(hxm_actor_probe, output);
+	}
+#endif
 	StartNewGame(State.level);
 	if (State.level < 0)
 		Newdemo_state = ND_STATE_NORMAL;
@@ -332,6 +605,7 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 		start_time();
 	if (readiness) return rendered_readiness(readiness, proof);
 #if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
+	if (hxm_actor_probe) return original_hxm_actor_proof(hxm_actor_probe, output);
 	if (clock_probe) return xl_render_clock_probe(clock_probe);
 	if (omega_probe) return xl_omega_damage_probe(omega_probe);
 	if (equipment_probe) {

@@ -156,19 +156,21 @@ std::shared_ptr<const ShieldImageResource> prepare_shield_image(unsigned index)
 
 std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Inventory &level, int subtype)
 {
-	if (subtype != 0 && subtype != 2 && subtype != 3) throw std::runtime_error("Unsupported XL particle image subtype");
+	if (subtype != 0 && subtype != 2 && subtype != 3 && subtype != 5 && subtype != 6) throw std::runtime_error("Unsupported XL particle image subtype");
 	bool required = false;
 	for (const auto &object : level.objects) {
 		if (object.render != 11) continue;
-		if (object.render_data.size() != 13 || object.render_data[11] < 0 || object.render_data[11] > 3)
-			throw std::runtime_error("XL particle image preparation requires a supported authored fire, smoke, spray or bubble payload");
+		if (object.render_data.size() != 13 || object.render_data[11] < 0 || object.render_data[11] > 6)
+			throw std::runtime_error("XL particle image preparation requires a supported authored stationary particle payload");
 		// Source spray uses the smoke particle image and fade profile
-		required |= (object.render_data[11] == 1 ? 0 : object.render_data[11]) == subtype;
+		required |= (object.render_data[11] == 1 || object.render_data[11] == 4 ? 0 : object.render_data[11]) == subtype;
 		// The non-array bubble shader also binds the active smoke/spark images
 		required |= subtype == 0 && object.render_data[11] == 2;
 	}
 	if (!required) return {};
 	if (subtype == 2) return prepare_addon_image(bubble_image_name, "bubble", bubble_image_atlas_side);
+	if (subtype == 5) return prepare_addon_image(rain_image_name, "rain", 1);
+	if (subtype == 6) return prepare_addon_image(snow_image_name, "snow", 1);
 	return prepare_addon_image(subtype == 3 ? fire_image_name : smoke_image_name, subtype == 3 ? "fire" : "smoke", subtype == 3 ? fire_image_atlas_side : smoke_image_atlas_side);
 }
 

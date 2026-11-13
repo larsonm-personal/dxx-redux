@@ -3,6 +3,8 @@
 #include "particle_fire.h"
 #include "particle_smoke.h"
 #include "particle_bubble.h"
+#include "particle_waterfall.h"
+#include "particle_weather.h"
 #include <optional>
 #include <type_traits>
 
@@ -13,10 +15,15 @@ namespace xl_compat
 {
 inline constexpr unsigned particle_system_limit = 10000;
 // Source retirement order is significant for FX RNG for both authored kinds
-template <bool Smoke, bool Bubble = false>
+template <ParticleKind Kind>
 struct AuthoredParticleEmitter {
-	static_assert(!(Smoke && Bubble));
-	using Particle = std::conditional_t<Bubble, BubbleParticle, std::conditional_t<Smoke, SmokeParticle, FireParticle>>;
+	static constexpr bool Smoke = Kind == ParticleKind::smoke;
+	static constexpr bool Bubble = Kind == ParticleKind::bubbles;
+	static constexpr bool Waterfall = Kind == ParticleKind::waterfall;
+	static constexpr bool Rain = Kind == ParticleKind::rain;
+	static constexpr bool Snow = Kind == ParticleKind::snow;
+	static_assert(Kind == ParticleKind::fire || Smoke || Bubble || Waterfall || Rain || Snow);
+	using Particle = std::conditional_t<Bubble, BubbleParticle, std::conditional_t<Smoke, SmokeParticle, std::conditional_t<Waterfall, WaterfallParticle, std::conditional_t<Rain || Snow, WeatherParticle, FireParticle>>>>;
 	ParticleEmitterDefinition definition;
 	ParticleOrientation orientation{ { { 65536, 0, 0 }, { 0, 65536, 0 }, { 0, 0, 65536 } } };
 	ParticlePoint position{}, previous{};
@@ -29,8 +36,11 @@ struct AuthoredParticleEmitter {
 	AuthoredParticleEmitter(const ParticleEmitterDefinition &input, const ParticlePoint &origin, const ParticleFace *surface, int location, bool sky, int time)
 	    : definition(input), position(origin), previous(origin), segment(location), moved(time), skybox(sky)
 	{
-		if (input.image != (Bubble ? 2 : Smoke ? 1
-		                                       : 5) ||
+		if (input.image != (Bubble ? 2 : Smoke   ? 1
+		                             : Waterfall ? 6
+		                             : Rain      ? 3
+		                             : Snow      ? 4
+		                                         : 5) ||
 		    input.count <= 0 || input.count > 100000 || input.life >= 0 || input.life == INT32_MIN)
 			throw std::runtime_error("Invalid XL authored particle emitter");
 		if (surface) face = *surface;
@@ -49,12 +59,12 @@ struct AuthoredParticleEmitter {
 	}
 	static const FireParticle &motion(const Particle &particle)
 	{
-		if constexpr (Smoke || Bubble) return particle.motion;
+		if constexpr (Smoke || Bubble || Waterfall || Rain || Snow) return particle.motion;
 		else return particle;
 	}
 	static FireParticle &motion(Particle &particle)
 	{
-		if constexpr (Smoke || Bubble) return particle.motion;
+		if constexpr (Smoke || Bubble || Waterfall || Rain || Snow) return particle.motion;
 		else return particle;
 	}
 
@@ -70,6 +80,8 @@ struct AuthoredParticleEmitter {
 			auto &slot = slots[std::size_t((first + i) % limit)];
 			if constexpr (Bubble) (void) advance_bubble_particle(slot, time, world, collisions);
 			else if constexpr (Smoke) (void) advance_smoke_particle(slot, time, float(definition.brightness) / 100.0f, random, world, collisions);
+			else if constexpr (Waterfall) (void) advance_waterfall_particle(slot, time, world, collisions);
+			else if constexpr (Rain || Snow) (void) advance_weather_particle(slot, time, world, collisions);
 			else (void) advance_fire_particle(slot, time, random, world, collisions);
 		}
 		// XL shrinks the loop bound while retiring; preserve deferred dead entries
@@ -84,7 +96,7 @@ struct AuthoredParticleEmitter {
 		if (!std::isfinite(requested) || double(requested) > INT32_MAX) throw std::runtime_error("XL emitter demand exceeds the source arithmetic range");
 		demand = int(requested);
 		if (demand >= 1) {
-			if constexpr (Bubble) demand = random.bounded(demand) + 1;
+			if constexpr (Bubble || Rain || Snow) demand = random.bounded(demand) + 1;
 			ticks = 0;
 			if (life < 0) {
 				const int created = std::min(demand, definition.count - count);
@@ -101,6 +113,8 @@ struct AuthoredParticleEmitter {
 						auto &slot = slots[std::size_t((next + i) % limit)];
 						if constexpr (Bubble) slot = create_bubble_particle(definition, at, orientation, face ? &*face : nullptr, segment, skybox, time, random);
 						else if constexpr (Smoke) slot = create_smoke_particle(definition, at, face ? &*face : nullptr, segment, skybox, time, float(definition.brightness) / 100.0f, random);
+						else if constexpr (Waterfall) slot = create_waterfall_particle(definition, at, face ? &*face : nullptr, segment, skybox, time, random);
+						else if constexpr (Rain || Snow) slot = create_weather_particle<Kind>(definition, at, orientation, face ? &*face : nullptr, segment, skybox, time, random);
 						else slot = create_fire_particle(definition, at, face ? &*face : nullptr, segment, skybox, time, random, &slot);
 					}
 					count += created;
@@ -112,9 +126,12 @@ struct AuthoredParticleEmitter {
 		return count;
 	}
 };
-using FireEmitter = AuthoredParticleEmitter<false>;
-using SmokeEmitter = AuthoredParticleEmitter<true>;
-using BubbleEmitter = AuthoredParticleEmitter<false, true>;
+using FireEmitter = AuthoredParticleEmitter<ParticleKind::fire>;
+using SmokeEmitter = AuthoredParticleEmitter<ParticleKind::smoke>;
+using BubbleEmitter = AuthoredParticleEmitter<ParticleKind::bubbles>;
+using WaterfallEmitter = AuthoredParticleEmitter<ParticleKind::waterfall>;
+using RainEmitter = AuthoredParticleEmitter<ParticleKind::rain>;
+using SnowEmitter = AuthoredParticleEmitter<ParticleKind::snow>;
 } // namespace xl_compat
 #ifdef _MSC_VER
 #pragma pack(pop)

@@ -157,9 +157,119 @@ static void bubble_objects_native_case(xl_compat::Inventory source)
 		require(particle_systems().empty(), "Deleted bubble owner failed to retire");
 		--Objects[1].signature;
 	}
+	source.level_version = 21;
+	source.game_version = 40;
+	for (const std::vector<int> payload : {
+	         std::vector<int>{ 2, 3, 3, 5, 4, 9, 0, 0, 0, 0, 3, 2, 1 },
+	         std::vector<int>{ 5, 3, 3, 4, 2, 1, 0, 0, 0, 0, 0, 2, 1 } }) {
+		source.objects[1].render_data = payload;
+		bind_particle_objects(source);
+		const auto before = d_rand_get_stream_call_count(D_RNG_FX);
+		particle_objects_frame(0);
+		require(particle_systems().size() == 1 && std::holds_alternative<BubbleEmitter>(particle_systems().front().emitter), "Original 21/40 bubble profile chose the wrong native emitter");
+		particle_objects_frame(100);
+		require(particle_systems().front().count() > 0 &&
+		            d_rand_get_stream_call_count(D_RNG_FX) >= before + (payload[10] ? 0 : 12),
+		        "Original 21/40 face or point bubble did not emit with source FX cadence");
+	}
+	source.objects[1].render_data[10] = 7;
+	bool invalid_face = false;
+	try {
+		(void) prepare_authored_particle(source, source.objects[1]);
+	} catch (const std::runtime_error &) {
+		invalid_face = true;
+	}
+	require(invalid_face, "Invalid original bubble face selector passed preparation");
 	xl_particle_objects_clear();
 	require(d_rand_get_stream_call_count(D_RNG_SIM) == sim, "Bubble lifecycle consumed simulation RNG");
-	std::cout << "XL bubble native ownership: original payload, full orientation, point jitter, wet/dry retirement, pause, activation restore, fresh clouds and recycled signatures passed\n";
+	std::cout << "XL bubble native ownership: 27/40 and 21/40 face/point payloads, invalid face, orientation, wet/dry retirement, pause, activation restore, fresh clouds and recycled signatures passed\n";
+}
+
+static void waterfall_objects_native_case(xl_compat::Inventory source)
+{
+	using namespace xl_compat;
+	const auto simulation = d_rand_get_stream_call_count(D_RNG_SIM);
+	// Original Dinter object 1488 payload on the existing live Neptune mine.
+	// Its face selector remains authored; only the surrounding geometry differs.
+	source.level_version = 21;
+	source.game_version = 40;
+	source.objects[1].render_data = { 1, 4, 7, 8, 1, 10, 180, 200, 255, 60, 2, 4, 1 };
+	source.objects[2].render_data[12] = 0;
+	bind_particle_objects(source);
+	particle_objects_frame(0);
+	require(particle_systems().size() == 1 && std::holds_alternative<WaterfallEmitter>(particle_systems().front().emitter), "Dinter waterfall selected a different native emitter");
+	auto &emitter = std::get<WaterfallEmitter>(particle_systems().front().emitter);
+	require(emitter.definition.image == 6 && emitter.definition.fade == 2 && emitter.count == 0, "Dinter waterfall lost its image, fade or creation cadence");
+	particle_objects_frame(100);
+	require(emitter.count > 0, "Dinter waterfall failed to emit");
+	const auto &first = emitter.slots[std::size_t(emitter.first)];
+	require(first.motion.decay == 1 && !first.motion.rotates && first.motion.width < first.motion.height && first.color[3] > 0, "Waterfall acquired fire/smoke motion or size");
+	const ParticlePoint eye{ Objects[1].pos.x, Objects[1].pos.y, Objects[1].pos.z };
+	const ParticleBasis basis{ { 65536, 0, 0 }, { 0, 65536, 0 } };
+	const auto scene = particle_scene_items({ 0 }, eye, basis, 101, 128, 128, 512, 512);
+	require(!scene.empty() && scene.front().subtype == 4 && scene.front().quad.blend == ParticleBlend::alpha && scene.front().quad.image < 0,
+	        "Waterfall did not use the owned smoke pixels through its distinct native draw policy");
+	const auto saved = particle_objects_snapshot();
+	require(xl_particle_object_set_enabled(1, 0), "Cannot disable waterfall owner");
+	particle_objects_frame(125);
+	require(emitter.life == 0 && emitter.count > 0, "Waterfall disable discarded a live cloud");
+	require(restore_particle_objects(saved, true) && particle_systems().empty(), "Waterfall restore retained transient cloud or lost activation");
+	particle_objects_frame(0);
+	particle_objects_frame(100);
+	require(particle_systems().size() == 1 && std::holds_alternative<WaterfallEmitter>(particle_systems().front().emitter) && particle_systems().front().count() > 0,
+	        "Restored waterfall did not rebuild its cloud");
+	xl_particle_objects_clear();
+	require(d_rand_get_stream_call_count(D_RNG_SIM) == simulation, "Waterfall consumed simulation RNG");
+	std::cout << "XL waterfall native ownership: Dinter face payload, distinct image/motion/draw, disable and fresh save cloud passed\n";
+}
+
+static void weather_objects_native_case(xl_compat::Inventory source)
+{
+	using namespace xl_compat;
+	const auto simulation = d_rand_get_stream_call_count(D_RNG_SIM);
+	source.level_version = 21;
+	source.game_version = 40;
+	source.objects[2].render_data[12] = 0;
+	const ParticlePoint eye{ Objects[1].pos.x, Objects[1].pos.y, Objects[1].pos.z };
+	const ParticleBasis basis{ { 65536, 0, 0 }, { 0, 65536, 0 } };
+	for (const auto &payload : {
+	         std::vector<int>{ 4, 2, 5, 4, 1, 10, 0, 0, 0, 0, 2, 6, 1 },
+	         std::vector<int>{ 10, 6, 10, 6, 1, 10, 255, 255, 255, 128, 5, 5, 1 } }) {
+		const bool snow = payload[11] == 6;
+		source.objects[1].render_data = payload;
+		bind_particle_objects(source);
+		particle_objects_frame(0);
+		require(particle_systems().size() == 1 &&
+		            (snow ? std::holds_alternative<SnowEmitter>(particle_systems().front().emitter)
+		                  : std::holds_alternative<RainEmitter>(particle_systems().front().emitter)),
+		        "Original weather payload chose another native emitter");
+		const int emission_time = snow ? 5000 : 100;
+		particle_objects_frame(emission_time);
+		require(particle_systems().front().count() > 0, "Original weather owner produced no particles");
+		const auto inspect = [&](const auto &emitter) {
+			const auto &particle = emitter.slots[std::size_t(emitter.first)];
+			require(particle.snow == snow && particle.motion.decay == 1 && particle.motion.frame == 0 &&
+			            particle.motion.orientation == 1 && particle.color[3] > 0,
+			        "Weather acquired the wrong source motion, atlas or color");
+		};
+		if (snow) inspect(std::get<SnowEmitter>(particle_systems().front().emitter));
+		else inspect(std::get<RainEmitter>(particle_systems().front().emitter));
+		const auto scene = particle_scene_items({ 0 }, eye, basis, emission_time + 1, 128, 128);
+		require(!scene.empty() && scene.front().subtype == payload[11], "Original weather owner produced no visible source scene");
+		const auto quad = particle_scene_quad(scene.front());
+		require(quad.blend == ParticleBlend::alpha && quad.image < 0 && quad.vertices[0].color[3] > 0,
+		        "Weather scene used the fire/smoke atlas or blend");
+		const auto saved = particle_objects_snapshot();
+		require(xl_particle_object_set_enabled(1, 0), "Cannot disable original weather owner");
+		particle_objects_frame(emission_time + 25);
+		require(restore_particle_objects(saved, true) && particle_systems().empty(), "Weather restore retained transient cloud");
+		particle_objects_frame(0);
+		particle_objects_frame(emission_time);
+		require(particle_systems().size() == 1 && particle_systems().front().count() > 0, "Weather restore did not rebuild cloud");
+	}
+	xl_particle_objects_clear();
+	require(d_rand_get_stream_call_count(D_RNG_SIM) == simulation, "Weather lifecycle consumed simulation RNG");
+	std::cout << "XL weather native ownership: original Dinter snow and Boiling rain payloads, distinct image/motion/scene, disable and fresh save cloud passed\n";
 }
 
 static void particle_objects_native_case(bool active)
@@ -178,6 +288,16 @@ static void particle_objects_native_case(bool active)
 		return;
 	}
 	require(!game_is_time_paused() && Highest_object_index >= 3 && Num_triggers > 0 && Players[Player_num].objnum == 0, "Particle owner controls require live unpaused Neptune");
+	// Pinned XL ChangeDir performs its multiply in signed 32-bit arithmetic.
+	// Original Dinter fire reaches this wrap boundary during normal frames.
+	struct HalfRandom {
+		float unit() { return 0.5f; }
+	} half_random;
+	FireParticle boundary{};
+	boundary.drift = { 218000000, 0, 0 };
+	boundary.direction = { 65536, 0, 0 };
+	move_fire_particle(boundary, 0, half_random, 0);
+	require(boundary.drift[0] == -211496729, "original fire ChangeDir lost source 32-bit wrap semantics");
 	PHYSFS_file *file = PHYSFS_openRead(Gamesave_current_filename);
 	require(file && PHYSFS_fileLength(file) > 0, "Particle owner source missing");
 	Bytes bytes(std::size_t(PHYSFS_fileLength(file)));
@@ -323,7 +443,7 @@ static void particle_objects_native_case(bool active)
 	require(particle_systems().size() == 1 && d_rand_get_stream_call_count(D_RNG_FX) == jitter_calls + 12, "Native point emitter lost one of the source's two jitter visits");
 	const auto *preserved = &particle_systems().front();
 	auto malformed = source;
-	malformed.objects[1].render_data[11] = 4;
+	malformed.objects[1].render_data[11] = 7;
 	bool rejected = false;
 	try {
 		bind_particle_objects(malformed);
@@ -364,6 +484,8 @@ static void particle_objects_native_case(bool active)
 		particle_objects_frame(50);
 		require(particle_systems().size() == 2 && particle_systems().back().count() > 0, "Mixed activation restore did not resume smoke emission");
 	}
+	waterfall_objects_native_case(source);
+	weather_objects_native_case(source);
 	bubble_objects_native_case(source);
 	xl_particle_objects_clear();
 	require(particle_systems().empty() && !xl_particle_object_set_enabled(1, 1), "Particle clear left a system or activation binding");

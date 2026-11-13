@@ -5,6 +5,17 @@ This directory owns D2X-XL format knowledge and compatibility policy. Normal Ope
 Runtime feature and resource checks decide admission. Software-renderer builds
 retain explicit rejection because XL rendering is not implemented there
 
+The current root working diff extends stationary single-player particle runtime
+support to bubbles, waterfall, snow and rain through the shared emitter and
+resource owners. The [particle record](evidence/particle-effects.md) gives the
+source/native checks and exact original-level limits. Zero particle admission
+findings do not certify a level: Dinter now passes its static POG strips but
+still needs generated-boss lifecycle support,
+Boiling waterworks lacks its authored POG, and Boiling canyons lack exact authored
+sound filenames. Original Warp Shock level 5's HXM animation slots now load in
+the normal OpenGL renderer; its [HXM record](evidence/hxm-gameplay.md) separates
+controlled actor and Android save evidence from full-level traversal.
+
 XL single-player time equipment now uses normal pickups, desktop Alt+S/Alt+B and
 Android Extra-button actions. Genuine addon import, ownership, clocks and cold
 save restoration share the existing resource and runtime owners. See
@@ -711,11 +722,12 @@ rejected. See the [tranche record](../ai%20tool%20plans/mission%20metadata/xl_ko
 
 # True-color POG acceptance
 
-The single-frame RGBA implementation has independent source conversion and
+The RGBA implementation has independent source conversion and
 desktop shader comparisons, original-resource installation, gameplay pixel
 consumers and normal Android lifecycle controls. See
 [the evidence and reusable commands](evidence/truecolor-pog-runtime.md) for
-exact scope, frame/cockpit rejection and original Pumo coverage. This does not
+exact scope, static-strip handling, clocked-frame/cockpit rejection and original
+Pumo coverage. This does not
 qualify the Pumo campaign. The historical fixture results above retain their
 original scope.
 

@@ -198,6 +198,9 @@ std::vector<xl_compat::ParticleSceneItem> xl_compat::particle_scene_items(const 
 		std::visit([&](auto &emitter) {
 			using Emitter = std::decay_t<decltype(emitter)>;
 			constexpr bool smoke = std::is_same_v<Emitter, SmokeEmitter>;
+			constexpr bool waterfall = std::is_same_v<Emitter, WaterfallEmitter>;
+			constexpr bool rain = std::is_same_v<Emitter, RainEmitter>;
+			constexpr bool snow = std::is_same_v<Emitter, SnowEmitter>;
 			const bool emitter_visible = particle_emitter_visible(emitter.segment, emitter.skybox, visible_flags);
 			for (int i = 0; i < emitter.count; ++i) {
 				auto &slot = emitter.slots[std::size_t((emitter.first + i) % int(emitter.slots.size()))];
@@ -215,6 +218,19 @@ std::vector<xl_compat::ParticleSceneItem> xl_compat::particle_scene_items(const 
 				} else if constexpr (smoke) {
 					if (prepare_smoke_particle_draw(slot, animate) && particle.decay > 0)
 						quads.push_back({ particle.position, smoke_particle_quad(slot, camera, smoke_width ? smoke_width : image_width, smoke_height ? smoke_height : image_height), float(std::hypot(double(particle.width), double(particle.height))), 0 });
+				} else if constexpr (waterfall) {
+					if (prepare_waterfall_particle_draw(slot, animate))
+						quads.push_back({ particle.position, waterfall_particle_quad(slot, camera, smoke_width ? smoke_width : image_width, smoke_height ? smoke_height : image_height), float(std::hypot(double(particle.width), double(particle.height))), 4 });
+				} else if constexpr (rain) {
+					if (prepare_weather_particle_draw(slot, animate))
+						quads.push_back({ particle.position, rain_particle_quad(slot, eye, image_width, image_height), float(std::hypot(double(particle.width), double(particle.height))), 5 });
+				} else if constexpr (snow) {
+					if (prepare_weather_particle_draw(slot, animate)) {
+						ParticleSceneItem item{ particle.position, {}, float(std::hypot(double(particle.width), double(particle.height))), 6 };
+						item.quad.blend = ParticleBlend::alpha;
+						item.snow = SnowSceneDraw{ &slot, image_width, image_height, basis };
+						quads.push_back(std::move(item));
+					}
 				} else if (prepare_fire_particle_draw(particle, animate))
 					quads.push_back({ particle.position, fire_particle_quad(particle, camera, image_width, image_height), float(std::hypot(double(particle.width), double(particle.height))), 3 });
 			}
@@ -223,12 +239,20 @@ std::vector<xl_compat::ParticleSceneItem> xl_compat::particle_scene_items(const 
 	}
 	if (bubble_width && bubble_height)
 		for (auto &item : quads)
-			if (item.subtype == 0) item.quad.image = 1;
+			if (item.subtype == 0 || item.subtype == 4) item.quad.image = 1;
 	return quads;
 }
 
 xl_compat::ParticleQuad xl_compat::particle_scene_quad(const ParticleSceneItem &item)
 {
+	if (item.snow) {
+		const auto &draw = *item.snow;
+		if (!draw.particle) throw std::runtime_error("XL deferred snow lost its particle");
+		EffectsRandom random;
+		auto quad = snow_particle_quad(*draw.particle, particle_view(draw.basis), draw.width, draw.height, random);
+		if (draw.camera_space) particle_camera_quad(quad, draw.eye, draw.camera);
+		return quad;
+	}
 	if (!item.bubble) return item.quad;
 	const auto &draw = *item.bubble;
 	if (!draw.particle) throw std::runtime_error("XL deferred bubble lost its particle");
@@ -254,7 +278,8 @@ std::vector<xl_compat::ParticleQuad> xl_compat::particle_scene(const std::vector
 		const bool multi = std::any_of(indices.begin(), indices.end(), [&](std::size_t index) { return items[index].subtype == 2; });
 		for (auto index : indices) {
 			auto quad = particle_scene_quad(items[index]);
-			if (multi) quad.image = items[index].subtype == 2 ? 2 : 1;
+			if (multi && (items[index].subtype == 0 || items[index].subtype == 2 || items[index].subtype == 4))
+				quad.image = items[index].subtype == 2 ? 2 : 1;
 			quads.push_back(std::move(quad));
 		}
 	};
@@ -276,8 +301,11 @@ extern "C" void xl_particle_render_scene(const short *segments, int count)
 	if (!xl_level_extensions_active() || systems.empty()) return;
 	try {
 		const auto *fire = xl_prepared_particle_image(), *smoke = xl_prepared_particle_image(0), *bubble = xl_prepared_particle_image(2);
+		const auto *rain = xl_prepared_particle_image(5), *snow = xl_prepared_particle_image(6);
 		const auto *image = fire ? fire : smoke ? smoke
-		                                        : bubble;
+		                              : bubble  ? bubble
+		                              : rain    ? rain
+		                                        : snow;
 		if (!image || !image->texture) throw std::runtime_error("XL particle renderer has no prepared image");
 		const Uint32 elapsed = SDL_GetTicks() - epoch;
 		if (elapsed > INT32_MAX) throw std::runtime_error("XL particle render session exceeds the source clock range");
@@ -289,13 +317,19 @@ extern "C" void xl_particle_render_scene(const short *segments, int count)
 		auto items = xl_compat::particle_scene_items(visible, eye, { point(Unscaled_matrix.rvec), point(Unscaled_matrix.uvec) }, int(elapsed), image->bitmap.width, image->bitmap.height, smoke ? smoke->bitmap.width : 0, smoke ? smoke->bitmap.height : 0, bubble ? bubble->bitmap.width : 0, bubble ? bubble->bitmap.height : 0);
 		const std::array<xl_compat::ParticlePoint, 3> view{ point(View_matrix.rvec), point(View_matrix.uvec), point(View_matrix.fvec) };
 		for (auto &item : items) {
-			const auto *selected = item.subtype == 2 ? bubble : item.subtype == 0 ? smoke
-			                                                                      : fire;
+			const auto *selected = item.subtype == 2 ? bubble : item.subtype == 0 || item.subtype == 4 ? smoke
+			                                                : item.subtype == 5                        ? rain
+			                                                : item.subtype == 6                        ? snow
+			                                                                                           : fire;
 			if (!selected || !selected->texture) throw std::runtime_error("XL particle scene lost its subtype image");
 			if (item.bubble) {
 				item.bubble->eye = eye;
 				item.bubble->camera = view;
 				item.bubble->camera_space = true;
+			} else if (item.snow) {
+				item.snow->eye = eye;
+				item.snow->camera = view;
+				item.snow->camera_space = true;
 			} else xl_compat::particle_camera_quad(item.quad, eye, view);
 			xl_compat::transparency_particle(item, selected->texture.get());
 		}
@@ -337,7 +371,20 @@ void xl_compat::particle_objects_frame(int time)
 					// Release source leaves this generic linked owner alive on disable
 					xl_audio_link_external(bubble_sound_name, 0, index, 1, F1_0 / 2, 256 * F1_0, -1, -1, 0, 0);
 				} else if (entry.effect.kind == ParticleKind::smoke || entry.effect.kind == ParticleKind::spray) systems.push_front({ index, entry.signature, SmokeEmitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time) });
-				else systems.push_front({ index, entry.signature, FireEmitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time) });
+				else if (entry.effect.kind == ParticleKind::waterfall) systems.push_front({ index, entry.signature, WaterfallEmitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time) });
+				else if (entry.effect.kind == ParticleKind::rain || entry.effect.kind == ParticleKind::snow) {
+					const auto point = [](const vms_vector &v) { return ParticlePoint{ v.x, v.y, v.z }; };
+					if (entry.effect.kind == ParticleKind::rain) {
+						RainEmitter emitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time);
+						emitter.orientation = { point(object.orient.rvec), point(object.orient.uvec), point(object.orient.fvec) };
+						systems.push_front({ index, entry.signature, std::move(emitter) });
+					} else {
+						SnowEmitter emitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time);
+						emitter.orientation = { point(object.orient.rvec), point(object.orient.uvec), point(object.orient.fvec) };
+						systems.push_front({ index, entry.signature, std::move(emitter) });
+					}
+				} else if (entry.effect.kind == ParticleKind::fire) systems.push_front({ index, entry.signature, FireEmitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, entry.face ? &*entry.face : nullptr, segment, world.segments[segment].skybox, time) });
+				else throw std::runtime_error("XL particle subtype has no native emitter behavior");
 				entry.system = &systems.front();
 			}
 			if (entry.system && !entry.face) {
@@ -359,7 +406,11 @@ void xl_compat::particle_objects_frame(int time)
 			if (entry.system == &*it) entry.system = nullptr;
 			it = systems.erase(it);
 		} else {
-			std::visit([&](auto &emitter) { emitter.update(time, random, world, true); }, it->emitter);
+			try {
+				std::visit([&](auto &emitter) { emitter.update(time, random, world, true); }, it->emitter);
+			} catch (const std::exception &error) {
+				throw std::runtime_error("object " + std::to_string(it->object) + ": " + error.what());
+			}
 			++it;
 		}
 	}

@@ -30,21 +30,23 @@ typedef struct d2_ham_validation_report {
 } d2_ham_validation_report;
 
 int d2_ham_validate_main(const uint8_t *data, size_t size,
-	                     const d2_ham_validation_limits *limits,
-	                     d2_ham_validation_report *report);
+                         const d2_ham_validation_limits *limits,
+                         d2_ham_validation_report *report);
 int d2_ham_validate_extra(const uint8_t *data, size_t size, int type,
                           const d2_ham_validation_limits *limits, int base_weapons, int base_robots,
                           int base_joints, int base_models, int base_object_bitmaps,
-	                      int base_object_bitmap_ptrs, d2_ham_validation_report *report);
+                          int base_object_bitmap_ptrs, d2_ham_validation_report *report);
 /* XL-only structural admission; reachable robot dependencies require final level validation */
 int d2_ham_validate_xl_extra(const uint8_t *data, size_t size,
-                            const d2_ham_validation_limits *limits, d2_ham_validation_report *report);
+                             const d2_ham_validation_limits *limits, d2_ham_validation_report *report);
 int d2_ham_validate_hxm(const uint8_t *data, size_t size,
                         const d2_ham_validation_limits *limits, int robot_count, int joint_count,
-	                    int model_count, d2_ham_validation_report *report);
+                        int model_count, d2_ham_validation_report *report);
 /* XL keeps replacement indices bounded to loaded tables; final level closure checks robot references */
 int d2_ham_validate_xl_hxm(const uint8_t *data, size_t size,
                            const d2_ham_validation_limits *limits, int robot_count, int joint_count,
                            int model_count, d2_ham_validation_report *report);
+/* The nine groups contain five count/offset pairs each. XL animation reads only 0..guns. */
+int d2_ham_normalize_xl_unused_joint_lists(uint8_t *joint_lists, int guns);
 
 #endif

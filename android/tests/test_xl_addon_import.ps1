@@ -1,6 +1,8 @@
-#!/usr/bin/env pwsh
-param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [string]$TimeEquipmentPilot)
+﻿#!/usr/bin/env pwsh
+param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [string]$TimeEquipmentPilot)
 $ErrorActionPreference = 'Stop'
+if ($Warp5 -and !$TimeEquipment) { throw 'Warp5 uses the protected original gameplay import mode' }
+if ($Dinter -and (!$TimeEquipment -or $Warp5)) { throw 'Dinter uses the protected original gameplay import mode alone' }
 if ($TimeEquipment -and ($PumoUiImport -or !$DistributionName -or !(Test-Path -LiteralPath $TimeEquipmentPilot -PathType Leaf))) {
     throw 'TimeEquipment requires DistributionName and an engine-written pilot with original Warp Shock level6 unlocked, in its own mode'
 }
@@ -17,15 +19,19 @@ if ($PumoUiImport) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-im
 if ($PumoUiCold) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-cold-android' }
 if ($PumoUiIsolation) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-isolation-android' }
 if ($PumoUiDisabledOwner) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-disabled-android' }
-if ($TimeEquipment) { $output = Join-Path $PSScriptRoot '../../temp/xl-time-equipment-android' }
+if ($TimeEquipment) { $output = Join-Path $PSScriptRoot $(if ($Dinter) { '../../temp/xl-dinter-android' } elseif ($Warp5) { '../../temp/xl-warp5-android' } else { '../../temp/xl-time-equipment-android' }) }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 function Invoke-AddonAdb {
     param([string[]]$Arguments)
     $diagnostic = $null
-    $seconds = if ($PumoUiImport) { 420 } else { 180 }
+    # The original XL distribution follows the baseline selective-import suite
+    # and then extracts a 1.6 GiB solid archive through the real picker.
+    $seconds = if ($PumoUiImport -or $DistributionName) { 420 } else { 180 }
     $result = Adb-Timeout -AdbArgs $Arguments -Seconds $seconds -IncludeStandardError -DiagnosticResult ([ref]$diagnostic)
-    if ($diagnostic.timed_out -or $diagnostic.exit_code -ne 0) { throw "Addon import adb failed: $result" }
+    if ($diagnostic.timed_out -or $diagnostic.exit_code -ne 0) {
+        throw "Addon import adb failed (timeout=$($diagnostic.timed_out), exit=$($diagnostic.exit_code)): $result"
+    }
     return $result
 }
 function Invoke-AddonPrivate {
@@ -60,7 +66,8 @@ if ($TimeEquipment) {
     if (([string](Invoke-AddonPrivate 'if test -e files/imported/sets/xl-picker-check; then echo yes; fi')).Trim() -eq 'yes') {
         throw 'Reserved disposable gameplay set already exists; inspect it before rerunning'
     }
-    $paths += @('files/imported/sets/xl-picker-check', 'files/d2x-redux/missions/wshock20.hog', 'files/d2x-redux/missions/wshock20.mn2')
+    $missionName = if ($Dinter) { 'dinter' } else { 'wshock20' }
+    $paths += @('files/imported/sets/xl-picker-check', "files/d2x-redux/missions/$missionName.hog", "files/d2x-redux/missions/$missionName.mn2")
 }
 $ready = $false
 $hostBackup = $null
@@ -130,6 +137,7 @@ try {
     $instrument = @('shell', 'am', 'instrument', '-w', '-e', 'suite', $suite)
     if ($DistributionName) { $instrument += @('-e', 'xl_addon_distribution', $DistributionName) }
     if ($TimeEquipment) { $instrument += @('-e', 'xl_time_equipment', 'true') }
+    if ($Dinter) { $instrument += @('-e', 'xl_dinter', 'true') }
     $instrument += "$($script:PACKAGE).test/com.dxxredux.app.RecoveryInstrumentation"
     $result = Invoke-AddonAdb -Arguments $instrument
     $result | Set-Content "$output/instrumentation.txt" -Encoding utf8
@@ -161,30 +169,90 @@ try {
             Invoke-AddonAdb -Arguments @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
                 '--es', 'command', 'set_mod_enabled', '--es', 'filename', 'xl-resources', '--ez', 'enabled', $enabled.ToString().ToLowerInvariant()) | Out-Null
             if (!(Wait-SetupCondition -TimeoutSeconds 20 -Predicate {
-                param($snapshot)
-                $entry = $snapshot.content_entries_by_id.'mod:xl-resources'
-                return $snapshot.active_set -eq 'xl-picker-check' -and $null -ne $entry -and $entry.enabled -eq $enabled
-            })) { throw "Resource enable toggle did not reach $enabled" }
+                        param($snapshot)
+                        $entry = $snapshot.content_entries_by_id.'mod:xl-resources'
+                        return $snapshot.active_set -eq 'xl-picker-check' -and $null -ne $entry -and $entry.enabled -eq $enabled
+                    })) { throw "Resource enable toggle did not reach $enabled" }
             Invoke-AddonPrivate 'cat files/setup_introspect.json' | Set-Content "$output/toggle-$enabled.json" -Encoding utf8
         }
         $scenario = Join-Path $PSScriptRoot '../game_scripts/test_xl_time_equipment_runtime.jsonc'
         $steps = @(Get-Content $scenario -Raw | ConvertFrom-Json)
-        # Reuse startup, saved-state expectations and the normal bullet-time toggle
-        $bullet = -1
-        for ($i = 0; $i -lt $steps.Count; $i++) { if ($steps[$i].action -eq 'meta_action' -and $steps[$i].id -eq 1047) { $bullet = $i; break } }
-        if ($bullet -lt 0) { throw 'Missing shared time-equipment control phase' }
-        $newGame = 0
-        while ($newGame -lt $steps.Count -and !($steps[$newGame].action -eq 'select' -and $steps[$newGame].text -eq 'New game')) { $newGame++ }
-        if ($newGame -eq $steps.Count) { throw 'Missing shared time-equipment startup' }
-        $cold = @($steps[0..($newGame - 1)]) + @(
-            @{ action = 'select'; text = 'Load game'; timeout_ms = 15000 },
-            @{ action = 'select'; text = 'level 6'; timeout_ms = 15000 }
-        ) + @($steps[-1], $steps[$bullet], @{
-            action = 'wait_for'; timeout_ms = 60000
-            expect = @{ 'xl_pilot.slow_motion.world_speed' = @{ lte = 1 }; 'xl_pilot.slow_motion.player_speed' = @{ lte = 1 };
-                'xl_pilot.slow_motion.has_slow_motion' = $true; 'xl_pilot.slow_motion.has_bullet_time' = $true }
-        })
-        $coldScript = Join-Path $output 'time-equipment-cold.jsonc'
+        if ($Warp5 -or $Dinter) {
+            # Reuse original picker, launcher, pilot and normal save ownership
+            $level = if ($Dinter) { 1 } else { 5 }
+            # Dinter's single level enters its briefing directly after Ok.
+            $warm = if ($Dinter) { @($steps[0..10]) + @($steps[12], $steps[13]) } else { @($steps[0..13]) }
+            if ($Dinter) { $warm[7].text = 'D.I: Monolevel' }
+            $warm[9].key = [string]$level
+            $warm[-1].expect = @{ in_game = $true; game_window_is_front = $true; current_level_num = $level;
+                'xl_pilot.runtime_active' = $true; 'resolution.render_width' = 960; 'resolution.render_height' = 540
+            }
+            $saveSteps = @(
+                @{ action = 'set_debug'; field = 'android_game_request'; value = 'save' },
+                @{ action = 'wait_for'; timeout_ms = 10000; expect = @{ menu_subtitle = 'Save Game' } },
+                @{ action = 'key'; key = 'enter'; post_delay_ms = 500 },
+                @{ action = 'wait_for'; timeout_ms = 30000; expect = @{ in_game = $true; current_level_num = $level;
+                        'xl_pilot.runtime_active' = $true; time_paused = $false
+                    }
+                }
+            )
+            if ($Dinter) {
+                $warm += $saveSteps
+                # The original segment is disconnected from spawn; backing
+                # away from its authored face leaves room for ordinary thrust.
+                $warm += @{ action = 'pose_view'; segment = 2598; position_fixed = @(-95528395, -51484581, 30474231);
+                    pitch = 0; bank = 0; heading = 0; post_delay_ms = 250
+                }
+            }
+            $warm += @(
+                @{ action = 'controller_input'; axes = @{ LS_Y = $(if ($Dinter) { 0.7 } else { -0.7 }) }; post_delay_ms = 1500 },
+                @{ action = 'wait_for'; timeout_ms = 10000; expect = @{ 'position.speed' = @{ gt = 0.05 } } },
+                @{ action = 'controller_input'; axes = @{ LS_Y = 0.0 } }
+            )
+            if (!$Dinter) { $warm += $saveSteps }
+            if ($Dinter) {
+                # The authored waterfall segment is disconnected from spawn;
+                # visit its exact original-mine camera pose after the save.
+                $warm += @(
+                    @{ action = 'pose_view'; segment = 2598; position_fixed = @(-95528395, -51484581, 30474231);
+                        pitch = 0; bank = 0; heading = 0; post_delay_ms = 2000
+                    },
+                    @{ action = 'wait_for'; timeout_ms = 15000; expect = @{ in_game = $true; current_level_num = 1;
+                            'position.segment' = 2598; 'xl_pilot.runtime_active' = $true
+                        }
+                    }
+                )
+            }
+            $scenario = Join-Path $output 'original-warm.jsonc'
+            $warm | ConvertTo-Json -Depth 30 | Set-Content $scenario -Encoding utf8
+            $cold = @($steps[0..5]) + @(
+                @{ action = 'select'; text = 'Load game'; timeout_ms = 15000 },
+                @{ action = 'select'; text = "level $level"; timeout_ms = 15000 },
+                @{ action = 'wait_for'; timeout_ms = 30000; expect = @{ in_game = $true; current_level_num = $level;
+                        'xl_pilot.runtime_active' = $true; time_paused = $false
+                    }
+                }
+            )
+            $coldScript = Join-Path $output 'original-cold.jsonc'
+        } else {
+            # Reuse startup, saved-state expectations and the normal bullet-time toggle
+            $bullet = -1
+            for ($i = 0; $i -lt $steps.Count; $i++) { if ($steps[$i].action -eq 'meta_action' -and $steps[$i].id -eq 1047) { $bullet = $i; break } }
+            if ($bullet -lt 0) { throw 'Missing shared time-equipment control phase' }
+            $newGame = 0
+            while ($newGame -lt $steps.Count -and !($steps[$newGame].action -eq 'select' -and $steps[$newGame].text -eq 'New game')) { $newGame++ }
+            if ($newGame -eq $steps.Count) { throw 'Missing shared time-equipment startup' }
+            $cold = @($steps[0..($newGame - 1)]) + @(
+                @{ action = 'select'; text = 'Load game'; timeout_ms = 15000 },
+                @{ action = 'select'; text = 'level 6'; timeout_ms = 15000 }
+            ) + @($steps[-1], $steps[$bullet], @{
+                    action = 'wait_for'; timeout_ms = 60000
+                    expect = @{ 'xl_pilot.slow_motion.world_speed' = @{ lte = 1 }; 'xl_pilot.slow_motion.player_speed' = @{ lte = 1 };
+                        'xl_pilot.slow_motion.has_slow_motion' = $true; 'xl_pilot.slow_motion.has_bullet_time' = $true
+                    }
+                })
+            $coldScript = Join-Path $output 'time-equipment-cold.jsonc'
+        }
         $cold | ConvertTo-Json -Depth 30 | Set-Content $coldScript -Encoding utf8
         $pids = @{}
         foreach ($run in @(@{ phase = 'warm'; script = $scenario }, @{ phase = 'cold'; script = $coldScript })) {
@@ -193,9 +261,26 @@ try {
             $runtimeExit = $LASTEXITCODE
             Invoke-AddonPrivate 'cat files/automation_result.json' | Set-Content "$output/$phase-result.json" -Encoding utf8
             Invoke-AddonPrivate 'cat files/automation_log.jsonl' | Set-Content "$output/$phase-steps.jsonl" -Encoding utf8
-            Invoke-AddonPrivate 'cat files/introspect.json' | Set-Content "$output/$phase-state.json" -Encoding utf8
+            # run_test requests a fresh final snapshot and can return before a
+            # busy original level publishes it. Poll that same pending response.
+            $gameState = $null
+            for ($attempt = 0; $attempt -lt 20 -and !$gameState; $attempt++) {
+                $gameState = Get-GameIntrospection -Serial $Serial
+                if (!$gameState) { Start-Sleep -Seconds 1 }
+            }
+            if (!$gameState) { throw "Original Android $phase gameplay snapshot was not published" }
+            $gameState | ConvertTo-Json -Depth 30 | Set-Content "$output/$phase-state.json" -Encoding utf8
             $receipt = Get-Content "$output/$phase-result.json" -Raw | ConvertFrom-Json
-            if ($runtimeExit -or $receipt.result -ne 'PASS' -or $receipt.steps_completed -ne $receipt.total_steps) { throw "Original Android time-equipment $phase failed" }
+            if ($runtimeExit -or $receipt.result -ne 'PASS' -or $receipt.steps_completed -ne $receipt.total_steps) { throw "Original Android $phase gameplay failed" }
+            if ($Warp5) {
+                $actor = @($gameState.level_scene.robots | Where-Object { $_.object -eq 226 -and $_.id -eq 51 })
+                if ($actor.Count -ne 1 -or $actor[0].model -ne 75 -or $actor[0].gun_count -ne 2 -or $actor[0].primary_weapon -ne 21) {
+                    throw "Original Warp 5 replacement robot is absent in $phase Android scene"
+                }
+            }
+            if ($Dinter -and ($gameState.mission_asset_owner -notmatch '^content/[0-9a-f]+$' -or $gameState.current_level_num -ne 1 -or !$gameState.xl_pilot.runtime_active)) {
+                throw "Original Dinter mission or XL runtime is absent in $phase Android scene"
+            }
             if ($phase -eq 'warm') { $warmRun = $receipt.run_id } else { $coldRun = $receipt.run_id }
             $pids[$phase] = ([string](Invoke-AddonAdb -Arguments @('shell', 'pidof', "$($script:PACKAGE):game"))).Trim()
             if ($pids[$phase] -notmatch '^\d+$') { throw "Missing Android $phase game process" }
@@ -224,7 +309,9 @@ try {
         if (Compare-Object @(Get-Content "$output/warm-saves.sha256") @(Get-Content "$output/cold-saves.sha256")) {
             throw 'Cold continuation changed the saved checkpoint files'
         }
-        Write-Output 'PASS: Original Android time pickups, touch controls, imported owner, energy, save and cold continuation'
+        if ($Dinter) { Write-Output 'PASS: Original Android Dinter controller movement, imported owner, save and cold continuation' }
+        elseif ($Warp5) { Write-Output 'PASS: Original Android Warp 5 actor, controller movement, imported owner, save and cold continuation' }
+        else { Write-Output 'PASS: Original Android time pickups, touch controls, imported owner, energy, save and cold continuation' }
     }
     if ($PumoUiImport) {
         foreach ($name in @('pumo-ui-import-proof.json', 'pumo-ui-import.png')) {

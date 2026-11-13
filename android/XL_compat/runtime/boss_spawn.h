@@ -20,6 +20,12 @@ typedef struct xl_boss_spawn_state {
 void xl_boss_spawn_load(void);
 void xl_boss_spawn_clear(void);
 int xl_boss_spawn_count(void);
+int xl_boss_authored_count(void);
+int xl_boss_robotmaker_available(int type);
+int xl_boss_robotmaker_created(int owner);
+int xl_boss_restore_robotmakers(void);
+void xl_boss_restore_robotmakers_commit(void);
+void xl_boss_restore_robotmakers_abort(void);
 /* Live required bosses include their death roll; destroyed reactors do not */
 int xl_level_objectives_remaining(void);
 int xl_boss_spawn_state_get(int index, xl_boss_spawn_state *state);

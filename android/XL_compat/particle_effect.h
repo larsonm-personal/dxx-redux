@@ -145,8 +145,16 @@ std::array<int, 3> particle_emitter_position(const ParticleEffect &effect, std::
 	const int limit = spread - spread / 2 ? spread - spread / 2 : 2;
 	spread /= 2;
 	for (auto &axis : position) {
+		// Source multiplication does not sequence its operand draws. MSVC's
+		// optimized and debug builds evaluate them in opposite orders.
+#if defined(_MSC_VER) && defined(NDEBUG)
+		const int radius = random.bounded(limit) + spread;
 		const int signed_random = 16383 - random.bounded(32768);
-		const auto value = std::int64_t(axis) + std::int64_t(signed_random) * (random.bounded(limit) + spread);
+#else
+		const int signed_random = 16383 - random.bounded(32768);
+		const int radius = random.bounded(limit) + spread;
+#endif
+		const auto value = std::int64_t(axis) + std::int64_t(signed_random) * radius;
 		if (value < INT32_MIN || value > INT32_MAX) throw std::runtime_error("XL particle emitter position exceeds the source arithmetic range");
 		axis = int(value);
 	}

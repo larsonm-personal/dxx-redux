@@ -25,9 +25,6 @@ extern "C" xl_pog_resources *xl_pog_prepare(PHYSFS_file *file, unsigned max_bitm
 		auto result = std::make_unique<xl_pog_resources>();
 		size_t total = 0;
 		for (const auto &image : images) {
-			if (image.truecolor && image.frames > 1)
-				throw std::runtime_error("POG bitmap " + std::to_string(image.index) + " requires " +
-				                         std::to_string(image.frames) + " true-color animation frames; their runtime animation is not implemented");
 			total += image.pixels.size();
 		}
 		result->pixels.reserve(total);
@@ -45,6 +42,8 @@ extern "C" xl_pog_resources *xl_pog_prepare(PHYSFS_file *file, unsigned max_bitm
 			entry.palette_flags = image.palette_flags;
 			entry.offset = unsigned(result->pixels.size());
 			entry.size = unsigned(image.pixels.size());
+			entry.frames = image.frames;
+			entry.frame_height = image.frame_height();
 			result->entries.push_back(entry);
 			result->pixels.insert(result->pixels.end(), image.pixels.begin(), image.pixels.end());
 		}

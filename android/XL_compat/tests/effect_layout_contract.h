@@ -175,7 +175,7 @@ void effect_layout_contract(const char *directory = nullptr)
 							const auto smoke_object_at = smoke_read32(smoke_read32(12) + 35);
 							check(translated_smoke.source.objects[0].render_data[11] == subtype && smoke_object_at + expected.size() <= translated_smoke.stock_level.size() && std::equal(expected.begin(), expected.end(), translated_smoke.stock_level.begin() + smoke_object_at), "Smoke/spray translation lost source subtype or changed the classic inert object header");
 						}
-						for (const auto field : { std::array<unsigned, 2>{ unsigned(header + 28), 7 }, { unsigned(header + 29), 2 }, { unsigned(header + 8), 11 }, { 6, 1 } }) {
+						for (const auto field : { std::array<unsigned, 2>{ unsigned(header + 28), 7 }, { unsigned(header + 29), 7 }, { unsigned(header + 8), 11 }, { 6, 1 } }) {
 							auto bad_fire = fire;
 							patch(bad_fire, start + field[0], field[1], 1);
 							rejects([&] { xl_compat::prepare_source_runtime_probe(bad_fire); });
