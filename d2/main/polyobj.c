@@ -612,7 +612,8 @@ extern int polymodel_read_n(polymodel *pm, int n, PHYSFS_file *fp)
 	for (i = 0; i < n; i++) {
 		pm[i].n_models = PHYSFSX_readInt(fp);
 		pm[i].model_data_size = PHYSFSX_readInt(fp);
-		pm->model_data = (ubyte *)(size_t)PHYSFSX_readInt(fp); // garbage, read it anyway just for consistency
+		PHYSFSX_readInt(fp); // serialized pointer is not an owned allocation
+		pm[i].model_data = NULL;
 		for (j = 0; j < MAX_SUBMODELS; j++)
 			pm[i].submodel_ptrs[j] = PHYSFSX_readInt(fp);
 		for (j = 0; j < MAX_SUBMODELS; j++)
@@ -649,7 +650,7 @@ void polygon_model_data_read(polymodel *pm, PHYSFS_file *fp)
 	polygon_model_data_init(pm);
 }
 
-void polygon_model_data_init(polymodel *pm)
+static void polygon_model_data_init_internal(polymodel *pm, int scoped)
 {
 #ifdef WORDS_NEED_ALIGNMENT
 	align_polygon_model_data(pm);
@@ -658,5 +659,16 @@ void polygon_model_data_init(polymodel *pm)
 	swap_polygon_model_data(pm->model_data);
 #endif
 	//verify(pm->model_data);
-	g3_init_polygon_model(pm->model_data);
+	if (scoped) g3_init_polygon_model_scoped(pm->model_data);
+	else g3_init_polygon_model(pm->model_data);
+}
+
+void polygon_model_data_init(polymodel *pm)
+{
+	polygon_model_data_init_internal(pm, 0);
+}
+
+void polygon_model_data_init_scoped(polymodel *pm)
+{
+	polygon_model_data_init_internal(pm, 1);
 }

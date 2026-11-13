@@ -572,10 +572,6 @@ bool g3_draw_polygon_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim_
 	return 1;
 }
 
-#ifndef NDEBUG
-int nest_count;
-#endif
-
 //alternate interpreter for morphing object
 bool g3_draw_morphing_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim_angles,g3s_lrgb model_light,vms_vector *new_points)
 {
@@ -764,10 +760,10 @@ bool g3_draw_morphing_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim
 	return 1;
 }
 
-void init_model_sub(ubyte *p)
+static void init_model_sub(ubyte *p, short *highest_texture, int *initialized_submodels)
 {
 	#ifndef NDEBUG
-	Assert(++nest_count < 1000);
+	Assert(++*initialized_submodels < 1000);
 	#endif
 
 	while (w(p) != OP_EOF) {
@@ -803,8 +799,8 @@ void init_model_sub(ubyte *p)
 
 				Assert(nv > 2);		//must have 3 or more points
 
-				if (w(p+28) > highest_texture_num)
-					highest_texture_num = w(p+28);
+				if (w(p+28) > *highest_texture)
+					*highest_texture = w(p+28);
 
 				p += 30 + ((nv&~1)+1)*2 + nv*12;
 					
@@ -813,8 +809,8 @@ void init_model_sub(ubyte *p)
 
 			case OP_SORTNORM:
 
-				init_model_sub(p+w(p+28));
-				init_model_sub(p+w(p+30));
+				init_model_sub(p+w(p+28), highest_texture, initialized_submodels);
+				init_model_sub(p+w(p+30), highest_texture, initialized_submodels);
 				p += 32;
 
 				break;
@@ -826,7 +822,7 @@ void init_model_sub(ubyte *p)
 
 
 			case OP_SUBCALL: {
-				init_model_sub(p+w(p+16));
+				init_model_sub(p+w(p+16), highest_texture, initialized_submodels);
 				p += 20;
 				break;
 
@@ -844,11 +840,13 @@ void init_model_sub(ubyte *p)
 //init code for bitmap models
 void g3_init_polygon_model(void *model_ptr)
 {
-	#ifndef NDEBUG
-	nest_count = 0;
-	#endif
+	highest_texture_num = g3_init_polygon_model_scoped(model_ptr);
+}
 
-	highest_texture_num = -1;
-
-	init_model_sub((ubyte *) model_ptr);
+short g3_init_polygon_model_scoped(void *model_ptr)
+{
+	short highest_texture = -1;
+	int initialized_submodels = 0;
+	init_model_sub((ubyte *) model_ptr, &highest_texture, &initialized_submodels);
+	return highest_texture;
 }

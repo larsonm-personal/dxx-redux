@@ -3,10 +3,114 @@
 #include "mission_prepare.h"
 #include "input_demo_world_trace.h"
 #include "input_demo_object_trace.h"
+#include "prepared_ham.h"
+extern "C" {
+#include "gauges.h"
+#include "endlevel.h"
+}
 static std::string descriptor_mutation_path;
 static std::string archive_removal_path;
 static std::string archive_corruption_path;
 static int identity_allocation_failure;
+
+static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
+{
+	PHYSFS_file *source = PHYSFS_openRead("descent2.ham");
+	require(source != nullptr, "missing authentic native HAM for destination control");
+	xl_compat::Bytes bytes(static_cast<std::size_t>(PHYSFS_fileLength(source)));
+	require(PHYSFS_readBytes(source, bytes.data(), bytes.size()) == PHYSFS_sint64(bytes.size()), "cannot retain HAM control bytes");
+	PHYSFS_close(source);
+	const auto directory = root / "preview-user";
+	write_bytes((directory / "prepham.ham").string().c_str(), bytes);
+	{
+		std::ofstream descriptor(directory / "prepham.mn2");
+		descriptor << "d2x-name = Prepared HAM control\nnum_levels = 1\nd2leva-1.rl2\n";
+		require(bool(descriptor), "cannot write prepared HAM descriptor control");
+	}
+	auto *mission = mission_prepare_from_current_dir("prepham.mn2");
+	require(mission != nullptr, "cannot prepare HAM control descriptor");
+	struct Discard {
+		mission_preparation **mission;
+		~Discard()
+		{
+			mission_discard_prepared(mission);
+		}
+	} discard{ &mission };
+	const auto original = gameplay_definitions();
+	const auto live_mission = Current_mission;
+	uint32_t sim_before;
+	d_rand_get_state(&sim_before);
+	const auto sim_calls = d_rand_get_call_count();
+	const auto lookup_state = [] {
+		std::vector<std::string> paths, formats;
+		char **search = PHYSFS_getSearchPath();
+		for (char **entry = search; entry && *entry; ++entry) paths.emplace_back(*entry);
+		PHYSFS_freeList(search);
+		const auto **types = PHYSFS_supportedArchiveTypes();
+		for (const auto **entry = types; entry && *entry; ++entry) formats.emplace_back((*entry)->extension);
+		return std::make_pair(paths, formats);
+	};
+	const auto lookup_before = lookup_state();
+	const auto energy = Weapon_info[CONCUSSION_ID].energy_usage;
+	struct Restore {
+		fix energy;
+		~Restore()
+		{
+			Weapon_info[CONCUSSION_ID].energy_usage = energy;
+		}
+	} restore{ energy };
+	Weapon_info[CONCUSSION_ID].energy_usage ^= F1_0;
+	const auto outgoing = gameplay_definitions();
+	const auto live_ship = only_player_ship;
+	const int live_cockpits = Num_cockpits, live_marker = Marker_model_num;
+	{
+		XlPreparedHam target(mission, "prepham.ham");
+		const auto &tables = target.tables();
+		require(*tables.N_weapon_types == N_weapon_types &&
+		            tables.Weapon_info[CONCUSSION_ID].energy_usage == energy &&
+		            tables.Weapon_info[CONCUSSION_ID].energy_usage != Weapon_info[CONCUSSION_ID].energy_usage,
+		        "incoming HAM borrowed outgoing equal-count weapon definitions");
+		require(*tables.N_polygon_models == N_polygon_models && *tables.NumTextures == NumTextures &&
+		            *tables.Num_reactors == Num_reactors && *tables.Num_cockpits == Num_cockpits &&
+		            *tables.Marker_model_num == Marker_model_num &&
+		            tables.only_player_ship->model_num == only_player_ship.model_num &&
+		            tables.Gauges[0].index == Gauges[0].index && tables.Gauges_hires[0].index == Gauges_hires[0].index &&
+		            tables.cockpit_bitmap[0].index == cockpit_bitmap[0].index &&
+		            *tables.exit_modelnum == N_polygon_models && *tables.destroyed_exit_modelnum == N_polygon_models,
+		        "native HAM destination omitted ship, reactor, gauge, cockpit or exit definitions");
+		for (int id = 0; id < N_polygon_models; ++id) {
+			const auto &model = tables.Polygon_models[id];
+			require(model.model_data != Polygon_models[id].model_data && model.model_data_size == Polygon_models[id].model_data_size &&
+			            !std::memcmp(model.model_data, Polygon_models[id].model_data, model.model_data_size),
+			        "prepared HAM model payload is not independently owned");
+		}
+		const auto *models = tables.Polygon_models;
+		XlPreparedHam moved(std::move(target));
+		require(moved.tables().Polygon_models == models && moved.tables().Weapon_info[CONCUSSION_ID].energy_usage == energy,
+		        "moving candidate invalidated destination or model views");
+		write_bytes((directory / "prepham.ham").string().c_str(), { 'b', 'a', 'd' });
+		bool rejected = false;
+		try {
+			XlPreparedHam invalid(mission, "prepham.ham");
+		} catch (const std::runtime_error &) {
+			rejected = true;
+		}
+		require(rejected && moved.tables().Weapon_info[CONCUSSION_ID].energy_usage == energy &&
+		            moved.tables().Polygon_models == models && gameplay_definitions() == outgoing,
+		        "malformed incoming HAM changed live or retained candidate definitions");
+	}
+	require(gameplay_definitions() == outgoing && Current_mission == live_mission &&
+	            !std::memcmp(&live_ship, &only_player_ship, sizeof(live_ship)) &&
+	            Num_cockpits == live_cockpits && Marker_model_num == live_marker,
+	        "discarding prepared HAM published target definitions");
+	Weapon_info[CONCUSSION_ID].energy_usage = energy;
+	uint32_t sim_after;
+	d_rand_get_state(&sim_after);
+	require(gameplay_definitions() == original && sim_before == sim_after && sim_calls == d_rand_get_call_count() &&
+	            lookup_state() == lookup_before,
+	        "prepared HAM control changed live definitions, SIM RNG or resource lookup");
+	std::cout << "Prepared native HAM: independent equal-count target, complete destinations, owned models, move and malformed discard passed\n";
+}
 extern "C" int xl_test_fail_identity_allocation(int allocation)
 {
 	if (identity_allocation_failure != allocation) return 0;
@@ -143,6 +247,9 @@ static int descriptor_test(int argc, char **argv)
 		require(load_level("d2leva-1.rl2") == 0, "stock baseline level failed");
 		require(!xl_resource_texture_scope_enabled() && !*mission_resource_archive(), "stock mission enabled XL resource lookup");
 		descriptor_retained_dependency_controls();
+		descriptor_prepared_ham_controls(std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")));
+		// Supplemental assertions-enabled selection; canonical Observatory always continues
+		if (!std::strcmp(find_arg_value(argc, argv, "-descriptor-test"), "ham-prepare")) return 0;
 		const auto stock_definitions = gameplay_definitions();
 		const auto stock_model = arena_model();
 		const int stock_segments = Num_segments;
