@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "screenshot_readback.h"
 #endif
 /*
  *
@@ -1266,12 +1267,11 @@ void save_screen_shot(int automap_flag)
 	static int savenum=0;
 	char savename[13+sizeof(SCRNS_DIR)];
 #ifndef OGLES
-	GLint previous_read_buffer = GL_FRONT;
 #ifdef DXX_XL_RUNTIME
-	GLint previous_read_framebuffer = 0, capture_framebuffer = 0, capture_read_buffer = GL_FRONT;
-	const int framebuffer_readback = GLEW_VERSION_3_0 || GLEW_ARB_framebuffer_object;
+	xl_screenshot_readback_state readback;
+#else
+	GLint previous_read_buffer = GL_FRONT;
 #endif
-	GLboolean double_buffered = GL_FALSE;
 #endif
 	#ifdef HAVE_LIBPNG
 	const char *ext = "png";
@@ -1299,39 +1299,22 @@ void save_screen_shot(int automap_flag)
 		HUD_init_message(HM_DEFAULT, "%s '%s'", TXT_DUMPING_SCREEN, savename + strlen(SCRNS_DIR));
 
 #ifndef OGLES
-	/* Read the rendered target without changing either framebuffer's read state */
-	glGetIntegerv(GL_READ_BUFFER, &previous_read_buffer);
 #ifdef DXX_XL_RUNTIME
-	if (framebuffer_readback) {
-		glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &previous_read_framebuffer);
-		glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &capture_framebuffer);
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, capture_framebuffer);
-		glGetIntegerv(GL_READ_BUFFER, &capture_read_buffer);
-	}
-	if (capture_framebuffer)
-		glReadBuffer(GL_COLOR_ATTACHMENT0);
-	else
-#endif
-	{
-		glGetBooleanv(GL_DOUBLEBUFFER, &double_buffered);
-#ifdef DXX_XL_DEVELOPER_PROBE
-		glReadBuffer(double_buffered ? GL_BACK : GL_FRONT);
+	xl_screenshot_readback_begin(&readback);
 #else
-		glReadBuffer(GL_FRONT);
+	glGetIntegerv(GL_READ_BUFFER, &previous_read_buffer);
+	glReadBuffer(GL_FRONT);
 #endif
-	}
 #endif
 
 	write_bmp(savename,grd_curscreen->sc_w,grd_curscreen->sc_h);
 
 #ifndef OGLES
 #ifdef DXX_XL_RUNTIME
-	if (framebuffer_readback) {
-		glReadBuffer(capture_read_buffer);
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, previous_read_framebuffer);
-	}
-#endif
+	xl_screenshot_readback_end(&readback);
+#else
 	glReadBuffer(previous_read_buffer);
+#endif
 #endif
 
 	start_time();

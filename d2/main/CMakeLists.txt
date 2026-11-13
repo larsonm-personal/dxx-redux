@@ -355,18 +355,14 @@ if(NOT ANDROID)
         PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve)
     if(DXX_XL_DEVELOPER_TESTS)
         set(metadata_entry ../../android/XL_compat/runtime/lifecycle_test.cpp)
-        # Gameplay continuation probes need the same navigation rules as the game
-        set(metadata_runtime_definitions DXX_PUMO_CONTACT_DEVELOPER_PROBE
-            DXX_GUIDEBOT_ROUTE_PLANNER DXX_GUIDEBOT_LIVE_ESCORT)
     else()
         set(metadata_entry ../../android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp)
-        set(metadata_runtime_definitions)
     endif()
     dxx_add_headless_target(
         dxx-redux-d2-headless-metadata
         ${metadata_entry}
         GAME_SOURCES ${D2X_HEADLESS_SOURCES}
-        PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II ${metadata_runtime_definitions}
+        PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II $<$<BOOL:${DXX_XL_DEVELOPER_TESTS}>:DXX_PUMO_CONTACT_DEVELOPER_PROBE>
         PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve
         AUDIO_TAG_METADATA
         INCLUDE_GAME_DIR)

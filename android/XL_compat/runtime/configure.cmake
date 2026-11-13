@@ -64,6 +64,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/player_resources.cpp"
                 "${xl_runtime_dir}/trigger_save.cpp"
                 "${xl_runtime_dir}/mission_progress.cpp"
+                "${xl_runtime_dir}/mission_resource_scope.c"
                 "${xl_runtime_dir}/object_trigger.cpp"
                 "${xl_runtime_dir}/robot_generator.cpp"
                 "${xl_runtime_dir}/boss_spawn.cpp"
@@ -147,11 +148,15 @@ target_sources(
             "${xl_runtime_dir}/lightning_renderer.cpp"
             "${xl_runtime_dir}/shield_renderer.cpp"
             "${xl_runtime_dir}/camera_scene.cpp"
-            "${xl_runtime_dir}/camera_renderer.cpp")
+            "${xl_runtime_dir}/camera_renderer.cpp"
+            "${xl_runtime_dir}/screenshot_readback.c")
 target_compile_features(${DXX_TARGET_PREFIX}arch_ogl PRIVATE cxx_std_17)
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE DXX_XL_RUNTIME)
 target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE "${xl_runtime_dir}")
 if(DXX_XL_DEVELOPER_TESTS AND TARGET dxx-redux-d2-headless-metadata)
+    # Continuation probes use the same navigation rules as the ordinary game
+    target_compile_definitions(dxx-redux-d2-headless-metadata PRIVATE DXX_GUIDEBOT_ROUTE_PLANNER
+                                                                      DXX_GUIDEBOT_LIVE_ESCORT)
     # Export earned private checkpoints with Android's real source-definition trailer
     set(xl_checkpoint_sources
         "${xl_runtime_dir}/checkpoint_export.cpp" "${xl_runtime_dir}/mod_save_identity_test.cpp"

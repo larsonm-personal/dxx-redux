@@ -1,5 +1,5 @@
-#ifndef DXX_MISSION_PREPARE_H
-#define DXX_MISSION_PREPARE_H
+#ifndef DXX_XL_MISSION_PREPARE_H
+#define DXX_XL_MISSION_PREPARE_H
 
 #include <physfs.h>
 #include "mission.h"

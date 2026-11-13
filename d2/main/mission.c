@@ -50,6 +50,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "resource_validation.h"
 #include "preview.h"
 #include "mission_prepare.h"
+#include "mission_resource_scope.h"
 #endif
 
 //values that describe where a mission is located
@@ -881,8 +882,7 @@ struct mission_preparation {
 	char path[PATH_MAX];
 	mission_descriptor_stage descriptor;
 	Mission *reserved_identity;
-	char private_mount[64];
-	int owns_mount;
+	xl_mission_resource_scope resources;
 };
 #endif
 
@@ -1278,22 +1278,11 @@ const char *mission_prepared_level(const mission_preparation *prepared, int leve
 	return NULL;
 }
 
-static int release_prepared_mount(mission_preparation *prepared)
-{
-	if (prepared->owns_mount) {
-		const char *mount = PHYSFS_getMountPoint(prepared->descriptor.companion_hog);
-		if (mount && !strcmp(mount, prepared->private_mount) &&
-		    !PHYSFS_unmount(prepared->descriptor.companion_hog)) return 0;
-		prepared->owns_mount = 0;
-	}
-	return 1;
-}
-
 int mission_discard_prepared(mission_preparation **owner)
 {
 	mission_preparation *prepared = owner ? *owner : NULL;
 	if (!prepared) return 1;
-	if (!release_prepared_mount(prepared)) return 0;
+	if (!xl_mission_resource_release(&prepared->resources, prepared->descriptor.companion_hog)) return 0;
 	release_descriptor_stage(&prepared->descriptor);
 	release_mission_identity(prepared->reserved_identity);
 	d_free(prepared);
@@ -1301,59 +1290,12 @@ int mission_discard_prepared(mission_preparation **owner)
 	return 1;
 }
 
-static int prepared_resource_name(const char *name)
-{
-	const char *part = name;
-	if (!name || !*name || *name == '/' || strchr(name, '\\') || strchr(name, ':')) return 0;
-	for (;;) {
-		const char *end = strchr(part, '/');
-		const size_t length = end ? (size_t)(end - part) : strlen(part);
-		if (!length || (length == 1 && part[0] == '.') ||
-		    (length == 2 && part[0] == '.' && part[1] == '.')) return 0;
-		if (!end) return 1;
-		part = end + 1;
-	}
-}
-
 PHYSFS_file *mission_prepared_open(mission_preparation *prepared, const char *resource)
 {
-	static unsigned int next_mount;
-	char path[PATH_MAX];
-	const char *mount, *origin;
-	if (!prepared || !prepared->descriptor.ready || !prepared_resource_name(resource)) return NULL;
-	const char *archive = prepared->descriptor.companion_hog;
-	if (!prepared->descriptor.has_companion_hog) {
-		if (strlen(resource) >= sizeof(path)) return NULL;
-		strcpy(path, resource);
-		if (PHYSFSEXT_locateCorrectCase(path) != 0) return NULL;
-		origin = PHYSFS_getRealDir(path);
-		if (!origin || strcmp(origin, prepared->descriptor.descriptor_root)) return NULL;
-		return PHYSFSX_openReadBuffered(path);
-	}
-	mount = PHYSFS_getMountPoint(archive);
-	if (!mount) {
-		do {
-			if (next_mount == UINT_MAX) return NULL;
-			snprintf(prepared->private_mount, sizeof(prepared->private_mount), "__mission_prepare_%u/", ++next_mount);
-		} while (PHYSFS_exists(prepared->private_mount));
-		if (!PHYSFS_mount(archive, prepared->private_mount, 1)) return NULL;
-		prepared->owns_mount = 1;
-		mount = PHYSFS_getMountPoint(archive);
-		/* PhysFS owns mount-point normalization, including the trailing slash */
-		if (!mount || strlen(mount) >= sizeof(prepared->private_mount)) return NULL;
-		strcpy(prepared->private_mount, mount);
-	}
-	if (prepared->owns_mount && mount && !strcmp(mount, prepared->private_mount)) {
-		const int size = snprintf(path, sizeof(path), "%s%s", prepared->private_mount, resource);
-		if (size < 0 || (size_t)size >= sizeof(path)) return NULL;
-	} else if (mission_owns_resource_archive(archive)) {
-		if (strlen(resource) >= sizeof(path)) return NULL;
-		strcpy(path, resource);
-	} else return NULL;
-	if (PHYSFSEXT_locateCorrectCase(path) != 0) return NULL;
-	origin = PHYSFS_getRealDir(path);
-	if (!origin || strcmp(origin, archive)) return NULL;
-	return PHYSFSX_openReadBuffered(path);
+	if (!prepared || !prepared->descriptor.ready) return NULL;
+	return xl_mission_resource_open(&prepared->resources,
+	                               prepared->descriptor.has_companion_hog ? prepared->descriptor.companion_hog : NULL,
+	                               prepared->descriptor.descriptor_root, resource);
 }
 #endif
 
@@ -1392,7 +1334,7 @@ int mission_commit_prepared(mission_preparation **owner)
 {
 	mission_preparation *prepared = owner ? *owner : NULL;
 	int loaded;
-	if (!prepared || !release_prepared_mount(prepared)) return 0;
+	if (!prepared || !xl_mission_resource_release(&prepared->resources, prepared->descriptor.companion_hog)) return 0;
 #ifdef __ANDROID__
 	const int owns_progress = !android_loading_progress_is_active();
 	if (owns_progress) android_loading_progress_begin("Loading mission", 0);

@@ -4194,3 +4194,42 @@ All of the following must be true for the named single-player capability profile
 If this gate is not met, the handoff names the achieved bounded scope and the
 next concrete gap. It must not claim full gameplay support, full campaign
 playability, graphical/audio completeness, or whole-stack merge readiness.
+
+### Layer 03 architecture cleanup - November 12, before the next work window
+
+The user requested a review and reduction of the continuation layer's native
+`d2/` changes. This is a bounded refactor, not resumption of the 12-hour gameplay
+plan. Source remains an uncommitted change over `013b7234`; no commit, push, PR or
+merge was performed.
+
+The [boundary review](xl_layer03_architecture_review_20261112.md) classifies all
+16 original native paths and records the implementation and test evidence.
+Candidate archive lookup/lease policy and screenshot framebuffer/read-state
+policy now live in `android/XL_compat/runtime`. The XL-only mission preparation
+header moved there from generic shared code. Developer metadata navigation
+configuration moved into the existing XL configure file, restoring native
+`main/CMakeLists.txt` to the layer parent's contents. Native codecs, context-aware
+record decoding, owner-private snapshots and small clock hooks remain with their
+single source of truth. No parser or lifecycle was duplicated.
+
+Against parent `0a2df4aeb`, native changes now cover 15 files, 666 additions and
+502 deletions: net growth 164 instead of 243 lines. Architecture guidance is
+explicit in copilot instructions, the XL README and the next-window plan.
+
+Windows/Linux ordinary and developer builds pass. Existing Observatory ownership
+and source controls pass on both hosts (17.859s/5.376s), as do seven screenshot
+read-state checks and time/warm-continuation witnesses (26.141s/16.850s). Selected
+`test_upstream_compat` passes on Windows/Linux (55.62s/26.40s; one combined CTest
+owner each). Ordinary replay on both hosts matches the retained original live
+capture: 12 object frames, 16 world records, 21 SIM and 12 FX events. These remain
+bounded assisted mechanics/replay checks, not connected progression or G2 closure.
+
+Evidence: `temp/xl-layer03-architecture-20261112/build-identities.json`, build/test
+logs, Windows output, Linux summary/commands, and native Linux output under
+`/var/tmp/dxx-pr464-20261111/private/architecture-review`. The review preserves
+failed setup attempts, including the Linux /mnt/c timeout under the unchanged
+60-second owner limit, and explains the successful native-filesystem rerun.
+
+Known whole-save atomicity remains unresolved. No Android/macOS qualification,
+new hosted CI or final package is claimed. Preserve the new untracked helper
+files and header move along with the revised plans when starting the next worker.
