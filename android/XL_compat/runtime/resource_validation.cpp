@@ -19,6 +19,7 @@
 #include <filesystem>
 #include "picosha2.h"
 #include "asset_dependencies.h"
+#include "input_demo_assets.h"
 #include "pog_resources.h"
 #include "pog_renderer.h"
 #include "named_audio.h"
@@ -443,6 +444,7 @@ extern "C" int xl_resource_load_vertigo(void)
 				if (!CameraAddonFile::owned(name)) continue;
 				if (PHYSFS_getMountPoint(mount)) throw std::runtime_error("Vertigo private mount is already active");
 				File archive(PHYSFS_openRead(name.c_str()), PHYSFS_close);
+				input_demo_assets_note_container(mount, name.c_str(), archive.get());
 				if (!archive || !PHYSFS_mountHandle(archive.get(), mount, "__xl_vertigo_resources__", 0))
 					throw std::runtime_error("Cannot mount owned Vertigo archive");
 				archive.release();
@@ -671,6 +673,7 @@ extern "C" int xl_resource_load_mod_data(void)
 		if (!ham.empty()) {
 			File file(PHYSFSX_openReadBuffered(ham.c_str()), PHYSFS_close);
 			if (!bm_read_xl_main_ham(file.get())) throw std::runtime_error("Malformed or unsupported XL mission HAM: " + ham);
+			input_demo_assets_extra_ham_loaded(ham.c_str(), file.get());
 		}
 		if (!hxm.empty()) {
 			File file(PHYSFSX_openReadBuffered(hxm.c_str()), PHYSFS_close);

@@ -4160,6 +4160,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		PHYSFS_close(fp);
 		return 0;
 	}
+	const uint32_t restored_xl_cached_clock = xl_level_extensions_active() ? xl_input_demo_cached_clock() : 0;
 #endif
 
 #ifdef __ANDROID__
@@ -4299,6 +4300,10 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			window_set_visible(Game_wind, 1);
 	}
 	reset_time();
+	#ifdef DXX_XL_RUNTIME
+	/* Exclude restore finalization from the saved gameplay clock's elapsed time */
+	if (xl_level_extensions_active()) xl_input_demo_restore_cached_clock(restored_xl_cached_clock);
+	#endif
 
 	#ifdef __ANDROID__
 	restore_profile.total_us = android_profile_monotonic_us() - restore_profile_start_us;

@@ -3,7 +3,7 @@
 New input recordings carry `asset_fingerprints` in their header. The native
 recorder binds each HOG/PIG/HAM role to bytes actually opened by the engine,
 including the selected D2 HAM/PIG fallback and a mounted custom mission HOG.
-It rechecks those sources at recording activation. Missing, changed, loose, or
+It rechecks those sources at recording activation. Missing, changed, or
 otherwise unresolved sources produce an explicit `unknown` status and reason.
 No script derives recording fingerprints from an edition label, mission name,
 recording filename, or the files installed later.
@@ -20,10 +20,25 @@ An archive-contained PIG/HAM also records `container`, naming its existing
 identity first, then hashes the selected member through its bounded DHF directory
 (up to 65,536 entries and 128 MiB per member). It respects mission-HOG precedence
 over loose data and rejects wrong loose files shadowing appended base HOGs.
-No files are extracted. Untracked archive owners, unsupported additional mission
+No files are extracted. Untracked archive owners, unresolved additional mission
 HAMs, or an asset change across recording levels make the recording explicitly
 unknown rather than silently omitting a dependency. Recording continues, and
 unknown recordings remain excluded from verified shareware selection.
+
+Successful supplemental D2 HAM/VHAM loads retain their load order as
+`d2_extra_0_ham` through `d2_extra_15_ham`. A member from a temporary HOG mount
+also records its matching `d2_extra_N_hog` container. The native owner hashes the
+same opened handles without changing their cursors and binds temporary mount
+aliases to their physical container bytes before unmounting. It checks those
+bytes again at capture; an unresolved source or more than 16 loads remains
+explicitly unknown. A fresh base HAM load resets this sequence.
+
+The host verifier searches `DataDir` and `ExtraDir` (Python `--extra`) for these
+supplemental dependencies. Their temporary mounts do not alter its final base
+asset search-priority check; the native post-load check verifies the actual
+supplemental sequence. Numbered roles must be contiguous, with matching container
+indices. These identities do not extend verification to arbitrary HXM/POG/mod
+resources or gameplay settings.
 
 ## Before playback
 

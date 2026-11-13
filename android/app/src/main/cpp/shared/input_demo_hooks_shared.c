@@ -27,6 +27,10 @@
 #include "input_demo_fp_env.h"
 #include "input_demo_hooks.h"
 #include "input_demo_newdemo_shared.h"
+#include "input_demo_start_shared.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "guidebot_routing.h"
+#endif
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #include "input_demo_result.h"
@@ -82,6 +86,7 @@ static unsigned int previous_fireball_hashes[MAX_OBJECTS];
 static int input_demo_replay_exit_requested = 0;
 static int input_demo_replay_observed_loaded = 0;
 static int input_demo_record_simulation_active = 0;
+static uint32_t input_demo_environment_operation = 0;
 
 static void input_demo_request_exit_after_replay(void)
 {
@@ -691,8 +696,30 @@ void input_demo_record_input_rear_view(int action)
 void input_demo_record_reset_input_phase(void)
 {
 	input_demo_record_simulation_active = 0;
+	input_demo_environment_operation = 0;
 	if (!input_demo_replay_is_loaded())
 		input_demo_reset_replay_input_state();
+}
+
+int input_demo_observe_environment(const char *consumer, int subject, input_demo_environment_clock *clock)
+{
+	char error[256] = "";
+	if (!consumer || !clock) return 0;
+	/* The pre-SIM capture hook runs inside GameProcessFrame's phase wrapper */
+	const int simulation = input_demo_record_simulation_active != 0 &&
+	                       strcmp(consumer, "input_end") && strcmp(consumer, "tail_end");
+	if (input_demo_replay_format_version() == 6) {
+		if (!input_demo_replay_environment_running()) return input_demo_replay_get_environment_origin(clock);
+		if (input_demo_replay_consume_environment(consumer, subject, simulation,
+		                                          input_demo_environment_operation, clock, error, sizeof(error))) return 1;
+		con_printf(CON_NORMAL, "Input demo environment mismatch: %s\n", error);
+		return 0;
+	}
+	if (input_demo_recorder_uses_environment() &&
+	    !input_demo_recorder_observe_environment(consumer, subject, simulation,
+	                                             clock, error, sizeof(error)))
+		input_demo_cancel_input_capture(error);
+	return 1;
 }
 
 int input_demo_stop_quick_recording_after_frame(void)
@@ -702,6 +729,11 @@ int input_demo_stop_quick_recording_after_frame(void)
 
 void input_demo_run_game_process_frame(void (*process)(void))
 {
+#ifdef DXX_XL_RUNTIME
+	if (!input_demo_record_simulation_active) xl_input_demo_begin_input_clock();
+#endif
+	if (!input_demo_record_simulation_active && input_demo_recorder_uses_environment())
+		input_demo_record_input_context();
 	/* The wrapper also resets the guard on every ordinary early return */
 	++input_demo_record_simulation_active;
 	process();
@@ -725,6 +757,9 @@ void input_demo_record_input_clear(void)
 
 void input_demo_record_input_context(void)
 {
+#ifdef DXX_XL_RUNTIME
+	if (!input_demo_record_simulation_active) xl_input_demo_begin_input_clock();
+#endif
 	if (input_demo_record_simulation_active && input_demo_recorder_uses_ordered_input()) {
 		input_demo_cancel_input_capture("ordered recording does not support input dispatch inside simulation");
 		return;
@@ -733,6 +768,10 @@ void input_demo_record_input_context(void)
 	char error[256] = "";
 	if (!input_demo_recorder_uses_ordered_input())
 		return;
+	if (input_demo_recorder_uses_environment() && !input_demo_validate_xl_fp_environment(error, sizeof(error))) {
+		input_demo_cancel_input_capture(error);
+		return;
+	}
 #ifdef DXX_XL_RUNTIME
 	const char *unsupported = xl_omega_input_demo_error();
 	if (unsupported) {
@@ -746,6 +785,14 @@ void input_demo_record_input_context(void)
 	    !input_demo_recorder_begin_input_batch(state, d_rand_get_call_count(), FrameTime, error, sizeof(error))) {
 		input_demo_cancel_input_capture(error[0] ? error : "could not capture pre-input SIM RNG");
 		return;
+	}
+	if (input_demo_recorder_uses_environment()) {
+		input_demo_player_cfg cfg;
+		input_demo_capture_player_cfg(&cfg);
+		if (!input_demo_recorder_observe_player_cfg(FrameTime, &cfg, 1, error, sizeof(error))) {
+			input_demo_cancel_input_capture(error);
+			return;
+		}
 	}
 	input_demo_rng_trace_set_context(input_demo_recorder_frame_count(), GameTime64);
 }
@@ -796,9 +843,19 @@ int input_demo_record_finish_input_tail(char *error, size_t error_size)
 	}
 #endif
 	if (!input_demo_validate_record_view_projection(error, error_size)) return 0;
+	if (input_demo_recorder_uses_environment()) {
+		input_demo_record_input_context();
+		if (!input_demo_recorder_is_active()) return 0;
+	}
 	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
 	if (!d_rand_get_state(&rng_state))
 		return 0;
+#ifdef DXX_XL_RUNTIME
+	if (input_demo_recorder_uses_environment()) {
+		input_demo_environment_clock clock;
+		xl_input_demo_observe("tail_end", -1, &clock);
+	}
+#endif
 	return input_demo_recorder_finish_input_tail(&state, &pulse, rng_state,
 	                                             d_rand_get_call_count(), error, error_size);
 }
@@ -861,6 +918,7 @@ static int input_demo_apply_ordered_input(uint32_t frame, char *error, size_t er
 	for (index = 0; index < batch.operation_count; ++index) {
 		if (!input_demo_replay_get_input_operation(frame, index, &operation, error, error_size))
 			goto failed;
+		input_demo_environment_operation = index + 1;
 		FrameTime = operation.frame_time;
 		switch (operation.kind) {
 			case INPUT_DEMO_INPUT_CONTROLS:
@@ -871,6 +929,16 @@ static int input_demo_apply_ordered_input(uint32_t frame, char *error, size_t er
 					snprintf(error, error_size, "rear-view decision has an invalid native precondition");
 					goto failed;
 				}
+				break;
+			case INPUT_DEMO_INPUT_PLAYER_CFG:
+				if (!input_demo_replay_update_player_cfg(&operation.player_cfg)) {
+					snprintf(error, error_size, "ordered player configuration is unavailable");
+					goto failed;
+				}
+				input_demo_apply_player_cfg(&operation.player_cfg);
+#ifdef DXX_BUILD_DESCENT_II
+				guidebot_routing_set_mode(operation.player_cfg.guidebot_routing_mode);
+#endif
 				break;
 			case INPUT_DEMO_INPUT_COCKPIT:
 				if (Rear_view || Player_is_dead) {
@@ -916,6 +984,12 @@ static int input_demo_apply_ordered_input(uint32_t frame, char *error, size_t er
 		}
 	}
 	FrameTime = simulation_frame_time;
+	if (input_demo_replay_format_version() == 6) {
+		input_demo_environment_clock clock;
+		if (!input_demo_replay_consume_environment(batch.is_tail ? "tail_end" : "input_end", -1, 0,
+		                                           batch.operation_count, &clock, error, error_size)) goto failed;
+	}
+	input_demo_environment_operation = 0;
 	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
 	if (memcmp(&state, &batch.residual_state, sizeof(state)) ||
 	    memcmp(&pulse, &batch.residual_pulse, sizeof(pulse))) {
@@ -929,6 +1003,7 @@ static int input_demo_apply_ordered_input(uint32_t frame, char *error, size_t er
 	}
 	return 1;
 failed:
+	input_demo_environment_operation = 0;
 	FrameTime = simulation_frame_time;
 	return 0;
 }
@@ -945,6 +1020,10 @@ void input_demo_record_game_frame(void)
 
 	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_recorder_is_active())
 		return;
+	if (input_demo_recorder_uses_environment() && !input_demo_validate_xl_fp_environment(error, sizeof(error))) {
+		input_demo_cancel_input_capture(error);
+		return;
+	}
 #ifdef DXX_XL_RUNTIME
 	const char *unsupported = xl_omega_input_demo_error();
 	if (unsupported) {
@@ -954,6 +1033,14 @@ void input_demo_record_game_frame(void)
 	}
 #endif
 	if (!input_demo_validate_record_view_projection(error, sizeof(error))) return;
+	if (input_demo_recorder_uses_environment()) {
+		input_demo_player_cfg cfg;
+		input_demo_capture_player_cfg(&cfg);
+		if (!input_demo_recorder_observe_player_cfg(FrameTime, &cfg, 0, error, sizeof(error))) {
+			input_demo_cancel_input_capture(error);
+			return;
+		}
+	}
 	if (!d_rand_get_state(&rng_state)) {
 		con_printf(CON_NORMAL, "Input demo recording stopped: live recording requires an lcg_state RNG backend\n");
 		input_demo_recorder_cancel();
@@ -963,10 +1050,26 @@ void input_demo_record_game_frame(void)
 	rng_call_count = d_rand_get_call_count();
 	android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_RECORD);
 	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
+#ifdef DXX_XL_RUNTIME
+	if (input_demo_recorder_uses_environment()) {
+		input_demo_environment_clock clock;
+		xl_input_demo_observe("input_end", -1, &clock);
+	}
+#endif
 	input_demo_capture_current_result(&frame_state);
 	if (input_demo_recorder_frame_count() == 0)
 		input_demo_reset_object_state_diag_history();
 	input_demo_capture_state_trace_diag(&diag);
+	if (input_demo_state_trace_is_active()) {
+		const uint32_t frame = input_demo_recorder_frame_count();
+		if (!input_demo_state_trace_write_frame(frame, FrameTime, rng_state, 1, rng_call_count,
+		                                        &diag, &frame_state, error, sizeof(error)) ||
+		    !input_demo_object_trace_write(frame, error, sizeof(error)) ||
+		    !input_demo_world_trace_write(frame, NULL, error, sizeof(error))) {
+			con_printf(CON_NORMAL, "Input demo recording state trace failed: %s\n", error);
+			input_demo_state_trace_stop();
+		}
+	}
 	if (!input_demo_recorder_capture_frame((int32_t) FrameTime, &state, &pulse,
 	                                       rng_state, 1, rng_call_count,
 	                                       &frame_state, &diag,
@@ -1052,7 +1155,7 @@ int input_demo_prepare_replay_frame_shared(
 	}
 	input_demo_delay_replay_frame_shared((fix) replay_frame.frame_time,
 	                                     replay_last_timer_value);
-	if (input_demo_replay_format_version() != 5) {
+	if (input_demo_replay_format_version() < 5) {
 		con_printf(CON_NORMAL, "Input demo replay stopped: legacy format: use android/tests/convert_public_replay.py for verified public-corpus conversion, or record again\n");
 		if (stop_replay) stop_replay(0);
 		return 0;
@@ -1116,6 +1219,7 @@ int input_demo_finish_replay_shared(int close_window,
 		char error[256] = "";
 		if (!input_demo_replay_clock_supported(NULL) ||
 		    input_demo_replay_next_frame_index() + 1 != input_demo_replay_frame_count() ||
+		    (input_demo_replay_format_version() == 6 && !input_demo_replay_advance_frame(error, sizeof(error))) ||
 		    !input_demo_apply_ordered_input(input_demo_replay_frame_count(), error, sizeof(error)) ||
 		    !input_demo_replay_clock_supported(NULL)) {
 			con_printf(CON_NORMAL, "Input demo replay stopped at early exit: %s\n",
@@ -1185,6 +1289,13 @@ int input_demo_process_fast_replay(void)
 
 static int input_demo_replay_clock_supported(void (*stop_replay)(int))
 {
+	char error[256] = "";
+	if (input_demo_replay_format_version() == 6 && !input_demo_validate_xl_fp_environment(error, sizeof(error))) {
+		con_printf(CON_URGENT, "Input demo replay stopped: %s\n", error);
+		if (stop_replay) stop_replay(0);
+		else input_demo_replay_unload();
+		return 0;
+	}
 #ifdef DXX_XL_RUNTIME
 	const char *unsupported = xl_omega_input_demo_error();
 	if (unsupported) {
@@ -1203,7 +1314,8 @@ int input_demo_step_replay_frame_shared(int (*prepare_replay_frame)(void), void 
 	/* A background draw must not reapply a non-idempotent pending batch */
 	if (game_is_time_paused())
 		return 0;
-	input_demo_restore_replay_fp_environment();
+	/* Format 6 validates the same environment as live capture instead of repairing it */
+	if (input_demo_replay_format_version() != 6) input_demo_restore_replay_fp_environment();
 	if (!prepare_replay_frame || !prepare_replay_frame())
 		return 0;
 	if (!input_demo_replay_clock_supported(stop_replay)) return 0;
@@ -1296,7 +1408,7 @@ void input_demo_write_replay_frame_state_trace_shared(
 void input_demo_trace_boundary(const char *phase)
 {
 	char error[256] = "";
-	const uint32_t frame = input_demo_replay_next_frame_index();
+	const uint32_t frame = input_demo_recorder_is_active() ? input_demo_recorder_frame_count() : input_demo_replay_next_frame_index();
 	if (!input_demo_state_trace_is_active())
 		return;
 	if (input_demo_object_trace_boundary(frame, phase, error, sizeof(error)) &&

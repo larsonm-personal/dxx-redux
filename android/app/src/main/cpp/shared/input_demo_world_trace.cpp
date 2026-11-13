@@ -2,8 +2,16 @@
 #include "input_demo_state_trace.h"
 #include "input_demo_ai_trace.h"
 #include "input_demo_object_trace.h"
+#ifdef DXX_XL_RUNTIME
+#include "preview.h"
+#include "slow_motion_save.h"
+#include "camera_save.h"
+#include "trigger_state.h"
+#include "input_demo_fixture.h"
+#endif
 
 #include <string>
+#include <stdexcept>
 #include <nlohmann/json.hpp>
 
 extern "C" {
@@ -29,6 +37,7 @@ extern "C" {
 #include "textures.h"
 #include "wall.h"
 #include "weapon.h"
+#include "input_demo_newdemo_shared.h"
 extern int delayed_primary_autoselect_weapon_index;
 extern int delayed_secondary_autoselect_weapon_index;
 }
@@ -392,6 +401,26 @@ json world_state()
 	out["secrets"] = json::array();
 	for (int i = 0; i < secret_area_total(secrets); ++i)
 		out["secrets"].push_back({ secrets->secrets[i].identity, secrets->found[i] });
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		input_demo_input_operation settings{};
+		settings.kind = INPUT_DEMO_INPUT_PLAYER_CFG;
+		input_demo_capture_player_cfg(&settings.player_cfg);
+		std::string encoded, error;
+		if (!input_demo_dispatch_operation_to_json(settings, INPUT_DEMO_GAME_D2, &encoded, &error))
+			throw std::runtime_error(error);
+		out["xl_player_cfg"] = json::parse(encoded).at("value");
+		out["xl_time"] = xl_runtime::slow_motion_trace_snapshot();
+		out["xl_cameras"] = xl_camera_trace_snapshot();
+		out["xl_triggers"] = json::array();
+		for (int i = 0; i < Num_triggers; ++i) {
+			xl_trigger_state state{};
+			if (!xl_wall_trigger_state(i, &state)) throw std::runtime_error("Missing XL trigger observation");
+			out["xl_triggers"].push_back({ state.elapsed, state.delay_ms, state.object, state.shot, state.operated,
+			                               state.destination, state.attached, state.signature, state.cooldown_active, state.cooldown_age_ms });
+		}
+	}
+#endif
 	return out;
 }
 #undef FIELD
@@ -446,11 +475,17 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	static json previous;
 	json current = world_state();
 	const bool boundary = phase != nullptr;
-	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
+	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 11 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
 	record["state"].get_ref<json::object_t &>().reserve(current.size());
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)
-		if (boundary || frame == 0 || !previous.contains(it.key()) || previous[it.key()] != it.value()) record["state"][it.key()] = it.value();
-	if (!boundary) previous = std::move(current);
-	return input_demo_state_trace_write_json(record.dump().c_str(), error, error_size) && input_demo_door_trace_write(frame, phase, error, error_size);
+		if (boundary || frame == 0 || !previous.contains(it.key()) || previous[it.key()] != it.value()) record["state"][it.key()] = std::move(it.value());
+	// Serialize the complete changed sections without cloning their large subtrees
+	const std::string encoded = record.dump();
+	if (!boundary) {
+		for (auto it = record["state"].begin(); it != record["state"].end(); ++it)
+			current[it.key()] = std::move(it.value());
+		previous = std::move(current);
+	}
+	return input_demo_state_trace_write_json(encoded.c_str(), error, error_size) && input_demo_door_trace_write(frame, phase, error, error_size);
 }

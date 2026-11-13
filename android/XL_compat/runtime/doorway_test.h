@@ -91,6 +91,9 @@ static void doorway_animation(std::ostream &out)
 	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	FrameTime = F1_0 / 32;
 	sample();
+	// Restore retains trigger cooldowns; the animation-only loop does not advance the host clock
+	timer_delay(F1_0 * 4 / 5);
+	timer_update();
 	require(check_trigger_sub(0, Player_num, 1) == 0 && Walls[0].state == WALL_DOOR_CLOSING, "Open trigger unexpectedly reversed a closing door");
 	// Source ToggleWall opens closed doors only; a player hit can reverse closing
 	require(wall_hit_process(&Segments[24], 5, 0, Player_num, ConsoleObject) == WHP_DOOR, "Player hit did not reverse closing door");

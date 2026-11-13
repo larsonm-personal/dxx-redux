@@ -160,6 +160,53 @@ class AssetPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(assets.AssetError, "Recorded asset mismatch"):
             assets.verify_header(header, self.data, "d2")
 
+    def test_supplemental_sequence_loose_and_temporary_container(self):
+        header = self.header("native_d2")
+        extra = self.root / "supplemental"
+        extra.mkdir()
+        loose = extra / "mission.vham"
+        loose.write_bytes(b"first loaded supplemental definitions")
+        self.bind_archive(header, "d2_extra_0_ham", loose)
+        payload = b"second loaded supplemental definitions"
+        archive = self.archive("temporary.hog", [("extra.ham", payload)])
+        archive = archive.rename(extra / archive.name)
+        self.bind_archive(header, "d2_extra_1_hog", archive)
+        header["asset_fingerprints"]["files"].append(
+            {
+                "role": "d2_extra_1_ham",
+                "name": "extra.ham",
+                "container": "d2_extra_1_hog",
+                "size": len(payload),
+                "sha256": hashlib.sha256(payload).hexdigest(),
+            }
+        )
+        with self.assertRaisesRegex(assets.AssetError, "Missing"):
+            assets.verify_header(header, self.data, "d2")
+        self.assertEqual(assets.verify_header(header, self.data, "d2", extra=extra)["status"], "verified")
+        loose.rename(extra / "renamed.vham")
+        self.assertEqual(assets.verify_header(header, self.data, "d2", extra=extra)["status"], "verified")
+        self.assertIsNone(assets.shareware_game(header))
+        archive.write_bytes(archive.read_bytes()[:-1] + b"!")
+        for allow in (False, True):
+            with self.assertRaisesRegex(assets.AssetError, "mismatch"):
+                assets.verify_header(header, self.data, "d2", extra=extra, allow_unverified=allow)
+
+    def test_supplemental_sequence_rejects_gaps_orphans_and_wrong_containers(self):
+        header = self.header("native_d2")
+        row = {"role": "d2_extra_0_ham", "name": "extra.ham", "size": 1, "sha256": "a" * 64}
+        header["asset_fingerprints"]["files"].append(row)
+        assets.fingerprints(header)
+        for role in ("d2_extra_1_ham", "d2_extra_16_ham", "d2_extra_00_ham", "d2_extra_0_hog"):
+            bad = copy.deepcopy(header)
+            bad["asset_fingerprints"]["files"][-1]["role"] = role
+            with self.assertRaises(assets.AssetError):
+                assets.fingerprints(bad)
+        for container in ("d2_extra_1_hog", "d2_extra_16_hog", [], True):
+            bad = copy.deepcopy(header)
+            bad["asset_fingerprints"]["files"][-1]["container"] = container
+            with self.assertRaises(assets.AssetError):
+                assets.fingerprints(bad)
+
     def test_mission_hog_member_overrides_loose_but_not_preferred_filename(self):
         header = self.header("native_d2")
         pig = next(row for row in header["asset_fingerprints"]["files"] if row["role"] == "d2_pig")
@@ -208,6 +255,31 @@ class AssetPreflightTests(unittest.TestCase):
         ham["container"] = "d2_pig"
         with self.assertRaisesRegex(assets.AssetError, "container must"):
             assets.fingerprints(header)
+
+    def test_extended_hog_names_payload_and_rejections(self):
+        # Match the shared native hog_format.h dialect, including DHF long names
+        path = self.data / "extended.hog"
+        payload = b"owned supplemental asset"
+        long_name = b"a-resource-name-longer-than-thirteen.ham"
+        prefix = b"alias.ham".ljust(13, b"\0") + struct.pack("<i", -len(payload))
+        entry = prefix + long_name.ljust(256, b"\0") + payload
+        for signature in (b"DHF", b"D2X"):
+            path.write_bytes(signature + entry)
+            self.assertEqual(
+                assets._hog_member(path, [long_name.decode()])[1:], (len(payload), hashlib.sha256(payload).hexdigest())
+            )
+            self.assertIsNone(assets._hog_member(path, ["alias.ham"]))
+        for bad in (
+            prefix + b"short",
+            prefix + b"x" * 256 + payload,
+            prefix + b"../escape".ljust(256, b"\0") + payload,
+            prefix + long_name.ljust(256, b"\0") + payload[:-1],
+            entry + entry,
+            b"bad".ljust(13, b"\0") + struct.pack("<i", -2147483648),
+        ):
+            path.write_bytes(b"D2X" + bad)
+            with self.assertRaises(assets.AssetError):
+                assets._hog_member(path, [long_name.decode()])
 
     def test_malformed_and_incomplete_cannot_be_bypassed(self):
         original = self.header()

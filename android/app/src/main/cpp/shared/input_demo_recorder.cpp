@@ -1,5 +1,6 @@
 #include "input_demo_cheats.h"
 #include "input_demo_recorder.h"
+#include "input_demo_fp_env.h"
 
 #include <stdio.h>
 
@@ -69,10 +70,15 @@ struct input_demo_recorder_session {
 	input_demo_level_start level_start{};
 	bool has_player_cfg;
 	input_demo_player_cfg player_cfg;
+	input_demo_player_cfg current_player_cfg{};
 	bool has_rear_view_baseline = false;
 	input_demo_rear_view_baseline rear_view_baseline = {};
 	bool has_view_projection = false;
 	input_demo_view_projection view_projection = {};
+	bool has_environment = false;
+	input_demo_environment_clock environment{}, last_environment{};
+	std::vector<input_demo_environment_sample> pending_environment, current_environment;
+	size_t current_environment_operations = 0;
 	bool has_checkpoint;
 	std::string checkpoint_save_name;
 	std::vector<unsigned char> checkpoint_data;
@@ -187,6 +193,25 @@ static int input_demo_recorder_input_fail(const std::string &message, char *erro
 	session.input_failed = true;
 	session.input_error = message;
 	return input_demo_recorder_copy_error(message, error, error_size);
+}
+
+static int input_demo_recorder_finish_environment(char *error, size_t error_size)
+{
+	auto &session = g_input_demo_recorder_session;
+	if (!session.has_environment || session.frame_lines.empty() || session.current_environment.empty()) return 1;
+	std::string encoded, detail;
+	auto previous = session.last_environment;
+	if (!input_demo_environment_to_json(session.current_environment, session.current_environment_operations,
+	                                    false, &previous, &encoded, &detail))
+		return input_demo_recorder_input_fail(detail, error, error_size);
+	auto &line = session.frame_lines.back();
+	if (!input_demo_record_size_supported(line.size() + encoded.size() + 15))
+		return input_demo_recorder_input_fail("environment frame exceeds the record limit", error, error_size);
+	line.pop_back();
+	line += ",\"environment\":" + encoded + "}";
+	session.last_environment = previous;
+	session.current_environment.clear();
+	return 1;
 }
 
 static int input_demo_recorder_append_operation(const input_demo_input_operation &operation, char *error, size_t error_size)
@@ -401,7 +426,7 @@ static bool input_demo_recorder_build_envelope(input_demo_file *demo,
 		if (session.input_failed) return input_demo_recorder_fail(error, session.input_error);
 		if (!session.has_input_tail || session.pending_input.present)
 			return input_demo_recorder_fail(error, "ordered recording requires finalized input tail");
-		demo->metadata.version = 5;
+		demo->metadata.version = session.has_environment ? 6 : 5;
 		demo->has_input_tail = true;
 		demo->input_tail = session.input_tail;
 	}
@@ -425,6 +450,8 @@ static bool input_demo_recorder_build_envelope(input_demo_file *demo,
 	demo->metadata.rear_view_baseline = session.rear_view_baseline;
 	demo->metadata.has_view_projection = session.has_view_projection;
 	demo->metadata.view_projection = session.view_projection;
+	demo->metadata.has_environment = session.has_environment;
+	demo->metadata.environment = session.environment;
 	if (session.has_checkpoint) {
 		demo->metadata.start_save = session.checkpoint_save_name;
 		demo->has_checkpoint = true;
@@ -474,6 +501,8 @@ void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings)
 	settings->rear_view_baseline = {};
 	settings->has_view_projection = 0;
 	settings->view_projection = {};
+	settings->has_environment = 0;
+	settings->environment = {};
 }
 
 int input_demo_recorder_is_active(void)
@@ -511,6 +540,8 @@ int input_demo_recorder_truncate(uint32_t frame_count)
 {
 	if (!g_input_demo_recorder_session.active)
 		return 0;
+	// A truncated environmental stream cannot reconstruct its pending clock basis
+	if (g_input_demo_recorder_session.has_environment) return 0;
 	if (frame_count > g_input_demo_recorder_session.control_frames.size())
 		return 0;
 	g_input_demo_recorder_session.control_frames.resize(frame_count);
@@ -578,6 +609,10 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 	if (settings->has_view_projection && (!settings->ordered_input || !input_demo_view_projection_supported(&settings->view_projection) ||
 	                                      (settings->game == INPUT_DEMO_GAME_D1 && settings->view_projection.missile_view_enabled)))
 		return input_demo_recorder_copy_error("invalid or legacy view projection", error, error_size);
+	if (settings->has_environment && (!settings->ordered_input || settings->game != INPUT_DEMO_GAME_D2 ||
+	                                  settings->environment.clock_ms < 26 || settings->environment.clock_ms > INT64_MAX - INT32_MAX ||
+	                                  settings->environment.pickup_ms > INT32_MAX || settings->environment.cached_ms > INT32_MAX))
+		return input_demo_recorder_copy_error("invalid or legacy XL environment origin", error, error_size);
 	if (have_checkpoint) {
 		if (!settings->checkpoint_save_name || !settings->checkpoint_save_name[0])
 			return input_demo_recorder_copy_error("missing recorder checkpoint_save_name", error, error_size);
@@ -591,6 +626,37 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 
 	if (have_checkpoint && settings->level_start)
 		return input_demo_recorder_copy_error("level start cannot contain a checkpoint", error, error_size);
+	if (settings->has_environment) {
+		if (!INPUT_DEMO_STRICT_FP_BUILD)
+			return input_demo_recorder_copy_error("XL input demos require a supported strict floating point C++ build", error, error_size);
+		if (!input_demo_validate_xl_fp_environment(error, error_size)) return 0;
+		// Use the same admission contract before starting or replacing any capture
+		input_demo_metadata metadata;
+		metadata.version = 6;
+		metadata.game = "d2";
+		metadata.mission = settings->mission;
+		metadata.git_version = input_demo_recorder_git_version();
+		metadata.arch = input_demo_recorder_arch();
+		metadata.level = settings->level;
+		metadata.difficulty = settings->difficulty;
+		metadata.start_mode = have_checkpoint ? "save_checkpoint" : "new_level";
+		if (have_checkpoint) metadata.start_save = settings->checkpoint_save_name;
+		metadata.rng_mode = settings->rng_mode;
+		metadata.frame_count = 1;
+		metadata.has_level_start = settings->level_start != nullptr;
+		if (settings->level_start) metadata.level_start = *settings->level_start;
+		metadata.has_player_cfg = settings->has_player_cfg != 0;
+		metadata.player_cfg = settings->player_cfg;
+		metadata.has_view_projection = settings->has_view_projection != 0;
+		metadata.view_projection = settings->view_projection;
+		metadata.has_rear_view_baseline = settings->has_rear_view_baseline != 0;
+		metadata.rear_view_baseline = settings->rear_view_baseline;
+		metadata.has_environment = true;
+		metadata.environment = settings->environment;
+		std::string encoded, detail;
+		if (!input_demo_metadata_to_header_line(metadata, &encoded, &detail))
+			return input_demo_recorder_copy_error(detail, error, error_size);
+	}
 	input_demo_recorder_reset_session();
 	input_demo_rng_trace_start();
 	g_input_demo_recorder_session.has_level_start = settings->level_start != NULL;
@@ -606,10 +672,13 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 	g_input_demo_recorder_session.has_player_cfg = settings->has_player_cfg ? true : false;
 	if (settings->has_player_cfg)
 		g_input_demo_recorder_session.player_cfg = settings->player_cfg;
+	g_input_demo_recorder_session.current_player_cfg = g_input_demo_recorder_session.player_cfg;
 	g_input_demo_recorder_session.has_rear_view_baseline = settings->has_rear_view_baseline != 0;
 	g_input_demo_recorder_session.rear_view_baseline = settings->rear_view_baseline;
 	g_input_demo_recorder_session.has_view_projection = settings->has_view_projection != 0;
 	g_input_demo_recorder_session.view_projection = settings->view_projection;
+	g_input_demo_recorder_session.has_environment = settings->has_environment != 0;
+	g_input_demo_recorder_session.environment = g_input_demo_recorder_session.last_environment = settings->environment;
 	g_input_demo_recorder_session.has_checkpoint = have_checkpoint ? true : false;
 	g_input_demo_recorder_session.record_per_frame_state = settings->record_per_frame_state ? true : false;
 	g_input_demo_recorder_session.ordered_input = settings->ordered_input != 0;
@@ -660,6 +729,7 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 		return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
 	if (!state || !pulse)
 		return input_demo_recorder_copy_error("missing frame control state", error, error_size);
+	if (!input_demo_recorder_finish_environment(error, error_size)) return 0;
 
 	input_demo_control_frame_clear(&control_frame);
 	control_frame.frame = static_cast<uint32_t>(session.control_frames.size());
@@ -722,6 +792,13 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 		return input_demo_recorder_input_fail("ordered frame exceeds the record limit", error, error_size);
 	session.control_frames.push_back(control_frame);
 	session.frame_lines.push_back(std::move(line));
+	if (session.has_environment) {
+		session.current_environment = std::move(session.pending_environment);
+		session.pending_environment.clear();
+		session.current_environment_operations = frame.dispatch.operations.size();
+		if (session.current_environment.empty())
+			return input_demo_recorder_input_fail("environment input boundary was not captured", error, error_size);
+	}
 	session.extended_frames.push_back((has_diag ? INPUT_DEMO_RECORDED_DIAG : 0) |
 	                                  (has_events ? INPUT_DEMO_RECORDED_EVENTS : 0));
 	session.pending_frame_events.clear();
@@ -735,6 +812,38 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 int input_demo_recorder_uses_ordered_input(void)
 {
 	return g_input_demo_recorder_session.active && g_input_demo_recorder_session.ordered_input;
+}
+
+int input_demo_recorder_uses_environment(void)
+{
+	return g_input_demo_recorder_session.active && g_input_demo_recorder_session.has_environment;
+}
+
+int input_demo_recorder_peek_environment(input_demo_environment_clock *clock)
+{
+	const auto &session = g_input_demo_recorder_session;
+	if (!clock || !input_demo_recorder_uses_environment() || session.input_failed) return 0;
+	// Pending input follows the last SIM frame; finalized storage is the fallback
+	*clock = !session.pending_environment.empty() ? session.pending_environment.back().clock : !session.current_environment.empty() ? session.current_environment.back().clock
+	                                                                                                                                : session.last_environment;
+	return 1;
+}
+
+int input_demo_recorder_observe_environment(const char *consumer, int subject, int simulation,
+                                            const input_demo_environment_clock *clock, char *error, size_t error_size)
+{
+	auto &session = g_input_demo_recorder_session;
+	if (!input_demo_recorder_uses_environment() || !consumer || !clock)
+		return input_demo_recorder_copy_error("environment capture is unavailable", error, error_size);
+	if (session.input_failed) return input_demo_recorder_copy_error(session.input_error, error, error_size);
+	if (session.has_input_tail || (simulation && (session.current_environment.empty() || session.pending_input.present)))
+		return input_demo_recorder_input_fail("environment observation is outside its capture phase", error, error_size);
+	auto &samples = simulation ? session.current_environment : session.pending_environment;
+	if (samples.size() >= INPUT_DEMO_ENVIRONMENT_SAMPLE_MAX)
+		return input_demo_recorder_input_fail("environment sample limit exceeded", error, error_size);
+	samples.push_back({ static_cast<uint32_t>(samples.size()), simulation != 0,
+	                    simulation ? 0u : static_cast<uint32_t>(session.pending_input.operations.size()), consumer, subject, *clock });
+	return 1;
 }
 
 int input_demo_recorder_begin_input_batch(uint32_t rng_state, uint32_t rng_count,
@@ -807,6 +916,26 @@ int input_demo_recorder_stage_input_cockpit(int32_t frame_time, int32_t current_
 	return input_demo_recorder_append_operation(operation, error, error_size);
 }
 
+int input_demo_recorder_observe_player_cfg(int32_t frame_time, const input_demo_player_cfg *cfg,
+                                           int allow_change, char *error, size_t error_size)
+{
+	auto &session = g_input_demo_recorder_session;
+	if (!input_demo_recorder_uses_environment()) return 1;
+	if (session.input_failed) return input_demo_recorder_copy_error(session.input_error, error, error_size);
+	if (!cfg || !session.has_player_cfg)
+		return input_demo_recorder_input_fail("missing captured player configuration", error, error_size);
+	if (!memcmp(cfg, &session.current_player_cfg, sizeof(*cfg))) return 1;
+	if (!allow_change)
+		return input_demo_recorder_input_fail("player configuration changed inside simulation", error, error_size);
+	input_demo_input_operation operation{};
+	operation.kind = INPUT_DEMO_INPUT_PLAYER_CFG;
+	operation.frame_time = frame_time;
+	operation.player_cfg = *cfg;
+	if (!input_demo_recorder_append_operation(operation, error, error_size)) return 0;
+	session.current_player_cfg = *cfg;
+	return 1;
+}
+
 static int input_demo_recorder_stage_control_operation(int kind, int32_t frame_time,
                                                        const input_demo_control_state *state,
                                                        const input_demo_control_pulse *pulse,
@@ -849,6 +978,7 @@ int input_demo_recorder_finish_input_tail(const input_demo_control_state *state,
 	if (session.input_failed) return input_demo_recorder_copy_error(session.input_error, error, error_size);
 	if (!state || !pulse || session.has_input_tail)
 		return input_demo_recorder_input_fail("missing tail controls or duplicate input tail", error, error_size);
+	if (!input_demo_recorder_finish_environment(error, error_size)) return 0;
 	if (session.automap_phase != 0 && session.automap_phase != INPUT_DEMO_AUTOMAP_ACTIVE)
 		return input_demo_recorder_input_fail("input tail cannot end during incomplete automap entry", error, error_size);
 	auto &tail = session.input_tail;
@@ -868,6 +998,14 @@ int input_demo_recorder_finish_input_tail(const input_demo_control_state *state,
 		tail.dispatch.pre_rng_state = rng_state;
 		tail.dispatch.pre_rng_count = rng_count;
 	}
+	if (session.has_environment) {
+		tail.has_environment = true;
+		tail.environment = session.pending_environment;
+		std::string encoded, detail;
+		if (!input_demo_environment_to_json(tail.environment, tail.dispatch.operations.size(), true,
+		                                    &session.last_environment, &encoded, &detail))
+			return input_demo_recorder_input_fail(detail, error, error_size);
+	}
 	std::string encoded, detail;
 	if (!input_demo_frame_to_json_line(tail, session.game, &encoded, &detail))
 		return input_demo_recorder_input_fail(detail, error, error_size);
@@ -875,6 +1013,7 @@ int input_demo_recorder_finish_input_tail(const input_demo_control_state *state,
 		return input_demo_recorder_input_fail("ordered input tail exceeds the record limit", error, error_size);
 	session.pending_frame_events.clear();
 	session.pending_frame_event_bytes = 0;
+	session.pending_environment.clear();
 	session.pending_input = input_demo_input_batch();
 	session.pending_input_bytes = 64;
 	session.has_input_tail = true;
@@ -1095,6 +1234,14 @@ int input_demo_recorder_stage_direct_command_select_weapon_exact(int weapon_clas
 	event["command"] = "select_weapon_exact";
 	event["weapon_class"] = weapon_class;
 	event["weapon_index"] = weapon_index;
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
+}
+
+int input_demo_recorder_stage_direct_command_xl_time_control(int bullet_time, char *error, size_t error_size)
+{
+	if (!g_input_demo_recorder_session.has_environment || bullet_time < 0 || bullet_time > 1)
+		return input_demo_recorder_input_fail("XL time control requires a supported environment timeline", error, error_size);
+	const ordered_json event = { { "kind", "direct_command" }, { "command", "xl_time_control" }, { "bullet_time", bullet_time != 0 } };
 	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
 }
 

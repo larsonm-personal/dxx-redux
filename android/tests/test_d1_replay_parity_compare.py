@@ -17,6 +17,10 @@ import d1_replay_parity as parity
 def schema_example(schema):
     if schema is int:
         return 0
+    if schema is bool:
+        return False
+    if schema is float:
+        return 0.0
     if isinstance(schema, dict):
         return {key: schema_example(child) for key, child in schema.items() if key != "*"}
     if isinstance(schema, tuple):
@@ -404,6 +408,19 @@ class ParityTests(unittest.TestCase):
         report = parity.compare_frames(a, b, self.header, "d1")
         self.assertEqual(report["status"], "fail")
         self.assertIn("diag", report["first_differences"])
+
+    def test_live_unknown_horizon_still_requires_complete_frames(self):
+        live = self.trace("live")
+        self.mutate(live, lambda rows: rows[0].update(source="record", frame_count=0))
+        self.assertEqual(len(list(parity.frames(live, self.header, "d1"))), 2)
+        self.mutate(live, lambda rows: rows.pop())
+        with self.assertRaisesRegex(parity.EvidenceError, "Missing frame evidence"):
+            list(parity.frames(live, self.header, "d1"))
+        for source in ("replay", "unknown"):
+            trace = self.trace(source)
+            self.mutate(trace, lambda rows: rows[0].update(source=source, frame_count=0))
+            with self.assertRaisesRegex(parity.EvidenceError, "Unexpected frame_count"):
+                list(parity.frames(trace, self.header, "d1"))
 
     def test_diagnostic_contract_covers_the_complete_producer(self):
         shared = Path(__file__).resolve().parents[1] / "app/src/main/cpp/shared"
@@ -930,11 +947,24 @@ class ParityTests(unittest.TestCase):
             parity.compare_rng(a, b, stream=1)
 
     def test_missing_rng_values_and_unknown_streams_are_incomplete(self):
-        for mutation in (lambda rows: rows[1].pop("result"), lambda rows: rows[1].update(stream=2)):
+        for mutation in (lambda rows: rows[1].pop("result"), lambda rows: rows[1].update(stream=3)):
             path = self.rng("rng")
             self.mutate(path, mutation)
             with self.assertRaises(parity.EvidenceError):
                 list(parity.rng_events(path))
+
+    def test_presentation_rng_retains_differences_and_requires_complete_diagnostics(self):
+        a, b = self.rng("presentation-a"), self.rng("presentation-b")
+        for path in (a, b):
+            self.mutate(path, lambda rows: rows[2].update(stream=2))
+        self.mutate(b, lambda rows: rows[2].update(result=3))
+        self.assertEqual(parity.compare_rng(a, b)["status"], "pass")
+        report = parity.compare_rng(a, b, stream=2)
+        self.assertEqual(report["presentation_events_compared"], 1)
+        self.assertEqual(report["status"], "fail")
+        self.mutate(b, lambda rows: rows[2].pop("result"))
+        with self.assertRaises(parity.EvidenceError):
+            parity.compare_rng(a, b)
 
     def test_effects_rng_does_not_set_the_gameplay_verdict(self):
         a, b = self.rng("rng-a"), self.rng("rng-b")
@@ -1337,6 +1367,228 @@ class ParityTests(unittest.TestCase):
         for path, engine in ((a, "d2"), (b, "d1")):
             with self.assertRaises(parity.EvidenceError):
                 list(parity.world_states(path, self.header, engine))
+
+    def native_d2_trace(self, name, world):
+        self.header.update(
+            game="d2",
+            mission="native-test",
+            version=6,
+            environment={"required": ["xl-clock-input-v1"], "slow_motion_speedup": 6},
+        )
+        path = self.world_trace(name) if world else self.object_trace(name)
+
+        def convert(rows):
+            for row in rows:
+                if row["type"] in ("world_state", "world_boundary"):
+                    row["version"] = 11
+                if row["type"] in ("object_state", "object_boundary"):
+                    row["capacity"] = 1367
+                    row["allocator"]["free_obj_list"] = list(range(1367))
+                    if world:
+                        row["slots"]["3"] = self.robot_object()
+                        self.import_robot(row["slots"]["3"])
+                        row["allocator"].update(num_objects=1, highest_object_index=3)
+                    obj = row["slots"]["3"]
+                    if obj["control_type"] == 9:
+                        obj["weapon"].pop("hitobj_list")
+                        obj["weapon"].update(xl_hit_order=[0, 1], last_hitobj=1)
+                    obj.update(
+                        render_type=1,
+                        polyobj={
+                            "model_num": 1,
+                            "subobj_flags": 0,
+                            "tmap_override": -1,
+                            "alt_textures": 0,
+                            "anim_angles": [[0, 0, 0]] * 10,
+                        },
+                    )
+                state = row.get("state", {})
+                if "ai" in state:
+                    self.import_world_storage(state)
+                    state["ai"]["local_capacity"] = 1367
+                    state["effects"] = [{**schema_example(parity.WORLD_SCHEMA["effects"][0]), "segnum": -1}]
+                    state["xl_player_cfg"] = schema_example(parity.XL_PLAYER_CFG_SCHEMA)
+                    for key in ("primary_order", "secondary_order"):
+                        state["xl_player_cfg"][key] = list(range(10)) + [255]
+                    state["xl_time"] = schema_example(parity.XL_TIME_SCHEMA)
+                    state["xl_time"].update(version=1, bound=True, anchor=[26, 0, 0, 0])
+                    state["xl_time"]["slow_motion"]["clocks"] = [[1.0, 0, 26, False]] * 2
+                    state["xl_triggers"] = [[0, -1, -1, 0, 0, 0, 0, 0, 0, 0] for _ in state["triggers"]]
+                    state["xl_cameras"] = {"version": 1, "ticks": 0, "states": []}
+
+        self.mutate(path, convert)
+        return path
+
+    def test_native_d2_compares_full_storage_and_only_audited_absence_sentinels(self):
+        for world in (False, True):
+            left = self.native_d2_trace("native-d2-left", world)
+            right = self.write("native-d2-right", list(parity.records(left)))
+            compare = parity.compare_world if world else parity.compare_objects
+
+            def absent(rows):
+                for row in rows:
+                    if "slots" in row:
+                        row["slots"]["3"]["polyobj"]["alt_textures"] = -1
+                    if "effects" in row.get("state", {}):
+                        row["state"]["effects"][0]["sidenum"] = -1
+
+            self.mutate(right, absent)
+            original = right.read_bytes()
+            self.assertEqual(compare(left, right, self.header, "d2", "d2")["status"], "pass")
+            self.assertEqual(right.read_bytes(), original)
+            with self.assertRaises(parity.EvidenceError):
+                compare(left, right, self.header, "d2")
+            # Positive overrides, unknown fields and FX histories remain compared
+            for kind in ("override", "unknown", "fx"):
+                bad = self.write("native-d2-bad", list(parity.records(right)))
+
+                def change(rows):
+                    row = next(row for row in rows if "slots" in row)
+                    if kind == "override":
+                        row["slots"]["3"]["polyobj"]["alt_textures"] = 1
+                    elif kind == "unknown":
+                        row["slots"]["3"]["future_gameplay"] = 7
+                    else:
+                        row["rng"][1]["calls"] += 1
+
+                self.mutate(bad, change)
+                self.assertEqual(compare(left, bad, self.header, "d2", "d2")["status"], "fail")
+
+    def test_native_d2_active_effect_sides_are_never_normalized(self):
+        left = self.native_d2_trace("effect-left", True)
+        self.mutate(
+            left,
+            lambda rows: [
+                row["state"]["effects"][0].update(flags=2) for row in rows if "effects" in row.get("state", {})
+            ],
+        )
+        right = self.write("effect-right", list(parity.records(left)))
+        self.mutate(
+            right,
+            lambda rows: [
+                row["state"]["effects"][0].update(sidenum=-1) for row in rows if "effects" in row.get("state", {})
+            ],
+        )
+        self.assertEqual(parity.compare_world(left, right, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_storage_requires_profile_complete_pool_and_consistent_ai_capacity(self):
+        path = self.native_d2_trace("xl-pool", True)
+        list(parity.world_states(path, self.header, "d2"))
+        for environment in ({}, None, {"required": ["future"], "slow_motion_speedup": 6}):
+            header = {**self.header, "environment": environment}
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(path, header, "d2"))
+        for kind in ("capacity", "allocator", "ai", "terminal"):
+            bad = self.write("xl-bad-pool", list(parity.records(path)))
+
+            def change(rows):
+                if kind == "capacity":
+                    rows[1]["capacity"] = 32769
+                elif kind == "allocator":
+                    rows[1]["allocator"]["free_obj_list"].pop()
+                elif kind == "ai":
+                    rows[2]["state"]["ai"]["local_capacity"] -= 1
+                else:
+                    rows[-2]["capacity"] = 1368
+                    rows[-2]["allocator"]["free_obj_list"].append(1367)
+
+            self.mutate(bad, change)
+            with self.subTest(kind=kind), self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+
+    def test_xl_projectile_history_is_ordered_bounded_and_required(self):
+        path = self.native_d2_trace("xl-hits", False)
+        for invalid in ([0, 0], [-1], [1367], list(range(21)), [0], [True]):
+            bad = self.write("xl-bad-hits", list(parity.records(path)))
+            self.mutate(bad, lambda rows: rows[1]["slots"]["3"]["weapon"].update(xl_hit_order=invalid))
+            with self.subTest(hits=invalid), self.assertRaises(parity.EvidenceError):
+                list(parity.object_states(bad, self.header, "d2"))
+        bad = self.write("xl-mixed-hits", list(parity.records(path)))
+        self.mutate(bad, lambda rows: rows[1]["slots"]["3"]["weapon"].update(hitobj_list=[0] * 1000))
+        with self.assertRaises(parity.EvidenceError):
+            list(parity.object_states(bad, self.header, "d2"))
+        changed = self.write("xl-reordered-hits", list(parity.records(path)))
+        self.mutate(changed, lambda rows: rows[1]["slots"]["3"]["weapon"].update(xl_hit_order=[1, 0], last_hitobj=0))
+        report = parity.compare_objects(path, changed, self.header, "d2", "d2")
+        self.assertEqual(report["status"], "fail")
+
+    def test_xl_camera_requires_static_ai_used_by_collision_admission(self):
+        path = self.native_d2_trace("xl-camera", True)
+        self.mutate(
+            path, lambda rows: [row["slots"]["3"].update(type=16, control_type=18) for row in rows if "slots" in row]
+        )
+        list(parity.world_states(path, self.header, "d2"))
+        changed = self.write("xl-camera-change", list(parity.records(path)))
+        self.mutate(changed, lambda rows: rows[1]["slots"]["3"]["ai"].update(behavior=129))
+        self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+        self.mutate(changed, lambda rows: rows[1]["slots"]["3"].pop("ai"))
+        with self.assertRaisesRegex(parity.EvidenceError, "Missing world field"):
+            list(parity.world_states(changed, self.header, "d2"))
+
+    def test_xl_clock_observation_is_required_typed_and_compared(self):
+        path = self.native_d2_trace("xl-time", True)
+        for key in ("xl_time", "xl_cameras", "xl_triggers", "xl_player_cfg"):
+            bad = self.write("xl-missing-time", list(parity.records(path)))
+            self.mutate(bad, lambda rows: rows[2]["state"].pop(key))
+            with self.assertRaisesRegex(parity.EvidenceError, "Missing world field"):
+                list(parity.world_states(bad, self.header, "d2"))
+        mutations = (
+            lambda time: time.update(bound=False),
+            lambda time: time.update(bound=1),
+            lambda time: time.update(anchor=[25, 0, 0, 0]),
+            lambda time: time.update(anchor=[26, 0, 0, -1]),
+            lambda time: time["slow_motion"]["clocks"][0].__setitem__(0, True),
+            lambda time: time["slow_motion"]["clocks"][0].__setitem__(0, float("nan")),
+            lambda time: time["slow_motion"]["clocks"][0].__setitem__(2, 27),
+            lambda time: time["slow_motion"].update(pickups=[[3, 48, 0], [3, 49, 0]]),
+        )
+        for mutate in mutations:
+            bad = self.write("xl-invalid-time", list(parity.records(path)))
+            self.mutate(bad, lambda rows: mutate(rows[2]["state"]["xl_time"]))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        changed = self.write("xl-pending-time", list(parity.records(path)))
+        self.mutate(changed, lambda rows: rows[2]["state"]["xl_time"]["slow_motion"].update(bullet_requested=True))
+        self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_player_settings_are_complete_and_compared(self):
+        path = self.native_d2_trace("xl-settings", True)
+        for key in parity.XL_PLAYER_CFG_SCHEMA:
+            bad = self.write("xl-settings-missing", list(parity.records(path)))
+            self.mutate(bad, lambda rows: rows[2]["state"]["xl_player_cfg"].pop(key))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        for value in (True, 2, -1):
+            bad = self.write("xl-settings-bad-boolean", list(parity.records(path)))
+            self.mutate(bad, lambda rows: rows[2]["state"]["xl_player_cfg"].update(original_homing=value))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        changed = self.write("xl-settings-changed", list(parity.records(path)))
+        self.mutate(changed, lambda rows: rows[2]["state"]["xl_player_cfg"].update(original_homing=1))
+        self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_trigger_cooldown_is_required_and_compared(self):
+        path = self.native_d2_trace("xl-trigger", True)
+
+        def populate(rows):
+            for row in rows:
+                if "ai" in row.get("state", {}):
+                    row["state"]["triggers"] = [schema_example(parity.WORLD_SCHEMA["triggers"][0])]
+                    row["state"]["triggers"][0].update(
+                        segments=[0] * 10, sides=[0] * 10, pad=0, d1_saved={"type": 0, "link_num": 0}
+                    )
+                    row["state"]["xl_triggers"] = [[0, -1, -1, 0, 0, 0, 0, 0, 1, 749]]
+
+        self.mutate(path, populate)
+        list(parity.world_states(path, self.header, "d2"))
+        for active, age in ((2, 0), (0, 1), (1, -1), (1, 751), (True, 0)):
+            bad = self.write("xl-invalid-trigger", list(parity.records(path)))
+            self.mutate(bad, lambda rows: rows[2]["state"]["xl_triggers"][0].__setitem__(slice(8, 10), [active, age]))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        changed = self.write("xl-expired-trigger", list(parity.records(path)))
+        self.mutate(changed, lambda rows: rows[2]["state"]["xl_triggers"][0].__setitem__(9, 750))
+        self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
 
     def test_world_engine_identity_is_checked_before_mapping_empty_object_boundaries(self):
         a = self.world_trace("native-world-identity")

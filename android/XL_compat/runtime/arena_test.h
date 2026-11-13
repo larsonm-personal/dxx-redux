@@ -651,15 +651,15 @@ static int arena_test(int argc, char **argv)
 				std::string line;
 				std::getline(file, line);
 				const auto header = nlohmann::json::parse(line);
-				require(header.at("mission") == "rtarena" && header.at("start_mode") == "new_level" && header.at("level") == 1 && header.at("frame_count") == into,
-				        "water traversal recording lacks new-level start or complete inputs");
+				require(header.at("mission") == "rtarena" && header.at("start_mode") == "save_checkpoint" && header.at("level") == 1 && header.at("frame_count") == into,
+				        "water traversal recording lacks the XL spawn checkpoint or complete inputs");
 				std::filesystem::copy_file(entry.path(), root / "xl-water-spawn.dximdemo", std::filesystem::copy_options::overwrite_existing);
 				exported = true;
 			}
 			require(exported, "water traversal recording was not exported");
 			require(write_player_file() == 0, "cannot export water traversal player profile");
 			std::cout << "Arena spawn input recording: segment=" << spawn_segment << " frames=" << into
-			          << "; new-level start and controls exported; cross-platform replay unverified\n";
+			          << "; XL spawn checkpoint and controls exported; cross-platform replay unverified\n";
 		}
 		std::cout << "Arena water reached through ordinary controls in " << into << " frames\n";
 		char save[] = "xl-water.sav", description[] = "Water segment checkpoint";
@@ -678,7 +678,7 @@ static int arena_test(int argc, char **argv)
 		require(state_restore_all_sub(save, 0) != 0, "water restore failed");
 		require(xl_resource_texture_scope_enabled() && *mission_resource_archive(), "water save restore lost XL resource identity");
 		require(ConsoleObject->segnum == 187 && !std::memcmp(&ConsoleObject->pos, &saved_position, sizeof(saved_position)) && xl_preview_water_segment(187), "water checkpoint did not restore property/position");
-		require(d_rand_get_stream_call_count(D_RNG_SIM) == 0, "native restore did not reset diagnostic SIM count");
+		require(d_rand_get_stream_call_count(D_RNG_SIM) == saved_rng_calls, "native restore changed the saved SIM draw count");
 		const auto restored_state = arena_state();
 		require(arena_animation_phases() == saved_animation, "native restore changed render-only animation phases");
 		for (std::size_t i = 0; i < saved_state.size(); ++i)
@@ -690,7 +690,7 @@ static int arena_test(int argc, char **argv)
 		std::cout << "Replay frames " << out << " -> " << replay_frames << '\n';
 		for (std::size_t i = 0; i < expected_state.size(); ++i)
 			if (expected_state[i] != replay_state[i]) std::cout << "Replay field " << i << ": " << expected_state[i] << " -> " << replay_state[i] << '\n';
-		require(d_rand_get_stream_call_count(D_RNG_SIM) == expected_rng_calls, "water replay consumed different SIM samples");
+		require(d_rand_get_stream_call_count(D_RNG_SIM) - saved_rng_calls == expected_rng_calls, "water replay consumed different SIM samples");
 		require(replay_frames == out && replay_state == expected_state, "water checkpoint replay diverged");
 		std::cout << "Arena water exit: " << out << " frames; checkpoint replay matches position/orientation/velocity/player/time/SIM RNG\n";
 		{

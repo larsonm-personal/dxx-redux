@@ -1,6 +1,7 @@
 foreach(
     pair IN
     ITEMS "main/textdata.cpp|d6172ffd9c3e94162358228ce168dd005d03feba231f45165b97f9b4ff1c0c5c"
+          "main/gametime.cpp|758b4a92b3800c0407c659f2829792e64cdabba7a818b27a64e6e267446d269b"
           "main/trigger.cpp|74f1284260fb4a4bb7396bc45eeb83868a7f2dfa5e3fdf0bcb767b94f1b12852"
           "include/descent.h|f8c34f569c51541dc4d1e69ae3ac04972401b4c6cad99ac450bbc57a245f83e4")
     string(REPLACE "|" ";" parts "${pair}")
@@ -18,6 +19,7 @@ string(FIND "${tail}" "\n};" end)
 math(EXPR length "${end} + 3")
 string(SUBSTRING "${tail}" 0 ${length} text_types)
 set(extracted "// Actual pinned text records and reader bodies\n${text_types}\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/gametime.cpp" "void CalcFrameTime (")
 foreach(signature IN ITEMS "void FreeTextData (" "void QSortTextData (" "void LoadTextData ("
                            "tTextIndex *FindTextData (" "int32_t ShowGameMessage (")
     extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/textdata.cpp" "${signature}")

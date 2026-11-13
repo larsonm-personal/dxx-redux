@@ -45,11 +45,11 @@ xl_compat::ParticleAnimationClock animation_clock;
 struct EffectsRandom {
 	int bounded(int limit) const
 	{
-		return d_rand_fx() % limit;
+		return d_rand_presentation() % limit;
 	}
 	float unit() const
 	{
-		return float(d_rand_fx()) / 32767.0f;
+		return float(d_rand_presentation()) / 32767.0f;
 	}
 };
 bool native_particle(int index)

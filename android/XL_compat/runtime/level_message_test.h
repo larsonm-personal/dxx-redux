@@ -1,4 +1,67 @@
 #include "level_messages.h"
+#include "input_demo_newdemo_shared.h"
+#include "input_demo_recorder.h"
+#include "input_demo_replay.h"
+
+static void message_recorded_clock()
+{
+	const auto directory = std::filesystem::path(PHYSFS_getWriteDir()) / "input_demo_recordings" / "new";
+	std::set<std::filesystem::path> prior;
+	if (std::filesystem::exists(directory))
+		for (const auto &entry : std::filesystem::directory_iterator(directory)) prior.insert(entry.path());
+	require(input_demo_start_quick_recording_common() && input_demo_recorder_uses_environment(), "Cannot record native message clock control");
+	for (int frame = 0; frame < 2; ++frame) {
+		timer_delay(F1_0 / 25);
+		timer_update();
+		FrameTime = F1_0 / 60;
+		Controls = {};
+		do_weapon_n_item_stuff();
+		calc_game_time();
+		GameProcessFrame();
+	}
+	require(input_demo_stop_quick_recording_common(), "Cannot finalize native message clock control");
+	std::filesystem::path recording;
+	for (const auto &entry : std::filesystem::directory_iterator(directory))
+		if (entry.path().extension() == ".dximdemo" && !prior.count(entry.path())) {
+			require(recording.empty(), "Multiple native message clock recordings");
+			recording = entry.path();
+		}
+	char error[256]{};
+	require(!recording.empty() && input_demo_replay_load(recording.string().c_str(), error, sizeof(error)), error);
+	require(input_demo_replay_begin_environment(error, sizeof(error)), error);
+	const xl_message_state near_expiry{ 950, 3, 1 };
+	require(xl_message_restore(&near_expiry, 1), "Cannot restore message in recorded clock domain");
+	timer_delay(F1_0 / 8);
+	timer_update();
+	xl_message_frame();
+	xl_message_state actual{};
+	xl_message_state_get(&actual);
+	require(actual.id == 3 && actual.duration == 1 && actual.elapsed_ms == 950,
+	        "Host delay advanced message state while replay owned the frame clock");
+	input_demo_file captured;
+	std::string parse_error;
+	require(input_demo_file_read(recording.string().c_str(), &captured, &parse_error), parse_error.c_str());
+	for (const auto &frame : captured.frames) {
+		for (const auto &sample : frame.environment) {
+			input_demo_environment_clock consumed{};
+			require(input_demo_replay_consume_environment(sample.consumer.c_str(), sample.subject, sample.simulation,
+			                                              sample.operation, &consumed, error, sizeof(error)),
+			        error);
+			// Saves and terminal observation need the consumed clock without a draw
+			xl_message_state_get(&actual);
+			const int64_t elapsed = 950 + int64_t(consumed.cached_ms) - captured.metadata.environment.cached_ms;
+			require(elapsed >= 1000 ? actual.id == 0 && actual.elapsed_ms == 0
+			                        : actual.id == 3 && actual.elapsed_ms == elapsed,
+			        "Message age or expiry did not follow the consumed recorded clock");
+		}
+		require(input_demo_replay_advance_frame(error, sizeof(error)), error);
+	}
+	require(actual.id == 0, "Recorded message control did not cross its expiry boundary");
+	input_demo_replay_unload();
+	const xl_message_state empty{};
+	require(xl_message_restore(&empty, 1), "Cannot clear native message clock control");
+	std::cout << "Recorded message clock ignores host delay and expires only as its timeline advances\n";
+}
 
 static xl_message_state message_snapshot()
 {
@@ -35,7 +98,7 @@ static void message_bad_state(const std::filesystem::path &root)
 		if (variant == 3) row[3] = -1;
 		if (variant == 4) row[3] = INT64_MAX;
 		if (variant == 5) row[3] = UINT64_MAX;
-		if (variant == 6) row[3] = true;
+		if (variant == 6) row[3] = bool{ true };
 		if (variant == 7) row[3] = 1.5;
 		if (variant == 8) row[1] = 0;
 		if (variant == 9) row.push_back(0);
@@ -101,6 +164,9 @@ static int level_message_test(int argc, char **argv)
 			require(xl_message_restore(&near_expiry, 1) && xl_message_alpha() > 0 && xl_message_alpha() <= 0.1f, "Message fade-out phase differs");
 			timer_delay(F1_0 / 8);
 			xl_message_frame();
+			require(message_snapshot().elapsed_ms == 950, "Message sampled unscheduled wall time instead of the cached frame clock");
+			timer_update();
+			xl_message_frame();
 			message_expect(0, 0, "");
 			int owner = -1;
 			for (int i = 0; i < xl_object_trigger_count(); ++i) {
@@ -153,6 +219,7 @@ static int level_message_test(int argc, char **argv)
 			require(restored.elapsed_ms >= earned.elapsed_ms && restored.elapsed_ms < earned.elapsed_ms + 2000, "Disk restore restarted or consumed message duration");
 			require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 			std::cout << (ordinal == 1 ? 23 : 27) << "/40 messages: wall/master/object/autoplay dispatch, duration, expiry, owned rejection and disk-through-stock passed\n";
+			message_recorded_clock();
 		}
 		std::cout << "XL message runtime controls passed\n";
 		return 0;

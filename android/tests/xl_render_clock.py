@@ -5,9 +5,28 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import time
+
+import d1_replay_parity as parity
 
 REVISION = "2576a98b5de310e3ac7c9777df2677d1627b8bae"
 PINS = {
+    "main/textdata.cpp": {
+        "d6172ffd9c3e94162358228ce168dd005d03feba231f45165b97f9b4ff1c0c5c",
+        "deb07823a0c0b94be95201d880d36b9fead089eddb21893c83f0dab08bf57a74",
+    },
+    "main/gamecntl.cpp": {
+        "53f7dc5dbb4e325e6f7ef12b48398fb4d27cbfcfc8bb90a61f7842f915f49d20",
+        "afd11b13c5cad394c53d2edbab12d62ec1dfffb527b4ffee6853be6978b5723e",
+    },
+    "main/gametime.cpp": {
+        "758b4a92b3800c0407c659f2829792e64cdabba7a818b27a64e6e267446d269b",
+        "4f342faeffa71ce7adc0d7792491704674c65b7fe41ec8f4b82831f1bdede45f",
+    },
+    "menus/menu.cpp": {
+        "7d622b4dbcbe6bf0d725c89e6df5265d64227b14a439cac93d98e303fd2244e1",
+        "ccbb31001e3e69807e4c132097c2220fb95a6e5285f3bd5259de4c525f255c62",
+    },
     "render/renderframe.cpp": {
         "56f059e9f02903cece0da2b95acbb2469bd65c9046d0a8539ee0708c632e3bbf",
         "9d09dbc8597c8c02ed738c73ba89f964bfcede1730eef54feb10f20a66f5e7c1",
@@ -31,6 +50,7 @@ EVENTS = (
     ("simulation_only", 0),
     ("main", 1),
     ("auxiliary_mono", 0),
+    ("paused_menu", 3),
     ("automap", 1),
     ("endlevel_main", 2),
     ("endlevel_auxiliary", 1),
@@ -64,6 +84,9 @@ def passed(code, proof, mission, level, xl):
         "reset_count",
         "shot_charge",
         "shot_delay",
+        "paused_frame_time",
+        "paused_game_time_unchanged",
+        "paused_sim_rng_unchanged",
     }
     if (
         type(code) is not int
@@ -85,6 +108,11 @@ def passed(code, proof, mission, level, xl):
         or proof["shot_charge"] != 32768 - (1092 if xl else 3276)
         or type(proof["shot_delay"]) is not int
         or proof["shot_delay"] != (1 if xl else 3276)
+        or type(proof["paused_frame_time"]) is not int
+        or proof["paused_frame_time"] < 0
+        or (xl and proof["paused_frame_time"] != 0)
+        or proof["paused_game_time_unchanged"] is not True
+        or proof["paused_sim_rng_unchanged"] is not True
         or not isinstance(proof["events"], list)
         or len(proof["events"]) != len(EVENTS)
     ):
@@ -109,6 +137,110 @@ def passed(code, proof, mission, level, xl):
     return True
 
 
+def time_combat_passed(proof, damage_rows, clocks):
+    """Require native player-projectile attribution at the observed slowed frame."""
+    try:
+        target = proof["combat"]
+        fields = (
+            "object",
+            "signature",
+            "robot_id",
+            "player",
+            "player_signature",
+            "primary_weapon",
+            "shields_before",
+            "shields_after",
+            "first_damage_frame",
+            "firing_frames",
+            "aiming_frames",
+        )
+        if any(type(target[key]) is not int for key in fields):
+            return False
+        if (
+            any(target[key] < 0 for key in ("object", "signature", "robot_id", "player", "player_signature"))
+            or target["primary_weapon"] != 0
+            or target["shields_before"] <= 0
+            or target["shields_after"] >= target["shields_before"]
+            or target["firing_frames"] != 84
+            or not 0 <= target["aiming_frames"] < 90
+            or type(proof["recorded_frames"]) is not int
+            or not 0 <= target["first_damage_frame"] < proof["recorded_frames"]
+            or type(proof["warmup_frames"]) is not int
+            or proof["warmup_frames"] != 66
+            or type(proof["inventory_assists"]) is not int
+            or proof["inventory_assists"] != 0
+            or type(proof["assists_during_recording"]) is not int
+            or proof["assists_during_recording"] != 0
+            or len(clocks) != 2
+        ):
+            return False
+        for index, name in enumerate(("world_speed_at_damage", "player_speed_at_damage")):
+            if (
+                len(clocks[index]) != 4
+                or type(target[name]) not in (int, float)
+                or not 1 < target[name] <= 3
+                or clocks[index][0] != target[name]
+            ):
+                return False
+        expected = {
+            "f": target["first_damage_frame"],
+            "robot": target["object"],
+            "robot_id": target["robot_id"],
+            "robot_signature": target["signature"],
+            "parent": target["player"],
+            "parent_signature": target["player_signature"],
+            "parent_type": 4,
+        }
+        return any(
+            isinstance(row, dict)
+            and row.get("type") == "robot_damage"
+            and type(row.get("version")) is int
+            and row.get("version") == 1
+            and all(type(row.get(key)) is int and row[key] == value for key, value in expected.items())
+            and all(type(row.get(key)) is int for key in ("old_shields", "new_shields", "damage"))
+            and row["damage"] > 0
+            and row["old_shields"] > row["new_shields"]
+            and row["new_shields"] < target["shields_before"]
+            for row in damage_rows
+        )
+    except (KeyError, TypeError):
+        return False
+
+
+def message_passed(code, proof, mission, level, xl, resume_ms):
+    expected = {
+        "schema": "xl-message-clock-v1",
+        "derived": True,
+        "complete": True,
+        "mission": mission,
+        "level": level,
+        "xl_active": True,
+        "modal_count": 1,
+        "resumed_frame_time": 0,
+        "resumed_heading": 0,
+        "message_id": 3,
+        "recorded_frames": 60,
+        "terminal_message": 0,
+        "rejected_profiles": 22,
+    }
+    return (
+        type(code) is int
+        and code == 0
+        and xl is True
+        and isinstance(proof, dict)
+        and set(proof) == set(expected) | {"renderer", "message_elapsed", "post_frame_cached_ms"}
+        and isinstance(proof["renderer"], str)
+        and bool(proof["renderer"].strip())
+        and type(resume_ms) is int
+        and 0 <= resume_ms <= 2147483647
+        and type(proof["post_frame_cached_ms"]) is int
+        and type(proof["message_elapsed"]) is int
+        and 0 <= proof["message_elapsed"] < 1000
+        and proof["message_elapsed"] == proof["post_frame_cached_ms"] - resume_ms
+        and all(type(proof[key]) is type(value) and proof[key] == value for key, value in expected.items())
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("engine", "data", "extra", "work", "reference-root"):
@@ -116,6 +248,13 @@ def main():
     parser.add_argument("--mission", required=True)
     parser.add_argument("--level", required=True, type=int)
     parser.add_argument("--xl", action="store_true")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--time-equipment", action="store_true", help="Exercise the existing ordinary time-pickup/control/save probe"
+    )
+    mode.add_argument(
+        "--message-modal", action="store_true", help="Record the existing derived message fixture's modal/timed chain"
+    )
     args = parser.parse_args()
     pins = verify_reference(args.reference_root)
     work = args.work.resolve()
@@ -137,29 +276,129 @@ def main():
         str(work / "user"),
         "-route-confirm-json-out",
         str(work / "unused-route.json"),
-        "-xl-render-clock-proof",
+        "-xl-message-clock-proof"
+        if args.message_modal
+        else "-xl-time-equipment-proof"
+        if args.time_equipment
+        else "-xl-render-clock-proof",
         str(proof_path),
         "-nosound",
         "-nomusic",
     ]
     with (work / "engine.log").open("wb") as log:
+        started = time.monotonic()
         try:
             code = subprocess.run(
                 command, cwd=work, stdout=log, stderr=subprocess.STDOUT, timeout=45, check=False
             ).returncode
         except subprocess.TimeoutExpired:
             code = None
+        elapsed = time.monotonic() - started
     proof = json.loads(proof_path.read_text()) if proof_path.exists() else {}
-    success = passed(code, proof, args.mission, args.level, args.xl)
+    recordings = []
+    if args.time_equipment:
+        required_events = {
+            "visible_slow_motion_pickup",
+            "visible_bullet_time_pickup",
+            "earned_original_pickups",
+            "ordinary_slow_motion",
+            "slow_motion_thrust",
+            "bullet_time",
+            "bullet_time_thrust",
+        }
+        success = (
+            code == 0
+            and proof.get("schema") == "xl-time-equipment-gameplay-v1"
+            and proof.get("complete") is True
+            and proof.get("assisted") is True
+            and proof.get("cold_resume") is False
+            and proof.get("mission") == args.mission
+            and proof.get("level") == args.level
+            and args.xl
+            and required_events <= {event.get("event") for event in proof.get("events", [])}
+        )
+        for demo in sorted((work / "user").rglob("*.dximdemo")):
+            with demo.open(encoding="utf-8") as stream:
+                header = json.loads(next(stream))
+            success = success and header.get("version") == 6 and header.get("start_mode") == "save_checkpoint"
+            recordings.append(
+                {
+                    "path": str(demo),
+                    "sha256": hashlib.sha256(demo.read_bytes()).hexdigest(),
+                    "frame_count": header.get("frame_count"),
+                    "live_replay_qualified": False,
+                }
+            )
+        success = success and len(recordings) == 1
+        if success:
+            try:
+                trace = Path(str(proof_path) + ".capture.jsonl.gz")
+                damage = [row for row in parity.records(trace) if row.get("type") == "robot_damage"]
+                frame = proof.get("combat", {}).get("first_damage_frame")
+                # World rows describe the start of a frame; damage is inside it.
+                # The next boundary observes the factors after that simulation.
+                clocks = next(
+                    (
+                        row["state"]["xl_time"]["slow_motion"]["clocks"]
+                        for row in parity.world_states(trace, header, "d2")
+                        if row["type"] == "world_state" and row["f"] == frame + 1
+                    ),
+                    None,
+                )
+                success = proof["combat_trace_verified"] = time_combat_passed(proof, damage, clocks)
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                proof["combat_trace_error"] = str(error)
+                success = False
+    elif args.message_modal:
+        success = True
+        for demo in sorted((work / "user").rglob("*.dximdemo")):
+            with demo.open(encoding="utf-8") as stream:
+                header = json.loads(next(stream))
+            success = (
+                success
+                and header.get("version") == 6
+                and header.get("start_mode") == "save_checkpoint"
+                and header.get("frame_count") == 60
+            )
+            first = next((row for row in parity.records(demo) if row.get("type") == "frame" and row.get("f") == 0), {})
+            resumes = [
+                sample
+                for sample in first.get("environment", {}).get("samples", [])
+                if sample.get("consumer") == "message_resume"
+            ]
+            success = (
+                success
+                and len(resumes) == 1
+                and resumes[0].get("subject") == 4
+                and resumes[0].get("phase") == "sim"
+                and resumes[0].get("operation") == 0
+            )
+            success = success and message_passed(
+                code, proof, args.mission, args.level, args.xl, resumes[0].get("cached_ms")
+            )
+            recordings.append(
+                {
+                    "path": str(demo),
+                    "sha256": hashlib.sha256(demo.read_bytes()).hexdigest(),
+                    "frame_count": header.get("frame_count"),
+                    "live_replay_qualified": False,
+                }
+            )
+        success = success and len(recordings) == 1
+    else:
+        success = passed(code, proof, args.mission, args.level, args.xl)
     result = {
         "passed": success,
         "exit_code": code,
+        "elapsed_seconds": elapsed,
         "proof": proof,
         "reference_revision": REVISION,
         "reference_hashes": pins,
         "engine_sha256": hashlib.sha256(engine.read_bytes()).hexdigest(),
         "official_readiness_status_updated": False,
     }
+    if args.time_equipment or args.message_modal:
+        result["recordings"] = recordings
     (work / "result.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({"passed": success, "exit_code": code, "events": len(proof.get("events", []))}))
     return 0 if success else 1

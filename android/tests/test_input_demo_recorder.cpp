@@ -21,6 +21,8 @@
 #include "input_demo_codec.h"
 #include "input_demo_limits.h"
 #include "input_demo_recorder.h"
+#include "input_demo_fp_env.h"
+#include <fenv.h>
 #include "input_demo_rng_trace.h"
 #include "input_demo_result.h"
 #include "input_demo_state_trace.h"
@@ -2061,8 +2063,272 @@ static int expect_ordered_input_codec(void)
 	return 0;
 }
 
+static int expect_environment_recording(void)
+{
+	const char *path = "test_environment_recording.dximdemo";
+	input_demo_recorder_settings settings;
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = INPUT_DEMO_GAME_D2;
+	settings.mission = "clock-contract";
+	settings.level = 1;
+	settings.rng_mode = input_demo_test_rng_mode();
+	settings.has_environment = 1;
+	settings.environment = { 100, 100, UINT32_MAX - 1, 100 };
+	input_demo_level_start level_start{};
+	level_start.has_xl_clock = 1;
+	settings.level_start = &level_start;
+	settings.has_player_cfg = 1;
+	settings.player_cfg.has_headlight_active_default = 1;
+	settings.player_cfg.primary_order_count = settings.player_cfg.secondary_order_count = 11;
+	for (int i = 0; i < 11; ++i)
+		settings.player_cfg.primary_order[i] = settings.player_cfg.secondary_order[i] = i == 10 ? 255 : i;
+	settings.has_view_projection = settings.has_rear_view_baseline = 1;
+	settings.view_projection = { 640, 480, 65536, 65536, 20, 0, 1 };
+	input_demo_control_state state = {};
+	input_demo_control_pulse pulse = {};
+	char error[256] = "";
+	const auto check = [&](int result) { return result || !report_failure(error); };
+	if (!INPUT_DEMO_STRICT_FP_BUILD) {
+		if (input_demo_recorder_start(&settings, error, sizeof(error)) || input_demo_recorder_is_active() ||
+		    !strstr(error, "strict floating point")) return report_failure("unsupported FP build started XL capture");
+		return 0;
+	}
+	const int original_rounding = fegetround();
+	if (fesetround(FE_DOWNWARD) != 0) return report_failure("could not set negative capture FP mode");
+	const bool admitted = input_demo_recorder_start(&settings, error, sizeof(error)) != 0;
+	const bool repaired = fegetround() != FE_DOWNWARD;
+	if (fesetround(original_rounding) != 0) return report_failure("could not restore capture FP mode");
+	if (admitted || repaired || input_demo_recorder_is_active()) return report_failure("invalid FP capture was admitted or repaired");
+	for (int missing = 0; missing < 6; ++missing) {
+		auto incomplete = settings;
+		if (missing == 0) incomplete.has_player_cfg = 0;
+		if (missing == 1) incomplete.has_view_projection = 0;
+		if (missing == 2) incomplete.has_rear_view_baseline = 0;
+		if (missing == 3) incomplete.level_start = nullptr;
+		if (missing == 4) incomplete.player_cfg.original_homing = 2;
+		if (missing == 5) incomplete.rng_mode = "per_frame_seed";
+		if (input_demo_recorder_start(&incomplete, error, sizeof(error)) || input_demo_recorder_is_active())
+			return report_failure("incomplete XL startup settings started a recording");
+	}
+	if (!check(input_demo_recorder_start(&settings, error, sizeof(error)))) return 1;
+	if (!input_demo_recorder_uses_environment() || input_demo_recorder_truncate(0))
+		return report_failure("environment capture did not retain its clock basis");
+	input_demo_environment_clock observed{};
+	if (!input_demo_recorder_peek_environment(&observed) || memcmp(&observed, &settings.environment, sizeof(observed)))
+		return report_failure("observer did not expose the capture origin");
+	for (int frame = 0; frame < 2; ++frame) {
+		input_demo_environment_clock clock = { 100 + frame * 52, uint32_t(100 + frame * 52), uint32_t(UINT32_MAX - 1 + frame * 4), uint32_t(100 + frame * 52) };
+		if (!check(input_demo_recorder_begin_input_batch(1, 0, 1092, error, sizeof(error))) ||
+		    !check(input_demo_recorder_stage_input_sample(1092, &state, &pulse, error, sizeof(error))) ||
+		    !check(input_demo_recorder_observe_environment("omega_fired", -1, 0, &clock, error, sizeof(error))) ||
+		    !check(input_demo_recorder_observe_environment("wall_trigger", 253, 0, &clock, error, sizeof(error)))) return 1;
+		if (!input_demo_recorder_peek_environment(&observed) || memcmp(&observed, &clock, sizeof(observed)))
+			return report_failure("observer lost pending input clock");
+		clock.clock_ms += 26;
+		clock.pickup_ms += 26;
+		clock.cached_ms += 26;
+		clock.render_frame += 2;
+		if (!check(input_demo_recorder_stage_input_sample(1092, &state, &pulse, error, sizeof(error))) ||
+		    !check(input_demo_recorder_observe_environment("omega_blocked", -1, 0, &clock, error, sizeof(error))) ||
+		    !check(input_demo_recorder_stage_direct_command_xl_time_control(0, error, sizeof(error))) ||
+		    !check(input_demo_recorder_stage_direct_command_xl_time_control(1, error, sizeof(error))) ||
+		    !check(input_demo_recorder_stage_direct_command_xl_time_control(0, error, sizeof(error))) ||
+		    !check(input_demo_recorder_observe_environment("input_end", -1, 0, &clock, error, sizeof(error))) ||
+		    !check(input_demo_recorder_capture_frame(1092, &state, &pulse, 1, 1, 0, nullptr, nullptr, error, sizeof(error))) ||
+		    !check(input_demo_recorder_observe_environment("slow_frame", -1, 1, &clock, error, sizeof(error))) ||
+		    !check(input_demo_recorder_observe_environment("pickup", 4, 1, &clock, error, sizeof(error)))) return 1;
+		++clock.clock_ms;
+		++clock.pickup_ms;
+		if (!check(input_demo_recorder_observe_environment("camera_frame", -1, 1, &clock, error, sizeof(error))) ||
+		    !check(input_demo_recorder_observe_environment("wall_trigger", 0, 1, &clock, error, sizeof(error))) ||
+		    !check(input_demo_recorder_observe_environment("message_resume", 4, 1, &clock, error, sizeof(error))) ||
+		    !input_demo_recorder_peek_environment(&observed) || memcmp(&observed, &clock, sizeof(observed)))
+			return report_failure("observer lost the current simulation clock");
+	}
+	input_demo_environment_clock tail = { 204, 204, 6, 204 };
+	if (!check(input_demo_recorder_begin_input_batch(1, 0, 0, error, sizeof(error))) ||
+	    !check(input_demo_recorder_stage_direct_command_xl_time_control(1, error, sizeof(error))) ||
+	    !check(input_demo_recorder_stage_direct_command_xl_time_control(0, error, sizeof(error))) ||
+	    !check(input_demo_recorder_observe_environment("tail_end", -1, 0, &tail, error, sizeof(error))) ||
+	    !check(input_demo_recorder_finish_input_tail(&state, &pulse, 1, 0, error, sizeof(error))) ||
+	    !input_demo_recorder_peek_environment(&observed) || memcmp(&observed, &tail, sizeof(observed)) ||
+	    !check(input_demo_recorder_flush(path, error, sizeof(error))) ||
+	    !check(input_demo_replay_load(path, error, sizeof(error)))) return 1;
+	input_demo_environment_clock actual = {};
+	if (fesetround(FE_UPWARD) != 0) return report_failure("could not set negative playback FP mode");
+	const bool replay_admitted = input_demo_replay_load(path, error, sizeof(error)) != 0;
+	const bool replay_repaired = fegetround() != FE_UPWARD;
+	if (fesetround(original_rounding) != 0) return report_failure("could not restore playback FP mode");
+	if (replay_admitted || replay_repaired || !input_demo_replay_is_loaded())
+		return report_failure("invalid FP playback was admitted, repaired or replaced the loaded session");
+	if (!input_demo_replay_get_environment_origin(&actual) || memcmp(&actual, &settings.environment, sizeof(actual)))
+		return report_failure("recording lost its environment origin");
+	if (input_demo_replay_environment_running() || input_demo_replay_consume_environment("omega_fired", -1, 0, 1, &actual, error, sizeof(error)))
+		return report_failure("environment stream began before checkpoint restore");
+	if (!check(input_demo_replay_begin_environment(error, sizeof(error)))) return 1;
+	for (int frame = 0; frame < 2; ++frame) {
+		const auto before = actual;
+		for (uint32_t command = 2; command < 5; ++command) {
+			input_demo_input_operation operation = {};
+			if (!check(input_demo_replay_get_input_operation(frame, command, &operation, error, sizeof(error))) ||
+			    operation.kind != INPUT_DEMO_INPUT_COMMAND || operation.command.kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_XL_TIME_CONTROL ||
+			    operation.command.value0 != (command == 3)) return report_failure("ordered time controls were lost or coalesced");
+		}
+		if (input_demo_replay_advance_frame(error, sizeof(error)) ||
+		    input_demo_replay_consume_environment("omega_blocked", -1, 0, 1, &actual, error, sizeof(error)) ||
+		    memcmp(&actual, &before, sizeof(actual)))
+			return report_failure("incorrect environment consumption changed playback");
+		if (!check(input_demo_replay_consume_environment("omega_fired", -1, 0, 1, &actual, error, sizeof(error))) ||
+		    actual.clock_ms != 100 + frame * 52 || actual.render_frame != uint32_t(UINT32_MAX - 1 + frame * 4) ||
+		    !check(input_demo_replay_consume_environment("wall_trigger", 253, 0, 1, &actual, error, sizeof(error))) ||
+		    actual.cached_ms != uint32_t(100 + frame * 52) ||
+		    !check(input_demo_replay_consume_environment("omega_blocked", -1, 0, 2, &actual, error, sizeof(error))) ||
+		    actual.clock_ms != 126 + frame * 52 || actual.render_frame != uint32_t(frame * 4) ||
+		    !check(input_demo_replay_consume_environment("input_end", -1, 0, 5, &actual, error, sizeof(error))) ||
+		    !check(input_demo_replay_consume_environment("slow_frame", -1, 1, 0, &actual, error, sizeof(error))) ||
+		    !check(input_demo_replay_consume_environment("pickup", 4, 1, 0, &actual, error, sizeof(error))) ||
+		    !check(input_demo_replay_consume_environment("camera_frame", -1, 1, 0, &actual, error, sizeof(error))) ||
+		    actual.clock_ms != 127 + frame * 52 ||
+		    !check(input_demo_replay_consume_environment("wall_trigger", 0, 1, 0, &actual, error, sizeof(error))) ||
+		    !check(input_demo_replay_consume_environment("message_resume", 4, 1, 0, &actual, error, sizeof(error))) ||
+		    actual.cached_ms != uint32_t(126 + frame * 52) ||
+		    !check(input_demo_replay_advance_frame(error, sizeof(error)))) return 1;
+	}
+	input_demo_result expected;
+	if (!check(input_demo_replay_get_expected_result(&expected, error, sizeof(error)))) return 1;
+	if (input_demo_replay_compare_result(&expected, error, sizeof(error))) return report_failure("unconsumed environmental tail was accepted");
+	for (uint32_t index = 0; index < 2; ++index) {
+		input_demo_input_operation operation = {};
+		if (!check(input_demo_replay_get_input_operation(2, index, &operation, error, sizeof(error))) ||
+		    operation.kind != INPUT_DEMO_INPUT_COMMAND || operation.command.kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_XL_TIME_CONTROL ||
+		    operation.command.value0 != (index == 0)) return report_failure("time controls were lost from the record-stop tail");
+	}
+	if (!check(input_demo_replay_consume_environment("tail_end", -1, 0, 2, &actual, error, sizeof(error))) ||
+	    memcmp(&actual, &tail, sizeof(actual)) ||
+	    !check(input_demo_replay_compare_result(&expected, error, sizeof(error)))) return 1;
+	if (input_demo_replay_consume_environment("tail_end", -1, 0, 2, &actual, error, sizeof(error)))
+		return report_failure("duplicate tail consumption was accepted");
+	input_demo_replay_unload();
+	input_demo_file recorded;
+	std::string detail, text;
+	if (!input_demo_file_read(path, &recorded, &detail)) return report_failure_string(detail);
+	{
+		auto envelope = recorded;
+		envelope.frames.clear();
+		const std::vector<std::string> oversized = { std::string(INPUT_DEMO_RECORD_MAX_BYTES + 1, ' '), "{}" };
+		if (input_demo_file_write_recorded(path, envelope, oversized, &detail) ||
+		    !input_demo_file_read(path, &recorded, &detail)) return report_failure("oversized recording replaced the existing demo");
+	}
+	recorded.metadata.version = 5;
+	recorded.metadata.has_environment = false;
+	for (auto &frame : recorded.frames) {
+		frame.has_environment = false;
+		frame.environment.clear();
+	}
+	recorded.input_tail.has_environment = false;
+	recorded.input_tail.environment.clear();
+	if (input_demo_file_to_text(recorded, &text, &detail)) return report_failure("format 5 accepted time commands without a timeline");
+	input_demo_replay_direct_command_event command = {};
+	for (const char *invalid : { "{\"kind\":\"direct_command\",\"command\":\"xl_time_control\",\"bullet_time\":1}",
+	                             "{\"kind\":\"direct_command\",\"command\":\"xl_time_control\",\"bullet_time\":false,\"extra\":0}" })
+		if (input_demo_dispatch_command_from_json(invalid, INPUT_DEMO_GAME_D2, &command, &detail)) return report_failure("invalid time command accepted");
+	if (input_demo_dispatch_command_from_json("{\"kind\":\"direct_command\",\"command\":\"xl_time_control\",\"bullet_time\":false}", INPUT_DEMO_GAME_D1, &command, &detail))
+		return report_failure("D1 accepted an XL time command");
+	remove(path);
+	remove((std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+	// Invalid clock order is sticky and cannot be flushed as a shorter success
+	if (!check(input_demo_recorder_start(&settings, error, sizeof(error)))) return 1;
+	input_demo_environment_clock invalid = { 99, 99, 0, 0 };
+	if (!check(input_demo_recorder_observe_environment("input_end", -1, 0, &invalid, error, sizeof(error))) ||
+	    !check(input_demo_recorder_capture_frame(1092, &state, &pulse, 1, 1, 0, nullptr, nullptr, error, sizeof(error)))) return 1;
+	if (input_demo_recorder_finish_input_tail(&state, &pulse, 1, 0, error, sizeof(error)) ||
+	    input_demo_recorder_flush(path, error, sizeof(error))) return report_failure("invalid captured environment was published");
+	input_demo_recorder_cancel();
+	// Settings changes retain their order around samples and in a no-SIM stop tail
+	if (!check(input_demo_recorder_start(&settings, error, sizeof(error))) ||
+	    !check(input_demo_recorder_begin_input_batch(1, 0, 1092, error, sizeof(error)))) return 1;
+	auto changed = settings.player_cfg;
+	changed.auto_leveling = changed.original_homing = 1;
+	std::swap(changed.primary_order[0], changed.primary_order[1]);
+	if (!check(input_demo_recorder_observe_player_cfg(1092, &changed, 1, error, sizeof(error))) ||
+	    !check(input_demo_recorder_observe_player_cfg(1092, &changed, 1, error, sizeof(error))) ||
+	    !check(input_demo_recorder_stage_input_sample(1092, &state, &pulse, error, sizeof(error))) ||
+	    !check(input_demo_recorder_observe_player_cfg(1092, &settings.player_cfg, 1, error, sizeof(error))) ||
+	    !check(input_demo_recorder_observe_environment("input_end", -1, 0, &settings.environment, error, sizeof(error))) ||
+	    !check(input_demo_recorder_capture_frame(1092, &state, &pulse, 1, 1, 0, nullptr, nullptr, error, sizeof(error))) ||
+	    !check(input_demo_recorder_begin_input_batch(1, 0, 1092, error, sizeof(error))) ||
+	    !check(input_demo_recorder_observe_player_cfg(1092, &changed, 1, error, sizeof(error))) ||
+	    !check(input_demo_recorder_observe_environment("tail_end", -1, 0, &settings.environment, error, sizeof(error))) ||
+	    !check(input_demo_recorder_finish_input_tail(&state, &pulse, 1, 0, error, sizeof(error))) ||
+	    !check(input_demo_recorder_flush(path, error, sizeof(error)))) return 1;
+	if (!input_demo_file_read(path, &recorded, &detail)) return report_failure_string(detail);
+	const auto &ops = recorded.frames[0].dispatch.operations;
+	if (recorded.metadata.player_cfg.auto_leveling || ops.size() != 3 ||
+	    ops[0].kind != INPUT_DEMO_INPUT_PLAYER_CFG || !ops[0].player_cfg.auto_leveling ||
+	    ops[0].player_cfg.primary_order[0] != 1 || ops[1].kind != INPUT_DEMO_INPUT_SAMPLE ||
+	    ops[2].kind != INPUT_DEMO_INPUT_PLAYER_CFG || ops[2].player_cfg.auto_leveling ||
+	    recorded.input_tail.dispatch.operations.size() != 1 ||
+	    !recorded.input_tail.dispatch.operations[0].player_cfg.original_homing)
+		return report_failure("ordered configuration changed its baseline, order, deduplication or tail");
+	if (!check(input_demo_replay_load(path, error, sizeof(error))) ||
+	    !input_demo_replay_update_player_cfg(&changed)) return 1;
+	input_demo_player_cfg latest{};
+	if (!input_demo_replay_get_player_cfg(&latest) || memcmp(&latest, &changed, sizeof(latest)))
+		return report_failure("replay lost its current configuration across pilot reload");
+	input_demo_replay_unload();
+	if (!input_demo_file_to_text(recorded, &text, &detail)) return report_failure_string(detail);
+	std::vector<nlohmann::ordered_json> rows;
+	std::istringstream stream(text);
+	for (std::string line; std::getline(stream, line);) rows.push_back(nlohmann::ordered_json::parse(line));
+	const auto rejects = [&](const auto &mutate) {
+		auto bad = rows;
+		mutate(bad[1]["dispatch"]["ops"][0]["value"]);
+		std::string encoded;
+		for (const auto &row : bad) encoded += row.dump() + "\n";
+		input_demo_file parsed;
+		return !input_demo_file_parse_text(encoded, &parsed, &detail);
+	};
+	for (const auto &item : rows[1]["dispatch"]["ops"][0]["value"].items())
+		if (!rejects([&](auto &value) { value.erase(item.key()); })) return report_failure("incomplete settings operation accepted");
+	if (!rejects([](auto &value) { value["original_homing"] = true; }) ||
+	    !rejects([](auto &value) { value["auto_leveling"] = 2; }) ||
+	    !rejects([](auto &value) { value["primary_order"][0] = 255; }) ||
+	    !rejects([](auto &value) { value["future_setting"] = 1; })) return report_failure("invalid settings operation accepted");
+	recorded.metadata.version = 5;
+	recorded.metadata.has_environment = false;
+	recorded.metadata.level_start.has_xl_clock = 0;
+	for (auto *frame : { &recorded.frames[0], &recorded.input_tail }) {
+		frame->has_environment = false;
+		frame->environment.clear();
+	}
+	if (input_demo_file_to_text(recorded, &text, &detail)) return report_failure("format 5 accepted ordered settings");
+	for (int bad = 0; bad < 3; ++bad) {
+		if (!check(input_demo_recorder_start(&settings, error, sizeof(error))) ||
+		    !check(input_demo_recorder_begin_input_batch(1, 0, 1092, error, sizeof(error)))) return 1;
+		auto invalid_cfg = changed;
+		if (bad == 0) invalid_cfg.original_homing = 2;
+		if (bad == 1) invalid_cfg.primary_order_count = 255;
+		if (input_demo_recorder_observe_player_cfg(1092, &invalid_cfg, bad != 2, error, sizeof(error)) ||
+		    input_demo_recorder_finish_input_tail(&state, &pulse, 1, 0, error, sizeof(error)))
+			return report_failure("invalid or simulation-time settings mutation was not sticky");
+		input_demo_recorder_cancel();
+	}
+	remove(path);
+	remove((std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+
+	return 0;
+}
+
 int main(void)
 {
+	// Checkpoint hashing must retain the SHA contract across multiple bounded chunks
+	std::vector<unsigned char> checkpoint(INPUT_DEMO_CHECKPOINT_MAX_BYTES);
+	for (size_t i = 0; i < checkpoint.size(); ++i) checkpoint[i] = static_cast<unsigned char>(i);
+	std::string hash, hash_error;
+	if (!input_demo_sha256_hex(checkpoint.data(), checkpoint.size(), &hash, &hash_error) ||
+	    hash != "91d3beb88a9b2f778a6c44a1c53b63d3c79931845a9aef84b3fb414610bd1938")
+		return report_failure("bounded checkpoint SHA-256 differs");
+	if (expect_environment_recording()) return 1;
 	if (expect_ordered_input_codec()) return 1;
 	if (expect_ordered_automap_codec()) return 1;
 	if (expect_ordered_rear_view_codec()) return 1;

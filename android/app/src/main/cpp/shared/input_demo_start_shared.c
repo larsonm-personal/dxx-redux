@@ -18,6 +18,7 @@
 #include "gameseq.h"
 #include "input_demo_debug_logging.h"
 #include "input_demo_hooks.h"
+#include "input_demo_fp_env.h"
 #include "input_demo_hooks_shared.h"
 #include "input_demo_limits.h"
 #include "input_demo_replay.h"
@@ -172,7 +173,7 @@ static unsigned int input_demo_replay_hash_u8_sequence(const ubyte *values, int 
 	return hash;
 }
 
-static void input_demo_apply_replay_player_cfg(const input_demo_player_cfg *player_cfg)
+void input_demo_apply_player_cfg(const input_demo_player_cfg *player_cfg)
 {
 	if (!player_cfg)
 		return;
@@ -219,7 +220,7 @@ void input_demo_apply_level_player_cfg(void)
 	/* Level-entry progress/window bookkeeping reloads the pilot. Recorded
 	 * settings remain authoritative for the simulation that starts afterward */
 	if (input_demo_replay_get_player_cfg(&cfg))
-		input_demo_apply_replay_player_cfg(&cfg);
+		input_demo_apply_player_cfg(&cfg);
 	else
 		input_demo_apply_legacy_replay_homing_default();
 }
@@ -589,7 +590,7 @@ static int input_demo_start_replay_new_level(
 	}
 	Difficulty_level = input_demo_replay_difficulty();
 	if (have_replay_player_cfg)
-		input_demo_apply_replay_player_cfg(replay_player_cfg);
+		input_demo_apply_player_cfg(replay_player_cfg);
 	else
 		input_demo_apply_legacy_replay_homing_default();
 	printf("Input demo replay starting: %s level %d, %u frames\n",
@@ -680,7 +681,7 @@ static int input_demo_restore_loaded_replay(void)
 		                           d1_checkpoint.difficulty_min,
 		                           d1_checkpoint.difficulty_max);
 		if (have_replay_player_cfg)
-			input_demo_apply_replay_player_cfg(replay_player_cfg);
+			input_demo_apply_player_cfg(replay_player_cfg);
 		else
 			input_demo_apply_legacy_replay_homing_default();
 		printf("Input demo replay starting: %s level %d, %u frames\n",
@@ -737,6 +738,42 @@ int input_demo_start_loaded_replay_common(void)
 	int result;
 	input_demo_rear_view_baseline view;
 	char projection_error[256] = "";
+	/* Validate the complete qualified profile before loading any world */
+	if (input_demo_replay_format_version() == 6) {
+		if (GameArg.SysLowMem) {
+			con_printf(CON_URGENT, "Input demo replay could not start: XL input demos require low-memory bitmap substitution to be disabled\n");
+			input_demo_replay_unload();
+			return 1;
+		}
+		if (!input_demo_validate_xl_fp_environment(projection_error, sizeof(projection_error))) {
+			printf("Input demo replay could not start: %s\n", projection_error);
+			input_demo_replay_unload();
+			return 1;
+		}
+#ifdef DXX_XL_RUNTIME
+		const char *backend_error = xl_input_demo_backend_error();
+		if (backend_error) {
+			con_printf(CON_URGENT, "Input demo replay could not start: %s\n", backend_error);
+			input_demo_replay_unload();
+			return 1;
+		}
+		input_demo_view_projection projection;
+		if (!input_demo_replay_has_player_cfg() ||
+		    !input_demo_replay_get_view_projection(&projection) ||
+		    !input_demo_replay_get_rear_view_baseline(&view) ||
+		    strcmp(input_demo_replay_rng_mode(), "lcg_state") ||
+		    (!input_demo_replay_has_checkpoint() &&
+		     (!input_demo_replay_level_start() || !input_demo_replay_level_start()->has_xl_clock))) {
+			printf("Input demo replay could not start: incomplete XL clock/input startup profile\n");
+			input_demo_replay_unload();
+			return 1;
+		}
+#else
+		con_printf(CON_URGENT, "Input demo replay could not start: XL clock/input timelines require the XL runtime\n");
+		input_demo_replay_unload();
+		return 1;
+#endif
+	}
 	if (!input_demo_validate_replay_view_projection(projection_error, sizeof(projection_error))) {
 		INPUT_DEMO_CRUMB_V("input_demo: startup projection rejected: %s", projection_error);
 		printf("Input demo replay could not start: %s\n", projection_error);
@@ -746,6 +783,12 @@ int input_demo_start_loaded_replay_common(void)
 	input_demo_reset_replay_input_state();
 	result = input_demo_restore_loaded_replay();
 	if (!result) {
+		if (input_demo_replay_format_version() == 6 &&
+		    !input_demo_validate_xl_fp_environment(projection_error, sizeof(projection_error))) {
+			printf("Input demo replay could not start after restore: %s\n", projection_error);
+			input_demo_replay_unload();
+			return 1;
+		}
 #ifdef DXX_XL_RUNTIME
 		const char *unsupported = xl_omega_input_demo_error();
 		if (unsupported) {
@@ -773,6 +816,12 @@ int input_demo_start_loaded_replay_common(void)
 				collide_set_collision_delay_last_play_time((fix64) collision_delay_last_play_time);
 		}
 		input_demo_trace_boundary("restored");
+		if (input_demo_replay_format_version() == 6 &&
+		    !input_demo_replay_begin_environment(projection_error, sizeof(projection_error))) {
+			printf("Input demo replay could not start: %s\n", projection_error);
+			input_demo_replay_unload();
+			return 1;
+		}
 	}
 	return result;
 }
@@ -802,7 +851,7 @@ static void input_demo_capture_restored_player_diag(
 		diag->player_cfg_result = read_player_file();
 	}
 	if (have_replay_player_cfg)
-		input_demo_apply_replay_player_cfg(replay_player_cfg);
+		input_demo_apply_player_cfg(replay_player_cfg);
 	else {
 		if (diag->replay_auto_level >= 0)
 			PlayerCfg.AutoLeveling = diag->replay_auto_level;

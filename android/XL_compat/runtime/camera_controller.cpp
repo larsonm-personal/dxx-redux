@@ -4,9 +4,11 @@
 #include "../camera_bindings.h"
 #include "preview.h"
 #include "resource_validation.h"
+#include "slow_motion_runtime.h"
 #include <SDL.h>
 #include <vector>
 #include <limits>
+#include <map>
 extern "C" {
 #include "inferno.h"
 #include "object.h"
@@ -129,6 +131,68 @@ nlohmann::json xl_camera_attachments_snapshot()
 		}
 	return saved;
 }
+nlohmann::json xl_camera_trace_snapshot()
+{
+	// The save/get helpers may retire stale signatures. Diagnostics never do
+	auto rows = nlohmann::json::array();
+	for (const auto &entry : cameras) {
+		const bool valid = live(entry);
+		const int brakes = valid && entry.type == 16 ? Objects[entry.owner].mtype.phys_info.brakes : 0;
+		rows.push_back({ { "monitor", entry.monitor }, { "owner", entry.owner }, { "signature", entry.signature }, { "type", entry.type }, { "id", entry.id }, { "live", valid }, { "original", entry.original }, { "angle", entry.rotation.angle }, { "delta", entry.rotation.delta }, { "t0", entry.rotation.t0 }, { "brakes", brakes } });
+	}
+	return { { "version", 1 }, { "ticks", frame_ticks }, { "states", rows } };
+}
+nlohmann::json xl_camera_motion_snapshot()
+{
+	auto rows = nlohmann::json::array();
+	for (const auto &entry : cameras) {
+		const int brakes = live(entry) && entry.type == 16 ? Objects[entry.owner].mtype.phys_info.brakes : 0;
+		rows.push_back({ entry.monitor, entry.owner, entry.rotation.angle, entry.rotation.delta, entry.rotation.t0, brakes });
+	}
+	return { { "version", 1 }, { "ticks", frame_ticks }, { "states", rows } };
+}
+bool xl_camera_motion_restore(const nlohmann::json &saved, bool apply)
+{
+	try {
+		const auto integer = [](const nlohmann::json &value, int64_t low, int64_t high) {
+			if (!value.is_number_integer() || (value.is_number_unsigned() && value.get<uint64_t>() > uint64_t(high))) throw std::runtime_error("Invalid camera motion integer");
+			const auto result = value.get<int64_t>();
+			if (result < low || result > high) throw std::runtime_error("Camera motion outside qualified bounds");
+			return result;
+		};
+		if (!saved.is_object() || saved.size() != 3 || !saved.at("version").is_number_integer() || saved.at("version") != 1 || !saved.at("states").is_array() || saved.at("states").size() != cameras.size()) return false;
+		const auto ticks = unsigned(integer(saved.at("ticks"), 0, INT32_MAX));
+		auto prepared = cameras;
+		std::map<int, int> brakes;
+		constexpr int step = (65536 / 360) / (camera_speed / 1000), limit = 65536 / 8 + step - 1;
+		for (std::size_t i = 0; i < cameras.size(); ++i) {
+			const auto &row = saved.at("states")[i];
+			auto &entry = prepared[i];
+			if (!row.is_array() || row.size() != 6 || integer(row[0], 0, INT32_MAX) != entry.monitor || integer(row[1], -1, INT32_MAX) != entry.owner) return false;
+			entry.rotation.angle = int16_t(integer(row[2], -limit, limit));
+			entry.rotation.delta = int16_t(integer(row[3], -step, step));
+			// The pinned producer initializes t0 to zero and never assigns it again
+			entry.rotation.t0 = integer(row[4], 0, 0);
+			const int value = int(integer(row[5], 0, INT32_MAX));
+			if ((entry.rotation.delta != 0 && entry.rotation.delta != step && entry.rotation.delta != -step) || (!entry.rotation.delta && entry.rotation.angle)) return false;
+			if (entry.type != 16 && (entry.rotation.angle || entry.rotation.delta || value)) return false;
+			if (entry.type == 16) {
+				if (entry.owner < 0 || entry.owner > Highest_object_index || Objects[entry.owner].type != 16 || Objects[entry.owner].control_type != 18 || Objects[entry.owner].movement_type != MT_NONE) return false;
+				const auto inserted = brakes.emplace(entry.owner, value);
+				if (!inserted.second && inserted.first->second != value) return false;
+			}
+		}
+		if (apply) {
+			cameras.swap(prepared);
+			frame_ticks = ticks;
+			for (const auto &[owner, value] : brakes) Objects[owner].mtype.phys_info.brakes = value;
+			xl_camera_renderer_reset();
+		}
+		return true;
+	} catch (const std::exception &) {
+		return false;
+	}
+}
 bool xl_camera_attachments_restore(const nlohmann::json &saved, bool apply)
 {
 	try {
@@ -164,11 +228,20 @@ bool xl_camera_attachments_restore(const nlohmann::json &saved, bool apply)
 extern "C" void xl_camera_controller_begin_frame(void)
 {
 	xl_hitbox_begin_frame();
-	frame_ticks = SDL_GetTicks();
+	if (xl_level_extensions_active()) {
+		input_demo_environment_clock clock{};
+		xl_input_demo_observe("camera_frame", -1, &clock);
+		frame_ticks = clock.cached_ms;
+	} else frame_ticks = xl_input_demo_cached_clock();
 }
 extern "C" unsigned xl_camera_controller_ticks(void)
 {
 	return frame_ticks;
+}
+extern "C" void xl_camera_controller_initial_ticks(unsigned ticks)
+{
+	if (ticks > INT32_MAX) Error("XL camera initial clock exceeds qualified signed range");
+	frame_ticks = ticks;
 }
 extern "C" void xl_camera_controller_frame(int owner)
 {

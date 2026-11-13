@@ -94,8 +94,27 @@ void fixture(const char *original, const std::filesystem::path &directory)
 	const auto level = actions(found->bytes);
 	std::string messages = "1:Wall message\\nSecond line\r\n2:Replacement\r\n3:Short message\r\n4:Modal message - close to continue\r\n5:Autoplay\r\n7:Long duration\r\n8:Zero duration\r\n9:Disabled\r\n10:Repeat message\r\n11:Collected object message\r\n12:Object autoplay";
 	Bytes output{ 'D', 'H', 'F' }, changed{ 'D', 'H', 'F' };
-	for (const std::string name : { "msg23", "msg27", "nomsg", "badmsg", "badid", "badsnd" }) {
-		auto current = name == "msg27" ? xl_test::runtime_layout_fixture(level, 27).bytes : level;
+	for (const std::string name : { "msg23", "msg27", "modal23", "modal27", "nomsg", "badmsg", "badid", "badsnd" }) {
+		auto current = name == "msg27" || name == "modal27" ? xl_test::runtime_layout_fixture(level, 27).bytes : level;
+		if (name == "modal23" || name == "modal27") {
+			const auto layout = xl_compat::inspect_level(current);
+			require(layout.walls.size() > 2, "Modal chain requires two child wall owners");
+			const auto table = layout.sections[3].offset;
+			const auto patch = [&](std::size_t at, int value, int size = 4) { xl_test::layout_patch(current, at, static_cast<std::uint32_t>(value), size); };
+			// An authored autoplay master pauses, then starts a timed child in SIM
+			patch(table + 4 * 52, 31, 1);
+			patch(table + 4 * 52 + 2, 2, 1);
+			patch(table + 4 * 52 + 4, 0);
+			patch(table + 4 * 52 + 8, -1);
+			for (int child = 0; child < 2; ++child) {
+				patch(layout.sections[1].offset + (child + 1) * 25 + 20, child ? 2 : 3, 1);
+				patch(table + 4 * 52 + 12 + child * 2, layout.walls[child + 1].segment, 2);
+				patch(table + 4 * 52 + 32 + child * 2, layout.walls[child + 1].side, 2);
+			}
+			// Keep the unrelated object autoplay from replacing the timed child
+			patch(table + 10 * 52 + 4 + 53 + 1, 0, 2);
+			require(xl_compat::runtime_blockers(xl_compat::inspect_level(current)).empty(), "Modal chain fixture is unsupported");
+		}
 		if (name == "badsnd") current.at(xl_compat::inspect_level(current).sections[3].offset) = 30;
 		xl_test::hog_member(output, name + ".rl2", current, false);
 		if (name == "msg23") xl_test::hog_member(changed, name + ".rl2", current, false);
@@ -116,6 +135,8 @@ void fixture(const char *original, const std::filesystem::path &directory)
 	std::filesystem::create_directories(directory);
 	write(directory / "xmessage.hog", output);
 	write(directory / "xmessage.mn2", text("d2x-name = Derived XL messages\nnum_levels = 2\nmsg23.rl2\nmsg27.rl2\n"));
+	write(directory / "xmodal.hog", output);
+	write(directory / "xmodal.mn2", text("d2x-name = Derived XL modal chain\nnum_levels = 2\nmodal23.rl2\nmodal27.rl2\n"));
 	write(directory / "xchanged.hog", changed);
 	write(directory / "xchanged.mn2", text("d2x-name = Changed XL messages\nnum_levels = 1\nmsg23.rl2\n"));
 	std::cout << "Derived XL message packages written: wall/object actions, 23/27 layouts and resource rejection controls\n";

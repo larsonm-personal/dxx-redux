@@ -1,9 +1,13 @@
 #ifndef XL_OMEGA_DAMAGE_PROBE_H
 #define XL_OMEGA_DAMAGE_PROBE_H
+#include <iostream>
 #ifndef DXX_XL_DEVELOPER_PROBE
 #error Omega damage controls require a developer build
 #endif
 extern "C" {
+#include "powerup.h"
+#include "render_gameplay_view.h"
+#include "guidebot_routing.h"
 int allowed_to_fire_laser(void);
 extern fix64 Last_omega_fire_time;
 void collide_robot_and_weapon(object *, object *, vms_vector *);
@@ -23,9 +27,22 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 	const auto require = [](bool ok, const char *message) { if (!ok) throw std::runtime_error(message); };
 	const auto flags = Players[Player_num].primary_weapon_flags;
 	const bool xl = xl_level_extensions_active();
+	char error[256]{};
+	// Keep the legacy rejection controls even while developer format 6 is exercised
+	const auto start_legacy = [&]() {
+		input_demo_recorder_settings settings;
+		input_demo_recorder_settings_clear(&settings);
+		settings.game = INPUT_DEMO_GAME_D2;
+		settings.mission = Current_mission_filename;
+		settings.level = Current_level_num;
+		settings.difficulty = Difficulty_level;
+		settings.rng_mode = "lcg_state";
+		require(input_demo_recorder_start(&settings, error, sizeof(error)), error);
+	};
 	Players[Player_num].primary_weapon_flags &= ~(1 << OMEGA_INDEX);
 	require(!xl_omega_input_demo_error(), "Omega-free input was rejected");
-	require(maybe_start_input_demo_recording(0), "Actual Omega-free recorder did not start");
+	if (xl) start_legacy();
+	else require(maybe_start_input_demo_recording(0), "Actual Omega-free recorder did not start");
 	input_demo_control_state controls{};
 	input_demo_control_pulse pulse{};
 	input_demo_result result{};
@@ -33,7 +50,6 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 	result.frame_count = 1;
 	unsigned seed = 0;
 	d_rand_get_stream_state(D_RNG_SIM, &seed);
-	char error[256]{};
 	require(input_demo_recorder_capture_frame(F1_0 / 60, &controls, &pulse, seed, 1, d_rand_get_call_count(), nullptr, nullptr, error, sizeof(error)), error);
 	require(input_demo_record_finish_input_tail(error, sizeof(error)), error);
 	const std::string replay_path = std::string(path) + ".dximdemo";
@@ -41,9 +57,11 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 	input_demo_recorder_cancel();
 	Players[Player_num].primary_weapon_flags |= 1 << OMEGA_INDEX;
 	require(bool(xl_omega_input_demo_error()) == xl, "Omega input admission crossed the classic boundary");
-	nlohmann::ordered_json results = { { "omega_free_recording", true }, { "xl", xl }, { "rejected_paths", nlohmann::ordered_json::array() } };
+	nlohmann::ordered_json results = { { "omega_free_recording", bool{ true } }, { "xl", xl }, { "rejected_paths", nlohmann::ordered_json::array() } };
 	if (xl) {
-		require(!maybe_start_input_demo_recording(0) && !input_demo_recorder_is_active(), "Owned Omega recording was accepted");
+		require(maybe_start_input_demo_recording(0) && input_demo_recorder_uses_environment(), "Developer Omega recording lacks its timeline");
+		input_demo_recorder_cancel();
+		results["developer_timeline_recording"] = bool{ true };
 		for (int route = 0; route < 3; ++route) {
 			require(input_demo_replay_load(replay_path.c_str(), error, sizeof(error)), error);
 			const auto before = xl_runtime::weapon_clock_snapshot();
@@ -70,22 +88,22 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 			                                                                         : "paused");
 		}
 		Players[Player_num].primary_weapon_flags &= ~(1 << OMEGA_INDEX);
-		require(maybe_start_input_demo_recording(0), "Acquisition recording did not start");
+		start_legacy();
 		Players[Player_num].primary_weapon_flags |= 1 << OMEGA_INDEX;
 		require(!input_demo_record_finish_input_tail(error, sizeof(error)) && !input_demo_recorder_is_active(), "Acquired Omega recording was accepted");
-		results["acquired_recording_rejected"] = true;
+		results["acquired_recording_rejected"] = bool{ true };
 		// Exercise the final-step exit entry before the outer post-step gate runs.
 		require(input_demo_replay_load(replay_path.c_str(), error, sizeof(error)), error);
 		omega_completion_writes = 0;
 		fix64 timer = 1;
 		require(input_demo_finish_replay_shared(0, &timer, nullptr, omega_completion_write), "Final-step exit was not handled");
 		require(!omega_completion_writes && !input_demo_replay_is_loaded() && timer == 0, "Final-step exit published unsupported Omega success");
-		results["simulation_exit_rejected"] = true;
+		results["simulation_exit_rejected"] = bool{ true };
 
 		// Build a legacy terminal tail containing a real authored all-weapons command.
 		// Low-level recorder APIs intentionally bypass the new live-capture admission.
 		Players[Player_num].primary_weapon_flags &= ~(1 << OMEGA_INDEX);
-		require(maybe_start_input_demo_recording(0), "Terminal-tail fixture recorder did not start");
+		start_legacy();
 		d_rand_get_stream_state(D_RNG_SIM, &seed);
 		require(input_demo_recorder_capture_frame(F1_0 / 60, &controls, &pulse, seed, 1, d_rand_get_call_count(), nullptr, nullptr, error, sizeof(error)), error);
 		require(input_demo_recorder_begin_input_batch(seed, d_rand_get_call_count(), FrameTime, error, sizeof(error)), error);
@@ -103,12 +121,12 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 			require(Players[Player_num].primary_weapon_flags & (1 << OMEGA_INDEX), "Authored terminal tail did not acquire Omega");
 			require(!omega_completion_writes && !input_demo_replay_is_loaded(), "Terminal-tail Omega published success");
 		}
-		results["terminal_tail_rejected"] = true;
+		results["terminal_tail_rejected"] = bool{ true };
 
 	} else {
 		require(maybe_start_input_demo_recording(0), "Classic Omega recording was rejected");
 		input_demo_recorder_cancel();
-		results["classic_recording_allowed"] = true;
+		results["classic_recording_allowed"] = bool{ true };
 		for (bool early_exit : { false, true }) {
 			require(input_demo_replay_load(replay_path.c_str(), error, sizeof(error)), error);
 			omega_completion_writes = 0;
@@ -117,16 +135,188 @@ static nlohmann::ordered_json omega_replay_policy_controls(const char *path)
 			else input_demo_advance_replay_frame_shared(nullptr, omega_completion_stop);
 			require(omega_completion_writes == 1 && !input_demo_replay_is_loaded(), "Classic Omega completion was rejected");
 		}
-		results["classic_completion_allowed"] = true;
+		results["classic_completion_allowed"] = bool{ true };
 	}
 	Players[Player_num].primary_weapon_flags = flags;
 	return results;
+}
+// Ordinary recording with setup assists confined to the checkpoint boundary
+static int xl_omega_recording_probe(const char *path)
+{
+	using nlohmann::ordered_json;
+	ordered_json proof = { { "schema", "xl-omega-recording-v1" }, { "assisted", bool{ true } }, { "complete", bool{ false } }, { "mission", Current_mission_filename }, { "level", Current_level_num }, { "position_assists", 0 }, { "inventory_assists", 0 }, { "assists_during_recording", 0 } };
+	const auto started = SDL_GetTicks();
+	const auto mark = [&](const char *stage) {
+		const auto elapsed = SDL_GetTicks() - started;
+		proof["timing_ms"][stage] = elapsed;
+		std::cout << "Omega recording timing: " << stage << '=' << elapsed << " ms\n"
+		          << std::flush;
+	};
+	try {
+		const auto require = [](bool ok, const char *message) { if (!ok) throw std::runtime_error(message); };
+		require(Game_wind && xl_level_extensions_active() && !game_is_time_paused() && !(Game_mode & GM_MULTI),
+		        "Omega recording requires an ordinary single-player XL world");
+		bool recording = false;
+		const auto frames = [&](int count, bool firing) {
+			for (int i = 0; i < count; ++i) {
+				SDL_Delay(17);
+				timer_update();
+				FrameTime = F1_0 / 60;
+				Controls = {};
+				Controls.fire_primary_state = firing;
+				do_weapon_n_item_stuff();
+				calc_game_time();
+				GameProcessFrame();
+				game_render_frame();
+				gr_flip();
+				require(glGetError() == GL_NO_ERROR && Current_level_num == proof["level"] && !Player_is_dead && (!recording || input_demo_recorder_is_active()),
+				        "Ordinary Omega capture stopped, died or changed level");
+			}
+		};
+		// Let the source one-second robot spawn protection expire through normal simulation
+		frames(66, false);
+		mark("warmup_finished");
+		proof["warmup_frames"] = 66;
+		// Find an original ordinary robot with room for an unobstructed firing pose
+		int target = -1;
+		vms_vector approach{}, forward{};
+		short approach_segment = -1;
+		for (int i = 0; i <= Highest_object_index && target < 0; ++i) {
+			const auto &actor = Objects[i];
+			if (actor.type != OBJ_ROBOT || actor.shields <= 0 || actor.ctype.ai_info.CLOAKED || Robot_info[actor.id].cloak_type || Robot_info[actor.id].boss_flag ||
+			    Robot_info[actor.id].companion || Robot_info[actor.id].thief) continue;
+			vms_vector center, inward;
+			compute_segment_center(&center, &Segments[actor.segnum]);
+			vm_vec_sub(&inward, &center, &actor.pos);
+			vm_vec_normalize_quick(&inward);
+			for (auto direction : { inward, actor.orient.fvec, actor.orient.rvec, actor.orient.uvec,
+			                        vms_vector{ -actor.orient.fvec.x, -actor.orient.fvec.y, -actor.orient.fvec.z } }) {
+				if (!vm_vec_mag_quick(&direction)) continue;
+				vm_vec_scale_add(&approach, &actor.pos, &direction, 25 * F1_0);
+				auto origin = actor.pos;
+				fvi_query query{};
+				query.p0 = &origin;
+				query.p1 = &approach;
+				query.startseg = actor.segnum;
+				query.rad = ConsoleObject->size;
+				query.thisobjnum = short(ConsoleObject - Objects);
+				fvi_info hit{};
+				if (find_vector_intersection(&query, &hit) != HIT_NONE || hit.hit_seg < 0) continue;
+				target = i;
+				approach_segment = short(hit.hit_seg);
+				forward = direction;
+				vm_vec_negate(&forward);
+				break;
+			}
+		}
+		require(target >= 0, "No original robot with an unobstructed Omega approach");
+		ConsoleObject->pos = ConsoleObject->last_pos = approach;
+		ConsoleObject->mtype.phys_info.velocity = {};
+		vm_vector_2_matrix(&ConsoleObject->orient, &forward, nullptr, nullptr);
+		obj_relink(int(ConsoleObject - Objects), approach_segment);
+		// Match ordinary assisted relocation: the prior view belonged to the old pose
+		render_reset_gameplay_view_objects();
+		proof["position_assists"] = 1;
+		int pickup = -1;
+		for (int i = 0; i <= Highest_object_index; ++i)
+			if (Objects[i].type == OBJ_POWERUP && Objects[i].id == POW_OMEGA_WEAPON && !(Objects[i].flags & OF_SHOULD_BE_DEAD)) {
+				pickup = i;
+				break;
+			}
+		require(pickup >= 0, "No original Omega pickup for recorded acquisition");
+		auto &item = Objects[pickup];
+		const int pickup_signature = item.signature;
+		proof["pickup"] = { { "object", pickup }, { "signature", pickup_signature }, { "original_segment", int(item.segnum) }, { "charge", int(item.ctype.powerup_info.count) } };
+		require(item.ctype.powerup_info.count == MAX_OMEGA_CHARGE, "Original Omega pickup has unexpected charge");
+		item.pos = item.last_pos = ConsoleObject->pos;
+		obj_relink(pickup, approach_segment);
+		proof["position_assists"] = 2;
+		Players[Player_num].primary_weapon_flags &= ~(1 << OMEGA_INDEX);
+		Players[Player_num].primary_weapon = LASER_INDEX;
+		Players[Player_num].energy = Players[Player_num].shields = 200 * F1_0;
+		Omega_charge = 0;
+		proof["inventory_assists"] = 1;
+		proof["setup"] = "Original robot and Omega pickup; player approach and pickup relocation, cleared Omega ownership/charge, laser selection, energy and shields before recording";
+		const int signature = Objects[target].signature;
+		const fix shields = Objects[target].shields;
+		proof["target"] = { { "object", target }, { "signature", signature }, { "robot_id", int(Objects[target].id) }, { "shields_before", shields } };
+		Controls = {};
+		mark("setup_finished");
+		require(input_demo_start_quick_recording_common() && input_demo_recorder_uses_environment(), "Cannot start ordinary Omega recording");
+		char error[256]{};
+		const auto observation = std::string(path) + ".capture.jsonl.gz";
+		require(input_demo_state_trace_start(observation.c_str(), "record", "d2", Current_mission_filename,
+		                                     Current_level_num, Difficulty_level, "save_checkpoint", 0, error, sizeof(error)),
+		        error);
+		input_demo_trace_boundary("restored");
+		proof["owned_before"] = bool(Players[Player_num].primary_weapon_flags & (1 << OMEGA_INDEX));
+		mark("recording_started");
+
+		input_demo_player_cfg initial_cfg{};
+		input_demo_capture_player_cfg(&initial_cfg);
+		recording = true;
+		frames(1, false);
+		proof["pickup"]["frame"] = input_demo_recorder_frame_count() - 1;
+		proof["pickup"]["consumed"] = bool(Objects[pickup].signature != pickup_signature || Objects[pickup].type != OBJ_POWERUP || (Objects[pickup].flags & OF_SHOULD_BE_DEAD));
+		proof["owned_after"] = bool(Players[Player_num].primary_weapon_flags & (1 << OMEGA_INDEX));
+		proof["charge_before"] = Omega_charge;
+		require(!proof["owned_before"].get<bool>() && proof["owned_after"].get<bool>() &&
+		            proof["pickup"]["frame"] == 0 && proof["pickup"]["consumed"].get<bool>() &&
+		            Players[Player_num].primary_weapon == OMEGA_INDEX && Omega_charge == MAX_OMEGA_CHARGE,
+		        "Ordinary recorded pickup did not acquire, select and charge Omega");
+		// Ordinary pickup selection rearms for one second before firing is allowed
+		const int rearm_frames = (REARM_TIME + F1_0 / 60 - 1) / (F1_0 / 60);
+		frames(rearm_frames, false);
+		proof["rearm_frames"] = rearm_frames;
+		require(Next_laser_fire_time <= GameTime64 && Omega_charge == MAX_OMEGA_CHARGE,
+		        "Ordinary pickup rearm did not expire with full Omega charge");
+		frames(40, true);
+		require(Players[Player_num].primary_weapon == OMEGA_INDEX && Objects[target].signature == signature && Objects[target].shields < shields,
+		        "Selected Omega did not damage the original target before autoselection");
+		proof["target"]["shields_after_omega"] = int(Objects[target].shields);
+		// Menu-equivalent preferences plus two ordinary routing setter changes
+		PlayerCfg.AutoLeveling = !initial_cfg.auto_leveling;
+		PlayerCfg.OriginalHoming = !initial_cfg.original_homing;
+		std::swap(PlayerCfg.PrimaryOrder[0], PlayerCfg.PrimaryOrder[1]);
+		guidebot_routing_set_mode(!initial_cfg.guidebot_routing_mode);
+		guidebot_routing_set_mode(initial_cfg.guidebot_routing_mode);
+		frames(50, true);
+		proof["charge_after_fire"] = Omega_charge;
+		const bool same_target = Objects[target].type == OBJ_ROBOT && Objects[target].signature == signature;
+		proof["target"]["shields_after_fire"] = same_target ? int(Objects[target].shields) : 0;
+		proof["target"]["destroyed"] = !same_target || (Objects[target].flags & OF_EXPLODING) != 0;
+		require(Omega_charge < proof["charge_before"].get<int>() &&
+		            (!same_target || Objects[target].shields < shields),
+		        "Ordinary Omega fire did not consume charge and damage the original target");
+		frames(45, false);
+		PlayerCfg.AutoLeveling = initial_cfg.auto_leveling;
+		PlayerCfg.OriginalHoming = initial_cfg.original_homing;
+		std::swap(PlayerCfg.PrimaryOrder[0], PlayerCfg.PrimaryOrder[1]);
+		frames(45, false);
+		proof["charge_after_recharge"] = Omega_charge;
+		require(Omega_charge > proof["charge_after_fire"].get<int>(), "Ordinary Omega did not recharge after releasing fire");
+		mark("frames_finished");
+		guidebot_routing_set_mode(!initial_cfg.guidebot_routing_mode);
+		proof["configuration_changes"] = 4;
+		require(input_demo_state_trace_is_active() && input_demo_stop_quick_recording_common(), "Ordinary Omega recording did not finish");
+		mark("recording_finalized");
+		proof["frames"] = 181 + rearm_frames;
+		proof["complete"] = bool{ true };
+	} catch (const std::exception &e) {
+		proof["error"] = e.what();
+		input_demo_cancel_unsupported_input_capture(e.what());
+		input_demo_state_trace_stop();
+	}
+	std::ofstream output(path);
+	output << proof.dump(2) << '\n';
+	output.flush();
+	return output.good() && proof["complete"].get<bool>() ? 0 : 1;
 }
 // Assisted component controls: actual firing, blob construction and robot collision
 static int xl_omega_damage_probe(const char *path)
 {
 	using nlohmann::ordered_json;
-	ordered_json proof = { { "schema", "xl-omega-damage-v1" }, { "assisted", true }, { "complete", false }, { "cases", ordered_json::array() } };
+	ordered_json proof = { { "schema", "xl-omega-damage-v1" }, { "assisted", bool{ true } }, { "complete", bool{ false } }, { "cases", ordered_json::array() } };
 	try {
 		const auto require = [](bool ok, const char *message) { if (!ok) throw std::runtime_error(message); };
 		const auto *renderer = glGetString(GL_RENDERER);
@@ -161,6 +351,9 @@ static int xl_omega_damage_probe(const char *path)
 				const int target = obj_create(OBJ_ROBOT, robot_id, ConsoleObject->segnum, &ConsoleObject->pos, &ConsoleObject->orient, F1_0, CT_NONE, MT_NONE, RT_NONE);
 				require(target >= 0, "Cannot allocate damage target");
 				Objects[target].shields = 10000 * F1_0;
+				// The XL damage owner protects newly spawned robots for one second
+				GameTime64 += F1_0;
+				Next_laser_fire_time = GameTime64;
 				std::vector<int> existing;
 				for (int i = 0; i <= Highest_object_index; ++i) existing.push_back(Objects[i].type == OBJ_NONE ? -1 : Objects[i].signature);
 				int shots = 0, remainder = 0;
@@ -198,13 +391,13 @@ static int xl_omega_damage_probe(const char *path)
 				obj_delete(target);
 			}
 		Game_mode = original_mode;
-		proof["complete"] = true;
+		proof["complete"] = bool{ true };
 	} catch (const std::exception &e) {
 		proof["error"] = e.what();
 	}
 	std::ofstream output(path);
 	output << proof.dump(2) << '\n';
 	output.flush();
-	return output.good() && proof["complete"] == true ? 0 : 1;
+	return output.good() && proof["complete"].get<bool>() ? 0 : 1;
 }
 #endif

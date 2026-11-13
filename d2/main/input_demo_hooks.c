@@ -2,6 +2,7 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
 #include "projectile.h"
+#include "slow_motion_runtime.h"
 #endif
 #include <limits.h>
 #include <stdarg.h>
@@ -261,6 +262,16 @@ static int input_demo_apply_d2_direct_command(void *context,
 		if (error && error_size)
 			snprintf(error, error_size, "%s", "cheat is unsupported for this game or mode");
 		return 0;
+	}
+	if (event->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_XL_TIME_CONTROL) {
+#ifdef DXX_XL_RUNTIME
+		if (event->value0 < 0 || event->value0 > 1 || event->value1 || event->text[0] ||
+		    !xl_level_extensions_active() || (Game_mode & GM_MULTI) ||
+		    input_demo_replay_format_version() != 6) goto invalid_arguments;
+		return validate_only || xl_slow_motion_request(event->value0);
+#else
+		goto invalid_arguments;
+#endif
 	}
 
 	if (event->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS ||

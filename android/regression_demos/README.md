@@ -176,6 +176,14 @@ The shared reader accepts recordings up to 1 GiB and reads bounded JSON lines
 limit remains 2 MiB. Parsed frame data still occupies memory until replay setup
 finishes; this is not a constant-memory replay engine
 
+Replay RNG tracing spools fixed-size events beside the requested trace as
+`<trace>.events.tmp`, then writes the existing JSONL format and removes the
+temporary file on normal cleanup. This bounds replay trace memory even when
+presentation generates millions of draws. Recording still retains its trace
+until a destination is chosen. Truncated traces fail finalization explicitly.
+The native result is published after RNG and state traces are finalized, so a
+large export does not appear to the runner as a result followed by a hung exit.
+
 # D1-in-D2 verification
 
 From the repository root, the existing runner can execute the D1 corpus in
@@ -332,6 +340,259 @@ Negative controls explicitly request `-NativeOnly`: their reports mark imported
 parity `not_run`, avoiding two redundant imported investigations. The positive
 graphics pass still requires the existing paired scope once. All mutations are
 disposable copies; checked-in fixtures stay byte-identical.
+
+## XL environmental timeline (format 6, under qualification)
+
+The codec recognizes a required `xl-clock-input-v1` capability for D2. Normal
+Windows and Linux OpenGL builds record and replay this format for the bounded
+profile below, including Omega and time equipment. Ordinary F5 recording and
+level-start recording use the same ordered timeline. Android, true-headless and
+other production backends remain rejected pending their qualification; developer
+probes retain access for that work. This does not establish complete XL gameplay,
+campaign progression or presentation independence. Existing format-5 stock
+fixtures are unchanged; legacy XL playback without the required equipment
+timeline remains rejected.
+
+The existing `android/tests/xl_omega_damage.py` owner accepts `--recording`
+for a developer-only live Omega witness. It warms the original level for 66
+ordinary frames, sets an approach pose and initial inventory before capture,
+and moves an original Omega pickup to that approach. Capture starts without Omega
+ownership or charge. The first ordinary frame acquires and selects the pickup;
+61 released-fire frames then let the one-second selection rearm delay expire.
+The remaining 90 held-fire and 90 released-fire frames exercise ordinary damage
+and recharge, for 242 recorded frames total. The receipt requires damage while
+Omega is still selected, charge consumption and recharge. It discloses the two
+position assists and one inventory setup assist and requires
+zero assists during recording. The original eight component/rate controls remain
+the default mode. A passing capture receipt does not qualify playback: compare
+the recorded detailed state and SIM RNG with clean-process replay before freezing
+the demo. The acquisition Warp 5 capture matches all 242 object/frame observations,
+246 world/boundary records, 1616 SIM RNG events and 488 FX RNG events against
+three clean-process playbacks, including accelerated and realtime pacing.
+This includes restored clocks/counters, texture UVs and
+AI chatter timers. Presentation RNG differs and remains reported separately.
+This bounded assisted witness is not complete XL state/platform qualification or
+a frozen corpus. The recording probe reports phase timings and the runner reports
+total process time; its 45-second clean-exit deadline remains unchanged.
+
+The existing `xl_render_clock.py --time-equipment` probe now reports startup,
+recording/save phase endpoints and aggregate delay/simulation/render/flip costs.
+A fresh original Warp 6 combat capture exits cleanly in 32.70 seconds against the
+unchanged 45-second deadline. Immediate and repeated accelerated/realtime replays
+each match 231 object/frame observations, 235 world/boundary records, 1193 SIM RNG
+events and 236 FX RNG events.
+The probe warms the level for 66 ordinary frames, finds a wall-clear approach
+outside original robots, then records the actual pickup, ordinary steering and
+84 firing frames during slow motion, followed by reversal. The existing damage
+trace must attribute a shield decrease to a player projectile in the observed
+slowed frame; a shield drop alone is insufficient. World observations describe
+frame starts, so the following boundary verifies the factors after the collision.
+One approach-pose assist precedes recording; inventory and in-record assists are
+zero. Later bullet-time controls and movement remain live checks outside that
+recording; five total pose assists prevent a connected-progression claim.
+The full world observer avoids deep-copying
+changed JSON sections before serialization. All 724 decoded trace records from a
+fixed before/after replay are byte-identical; no field, delta or flush was removed.
+Earlier timed-out captures and failed setup/verifier attempts remain failed
+evidence. These Windows results do not establish cross-platform acceptance.
+
+XL transient particles, lightning bolt/draw geometry and flare illumination use
+RNG stream 2 (`D_RNG_PRESENTATION`). These owners previously consumed stream 1
+(`D_RNG_FX`), which also drives simulation-owned sound deadlines and some stock
+object effects. Rendering extra views or rebuilding clouds could therefore change
+later FX decisions. The new stream uses the existing LCG, independently even in
+libc RNG builds. Stock SIM/FX sequences and stock flare selection are unchanged.
+Every presentation draw/reseed remains in the complete RNG trace, with a separate
+`presentation_rng` comparison report. The two-entry object/boundary `rng` array
+continues to describe SIM and FX; native D2 comparison retains both exactly.
+Presentation sequence/state is not saved: transient clouds and bolts already
+rebuild on ordinary restoration. This is an RNG ownership boundary, not blanket
+qualification of optional graphics/audio. Lightning linked-sound ownership and
+all other gameplay dependencies still require the G3 audit and no-device proof.
+
+The header `environment` object contains `required: ["xl-clock-input-v1"]`,
+`slow_motion_speedup: 6`, `clock_ms`, `pickup_ms`, `cached_ms` and `render_frame`. Unknown or
+duplicate required capabilities and unsupported profiles reject. Build identity
+remains provenance rather than an exact-commit playback whitelist. The existing
+difficulty metadata retains its range validation. Format 6 requires `lcg_state`,
+explicit `player_cfg`, `view_projection` and `rear_view` objects, plus an XL clock
+baseline for `new_level`. Every ordinary D2 player-config field emitted by the
+recorder must be present, including headlight default, homing, Guide-Bot routing,
+autoselection options and both weapon orders. Boolean settings require integer
+0 or 1. Missing settings do not inherit legacy defaults. Both complete-file
+admission and recorder startup enforce this contract before activating a session;
+format-5 stock/default behavior remains unchanged.
+
+The settings audit currently distinguishes these owners. Open rows are
+qualification work, not implied support:
+
+| Setting/input                                                                                          | Existing ownership and remaining qualification                                                                                                                                                               |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Difficulty                                                                                             | Header 0-4, restored before startup; ordered difficulty commands retain later changes                                                                                                                        |
+| Auto-leveling, persistent debris, headlight default, homing, weapon selection/order, Guide-Bot routing | Explicit startup configuration plus complete ordered `player_cfg` operations; Guide-Bot changes use the ordinary setter and retain its AI routing reset; the current profile survives pilot reload           |
+| Keyboard, joystick, mouse and touch scaling/bindings                                                   | Applied before captured control samples; playback dispatches those scaled samples, rather than reading current device bindings                                                                               |
+| Rear view/cockpit and projection/depth/missile view                                                    | Explicit startup baselines and ordered view operations; projection changes cancel capture, and incompatible playback projection rejects                                                                      |
+| Extra/guided/camera render views                                                                       | Existing gameplay-view admission applies; broader renderer independence remains G3 work, since visibility and render counts can affect gameplay                                                              |
+| XL speedup and process clocks                                                                          | Required speedup 6, bounded recorded transition/pickup/cached clocks and render-event count; no configurable alternate speedup is currently implemented                                                      |
+| RNG and floating point                                                                                 | Required `lcg_state` and supported strict C/C++ build profile; altered runtime FP controls reject without replay-only repair. Cross-build/architecture gameplay qualification remains open                   |
+| Cheats and checkpoint globals                                                                          | Ordered all-weapons commands are retained. Active other native cheat flags or suspended simulation subsystems reject XL recording before startup; complete gameplay-state and disk continuation belong to G2 |
+| Audio backend and optional visual effects                                                              | Some runtime state still depends on backend availability; G3 must establish simulation independence before treating these as presentation-only                                                               |
+
+Low-memory bitmap substitution (`-lowmem`) is outside this profile: it changes
+the `GameBitmaps` pixels used by transparency collision checks. XL capture
+rejects it before creating a checkpoint, and format-6 playback rejects it before
+restoring the world. Other active native cheat flags and debug subsystem
+suspension also reject; the native end-level robot suspension remains allowed.
+The existing modal integration owner checks all 22 rejected startup profiles,
+unchanged player/controls/SIM RNG, normal end-level admission and successful
+ordinary recording after restoring the settings.
+
+Format 6 admission requires the existing CMake strict-FP profile in both C and
+C++: MSVC `/fp:strict`, or GCC/Clang no fast math and no contraction. Compiler
+markers additionally reject fast-math overrides and excess-precision evaluation.
+The checked hardware profiles are SSE2 (plus 53-bit x87 on MSVC x86) and ARM
+hardware floating point. Unknown compiler/hardware profiles reject. These are
+admission prerequisites, not cross-platform gameplay qualification.
+
+Capture startup checks FP controls before checkpoint capture; replay checks before
+session publication and world restore, then again after restore. Live input/frame
+boundaries and replay steps require nearest rounding, masked exceptions and
+gradual underflow. ARM also requires its default NaN/vector controls. Accrued
+exception status is not a control change. A changed control mode cancels the
+companion capture or stops playback with a diagnostic; it is not silently repaired.
+Format 6 no longer uses the historical Windows replay-only FP reset. Stock format
+5 retains that behavior. The build profile is part of the format-6 contract;
+changing its numerical semantics requires renewed fidelity qualification.
+
+Format 6 records configuration changes as `{k: "player_cfg", ft, value}` in the
+existing ordered dispatch list. `value` is the complete, validated D2 `player_cfg`
+field map, including both weapon orders. Missing fields, invalid booleans/orders,
+unknown keys, D1 operations and use in format 5 reject before execution. The
+initial header remains unchanged; playback retains the current ordered profile
+when a later pilot reload reapplies settings. Format-5 recording/playback behavior
+is unchanged.
+
+The recorder observes settings before input consumers and simulation, deduplicates
+unchanged snapshots, and captures a final change in the no-simulation stop tail.
+A preference mutation first discovered inside simulation cancels the companion
+rather than emitting an operation after its consequences. Guide-Bot routing is
+captured at its ordinary setter before resetting AI routing; two changes between
+frames remain two operations even when the final mode equals the original mode.
+Playback uses that same setter, not the save-restoration path that preserves AI.
+
+XL world observations use schema 11 and require `xl_player_cfg` at restored,
+per-frame and terminal boundaries. Stock world schema 10 is unchanged. Earlier XL
+schema-10 receipts retain their historical scope; they cannot prove the newly
+required settings observation. The Omega recording probe exercises menu-equivalent
+auto-leveling, homing and weapon-order changes, two ordinary routing setter calls
+at frame 102, preference restoration at frame 197, and routing in the stop tail.
+Its runner checks all four recorded operation sites alongside the pickup, rearm,
+combat and recharge workload. This is scripted settings qualification, not a UI menu
+or connected-progression playthrough.
+
+Every frame and the mandatory input tail carry `environment: {count, samples}`.
+Each sample has a contiguous zero-based `sequence`, `phase` (`input` or `sim`),
+`operation`, `consumer`, `subject`, and the four clock values. Input operation
+numbers are one-based: a consumer inside the second dispatched operation has
+`operation: 2`. Simulation samples have `operation: 0`. A single `input_end`
+sample follows all input operations before any simulation samples; a tail instead
+ends with `tail_end` and cannot contain simulation samples. Empty input batches
+still have their boundary sample. This preserves multiple interleaved operations
+and the record-stop tail without assuming one render per simulation frame.
+
+Consumers are closed: `slow_frame`, `slow_off`, `pickup`, `camera_frame`, `wall_trigger`, `message_resume`, `omega_blocked` and
+`omega_fired`, plus the two boundary names. Pickup samples identify the object
+slot in `subject`; wall-trigger samples identify an index in 0..253. Message-resume
+samples identify the acknowledged text ID in 1..32767. Other
+consumers require `subject: -1`. Slow-frame, camera-frame and pickup
+consumers belong to simulation. Counts, phases, ordering, required boundaries,
+unknown fields and duplicate JSON keys reject during complete-file admission,
+without replacing an already parsed recording.
+
+`camera_frame` supplies the cached SDL millisecond clock at the ordinary object
+simulation boundary, using `cached_ms` from that ordered sample. Wall-trigger
+cooldowns consume the same cached integer clock at activation, including input
+dispatch and simulation. The timer owner exposes its last SDL sample without a
+new timer read or conversion from fixed point. XL adds a constant saved-domain
+offset after ordinary disk restoration, so subsequent cached samples advance
+from the saved origin instead of the new process's uptime. Neither consumer uses
+the replay renderer's clock. Detailed XL time observations read the last consumed
+sample, including the checkpoint origin before frame zero; they never sample a
+timer, advance a consumer or update the save clock cache. The detailed trace
+retains time factors/directions/threshold ages, pending controls, weapon markers,
+pickup ages, camera-controller state and pending wall-trigger/cooldown state.
+Save schema 40 retains cooldown activation and its age clamped at the source's
+750 ms threshold. Loading rebases that age onto the restored cached clock or
+admitted replay origin. The unqualified format-6 drafts lacking `cached_ms`
+reject; they are diagnostic evidence, not a released compatibility contract.
+Timed level messages also consume this cached clock, matching the pinned
+`ShowGameMessage` use of `nSDLTicks[0]`. Message age, text and opacity no longer
+read host wall time. Save/trace readers derive effective age and expiry directly
+without mutating the message owner or depending on a prior draw/update call.
+Native message controls record ordinary frames, reload their timeline, hold its
+clock while host time advances, then verify age and expiry as recorded samples
+are consumed. These derived controls do not prove original navigation or completion.
+Paused XL menu draws now give `FrameTime` zero and reset the next frame's host
+timer origin, matching the paused branch of pinned `CalcFrameTime`. Stock timing
+is unchanged. The existing rendered clock probe opens a real menu, processes
+three event loops and checks zero XL duration, unchanged game time/SIM RNG and
+the three actual render-counter contributions.
+An XL modal also holds the cached gameplay tick through the interrupted frame,
+matching the source's return before `GetSlowTicks`. The next input/frame boundary
+releases it; restore and level reset clear the temporary hold. `message_resume`
+observes real elapsed clocks and render counts after the normal pause/window
+lifecycle, while retaining that cached tick for chained actions in the same frame.
+Both live play and replay establish zero paused duration before opening the menu.
+Replay displays and automatically acknowledges this source-defined single-button
+message, whose return value never selects a gameplay action. Normal window
+activation still clears controls; no recorded control or world state is injected.
+The existing derived message fixture exercises an autoplay master, a modal and
+a following timed child inside SIM. Live captures and repeated clean-process
+rendered playback compare full objects/world/frames and RNG, including message
+expiry on the next sampled clock. This qualifies the tested modal continuation;
+true-headless message output and broader presentation independence remain G3 work.
+The schema also persists both signed texture coordinates at all four corners of
+every segment face. Scrolling UVs feed hit-point transparency as well as drawing;
+restoring only texture IDs changes collision. All rows and coordinates validate
+before any UV is applied. The bounded trailer allowance adds the maximum encoded
+UV array to the prior 8 MiB owner allowance. Older development XL saves lack this
+state and reject; stock save layouts remain unchanged.
+Camera scan angle, direction, per-owner brake time and the cached frame boundary
+are saved separately from attachment identity. All monitor rows validate before
+publication, including agreement between monitors sharing an owner. The pinned
+source's unused `t0` field remains zero. New-level format-6 baselines explicitly
+carry `xl_camera_ticks`, bounded by the header's cached-clock origin. These fields
+preserve ordinary save continuation as well as checkpoint playback; they do not
+add playback-only camera corrections.
+It also preserves the nonnegative fixed-point frame duration and SIM RNG call
+counter alongside the stock save's SIM seed. The counter is diagnostic and used
+for ordered-input validation; it does not choose random values. Frame duration
+can be consumed before the next time calculation and is the fallback for a bad
+timer delta. Ordinary XL disk restores retain both instead of inheriting startup
+zeros. Malformed durations/counters reject before any trailer state is applied.
+These observations do not establish complete XL owner coverage; that remains a
+separate save/continuation qualification gate.
+
+The current bounded profile uses nondecreasing signed 64-bit transition-clock
+milliseconds, starting at least at 26 and leaving INT32_MAX overflow headroom.
+Pickup and cached milliseconds are separately nondecreasing in 0..INT32_MAX, matching the currently
+qualified signed native animation-clock domain; a longer process lifetime is
+not silently wrapped into that profile. Render frames use unsigned 32-bit modulo
+arithmetic: each observed forward difference is at most INT32_MAX, including
+UINT32_MAX to zero. There are at most 16,384 samples per frame/tail, within the
+existing record/file byte limits. No clock is inferred from display rate or
+substituted for elapsed time. The recorder and replay owners now preserve and
+consume this stream, including exact consumer/phase/operation checks and a
+fully consumed tail. Native world admission requires the complete supported
+profile and origin binding before restoration; unsupported backends reject
+before loading the checkpoint or level.
+
+The D2-only ordered command `xl_time_control` carries one boolean `bullet_time`.
+Each ordinary Alt+S/Alt+B request is retained, including repeated requests in a
+single batch. The runtime retains the source's pending-boolean coalescing until
+the next simulation step. Formats before 6 reject this command. Android Extra
+actions reach the same ordinary key handler. These code paths are not yet an
+accepted live recording or Android qualification.
 
 ## Ordered input recording (format 5)
 

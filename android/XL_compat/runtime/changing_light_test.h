@@ -1,4 +1,30 @@
 #include "../tests/changing_light_fixture.h"
+extern "C" {
+void slide_textures(void);
+void compute_slide_segs(void);
+}
+
+static std::vector<std::array<int32_t, 48>> texture_uv_snapshot()
+{
+	std::vector<std::array<int32_t, 48>> result(Num_segments);
+	for (int segment = 0; segment < Num_segments; ++segment) {
+		std::size_t field = 0;
+		for (const auto &side : Segments[segment].sides)
+			for (const auto &uvl : side.uvls) {
+				result[segment][field++] = uvl.u;
+				result[segment][field++] = uvl.v;
+			}
+	}
+	return result;
+}
+static std::array<fix, 2> collision_texture_uv()
+{
+	vms_vector center;
+	compute_center_point_on_side(&center, &Segments[0], 0);
+	std::array<fix, 2> result{};
+	find_hitpoint_uv(&result[0], &result[1], nullptr, &center, &Segments[0], 0, 0);
+	return result;
+}
 
 static std::vector<xl_light_segment_state> light_snapshot()
 {
@@ -193,7 +219,8 @@ static void light_bad_state(const std::filesystem::path &root)
 	std::ifstream input(user / "light-state.bin", std::ios::binary);
 	const xl_compat::Bytes encoded{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
 	const auto before = light_snapshot();
-	for (int variant = 0; variant < 9; ++variant) {
+	const auto before_uv = texture_uv_snapshot();
+	for (int variant = 0; variant < 19; ++variant) {
 		auto block = nlohmann::json::parse(encoded.begin() + 16, encoded.end());
 		auto &rows = block["lighting"];
 		if (variant == 0) rows = nlohmann::json::array();
@@ -205,6 +232,18 @@ static void light_bad_state(const std::filesystem::path &root)
 		if (variant == 6) rows[0][2] = 0.5;
 		if (variant == 7) block.erase("lighting");
 		if (variant == 8) block["source"] = xl_level_trigger_identity() ^ UINT64_C(1);
+		// A valid early change must not publish when a later UV or other owner fails
+		block["texture_uv"][0][0] = before_uv[0][0] + 1;
+		if (variant == 9) block.erase("texture_uv");
+		if (variant == 10) block["texture_uv"] = nlohmann::json::array();
+		if (variant == 11) block["texture_uv"].push_back(block["texture_uv"][0]);
+		if (variant == 12) block["texture_uv"].back().erase(47);
+		if (variant == 13) block["texture_uv"].back().push_back(0);
+		if (variant == 14) block["texture_uv"].back()[47] = UINT64_MAX;
+		if (variant == 15) block["texture_uv"].back()[47] = INT64_MIN;
+		if (variant == 16) block["texture_uv"].back()[47] = nlohmann::json::boolean_t(1);
+		if (variant == 17) block["texture_uv"].back()[47] = 0.5;
+		if (variant == 18) block["texture_uv"].back()[47] = "0";
 		const auto text = block.dump();
 		xl_compat::Bytes bad(encoded.begin(), encoded.begin() + 16);
 		bad.insert(bad.end(), text.begin(), text.end());
@@ -216,11 +255,11 @@ static void light_bad_state(const std::filesystem::path &root)
 		}
 		write_bytes((user / "light-bad.bin").string().c_str(), bad);
 		file = PHYSFS_openRead("light-bad.bin");
-		require(file && !xl_wall_trigger_read(file) && PHYSFS_close(file) && same_light_snapshot(before, light_snapshot()), "Malformed light state was accepted or changed live brightness");
+		require(file && !xl_wall_trigger_read(file) && PHYSFS_close(file) && same_light_snapshot(before, light_snapshot()) && texture_uv_snapshot() == before_uv, "Malformed light/UV state was accepted or partially changed the live world");
 	}
 	file = PHYSFS_openRead("light-state.bin");
-	require(file && xl_wall_trigger_read(file) && PHYSFS_close(file) && same_light_snapshot(before, light_snapshot()), "Valid light state did not recover");
-	std::cout << "Nine malformed light payloads rejected without changing live brightness; valid recovery passed\n";
+	require(file && xl_wall_trigger_read(file) && PHYSFS_close(file) && same_light_snapshot(before, light_snapshot()) && texture_uv_snapshot() == before_uv, "Valid light/UV state did not recover");
+	std::cout << "Nineteen malformed light/UV payloads rejected without partial publication; valid recovery passed\n";
 }
 
 static int changing_light_test(int argc, char **argv)
@@ -230,6 +269,19 @@ static int changing_light_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir"));
+		if (!std::strcmp(find_arg_value(argc, argv, "-changing-light-test"), "resume")) {
+			std::strcpy(Players[Player_num].callsign, "XLTest");
+			input_demo_set_skip_level_intro(1);
+			char save[] = "lights-earned.sav";
+			std::ifstream input(root / "uv-earned.json");
+			const auto expected = nlohmann::json::parse(input);
+			require(state_restore_all_sub(save, 0), "Cold UV checkpoint restore failed");
+			require(nlohmann::json(texture_uv_snapshot()) == expected.at("coordinates") &&
+			            nlohmann::json(collision_texture_uv()) == expected.at("collision"),
+			        "Cold checkpoint lost scrolling UVs or hit-point transparency coordinates");
+			std::cout << "XL cold texture UV restore passed: " << Num_segments << " segments and collision interpolation\n";
+			return 0;
+		}
 		const auto source = write_changing_light_fixture(root / "missions", !std::strcmp(find_arg_value(argc, argv, "-changing-light-test"), "validity"));
 		require(load_base_mission("xlights", error, sizeof(error)), error);
 		require(xl_level_supported("neptunxl.rl2", 0), xl_level_rejection());
@@ -264,12 +316,34 @@ static int changing_light_test(int argc, char **argv)
 			for (int c = 0; c < 24; ++c)
 				require(earned[s].light[c] == dark[s].light[c] + contribution[s][c], "Expanded light-on lost its high-index range");
 		require(!same_light_snapshot(before, earned), "Fixture did not expose non-invertible lower clamping");
+		const auto authored_uv = texture_uv_snapshot();
+		const int texture = Segments[0].sides[0].tmap_num;
+		const auto original_texture = TmapInfo[texture];
+		const auto original_frame_time = FrameTime;
+		TmapInfo[texture].slide_u = 128;
+		TmapInfo[texture].slide_v = -64;
+		compute_slide_segs();
+		FrameTime = F1_0 / 60;
+		for (int frame = 0; frame < 66; ++frame) slide_textures();
+		FrameTime = original_frame_time;
+		TmapInfo[texture] = original_texture;
+		compute_slide_segs();
+		const auto earned_uv = texture_uv_snapshot();
+		require(earned_uv != authored_uv && earned_uv[0][0] != authored_uv[0][0] && earned_uv[0][1] != authored_uv[0][1], "Texture-scroll fixture did not earn both UV coordinates");
+		const auto earned_collision_uv = collision_texture_uv();
+		{
+			std::ofstream output(root / "uv-earned.json");
+			output << nlohmann::json{ { "coordinates", earned_uv }, { "collision", earned_collision_uv } }.dump(2) << '\n';
+			output.flush();
+			require(output.good(), "Cannot export earned UV witness for cold restore");
+		}
 		char save[] = "lights-earned.sav", description[] = "XL earned light state";
 		stop_time();
 		require(state_save_all_sub(save, description), "Cannot save earned changing lights");
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2"), "Light stock transition failed");
 		require(!xl_light_index_count() && !xl_light_segment_count() && !xl_changing_light(0, 0, -1), "Owned XL light state leaked into stock");
-		require(state_restore_all_sub(save, 0) && same_light_snapshot(earned, light_snapshot()), "Source restore reconstructed masks but lost earned clamped brightness");
+		require(state_restore_all_sub(save, 0) && same_light_snapshot(earned, light_snapshot()) && texture_uv_snapshot() == earned_uv, "Source restore lost earned brightness or collision texture coordinates");
+		require(collision_texture_uv() == earned_collision_uv, "Disk restore changed hit-point transparency coordinates");
 		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		require_owned_light_records(source);
 		light_bad_state(root);
@@ -281,7 +355,7 @@ static int changing_light_test(int argc, char **argv)
 			const auto fresh = light_snapshot();
 			auto *file = PHYSFS_openRead("light-state.bin");
 			require(file && !xl_wall_trigger_read(file) && PHYSFS_close(file) && same_light_snapshot(fresh, light_snapshot()), "Foreign invalid-row trailer changed live state");
-			require(state_restore_all_sub(save, 0) && xl_level_trigger_identity() == identity && same_light_snapshot(earned, light_snapshot()), "Invalid rows or earned state changed through restore");
+			require(state_restore_all_sub(save, 0) && xl_level_trigger_identity() == identity && same_light_snapshot(earned, light_snapshot()) && texture_uv_snapshot() == earned_uv, "Invalid rows or earned state changed through restore");
 			require_owned_light_records(source);
 			std::cout << "Invalid raw-row identity, foreign trailer rejection and exact recovery passed\n";
 		}

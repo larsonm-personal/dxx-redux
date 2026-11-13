@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include <string>
+#include <sstream>
 #include <vector>
 #include <nlohmann/json.hpp>
 
@@ -702,6 +703,17 @@ static int expect_metadata_level_validation(void)
 	return 0;
 }
 
+static void fill_xl_startup_settings(input_demo_metadata &metadata)
+{
+	metadata.has_player_cfg = true;
+	metadata.player_cfg.has_headlight_active_default = 1;
+	metadata.player_cfg.primary_order_count = metadata.player_cfg.secondary_order_count = 11;
+	for (int i = 0; i < 11; ++i)
+		metadata.player_cfg.primary_order[i] = metadata.player_cfg.secondary_order[i] = i == 10 ? 255 : i;
+	metadata.has_view_projection = metadata.has_rear_view_baseline = true;
+	metadata.view_projection = { 640, 480, 65536, 65536, 20, 0, 1 };
+}
+
 static int expect_level_start_metadata(void)
 {
 	input_demo_metadata metadata, parsed;
@@ -738,6 +750,38 @@ static int expect_level_start_metadata(void)
 	    parsed.level_start.collision_sound_time != -1234567890123LL || parsed.level_start.wiggle_phase != 65001)
 		return report_failure("level-start fields changed during round trip");
 	std::string old_phase = text;
+	{
+		auto xl = metadata;
+		xl.version = 6;
+		xl.game = "d2";
+		fill_xl_startup_settings(xl);
+		xl.has_environment = true;
+		xl.environment = { 26, 0, 0, 1234 };
+		xl.level_start.has_xl_clock = 1;
+		xl.level_start.xl_last_omega_frame = UINT32_MAX;
+		xl.level_start.xl_camera_ticks = 1230;
+		xl.level_start.flags = 32768 | 65536;
+		std::string encoded;
+		if (!input_demo_metadata_to_header_line(xl, &encoded, &error) ||
+		    !input_demo_metadata_parse_header_line(encoded, &parsed, &error) ||
+		    !parsed.level_start.has_xl_clock || parsed.level_start.xl_last_omega_frame != UINT32_MAX ||
+		    parsed.level_start.xl_camera_ticks != 1230 ||
+		    parsed.level_start.flags != xl.level_start.flags) return report_failure_string("XL initial clock round trip: " + error);
+		auto missing_clock = nlohmann::ordered_json::parse(encoded);
+		missing_clock["level_start"].erase("xl_last_omega_frame");
+		if (input_demo_metadata_parse_header_line(missing_clock.dump(), &parsed, &error)) return report_failure("XL initial clock omission accepted");
+		missing_clock = nlohmann::ordered_json::parse(encoded);
+		missing_clock["level_start"].erase("xl_camera_ticks");
+		if (input_demo_metadata_parse_header_line(missing_clock.dump(), &parsed, &error)) return report_failure("XL camera clock omission accepted");
+		for (const auto &bad : nlohmann::json::array({ -1, 1235, UINT64_MAX, 0.5, true })) {
+			auto invalid_clock = nlohmann::ordered_json::parse(encoded);
+			invalid_clock["level_start"]["xl_camera_ticks"] = bad;
+			if (input_demo_metadata_parse_header_line(invalid_clock.dump(), &parsed, &error)) return report_failure("Invalid XL camera clock accepted");
+		}
+		xl.version = 5;
+		xl.has_environment = false;
+		if (input_demo_metadata_to_header_line(xl, &encoded, &error)) return report_failure("legacy level start accepted XL clock state");
+	}
 	const size_t phase_offset = old_phase.find(",\"wiggle_phase\":65001");
 	if (phase_offset == std::string::npos)
 		return report_failure("missing level-start phase test field");
@@ -794,6 +838,23 @@ static int expect_asset_fingerprints(void)
 	if (!input_demo_metadata_parse_header_line(header.dump(), &parsed, &error) || !input_demo_metadata_to_header_line(parsed, &line, &error) || json::parse(line)["asset_fingerprints"] != member)
 		return report_failure_string("container member round trip failed: " + error);
 	std::vector<json> invalid;
+	auto supplemental = assets;
+	supplemental["files"].push_back({ { "role", "d2_extra_0_hog" }, { "name", "extra.hog" }, { "size", 100 }, { "sha256", std::string(64, 'b') } });
+	supplemental["files"].push_back({ { "role", "d2_extra_0_ham" }, { "name", "extra.ham" }, { "size", 50 }, { "sha256", std::string(64, 'c') }, { "container", "d2_extra_0_hog" } });
+	if (d1) invalid.push_back(supplemental);
+	else {
+		header["asset_fingerprints"] = supplemental;
+		if (!input_demo_metadata_parse_header_line(header.dump(), &parsed, &error) || !input_demo_metadata_to_header_line(parsed, &line, &error) || json::parse(line)["asset_fingerprints"] != supplemental)
+			return report_failure_string("supplemental HAM fingerprint round trip failed: " + error);
+		for (const char *role : { "d2_extra_1_ham", "d2_extra_16_ham", "d2_extra_00_ham" }) {
+			auto bad = supplemental;
+			bad["files"].back()["role"] = role;
+			invalid.push_back(std::move(bad));
+		}
+		auto bad = supplemental;
+		bad["files"].erase(bad["files"].size() - 1);
+		invalid.push_back(std::move(bad));
+	}
 	auto invalid_container = member;
 	invalid_container["files"][1]["container"] = "mission_hog";
 	invalid.push_back(invalid_container);
@@ -845,8 +906,138 @@ static int expect_asset_fingerprints(void)
 	return 0;
 }
 
+static int expect_environment_timeline(void)
+{
+	using json = nlohmann::ordered_json;
+	input_demo_file demo;
+	demo.metadata.version = 6;
+	demo.metadata.game = "d2";
+	demo.metadata.mission = "clock-contract";
+	demo.metadata.git_version = "provenance-only";
+	demo.metadata.arch = "x86_64";
+	demo.metadata.level = 1;
+	demo.metadata.start_mode = "new_level";
+	demo.metadata.rng_mode = input_demo_rng_mode_name(d_rand_get_replay_mode());
+	demo.metadata.frame_count = 1;
+	demo.metadata.has_environment = true;
+	demo.metadata.environment = { 100, 100, UINT32_MAX - 1, 100 };
+	fill_xl_startup_settings(demo.metadata);
+	demo.metadata.has_level_start = true;
+	demo.metadata.level_start.has_xl_clock = 1;
+	demo.frames.resize(1);
+	auto &frame = demo.frames[0];
+	frame.input.has_frame_time = 1;
+	frame.input.frame_time = 1092;
+	frame.rng.has_call_count = 1;
+	frame.dispatch.present = true;
+	frame.dispatch.pre_rng_is_post = true;
+	input_demo_input_operation sample = {};
+	sample.kind = INPUT_DEMO_INPUT_SAMPLE;
+	sample.frame_time = 1092;
+	frame.dispatch.operations = { sample, sample };
+	frame.has_environment = true;
+	frame.environment = {
+		{ 0, false, 1, "omega_fired", -1, { 100, 100, UINT32_MAX - 1, 0 } },
+		{ 1, false, 2, "omega_blocked", -1, { 126, 126, 0, 0 } },
+		{ 2, false, 2, "input_end", -1, { 126, 126, 0, 0 } },
+		{ 3, true, 0, "slow_frame", -1, { 126, 126, 0, 0 } },
+		{ 4, true, 0, "pickup", 4, { 126, 126, 0, 0 } },
+		{ 5, true, 0, "camera_frame", -1, { 127, 127, 0, 0 } },
+		{ 6, true, 0, "wall_trigger", 253, { 127, 127, 0, 0 } },
+		{ 7, true, 0, "message_resume", 32767, { 128, 128, 1, 0 } }
+	};
+	for (auto &entry : frame.environment) entry.clock.cached_ms = 100 + entry.sequence;
+	demo.has_input_tail = true;
+	demo.input_tail.input.frame = demo.input_tail.rng.frame = 1;
+	demo.input_tail.rng.has_call_count = 1;
+	demo.input_tail.dispatch.present = true;
+	demo.input_tail.dispatch.pre_rng_is_post = true;
+	demo.input_tail.has_environment = true;
+	demo.input_tail.environment = { { 0, false, 0, "tail_end", -1, { 152, 152, 2, 152 } } };
+	demo.has_result = true;
+	snprintf(demo.result.game, sizeof(demo.result.game), "d2");
+	snprintf(demo.result.mission, sizeof(demo.result.mission), "clock-contract");
+	demo.result.level = 1;
+	demo.result.frame_count = 1;
+	std::string text, error;
+	if (!input_demo_file_to_text(demo, &text, &error)) return report_failure_string("environment fixture: " + error);
+	if (expect_streaming_demo(text, text, true)) return 1;
+	std::vector<json> rows;
+	std::istringstream stream(text);
+	for (std::string line; std::getline(stream, line);) rows.push_back(json::parse(line));
+	const auto reject = [&](auto mutate) {
+		auto changed = rows;
+		mutate(changed);
+		std::string invalid;
+		for (const auto &row : changed) invalid += row.dump() + "\n";
+		return expect_streaming_demo(invalid, text, false);
+	};
+	for (const char *key : { "player_cfg", "view_projection", "rear_view", "level_start" })
+		if (reject([&](auto &r) { r[0].erase(key); })) return 1;
+	for (const auto &entry : rows[0]["player_cfg"].items()) {
+		if (reject([&](auto &r) { r[0]["player_cfg"].erase(entry.key()); })) return 1;
+		if (!entry.value().is_array())
+			for (const auto bad : { json(-1), json(2), json(true), json(0.5) })
+				if (reject([&](auto &r) { r[0]["player_cfg"][entry.key()] = bad; })) return 1;
+	}
+	if (reject([](auto &r) { r[0]["rng_mode"] = "per_frame_seed"; }) ||
+	    reject([](auto &r) { r[0]["environment"]["required"] = json::array({ "future-clock" }); }) ||
+	    reject([](auto &r) { r[0]["environment"]["required"].push_back("xl-clock-input-v1"); }) ||
+	    reject([](auto &r) { r[0]["environment"]["slow_motion_speedup"] = 7; }) ||
+	    reject([](auto &r) { r[0]["environment"]["slow_motion_speedup"] = 6.0; }) ||
+	    reject([](auto &r) { r[0].erase("environment"); }) ||
+	    reject([](auto &r) { r[0]["version"] = 5; }) ||
+	    reject([](auto &r) { r[0]["game"] = "d1"; }) ||
+	    reject([](auto &r) { r[0]["environment"]["clock_ms"] = -1; }) ||
+	    reject([](auto &r) { r[0]["environment"]["clock_ms"] = UINT64_MAX; }) ||
+	    reject([](auto &r) { r[0]["environment"].erase("cached_ms"); }) ||
+	    reject([](auto &r) { r[0]["environment"]["cached_ms"] = UINT32_MAX; }) ||
+	    reject([](auto &r) { r[1].erase("environment"); }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"].erase(4); }) ||
+	    reject([](auto &r) { r[1]["environment"]["count"] = INPUT_DEMO_ENVIRONMENT_SAMPLE_MAX + 1; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["sequence"] = 0; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["clock_ms"] = 99; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["pickup_ms"] = 99; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["pickup_ms"] = UINT32_MAX; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["cached_ms"] = 99; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["cached_ms"] = -1; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1].erase("cached_ms"); }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][6]["subject"] = 254; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][6]["subject"] = -1; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][7]["subject"] = 0; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][7]["subject"] = 32768; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][7]["subject"] = true; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][7]["phase"] = "input"; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["render_frame"] = UINT32_MAX - 2; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["operation"] = 3; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["consumer"] = "unknown"; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][2]["consumer"] = "omega_fired"; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][3]["phase"] = "input"; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][4]["subject"] = -1; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][5]["subject"] = 0; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["consumer"] = "camera_frame"; }) ||
+	    reject([](auto &r) { r[1]["environment"]["samples"][1]["unknown"] = true; }) ||
+	    reject([](auto &r) { r[2]["environment"]["samples"][0]["phase"] = "sim"; }) ||
+	    reject([](auto &r) { r[2].erase("environment"); }) ||
+	    reject([](auto &r) { r.erase(r.begin() + 2); })) return 1;
+	const auto key = text.find("\"sequence\":0");
+	if (key == std::string::npos || expect_streaming_demo(text.substr(0, key) + "\"sequence\":0," + text.substr(key), text, false)) return 1;
+	// Version 5 stock files retain their existing contract and no environment data
+	demo.metadata.version = 5;
+	demo.metadata.has_environment = false;
+	demo.metadata.level_start.has_xl_clock = 0;
+	for (auto *item : { &demo.frames[0], &demo.input_tail }) {
+		item->has_environment = false;
+		item->environment.clear();
+	}
+	if (!input_demo_file_to_text(demo, &text, &error) || expect_streaming_demo(text, text, true))
+		return report_failure_string("stock ordered-input compatibility: " + error);
+	return 0;
+}
+
 int main(void)
 {
+	if (expect_environment_timeline()) return 1;
 	if (expect_asset_fingerprints()) return 1;
 	if (expect_level_start_metadata())
 		return 1;

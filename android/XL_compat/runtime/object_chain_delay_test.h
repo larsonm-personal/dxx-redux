@@ -169,7 +169,7 @@ static int object_chain_delay_test(int argc, char **argv)
 		std::ifstream encoded_file(user / "delay-state.bin", std::ios::binary);
 		const xl_compat::Bytes encoded{ std::istreambuf_iterator<char>(encoded_file), std::istreambuf_iterator<char>() };
 		require(encoded.size() > 16, "delayed trailer missing");
-		for (int variant = 0; variant < 10; ++variant) {
+		for (int variant = 0; variant < 14; ++variant) {
 			auto block = nlohmann::json::parse(encoded.begin() + 16, encoded.end());
 			block["states"][0][0] = states[0].elapsed + 1;
 			if (variant == 0) block.erase("actors");
@@ -182,6 +182,13 @@ static int object_chain_delay_test(int argc, char **argv)
 			if (variant == 7) block["actors"][0][1] = 1.5;
 			if (variant == 8) block["actors"][1][1] = 1;
 			if (variant == 9) block["schema"] = 5;
+			if (variant == 10) block["actors"][0][2] = 2;
+			if (variant == 11) block["actors"][0][3] = 751;
+			if (variant == 12) block["actors"][0][2] = nlohmann::json::parse("true");
+			if (variant == 13) {
+				block["actors"][0][2] = 0;
+				block["actors"][0][3] = 1;
+			}
 			const auto text = block.dump();
 			xl_compat::Bytes bad(encoded.begin(), encoded.begin() + 16);
 			bad.insert(bad.end(), text.begin(), text.end());

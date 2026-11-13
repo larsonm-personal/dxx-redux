@@ -9,8 +9,8 @@ if(TARGET test_upstream_compat)
     if(SDLMIXER)
         file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/music-pcm")
         add_test(NAME test_music_pcm COMMAND test_upstream_compat --music-pcm)
-        set_tests_properties(test_music_pcm PROPERTIES TIMEOUT 30
-            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/music-pcm")
+        set_tests_properties(test_music_pcm PROPERTIES TIMEOUT 30 WORKING_DIRECTORY
+                                                       "${CMAKE_CURRENT_BINARY_DIR}/music-pcm")
     endif()
     add_test(NAME test_keyboard_rebind
              COMMAND ${CMAKE_COMMAND} -DENGINE=$<TARGET_FILE:test_upstream_compat> -P
@@ -551,6 +551,7 @@ add_executable(
     "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_codec.cpp"
     "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_result.cpp"
     "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_state_trace.cpp"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_fp_env.c"
     "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_replay.cpp"
     "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_direct_command_policy.c"
     "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_recorder.cpp")
@@ -578,6 +579,7 @@ add_executable(
     "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_codec.cpp"
     "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_result.cpp"
     "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_state_trace.cpp"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_fp_env.c"
     "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_recorder.cpp"
     "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_replay.cpp"
     "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_direct_command_policy.c")
@@ -588,6 +590,39 @@ target_link_libraries(test_input_demo_replay PRIVATE ${DXX_TARGET_PREFIX}maths
 target_include_directories(test_input_demo_replay PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 dxx_input_demo_apply_codec_deps(test_input_demo_replay)
 dxx_input_demo_apply_build_metadata(test_input_demo_replay)
+
+foreach(fp_variant IN ITEMS environment unqualified fast)
+    set(fp_target test_input_demo_fp_${fp_variant})
+    add_executable(${fp_target} test_input_demo_fp_environment.cpp
+                                "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_fp_env.c")
+    target_compile_features(${fp_target} PRIVATE cxx_std_11)
+    target_include_directories(${fp_target} PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+    if(NOT WIN32)
+        target_link_libraries(${fp_target} PRIVATE m)
+    endif()
+    if(fp_variant STREQUAL "environment")
+        dxx_input_demo_apply_build_metadata(${fp_target})
+        target_compile_definitions(${fp_target}
+                                   PRIVATE INPUT_DEMO_FP_EXPECT_SUPPORTED=$<BOOL:${DXX_STRICT_FP}>)
+    else()
+        target_compile_definitions(${fp_target} PRIVATE INPUT_DEMO_FP_EXPECT_REJECT=1)
+        if(fp_variant STREQUAL "fast")
+            # Test a real compiler override, without an intentional option-conflict warning
+            get_target_property(fp_options ${fp_target} COMPILE_OPTIONS)
+            if(NOT fp_options)
+                set(fp_options "")
+            endif()
+            list(REMOVE_ITEM fp_options /fp:strict -ffp-contract=off -fno-fast-math)
+            set_property(TARGET ${fp_target} PROPERTY COMPILE_OPTIONS ${fp_options})
+            target_compile_definitions(${fp_target} PRIVATE DXX_INPUT_DEMO_STRICT_FP=1)
+            if(MSVC)
+                target_compile_options(${fp_target} PRIVATE /fp:fast)
+            elseif(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
+                target_compile_options(${fp_target} PRIVATE -ffast-math)
+            endif()
+        endif()
+    endif()
+endforeach()
 
 add_executable(test_args_defaults test_args_defaults.c)
 if(DXX_TEST_GAME STREQUAL "d2")
@@ -660,6 +695,9 @@ set(DXX_HOST_TEST_TARGETS
     test_input_demo_result
     test_game_automate_input
     test_input_demo_replay
+    test_input_demo_fp_environment
+    test_input_demo_fp_unqualified
+    test_input_demo_fp_fast
     test_args_defaults)
 
 if(DXX_TEST_GAME STREQUAL "d2")

@@ -136,6 +136,7 @@ static void static_robot_native_controls(const std::filesystem::path &root, bool
 	*ConsoleObject = before;
 	const auto ticks = SDL_GetTicks();
 	if (ticks < 500) SDL_Delay(500 - ticks);
+	timer_update();
 	xl_camera_controller_begin_frame();
 	vms_vector end = center, hit{}, normal{};
 	fvi_query query{};

@@ -202,6 +202,52 @@ static unsigned camera_motion_native_controls(std::ostream &output, object &effe
 	Viewer = saved_viewer;
 	return count;
 }
+static void camera_motion_continuation_controls(object &camera)
+{
+	const auto earned = camera;
+	const auto motion = xl_camera_motion_snapshot();
+	const auto attachments = xl_camera_attachments_snapshot();
+	require(motion["states"].size() == 2 && xl_camera_motion_restore(motion, false), "Cannot validate earned shared-owner camera motion");
+	for (int variant = 0; variant < 17; ++variant) {
+		auto bad = motion;
+		if (variant == 0) bad.erase("ticks");
+		if (variant == 1) bad["ticks"] = -1;
+		if (variant == 2) bad["ticks"] = UINT64_MAX;
+		if (variant == 3) bad["ticks"] = 0.5;
+		if (variant == 4) bad["ticks"] = nlohmann::json::boolean_t(true);
+		if (variant == 5) bad["states"].erase(bad["states"].begin());
+		if (variant == 6) bad["states"][1][0] = 0;
+		if (variant == 7) bad["states"][1][1] = -1;
+		if (variant == 8) bad["states"][1][2] = 9000;
+		if (variant == 9) bad["states"][1][3] = 1;
+		if (variant == 10) bad["states"][1][4] = 1;
+		if (variant == 11) bad["states"][1][5] = -1;
+		if (variant == 12) bad["states"][1][5] = UINT64_MAX;
+		if (variant == 13) bad["states"][1][5] = motion["states"][0][5].get<int>() + 1;
+		if (variant == 14) bad["states"][1].push_back(0);
+		if (variant == 15) bad["version"] = 2;
+		if (variant == 16) bad["extra"] = 0;
+		require(!xl_camera_motion_restore(bad, true) && xl_camera_motion_snapshot() == motion &&
+		            !std::memcmp(&camera, &earned, sizeof(camera)),
+		        "Malformed camera motion published partial state");
+	}
+	std::vector<std::pair<nlohmann::json, vms_matrix>> expected;
+	for (int frame = 0; frame < 600; ++frame) {
+		object_move_one(&camera);
+		expected.emplace_back(xl_camera_motion_snapshot(), camera.orient);
+	}
+	camera = earned;
+	require(xl_camera_controller_restore(1) && xl_camera_attachments_restore(attachments, true) &&
+	            xl_camera_motion_restore(motion, true),
+	        "Cannot restore camera continuation state");
+	for (const auto &frame : expected) {
+		object_move_one(&camera);
+		require(xl_camera_motion_snapshot() == frame.first && !std::memcmp(&camera.orient, &frame.second, sizeof(camera.orient)),
+		        "Restored camera diverged at a native object frame");
+	}
+	camera = earned;
+	require(xl_camera_motion_restore(motion, true), "Cannot restore camera control fixture");
+}
 static void camera_controller_native_controls(const std::filesystem::path &root, object &camera)
 {
 	const int owner = int(&camera - Objects);
@@ -261,6 +307,7 @@ static void camera_controller_native_controls(const std::filesystem::path &root,
 			camera.orient = original;
 			camera.ctype.ai_info.behavior = behavior;
 			camera.mtype.phys_info.brakes = 73;
+			timer_update();
 			xl_camera_controller_begin_frame();
 			const auto load_ticks = xl_camera_controller_ticks();
 			xl_camera_controller_load(fixture);
@@ -301,6 +348,7 @@ static void camera_controller_native_controls(const std::filesystem::path &root,
 			require(xl_camera_controller_get(owner, before) && before.monitor == 1 && !before.rotation.angle && !before.rotation.delta && !before.rotation.t0,
 			        "Camera controller did not initialize the last monitor binding");
 			for (int frame = 0; frame < 1200; ++frame) {
+				timer_update();
 				xl_camera_controller_begin_frame();
 				require(xl_camera_controller_get(owner, before), "Bound camera controller disappeared");
 				const auto orientation = camera.orient;
@@ -319,6 +367,7 @@ static void camera_controller_native_controls(const std::filesystem::path &root,
 				output << '\n';
 				++cases;
 			}
+			camera_motion_continuation_controls(camera);
 			for (int variant = 0; variant < 3; ++variant) {
 				auto bad = fixture;
 				const auto previous_orientation = camera.orient;
@@ -353,6 +402,7 @@ static void camera_controller_native_controls(const std::filesystem::path &root,
 	output.close();
 	require(bool(output), "Cannot write native camera controller receipt");
 	std::cout << "Native camera controller frames: " << cases << " passed\n";
+	std::cout << "Native camera motion continuation: 5400 frames and 153 atomic rejection controls passed\n";
 	std::cout << "Native camera object record restores: " << restore_cases << " passed\n";
 }
 static void camera_physics_native_controls(object &camera)
@@ -394,6 +444,7 @@ static void camera_physics_native_controls(object &camera)
 					            !get_seg_masks(&end, ConsoleObject->segnum, ConsoleObject->size, __FILE__, __LINE__).facemask,
 					        "Camera physics control touches a room wall");
 					xl_object_birth_created(owner);
+					timer_update();
 					xl_camera_controller_begin_frame();
 					require(xl_camera_query(&camera, ConsoleObject, &ConsoleObject->pos, &end, ConsoleObject->size, &hit, &normal) != 0, "Camera physics control requires a contact");
 					xl_compat::CameraUnstickState expected{ start, point(end), point(offset) };
@@ -494,6 +545,7 @@ static void camera_projectile_physics_controls(object &camera)
 							vms_vector offset{}, end{}, hit{}, normal{};
 							vm_vec_copy_scale(&offset, &weapon.mtype.phys_info.velocity, xl_preview_motion_time(weapon.segnum, FrameTime));
 							vm_vec_add(&end, &start, &offset);
+							timer_update();
 							xl_camera_controller_begin_frame();
 							require(xl_camera_query(&camera, &weapon, &start, &end, weapon.size, &hit, &normal) != 0 && point(hit) == point(start), "Projectile physics control requires an inside-start contact");
 							const auto reflected = xl_compat::camera_reflect_velocity(velocity, weapon.mtype.phys_info.mass, harmless);
@@ -696,6 +748,7 @@ static bool camera_weapon_controls(const std::filesystem::path &root)
 		const auto original_hit = hit;
 		camera.pos.x = 3 * F1_0;
 		require(xl_camera_hitbox_query(&camera, &moving, &start, &end, &hit, &normal) == initial && hit.x == original_hit.x, "Camera query cache did not retain same-tick geometry");
+		timer_update();
 		xl_camera_controller_begin_frame();
 		require(xl_camera_hitbox_query(&camera, &moving, &start, &end, &hit, &normal) != 0 && hit.x == original_hit.x + 3 * F1_0, "Camera physics tick did not refresh geometry");
 		replacement_resources->install_hxm();
@@ -972,6 +1025,7 @@ static bool camera_weapon_controls(const std::filesystem::path &root)
 	xl_camera_hit_state_created(int(ConsoleObject - Objects));
 	const auto hit_ticks = SDL_GetTicks();
 	if (hit_ticks < 500) SDL_Delay(500 - hit_ticks);
+	timer_update();
 	xl_camera_controller_begin_frame();
 	do_physics_sim(ConsoleObject);
 	xl_compat::CameraHitState earned_hit;

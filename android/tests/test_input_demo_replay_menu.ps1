@@ -183,6 +183,7 @@ try {
     )
     $Runner = 'visual'
     $ExecutablePath = 'not-started'
+    $ExtraDir = $null
     foreach ($case in $fpsCases) {
         $path = Join-Path $sourceRepo ('android/tests/fixtures/' + $case[0])
         $mode = Get-LaunchMode -RequestedMode realtime -Path $path -Config @{ MaxFps = 200 }
@@ -196,6 +197,11 @@ try {
     }
     $legacyArguments = @(Get-LaunchArguments -Config @{ TitleArg = '-notitles' } -ResolvedDataDir 'data' -ResolvedDemoPath 'user recording' -ActualResultPath 'result' -LaunchMode @{ MaxFps = 30; ExtraArgs = @() } -RenderProfileSelection @{ ExtraArgs = @() })
     Assert-True ('-inputdemo-exit' -notin $legacyArguments) 'Existing user recordings must not opt into natural exit automatically'
+    Assert-True ('-extra-dir' -notin $legacyArguments) 'An omitted extra directory must not add a launch argument'
+    $ExtraDir = $searchRoot
+    $extraArguments = @(Get-LaunchArguments -Config @{ TitleArg = '-notitles' } -ResolvedDataDir 'data' -ResolvedDemoPath 'user recording' -ActualResultPath 'result' -LaunchMode @{ MaxFps = 30; ExtraArgs = @() } -RenderProfileSelection @{ ExtraArgs = @() })
+    Assert-True ('-extra-dir' -in $extraArguments -and $extraArguments[[array]::IndexOf($extraArguments, '-extra-dir') + 1] -eq (Resolve-Path -LiteralPath $searchRoot).Path) 'Explicit extra directory must remain one resolved argument, including spaces'
+    $ExtraDir = $null
     $timing = Join-Path $fixtureRoot 'timing.dximdemo'
     @('// comment containing "type":"frame"', '{"type":"other","nested":{"type":"frame"},"ft":1}', '{"ft":8192,"type":"frame"}', '{ "type" : "frame" }', '{"type":"frame","ft":4096}', '{"type":"frame"}') |
         Set-Content -LiteralPath $timing -Encoding utf8

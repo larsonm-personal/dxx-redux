@@ -1,4 +1,5 @@
 #include "../admission.h"
+#include "trigger_state.h"
 static void write_trigger_chain_fixture(const std::filesystem::path &root)
 {
 	std::ifstream original(root / "neptunxl.hog", std::ios::binary);
@@ -122,6 +123,38 @@ static int trigger_chain_test(int argc, char **argv)
 		timer_delay(F1_0 * 4 / 5);
 		timer_update();
 		require(check_trigger_sub(7, Player_num, 0) == 0 && Triggers[4].value == 3, "chain debounce did not expire");
+		std::vector<xl_trigger_state> cooldown_states(Num_triggers);
+		for (int i = 0; i < Num_triggers; ++i)
+			require(xl_wall_trigger_state(i, &cooldown_states[i]), "Cannot observe trigger cooldown");
+		std::ofstream cooldown_samples(std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / "trigger-cooldowns.txt");
+		for (int active : { 0, 1 })
+			for (int age : { 0, 1, 749, 750 }) {
+				auto restored = cooldown_states;
+				restored[7].cooldown_active = active;
+				restored[7].cooldown_age_ms = active ? age : 0;
+				require(xl_wall_trigger_restore(restored.data(), Num_triggers), "Cannot restore trigger cooldown boundary");
+				const int value_before = Triggers[4].value;
+				const int result = check_trigger_sub(7, Player_num, 0);
+				require(result == int(active && age < 750) && Triggers[4].value == value_before + (result == 0), "Trigger cooldown boundary changed gameplay");
+				cooldown_samples << active << ' ' << age << ' ' << result << '\n';
+			}
+		cooldown_samples.close();
+		require(bool(cooldown_samples), "Cannot write trigger cooldown reference samples");
+		// Validate every row before changing any scheduled or cooldown state
+		for (int variant = 0; variant < 4; ++variant) {
+			auto invalid = cooldown_states;
+			if (variant == 0) invalid.back().cooldown_active = 2;
+			if (variant == 1) invalid.back().cooldown_age_ms = -1;
+			if (variant == 2) invalid.back().cooldown_age_ms = 751;
+			if (variant == 3) {
+				invalid.back().cooldown_active = 0;
+				invalid.back().cooldown_age_ms = 1;
+			}
+			xl_trigger_state before{}, after{};
+			require(xl_wall_trigger_state(7, &before) && !xl_wall_trigger_restore(invalid.data(), Num_triggers) && xl_wall_trigger_state(7, &after) &&
+			            before.cooldown_active == after.cooldown_active && before.cooldown_age_ms == after.cooldown_age_ms && before.elapsed == after.elapsed,
+			        "Invalid trigger cooldown partially changed runtime state");
+		}
 		// Self-loop bounded independently of post-action one-shot disabling
 		const auto saved_zero = Triggers[0];
 		Triggers[0].flags = TF_ONE_SHOT;
@@ -213,11 +246,19 @@ static int trigger_chain_test(int argc, char **argv)
 		require(Triggers[0].time == -1 && Triggers[6].time == -1, "XL scheduling descriptors changed during frame");
 		char save[] = "xl-chain.sav", description[] = "Trigger chain source restoration";
 		stop_time();
+		// Persist an active cooldown through real disk IO and a stock transition
+		xl_wall_trigger_reset();
+		require(check_trigger_sub(7, Player_num, 0) == 0, "Cannot prime saved trigger cooldown");
+		Triggers[4].value = 2;
 		require(state_save_all_sub(save, description) != 0, "chain save failed");
 		require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0, "chain stock transition failed");
 		require(xl_wall_trigger(0, ConsoleObject - Objects, 0) == -1, "chain hook contaminated stock dispatch");
 		require(state_restore_all_sub(save, 0) != 0 && !std::strcmp(Current_mission_filename, "chain"), "chain source restore failed");
 		require(Triggers[4].value == 2 && (Triggers[4].flags & TF_DISABLED), "save lost master counter or disabled state");
+		xl_trigger_state resumed{};
+		require(xl_wall_trigger_state(7, &resumed) && resumed.cooldown_active && resumed.cooldown_age_ms < 750 &&
+		            check_trigger_sub(7, Player_num, 0) == 1 && Triggers[4].value == 2,
+		        "Disk restore discarded active trigger cooldown");
 		require(fire(6) == 0 && Triggers[4].value == 1 && (Triggers[4].flags & TF_DISABLED), "restored counter did not remain authoritative");
 		require(fire(6) == 0 && Triggers[4].value == 0 && !(Triggers[4].flags & TF_DISABLED), "restored counter did not enable master");
 		// A real exit child stops later actions and skips the master's one-shot update

@@ -32,6 +32,7 @@ static void camera_passive_physics_controls(object &camera, bool stationary = fa
 						actor.mtype.phys_info.velocity = { velocity[0], velocity[1], velocity[2] };
 						FrameTime = duration;
 						xl_camera_hit_state_created(owner);
+						timer_update();
 						xl_camera_controller_begin_frame();
 						vms_vector offset{}, end{}, hit{}, normal{};
 						vm_vec_copy_scale(&offset, &actor.mtype.phys_info.velocity, xl_preview_motion_time(actor.segnum, FrameTime));

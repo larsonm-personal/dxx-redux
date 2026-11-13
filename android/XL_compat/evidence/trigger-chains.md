@@ -38,6 +38,29 @@ Stock trigger behavior remains selected when no XL source is loaded
 
 ## Native checks
 
+The guarded gameplay-timeline tranche replaces the fixed-point debounce clock
+with the integer SDL sample cached by the ordinary D2 timer owner. The pinned
+`CGameLoop::Step` calls `CalcFrameTime`/`GetSlowTicks` before controls and simulation;
+`CTrigger::Operate` reads that cache and rejects elapsed values below 750 ms.
+Redux likewise retains its ordinary event/frame timer-update boundaries; reading
+the cooldown never takes a fresh SDL timestamp. Format-6 recording preserves the
+cache as `cached_ms` and consumes a `wall_trigger` sample at each eligible top-level
+activation, in input or simulation order. Nested/attached/teleport/boost eligibility
+remains the pinned source predicate
+
+Save schema 37 stores activation and age, capped at 750 ms where all later values
+have the same activation behavior. Restore validates every row before applying
+and rebases ages onto the admitted replay origin or current cached clock. The
+existing detailed world observer now includes scheduled trigger fields, actor
+identity and cooldown state. It reads the cache without advancing time or samples
+
+The existing native chain owner exports eight inactive/active 0/1/749/750 ms
+boundary cases to the hash-pinned source cooldown block. It also checks invalid
+state rejection and an active cooldown across real disk save/load with a stock
+transition. This is not yet fresh-process cold-continuation or an original-content
+live trigger recording. The generic codec separately checks trigger subjects,
+ordered input/SIM consumption and missing/nonmonotonic/out-of-range cached clocks
+
 xl_wall_trigger_chains uses original Neptune geometry with explicitly derived
 trigger and wall assignments. It covers ordered enable/teleport/disable actions,
 nested dispatch, disabled targets, raw counter transitions, debounce and expiry,

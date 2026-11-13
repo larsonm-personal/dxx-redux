@@ -385,7 +385,7 @@ class EffectPhaseTests(unittest.TestCase):
             for effect in (24, 26):
                 effects[effect] = {raw: expected[f"effect{effect}"][name] for name, raw in phase.TRACE_FIELDS.items()}
             state = {key: {} for key in phase.parity.WORLD_GROUPS}
-            state.update(effects=effects, globals={"GameTime64": time})
+            state.update(effects=effects, globals={"GameTime64": time}, ai={"local_capacity": 350})
             row = {
                 "type": kind,
                 "version": 10,
@@ -397,8 +397,10 @@ class EffectPhaseTests(unittest.TestCase):
                 row["phase"] = boundary
             return row
 
+        rows.append(
+            {"type": "object_boundary", "version": 2, "f": 0, "reset": True, "phase": "restored", "capacity": 350}
+        )
         rows.append(world("world_boundary", 0, self.capture["initial"], 0, "restored"))
-        rows.append({"type": "object_boundary", "version": 2, "f": 0, "reset": True, "phase": "restored"})
         for frame, observation in enumerate(self.capture["observations"]):
             expected = self.capture["initial"] if frame == 0 else self.capture["observations"][frame - 1]
             rows.append(world("world_state", frame, expected, observation["game_time"]))
@@ -412,7 +414,14 @@ class EffectPhaseTests(unittest.TestCase):
             )
         )
         rows.append(
-            {"type": "object_boundary", "version": 2, "f": self.capture["frames"], "reset": True, "phase": "terminal"}
+            {
+                "type": "object_boundary",
+                "version": 2,
+                "f": self.capture["frames"],
+                "reset": True,
+                "phase": "terminal",
+                "capacity": 350,
+            }
         )
         return rows
 

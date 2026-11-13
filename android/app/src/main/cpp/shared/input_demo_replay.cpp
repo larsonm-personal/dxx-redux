@@ -1,5 +1,6 @@
 #include "input_demo_cheats.h"
 #include "input_demo_replay.h"
+#include "input_demo_fp_env.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -31,6 +32,10 @@ struct input_demo_replay_session {
 	int format_version;
 	std::vector<input_demo_input_batch_info> input_batches;
 	std::vector<std::vector<input_demo_input_operation>> input_operations;
+	input_demo_environment_clock environment{}, last_environment{};
+	std::vector<std::vector<input_demo_environment_sample>> environment_frames;
+	size_t environment_cursor = 0;
+	bool environment_running = false;
 	std::string actual_result_path;
 	bool has_expected_result;
 	input_demo_result expected_result;
@@ -489,11 +494,60 @@ int input_demo_replay_format_version(void)
 	return g_input_demo_replay_session.loaded ? g_input_demo_replay_session.format_version : 0;
 }
 
+int input_demo_replay_get_environment_origin(input_demo_environment_clock *clock)
+{
+	const auto &session = g_input_demo_replay_session;
+	if (!session.loaded || session.format_version != 6 || !clock) return 0;
+	*clock = session.environment;
+	return 1;
+}
+
+int input_demo_replay_peek_environment(input_demo_environment_clock *clock)
+{
+	const auto &session = g_input_demo_replay_session;
+	if (!session.loaded || session.format_version != 6 || !clock) return 0;
+	*clock = session.last_environment;
+	return 1;
+}
+
+int input_demo_replay_environment_running(void)
+{
+	return g_input_demo_replay_session.loaded && g_input_demo_replay_session.environment_running;
+}
+
+int input_demo_replay_begin_environment(char *error, size_t error_size)
+{
+	auto &session = g_input_demo_replay_session;
+	if (!session.loaded || session.format_version != 6 || session.environment_running || session.next_frame_index || session.environment_cursor)
+		return copy_error("environment playback cannot begin at this boundary", error, error_size);
+	session.environment_running = true;
+	return 1;
+}
+
+int input_demo_replay_consume_environment(const char *consumer, int subject, int simulation, uint32_t operation,
+                                          input_demo_environment_clock *clock, char *error, size_t error_size)
+{
+	auto &session = g_input_demo_replay_session;
+	if (!session.loaded || session.format_version != 6 || !session.environment_running || !consumer || !clock ||
+	    session.next_frame_index >= session.environment_frames.size())
+		return copy_error("environment playback is unavailable", error, error_size);
+	const auto &samples = session.environment_frames[session.next_frame_index];
+	if (session.environment_cursor >= samples.size()) return copy_error("environment timeline exhausted", error, error_size);
+	const auto &sample = samples[session.environment_cursor];
+	if (sample.consumer != consumer || sample.subject != subject || sample.simulation != (simulation != 0) || sample.operation != operation)
+		return copy_error("environment consumer order differs at frame " + std::to_string(session.next_frame_index) +
+		                      " sample " + std::to_string(session.environment_cursor),
+		                  error, error_size);
+	*clock = session.last_environment = sample.clock;
+	++session.environment_cursor;
+	return 1;
+}
+
 int input_demo_replay_get_input_batch_info(uint32_t frame_index, input_demo_input_batch_info *info,
                                            char *error, size_t error_size)
 {
 	const auto &session = g_input_demo_replay_session;
-	if (!session.loaded || session.format_version != 5 || !info || frame_index >= session.input_batches.size())
+	if (!session.loaded || session.format_version < 5 || !info || frame_index >= session.input_batches.size())
 		return copy_error("ordered input batch is unavailable or index is out of range", error, error_size);
 	*info = session.input_batches[frame_index];
 	return 1;
@@ -503,7 +557,7 @@ int input_demo_replay_get_input_operation(uint32_t frame_index, uint32_t operati
                                           input_demo_input_operation *operation, char *error, size_t error_size)
 {
 	const auto &session = g_input_demo_replay_session;
-	if (!session.loaded || session.format_version != 5 || !operation || frame_index >= session.input_operations.size() ||
+	if (!session.loaded || session.format_version < 5 || !operation || frame_index >= session.input_operations.size() ||
 	    operation_index >= session.input_operations[frame_index].size())
 		return copy_error("ordered input operation is unavailable or index is out of range", error, error_size);
 	*operation = session.input_operations[frame_index][operation_index];
@@ -537,6 +591,11 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 		return copy_error("missing replay demo file path", error, error_size);
 	if (!input_demo_file_read(demo_path, &demo, &replay_error))
 		return copy_error(replay_error, error, error_size);
+	if (demo.metadata.version == 6) {
+		if (!INPUT_DEMO_STRICT_FP_BUILD)
+			return copy_error("XL input demos require a supported strict floating point C++ build", error, error_size);
+		if (!input_demo_validate_xl_fp_environment(error, error_size)) return 0;
+	}
 	game = game_id_from_name(demo.metadata.game);
 	if (!game)
 		return copy_error("metadata game must be d1 or d2", error, error_size);
@@ -601,8 +660,12 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 	g_input_demo_replay_session.frame_events.resize(g_input_demo_replay_session.frames.size());
 	for (i = 0; i != demo.frames.size() && i != g_input_demo_replay_session.frame_events.size(); ++i)
 		g_input_demo_replay_session.frame_events[i] = std::move(demo.frames[i].events);
-	if (demo.metadata.version == 5) {
+	if (demo.metadata.version >= 5) {
 		auto &session = g_input_demo_replay_session;
+		if (demo.metadata.has_environment) {
+			session.environment = session.last_environment = demo.metadata.environment;
+			session.environment_frames.resize(demo.frames.size() + 1);
+		}
 		session.input_batches.resize(demo.frames.size() + 1);
 		session.input_operations.resize(demo.frames.size() + 1);
 		for (size_t index = 0; index <= demo.frames.size(); ++index) {
@@ -624,6 +687,7 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 				info.residual_pulse = session.frames[index].pulse;
 			}
 			session.input_operations[index] = std::move(source.dispatch.operations);
+			if (demo.metadata.has_environment) session.environment_frames[index] = std::move(source.environment);
 		}
 	}
 	g_input_demo_replay_session.final_game_time64 = replay_duration;
@@ -721,6 +785,11 @@ int input_demo_replay_write_actual_result(const input_demo_result *result,
 	const auto &session = g_input_demo_replay_session;
 	if (!session.loaded || session.actual_result_path.empty())
 		return copy_error("replay has no active result output path", error, error_size);
+	// The result signals completion to process owners; finish buffered traces
+	// first so large RNG exports cannot be mistaken for a shutdown hang
+	if (!input_demo_rng_trace_stop(error, error_size))
+		return 0;
+	input_demo_state_trace_stop();
 	if (!input_demo_result_write_json_file(session.actual_result_path.c_str(), result, error, error_size))
 		return 0;
 	g_input_demo_actual_result_written = true;
@@ -737,6 +806,14 @@ int input_demo_replay_get_player_cfg(input_demo_player_cfg *player_cfg)
 	if (!input_demo_replay_has_player_cfg() || !player_cfg)
 		return 0;
 	*player_cfg = g_input_demo_replay_session.player_cfg;
+	return 1;
+}
+
+int input_demo_replay_update_player_cfg(const input_demo_player_cfg *cfg)
+{
+	auto &session = g_input_demo_replay_session;
+	if (!session.loaded || session.format_version != 6 || !session.has_player_cfg || !cfg) return 0;
+	session.player_cfg = *cfg;
 	return 1;
 }
 
@@ -835,6 +912,11 @@ int input_demo_replay_compare_result(const input_demo_result *actual,
                                      char *error, size_t error_size)
 {
 	input_demo_result expected;
+	const auto &session = g_input_demo_replay_session;
+	if (session.loaded && session.format_version == 6 &&
+	    (session.next_frame_index != session.frames.size() ||
+	     session.environment_cursor != session.environment_frames.back().size()))
+		return copy_error("environment timeline has unconsumed frames or tail", error, error_size);
 
 	if (!input_demo_replay_get_expected_result(&expected, error, error_size))
 		return 0;
@@ -941,7 +1023,11 @@ int input_demo_replay_advance_frame(char *error, size_t error_size)
 		return copy_error("input demo replay is not loaded", error, error_size);
 	if (input_demo_replay_is_finished())
 		return copy_error("input demo replay is at end of stream", error, error_size);
-	g_input_demo_replay_session.next_frame_index++;
+	auto &session = g_input_demo_replay_session;
+	if (session.format_version == 6 && session.environment_cursor != session.environment_frames[session.next_frame_index].size())
+		return copy_error("environment frame has unconsumed samples", error, error_size);
+	session.environment_cursor = 0;
+	session.next_frame_index++;
 	return 1;
 }
 }

@@ -15,6 +15,7 @@ extern "C" {
 #include "inferno.h"
 #include "object.h"
 #include "game.h"
+#include "endlevel.h"
 #include "vecmat.h"
 #include "aistruct.h"
 #include "weapon.h"
@@ -24,8 +25,11 @@ extern "C" {
 #include "cntrlcen.h"
 #include "newdemo.h"
 #include "dxxerror.h"
+#include "console.h"
 #include "vclip.h"
 #include "args.h"
+#include "input_demo_hooks_shared.h"
+#include "input_demo_hooks.h"
 }
 namespace
 {
@@ -40,11 +44,89 @@ int64_t clock_ms()
 }
 int64_t last_missile;
 uint32_t render_clock, last_omega_frame;
+input_demo_environment_clock saved_environment{};
+bool saved_environment_valid = false;
+// Keep the cached gameplay clock in its saved domain across cold continuation
+// Level changes preserve this process clock, just as they preserve SDL uptime
+int64_t cached_clock_offset = 0;
+bool cached_clock_held = false;
+uint32_t held_cached_clock = 0;
+uint32_t cached_clock_now()
+{
+	if (cached_clock_held) return held_cached_clock;
+	const auto now = int64_t(timer_query_milliseconds()) + cached_clock_offset;
+	if (now < 0 || now > INT32_MAX) Error("XL cached gameplay clock exceeds qualified signed range");
+	return uint32_t(now);
+}
+input_demo_environment_clock environment_now()
+{
+	input_demo_environment_clock clock{};
+	if (input_demo_replay_peek_environment(&clock)) return clock;
+	return { clock_ms(), SDL_GetTicks(), render_clock, cached_clock_now() };
+}
+input_demo_environment_clock observe(const char *consumer, int subject = -1)
+{
+	input_demo_environment_clock clock{};
+	xl_input_demo_observe(consumer, subject, &clock);
+	return clock;
+}
 bool enabled()
 {
 	return xl_level_extensions_active() && !(Game_mode & GM_MULTI);
 }
 } // namespace
+extern "C" void xl_input_demo_observe(const char *consumer, int subject, input_demo_environment_clock *clock)
+{
+	*clock = environment_now();
+	if (!input_demo_observe_environment(consumer, subject, clock)) Error("XL input-demo environment: %s", consumer);
+	// This counter is an environmental input; actual replay draws do not advance it
+	if (input_demo_replay_format_version() == 6) {
+		render_clock = clock->render_frame;
+		// Ending playback can return to ordinary play in the last consumed domain
+		cached_clock_offset = int64_t(clock->cached_ms) - timer_query_milliseconds();
+	}
+}
+extern "C" uint32_t xl_input_demo_cached_clock(void)
+{
+	input_demo_environment_clock clock{};
+	return input_demo_replay_peek_environment(&clock) ? clock.cached_ms : cached_clock_now();
+}
+extern "C" void xl_input_demo_hold_cached_clock(void)
+{
+	// Source paused CalcFrameTime returns before GetSlowTicks
+	// Keep that tick through the interrupted frame, including chained messages
+	held_cached_clock = xl_input_demo_cached_clock();
+	cached_clock_held = true;
+}
+extern "C" void xl_input_demo_begin_input_clock(void)
+{
+	cached_clock_held = false;
+}
+extern "C" int xl_input_demo_restore_cached_clock(uint32_t ticks)
+{
+	if (ticks > INT32_MAX) return 0;
+	cached_clock_held = false;
+	cached_clock_offset = int64_t(ticks) - timer_query_milliseconds();
+	return 1;
+}
+extern "C" int xl_input_demo_saved_environment(input_demo_environment_clock *clock)
+{
+	if (!clock || !saved_environment_valid) return 0;
+	*clock = saved_environment;
+	return 1;
+}
+extern "C" void xl_input_demo_current_environment(input_demo_environment_clock *clock)
+{
+	*clock = environment_now();
+}
+extern "C" uint32_t xl_slow_motion_last_omega_frame(void)
+{
+	return last_omega_frame;
+}
+extern "C" void xl_slow_motion_initial_omega_frame(uint32_t frame)
+{
+	last_omega_frame = frame;
+}
 namespace xl_runtime
 {
 bool time_equipment_resources_required(const xl_compat::Inventory &level)
@@ -84,7 +166,7 @@ extern "C" int xl_time_equipment_animate(object *actor)
 {
 	if (!enabled() || actor->type != OBJ_POWERUP || !xl_compat::time_equipment_powerup(actor->id)) return 0;
 	auto &clip = actor->rtype.vclip_info;
-	const auto now = std::int64_t(SDL_GetTicks());
+	const auto now = std::int64_t(observe("pickup", int(actor - Objects)).pickup_ms);
 	auto elapsed = now - clip.frametime;
 	if (elapsed < 0) {
 		clip.frametime = fix(now);
@@ -101,21 +183,30 @@ extern "C" int xl_time_equipment_animate(object *actor)
 }
 extern "C" void xl_slow_motion_reset(void)
 {
+	cached_clock_held = false;
 	state = {};
 	slow_requested = bullet_requested = false;
 	xl_named_audio_slow_motion_reset();
 	last_missile = 0;
 	// The reference loader resets the render counter, not the Omega marker
 	render_clock = 0;
+	saved_environment_valid = false;
 }
 extern "C" int xl_slow_motion_request(int bullet_time)
 {
 	if (!enabled()) return 0;
-	if (input_demo_recorder_is_active() || input_demo_replay_is_loaded()) {
+	if ((input_demo_recorder_is_active() && !input_demo_recorder_uses_environment()) ||
+	    (input_demo_replay_is_loaded() && !input_demo_replay_environment_running())) {
 		HUD_init_message(HM_DEFAULT, "XL time controls require a recorded real-time clock timeline");
 		return 1;
 	}
 	if (!Player_is_dead) {
+		if (input_demo_recorder_uses_environment()) {
+			char error[256] = "";
+			input_demo_record_input_context();
+			if (!input_demo_recorder_stage_direct_command_xl_time_control(bullet_time, error, sizeof(error)))
+				con_printf(CON_NORMAL, "XL time control recording failed: %s\n", error);
+		}
 		if (bullet_time) bullet_requested = true;
 		else slow_requested = true;
 	}
@@ -132,7 +223,7 @@ void runtime_step(bool slow, bool bullet, bool stop)
 		input.energy = Players[Player_num].energy;
 		input.frame = stop ? 0 : FrameTime;
 		input.difficulty = Difficulty_level;
-		input.now_ms = clock_ms();
+		input.now_ms = observe(stop ? "slow_off" : "slow_frame").clock_ms;
 		input.reactor_destroyed = stop || Control_center_destroyed != 0;
 		input.force_off = stop;
 		input.mixer = !GameArg.SndNoSound && xl_named_audio_backend_ready() != 0;
@@ -173,28 +264,46 @@ nlohmann::json xl_runtime::slow_motion_diagnostics()
 		     { "world_active", state.clocks[0].active },
 		     { "player_active", state.clocks[1].active } };
 }
-nlohmann::json xl_runtime::slow_motion_snapshot()
+static nlohmann::json slow_motion_state_snapshot(const input_demo_environment_clock &environment)
 {
-	const auto now = clock_ms();
-	nlohmann::json saved = { { "clocks", nlohmann::json::array() }, { "transition_sound", state.transition_sound }, { "pickups", nlohmann::json::array() } };
+	const auto now = environment.clock_ms;
+	nlohmann::json saved = { { "clocks", nlohmann::json::array() }, { "transition_sound", state.transition_sound }, { "pickups", nlohmann::json::array() }, { "slow_requested", slow_requested }, { "bullet_requested", bullet_requested } };
 	for (const auto &clock : state.clocks)
 		// Only the strict 25 ms threshold matters; the reference never catches up
 		saved["clocks"].push_back({ clock.speed, clock.direction, std::clamp<std::int64_t>(now - clock.updated_ms, 0, 26), clock.active });
 	for (int i = 0; i <= Highest_object_index; ++i) {
 		const auto &actor = Objects[i];
 		if (actor.type == OBJ_POWERUP && xl_compat::time_equipment_powerup(actor.id))
-			saved["pickups"].push_back({ i, actor.id, std::int64_t(SDL_GetTicks()) - actor.rtype.vclip_info.frametime });
+			saved["pickups"].push_back({ i, actor.id, std::int64_t(environment.pickup_ms) - actor.rtype.vclip_info.frametime });
 	}
 	return saved;
+}
+nlohmann::json xl_runtime::slow_motion_snapshot()
+{
+	saved_environment = environment_now();
+	saved_environment_valid = true;
+	return slow_motion_state_snapshot(saved_environment);
+}
+nlohmann::json xl_runtime::slow_motion_trace_snapshot()
+{
+	input_demo_environment_clock anchor{};
+	// Observe the last consumed sample, never a fresh timer query or save snapshot
+	if (!input_demo_recorder_peek_environment(&anchor) && !input_demo_replay_peek_environment(&anchor))
+		return { { "bound", bool{ false } } };
+	return { { "bound", bool{ true } }, { "version", 1 }, { "anchor", { anchor.clock_ms, anchor.pickup_ms, anchor.render_frame, anchor.cached_ms } }, { "slow_motion", slow_motion_state_snapshot(anchor) }, { "weapon_clock", { last_missile - GameTime64, last_omega_frame } } };
 }
 bool xl_runtime::restore_slow_motion(const nlohmann::json &saved, bool apply)
 {
 	try {
-		if (!saved.is_object() || saved.size() != 3 || !saved.at("transition_sound").is_boolean() ||
+		if (!saved.is_object() || saved.size() != 5 || !saved.at("transition_sound").is_boolean() ||
+		    !saved.at("slow_requested").is_boolean() || !saved.at("bullet_requested").is_boolean() ||
 		    !saved.at("clocks").is_array() || saved.at("clocks").size() != 2 || !saved.at("pickups").is_array()) return false;
 		xl_compat::SlowMotionState restored;
 		restored.transition_sound = saved.at("transition_sound").get<bool>();
-		const auto now = clock_ms();
+		auto environment = environment_now();
+		// Admission installs the captured origin before ordinary checkpoint restore
+		if (!input_demo_replay_environment_running()) input_demo_replay_get_environment_origin(&environment);
+		const auto now = environment.clock_ms;
 		for (unsigned i = 0; i < 2; ++i) {
 			const auto &row = saved.at("clocks")[i];
 			if (!row.is_array() || row.size() != 4 || !row[0].is_number() || !row[1].is_number_integer() ||
@@ -207,7 +316,7 @@ bool xl_runtime::restore_slow_motion(const nlohmann::json &saved, bool apply)
 			restored.clocks[i] = { speed, int(direction), now - age, row[3].get<bool>() };
 		}
 		std::size_t pickup = 0;
-		const auto pickup_now = std::int64_t(SDL_GetTicks());
+		const auto pickup_now = std::int64_t(environment.pickup_ms);
 		for (int i = 0; i <= Highest_object_index; ++i) {
 			const auto &actor = Objects[i];
 			if (actor.type != OBJ_POWERUP || !xl_compat::time_equipment_powerup(actor.id)) continue;
@@ -222,7 +331,8 @@ bool xl_runtime::restore_slow_motion(const nlohmann::json &saved, bool apply)
 		if (pickup != saved.at("pickups").size()) return false;
 		if (apply) {
 			state = restored;
-			slow_requested = bullet_requested = false;
+			slow_requested = saved.at("slow_requested").get<bool>();
+			bullet_requested = saved.at("bullet_requested").get<bool>();
 			for (const auto &row : saved.at("pickups"))
 				Objects[row[0].get<int>()].rtype.vclip_info.frametime = fix(pickup_now - row[2].get<std::int64_t>());
 		}
@@ -338,7 +448,9 @@ extern "C" void xl_slow_motion_missile_fired(void)
 }
 nlohmann::json xl_runtime::weapon_clock_snapshot()
 {
-	return nlohmann::json{ last_missile - GameTime64, render_clock, last_omega_frame };
+	const auto rendered = environment_now().render_frame;
+	saved_environment.render_frame = rendered;
+	return nlohmann::json{ last_missile - GameTime64, rendered, last_omega_frame };
 }
 bool xl_runtime::restore_weapon_clock(const nlohmann::json &saved, bool apply)
 {
@@ -367,30 +479,66 @@ bool xl_runtime::restore_weapon_clock(const nlohmann::json &saved, bool apply)
 
 extern "C" void xl_slow_motion_render_advance(void)
 {
-	if (enabled()) ++render_clock;
+	if (enabled() && input_demo_replay_format_version() != 6) ++render_clock;
 }
 extern "C" uint32_t xl_slow_motion_render_clock(void)
 {
-	return render_clock;
+	return environment_now().render_frame;
 }
 
 extern "C" int xl_slow_motion_omega_blocked(void)
 {
 	if (!enabled()) return -1;
-	return last_omega_frame == render_clock || last_omega_frame == render_clock - 1;
+	const auto rendered = observe("omega_blocked").render_frame;
+	return last_omega_frame == rendered || last_omega_frame == rendered - 1;
 }
 extern "C" int xl_slow_motion_omega_fired(void)
 {
 	if (!enabled()) return 0;
-	last_omega_frame = render_clock;
+	last_omega_frame = observe("omega_fired").render_frame;
 	return 1;
 }
 
+extern "C" const char *xl_input_demo_backend_error(void)
+{
+#if defined(DXX_XL_DEVELOPER_PROBE)
+	// Other backends remain available to the existing qualification owners
+	return nullptr;
+#elif defined(DXX_HEADLESS_CONSOLE)
+	return "XL clock/input timeline playback requires rendered backend qualification; true headless is not yet qualified";
+#elif defined(__ANDROID__)
+	return "XL clock/input timeline recording and playback on Android are not yet qualified";
+#elif defined(OGL) && (defined(_WIN32) || defined(__linux__))
+	return nullptr;
+#else
+	return "XL clock/input timelines require a qualified Windows or Linux OpenGL backend";
+#endif
+}
+extern "C" const char *xl_input_demo_profile_error(void)
+{
+	if (!enabled()) return nullptr;
+	if (const auto *error = xl_input_demo_backend_error()) return error;
+	// Low-memory bitmap substitution can change transparency collision pixels
+	if (GameArg.SysLowMem) return "XL input demos require low-memory bitmap substitution to be disabled";
+	// Only the enabled/all-weapons flags have an ordered startup/input contract
+	if (cheats.lamer || cheats.allkeys || cheats.accessory || cheats.invul || cheats.shields ||
+	    cheats.killreactor || cheats.exitpath || cheats.levelwarp || cheats.fullautomap ||
+	    cheats.ghostphysics || cheats.rapidfire || cheats.bouncyfire || cheats.turbo ||
+	    cheats.robotfiringsuspended || cheats.killallrobots || cheats.robotskillrobots ||
+	    cheats.monsterdamage || cheats.buddyclone || cheats.buddyangry || cheats.acid)
+		return "XL input demos do not support an active cheat outside the ordered all-weapons contract";
+	// The ordinary escape sequence suspends robots as part of its native lifecycle
+	if (Game_suspended & ~(Endlevel_sequence ? SUSP_ROBOTS : 0))
+		return "XL input demos do not support suspended simulation subsystems";
+	return nullptr;
+}
 extern "C" const char *xl_omega_input_demo_error(void)
 {
+	if (const auto *error = xl_input_demo_profile_error()) return error;
+	if (input_demo_recorder_uses_environment() || input_demo_replay_format_version() == 6) return nullptr;
 	if (enabled() && (xl_prepared_time_equipment_image(0) || (Players[Player_num].flags & (xl_compat::slow_motion_equipment | xl_compat::bullet_time_equipment))))
-		return "XL time-equipment input demos require an unimplemented real-time clock timeline";
+		return "XL time-equipment input demos require a recorded real-time clock timeline";
 	return enabled() && (Players[Player_num].primary_weapon_flags & (1 << OMEGA_INDEX))
-	           ? "XL Omega input demos require an unimplemented render-clock timeline"
+	           ? "XL Omega input demos require a recorded render-clock timeline"
 	           : nullptr;
 }

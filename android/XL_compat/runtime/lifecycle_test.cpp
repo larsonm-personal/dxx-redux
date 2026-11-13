@@ -1,4 +1,6 @@
 // Exercise the real loader wrapper; no renderer or gameplay certification
+// The fixture codec has C++ linkage and types; include before packed C engine headers
+#include "input_demo_fixture.h"
 #include "native_crash_diagnostic.h"
 #include "slow_motion_runtime.h"
 #include "slow_motion_save.h"
@@ -500,26 +502,30 @@ void dynamic_lighting(const xl_compat::Inventory &source, int vertex)
 		for (unsigned c = 0; c < 3; ++c)
 			require(rgb[c] == int32_t(expected.rgb[c] * 65536), "live emitter intensity/color differs from reference rule");
 	};
-	unsigned fx_state = 0, sim_state = 0, sim_after = 0;
-	require(d_rand_get_stream_state(D_RNG_FX, &fx_state) && d_rand_get_stream_state(D_RNG_SIM, &sim_state), "RNG state unavailable for flare isolation check");
-	const auto fx_calls = d_rand_get_stream_call_count(D_RNG_FX), sim_calls = d_rand_get_stream_call_count(D_RNG_SIM);
+	unsigned fx_state = 0, fx_after = 0;
+	const auto fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	require(d_rand_get_stream_state(D_RNG_FX, &fx_state), "Cannot inspect flare FX isolation");
+	unsigned presentation_state = 0, sim_state = 0, sim_after = 0;
+	require(d_rand_get_stream_state(D_RNG_PRESENTATION, &presentation_state) && d_rand_get_stream_state(D_RNG_SIM, &sim_state), "RNG state unavailable for flare isolation check");
+	const auto presentation_calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION), sim_calls = d_rand_get_stream_call_count(D_RNG_SIM);
 	const auto flare_light = Weapon_info[FLARE_ID].light;
 	Weapon_info[FLARE_ID].light = F1_0;
 	Objects[0].id = FLARE_ID;
 	for (int life : { 2 * F1_0, F1_0 / 2 }) {
 		Objects[0].lifeleft = life;
-		d_srand_stream(D_RNG_FX, 12345);
-		const unsigned sample = d_rand_stream(D_RNG_FX);
-		d_srand_stream(D_RNG_FX, 12345);
-		const auto calls = d_rand_get_stream_call_count(D_RNG_FX);
+		d_srand_stream(D_RNG_PRESENTATION, 12345);
+		const unsigned sample = d_rand_stream(D_RNG_PRESENTATION);
+		d_srand_stream(D_RNG_PRESENTATION, 12345);
+		const auto calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 		xl_preview_dynamic_frame();
 		require(xl_preview_unresolved_emitters() == 0, "flare emitter unresolved");
-		require(d_rand_get_stream_call_count(D_RNG_FX) == calls + 1, "flare did not consume exactly one FX sample");
+		require(d_rand_get_stream_call_count(D_RNG_PRESENTATION) == calls + 1, "flare did not consume exactly one presentation sample");
 		check_color(vertex, xl_compat::flare_intensity(F1_0, life, sample) / 4, { 1, 1, 1 });
 	}
 	require(d_rand_get_stream_state(D_RNG_SIM, &sim_after) && sim_after == sim_state && d_rand_get_stream_call_count(D_RNG_SIM) == sim_calls, "flare rendering advanced simulation RNG");
-	d_rand_set_stream_state(D_RNG_FX, fx_state);
-	d_rand_set_stream_call_count(D_RNG_FX, fx_calls);
+	d_rand_set_stream_state(D_RNG_PRESENTATION, presentation_state);
+	d_rand_set_stream_call_count(D_RNG_PRESENTATION, presentation_calls);
+	require(d_rand_get_stream_state(D_RNG_FX, &fx_after) && fx_after == fx_state && d_rand_get_stream_call_count(D_RNG_FX) == fx_calls, "Flare rendering changed simulation-owned FX RNG");
 	Weapon_info[FLARE_ID].light = flare_light;
 	// Controlled weapon-table intensity isolates color selection from retail values
 	for (int id : { int(CONCUSSION_ID), int(SUPER_MECH_MISS), int(LASER_ID), int(SUPERPROX_ID) }) {

@@ -80,6 +80,127 @@ class RenderedReadinessTests(unittest.TestCase):
 
 
 class XlPrivateTests(unittest.TestCase):
+    def test_time_combat_requires_player_damage_in_the_observed_slowed_frame(self):
+        target = dict(
+            object=188,
+            signature=189,
+            robot_id=27,
+            player=0,
+            player_signature=0,
+            primary_weapon=0,
+            shields_before=3000000,
+            shields_after=2000000,
+            first_damage_frame=40,
+            firing_frames=84,
+            aiming_frames=47,
+            world_speed_at_damage=1.5,
+            player_speed_at_damage=1.5,
+        )
+        proof = dict(
+            combat=target, recorded_frames=198, warmup_frames=66, inventory_assists=0, assists_during_recording=0
+        )
+        damage = dict(
+            type="robot_damage",
+            version=1,
+            f=40,
+            robot=188,
+            robot_signature=189,
+            robot_id=27,
+            parent=0,
+            parent_type=4,
+            parent_signature=0,
+            old_shields=3000000,
+            new_shields=2000000,
+            damage=1000000,
+        )
+        clocks = [[1.5, 1, 0, False], [1.5, 1, 0, False]]
+        self.assertTrue(render_clock.time_combat_passed(proof, [damage], clocks))
+        self.assertFalse(render_clock.time_combat_passed(proof, [], clocks))
+        self.assertFalse(render_clock.time_combat_passed(proof, [None, {**damage, "version": True}], clocks))
+        for key, value in dict(
+            f=41,
+            robot=187,
+            robot_signature=190,
+            parent=1,
+            parent_type=2,
+            parent_signature=1,
+            damage=0,
+            new_shields=3000000,
+        ).items():
+            self.assertFalse(render_clock.time_combat_passed(proof, [{**damage, key: value}], clocks), key)
+        for key, value in dict(
+            first_damage_frame=True,
+            aiming_frames=90,
+            primary_weapon=1,
+            world_speed_at_damage=1,
+            player_speed_at_damage=3,
+            shields_after=3000000,
+        ).items():
+            self.assertFalse(
+                render_clock.time_combat_passed({**proof, "combat": {**target, key: value}}, [damage], clocks), key
+            )
+        for key in proof:
+            self.assertFalse(
+                render_clock.time_combat_passed({k: v for k, v in proof.items() if k != key}, [damage], clocks), key
+            )
+        self.assertFalse(render_clock.time_combat_passed(proof, [damage], [[1, 0, 0, False], [1, 0, 0, False]]))
+
+    def test_omega_recording_requires_damage_recharge_and_no_mid_capture_assists(self):
+        proof = dict(
+            schema="xl-omega-recording-v1",
+            complete=True,
+            assisted=True,
+            mission="fixture",
+            level=5,
+            frames=242,
+            rearm_frames=61,
+            warmup_frames=66,
+            position_assists=2,
+            inventory_assists=1,
+            assists_during_recording=0,
+            configuration_changes=4,
+            owned_before=False,
+            owned_after=True,
+            pickup=dict(object=73, signature=74, original_segment=763, charge=65536, frame=0, consumed=True),
+            charge_before=65536,
+            charge_after_fire=17000,
+            charge_after_recharge=42000,
+            target=dict(
+                object=117,
+                signature=118,
+                robot_id=7,
+                shields_before=16000000,
+                shields_after_omega=6800000,
+                shields_after_fire=3400000,
+                destroyed=False,
+            ),
+        )
+        self.assertTrue(omega_damage.recording_passed(0, proof, "fixture", 5))
+        for key in proof:
+            bad = copy.deepcopy(proof)
+            del bad[key]
+            self.assertFalse(omega_damage.recording_passed(0, bad, "fixture", 5), key)
+        for key, value in dict(
+            assists_during_recording=1,
+            configuration_changes=3,
+            inventory_assists=True,
+            complete=1,
+            charge_after_fire=65536,
+            charge_after_recharge=17000,
+            owned_before=True,
+            owned_after=False,
+        ).items():
+            self.assertFalse(omega_damage.recording_passed(0, {**proof, key: value}, "fixture", 5), key)
+        bad = copy.deepcopy(proof)
+        bad["target"]["shields_after_omega"] = bad["target"]["shields_before"]
+        self.assertFalse(omega_damage.recording_passed(0, bad, "fixture", 5))
+        for key, value in (("object", -1), ("signature", True), ("frame", 1), ("consumed", False), ("charge", 0)):
+            bad = copy.deepcopy(proof)
+            bad["pickup"][key] = value
+            self.assertFalse(omega_damage.recording_passed(0, bad, "fixture", 5), key)
+        for code in (1, None, False):
+            self.assertFalse(omega_damage.recording_passed(code, proof, "fixture", 5))
+
     def test_omega_damage_requires_actual_complete_controls(self):
         for xl in (False, True):
             policy = {
@@ -89,7 +210,9 @@ class XlPrivateTests(unittest.TestCase):
             }
             policy["acquired_recording_rejected" if xl else "classic_recording_allowed"] = True
             if xl:
-                policy.update(simulation_exit_rejected=True, terminal_tail_rejected=True)
+                policy.update(
+                    simulation_exit_rejected=True, terminal_tail_rejected=True, developer_timeline_recording=True
+                )
             else:
                 policy["classic_completion_allowed"] = True
             proof = {
@@ -173,6 +296,9 @@ class XlPrivateTests(unittest.TestCase):
                 reset_count=0,
                 shot_charge=32768 - (1092 if xl else 3276),
                 shot_delay=1 if xl else 3276,
+                paused_frame_time=0 if xl else 1092,
+                paused_game_time_unchanged=True,
+                paused_sim_rng_unchanged=True,
                 events=[],
             )
             count = 0
@@ -202,6 +328,10 @@ class XlPrivateTests(unittest.TestCase):
                 ("reset_count", True),
                 ("shot_charge", 0),
                 ("shot_delay", 0),
+                ("paused_frame_time", True),
+                ("paused_frame_time", -1),
+                ("paused_game_time_unchanged", False),
+                ("paused_sim_rng_unchanged", 1),
                 ("mission", "wrong"),
                 ("events", proof["events"][:-1]),
                 ("events", proof["events"] + [proof["events"][0]]),
@@ -210,11 +340,60 @@ class XlPrivateTests(unittest.TestCase):
                 bad = copy.deepcopy(proof)
                 bad[key] = value
                 self.assertFalse(render_clock.passed(0, bad, "fixture", 1, xl), key)
+            if xl:
+                bad = copy.deepcopy(proof)
+                bad["paused_frame_time"] = 1092
+                self.assertFalse(render_clock.passed(0, bad, "fixture", 1, xl))
             for i in range(len(proof["events"])):
                 for key, value in (("event", "wrong"), ("after", 99), ("before", True), ("charge", 0), ("extra", 0)):
                     bad = copy.deepcopy(proof)
                     bad["events"][i][key] = value
                     self.assertFalse(render_clock.passed(0, bad, "fixture", 1, xl))
+
+    def test_message_clock_proof_requires_actual_modal_and_timed_continuation(self):
+        proof = dict(
+            schema="xl-message-clock-v1",
+            derived=True,
+            complete=True,
+            mission="fixture",
+            level=1,
+            xl_active=True,
+            renderer="fixture",
+            modal_count=1,
+            resumed_frame_time=0,
+            resumed_heading=0,
+            message_id=3,
+            message_elapsed=1,
+            post_frame_cached_ms=1001,
+            recorded_frames=60,
+            terminal_message=0,
+            rejected_profiles=22,
+        )
+        self.assertTrue(render_clock.message_passed(0, proof, "fixture", 1, True, 1000))
+        for code in (None, False, 1):
+            self.assertFalse(render_clock.message_passed(code, proof, "fixture", 1, True, 1000))
+        for key, value in (
+            ("modal_count", 0),
+            ("resumed_frame_time", 1092),
+            ("resumed_heading", 546),
+            ("message_id", 0),
+            ("message_elapsed", 0),
+            ("message_elapsed", -1),
+            ("message_elapsed", 1000),
+            ("terminal_message", 3),
+            ("post_frame_cached_ms", 1000),
+            ("post_frame_cached_ms", True),
+            ("recorded_frames", 59),
+            ("rejected_profiles", 20),
+            ("complete", 1),
+            ("renderer", ""),
+        ):
+            changed = {**proof, key: value}
+            self.assertFalse(render_clock.message_passed(0, changed, "fixture", 1, True, 1000), key)
+        for key in proof:
+            changed = dict(proof)
+            del changed[key]
+            self.assertFalse(render_clock.message_passed(0, changed, "fixture", 1, True, 1000), key)
 
     def test_render_clock_pin_accepts_only_exact_representations(self):
         with tempfile.TemporaryDirectory() as temporary:

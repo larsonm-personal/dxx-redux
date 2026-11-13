@@ -6,7 +6,7 @@
 /* Values entering fresh level initialization, not an arbitrary world snapshot
  * Bounds are shared by the file codec and engine capture/apply code */
 #define INPUT_DEMO_LEVEL_PLAYER_FIELDS(X)              \
-	X(uint32_t, flags, 0, 32767)                       \
+	X(uint32_t, flags, 0, 131071)                      \
 	X(int32_t, energy, 0, INT32_MAX)                   \
 	X(int32_t, shields, INT32_MIN, INT32_MAX)          \
 	X(uint8_t, lives, 0, 255)                          \
@@ -84,6 +84,10 @@ typedef struct input_demo_level_start {
 #undef INPUT_DEMO_DECLARE_ARRAY
 	/* Optional in older new_level metadata, which used the unshifted game clock */
 	uint32_t wiggle_phase;
+	/* XL preserves its last Omega render marker across genuine level loads */
+	uint32_t has_xl_clock;
+	uint32_t xl_last_omega_frame;
+	uint32_t xl_camera_ticks;
 } input_demo_level_start;
 #pragma pack(pop)
 

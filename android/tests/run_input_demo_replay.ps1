@@ -14,6 +14,8 @@ param(
     [ValidateRange(0.01, 1048576)][double]$MinimumFreeSpaceGB = 4,
     [Alias('HogDir')]
     [string]$DataDir,
+    # Owned supplemental mission resources used by XL and other custom missions
+    [string]$ExtraDir,
     [ValidateSet('retail', 'shareware')][string]$DataEdition = 'retail',
     [string]$Pilot,
     [switch]$NoRender,
@@ -911,6 +913,7 @@ function Get-HeadlessConsoleLaunchArguments {
         '-inputdemo-replay', $ResolvedDemoPath,
         '-inputdemo-actual-result', $ActualResultPath
     )
+    if ($ExtraDir) { $launchParameters += @('-extra-dir', (Resolve-Path -LiteralPath $ExtraDir).Path) }
     if ($resolvedStateLogPath) {
         $launchParameters += @('-inputdemo-state-log', $ResolvedStateLogPath)
     }
@@ -1115,6 +1118,7 @@ function Get-LaunchArguments {
     if ($LaunchMode.ExtraArgs.Count -gt 0) {
         $launchParameters += $LaunchMode.ExtraArgs
     }
+    if ($ExtraDir) { $launchParameters += @('-extra-dir', (Resolve-Path -LiteralPath $ExtraDir).Path) }
     if ($RenderProfileSelection.ExtraArgs.Count -gt 0) {
         $launchParameters += $RenderProfileSelection.ExtraArgs
     }
@@ -1655,7 +1659,7 @@ if ($ResolveDataDirOnly) {
     }
     exit 0
 }
-$assetCheck = Invoke-InputDemoAssetCheck -RepoRoot $repoRoot -Command verify -Paths @($resolvedDemoPath) -DataDir $resolvedDataDir -Game $resolvedGame -D1InD2:$D1InD2 -AllowUnverifiedAssets:$AllowUnverifiedAssets
+$assetCheck = Invoke-InputDemoAssetCheck -RepoRoot $repoRoot -Command verify -Paths @($resolvedDemoPath) -DataDir $resolvedDataDir -ExtraDir $ExtraDir -Game $resolvedGame -D1InD2:$D1InD2 -AllowUnverifiedAssets:$AllowUnverifiedAssets
 if ($assetCheck.status -eq 'unverified') { Write-Warning 'UNVERIFIED recording assets: explicit historical playback opt-in; this run is not verified shareware coverage' }
 $runnerPromptDefaults = Get-RunnerPromptDefaults -RequestedRunner $Runner -RequestedMode $Mode -RequestedProfile $RenderProfile
 $renderProfileSelection = Get-RenderProfile -RequestedProfile $runnerPromptDefaults.RenderProfile -RequestedMode $runnerPromptDefaults.Mode

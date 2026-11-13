@@ -15,6 +15,8 @@ REQUIRED = {
     "d1_in_d2": {"d1_hog", "d1_pig"},
 }
 ROLES = {"d1_hog", "d1_pig", "d2_hog", "d2_pig", "d2_ham", "mission_hog"}
+# Synchronized with native input_demo_assets.cpp and input_demo_fixture.cpp
+EXTRA_ROLES = {f"d2_extra_{index}_{kind}" for index in range(16) for kind in ("ham", "hog")}
 ROLE_NAMES = {
     "d1_hog": ("descent.hog",),
     "d1_pig": ("descent.pig",),
@@ -77,7 +79,7 @@ def fingerprints(header):
         ):
             raise AssetError("Malformed asset file fields")
         role, name = item["role"], item["name"]
-        if not isinstance(role, str) or role not in ROLES or role in roles:
+        if not isinstance(role, str) or role not in ROLES | EXTRA_ROLES or role in roles:
             raise AssetError("Unknown or duplicate asset role")
         if (
             not isinstance(name, str)
@@ -91,7 +93,11 @@ def fingerprints(header):
         if not isinstance(item["sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", item["sha256"]):
             raise AssetError("Asset SHA-256 must contain 64 lowercase hexadecimal characters")
         if "container" in item and (
-            role.endswith("_hog") or item["container"] not in ("d1_hog", "d2_hog", "mission_hog")
+            not isinstance(item["container"], str)
+            or role.endswith("_hog")
+            or item["container"]
+            not in {"d1_hog", "d2_hog", "mission_hog"} | {r for r in EXTRA_ROLES if r.endswith("_hog")}
+            or (item["container"] in EXTRA_ROLES and item["container"] != role.removesuffix("_ham") + "_hog")
         ):
             raise AssetError("Asset container must name a recorded HOG role")
         roles.add(role)
@@ -100,8 +106,16 @@ def fingerprints(header):
     allowed = REQUIRED[mode] | {"mission_hog"}
     if mode == "d1_in_d2":
         allowed |= REQUIRED["native_d2"]
+    if mode != "native_d1":
+        allowed |= EXTRA_ROLES
     if not roles <= allowed or (status == "complete" and not REQUIRED[mode] <= roles):
         raise AssetError("Incomplete or incompatible asset role set")
+    if status == "complete":
+        indices = [index for index in range(16) if f"d2_extra_{index}_ham" in roles]
+        if indices != list(range(len(indices))) or any(
+            role.removesuffix("_hog") + "_ham" not in roles for role in roles & EXTRA_ROLES if role.endswith("_hog")
+        ):
+            raise AssetError("Incomplete supplemental HAM sequence")
     if (
         status == "complete"
         and mode == "d1_in_d2"
@@ -171,11 +185,17 @@ def _loose_path(row, data, children):
         raise AssetError(f"Ambiguous recorded asset: {row['role']}/{row['name']}")
     if not matches:
         # A diagnostic basename can change; prove identical bytes, never edition by name
-        extension = "." + row["role"].rsplit("_", 1)[1]
+        extensions = (
+            (".ham", ".vham")
+            if row["role"] in EXTRA_ROLES and row["role"].endswith("_ham")
+            else ("." + row["role"].rsplit("_", 1)[1],)
+        )
         matches = [
             path
             for path in candidates
-            if path.suffix.lower() == extension and path.stat().st_size == row["size"] and digest(path) == row["sha256"]
+            if path.suffix.lower() in extensions
+            and path.stat().st_size == row["size"]
+            and digest(path) == row["sha256"]
         ]
     if len(matches) != 1:
         raise AssetError(f"Missing or ambiguous recorded asset: {row['role']}/{row['name']}")
@@ -186,20 +206,33 @@ def _loose_path(row, data, children):
 
 
 def _hog_member(path, names, expected=None):
-    """Bounded DHF directory/member hashing, never extraction or game-format parsing."""
+    """Bounded DHF/D2X hashing; directory layout follows XL_compat/hog_format.h."""
     names = [name.lower() for name in names]
     matches, identical, seen = {}, [], set()
     length = path.stat().st_size
     with path.open("rb") as stream:
-        if stream.read(3) != b"DHF":
-            raise AssetError("Unsupported asset container (requires DHF HOG): " + str(path))
+        if stream.read(3) not in (b"DHF", b"D2X"):
+            raise AssetError("Unsupported asset container (requires DHF or D2X HOG): " + str(path))
         while stream.tell() < length:
             header = stream.read(17)
             if len(header) != 17 or len(seen) >= 65536:
                 raise AssetError("Truncated or oversized HOG directory")
-            name = header[:13].split(b"\0", 1)[0].decode("ascii").lower()
-            size = struct.unpack_from("<I", header, 13)[0]
-            if not name or name in seen or size > 128 * 1024 * 1024 or size > length - stream.tell():
+            size = struct.unpack_from("<i", header, 13)[0]
+            raw_name = header[:13]
+            if size < 0:
+                raw_name = stream.read(256)
+                if size == -2147483648 or len(raw_name) != 256 or b"\0" not in raw_name:
+                    raise AssetError("Invalid or truncated extended HOG header")
+                size = -size
+            name = raw_name.split(b"\0", 1)[0].lower().decode("latin-1")
+            if (
+                not name
+                or name in (".", "..")
+                or name in seen
+                or any(c in "/\\:" or ord(c) < 32 or ord(c) == 127 for c in name)
+                or size > 128 * 1024 * 1024
+                or size > length - stream.tell()
+            ):
                 raise AssetError("Ambiguous, truncated or oversized HOG member")
             seen.add(name)
             if name in names or (expected is not None and size == expected["size"]):
@@ -253,7 +286,7 @@ def _selected_identity(names, hogs, children):
     return None
 
 
-def verify_header(header, data, engine, imported=False, allow_unverified=False, repo=ROOT):
+def verify_header(header, data, engine, imported=False, allow_unverified=False, repo=ROOT, extra=None):
     value = fingerprints(header)
     recorded = header.get("game")
     if recorded not in ("d1", "d2") or engine not in ("d1", "d2"):
@@ -271,8 +304,24 @@ def verify_header(header, data, engine, imported=False, allow_unverified=False, 
     if value is not None:
         data = Path(data)
         children = [path for path in data.iterdir() if path.is_file()]
+        supplemental = (
+            list(
+                dict.fromkeys(
+                    path
+                    for root in dict.fromkeys((data, Path(extra) if extra is not None else data))
+                    for path in root.rglob("*")
+                    if path.is_file() and path.suffix.lower() in (".ham", ".vham", ".hog")
+                )
+            )
+            if any(row["role"] in EXTRA_ROLES for row in value["files"])
+            else []
+        )
         # Verify every whole container before trusting any member payload
-        hogs = {row["role"]: _loose_path(row, data, children) for row in value["files"] if row["role"].endswith("_hog")}
+        hogs = {
+            row["role"]: _loose_path(row, data, supplemental if row["role"] in EXTRA_ROLES else children)
+            for row in value["files"]
+            if row["role"].endswith("_hog")
+        }
         for row in value["files"]:
             if row["role"].endswith("_hog"):
                 continue
@@ -283,9 +332,15 @@ def verify_header(header, data, engine, imported=False, allow_unverified=False, 
                 _check_member(row, member)
                 names += (member[0],)
             if not container:
-                path = _loose_path(row, data, children)
+                path = _loose_path(row, data, supplemental if row["role"] in EXTRA_ROLES else children)
                 names += (path.name.lower(),)
-            _check_member(row, _selected_identity(names, hogs, children))
+            # Supplemental loads can use temporary mounts or replace earlier
+            # tables. Native post-load verification checks their actual order;
+            # they do not join the final base-asset search path here
+            if row["role"] not in EXTRA_ROLES:
+                _check_member(
+                    row, _selected_identity(names, {k: v for k, v in hogs.items() if k not in EXTRA_ROLES}, children)
+                )
     verified = value is not None and value["status"] == "complete"
     return {
         "status": "verified" if verified else "unverified",
@@ -317,6 +372,7 @@ def main():
     parser.add_argument("paths", nargs="+", type=Path)
     parser.add_argument("--repo", type=Path, default=ROOT)
     parser.add_argument("--data", type=Path)
+    parser.add_argument("--extra", type=Path)
     parser.add_argument("--game", choices=("all", "d1", "d2"), default="all")
     parser.add_argument("--imported", action="store_true")
     parser.add_argument("--allow-unverified-assets", action="store_true")
@@ -340,7 +396,7 @@ def main():
                 if args.data is None or args.game == "all":
                     raise AssetError("Verification requires --data and --game")
                 result = verify_header(
-                    header, args.data, args.game, args.imported, args.allow_unverified_assets, args.repo
+                    header, args.data, args.game, args.imported, args.allow_unverified_assets, args.repo, args.extra
                 )
             print(json.dumps(result))
     except (OSError, ValueError, KeyError, TypeError) as error:

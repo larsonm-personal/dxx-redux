@@ -113,5 +113,40 @@ gameplay blockers. Neither gains playable or campaign qualification.
 
 Flicker capacity and its full lifecycle, other renderer profiles, complete
 changing-source visual comparisons, custom resource registries and original
-campaign qualification remain unfinished. The existing 8 MiB trailer bound
-also remains; these controls do not claim unbounded save payloads.
+campaign qualification remain unfinished. At that checkpoint the 8 MiB trailer
+bound remained; these controls did not claim unbounded save payloads.
+
+## Texture-coordinate continuation, November 11, 2026
+
+The ordinary Warp 5 Omega recording exposed lost scrolling UV coordinates at
+checkpoint restoration. `d2/main/game.c::slide_textures` changes those values;
+`d2/main/fvi.c::find_hitpoint_uv` consumes them for `check_trans_wall`, including
+the XL pixel-transparency collision path. They are gameplay state.
+
+Development save schema 38 adds 48 signed coordinates per segment, covering
+both U and V on all four corners of all six faces. It preserves coordinates even
+when a face no longer uses a scrolling texture. The complete field count,
+segment count, row lengths and signed 32-bit values validate before any coordinate
+is applied. The existing lighting owner still restores L independently. The
+trailer bound is the previous 8 MiB plus `MAX_SEGMENTS * (48 * 12 + 3) + 64`
+bytes, accounting for the maximum encoded int32 array and its delimiters.
+Older development XL saves reject; stock save layouts are unchanged.
+
+The existing changing-light owner now drives native texture scrolling before its
+disk save, transitions through stock, and compares all earned UVs after restore.
+It also checks the actual collision UV interpolation, rejects nineteen malformed
+light/UV payloads without partial UV publication, then restores the same disk
+save in a fresh process against the captured coordinates. Both original and
+invalid-light-row variants cover all 93 fixture segments. These remain derived
+mechanics controls, not original mission progression or complete cold-state
+qualification. Other clock/camera/FX differences remain tracked in the gameplay
+ledger.
+
+Windows passes both native variants and boss spawning; Linux passes the same
+three owners. Fresh original Warp 5 Omega capture6 and clean replay3 under
+`temp/pr464-ci-fixes-20261110` show zero UV differences across all 184 detailed
+world/boundary records, with 180 matching frame comparisons and 1059 matching
+SIM RNG events. Remaining clock/camera/FX differences keep that demo unqualified.
+The prior capture5 reached terminal state but hit the unchanged 45-second process
+timeout while compilation overlapped; it remains failed evidence. The quiet
+capture6 exits cleanly within the same timeout.

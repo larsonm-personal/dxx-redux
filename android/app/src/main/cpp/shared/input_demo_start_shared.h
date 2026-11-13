@@ -44,6 +44,7 @@ typedef struct input_demo_replay_restored_player_diag {
 
 void input_demo_set_skip_level_intro(int skip);
 void input_demo_apply_level_player_cfg(void);
+void input_demo_apply_player_cfg(const input_demo_player_cfg *player_cfg);
 int input_demo_consume_skip_level_intro(void);
 int input_demo_maybe_validate_metadata_from_cmdline(void);
 int input_demo_load_replay_from_path_common(const char *demo_path,

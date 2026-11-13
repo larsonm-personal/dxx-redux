@@ -64,9 +64,59 @@ the source's energy expression within its checked integer bound
   simulation stepping. Exhausted energy and reactor countdown use the source
   transition rules
 
-Input-demo recording/replay still rejects these controls because its real-time
-render-clock timeline is not implemented. The Omega replay limitation remains
-explicit; no rejection guard was removed
+Production input-demo recording/replay remains guarded while the format-6
+environment stream is integrated and qualified. Its codec, recorder/replay
+owners and runtime consumers are implemented. A developer Windows capture of
+the original Warp 6 slow-motion pickup, activation, reversal and live combat now
+matches 198 frame diagnostics and 811 SIM RNG events in one clean-process replay.
+Detailed restore fields still differ; immediate/repeated playback and complete
+XL semantic coverage remain unqualified. See the developing contract in
+[the input-demo README](../../regression_demos/README.md#xl-environmental-timeline-format-6-under-qualification)
+
+The shared detailed comparator now accepts an explicit native D2 comparison
+without applying D1 import mappings. Format-6 XL profiles admit the bounded
+object/AI pools and ordered twenty-victim projectile history. Both RNG streams,
+endlevel state and unknown fields remain compared until presentation independence
+is proved. Raw traces remain unchanged. Two absence representations are equivalent:
+polygon alternate textures 0/-1 (all draw consumers select only values above zero),
+and effect side 0/-1 only when segment is -1 and EF_ONE_SHOT is clear. Collision
+and camera-glass activation assign the side before enabling a one-shot effect
+
+That audit found missing camera static AI storage in the existing object observer.
+Camera collision admission reads its behavior, so the trace now emits it and
+the comparator requires it. The earlier 198-frame live capture lacks this field
+and is explicitly incomplete under the stricter check, despite its matching
+coarse hashes and SIM RNG. Full XL owner-state coverage remains required;
+no expected recording or raw observation was rewritten
+
+A subsequent fresh Windows capture with camera AI included matches 198 detailed
+object frames, 202 world/boundary observations and 811 strict SIM RNG events in
+one clean accelerated playback. This compares the emitted generic state only;
+XL owner coverage, supplemental HAM identity and repeated-platform qualification
+are still incomplete. Camera rotation now consumes an ordered `camera_frame`
+environment sample. Read-only typed time/camera observations use the last consumed
+sample and never advance a clock, refresh a save snapshot or retire a camera
+attachment. Ordinary record finalization emits its terminal observation after
+the input tail, matching the replay boundary
+
+Fresh `g1-live-time-capture-4` and `g1-time-replay-5` match 198 object frames,
+202 world/boundary observations including these XL fields, 811 strict SIM RNG
+events and all 198 frame hashes. The native capture also verifies observer
+purity. Trigger cooldown still uses an unrecorded external timer, and complete
+owner-state/cold-continuation coverage remains unfinished. This recording remains
+diagnostic and uses explicit unverified-asset playback for supplemental HAM
+
+Native XL save schema 36 preserves pending slow-motion and bullet-time
+requests. Restoring between an ordinary key press and its next simulation step
+must not discard that input. The existing rendered clock probe checks actual
+disk save/restore and atomic rejection of malformed pending-request fields
+
+The same save owner retains the pending player-appearance effect. A checkpoint
+before the first simulation step previously lost this effect on restore, changing
+object allocation and SIM RNG context even while terminal player state matched.
+The new live capture retains this startup boundary; no pose changes occur during
+its recorded interval. Its approach pose is assisted before recording, and it
+does not establish connected original progression
 
 ## Current demonstrations and limits
 

@@ -11,12 +11,14 @@
 #include "config.h"
 
 static fix64 F64_RunTime = 0;
+static Uint32 cached_ticks = 0;
 
 void timer_update(void)
 {
 	static ubyte init = 1;
 	static fix64 last_tv = 0;
-	fix64 cur_tv = SDL_GetTicks()*F1_0/1000;
+	cached_ticks = SDL_GetTicks();
+	fix64 cur_tv = cached_ticks*F1_0/1000;
 
 	if (init)
 	{
@@ -32,6 +34,12 @@ void timer_update(void)
 fix64 timer_query(void)
 {
 	return (F64_RunTime);
+}
+
+/* Preserve the integer clock sampled by timer_update, without another read */
+unsigned int timer_query_milliseconds(void)
+{
+	return cached_ticks;
 }
 
 void timer_delay(fix seconds)
