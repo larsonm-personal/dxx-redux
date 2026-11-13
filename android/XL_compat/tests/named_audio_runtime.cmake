@@ -79,7 +79,12 @@ foreach(ordinal IN ITEMS 1 2)
         ERROR_VARIABLE error
         TIMEOUT 45)
     file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
-    if(NOT result EQUAL 0 OR NOT log MATCHES "XL named audio runtime controls passed"
+    if(NOT result EQUAL 0
+       OR NOT log MATCHES "XL named audio runtime controls passed"
+       OR NOT
+          log
+          MATCHES
+          "Audio observation purity: repeated snapshots preserve live owners and subsequent PCM; frame retirement passed"
        OR NOT log MATCHES "Bubble audio passed: prepared addon"
        OR NOT log MATCHES "${version}/40 sounds: wall/master/object/autoplay")
         message(FATAL_ERROR "Named audio version ${version} failed (${result}): ${log}${error}")
