@@ -87,30 +87,35 @@ int digi_sounds_initialized=0;
 #endif
 
 /* Find the sound which actually equates to a sound number */
-int digi_xlat_sound(int soundno)
+int digi_xlat_sound_from_tables(int soundno, int low_memory, const ubyte *sounds, const ubyte *alternates)
 {
 	ubyte translated;
 
-	if (soundno < 0)
+	if (soundno < 0 || soundno >= MAX_SOUNDS)
 		return -1;
-	if (soundno >= MAX_SOUNDS) {
-		int extended = d1_in_d2_translate_extended_sound(soundno);
-		return extended >= 0 && extended < MAX_SOUND_FILES ? extended : -1;
-	}
 
-	if (GameArg.SysLowMem)
+	if (low_memory)
 	{
-		soundno = AltSounds[soundno];
+		soundno = alternates[soundno];
 		if (soundno >= MAX_SOUNDS)
 			return -1;
 	}
 
 	//Assert(Sounds[soundno] != 255);	//if hit this, probably using undefined sound
-	translated = Sounds[soundno];
+	translated = sounds[soundno];
 	if (translated >= MAX_SOUND_FILES)
 		return -1;
 
 	return translated;
+}
+
+int digi_xlat_sound(int soundno)
+{
+	if (soundno >= MAX_SOUNDS) {
+		int extended = d1_in_d2_translate_extended_sound(soundno);
+		return extended >= 0 && extended < MAX_SOUND_FILES ? extended : -1;
+	}
+	return digi_xlat_sound_from_tables(soundno, GameArg.SysLowMem, Sounds, AltSounds);
 }
 
 int digi_unxlat_sound(int soundno)

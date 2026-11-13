@@ -57,6 +57,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "laser.h"
 #include "escort.h"
 #include "guidebot_save_io.h"
+#include "guidebot_escort_state.h"
 #include "thief_network_policy.h"
 #include "escort_exit_policy.h"
 #include "escort_goal_policy.h"
@@ -2156,36 +2157,32 @@ static void escort_restore_companion_robot_control(void)
 #include "android_save_probe.h"
 #endif
 
+void escort_capture_runtime_state(guidebot_escort_state *state)
+{
+#if MAX_STOLEN_ITEMS != GUIDEBOT_ESCORT_STOLEN_SLOTS
+#error "Guidebot escort snapshot inventory does not match the native owner"
+#endif
+#define ESCORT_FIELD(type, name, kind) state->name = name;
+#define ESCORT_LIMIT(type, name, kind, low, high) ESCORT_FIELD(type, name, kind)
+#define ESCORT_TEXT(name, capacity) memcpy(state->name, name, sizeof(state->name));
+#include "guidebot_escort_state_members.h"
+#undef ESCORT_FIELD
+#undef ESCORT_LIMIT
+#undef ESCORT_TEXT
+
+	memcpy(state->stolen, Stolen_items, sizeof(state->stolen));
+	state->persistent_message = escort_goal_message_persistent();
+}
+
 int escort_save_runtime(guidebot_save_stream *s)
 {
-	GB_FIELD(s, Max_escort_length, GB_SIGNED);
-	GB_FIELD(s, Escort_kill_object, GB_SIGNED);
-	GB_FIELD(s, Escort_goal_object, GB_SIGNED);
-	GB_FIELD(s, Escort_special_goal, GB_SIGNED);
-	GB_FIELD(s, Escort_goal_index, GB_SIGNED);
-	GB_FIELD(s, Buddy_messages_suppressed, GB_SIGNED);
-	GB_FIELD(s, Escort_goal_secret_seg, GB_SIGNED);
-	GB_FIELD(s, Escort_goal_secret_side, GB_SIGNED);
-	GB_LIMIT(s, Buddy_objnum, GB_SIGNED, -1, MAX_OBJECTS - 1);
-	GB_FIELD(s, Buddy_allowed_to_talk, GB_SIGNED);
-	GB_FIELD(s, Looking_for_marker, GB_SIGNED);
-	GB_FIELD(s, Last_buddy_key, GB_SIGNED);
-	GB_LIMIT(s, Stolen_item_index, GB_SIGNED, 0, MAX_STOLEN_ITEMS - 1);
-	GB_TEXT(s, Escort_goal_message_text);
-	GB_FIELD(s, Escort_goal_message_signature, GB_SIGNED);
-	GB_FIELD(s, Escort_goal_message_owner, GB_SIGNED);
-	GB_FIELD(s, Escort_goal_message_generation, GB_UNSIGNED);
-	GB_FIELD(s, Escort_goal_message_sequence, GB_UNSIGNED);
-	GB_FIELD(s, Escort_goal_message_next_send, GB_CLOCK);
-	GB_FIELD(s, Escort_last_path_created, GB_CLOCK);
-	GB_FIELD(s, Buddy_sorry_time, GB_CLOCK);
-	GB_FIELD(s, Last_buddy_message_time, GB_CLOCK);
-	GB_FIELD(s, Buddy_last_seen_player, GB_CLOCK);
-	GB_FIELD(s, Buddy_last_player_path_created, GB_CLOCK);
-	GB_FIELD(s, Last_come_back_message_time, GB_CLOCK);
-	GB_FIELD(s, Buddy_last_missile_time, GB_CLOCK);
-	GB_FIELD(s, Re_init_thief_time, GB_CLOCK);
-	GB_FIELD(s, Last_thief_hit_time, GB_CLOCK);
+#define ESCORT_FIELD(type, name, kind) GB_FIELD(s, name, kind);
+#define ESCORT_LIMIT(type, name, kind, low, high) GB_LIMIT(s, name, kind, low, high);
+#define ESCORT_TEXT(name, capacity) GB_TEXT(s, name);
+#include "guidebot_escort_state_members.h"
+#undef ESCORT_FIELD
+#undef ESCORT_LIMIT
+#undef ESCORT_TEXT
 #ifdef __ANDROID__
 	if (s->writing) android_save_probe_mark("runtime_fixed");
 #endif

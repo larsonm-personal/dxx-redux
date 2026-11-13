@@ -7,17 +7,38 @@
 #include "slow_motion_save.h"
 #include "camera_save.h"
 #include "trigger_state.h"
+#include "object_birth.h"
+#include "seismic_gameplay.h"
+#include "object_trigger.h"
+#include "boss_spawn.h"
+#include "equipment.h"
+#include "robot_generator.h"
+#include "motion_state.h"
+#include "mission_progress.h"
+#include "fluids.h"
+#include "repair.h"
+#include "reactor_countdown.h"
+#include "flicker.h"
 #include "input_demo_fixture.h"
 #endif
 
 #include <string>
 #include <stdexcept>
+#include <cmath>
+#include <limits>
+#include <memory>
 #include <nlohmann/json.hpp>
 
 extern "C" {
 #include "bm.h"
 #include "cntrlcen.h"
 #include "collide.h"
+#ifdef DXX_XL_RUNTIME
+#include "controls.h"
+#include "guidebot_escort_state.h"
+#include "guidebot_route_state.h"
+#include "guidebot_metadata_snapshot.h"
+#endif
 #include "effects.h"
 #include "endlevel.h"
 #include "endlevel_runtime.h"
@@ -173,6 +194,232 @@ json player_state(const player &p)
 	return out;
 }
 
+#ifdef DXX_XL_RUNTIME
+json metadata_long_double(long double value)
+{
+	if (!std::isfinite(value)) throw std::runtime_error("Nonfinite Guide-Bot metadata score");
+	int exponent = 0;
+	long double fraction = std::frexp(std::fabs(value), &exponent);
+	json bits = json::array();
+	// Canonical exact binary value, independent of native long-double padding/width
+	while (fraction != 0) {
+		fraction *= 2;
+		const int bit = fraction >= 1;
+		bits.push_back(bit);
+		fraction -= bit;
+		if (bits.size() > std::numeric_limits<long double>::digits)
+			throw std::runtime_error("Nonbinary Guide-Bot metadata score");
+	}
+	return { { "negative", std::signbit(value) }, { "bits", bits }, { "exponent", exponent - static_cast<int>(bits.size()) } };
+}
+
+#define METADATA_TRACE_GB_SIGNED(value)      static_cast<int64_t>(value)
+#define METADATA_TRACE_GB_UNSIGNED(value)    static_cast<uint64_t>(value)
+#define METADATA_TRACE_GB_BYTES(value)       static_cast<int>(value)
+#define METADATA_TRACE_GB_DOUBLE(value)      static_cast<double>(value)
+#define METADATA_TRACE_GB_LONG_DOUBLE(value) metadata_long_double(value)
+#define METADATA_BEGIN(type)                  \
+	json metadata_trace_##type(const type &v) \
+	{                                         \
+		json out = json::object();            \
+		out.get_ref<json::object_t &>().reserve(96);
+#define METADATA_END() \
+	return out;        \
+	}
+#define METADATA_FIELD(name, kind)            out[#name] = METADATA_TRACE_##kind(v.name);
+#define METADATA_LIMIT(name, kind, low, high) METADATA_FIELD(name, kind)
+#define METADATA_TEXT(name)                                                              \
+	{                                                                                    \
+		auto &array = out[#name];                                                        \
+		array = json::array();                                                           \
+		for (const unsigned char byte : v.name) array.push_back(static_cast<int>(byte)); \
+	}
+#define METADATA_ARRAY(name, count, kind)                                                         \
+	{                                                                                             \
+		auto &array = out[#name];                                                                 \
+		array = json::array();                                                                    \
+		for (size_t i0 = 0; i0 < count; ++i0) array.push_back(METADATA_TRACE_##kind(v.name[i0])); \
+	}
+#define METADATA_MATRIX(name, rows, columns, kind)                                                    \
+	out[#name] = json::array();                                                                       \
+	for (size_t i0 = 0; i0 < rows; ++i0) {                                                            \
+		json row = json::array();                                                                     \
+		for (size_t i1 = 0; i1 < columns; ++i1) row.push_back(METADATA_TRACE_##kind(v.name[i0][i1])); \
+		out[#name].push_back(std::move(row));                                                         \
+	}
+#define METADATA_STRUCT(name, type) out[#name] = metadata_trace_##type(v.name);
+#define METADATA_STRUCT_ARRAY(name, type, count) \
+	out[#name] = json::array();                  \
+	for (size_t i0 = 0; i0 < count; ++i0) out[#name].push_back(metadata_trace_##type(v.name[i0]));
+#include "guidebot_metadata_fields.h"
+#undef METADATA_BEGIN
+#undef METADATA_END
+#undef METADATA_FIELD
+#undef METADATA_LIMIT
+#undef METADATA_TEXT
+#undef METADATA_ARRAY
+#undef METADATA_MATRIX
+#undef METADATA_STRUCT
+#undef METADATA_STRUCT_ARRAY
+
+json metadata_xl_state()
+{
+	// This snapshot contains full fixed workspaces; keep it off the native stack
+	std::unique_ptr<guidebot_metadata_snapshot> snapshot(new guidebot_metadata_snapshot{});
+	level_metadata_capture_snapshot(snapshot.get());
+	json out = { { "version", 1 } };
+	// ordered_json otherwise copies prior full arrays when its key vector grows
+	out.get_ref<json::object_t &>().reserve(64);
+#define METADATA_STRUCT(type, name, serializer) out[#name] = metadata_trace_##type(snapshot->name);
+#define METADATA_VALUE(type, name, kind)        out[#name] = METADATA_TRACE_##kind(snapshot->name);
+#include "guidebot_metadata_save_members.h"
+#undef METADATA_STRUCT
+#undef METADATA_VALUE
+	return out;
+}
+#undef METADATA_TRACE_GB_SIGNED
+#undef METADATA_TRACE_GB_UNSIGNED
+#undef METADATA_TRACE_GB_BYTES
+#undef METADATA_TRACE_GB_DOUBLE
+#undef METADATA_TRACE_GB_LONG_DOUBLE
+
+json environment_xl_state()
+{
+	// These existing owner getters are pure; save codecs retain their validation
+	xl_countdown_state countdown{};
+	xl_countdown_get(&countdown);
+	json out = { { "version", 1 }, { "fluid_scrape_elapsed", xl_fluid_scrape_elapsed() }, { "repair_elapsed", xl_repair_elapsed() }, { "countdown", { countdown.pending, countdown.phase, countdown.fraction } }, { "flickers", json::array() } };
+	for (int index = 0; index < xl_flicker_count(); ++index) {
+		xl_flicker_state state{};
+		if (!xl_flicker_get(index, &state)) throw std::runtime_error("Missing XL flicker observation");
+		out["flickers"].push_back({ state.segment, state.side, state.delay, state.timer, state.mask });
+	}
+	// Native reactor fields and all ambient/corner lighting already live in world_state
+	return out;
+}
+
+json native_xl_state()
+{
+	json out = { { "version", 1 }, { "omega_charge", Omega_charge }, { "wiggle_phase", controls_get_wiggle_phase() }, { "afterburner_charge", json::array() }, { "afterburner_times", json::array() }, { "guided", json::array() } };
+	for (int i = 0; i < N_players; ++i) out["afterburner_charge"].push_back(static_cast<int>(Players[i].afterburner_charge));
+	for (int i = 0; i < object_capacity(); ++i) out["afterburner_times"].push_back(Last_afterburner_time[i]);
+	for (int player = 0; player < MAX_PLAYERS; ++player) {
+		int slot = -1;
+		if (Guided_missile[player]) {
+			// Pointer equality also handles stale native bindings without dereferencing them
+			slot = -2;
+			for (int i = 0; i < object_capacity(); ++i)
+				if (Guided_missile[player] == &Objects[i]) {
+					slot = i;
+					break;
+				}
+		}
+		// Every consumer tests the pointer first; a null pointer's old signature is inert
+		out["guided"].push_back({ slot, slot == -1 ? -1 : Guided_missile_sig[player] });
+	}
+	guidebot_escort_state escort{};
+	escort_capture_runtime_state(&escort);
+	auto &escort_state = out["escort"];
+	escort_state["version"] = 1;
+#define ESCORT_FIELD(type, name, kind)            FIELD(escort_state, escort, name);
+#define ESCORT_LIMIT(type, name, kind, low, high) ESCORT_FIELD(type, name, kind)
+#define ESCORT_TEXT(name, capacity)              \
+	escort_state[#name] = json::array();         \
+	for (const unsigned char byte : escort.name) \
+		escort_state[#name].push_back(static_cast<int>(byte));
+#include "guidebot_escort_state_members.h"
+#undef ESCORT_FIELD
+#undef ESCORT_LIMIT
+#undef ESCORT_TEXT
+	escort_state["stolen"] = scalars(escort.stolen);
+	escort_state["persistent_message"] = escort.persistent_message;
+	guidebot_route_state route{};
+	escort_route_capture_runtime_state(&route);
+	auto &route_state = out["route"];
+	route_state = { { "version", 1 }, { "enabled", bool(route.enabled) } };
+	if (route.enabled) {
+		route_state["trigger_capacity"] = route.trigger_capacity;
+		route_state["restore_pending"] = route.restore_pending;
+		route_state["cache_poll_wait"] = route.cache_poll_wait;
+#define ROUTE_FIELD(type, name, source, kind)            FIELD(route_state, route, name);
+#define ROUTE_LIMIT(type, name, source, kind, low, high) ROUTE_FIELD(type, name, source, kind)
+#define ROUTE_HOST_CLOCK(type, name, source, kind)       ROUTE_FIELD(type, name, source, kind)
+#define ROUTE_ARRAY(type, name, source, capacity, kind)  route_state[#name] = scalars(route.name);
+#define ROUTE_TEXT(name, source, capacity)      \
+	route_state[#name] = json::array();         \
+	for (const unsigned char byte : route.name) \
+		route_state[#name].push_back(static_cast<int>(byte));
+#define ROUTE_TRIGGER_BYTES(name, source)            \
+	route_state[#name] = json::array();              \
+	for (int i = 0; i < route.trigger_capacity; ++i) \
+		route_state[#name].push_back(int(route.name[i]));
+#include "guidebot_route_state_members.h"
+#undef ROUTE_FIELD
+#undef ROUTE_LIMIT
+#undef ROUTE_HOST_CLOCK
+#undef ROUTE_ARRAY
+#undef ROUTE_TEXT
+#undef ROUTE_TRIGGER_BYTES
+	}
+	// The native save compatibility getter deliberately returns zeros under XL
+	// Observe the actual seismic owner, including the magnitude used by guidance
+	const auto seismic = xl_compat::seismic_gameplay_snapshot();
+	out["seismic"] = { { "strength", seismic[0] }, { "pending", seismic[1] }, { "magnitude", seismic[4] }, { "phase", seismic[5] }, { "fraction", seismic[6] }, { "interval", seismic[2].is_null() ? json::array() : json(seismic[2]) }, { "detonations", json::array() } };
+	out["metadata"] = metadata_xl_state();
+	out["events"] = { { "version", 1 }, { "objects", xl_compat::object_trigger_snapshot() }, { "bosses", xl_compat::boss_spawn_snapshot() }, { "equipment", xl_compat::equipment_snapshot() }, { "producers", xl_compat::robot_generator_snapshot() } };
+	out["motion"] = { { "version", 1 }, { "boosts", xl_compat::speed_boost_snapshot() }, { "spawns", xl_compat::spawn_points_snapshot() }, { "progression", xl_compat::mission_progress_trace_snapshot() }, { "projectiles", xl_compat::projectile_snapshot() } };
+	out["environment"] = environment_xl_state();
+	for (const auto &entry : seismic[3])
+		out["seismic"]["detonations"].push_back({ !entry[0].is_null(), entry[0].is_null() ? json(0) : json(entry[0]), entry[1] });
+	return out;
+}
+
+json trigger_state_snapshot()
+{
+	auto rows = json::array();
+	for (int i = 0; i < Num_triggers; ++i) {
+		xl_trigger_state state{};
+		if (!xl_wall_trigger_state(i, &state)) throw std::runtime_error("Missing XL trigger observation");
+		rows.push_back({ state.elapsed, state.delay_ms, state.object, state.shot, state.operated,
+		                 state.destination, state.attached, state.signature, state.cooldown_active, state.cooldown_age_ms });
+	}
+	return rows;
+}
+#endif
+
+json producer_state()
+{
+	json out = json::object();
+	out["fuelcenters"] = json::array();
+	for (int i = 0; i < Num_fuelcenters; ++i) {
+		const auto &s = Station[i];
+		json row = json::object();
+		FIELD(row, s, Type);
+		FIELD(row, s, segnum);
+		FIELD(row, s, Flag);
+		FIELD(row, s, Enabled);
+		FIELD(row, s, Lives);
+		FIELD(row, s, Capacity);
+		FIELD(row, s, MaxCapacity);
+		FIELD(row, s, Timer);
+		FIELD(row, s, Disable_time);
+		row["center"] = vector(s.Center);
+		out["fuelcenters"].push_back(std::move(row));
+	}
+	out["robotcenters"] = json::array();
+	for (int i = 0; i < Num_robot_centers; ++i) {
+		const auto &r = RobotCenters[i];
+		json row = json::object();
+		FIELD(row, r, hit_points);
+		FIELD(row, r, interval);
+		FIELD(row, r, segnum);
+		FIELD(row, r, fuelcen_num);
+		row["robot_flags"] = scalars(r.robot_flags);
+		out["robotcenters"].push_back(std::move(row));
+	}
+	return out;
+}
+
 json world_state()
 {
 	json out = json::object();
@@ -325,33 +572,9 @@ json world_state()
 	FIELD(reactor, ControlCenterTriggers, num_links);
 	reactor["segments"] = scalars(ControlCenterTriggers.seg);
 	reactor["sides"] = scalars(ControlCenterTriggers.side);
-	out["fuelcenters"] = json::array();
-	for (int i = 0; i < Num_fuelcenters; ++i) {
-		const auto &s = Station[i];
-		json row = json::object();
-		FIELD(row, s, Type);
-		FIELD(row, s, segnum);
-		FIELD(row, s, Flag);
-		FIELD(row, s, Enabled);
-		FIELD(row, s, Lives);
-		FIELD(row, s, Capacity);
-		FIELD(row, s, MaxCapacity);
-		FIELD(row, s, Timer);
-		FIELD(row, s, Disable_time);
-		row["center"] = vector(s.Center);
-		out["fuelcenters"].push_back(std::move(row));
-	}
-	out["robotcenters"] = json::array();
-	for (int i = 0; i < Num_robot_centers; ++i) {
-		const auto &r = RobotCenters[i];
-		json row = json::object();
-		FIELD(row, r, hit_points);
-		FIELD(row, r, interval);
-		FIELD(row, r, segnum);
-		FIELD(row, r, fuelcen_num);
-		row["robot_flags"] = scalars(r.robot_flags);
-		out["robotcenters"].push_back(std::move(row));
-	}
+	auto producers = producer_state();
+	out["fuelcenters"] = std::move(producers["fuelcenters"]);
+	out["robotcenters"] = std::move(producers["robotcenters"]);
 	out["effects"] = json::array();
 	for (int i = 0; i < Num_effects; ++i) {
 		const auto &e = Effects[i];
@@ -411,14 +634,10 @@ json world_state()
 			throw std::runtime_error(error);
 		out["xl_player_cfg"] = json::parse(encoded).at("value");
 		out["xl_time"] = xl_runtime::slow_motion_trace_snapshot();
+		out["xl_births"] = xl_object_birth_snapshot();
+		out["xl_native"] = native_xl_state();
 		out["xl_cameras"] = xl_camera_trace_snapshot();
-		out["xl_triggers"] = json::array();
-		for (int i = 0; i < Num_triggers; ++i) {
-			xl_trigger_state state{};
-			if (!xl_wall_trigger_state(i, &state)) throw std::runtime_error("Missing XL trigger observation");
-			out["xl_triggers"].push_back({ state.elapsed, state.delay_ms, state.object, state.shot, state.operated,
-			                               state.destination, state.attached, state.signature, state.cooldown_active, state.cooldown_age_ms });
-		}
+		out["xl_triggers"] = trigger_state_snapshot();
 	}
 #endif
 	return out;
@@ -427,10 +646,32 @@ json world_state()
 #undef GLOBAL
 } // namespace
 
+nlohmann::ordered_json input_demo_producer_trace_snapshot()
+{
+	return producer_state();
+}
+
+nlohmann::ordered_json input_demo_world_trace_snapshot()
+{
+	return world_state();
+}
+
 nlohmann::ordered_json input_demo_endlevel_trace_snapshot()
 {
 	return endlevel_state();
 }
+
+#ifdef DXX_XL_RUNTIME
+nlohmann::ordered_json input_demo_trigger_trace_snapshot()
+{
+	return trigger_state_snapshot();
+}
+
+nlohmann::ordered_json input_demo_native_xl_trace_snapshot()
+{
+	return native_xl_state();
+}
+#endif
 
 // Separate read-only observations preserve the immutable world schema and hashes
 int input_demo_door_trace_write(uint32_t frame, const char *phase, char *error, size_t error_size)
@@ -475,7 +716,7 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	static json previous;
 	json current = world_state();
 	const bool boundary = phase != nullptr;
-	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 11 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
+	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 19 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
 	record["state"].get_ref<json::object_t &>().reserve(current.size());
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)

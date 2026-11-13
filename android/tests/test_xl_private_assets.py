@@ -80,6 +80,63 @@ class RenderedReadinessTests(unittest.TestCase):
 
 
 class XlPrivateTests(unittest.TestCase):
+    def test_time_continuation_requires_fractional_native_restore_and_terminal_evidence(self):
+        proof = dict(
+            schema="xl-time-equipment-gameplay-v1",
+            complete=True,
+            assisted=True,
+            cold_resume=False,
+            mission="fixture",
+            level=6,
+            recorded_frames=12,
+            inventory_assists=0,
+            assists_during_recording=0,
+            transition_checkpoint=dict(speed=2.85, direction=-1, active=True),
+        )
+        self.assertTrue(render_clock.time_continuation_capture_passed(0, proof, "fixture", 6))
+        for key, value in (
+            ("complete", 1),
+            ("cold_resume", True),
+            ("recorded_frames", True),
+            ("recorded_frames", 11),
+            ("assists_during_recording", 1),
+            ("mission", "other"),
+            ("level", True),
+        ):
+            self.assertFalse(render_clock.time_continuation_capture_passed(0, {**proof, key: value}, "fixture", 6), key)
+        for key, value in (("speed", 1), ("speed", 3), ("speed", float("nan")), ("direction", 1), ("active", 1)):
+            changed = {**proof, "transition_checkpoint": {**proof["transition_checkpoint"], key: value}}
+            self.assertFalse(render_clock.time_continuation_capture_passed(0, changed, "fixture", 6), key)
+        for key in proof:
+            self.assertFalse(
+                render_clock.time_continuation_capture_passed(
+                    0, {k: v for k, v in proof.items() if k != key}, "fixture", 6
+                ),
+                key,
+            )
+        resumed = dict(
+            phase="native_restored",
+            cold_resume=True,
+            native_save_restores=1,
+            native_save_rejections=1,
+            recorded_frames=12,
+        )
+        self.assertTrue(render_clock.time_continuation_resume_passed(0, resumed, True, True))
+        for key, value in (
+            ("native_save_restores", 0),
+            ("native_save_restores", 2),
+            ("native_save_restores", True),
+            ("native_save_rejections", 0),
+            ("recorded_frames", 13),
+            ("phase", "complete"),
+        ):
+            self.assertFalse(render_clock.time_continuation_resume_passed(0, {**resumed, key: value}, True, True), key)
+        for code in (False, None, 1):
+            self.assertFalse(render_clock.time_continuation_capture_passed(code, proof, "fixture", 6))
+            self.assertFalse(render_clock.time_continuation_resume_passed(code, resumed, True, True))
+        self.assertFalse(render_clock.time_continuation_resume_passed(0, resumed, False, True))
+        self.assertFalse(render_clock.time_continuation_resume_passed(0, resumed, True, False))
+
     def test_time_combat_requires_player_damage_in_the_observed_slowed_frame(self):
         target = dict(
             object=188,

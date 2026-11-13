@@ -2,6 +2,11 @@
 #define XL_ROBOT_GENERATOR_H
 #include <stdint.h>
 #ifdef __cplusplus
+#include <nlohmann/json_fwd.hpp>
+namespace xl_compat
+{
+nlohmann::json robot_generator_snapshot();
+}
 extern "C" {
 #endif
 struct vms_vector;

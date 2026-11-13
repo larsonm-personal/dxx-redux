@@ -344,6 +344,13 @@ extern void init_thief_for_level();
 extern int Escort_goal_object;
 
 extern int ai_save_state(rewind_file * fp);
+/* Decode once against candidate geometry/time without changing live AI or D1 markers
+ * Success advances the stream; failure restores its original cursor */
+typedef struct ai_restore_candidate ai_restore_candidate;
+ai_restore_candidate *ai_prepare_restore(rewind_file *fp, int version, int swap,
+                                         int capacity, int highest_segment, fix64 epoch);
+int ai_apply_restore(const ai_restore_candidate *state);
+void ai_discard_restore(ai_restore_candidate *state);
 extern int ai_restore_state(rewind_file *fp, int version, int swap);
 
 extern int Buddy_objnum, Buddy_allowed_to_talk;

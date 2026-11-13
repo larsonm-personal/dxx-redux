@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <vector>
+#include <nlohmann/json.hpp>
 extern "C" {
 #include "inferno.h"
 #include "object.h"
@@ -271,6 +272,21 @@ extern "C" int xl_object_trigger_state_get(int index, xl_object_trigger_state *r
 	if (entry.owner >= 0 && !bound(entry)) entry.owner = -1;
 	*result = { entry.owner, entry.signature, entry.action.type, entry.action.flags, entry.action.value, entry.operated ? 1 : 0, entry.destination };
 	return 1;
+}
+
+nlohmann::json xl_compat::object_trigger_snapshot()
+{
+	auto result = nlohmann::json::array();
+	for (const auto &entry : actions) {
+		const auto &action = entry.action;
+		auto segments = nlohmann::json::array(), sides = nlohmann::json::array();
+		for (int index = 0; index < MAX_WALLS_PER_LINK; ++index) {
+			segments.push_back(int(action.seg[index]));
+			sides.push_back(int(action.side[index]));
+		}
+		result.push_back({ { "authored_owner", entry.authored_owner }, { "owner", entry.owner }, { "signature", entry.signature }, { "destination", entry.destination }, { "audio_key", entry.audio_key }, { "operated", entry.operated }, { "type", int(action.type) }, { "flags", int(action.flags) }, { "value", int(action.value) }, { "time", int(action.time) }, { "num_links", int(action.num_links) }, { "pad", int(action.pad) }, { "segments", segments }, { "sides", sides } });
+	}
+	return result;
 }
 
 extern "C" int xl_object_trigger_restore(const xl_object_trigger_state *states, int count, int apply)

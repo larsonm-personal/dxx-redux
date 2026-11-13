@@ -223,10 +223,12 @@ discovered independent feature genuinely improves review, and record why.
 | xl_gameplay_20261111_05_progression   | G5: connected navigation, combat and mission lifecycle              | 04_runtime                                          |
 | xl_gameplay_20261111_06_qualification | G6-G7: durable corpus, platform proof and delivery                  | 05_progression                                      |
 
-Each branch builds and has meaningful scoped tests before publication. A draft
-can honestly carry an unmet external/platform gate; it cannot claim implemented
-behavior with a known implementation failure. Complete the current layer before
-creating its child, so lower-layer rewrites are uncommon.
+Each branch builds and has meaningful scoped tests before publication. Publish
+coherent partial milestones early as non-draft fork PRs, with unmet gameplay or
+external gates stated accurately. Do not defer the first push until the whole
+layer is complete: obtaining and repairing hosted CI is part of implementation.
+Complete the current layer before creating its child, so lower-layer rewrites
+are uncommon. A partial checkpoint does not close its unfinished gameplay gate.
 
 Installed gh 2.102.0 supports native stacks. The GitHub connector can create/edit
 ordinary PRs but does not expose native stack linking; use gh for that step.
@@ -242,13 +244,13 @@ Recommended publication procedure:
    Stage explicit owned paths only; never git add -A or gh stack add -A.
 3. Format once, run scoped gates, inspect staged diff, commit and push that branch
    to origin. Record pushed commit and tree. Preserve local d2xxl_nov10 unchanged.
-4. Create the PR in larsonm-personal/dxx-redux with the table's immediate base.
+4. Create/update a non-draft PR in larsonm-personal/dxx-redux with the table's immediate base.
    State the concrete behavior, dependency PR, tests, current limits and source
    identity. Do not create six independent cmake-based PRs with cumulative diffs.
 5. Once two layers exist, link only this tranche's PRs using native stacks.
    With GH_REPO set to larsonm-personal/dxx-redux, the verified CLI shape is:
 
-       gh stack link --remote origin --base <verified-trunk> <first-PR-URL> <second-PR-URL>
+       gh stack link --open --remote origin --base <verified-trunk> <first-PR-URL> <second-PR-URL>
 
    Append new PRs using the returned stack number and full fork PR URL. Inspect
    gh stack view --json and server PR metadata afterward. Do not include #464
@@ -261,10 +263,14 @@ Recommended publication procedure:
    runs tests. The current tip must receive full required aggregate coverage,
    including lower-layer changes. Do not add skip labels or change eligibility
    merely to get green checks.
-7. Review exact-head CI after each published layer while doing safe local work.
-   Fix deterministic failures before adding dependent work. A run for an old
-   head, a PR merge ref, a queued job or a skipped job is not current-head success.
-   Record which source identity a workflow actually tested.
+7. Monitor CI after every published checkpoint while continuing independent work.
+   Inspect failed logs/artifacts, fix causes, retest and push again. Require
+   terminal passing applicable public/private checks before accepting the
+   checkpoint. A run for an old head, a queued job or a skipped required owner is
+   not success. For normal PR merge-ref checks, record the tested merge SHA and
+   confirm it incorporates the current head and intended base. For private
+   controllers record the actual candidate SHA separately from the controller.
+   Reserve time for a feedback/fix cycle; do not leave avoidable red CI to the user.
 8. Prefer fixup commits over history rewriting after publication. If a rebase is
    necessary, preserve all later fixes, record old refs and use explicit
    --force-with-lease=refs/heads/<owned-branch>:<observed-old-sha> only for these
@@ -279,7 +285,7 @@ Useful explicit commands, with placeholders resolved from the ledger:
     git rev-parse 'origin/d2xxl_nov10^{tree}'
     git switch -c xl_gameplay_20261111_01_baseline origin/d2xxl_nov10
     git push -u origin xl_gameplay_20261111_01_baseline
-    gh pr create --repo larsonm-personal/dxx-redux --base <parent> --head <branch> --draft --title <title> --body-file <body-file>
+    gh pr create --repo larsonm-personal/dxx-redux --base <parent> --head <branch> --title <title> --body-file <body-file>
 
 These are sequential examples, not a script to run blindly. If branch names
 already exist, inspect and continue them. Commit this plan and the goal prompt
@@ -733,9 +739,14 @@ Final handoff must contain:
   checks alone.
 - The exact next unfinished gameplay item if the full closure gate is not met,
   with evidence, source anchors and revised work estimate.
+- A dated what-was-done report, corrected next-window plan and replacement
+  copy/paste kickoff prompt carrying the same fork-only, stacked non-draft PR,
+  active CI monitoring, final-candidate acceptance and no-merge requirements.
 
-Acceptance: coherent stack published to the fork with accurate descriptions,
-final-source packages and verification, honest unresolved gates, clean handoff.
+Acceptance: coherent non-draft stack published to the fork with accurate
+descriptions, passing applicable final-candidate CI, final-source packages and
+verification, honest unresolved gates, and the report/plan/prompt handoff.
+Unavailable required CI is an explicit incomplete external gate, never a pass.
 This closes delivery, not an unfinished gameplay category by renaming it deferred.
 
 ## 6. Shared validation and command anchors
@@ -819,13 +830,13 @@ retaining the change. All statuses below are planning statuses, not completed wo
 | Item | Status                                                                           | Branch / commit / PR                                                              | Evidence, limits and revised estimate                                                                                       |
 | ---- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | G0   | Accepted baseline repair; remaining hosted checks and Android limitation tracked | xl_gameplay_20261111_01_baseline; implementation a5db8d739; draft #465, base #464 | Windows/Linux native each 100 pass / 1 expected skip; Linux public 61/61; canonical private 113/113 and hosted private PASS |
-| G1   | In progress: Omega acquisition/combat, time/settings and modal fidelity pass     | xl_gameplay_20261111_02_timeline; parent 96ce2f8be; not published                 | Latest: Omega242 frames/246 world records/1616 SIM/488 FX match three clean plays; production admission remains closed      |
-| G2   | Not started                                                                      | 03_continuation                                                                   | Complete XL observer/cold-continuation audit required                                                                       |
+| G1   | Accepted bounded normal GL timeline; further platform gates remain G3/G6         | xl_gameplay_20261111_02_timeline; 0a2df4aeb; draft #467, base #465                | Windows/Linux ordered timeline qualification and exact-candidate CI pass; true headless and Android remain open             |
+| G2   | In progress: birth, native controls, fixed escort, route and saved metadata      | xl_gameplay_20261111_03_continuation; local only, parent 0a2df4aeb                | Remaining mutable owners and whole-save atomic rejection incomplete; no layer03 PR or G2 acceptance                         |
 | G3   | Not started                                                                      | 04_runtime                                                                        | True-headless XL and optional presentation independence unqualified                                                         |
 | G4   | Not started                                                                      | 04_runtime                                                                        | Source no-op smoke, makers, subzero and wider gameplay predicates require decisions                                         |
 | G5   | Not started                                                                      | 05_progression                                                                    | Existing assisted views do not prove connected original play                                                                |
 | G6   | Not started                                                                      | 06_qualification                                                                  | No newly frozen forward-compatible XL corpus yet                                                                            |
-| G7   | Not started                                                                      | 06_qualification                                                                  | Layer 01 draft published; final packages and remaining layers not created                                                   |
+| G7   | Not started                                                                      | 06_qualification                                                                  | Layers 01/02 published; final packages and remaining layers not created                                                     |
 
 G0 publication checkpoint, November 11 at 08:37 PST (16:37 UTC):
 
@@ -2688,6 +2699,1450 @@ G1 public door-observer repair checkpoint, November 11 at 22:00 PST:
   exact-head validation again. G1 remains open; G2 audit only, no child branch.
   Work21:54-22:00 PST; remaining G1 approximately1-2h, G2-G7 approximately17.5h.
 
+G1 validation checkpoint, November 11 at 22:41 PST:
+
+- Current published head0a2df4aebc4e87be3d1ae802f05c2fce64b55072 remains on
+  layer02/PR467, immediate parent465, server stack466. No source changes in this
+  checkpoint. Independent review remains untracked; existing stashes preserved.
+- Literal-head engine43165269464 passes D1/D2 and ASan. XL43165276558 passes
+  public contracts and both developer builds; tooling43165280117 passes both
+  hosts. Public-save43165272925 build/save job131005721865 now passes, including
+  the immutable door screenshots. Native131013301146 and headed131013301158
+  downstream replay jobs are executing; no aggregate replay conclusion yet.
+- Trusted private43165315754 passes the complete canonical owner at current0a2:
+  113 required tests,16 format witnesses,3 modern source levels,4 fixed navigation
+  anchors in4858ms; owner927.189s. Check-results and exact-head publisher both
+  pass. Sanitized receipt: temp/pr464-ci-fixes-20261110/g1-private-0a2-ci/results.json.
+  Earlierf93 run43164491258 also passed its complete owner; its publisher rejected
+  the superseded head. Keep that provenance rejection separate from test results.
+- Local canonical native cohort passes113/113, zero CTest skips,279.07s. Its
+  invocation then failed on a previously existing navigation output directory.
+  Preserving that evidence, resumed unchanged canonical functions in a fresh
+  directory:16 formats,3 source levels,4 anchors22.927s, asset re-verification and
+  strict summary validator pass. Composite receipt/provenance are under
+  g1-private-postchecks-0a2-final; this is not an exit-zero claim for the original
+  invocation. Canonical freshly rebuilt developer executable SHA256
+  8dae8f10efdd67ef555a290d9c945d9fba65c45f9ebb6416b866ec908b0ebadf;
+  normal headless metadata3fce8feef542f0f2970a1cd6d8e678ec78733a2d152a6475abd442040e231a4d,
+  route8a28c2cc1164220cc0e913ced3d54b5e4638afd887373c70d054d87f8f46029c.
+  Build source is9c81 plus the private fixes committed asf93; later0a2 changes
+  only the public capture fixture/ledger. Full receipts retain this distinction.
+- Standard private camera_subchecks explicitly not_run_missing_addon; rendered
+  full-resource Warp actor checks are outside this owner. Supplemental current
+  developer projectile CMake owner with pinned addon df69c62a and Vertigo
+  faa67189 passes all camera subchecks, fresh-process continuation and source
+  comparisons under unchanged150s outer limit. Source comparisons:history1650,
+  controller10800,motion2160,rotation32448,each model hitbox7560. Evidence prefix
+  g1-camera-supplement-0a2; genuine inputs remain byte-identical.
+- Broader sample43165276576 host/JVM pass. JVM1322 executed,12 skips:8 optional
+  private-content inputs and4 owned live-service/auth prerequisites. Host extractor
+  retains sow_real_media_tests skip and hfs/sti2/stuffit real-media exclusions.
+  Android reviewed test selection, final job and aggregate result check pass
+  (confirmed22:44 PST). This sample does not certify authentic XL
+  Android gameplay. Receipts/plan/reports use g1-sample-0a2- prefixes.
+  Final summary confirms11 selected owners PASS and none selected without a
+  pass; only2 owners provide complete leaf coverage. Its outcome remains
+  incomplete with3128 catalog owners pending, not a full-catalog qualification.
+  Compact final receipts are in g1-sample-0a2-summary.
+- Frozen readiness remains4/8 with its expected red status, distinct from actual
+  rendered XL. Format6 Android/true-headless guards remain closed. G2 state/cold
+  continuation, G3 presentation independence, G5 connected play and G6 platform
+  qualification remain open. G2 read-only notes identify birth time/order loss,
+  missing native/XL semantic fields and whole-save atomicity to reproduce; no
+  G2 source implementation or child branch yet.
+- Work22:00-22:41 PST. G1 remaining estimate30-60min for replay/Android closure
+  and any failures; G2-G7 at least17.5h, with increased G2 uncertainty from the
+  full-state/atomicity audit. No cutoff. Free space35.21GiB; no cleanup deletion.
+  Next inspect the live replay and Android jobs, fix deterministic failures, then
+  accept G1, create layer03 from its unchanged published parent and reproduce the
+  object-birth cold-continuation gap in the existing projectile owner.
+
+G2 preparatory reproduction, November 11 at 22:55 PST:
+
+- G1 hosted native replay job131013301146 now passes; headed job131013301158
+  remains live in43165272925. Published parent0a2 is unchanged; no layer03 branch
+  or production persistence change yet. This is preparatory regression evidence
+  while the final G1 job runs, not G2 acceptance or whole-stack readiness.
+- Extended existing projectile_test.h with unpublished opt-in birth/birth-resume
+  modes. Derived setup creates one native robot/weapon, saves at age0.5s, then
+  compares the same real collide_robot_and_weapon call at age0.75s uninterrupted,
+  after same-process disk restore, and after a fresh process loads that save.
+  Default canonical owner behavior and membership are unchanged by these modes.
+- Both disk paths reproduce the material defect: uninterrupted victim100 shields
+  and projectile15; restored victim60 and projectile25. Hit history remains true;
+  SIM state3554416254 and call count2 agree. Thus this is not merely a missing
+  diagnostic counter. Save SHA256
+  4fb3448e28ec7e8c77f28913e90260381a8eb5935c4acbc2efccad52fd8dc644.
+  Evidence: temp/pr464-ci-fixes-20261110/g2-birth-repro/{birth-future,birth-restored,
+  birth-cold}.json and g2-birth-{repro,cold-repro}.log. Both commands exit1 as
+  expected for the unfixed defect; failed evidence is retained.
+- Root-bound Linux developer target rebuilt successfully with the opt-in test
+  patch over0a2; normal games and published CI binaries unchanged. Existing GCC
+  string-literal warnings remain. No authentic input or expected fixture edited.
+  Developer EXE SHA256b8a9e4e25ca0c76c87926561970582077b245e861da7e8d21083031eb4110d49.
+  Scoped mixed-language quality and diff whitespace checks pass. Formatter-only
+  line wrapping followed execution; retained test patch SHA256
+  4e84c15f8247df8beacfa0aac92ec099bfae29395006d4e066abf3580559dd7c,
+  g2-birth-repro-working.patch. No current canonical executable identity claim.
+  Next: finish G1 hosted headed result, create layer03 once G1 closes, preserve
+  born time/order through the shared save owner, extend invalid/slot reuse/order
+  controls and integrate these cold-process checks into the existing owner.
+
+G1 native replay receipt, November 11 at 22:58 PST:
+
+- Literal0a2 native replay job131013301146 passes34/34 runs across17 scenarios;
+  every run has exit0, status pass and fidelity pass. Wrong-oracle/bad-input
+  controls reject with exit1, and no-collect control passes its authored-loot
+  scope. Report qualification remains incomplete and paired imported-D1 parity
+  explicitly not_run; that requires the separate headed job131013301158, still
+  live. No native/XL headless equivalence claim follows from stock-only results.
+- Compact reports: temp/pr464-ci-fixes-20261110/g1-public-replay-0a2-headless.
+  Large725MB raw artifact was not downloaded. Published parent remains0a2;
+  current unpublished diff is the preparatory projectile regression and ledger.
+
+G1 acceptance and G2 entry, November 11 at 23:04 PST:
+
+- G1 ACCEPTED for the bounded normal Windows/Linux OpenGL Omega/time timeline
+  profile at published0a2df4aebc4e87be3d1ae802f05c2fce64b55072, tree
+  16f41c900c030b49c62a3dd410e9dc9df3410ea9, PR467. All required current-commit
+  dispatched series now pass:engine/ASan43165269464,XL43165276558,
+  tooling43165280117,public save/replay43165272925 and trusted private43165315754.
+  Broader sample43165276576 and public LAN also pass. No merge performed.
+- Final hosted headed131013301158 passes34/34 native runs and required imported
+  D1 flight gameplay/SIM scope. Four imported scenarios remain unqualified,
+  three exclusions and raw paired exit1 remain visible, detailed diagnostic/
+  object/world parity incomplete. All three real-engine negative controls pass.
+  Thus existing retained scope passes; no whole-simulation/imported parity claim.
+  Compact reports:g1-public-replay-0a2-headed;853MB raw artifact not downloaded.
+- Fork refresh confirms origin/02 equals0a2 and cmake remainsb3bb12cb. PR464
+  remains open at e87f4bfa; server stack466 still464/465/467, tip position3/3.
+  Three original stashes and independent review preserved. G1 final acceptance
+  ledger is carried into the next coherent layer without changing the already
+  tested parent commit or rerunning CI for a documentation-only parent push.
+- Created xl_gameplay_20261111_03_continuation from refreshed origin/02 at0a2,
+  carrying the unpublished preparatory test and ledger. No layer03 commit, push
+  or PR yet. G2 remains OPEN; no production state fix has been applied.
+- Second G2 regression now reproduced in an isolated fresh process: corrupt
+  only the checksum of the derived newborn save. Native restore returns false
+  with Corrupt XL trigger state payload, but player energy changes91 to saved100
+  before rejection. Receipt g2-birth-repro/birth-invalid-restore.json and log
+  g2-atomic-repro.log. This confirms whole-save atomicity is weaker than existing
+  trailer-only tests. Opt-in birth-atomic mode retains that failed evidence;
+  default canonical owner/membership still unchanged. No authentic input edited.
+- G1 work exceeded its estimate because real live/cold/CI integration failures
+  required repair. Actual checkpoint23:04 PST; G2 estimate revised to4-6h for
+  complete observation, forward persistence and atomic cold continuation, with
+  G3-G7 approximately14.5h afterward. No cutoff or scope reduction. G0/G1
+  accepted; G2-G7 open. Normal Android/true-headless format6 guards stay closed;
+  frozen readiness remains4/8. Next finish the shared birth snapshot/validation/
+  restore contract and its cold/order/reuse controls, then the remaining state
+  map and whole-save rejection behavior through existing save/rewind owners.
+
+G2 birth-state implementation checkpoint, November 11 at 23:24 PST:
+
+- Added shared read-only birth snapshot and validated restore in object_birth.*;
+  schema41 in trigger_save.cpp preserves every live slot/signature, creation time,
+  append order and next counter. Bound rows/fields, exact live membership, unique
+  nonzero orders, nonnegative times no later than GameTime64, and counter overflow
+  reject before birth-table publication. Expanded storage stays on the heap.
+  Authored objects retain zero births; deleted rows have no future effect and the
+  counter still preserves their consumed append positions. No source-order/RNG
+  compensation or old-development-save compatibility reader was introduced.
+- The original derived damage regression now passes both same-process disk and
+  fresh-process load. Extended it to compare new allocations, deleted/reused slots
+  and monotonic next orders. Integrated both modes into the existing projectile
+  CMake owner. Added19 malformed birth cases, preserving all56 prior cases, with
+  explicit unchanged birth-table checks. Camera cold snapshots now include births.
+  Historical source hit-state/reset controls remain; forward birth semantics are
+  documented explicitly in regression_demos/README.md as a deliberate extension.
+- Full Linux projectile owner with authentic pinned addon/Vertigo and all existing
+  source references passes under unchanged150s outer deadline. Camera subchecks
+  executed;75 malformed cases, valid recovery, native/stock collision controls,
+  full camera save-through-stock/cold process, and newborn warm/cold continuation
+  all pass. Evidence:g2-projectile-contract-fixed and its log. Linux developer EXE
+  SHA256e6d25309bd6b486e4b2ab6e2c3830a3a44a36a115aa2120033bc6bc42ec305e7.
+- Initial expanded owner rejected the camera fixture because its smart-child
+  helper retained actors/effects created at later times, then rewound GameTime64.
+  Removed that fixture clock rewind so retained runtime actors stay in their
+  creation domain; validation was not weakened. Failed evidence remains in
+  g2-projectile-contract. A temporary all-row diagnostic exceeded con_printf's
+  buffer and aborted the diagnostic attempt; it identified the future rows and
+  was removed. That failed attempt remains g2-projectile-diagnostic, never a pass.
+- Windows developer cache verified CMAKE_HOME_DIRECTORY=C:/local/dxx-redux/d2,
+  x86 MSVC14.44, developer ON, strict FP ON. First invocation incorrectly used
+  output name xl-preview-lifecycle; current CMake requires target
+  dxx-redux-d2-headless-metadata. Corrected build is live, log
+  g2-birth-windows-metadata-build.log. Never ran its stale November4 executable.
+- Source remains uncommitted on layer03; no push/PR yet. Earlier scoped quality
+  passed; final quality after the fixture/validation edits still required.
+  Whole-save malformed-trailer atomicity remains reproduced and unfixed, as do
+  the remaining complete-state observation/cold-continuation gates. Next finish
+  Windows build and existing-owner runtime validation, then continue G2 state
+  completeness and whole-save rejection using existing owners. No G2 acceptance.
+
+G2 birth-state validation checkpoint, November 11 at 23:38 PST:
+
+- Final shared projectile owner passes on Windows x86 and Linux with authentic
+  addon/Vertigo, all camera/source comparisons,75 malformed cases, valid recovery,
+  save-through-stock/cold camera state, and newborn uninterrupted/warm/cold future
+  collisions including new allocation and deleted/reused slots. Windows19.647s;
+  Linux completed under enforced150s outer limit. No required test or deadline
+  removed. Logs/directories:g2-projectile-final-{windows,linux}.
+- Newborn observations match across hosts:birth_time131072,birth_order1,
+  GameTime180224,victim100 shields,projectile15,hit historytrue,transient order4,
+  replacement order5,SIM3554416254,calls2. This compares actual native collision
+  results, not a replacement expected fixture or replay-only repair.
+- Windows first failed new case67 because legacy loadgl.h defines false as0:
+  the fixture emitted valid integer0 instead of a JSON boolean. A subsequent
+  test assertion likewise compared JSON true with macro-expanded integer1.
+  Corrected the new cases to explicit json::boolean_t and get<bool>, preserving
+  validation. Both failures retained under g2-projectile-windows[-fixed]; final
+  runs above pass. Error reporting now distinguishes opened/accepted/closed/
+  unchanged and always closes an unexpectedly accepted malformed file.
+- Final developer EXE hashes:Windows
+  c3aba7447a1e4c254dcd074f2ab329c4ea8406cf61ff1a32447e1a4f01913909;
+  Linux3b8d7abc4204bb33af00f57af0da068d1c889ad1e28e41fa2e96a96257c2ad68.
+  Both built0a2 plus this working source patch, with strict FP and developer
+  probes. These are developer validation binaries, not new normal-game packages.
+- Scoped mixed-language final quality and whitespace pass. Automation catalog
+  passes99 JSON/315 PowerShell/547 support; runner catalog passes428 top-level/
+  547 support. Logs:g2-birth-final-quality,g2-birth-catalog,g2-birth-master-catalog.
+  Existing compiler warnings unchanged; no new warning identified.
+- Repeated whole-save atomicity probe on fresh schema41 save still fails as
+  expected:restorefalse,live energy91 replaced by saved100. Evidence
+  g2-atomic-after-birth.log and g2-projectile-final-linux/birth-invalid-restore.json.
+  This is an explicit remaining G2 defect, not a passing rejection control.
+- Commit this coherent birth preservation change locally on layer03; do not
+  publish/accept G2 yet. Whole-save atomic restore and complete semantic/native/XL
+  observation/continuation remain open. Continue through the existing save/rewind
+  owners; Android's state_save_to_memory/state_restore_from_memory and file
+  adapter are existing reuse anchors, not permission to enable Android-specific
+  policy on desktop. G3-G7 remain open. No merge or private asset publication.
+
+G2 birth observer checkpoint, November 12 at 00:11 PST:
+
+- Layer03 local birth persistence commit2e66171309e85b881c7d874ce9281e74b3bcfc51
+  has not been pushed. Added pure xl_births to the existing detailed world
+  observer; XL world schema12 requires every live slot/signature, birth time,
+  append order and next counter. Stock world10/object2 stay unchanged. Reader
+  validates bounded typed rows, counter/order uniqueness and time domain each
+  frame, plus exact live membership/signatures at restored/terminal boundaries.
+  Per-frame object identity cross-validation remains in the separate object
+  reader/comparison; do not claim the birth reader checks that each frame.
+- Existing water-arena owner now emits ordinary live and fresh-process replay
+  traces. Both Linux-native and Windows owners pass with the original HOG and
+  descriptor pins and unchanged90/60s subprocess/120s outer deadlines. Each
+  trace has1235 frames,1237 birth observations; birth observations match across
+  all four host/capture/replay paths. This bounded recording observes one runtime
+  birth and next counter1; the earlier projectile continuation owner separately
+  covers creation/deletion/reuse and next order5. No original inputs/oracles edited.
+- Full object comparisons pass1235/1235 on both hosts, including allocator and
+  both RNG streams. Full world comparisons FAIL on both hosts:303 named first
+  differences, restricted to inactive awareness-buffer rows and automap discovery.
+  ai.c reads awareness only below Num_awareness_events and fully overwrites an
+  appended entry; its save writes only active rows. Keep the raw differing data.
+  arena_frame omits ordinary post-simulation render_update_game_view_automap,
+  which shared playback invokes. These observations do not establish full world
+  fidelity, true-headless qualification or G2 acceptance. Next repair the live
+  owner boundary and define/test semantic inactive-queue comparison with explicit
+  source/consumer evidence, retaining unknown and active fields.
+- First Linux owner on the Windows-mounted output timed out before recording
+  during existing graphics rejection/recovery checks. Retained as
+  g2-birth-observer-linux and its log. Fresh Linux-native output passes the same
+  deadlines; copied traces/logs are g2-birth-observer-linux-native. Windows output
+  g2-birth-observer-windows passes. Comparisons are *-compare-header.json (Linux)
+  and *-windows-compare.json; cross-host birth-only receipt
+  g2-birth-observer-cross-host.json explicitly retains the full-world failure.
+  Initial analysis called the D1-only read_demo helper on D2 and failed; retained
+  g2-birth-observer-linux-compare.json. Correct analysis reads the native header.
+- Windows developer executable SHA256
+  57f20b7e9fb0fe7e3038a6cec39c9fccf456a2b9cd71b5b89f0612b3745980f2;
+  Linux53fded705a0d73af617661e8d2f438cd3cc15ea4f79e65ec3b133fe30b5e4683.
+  Both verified root-bound caches built2e66 plus this observer patch. Linux first
+  build caught a missing input_demo_world_trace.h include in the arena owner;
+  fixed rebuild passes. Existing unrelated compiler warnings remain unchanged.
+- Reader suite76 tests passes32.146s. Scoped mixed-language quality and whitespace
+  pass. Automation catalog99 JSON/315 PowerShell/547 support and runner catalog
+  428 top-level/547 support pass. Evidence g2-birth-observer-{reader-final,
+  final-quality,catalog,master-catalog}.log. No new top-level owner or timeout.
+- Audit correction: timer_query_milliseconds returns cached_ticks populated by
+  timer_update. xl_input_demo_cached_clock therefore does not freshly sample host
+  time; wall-trigger cooldown getter needs no clock change. Earlier scratch audit
+  wording is superseded; other mutating save getters retain their separate issues.
+- G2 remains OPEN: complete native/XL semantics, cold continuation and whole-save
+  rejection atomicity still required. Corrupt trailer still returnsfalse after
+  changing energy91 to100; no rollback fix has been applied. No layer03 PR/push,
+  no G2-G7 acceptance. Actual00:11 PST; revised G2 estimate4-6h remains uncertain,
+  with approximately14.5h afterward. Continue sequentially without a cutoff.
+
+G2 native observer fidelity checkpoint, November 12 at 00:22 PST:
+
+- Birth observer committed locally as5cb81839aae90bca7263667f748bfa5b6a18da6d,
+  treec3a6d641436be5c0e3be264fbe5a6a293f0928d4. This follow-up adds the ordinary
+  render_update_game_view_automap boundary after arena_frame simulation. The
+  existing live fixture now discovers the view at the same ordinary phase as
+  playback; no pose, expected-state injection or production replay compensation.
+- Native D2 semantic comparison preserves raw awareness storage, comparing only
+  the active queue's known fields while retaining inactive unknown fields. Source
+  ai.c create_awareness_event writes segment/type/position before incrementing
+  Num_awareness_events; process_awareness_events reads only that active prefix,
+  then clears its count; ai_save_state writes the same prefix. This is a bounded
+  inactive-storage classification, not an exclusion of active AI state. Active
+  entries with equal queue counts still differ in regression controls, and a
+  future field in an inactive row still fails. Existing D1/imported comparison
+  semantics, raw traces, capacity/count validation and all other fields remain.
+- Full existing water-arena owner passes on Windows and Linux-native storage,
+  with unchanged90/60/120s deadlines and authentic source pins. Detailed semantic
+  live-to-cold-replay comparisons now pass on BOTH hosts:1235 object frames and
+  1239 world/boundary records, all compared fields and both frame RNG streams.
+  A separate Linux process also replays the Windows recording and matches its
+  embedded trailer plus all1235 object/1239 world observations. Windows demo
+  SHA25619fa28531c364671f8de5071bddd91c60095819b76d460d52fadbed2008cc8bf.
+  This validates the currently observed field set, not complete G2 state or
+  strict per-draw RNG-event/corpus qualification. Prior failed traces retained.
+- Evidence g2-water-semantic-{windows,linux-native,cross-replay} and respective
+  logs; detailed JSON receipts g2-water-semantic-{windows,linux,cross}-compare.json.
+  Linux original workspaces /var/tmp/dxx-pr464-20261111/private/g2-water-semantic
+  and g2-water-semantic-cross; selected traces/logs copied into repository temp.
+  Cross-process metadata g2-water-semantic-cross-replay.json records actual args,
+  executable and input hashes. The default output path placed its generated
+  terminal JSON and scheduling diagnostic beside the Windows input, overwriting
+  earlier generated derivatives. Input demo and detailed Windows traces remained
+  unchanged. Moved these Linux-generated derivatives into cross-replay with
+  explicit windows-demo.linux-generated names; Windows terminal evidence is its
+  own successful process log and captured detailed trace. Future cross probes
+  must stage a separate input copy so defaults cannot overwrite earlier outputs.
+- Windows developer EXE SHA256
+  e19a16aaf2a969c53ca60e2ac999ec63ae2d0ce6f4f6407b25f1250967c861f1;
+  Linuxd5a3c6e0d6a19b13bd19c19e0cd38681e50da9517f78a498931b00071db17ca2.
+  Verified root-bound strict-FP developer caches built5cb plus this working
+  patch. Normal-game/Android binaries have not been rebuilt or qualified here.
+- Reader77 tests pass34.532s, final scoped mixed-language quality/whitespace pass,
+  catalogs pass99 JSON/315 PowerShell/547 support and428 top-level/547 support.
+  Logs g2-water-semantic-{reader,final-quality,catalog,master-catalog}.log. Both
+  native builds pass with the previously noted unrelated warnings unchanged.
+- Commit this coherent owner/comparison fix locally on layer03. No push/PR or
+  G2 acceptance yet. Complete native/XL owner observation, real combined cold
+  continuations and atomic whole-save rejection remain. The energy91->100 failed
+  restore is still open. Next extend the existing typed native/XL owner snapshots
+  (Omega/afterburner, guided/wiggle, complete escort/route metadata and XL owners),
+  then implement loader transaction/rejection through existing save/rewind
+  ownership. G0/G1 accepted; G2-G7 open. Actual00:22 PST; G2 remaining4-6h and
+  later items approximately14.5h still uncertain. Continue with no cutoff.
+
+G2 native state observation checkpoint, November 12 at 01:01 PST:
+
+- Work on layer03 parent83474bc1d9e25b270114294dceb81cd218930272, adding
+  input_demo_world_trace native_xl_state and its pure C++ snapshot entry point.
+  XL world schema13 requires xl_native version1:Omega charge, per-player
+  afterburner charge,16-bit wiggle phase, all object-pool afterburner clocks,
+  eight guided slot/signature bindings, and named typed XL seismic state.
+  Null guided pointers normalize only their unread signature to-1; live/stale
+  pointers retain raw signatures, foreign pointers emit-2 and fail validation.
+  Stock world10/object2 and native save schema41 remain unchanged.
+- The native seismic save getter deliberately returns zeros whenever XL owns
+  the world. Observer uses the existing pure seismic_gameplay_snapshot instead,
+  preserving strength/pending duration, interval, four detonation ages/scales,
+  actual guidance magnitude, phase/fraction. Reader validates all required types,
+  counts, bounds, timer epochs and activity representation; unknown fields stay
+  compared. Earlier schema12 private traces retain their historical scope.
+- Extended the existing newborn/projectile owner into a combined DERIVED case:
+  production-created guided shot, setup Omega/afterburner grants, explicit wiggle
+  and object-clock setup, pending source seismic action, actual object_move_one
+  afterburner activation before save, then identical future steering/recharge and
+  physics, newborn collision, deletion/reuse and SIM observation. Pure snapshots
+  are repeated with unchanged state/RNG. Raw guided/player objects remain in
+  receipt files; comparison uses only the existing audited0/-1 alt-texture absence
+  equivalence. Unknown/active fields are retained. No original progression claim.
+- Full projectile CMake owner passes on BOTH hosts with authentic pinned addon
+  and Vertigo, all75 pre-existing malformed cases, camera subchecks, source/native
+  collision controls, warm/cold camera saves and combined native continuation.
+  Original120s subprocess/150s outer deadlines unchanged. All three raw future,
+  restored and cold JSON receipts match exactly between Windows and Linux.
+  Evidence g2-native-owner-projectile-{windows,linux}, their logs, and
+  g2-native-owner-projectile-cross.json. Linux source work in
+  /var/tmp/dxx-pr464-20261111/private/g2-native-owner-projectile.
+- Combined future metrics on both hosts:GameTime180224,SIM551188310,calls10,
+  guided slot5,Omega32768,afterburner31403->33451,wiggle34002->50386,
+  energy6533120,victim shields6553600,replacement birth order10. Seismic advances
+  into interval[0,131072],strength32768,magnitude-538. This proves the named
+  derived continuation; active time-equipment, pending generator/trigger and
+  earned-progression cold cases remain separately open.
+- Existing water owner also passes on both hosts. Full schema13 semantic trace
+  comparisons pass Windows live/replay,Linux live/replay,and Windows live to an
+  isolated Linux process:1235 object frames and1239 world/boundary records each,
+  both observed frame RNG streams, all currently emitted fields. Receipt
+  g2-native-owner-water-compare.json; outputs g2-native-owner-water-{windows,linux}
+  and g2-native-owner-cross, logs/metadata alongside. Cross probe copied the input
+  into its own private user directory before replay; generated derivatives stay
+  there. Original and isolated Windows input hashes still equal
+  8783572d58d31896e11bd5fa981c35697a3f2d1a8e507ddc28dacb38a0b9a825.
+  No strict per-draw/corpus or true-headless Omega/time qualification claim.
+- Both verified root-bound developer caches keep strict FP ON. Windows EXE
+  SHA2566de4dc417c71f6239dc7e5ecd194859685c52f4b8dd2ff774234ae78fc0b13fd;
+  Linux7f8fa55aa8bd03723e79ed9b79713c2d90f85607c3b6f245b3da91e5c9bac1ea.
+  Built83474 plus this working source patch, not normal production/Android packages.
+  Final quality and whitespace pass; reader78 tests passes38.141s. Catalogs pass
+  99 JSON/315 PowerShell/547 support and428 top-level/547 support. Evidence
+  g2-native-owner-{scoped-quality,reader,catalog,master-catalog}.log.
+- Initial reader extension missed its synthetic player's afterburner array;
+  rejected with10 errors in g2-native-observer-reader.log. Corrected the fixture,
+  preserving strict production validation. GCC caught new packed player energy
+  forwarding in the test receipt; scalar copies fixed it. Failed build retained
+  g2-native-continuation-fixed-linux-build.log; final _-owner-_-build logs pass.
+  Existing unrelated compiler warnings unchanged.
+- IMPORTANT corrected invalid witness: direct read_flying_controls left
+  Drop_afterburner_blob_flag1 in the warm process,0 cold, plus known0/-1 texture
+  sentinels (g2-native-continuation-{repro,cold-repro}.log; original failed Linux
+  directory private/g2-native-continuation-repro). This is NOT a gameplay save
+  defect: object_move_one resets that scratch flag before every control dispatch,
+  then consumes it in the same movement. A temporary uncommitted schema42 patch
+  was removed; trigger_save.cpp matches HEAD byte-for-byte and schema41 remains.
+  Corrected fixture uses object_move_one; no useless persistence/normalization of
+  unknown state retained. Failed evidence is preserved with this classification.
+- Commit this coherent observer/continuation coverage locally. No layer03 push
+  or PR, no G2 acceptance. Full escort/route/metadata and remaining XL owner
+  observations, combined cold cases and whole-save invalid-restore atomicity
+  remain open. Native energy91->100 failure on rejected corrupt trailer is still
+  real and unfixed. Next continue pure owner-side/shared typed observation for
+  those states, then transaction/validation via existing save/rewind owners.
+  Actual01:01 PST; G2 estimate revised5-8h because complete-state/loader work
+  remains uncertain; later items approximately14.5h. No cutoff or scope reduction.
+
+G2 fixed escort/thief state checkpoint, November 12 at 01:33 PST:
+
+- Parentbb513f9e77f4053e12ae0535b726c106b29f8d15, tree
+  e4d1dc090efd02fc6b83fee99a05f9972730bf39. Added pointer-free
+  guidebot_escort_state and shared guidebot_escort_state_members.h, containing
+  exactly the original28 fixed escort save operations. escort.c now uses that
+  same list for its existing codec and a pure game-thread capture function.
+  No codec calls, cache polling, timer sampling, owner repair or simulation
+  mutation occur during capture. The captured state adds ten stolen-item bytes
+  and the persistent-message preference; all150 message-buffer bytes are observed
+  explicitly, including native encoding and trailing storage. Multiplayer-only
+  owner protocol state is outside this single-player scope; route/metadata remains
+  separately open. This is complete fixed-save-field observation, not proof that
+  every state owner or active Guide-Bot route is qualified.
+- XL world schema14 requires the fixed escort section inside xl_native; its
+  scalar bounds, unsigned counters, clock storage, object/index bounds, message
+  termination and full buffer/inventory sizes/types validate. Every scalar and
+  buffer, including trailing text bytes and unknown fields, remains compared.
+  Stock world10/object2, input format6 and native/XL save layouts are unchanged.
+  Source comparison g2-escort-layout-check.json confirms the original28 operation
+  names, order, kinds and bound expressions match exactly; framing is unchanged.
+- Extended the existing combined native projectile continuation case using the
+  authentic loaded thief definition42, a derived separate-segment starting pose,
+  seeded energy/shield inventory and nondefault escort length117/path clock.
+  Future native drop_stolen_items creates two actual powerups (IDs1/2), clears
+  inventory and index, and a second empty drop allocates nothing or consumes
+  either RNG stream. Guided steering/physics, recharge, seismic, newborn collision
+  and slot reuse remain exercised. Raw thief object/AI and loot objects are kept
+  in receipts. Only the existing0/-1 alternate-texture absence equivalence applies
+  to the new thief actor too; unknown/active fields remain. This derived seeded
+  inventory proves cold loot continuation, not actual theft or original combat.
+- Full projectile owner passes Windows and Linux with authentic pinned Neptune,
+  addon and Vertigo, camera subchecks executed, all75 malformed cases/source
+  comparisons retained, original120s subprocess/150s outer deadlines unchanged.
+  Uninterrupted, warm and cold receipts match exactly across hosts. Evidence
+  g2-escort-projectile-{windows,linux}, associated logs and
+  g2-escort-projectile-cross.json. Native metrics:thief slot4/id42,inventory
+  [1,2,255x8]->[255x10],index2->0,escort length117,SIM3866696494,calls18,
+  replacement order11. No expected public fixture or authentic input edited.
+- Fresh water owner passes both hosts; full schema14 comparisons pass Windows
+  live/replay,Linux live/replay,and Windows live to isolated Linux replay:
+  1235 object frames and1239 world/boundary records each, both observed frame RNG
+  streams and all current fields. Evidence g2-escort-water-{windows,linux},
+  g2-escort-cross, their logs/metadata, and g2-escort-water-compare.json. Original
+  and isolated Windows input hashes remain
+  326fde4420a06f4c368fd9daafc04c85c5c7d62878f93b6d4505d3f93563e604.
+  Cross probe generated outputs only beside its own staged input. No true-headless
+  Omega/time, strict per-draw corpus or complete G2 qualification claim.
+- Verified root-bound strict-FP developer caches builtbb513 plus this working
+  patch. Windows EXE SHA256
+  8c8ced08f199ad2524723c3e5dd479ce542deb530e943bfa4f1648117afef150;
+  Linux3acb0c6416facfcc88eecc0047aac447a46befdf7d664d1644ebd816cd44ab67.
+  Both builds pass with prior unrelated warnings unchanged. Scoped quality and
+  whitespace pass; reader79 tests passes40.343s; automation catalog99 JSON/
+  315 PowerShell/547 support and runner428 top-level/547 support pass. Logs
+  g2-escort-{quality,reader,catalog,master-catalog}.log. No new top-level owner.
+- Commit this coherent fixed-owner observation locally on layer03. No push/PR
+  or G2 acceptance. Remaining route/metadata typed observation is substantially
+  larger, including shared structs, pending planner state and cache clocks;
+  preserve all gameplay fields and audit clock/budget consumers before assigning
+  diagnostic-only semantics. Then finish other XL owners, combined pending
+  trigger/generator/time/progression cold cases and atomic whole-save rejection.
+  Rejected corrupt-trailer energy91->100 remains a real unfixed loader defect.
+  G0/G1 accepted; G2-G7 open. Actual01:33 PST; G2 remaining estimate revised6-10h
+  for this expanded state/loader scope, later items approximately14.5h uncertain.
+  Continue sequentially with no cutoff or scope reduction.
+
+G2 route-state observation checkpoint, November 12 at 02:20 PST:
+
+- Parent cad22640b27e88abe2d9bb082e6699dd9ae43ddb, tree
+  0995542361a4fdcfd141113ac383da25f9b54ab9. Added pointer-free
+  guidebot_route_state and shared guidebot_route_state_members.h. The existing
+  codec and pure capture use the same ordered 107 operations, including 104
+  scalars, the full 64-byte label, four limiter timestamps and 254 trigger bytes.
+  Capture adds the restore-pending marker and bounded cache-poll wait. Independent
+  g2-route-layout-check.json confirms the flattened original save field sources,
+  order, kinds and bounds are identical. Trigger framing and the host-clock epoch
+  adapter are unchanged; no save schema change. The last-replan-reason string is
+  diagnostic only: source consumers are logging and game_introspect.cpp, not
+  planner decisions. Metadata remains separately open.
+- XL world schema15 requires this typed route section. The reader validates all
+  field storage, capacities, text termination, target mode, limiter count and wait;
+  pending SIM deadlines and unknown fields remain compared. Raw cache deadlines
+  stay in receipts. Semantic comparison uses the production poll predicate's
+  exact remaining wait: future deadlines less than two seconds away delay the
+  poll; all other values permit an immediate poll. timer_query only reads cached
+  F64_RunTime and does not sample/advance it. The codec intentionally rebases the
+  raw host deadline, so comparing that absolute number across processes was an
+  invalid witness. The same helper now supplies both production eligibility and
+  capture, preserving the original predicate. Active cache loading/full routing
+  remain unqualified. Disabled compiled support is explicit. Stock world10,
+  object2, input format6 and existing native/XL save layouts are unchanged.
+- The real developer lifecycle target previously extended metadata-only behavior
+  without the planner/live escort. Enabled those existing sources through its
+  compile definitions, matching the game and replay targets; ordinary metadata
+  builds retain their prior configuration. The existing combined projectile owner
+  now fills four recalc slots, saves a pending fifth request, rejects future work
+  at 2.75 seconds and permits it at 3 seconds after uninterrupted/warm/cold loads.
+  The derived fixture persists Enhanced routing using write_player_file, because
+  StartNewLevelSub -> set_highest_level rereads the player profile on restore.
+  An in-memory-only setting was insufficient. No forced post-load route state or
+  new test framework/owner was added. This proves the limiter, not a real route.
+- Failed evidence is preserved: g2-route-projectile-* fail with the old disabled
+  planner; g2-route-planner-projectile-windows and g2-route-owner-projectile-windows
+  fail due to the derived profile requesting Original routing. Targeted
+  g2-route-{policy,restore}-probe logs confirm mode/default0 and reset route.
+  g2-route-profile-projectile-windows then differs only in the rebased cache
+  deadline. None is classified as a gameplay save defect or hidden by a skip.
+- Final full projectile owners pass both hosts, authentic Neptune/addon/Vertigo,
+  camera subchecks executed, all75 malformed cases and source comparisons kept,
+  unchanged120s subprocess/150s Linux outer deadlines. Six uninterrupted/warm/cold
+  receipts agree across hosts under the documented native alt-texture and host
+  epoch semantics; raw receipts retained. g2-route-projectile-cross.json records
+  GameTime196608, victim shields100, SIM3866696494/calls18, replacement order11,
+  thief slot4. Existing guided input, recharge, seismic, loot and collision checks
+  remain. This is derived mechanics, not theft, combat or connected original play.
+- Fresh water owners pass both hosts. Full schema15 semantic comparisons pass
+  Windows live/replay, Linux live/replay and Windows live/isolated Linux replay:
+  each1235 object frames/1239 world and boundary records, including both observed
+  frame RNG streams. All five trace starts explicitly have route.enabled=true.
+  Evidence g2-route-water-{windows,linux}, g2-route-cross, their logs/metadata,
+  g2-route-water-compare.json. Windows input and isolated copy SHA256
+  0b79342318c635612ace1d36f33daee32ce8d6373e973e5c651937a8dfd84826.
+  Cross-generated derivatives remain beside their own staged input. A collection
+  assertion initially used the wrong key world_version after comparisons passed;
+  corrected to the actual version key and collected without rerunning comparisons.
+  No true-headless Omega/time, Android or strict per-draw corpus claim.
+- Root-bound strict-FP developer builds pass, source parent plus this owned patch.
+  Windows EXE SHA25653bacc2ac0b6a68b8f9bcaa9eae4f20cea89907dc2e927b3129be1a2f96bc5f5;
+  Linux b6ce1f322433ba04420a4bfa4853f1a8b06dbe80c4aee2719f6289d5a61c6a9d.
+  Identities in g2-route-build-identities.json; prior unrelated warnings remain.
+  Quality/whitespace pass; reader81 tests passes55.650s. Catalogs pass99 JSON/
+  315 PowerShell/547 support and428 top-level/547 support. Logs
+  g2-route-clock-{quality,reader,windows-build,linux-build,projectile-*}.log,
+  g2-route-{catalog,master-catalog}.log. No authentic input or public oracle edited.
+- Commit this coherent change locally on layer03; no push/PR or G2 acceptance.
+  Next: extend the existing pure guidebot_metadata_snapshot through shared typed
+  field lists, preserving codec order/width, then audit remaining XL owners and
+  combined pending trigger/generator/time/progression continuation. Whole-save
+  corrupt-trailer rejection still changes energy91->100 and remains a real,
+  unfixed loader defect. G0/G1 accepted; G2-G7 open. Actual02:20 PST, G2 remaining
+  estimate8-14h for expanded state/transaction work; later items approximately
+  14.5h with substantial uncertainty. Continue sequentially without a cutoff or
+  scope reduction. No WSL restart needed; the previously authorized recovery is
+  already complete and Linux validation is working.
+
+G2 typed saved-metadata checkpoint, November 12 at 02:47 PST:
+
+- Parent e6de0a23d8ecae157844b7abf3b36885446c8306, tree
+  bb7e8d4aafedb4e1bc14847e8aeaf9adee1c0993. Added shared
+  guidebot_metadata_fields.h and retained the existing nine native codec helper
+  signatures through macros in guidebot_metadata_save_fields.h. The list has
+  234 field/array/text/child operations, including16 bounds,20 arrays,one matrix
+  and six text buffers. Independent g2-metadata-layout-check.json proves all nine
+  original helper bodies reexpand identically, ignoring whitespace, including
+  field sources, loop bounds and order. No native/XL save schema or framing change.
+- The existing pure level_metadata_capture_snapshot now supplies detailed XL
+  observation. All33 saved members are observed under xl_native.metadata/version1:
+  canonical/live/candidate plans, summaries, snapshots and hashes, decisions,
+  certificates, both full workspaces, pending work and counters. Each workspace
+  retains all9000 entries in reachable/queue/strategic/physical arrays. Text uses
+  complete byte arrays, not Unicode conversion. Unsigned hashes/counters preserve
+  all64 bits. Long-double scores use canonical exact sign/binary-bits/exponent,
+  preserving negative zero and native precision without ABI padding or narrowing
+  to double. The reader rejects malformed types, widths, bounds, missing fields,
+  array sizes, text termination and noncanonical binary scores; unknown fields
+  remain compared. All captured timing counters remain present and compared.
+- XL world schema16 requires this extension. Stock world10, object2 and input
+  format6 remain unchanged. Older schema15 evidence retains its scope. Capture
+  uses a heap snapshot and typed fields only, with no codec call or native owner
+  mutation. Reserving the ordered JSON key storage avoids copying full prior
+  workspace arrays during construction. No opaque snapshot hash or decoder was
+  introduced. README documents this saved-field coverage and its current limits.
+- Verified root-bound Windows/Linux strict-FP developer builds pass with no new
+  warnings. The existing test_guidebot_metadata_snapshot passes on both hosts
+  (Windows0.21s/Linux0.06s): detached ownership,32 exact roundtrips including
+  nontrivial doubles/long doubles/negative zero and high unsigned hashes, rejected
+  truncation and unterminated text without destination mutation. This validates
+  the retained codec; it does not qualify an active planner's cross-ABI arithmetic.
+- Both full projectile owners pass with original Neptune/addon/Vertigo, camera
+  subchecks executed, all75 malformed/source cases and120s subprocess/150s Linux
+  outer deadlines retained. All six uninterrupted/warm/cold receipts match across
+  hosts with every new metadata field included, under only the already documented
+  empty-texture and route host-epoch semantics. g2-metadata-projectile-cross.json
+  and collected raw receipts preserve the result. The witness has canonical
+  three-step metadata/readiness2 and live_route_work_pending0. It is a derived
+  mechanics/limiter case, not pending planner execution or original route proof.
+- Both water owners pass under their original90/60s subprocess deadlines and
+  Linux120s outer deadline. Full schema16 comparisons pass Windows live/replay,
+  Linux live/replay and Windows live/isolated Linux replay: each1235 object frames
+  and1239 world/boundary records, both observed frame RNG streams and all metadata
+  fields. All five trace starts explicitly contain the34-key metadata object.
+  Evidence g2-metadata-water-{windows,linux}, g2-metadata-cross, associated logs,
+  g2-metadata-water-compare.json. Input and isolated-copy SHA256
+  5f8494f7ab6777e5d76d4c4a48bc35fce683073cc20e84982c4604c9aa3b2dc8.
+  Cross-generated derivatives remain beside their own copied input. No Android,
+  true-headless Omega/time or strict per-draw/corpus qualification claim.
+- Windows developer EXE SHA256
+  b0ed3da3ab7c4b1a094f6542ce1f1dd8a2d838c9e0fa84eac9fb65ace58318e6;
+  Linux27317b0407e520df80b21a5a691616d2b2894d7fa51f5eaf76e6a1ce2376ab92.
+  g2-metadata-build-identities.json records source parent plus this working patch.
+  These are developer validation binaries, not the final normal game packages.
+  Quality/whitespace and both catalogs pass (99 JSON/315 PowerShell/547 support;
+  428 top-level/547 support). The complete comparison-policy owner passes82 reader
+  tests in78.316s plus its PowerShell assertions. Initial82-test run passed in
+  133.756s, beyond that owner's default budget. Batched the escort/route scalar
+  differences into one comparison each, asserting every individual field path is
+  reported. All previous negative and difference assertions remain; no timeout
+  increase or test skip. Final logs g2-metadata-{comparison-policy,policy-quality,
+  quality,reserve-quality,catalog,master-catalog,codec-_,_-build}.log.
+- Saved-field observation is not a complete runtime-owner audit. secretarea.c
+  also owns async/cache and planning policy state outside the existing saved list.
+  Active pending jobs and cache residency still need continuation evidence. Its
+  Android branch uses a2000us clock budget/work_limit512 around the certifier,
+  whereas desktop selection supplies no budget. See the existing compiled-route
+  selection and level_metadata_live_work_clock_us. Do not label these decisions
+  presentation-only or infer Android/cross-ABI qualification from completed host
+  metadata. The native original-navigation owner already has an opt-in ordinary
+  save-continuity audit; reuse that owner for any further route qualification.
+- Commit locally on layer03, no push/PR or G2 acceptance. Next audit and observe
+  remaining XL owners through existing pure typed APIs in trigger_save.cpp and
+  their owners, including pending generator/trigger, time/progression, spawn/boost
+  and relevant camera/resource state; avoid invoking serializers that repair or
+  sample clocks. The next audit already found xl_object_trigger_state_get clears
+  an unbound owner, and xl_boss_spawn_state_get clears an unbound owner and writes
+  gate_interval into the live boss. Add pure owner-side observation before using
+  those getters in a trace. xl_equipment_state_get and the producer ready-mask
+  getter only copy/read their state. Wall trigger state already appears in full
+  in the current ten-column observer. Then finish combined cold cases and
+  transaction/staged validation.
+  Whole-save rejection of a corrupt XL trailer still changes energy91->100 and
+  remains a real unfixed loader defect. G0/G1 accepted, G2-G7 open. Actual02:47 PST;
+  G2 remaining estimate8-14h, later items approximately14.5h, substantial uncertainty.
+  Continue sequentially; no cutoff or scope reduction.
+
+G2 raw event and mixed-producer checkpoint, November 12 at 03:57 PST:
+
+- Layer03 remains local on xl_gameplay_20261111_03_continuation. Parent
+  b7f79086b129b3a6fccf27fe24ba3723f7453d80, tree
+  5302b008d19693a9b4dab31b11f5431a12ae7587. This checkpoint includes this ledger,
+  the four existing object/boss/equipment/robot-generator owners and headers,
+  their existing native tests/CMake owners, shared world trace/header, comparison
+  reader/tests and README, and the existing linked CPU fixture. No push or PR03.
+  Independent untracked PR464 review and existing stashes remain untouched.
+- Added pure owner-side raw observations of every stored object action field,
+  including tail target arrays and bindings; live/generated boss fields/routes
+  and an active restore checkpoint; equipment timers/phase, selection masks,
+  owners and station links; producer implicit/ready masks and authored rows.
+  Existing save getters remain unchanged. In particular, object/boss getters
+  retire stale bindings, boss enumeration prunes generated entries and its getter
+  recomputes the stored gate interval. A trace must not invoke those operations.
+  Positive existing-owner tests deliberately invalidate actual bindings, change
+  difficulty for the generated-boss case, and verify composite observation neither
+  repairs/prunes state nor consumes SIM/FX RNG. Stock transitions inspect raw
+  empty storage rather than relying only on XL-gated counts.
+- XL world schema17 requires the typed events extension. Stock world10, object2
+  and input6 remain unchanged. The reader validates widths, strict booleans,
+  ten-element target tails, uint32 selection flags, at most20 authored native
+  robot centers, readiness bits within that count and checkpoint lifetime. Unknown
+  fields remain compared. No event field is normalized away. Existing native
+  producer-table encoding was lifted unchanged to one helper shared by the world
+  observer and continuation receipt; g2-events-producer-layout.json verifies the
+  old/new field loops agree. No parallel save decoder or lifecycle was added.
+- Extended the existing equipment owner with a real mixed pending checkpoint:
+  two item morphs plus an ordinary robot maker in its pending morph phase.
+  Production fuelcen_update_all advances exact future intervals and creates two
+  actual pickups and one actual robot. Uninterrupted, warm and new-process disk
+  load agree across Windows/Linux for layouts23/25/27:18 raw receipts,49 live
+  objects each, birth counter7, SIM state468395383/calls107 and FX
+  state4262131764/calls1500. Includes complete objects/slots, birth order, producer
+  tables before/after, raw XL owners and robot counters. Only existing absent
+  alt-texture0/-1 and route host-epoch deadline/remaining-wait semantics apply.
+  Evidence g2-events-mixed-cross.json and raw g2-events-mixed-equipment* roots.
+  This uses derived authored controls and frame advances, not ordinary connected
+  original navigation/combat. No new top-level test owner or timeout increase.
+- Retained failed witnesses and corrected their causes: initial GCC compilation
+  rejected ordered_json conversion in a JSON push_back; explicit JSON conversion
+  fixed the receipt. An initial equipment checkpoint saved SUSP_ROBOTS, which
+  normal level resume clears. End suspension before saving and prepare the robot
+  morph through production fuelcen_update_all; no post-load forcing/repair.
+  The new generated-boss purity assertion belongs to boss_groups, not the basic
+  boss owner. The retained malformed boss test used schema41, now valid after
+  birth persistence; use always-unsupported schema0, keeping rejection/rollback
+  assertions. The existing linked CPU consumer exposed an unresolved Error from
+  the retained birth-order exhaustion guard. Added its fatal boundary to that
+  fixture using the production declaration, formatted message and abort; kept
+  the real guard. Final linked consumer build/CTest passes1/1 in0.57s.
+- Verified root-bound strict-FP Windows/Linux developer builds and ordinary D1
+  Windows build pass. Existing object-event and basic-boss owners pass both hosts;
+  final mixed equipment23/25/27 and boss-groups owners pass both hosts, with actual
+  xl_object_decode_reference/xl_equipment_reference/xl_boss_reference execution.
+  Final full projectile owners pass Windows19.688s/Linux9.968s, genuine camera
+  addon subchecks executed, all75 malformed/source controls retained. All six
+  birth uninterrupted/warm/cold semantic receipts match across hosts with events
+  included. Water owners pass Windows97.094s/Linux51.234s. Existing subprocess
+  and outer deadlines are unchanged. Final owner reports/logs use g2-events*.
+- Complete schema17 detailed comparisons pass Windows live/replay, Linux
+  live/replay and Windows live/isolated Linux replay: each1235 object frames and
+  1239 world/boundary records, observed RNG streams and every event field.
+  All five first world records contain schema17 and all five events members.
+  Original Windows input and isolated copy SHA256
+  300c1df4111e5d5e75647242ecc74a13794bd59f110ab9c2d00b43048975c3b5.
+  Raw traces and copied input/profile remain separate. Evidence
+  g2-events-water-compare.json and g2-events-{water-windows,water-linux,cross}.
+  WSL is healthy; runs use its native filesystem. These are rendered WSLg/Windows
+  results, not true-headless or Android qualification.
+- Authentic Neptune SHA4016618d24238803135dabf2b33daee2a2c34a670c3f016d94ae4639c8887303,
+  Arena HOG adbfea019c1ac29ac922e15876c22ca6ce30eb02d598a98e6ef7dfdce2b2dd3e,
+  descriptor14150755f14e210b284aa03c45d75e1b2f96be7b567bbc324bf4986b96928a71,
+  camera addon df69c62aad949f2d92bc1bbea4b597623cd29d0a0f594cdcc3d66568d6ce482a
+  and Vertigo faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f
+  are unchanged. Pinned XL reference remains2576a98b5de310e3ac7c9777df2677d1627b8bae;
+  existing extracted-source oracles remain the authority for their mechanics.
+  Windows developer EXE SHA256
+  bc33a1b2dba3a62184b1eb3840f4155fdc6f42b93c1cfef00df88033133c3799;
+  Linux312ccca82814bd52eaa2e65410a51daf7389b83363863e11edab30f1d6aa6c69.
+  g2-events-build-identities.json pins parent plus this working patch and D1 EXE.
+  These remain developer validation binaries, not final delivery packages.
+- Scoped mixed quality/whitespace pass; comparison-policy owner passes83 tests
+  in83.613s plus PowerShell assertions, no skip/budget changes. Both required
+  catalogs pass:99 JSON/315 PowerShell/547 support;428 top-level/547 support.
+  See g2-events-{comparison-policy,final-quality,catalog,master-catalog}.log.
+  CI acceptance remains the previously recorded exact0a2 layer02 result; these
+  local layer03 changes have not been published or tested by hosted CI.
+- Next coherent G2 item: continue the remaining owner audit and add pure typed
+  observation for progression/spawn/boost, projectile/contact history and relevant
+  environment/camera/resource owners. xl_speed_boost_state_count/get call
+  state_for, which clears stale signatures; named_audio_snapshot destroys stale
+  object links, reconciles owners and resets looping state. Do not call either
+  from a trace. Camera trace is already pure, attachments/save helpers can mutate.
+  Audit clock and allocator consequences rather than omitting whole owners.
+  Speed-boost last_speed intentionally survives its clear function and the pinned
+  source also owns global speedBoostSpeed; qualify that lifetime before changing
+  it. Pending Guide-Bot async/cache/Android budget remains unqualified.
+  Whole-save invalid XL-trailer restore still changes live energy91->100 and is
+  a real unfixed loader defect: d2/main/state.c installs the world before runtime
+  validation and xl_wall_trigger_read. Reuse native codecs with complete staged
+  validation/transaction; a checksum-only preflight or naive serialize/rollback
+  is insufficient. G0/G1 accepted, G2-G7 open. Actual03:57 PST; revise G2 remainder
+  to8-14h and later work approximately14.5h, with substantial uncertainty. No cutoff.
+
+### G2 motion/contact observation and paused-clock checkpoint, November 12 05:34 PST
+
+- G2 remains in progress. Sequential work since the 03:57 checkpoint extends
+  local layer03 `xl_gameplay_20261111_03_continuation`, parent
+  705033a5bc016e69f3c71e72f59bff76aad34b30, parent tree
+  8cada089155af8eebfbb67183f544a3288747e7f. This checkpoint is not pushed and
+  has no layer03 PR or hosted-CI result. G0/G1 retain their recorded acceptance;
+  G2-G7 remain open. Independent PR464 review, three stashes and assets preserved.
+- XL world schema18 adds a typed motion owner: raw boost bindings, turn phase,
+  six vectors and shared last speed; all16 configured/unconfigured spawn slots;
+  raw mission progression and revisit policy; projectile contact count and all20
+  victim slots. Readers retain unknown fields and reject invalid widths, owners,
+  booleans, capacities and mission tables. Stock world10/object2/input6 unchanged.
+  Pure snapshots read private storage without binding repair. Positive owner
+  tests invalidate real boost/projectile signatures and verify no mutation or
+  SIM/FX draw. Shared speed intentionally survives clears, as in pinned source.
+  JSON declarations live in motion_state.h, before packed engine definitions.
+- Existing world/object writers now share their exact encoding with continuation
+  receipts: all world fields, live objects, allocator/free slots, segment heads,
+  clocks and both RNG streams. g2-motion-layout-check.json verifies the lifted
+  object-pool and ten-field trigger encoding is unchanged. Existing equipment
+  receipt/semantic helpers were reused. Only previously documented inactive
+  alt-texture/effect/awareness and host route-deadline equivalences apply; raw
+  receipts are retained and unknown fields remain compared.
+- Existing spawn owner now saves configured spawns, an active boost turn and a
+  delayed authored spawn action. Identical future production trigger processing
+  advances one second and one turn tick, then actual lethal damage/death/respawn
+  uses segment30. Uninterrupted, warm and fresh-process cold receipts match on
+  Windows/Linux: six receipts,44 objects before/after, all world/object/pool
+  state and SIM/FX. g2-motion-cross-receipts.json records all six comparisons.
+  Native xl_time is explicitly unbound; this is derived mechanics with authored
+  setup/frame advances, not ordered-time or connected original-play proof.
+- Full cold comparison exposed real clock drift through save/load and respawn.
+  Pinned main/gametime.cpp StopTime/StartTime do not call GetSlowTicks; paused
+  CalcFrameTime returns before it, while unpaused frames and input CapSampleRate
+  do sample uptime. Outer pause now holds the consumed tick; native clock
+  restore holds it through loader finalization; automatic rear-view RESET does
+  not start a clock poll. Next actual input/unpaused frame releases the hold and
+  observes elapsed uptime, including menus. Nested pause/reset controls retain
+  exact equality and next-input advancement. The existing cold camera fixture
+  now advances an actual calc_frame_time rather than timer_update alone.
+  Existing reference_level_text pins/extracts CalcFrameTime; no copied oracle.
+- Final root-bound strict-FP developer builds pass Windows/Linux; ordinary D2
+  targets pass Windows with developer tests ON and OFF; ordinary D1 builds pass.
+  Final native owners: projectile/camera both hosts (Linux9.953s), spawn
+  Win18.781s/Linux11.313s, boost27.594s/8.734s, equipment layout23
+  28.766s/11.640s, water100.797s/45.016s. Genuine camera-addon checks execute;
+  projectile retains75 malformed/source cases and boost1944 crossings.
+  Actual pinned projectile/effect/HXM/spawn/boost/equipment source oracles run.
+  Layout25/27 passed the preceding event checkpoint and were not rerun here.
+  Linked CPU consumer passes1/1 in0.69s. Original subprocess deadlines unchanged.
+  Evidence g2-motion-final-controls.json and named g2-motion-* logs.
+- Schema18 detailed water comparisons pass Windows live/replay, Linux
+  live/replay and Windows live/isolated Linux replay: each1235 object frames and
+  1239 world/boundary records, all observed state/unknown fields and RNG. All five
+  initial world records explicitly contain schema18 and the motion owner.
+  Canonical valid aggregate: g2-motion-water-compare.json. Two scratch individual
+  JSON reports accidentally have a literal trailing newline escape; retained as
+  diagnostics and decoded without altering comparison payloads for the aggregate.
+  Original and isolated input SHA256
+  2d3dd99dca10be6844e3274d88d2335ecd5002afee114a9f2e6ea64095975bed.
+- Fresh original WShock20 level5 Omega recording passes the existing owner:
+  acquisition, actual robot damage, discharge/recharge and ordered configuration
+  sites;242 frames, two position/one inventory setup assists, zero during recording.
+  Capture41.063s, recording finalized28.325s, original45s budget unchanged.
+  Single authentic asset root avoids ambiguous duplicate PIG provenance. Demo
+  g2-motion-omega-owned/user/input_demo_recordings/new/
+  d2_wshock20_level5_20261112_050255.dximdemo SHA256
+  33de03a42fbabb2b759f1e01d6342c0105114d9e87c81330501bdf20765412b3.
+  Two strict fresh-process replays, ordinary developer-OFF and developer-ON D2,
+  both pass242 state frames, per-draw RNG, result, clean exit and60s engine
+  deadline. Detailed reader compares242 object/246 world-boundary records to
+  capture for both, PASS; g2-motion-omega-compare.json and owned-{a,b} logs.
+  Asset fingerprints complete; no unverified-assets override. These are Windows
+  rendered mechanics, not connected progression/Linux/Android/headless Omega.
+- Retained unsuccessful probes: packed JSON placement caused Windows runtime
+  corruption/GCC min-macro errors, fixed by JSON-independent C gameplay headers
+  and early full JSON include; pause/clock experiments narrowed the real cause
+  to rear-view RESET plus loader hold release, with speculative gameplay edits
+  reverted and temporary CLOCK logging removed. Earlier nondeveloper probe CLI
+  did not record Omega, and a duplicate-root capture had unknown PIG provenance;
+  neither counts as evidence. Final strict single-root capture replaces those
+  attempts without weakening any reader, expected result, comparison or timeout.
+- g2-motion-build-identities.json pins parent, source-patch SHA256
+  ff7212373a722163eae2f8ec0d067768a2213dcf52cbe2e52ab29a9dec8a2056 and
+  new-header b40a3434d4687c9f7efb63a8a6c93098505fe9ee3b06667c146628bdd616aadb.
+  Win lifecycle EXE4a46455a87e4aba0542fc213341cdfe73116e45a2841196ea14ced13a675f59d,
+  Linux3402ea87b4e990177d79d70c1f334c5291742300e954bc71df68926fc523b892;
+  ordinary Win developer-ONa1cdd58d07e73cb16a8f650337fd37dcf11cb22f9fff57fe00a1847a34bee77c,
+  OFF498813c850c7ef66bd0e5957ff7fe94cbd61e502233bd2a619829a11da149caf,
+  D131901cdcd4f8fd6b9fb6d590bc255ca63cfc6b62bfad82d1dd5eb8d85968bfd0.
+  Cached stamp predates these edits; identities use actual source patch and binary
+  hashes. The final native/test patch excludes Markdown and adds only reader
+  alignment comments after builds; paths and prior hash retained in the report.
+  These are validation outputs, not final executable/APK packages.
+  Authentic inputs unchanged; full Neptune/Arena/camera/Vertigo identities in
+  that report. WShock20 HOG2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c,
+  PIGfacdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b.
+  Reference remains2576a98b5de310e3ac7c9777df2677d1627b8bae.
+- Comparison-policy owner passes84 tests97.033s plus PowerShell assertions;
+  required catalogs pass99 JSON/315 PowerShell/547 support and428 top-level/547
+  support. Final scoped mixed quality/whitespace pass, including the ledger;
+  g2-motion-checkpoint-quality.log. No new top-level owner/skip/budget.
+  Windows/Linux rendered runs use existing owners, Linux outputs on native WSL
+  filesystem. No Android run/profile changes or true-headless qualification.
+- Official cleanup preview then TemporaryOnly apply preserved emulator workspaces,
+  all active/current evidence, authentic asset roots and reference. After owned
+  jobs ended it removed two eligible artifacts1.9MiB; C:22.18GiB remains, below
+  requested50GiB because protected material is retained. Both emulators preserved.
+  g2-motion-cleanup-{preview,apply}.log; no manual cache deletion.
+- Next: finish scoped quality/review and commit this local checkpoint, then audit
+  remaining environment/contact/audio and unbound-time consumers. named_audio_snapshot
+  mutates stale links/owner/loop state and cannot serve a trace; implement a pure
+  locked observation if gameplay consequences remain. Full-save invalid XL
+  trailer still changes live energy91->100: repair via existing native staged
+  validation/transaction, not checksum-only preflight, guessed decoder or naive
+  rollback. Guide-Bot async/cache/Android budget, whole-state completion and all
+  G3-G7 gates remain open. Actual05:34 PST November12; estimated G2 remainder
+  8-14h and later work approximately14.5h, substantial uncertainty, no cutoff.
+
+### G2 environment observation checkpoint, November 12 05:52 PST
+
+- Continues local layer03 `xl_gameplay_20261111_03_continuation` after committed
+  motion/clock checkpoint3e7c71ff55af619d06c68403a46f5e24df547c97, tree
+  f844231f1e98b480f6acbb1ac3927f971e868e9c. No layer03 push/PR/CI claim.
+  G0/G1 accepted; G2-G7 remain open. Work sequential, assets/stashes/independent
+  PR464 review preserved. Actual start approximately05:34 PST November12.
+- XL world schema19 adds `xl_native.environment`: exact signed64 fluid scrape
+  and repair cue elapsed times, countdown pending/phase/fraction and all flicker
+  segment/side/delay/timer/full uint32 pattern rows. Existing pure C getters are
+  reused; no save decoder, new owner, frame advance or binding repair in the
+  observer. Native reactor fields and all changing-light ambient/corner values
+  already exist in the generic world trace and are not duplicated. Stock
+  world10/object2/input6 unchanged. README documents the expanded contract.
+- Existing lava/repair/countdown/flicker owners now prove the composite observer
+  preserves actual stored cadence and RNG. Positive cases include pending repair
+  and fluid intervals, nonzero countdown phase/fraction and all130 flickers,
+  duplicate owners, disabled INT32_MIN timers and bit31 patterns. Strict reader
+  validation rejects wrong widths/types, bad segment/side bindings and cadence
+  bounds; unknown fields remain compared. No skip/deadline changes or new owner.
+- Windows/Linux root-bound strict-FP developer builds pass, as do ordinary
+  developer-OFF Windows D2 and D1. Existing native controls pass both hosts:
+  lava Win6.593s/Linux2.594s, repair4.766s/1.922s, flicker8.109s/2.969s,
+  countdown8.031s/3.328s and full spawn17.750s/8.578s. Actual extracted-source
+  lava/repair/flicker/spawn reference executables run; retained native malformed,
+  stock isolation and save/restore cases remain. Countdown exercises layouts23/27
+  with its existing authored controls and15 malformed trailers per layout.
+  g2-environment-controls-{windows,linux}.json retains commands/results.
+- All six native spawn uninterrupted/warm/cold receipts match, now including the
+  environment owner, full world/objects/allocator/clocks and SIM/FX. The existing
+  reader validates base/native schemas and complete object storage. Native
+  xl_time remains explicitly unbound; no ordered-time claim or reader relaxation.
+  g2-environment-cold-compare.json. Derived authored setup and frame advancement
+  are not connected original-level navigation/combat/completion evidence.
+- Existing water owner passes Linux57.906s and Windows under its original
+  90s capture/60s replay subprocess limits. The initial Windows attempt hit an
+  additional scratch controller120s aggregate limit and truncated replay gzip;
+  that attempt remains failed in controls-windows.json and its evidence root.
+  The repeat invokes the existing bounded CMake owner directly; no source/test
+  deadline was raised. Complete successful repeat lives in
+  g2-environment-water-windows-bounded. Isolated Linux playback of that Windows
+  recording passes its original60s deadline with embedded-result match.
+  Detailed comparisons now all PASS: Windows live/replay, Linux live/replay and
+  Windows live/isolated Linux replay, each1235 object frames/1239 world-boundary
+  records and all observed fields/RNG, including unknown fields. All five first
+  world records explicitly carry schema19 and every environment member.
+  g2-environment-water-compare.json is the canonical valid aggregate. Original
+  Windows input and isolated copy SHA256
+  d72c60092c5cfef483513d08cde6438e022fa6fc46307ce0ccf8d98be95c28a7;
+  Linux independent input013b71665aed15123913963fdff8effbbc5e199905adb9fcd94a5200fd180d46.
+- Comparison-policy owner passes85 tests91.802s plus PowerShell assertions;
+  automation catalogs pass99 JSON/315 PowerShell/547 support and428 top-level/547
+  support. g2-environment-{comparison-policy,catalog,master-catalog}.log.
+  Scoped mixed quality and whitespace pass. Final ledger formatting/review and
+  commit follow this ledger update; no source edits during runs. All owned build,
+  native-control and comparison processes have reached terminal success except
+  the explicitly retained initial scratch aggregate timeout.
+- g2-environment-build-identities.json pins source paths and patch SHA256
+  2a2daa305995bee970df11590fdb4cba00f6314c231445b39350debcdfcf3298.
+  Windows lifecycle6256dcba6951e250dffe03b12cbdec8e80ebaeab59851332c671e3d45fdaa1c7,
+  Linuxf87b377821d9f0b85afe13e534053b28c6f50b46b2c5cab9e2cdd79c88f3f720,
+  ordinary D2777673e97332aa3e9c82b26beadfeaf864b55301539f9be8af3bb551058ad26d,
+  D144272c30df6e097222acc06e078958263aec0f0a9c31401938e582764939448c.
+  All prior Neptune/Arena/WShock20/PIG/camera/Vertigo asset hashes rechecked
+  unchanged, reference2576a98b5de310e3ac7c9777df2677d1627b8bae. Validation
+  binaries only; no final packages, Android run or true-headless qualification.
+- Consumer audit: fluids.cpp last_scrape gates physical turbulence/SIM RNG;
+  reactor_countdown.cpp fractional cadence gates countdown/rocking/death.
+  repair.cpp cues/map_calls counters have no gameplay reader (getters feed
+  introspection/tests), but cue elapsed time stays observed while audio branches
+  remain unqualified. flicker.cpp mutable timers/masks feed native light changes;
+  its ordered lookup/brightness are derived only during source/asset bind/clear.
+  camera_collision.cpp ActorHitState has no current external gameplay reader:
+  its getter feeds save/tests; register_hit return values are ignored by both
+  runtime query/unstick call sites. Save preserves repaired age; its visual hit
+  arrays reset by source save policy. static_restore_slots is populated afresh
+  after native level load and consumed only to restore source-omitted object
+  unions; ordinary simulation never reads that map. None of this relaxes required
+  collision geometry, contact forces, camera rotation or flash/RNG coverage.
+- Next after this checkpoint: qualify a real cold active time transition with
+  existing render_clock_probe.h time-equipment and android/tests/xl_render_clock.py
+  owners. Current fresh-process control covers fully active bullet time3/1,
+  rather than an in-flight direction/fraction/age with full future comparison.
+  Verify native disk state before any replay/environment admission can repair
+  omitted state, then use identical external inputs; retain strict recorded timeline
+  binding. Complete pure audio/event ownership audit (named_audio_snapshot
+  mutates and output success currently affects future wall-trigger disablement).
+  Whole-save invalid XL trailer still changes energy91->100: state.c publishes
+  the base world before state_validate_runtime_state/xl_wall_trigger_read.
+  Existing false/apply owner validation depends on the candidate world/resources;
+  fixing only trailer checksum/shape before loading is insufficient. Design a
+  complete staged native restore using existing codecs/owners, with no duplicate
+  decoder or naive serialize-and-rollback. Guide-Bot async/cache/Android budget
+  remains unqualified. G2 acceptance and layer03 publication are not complete.
+  Actual end05:52 PST, approximately18min including validation/comparison.
+  Revised remaining G2 estimate12-18h, later approximately14.5h, high uncertainty;
+  no cutoff and no reduction in the gameplay closure gate.
+
+### G2 native time-continuation checkpoint, November 12 07:20 PST
+
+- Continues local layer03 `xl_gameplay_20261111_03_continuation` from parent
+  3dbb88c6ba98360ede6407fe63feb4ff2c11c579, tree
+  747f70654d81a93303118dcc377cfa07f0c93184. Work began approximately05:53 PST.
+  G0/G1 accepted; G2-G7 open. No layer03 push, PR or current-tip CI claim.
+  Existing stashes, independent untracked review and authentic inputs preserved.
+- Extends existing render_clock_probe.h time-equipment/xl_render_clock.py owners
+  with --time-equipment --xl --native-continuation. Retains actual original
+  WShock20 level6 pickups48/49, warmup, pause and same-input slow/bullet movement.
+  Ordinary Alt+B reverses the earned transition. After seven actual frames,
+  ordinary quick recording retains its native checkpoint bytes and records12
+  thrust/laser frames. No second serializer, decoder, replay loop or state repair.
+- Shared startup accepts only the identical native disk checkpoint, invokes the
+  existing native restore once and observes its result before replay metadata
+  overlays. Existing schema19 strictly validates bound fractional time, objects,
+  pool/segment lists and world. Wrong-file control rejects before native restore
+  and preserves full observed world/pool/RNG. This initial-condition identity
+  guard does NOT fix ordinary malformed-save atomicity; that defect remains open.
+- Windows/Linux each pass capture, same-process warm and two clean-process cold
+  continuations. Initial capture+warm process21.844s/17.106s, unchanged45s limit.
+  Each of six relationships matches native state before metadata,12 detailed
+  object frames,16 world/boundary records,21 SIM draws and12 FX draws including
+  order/context. A real Windows disk save also passes the identical checks in a
+  clean Linux process. Natural exits, embedded terminal matches and typed proof
+  counters each require exactly one actual restore and one wrong-file rejection.
+  g2-time-native-summary.json and g2-time-cross-compare.json are canonical.
+- Checkpoint has362 live objects; world factor2.84999942779541, direction-1,
+  active true, actual saved update age5ms Windows/7ms Linux (below25ms), player
+  factor1. SIM calls1318/state574828266, FX1829/state3249882325. Five position
+  assists prepare original pickups/approach, zero inventory assists and zero
+  assists during recording. These are assisted mechanics, not connected level
+  progression/completion. Both old default time-equipment owners also pass their
+  complete231-frame combat workload, Windows36.875s/Linux28.134s, including real
+  laser damage in slowed simulation; no retained workload was shortened.
+- Windows input SHA962de56f3c885240b6cfa8c46817e5f8c150416681599d817606bde752b98089,
+  native save8365420eecde87bb7682172545b82ac5fb616c90a1fa9a0e588d74edefaf40fa.
+  Linux input2764ec4bbb1e60db807463cdaaf572360632510890ec9b8548465351837bbc77,
+  save64548efe2de2dc670ecc8cfe104f76270eebfde261c1d44384bfea4ecc9da539.
+  Complete authentic169-file/144060897-byte data root was copied to native Linux
+  storage and every file SHA-verified; g2-time-native-data.json. Reading the same
+  inputs through /mnt/c had exceeded the existing first-process45s deadline.
+  No timeout increase, missing-resource waiver or WSL restart in this increment.
+- Real Mesa validation exposed stale GL_INVALID_OPERATION from developer
+  screenshot glReadBuffer(GL_BACK). d2/arch/ogl/gr.c now reads the rendered draw
+  framebuffer with its valid attachment/default buffer and restores both read
+  framebuffer selections. No GL error draining/suppression. Existing time owner
+  verifies error-free screenshot and preserved read state on both real drivers.
+  Ordinary -window selection fixes WSLg fullscreen BadRROutput; rendering remains
+  enabled. OGLES path and D1 screenshot source unchanged.
+- Ordinary developer-OFF Windows D2 final checkpoint replay passes strict assets,
+  clean exit,12 object/16 world records and21 SIM/12 FX draws via the existing
+  embedded temporary-save path; g2-time-default-final-compare.json. Immutable
+  stock D1/D2 final flight controls pass360 live-oracle frames each,96/778 SIM
+  events, actual weapons/movement/wall-contact; g2-time-stock-final-compare.json.
+  Required private-asset unit owner49 tests4.667s, zero skips. Catalogs pass99
+  JSON/315 PowerShell/547 support and428 top-level/547 support. Earlier raw unit
+  errors came from absent CMake/CTest PATH; rerun with installed pinned tools.
+  Earlier stock invocation wrongly requested absent inline fixture state;
+  corrected existing compact oracle owner passes without modifying expectations.
+  Relative/absolute duplicate data-root aliases caused one asset preflight error;
+  identical absolute DataDir/ExtraDir corrects invocation, with no validator waiver.
+  All failed attempts retained separately. Final scoped mixed quality/review follow.
+- Root-bound strict-FP ordinary Windows developer ON/OFF, Linux developer ON and
+  Windows D1 builds pass. Source patch SHA
+  7312b8dce381a786438c4a5d36e198a5c8ff96e86d7137769e572ec187fe19cd,
+  nine non-Markdown paths in g2-time-build-identities.json. Windows developer
+  dd21435534c92afb1b2d0b87597bfccd7814e20640e7ac6a3fc8df241bba6dec,
+  Linux8f44bc3fef9a6ee673433e1f08b553ffccf97c3f35891ac2308c6e47d4aeebd2,
+  ordinary D22fcd08fcc6644ff90728d618a174574a8985a9396719caa0469799105e889442,
+  D1367b7316ad701af50637a783b1da80f729ddfcfc5f877d3fb974a439889fc6b9.
+  Cached git stamp predates edits; source patch and actual binary hashes identify
+  tested code. Pinned XL reference remains2576a98b5de310e3ac7c9777df2677d1627b8bae.
+  No current lifecycle-binary/full private corpus CI, Android, true-headless or
+  final executable/APK delivery claim. Validation outputs remain under
+  temp/pr464-ci-fixes-20261110, with complete commands/logs and input identities.
+- Next main G2 defect: ordinary rejected XL trailer still changes energy91->100.
+  state.c installs mission/level/base world before state_validate_runtime_state
+  and xl_wall_trigger_read; owner validation depends on candidate world/resources.
+  Implement complete staged native restore using the existing codecs/owners,
+  not checksum-only preflight, guessed second decoder or serialize/rollback.
+  Pure named-audio/event observation and Guide-Bot async/cache/Android2000us
+  behavior remain unqualified. Audio output success currently changes future
+  wall disablement; G3 must separate deterministic logical event ownership.
+  G2 acceptance/layer03 publication remain incomplete. Actual approximately07:20
+  PST November12; remaining G2 estimated11-17h, later14.5-20h, high uncertainty.
+  No cutoff or reduction in the gameplay closure gate.
+
+### G2 staged AI decoder checkpoint, November 12 07:42 PST
+
+- Local layer03 remains `xl_gameplay_20261111_03_continuation`, parent
+  6a696086152ed87807aa33a2c752e628603faa8c, tree
+  ff85fd3373b97d91cb3202ab1e261c77d13a96d2. That parent committed the preceding
+  native time-continuation/screenshot checkpoint after final quality passed.
+  Current work began approximately07:20 PST. No push, PR or current-tip CI claim;
+  G0/G1 accepted, G2-G7 open. All three original stashes and independent review
+  remain untouched. No Android state/profile changes or WSL restart.
+- Begins actual native restore staging in d2/main/ai.c and ai.h. Replaces the
+  separate discarded preflight decode plus live decode with one retained opaque
+  ai_restore_candidate. Existing native local/path/cloak codecs take an explicit
+  candidate epoch/capacity/segment limit. The candidate owns all decoded AI,
+  boss, escort and awareness fields until explicit application; discard is inert.
+  Apply checks target capacity/geometry/epoch before publishing any fields.
+  Ordinary ai_restore_state now uses this same prepare/apply/discard owner.
+  Save writer/layout remain unchanged. Original D1 extension locals are preserved;
+  D1 boss damage/history helpers run only at commit, not during preparation.
+- Checked scalar reads reject short data before interpreting it. Bounded native
+  tables reject truncation before legacy byte readers can abort; appended vectors
+  retain their explicit little endian independently of save-header byte order.
+  Epoch bounds prevent signed64 overflow when rebasing native signed32 offsets.
+  No second save decoder, alternate lifecycle, checksum-only fix or rollback.
+- Existing test_upstream_compat owner passes Windows61.92s and Linux30.14s,
+  one complete CTest entry each, zero skips. Its existing180-case sound-storage
+  matrix (D2/D1/D2 profiles, versions31/34/35, both header byte orders, ten full
+  signed sound values) now also proves pure preparation, full observed AI
+  preservation on rejection, changed epoch/geometry guards, commit after source
+  close and explicit-endian nonzero vectors. Independent candidate epochs and
+  seven truncation boundaries exercise retained ownership, clock rebasing and
+  short header/local/path/cloak/tail rejection. All older compatibility cases
+  remain in the same full owner. Initial run caught my use of a fatal legacy
+  vector EOF reader; fixed before the successful strengthened full-owner runs.
+- Ordinary developer-OFF strict-FP Windows and Linux builds pass. Each replays
+  the preceding Windows native-save time-transition recording through ordinary
+  embedded-checkpoint startup, strict asset validation and clean natural exit.
+  Full comparisons against the unchanged live capture pass on both hosts:
+  12 object frames,16 world/boundary records,21 SIM events and12 FX events with
+  value/order/context. g2-ai-staging-replay-{windows,linux}-compare.json are the
+  canonical detailed receipts. Successful Linux owner root is
+  g2-ai-staging-replay-linux-qualified, with verified actual sandbox binary hash.
+  The original recording's five setup position assists, zero inventory assists
+  and zero in-record assists remain; no new recording, expectation or input edit.
+  These are saved mechanics controls, not connected original-level progression.
+- Failed Linux attempts remain: my first command had cross-shell variable
+  expansion and never launched an engine; the next copied the old binary before
+  the active build linked (old SHA88661d0785b65a45d749752531617bfd5345113fd94d0f437041e3e756ec8099)
+  and correctly rejected the newer XL schema. After waiting for terminal build,
+  replay matched state/terminal but its owner failed because the prior cross-save
+  folder lacked the RNG sidecar. The complete original three-file recording
+  bundle was then copied and every byte SHA-verified; the entire strict owner
+  passed with current binary. g2-ai-staging-input-manifest.json pins demo
+  962de56f3c885240b6cfa8c46817e5f8c150416681599d817606bde752b98089
+  and unchanged sidecars. No timeout/skip/asset waiver or expected-result change.
+- g2-ai-staging-build-identities.json pins three non-Markdown source paths and
+  patch SHAe62468186dd2dc2a776019e18495408c5bee03640c54cbc75a35affb2a7c2ab7.
+  Windows engine4ddb33af515e9360e458a9920df8458ce2f9d1f53169fd121f23d458aa08d65e,
+  compatibilitydef4bf23a44222c50b150ff26b859360f594b4738044f77d9ac1b1b81cb22314;
+  Linux engineca82e6622dd7c896af07e76032351517e0b80378dfd7b8af027648c261d1bc02,
+  compatibilitydf44757a81fd91599564e9a56f91d4c108caaa2a71d1cfbe1becd38d616af6c1.
+  Actual Linux sandbox engine matches the source binary. Root-bound caches,
+  strict FP ON, existing baseline warnings only; no new warnings in owned code.
+  One initial Windows build requested the test target in the developer cache
+  that does not define it; corrected cache build and all terminal results retained.
+  This is local qualification, not a current full private corpus/Android or CI run.
+- Both required catalogs pass99 JSON/315 PowerShell/547 support and428 top-level/
+  547 support. Scoped mixed quality passed; final ledger quality/review precede
+  commit. Authentic169-file runtime data mirror and pinned XL reference remain
+  unchanged. Cleanup preview uses official TemporaryOnly/50GiB/emulator-preserve
+  policy and retained exclusions plus replay sandboxes; zero eligible artifacts,
+  approximately17.97GiB free at preview. After all owned jobs finished, official
+  apply removed zero eligible artifacts;17.60GiB remains, below50GiB because
+  protected assets, reference, builds and evidence are retained. Both emulators
+  preserved. g2-ai-cleanup-{preview,apply}.log; no manual cache deletion.
+- Next: finish whole native save staging before state.c publishes mission, player,
+  object, wall or runtime state. AI now supplies a retained candidate for this;
+  whole-save invalid XL trailer still changes energy91->100 and is NOT fixed.
+  state_object_rw_to_object and state_player_rw_to_player still consume live
+  GameTime64, XL/D1 mode and reactor definitions; make their existing codecs
+  accept candidate context, then stage native/runtime and source-bound XL owners
+  through the same validation before commit. Do not substitute a checksum guard
+  or serialize/rollback. Guide-Bot async/cache/Android2000us audit and pure
+  audio/event ownership remain open, as do all G3-G7 gates. Actual approximately
+  07:42 PST November12; revised remaining G2 estimate11-17h and later14.5-20h,
+  high uncertainty, no cutoff or scope reduction.
+
+### G2 explicit native record context checkpoint, November 12 08:16 PST
+
+- Continues local layer03 `xl_gameplay_20261111_03_continuation` from
+  d0c1332b596e0d4bdebe7a12b09370dbc73c6b24, tree
+  92a1f2b6c943b550b1ecbaa51ff5f77e39b1c628. Previous turn was verified progress:
+  retained AI staging and native time continuation are committed. Current work
+  began07:46 PST November12. G0/G1 accepted; G2-G7 remain open. No layer03 push,
+  PR or current-tip CI claim. Independent review and all original stashes preserved.
+- New shared object_decode_context.h supplies a borrowed, immutable candidate
+  epoch, original-D1/XL profile, robot definitions and reactor definitions. Native
+  object decoding and endian conversion now accept this context; existing live
+  wrappers retain their dispatch. D1 AI read/swap selection shares its existing
+  predicate and codecs with the explicit context. Reactor gun transformation takes
+  const definitions and retains native out-of-range reactor-ID fallback. No native
+  wire, save writer, input format, fixture, expected result or simulation policy
+  change. Shared signed64 rebasing bounds also replace the duplicated AI guard.
+- state.c now has one checked native object reader and one player reader using
+  these codecs. Short records reject before interpretation, leave candidate output
+  untouched and restore the original file cursor. Replaces the previous unchecked
+  object read into uninitialized storage and repeated per-record heap allocations.
+  The ordinary loader retains the decoded player before level loading, uses it for
+  the existing equipment hint, then installs that same retained record afterward.
+  No peek/seek/redecode of the player. Its epoch must remain stable through native
+  level setup; transient equipment hints are restored before that guard can fail.
+  Co-op player reads share the same native reader; no new co-op lifecycle or policy.
+- Existing complete test_upstream_compat owners pass, zero skips: Windows D2
+  51.89s, Linux D229.90s, Windows D11.80s. Builds are ordinary developer-OFF,
+  root-bound strict-FP ON. Retained D1/D2 and packet/save AI-layout controls remain.
+  The existing160-case AI layout matrix now verifies80 save cases against an
+  intentionally different live mission/robot profile and epoch;160 native file
+  reads cover both byte orders. Added controls cover36 signed object-clock/profile
+  combinations,12 player file reads, short object/player records (including a
+  nonzero starting cursor), native-vs-companion AI, reactor transforms/fallback,
+  invalid gun counts/epochs and unchanged live definitions/clocks/RNG. These are
+  derived native integration controls, not original-content progression evidence.
+- Same existing ordinary visual replay owner passes on Windows and Linux after
+  final builds reach terminal success, using the complete unchanged Windows
+  fractional-time save-start recording bundle. Both match its original live
+  capture:12 object frames,16 world/boundary records,21 SIM events and12 FX events,
+  including ordering/context and unknown observed fields. Strict assets, actual
+  result match and clean natural exit required; no deadline/skip/asset waiver,
+  seed repair, extra control or comparator relaxation. Canonical
+  g2-decode-record-compare.json; g2-decode-record-replay-{windows,linux} retain logs,
+  trace, result and the exact invoked command. Sandbox engine hashes equal the
+  completed build outputs. The original five setup position assists, zero inventory
+  assists and zero in-record assists remain; no new recording or pose assist.
+- g2-decode-record-build-identities.json pins all nine non-Markdown source paths,
+  including the new header, every source-file hash and patch SHA
+  660fcda9cd477e6694bd45cc2b0bd9f497f37f6d7bb2d53702f742176515dc28.
+  Windows D2a7bc93cca73569a8a86c96800bbf0544f94ce8593e6884dcaa1bd3e81211f381,
+  D2 compatibility992a9f7c23da5d97e7341f12b315ff27ad3cf01d7ed4e4d1e51fc537cbf612a4;
+  Linux D29eb6254466baa66aec4381717db2381c7dfc442ae6414852b30190fa3c0d7443,
+  compatibilitye74c44fd1550af376b1923c81e8495fe98140771b8a6c7b9a3c5a7912a180ec1.
+  D1 engine367b7316ad701af50637a783b1da80f729ddfcfc5f877d3fb974a439889fc6b9,
+  compatibility7b38d7785afb2080d1d566e12e08ad2a4f114afce361042365cf996b8d68aecc.
+  Cached build stamp predates edits; actual binary and source hashes identify code.
+  Initial context-only owners also passed before the checked-I/O addition; final
+  record-owner results above qualify the complete candidate. No new build warnings
+  in changed logic; existing fixture/string-literal warnings remain separately.
+- Both required catalogs pass unchanged99 JSON/315 PowerShell/547 support and428
+  top-level/547 support, g2-decode-context-{catalog,master-catalog}.log. No new
+  runner or membership reduction. Scoped mixed quality/whitespace pass; final
+  ledger quality and staged review precede commit. Authentic runtime data and
+  pinned source2576a98b5de310e3ac7c9777df2677d1627b8bae unchanged. Prior official
+  cleanup cycle removed zero eligible artifacts; approximately16.95GiB currently
+  free, with active evidence, authentic assets, reference and emulators preserved.
+  No manual deletion, Android run/profile change or WSL restart. Android memory
+  backend/device continuation, true-headless XL and current full CI are unverified.
+- Next main G2 action is whole restore staging, not another observation exclusion:
+  reuse mission.c's existing mission_descriptor_stage, parse_mission_descriptor
+  and namespaced archive preflight to retain target mission/source admission before
+  load_mission publication. Bind prepared resource definitions to this explicit
+  native record context, then retain the remaining native/runtime state and
+  validate source-bound XL owners against that candidate before commit. Existing
+  XlPreparedResources already exposes staged robot data through dependencies(),
+  but its mission baseline/resource lookup still assumes the selected live mission;
+  factor that existing ownership rather than making a second mission/level loader.
+  Whole-save bad XL trailer still changes energy91->100 and is NOT fixed by this
+  codec step. Full source/native/runtime/XL staging remains required, with no
+  checksum-only preflight, guessed tag search or serialize/rollback. Guide-Bot
+  async/cache/Android2000us, pure audio/event observation and G3-G7 remain open.
+  Actual approximately08:16 PST; remaining G2 revised12-20h, later14.5-20h, high
+  uncertainty, no cutoff or reduction of the original gameplay closure gate.
+
+### G2 retained mission preparation checkpoint - November 12, 08:43 PST
+
+- G2 remains open. Root branch xl_gameplay_20261111_03_continuation, parent
+  c0bc13aa99b380bcc2781d053421040993f7d6a3, tree
+  219e1ee113bd1bb859a1aedf70c33be6e512bdaf. This candidate is local, with no
+  layer-03 publication or current-tip hosted CI claim. Preserve the independent
+  review and all three stashes. Earlier G0/G1 CI receipts are unchanged history.
+- d2/main/mission.c now retains the existing native descriptor parse and reserved
+  identity allocation behind mission_prepare.h. Ordinary selection uses the same
+  preparation and native commit, including existing archive handoff and Android
+  acquisition boundaries. Custom D2 descriptor tables, source text and copied
+  list identity survive list release. Builtin/original-D1 initialization remains
+  on its existing commit path; this is not pure builtin mission preparation.
+- Candidate archive members can be read through an isolated PhysFS namespace.
+  Reads require the candidate's actual archive origin; a foreign mount or unsafe
+  relative name rejects. Existing owned live archives may be borrowed. An open
+  private member prevents both commit and discard, retaining the caller's handle;
+  after close, discard releases the private mount and commit passes the same
+  retained native fields to publication. Preparation does not select the mission,
+  reset runtime state or publish candidate basenames into active resource lookup.
+  This is a prerequisite for full restore staging, not an atomic full save load.
+- Extended the existing descriptor owner and its mandatory CMake completion
+  marker. Full native world, object pool and live-object snapshots check prepare,
+  private read, busy lease, discard and malformed-descriptor rejection. The
+  original Observatory level is read privately and compared byte-for-byte.
+  Independent candidates retain their own identity. Only derived prepreg copies
+  receive a late invalid descriptor mutation; commit uses the retained valid
+  descriptor, then ordinary stock recovery restores the original resource scope.
+  Existing allocation/archive/Android handoff fault controls remain enabled.
+- Final Windows and Linux Observatory source-reference owners pass, including
+  all12 firing-gate and four contact-dispatch comparisons, native boundaries,
+  no-damage persistence, fusion/guidance and224 ambient sources/328 colors.
+  Windows max RGB delta1.47e-7; Linux3e-8. Evidence under
+  temp/pr464-ci-fixes-20261110/g2-mission-prepare-reference-{windows,linux},
+  with corresponding controller logs. Initial Windows native-only owner also
+  passed, but only the later reference run qualifies the source comparison.
+  First Linux controller invocation stopped before native execution because an
+  unquoted PowerShell -D argument lost its extension; quoted arguments pass.
+  Keep g2-mission-prepare-reference-linux-argument-failure.log as that receipt.
+  No engine failure, changed oracle, weakened cohort or increased timeout.
+- Developer-ON ordinary engine and metadata targets build on both hosts. Ordinary
+  developer-OFF D2 engine and full test_upstream_compat also build and pass:
+  Windows1/1 CTest entry60.08s, Linux1/1 entry36.28s, zero skips. These entries
+  execute the existing combined compatibility owner, not one individual case.
+  D1 source was not changed or rebuilt for this mission-only checkpoint; its
+  preceding full1.80s owner remains separately dated evidence. Logs:
+  g2-mission-prepare-{windows,linux}-stock-{build,ctest}.log and developer build
+  logs. Existing unchanged fixture string-literal/bool warnings remain visible.
+- Both ordinary rendered developer-OFF save-start replays pass strict result,
+  clean exit and RNG comparison. Detailed existing parity owner comparison to
+  the original live capture passes on both hosts:12 object frames,16 world
+  records,21 SIM draws and12 FX draws, with no masks or expected values changed.
+  See g2-mission-prepare-compare.json and g2-mission-prepare-replay-{windows,linux}.
+  Original demo SHA962de56f3c885240b6cfa8c46817e5f8c150416681599d817606bde752b98089,
+  original WShock20 level6, five setup position assists, zero inventory assists
+  and zero in-record assists. This short retained recording is not connected
+  original-content navigation/combat qualification. Linux uses the complete
+  previously verified144060897-byte/169-file runtime directory and original
+  three-file demo bundle; no subset/missing-resource waiver.
+- Authentic Observatory HOG remains
+  e89acaad09cefa0c09fc4b487c56b6077477cfe20169f364fe54f627040b01e7,
+  descriptor8a2946c7f786f4834e1c9e303a8d4248b419b89479a750d0d6c1917fbe1b6317.
+  Both controllers verify unchanged original bytes at completion. Pinned source
+  remains2576a98b5de310e3ac7c9777df2677d1627b8bae. The existing extracted oracle
+  was built on Windows using its pinned controlweapon.cpp/collide.cpp/
+  loadgeometry.cpp adapter; no copied expected implementation. Build/source/input
+  hashes and final commit/tree are recorded in
+  g2-mission-prepare-build-identities.json. No new source predicate is admitted.
+- Scoped mixed quality and required catalog validation precede commit. No new
+  top-level runner, owner membership or timeout change. No Android execution or
+  profile modification, current-tip CI, true-headless qualification or packages
+  are claimed. WSL is healthy after the earlier authorized restart; this
+  checkpoint did not require another restart. Approximately16.37GiB free, with
+  active evidence, genuine assets, reference and emulator workspaces preserved.
+- Next main G2 step: bind the existing prepared resource owner to the retained
+  mission/source and baseline definitions, then stage all native/runtime/XL
+  restore owners before any publication. XlPreparedResources currently reads
+  mission_base, Current_mission, mounted companions and live registries; passing
+  only a level name or checksum is insufficient. Native record/AI decoders are
+  already context-bound. Retain the same codecs and source ownership, without
+  serialize/rollback or a second loader. Full bad-XL-save rejection still changes
+  energy91->100 and is NOT fixed here. Guide-Bot async/cache/Android2000us and
+  deterministic audio observation remain open, followed by all G3-G7 acceptance.
+  Actual08:43 PST; revised remaining G2 roughly12-20h, later14.5-20h, high
+  uncertainty. No cutoff, scope reduction or full gameplay readiness claim.
+
+### G2 retained dependency definitions checkpoint - November 12, 09:15 PST
+
+- G2 remains open on xl_gameplay_20261111_03_continuation. Parent
+  9c61348093206fb5f2f224f8e55c759c4eac1a81, tree
+  d957bb3c1a134f58b98b079e36593d5deb0d4592. The preceding retained-mission
+  checkpoint is committed at that parent. No layer03 push/PR or current-tip
+  hosted CI is claimed. Preserve the independent review and all three stashes.
+- The existing ObjectDependencies walk now binds counts and read-only views for
+  weapons, powerups, vclips/effects/wall animations, textures/material metadata,
+  object bitmap count and sound mappings, alongside its retained robot/model
+  views. MissionDefinitions owns their captured tables. The same binder is used
+  by HXM preparation, State initialization and camera ownership transfer. Native
+  digi_xlat_sound now delegates its bounded native mapping to
+  digi_xlat_sound_from_tables; extended original-D1 translation keeps its existing
+  path. No second sound algorithm or source admission predicate was invented.
+  Missing sample diagnostics now identify logical/sample/live mapping and profile.
+- Extended the existing Observatory owner with a causal retained-definition
+  control: invalidate live counts and weapon/powerup/animation/material records,
+  silence live mappings and change the live low-memory option, then construct
+  and walk the prepared baseline. Its dependency closure matches the original;
+  live invalid fields stay untouched; a live-bound walker rejects. A separately
+  invalid retained weapon rejects instead of falling back to valid live data.
+  RAII restores the original fields/mappings, and the recovered live walk matches.
+  Completion is mandatory in the existing CMake owner; no new top-level runner.
+- Found and repaired an integration error introduced during this checkpoint,
+  before commit: the initial Windows ordinary replay timed out at60s with native
+  Error: Cannot run XL level: warplab.rl2 dependency sound has no loaded sample.
+  A direct second execution of the same95cb0fde... binary reproduced the dialog.
+  Camera preparation moved the temporary MissionDefinitions and graph into the
+  surviving State, leaving the newly added inline sound-array views pointing at
+  destroyed temporary storage. Rebind all definition views after that transfer,
+  preserving graph traversal sets. A diagnostics-only rebuild happened to pass;
+  that allocator-dependent result was NOT accepted as a fix. The final source
+  contains the ownership repair and is rebuilt/tested on both hosts.
+  Preserve g2-dependency-definitions-replay-windows, its failure.json and retained
+  sandbox/binary, plus diagnostic receipts. The failure was not a missing genuine
+  asset waiver and no timeout or expected value changed. Computer-use skill read
+  the unflushed dialog; its input API returned access denied, so only the owned
+  diagnostic process was stopped through the CLI. No user interaction needed.
+- Private candidate reads now apply the native case-normalization helper before
+  checking the real archive/directory origin. A direct isolated PhysFS probe
+  confirmed that the original lowercase HOG member was not found under uppercase
+  spelling. The existing original-level read now requests OBSRV-XL.RL2 and still
+  compares all52176 original bytes; later retained reads exercise lowercase.
+  Namespace/path and foreign-origin guards remain intact for both spellings.
+- Final source-reference Observatory owner passes on Windows and Linux, with the
+  retained-definition and uppercase-read controls, all12 firing/four contact
+  source comparisons and the complete existing native/persistence controls.
+  Original ambient224 sources/328 colors remains within1.47e-7 Windows/3e-8 Linux.
+  Evidence g2-dependency-definitions-fixed-reference-{windows,linux} and logs.
+  Both original descriptor/HOG hashes are checked unchanged by the controllers.
+- Final developer-ON engine/metadata and developer-OFF engine/compatibility targets
+  build on both hosts. Full test_upstream_compat passes Windows61.11s and
+  Linux36.80s, one combined CTest entry each, zero skips. Earlier pre-repair
+  compatibility entries also passed72.52s/33.80s, illustrating why the ordinary
+  real save-start replay remained necessary. D1 native source was not changed or
+  rebuilt here; actual D1-in-D2 translation is exercised by the D2 owner. Existing
+  fixture/string-literal warnings remain, no new warnings in the edited logic.
+- Final ordinary developer-OFF save-start replay passes twice in clean Windows
+  processes and once on Linux. All three match the original live capture through
+  the existing detailed comparator:12 object frames,16 world records,21 SIM and12
+  FX draws, no first differences. See
+  g2-dependency-definitions-fixed-compare.json and fixed-replay-* receipts. The
+  original assisted WShock20 level6 recording and its setup limits remain as
+  documented above; this does not add connected progression or headless proof.
+- Additional Windows HXM owner passed its original malformed/reachable-dependency,
+  animation and source controls plus Warp5 warm/cold actor proof, with identical
+  shields23696201 after the shot. These isolated actor controls use an assisted
+  warm setup; cold reload inherits that checkpoint. The HXM run preceded the final
+  camera rebind/case correction; final camera-path qualification is the ordinary
+  Warp6 recording above. Optional CAMERA_HOG was not supplied, as in the existing
+  canonical CMake registration; do not count that optional subcase as executed.
+  The installed genuine addon e7351d66... differs from that old optional owner's
+  pinned df69c62a... archive, so it was not substituted to manufacture coverage.
+- Source patch542546800c636c7d20bf1582e3f2bae241bc6121800ca41b526e216bd979c6e6,
+  all seven source hashes, eight executable hashes, original inputs and post-hook
+  committed head/tree are recorded in g2-dependency-definitions-build-identities.json.
+  Final Windows ordinary D24151d8f979fd479fb3afd685dedc2b242f4f74185f9f9d9c326b7580fd88d52d;
+  Linux098bf0357ef5803f9ec2cc8439d751523836a30be54bc44a74ac62fe81b3a6f8.
+  Reference2576a98b5de310e3ac7c9777df2677d1627b8bae and authentic mission bytes
+  remain unchanged. Both required catalogs pass99 JSON/315 PowerShell/547 support
+  and428 top-level entries. Scoped mixed quality passes, with final ledger quality
+  and staged review before commit. No cohort, skip, timeout or asset relaxation.
+- Still required: explicitly prepare the target mission's native HAM/extension
+  definitions and source/resource ownership, rather than capturing a selected
+  live baseline. The existing native HAM codec writes global tables; factor its
+  destination binding rather than create a second decoder. Sample/bitmap banks,
+  camera weapon checks and file lookup still have live installation dependencies.
+  Then retain the remaining native/runtime/XL restore owners and validate before
+  any publication. The bad-XL-save energy91->100 atomicity failure is NOT fixed by
+  this table binding. Guide-Bot async/cache/Android2000us and deterministic audio
+  observation remain open, followed by G3-G7. No Android run, current full CI,
+  true-headless qualification, packages or full gameplay readiness claim.
+  Actual approximately09:15 PST; remaining G2 roughly12-20h, later14.5-20h, high
+  uncertainty, no cutoff or scope reduction. Official idle cleanup preview/apply
+  removed zero eligible artifacts, leaving15.54GiB, below the50GiB target; see
+  g2-dependency-definitions-cleanup-{preview,apply}.log. Genuine inputs, evidence,
+  native caches, all replay sandboxes and emulator workspaces were excluded or
+  protected. No manual cache deletion or new WSL restart.
+
+### User-requested wind-down - November 12, 09:19 PST request
+
+- The user requested stopping after the next coherent chunk and producing a
+  what-was-done report, remaining work/estimate for90% playable levels, and a
+  high-level outline for another12 hours. This supersedes immediate autonomous
+  continuation through the unfinished G2-G7 queue. No new HAM-reader edits were
+  started; the last tested implementation remains3660e9a14b9c7651c5f686ce7b4ceeefd779172d,
+  tree89ae4d157132c115d973846eb6be38037b40ab7b. The handoff adds documentation only.
+- Current summary: [what was done](xl_gameplay_what_was_done_20261112.md).
+  Future outline: [next12 hours](xl_gameplay_next_12_hours_20261112.md).
+  G0/G1 are accepted for their recorded bounded scopes. G2 remains unfinished and
+  local/unpublished; G3-G7 remain open. The known invalid-restore energy91->100
+  defect is still open. No90% playable claim or current-tip hosted CI claim.
+- Fresh GitHub metadata confirms#464/#465/#467 open, unmerged, ready for review,
+  with unchanged published heads. The nine returned PR-triggered workflow runs
+  associated with0a2df4aeb completed successfully; conditional job execution and
+  exact-candidate dispatch receipts retain their separate scopes. Local03 is not
+  part of the published stack. No remote mutation or merge during wind-down.
+- The90% denominator and playable numerator have not been established. Preserve
+  the full1111-entry catalog accounting and historical4/8 load/tick series.
+  Proposed future single-player eligibility needs explicit exclusions and an
+  actual per-entry blocker matrix. The report budgets45-80 further engineering
+  hours with low confidence, plus any required individual-level playthrough
+  workload; this replaces treating the earlier remaining-item estimates as a
+  credible90% forecast. The next12-hour outline is a proposal, not a started run.
+- Source/binary hashes and detailed final tests remain in the preceding checkpoint.
+  Independent untracked review, all three stashes and authentic inputs are
+  preserved. About15.5GiB free; official cleanup could not reach50GiB without
+  touching protected material. Finish documentation quality/review, commit the
+  handoff locally and leave no owned build/test/formatter running.
+
 Per-item handoff template:
 
     Item and status:
@@ -2750,3 +4205,64 @@ All of the following must be true for the named single-player capability profile
 If this gate is not met, the handoff names the achieved bounded scope and the
 next concrete gap. It must not claim full gameplay support, full campaign
 playability, graphical/audio completeness, or whole-stack merge readiness.
+
+### Layer 03 architecture cleanup - November 12, before the next work window
+
+The user requested a review and reduction of the continuation layer's native
+`d2/` changes. This is a bounded refactor, not resumption of the 12-hour gameplay
+plan. Source remains an uncommitted change over `013b7234`; no commit, push, PR or
+merge was performed.
+
+The [boundary review](xl_layer03_architecture_review_20261112.md) classifies all
+16 original native paths and records the implementation and test evidence.
+Candidate archive lookup/lease policy and screenshot framebuffer/read-state
+policy now live in `android/XL_compat/runtime`. The XL-only mission preparation
+header moved there from generic shared code. Developer metadata navigation
+configuration moved into the existing XL configure file, restoring native
+`main/CMakeLists.txt` to the layer parent's contents. Native codecs, context-aware
+record decoding, owner-private snapshots and small clock hooks remain with their
+single source of truth. No parser or lifecycle was duplicated.
+
+Against parent `0a2df4aeb`, native changes now cover 15 files, 666 additions and
+502 deletions: net growth 164 instead of 243 lines. Architecture guidance is
+explicit in copilot instructions, the XL README and the next-window plan.
+
+Windows/Linux ordinary and developer builds pass. Existing Observatory ownership
+and source controls pass on both hosts (17.859s/5.376s), as do seven screenshot
+read-state checks and time/warm-continuation witnesses (26.141s/16.850s). Selected
+`test_upstream_compat` passes on Windows/Linux (55.62s/26.40s; one combined CTest
+owner each). Ordinary replay on both hosts matches the retained original live
+capture: 12 object frames, 16 world records, 21 SIM and 12 FX events. These remain
+bounded assisted mechanics/replay checks, not connected progression or G2 closure.
+
+Evidence: `temp/xl-layer03-architecture-20261112/build-identities.json`, build/test
+logs, Windows output, Linux summary/commands, and native Linux output under
+`/var/tmp/dxx-pr464-20261111/private/architecture-review`. The review preserves
+failed setup attempts, including the Linux /mnt/c timeout under the unchanged
+60-second owner limit, and explains the successful native-filesystem rerun.
+
+Known whole-save atomicity remains unresolved. No Android/macOS qualification,
+new hosted CI or final package is claimed. Preserve the new untracked helper
+files and header move along with the revised plans when starting the next worker.
+
+### November 12: PR 468 CI repair in progress
+
+The architecture cleanup is now published as `0d3456979` on non-draft fork
+[PR #468](https://github.com/larsonm-personal/dxx-redux/pull/468), based on layer 02.
+The prior local commit has identical contents and is preserved; fixes start from
+the published history on `ci468-fixes`. See the
+[repair plan and evidence](pr468_ci_fixes_20261112.md) for current results.
+
+Initial CI exposed null frees in mission cleanup under the checked Debug
+allocator, causing unattended D2 graphics replay to wait on warning dialogs.
+It also exposed source-contract drift after AI staging, effect-phase fixture
+drift after object-boundary validation, and hosted Ubuntu source-layout drift.
+Dependent steps skipped after these failures are untested, not passes.
+
+The user explicitly requires fork publication and passing applicable CI as work
+products. The next-window plan, original goal and
+[new kickoff prompt](xl_gameplay_kickoff_20261112.txt) now require early non-draft
+immediate-parent PRs in `larsonm-personal/dxx-redux`, monitoring while independent
+work continues, repair cycles, terminal final-candidate checks, and replacement
+report/plan/prompt handoffs. Partial G2 work can be published without claiming G2
+acceptance. No merges, auto-merge or upstream publication are authorized.

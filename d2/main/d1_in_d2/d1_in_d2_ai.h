@@ -10,6 +10,7 @@ struct object_rw;
 struct segment;
 struct ai_local;
 struct robot_info;
+struct d2_object_decode_context;
 
 /* Versioned runtime extension for original local timers and legacy AI fields */
 void d1_in_d2_ai_reset_saved_storage(void);
@@ -23,6 +24,11 @@ int d1_in_d2_ai_read_saved_storage(rewind_file *fp, int swap, int apply);
 int d1_in_d2_ai_write_object(const struct object *obj, struct object_rw *saved, int savegame);
 int d1_in_d2_ai_read_object(const struct object_rw *saved, struct object *obj);
 int d1_in_d2_ai_swap_object(struct object_rw *saved);
+/* Same codecs with immutable candidate bindings; NULL retains live dispatch */
+int d1_in_d2_ai_read_object_for_context(const struct object_rw *saved, struct object *obj,
+                                       const struct d2_object_decode_context *context);
+int d1_in_d2_ai_swap_object_for_context(struct object_rw *saved,
+                                       const struct d2_object_decode_context *context);
 
 enum d1_ai_actor_role { D1_AI_ENGINE_ACTOR, D1_AI_NATIVE_ENEMY };
 /* Select at an AI phase boundary; optional companions retain engine policy */

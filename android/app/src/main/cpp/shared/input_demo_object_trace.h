@@ -19,5 +19,6 @@ int input_demo_object_trace_boundary(uint32_t frame, const char *phase, char *er
 struct object;
 // The caller supplies the engine slot for actors with slot-owned AI storage
 nlohmann::ordered_json input_demo_object_trace_snapshot(const object &value, int slot);
+nlohmann::ordered_json input_demo_object_pool_trace_snapshot();
 #endif
 #endif

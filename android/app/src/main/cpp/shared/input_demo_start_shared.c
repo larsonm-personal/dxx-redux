@@ -503,8 +503,17 @@ static int input_demo_remove_owned_checkpoint_temp(const char *path)
 
 static int input_demo_restore_replay_checkpoint_data(
     const uint8_t *checkpoint_data,
-    size_t checkpoint_size)
+    size_t checkpoint_size, const char *native_path,
+    int (*restored)(void *), void *context)
 {
+	if (native_path) {
+		if (!input_demo_restore_checkpoint_save(native_path) || (restored && !restored(context))) {
+			printf("Input demo native checkpoint restore or observation failed: %s\n", native_path);
+			input_demo_replay_unload();
+			return 0;
+		}
+		return 1;
+	}
 	char local_checkpoint_name[PATH_MAX] = "";
 	PHYSFS_file *checkpoint_file = input_demo_open_owned_checkpoint_temp(
 	    local_checkpoint_name, sizeof(local_checkpoint_name));
@@ -602,7 +611,8 @@ static int input_demo_start_replay_new_level(
 	return 0;
 }
 
-static int input_demo_restore_loaded_replay(void)
+static int input_demo_restore_loaded_replay(const char *native_path,
+                                            int (*restored)(void *), void *context)
 {
 	const char *checkpoint_name;
 	const uint8_t *checkpoint_data;
@@ -707,7 +717,7 @@ static int input_demo_restore_loaded_replay(void)
 	}
 #endif
 	PlayerCfg.OriginalHoming = have_replay_player_cfg ? replay_player_cfg->original_homing : 0;
-	if (!input_demo_restore_replay_checkpoint_data(checkpoint_data, checkpoint_size))
+	if (!input_demo_restore_replay_checkpoint_data(checkpoint_data, checkpoint_size, native_path, restored, context))
 		return 1;
 	{
 		input_demo_replay_restored_player_diag player_diag;
@@ -733,7 +743,8 @@ static int input_demo_restore_loaded_replay(void)
 	return 0;
 }
 
-int input_demo_start_loaded_replay_common(void)
+static int input_demo_start_loaded_replay_impl(const char *native_path,
+                                               int (*restored)(void *), void *context)
 {
 	int result;
 	input_demo_rear_view_baseline view;
@@ -781,7 +792,7 @@ int input_demo_start_loaded_replay_common(void)
 		return 1;
 	}
 	input_demo_reset_replay_input_state();
-	result = input_demo_restore_loaded_replay();
+	result = input_demo_restore_loaded_replay(native_path, restored, context);
 	if (!result) {
 		if (input_demo_replay_format_version() == 6 &&
 		    !input_demo_validate_xl_fp_environment(projection_error, sizeof(projection_error))) {
@@ -824,6 +835,38 @@ int input_demo_start_loaded_replay_common(void)
 		}
 	}
 	return result;
+}
+
+int input_demo_start_loaded_replay_common(void)
+{
+	return input_demo_start_loaded_replay_impl(NULL, NULL, NULL);
+}
+
+int input_demo_start_loaded_replay_from_file_common(const char *path,
+                                                    int (*restored)(void *), void *context)
+{
+	const uint8_t *expected = input_demo_replay_checkpoint_data();
+	const size_t size = input_demo_replay_checkpoint_size();
+	PHYSFS_file *file = NULL;
+	int valid = path && path[0] && input_demo_replay_has_checkpoint() && expected && size &&
+	            !strcmp(input_demo_replay_start_mode(), "save_checkpoint") &&
+	            !input_demo_d1_in_d2_enabled;
+	if (valid) file = PHYSFS_openRead(path);
+	valid = file && PHYSFS_fileLength(file) == (PHYSFS_sint64) size;
+	for (size_t offset = 0; valid && offset < size;) {
+		uint8_t bytes[4096];
+		const size_t amount = size - offset < sizeof(bytes) ? size - offset : sizeof(bytes);
+		valid = PHYSFS_readBytes(file, bytes, amount) == (PHYSFS_sint64) amount &&
+		        !memcmp(bytes, expected + offset, amount);
+		offset += amount;
+	}
+	if (file && !PHYSFS_close(file)) valid = 0;
+	if (!valid) {
+		printf("Input demo native save differs from its recorded checkpoint\n");
+		input_demo_replay_unload();
+		return 1;
+	}
+	return input_demo_start_loaded_replay_impl(path, restored, context);
 }
 
 static void input_demo_capture_restored_player_diag(

@@ -16,8 +16,30 @@ execute_process(
     TIMEOUT 80)
 file(WRITE "${OUTPUT}/controls.log" "${log}${error}")
 string(FIND "${log}" "XL equipment controls passed" witness)
-if(NOT result EQUAL 0 OR witness LESS 0)
+if(NOT result EQUAL 0
+   OR witness LESS 0
+   OR NOT
+      log
+      MATCHES
+      "Equipment raw observation: pending maker, selection flags and station links preserved without mutation or RNG"
+)
     message(FATAL_ERROR "Equipment controls failed (${result}): ${log}${error}")
+endif()
+execute_process(
+    COMMAND "${ENGINE}" -equipment-test resume -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir
+            "${OUTPUT}/preview-user" -nosound -nomusic
+    RESULT_VARIABLE cold_result
+    OUTPUT_VARIABLE cold_log
+    ERROR_VARIABLE cold_error
+    TIMEOUT 80)
+file(WRITE "${OUTPUT}/cold.log" "${cold_log}${cold_error}")
+if(NOT cold_result EQUAL 0
+   OR NOT cold_log MATCHES
+      "Pending equipment cold continuation: native items, owner state, births and SIM/FX RNG passed"
+)
+    message(
+        FATAL_ERROR
+            "Pending equipment cold continuation failed (${cold_result}): ${cold_log}${cold_error}")
 endif()
 if(REFERENCE)
     execute_process(

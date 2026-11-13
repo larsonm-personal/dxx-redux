@@ -44,6 +44,23 @@ if(CAMERA_HOG AND NOT camera_coverage STREQUAL "executed")
     message(FATAL_ERROR "Requested camera subchecks were omitted")
 endif()
 message("XL_CAMERA_SUBCHECKS: ${camera_coverage}")
+foreach(mode IN ITEMS birth birth-resume)
+    execute_process(
+        COMMAND "${ENGINE}" -projectile-test "${mode}" -hogdir "${DATA}" -extra-dir "${OUTPUT}"
+                -userdir "${OUTPUT}/preview-user" -nosound -nomusic
+        RESULT_VARIABLE birth_result
+        OUTPUT_VARIABLE birth_stdout
+        ERROR_VARIABLE birth_stderr
+        TIMEOUT 120)
+    file(WRITE "${OUTPUT}/${mode}.log" "${birth_stdout}${birth_stderr}")
+    if(NOT birth_result EQUAL 0 OR NOT birth_stdout MATCHES
+                                   "Newborn collision uninterrupted/disk continuation passed")
+        message(
+            FATAL_ERROR
+                "Object birth continuation failed (${birth_result}): ${birth_stdout}${birth_stderr}"
+        )
+    endif()
+endforeach()
 if(CAMERA_HOG)
     execute_process(
         COMMAND "${ENGINE}" -projectile-test resume -hogdir "${DATA}" -extra-dir "${OUTPUT}"

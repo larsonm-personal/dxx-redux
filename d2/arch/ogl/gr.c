@@ -1,5 +1,6 @@
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "screenshot_readback.h"
 #endif
 /*
  *
@@ -1265,6 +1266,13 @@ void save_screen_shot(int automap_flag)
 {
 	static int savenum=0;
 	char savename[13+sizeof(SCRNS_DIR)];
+#ifndef OGLES
+#ifdef DXX_XL_RUNTIME
+	xl_screenshot_readback_state readback;
+#else
+	GLint previous_read_buffer = GL_FRONT;
+#endif
+#endif
 	#ifdef HAVE_LIBPNG
 	const char *ext = "png";
 	#else
@@ -1291,14 +1299,23 @@ void save_screen_shot(int automap_flag)
 		HUD_init_message(HM_DEFAULT, "%s '%s'", TXT_DUMPING_SCREEN, savename + strlen(SCRNS_DIR));
 
 #ifndef OGLES
-#ifdef DXX_XL_DEVELOPER_PROBE
-	glReadBuffer(GL_BACK);
+#ifdef DXX_XL_RUNTIME
+	xl_screenshot_readback_begin(&readback);
 #else
+	glGetIntegerv(GL_READ_BUFFER, &previous_read_buffer);
 	glReadBuffer(GL_FRONT);
 #endif
 #endif
 
 	write_bmp(savename,grd_curscreen->sc_w,grd_curscreen->sc_h);
+
+#ifndef OGLES
+#ifdef DXX_XL_RUNTIME
+	xl_screenshot_readback_end(&readback);
+#else
+	glReadBuffer(previous_read_buffer);
+#endif
+#endif
 
 	start_time();
 }

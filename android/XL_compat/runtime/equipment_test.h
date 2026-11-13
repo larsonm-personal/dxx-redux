@@ -1,5 +1,9 @@
 // Production-load equipment controls use poses and authored actions, never navigation
 #include "equipment.h"
+#include "robot_generator.h"
+#include "input_demo_world_trace.h"
+#include "input_demo_object_trace.h"
+#include "object_birth.h"
 #include "slow_motion_runtime.h"
 #include "../time_equipment.h"
 extern "C" {
@@ -407,6 +411,52 @@ static void equipment_mixed_order_controls(const xl_compat::Inventory &authored,
 	std::cout << "XL mixed producers passed: geometry order preserves selected actors, allocation slots and RNG\n";
 }
 
+static nlohmann::json equipment_pending_future()
+{
+	require(Game_suspended == 0, "Equipment continuation requires ordinary unsuspended simulation");
+	xl_equipment_state first{}, second{};
+	require(xl_equipment_state_get(0, &first) && xl_equipment_state_get(1, &second) && first.pending && second.pending,
+	        "Equipment continuation did not retain both pending morphs");
+	const int station = matcen_get_station_num(0);
+	require(station >= 0 && station < Num_fuelcenters && Station[station].Flag == 1,
+	        "Equipment continuation lost its pending ordinary robot maker");
+	const auto before = input_demo_native_xl_trace_snapshot();
+	const auto producers_before = input_demo_producer_trace_snapshot();
+	const auto remaining = Vclip[VCLIP_MORPHING_ROBOT].play_time / 2 - first.timer;
+	require(remaining > 0 && remaining <= INT32_MAX && first.timer == second.timer, "Equipment continuation has no shared remaining morph interval");
+	FrameTime = static_cast<fix>(remaining);
+	GameTime64 += FrameTime;
+	fuelcen_update_all();
+	auto objects = nlohmann::json::object(), rng = nlohmann::json::array();
+	// Advance the pending robot morph beyond the source's strict half-vclip bound
+	FrameTime = Vclip[VCLIP_MORPHING_ROBOT].play_time / 2 + 1;
+	GameTime64 += FrameTime;
+	fuelcen_update_all();
+	int energy = 0, ammo = 0, robots = 0;
+	for (int slot = 0; slot <= Highest_object_index; ++slot) {
+		const auto &object = Objects[slot];
+		if (object.type == OBJ_NONE) continue;
+		objects[std::to_string(slot)] = nlohmann::json(input_demo_object_trace_snapshot(object, slot));
+		if (object.type == OBJ_POWERUP && object.segnum == 20 && object.id == POW_ENERGY) ++energy;
+		if (object.type == OBJ_POWERUP && object.segnum == 23 && object.id == POW_VULCAN_AMMO) ++ammo;
+		if (object.type == OBJ_ROBOT && static_cast<unsigned char>(object.matcen_creator) == (station | 0x80)) ++robots;
+	}
+	require(energy == 1 && ammo == 1 && robots == 1, "Pending mixed producers did not create two ordinary items and one robot");
+	for (const auto stream : { D_RNG_SIM, D_RNG_FX }) {
+		unsigned state = 0;
+		require(d_rand_get_stream_state(stream, &state), "Cannot observe equipment continuation RNG");
+		rng.push_back({ int(stream), state, d_rand_get_stream_call_count(stream) });
+	}
+	return { { "native_before", before }, { "native_after", input_demo_native_xl_trace_snapshot() }, { "producers_before", producers_before }, { "producers_after", input_demo_producer_trace_snapshot() }, { "robots_level", int(Players[Player_num].num_robots_level) }, { "robots_total", int(Players[Player_num].num_robots_total) }, { "objects", objects }, { "births", xl_object_birth_snapshot() }, { "time", GameTime64 }, { "frame_time", FrameTime }, { "rng", rng } };
+}
+
+static void equipment_pending_compare(const nlohmann::json &expected, const nlohmann::json &actual)
+{
+	const auto wanted = native_continuation_semantic(expected), observed = native_continuation_semantic(actual);
+	if (wanted != observed) std::cerr << "Equipment continuation differences=" << nlohmann::json::diff(wanted, observed).dump() << '\n';
+	require(wanted == observed, "Pending equipment continuation changed native state, objects, births or RNG");
+}
+
 static int equipment_test(int argc, char **argv)
 {
 	try {
@@ -414,6 +464,20 @@ static int equipment_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / "missions";
+		if (!std::strcmp(find_arg_value(argc, argv, "-equipment-test"), "resume")) {
+			std::strcpy(Players[Player_num].callsign, "XLTest");
+			input_demo_set_skip_level_intro(1);
+			char pending[] = "equip-pending.sav";
+			require(state_restore_all_sub(pending, 0), "Cannot cold restore pending equipment");
+			std::ifstream input(root.parent_path() / "equipment-future.json");
+			nlohmann::json expected;
+			input >> expected;
+			const auto actual = equipment_pending_future();
+			native_continuation_receipt(root.parent_path() / "equipment-cold.json", actual);
+			equipment_pending_compare(expected, actual);
+			std::cout << "Pending equipment cold continuation: native items, owner state, births and SIM/FX RNG passed\n";
+			return 0;
+		}
 		const auto layout_argument = find_arg_value(argc, argv, "-layout-version");
 		const int version = layout_argument ? std::atoi(layout_argument) : 23;
 		const auto authored = write_equipment_fixture(root, version);
@@ -450,9 +514,30 @@ static int equipment_test(int argc, char **argv)
 		FrameTime = Vclip[VCLIP_MORPHING_ROBOT].play_time / 4;
 		fuelcen_update_all();
 		const auto captured = state(0);
+		const auto observed_equipment = xl_compat::equipment_snapshot();
+		const auto observed_calls = d_rand_get_call_count(), observed_fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+		require(observed_equipment == nlohmann::json(input_demo_native_xl_trace_snapshot().at("events").at("equipment")) &&
+		            observed_equipment == xl_compat::equipment_snapshot() &&
+		            observed_calls == d_rand_get_call_count() && observed_fx_calls == d_rand_get_stream_call_count(D_RNG_FX),
+		        "Pending equipment observation changed state or RNG");
+		std::cout << "Equipment raw observation: pending maker, selection flags and station links preserved without mutation or RNG\n";
+		// End the fixture's suspension assist before checkpointing ordinary producers
+		// Native level resume clears debug/endlevel suspension rather than saving it
+		Game_suspended = 0;
+		const auto pending_frame_time = FrameTime;
+		FrameTime = 0;
+		fuelcen_update_all();
+		FrameTime = pending_frame_time;
 		stop_time();
 		require(state_save_all_sub(pending, description), "pending equipment save failed");
 		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
+		const auto pending_future = equipment_pending_future();
+		native_continuation_receipt(root.parent_path() / "equipment-future.json", pending_future);
+		require(state_restore_all_sub(pending, 0), "Cannot warm restore pending equipment");
+		const auto pending_restored = equipment_pending_future();
+		native_continuation_receipt(root.parent_path() / "equipment-restored.json", pending_restored);
+		equipment_pending_compare(pending_future, pending_restored);
+		require(state_restore_all_sub(pending, 0), "Cannot restore equipment production baseline");
 		require(xl_equipment_trigger(20) == 2, "equipment disable failed");
 		FrameTime = i2f(20);
 		fuelcen_update_all();
@@ -478,6 +563,10 @@ static int equipment_test(int argc, char **argv)
 		require(items(20).size() == 1, "equipment did not replenish after pickup");
 		require(state_restore_all_sub(pending, 0) && state(0).timer == captured.timer && state(0).pending && items(20).empty(), "pending equipment disk restore differs");
 		require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0 && !xl_equipment_count() && !xl_equipment_trigger(20), "equipment state leaked into stock dispatch");
+		const auto stock_equipment = xl_compat::equipment_snapshot(), stock_producers = xl_compat::robot_generator_snapshot();
+		require(stock_equipment.at("makers").empty() && stock_equipment.at("station_links").empty() &&
+		            stock_producers.at("authored").empty() && stock_producers.at("implicit_flags") == 0 && stock_producers.at("ready_mask") == 0,
+		        "Raw equipment or producer ownership leaked into stock dispatch");
 		Difficulty_level = 0;
 		require(state_restore_all_sub(pending, 0) && xl_equipment_count() == 2 && state(0).pending && state(0).timer == captured.timer && Difficulty_level == 2, "stock-to-equipment restore lost pending state or difficulty");
 		equipment_reference_samples(root.parent_path(), authored, initial);

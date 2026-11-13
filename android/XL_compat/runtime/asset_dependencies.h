@@ -38,6 +38,18 @@ struct ObjectDependencies {
 	const bitmap_index *object_bitmaps = ObjBitmaps;
 	const ushort *object_bitmap_ptrs = ObjBitmapPtrs;
 	const int *dying_models = Dying_modelnums, *dead_models = Dead_modelnums;
+	int weapon_count = N_weapon_types, powerup_count = N_powerup_types;
+	int clip_count = Num_vclips, effect_count = Num_effects, wall_clip_count = Num_wall_anims;
+	int texture_count = NumTextures, object_bitmap_count = N_ObjBitmaps;
+	const weapon_info *weapon_data = Weapon_info;
+	const powerup_type_info *powerup_data = Powerup_info;
+	const vclip *clip_data = Vclip;
+	const eclip *effect_data = Effects;
+	const wclip *wall_clip_data = WallAnims;
+	const bitmap_index *texture_data = Textures;
+	const tmap_info *texture_info = TmapInfo;
+	const ubyte *sound_mappings = Sounds, *alternate_sounds = AltSounds;
+	int low_memory = GameArg.SysLowMem;
 	std::set<std::pair<int, bool>> robot_profiles;
 	std::set<int> robots, weapons, powerups, models, clips, bitmaps, sounds, textures, effects, wall_clips;
 	void sound(int id)
@@ -45,16 +57,18 @@ struct ObjectDependencies {
 		if (id == -1 || id == 255) return;
 		asset_require(id >= 0 && id < MAX_SOUNDS, "dependency references invalid sound ID");
 		// Pinned XlatSound treats the original table's 255 entries as silence
-		const int logical = GameArg.SysLowMem ? AltSounds[id] : id;
+		const int logical = low_memory ? alternate_sounds[id] : id;
 		if (logical == 255) return;
 		asset_require(logical >= 0 && logical < MAX_SOUNDS, "dependency references invalid alternate sound ID");
-		if (Sounds[logical] == 255) return;
-		const int resolved = digi_xlat_sound(id);
+		if (sound_mappings[logical] == 255) return;
+		const int resolved = digi_xlat_sound_from_tables(id, low_memory, sound_mappings, alternate_sounds);
 		if (resolved < 0 || resolved >= MAX_SOUND_FILES)
 			throw std::runtime_error("dependency references unmapped sound " + std::to_string(id));
 		const auto &s = GameSounds[resolved];
-		asset_require(s.data && s.data != reinterpret_cast<ubyte *>(-1) && s.length > 0,
-		              "dependency sound has no loaded sample");
+		if (!s.data || s.data == reinterpret_cast<ubyte *>(-1) || s.length <= 0)
+			throw std::runtime_error("dependency sound has no loaded sample: logical=" + std::to_string(id) +
+			                         " sample=" + std::to_string(resolved) + " live_sample=" + std::to_string(digi_xlat_sound(id)) +
+			                         " low_memory=" + std::to_string(low_memory));
 		sounds.insert(resolved);
 	}
 	void bitmap(int id)
@@ -70,9 +84,9 @@ struct ObjectDependencies {
 	void clip(int id)
 	{
 		if (id == -1) return;
-		asset_require(id >= 0 && id < Num_vclips, "object dependency references missing vclip");
+		asset_require(id >= 0 && id < clip_count, "object dependency references missing vclip");
 		if (!clips.insert(id).second) return;
-		const auto &v = Vclip[id];
+		const auto &v = clip_data[id];
 		sound(v.sound_num);
 		asset_require(v.num_frames > 0 && v.num_frames <= VCLIP_MAX_FRAMES, "object dependency has empty/invalid vclip");
 		for (int i = 0; i < v.num_frames; ++i) bitmap(v.frames[i].index);
@@ -80,9 +94,9 @@ struct ObjectDependencies {
 	void effect(int id)
 	{
 		if (id == -1) return;
-		asset_require(id >= 0 && id < Num_effects, "dependency references missing effect");
+		asset_require(id >= 0 && id < effect_count, "dependency references missing effect");
 		if (!effects.insert(id).second) return;
-		const auto &e = Effects[id];
+		const auto &e = effect_data[id];
 		asset_require(e.vc.num_frames > 0 && e.vc.num_frames <= VCLIP_MAX_FRAMES, "effect frame count invalid");
 		for (int i = 0; i < e.vc.num_frames; ++i) bitmap(e.vc.frames[i].index);
 		sound(e.sound_num);
@@ -94,18 +108,18 @@ struct ObjectDependencies {
 	}
 	void texture(int id)
 	{
-		asset_require(id >= 0 && id < NumTextures, "dependency references missing texture");
+		asset_require(id >= 0 && id < texture_count, "dependency references missing texture");
 		if (!textures.insert(id).second) return;
-		bitmap(Textures[id].index);
-		effect(TmapInfo[id].eclip_num);
-		if (TmapInfo[id].destroyed >= 0) texture(TmapInfo[id].destroyed);
+		bitmap(texture_data[id].index);
+		effect(texture_info[id].eclip_num);
+		if (texture_info[id].destroyed >= 0) texture(texture_info[id].destroyed);
 	}
 	void wall_clip(int id)
 	{
 		if (id == -1) return;
-		asset_require(id >= 0 && id < Num_wall_anims, "dependency references missing wall animation");
+		asset_require(id >= 0 && id < wall_clip_count, "dependency references missing wall animation");
 		if (!wall_clips.insert(id).second) return;
-		const auto &w = WallAnims[id];
+		const auto &w = wall_clip_data[id];
 		asset_require(w.num_frames > 0 && w.num_frames <= MAX_CLIP_FRAMES, "wall animation frame count invalid");
 		asset_require(w.play_time >= w.num_frames, "wall animation duration cannot represent every frame");
 		for (int i = 0; i < w.num_frames; ++i) texture(w.frames[i]);
@@ -131,10 +145,10 @@ struct ObjectDependencies {
 		asset_require(int(p.first_texture) + p.n_textures <= MAX_OBJ_BITMAPS, "model texture pointer range invalid");
 		for (int i = 0; i < p.n_textures; ++i) {
 			const int index = object_bitmap_ptrs[p.first_texture + i];
-			asset_require(index >= 0 && index < N_ObjBitmaps, "model texture references missing object bitmap");
+			asset_require(index >= 0 && index < object_bitmap_count, "model texture references missing object bitmap");
 			bitmap(object_bitmaps[index].index);
-			for (int e = 0; e < Num_effects; ++e)
-				if (Effects[e].changing_object_texture == index || Effects[e].changing_object_texture == p.first_texture + i) effect(e);
+			for (int e = 0; e < effect_count; ++e)
+				if (effect_data[e].changing_object_texture == index || effect_data[e].changing_object_texture == p.first_texture + i) effect(e);
 		}
 		model(dying_models[id]);
 		model(dead_models[id]);
@@ -143,9 +157,9 @@ struct ObjectDependencies {
 	void weapon(int id)
 	{
 		if (id == -1) return;
-		asset_require(id >= 0 && id < N_weapon_types, "object dependency references missing weapon");
+		asset_require(id >= 0 && id < weapon_count, "object dependency references missing weapon");
 		if (!weapons.insert(id).second) return;
-		const auto &w = Weapon_info[id];
+		const auto &w = weapon_data[id];
 		sound(w.flash_sound);
 		sound(w.robot_hit_sound);
 		sound(w.wall_hit_sound);
@@ -165,13 +179,14 @@ struct ObjectDependencies {
 		if (xl_time_equipment && xl_compat::time_equipment_powerup(id)) {
 			powerups.insert(id);
 			// Addon items use their owned image strips and the afterburner pickup sound
-			sound(Powerup_info[POW_AFTERBURNER].hit_sound);
+			asset_require(POW_AFTERBURNER < powerup_count, "time equipment requires the afterburner sound definition");
+			sound(powerup_data[POW_AFTERBURNER].hit_sound);
 			return;
 		}
-		asset_require(id >= 0 && id < N_powerup_types, "object dependency references missing powerup");
+		asset_require(id >= 0 && id < powerup_count, "object dependency references missing powerup");
 		if (powerups.insert(id).second) {
-			clip(Powerup_info[id].vclip_num);
-			sound(Powerup_info[id].hit_sound);
+			clip(powerup_data[id].vclip_num);
+			sound(powerup_data[id].hit_sound);
 		}
 	}
 	void contents(int type, int id)

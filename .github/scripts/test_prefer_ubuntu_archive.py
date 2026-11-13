@@ -21,16 +21,12 @@ class MirrorTests(unittest.TestCase):
         jobs = source.split("\njobs:\n", 1)[1]
         return {
             name: body
-            for name, body in re.findall(
-                r"(?ms)^  ([\w-]+):\n(.*?)(?=^  [\w-]+:|\Z)", jobs
-            )
+            for name, body in re.findall(r"(?ms)^  ([\w-]+):\n(.*?)(?=^  [\w-]+:|\Z)", jobs)
             if "sudo apt-get" in body
         }
 
     def assert_controller_before_apt(self, source, job_name):
-        match = re.search(
-            rf"(?ms)^  {re.escape(job_name)}:\n(.*?)(?=^  [\w-]+:|\Z)", source
-        )
+        match = re.search(rf"(?ms)^  {re.escape(job_name)}:\n(.*?)(?=^  [\w-]+:|\Z)", source)
         self.assertIsNotNone(match, f"Missing {job_name} job")
         job = match.group(1)
         call = "python3 control/.github/scripts/prefer_ubuntu_archive.py"
@@ -80,6 +76,62 @@ class MirrorTests(unittest.TestCase):
         ):
             with self.subTest(sources=sources), self.assertRaises(ValueError):
                 self.transform(helper.ORIGINAL, sources=sources)
+
+    def test_official_direct_sources_are_unchanged(self):
+        for scheme in (b"http", b"https"):
+            for host in (b"archive", b"security", b"azure.archive"):
+                for slash in (b"", b"/"):
+                    sources = SOURCES.replace(
+                        b"mirror+file:/etc/apt/apt-mirrors.txt",
+                        scheme + b"://" + host + b".ubuntu.com/ubuntu" + slash,
+                    )
+                    with self.subTest(sources=sources):
+                        self.assertEqual(self.transform(helper.ORIGINAL, sources), helper.ORIGINAL)
+        mixed = SOURCES + b"URIs: http://archive.ubuntu.com/ubuntu/\n"
+        with self.assertRaises(ValueError):
+            self.transform(helper.ORIGINAL, mixed)
+
+    def test_direct_sources_never_invoke_a_writer(self):
+        with tempfile.TemporaryDirectory() as directory:
+            mirrors, sources = Path(directory, "mirrors"), Path(directory, "sources")
+            direct = SOURCES.replace(b"mirror+file:/etc/apt/apt-mirrors.txt", b"http://archive.ubuntu.com/ubuntu")
+            mirrors.write_bytes(helper.ORIGINAL)
+            sources.write_bytes(direct)
+            with (
+                patch.object(helper, "MIRRORS", mirrors),
+                patch.object(helper, "SOURCES", sources),
+                patch.dict(helper.os.environ, ENV, clear=True),
+                patch.object(helper.platform, "freedesktop_os_release", return_value=RELEASE),
+                patch.object(helper.platform, "machine", return_value="x86_64"),
+                patch.object(helper.subprocess, "run") as run,
+            ):
+                helper.main()
+                run.assert_not_called()
+                self.assertEqual(sources.read_bytes(), direct)
+                self.assertEqual(mirrors.read_bytes(), helper.ORIGINAL)
+
+    def test_unmanaged_sources_never_write_or_block_apt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            mirrors, sources = Path(directory, "mirrors"), Path(directory, "sources")
+            unmanaged = SOURCES + b"URIs: https://custom.example/ubuntu\n"
+            mirrors.write_bytes(helper.ORIGINAL)
+            sources.write_bytes(unmanaged)
+            with (
+                patch.object(helper, "MIRRORS", mirrors),
+                patch.object(helper, "SOURCES", sources),
+                patch.dict(helper.os.environ, ENV, clear=True),
+                patch.object(helper.platform, "freedesktop_os_release", return_value=RELEASE),
+                patch.object(helper.platform, "machine", return_value="x86_64"),
+                patch.object(helper.subprocess, "run") as run,
+            ):
+                helper.main()
+                run.assert_not_called()
+                self.assertEqual(sources.read_bytes(), unmanaged)
+                self.assertEqual(mirrors.read_bytes(), helper.ORIGINAL)
+                # Host authorization remains mandatory even for the no-write path
+                with patch.dict(helper.os.environ, {"RUNNER_ENVIRONMENT": "self-hosted"}):
+                    with self.assertRaises(ValueError):
+                        helper.main()
 
     def test_non_hosted_non_noble_and_arm_runners_fail(self):
         for key in ENV:
@@ -156,18 +208,14 @@ class MirrorTests(unittest.TestCase):
         self.assertTrue(marker)
         job, next_marker, rest = suffix.partition("  execution-stack:\n")
         self.assertTrue(next_marker)
-        first_apt = next(
-            line for line in job.splitlines(keepends=True) if "sudo apt-get" in line
-        )
+        first_apt = next(line for line in job.splitlines(keepends=True) if "sudo apt-get" in line)
         variants = {
             "missing": job.replace(call, "# controller omitted"),
             "duplicate": job.replace(call, call + "\n          " + call),
             "late": job.replace("          " + call + "\n", "", 1).replace(
                 first_apt, first_apt + "          " + call + "\n", 1
             ),
-            "target": job.replace(
-                call, "python3 target/.github/scripts/prefer_ubuntu_archive.py"
-            ),
+            "target": job.replace(call, "python3 target/.github/scripts/prefer_ubuntu_archive.py"),
             "untrusted-ref": job.replace(
                 "ref: ${{ github.workflow_sha }}",
                 "ref: ${{ needs.plan.outputs.target_sha }}",
@@ -175,9 +223,7 @@ class MirrorTests(unittest.TestCase):
         }
         for name, altered in variants.items():
             with self.subTest(name=name), self.assertRaises(AssertionError):
-                self.assert_controller_before_apt(
-                    prefix + marker + altered + next_marker + rest, "pumo_stage"
-                )
+                self.assert_controller_before_apt(prefix + marker + altered + next_marker + rest, "pumo_stage")
 
     def test_new_apt_job_requires_explicit_review(self):
         nightly = (ROOT / ".github/workflows/nightly-tooling-sweep.yml").read_text()

@@ -2,10 +2,12 @@
 #define XL_EQUIPMENT_H
 #include <stdint.h>
 #ifdef __cplusplus
+#include <nlohmann/json_fwd.hpp>
 namespace xl_compat
 {
 struct Inventory;
-}
+nlohmann::json equipment_snapshot();
+} // namespace xl_compat
 void xl_equipment_load(const xl_compat::Inventory &level);
 extern "C" {
 #endif

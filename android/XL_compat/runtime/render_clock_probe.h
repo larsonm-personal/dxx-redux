@@ -297,7 +297,28 @@ static int xl_render_clock_probe(const char *path)
 	}
 }
 // Reuse the rendered probe's ordinary startup, renderer and private save directory
-static int xl_time_equipment_probe(const char *path, bool resume, int carried_level)
+static nlohmann::json xl_time_transition_state()
+{
+	nlohmann::json objects = nlohmann::json::object();
+	for (int slot = 0; slot < object_capacity(); ++slot)
+		if (Objects[slot].type != OBJ_NONE) objects[std::to_string(slot)] = input_demo_object_trace_snapshot(Objects[slot], slot);
+	const auto sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
+	const auto world = input_demo_world_trace_snapshot(), pool = input_demo_object_pool_trace_snapshot();
+	if (world != input_demo_world_trace_snapshot() || pool != input_demo_object_pool_trace_snapshot() ||
+	    sim != d_rand_get_call_count() || fx != d_rand_get_stream_call_count(D_RNG_FX))
+		throw std::runtime_error("Time continuation observation changed world, pool or RNG");
+	return { { "world", world }, { "pool", pool }, { "objects", objects } };
+}
+
+static void xl_time_transition_snapshot(const std::string &path)
+{
+	const auto snapshot = xl_time_transition_state();
+	std::ofstream out(path);
+	out << snapshot.dump(2) << '\n';
+	if (!out.good()) throw std::runtime_error("Cannot write native time continuation observation");
+}
+
+static int xl_time_equipment_probe(const char *path, bool resume, int carried_level, const char *transition)
 {
 	using nlohmann::ordered_json;
 	ordered_json proof = { { "schema", "xl-time-equipment-gameplay-v1" }, { "assisted", bool{ true } }, { "complete", bool{ false } }, { "cold_resume", resume }, { "position_assists", 0 }, { "inventory_assists", 0 }, { "assists_during_recording", 0 }, { "level_load_assists", 0 }, { "carried_level", carried_level }, { "events", ordered_json::array() } };
@@ -403,11 +424,81 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 			const auto audio = xl_compat::named_audio_diagnostics();
 			proof["events"].push_back({ { "event", event }, { "level", Current_level_num }, { "clocks", xl_runtime::slow_motion_diagnostics() }, { "energy", int(Players[Player_num].energy) }, { "shields", int(Players[Player_num].shields) }, { "elapsed_ms", SDL_GetTicks() }, { "audio", { { "slowdown", audio.at("slowdown") }, { "output_callbacks", audio.at("output_callbacks") }, { "output_frames", audio.at("output_frames") }, { "paused", audio.at("paused") }, { "resume_pending", audio.at("resume_pending") }, { "output_volume", audio.at("output_volume") }, { "effects_volume", audio.at("effects_volume") }, { "starts", audio.at("starts") }, { "completions", audio.at("completions") }, { "external_resources", audio.at("external_resources") } } }, { "position", { int(ConsoleObject->pos.x), int(ConsoleObject->pos.y), int(ConsoleObject->pos.z) } } });
 			require(write(), "Cannot write time-equipment progress");
-			// Developer screenshots read the back buffer before it is swapped/cleared
+			// Capture the rendered target before it is swapped or cleared
 			game_render_frame();
+			GLint read_framebuffer = 0, read_buffer = 0;
+			glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &read_framebuffer);
+			glGetIntegerv(GL_READ_BUFFER, &read_buffer);
 			save_screen_shot(0);
+			GLint restored_framebuffer = 0, restored_buffer = 0;
+			glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &restored_framebuffer);
+			glGetIntegerv(GL_READ_BUFFER, &restored_buffer);
+			require(glGetError() == GL_NO_ERROR && read_framebuffer == restored_framebuffer && read_buffer == restored_buffer,
+			        "Time-equipment screenshot failed or changed the read framebuffer/buffer");
 			gr_flip();
 		};
+		if (transition && resume) {
+			char error[256]{};
+			const auto before_rejection = xl_time_transition_state();
+			require(input_demo_load_replay_from_path_common(transition, INPUT_DEMO_GAME_D2, "d2", error, sizeof(error)), error);
+			const auto size = input_demo_replay_checkpoint_size();
+			const auto *bytes = input_demo_replay_checkpoint_data();
+			require(bytes && size, "Native continuation lacks its recorded checkpoint");
+			auto *different = PHYSFS_openWrite("time-transition-different.sav");
+			const uint8_t changed = bytes[size - 1] ^ 1;
+			require(different && PHYSFS_writeBytes(different, bytes, size - 1) == PHYSFS_sint64(size - 1) &&
+			            PHYSFS_writeBytes(different, &changed, 1) == 1 && PHYSFS_close(different),
+			        "Cannot write differing native checkpoint control");
+			unsigned rejected_restores = 0;
+			const auto rejected = [](void *context) -> int { ++*static_cast<unsigned *>(context); return 1; };
+			require(input_demo_start_loaded_replay_from_file_common("time-transition-different.sav", rejected, &rejected_restores) != 0 &&
+			            rejected_restores == 0 && before_rejection == xl_time_transition_state(),
+			        "A different native checkpoint reached restore or changed live world/RNG");
+			proof["native_save_rejections"] = 1;
+			require(input_demo_load_replay_from_path_common(transition, INPUT_DEMO_GAME_D2, "d2", error, sizeof(error)), error);
+			const std::string actual = std::string(path) + ".actual.json";
+			input_demo_replay_set_actual_result_path(actual.c_str());
+			struct restore_observer {
+				const char *path;
+				unsigned count = 0;
+			} native{ path };
+			const auto observe = [](void *context) -> int {
+				try {
+					auto &native = *static_cast<restore_observer *>(context);
+					++native.count;
+					xl_time_transition_snapshot(std::string(native.path) + ".native-restored.json");
+					return 1;
+				} catch (const std::exception &failure) {
+					std::fprintf(stderr, "%s\n", failure.what());
+					return 0;
+				}
+			};
+			const std::string trace = std::string(path) + ".replay.jsonl.gz";
+			require(input_demo_state_trace_start(trace.c_str(), "replay", "d2", Current_mission_filename, Current_level_num,
+			                                     Difficulty_level, "save_checkpoint", input_demo_replay_frame_count(), error, sizeof(error)),
+			        error);
+			require(!input_demo_start_loaded_replay_from_file_common("time-transition.sav", observe, &native) && native.count == 1,
+			        "Cannot resume time transition from its identical native disk save");
+			const std::string rng = std::string(path) + ".rng.jsonl";
+			require(input_demo_rng_trace_start_replay(rng.c_str(), error, sizeof(error)), error);
+			const auto count = input_demo_replay_frame_count();
+			proof["native_save_restores"] = native.count;
+			proof["recorded_frames"] = count;
+			proof["phase"] = "native_restored";
+			require(write(), "Cannot write native restore evidence before the normal replay exit");
+			while (input_demo_replay_is_loaded()) {
+				require(input_demo_step_replay_frame() || !input_demo_replay_is_loaded(), "Native time transition replay failed to advance");
+				if (input_demo_replay_is_loaded()) {
+					game_render_frame();
+					gr_flip();
+				}
+			}
+			require(count == 12 && input_demo_replay_actual_result_written(), "Native time continuation did not finish and write its result");
+			proof["native_save_restores"] = 1;
+			proof["recorded_frames"] = count;
+			proof["complete"] = bool{ true };
+			return write() ? 0 : 1;
+		}
 		char file[] = "time-equipment.sav", description[] = "Original time equipment";
 		if (resume) {
 			require(state_restore_all_sub(file, 0), "Cannot cold-restore earned time equipment");
@@ -524,7 +615,7 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 				vm_vec_negate(&inward);
 				vm_vector_2_matrix(&approach.orient, &inward, nullptr, nullptr);
 				pose(approach);
-				if (id == 48) {
+				if (id == 48 && !transition) {
 					proof["timing_ms"]["recording_start_entered"] = SDL_GetTicks();
 					require(input_demo_start_quick_recording_common() && input_demo_recorder_uses_environment(), "Cannot start ordinary XL pickup recording");
 					proof["timing_ms"]["recording_started"] = SDL_GetTicks();
@@ -557,7 +648,7 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 					frames(1, true);
 				require(Players[Player_num].flags & (id == 48 ? XL_PLAYER_FLAGS_SLOW_MOTION : XL_PLAYER_FLAGS_BULLET_TIME),
 				        "Normal collision did not collect the original time equipment");
-				if (id == 48) {
+				if (id == 48 && !transition) {
 					require(Objects[combat_target].type == OBJ_ROBOT && Objects[combat_target].signature == combat_signature && Objects[combat_target].shields > 0 &&
 					            Players[Player_num].primary_weapon == LASER_INDEX,
 					        "Original time-equipment combat target or starting laser changed");
@@ -630,6 +721,44 @@ static int xl_time_equipment_probe(const char *path, bool resume, int carried_le
 		const auto bullet_distance = movement("bullet_time_thrust");
 		require(bullet_distance > slow_distance, "Bullet time did not preserve faster ordinary player movement");
 		proof["same_input_movement"] = { { "frames", 24 }, { "slow_distance_raw", slow_distance }, { "bullet_distance_raw", bullet_distance } };
+		if (transition) {
+			require(HandleGameKey(KEY_ALTED | KEY_B), "Cannot reverse earned bullet-time transition");
+			frames(7);
+			const auto clock = xl_runtime::slow_motion_state().clocks[0];
+			require(clock.speed > 1 && clock.speed < 3 && clock.direction == -1, "Cold checkpoint requires a live fractional time transition");
+			require(input_demo_start_quick_recording_common() && input_demo_recorder_uses_environment(), "Cannot record time continuation inputs");
+			size_t size = 0;
+			const auto *bytes = input_demo_recorder_checkpoint_data(&size);
+			auto *save = PHYSFS_openWrite("time-transition.sav");
+			require(bytes && size && save && PHYSFS_writeBytes(save, bytes, size) == PHYSFS_sint64(size) && PHYSFS_close(save),
+			        "Cannot retain the ordinary recorder's native disk checkpoint");
+			xl_time_transition_snapshot(std::string(path) + ".native-before.json");
+			char error[256]{};
+			const std::string trace = std::string(path) + ".capture.jsonl.gz";
+			require(input_demo_state_trace_start(trace.c_str(), "record", "d2", Current_mission_filename, Current_level_num,
+			                                     Difficulty_level, "save_checkpoint", 12, error, sizeof(error)),
+			        error);
+			input_demo_trace_boundary("restored");
+			frames(12, true, true);
+			require(input_demo_stop_quick_recording_common(), "Cannot finish native time continuation recording");
+			proof["transition_checkpoint"] = { { "speed", clock.speed }, { "direction", clock.direction }, { "active", clock.active } };
+			proof["recorded_frames"] = 12;
+			proof["complete"] = bool{ true };
+			require(write(), "Cannot finish time transition proof");
+			std::string demo;
+			char **files = PHYSFS_enumerateFiles("input_demo_recordings/new");
+			for (char **entry = files; entry && *entry; ++entry) {
+				const std::string name(*entry);
+				if (name.size() > 9 && name.compare(name.size() - 9, 9, ".dximdemo") == 0) {
+					require(demo.empty(), "Time continuation requires an isolated single recording");
+					demo = std::string(PHYSFS_getWriteDir()) + "/input_demo_recordings/new/" + name;
+				}
+			}
+			PHYSFS_freeList(files);
+			require(!demo.empty(), "Time continuation recording was not exported");
+			const std::string warm = std::string(path) + ".warm";
+			return xl_time_equipment_probe(warm.c_str(), true, 0, demo.c_str());
+		}
 		if (resume) {
 			require(HandleGameKey(KEY_ALTED | KEY_B), "Normal time-off key was not consumed");
 			frames(84);

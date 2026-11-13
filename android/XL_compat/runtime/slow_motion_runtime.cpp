@@ -105,7 +105,10 @@ extern "C" void xl_input_demo_begin_input_clock(void)
 extern "C" int xl_input_demo_restore_cached_clock(uint32_t ticks)
 {
 	if (ticks > INT32_MAX) return 0;
-	cached_clock_held = false;
+	// Restore the consumed sample, not a running query during loader finalization
+	// The ordinary next input boundary releases it and samples uptime again
+	held_cached_clock = ticks;
+	cached_clock_held = true;
 	cached_clock_offset = int64_t(ticks) - timer_query_milliseconds();
 	return 1;
 }

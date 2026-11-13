@@ -3,6 +3,7 @@
 These inspect production wiring. They do not claim runtime coverage of Android
 rewind, input-demo replay, or the D2 secret-return transition.
 """
+
 import os
 from pathlib import Path
 import re
@@ -30,18 +31,29 @@ class SaveEpochContractTest(unittest.TestCase):
                     source = (ROOT / game / "main/state.c").read_text(encoding="utf-8")
                     player = (ROOT / game / "main/player.h").read_text(encoding="utf-8")
                     weapon = (ROOT / game / "main/weapon.h").read_text(encoding="utf-8")
-                    names = ("STATE_COMPATIBLE_VERSION", "THUMBNAIL_W", "THUMBNAIL_H",
-                             "THUMBNAIL_PALETTE_BYTES", "THUMBNAIL_RGB_BYTES",
-                             "STATE_THUMBNAIL_PALETTE_VERSION", "STATE_THUMBNAIL_RGB_VERSION",
-                             "DESC_LENGTH", "CALLSIGN_LEN", "MAX_PRIMARY_WEAPONS", "MAX_SECONDARY_WEAPONS")
-                    definitions = "\n".join(re.search(r"^#define\s+" + name + r"\b[^\n]*",
-                                                      source + player + weapon, re.M).group(0) for name in names)
+                    names = (
+                        "STATE_COMPATIBLE_VERSION",
+                        "THUMBNAIL_W",
+                        "THUMBNAIL_H",
+                        "THUMBNAIL_PALETTE_BYTES",
+                        "THUMBNAIL_RGB_BYTES",
+                        "STATE_THUMBNAIL_PALETTE_VERSION",
+                        "STATE_THUMBNAIL_RGB_VERSION",
+                        "DESC_LENGTH",
+                        "CALLSIGN_LEN",
+                        "MAX_PRIMARY_WEAPONS",
+                        "MAX_SECONDARY_WEAPONS",
+                    )
+                    definitions = "\n".join(
+                        re.search(r"^#define\s+" + name + r"\b[^\n]*", source + player + weapon, re.M).group(0)
+                        for name in names
+                    )
                     start = player.index("typedef struct player_rw {")
-                    record = player[start:player.index("} __pack__ player_rw;", start) + len("} __pack__ player_rw;")]
+                    record = player[start : player.index("} __pack__ player_rw;", start) + len("} __pack__ player_rw;")]
                     start = source.index("static int state_thumbnail_has_palette(")
-                    thumbnail = source[start:source.index("static grs_bitmap *state_read_thumbnail", start)]
+                    thumbnail = source[start : source.index("static grs_bitmap *state_read_thumbnail", start)]
                     start = source.index("int state_get_save_file_callsign(")
-                    reader = source[start:source.index("\n}\n", start) + 3]
+                    reader = source[start : source.index("\n}\n", start) + 3]
                     prefix = definitions + "\n" + record + '\n#include "save_epoch_runtime.h"\n' + thumbnail
                     prefix += '\nstatic char dgss_id[4] = "DGSS";\n'
                     header = work / "save_callsign_reader_under_test.h"
@@ -49,36 +61,65 @@ class SaveEpochContractTest(unittest.TestCase):
 
                     def compile_reader(body):
                         header.write_text(prefix + body, encoding="utf-8")
-                        result = subprocess.run([compiler, "-std=c99", "-Wall", "-Wextra", "-Werror",
-                                        "-I", str(work), "-I", str(SHARED),
-                                        str(ROOT / "android/tests/save_callsign_reader_fixture.c"),
-                                        "-o", str(binary)], capture_output=True, text=True,
-                                       env={**os.environ, "TMPDIR": str(work)}, timeout=20)
+                        result = subprocess.run(
+                            [
+                                compiler,
+                                "-std=c99",
+                                "-Wall",
+                                "-Wextra",
+                                "-Werror",
+                                "-I",
+                                str(work),
+                                "-I",
+                                str(SHARED),
+                                str(ROOT / "android/tests/save_callsign_reader_fixture.c"),
+                                "-o",
+                                str(binary),
+                            ],
+                            capture_output=True,
+                            text=True,
+                            env={**os.environ, "TMPDIR": str(work)},
+                            timeout=20,
+                        )
                         self.assertEqual(result.returncode, 0, result.stderr)
 
                     compile_reader(reader)
                     size = int(subprocess.check_output([str(binary), "--player-size"], text=True))
                     compatible = int(re.search(r"#define\s+STATE_COMPATIBLE_VERSION\s+(\d+)", source).group(1))
-                    version = int(re.search(r"#define SAVE_EPOCH_" + game.upper() + r"_VERSION (\d+)",
-                                            (SHARED / "save_epoch_format.h").read_text()).group(1))
+                    version = int(
+                        re.search(
+                            r"#define SAVE_EPOCH_" + game.upper() + r"_VERSION (\d+)",
+                            (SHARED / "save_epoch_format.h").read_text(),
+                        ).group(1)
+                    )
                     rgb_version = int(re.search(r"#define\s+STATE_THUMBNAIL_RGB_VERSION\s+(\d+)", source).group(1))
-                    palette_version = int(re.search(r"#define\s+STATE_THUMBNAIL_PALETTE_VERSION\s+(\d+)", source).group(1))
+                    palette_version = int(
+                        re.search(r"#define\s+STATE_THUMBNAIL_PALETTE_VERSION\s+(\d+)", source).group(1)
+                    )
                     format_source = (SHARED / "android_save_format.h").read_text(encoding="utf-8")
-                    supported_names = ("ANDROID_D1_SAVE_VERSION",) if game == "d1" else (
-                        "ANDROID_D2_SAVE_VERSION", "ANDROID_D1_IN_D2_SAVE_VERSION")
-                    supported_versions = tuple(int(re.search(r"#define\s+" + name + r"\s+(\d+)",
-                                                            format_source).group(1))
-                                               for name in supported_names)
+                    supported_names = (
+                        ("ANDROID_D1_SAVE_VERSION",)
+                        if game == "d1"
+                        else ("ANDROID_D2_SAVE_VERSION", "ANDROID_D1_IN_D2_SAVE_VERSION")
+                    )
+                    supported_versions = tuple(
+                        int(re.search(r"#define\s+" + name + r"\s+(\d+)", format_source).group(1))
+                        for name in supported_names
+                    )
                     maximum = ((1 << 63) - 1) // 128
 
                     def fixture(saved_version, epoch, endian="<", pathname=False):
-                        thumbnail_size = 15000 if saved_version >= rgb_version else 5000 + (768 if saved_version >= palette_version else 0)
+                        thumbnail_size = (
+                            15000
+                            if saved_version >= rgb_version
+                            else 5000 + (768 if saved_version >= palette_version else 0)
+                        )
                         mission = b"\0" * 8 + b"\1" + b"mission\0".ljust(128, b"\0") if pathname else b"\0" * 9
                         data = b"DGSS" + struct.pack(endian + "I", saved_version) + b"\0" * (20 + thumbnail_size)
                         data += struct.pack(endian + "I", 0) + mission + struct.pack(endian + "iii", 1, 2, 0)
                         offset = len(data)
                         if saved_version >= version:
-                            data += struct.pack(endian + "II", epoch & 0xffffffff, epoch >> 32)
+                            data += struct.pack(endian + "II", epoch & 0xFFFFFFFF, epoch >> 32)
                         return data + b"player\0".ljust(size, b"\0"), offset
 
                     def check(data, expected="player", success=True):
@@ -88,7 +129,9 @@ class SaveEpochContractTest(unittest.TestCase):
                         if success:
                             self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
                         else:
-                            self.assertEqual(result.returncode, 5, "pre-fix reader must reproduce the callsign mismatch")
+                            self.assertEqual(
+                                result.returncode, 5, "pre-fix reader must reproduce the callsign mismatch"
+                            )
 
                     for endian in ("<", ">"):
                         for pathname in (False, True):
@@ -97,28 +140,29 @@ class SaveEpochContractTest(unittest.TestCase):
                             for legacy in sorted(set((compatible, version - 1, version)) - set(supported_versions)):
                                 check(fixture(legacy, 0, endian, pathname)[0], "--reject")
                             for supported in supported_versions:
-                                for epoch in (0, 0xb5, (1 << 40) + 0x47, maximum):
+                                for epoch in (0, 0xB5, (1 << 40) + 0x47, maximum):
                                     check(fixture(supported, epoch, endian, pathname)[0])
                         check(fixture(max(supported_versions) + 1, 0, endian)[0], "--reject")
                         for supported in supported_versions:
-                            valid, offset = fixture(supported, 0xb5, endian)
+                            valid, offset = fixture(supported, 0xB5, endian)
                             for length in range(8):
-                                check(valid[:offset + length], "--reject")
+                                check(valid[: offset + length], "--reject")
                             for invalid in (maximum + 1, (1 << 64) - 1):
                                 check(fixture(supported, invalid, endian)[0], "--reject")
                             check(valid[:-1], "--reject")
 
                     # Removing only the nested epoch advance recreates the pre-fix
                     # offset bug without weakening production version validation.
-                    epoch_block = (r"\tif \(version >= SAVE_EPOCH_" + game.upper() +
-                                   r"_VERSION\) \{\n\t\tfix64 saved_epoch;\n"
-                                   r"\t\tif \(!save_epoch_read\(fp, swap, &saved_epoch\)\) \{\n"
-                                   r"\t\t\tPHYSFS_close\(fp\);\n\t\t\treturn 0;\n\t\t}\n\t}\n")
+                    epoch_block = (
+                        r"\tif \(version >= SAVE_EPOCH_" + game.upper() + r"_VERSION\) \{\n\t\tfix64 saved_epoch;\n"
+                        r"\t\tif \(!save_epoch_read\(fp, swap, &saved_epoch\)\) \{\n"
+                        r"\t\t\tPHYSFS_close\(fp\);\n\t\t\treturn 0;\n\t\t}\n\t}\n"
+                    )
                     old_reader, removed = re.subn(epoch_block, "", reader, count=1)
                     self.assertEqual(removed, 1, "must mutate exactly the production epoch-read block")
                     compile_reader(old_reader)
                     for supported in supported_versions:
-                        check(fixture(supported, 0xb5)[0], success=False)
+                        check(fixture(supported, 0xB5)[0], success=False)
                     check(fixture(version - 1, 0)[0], "--reject")
 
     def test_new_versions_are_explicit(self):
@@ -131,7 +175,7 @@ class SaveEpochContractTest(unittest.TestCase):
 
     def test_reader_checks_both_words_before_publishing(self):
         source = (SHARED / "save_epoch_runtime.h").read_text(encoding="utf-8")
-        reader = source[source.index("static inline int save_epoch_read"):]
+        reader = source[source.index("static inline int save_epoch_read") :]
         self.assertIn("PHYSFS_read(fp, words, sizeof(words), 1) != 1", reader)
         self.assertIn("words[0] = SWAPINT(words[0])", reader)
         self.assertIn("words[1] = SWAPINT(words[1])", reader)
@@ -142,11 +186,14 @@ class SaveEpochContractTest(unittest.TestCase):
         for game in ("d1", "d2"):
             with self.subTest(game=game):
                 source = (ROOT / game / "main/state.c").read_text(encoding="utf-8")
-                reader = source[source.index("int state_get_save_file_callsign("):]
+                reader = source[source.index("int state_get_save_file_callsign(") :]
                 guard = "version >= SAVE_EPOCH_" + game.upper() + "_VERSION"
-                self.assertRegex(reader, r"if \(" + guard + r"\) \{\s*fix64 saved_epoch;\s*"
-                                               r"if \(!save_epoch_read\(fp, swap, &saved_epoch\)\) \{\s*"
-                                               r"PHYSFS_close\(fp\);\s*return 0;\s*\}\s*\}")
+                self.assertRegex(
+                    reader,
+                    r"if \(" + guard + r"\) \{\s*fix64 saved_epoch;\s*"
+                    r"if \(!save_epoch_read\(fp, swap, &saved_epoch\)\) \{\s*"
+                    r"PHYSFS_close\(fp\);\s*return 0;\s*\}\s*\}",
+                )
                 self.assertLess(reader.index("PHYSFSX_readSXE32(fp, swap)"), reader.index(guard))
                 self.assertLess(reader.index(guard), reader.index("PHYSFS_read(fp, &pl_rw"))
                 self.assertLess(reader.index("PHYSFS_read(fp, &pl_rw"), reader.index("strncpy(callsign"))
@@ -160,14 +207,23 @@ class SaveEpochContractTest(unittest.TestCase):
                 end = source.index("// Start new game", start)
                 selection = source[start:end]
                 self.assertLess(selection.index("!save_epoch_read"), selection.index("GameTime64 ="))
-                self.assertLess(selection.index("android_rewind_restore_game_time64_active()"),
-                                selection.index("input_demo_replay_has_checkpoint()"))
+                self.assertLess(
+                    selection.index("android_rewind_restore_game_time64_active()"),
+                    selection.index("input_demo_replay_has_checkpoint()"),
+                )
                 self.assertRegex(selection, r"android_rewind_restore_game_time64\(\);\s*else\s*\{")
-                self.assertRegex(selection, r"GameTime64 = \(fix64\)tmptime32;\s*"
-                                           r"if \(input_demo_replay_has_checkpoint\(\)\)\s*"
-                                           r"GameTime64 \+= input_demo_replay_checkpoint_start_gt\(\);\s*else if")
+                self.assertRegex(
+                    selection,
+                    r"GameTime64 = \(fix64\)tmptime32;\s*"
+                    r"if \(input_demo_replay_has_checkpoint\(\)\)\s*"
+                    r"GameTime64 \+= input_demo_replay_checkpoint_start_gt\(\);\s*else if",
+                )
                 self.assertIn("GameTime64 = saved_epoch", selection)
-                expected_guard = "version >= SAVE_EPOCH_D2_VERSION && !secret_restore" if game == "d2" else "version >= SAVE_EPOCH_D1_VERSION"
+                expected_guard = (
+                    "version >= SAVE_EPOCH_D2_VERSION && !secret_restore"
+                    if game == "d2"
+                    else "version >= SAVE_EPOCH_D1_VERSION"
+                )
                 self.assertIn("else if (" + expected_guard + ")", selection)
                 # The header must reject before the restore marks the world replaced
                 self.assertLess(selection.index("!save_epoch_read"), selection.index("*world_changed = 1"))
@@ -176,11 +232,30 @@ class SaveEpochContractTest(unittest.TestCase):
         for game in ("d1", "d2"):
             with self.subTest(game=game):
                 source = (ROOT / game / "main/ai.c").read_text(encoding="utf-8")
-                self.assertRegex(source, r"Boss_dying_start_time = tmptime32 \? GameTime64 \+ \(fix64\)tmptime32 : 0;\s*"
-                                         r"if \(tmptime32 && !Boss_dying_start_time\)\s*Boss_dying_start_time = -1;")
+                epoch = r"GameTime64 \+ \(fix64\)tmptime32" if game == "d1" else r"state->epoch \+ tmptime32"
+                self.assertRegex(
+                    source,
+                    r"Boss_dying_start_time = tmptime32 \? " + epoch + r" : 0;\s*"
+                    r"if \(tmptime32 && !Boss_dying_start_time\)\s*Boss_dying_start_time = -1;",
+                )
+                if game == "d2":
+                    # Candidate decoding captures the incoming epoch; publication
+                    # must reject a changed live epoch before writing boss state
+                    prepare = source[
+                        source.index("ai_restore_candidate *ai_prepare_restore(") : source.index(
+                            "int ai_apply_restore("
+                        )
+                    ]
+                    apply = source[source.index("int ai_apply_restore(") :]
+                    self.assertIn("state->epoch = epoch;", prepare)
+                    self.assertRegex(apply, r"state->epoch != GameTime64\)\s*return 0;")
+                    self.assertLess(apply.index("state->epoch != GameTime64"), apply.index("Boss_dying_start_time ="))
         translated = (ROOT / "d2/main/d1_in_d2/d1_save_translate.c").read_text(encoding="utf-8")
-        self.assertRegex(translated, r"state->boss_dying_start_time = time_delta \? GameTime64 \+ \(fix64\) time_delta : 0;\s*"
-                                    r"if \(time_delta && !state->boss_dying_start_time\)\s*state->boss_dying_start_time = -1;")
+        self.assertRegex(
+            translated,
+            r"state->boss_dying_start_time = time_delta \? GameTime64 \+ \(fix64\) time_delta : 0;\s*"
+            r"if \(time_delta && !state->boss_dying_start_time\)\s*state->boss_dying_start_time = -1;",
+        )
 
     def test_writers_keep_zero_legacy_clock_before_authoritative_epoch(self):
         for game in ("d1", "d2"):
@@ -189,9 +264,12 @@ class SaveEpochContractTest(unittest.TestCase):
                 start = source.rfind("//Save GameTime", 0, source.index("!save_epoch_write(fp, GameTime64)"))
                 end = source.index("//Save player info", start)
                 header = source[start:end]
-                self.assertRegex(header, r"tmptime32 = 0;\s*"
-                                         r"PHYSFS_write\(fp, &tmptime32, sizeof\(fix\), 1\);\s*"
-                                         r"if \(!save_epoch_write\(fp, GameTime64\)\)")
+                self.assertRegex(
+                    header,
+                    r"tmptime32 = 0;\s*"
+                    r"PHYSFS_write\(fp, &tmptime32, sizeof\(fix\), 1\);\s*"
+                    r"if \(!save_epoch_write\(fp, GameTime64\)\)",
+                )
 
 
 if __name__ == "__main__":

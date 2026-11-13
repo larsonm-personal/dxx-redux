@@ -247,6 +247,8 @@ static void lava_lifecycle(const std::filesystem::path &output)
 	ConsoleObject->mtype.phys_info.velocity = {};
 	GameTime64 = i2f(20);
 	require(xl_fluid_restore(F1_0 / 8, 1), "Lava clock setup failed");
+	require(native_environment_observation().at("fluid_scrape_elapsed") == F1_0 / 8,
+	        "Environment observation lost the actual fluid scrape cadence");
 	char save[] = "lava-earned.sav", description[] = "XL lava clock";
 	stop_time();
 	require(state_save_all_sub(save, description), "Lava disk save failed");

@@ -5,6 +5,22 @@ This directory owns D2X-XL format knowledge and compatibility policy. Normal Ope
 Runtime feature and resource checks decide admission. Software-renderer builds
 retain explicit rejection because XL rendering is not implemented there
 
+Implementation placement is part of this boundary. XL admission/resource policy,
+candidate archive scopes, gameplay adapters, renderer helpers and XL developer
+target configuration belong here. Native `d2/` files should retain small calls at
+the real lifecycle boundary and native codec/state access where that is the single
+source of truth. Do not fork the native save decoder into an XL loader, export
+owner-private globals for diagnostics, or hide a large implementation in an
+included fragment merely to reduce the native line count. Shared stock/Android
+facilities with no XL-specific policy belong in `android/app/src/main/cpp/shared`.
+
+For retained mission preparation, `runtime/mission_prepare.h` describes the native
+descriptor/identity handle; `runtime/mission_resource_scope.c` owns isolated archive
+lookup and lease policy. Native descriptor parsing and mission publication remain
+in `mission.c`. Desktop screenshot framebuffer policy is in
+`runtime/screenshot_readback.c`; naming, image writing and native pause/resume stay
+in `arch/ogl/gr.c`. These separations do not complete the whole-save transaction.
+
 The current root working diff extends stationary single-player particle runtime
 support to bubbles, waterfall, snow and rain through the shared emitter and
 resource owners. The [particle record](evidence/particle-effects.md) gives the

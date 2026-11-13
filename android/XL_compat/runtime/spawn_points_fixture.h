@@ -29,7 +29,7 @@ static void write_spawn_points_fixture(const std::filesystem::path &root)
 			action(1, 28, 8 | 32, -1, 0, { { 84, 0 } });
 			action(2, 31, 8, 20000, 0, { target(3) });
 			action(3, 28, 8, 1000, 0, { { 92, 4 } });
-			action(4, 15, 8, -1, 2, { { 70, 0 } });
+			action(4, 15, 8 | 32, -1, 2, { { 70, 0 } });
 			action(5, 28, 8, 1000, 0, { { 30, 1 } });
 			const auto properties = source.game_offset - (source.vertices.size() + source.segments.size() * 6 + 910 + source.segments.size()) * 13;
 			patch(properties + source.walls[0].segment * 13, 0, 1);

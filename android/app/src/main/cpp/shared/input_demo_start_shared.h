@@ -62,5 +62,9 @@ int input_demo_start_replay_state_trace_and_log_paths(
     const input_demo_replay_cmdline_options *options, char *error,
     size_t error_size);
 int input_demo_start_loaded_replay_common(void);
+/* Reuse normal startup with the identical native disk save, restored once
+ * The observer runs immediately after native restore, before replay metadata */
+int input_demo_start_loaded_replay_from_file_common(const char *path,
+                                                    int (*restored)(void *), void *context);
 
 #endif

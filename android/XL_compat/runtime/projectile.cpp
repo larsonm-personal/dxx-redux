@@ -1,7 +1,9 @@
 #include <array>
+#include "motion_state.h"
 #include "projectile.h"
 #include "../projectile_history.h"
 #include "preview.h"
+#include <nlohmann/json.hpp>
 extern "C" {
 #include "inferno.h"
 #include "object.h"
@@ -52,6 +54,17 @@ extern "C" int xl_projectile_state_get(int owner, xl_projectile_state *result)
 	if (!result || !state) return 0;
 	*result = *state;
 	return 1;
+}
+nlohmann::json xl_compat::projectile_snapshot()
+{
+	auto rows = nlohmann::json::array();
+	for (int slot = 0; slot < MAX_OBJECTS; ++slot) {
+		const auto &state = states[slot];
+		// Zero-count storage cannot be read by any history consumer
+		if (!state.count) continue;
+		rows.push_back({ { "slot", slot }, { "owner", state.owner }, { "signature", state.signature }, { "count", state.count }, { "victims", state.victims } });
+	}
+	return rows;
 }
 extern "C" int xl_projectile_restore(const xl_projectile_state *input, int count, int apply)
 {

@@ -1,5 +1,8 @@
 #include "resource_validation.h"
 #include "input_demo_replay.h"
+#include "input_demo_state_trace.h"
+#include "input_demo_world_trace.h"
+#include "render_gameplay_view.h"
 #include "xl_animation_phase.h"
 #include "effects.h"
 #include <map>
@@ -63,6 +66,8 @@ static void arena_frame(const vms_vector *target)
 	if (arena_recording) input_demo_record_input_sample();
 	calc_game_time();
 	GameProcessFrame();
+	// Ordinary live draws discover the current view after simulation
+	require(render_update_game_view_automap(), "arena traversal has no initialized gameplay view");
 	require(!Player_is_dead && Players[Player_num].shields > 0, "arena traversal killed player");
 }
 
@@ -273,6 +278,8 @@ static int arena_test(int argc, char **argv)
 			std::strcpy(Players[Player_num].callsign, "XLWater");
 			input_demo_set_skip_level_intro(1);
 			require(input_demo_load_replay_from_path(replay, error, sizeof(error)), error);
+			const auto trace = (std::filesystem::path(PHYSFS_getWriteDir()) / "xl-water-replay.jsonl.gz").string();
+			require(input_demo_state_trace_start_replay(trace.c_str(), error, sizeof(error)), error);
 			const auto frames = input_demo_replay_frame_count();
 			require(frames > 0 && frames < 18000 && input_demo_start_loaded_replay() == 0, "cannot start bounded arena input replay");
 			require(!xl_preview_water_segment(ConsoleObject->segnum), "arena replay did not start at dry spawn");
@@ -324,8 +331,11 @@ static int arena_test(int argc, char **argv)
 		{
 			const int weapon_count = N_weapon_types;
 			N_weapon_types = 0;
+			require(xl_level_supported("rtarena.rl2", 0), "outgoing live weapon count changed retained candidate definitions");
+			xl_resource_baseline_capture();
 			const bool accepted = xl_level_supported("rtarena.rl2", 0) != 0;
 			N_weapon_types = weapon_count;
+			xl_resource_baseline_capture();
 			require(!accepted && std::strstr(xl_level_rejection(), "weapon"), "water exception bypassed common weapon dependencies");
 			require(xl_level_supported("rtarena.rl2", 0), "water resource dependency check did not recover");
 		}
@@ -638,6 +648,14 @@ static int arena_test(int argc, char **argv)
 		const int paused = game_is_time_paused();
 		require(input_demo_start_quick_recording_common() != 0 && game_is_time_paused() == paused,
 		        "cannot record water traversal without changing pause state");
+		{
+			char error[256]{};
+			const auto trace = (std::filesystem::path(PHYSFS_getWriteDir()) / "xl-water-capture.jsonl.gz").string();
+			require(input_demo_state_trace_start(trace.c_str(), "record", "d2", Current_mission_filename,
+			                                     Current_level_num, Difficulty_level, "save_checkpoint", 0, error, sizeof(error)),
+			        error);
+			input_demo_trace_boundary("restored");
+		}
 		arena_recording = true;
 		const int into = arena_traverse(187);
 		arena_recording = false;

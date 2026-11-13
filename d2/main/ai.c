@@ -84,6 +84,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 #include "rewind_file_compat.h"
+#include "object_decode_context.h"
 
 // ---------- John: These variables must be saved as part of gamesave. --------
 int             Ai_initialized = 0;
@@ -2123,7 +2124,7 @@ int ai_save_state(PHYSFS_file *fp)
 	return 1;
 }
 
-void ai_local_read_n_swap(ai_local *ail, int n, int swap, PHYSFS_file *fp)
+static void ai_local_read_n_swap(ai_local *ail, int n, int swap, PHYSFS_file *fp, fix64 epoch)
 {
 	int i;
 	
@@ -2144,11 +2145,11 @@ void ai_local_read_n_swap(ai_local *ail, int n, int swap, PHYSFS_file *fp)
 		ail->next_fire2 = PHYSFSX_readSXE32(fp, swap);
 		ail->player_awareness_time = PHYSFSX_readSXE32(fp, swap);
 		tmptime32 = PHYSFSX_readSXE32(fp, swap);
-		ail->time_player_seen = GameTime64 + (fix64)tmptime32;
+		ail->time_player_seen = epoch + (fix64)tmptime32;
 		tmptime32 = PHYSFSX_readSXE32(fp, swap);
-		ail->time_player_sound_attacked = GameTime64 + (fix64)tmptime32;
+		ail->time_player_sound_attacked = epoch + (fix64)tmptime32;
 		tmptime32 = PHYSFSX_readSXE32(fp, swap);
-		ail->next_misc_sound_time = GameTime64 + (fix64)tmptime32;
+		ail->next_misc_sound_time = epoch + (fix64)tmptime32;
 		ail->time_since_processed = PHYSFSX_readSXE32(fp, swap);
 		
 		for (j = 0; j < MAX_SUBMODELS; j++)
@@ -2173,7 +2174,7 @@ void point_seg_read_n_swap(point_seg *ps, int n, int swap, PHYSFS_file *fp)
 	}
 }
 
-void ai_cloak_info_read_n_swap(ai_cloak_info *ci, int n, int swap, PHYSFS_file *fp)
+static void ai_cloak_info_read_n_swap(ai_cloak_info *ci, int n, int swap, PHYSFS_file *fp, fix64 epoch)
 {
 	int i;
 	fix tmptime32 = 0;
@@ -2181,7 +2182,7 @@ void ai_cloak_info_read_n_swap(ai_cloak_info *ci, int n, int swap, PHYSFS_file *
 	for (i = 0; i < n; i++, ci++)
 	{
 		tmptime32 = PHYSFSX_readSXE32(fp, swap);
-		ci->last_time = GameTime64 + (fix64)tmptime32;
+		ci->last_time = epoch + (fix64)tmptime32;
 		ci->last_segment = PHYSFSX_readSXE32(fp, swap);
 		PHYSFSX_readVectorX(fp, &ci->last_position, swap);
 	}
@@ -2200,291 +2201,240 @@ static int ai_restore_advanced_exactly(PHYSFS_file *fp, PHYSFS_sint64 start,
 
 static int ai_restore_preflight_s32(PHYSFS_file *fp, int swap, int *value)
 {
-	PHYSFS_sint64 start = PHYSFS_tell(fp);
-	*value = PHYSFSX_readSXE32(fp, swap);
-	return ai_restore_advanced_exactly(fp, start, sizeof(int));
+	PHYSFS_sint32 raw;
+	if (PHYSFS_read(fp, &raw, sizeof(raw), 1) != 1) return 0;
+	*value = swap ? SWAPINT(raw) : raw;
+	return 1;
 }
 
 static int ai_restore_preflight_s16(PHYSFS_file *fp, int swap, short *value)
 {
-	PHYSFS_sint64 start = PHYSFS_tell(fp);
-	*value = (short)PHYSFSX_readSXE16(fp, swap);
-	return ai_restore_advanced_exactly(fp, start, sizeof(short));
+	PHYSFS_sint16 raw;
+	if (PHYSFS_read(fp, &raw, sizeof(raw), 1) != 1) return 0;
+	*value = swap ? SWAPSHORT(raw) : raw;
+	return 1;
 }
 
-static int ai_restore_preflight_vector(PHYSFS_file *fp, int swap)
+static int ai_restore_bytes_available(PHYSFS_file *fp, PHYSFS_uint64 bytes)
 {
-	vms_vector value;
-	PHYSFS_sint64 start = PHYSFS_tell(fp);
-	PHYSFSX_readVectorX(fp, &value, swap);
-	return ai_restore_advanced_exactly(fp, start, sizeof(value));
+	const PHYSFS_sint64 position = PHYSFS_tell(fp), length = PHYSFS_fileLength(fp);
+	return position >= 0 && length >= position && bytes <= (PHYSFS_uint64)(length - position);
 }
 
-static int ai_restore_preflight(PHYSFS_file *fp, int version, int swap)
+static int ai_restore_read_le_vector(PHYSFS_file *fp, vms_vector *value)
 {
-	PHYSFS_sint64 start = PHYSFS_tell(fp);
+	int x, y, z;
+	/* These appended vectors use explicit little endian even in swapped saves */
+	if (!ai_restore_preflight_s32(fp, INTEL_INT(1) != 1, &x) ||
+	    !ai_restore_preflight_s32(fp, INTEL_INT(1) != 1, &y) ||
+	    !ai_restore_preflight_s32(fp, INTEL_INT(1) != 1, &z)) return 0;
+	value->x = x;
+	value->y = y;
+	value->z = z;
+	return 1;
+}
+
+/* Retain the decoded candidate until the enclosing save transaction can publish it */
+struct ai_restore_candidate {
+	int version, capacity, highest_segment;
+	fix64 epoch;
+	int initialized, agitation;
+	ai_local *locals;
+	point_seg points[MAX_POINT_SEGS];
+	ai_cloak_info cloaks[MAX_AI_CLOAK_INFO];
+	int boss[12];
+	int escort[5];
+	ubyte stolen[MAX_STOLEN_ITEMS];
+	int free_point, teleport_count, gate_count, awareness_count;
+	short gates[MAX_BOSS_TELEPORT_SEGS], teleports[MAX_BOSS_TELEPORT_SEGS];
+	awareness_event awareness[MAX_AWARENESS_EVENTS];
+	vms_vector believed, last_fired;
+	int believed_segment;
+};
+
+void ai_discard_restore(ai_restore_candidate *state)
+{
+	if (!state) return;
+	free(state->locals);
+	free(state);
+}
+
+ai_restore_candidate *ai_prepare_restore(PHYSFS_file *fp, int version, int swap,
+                                         int capacity, int highest_segment, fix64 epoch)
+{
+	const PHYSFS_sint64 start = PHYSFS_tell(fp);
 	PHYSFS_sint64 block_start;
-	ai_local *locals = NULL;
-	point_seg *points = NULL;
-	ai_cloak_info *cloaks = NULL;
-	ubyte stolen_items[MAX_STOLEN_ITEMS];
-	int value;
-	int gate_count = 0;
-	int teleport_count = 0;
+	ai_restore_candidate *state = NULL;
 	int i;
-	int ok = 0;
-	int stage = 1;
-
-	if (start < 0)
-		return 0;
-	locals = (ai_local *)malloc((size_t)object_capacity() * sizeof(*locals));
-	points = (point_seg *)malloc((size_t)MAX_POINT_SEGS * sizeof(*points));
-	cloaks = (ai_cloak_info *)malloc((size_t)MAX_AI_CLOAK_INFO * sizeof(*cloaks));
-	if (!locals || !points || !cloaks)
-		goto done;
-	stage = 2;
-	if (!ai_restore_preflight_s32(fp, swap, &value) ||
-	    !ai_restore_preflight_s32(fp, swap, &value))
-		goto done;
-	stage = 3;
+	/* Native records contain signed 32-bit offsets from the candidate epoch */
+	if (start < 0 || capacity < 1 || capacity > MAX_OBJECTS ||
+	    highest_segment < 0 || highest_segment >= MAX_SEGMENTS ||
+	    !object_decode_epoch_valid(epoch))
+		return NULL;
+	state = (ai_restore_candidate *)calloc(1, sizeof(*state));
+	if (!state) return NULL;
+	state->locals = (ai_local *)calloc((size_t)capacity, sizeof(*state->locals));
+	if (!state->locals) goto fail;
+	state->version = version;
+	state->capacity = capacity;
+	state->highest_segment = highest_segment;
+	state->epoch = epoch;
+#define AI_READ(value) do { if (!ai_restore_preflight_s32(fp, swap, &(value))) goto fail; } while (0)
+	AI_READ(state->initialized);
+	AI_READ(state->agitation);
 	block_start = PHYSFS_tell(fp);
-	ai_local_read_n_swap(locals, object_capacity(), swap, fp);
-	if (!ai_restore_advanced_exactly(fp, block_start,
-	                                (PHYSFS_uint64)object_capacity() * 200u))
-		goto done;
-	stage = 4;
+	/* The legacy byte reader aborts on EOF; reject a short table before using it */
+	if (!ai_restore_bytes_available(fp, (PHYSFS_uint64)capacity * 200u)) goto fail;
+	ai_local_read_n_swap(state->locals, capacity, swap, fp, epoch);
+	if (!ai_restore_advanced_exactly(fp, block_start, (PHYSFS_uint64)capacity * 200u)) goto fail;
 	block_start = PHYSFS_tell(fp);
-	point_seg_read_n_swap(points, MAX_POINT_SEGS, swap, fp);
-	if (!ai_restore_advanced_exactly(fp, block_start,
-	                                (PHYSFS_uint64)MAX_POINT_SEGS * 16u))
-		goto done;
-	stage = 5;
+	if (!ai_restore_bytes_available(fp, (PHYSFS_uint64)MAX_POINT_SEGS * 16u)) goto fail;
+	point_seg_read_n_swap(state->points, MAX_POINT_SEGS, swap, fp);
+	if (!ai_restore_advanced_exactly(fp, block_start, (PHYSFS_uint64)MAX_POINT_SEGS * 16u)) goto fail;
 	block_start = PHYSFS_tell(fp);
-	ai_cloak_info_read_n_swap(cloaks, MAX_AI_CLOAK_INFO, swap, fp);
-	if (!ai_restore_advanced_exactly(fp, block_start,
-	                                (PHYSFS_uint64)MAX_AI_CLOAK_INFO * 20u))
-		goto done;
-	stage = 6;
-	for (i = 0; i < 12; i++)
-		if (!ai_restore_preflight_s32(fp, swap, &value))
-			goto done;
+	if (!ai_restore_bytes_available(fp, (PHYSFS_uint64)MAX_AI_CLOAK_INFO * 20u)) goto fail;
+	ai_cloak_info_read_n_swap(state->cloaks, MAX_AI_CLOAK_INFO, swap, fp, epoch);
+	if (!ai_restore_advanced_exactly(fp, block_start, (PHYSFS_uint64)MAX_AI_CLOAK_INFO * 20u)) goto fail;
+	for (i = 0; i < 12; ++i) AI_READ(state->boss[i]);
 	if (version >= 8) {
-		stage = 7;
-		for (i = 0; i < 5; i++)
-			if (!ai_restore_preflight_s32(fp, swap, &value))
-				goto done;
-		block_start = PHYSFS_tell(fp);
-		PHYSFS_read(fp, stolen_items, sizeof(stolen_items), 1);
-		if (!ai_restore_advanced_exactly(fp, block_start, sizeof(stolen_items)))
-			goto done;
+		for (i = 0; i < 5; ++i) AI_READ(state->escort[i]);
+		if (PHYSFS_read(fp, state->stolen, sizeof(state->stolen), 1) != 1) goto fail;
 	}
 	if (version >= 15) {
-		stage = 8;
-		if (!ai_restore_preflight_s32(fp, swap, &value) ||
-		    value < 0 || value > MAX_POINT_SEGS)
-			goto done;
+		AI_READ(state->free_point);
+		if (state->free_point < 0 || state->free_point > MAX_POINT_SEGS) goto fail;
 	}
 	if (version >= 21) {
-		stage = 9;
-		if (!ai_restore_preflight_s32(fp, swap, &teleport_count) ||
-		    !ai_restore_preflight_s32(fp, swap, &gate_count) ||
-		    teleport_count < 0 || teleport_count > MAX_BOSS_TELEPORT_SEGS ||
-		    gate_count < 0 || gate_count > MAX_BOSS_TELEPORT_SEGS)
-			goto done;
-		for (i = 0; i < gate_count; i++) {
-			short segnum;
-			if (!ai_restore_preflight_s16(fp, swap, &segnum) ||
-			    segnum < 0 || segnum > Highest_segment_index)
-				goto done;
-		}
-		for (i = 0; i < teleport_count; i++) {
-			short segnum;
-			if (!ai_restore_preflight_s16(fp, swap, &segnum) ||
-			    segnum < 0 || segnum > Highest_segment_index)
-				goto done;
-		}
+		AI_READ(state->teleport_count);
+		AI_READ(state->gate_count);
+		if (state->teleport_count < 0 || state->teleport_count > MAX_BOSS_TELEPORT_SEGS ||
+		    state->gate_count < 0 || state->gate_count > MAX_BOSS_TELEPORT_SEGS) goto fail;
+		for (i = 0; i < state->gate_count; ++i)
+			if (!ai_restore_preflight_s16(fp, swap, &state->gates[i]) ||
+			    state->gates[i] < 0 || state->gates[i] > highest_segment) goto fail;
+		for (i = 0; i < state->teleport_count; ++i)
+			if (!ai_restore_preflight_s16(fp, swap, &state->teleports[i]) ||
+			    state->teleports[i] < 0 || state->teleports[i] > highest_segment) goto fail;
 	}
 	if (version >= 23) {
-		stage = 10;
-		if (!ai_restore_preflight_s32(fp, swap, &value) ||
-		    value < 0 || value > MAX_AWARENESS_EVENTS)
-			goto done;
-		for (i = 0; i < value; i++) {
-			short segnum;
-			short type;
-			if (!ai_restore_preflight_s16(fp, swap, &segnum) ||
-			    !ai_restore_preflight_s16(fp, swap, &type) ||
-			    !ai_restore_preflight_vector(fp, swap) ||
-			    segnum < 0 || segnum > Highest_segment_index ||
-			    type < PA_NEARBY_ROBOT_FIRED ||
-			    type > PA_WEAPON_ROBOT_COLLISION)
-				goto done;
+		AI_READ(state->awareness_count);
+		if (state->awareness_count < 0 || state->awareness_count > MAX_AWARENESS_EVENTS) goto fail;
+		for (i = 0; i < state->awareness_count; ++i) {
+			awareness_event *event = &state->awareness[i];
+			if (!ai_restore_preflight_s16(fp, swap, &event->segnum) ||
+			    !ai_restore_preflight_s16(fp, swap, &event->type)) goto fail;
+			/* The appended awareness vectors use the explicit little-endian writer */
+			if (!ai_restore_read_le_vector(fp, &event->pos) ||
+			    event->segnum < 0 || event->segnum > highest_segment ||
+			    event->type < PA_NEARBY_ROBOT_FIRED || event->type > PA_WEAPON_ROBOT_COLLISION) goto fail;
 		}
-		if (!ai_restore_preflight_vector(fp, swap) ||
-		    !ai_restore_preflight_s32(fp, swap, &value) ||
-		    value < -1 || value > Highest_segment_index ||
-		    !ai_restore_preflight_vector(fp, swap))
-			goto done;
+		if (!ai_restore_read_le_vector(fp, &state->believed)) goto fail;
+		AI_READ(state->believed_segment);
+		if (state->believed_segment < -1 || state->believed_segment > highest_segment) goto fail;
+		if (!ai_restore_read_le_vector(fp, &state->last_fired)) goto fail;
 	}
-	ok = 1;
-
-done:
-	if (!ok)
-		con_printf(CON_URGENT, "AI restore preflight rejected D2 state at stage %d\n", stage);
-	free(cloaks);
-	free(points);
-	free(locals);
-	if (!PHYSFS_seek(fp, start))
-		return 0;
-	return ok;
+#undef AI_READ
+	return state;
+fail:
+	con_printf(CON_URGENT, "AI restore rejected D2 candidate before publication\n");
+	ai_discard_restore(state);
+	PHYSFS_seek(fp, start);
+	return NULL;
 }
 
-int ai_restore_state(PHYSFS_file *fp, int version, int swap)
+int ai_apply_restore(const ai_restore_candidate *state)
 {
-	fix tmptime32 = 0;
 	int i;
-
-	if (!ai_restore_preflight(fp, version, swap))
+	fix tmptime32;
+	if (!state || state->capacity != object_capacity() ||
+	    state->highest_segment != Highest_segment_index || state->epoch != GameTime64)
 		return 0;
-
-	Ai_initialized = PHYSFSX_readSXE32(fp, swap);
-	Overall_agitation = PHYSFSX_readSXE32(fp, swap);
-	ai_local_read_n_swap(Ai_local_info, object_capacity(), swap, fp);
-	point_seg_read_n_swap(Point_segs, MAX_POINT_SEGS, swap, fp);
-	ai_cloak_info_read_n_swap(Ai_cloak_info, MAX_AI_CLOAK_INFO, swap, fp);
-	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Boss_cloak_start_time = GameTime64 + (fix64)tmptime32;
-	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Boss_cloak_end_time = GameTime64 + (fix64)tmptime32;
-	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Last_teleport_time = GameTime64 + (fix64)tmptime32;
-	Boss_teleport_interval = PHYSFSX_readSXE32(fp, swap);
-	Boss_cloak_interval = PHYSFSX_readSXE32(fp, swap);
-	Boss_cloak_duration = PHYSFSX_readSXE32(fp, swap);
-	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Last_gate_time = GameTime64 + (fix64)tmptime32;
-	Gate_interval = PHYSFSX_readSXE32(fp, swap);
-	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Boss_dying_start_time = tmptime32 ? GameTime64 + (fix64)tmptime32 : 0;
-	if (tmptime32 && !Boss_dying_start_time)
-		Boss_dying_start_time = -1;
-	Boss_dying = PHYSFSX_readSXE32(fp, swap);
-	Boss_dying_sound_playing = PHYSFSX_readSXE32(fp, swap);
+	Ai_initialized = state->initialized;
+	Overall_agitation = state->agitation;
+	/* The original D1 fields have their own extension owner, absent from this block */
+	for (i = 0; i < state->capacity; ++i) {
+		const d1_ai_local_storage original = Ai_local_info[i].d1_saved;
+		Ai_local_info[i] = state->locals[i];
+		Ai_local_info[i].d1_saved = original;
+	}
+	memcpy(Point_segs, state->points, sizeof(state->points));
+	memcpy(Ai_cloak_info, state->cloaks, sizeof(state->cloaks));
+	Boss_cloak_start_time = state->epoch + state->boss[0];
+	Boss_cloak_end_time = state->epoch + state->boss[1];
+	Last_teleport_time = state->epoch + state->boss[2];
+	Boss_teleport_interval = state->boss[3];
+	Boss_cloak_interval = state->boss[4];
+	Boss_cloak_duration = state->boss[5];
+	Last_gate_time = state->epoch + state->boss[6];
+	Gate_interval = state->boss[7];
+	tmptime32 = state->boss[8];
+	Boss_dying_start_time = tmptime32 ? state->epoch + tmptime32 : 0;
+	if (tmptime32 && !Boss_dying_start_time) Boss_dying_start_time = -1;
+	Boss_dying = state->boss[9];
+	Boss_dying_sound_playing = state->boss[10];
 	// Before state version 35, the writer read four bytes from a byte global
 	// Preserve that reader's signed-byte interpretation of legacy padding
-	if (version < 35)
-		Boss_dying_sound_playing = (sbyte)Boss_dying_sound_playing;
-	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Boss_hit_time = d1_in_d2_ai_restore_boss_hit_time(tmptime32);
+	if (state->version < 35) Boss_dying_sound_playing = (sbyte)Boss_dying_sound_playing;
+	/* D1 boss damage/history publication belongs to commit, never preparation */
+	Boss_hit_time = d1_in_d2_ai_restore_boss_hit_time(state->boss[11]);
 	// -- MK, 10/21/95, unused! -- PHYSFS_read(fp, &Boss_been_hit, sizeof(int), 1);
-
-	if (version >= 8) {
-		Escort_kill_object = PHYSFSX_readSXE32(fp, swap);
-		tmptime32 = PHYSFSX_readSXE32(fp, swap);
-		Escort_last_path_created = GameTime64 + (fix64)tmptime32;
-		Escort_goal_object = PHYSFSX_readSXE32(fp, swap);
-		Escort_special_goal = PHYSFSX_readSXE32(fp, swap);
-		Escort_goal_index = PHYSFSX_readSXE32(fp, swap);
-		PHYSFS_read(fp, &Stolen_items, sizeof(Stolen_items[0]) * MAX_STOLEN_ITEMS, 1);
-
+	if (state->version >= 8) {
+		Escort_kill_object = state->escort[0];
+		Escort_last_path_created = state->epoch + state->escort[1];
+		Escort_goal_object = state->escort[2];
+		Escort_special_goal = state->escort[3];
+		Escort_goal_index = state->escort[4];
+		memcpy(Stolen_items, state->stolen, sizeof(state->stolen));
 		// rebirth uses UINT8_MAX for ESCORT_GOAL_UNSPECIFIED
-		if (Escort_goal_object == 255)
-			Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
-		if (Escort_special_goal == 255)
-			Escort_special_goal = ESCORT_GOAL_UNSPECIFIED;
+		if (Escort_goal_object == 255) Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+		if (Escort_special_goal == 255) Escort_special_goal = ESCORT_GOAL_UNSPECIFIED;
 	} else {
-		int i;
-
 		Escort_kill_object = -1;
 		Escort_last_path_created = 0;
 		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 		Escort_special_goal = -1;
 		Escort_goal_index = -1;
-
-		for (i=0; i<MAX_STOLEN_ITEMS; i++) {
-			Stolen_items[i] = 255;
-		}
-
+		memset(Stolen_items, 255, sizeof(Stolen_items));
 	}
-
-	if (version >= 15) {
-		int temp;
-		temp = PHYSFSX_readSXE32(fp, swap);
-		if (temp < 0 || temp > MAX_POINT_SEGS)
-			return 0;
-		Point_segs_free_ptr = &Point_segs[temp];
-	} else
+	if (state->version >= 15)
+		Point_segs_free_ptr = &Point_segs[state->free_point];
+	else
 		ai_reset_all_paths();
-
-	if (version >= 21) {
-		int i;
-
-		Num_boss_teleport_segs = PHYSFSX_readSXE32(fp, swap);
-		Num_boss_gate_segs = PHYSFSX_readSXE32(fp, swap);
-		if (Num_boss_teleport_segs < 0 || Num_boss_teleport_segs > MAX_BOSS_TELEPORT_SEGS ||
-			Num_boss_gate_segs < 0 || Num_boss_gate_segs > MAX_BOSS_TELEPORT_SEGS)
-			return 0;
-
-		for (i = 0; i < Num_boss_gate_segs; i++) {
-			Boss_gate_segs[i] = PHYSFSX_readSXE16(fp, swap);
-			if (Boss_gate_segs[i] < 0 || Boss_gate_segs[i] > Highest_segment_index)
-				return 0;
-		}
-
-		for (i = 0; i < Num_boss_teleport_segs; i++) {
-			Boss_teleport_segs[i] = PHYSFSX_readSXE16(fp, swap);
-			if (Boss_teleport_segs[i] < 0 ||
-			    Boss_teleport_segs[i] > Highest_segment_index)
-				return 0;
-		}
+	if (state->version >= 21) {
+		Num_boss_teleport_segs = state->teleport_count;
+		Num_boss_gate_segs = state->gate_count;
+		memcpy(Boss_gate_segs, state->gates, (size_t)state->gate_count * sizeof(*state->gates));
+		memcpy(Boss_teleport_segs, state->teleports, (size_t)state->teleport_count * sizeof(*state->teleports));
 	}
-
-	if (version >= 23) {
-		int saved_num_awareness_events = PHYSFSX_readSXE32(fp, swap);
-		if (saved_num_awareness_events < 0 || saved_num_awareness_events > MAX_AWARENESS_EVENTS)
-			return 0;
-
-		Num_awareness_events = 0;
-		for (i = 0; i < saved_num_awareness_events; i++) {
-			awareness_event event;
-
-			event.segnum = (short)PHYSFSX_readSXE16(fp, swap);
-			event.type = (short)PHYSFSX_readSXE16(fp, swap);
-			/* The appended awareness vectors use the explicit little-endian writer */
-			PHYSFSX_readVector(&event.pos, fp);
-			if (event.segnum < 0 || event.segnum > Highest_segment_index ||
-			    event.type < PA_NEARBY_ROBOT_FIRED ||
-			    event.type > PA_WEAPON_ROBOT_COLLISION)
-				return 0;
-			if (Num_awareness_events < MAX_AWARENESS_EVENTS)
-				Awareness_events[Num_awareness_events++] = event;
-		}
-		PHYSFSX_readVector(&Believed_player_pos, fp);
-		Believed_player_seg = PHYSFSX_readSXE32(fp, swap);
-		if (Believed_player_seg < -1 || Believed_player_seg > Highest_segment_index)
-			return 0;
-		PHYSFSX_readVector(&Last_fired_upon_player_pos, fp);
+	if (state->version >= 23) {
+		Num_awareness_events = state->awareness_count;
+		memcpy(Awareness_events, state->awareness, (size_t)state->awareness_count * sizeof(*state->awareness));
+		Believed_player_pos = state->believed;
+		Believed_player_seg = state->believed_segment;
+		Last_fired_upon_player_pos = state->last_fired;
 	} else {
 		Num_awareness_events = 0;
 		if (ConsoleObject) {
 			Believed_player_pos = ConsoleObject->pos;
 			Believed_player_seg = ConsoleObject->segnum;
 			Last_fired_upon_player_pos = ConsoleObject->pos;
-			} else {
+		} else {
 			vm_vec_zero(&Believed_player_pos);
 			Believed_player_seg = -1;
 			vm_vec_zero(&Last_fired_upon_player_pos);
 		}
-	}
-
-	if (version < 23) {
-		for (i = 0; i < object_capacity(); i++) {
-			if (Ai_local_info[i].time_player_seen > 0)
-				Ai_local_info[i].time_player_seen = 0;
-			if (Ai_local_info[i].time_player_sound_attacked > 0)
-				Ai_local_info[i].time_player_sound_attacked = 0;
+		for (i = 0; i < object_capacity(); ++i) {
+			if (Ai_local_info[i].time_player_seen > 0) Ai_local_info[i].time_player_seen = 0;
+			if (Ai_local_info[i].time_player_sound_attacked > 0) Ai_local_info[i].time_player_sound_attacked = 0;
 		}
 	}
-
 	return 1;
+}
+
+int ai_restore_state(PHYSFS_file *fp, int version, int swap)
+{
+	ai_restore_candidate *state = ai_prepare_restore(fp, version, swap, object_capacity(), Highest_segment_index, GameTime64);
+	const int result = ai_apply_restore(state);
+	ai_discard_restore(state);
+	return result;
 }

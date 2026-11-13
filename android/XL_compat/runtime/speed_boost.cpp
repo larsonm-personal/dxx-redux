@@ -1,4 +1,6 @@
 #include "speed_boost.h"
+#include "motion_state.h"
+#include <nlohmann/json.hpp>
 #include "preview.h"
 #include <algorithm>
 #include <array>
@@ -295,6 +297,19 @@ extern "C" int xl_speed_boost_exit_blocked(int index, int segment, int side)
 extern "C" int xl_speed_boost_last_speed(void)
 {
 	return xl_level_extensions_active() ? last_speed : 0;
+}
+nlohmann::json xl_compat::speed_boost_snapshot()
+{
+	auto rows = nlohmann::json::array();
+	for (int slot = 0; slot < MAX_OBJECTS; ++slot) {
+		const auto &state = states[slot];
+		// state_for ignores the other rows on every path, including new actions
+		// Keep stale active rows without calling its binding repair
+		if (!state.boosted && !state.steps) continue;
+		rows.push_back({ { "slot", slot }, { "owner", state.owner }, { "signature", state.signature }, { "boosted", state.boosted }, { "speed", state.speed }, { "steps", state.steps }, { "phase", state.phase }, { "velocity", state.velocity }, { "minimum", state.minimum }, { "maximum", state.maximum }, { "source", state.source }, { "destination", state.destination }, { "direction", state.direction } });
+	}
+	// The source's global speedBoostSpeed also survives level resets
+	return { { "last_speed", last_speed }, { "states", rows } };
 }
 extern "C" int xl_speed_boost_state_count(void)
 {

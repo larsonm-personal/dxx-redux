@@ -60,6 +60,7 @@ extern "C" {
 #include "window.h"
 #include "text.h"
 #include "console.h"
+#include "dxxerror.h"
 #include "d1_in_d2/d1_in_d2_presentation.h"
 #include "d1_in_d2/d1_in_d2_levels.h"
 extern int HighlightMarker;
@@ -5634,6 +5635,15 @@ void newdemo_stop_recording(int)
 void do_end_briefing_screens(char *)
 {
 	require(false, "unused D1 briefing");
+}
+void Error(const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	std::vfprintf(stderr, format, args);
+	va_end(args);
+	std::fputc('\n', stderr);
+	std::abort();
 }
 void con_printf(int priority, const char *format, ...)
 {

@@ -154,6 +154,10 @@ nlohmann::json xl_compat::mission_progress_snapshot()
 	if (!bound()) throw std::runtime_error("XL progression owner does not match the loaded mission");
 	return { { "mission", mission }, { "states", states }, { "next", Next_level_num } };
 }
+nlohmann::json xl_compat::mission_progress_trace_snapshot()
+{
+	return { { "mission", mission }, { "states", states }, { "next", Next_level_num }, { "cache_restore", cache_restore }, { "bound", bound() } };
+}
 bool xl_compat::restore_mission_progress(const nlohmann::json &saved, bool apply)
 {
 	try {
@@ -195,7 +199,13 @@ void xl_compat::mission_progress_native_controls()
 	changed["next"] = 29;
 	if (!restore_mission_progress(changed, true) || mission_progress_snapshot() != changed)
 		throw std::runtime_error("Mission progress round trip differs");
+	const auto observed = mission_progress_trace_snapshot();
+	if (observed.at("states") != changed.at("states") || observed.at("next") != changed.at("next") ||
+	    observed.at("cache_restore").get<bool>() || !observed.at("bound").get<bool>() || observed != mission_progress_trace_snapshot())
+		throw std::runtime_error("Mission progression observation changed or concealed earned state");
 	cache_restore = true;
+	if (!mission_progress_trace_snapshot().at("cache_restore").get<bool>())
+		throw std::runtime_error("Mission progression observation concealed revisit policy");
 	if (!restore_mission_progress(earned, true) || mission_progress_snapshot() != changed)
 		throw std::runtime_error("Level revisit rolled back mission progress");
 	cache_restore = false;

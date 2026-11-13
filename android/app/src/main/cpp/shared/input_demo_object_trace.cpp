@@ -193,19 +193,9 @@ nlohmann::ordered_json input_demo_object_trace_snapshot(const object &value, int
 	return object_state(value, slot);
 }
 
-static int write_object_state(uint32_t frame, const char *phase, char *error, size_t error_size)
+nlohmann::ordered_json input_demo_object_pool_trace_snapshot()
 {
-	static std::array<json, MAX_OBJECTS> previous;
-	if (frame == 0 && !phase) previous.fill(nullptr);
-	json record = { { "type", phase ? "object_boundary" : "object_state" }, { "version", 2 }, { "f", frame }, { "reset", phase || frame == 0 }, { "capacity", object_capacity() }, { "slots", json::object() } };
-	// Avoid repeatedly copying earlier object snapshots as this ordered map grows
-	record["slots"].get_ref<json::object_t &>().reserve(object_capacity());
-	if (phase) record["phase"] = phase;
-	for (int i = 0; i < object_capacity(); ++i) {
-		json current = Objects[i].type == OBJ_NONE ? json(nullptr) : object_state(Objects[i], i);
-		if (phase ? !current.is_null() : current != previous[i]) record["slots"][std::to_string(i)] = current;
-		if (!phase) previous[i] = std::move(current);
-	}
+	json record = json::object();
 	object_runtime_state allocator;
 	object_get_runtime_state(&allocator);
 	record["allocator"] = {
@@ -222,6 +212,24 @@ static int write_object_state(uint32_t frame, const char *phase, char *error, si
 		const int available = d_rand_get_stream_state(stream, &state);
 		record["rng"].push_back({ { "available", available }, { "state", state }, { "calls", d_rand_get_stream_call_count(stream) } });
 	}
+	return record;
+}
+
+static int write_object_state(uint32_t frame, const char *phase, char *error, size_t error_size)
+{
+	static std::array<json, MAX_OBJECTS> previous;
+	if (frame == 0 && !phase) previous.fill(nullptr);
+	json record = { { "type", phase ? "object_boundary" : "object_state" }, { "version", 2 }, { "f", frame }, { "reset", phase || frame == 0 }, { "capacity", object_capacity() }, { "slots", json::object() } };
+	// Avoid repeatedly copying earlier object snapshots as this ordered map grows
+	record["slots"].get_ref<json::object_t &>().reserve(object_capacity());
+	if (phase) record["phase"] = phase;
+	for (int i = 0; i < object_capacity(); ++i) {
+		json current = Objects[i].type == OBJ_NONE ? json(nullptr) : object_state(Objects[i], i);
+		if (phase ? !current.is_null() : current != previous[i]) record["slots"][std::to_string(i)] = current;
+		if (!phase) previous[i] = std::move(current);
+	}
+	auto pool = input_demo_object_pool_trace_snapshot();
+	for (auto it = pool.begin(); it != pool.end(); ++it) record[it.key()] = std::move(it.value());
 	return input_demo_state_trace_write_json(record.dump().c_str(), error, error_size);
 }
 

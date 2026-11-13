@@ -480,15 +480,95 @@ captured at its ordinary setter before resetting AI routing; two changes between
 frames remain two operations even when the final mode equals the original mode.
 Playback uses that same setter, not the save-restoration path that preserves AI.
 
-XL world observations use schema 11 and require `xl_player_cfg` at restored,
-per-frame and terminal boundaries. Stock world schema 10 is unchanged. Earlier XL
-schema-10 receipts retain their historical scope; they cannot prove the newly
-required settings observation. The Omega recording probe exercises menu-equivalent
+XL world observations use schema 19 and require `xl_player_cfg`, `xl_births` and `xl_native`
+at restored, per-frame and terminal boundaries. Birth observations contain every
+live slot/signature, birth time, creation order and the next creation counter;
+the reader checks live object identities at both boundaries and validates the
+times, orders and bounds on every frame. Stock world schema 10 is unchanged.
+The native extension observes Omega and afterburner charge, the 16-bit wiggle
+phase, every object-slot afterburner clock, all eight guided-missile pointer/slot
+and signature associations, and the actual XL seismic
+owner's interval, detonation scales/ages, magnitude and cadence. The native seismic
+save compatibility getter returns zeros under XL and cannot supply that observation.
+A null guided pointer is represented as `[-1, -1]`: every consumer checks that pointer before
+its signature. Non-null bindings retain their raw signature even if stale, and
+an out-of-pool pointer is emitted as slot `-2` and rejected by the reader.
+The native extension also captures the base escort owner's complete fixed save
+fields through one shared field list, plus all ten stolen-item bytes and the
+persistent-message preference. Its 150-byte message buffer is an explicit byte
+array, preserving both native text encoding and trailing storage without a
+Unicode conversion. Capture performs no save encoding, cache polling, owner
+repair or timer sampling. Route state uses the same approach for its 107 save
+operations: goal/unexplored targets, pending recalc and notifications, liveness,
+avoidance, limiter timestamps, trigger activation bytes and counters. Capture
+also retains the pending restore marker. The raw cache-poll deadline remains in
+its native cached-host-clock domain in receipts. Semantic comparison uses its
+remaining wait from the same predicate as the real poll consumer: a future deadline
+less than two seconds away delays polling; other values permit an immediate poll.
+The codec intentionally rebases this deadline to the restoring process's cached
+clock. Capture reads that existing cached value without sampling or advancing time.
+The remaining wait is required and compared; unknown fields remain compared.
+Active cache loading and full routing are still unqualified. Disabled compiled route support is explicit.
+Metadata captures the existing detached typed snapshot: all canonical/live/candidate
+plans, hashes and generations, decisions, certificates, both full workspaces and
+pending work summaries. Its shared field list also drives the unchanged native
+codec. Full fixed arrays and text storage remain visible. Long-double scores use
+an exact sign, binary significand and exponent, preserving native precision and
+negative zero without copying ABI padding or narrowing to double. Metadata and
+active-route qualification remain incomplete.
+The native `events` section captures raw object actions and bindings, all live boss
+fields/routes and any pending restore checkpoint, equipment state/selection flags/
+station links, and producer implicit/ready masks and authored ownership. These
+snapshots read owner storage directly. The older object/boss getters may retire
+stale bindings, refresh an interval or prune generated bosses, so they cannot
+supply a pure observation. Existing object/boss tests deliberately make bindings
+stale and verify that observation preserves them without mutation or RNG draws.
+The native `motion` section captures boost ownership, turn phase, velocity bounds,
+directions and shared last speed; all sixteen raw spawn transforms/configuration;
+mission progression and revisit policy; and complete projectile history rows.
+Observation preserves stale signatures instead of invoking binding repair. Empty
+boost/history rows are excluded only where every consumer ignores them. The source
+last speed survives a level clear and remains visible even with no active rows.
+Native pause/save preserves the cached gameplay sample until the next genuine
+input poll or unpaused `calc_frame_time`. Paused frame calculation and automatic
+rear-view reset retain it; native restore reinstates it before finalization. The
+next source sampling boundary observes uptime again, including time in menus.
+The native `environment` section observes fluid scrape and repair cue elapsed
+times, countdown pending time/phase/fraction, and every flicker row including
+disabled timers and full uint32 patterns. Fluid cadence gates physical turbulence
+and SIM draws; countdown cadence gates rocking, warnings and death. Repair cue
+timing also remains observed while audio's future event effects are qualified.
+Existing segment fields already observe every corner's light and ambient light,
+so the extension does not duplicate changing-light results. Existing pure owner
+getters supply these fields without running frames or repairing state. Authored
+light tables and prepared brightness remain bound to the admitted source/assets;
+runtime phases and resulting light values must agree independently.
+The existing time-equipment owner accepts `--native-continuation` together with
+`--time-equipment --xl`. It retains the ordinary recorder's native disk-save bytes
+at a fractional reversing transition, then drives a warm load and two fresh
+processes with the same recorded future inputs. Shared replay startup accepts the
+identical native file and restores it once; an observer captures full native state
+before replay metadata is applied. Native checkpoint equality and detailed future
+world/object/RNG comparisons are independent requirements. A differing file must
+be rejected before restore without changing live state. This byte-identity guard
+qualifies the recorded input's initial condition; it does not establish atomic
+rejection of malformed native saves by the ordinary loader.
+Earlier XL schema-10/11/12/13/14/15/16/17/18 receipts retain their historical scope; they cannot
+prove the newly required native-state observation. The Omega recording probe exercises menu-equivalent
 auto-leveling, homing and weapon-order changes, two ordinary routing setter calls
 at frame 102, preference restoration at frame 197, and routing in the stop tail.
 Its runner checks all four recorded operation sites alongside the pickup, rearm,
 combat and recharge workload. This is scripted settings qualification, not a UI menu
 or connected-progression playthrough.
+
+Native D2 comparisons retain the full raw awareness buffer in the trace. Only
+the known segment/type/position fields beyond `Num_awareness_events` are ignored
+semantically: `ai.c` processes and saves only the active queue, and enqueue
+overwrites all three fields before increasing its count. Active entries, the
+count, storage length and unknown fields remain compared. Automap discovery
+remains gameplay state because Guide-Bot unexplored routing consumes it; the
+native live traversal owner invokes the ordinary view-discovery boundary after
+simulation, as playback and interactive drawing do.
 
 Every frame and the mandatory input tail carry `environment: {count, samples}`.
 Each sample has a contiguous zero-based `sequence`, `phase` (`input` or `sim`),
@@ -521,10 +601,56 @@ sample, including the checkpoint origin before frame zero; they never sample a
 timer, advance a consumer or update the save clock cache. The detailed trace
 retains time factors/directions/threshold ages, pending controls, weapon markers,
 pickup ages, camera-controller state and pending wall-trigger/cooldown state.
-Save schema 40 retains cooldown activation and its age clamped at the source's
+Save schema 41 retains cooldown activation and its age clamped at the source's
 750 ms threshold. Loading rebases that age onto the restored cached clock or
 admitted replay origin. The unqualified format-6 drafts lacking `cached_ms`
 reject; they are diagnostic evidence, not a released compatibility contract.
+Schema 41 also preserves runtime object birth time and append order, including
+the next creation counter after deleted objects. These values control newborn
+robot damage protection and the order of smart-weapon/radial target selection.
+The pinned XL save omits them; the forward Redux continuation contract deliberately
+preserves them so loading an earned save does not change identical future play.
+Authored objects retain zero birth time/order. Every live slot/signature must
+appear exactly once, in slot order; nonzero creation orders must be unique and
+bounded by the saved counter, and birth times cannot exceed the saved game epoch.
+The complete birth table validates before that table is published. Earlier
+development XL schema-40 saves reject explicitly; stock saves and classic demos
+keep their existing layouts. This table guarantee alone does not establish
+atomicity of the surrounding native whole-save loader.
+`Drop_afterburner_blob_flag` is scratch within `object_move_one`: that owner
+clears it before reading controls and consumes it before returning. It needs no
+cross-frame/save persistence. The continuation case uses this complete owner;
+calling `read_flying_controls` alone can create an irrelevant stale-flag difference.
+The existing projectile continuation owner combines newborn damage/order/reuse
+with a live guided missile, Omega charge, afterburner input/resources, wiggle,
+object clocks, a pending seismic event and derived stolen inventory on an authentic
+thief definition. Identical future native controls steer
+the missile and recharge the afterburner across uninterrupted, warm and cold
+execution. A derived route goal fills the normal recalc limiter, saves its pending
+request and verifies identical rejection before expiry and release at its deadline.
+The fixture persists its Enhanced routing preference through the normal player
+profile writer, since ordinary level restore reloads that preference from disk.
+The developer lifecycle target includes the game's planner and live escort code.
+This exercises the limiter rather than a complete active route or metadata load.
+Ordinary stolen-item drops create actual loot, with an empty-inventory
+control that consumes no RNG or object slots. This is an explicitly derived
+mechanic case with seeded inventory, not proof of actual theft or connected original
+play or proof of whole-save atomicity.
+The existing equipment owner also saves two pending item morphs and a pending
+ordinary robot maker. Identical future intervals produce two actual items and a
+robot after uninterrupted, warm and fresh-process execution. It compares live
+slots, birth order, native owner/producer tables, robot counters and SIM/FX RNG.
+Its setup ends robot suspension before saving; normal level resume clears that
+debug/endlevel flag. This is a derived producer control, not connected original play.
+The existing spawn owner combines an active boost turn and pending authored spawn
+change with actual lethal damage/respawn. Uninterrupted, warm and fresh-process
+disk continuation compare the full observed world, object slots, allocator,
+segment links and both RNG streams before and after. It uses derived authored
+controls and explicit frame intervals. Its `xl_time` is explicitly unbound: this
+native mechanics case does not qualify an ordered Omega/time timeline or replace
+original connected-play evidence. Raw receipts retain the known inactive effect/
+awareness storage and route host deadline; comparison applies the same specific
+equivalences as the existing detailed D2 reader.
 Timed level messages also consume this cached clock, matching the pinned
 `ShowGameMessage` use of `nSDLTicks[0]`. Message age, text and opacity no longer
 read host wall time. Save/trace readers derive effective age and expiry directly
@@ -555,7 +681,7 @@ The schema also persists both signed texture coordinates at all four corners of
 every segment face. Scrolling UVs feed hit-point transparency as well as drawing;
 restoring only texture IDs changes collision. All rows and coordinates validate
 before any UV is applied. The bounded trailer allowance adds the maximum encoded
-UV array to the prior 8 MiB owner allowance. Older development XL saves lack this
+UV array and bounded birth rows to the prior 8 MiB owner allowance. Older development XL saves lack this
 state and reject; stock save layouts remain unchanged.
 Camera scan angle, direction, per-owner brake time and the cached frame boundary
 are saved separately from attachment identity. All monitor rows validate before

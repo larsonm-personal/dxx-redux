@@ -22,7 +22,9 @@
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #include "input_demo_state_trace.h"
+#include "input_demo_rng_trace.h"
 #include "input_demo_world_trace.h"
+#include "input_demo_object_trace.h"
 #endif
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
@@ -48,6 +50,7 @@ extern "C" {
 #include "gamesave.h"
 #include "inferno.h"
 #include "input_demo_start.h"
+#include "input_demo_start_shared.h"
 #include "mission.h"
 #include "maths.h"
 #include "newdemo.h"
@@ -626,7 +629,8 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 				return 1;
 			}
 		}
-		return xl_time_equipment_probe(equipment_probe, startup_find_cmd_arg("-xl-time-equipment-resume") != 0, carried_level);
+		return xl_time_equipment_probe(equipment_probe, startup_find_cmd_arg("-xl-time-equipment-resume") != 0, carried_level,
+		                               argument_value("-xl-time-equipment-transition"));
 	}
 #endif
 	State.active = 1;

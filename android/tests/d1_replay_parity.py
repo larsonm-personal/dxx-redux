@@ -679,7 +679,28 @@ def semantic_d2_world(row):
         else effect
         for effect in row["state"]["effects"]
     ]
-    return {**row, "state": {**row["state"], "effects": effects}}
+    ai = row["state"]["ai"]
+    # ai.c processes and saves only [0, Num_awareness_events); enqueue writes
+    # every known field before increasing the count. Retain raw trailing storage
+    # in the trace and unknown fields in the comparison, but ignore stale values
+    # of those three known fields outside the active queue
+    awareness = [
+        entry if index < ai["Num_awareness_events"] else {**entry, "segment": 0, "type": 0, "position": [0, 0, 0]}
+        for index, entry in enumerate(ai["awareness"])
+    ]
+    state = {**row["state"], "effects": effects, "ai": {**ai, "awareness": awareness}}
+    if "xl_native" in state:
+        native = state["xl_native"]
+        route = native["route"]
+        if route["enabled"]:
+            # guidebot_route.c shares this exact bounded wait with its poll consumer.
+            # The codec rebases the raw host deadline; preserve it in the receipt
+            # while comparing the remaining wait, including immediate eligibility.
+            state["xl_native"] = {
+                **native,
+                "route": {**route, "Escort_route_cache_poll_time": route["cache_poll_wait"]},
+            }
+    return {**row, "state": state}
 
 
 def canonical_d1_ai_storage(value, fields):
@@ -1132,10 +1153,497 @@ XL_CAMERA_SCHEMA = integer_fields(
         )
     ],
 )
+# D2 controls.h/player.h/weapon.h: 16-bit wiggle phase, 8 guided player slots,
+# and 4 XL-owned seismic detonation slots; object clocks use the observed pool size
+ESCORT_SIGNED_FIELDS = (
+    "Max_escort_length Escort_kill_object Escort_goal_object Escort_special_goal Escort_goal_index "
+    "Buddy_messages_suppressed Escort_goal_secret_seg Escort_goal_secret_side Buddy_objnum Buddy_allowed_to_talk "
+    "Looking_for_marker Last_buddy_key Stolen_item_index Escort_goal_message_signature Escort_goal_message_owner"
+).split()
+ESCORT_UNSIGNED_FIELDS = "Escort_goal_message_generation Escort_goal_message_sequence".split()
+ESCORT_CLOCK_FIELDS = (
+    "Escort_goal_message_next_send Escort_last_path_created Buddy_sorry_time Last_buddy_message_time "
+    "Buddy_last_seen_player Buddy_last_player_path_created Last_come_back_message_time Buddy_last_missile_time "
+    "Re_init_thief_time Last_thief_hit_time"
+).split()
+# guidebot_escort_state.h / guidebot_goal_message.h: ten stolen-item bytes and
+# the complete 150-byte message buffer, including native trailing storage
+XL_ESCORT_SCHEMA = integer_fields(
+    " ".join(("version", "persistent_message", *ESCORT_SIGNED_FIELDS, *ESCORT_UNSIGNED_FIELDS, *ESCORT_CLOCK_FIELDS)),
+    stolen=(int,) * 10,
+    Escort_goal_message_text=(int,) * 150,
+)
+ROUTE_SIGNED_FIELDS = (
+    "Escort_route_goal_active Escort_route_goal_target_seg Escort_route_goal_objective_kind "
+    "Escort_route_goal_activation_kind Escort_route_goal_requires_guided_missile "
+    "Escort_route_goal_objective_seg Escort_route_goal_objective_side Escort_route_goal_objective_wall "
+    "Escort_route_goal_objective_trigger Escort_route_goal_objective_object "
+    "Escort_route_goal_objective_key_index Escort_route_goal_guidance_mode Escort_route_goal_guidance_seg "
+    "Escort_route_goal_frontier_player_openable_door Escort_unexplored_route_target_active "
+    "Escort_unexplored_route_target_component_size Escort_unexplored_route_target_target_seg "
+    "Escort_unexplored_route_target_waypoint_seg Escort_unexplored_route_target_direct_reachable "
+    "Escort_hostage_object Escort_hostage_signature Escort_route_target_mode Escort_route_metadata_dirty "
+    "Escort_route_cache_improvement_pending Escort_route_dirty_notification_time_valid "
+    "Escort_route_last_audit_rescan_time_valid Escort_route_goal_request_pending Escort_nav_trace_last_pos_x "
+    "Escort_nav_trace_last_pos_y Escort_nav_trace_last_pos_z Escort_nav_trace_last_signature "
+    "Escort_nav_trace_last_goal Escort_nav_trace_last_path_index Escort_nav_trace_stall_samples "
+    "Escort_nav_liveness_anchor_x Escort_nav_liveness_anchor_y Escort_nav_liveness_anchor_z "
+    "Escort_nav_liveness_signature Escort_route_avoid_from_seg Escort_route_avoid_seg "
+    "Escort_route_avoid_from_seg2 Escort_route_avoid_seg2 Escort_route_avoid_trigger Escort_route_avoid_wall "
+    "Escort_route_progress_signature Escort_route_progress_seg Escort_route_progress_path_index "
+    "Escort_route_progress_target_seg Escort_route_progress_stall_samples Escort_route_path_recalc_pending "
+    "Escort_route_path_recalc_goal_kind Escort_route_path_recalc_goal_seg "
+    "Escort_route_path_recalc_goal_trigger Escort_route_path_recalc_goal_wall Escort_route_logged_readiness"
+).split()
+ROUTE_UNSIGNED_FIELDS = (
+    "Escort_route_seen_revision Escort_route_metadata_rescan_count Escort_route_guidance_full_search_count "
+    "Escort_route_ignored_nonowner_key_change_count Escort_route_boss_move_invalidation_count "
+    "Escort_route_wall_generation Escort_route_trigger_generation Escort_route_object_generation "
+    "Escort_route_reactor_generation Escort_route_automap_generation Escort_route_pending_event_mask "
+    "Escort_route_pending_audit_mask Escort_route_deferred_live_event_mask "
+    "Escort_route_event_notification_count Escort_route_notification_coalesced_count "
+    "Escort_route_redundant_dirty_domain_count Escort_route_event_coalesced_rescan_count "
+    "Escort_route_publish_latency_sample_count Escort_route_publish_latency_last_ticks "
+    "Escort_route_publish_latency_max_ticks Escort_route_ignored_nonowner_event_count "
+    "Escort_route_audit_check_count Escort_route_audit_discovery_count Escort_route_audit_only_discovery_count "
+    "Escort_route_audit_work_total Escort_route_audit_work_max Escort_route_audit_deferred_count "
+    "Escort_route_certificate_check_count Escort_route_certificate_failure_count "
+    "Escort_route_certificate_work_total Escort_route_certificate_work_max Escort_route_path_retained_count "
+    "Escort_route_path_replaced_count Escort_route_invalid_path_stopped_count Escort_route_audit_domain_cursor "
+    "Escort_route_stall_recovery_count Escort_route_path_recalc_limiter_count "
+    "Escort_route_path_recalc_suppressed_count"
+).split()
+ROUTE_CLOCK_FIELDS = (
+    "Escort_hostage_next_plan Escort_route_first_dirty_notification_time Escort_route_audit_next_time "
+    "Escort_route_last_audit_rescan_time Escort_route_completion_check_time Escort_nav_trace_next_time "
+    "Escort_nav_liveness_last_progress_time Escort_route_progress_next_time "
+    "Escort_route_path_recalc_requested_time Escort_route_path_recalc_due_time Escort_route_cache_poll_time"
+).split()
+# Shared guidebot_route_state capacities: label64, recalc4, native trigger pool
+XL_ROUTE_SCHEMA = integer_fields(
+    " ".join(
+        (
+            "trigger_capacity",
+            "restore_pending",
+            "cache_poll_wait",
+            *ROUTE_SIGNED_FIELDS,
+            *ROUTE_UNSIGNED_FIELDS,
+            *ROUTE_CLOCK_FIELDS,
+        )
+    ),
+    version=int,
+    enabled=bool,
+    Escort_route_goal_label=(int,) * 64,
+    Escort_route_path_recalc_limiter_timestamps=(int,) * 4,
+    Escort_route_activated_triggers=[int],
+)
+# Typed metadata contract mirrors guidebot_metadata_fields.h and the native capacities
+METADATA_I32 = range(-2147483648, 2147483648)
+METADATA_U32 = range(0, 4294967296)
+METADATA_I64 = range(-(2**63), 2**63)
+METADATA_U64 = range(0, 18446744073709551616)
+METADATA_BYTE = range(0, 256)
+METADATA_LONG_DOUBLE_SCHEMA = {"negative": bool, "bits": [range(0, 2)], "exponent": range(-16494, 16385)}
+
+METADATA_LEVEL_METADATA_ROUTE_STEP_SCHEMA = {
+    "kind": METADATA_I32,
+    "seg": METADATA_I32,
+    "side": METADATA_I32,
+    "wall_num": METADATA_I32,
+    "trigger_num": METADATA_I32,
+    "trigger_type": METADATA_I32,
+    "key_index": METADATA_I32,
+    "key_carrier_objnum": METADATA_I32,
+    "can_be_bypassed": METADATA_I32,
+    "activation_kind": METADATA_I32,
+    "requires_guided_missile": METADATA_I32,
+    "guided_missile_point_count": METADATA_I32,
+    "is_switch_restorer": METADATA_I32,
+    "restored_wall_num": METADATA_I32,
+    "switch_shot_quality": METADATA_I32,
+    "switch_shot_incidence_cosine": METADATA_I32,
+    "switch_guidance_candidate_count": range(0, 17),
+    "switch_guidance_candidate_seg": (METADATA_I32,) * 16,
+    "switch_guidance_candidate_pos": ((METADATA_I32,) * 3,) * 16,
+    "switch_guidance_candidate_quality": (METADATA_I32,) * 16,
+    "switch_guidance_candidate_incidence": (METADATA_I32,) * 16,
+    "path_segment_count": METADATA_I32,
+    "path_terminal_segment": METADATA_I32,
+    "activation_pos_valid": METADATA_I32,
+    "activation_pos": (METADATA_I32,) * 3,
+    "aim_pos_valid": METADATA_I32,
+    "aim_pos": (METADATA_I32,) * 3,
+    "label_pos_valid": METADATA_I32,
+    "label_pos": (METADATA_I32,) * 3,
+    "distance_from_previous": float,
+    "label": (METADATA_BYTE,) * 64,
+    "trigger_type_name": (METADATA_BYTE,) * 96,
+    "opened_link_count": range(0, 11),
+    "opened_link_seg": (METADATA_I32,) * 10,
+    "opened_link_side": (METADATA_I32,) * 10,
+    "opened_link_wall": (METADATA_I32,) * 10,
+}
+
+METADATA_LEVEL_METADATA_STATE_SCHEMA = {
+    "energy_center_segment_count": METADATA_I32,
+    "energy_center_raw_count": METADATA_I32,
+    "energy_center_count": METADATA_I32,
+    "energy_center_group_distance": METADATA_I32,
+    "energy_center_nearest_raw_distance": METADATA_I32,
+    "matcen_segment_count": METADATA_I32,
+    "matcen_raw_count": METADATA_I32,
+    "matcen_count": METADATA_I32,
+    "mine_volume": float,
+    "mine_volume_normalized": float,
+    "travel_distance": float,
+    "travel_time_seconds": METADATA_I32,
+    "guidebot_count": METADATA_I32,
+    "guidebot_placed": METADATA_I32,
+    "guidebot_accessible": METADATA_I32,
+    "guidebot_placement_note": (METADATA_BYTE,) * 128,
+    "guidebot_note": (METADATA_BYTE,) * 128,
+    "route_status": METADATA_I32,
+    "route_problem": (METADATA_BYTE,) * 128,
+    "route_note": (METADATA_BYTE,) * 128,
+    "route_required_key_mask": METADATA_I32,
+    "route_completing_key_mask_set": METADATA_I32,
+    "unnecessary_key_mask": METADATA_I32,
+    "route_step_count": range(0, 97),
+    "route_steps": (METADATA_LEVEL_METADATA_ROUTE_STEP_SCHEMA,) * 96,
+}
+
+METADATA_ROUTE_PLANNER_PLAN_SUMMARY_SCHEMA = {
+    "endpoint_kind": METADATA_I32,
+    "route_step_count": range(0, 97),
+    "first_pending_step": range(-1, 96),
+    "first_pending_path_segment_count": METADATA_I32,
+    "first_pending_path_terminal_segment": METADATA_I32,
+    "partial_frontier_segment": METADATA_I32,
+}
+
+METADATA_ROUTE_SNAPSHOT_SUMMARY_SCHEMA = {
+    "topology_hash": METADATA_U64,
+    "state_hash": METADATA_U64,
+    "start_hash": METADATA_U64,
+    "progression_hash": METADATA_U64,
+    "navigation_hash": METADATA_U64,
+    "trigger_hash": METADATA_U64,
+    "object_hash": METADATA_U64,
+    "automap_hash": METADATA_U64,
+    "actor_hash": METADATA_U64,
+    "segment_count": METADATA_I32,
+    "wall_count": METADATA_I32,
+    "trigger_count": METADATA_I32,
+    "object_count": METADATA_I32,
+    "start_segment": METADATA_I32,
+    "key_mask": METADATA_I32,
+    "control_center_destroyed": METADATA_I32,
+    "topology_generation": METADATA_U32,
+    "start_generation": METADATA_U32,
+    "progression_generation": METADATA_U32,
+    "navigation_generation": METADATA_U32,
+    "trigger_generation": METADATA_U32,
+    "object_generation": METADATA_U32,
+    "automap_generation": METADATA_U32,
+    "actor_generation": METADATA_U32,
+}
+
+METADATA_GUIDEBOT_ROUTE_VALIDITY_CERTIFICATE_SCHEMA = {
+    "status": METADATA_I32,
+    "source_trigger": METADATA_I32,
+    "source_wall": METADATA_I32,
+    "source_object": METADATA_I32,
+    "frontier_segment": METADATA_I32,
+}
+
+METADATA_GUIDEBOT_ROUTE_DECISION_SCHEMA = {
+    "version": METADATA_U32,
+    "status": METADATA_I32,
+    "target_policy": METADATA_I32,
+    "requested_target_segment": METADATA_I32,
+    "objective_kind": METADATA_I32,
+    "activation_kind": METADATA_I32,
+    "requires_guided_missile": METADATA_I32,
+    "objective_trigger": METADATA_I32,
+    "objective_wall": METADATA_I32,
+    "objective_key": METADATA_I32,
+    "objective_object": METADATA_I32,
+    "objective_segment": METADATA_I32,
+    "objective_side": METADATA_I32,
+    "guidance_position_valid": METADATA_I32,
+    "guidance_position": (METADATA_I32,) * 3,
+    "path_terminal_segment": METADATA_I32,
+    "partial_frontier_segment": METADATA_I32,
+    "dependency_mask": METADATA_U32,
+    "topology_hash": METADATA_U64,
+    "state_hash": METADATA_U64,
+    "start_hash": METADATA_U64,
+    "progression_hash": METADATA_U64,
+    "navigation_hash": METADATA_U64,
+    "trigger_hash": METADATA_U64,
+    "object_hash": METADATA_U64,
+    "automap_hash": METADATA_U64,
+    "actor_hash": METADATA_U64,
+    "input_hash": METADATA_U64,
+    "semantic_hash": METADATA_U64,
+    "guidance_hash": METADATA_U64,
+    "decision_hash": METADATA_U64,
+    "certificate": METADATA_GUIDEBOT_ROUTE_VALIDITY_CERTIFICATE_SCHEMA,
+}
+
+METADATA_GUIDEBOT_ROUTE_CERTIFIER_WORKSPACE_SCHEMA = {
+    "reachable": (METADATA_BYTE,) * 9000,
+    "queue": (METADATA_I32,) * 9000,
+    "strategic_distance": (METADATA_I32,) * 9000,
+    "physical_distance": (METADATA_I32,) * 9000,
+    "firing_cache_valid": METADATA_I32,
+    "firing_cache_num_segments": range(0, 9001),
+    "firing_cache_num_walls": METADATA_I32,
+    "firing_cache_trigger": METADATA_I32,
+    "firing_cache_wall": METADATA_I32,
+    "firing_cache_aim": (METADATA_I32,) * 3,
+    "firing_cache_segment": METADATA_I32,
+    "firing_cache_path_segment_count": METADATA_I32,
+    "firing_cache_position": (METADATA_I32,) * 3,
+    "firing_cache_shot_quality": METADATA_I32,
+    "firing_cache_incidence_cosine": METADATA_I32,
+    "job_active": METADATA_I32,
+    "job_start_segment": METADATA_I32,
+    "job_num_segments": range(0, 9001),
+    "reach_head": range(0, 9001),
+    "reach_tail": range(0, 9001),
+    "reach_side": range(0, 7),
+    "reach_complete": METADATA_I32,
+    "job_visited_segments": METADATA_U32,
+    "job_evaluated_edges": METADATA_U32,
+    "job_evaluated_firing_positions": METADATA_U32,
+    "firing_search_active": METADATA_I32,
+    "firing_search_pass": METADATA_I32,
+    "firing_search_segment": METADATA_I32,
+    "firing_search_detailed_count": range(0, 9),
+    "firing_search_selection_segment": METADATA_I32,
+    "firing_search_selection_complete": METADATA_I32,
+    "firing_search_detailed_index": range(0, 9),
+    "firing_search_detailed_sample": METADATA_I32,
+    "firing_search_detailed_segments": (METADATA_I32,) * 8,
+    "firing_search_detailed_scores": (METADATA_LONG_DOUBLE_SCHEMA,) * 8,
+    "firing_search_original_segment": METADATA_I32,
+    "firing_search_original_position": (METADATA_I32,) * 3,
+    "firing_search_best_segment": METADATA_I32,
+    "firing_search_best_path_distance": METADATA_I32,
+    "firing_search_best_position": (METADATA_I32,) * 3,
+    "firing_search_best_quality": METADATA_I32,
+    "firing_search_best_incidence": METADATA_I32,
+    "firing_search_best_score": METADATA_LONG_DOUBLE_SCHEMA,
+    "firing_frontier_active": METADATA_I32,
+    "firing_frontier_phase": METADATA_I32,
+    "firing_frontier_goal_segment": METADATA_I32,
+    "firing_frontier_init_segment": METADATA_I32,
+    "firing_frontier_head": range(0, 9001),
+    "firing_frontier_tail": range(0, 9001),
+    "firing_frontier_side": METADATA_I32,
+    "firing_frontier_scan_segment": METADATA_I32,
+    "firing_frontier_best_segment": METADATA_I32,
+    "firing_frontier_best_remaining": METADATA_I32,
+    "firing_frontier_best_incidence": METADATA_I32,
+    "unexplored_active": METADATA_I32,
+    "unexplored_init_segment": METADATA_I32,
+    "unexplored_scan_segment": METADATA_I32,
+    "unexplored_component_head": range(0, 9001),
+    "unexplored_component_tail": range(0, 9001),
+    "unexplored_component_side": METADATA_I32,
+    "unexplored_component_size": METADATA_I32,
+    "unexplored_component_target": METADATA_I32,
+    "unexplored_component_distance": METADATA_I32,
+    "unexplored_best_size": METADATA_I32,
+    "unexplored_best_target": METADATA_I32,
+    "unexplored_best_distance": METADATA_I32,
+}
+
+METADATA_GUIDEBOT_ROUTE_CERTIFIER_SUMMARY_SCHEMA = {
+    "selected_step": METADATA_I32,
+    "selected_segment": METADATA_I32,
+    "blocking_step": METADATA_I32,
+    "blocking_segment": METADATA_I32,
+    "blocking_reason": METADATA_I32,
+    "used_prepared_fallback": METADATA_I32,
+    "required_steps_low": METADATA_U64,
+    "visited_segments": METADATA_U32,
+    "evaluated_edges": METADATA_U32,
+    "evaluated_actions": METADATA_U32,
+    "rejected_actions": METADATA_U32,
+    "evaluated_firing_positions": METADATA_U32,
+    "reranked_firing_position": METADATA_I32,
+    "firing_cache_hit": METADATA_I32,
+    "approximate_firing_position": METADATA_I32,
+    "steep_firing_position": METADATA_I32,
+}
+
+METADATA_LEVEL_METADATA_LIVE_WORK_SUMMARY_SCHEMA = {
+    "full_plan_calls": METADATA_U32,
+    "blocked_full_plan_calls": METADATA_U32,
+    "deferred_refreshes": METADATA_U32,
+    "retained_incumbents": METADATA_U32,
+    "deferred_without_incumbent": METADATA_U32,
+    "route_ticks": METADATA_U32,
+    "deferred_ticks": METADATA_U32,
+    "completed_ticks": METADATA_U32,
+    "tick_overruns": METADATA_U32,
+    "compiled_selector_calls": METADATA_U32,
+    "compiled_selector_successes": METADATA_U32,
+    "compiled_selector_failures": METADATA_U32,
+    "compiled_selector_max_evaluated_actions": METADATA_U32,
+    "pending_event_mask": METADATA_U32,
+    "pending": METADATA_I32,
+    "reachability_cursor": METADATA_I32,
+    "firing_candidate_cursor": METADATA_I32,
+    "firing_candidate_pass": METADATA_I32,
+    "unexplored_candidate_cursor": METADATA_I32,
+    "last_tick_us": METADATA_U64,
+    "max_tick_us": METADATA_U64,
+    "last_refresh_us": METADATA_U64,
+    "max_refresh_us": METADATA_U64,
+    "refresh_overruns": METADATA_U32,
+}
+
+XL_METADATA_SCHEMA = {
+    "version": range(1, 2),
+    "canonical_state": METADATA_LEVEL_METADATA_STATE_SCHEMA,
+    "canonical_plan_summary": METADATA_ROUTE_PLANNER_PLAN_SUMMARY_SCHEMA,
+    "canonical_plan_summary_valid": METADATA_I32,
+    "live_route_state": METADATA_LEVEL_METADATA_STATE_SCHEMA,
+    "live_route_state_valid": METADATA_I32,
+    "live_plan_summary": METADATA_ROUTE_PLANNER_PLAN_SUMMARY_SCHEMA,
+    "live_plan_summary_valid": METADATA_I32,
+    "live_candidate_state": METADATA_LEVEL_METADATA_STATE_SCHEMA,
+    "live_candidate_summary": METADATA_ROUTE_PLANNER_PLAN_SUMMARY_SCHEMA,
+    "live_candidate_certificate": METADATA_GUIDEBOT_ROUTE_VALIDITY_CERTIFICATE_SCHEMA,
+    "canonical_snapshot": METADATA_ROUTE_SNAPSHOT_SUMMARY_SCHEMA,
+    "canonical_snapshot_valid": METADATA_I32,
+    "canonical_analysis_profile_hash": METADATA_U64,
+    "live_snapshot": METADATA_ROUTE_SNAPSHOT_SUMMARY_SCHEMA,
+    "live_snapshot_valid": METADATA_I32,
+    "progression_object_audit_hash": METADATA_U64,
+    "progression_object_audit_hash_valid": METADATA_I32,
+    "navigation_access_audit_hash": METADATA_U64,
+    "navigation_access_audit_hash_valid": METADATA_I32,
+    "route_start_objnum": METADATA_I32,
+    "route_start_seg": METADATA_I32,
+    "live_route_target_seg": METADATA_I32,
+    "route_readiness": METADATA_I32,
+    "route_revision": METADATA_U32,
+    "route_certifier_workspace": METADATA_GUIDEBOT_ROUTE_CERTIFIER_WORKSPACE_SCHEMA,
+    "route_frontier_workspace": METADATA_GUIDEBOT_ROUTE_CERTIFIER_WORKSPACE_SCHEMA,
+    "route_certifier_summary": METADATA_GUIDEBOT_ROUTE_CERTIFIER_SUMMARY_SCHEMA,
+    "live_certificate": METADATA_GUIDEBOT_ROUTE_VALIDITY_CERTIFICATE_SCHEMA,
+    "published_route_decision": METADATA_GUIDEBOT_ROUTE_DECISION_SCHEMA,
+    "published_route_decision_valid": METADATA_I32,
+    "live_route_provenance": METADATA_I32,
+    "live_work_summary": METADATA_LEVEL_METADATA_LIVE_WORK_SUMMARY_SCHEMA,
+    "live_route_work_pending": METADATA_I32,
+}
+
+XL_OBJECT_EVENT_SCHEMA = {
+    **dict.fromkeys("authored_owner owner signature destination audio_key value time".split(), METADATA_I32),
+    "operated": bool,
+    "type": METADATA_BYTE,
+    "flags": METADATA_BYTE,
+    "num_links": range(0, 11),
+    "pad": range(-128, 128),
+    "segments": (range(-32768, 32768),) * 10,
+    "sides": (range(-32768, 32768),) * 10,
+}
+XL_BOSS_EVENT_SCHEMA = {
+    **dict.fromkeys("authored_owner owner signature id interval dying sound home".split(), METADATA_I32),
+    **dict.fromkeys(
+        "last cloak_start cloak_end teleport hit death_start".split(), range(-9223372036854775808, 9223372036854775808)
+    ),
+    "generated": bool,
+    "teleport_segments": [METADATA_I32],
+}
+XL_EVENTS_SCHEMA = {
+    "version": range(1, 2),
+    "objects": [XL_OBJECT_EVENT_SCHEMA],
+    "bosses": {"live": [XL_BOSS_EVENT_SCHEMA], "restore_pending": bool, "checkpoint": [XL_BOSS_EVENT_SCHEMA]},
+    "equipment": {
+        "makers": [
+            {
+                **dict.fromkeys("segment owner".split(), METADATA_I32),
+                "timer": range(-9223372036854775808, 9223372036854775808),
+                "enabled": range(0, 2),
+                "pending": range(0, 2),
+                "flags": (METADATA_U32,) * 2,
+            }
+        ],
+        "station_links": [(METADATA_I32,) * 2],
+    },
+    "producers": {
+        "implicit_flags": METADATA_U32,
+        "ready_mask": METADATA_U32,
+        "authored": [(METADATA_U32, METADATA_U32, METADATA_I32, METADATA_I32)],
+    },
+}
+XL_BOOST_SCHEMA = {
+    **dict.fromkeys("slot owner signature".split(), METADATA_I32),
+    "boosted": range(-1, 2),
+    "speed": range(0, 11),
+    "steps": range(0, 10),
+    "phase": range(0, 65536),
+    **dict.fromkeys("velocity minimum maximum source destination direction".split(), (METADATA_I32,) * 3),
+}
+XL_SPAWN_SCHEMA = {
+    **dict.fromkeys("segment side".split(), METADATA_I32),
+    "position": (METADATA_I32,) * 3,
+    "orientation": (METADATA_I32,) * 9,
+}
+# Keep fixed storage aligned with runtime/projectile.h (20 hits) and spawn_points.h (16 slots)
+XL_PROJECTILE_SCHEMA = {
+    **dict.fromkeys("slot owner signature".split(), METADATA_I32),
+    "count": range(1, 21),
+    "victims": (METADATA_I32,) * 20,
+}
+XL_MOTION_SCHEMA = {
+    "version": range(1, 2),
+    "boosts": {"last_speed": range(0, 11), "states": [XL_BOOST_SCHEMA]},
+    "spawns": {"configured": bool, "points": (XL_SPAWN_SCHEMA,) * 16},
+    "progression": {
+        "mission": str,
+        "states": [range(-1, 2)],
+        "next": range(-32768, 32768),
+        "cache_restore": bool,
+        "bound": bool,
+    },
+    "projectiles": [XL_PROJECTILE_SCHEMA],
+}
+XL_ENVIRONMENT_SCHEMA = {
+    "version": range(1, 2),
+    "fluid_scrape_elapsed": METADATA_I64,
+    "repair_elapsed": METADATA_I64,
+    "countdown": (range(0, 65536 * 25 // 1000 + 1), range(0, 25), range(0, 65536)),
+    "flickers": [(METADATA_I32, range(0, 6), range(0, 2**31), METADATA_I32, METADATA_U32)],
+}
+XL_NATIVE_SCHEMA = integer_fields(
+    "version omega_charge wiggle_phase",
+    afterburner_charge=[int],
+    afterburner_times=[int],
+    guided=((int, int),) * 8,
+    metadata=XL_METADATA_SCHEMA,
+    events=XL_EVENTS_SCHEMA,
+    motion=XL_MOTION_SCHEMA,
+    environment=XL_ENVIRONMENT_SCHEMA,
+    escort=XL_ESCORT_SCHEMA,
+    route={"version": int, "enabled": bool},
+    seismic=integer_fields(
+        "strength pending magnitude phase fraction", interval=[int], detonations=((bool, int, float),) * 4
+    ),
+)
 
 
 def validate_world_value(value, schema, path):
-    if schema is int:
+    if schema is str:
+        if type(value) is not str:
+            raise EvidenceError(f"World field must be a string: {path}")
+    elif schema is int:
         if type(value) is not int:
             raise EvidenceError(f"World field must be an integer: {path}")
     elif schema is bool:
@@ -1144,6 +1652,9 @@ def validate_world_value(value, schema, path):
     elif schema is float:
         if type(value) is not float or not math.isfinite(value):
             raise EvidenceError(f"World field must be a finite float: {path}")
+    elif isinstance(schema, range):
+        if type(value) is not int or value not in schema:
+            raise EvidenceError(f"World integer is outside its native range: {path}")
     elif isinstance(schema, dict):
         if not isinstance(value, dict):
             raise EvidenceError(f"World field must be an object: {path}")
@@ -1159,6 +1670,9 @@ def validate_world_value(value, schema, path):
                 if child is int:
                     if type(value[key]) is not int:
                         raise EvidenceError(f"World field must be an integer: {path}.{key}")
+                elif isinstance(child, range):
+                    if type(value[key]) is not int or value[key] not in child:
+                        raise EvidenceError(f"World integer is outside its native range: {path}.{key}")
                 else:
                     validate_world_value(value[key], child, f"{path}.{key}")
     else:
@@ -1170,11 +1684,14 @@ def validate_world_value(value, schema, path):
             if child is int:
                 if type(item) is not int:
                     raise EvidenceError(f"World field must be an integer: {path}[{index}]")
+            elif isinstance(child, range):
+                if type(item) is not int or item not in child:
+                    raise EvidenceError(f"World integer is outside its native range: {path}[{index}]")
             else:
                 validate_world_value(item, child, f"{path}[{index}]")
 
 
-def validate_world_state(state, engine=None, xl=False):
+def validate_world_state(state, engine=None, xl=False, objects=None):
     validate_world_value(state, WORLD_SCHEMA, "$.state")
     if xl:
         validate_world_value(
@@ -1184,10 +1701,163 @@ def validate_world_state(state, engine=None, xl=False):
                 "xl_cameras": XL_CAMERA_SCHEMA,
                 "xl_triggers": [(int,) * 10],
                 "xl_player_cfg": XL_PLAYER_CFG_SCHEMA,
+                "xl_births": {"version": int, "next": int, "objects": [(int,) * 4]},
+                "xl_native": XL_NATIVE_SCHEMA,
             },
             "$.state",
         )
         cfg = state["xl_player_cfg"]
+        births = state["xl_births"]
+        capacity = state["ai"]["local_capacity"]
+        native = state["xl_native"]
+        metadata = native["metadata"]
+        events = native["events"]
+        motion = native["motion"]
+        environment = native["environment"]
+        if any(not 0 <= row[0] < len(state["segments"]) for row in environment["flickers"]):
+            raise EvidenceError("Invalid XL environment segment binding")
+        for rows in (motion["boosts"]["states"], motion["projectiles"]):
+            slots = [row["slot"] for row in rows]
+            if len(rows) > capacity or slots != sorted(set(slots)) or any(not 0 <= slot < capacity for slot in slots):
+                raise EvidenceError("Invalid XL motion owner slots or capacity")
+        progress = motion["progression"]
+        # d2/main/mission.h: 127 mission levels, plus the unused level-zero sentinel
+        if len(progress["states"]) > 128 or (progress["states"] and progress["states"][0] != 0):
+            raise EvidenceError("Invalid XL progression level table")
+        if progress["bound"] and (len(progress["states"]) < 2 or not progress["mission"]):
+            raise EvidenceError("Missing bound XL progression source or levels")
+        if not events["bosses"]["restore_pending"] and events["bosses"]["checkpoint"]:
+            raise EvidenceError("Inactive XL boss restore checkpoint has live storage")
+        if len(events["producers"]["authored"]) > 20 or events["producers"]["ready_mask"] >> len(
+            events["producers"]["authored"]
+        ):
+            raise EvidenceError("Invalid XL producer readiness or source count")
+        for owner in ("canonical_state", "live_route_state", "live_candidate_state"):
+            value = metadata[owner]
+            for key in ("guidebot_placement_note", "guidebot_note", "route_problem", "route_note"):
+                if 0 not in value[key]:
+                    raise EvidenceError("Unterminated Guide-Bot metadata text")
+            for step in value["route_steps"]:
+                if 0 not in step["label"] or 0 not in step["trigger_type_name"]:
+                    raise EvidenceError("Unterminated Guide-Bot metadata step text")
+        for owner in ("route_certifier_workspace", "route_frontier_workspace"):
+            value = metadata[owner]
+            for score in (value["firing_search_best_score"], *value["firing_search_detailed_scores"]):
+                bits = score["bits"]
+                if (
+                    len(bits) > 113
+                    or (bits and (bits[0] != 1 or bits[-1] != 1))
+                    or (not bits and score["exponent"] != 0)
+                ):
+                    raise EvidenceError("Noncanonical Guide-Bot metadata binary score")
+        route = native["route"]
+        if route["version"] != 1:
+            raise EvidenceError("Unsupported XL route observation")
+        if route["enabled"]:
+            validate_world_value(route, XL_ROUTE_SCHEMA, "$.state.xl_native.route")
+            if (
+                route["trigger_capacity"] != 254
+                or route["restore_pending"] not in (0, 1)
+                or not 0 <= route["cache_poll_wait"] < 2 * 65536
+                or any(not -2147483648 <= route[key] <= 2147483647 for key in ROUTE_SIGNED_FIELDS)
+                or any(not 0 <= route[key] <= 4294967295 for key in ROUTE_UNSIGNED_FIELDS)
+                or any(not -9223372036854775808 <= route[key] <= 9223372036854775807 for key in ROUTE_CLOCK_FIELDS)
+                or not 0 <= route["Escort_route_target_mode"] <= 2
+                or not 0 <= route["Escort_route_path_recalc_limiter_count"] <= 4
+                or len(route["Escort_route_activated_triggers"]) != route["trigger_capacity"]
+                or any(
+                    not 0 <= value <= 255
+                    for value in (*route["Escort_route_goal_label"], *route["Escort_route_activated_triggers"])
+                )
+                or 0 not in route["Escort_route_goal_label"]
+                or any(
+                    not -9223372036854775808 <= value <= 9223372036854775807
+                    for value in route["Escort_route_path_recalc_limiter_timestamps"]
+                )
+            ):
+                raise EvidenceError("Invalid XL route field, timer or array storage")
+        escort = native["escort"]
+        if (
+            escort["version"] != 1
+            or escort["persistent_message"] not in (0, 1)
+            or any(not -2147483648 <= escort[key] <= 2147483647 for key in ESCORT_SIGNED_FIELDS)
+            or any(not 0 <= escort[key] <= 4294967295 for key in ESCORT_UNSIGNED_FIELDS)
+            or any(not -9223372036854775808 <= escort[key] <= 9223372036854775807 for key in ESCORT_CLOCK_FIELDS)
+            or not -1 <= escort["Buddy_objnum"] < capacity
+            or not 0 <= escort["Stolen_item_index"] < 10
+            or any(not 0 <= value <= 255 for value in (*escort["stolen"], *escort["Escort_goal_message_text"]))
+            or 0 not in escort["Escort_goal_message_text"]
+        ):
+            raise EvidenceError("Invalid XL escort/thief observation")
+        if (
+            native["version"] != 1
+            or not 0 <= native["omega_charge"] <= 65536
+            or not 0 <= native["wiggle_phase"] <= 65535
+            or len(native["afterburner_charge"]) != len(state["players"])
+            or any(not 0 <= charge <= 65536 for charge in native["afterburner_charge"])
+            or len(native["afterburner_times"]) != capacity
+            or any(not -9223372036854775808 <= time <= 9223372036854775807 for time in native["afterburner_times"])
+            or any(
+                not -1 <= slot < capacity or not -1 <= signature <= 2147483647 or (slot == -1 and signature != -1)
+                for slot, signature in native["guided"]
+            )
+        ):
+            raise EvidenceError("Invalid XL native weapon, control or object-clock observation")
+        seismic = native["seismic"]
+        epoch = state["globals"]["GameTime64"]
+        maximum_epoch = 72057594037927935  # save_epoch_format.h: INT64_MAX / 128
+        interval = seismic["interval"]
+        if (
+            not -2147483648 <= seismic["strength"] <= 2147483647
+            or not -2147483648 <= seismic["pending"] <= 2147418112
+            or not -2147483648 <= seismic["magnitude"] <= 2147483647
+            or not 0 <= seismic["phase"] <= 24
+            or not 0 <= seismic["fraction"] <= 65535
+            or len(interval) not in (0, 2)
+            or (
+                interval
+                and (
+                    not -maximum_epoch <= interval[0] <= 0
+                    or not interval[0] < interval[1] <= 2147483647
+                    or interval[1] - interval[0] > 2147483647
+                    or any(not -maximum_epoch <= epoch + time <= maximum_epoch for time in interval)
+                )
+            )
+            or any(
+                not 0.0 <= scale <= 1.0
+                or not -2147483647 <= age <= 0
+                or (not active and age != 0)
+                or not -maximum_epoch <= epoch + age <= maximum_epoch
+                for active, age, scale in seismic["detonations"]
+            )
+        ):
+            raise EvidenceError("Invalid XL native seismic observation")
+        if (
+            set(births) != {"version", "next", "objects"}
+            or births["version"] != 1
+            or not 0 <= births["next"] < 18446744073709551615
+            or len(births["objects"]) > capacity
+        ):
+            raise EvidenceError("Invalid XL birth observation header")
+        previous = -1
+        orders = set()
+        for slot, signature, born, order in births["objects"]:
+            if (
+                not previous < slot < capacity
+                or not 0 <= signature <= 2147483647
+                or not 0 <= born <= state["globals"]["GameTime64"]
+                or not 0 <= order <= births["next"]
+                or (not order and born)
+                or (order and order in orders)
+            ):
+                raise EvidenceError("Invalid XL birth identity, time or order")
+            previous = slot
+            if order:
+                orders.add(order)
+        if objects is not None and [(slot, signature) for slot, signature, _, _ in births["objects"]] != [
+            (int(slot), value["signature"]) for slot, value in sorted(objects.items(), key=lambda item: int(item[0]))
+        ]:
+            raise EvidenceError("XL births do not match live object identities")
         for key in XL_PLAYER_CFG_SCHEMA:
             if key.endswith("_order"):
                 if sorted(cfg[key]) != list(range(10)) + [255]:
@@ -1405,6 +2075,7 @@ def world_states(path, header, engine="d1"):
     terminal = False
     xl = xl_storage_profile(header, engine)
     object_capacity = None
+    boundary_objects = None
     for row in records(path):
         kind = row.get("type")
         if kind == "meta":
@@ -1419,7 +2090,7 @@ def world_states(path, header, engine="d1"):
         if (
             not meta_seen
             or type(row.get("version")) is not int
-            or row["version"] != (2 if kind == "object_boundary" else 11 if xl else 10)
+            or row["version"] != (2 if kind == "object_boundary" else 19 if xl else 10)
         ):
             raise EvidenceError("Missing world metadata or unsupported schema")
         if kind.endswith("boundary"):
@@ -1440,7 +2111,7 @@ def world_states(path, header, engine="d1"):
             if kind == "world_boundary":
                 if not isinstance(row.get("state"), dict) or not all(group in row["state"] for group in WORLD_GROUPS):
                     raise EvidenceError("Incomplete world boundary")
-                validate_world_state(row["state"], engine, xl)
+                validate_world_state(row["state"], engine, xl, boundary_objects)
                 if row["state"]["ai"]["local_capacity"] != object_capacity:
                     raise EvidenceError("AI and object capacities disagree")
             else:
@@ -1448,6 +2119,7 @@ def world_states(path, header, engine="d1"):
                 if object_capacity is not None and object_capacity != row["capacity"]:
                     raise EvidenceError("Object boundary capacity changed")
                 object_capacity = row["capacity"]
+                boundary_objects = row["slots"]
             yield row
         else:
             if terminal or type(row.get("f")) is not int or count != row["f"] or row.get("reset") is not (count == 0):

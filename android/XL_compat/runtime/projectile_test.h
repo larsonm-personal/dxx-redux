@@ -1,9 +1,16 @@
 #include "projectile.h"
+#include "motion_state.h"
 #include "object_birth.h"
+#include "input_demo_world_trace.h"
+#include "input_demo_object_trace.h"
+#include "seismic_gameplay.h"
 #include "../tests/hog_fixture.h"
 extern "C" {
+#include "guidebot_route_internal.h"
 void maybe_kill_weapon(object *, object *);
 void collide_weapon_and_controlcen(object *, object *, vms_vector *);
+void drop_stolen_items(object *, int);
+extern int Stolen_item_index;
 }
 
 static int projectile_test_shot(int parent, int weapon = FUSION_ID)
@@ -66,14 +73,14 @@ static void projectile_impacts(const std::filesystem::path &root)
 	std::cout << count << " actual projectile impact samples exported\n";
 }
 
-static int projectile_robot()
+static int projectile_robot(int id = 0)
 {
-	const int victim = obj_create(OBJ_ROBOT, 0, ConsoleObject->segnum, &ConsoleObject->pos, &vmd_identity_matrix, F1_0, CT_AI, MT_PHYSICS, RT_POLYOBJ);
+	const int victim = obj_create(OBJ_ROBOT, id, ConsoleObject->segnum, &ConsoleObject->pos, &vmd_identity_matrix, F1_0, CT_AI, MT_PHYSICS, RT_POLYOBJ);
 	require(victim >= 0, "Cannot allocate combat target");
 	auto &robot = Objects[victim];
-	robot.rtype.pobj_info.model_num = Robot_info[0].model_num;
-	robot.mtype.phys_info.mass = Robot_info[0].mass;
-	robot.mtype.phys_info.drag = Robot_info[0].drag;
+	robot.rtype.pobj_info.model_num = Robot_info[id].model_num;
+	robot.mtype.phys_info.mass = Robot_info[id].mass;
+	robot.mtype.phys_info.drag = Robot_info[id].drag;
 	robot.shields = i2f(100);
 	init_ai_object(victim, AIB_NORMAL, -1);
 	return victim;
@@ -345,6 +352,210 @@ static void projectile_robot_attacker_blast()
 	std::cout << "Native hostile/guidebot/player/cheat radial damage and force controls passed\n";
 }
 
+static nlohmann::json projectile_birth_future(int victim, int shot, int thief)
+{
+	const auto native_before = input_demo_native_xl_trace_snapshot();
+	const auto before_calls = d_rand_get_call_count();
+	require(native_before == input_demo_native_xl_trace_snapshot() && before_calls == d_rand_get_call_count(),
+	        "Native continuation observation changed state or RNG");
+	const auto *guided_before = Guided_missile[Player_num];
+	require(guided_before && guided_before->signature == Guided_missile_sig[Player_num], "Missing guided continuation owner before input");
+	const auto orientation_before = guided_before->orient;
+	FrameTime = F1_0 / 4;
+	GameTime64 += FrameTime;
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	require(!escort_route_path_recalc_begin("continuation_before_due"), "Restored route limiter allowed recalc before its saved deadline");
+#endif
+	require(xl_seismic_frame(), "Cannot advance saved seismic gameplay");
+	Controls = {};
+	Controls.pitch_time = F1_0 / 32;
+	Controls.heading_time = F1_0 / 24;
+	Controls.bank_time = F1_0 / 64;
+	Controls.forward_thrust_time = F1_0 / 8;
+	object_move_one(ConsoleObject);
+	const auto *guided = Guided_missile[Player_num];
+	require(guided && guided->type == OBJ_WEAPON && guided->id == GUIDEDMISS_ID && guided->signature == Guided_missile_sig[Player_num],
+	        "Saved guided missile did not retain native steering ownership");
+	require(std::memcmp(&orientation_before, &guided->orient, sizeof(orientation_before)) != 0,
+	        "Identical future guided controls did not steer the retained missile");
+	collide_robot_and_weapon(&Objects[victim], &Objects[shot], &Objects[victim].pos);
+	const auto raw_history = xl_compat::projectile_snapshot();
+	require(!raw_history.empty() && xl_projectile_has_hit(shot, victim), "Actual contact did not create projectile history for observation");
+	const int raw_signature = Objects[shot].signature;
+	const auto raw_sim_calls = d_rand_get_call_count(), raw_fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	Objects[shot].signature = raw_signature ^ 0x40000000;
+	require(raw_history == xl_compat::projectile_snapshot() &&
+	            raw_history == nlohmann::json(input_demo_native_xl_trace_snapshot().at("motion").at("projectiles")),
+	        "Projectile observation discarded stale ownership or changed hit history");
+	Objects[shot].signature = raw_signature;
+	require(raw_sim_calls == d_rand_get_call_count() && raw_fx_calls == d_rand_get_stream_call_count(D_RNG_FX), "Projectile history observation consumed RNG");
+	const int transient = projectile_robot();
+	const auto transient_order = xl_object_birth_order(transient);
+	obj_delete(transient);
+	const int replacement = projectile_robot();
+	const auto replacement_order = xl_object_birth_order(replacement);
+	require(replacement == transient && replacement_order > transient_order &&
+	            xl_object_birth_time(replacement) == GameTime64,
+	        "Reused slot lost its new birth or monotonic creation order");
+	obj_delete(replacement);
+	std::vector<int> prior(object_capacity(), -1);
+	for (int i = 0; i <= Highest_object_index; ++i)
+		if (Objects[i].type != OBJ_NONE) prior[i] = Objects[i].signature;
+	drop_stolen_items(&Objects[thief], 0);
+	auto loot = nlohmann::json::array();
+	for (int i = 0; i <= Highest_object_index; ++i)
+		if (Objects[i].type != OBJ_NONE && prior[i] != Objects[i].signature)
+			loot.push_back({ i, input_demo_object_trace_snapshot(Objects[i], i) });
+	require(loot.size() == 2 && Objects[loot[0][0].get<int>()].type == OBJ_POWERUP && Objects[loot[1][0].get<int>()].type == OBJ_POWERUP,
+	        "Saved thief inventory did not create its two actual loot objects");
+	const auto loot_calls = d_rand_get_call_count();
+	const auto loot_fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	drop_stolen_items(&Objects[thief], 0);
+	require(loot_calls == d_rand_get_call_count() && loot_fx_calls == d_rand_get_stream_call_count(D_RNG_FX),
+	        "Empty stolen inventory consumed RNG draws");
+	std::size_t live = 0;
+	for (int i = 0; i <= Highest_object_index; ++i)
+		live += Objects[i].type != OBJ_NONE;
+	require(live == std::size_t(std::count_if(prior.begin(), prior.end(), [](int signature) { return signature != -1; })) + 2,
+	        "Empty stolen inventory created extra objects");
+	GameTime64 += F1_0 / 4;
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	require(escort_route_path_recalc_begin("continuation_due"), "Restored route limiter did not release at its saved deadline");
+#endif
+	unsigned sim = 0;
+	require(d_rand_get_state(&sim), "Cannot observe birth continuation SIM state");
+	auto result = nlohmann::json{ { "victim", victim }, { "shot", shot }, { "time", GameTime64 }, { "victim_shields", int(Objects[victim].shields) }, { "shot_shields", int(Objects[shot].shields) }, { "hit", bool(xl_projectile_has_hit(shot, victim)) }, { "birth_time", xl_object_birth_time(victim) }, { "birth_order", xl_object_birth_order(victim) }, { "transient_order", transient_order }, { "replacement_order", replacement_order }, { "sim", sim }, { "calls", d_rand_get_call_count() }, { "native_before", native_before }, { "native_after", input_demo_native_xl_trace_snapshot() }, { "guided", input_demo_object_trace_snapshot(*guided, int(guided - Objects)) }, { "player", input_demo_object_trace_snapshot(*ConsoleObject, int(ConsoleObject - Objects)) }, { "player_energy", int(Players[Player_num].energy) }, { "player_flags", unsigned(Players[Player_num].flags) } };
+	result["thief_slot"] = thief;
+	result["thief"] = input_demo_object_trace_snapshot(Objects[thief], thief);
+	result["loot"] = std::move(loot);
+	return result;
+}
+
+static nlohmann::json projectile_birth_semantic(nlohmann::json state)
+{
+	// Match the existing D2 observer policy: 0/-1 both mean no alternate texture
+	// Raw actor values stay in the separately written expected/actual receipts
+	for (const char *actor : { "guided", "player", "thief" }) {
+		auto &value = state.at(actor).at("polyobj").at("alt_textures");
+		if (value == 0 || value == -1) value = 0;
+	}
+	// The native codec rebases this host-clock deadline; compare its exact poll wait
+	// Raw deadlines remain in the separately written expected/actual receipts
+	for (const char *boundary : { "native_before", "native_after" }) {
+		auto &route = state.at(boundary).at("route");
+		if (route.at("enabled").get<bool>()) route["Escort_route_cache_poll_time"] = route.at("cache_poll_wait");
+	}
+	return state;
+}
+
+static void projectile_birth_continuation(const std::filesystem::path &root, bool cold)
+{
+	char save[] = "projectile-birth.sav", description[] = "XL newborn damage";
+	nlohmann::json expected;
+	if (cold) {
+		std::ifstream input(root / "birth-future.json");
+		input >> expected;
+		require(state_restore_all_sub(save, 0), "Cannot cold restore newborn collision save");
+	} else {
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		// Level restore reloads the real player profile before applying its preference
+		guidebot_routing_set_default(GUIDEBOT_ROUTING_ENHANCED);
+		require(write_player_file() == 0, "Cannot persist derived route preference");
+#endif
+		// Derived setup isolates the real newborn collision gate; no gameplay assist claim
+		GameTime64 += 2 * F1_0;
+		const int victim = projectile_robot();
+		const int shot = projectile_test_shot(ConsoleObject - Objects);
+		const int guided = projectile_test_shot(ConsoleObject - Objects, GUIDEDMISS_ID);
+		require(Guided_missile[Player_num] == &Objects[guided], "Derived guided shot did not acquire its normal native owner");
+		int thief_id = -1;
+		for (int i = 0; i < N_robot_types && thief_id < 0; ++i)
+			if (Robot_info[i].thief) thief_id = i;
+		require(thief_id >= 0, "Derived continuation requires an authentic thief definition");
+		const int thief = projectile_robot(thief_id);
+		const int thief_segment = (ConsoleObject->segnum + 1) % Num_segments;
+		compute_segment_center(&Objects[thief].pos, &Segments[thief_segment]);
+		obj_relink(thief, thief_segment);
+		// Derived already-stolen inventory; future drops use the ordinary native owner
+		std::fill(std::begin(Stolen_items), std::end(Stolen_items), 255);
+		Stolen_items[0] = POW_ENERGY;
+		Stolen_items[1] = POW_SHIELD_BOOST;
+		Stolen_item_index = 2;
+		Max_escort_length = 117;
+		Escort_last_path_created = GameTime64 - F1_0 / 8;
+		Omega_charge = F1_0 / 2;
+		Players[Player_num].flags |= PLAYER_FLAGS_AFTERBURNER;
+		Players[Player_num].afterburner_charge = F1_0 / 2;
+		controls_restore_wiggle_phase(1234);
+		Last_afterburner_time[guided] = GameTime64 - F1_0 / 32;
+		trigger seismic{};
+		seismic.type = 36;
+		seismic.value = F1_0 / 2;
+		seismic.time = 2;
+		require(xl_seismic_action(&seismic), "Cannot prepare derived active seismic continuation");
+		FrameTime = F1_0 / 16;
+		Controls = {};
+		Controls.afterburner_state = 1;
+		object_move_one(ConsoleObject);
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		guidebot_routing_set_mode(GUIDEBOT_ROUTING_ENHANCED);
+		Escort_route_goal = {};
+		Escort_route_goal.active = 1;
+		Escort_route_goal.target_seg = ConsoleObject->segnum;
+		Escort_route_goal.objective_kind = LEVEL_METADATA_ROUTE_EXIT;
+		for (int i = 0; i < 4; ++i) require(escort_route_path_recalc_begin("continuation_prepare"), "Cannot fill native route recalc window");
+		require(!escort_route_path_recalc_begin("continuation_pending"), "Native route limiter did not retain a pending request");
+#else
+		require(false, "Combined route continuation requires the compiled planner");
+#endif
+		GameTime64 += F1_0 / 2;
+		stop_time();
+		require(state_save_all_sub(save, description), "Cannot save newborn collision state");
+		expected = projectile_birth_future(victim, shot, thief);
+		require(expected.at("victim_shields").get<int>() == i2f(100) && expected.at("hit").get<bool>(),
+		        "Uninterrupted newborn did not reject damage while retaining projectile history");
+		std::ofstream output(root / "birth-future.json");
+		output << expected.dump(2) << '\n';
+		output.close();
+		require(bool(output), "Cannot write uninterrupted newborn collision receipt");
+		require(state_restore_all_sub(save, 0), "Cannot restore newborn collision save");
+	}
+	const auto actual = projectile_birth_future(expected.at("victim").get<int>(), expected.at("shot").get<int>(), expected.at("thief_slot").get<int>());
+	std::ofstream output(root / (cold ? "birth-cold.json" : "birth-restored.json"));
+	output << actual.dump(2) << '\n';
+	output.close();
+	require(bool(output), "Cannot write restored newborn collision receipt");
+	const auto wanted = projectile_birth_semantic(expected), observed = projectile_birth_semantic(actual);
+	if (observed != wanted) std::cerr << "Newborn collision differences=" << nlohmann::json::diff(wanted, observed).dump() << '\n';
+	require(observed == wanted, "Disk continuation changed newborn damage, projectile disposition or SIM state");
+	std::cout << "Newborn collision uninterrupted/disk continuation passed; cold=" << cold << '\n';
+}
+
+static void projectile_invalid_disk_restore(const std::filesystem::path &root)
+{
+	const auto user = root / "preview-user";
+	std::ifstream input(user / "projectile-birth.sav", std::ios::binary);
+	xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
+	constexpr char tag[] = "DXXLTR01";
+	const auto found = std::search(bytes.begin(), bytes.end(), tag, tag + 8);
+	require(found != bytes.end() && bytes.end() - found >= 16, "Cannot locate complete XL trailer in newborn save");
+	// Corrupt only the derived save checksum; authentic mission bytes stay untouched
+	*(found + 12) ^= 1;
+	write_bytes((user / "birth-invalid.sav").string().c_str(), bytes);
+	Players[Player_num].energy = i2f(91);
+	const int before = Players[Player_num].energy;
+	char save[] = "birth-invalid.sav";
+	const bool accepted = state_restore_all_sub(save, 0);
+	const int after = Players[Player_num].energy;
+	const nlohmann::json result = { { "accepted", accepted }, { "energy_before", before }, { "energy_after", after } };
+	std::ofstream output(root / "birth-invalid-restore.json");
+	output << result.dump(2) << '\n';
+	output.close();
+	require(bool(output), "Cannot write invalid disk restore receipt");
+	std::cout << "Invalid whole-save restore: " << result.dump() << '\n';
+	require(!accepted && before == after, "Invalid XL trailer replaced live native player resources before rejection");
+}
+
 static void projectile_robot_damage_grace()
 {
 	const int victim = projectile_robot();
@@ -502,6 +713,7 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 	std::ifstream input(user / "projectile-state.bin", std::ios::binary);
 	const xl_compat::Bytes encoded{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
 	const auto before = projectile_capture();
+	const auto births_before = xl_object_birth_snapshot();
 	require(before.size() >= 2, "Need multiple projectile owners for malformed-state controls");
 	const auto hits_before = xl_camera_hit_snapshot();
 	const auto motion_before = xl_camera_motion_snapshot();
@@ -511,7 +723,7 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 	std::vector<xl_compat::CameraHitState> live_hits(hits_before.size());
 	std::vector<bool> had_hits;
 	for (std::size_t i = 0; i < hits_before.size(); ++i) had_hits.push_back(xl_camera_hit_state_get(hits_before[i].owner, live_hits[i]));
-	for (int variant = 0; variant < 56; ++variant) {
+	for (int variant = 0; variant < 75; ++variant) {
 		auto block = nlohmann::json::parse(encoded.begin() + 16, encoded.end());
 		auto &rows = block["projectiles"];
 		if (variant == 0) rows[0][0] = MAX_OBJECTS;
@@ -571,6 +783,30 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 		if (variant == 53) block["sim_rng_calls"] = UINT64_MAX;
 		if (variant == 54) block["sim_rng_calls"] = 0.5;
 		if (variant == 55) block["sim_rng_calls"] = nlohmann::json::boolean_t(true);
+		if (variant == 56) block.erase("births");
+		if (variant == 57) block["births"]["unknown"] = 0;
+		if (variant == 58) block["births"]["version"] = 2;
+		if (variant == 59) block["births"]["objects"].erase(block["births"]["objects"].begin());
+		if (variant == 60) block["births"]["objects"][1] = block["births"]["objects"][0];
+		if (variant == 61) block["births"]["objects"][0][0] = MAX_OBJECTS;
+		if (variant == 62) block["births"]["objects"][0][1] = INT32_MAX;
+		if (variant == 63) block["births"]["objects"][0][2] = GameTime64 + 1;
+		if (variant == 64) block["births"]["objects"][0][2] = -1;
+		if (variant == 65) block["births"]["objects"][0][3] = UINT64_MAX;
+		if (variant == 66) {
+			block["births"]["objects"][0][3] = block["births"]["objects"][1][3] = 1;
+		}
+		if (variant == 67) block["births"]["objects"][0][3] = nlohmann::json::boolean_t(false);
+		if (variant == 68) block["births"]["next"] = -1;
+		if (variant == 69) block["births"]["next"] = UINT64_MAX;
+		if (variant == 70) block["births"]["next"] = 1.5;
+		if (variant == 71) block["births"]["objects"][0][0] = 0.5;
+		if (variant == 72) block["births"]["objects"].push_back(block["births"]["objects"][0]);
+		if (variant == 73) {
+			block["births"]["objects"][0][2] = 1;
+			block["births"]["objects"][0][3] = 0;
+		}
+		if (variant == 74) block["births"]["version"] = nlohmann::json::boolean_t(true);
 		const auto text = block.dump();
 		xl_compat::Bytes bad(encoded.begin(), encoded.begin() + 16);
 		bad.insert(bad.end(), text.begin(), text.end());
@@ -582,9 +818,15 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 		}
 		write_bytes((user / "projectile-bad.bin").string().c_str(), bad);
 		file = PHYSFS_openRead("projectile-bad.bin");
-		const bool rejected = file && !xl_wall_trigger_read(file) && PHYSFS_close(file) && projectile_same(before, projectile_capture());
-		if (!rejected) std::cerr << "Malformed projectile variant=" << variant << "\n";
+		const bool opened = file != nullptr;
+		const bool accepted = file && xl_wall_trigger_read(file);
+		const bool closed = file && PHYSFS_close(file);
+		const bool unchanged = projectile_same(before, projectile_capture());
+		const bool rejected = opened && !accepted && closed && unchanged;
+		if (!rejected) std::cerr << "Malformed projectile variant=" << variant << " opened=" << opened
+			                     << " accepted=" << accepted << " closed=" << closed << " unchanged=" << unchanged << '\n';
 		require(rejected, "Malformed projectile trailer was accepted or changed live history");
+		require(xl_object_birth_snapshot() == births_before, "Malformed trailer published object birth state");
 		require(xl_camera_flash_snapshot() == flash_before, "Malformed trailer published flash state");
 		require(FrameTime == frame_before && d_rand_get_call_count() == calls_before, "Malformed trailer published frame time or SIM count");
 		require(xl_camera_motion_snapshot() == motion_before && xl_input_demo_cached_clock() == clock_before,
@@ -601,7 +843,7 @@ static void projectile_corrupt_controls(const std::filesystem::path &root)
 	xl_projectile_clear();
 	file = PHYSFS_openRead("projectile-state.bin");
 	require(file && xl_wall_trigger_read(file) && PHYSFS_close(file) && projectile_same(before, projectile_capture()), "Valid projectile trailer did not recover");
-	std::cout << "Fifty-six malformed projectile/camera hit/flash/clock trailers rejected before table publication; valid recovery passed\n";
+	std::cout << "Seventy-five malformed projectile/birth/camera hit/flash/clock trailers rejected before table publication; valid recovery passed\n";
 }
 
 static nlohmann::json camera_hit_continuation_snapshot()
@@ -610,7 +852,7 @@ static nlohmann::json camera_hit_continuation_snapshot()
 	require(d_rand_get_state(&sim_state), "Cannot capture SIM state for cold continuation");
 	auto hits = nlohmann::json::array();
 	for (const auto &hit : xl_camera_hit_snapshot()) hits.push_back({ hit.owner, hit.signature, hit.type, hit.elapsed });
-	return { { "motion", xl_camera_motion_snapshot() }, { "cached_clock", xl_input_demo_cached_clock() }, { "hits", hits }, { "flash", xl_camera_flash_snapshot() }, { "children", camera_children_capture() }, { "frame_time", FrameTime }, { "sim_rng_calls", d_rand_get_call_count() }, { "sim_rng_state", sim_state } };
+	return { { "births", xl_object_birth_snapshot() }, { "motion", xl_camera_motion_snapshot() }, { "cached_clock", xl_input_demo_cached_clock() }, { "hits", hits }, { "flash", xl_camera_flash_snapshot() }, { "children", camera_children_capture() }, { "frame_time", FrameTime }, { "sim_rng_calls", d_rand_get_call_count() }, { "sim_rng_state", sim_state } };
 }
 static void camera_hit_disk_controls(const std::filesystem::path &root)
 {
@@ -657,7 +899,6 @@ static void camera_hit_disk_controls(const std::filesystem::path &root)
 	require(xl_camera_controller_ticks() == unsigned(saved_ticks), "Camera disk restore lost its cached frame clock");
 	require(xl_camera_flash_snapshot() == saved_flash, "Full disk restore lost impact-earned flash delay/color");
 	require(camera_children_capture() == saved_children, "Full disk restore lost smart child ownership, target or motion");
-	for (const auto &child : saved_children) require(!xl_object_birth_order(child[0]), "Restored smart child retained omitted source creation order");
 	xl_compat::CameraHitState restored;
 	require(xl_camera_hit_state_get(owner, restored) && restored.repaired == int64_t(saved_ticks) - elapsed &&
 	            !restored.next && !restored.shield_time && !restored.critical_time &&
@@ -689,7 +930,8 @@ static void camera_hit_cold_controls(const std::filesystem::path &root)
 	require(restored == expected, "Cold camera hit restore changed clocks, elapsed repair, flash or children");
 	const auto cached = xl_input_demo_cached_clock();
 	SDL_Delay(2);
-	timer_update();
+	// The ordinary unpaused frame samples GetSlowTicks after native restore
+	calc_frame_time();
 	xl_camera_controller_begin_frame();
 	require(xl_camera_controller_ticks() > cached && xl_camera_controller_ticks() == xl_input_demo_cached_clock(),
 	        "Cold camera continuation did not advance in the saved clock domain");
@@ -704,6 +946,19 @@ static int projectile_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir"));
+		const auto mode = std::string(find_arg_value(argc, argv, "-projectile-test"));
+		if (mode == "birth" || mode == "birth-resume" || mode == "birth-atomic") {
+			std::strcpy(Players[Player_num].callsign, "XLTest");
+			input_demo_set_skip_level_intro(1);
+			if (mode != "birth-resume") {
+				require(load_base_mission("neptunxl", error, sizeof(error)), error);
+				StartNewGame(1);
+				Game_suspended = SUSP_ROBOTS;
+			}
+			if (mode == "birth-atomic") projectile_invalid_disk_restore(root);
+			else projectile_birth_continuation(root, mode == "birth-resume");
+			return 0;
+		}
 		if (!std::strcmp(find_arg_value(argc, argv, "-projectile-test"), "resume")) {
 			std::strcpy(Players[Player_num].callsign, "XLTest");
 			input_demo_set_skip_level_intro(1);
@@ -830,6 +1085,7 @@ static int projectile_test(int argc, char **argv)
 		do_explosion_sequence(saved_effect);
 		const auto effect_position = saved_effect->pos;
 		const auto saved = projectile_capture();
+		const auto saved_births = xl_object_birth_snapshot();
 		char save[] = "projectiles.sav", description[] = "XL projectile history";
 		stop_time();
 		require(state_save_all_sub(save, description), "Cannot save earned projectile histories");
@@ -842,7 +1098,8 @@ static int projectile_test(int argc, char **argv)
 		require(state_restore_all_sub(save, 0) && projectile_same(saved, projectile_capture()), "Disk through stock lost full projectile histories");
 		require(Objects[evicted].control_type == CT_NONE && Objects[evicted].movement_type == MT_NONE,
 		        "Full save through stock reactivated a static robot");
-		require(xl_object_birth_time(first) == 0 && xl_object_birth_time(retained) == 0, "Disk restore did not reset private creation times like source level reload");
+		require(xl_object_birth_snapshot() == saved_births && xl_object_birth_time(first) == 7 * F1_0 && xl_object_birth_time(retained) == 7 * F1_0,
+		        "Forward disk restore lost earned object birth time or append order");
 		auto *saved_viewer = Viewer;
 		auto restore_viewer = *ConsoleObject;
 		restore_viewer.pos.x += 10 * F1_0;
@@ -851,7 +1108,7 @@ static int projectile_test(int argc, char **argv)
 		Viewer = saved_viewer;
 		require(Objects[effect_slot].type == OBJ_FIREBALL && !std::memcmp(&effect_position, &Objects[effect_slot].pos, sizeof(effect_position)),
 		        "Restored explosion inherited unsaved source motion state");
-		std::cout << "XL object birth and explosion motion disk reset passed\n";
+		std::cout << "XL forward object birth preservation and source explosion motion reset passed\n";
 		require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 		const auto shields = Objects[retained].shields;
 		collide_robot_and_weapon(&Objects[retained], &Objects[first], &Objects[retained].pos);

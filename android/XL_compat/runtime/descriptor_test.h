@@ -1,5 +1,8 @@
 // Test-only mutation at the native preflight/commit boundary
 #include "no_damage_persistence_test.h"
+#include "mission_prepare.h"
+#include "input_demo_world_trace.h"
+#include "input_demo_object_trace.h"
 static std::string descriptor_mutation_path;
 static std::string archive_removal_path;
 static std::string archive_corruption_path;
@@ -31,6 +34,104 @@ extern "C" void xl_test_descriptor_staged(void)
 }
 
 // Native descriptor discovery without admitting unaudited XL gameplay
+static void descriptor_retained_dependency_controls()
+{
+	const auto walk = [](xl_assets::ObjectDependencies &graph) {
+		graph.robot(0);
+		graph.weapon(CONCUSSION_ID);
+		graph.powerup(POW_SHIELD_BOOST);
+		graph.texture(0);
+		graph.effect(0);
+		graph.wall_clip(0);
+	};
+	const auto same = [](const auto &a, const auto &b) {
+		return a.robot_profiles == b.robot_profiles && a.robots == b.robots && a.weapons == b.weapons &&
+		       a.powerups == b.powerups && a.models == b.models && a.clips == b.clips &&
+		       a.bitmaps == b.bitmaps && a.sounds == b.sounds && a.textures == b.textures &&
+		       a.effects == b.effects && a.wall_clips == b.wall_clips;
+	};
+	XlPreparedResources retained("d2leva-1.rl2");
+	auto expected = retained.dependencies();
+	walk(expected);
+	bool bound_valid = false, live_rejected = false;
+	{
+		struct Restore {
+			int weapons = N_weapon_types, powerups = N_powerup_types, clips = Num_vclips, effects = Num_effects;
+			int walls = Num_wall_anims, textures = NumTextures, bitmaps = N_ObjBitmaps, low_memory = GameArg.SysLowMem;
+			weapon_info weapon = Weapon_info[CONCUSSION_ID];
+			powerup_type_info powerup = Powerup_info[POW_SHIELD_BOOST];
+			vclip clip = Vclip[Powerup_info[POW_SHIELD_BOOST].vclip_num];
+			eclip effect = Effects[0];
+			wclip wall = WallAnims[0];
+			bitmap_index texture = Textures[0];
+			tmap_info info = TmapInfo[0];
+			std::array<ubyte, MAX_SOUNDS> sounds, alternates;
+			Restore()
+			{
+				std::copy_n(Sounds, MAX_SOUNDS, sounds.begin());
+				std::copy_n(AltSounds, MAX_SOUNDS, alternates.begin());
+			}
+			~Restore()
+			{
+				N_weapon_types = weapons;
+				N_powerup_types = powerups;
+				Num_vclips = clips;
+				Num_effects = effects;
+				Num_wall_anims = walls;
+				NumTextures = textures;
+				N_ObjBitmaps = bitmaps;
+				GameArg.SysLowMem = low_memory;
+				Weapon_info[CONCUSSION_ID] = weapon;
+				Powerup_info[POW_SHIELD_BOOST] = powerup;
+				Vclip[powerup.vclip_num] = clip;
+				Effects[0] = effect;
+				WallAnims[0] = wall;
+				Textures[0] = texture;
+				TmapInfo[0] = info;
+				std::copy(sounds.begin(), sounds.end(), Sounds);
+				std::copy(alternates.begin(), alternates.end(), AltSounds);
+			}
+		} restore;
+		Weapon_info[CONCUSSION_ID].render_type = 127;
+		Powerup_info[POW_SHIELD_BOOST].vclip_num = VCLIP_MAXNUM;
+		Vclip[restore.powerup.vclip_num].num_frames = 0;
+		Effects[0].vc.num_frames = 0;
+		WallAnims[0].num_frames = 0;
+		Textures[0].index = 0;
+		TmapInfo[0].eclip_num = MAX_EFFECTS;
+		std::fill_n(Sounds, MAX_SOUNDS, ubyte(255));
+		std::fill_n(AltSounds, MAX_SOUNDS, ubyte(255));
+		GameArg.SysLowMem = !restore.low_memory;
+		N_weapon_types = N_powerup_types = Num_vclips = Num_effects = Num_wall_anims = NumTextures = N_ObjBitmaps = 0;
+		XlPreparedResources prepared("d2leva-1.rl2");
+		walk(prepared.dependencies());
+		bound_valid = same(expected, prepared.dependencies()) && N_weapon_types == 0 && NumTextures == 0 &&
+		              Weapon_info[CONCUSSION_ID].render_type == 127 && Sounds[0] == 255;
+		try {
+			xl_assets::ObjectDependencies live;
+			live.weapon(CONCUSSION_ID);
+		} catch (const std::runtime_error &) {
+			live_rejected = true;
+		}
+	}
+	require(bound_valid && live_rejected, "prepared dependency walk used or repaired the previous mission's definition tables");
+	auto invalid = retained.dependencies();
+	std::vector<weapon_info> weapons(invalid.weapon_data, invalid.weapon_data + invalid.weapon_count);
+	weapons.at(CONCUSSION_ID).render_type = 127;
+	invalid.weapon_data = weapons.data();
+	bool rejected = false;
+	try {
+		invalid.weapon(CONCUSSION_ID);
+	} catch (const std::runtime_error &) {
+		rejected = true;
+	}
+	require(rejected, "invalid retained weapon definition fell back to the valid live table");
+	xl_assets::ObjectDependencies recovered;
+	walk(recovered);
+	require(same(expected, recovered), "retained definition controls failed to restore live table mappings and counts");
+	std::cout << "Retained dependency definitions: weapons, powerups, animations, textures and sound mappings ignore previous live tables; invalid candidate rejects\n";
+}
+
 static int descriptor_test(int argc, char **argv)
 {
 	std::setvbuf(stdout, nullptr, _IONBF, 0);
@@ -41,6 +142,7 @@ static int descriptor_test(int argc, char **argv)
 		require(load_base_mission("d2", error, sizeof(error)), error);
 		require(load_level("d2leva-1.rl2") == 0, "stock baseline level failed");
 		require(!xl_resource_texture_scope_enabled() && !*mission_resource_archive(), "stock mission enabled XL resource lookup");
+		descriptor_retained_dependency_controls();
 		const auto stock_definitions = gameplay_definitions();
 		const auto stock_model = arena_model();
 		const int stock_segments = Num_segments;
@@ -162,6 +264,77 @@ static int descriptor_test(int argc, char **argv)
 			PHYSFS_freeList(paths);
 			return result;
 		};
+		{
+			const auto snapshot = [] {
+				auto objects = nlohmann::json::object();
+				for (int slot = 0; slot < object_capacity(); ++slot)
+					if (Objects[slot].type != OBJ_NONE) objects[std::to_string(slot)] = input_demo_object_trace_snapshot(Objects[slot], slot);
+				return nlohmann::json{ { "world", input_demo_world_trace_snapshot() }, { "pool", input_demo_object_pool_trace_snapshot() }, { "objects", objects } };
+			};
+			Mission *live = Current_mission;
+			const auto before = snapshot();
+			const auto paths = search_paths();
+			const std::string live_archive = mission_resource_archive();
+			auto *prepared = mission_prepare_by_name("obsrv-xl");
+			const Mission *candidate = mission_prepared_descriptor(prepared);
+			require(prepared && candidate && candidate->enhanced == MISSION_ENHANCED_XL &&
+			            candidate->last_level == 1 && !std::strcmp(candidate->filename, "obsrv-xl") &&
+			            !std::strcmp(mission_prepared_level(prepared, 1), "obsrv-xl.rl2") &&
+			            !mission_prepared_level(prepared, 0) && !mission_prepared_level(prepared, 2) &&
+			            !mission_prepared_level(prepared, INT_MIN) && !mission_prepared_level(prepared, INT_MAX),
+			        "retained original descriptor lost identity or level bounds");
+			const std::string archive = mission_prepared_archive(prepared);
+			require(Current_mission == live && snapshot() == before && search_paths() == paths &&
+			            !PHYSFS_getMountPoint(archive.c_str()) && !PHYSFS_getRealDir("obsrv-xl.rl2"),
+			        "mission preparation published candidate state or archive lookup");
+			PHYSFS_file *member = mission_prepared_open(prepared, "OBSRV-XL.RL2");
+			xl_compat::Bytes bytes(original_17.size());
+			require(member && PHYSFS_readBytes(member, bytes.data(), bytes.size()) == PHYSFS_sint64(bytes.size()) &&
+			            bytes == original_17 && Current_mission == live && snapshot() == before &&
+			            !PHYSFS_getRealDir("obsrv-xl.rl2") && live_archive == mission_resource_archive(),
+			        "isolated candidate reads changed live lookup, world, pool, objects or RNG");
+			const auto private_paths = search_paths();
+			for (const char *bad : { "", "/obsrv-xl.rl2", "../obsrv-xl.rl2", "folder/../obsrv-xl.rl2", "folder//obsrv-xl.rl2", "C:/obsrv-xl.rl2", "folder\\obsrv-xl.rl2" })
+				require(!mission_prepared_open(prepared, bad), "candidate resource escaped its relative namespace");
+			require(!mission_commit_prepared(&prepared) && prepared && !mission_discard_prepared(&prepared) && prepared &&
+			            Current_mission == live && snapshot() == before && search_paths() == private_paths,
+			        "busy candidate lease was consumed or published");
+			require(PHYSFS_close(member) && mission_discard_prepared(&prepared) && !prepared &&
+			            mission_discard_prepared(&prepared) && search_paths() == paths && snapshot() == before && Current_mission == live,
+			        "discard did not release candidate ownership and restore the original search path");
+			// Derived copies preserve the authentic input files while the late-change control runs
+			const auto derived_descriptor = root.parent_path() / "prepreg.mn2", derived_archive = root.parent_path() / "prepreg.hog";
+			std::filesystem::copy_file(root / "obsrv-xl.hog", derived_archive);
+			std::filesystem::copy_file(root / "obsrv-xl.mn2", derived_descriptor);
+			auto *independent = mission_prepare_by_name("obsrv-xl");
+			prepared = mission_prepare_from_current_dir("prepreg.mn2");
+			require(independent && prepared && mission_discard_prepared(&independent) && !independent &&
+			            !std::strcmp(mission_prepared_descriptor(prepared)->filename, "prepreg"),
+			        "discarding another candidate invalidated retained identity storage");
+			const std::string retained = mission_prepared_descriptor_text(prepared);
+			{
+				std::ofstream changed(derived_descriptor, std::ios::trunc);
+				changed << "d2x-name = Changed after prepare\nnum_levels = 999999999999\n";
+				require(bool(changed), "cannot write derived descriptor mutation control");
+			}
+			member = mission_prepared_open(prepared, "obsrv-xl.rl2");
+			require(member && PHYSFS_fileLength(member) == PHYSFS_sint64(original_17.size()) && PHYSFS_close(member) &&
+			            Current_mission == live && snapshot() == before,
+			        "retained candidate could not read its independent archive before publication");
+			require(mission_commit_prepared(&prepared) && !prepared && Current_mission != live &&
+			            !std::strcmp(Current_mission_filename, "prepreg") && Last_level == 1 &&
+			            !std::strcmp(Level_names[0], "obsrv-xl.rl2") && retained == mission_descriptor_snapshot() &&
+			            mission_owns_resource_archive(PHYSFS_getRealDir("obsrv-xl.rl2")),
+			        "native commit reparsed changed descriptor bytes or lost retained archive ownership");
+			require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0 && search_paths() == paths,
+			        "retained mission commit did not recover the original stock resource scope");
+			live = Current_mission;
+			const auto recovered = snapshot();
+			require(!mission_prepare_from_current_dir("prepreg.mn2") && Current_mission == live &&
+			            snapshot() == recovered && search_paths() == paths,
+			        "malformed descriptor preparation changed the recovered world");
+			std::cout << "Retained mission preparation: isolated original reads, busy leases, snapshot commit and discard preserve live state\n";
+		}
 		auto fixture = [&](const char *name, const std::string &body, bool accepted) {
 			std::ofstream out(root / (std::string(name) + ".mn2"), std::ios::binary);
 			out << body;

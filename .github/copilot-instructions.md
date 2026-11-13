@@ -5,6 +5,7 @@ Cross-platform Descent 1/2 in C/C++ with SDL; current focus is the Android port
 ## Architecture
 
 - Minimize changes in `d1/` and `d2/` to ease upstream merges; put shared new code in `android/`. Check both games when adding hooks or fixing duplicated behavior, without broadly deduplicating upstream code
+- Keep D2X-XL format knowledge, admission/resource policy, runtime behavior, renderer helpers and developer-only configuration in `android/XL_compat/`. Native `d2/` changes should be narrow integration hooks or necessary changes to the existing native codec/state owner. Do not move or duplicate native save formats, expose private globals, or include large implementation fragments merely to make the native diff smaller. Explain any substantial native edit in the plan/review
 - Preserve Windows/Linux/macOS builds. Guard Android-only changes with `__ANDROID__` or separate files; identify Android-related diagnostic additions
 - Core edits are appropriate for introspection/automation, touch support, Android filesystem integration, and maintaining a single source of truth. Keep game-format knowledge in the engine (e.g. player-file access through `playsave.c`), not duplicated in Kotlin
 - Document constants or interface definitions duplicated across native and JVM code so both copies stay synchronized
@@ -15,6 +16,7 @@ Cross-platform Descent 1/2 in C/C++ with SDL; current focus is the Android port
 ## Code and workflow
 
 - Do not create Git commits, push branches, do merges, etc. unless the user specifically asks for this
+- When the user authorizes a PR-based work run, publication and passing applicable CI are part of the work. Use non-draft, immediate-parent stacked PRs in the authorized fork, publish coherent locally tested checkpoints early, monitor CI while continuing independent work, and fix failures before acceptance. Record final-candidate checks and meaningful skip/blocker reasons in the handoff and next kickoff prompt. This does not authorize merges or upstream publication
 - Match existing style, especially in `d1/` and `d2/`, including header-defined string constants. The engine is largely C-style C++; simple RAII and standard containers are welcome in `android/` when they improve safety
 - Avoid unnecessary wrappers, abstractions, and duplication. Preserve handmade comments
 - Prefer printable ASCII and UTF-8 without BOM. No emoji or em dashes. Omit terminal periods in standalone log messages and comments

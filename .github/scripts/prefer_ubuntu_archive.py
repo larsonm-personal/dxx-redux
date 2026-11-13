@@ -23,6 +23,10 @@ MIRRORS = Path("/etc/apt/apt-mirrors.txt")
 SOURCES = Path("/etc/apt/sources.list.d/ubuntu.sources")
 
 
+class UnmanagedSources(ValueError):
+    """The optional priority optimization does not apply to this source layout."""
+
+
 def prefer_archive(mirrors, sources, environ, release, machine):
     """Validate the known image configuration before returning replacement bytes."""
     if (
@@ -35,8 +39,14 @@ def prefer_archive(mirrors, sources, environ, release, machine):
     ):
         raise ValueError("Expected a disposable GitHub-hosted Ubuntu Noble x64 runner")
     uris = re.findall(rb"^URIs:[ \t]*(.*)$", sources, re.MULTILINE)
+    # Some hosted images retain cloud-init's official direct sources. No mirror
+    # priorities apply there; leave both files untouched and let apt use them
+    if uris and all(
+        re.fullmatch(rb"https?://(?:azure\.archive|archive|security)\.ubuntu\.com/ubuntu/?", uri) for uri in uris
+    ):
+        return mirrors
     if not uris or any(uri != b"mirror+file:/etc/apt/apt-mirrors.txt" for uri in uris):
-        raise ValueError("Unexpected Ubuntu source URIs; refusing to change mirror priorities")
+        raise UnmanagedSources("Ubuntu source layout is not managed by the mirror priority helper")
     if mirrors not in (ORIGINAL, PREFERRED):
         raise ValueError("Unexpected apt mirror list; refusing to change mirror priorities")
     return PREFERRED
@@ -44,14 +54,24 @@ def prefer_archive(mirrors, sources, environ, release, machine):
 
 def main():
     before = MIRRORS.read_bytes()
-    after = prefer_archive(
-        before, SOURCES.read_bytes(), os.environ, platform.freedesktop_os_release(), platform.machine()
-    )
+    try:
+        after = prefer_archive(
+            before, SOURCES.read_bytes(), os.environ, platform.freedesktop_os_release(), platform.machine()
+        )
+    except UnmanagedSources:
+        # This is a download optimization, not a prerequisite for valid apt
+        # sources. Unknown layouts must never be rewritten; apt still validates
+        # and installs dependencies using the runner's original configuration
+        print("Unmanaged Ubuntu source layout: leaving apt configuration unchanged")
+        return
     if before != after:
         subprocess.run(["sudo", "tee", str(MIRRORS)], input=after, stdout=subprocess.DEVNULL, check=True)
     if MIRRORS.read_bytes() != after:
         raise RuntimeError("Apt mirror priority verification failed")
-    print("Apt mirror priorities: archive=1, Azure=2, security=3")
+    if after == PREFERRED:
+        print("Apt mirror priorities: archive=1, Azure=2, security=3")
+    else:
+        print("Official direct Ubuntu sources: leaving apt configuration unchanged")
 
 
 if __name__ == "__main__":

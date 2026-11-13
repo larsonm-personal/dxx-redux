@@ -92,6 +92,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 #include "timer.h"
 #include "d1_in_d2/d1_in_d2_ai.h"
+#include "object_decode_context.h"
 #include "d1_in_d2/d1_in_d2_semantics.h"
 #include "homing_compat.h"
 #include "d1_in_d2/d1_in_d2_weapons.h"
@@ -3238,10 +3239,12 @@ void wake_up_missile_camera_robots(void)
 }
 
 // Swap endianess of given object_rw if swap == 1
-void object_rw_swap(object_rw *obj, int swap, int native_ai_format)
+int object_rw_swap_for_context(object_rw *obj, int swap, int native_ai_format,
+                               const d2_object_decode_context *context)
 {
+	if (!obj || (context && !object_decode_context_valid(context))) return 0;
 	if (!swap)
-		return;
+		return 1;
 
 	obj->signature     = SWAPINT(obj->signature);
 	obj->next          = SWAPSHORT(obj->next);
@@ -3319,7 +3322,7 @@ void object_rw_swap(object_rw *obj, int swap, int native_ai_format)
 			
 		case CT_MORPH:
 		case CT_AI:
-			if (native_ai_format && d1_in_d2_ai_swap_object(obj)) break;
+			if (native_ai_format && d1_in_d2_ai_swap_object_for_context(obj, context)) break;
 			obj->ctype.ai_info.hide_segment           = SWAPSHORT(obj->ctype.ai_info.hide_segment);
 			obj->ctype.ai_info.hide_index             = SWAPSHORT(obj->ctype.ai_info.hide_index);
 			obj->ctype.ai_info.path_length            = SWAPSHORT(obj->ctype.ai_info.path_length);
@@ -3373,6 +3376,12 @@ void object_rw_swap(object_rw *obj, int swap, int native_ai_format)
 			break;
 			
 	}
+	return 1;
+}
+
+void object_rw_swap(object_rw *obj, int swap, int native_ai_format)
+{
+	object_rw_swap_for_context(obj, swap, native_ai_format, NULL);
 }
 
 void set_homing_update_rate(int update_rate, int original_homing) {

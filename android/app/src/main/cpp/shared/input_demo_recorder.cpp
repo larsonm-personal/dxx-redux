@@ -510,6 +510,13 @@ int input_demo_recorder_is_active(void)
 	return g_input_demo_recorder_session.active ? 1 : 0;
 }
 
+const uint8_t *input_demo_recorder_checkpoint_data(size_t *size)
+{
+	const auto &session = g_input_demo_recorder_session;
+	if (size) *size = session.active ? session.checkpoint_data.size() : 0;
+	return session.active && !session.checkpoint_data.empty() ? session.checkpoint_data.data() : nullptr;
+}
+
 uint32_t input_demo_recorder_frame_count(void)
 {
 	return static_cast<uint32_t>(g_input_demo_recorder_session.control_frames.size());

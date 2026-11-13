@@ -15,7 +15,18 @@ execute_process(
 file(WRITE "${OUTPUT}/controls.log" "${stdout}${stderr}")
 string(FIND "${stdout}" "XL speed boost source controls passed" witness)
 string(FIND "${stdout}" "Crossing controls: 1944 cases, bad FVI 0, bad physics 0" crossing_witness)
-if(NOT result EQUAL 0 OR witness LESS 0 OR crossing_witness LESS 0)
+if(NOT result EQUAL 0
+   OR witness LESS 0
+   OR crossing_witness LESS 0
+   OR NOT
+      stdout
+      MATCHES
+      "Boost raw observation: stale actor, turn phase, velocity bounds and shared speed preserved without mutation or RNG"
+   OR NOT
+      stdout
+      MATCHES
+      "XL cached pause clock: nested pause holds the interrupted tick, next input poll observes elapsed uptime"
+)
     message(FATAL_ERROR "Boost controls failed (${result}): ${stdout}${stderr}")
 endif()
 if(REFERENCE)

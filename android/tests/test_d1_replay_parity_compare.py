@@ -15,12 +15,16 @@ import d1_replay_parity as parity
 
 
 def schema_example(schema):
+    if schema is str:
+        return ""
     if schema is int:
         return 0
     if schema is bool:
         return False
     if schema is float:
         return 0.0
+    if isinstance(schema, range):
+        return 0 if 0 in schema else schema.start
     if isinstance(schema, dict):
         return {key: schema_example(child) for key, child in schema.items() if key != "*"}
     if isinstance(schema, tuple):
@@ -1380,7 +1384,7 @@ class ParityTests(unittest.TestCase):
         def convert(rows):
             for row in rows:
                 if row["type"] in ("world_state", "world_boundary"):
-                    row["version"] = 11
+                    row["version"] = 19
                 if row["type"] in ("object_state", "object_boundary"):
                     row["capacity"] = 1367
                     row["allocator"]["free_obj_list"] = list(range(1367))
@@ -1415,6 +1419,16 @@ class ParityTests(unittest.TestCase):
                     state["xl_time"]["slow_motion"]["clocks"] = [[1.0, 0, 26, False]] * 2
                     state["xl_triggers"] = [[0, -1, -1, 0, 0, 0, 0, 0, 0, 0] for _ in state["triggers"]]
                     state["xl_cameras"] = {"version": 1, "ticks": 0, "states": []}
+                    state["xl_births"] = {"version": 1, "next": 0, "objects": [[3, 0, 0, 0]]}
+                    state["xl_native"] = schema_example(parity.XL_NATIVE_SCHEMA)
+                    state["xl_native"].update(
+                        version=1, afterburner_charge=[0], afterburner_times=[0] * 1367, guided=[[-1, -1]] * 8
+                    )
+                    state["xl_native"]["escort"]["version"] = 1
+                    state["xl_native"]["route"] = schema_example(parity.XL_ROUTE_SCHEMA)
+                    state["xl_native"]["route"].update(
+                        version=1, enabled=True, trigger_capacity=254, Escort_route_activated_triggers=[0] * 254
+                    )
 
         self.mutate(path, convert)
         return path
@@ -1453,6 +1467,50 @@ class ParityTests(unittest.TestCase):
 
                 self.mutate(bad, change)
                 self.assertEqual(compare(left, bad, self.header, "d2", "d2")["status"], "fail")
+
+    def test_native_d2_awareness_compares_active_entries_and_unknown_inactive_fields(self):
+        left = self.native_d2_trace("awareness-left", True)
+        right = self.write("awareness-right", list(parity.records(left)))
+
+        def stale(rows):
+            for row in rows:
+                if "ai" in row.get("state", {}):
+                    row["state"]["ai"]["awareness"][0].update(segment=1, type=2, position=[3, 4, 5])
+
+        self.mutate(right, stale)
+        raw = right.read_bytes()
+        self.assertEqual(parity.compare_world(left, right, self.header, "d2", "d2")["status"], "pass")
+        self.assertEqual(right.read_bytes(), raw)
+        for kind in ("active", "unknown"):
+            bad = self.write("awareness-bad", list(parity.records(right)))
+            expected = left
+            if kind == "active":
+                expected = self.write("awareness-active", list(parity.records(left)))
+                self.mutate(
+                    expected,
+                    lambda rows: [
+                        row["state"]["ai"].update(Num_awareness_events=1)
+                        for row in rows
+                        if "ai" in row.get("state", {})
+                    ],
+                )
+
+            def change(rows):
+                for row in rows:
+                    if "ai" in row.get("state", {}):
+                        ai = row["state"]["ai"]
+                        if kind == "active":
+                            ai["Num_awareness_events"] = 1
+                        else:
+                            ai["awareness"][0]["future_gameplay"] = 7
+
+            self.mutate(bad, change)
+            report = parity.compare_world(expected, bad, self.header, "d2", "d2")
+            self.assertEqual(report["status"], "fail")
+            if kind == "active":
+                self.assertIn(
+                    "world_boundary:restored:$.state.ai.awareness[0].position[0]", report["first_field_differences"]
+                )
 
     def test_native_d2_active_effect_sides_are_never_normalized(self):
         left = self.native_d2_trace("effect-left", True)
@@ -1527,7 +1585,7 @@ class ParityTests(unittest.TestCase):
 
     def test_xl_clock_observation_is_required_typed_and_compared(self):
         path = self.native_d2_trace("xl-time", True)
-        for key in ("xl_time", "xl_cameras", "xl_triggers", "xl_player_cfg"):
+        for key in ("xl_time", "xl_cameras", "xl_triggers", "xl_player_cfg", "xl_births", "xl_native"):
             bad = self.write("xl-missing-time", list(parity.records(path)))
             self.mutate(bad, lambda rows: rows[2]["state"].pop(key))
             with self.assertRaisesRegex(parity.EvidenceError, "Missing world field"):
@@ -1550,6 +1608,459 @@ class ParityTests(unittest.TestCase):
         changed = self.write("xl-pending-time", list(parity.records(path)))
         self.mutate(changed, lambda rows: rows[2]["state"]["xl_time"]["slow_motion"].update(bullet_requested=True))
         self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_native_state_is_bounded_and_compared(self):
+        path = self.native_d2_trace("xl-native", True)
+        list(parity.world_states(path, self.header, "d2"))
+        invalid = (
+            lambda native: native.pop("omega_charge"),
+            lambda native: native.update(version=2),
+            lambda native: native.update(omega_charge=65537),
+            lambda native: native.update(omega_charge=True),
+            lambda native: native.update(wiggle_phase=65536),
+            lambda native: native.update(afterburner_charge=[65537]),
+            lambda native: native.update(afterburner_charge=[]),
+            lambda native: native["afterburner_times"].pop(),
+            lambda native: native["afterburner_times"].__setitem__(0, 9223372036854775808),
+            lambda native: native["guided"].pop(),
+            lambda native: native["guided"].__setitem__(0, [-2, -1]),
+            lambda native: native["guided"].__setitem__(0, [1367, 0]),
+            lambda native: native["guided"].__setitem__(0, [-1, 0]),
+            lambda native: native["guided"].__setitem__(0, [3, 2147483648]),
+            lambda native: native["seismic"].update(magnitude=2147483648),
+            lambda native: native["seismic"]["detonations"].pop(),
+            lambda native: native["seismic"].update(phase=25),
+            lambda native: native["seismic"].update(interval=[1, 2]),
+            lambda native: native["seismic"]["detonations"].__setitem__(0, [False, -1, 0.5]),
+        )
+        for mutation in invalid:
+            bad = self.write("xl-native-invalid", list(parity.records(path)))
+            self.mutate(bad, lambda rows: mutation(rows[2]["state"]["xl_native"]))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        changes = (
+            lambda native: native.update(omega_charge=1),
+            lambda native: native.update(wiggle_phase=1),
+            lambda native: native["afterburner_charge"].__setitem__(0, 1),
+            lambda native: native["afterburner_times"].__setitem__(0, 1),
+            lambda native: native["guided"].__setitem__(0, [3, 0]),
+            lambda native: native["seismic"]["detonations"].__setitem__(0, [True, 0, 0.5]),
+            lambda native: native["seismic"].update(interval=[0, 1]),
+            lambda native: native["seismic"].update(magnitude=1),
+            lambda native: native["seismic"].update(strength=1),
+            lambda native: native["seismic"].update(pending=1),
+            lambda native: native["seismic"].update(phase=1),
+            lambda native: native["seismic"].update(fraction=1),
+            lambda native: native.update(future_gameplay=1),
+        )
+        for mutation in changes:
+            changed = self.write("xl-native-changed", list(parity.records(path)))
+            self.mutate(changed, lambda rows: mutation(rows[2]["state"]["xl_native"]))
+            self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_escort_fields_inventory_and_text_storage_are_required_and_compared(self):
+        path = self.native_d2_trace("xl-escort", True)
+        invalid = (
+            lambda escort: escort.pop("Escort_last_path_created"),
+            lambda escort: escort.update(version=2),
+            lambda escort: escort.update(Buddy_objnum=1367),
+            lambda escort: escort.update(Stolen_item_index=10),
+            lambda escort: escort.update(Escort_goal_message_generation=-1),
+            lambda escort: escort.update(Escort_goal_message_sequence=4294967296),
+            lambda escort: escort.update(Buddy_sorry_time=9223372036854775808),
+            lambda escort: escort["stolen"].pop(),
+            lambda escort: escort["stolen"].__setitem__(0, 256),
+            lambda escort: escort["stolen"].__setitem__(0, True),
+            lambda escort: escort["Escort_goal_message_text"].pop(),
+            lambda escort: escort.update(Escort_goal_message_text=[65] * 150),
+        )
+        for mutation in invalid:
+            bad = self.write("xl-escort-invalid", list(parity.records(path)))
+            self.mutate(bad, lambda rows: mutation(rows[2]["state"]["xl_native"]["escort"]))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        fields = (
+            *parity.ESCORT_SIGNED_FIELDS,
+            *parity.ESCORT_UNSIGNED_FIELDS,
+            *parity.ESCORT_CLOCK_FIELDS,
+            "persistent_message",
+        )
+        changed = self.write("xl-escort-changed", list(parity.records(path)))
+        self.mutate(changed, lambda rows: rows[2]["state"]["xl_native"]["escort"].update(dict.fromkeys(fields, 1)))
+        report = parity.compare_world(path, changed, self.header, "d2", "d2")
+        self.assertEqual(report["status"], "fail")
+        paths = {difference["path"] for difference in report["first_field_differences"].values()}
+        for field in fields:
+            self.assertIn(f"$.state.xl_native.escort.{field}", paths)
+        for mutation in (
+            lambda escort: escort["stolen"].__setitem__(0, 1),
+            lambda escort: escort["Escort_goal_message_text"].__setitem__(0, 65),
+            lambda escort: escort["Escort_goal_message_text"].__setitem__(149, 255),
+            lambda escort: escort.update(future_gameplay=1),
+        ):
+            changed = self.write("xl-escort-buffer-changed", list(parity.records(path)))
+            self.mutate(changed, lambda rows: mutation(rows[2]["state"]["xl_native"]["escort"]))
+            self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_route_fields_pending_work_and_arrays_are_required_and_compared(self):
+        path = self.native_d2_trace("xl-route", True)
+        invalid = (
+            lambda route: route.pop("Escort_route_path_recalc_due_time"),
+            lambda route: route.update(version=2),
+            lambda route: route.update(enabled=1),
+            lambda route: route.update(trigger_capacity=100),
+            lambda route: route.update(restore_pending=2),
+            lambda route: route.pop("cache_poll_wait"),
+            lambda route: route.update(cache_poll_wait=-1),
+            lambda route: route.update(cache_poll_wait=131072),
+            lambda route: route.update(Escort_route_target_mode=3),
+            lambda route: route.update(Escort_route_path_recalc_limiter_count=5),
+            lambda route: route.update(Escort_route_pending_event_mask=-1),
+            lambda route: route.update(Escort_route_cache_poll_time=9223372036854775808),
+            lambda route: route["Escort_route_activated_triggers"].pop(),
+            lambda route: route["Escort_route_activated_triggers"].__setitem__(0, 256),
+            lambda route: route["Escort_route_path_recalc_limiter_timestamps"].pop(),
+            lambda route: route["Escort_route_goal_label"].pop(),
+            lambda route: route.update(Escort_route_goal_label=[65] * 64),
+        )
+        for mutation in invalid:
+            bad = self.write("xl-route-invalid", list(parity.records(path)))
+            self.mutate(bad, lambda rows: mutation(rows[2]["state"]["xl_native"]["route"]))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        fields = tuple(
+            field
+            for field in (
+                *parity.ROUTE_SIGNED_FIELDS,
+                *parity.ROUTE_UNSIGNED_FIELDS,
+                *parity.ROUTE_CLOCK_FIELDS,
+                "restore_pending",
+                "cache_poll_wait",
+            )
+            if field != "Escort_route_cache_poll_time"
+        )
+        # One comparison must report every mutated field, including unrelated ones
+        # Avoid parsing the full fixed metadata pools once per scalar
+        changed = self.write("xl-route-changed", list(parity.records(path)))
+        self.mutate(changed, lambda rows: rows[2]["state"]["xl_native"]["route"].update(dict.fromkeys(fields, 1)))
+        report = parity.compare_world(path, changed, self.header, "d2", "d2")
+        self.assertEqual(report["status"], "fail")
+        paths = {difference["path"] for difference in report["first_field_differences"].values()}
+        for field in fields:
+            self.assertIn(f"$.state.xl_native.route.{field}", paths)
+        for field, index in (
+            ("Escort_route_activated_triggers", 253),
+            ("Escort_route_path_recalc_limiter_timestamps", 3),
+            ("Escort_route_goal_label", 63),
+        ):
+            changed = self.write("xl-route-array-changed", list(parity.records(path)))
+            self.mutate(changed, lambda rows: rows[2]["state"]["xl_native"]["route"][field].__setitem__(index, 1))
+            self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+        disabled = self.write("xl-route-disabled", list(parity.records(path)))
+        self.mutate(
+            disabled,
+            lambda rows: [
+                row["state"]["xl_native"].update(route={"version": 1, "enabled": False})
+                for row in rows
+                if "xl_native" in row.get("state", {})
+            ],
+        )
+        list(parity.world_states(disabled, self.header, "d2"))
+
+    def test_xl_route_cache_host_epoch_preserves_poll_wait_and_unknown_fields(self):
+        path = self.native_d2_trace("xl-route-host-epoch", True)
+        changed = self.write("xl-route-rebased", list(parity.records(path)))
+        self.mutate(
+            changed,
+            lambda rows: rows[2]["state"]["xl_native"]["route"].update(Escort_route_cache_poll_time=82314),
+        )
+        self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "pass")
+        raw = list(parity.records(changed))
+        self.assertEqual(raw[2]["state"]["xl_native"]["route"]["Escort_route_cache_poll_time"], 82314)
+        self.mutate(changed, lambda rows: rows[2]["state"]["xl_native"]["route"].update(unknown_owner=1))
+        self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_metadata_full_typed_snapshot_is_required_validated_and_compared(self):
+        path = self.native_d2_trace("xl-metadata", True)
+        rows = list(parity.records(path))
+        state = next(row["state"] for row in rows if "xl_native" in row.get("state", {}))
+        metadata = state["xl_native"]["metadata"]
+        invalid = (
+            lambda m: m.update(version=2),
+            lambda m: m.pop("canonical_state"),
+            lambda m: m.update(canonical_analysis_profile_hash=1 << 64),
+            lambda m: m["canonical_snapshot"].update(topology_hash=True),
+            lambda m: m["live_work_summary"].update(last_tick_us=-1),
+            lambda m: m["canonical_state"].update(guidebot_note=[65] * 128),
+            lambda m: m["canonical_state"].update(route_step_count=97),
+            lambda m: m["route_certifier_workspace"]["queue"].pop(),
+            lambda m: m["route_frontier_workspace"]["reachable"].__setitem__(8999, 256),
+            lambda m: m["route_certifier_workspace"].update(
+                firing_search_best_score={"negative": False, "bits": [1, 0], "exponent": 0}
+            ),
+            lambda m: m["route_certifier_workspace"].update(
+                firing_search_best_score={"negative": False, "bits": [1] * 114, "exponent": 0}
+            ),
+            lambda m: m["route_certifier_workspace"].update(
+                firing_search_best_score={"negative": False, "bits": [], "exponent": 1}
+            ),
+        )
+        for mutation in invalid:
+            changed = copy.deepcopy(state)
+            mutation(changed["xl_native"]["metadata"])
+            with self.assertRaises(parity.EvidenceError):
+                parity.validate_world_state(changed, "d2", True)
+        # Hashes and microsecond counters retain all unsigned 64 bits
+        metadata["canonical_analysis_profile_hash"] = (1 << 64) - 1
+        metadata["live_work_summary"]["last_tick_us"] = (1 << 64) - 1
+        parity.validate_world_state(state, "d2", True)
+        mutations = (
+            lambda m: m.update(live_route_work_pending=1),
+            lambda m: m["route_frontier_workspace"]["queue"].__setitem__(8999, 1),
+            lambda m: m["live_candidate_state"]["route_steps"][95]["label"].__setitem__(63, 1),
+            lambda m: m["route_certifier_workspace"]["firing_search_best_score"].update(bits=[1], exponent=-1),
+            lambda m: m["published_route_decision"].update(semantic_hash=(1 << 64) - 1),
+            lambda m: m.update(unknown_owner=1),
+        )
+        for mutation in mutations:
+            changed = self.write("xl-metadata-changed", list(parity.records(path)))
+            self.mutate(changed, lambda items: mutation(items[2]["state"]["xl_native"]["metadata"]))
+            self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_event_owners_raw_bindings_pending_state_and_source_tables_are_compared(self):
+        path = self.native_d2_trace("xl-events", True)
+
+        def populate(rows):
+            for row in rows:
+                events = row.get("state", {}).get("xl_native", {}).get("events")
+                if events is None:
+                    continue
+                events["objects"] = [schema_example(parity.XL_OBJECT_EVENT_SCHEMA)]
+                events["bosses"]["live"] = [schema_example(parity.XL_BOSS_EVENT_SCHEMA)]
+                events["bosses"]["live"][0]["teleport_segments"] = [0, 1]
+                maker = schema_example(parity.XL_EVENTS_SCHEMA["equipment"]["makers"][0])
+                maker.update(timer=3, segment=1, enabled=1, pending=1, flags=[2147483648, 65536])
+                events["equipment"].update(makers=[maker], station_links=[[4, 1]])
+                events["producers"].update(implicit_flags=2147483648, ready_mask=1, authored=[[0, 0, 1, 0]])
+
+        self.mutate(path, populate)
+        state = next(row["state"] for row in parity.records(path) if "xl_native" in row.get("state", {}))
+        parity.validate_world_state(state, "d2", True)
+        invalid = (
+            lambda e: e.update(version=2),
+            lambda e: e.pop("objects"),
+            lambda e: e["objects"][0].update(num_links=11),
+            lambda e: e["objects"][0]["segments"].pop(),
+            lambda e: e["objects"][0].update(operated=1),
+            lambda e: e["bosses"]["live"][0].update(last=9223372036854775808),
+            lambda e: e["bosses"].update(checkpoint=[schema_example(parity.XL_BOSS_EVENT_SCHEMA)]),
+            lambda e: e["equipment"]["makers"][0].update(pending=2),
+            lambda e: e["equipment"]["makers"][0]["flags"].__setitem__(1, 4294967296),
+            lambda e: e["equipment"]["station_links"][0].pop(),
+            lambda e: e["producers"].update(ready_mask=2),
+            lambda e: e["producers"].update(authored=[[0, 0, 0, 0]] * 21),
+        )
+        for mutation in invalid:
+            changed = copy.deepcopy(state)
+            mutation(changed["xl_native"]["events"])
+            with self.assertRaises(parity.EvidenceError):
+                parity.validate_world_state(changed, "d2", True)
+        changes = (
+            (("objects", 0, "owner"), 1, "objects[0].owner"),
+            (("objects", 0, "segments", 9), 1, "objects[0].segments[9]"),
+            (("bosses", "live", 0, "death_start"), 1, "bosses.live[0].death_start"),
+            (("bosses", "live", 0, "generated"), True, "bosses.live[0].generated"),
+            (("bosses", "live", 0, "teleport_segments", 1), 2, "bosses.live[0].teleport_segments[1]"),
+            (("equipment", "makers", 0, "pending"), 0, "equipment.makers[0].pending"),
+            (("equipment", "makers", 0, "flags", 1), 65537, "equipment.makers[0].flags[1]"),
+            (("equipment", "station_links", 0, 1), 2, "equipment.station_links[0][1]"),
+            (("producers", "implicit_flags"), 2147483649, "producers.implicit_flags"),
+            (("producers", "ready_mask"), 0, "producers.ready_mask"),
+            (("unknown_owner",), 1, "unknown_owner"),
+        )
+        changed = self.write("xl-events-changed", list(parity.records(path)))
+
+        def change(rows):
+            events = rows[2]["state"]["xl_native"]["events"]
+            for keys, value, _ in changes:
+                target = events
+                for key in keys[:-1]:
+                    target = target[key]
+                target[keys[-1]] = value
+
+        self.mutate(changed, change)
+        report = parity.compare_world(path, changed, self.header, "d2", "d2")
+        self.assertEqual(report["status"], "fail")
+        paths = {difference["path"] for difference in report["first_field_differences"].values()}
+        for _, _, suffix in changes:
+            self.assertIn(f"$.state.xl_native.events.{suffix}", paths)
+
+    def test_xl_environment_cadence_bindings_and_full_patterns_are_checked(self):
+        path = self.native_d2_trace("xl-environment", True)
+
+        def populate(rows):
+            for row in rows:
+                state = row.get("state", {})
+                if "xl_native" not in state:
+                    continue
+                state["segments"] = [schema_example(parity.WORLD_SCHEMA["segments"][0])]
+                state["xl_native"]["environment"].update(
+                    fluid_scrape_elapsed=-1,
+                    repair_elapsed=65536 // 8,
+                    countdown=[65536 // 100, 9, 65535],
+                    flickers=[[0, 5, 16384, -(2**31), 2**31]],
+                )
+
+        self.mutate(path, populate)
+        state = next(row["state"] for row in parity.records(path) if "xl_native" in row.get("state", {}))
+        parity.validate_world_state(state, "d2", True)
+        for mutation in (
+            lambda e: e.update(version=2),
+            lambda e: e.update(fluid_scrape_elapsed=2**63),
+            lambda e: e.update(repair_elapsed=True),
+            lambda e: e["countdown"].pop(),
+            lambda e: e["countdown"].__setitem__(0, 65536 * 25 // 1000 + 1),
+            lambda e: e["countdown"].__setitem__(1, 25),
+            lambda e: e["countdown"].__setitem__(2, 65536),
+            lambda e: e["flickers"][0].__setitem__(0, 1),
+            lambda e: e["flickers"][0].__setitem__(1, 6),
+            lambda e: e["flickers"][0].__setitem__(2, -1),
+            lambda e: e["flickers"][0].__setitem__(3, -(2**31) - 1),
+            lambda e: e["flickers"][0].__setitem__(4, 2**32),
+            lambda e: e["flickers"][0].pop(),
+        ):
+            changed = copy.deepcopy(state)
+            mutation(changed["xl_native"]["environment"])
+            with self.assertRaises(parity.EvidenceError):
+                parity.validate_world_state(changed, "d2", True)
+        changed = self.write("xl-environment-changed", list(parity.records(path)))
+
+        def change(rows):
+            environment = rows[2]["state"]["xl_native"]["environment"]
+            environment["fluid_scrape_elapsed"] = 0
+            environment["repair_elapsed"] += 1
+            environment["countdown"][2] -= 1
+            environment["flickers"][0][4] += 1
+            environment["unknown_owner"] = 1
+
+        self.mutate(changed, change)
+        report = parity.compare_world(path, changed, self.header, "d2", "d2")
+        self.assertEqual(report["status"], "fail")
+        paths = {difference["path"] for difference in report["first_field_differences"].values()}
+        for suffix in ("fluid_scrape_elapsed", "repair_elapsed", "countdown[2]", "flickers[0][4]", "unknown_owner"):
+            self.assertIn(f"$.state.xl_native.environment.{suffix}", paths)
+
+    def test_xl_motion_raw_owners_vectors_history_and_campaign_are_checked(self):
+        path = self.native_d2_trace("xl-motion", True)
+
+        def populate(rows):
+            for row in rows:
+                motion = row.get("state", {}).get("xl_native", {}).get("motion")
+                if motion is None:
+                    continue
+                boost = schema_example(parity.XL_BOOST_SCHEMA)
+                boost.update(slot=3, owner=3, signature=7, boosted=1, speed=5, steps=9, phase=40000)
+                motion["boosts"].update(last_speed=7, states=[boost])
+                motion["spawns"]["configured"] = True
+                motion["spawns"]["points"][15].update(segment=9, side=5, orientation=list(range(9)))
+                motion["progression"].update(mission="earned", states=[0, 1, -1], next=2, bound=True)
+                shot = schema_example(parity.XL_PROJECTILE_SCHEMA)
+                shot.update(slot=4, owner=4, signature=11, count=1, victims=[3] + [0] * 19)
+                motion["projectiles"] = [shot]
+
+        self.mutate(path, populate)
+        state = next(row["state"] for row in parity.records(path) if "xl_native" in row.get("state", {}))
+        parity.validate_world_state(state, "d2", True)
+        for mutation in (
+            lambda m: m.update(version=2),
+            lambda m: m["boosts"]["states"][0].update(slot=1367),
+            lambda m: m["boosts"]["states"].append(copy.deepcopy(m["boosts"]["states"][0])),
+            lambda m: m["boosts"]["states"][0]["velocity"].pop(),
+            lambda m: m["boosts"]["states"][0].update(phase=65536),
+            lambda m: m["spawns"].update(configured=1),
+            lambda m: m["spawns"]["points"].pop(),
+            lambda m: m["spawns"]["points"][0]["orientation"].pop(),
+            lambda m: m["progression"].update(mission=1),
+            lambda m: m["progression"].update(states=[0] * 129),
+            lambda m: m["progression"].update(states=[1, 1]),
+            lambda m: m["progression"].update(mission=""),
+            lambda m: m["projectiles"][0].update(count=21),
+            lambda m: m["projectiles"][0]["victims"].pop(),
+        ):
+            changed = copy.deepcopy(state)
+            mutation(changed["xl_native"]["motion"])
+            with self.assertRaises(parity.EvidenceError):
+                parity.validate_world_state(changed, "d2", True)
+        changes = (
+            (("boosts", "last_speed"), 8, "boosts.last_speed"),
+            (("boosts", "states", 0, "signature"), 12, "boosts.states[0].signature"),
+            (("boosts", "states", 0, "phase"), 40001, "boosts.states[0].phase"),
+            (("boosts", "states", 0, "maximum", 2), 1, "boosts.states[0].maximum[2]"),
+            (("spawns", "points", 15, "orientation", 8), 9, "spawns.points[15].orientation[8]"),
+            (("progression", "states", 2), 1, "progression.states[2]"),
+            (("progression", "cache_restore"), True, "progression.cache_restore"),
+            (("projectiles", 0, "victims", 19), 2, "projectiles[0].victims[19]"),
+            (("unknown_owner",), 1, "unknown_owner"),
+        )
+        changed = self.write("xl-motion-changed", list(parity.records(path)))
+
+        def change(rows):
+            motion = rows[2]["state"]["xl_native"]["motion"]
+            for keys, value, _ in changes:
+                target = motion
+                for key in keys[:-1]:
+                    target = target[key]
+                target[keys[-1]] = value
+
+        self.mutate(changed, change)
+        report = parity.compare_world(path, changed, self.header, "d2", "d2")
+        self.assertEqual(report["status"], "fail")
+        paths = {difference["path"] for difference in report["first_field_differences"].values()}
+        for _, _, suffix in changes:
+            self.assertIn(f"$.state.xl_native.motion.{suffix}", paths)
+
+    def test_xl_births_are_bound_to_objects_and_compared(self):
+        path = self.native_d2_trace("xl-births", True)
+
+        def populate(rows):
+            for row in rows:
+                state = row.get("state", {})
+                if "ai" in state:
+                    state["globals"]["GameTime64"] = 100
+                    state["xl_births"] = {"version": 1, "next": 5, "objects": [[3, 0, 50, 2]]}
+
+        self.mutate(path, populate)
+        list(parity.world_states(path, self.header, "d2"))
+        mutations = (
+            lambda births: births.update(version=2),
+            lambda births: births.update(next=-1),
+            lambda births: births.update(next=18446744073709551615),
+            lambda births: births.update(objects=[]),
+            lambda births: births["objects"].append([4, 1, 50, 2]),
+            lambda births: births["objects"][0].__setitem__(0, 1367),
+            lambda births: births["objects"][0].__setitem__(1, 1),
+            lambda births: births["objects"][0].__setitem__(2, 101),
+            lambda births: births["objects"][0].__setitem__(3, 6),
+            lambda births: births["objects"][0].__setitem__(3, True),
+            lambda births: births.update(unknown=0),
+        )
+        for mutation in mutations:
+            bad = self.write("xl-births-invalid", list(parity.records(path)))
+            self.mutate(bad, lambda rows: mutation(rows[2]["state"]["xl_births"]))
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(bad, self.header, "d2"))
+        for field, value in (("next", 6), ("birth_time", 51), ("birth_order", 3)):
+            changed = self.write("xl-births-changed", list(parity.records(path)))
+
+            def change(rows):
+                births = rows[2]["state"]["xl_births"]
+                if field == "next":
+                    births["next"] = value
+                else:
+                    births["objects"][0][2 if field == "birth_time" else 3] = value
+
+            self.mutate(changed, change)
+            self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
 
     def test_xl_player_settings_are_complete_and_compared(self):
         path = self.native_d2_trace("xl-settings", True)

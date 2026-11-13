@@ -17,6 +17,23 @@ string(FIND "${stdout}" "XL spawn-point source controls passed" witness)
 if(NOT result EQUAL 0 OR witness LESS 0)
     message(FATAL_ERROR "Spawn controls failed (${result}): ${stdout}${stderr}")
 endif()
+execute_process(
+    COMMAND "${ENGINE}" -spawn-points-test resume -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir
+            "${OUTPUT}/preview-user" -nosound -nomusic
+    RESULT_VARIABLE cold_result
+    OUTPUT_VARIABLE cold_stdout
+    ERROR_VARIABLE cold_stderr
+    TIMEOUT 75)
+file(WRITE "${OUTPUT}/cold.log" "${cold_stdout}${cold_stderr}")
+if(NOT cold_result EQUAL 0
+   OR NOT
+      cold_stdout
+      MATCHES
+      "Spawn cold continuation: delayed authored change, active boost turn, death/respawn, world, objects and RNG passed"
+)
+    message(
+        FATAL_ERROR "Spawn cold continuation failed (${cold_result}): ${cold_stdout}${cold_stderr}")
+endif()
 if(REFERENCE)
     execute_process(
         COMMAND "${REFERENCE}" "${OUTPUT}/spawn-samples.txt" RESULT_VARIABLE reference_result

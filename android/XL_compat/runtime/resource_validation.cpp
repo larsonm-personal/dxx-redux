@@ -130,12 +130,24 @@ struct MissionDefinitions {
 	std::vector<int> dead{ Dead_modelnums, Dead_modelnums + N_polygon_models };
 	std::vector<bitmap_index> bitmaps{ ObjBitmaps, ObjBitmaps + MAX_OBJ_BITMAPS };
 	std::vector<ushort> pointers{ ObjBitmapPtrs, ObjBitmapPtrs + MAX_OBJ_BITMAPS };
+	std::vector<weapon_info> weapons{ Weapon_info, Weapon_info + N_weapon_types };
+	std::vector<powerup_type_info> powerups{ Powerup_info, Powerup_info + N_powerup_types };
+	std::vector<vclip> clips{ Vclip, Vclip + Num_vclips };
+	std::vector<eclip> effects{ Effects, Effects + Num_effects };
+	std::vector<wclip> wall_clips{ WallAnims, WallAnims + Num_wall_anims };
+	std::vector<bitmap_index> textures{ Textures, Textures + NumTextures };
+	std::vector<tmap_info> texture_info{ TmapInfo, TmapInfo + NumTextures };
+	std::array<ubyte, MAX_SOUNDS> sounds, alternate_sounds;
+	int object_bitmap_count = N_ObjBitmaps;
+	int low_memory = GameArg.SysLowMem;
 	std::vector<std::vector<ubyte>> payloads;
 	std::vector<int> custom_radii;
 	std::vector<int> base_radii;
 
 	MissionDefinitions() : payloads(models.size()), custom_radii(models.size()), base_radii(models.size())
 	{
+		std::copy_n(Sounds, MAX_SOUNDS, sounds.begin());
+		std::copy_n(AltSounds, MAX_SOUNDS, alternate_sounds.begin());
 		for (std::size_t id = 0; id < models.size(); ++id) {
 			auto &model = models[id];
 			base_radii[id] = model.rad;
@@ -144,6 +156,36 @@ struct MissionDefinitions {
 				model.model_data = payloads[id].data();
 			}
 		}
+	}
+	void bind_dependencies(xl_assets::ObjectDependencies &graph) const
+	{
+		graph.robot_data = robots.data();
+		graph.joint_data = joints.data();
+		graph.model_data = models.data();
+		graph.object_bitmaps = bitmaps.data();
+		graph.object_bitmap_ptrs = pointers.data();
+		graph.dying_models = dying.data();
+		graph.dead_models = dead.data();
+		graph.robot_count = int(robots.size());
+		graph.joint_count = int(joints.size());
+		graph.model_count = int(models.size());
+		graph.weapon_data = weapons.data();
+		graph.powerup_data = powerups.data();
+		graph.clip_data = clips.data();
+		graph.effect_data = effects.data();
+		graph.wall_clip_data = wall_clips.data();
+		graph.texture_data = textures.data();
+		graph.texture_info = texture_info.data();
+		graph.weapon_count = int(weapons.size());
+		graph.powerup_count = int(powerups.size());
+		graph.clip_count = int(clips.size());
+		graph.effect_count = int(effects.size());
+		graph.wall_clip_count = int(wall_clips.size());
+		graph.texture_count = int(textures.size());
+		graph.object_bitmap_count = object_bitmap_count;
+		graph.sound_mappings = sounds.data();
+		graph.alternate_sounds = alternate_sounds.data();
+		graph.low_memory = low_memory;
 	}
 };
 std::unique_ptr<MissionDefinitions> mission_base;
@@ -261,16 +303,7 @@ std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefiniti
 		pointers.at(id) = PHYSFSX_readShort(file);
 		changed_pointers.insert(id);
 	}
-	graph.robot_data = robots.data();
-	graph.joint_data = joints.data();
-	graph.model_data = models.data();
-	graph.object_bitmaps = bitmaps.data();
-	graph.object_bitmap_ptrs = pointers.data();
-	graph.dying_models = dying.data();
-	graph.dead_models = dead.data();
-	graph.robot_count = int(robots.size());
-	graph.joint_count = int(joints.size());
-	graph.model_count = int(models.size());
+	definitions.bind_dependencies(graph);
 	if (camera) {
 		// Pinned InitCamBots normalizes the appended definition, not serialized slot 38
 		auto &robot = robots.at(camera_ids.first);
@@ -301,7 +334,7 @@ std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefiniti
 	for (const int id : changed_models) graph.model(id);
 	for (const int id : changed_bitmaps) graph.bitmap(bitmaps[id].index);
 	for (const int id : changed_pointers) {
-		if (pointers[id] >= N_ObjBitmaps) throw std::runtime_error("HXM model texture references missing object bitmap");
+		if (pointers[id] >= graph.object_bitmap_count) throw std::runtime_error("HXM model texture references missing object bitmap");
 		graph.bitmap(bitmaps[pointers[id]].index);
 	}
 	// XL level admission walks reachable robot profiles after HXM and model layers
@@ -901,16 +934,7 @@ struct XlPreparedResources::State {
 	void bind_graph()
 	{
 		graph = xl_assets::ObjectDependencies{};
-		graph.robot_data = definitions.robots.data();
-		graph.joint_data = definitions.joints.data();
-		graph.model_data = definitions.models.data();
-		graph.object_bitmaps = definitions.bitmaps.data();
-		graph.object_bitmap_ptrs = definitions.pointers.data();
-		graph.dying_models = definitions.dying.data();
-		graph.dead_models = definitions.dead.data();
-		graph.robot_count = int(definitions.robots.size());
-		graph.joint_count = int(definitions.joints.size());
-		graph.model_count = int(definitions.models.size());
+		definitions.bind_dependencies(graph);
 		graph.xl_boss_spawning = true;
 	}
 };
@@ -1031,6 +1055,8 @@ void XlPreparedResources::prepare_camera_model()
 	state->definitions = std::move(staged->definitions);
 	state->changes = std::move(staged->changes);
 	state->graph = std::move(staged->graph);
+	// Inline definition arrays move by value; bind views to the surviving owner
+	state->definitions.bind_dependencies(state->graph);
 	state->native_models = std::move(staged->native_models);
 	state->camera_robot = ids.first;
 	state->camera_model = ids.second;

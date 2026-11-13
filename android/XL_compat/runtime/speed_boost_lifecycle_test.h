@@ -1,4 +1,6 @@
 #include "speed_boost_fixture.h"
+#include "input_demo_world_trace.h"
+#include "motion_state.h"
 static std::vector<xl_speed_boost_state> capture_boosts()
 {
 	std::vector<xl_speed_boost_state> result(xl_speed_boost_state_count());
@@ -31,6 +33,31 @@ static void speed_boost_lifecycle_test(const std::filesystem::path &root)
 	xl_speed_boost_frame();
 	const auto earned = capture_boosts();
 	require(earned.size() == 2 && earned[0].owner == player && earned[1].owner == robot && earned[0].steps == 9 && earned[0].phase == 40000, "actors lost independent orientation phase");
+	const auto raw_boosts = xl_compat::speed_boost_snapshot();
+	const int raw_signature = Objects[robot].signature;
+	const auto raw_sim_calls = d_rand_get_call_count(), raw_fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	Objects[robot].signature = raw_signature ^ 0x40000000;
+	require(raw_boosts.at("states").size() == 2 && raw_boosts == xl_compat::speed_boost_snapshot() &&
+	            raw_boosts == nlohmann::json(input_demo_native_xl_trace_snapshot().at("motion").at("boosts")),
+	        "Boost observation repaired a stale signature or lost a turn/velocity field");
+	Objects[robot].signature = raw_signature;
+	require(raw_sim_calls == d_rand_get_call_count() && raw_fx_calls == d_rand_get_stream_call_count(D_RNG_FX), "Boost observation consumed RNG");
+	std::cout << "Boost raw observation: stale actor, turn phase, velocity bounds and shared speed preserved without mutation or RNG\n";
+	const auto paused_tick = xl_input_demo_cached_clock();
+	stop_time();
+	stop_time();
+	SDL_Delay(5);
+	timer_update();
+	start_time();
+	require(xl_input_demo_cached_clock() == paused_tick, "Nested pause advanced the cached gameplay tick");
+	start_time();
+	require(xl_input_demo_cached_clock() == paused_tick, "Pause exit sampled a new gameplay tick");
+	reset_rear_view();
+	require(xl_input_demo_cached_clock() == paused_tick, "Automatic rear-view reset sampled a new gameplay tick");
+	// A real next input poll samples uptime, including the elapsed menu interval
+	xl_input_demo_begin_input_clock();
+	require(xl_input_demo_cached_clock() >= paused_tick + 5, "Next input poll lost elapsed pause uptime");
+	std::cout << "XL cached pause clock: nested pause holds the interrupted tick, next input poll observes elapsed uptime\n";
 	require(xl_wall_trigger(5, player, 0) == 1, "delayed boost ran immediately");
 	char save[] = "boost-earned.sav", description[] = "Earned XL speed boosts";
 	stop_time();
@@ -79,6 +106,8 @@ static void speed_boost_lifecycle_test(const std::filesystem::path &root)
 	}
 	require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0, "boost stock recovery failed");
 	require(!xl_speed_boost_state_count() && !xl_speed_boost_player_locked() && !xl_speed_boost_drag(ConsoleObject - Objects, F1_0), "XL boost leaked into stock runtime");
+	require(xl_compat::speed_boost_snapshot().at("states").empty() && xl_compat::speed_boost_snapshot().at("last_speed") == raw_boosts.at("last_speed"),
+	        "Raw boost rows leaked into stock or source shared-speed lifetime changed");
 	const auto stock_velocity = ConsoleObject->mtype.phys_info.velocity;
 	xl_speed_boost_stop(ConsoleObject - Objects);
 	require(!std::memcmp(&stock_velocity, &ConsoleObject->mtype.phys_info.velocity, sizeof(stock_velocity)), "XL stop modified Redux velocity");
