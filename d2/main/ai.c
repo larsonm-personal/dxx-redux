@@ -84,6 +84,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 #include "rewind_file_compat.h"
+#include "object_decode_context.h"
 
 // ---------- John: These variables must be saved as part of gamesave. --------
 int             Ai_initialized = 0;
@@ -2268,7 +2269,7 @@ ai_restore_candidate *ai_prepare_restore(PHYSFS_file *fp, int version, int swap,
 	/* Native records contain signed 32-bit offsets from the candidate epoch */
 	if (start < 0 || capacity < 1 || capacity > MAX_OBJECTS ||
 	    highest_segment < 0 || highest_segment >= MAX_SEGMENTS ||
-	    epoch < INT64_MIN + (fix64)INT32_MAX + 1 || epoch > INT64_MAX - INT32_MAX)
+	    !object_decode_epoch_valid(epoch))
 		return NULL;
 	state = (ai_restore_candidate *)calloc(1, sizeof(*state));
 	if (!state) return NULL;

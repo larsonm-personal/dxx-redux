@@ -3831,6 +3831,90 @@ G2 raw event and mixed-producer checkpoint, November 12 at 03:57 PST:
   07:42 PST November12; revised remaining G2 estimate11-17h and later14.5-20h,
   high uncertainty, no cutoff or scope reduction.
 
+### G2 explicit native record context checkpoint, November 12 08:16 PST
+
+- Continues local layer03 `xl_gameplay_20261111_03_continuation` from
+  d0c1332b596e0d4bdebe7a12b09370dbc73c6b24, tree
+  92a1f2b6c943b550b1ecbaa51ff5f77e39b1c628. Previous turn was verified progress:
+  retained AI staging and native time continuation are committed. Current work
+  began07:46 PST November12. G0/G1 accepted; G2-G7 remain open. No layer03 push,
+  PR or current-tip CI claim. Independent review and all original stashes preserved.
+- New shared object_decode_context.h supplies a borrowed, immutable candidate
+  epoch, original-D1/XL profile, robot definitions and reactor definitions. Native
+  object decoding and endian conversion now accept this context; existing live
+  wrappers retain their dispatch. D1 AI read/swap selection shares its existing
+  predicate and codecs with the explicit context. Reactor gun transformation takes
+  const definitions and retains native out-of-range reactor-ID fallback. No native
+  wire, save writer, input format, fixture, expected result or simulation policy
+  change. Shared signed64 rebasing bounds also replace the duplicated AI guard.
+- state.c now has one checked native object reader and one player reader using
+  these codecs. Short records reject before interpretation, leave candidate output
+  untouched and restore the original file cursor. Replaces the previous unchecked
+  object read into uninitialized storage and repeated per-record heap allocations.
+  The ordinary loader retains the decoded player before level loading, uses it for
+  the existing equipment hint, then installs that same retained record afterward.
+  No peek/seek/redecode of the player. Its epoch must remain stable through native
+  level setup; transient equipment hints are restored before that guard can fail.
+  Co-op player reads share the same native reader; no new co-op lifecycle or policy.
+- Existing complete test_upstream_compat owners pass, zero skips: Windows D2
+  51.89s, Linux D229.90s, Windows D11.80s. Builds are ordinary developer-OFF,
+  root-bound strict-FP ON. Retained D1/D2 and packet/save AI-layout controls remain.
+  The existing160-case AI layout matrix now verifies80 save cases against an
+  intentionally different live mission/robot profile and epoch;160 native file
+  reads cover both byte orders. Added controls cover36 signed object-clock/profile
+  combinations,12 player file reads, short object/player records (including a
+  nonzero starting cursor), native-vs-companion AI, reactor transforms/fallback,
+  invalid gun counts/epochs and unchanged live definitions/clocks/RNG. These are
+  derived native integration controls, not original-content progression evidence.
+- Same existing ordinary visual replay owner passes on Windows and Linux after
+  final builds reach terminal success, using the complete unchanged Windows
+  fractional-time save-start recording bundle. Both match its original live
+  capture:12 object frames,16 world/boundary records,21 SIM events and12 FX events,
+  including ordering/context and unknown observed fields. Strict assets, actual
+  result match and clean natural exit required; no deadline/skip/asset waiver,
+  seed repair, extra control or comparator relaxation. Canonical
+  g2-decode-record-compare.json; g2-decode-record-replay-{windows,linux} retain logs,
+  trace, result and the exact invoked command. Sandbox engine hashes equal the
+  completed build outputs. The original five setup position assists, zero inventory
+  assists and zero in-record assists remain; no new recording or pose assist.
+- g2-decode-record-build-identities.json pins all nine non-Markdown source paths,
+  including the new header, every source-file hash and patch SHA
+  660fcda9cd477e6694bd45cc2b0bd9f497f37f6d7bb2d53702f742176515dc28.
+  Windows D2a7bc93cca73569a8a86c96800bbf0544f94ce8593e6884dcaa1bd3e81211f381,
+  D2 compatibility992a9f7c23da5d97e7341f12b315ff27ad3cf01d7ed4e4d1e51fc537cbf612a4;
+  Linux D29eb6254466baa66aec4381717db2381c7dfc442ae6414852b30190fa3c0d7443,
+  compatibilitye74c44fd1550af376b1923c81e8495fe98140771b8a6c7b9a3c5a7912a180ec1.
+  D1 engine367b7316ad701af50637a783b1da80f729ddfcfc5f877d3fb974a439889fc6b9,
+  compatibility7b38d7785afb2080d1d566e12e08ad2a4f114afce361042365cf996b8d68aecc.
+  Cached build stamp predates edits; actual binary and source hashes identify code.
+  Initial context-only owners also passed before the checked-I/O addition; final
+  record-owner results above qualify the complete candidate. No new build warnings
+  in changed logic; existing fixture/string-literal warnings remain separately.
+- Both required catalogs pass unchanged99 JSON/315 PowerShell/547 support and428
+  top-level/547 support, g2-decode-context-{catalog,master-catalog}.log. No new
+  runner or membership reduction. Scoped mixed quality/whitespace pass; final
+  ledger quality and staged review precede commit. Authentic runtime data and
+  pinned source2576a98b5de310e3ac7c9777df2677d1627b8bae unchanged. Prior official
+  cleanup cycle removed zero eligible artifacts; approximately16.95GiB currently
+  free, with active evidence, authentic assets, reference and emulators preserved.
+  No manual deletion, Android run/profile change or WSL restart. Android memory
+  backend/device continuation, true-headless XL and current full CI are unverified.
+- Next main G2 action is whole restore staging, not another observation exclusion:
+  reuse mission.c's existing mission_descriptor_stage, parse_mission_descriptor
+  and namespaced archive preflight to retain target mission/source admission before
+  load_mission publication. Bind prepared resource definitions to this explicit
+  native record context, then retain the remaining native/runtime state and
+  validate source-bound XL owners against that candidate before commit. Existing
+  XlPreparedResources already exposes staged robot data through dependencies(),
+  but its mission baseline/resource lookup still assumes the selected live mission;
+  factor that existing ownership rather than making a second mission/level loader.
+  Whole-save bad XL trailer still changes energy91->100 and is NOT fixed by this
+  codec step. Full source/native/runtime/XL staging remains required, with no
+  checksum-only preflight, guessed tag search or serialize/rollback. Guide-Bot
+  async/cache/Android2000us, pure audio/event observation and G3-G7 remain open.
+  Actual approximately08:16 PST; remaining G2 revised12-20h, later14.5-20h, high
+  uncertainty, no cutoff or reduction of the original gameplay closure gate.
+
 Per-item handoff template:
 
     Item and status:

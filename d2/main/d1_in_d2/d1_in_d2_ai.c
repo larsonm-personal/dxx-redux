@@ -50,20 +50,24 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_hooks.h"
 #include "byteswap.h"
 #include "rewind_file_compat.h"
+#include "object_decode_context.h"
 
 typedef char d1_ai_record_size_check[(sizeof(d1_ai_static_rw) == 30 && sizeof(ai_static_rw) == 30 && MAX_AI_FLAGS == 11) ? 1 : -1];
 
-static int native_ai_record(int type, int id, int control)
+static int native_ai_record(int type, int id, int control, const d2_object_decode_context *context)
 {
-	return d1_in_d2_use_d1_gameplay() && type == OBJ_ROBOT && id >= 0 && id < N_robot_types &&
-		!Robot_info[id].companion && (control == CT_AI || control == CT_MORPH);
+	const int native = context ? context->original_d1 : d1_in_d2_use_d1_gameplay();
+	const int count = context ? context->robot_count : N_robot_types;
+	const robot_info *robots = context ? context->robots : Robot_info;
+	return native && robots && type == OBJ_ROBOT && id >= 0 && id < count &&
+		!robots[id].companion && (control == CT_AI || control == CT_MORPH);
 }
 
 int d1_in_d2_ai_write_object(const object *obj, object_rw *saved, int savegame)
 {
 	const ai_static *state = &obj->ctype.ai_info;
 	d1_ai_static_rw *record = &saved->ctype.d1_ai_info;
-	if (!native_ai_record(obj->type, obj->id, obj->control_type))
+	if (!native_ai_record(obj->type, obj->id, obj->control_type, NULL))
 		return 0;
 	record->behavior = state->behavior;
 	memcpy(record->flags, state->flags, sizeof(record->flags));
@@ -82,11 +86,12 @@ int d1_in_d2_ai_write_object(const object *obj, object_rw *saved, int savegame)
 	return 1;
 }
 
-int d1_in_d2_ai_read_object(const object_rw *saved, object *obj)
+int d1_in_d2_ai_read_object_for_context(const object_rw *saved, object *obj,
+                                       const d2_object_decode_context *context)
 {
 	const d1_ai_static_rw *record = &saved->ctype.d1_ai_info;
 	ai_static *state = &obj->ctype.ai_info;
-	if (!native_ai_record(saved->type, saved->id, saved->control_type))
+	if (!native_ai_record(saved->type, saved->id, saved->control_type, context))
 		return 0;
 	memset(state, 0, sizeof(*state));
 	state->behavior = record->behavior;
@@ -102,10 +107,15 @@ int d1_in_d2_ai_read_object(const object_rw *saved, object *obj)
 	return 1;
 }
 
-int d1_in_d2_ai_swap_object(object_rw *saved)
+int d1_in_d2_ai_read_object(const object_rw *saved, object *obj)
+{
+	return d1_in_d2_ai_read_object_for_context(saved, obj, NULL);
+}
+
+int d1_in_d2_ai_swap_object_for_context(object_rw *saved, const d2_object_decode_context *context)
 {
 	d1_ai_static_rw *record = &saved->ctype.d1_ai_info;
-	if (!native_ai_record(saved->type, saved->id, saved->control_type))
+	if (!native_ai_record(saved->type, saved->id, saved->control_type, context))
 		return 0;
 	record->hide_segment = SWAPSHORT(record->hide_segment);
 	record->hide_index = SWAPSHORT(record->hide_index);
@@ -116,6 +126,11 @@ int d1_in_d2_ai_swap_object(object_rw *saved)
 	record->danger_laser_signature = SWAPINT(record->danger_laser_signature);
 	record->danger_laser_num = SWAPSHORT(record->danger_laser_num);
 	return 1;
+}
+
+int d1_in_d2_ai_swap_object(object_rw *saved)
+{
+	return d1_in_d2_ai_swap_object_for_context(saved, NULL);
 }
 
 void d1_in_d2_ai_reset_saved_storage(void)

@@ -88,7 +88,7 @@ void do_countdown_frame();
 
 //	-----------------------------------------------------------------------------
 //return the position & orientation of a gun on the control center object
-void calc_controlcen_gun_point(reactor *reactor, object *obj,int gun_num)
+void calc_controlcen_gun_point(const reactor *reactor, object *obj,int gun_num)
 {
 	vms_matrix m;
 	vms_vector *gun_point = &obj->ctype.reactor_info.gun_pos[gun_num];

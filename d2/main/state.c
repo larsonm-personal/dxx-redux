@@ -76,6 +76,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "controls.h"
 #include "laser.h"
 #include "state.h"
+#include "object_decode_context.h"
 #include "android_crash_handler.h"
 #ifdef __ANDROID__
 #include "android_pause.h"
@@ -1781,8 +1782,18 @@ void state_object_to_object_rw(object *obj, object_rw *obj_rw)
 }
 
 // turn object_rw to object after reading from Savegame
-void state_object_rw_to_object(object_rw *obj_rw, object *obj, int native_ai_format)
+int state_decode_object(const object_rw *obj_rw, object *obj, int native_ai_format,
+                        const d2_object_decode_context *context)
 {
+	const reactor *reactor_definition = NULL;
+	if (!obj_rw || !obj || !object_decode_context_valid(context)) return 0;
+	if (obj_rw->control_type == CT_CNTRLCEN && obj_rw->type == OBJ_CNTRLCEN && obj_rw->render_type == RT_POLYOBJ) {
+		if (context->reactor_capacity < 1 || context->reactor_capacity > MAX_REACTORS) return 0;
+		/* Preserve the native fallback for badly ported D1 reactor IDs */
+		const int id = obj_rw->id >= context->reactor_capacity ? 0 : obj_rw->id;
+		reactor_definition = &context->reactors[id];
+		if (reactor_definition->n_guns < 0 || reactor_definition->n_guns > MAX_CONTROLCEN_GUNS) return 0;
+	}
 	obj->signature     = obj_rw->signature;
 	obj->type          = obj_rw->type;
 	obj->id            = obj_rw->id;
@@ -1852,14 +1863,12 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj, int native_ai_for
 			obj->ctype.laser_info.parent_type      = obj_rw->ctype.laser_info.parent_type;
 			obj->ctype.laser_info.parent_num       = obj_rw->ctype.laser_info.parent_num;
 			obj->ctype.laser_info.parent_signature = obj_rw->ctype.laser_info.parent_signature;
-			obj->ctype.laser_info.creation_time    = GameTime64 + (fix64)obj_rw->ctype.laser_info.creation_time;
+			obj->ctype.laser_info.creation_time    = context->epoch + (fix64)obj_rw->ctype.laser_info.creation_time;
 			obj->ctype.laser_info.creation_framecount = 0;
 			memset(obj->ctype.laser_info.hitobj_list, 0, sizeof(obj->ctype.laser_info.hitobj_list));
 			obj->ctype.laser_info.last_hitobj      = obj_rw->ctype.laser_info.last_hitobj;
 			if (obj->ctype.laser_info.last_hitobj >= 0 && obj->ctype.laser_info.last_hitobj < DXX_CLASSIC_MAX_OBJECTS
-#ifdef DXX_XL_RUNTIME
-			    && !xl_level_extensions_active()
-#endif
+			    && !context->xl
 			)
 				obj->ctype.laser_info.hitobj_list[obj->ctype.laser_info.last_hitobj] = 1; // restore most recent hitobj to hitobj_list
 			obj->ctype.laser_info.track_goal       = obj_rw->ctype.laser_info.track_goal;
@@ -1879,7 +1888,7 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj, int native_ai_for
 		case CT_AI:
 		{
 			int i;
-			if (native_ai_format && d1_in_d2_ai_read_object(obj_rw, obj)) break;
+			if (native_ai_format && d1_in_d2_ai_read_object_for_context(obj_rw, obj, context)) break;
 			obj->ctype.ai_info.behavior               = obj_rw->ctype.ai_info.behavior; 
 			for (i = 0; i < MAX_AI_FLAGS; i++)
 				obj->ctype.ai_info.flags[i]       = obj_rw->ctype.ai_info.flags[i]; 
@@ -1891,7 +1900,7 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj, int native_ai_for
 			obj->ctype.ai_info.danger_laser_num       = obj_rw->ctype.ai_info.danger_laser_num;
 			obj->ctype.ai_info.danger_laser_signature = obj_rw->ctype.ai_info.danger_laser_signature;
 			obj->ctype.ai_info.dying_start_time = obj_rw->ctype.ai_info.dying_start_time ?
-				GameTime64 + obj_rw->ctype.ai_info.dying_start_time : 0;
+				context->epoch + obj_rw->ctype.ai_info.dying_start_time : 0;
 			if (obj_rw->ctype.ai_info.dying_start_time && !obj->ctype.ai_info.dying_start_time)
 				obj->ctype.ai_info.dying_start_time = -1;
 			break;
@@ -1903,7 +1912,7 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj, int native_ai_for
 			
 		case CT_POWERUP:
 			obj->ctype.powerup_info.count         = obj_rw->ctype.powerup_info.count;
-			obj->ctype.powerup_info.creation_time = GameTime64 + (fix64)obj_rw->ctype.powerup_info.creation_time;
+			obj->ctype.powerup_info.creation_time = context->epoch + (fix64)obj_rw->ctype.powerup_info.creation_time;
 			obj->ctype.powerup_info.flags         = obj_rw->ctype.powerup_info.flags;
 			break;
 		case CT_CNTRLCEN:
@@ -1911,12 +1920,10 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj, int native_ai_for
 			// Boss levels keep a hidden CT_CNTRLCEN placeholder as OBJ_GHOST/RT_NONE.
 			// Only rebuild gun points for the live reactor object.
 			int i = 0;
-			reactor *reactor;
 			if (obj->type != OBJ_CNTRLCEN || obj->render_type != RT_POLYOBJ)
 				break;
-			reactor = get_reactor_definition(obj->id);
-			for (i=0; i<reactor->n_guns; i++)
-				calc_controlcen_gun_point(reactor, obj, i);
+			for (i=0; i<reactor_definition->n_guns; i++)
+				calc_controlcen_gun_point(reactor_definition, obj, i);
 			break;
 		}
 	}
@@ -1956,6 +1963,44 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj, int native_ai_for
 			break;
 			
 	}
+	return 1;
+}
+
+static d2_object_decode_context state_live_decode_context(void)
+{
+	d2_object_decode_context context;
+	context.epoch = GameTime64;
+	context.original_d1 = d1_in_d2_use_d1_gameplay();
+	context.xl = 0;
+#ifdef DXX_XL_RUNTIME
+	context.xl = xl_level_extensions_active();
+#endif
+	context.robots = Robot_info;
+	context.robot_count = N_robot_types;
+	context.reactors = Reactors;
+	context.reactor_capacity = MAX_REACTORS;
+	return context;
+}
+
+void state_object_rw_to_object(object_rw *saved, object *decoded, int native_ai_format)
+{
+	const d2_object_decode_context context = state_live_decode_context();
+	if (!state_decode_object(saved, decoded, native_ai_format, &context))
+		Warning("Invalid native object restore context");
+}
+
+int state_read_object(PHYSFS_file *file, int swap, int native_ai_format,
+                      const d2_object_decode_context *context, object *decoded)
+{
+	object_rw saved;
+	if (!file || !decoded || !object_decode_context_valid(context)) return 0;
+	const PHYSFS_sint64 start = PHYSFS_tell(file);
+	if (start < 0) return 0;
+	if (PHYSFS_read(file, &saved, sizeof(saved), 1) == 1 &&
+	    object_rw_swap_for_context(&saved, swap, native_ai_format, context) &&
+	    state_decode_object(&saved, decoded, native_ai_format, context)) return 1;
+	PHYSFS_seek(file, start);
+	return 0;
 }
 
 static void state_relink_objects_by_index(void)
@@ -2105,8 +2150,9 @@ void state_player_to_player_rw(player *pl, player_rw *pl_rw)
 }
 
 // turn player_rw to player after reading from Savegame
-void state_player_rw_to_player(player_rw *pl_rw, player *pl)
+int state_decode_player(const player_rw *pl_rw, player *pl, int64_t epoch)
 {
+	if (!pl_rw || !pl || !object_decode_epoch_valid(epoch)) return 0;
 	int i=0;
 	/* player_rw omits newer runtime fields, so initialize them deterministically. */
 	memset(pl, 0, sizeof(*pl));
@@ -2136,8 +2182,8 @@ void state_player_rw_to_player(player_rw *pl_rw, player *pl)
 	pl->time_level                = pl_rw->time_level;
 	pl->time_total                = pl_rw->time_total;
 	/* cloak/invulnerability are stored as GameTime64-relative offsets in player_rw */
-	pl->cloak_time                = GameTime64 + pl_rw->cloak_time;
-	pl->invulnerable_time         = GameTime64 + pl_rw->invulnerable_time;
+	pl->cloak_time                = epoch + pl_rw->cloak_time;
+	pl->invulnerable_time         = epoch + pl_rw->invulnerable_time;
 	pl->KillGoalCount             = pl_rw->KillGoalCount;
 	pl->net_killed_total          = pl_rw->net_killed_total;
 	pl->net_kills_total           = pl_rw->net_kills_total;
@@ -2152,6 +2198,27 @@ void state_player_rw_to_player(player_rw *pl_rw, player *pl)
 	pl->homing_object_dist        = pl_rw->homing_object_dist;
 	pl->hours_level               = pl_rw->hours_level;
 	pl->hours_total               = pl_rw->hours_total;
+	return 1;
+}
+
+void state_player_rw_to_player(player_rw *saved, player *decoded)
+{
+	if (!state_decode_player(saved, decoded, GameTime64))
+		Warning("Invalid native player restore epoch");
+}
+
+int state_read_player(PHYSFS_file *file, int swap, int64_t epoch, player *decoded)
+{
+	player_rw saved;
+	if (!file || !decoded || !object_decode_epoch_valid(epoch)) return 0;
+	const PHYSFS_sint64 start = PHYSFS_tell(file);
+	if (start < 0) return 0;
+	if (PHYSFS_read(file, &saved, sizeof(saved), 1) == 1) {
+		player_rw_swap(&saved, swap);
+		if (state_decode_player(&saved, decoded, epoch)) return 1;
+	}
+	PHYSFS_seek(file, start);
+	return 0;
 }
 
 
@@ -3186,6 +3253,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 {
 	int version,i, j, segnum, coop_player_got[MAX_PLAYERS], coop_org_objnum = Players[Player_num].objnum;
 	int saved_guidebot_mode = -1;
+	d2_object_decode_context decode_context;
 	state_guided_owner guided_owners[MAX_PLAYERS];
 	object * obj;
 	PHYSFS_file *fp;
@@ -3469,6 +3537,12 @@ int state_restore_all_sub(char *filename, int secret_restore)
 //Read player info
 
 	{
+		player prepared_player;
+		const fix64 prepared_epoch = GameTime64;
+		if (!state_read_player(fp, swap, prepared_epoch, &prepared_player)) {
+			PHYSFS_close(fp);
+			return 0;
+		}
 #ifdef __ANDROID__
 		restore_profile_before_level_us = android_profile_monotonic_us();
 		if (Game_mode & GM_MULTI_COOP)
@@ -3476,22 +3550,18 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			        current_level, Current_level_num, Netgame.levelnum);
 #endif
 #ifdef DXX_XL_RUNTIME
-		// Resource preparation runs before the player payload is installed
-		// Peek through the engine's existing native save layout, then restore the cursor
-		player_rw resource_player;
-		const PHYSFS_sint64 player_offset = PHYSFS_tell(fp);
-		if (player_offset < 0 || PHYSFS_read(fp, &resource_player, sizeof(resource_player), 1) != 1 ||
-		    !PHYSFS_seek(fp, player_offset)) {
-			PHYSFS_close(fp);
-			return 0;
-		}
-		player_rw_swap(&resource_player, swap);
-		const uint32_t previous_equipment_hint = xl_time_equipment_restore_hint(resource_player.flags);
+		// Resource preparation runs before the retained player payload is installed
+		const uint32_t previous_equipment_hint = xl_time_equipment_restore_hint(prepared_player.flags);
 #endif
 		StartNewLevelSub(current_level, 1, secret_restore);
+		decode_context = state_live_decode_context();
 #ifdef DXX_XL_RUNTIME
 		xl_time_equipment_restore_hint(previous_equipment_hint);
 #endif
+		if (decode_context.epoch != prepared_epoch) {
+			PHYSFS_close(fp);
+			return 0;
+		}
 #ifdef __ANDROID__
 		if (multi_save_transfer_sync_poll(0)) {
 			android_restore_phase("co-op level synchronization interrupted");
@@ -3512,17 +3582,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 #endif
 
 		if (secret_restore) {
-			player	dummy_player;
-			player_rw *pl_rw;
-			MALLOC(pl_rw, player_rw, 1);
-			if (PHYSFS_read(fp, pl_rw, sizeof(player_rw), 1) != 1) {
-				d_free(pl_rw);
-				PHYSFS_close(fp);
-				return 0;
-			}
-			player_rw_swap(pl_rw, swap);
-			state_player_rw_to_player(pl_rw, &dummy_player);
-			d_free(pl_rw);
+			const player dummy_player = prepared_player;
 			if (secret_restore == 1) {		//	This means he didn't die, so he keeps what he got in the secret level.
 				Players[Player_num].level = dummy_player.level;
 				Players[Player_num].last_score = dummy_player.last_score;
@@ -3543,16 +3603,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 				Players[Player_num] = dummy_player;
 			}
 		} else {
-			player_rw *pl_rw;
-			MALLOC(pl_rw, player_rw, 1);
-			if (PHYSFS_read(fp, pl_rw, sizeof(player_rw), 1) != 1) {
-				d_free(pl_rw);
-				PHYSFS_close(fp);
-				return 0;
-			}
-			player_rw_swap(pl_rw, swap);
-			state_player_rw_to_player(pl_rw, &Players[Player_num]);
-			d_free(pl_rw);
+			Players[Player_num] = prepared_player;
 		}
 	}
 	strcpy( Players[Player_num].callsign, org_callsign );
@@ -3620,12 +3671,10 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	//object_read_n_swap(Objects, i, swap, fp);
 	for (i=0; i<=Highest_object_index; i++ )
 	{
-		object_rw *obj_rw;
-		MALLOC(obj_rw, object_rw, 1);
-		PHYSFS_read(fp, obj_rw, sizeof(object_rw), 1);
-		object_rw_swap(obj_rw, swap, version >= D1_AI_OBJECT_SAVE_VERSION);
-		state_object_rw_to_object(obj_rw, &Objects[i], version >= D1_AI_OBJECT_SAVE_VERSION);
-		d_free(obj_rw);
+		if (!state_read_object(fp, swap, version >= D1_AI_OBJECT_SAVE_VERSION, &decode_context, &Objects[i])) {
+			PHYSFS_close(fp);
+			return 0;
+		}
 	}
 
 #ifdef __ANDROID__
@@ -3976,22 +4025,16 @@ int state_restore_all_sub(char *filename, int secret_restore)
 
 		for (i = 0; i < MAX_PLAYERS; i++) 
 		{
-			player_rw *pl_rw;
 			object *obj;
 
 			// prepare arrays for mapping our players below
 			coop_player_got[i] = 0;
 
 			// read the stored players
-			MALLOC(pl_rw, player_rw, 1);
-			if (PHYSFS_read(fp, pl_rw, sizeof(player_rw), 1) != 1) {
-				d_free(pl_rw);
+			if (!state_read_player(fp, swap, decode_context.epoch, &restore_players[i])) {
 				PHYSFS_close(fp);
 				return 0;
 			}
-			player_rw_swap(pl_rw, swap);
-			state_player_rw_to_player(pl_rw, &restore_players[i]);
-			d_free(pl_rw);
 			
 			// make all (previous) player objects to ghosts but store them first for later remapping
 			obj = NULL;

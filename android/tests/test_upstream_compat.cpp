@@ -116,6 +116,7 @@ int net_udp_mdata_source_is_authorized(ubyte pnum, struct _sockaddr sender_addr,
 #include "state.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "guidebot_routing.h"
+#include "object_decode_context.h"
 int find_exit_segment(void);
 int read_hamfile(void);
 void state_object_to_object_rw(object *obj, object_rw *saved);
@@ -8482,6 +8483,56 @@ static void test_native_ai_object_encoding()
 					        "AI save/network decoding preserves index, danger references and engine-only sound state");
 					if (native) require(actual.d1_saved.follow_path_start_seg == -1234 && actual.d1_saved.follow_path_end_seg == 2345 && actual.dying_start_time == 0,
 						                "native object transfer retains both original follow fields without D2 death state");
+					if (savegame) {
+						const auto candidate_robot = Robot_info[0];
+						const d2_object_decode_context context{ GameTime64, mission.descent_version == 1, 0, &candidate_robot, 1, Reactors, MAX_REACTORS };
+						const auto epoch = GameTime64;
+						const int live_profile = mission.descent_version;
+						mission.descent_version = live_profile == 1 ? 2 : 1;
+						Robot_info[0].companion = !candidate_robot.companion;
+						GameTime64 += 1234;
+						const auto sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
+						object_rw staged_wire = original;
+						object staged = {};
+						require(object_rw_swap_for_context(&staged_wire, 1, 1, &context) &&
+						            object_rw_swap_for_context(&staged_wire, 1, 1, &context) &&
+						            !std::memcmp(&staged_wire, &original, sizeof(original)) &&
+						            state_decode_object(&staged_wire, &staged, 1, &context) &&
+						            !std::memcmp(&staged, &restored, sizeof(staged)),
+						        "candidate AI save decoding and endian layout use bound definitions and epoch rather than the live mission");
+						require(GameTime64 == epoch + 1234 && mission.descent_version != live_profile &&
+						            Robot_info[0].companion != candidate_robot.companion &&
+						            d_rand_get_call_count() == sim && d_rand_get_stream_call_count(D_RNG_FX) == fx,
+						        "candidate decoding leaves the different live profile, clock, definitions and RNG untouched");
+						for (const int byte_order : { 0, 1 }) {
+							object_rw file_wire = original;
+							require(object_rw_swap_for_context(&file_wire, byte_order, 1, &context), "prepare native candidate file bytes");
+							const auto *data = reinterpret_cast<const ubyte *>(&file_wire);
+							write_fixture("candidate-object.bin", bytes(data, data + sizeof(file_wire)));
+							PHYSFS_file *handle = PHYSFSX_openReadBuffered("candidate-object.bin");
+							REWIND_PHYSFS_FILE(reader, handle);
+							object read = {};
+							require(handle && state_read_object(reader, byte_order, 1, &context, &read) &&
+							            PHYSFS_tell(handle) == sizeof(file_wire) && PHYSFS_close(handle) &&
+							            !std::memcmp(&read, &restored, sizeof(read)),
+							        "the native file owner decodes either byte order using retained candidate bindings");
+							if (native && control == CT_AI && index == 0) {
+								for (const size_t cut : { size_t(0), size_t(1), offsetof(object_rw, ctype) + 1, sizeof(file_wire) - 1 }) {
+									write_fixture("candidate-object-short.bin", bytes(data, data + cut));
+									handle = PHYSFSX_openReadBuffered("candidate-object-short.bin");
+									REWIND_PHYSFS_FILE(short_reader, handle);
+									const auto before = read;
+									require(handle && !state_read_object(short_reader, byte_order, 1, &context, &read) &&
+									            PHYSFS_tell(handle) == 0 && PHYSFS_close(handle) &&
+									            !std::memcmp(&read, &before, sizeof(read)),
+									        "short native objects reject before decoding and preserve output and cursor");
+								}
+							}
+						}
+						GameTime64 = epoch;
+						mission.descent_version = live_profile;
+						Robot_info[0] = candidate_robot;
+					}
 				}
 			}
 		}
@@ -8489,6 +8540,130 @@ static void test_native_ai_object_encoding()
 	Robot_info[0] = previous_robot;
 	N_robot_types = previous_count;
 	Current_mission = previous_mission;
+}
+
+static void test_candidate_object_player_decoding()
+{
+	const auto live_time = GameTime64;
+	const auto sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
+	const fix64 candidate_epoch = live_time == 3 * F1_0 + 1234 ? 3 * F1_0 + 1235 : 3 * F1_0 + 1234;
+	d2_object_decode_context context{ candidate_epoch, 0, 0, nullptr, 0, nullptr, 0 };
+	for (const int delta : { INT_MIN, -F1_0, -int(context.epoch), 0, 1234, INT_MAX }) {
+		for (const int control : { CT_WEAPON, CT_POWERUP, CT_AI }) {
+			for (const int xl : { 0, 1 }) {
+				context.xl = xl;
+				object_rw saved = {};
+				saved.type = control == CT_WEAPON ? OBJ_WEAPON : control == CT_POWERUP ? OBJ_POWERUP
+				                                                                       : OBJ_ROBOT;
+				saved.control_type = static_cast<ubyte>(control);
+				if (control == CT_WEAPON) {
+					saved.ctype.laser_info.creation_time = delta;
+					saved.ctype.laser_info.last_hitobj = 17;
+				} else if (control == CT_POWERUP) saved.ctype.powerup_info.creation_time = delta;
+				else saved.ctype.ai_info.dying_start_time = delta;
+				const auto original = saved;
+				object decoded = {};
+				require(state_decode_object(&saved, &decoded, 0, &context) && !std::memcmp(&saved, &original, sizeof(saved)),
+				        "pure native object codec preserves its input bytes");
+				const fix64 time = context.epoch + delta;
+				if (control == CT_WEAPON) require(decoded.ctype.laser_info.creation_time == time &&
+					                                  decoded.ctype.laser_info.hitobj_list[17] == (xl ? 0 : 1),
+					                              "candidate weapon birth and classic hit history use the explicit clock/XL profile");
+				else if (control == CT_POWERUP) require(decoded.ctype.powerup_info.creation_time == time,
+					                                    "candidate pickup birth uses its epoch");
+				else require(decoded.ctype.ai_info.dying_start_time == (delta ? time ? time : -1 : 0),
+					         "candidate AI death clock preserves inactive and rebased-zero sentinels");
+			}
+		}
+		player_rw saved = {};
+		saved.cloak_time = delta;
+		saved.invulnerable_time = INT_MAX;
+		saved.energy = i2f(91);
+		saved.shields = i2f(73);
+		const auto original = saved;
+		player decoded;
+		require(state_decode_player(&saved, &decoded, context.epoch) && decoded.cloak_time == context.epoch + delta &&
+		            decoded.invulnerable_time == context.epoch + INT_MAX && decoded.energy == saved.energy &&
+		            decoded.shields == saved.shields && !std::memcmp(&saved, &original, sizeof(saved)),
+		        "candidate player decoding retains resources and binds both signed32 offsets to its epoch");
+		const auto before = decoded;
+		for (const auto bad_epoch : { INT64_MIN, INT64_MAX })
+			require(!state_decode_player(&saved, &decoded, bad_epoch) && !std::memcmp(&decoded, &before, sizeof(decoded)),
+			        "invalid player epoch rejects before touching the candidate output");
+		for (const int byte_order : { 0, 1 }) {
+			player_rw wire = saved;
+			player_rw_swap(&wire, byte_order);
+			const auto *data = reinterpret_cast<const ubyte *>(&wire);
+			write_fixture("candidate-player.bin", bytes(data, data + sizeof(wire)));
+			PHYSFS_file *handle = PHYSFSX_openReadBuffered("candidate-player.bin");
+			REWIND_PHYSFS_FILE(reader, handle);
+			player read;
+			require(handle && state_read_player(reader, byte_order, candidate_epoch, &read) &&
+			            PHYSFS_tell(handle) == sizeof(wire) && PHYSFS_close(handle) &&
+			            !std::memcmp(&read, &decoded, sizeof(read)),
+			        "the native player file owner uses the same explicit epoch in either byte order");
+			for (const size_t cut : { size_t(0), size_t(1), sizeof(wire) - 1 }) {
+				bytes truncated(7, 0xa5);
+				truncated.insert(truncated.end(), data, data + cut);
+				write_fixture("candidate-player-short.bin", truncated);
+				handle = PHYSFSX_openReadBuffered("candidate-player-short.bin");
+				REWIND_PHYSFS_FILE(short_reader, handle);
+				const auto before_read = read;
+				require(handle && PHYSFS_seek(handle, 7) &&
+				            !state_read_player(short_reader, byte_order, candidate_epoch, &read) && PHYSFS_tell(handle) == 7 &&
+				            PHYSFS_close(handle) && !std::memcmp(&read, &before_read, sizeof(read)),
+				        "short player records restore their nonzero starting cursor without changing output");
+			}
+		}
+	}
+	reactor definitions[2] = {};
+	definitions[0].n_guns = 1;
+	definitions[0].gun_points[0] = { F1_0, 2 * F1_0, 3 * F1_0 };
+	definitions[0].gun_dirs[0] = { F1_0, 0, 0 };
+	definitions[1].n_guns = 2;
+	definitions[1].gun_points[0] = { -F1_0, -2 * F1_0, -3 * F1_0 };
+	definitions[1].gun_dirs[0] = { 0, F1_0, 0 };
+	definitions[1].gun_points[1] = { 4 * F1_0, 5 * F1_0, 6 * F1_0 };
+	definitions[1].gun_dirs[1] = { 0, 0, F1_0 };
+	context.reactors = definitions;
+	context.reactor_capacity = 2;
+	const auto live_reactors = std::vector<reactor>(Reactors, Reactors + MAX_REACTORS);
+	for (const int id : { 0, 1, 200 }) {
+		object_rw saved = {};
+		saved.type = OBJ_CNTRLCEN;
+		saved.control_type = CT_CNTRLCEN;
+		saved.render_type = RT_POLYOBJ;
+		saved.id = id;
+		saved.pos = { 7 * F1_0, 8 * F1_0, 9 * F1_0 };
+		saved.orient = vmd_identity_matrix;
+		object decoded = {}, expected = {};
+		expected.type = OBJ_CNTRLCEN;
+		expected.render_type = RT_POLYOBJ;
+		expected.pos = saved.pos;
+		expected.orient = saved.orient;
+		const auto &definition = definitions[id < 2 ? id : 0];
+		for (int gun = 0; gun < definition.n_guns; ++gun) calc_controlcen_gun_point(&definition, &expected, gun);
+		require(state_decode_object(&saved, &decoded, 0, &context) &&
+		            !std::memcmp(&decoded.ctype.reactor_info, &expected.ctype.reactor_info, sizeof(decoded.ctype.reactor_info)),
+		        "candidate reactor gun transforms use bound definitions, including the native out-of-range ID fallback");
+		const auto before = decoded;
+		definitions[0].n_guns = MAX_CONTROLCEN_GUNS + 1;
+		saved.id = 0;
+		require(!state_decode_object(&saved, &decoded, 0, &context) && !std::memcmp(&decoded, &before, sizeof(decoded)),
+		        "invalid reactor gun count rejects before candidate publication");
+		definitions[0].n_guns = 1;
+		context.epoch = INT64_MAX;
+		const auto wire = saved;
+		require(!state_decode_object(&saved, &decoded, 0, &context) &&
+		            !object_rw_swap_for_context(&saved, 1, 1, &context) &&
+		            !std::memcmp(&saved, &wire, sizeof(saved)) && !std::memcmp(&decoded, &before, sizeof(decoded)),
+		        "invalid object epoch leaves native wire and candidate output unchanged");
+		context.epoch = candidate_epoch;
+	}
+	require(GameTime64 == live_time && !std::memcmp(Reactors, live_reactors.data(), sizeof(Reactors)) &&
+	            d_rand_get_call_count() == sim && d_rand_get_stream_call_count(D_RNG_FX) == fx,
+	        "candidate object/player decoding leaves live clocks, reactor definitions and both RNG streams untouched");
+	std::puts("Native candidate object/player clocks, AI bindings, reactor transforms and rejection controls passed");
 }
 
 static void test_d1_ai_storage_scope()
@@ -13038,6 +13213,7 @@ int main(int argc, char **argv)
 	test_ai_diagnostic_profiles();
 #ifdef DXX_BUILD_DESCENT_II
 	test_native_ai_object_encoding();
+	test_candidate_object_player_decoding();
 	for (const int size : { D1_10_BIG_PIGSIZE, D1_10_PIGSIZE, D1_MAC_SHARE_PIGSIZE })
 		require(d1_in_d2_source_edition_error(size) != nullptr, "unsupported native source layouts have explicit imported admission errors");
 	for (const int size : { D1_SHARE_BIG_PIGSIZE, D1_SHARE_10_PIGSIZE, D1_SHARE_PIGSIZE,
