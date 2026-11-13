@@ -54,12 +54,15 @@ struct RenderModelSphere;
 } // namespace xl_compat
 
 // Own the definitions used by both companion and level dependency checks
+class XlPreparedHam;
 class XlPreparedResources
 {
   public:
 	explicit XlPreparedResources(const char *level_filename, const xl_compat::Inventory *level = nullptr, int ordinal = 0);
+	explicit XlPreparedResources(XlPreparedHam incoming);
 	~XlPreparedResources();
 	xl_assets::ObjectDependencies &dependencies();
+	std::string prepare_hxm(PHYSFS_file *file);
 	void install_hxm();
 	void install_pog();
 	void install_messages();

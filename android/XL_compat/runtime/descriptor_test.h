@@ -104,12 +104,77 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 	            Num_cockpits == live_cockpits && Marker_model_num == live_marker,
 	        "discarding prepared HAM published target definitions");
 	Weapon_info[CONCUSSION_ID].energy_usage = energy;
+	write_bytes((directory / "prepham.ham").string().c_str(), bytes);
+	{
+		auto replacement = Robot_info[0];
+		replacement.mass += 1;
+		PHYSFS_file *output = PHYSFS_openWrite("prepham.hxm");
+		require(output != nullptr, "cannot write incoming HXM control");
+		PHYSFS_writeSLE32(output, 0x21584d48);
+		PHYSFS_writeSLE32(output, 1);
+		PHYSFS_writeSLE32(output, 1);
+		PHYSFS_writeSLE32(output, 0);
+		require(robot_info_write_n(&replacement, 1, output), "cannot encode incoming HXM robot");
+		for (int section = 0; section < 4; ++section) PHYSFS_writeSLE32(output, 0);
+		require(PHYSFS_close(output), "cannot close incoming HXM control");
+		XlPreparedResources candidate{ XlPreparedHam(mission, "prepham.ham") };
+		{
+			struct RestoreCount {
+				int count = N_robot_types;
+				~RestoreCount()
+				{
+					N_robot_types = count;
+				}
+			} restore_count;
+			N_robot_types = 0;
+			std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> input(mission_prepared_open(mission, "prepham.hxm"), PHYSFS_close);
+			candidate.prepare_hxm(input.get());
+			require(N_robot_types == 0 && candidate.dependencies().robot_data[0].mass == replacement.mass,
+			        "incoming HXM used or repaired outgoing table counts");
+		}
+		write_bytes((directory / "prepham.hxm").string().c_str(), { 'b', 'a', 'd' });
+		bool rejected = false;
+		try {
+			std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> invalid(mission_prepared_open(mission, "prepham.hxm"), PHYSFS_close);
+			candidate.prepare_hxm(invalid.get());
+		} catch (const std::runtime_error &) {
+			rejected = true;
+		}
+		require(rejected && candidate.dependencies().robot_data[0].mass == replacement.mass && gameplay_definitions() == original,
+		        "malformed HXM changed retained target or live definitions");
+		const auto original_robot = Robot_info[0];
+		candidate.install_hxm();
+		require(Robot_info[0].mass == replacement.mass, "incoming HXM was not published from retained definitions");
+		reset_level_robots_file();
+		require(Robot_info[0].mass == replacement.mass,
+		        "mission HXM publication was incorrectly retired as a temporary level replacement");
+		Robot_info[0] = original_robot;
+	}
+	{
+		XlPreparedHam incoming(mission, "prepham.ham");
+		const auto *payload = incoming.tables().Polygon_models[0].model_data;
+		Weapon_info[CONCUSSION_ID].energy_usage ^= F1_0;
+		XlPreparedResources resources(std::move(incoming));
+		auto &graph = resources.dependencies();
+		require(graph.weapon_count == N_weapon_types &&
+		            graph.weapon_data[CONCUSSION_ID].energy_usage == energy &&
+		            graph.weapon_data[CONCUSSION_ID].energy_usage != Weapon_info[CONCUSSION_ID].energy_usage &&
+		            graph.model_data[0].model_data != Polygon_models[0].model_data,
+		        "incoming resource graph borrowed outgoing equal-count definitions");
+		resources.install_hxm();
+		require(Polygon_models[0].model_data == payload && gameplay_definitions() == original,
+		        "incoming resource publication did not transfer its decoded target definitions");
+		graph.weapon(CONCUSSION_ID);
+		require(graph.weapon_data[CONCUSSION_ID].energy_usage == Weapon_info[CONCUSSION_ID].energy_usage,
+		        "published target differs from its retained dependency graph");
+	}
 	uint32_t sim_after;
 	d_rand_get_state(&sim_after);
 	require(gameplay_definitions() == original && sim_before == sim_after && sim_calls == d_rand_get_call_count() &&
 	            lookup_state() == lookup_before,
 	        "prepared HAM control changed live definitions, SIM RNG or resource lookup");
 	std::cout << "Prepared native HAM: independent equal-count target, complete destinations, owned models, move and malformed discard passed\n";
+	std::cout << "Incoming resource definitions: retained graph and native ownership transfer passed\n";
 }
 extern "C" int xl_test_fail_identity_allocation(int allocation)
 {
