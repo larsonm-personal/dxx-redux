@@ -4593,3 +4593,44 @@ archives, the native deadlines and existing owner membership are unchanged.
 
 Target source lookup, independent bitmap/sample banks and whole-world restore
 still require work. These passes do not complete the active tranche goal.
+
+### Isolated incoming origins and complete mission model preparation
+
+PR [475](https://github.com/larsonm-personal/dxx-redux/pull/475), head
+`4d05cb4b5b3d8261ec45ba187ba00c792d0ab65b`, publishes retained VHAM above PR 474.
+PR 474 private qualification run 43458841004 attempt 1 is terminal success;
+its sampled readiness check remains the known separate failure. Public long
+owners and PR 475 qualification continue to be monitored.
+
+The next layer moves owned model/skin decoding and missing native geometry into
+mission resource preparation before any HAM/HXM/VHAM publication. The ordinary
+mission loader uses that same preparer. A retained target descriptor can instead
+resolve its own mod directory and archive without selecting the target mission.
+Private subtree leases preserve the outgoing lookup scope; only the two physical
+mod-directory components are matched by case, while member lookup retains the
+existing PhysicsFS rules. Definition/model source hashes describe retained reads.
+`XlPreparedResources` now supports moves with its installed-owner pointer kept
+consistent.
+
+The canonical Pumo owner stages a derived B with the same basename and equal
+robot/weapon counts as installed A, different HXM data, a separate mixed-case
+mod directory, and a smaller optional model set. It removes the descriptor's
+public mount before preparation. Discard and move preserve A's definitions,
+render state, mission/source identity, lookup paths and SIM state. B publishes
+from retained data after its descriptor is discarded and source files are
+corrupted; reloading A restores the original state. Windows and Linux Debug
+controls pass in 47.98 and 34.97 seconds respectively.
+
+This control first exposed the native physical-path helper retaining a virtual
+mount prefix in the HOG filename. Both D1/D2 helpers now strip that prefix before
+constructing the physical path; D1 runtime build/help pass. A subsequent failure
+caught the HAM stream holding its private directory lease during optional HXM
+lookup. HAM decode now releases that stream/lease before the next layer; a busy
+independent lease is rejected instead of silently skipping a layer. The failed
+fixture/path/lease receipts remain under the tranche scratch root. Existing
+Debug null-free/shutdown-allocation diagnostics match the preceding Pumo owner;
+no new diagnostic suppression was added.
+
+Independent target bitmap/sample banks and actual live gameplay continuation
+still need qualification. Full G2 remains open, and this checkpoint does not end
+the 15-hour tranche.

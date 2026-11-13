@@ -37,6 +37,7 @@
 #include <utility>
 #include "prepared_ham.h"
 #include "retained_resource.h"
+#include "mission_resource_scope.h"
 #ifdef __ANDROID__
 #include "../../app/src/main/cpp/shared/android_mission_assets.h"
 #include "../../app/src/main/cpp/shared/android_sound_trace.h"
@@ -539,9 +540,78 @@ extern "C" int xl_resource_load_vertigo(void)
 
 namespace
 {
-std::string owned_mod_file(const char *extension, const std::string &relative = {})
+struct IncomingSourceFile {
+	struct DirectoryLease {
+		xl_mission_resource_scope scope{};
+		std::string path;
+		~DirectoryLease()
+		{
+			xl_mission_resource_release(&scope, path.c_str());
+		}
+	};
+	// Declaration order closes the member before releasing its private mount
+	std::unique_ptr<DirectoryLease> lease;
+	File file{ nullptr, PHYSFS_close };
+	PHYSFS_file *get() const
+	{
+		return file.get();
+	}
+	explicit operator bool() const
+	{
+		return bool(file);
+	}
+};
+
+std::string incoming_mod_directory(mission_preparation *target, const std::string &name)
 {
-	const std::string archive = mission_resource_archive();
+	std::filesystem::path directory(mission_prepared_directory(target));
+	// Resolve only the two owned directory components; member case lookup inside
+	// that subtree remains the existing PhysicsFS owner's job
+	for (const auto &component : { std::string("mods"), name }) {
+		if (!std::filesystem::is_directory(directory)) return {};
+		std::filesystem::path selected;
+		for (const auto &entry : std::filesystem::directory_iterator(directory)) {
+			if (d_stricmp(entry.path().filename().string().c_str(), component.c_str()) || !entry.is_directory()) continue;
+			if (!selected.empty()) throw std::runtime_error("Ambiguous incoming mod directory case");
+			selected = entry.path();
+		}
+		if (selected.empty()) return {};
+		directory = std::move(selected);
+	}
+	return directory.string();
+}
+
+IncomingSourceFile incoming_owned_file(mission_preparation *target, const std::string &path)
+{
+	IncomingSourceFile result;
+	if (!target) {
+		result.file.reset(PHYSFSX_openReadBuffered(path.c_str()));
+		return result;
+	}
+	// Mount the target's mod subtree privately even when another mission shadows
+	// the same logical basename. Never rearrange the outgoing search path
+	const auto separator = path.find('/', 5);
+	if (path.compare(0, 5, "mods/") || separator == std::string::npos)
+		throw std::runtime_error("Invalid incoming mod resource path");
+	const auto directory = incoming_mod_directory(target, path.substr(5, separator - 5));
+	if (!directory.empty()) {
+		result.lease = std::make_unique<IncomingSourceFile::DirectoryLease>();
+		result.lease->path = directory;
+		if (PHYSFS_getMountPoint(directory.c_str()))
+			throw std::runtime_error("Incoming mod directory is already leased");
+		result.file.reset(xl_mission_resource_open(&result.lease->scope, result.lease->path.c_str(), nullptr,
+		                                           path.substr(separator + 1).c_str()));
+		if (result.file) return result;
+		result.lease.reset();
+	}
+	result.file.reset(mission_prepared_open(target, path.c_str()));
+	if (result.file) return result;
+	return result;
+}
+
+std::string owned_mod_file(const char *extension, const std::string &relative = {}, mission_preparation *target = nullptr)
+{
+	const std::string archive = target ? mission_prepared_archive(target) : mission_resource_archive();
 	const auto slash = archive.find_last_of("/\\");
 	const auto leaf = archive.substr(slash == std::string::npos ? 0 : slash + 1);
 	const auto dot = leaf.find_last_of('.');
@@ -550,6 +620,7 @@ std::string owned_mod_file(const char *extension, const std::string &relative = 
 	if (name.empty() || name == "." || name == ".." || name.find_first_of(":/\\") != std::string::npos)
 		throw std::runtime_error("Invalid XL mission resource identity");
 	std::string path = "mods/" + name + "/" + (relative.empty() ? name + extension : relative);
+	if (target) return incoming_owned_file(target, path) ? path : std::string{};
 #ifdef __ANDROID__
 	if (*android_mission_assets_key()) {
 		char resolved[PATH_MAX];
@@ -591,9 +662,9 @@ void install_mission_hxm(PHYSFS_file *file)
 	}
 }
 
-std::vector<uint8_t> read_model_resource(const std::string &path)
+std::vector<uint8_t> read_model_resource(const std::string &path, mission_preparation *target)
 {
-	File file(PHYSFSX_openReadBuffered(path.c_str()), PHYSFS_close);
+	auto file = incoming_owned_file(target, path);
 	const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
 	if (length <= 0 || length > 64 * 1024 * 1024) throw std::runtime_error("Invalid owned model resource: " + path);
 	std::vector<uint8_t> bytes(static_cast<std::size_t>(length));
@@ -601,7 +672,7 @@ std::vector<uint8_t> read_model_resource(const std::string &path)
 	return bytes;
 }
 
-xl_compat::OwnedModelSet prepare_owned_models(int ordinal)
+xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *target = nullptr)
 {
 	xl_compat::OwnedModelSet result;
 	auto &pending = result.models;
@@ -627,7 +698,7 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal)
 		std::string selected_folder;
 		for (const auto &folder : folders) {
 			for (const auto &candidate : xl_compat::model_candidates(id)) {
-				path = owned_mod_file("", folder + candidate);
+				path = owned_mod_file("", folder + candidate, target);
 				if (!path.empty()) {
 					selected_folder = folder;
 					break;
@@ -644,7 +715,7 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal)
 		}
 		auto resource = std::make_shared<xl_compat::OofResource>();
 		resource->path = path;
-		const auto model_bytes = read_model_resource(path);
+		const auto model_bytes = read_model_resource(path, target);
 		if (ase) {
 			const std::string text(model_bytes.begin(), model_bytes.end());
 			auto compiled = xl_compat::compile_ase_mesh(xl_compat::decode_ase_model(xl_compat::read_ase_records(text)));
@@ -661,12 +732,12 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal)
 			if (texture.empty() || texture == "." || texture == ".." || texture.find_first_of("/\\:") != std::string::npos)
 				throw std::runtime_error("Invalid owned OOF skin name: " + path);
 			if (resource_key(texture).size() < 4 || resource_key(texture).substr(texture.size() - 4) != ".tga") texture += ".tga";
-			auto skin_path = owned_mod_file("", selected_folder + texture);
-			if (skin_path.empty() && selected_folder != "models/") skin_path = owned_mod_file("", "models/" + texture);
+			auto skin_path = owned_mod_file("", selected_folder + texture, target);
+			if (skin_path.empty() && selected_folder != "models/") skin_path = owned_mod_file("", "models/" + texture, target);
 			if (skin_path.empty()) throw std::runtime_error("Missing owned OOF skin: " + texture);
 			auto &skin = skins_by_path[skin_path];
 			if (!skin) {
-				const auto bytes = read_model_resource(skin_path);
+				const auto bytes = read_model_resource(skin_path, target);
 				skin = std::make_shared<const xl_compat::PogBitmap>(xl_compat::read_particle_image(bytes.data(), bytes.size()));
 				sources[skin_path] = picosha2::hash256_hex_string(bytes);
 			}
@@ -730,25 +801,15 @@ extern "C" int xl_resource_load_mod_data(void)
 		std::map<std::string, std::string> sources;
 		const auto ham = owned_mod_file(".ham"), hxm = owned_mod_file(".hxm"), vham = owned_mod_file(".vham");
 		for (const auto &path : { vham }) {
-			if (path.empty()) continue;
+			if (!ham.empty() || path.empty()) continue;
 			File file(PHYSFSX_openReadBuffered(path.c_str()), PHYSFS_close);
 			if (!file) throw std::runtime_error("Cannot read XL mission definition: " + path);
 			sources[path] = resource_hash(file.get(), path);
 		}
 		if (!ham.empty()) {
 			File file(PHYSFSX_openReadBuffered(ham.c_str()), PHYSFS_close);
-			XlPreparedHam incoming(file.get());
-			sources[ham] = incoming.source_hash();
-			XlPreparedResources target{ std::move(incoming) };
-			if (!hxm.empty()) {
-				File replacement(PHYSFSX_openReadBuffered(hxm.c_str()), PHYSFS_close);
-				sources[hxm] = target.prepare_hxm(replacement.get());
-			}
-			if (!vham.empty()) {
-				File extension(PHYSFSX_openReadBuffered(vham.c_str()), PHYSFS_close);
-				sources[vham] = target.prepare_vham(extension.get());
-			}
-			target.install_hxm();
+			auto target = XlPreparedResources::prepare_mission(nullptr);
+			target->install_hxm();
 #ifdef __ANDROID__
 			mod_save_capture_definitions();
 #endif
@@ -761,6 +822,9 @@ extern "C" int xl_resource_load_mod_data(void)
 				File extension(PHYSFSX_openReadBuffered(vham.c_str()), PHYSFS_close);
 				input_demo_assets_extra_ham_loaded(vham.c_str(), extension.get());
 			}
+			con_printf(CON_NORMAL, "XL mission definitions: HAM=%s HXM=%s VHAM=%s robots=%d models=%d\n",
+			           ham.c_str(), hxm.c_str(), vham.c_str(), N_robot_types, N_polygon_models);
+			return 1;
 		}
 		if (ham.empty() && !hxm.empty()) {
 			File file(PHYSFSX_openReadBuffered(hxm.c_str()), PHYSFS_close);
@@ -908,6 +972,9 @@ extern "C" void xl_resource_baseline_capture(void)
 struct XlPreparedResources::State {
 	std::unique_ptr<XlPreparedHam> incoming_ham;
 	std::unique_ptr<XlPreparedHam> incoming_extra;
+	std::map<std::string, std::string> definition_sources;
+	std::set<int> generated_models;
+	bool complete_mission = false;
 	std::vector<std::vector<unsigned char>> definition_layers;
 	xl_compat::OwnedModelSet owned_models;
 	MissionDefinitions definitions;
@@ -945,14 +1012,15 @@ struct XlPreparedResources::State {
 			native_models[id] = std::make_unique<NativeModel>(definitions.models[id]);
 	}
 
-	void prepare_models(int ordinal)
+	void prepare_models(int ordinal, mission_preparation *target = nullptr)
 	{
-		owned_models = xl_prepare_owned_models(ordinal);
-		owned_models.sources.insert(mission_definition_sources.begin(), mission_definition_sources.end());
+		owned_models = complete_mission ? prepare_owned_models(ordinal, target) : xl_prepare_owned_models(ordinal);
+		const auto &sources = complete_mission ? definition_sources : mission_definition_sources;
+		owned_models.sources.insert(sources.begin(), sources.end());
 		for (const auto &entry : owned_models.models) {
 			const int id = entry.first;
 			if (changes.models.count(id)) continue;
-			if (std::size_t(id) < definitions.models.size() && definitions.models[id].model_data && !mission_generated_models.count(id)) continue;
+			if (std::size_t(id) < definitions.models.size() && definitions.models[id].model_data && (complete_mission || !mission_generated_models.count(id))) continue;
 			const std::size_t size = (std::max) (definitions.models.size(), std::size_t(id + 1));
 			definitions.models.resize(size);
 			definitions.payloads.resize(size);
@@ -976,6 +1044,7 @@ struct XlPreparedResources::State {
 			model.submodel_maxs[0] = model.maxs;
 			definitions.custom_radii[id] = model.rad;
 			changes.models.insert(id);
+			if (complete_mission) generated_models.insert(id);
 			has_hxm = true;
 		}
 		bind_graph();
@@ -1013,6 +1082,52 @@ XlPreparedResources::XlPreparedResources(XlPreparedHam incoming)
 	state = std::make_unique<State>(MissionDefinitions(incoming.tables()));
 	state->incoming_ham = std::make_unique<XlPreparedHam>(std::move(incoming));
 	state->mission_definitions = true;
+}
+
+std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_mission(mission_preparation *mission)
+{
+	if (mission && (!mission_prepared_descriptor(mission) || mission_prepared_descriptor(mission)->descent_version != 2))
+		throw std::runtime_error("Incoming resource preparation requires a D2 descriptor");
+	const auto ham = owned_mod_file(".ham", {}, mission);
+	if (ham.empty()) throw std::runtime_error("Incoming mission has no owned HAM definitions");
+	XlPreparedHam incoming = [&] {
+		auto file = incoming_owned_file(mission, ham);
+		return XlPreparedHam(file.get());
+	}();
+	const auto hash = incoming.source_hash();
+	auto result = std::make_unique<XlPreparedResources>(std::move(incoming));
+	result->state->complete_mission = true;
+	result->state->definition_sources[ham] = hash;
+	const auto hxm = owned_mod_file(".hxm", {}, mission);
+	if (!hxm.empty()) {
+		auto replacement = incoming_owned_file(mission, hxm);
+		result->state->definition_sources[hxm] = result->prepare_hxm(replacement.get());
+	}
+	const auto vham = owned_mod_file(".vham", {}, mission);
+	if (!vham.empty()) {
+		auto extension = incoming_owned_file(mission, vham);
+		result->state->definition_sources[vham] = result->prepare_vham(extension.get());
+	}
+	result->state->prepare_models(0, mission);
+	return result;
+}
+
+const std::map<std::string, std::string> &XlPreparedResources::sources() const
+{
+	return state->owned_models.sources;
+}
+
+XlPreparedResources::XlPreparedResources(XlPreparedResources &&other) noexcept : state(std::move(other.state))
+{
+	if (installed_resources == &other) installed_resources = this;
+}
+XlPreparedResources &XlPreparedResources::operator=(XlPreparedResources &&other) noexcept
+{
+	if (this == &other) return *this;
+	if (installed_resources == this) installed_resources = nullptr;
+	state = std::move(other.state);
+	if (installed_resources == &other) installed_resources = this;
+	return *this;
 }
 
 std::string XlPreparedResources::prepare_hxm(PHYSFS_file *file)
@@ -1454,6 +1569,8 @@ void XlPreparedResources::install_hxm()
 	// Allocate publication copies before changing any live definitions
 	auto models = state->owned_models.models;
 	auto sources = state->owned_models.sources;
+	auto definition_sources = state->definition_sources;
+	auto generated_models = state->generated_models;
 	// Repeated native reloads need fresh buffers, also before incoming publication
 	for (const int id : state->changes.models)
 		if (!state->native_models[id]->model.model_data) {
@@ -1463,6 +1580,10 @@ void XlPreparedResources::install_hxm()
 	if (state->incoming_ham) {
 		state->incoming_ham->install();
 		state->incoming_ham.reset();
+	}
+	if (state->complete_mission) {
+		mission_definition_sources = std::move(definition_sources);
+		mission_generated_models = std::move(generated_models);
 	}
 	if (!state->has_hxm) {
 		xl_oof_renderer_clear();
