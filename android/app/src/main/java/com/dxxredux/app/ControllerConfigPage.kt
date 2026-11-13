@@ -8,7 +8,6 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
@@ -230,12 +229,13 @@ internal fun ControllerConfigPage(
     onDialogGenericMotionEvent: ((View, MotionEvent) -> Boolean)? = null,
     onDialogViewChanged: (View?) -> Unit = {},
     onPickerOpenChanged: (Boolean) -> Unit = {},
+    sectionTarget: String? = null,
     onBack: () -> Unit,
 ) {
-    BackHandler(onBack = onBack)
     @Suppress("UNUSED_EXPRESSION")
     axisGeneration
 
+    val draft = rememberSettingsEditorDraft("controller.editor")
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val hasTouchscreen =
@@ -247,15 +247,17 @@ internal fun ControllerConfigPage(
             hasTouchscreen = hasTouchscreen,
             controllerNavigationActive = controllerNavigationActive,
         )
-    var controllerSlots by remember { mutableStateOf(ControllerConfigSlotRepository.load(context)) }
+    var controllerSlots by draft.state(
+        "controllerSlots",
+    ) { mutableStateOf(ControllerConfigSlotRepository.load(context)) }
     val activeSlotName = controllerSlots.activeSlot.name
 
     // Bindings state: control ID → function label
-    val bindings = remember { mutableStateMapOf<String, String>() }
-    val inverts = remember { mutableStateListOf<String>() } // inverted axis control IDs
-    val thresholds = remember { mutableStateMapOf<String, Int>() }
-    val axisResponses = remember { mutableStateMapOf<String, ControllerAxisResponse>() }
-    var initialized by remember { mutableStateOf(false) }
+    val bindings = draft.state("bindings") { mutableStateMapOf<String, String>() }
+    val inverts = draft.state("inverts") { mutableStateListOf<String>() } // inverted axis control IDs
+    val thresholds = draft.state("thresholds") { mutableStateMapOf<String, Int>() }
+    val axisResponses = draft.state("axisResponses") { mutableStateMapOf<String, ControllerAxisResponse>() }
+    var initialized by draft.state("initialized") { mutableStateOf(false) }
 
     fun loadControllerConfigState(config: ControllerConfigState) {
         bindings.clear()
@@ -299,15 +301,27 @@ internal fun ControllerConfigPage(
 
     // Touch/dialog state
     val controlBounds = remember { mutableMapOf<String, Rect>() }
-    var selectedControl by remember { mutableStateOf<String?>(null) }
-    var showButtonPicker by remember { mutableStateOf(false) }
-    var showStickPicker by remember { mutableStateOf(false) }
-    var showDpadPicker by remember { mutableStateOf(false) }
-    var showSlotDialog by remember { mutableStateOf(false) }
-    var showControllerPresetPicker by remember { mutableStateOf(false) }
-    var showRawInputs by remember { mutableStateOf(false) }
-    var selectedActionButtonIndex by remember { mutableIntStateOf(0) }
+    var selectedControl by draft.state("selectedControl") { mutableStateOf<String?>(null) }
+    var showButtonPicker by draft.state("showButtonPicker") { mutableStateOf(false) }
+    var showStickPicker by draft.state("showStickPicker") { mutableStateOf(false) }
+    var showDpadPicker by draft.state("showDpadPicker") { mutableStateOf(false) }
+    var showSlotDialog by draft.state("showSlotDialog") { mutableStateOf(false) }
+    var showControllerPresetPicker by draft.state("showControllerPresetPicker") { mutableStateOf(false) }
+    var showRawInputs by draft.state("showRawInputs") { mutableStateOf(false) }
+    var showExitPrompt by remember { mutableStateOf(false) }
+    var selectedActionButtonIndex by draft.state("selectedActionButtonIndex") { mutableIntStateOf(0) }
     SideEffect { onActionSelectionChanged(selectedActionButtonIndex) }
+    LaunchedEffect(sectionTarget) {
+        selectedActionButtonIndex =
+            when (sectionTarget) {
+                SettingsSections.CONTROLLER_SLOTS -> 0
+                SettingsSections.CONTROLLER_PRESETS -> 1
+                SettingsSections.CONTROLLER_EXPORT -> 2
+                SettingsSections.CONTROLLER_IMPORT -> 3
+                SettingsSections.CONTROLLER_RAW -> 6
+                else -> selectedActionButtonIndex
+            }
+    }
     var suppressActionButtonARelease by remember { mutableStateOf(false) }
     var staleAxisIndices by remember { mutableStateOf(emptySet<Int>()) }
     var staleDpadIndices by remember { mutableStateOf(emptySet<Int>()) }
@@ -450,16 +464,16 @@ internal fun ControllerConfigPage(
             else -> null
         }
 
-    val showButtonPickerState by rememberUpdatedState(showButtonPicker)
-    val showStickPickerState by rememberUpdatedState(showStickPicker)
-    val showDpadPickerState by rememberUpdatedState(showDpadPicker)
     val showRawInputsState by rememberUpdatedState(showRawInputs)
     val axesState by rememberUpdatedState(effectiveAxes)
     val dpadAxesState by rememberUpdatedState(effectiveDpadAxes)
     val pressedButtonsState by rememberUpdatedState(pressedButtons)
     val windowFocused by rememberUpdatedState(LocalWindowInfo.current.isWindowFocused)
 
-    val pickerOpen = showButtonPicker || showStickPicker || showDpadPicker || showRawInputs
+    val pickerOpen =
+        showButtonPicker || showStickPicker || showDpadPicker || showRawInputs ||
+            showSlotDialog || showControllerPresetPicker || showExitPrompt
+    val pickerOpenState by rememberUpdatedState(pickerOpen)
 
     DisposableEffect(pickerOpen) {
         onPickerOpenChanged(pickerOpen)
@@ -471,15 +485,29 @@ internal fun ControllerConfigPage(
     }
 
     fun saveSelection() {
-        controllerSlots =
-            ControllerConfigSlotRepository.saveActiveConfig(
-                context,
-                currentControllerConfigState(),
-                gameVariant,
-            )
-        Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
-        onBack()
+        try {
+            controllerSlots =
+                ControllerConfigSlotRepository.saveActiveConfig(
+                    context,
+                    currentControllerConfigState(),
+                    gameVariant,
+                )
+            Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
+            onBack()
+        } catch (_: Exception) {
+            Toast.makeText(context, "Could not save controller mapping. Please retry", Toast.LENGTH_LONG).show()
+        }
     }
+
+    val requestBack =
+        rememberSettingsEditorExit(
+            dirty = currentControllerConfigState() != controllerSlots.activeSlot.value,
+            onSaveAndLeave = { saveSelection() },
+            onLeave = onBack,
+            mixedImmediateSaves = true,
+            onPromptOpenChanged = { showExitPrompt = it },
+        )
+    val requestBackState by rememberUpdatedState(requestBack)
 
     fun exportSelection() {
         controllerSlots =
@@ -521,10 +549,16 @@ internal fun ControllerConfigPage(
         var wasADown = false
         var wasBDown = false
         while (true) {
-            val pickerOpen = showButtonPickerState || showStickPickerState || showDpadPickerState || showRawInputsState
+            val pickerOpen = pickerOpenState
             val currentButtons = pressedButtonsState.toList()
             val bDown = "B" in currentButtons
-            if (showRawInputsState && wasBDown && !bDown) showRawInputs = false
+            if (wasBDown && !bDown) {
+                if (showRawInputsState) {
+                    showRawInputs = false
+                } else if (windowFocused && !pickerOpen) {
+                    requestBackState()
+                }
+            }
             wasBDown = bDown
             val trigger =
                 longPressDetector.update(
@@ -1502,7 +1536,8 @@ internal fun ControllerConfigPage(
                         .weight(1f)
                         .height(36.dp)
                         .then(actionButtonModifier(actionButtonHighlightVisible && selectedActionButtonIndex == 0))
-                        .focusProperties { canFocus = false },
+                        .settingsSectionTarget(SettingsSections.CONTROLLER_SLOTS, sectionTarget)
+                        .focusProperties { canFocus = sectionTarget == SettingsSections.CONTROLLER_SLOTS },
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
             ) {
                 Text("Choose Slot", fontSize = 12.sp)
@@ -1517,7 +1552,8 @@ internal fun ControllerConfigPage(
                         .weight(1f)
                         .height(36.dp)
                         .then(actionButtonModifier(actionButtonHighlightVisible && selectedActionButtonIndex == 1))
-                        .focusProperties { canFocus = false },
+                        .settingsSectionTarget(SettingsSections.CONTROLLER_PRESETS, sectionTarget)
+                        .focusProperties { canFocus = sectionTarget == SettingsSections.CONTROLLER_PRESETS },
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
             ) {
                 Text("Apply Preset", fontSize = 12.sp)
@@ -1542,10 +1578,8 @@ internal fun ControllerConfigPage(
                             1f,
                         ).height(38.dp)
                         .then(actionButtonModifier(actionButtonHighlightVisible && selectedActionButtonIndex == 2))
-                        .focusProperties {
-                            canFocus =
-                                false
-                        },
+                        .settingsSectionTarget(SettingsSections.CONTROLLER_EXPORT, sectionTarget)
+                        .focusProperties { canFocus = sectionTarget == SettingsSections.CONTROLLER_EXPORT },
             ) {
                 Text("Export", fontSize = 12.sp)
             }
@@ -1560,10 +1594,8 @@ internal fun ControllerConfigPage(
                             1f,
                         ).height(38.dp)
                         .then(actionButtonModifier(actionButtonHighlightVisible && selectedActionButtonIndex == 3))
-                        .focusProperties {
-                            canFocus =
-                                false
-                        },
+                        .settingsSectionTarget(SettingsSections.CONTROLLER_IMPORT, sectionTarget)
+                        .focusProperties { canFocus = sectionTarget == SettingsSections.CONTROLLER_IMPORT },
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
             ) {
                 Text("Import", fontSize = 12.sp)
@@ -1641,7 +1673,8 @@ internal fun ControllerConfigPage(
                     .fillMaxWidth()
                     .height(36.dp)
                     .then(actionButtonModifier(actionButtonHighlightVisible && selectedActionButtonIndex in 6..7))
-                    .focusProperties { canFocus = false },
+                    .settingsSectionTarget(SettingsSections.CONTROLLER_RAW, sectionTarget)
+                    .focusProperties { canFocus = sectionTarget == SettingsSections.CONTROLLER_RAW },
         ) { Text("Raw inputs", fontSize = 12.sp) }
         Text("Additional inputs", fontSize = 12.sp, fontWeight = FontWeight.Bold)
         for ((rowIndex, controls) in listOf(listOf("BRAKE", "GAS"), listOf("L2", "R2")).withIndex()) {
@@ -1693,7 +1726,13 @@ internal fun ControllerConfigPage(
                         .padding(8.dp),
             ) {
                 Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(end = 8.dp)) {
-                    controllerCanvas(Modifier.fillMaxHeight())
+                    controllerCanvas(
+                        Modifier.fillMaxHeight().settingsSectionTarget(
+                            SettingsSections.CONTROLLER_RESPONSE,
+                            sectionTarget,
+                            focusContainer = true,
+                        ),
+                    )
                     Text(
                         text = "slot: $activeSlotName",
                         modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
@@ -1724,7 +1763,13 @@ internal fun ControllerConfigPage(
                         .padding(12.dp),
             ) {
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                    controllerCanvas(Modifier.fillMaxSize())
+                    controllerCanvas(
+                        Modifier.fillMaxSize().settingsSectionTarget(
+                            SettingsSections.CONTROLLER_RESPONSE,
+                            sectionTarget,
+                            focusContainer = true,
+                        ),
+                    )
                     Text(
                         text = "slot: $activeSlotName",
                         modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
@@ -2296,22 +2341,23 @@ private fun StickPickerDialog(
     onConfirm: (StickPickerResult) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val draft = rememberSettingsEditorDraft("controller.stick")
     @Suppress("UNUSED_EXPRESSION")
     liveUpdateToken
     val confirmFocus = remember { FocusRequester() }
     val dismissFocus = remember { FocusRequester() }
-    var selectedX by remember { mutableStateOf(currentXFunc) }
-    var selectedXResponse by remember { mutableStateOf(xResponse) }
-    var selectedY by remember { mutableStateOf(currentYFunc) }
-    var selectedYResponse by remember { mutableStateOf(yResponse) }
-    var invertX by remember { mutableStateOf(currentXInvert) }
-    var invertY by remember { mutableStateOf(currentYInvert) }
-    var xButtonMode by remember { mutableStateOf(currentXButtonMode) }
-    var yButtonMode by remember { mutableStateOf(currentYButtonMode) }
-    var xNegFunc by remember { mutableStateOf(currentXNegFunc) }
-    var xPosFunc by remember { mutableStateOf(currentXPosFunc) }
-    var yNegFunc by remember { mutableStateOf(currentYNegFunc) }
-    var yPosFunc by remember { mutableStateOf(currentYPosFunc) }
+    var selectedX by draft.state("selectedX") { mutableStateOf(currentXFunc) }
+    var selectedXResponse by draft.state("selectedXResponse") { mutableStateOf(xResponse) }
+    var selectedY by draft.state("selectedY") { mutableStateOf(currentYFunc) }
+    var selectedYResponse by draft.state("selectedYResponse") { mutableStateOf(yResponse) }
+    var invertX by draft.state("invertX") { mutableStateOf(currentXInvert) }
+    var invertY by draft.state("invertY") { mutableStateOf(currentYInvert) }
+    var xButtonMode by draft.state("xButtonMode") { mutableStateOf(currentXButtonMode) }
+    var yButtonMode by draft.state("yButtonMode") { mutableStateOf(currentYButtonMode) }
+    var xNegFunc by draft.state("xNegFunc") { mutableStateOf(currentXNegFunc) }
+    var xPosFunc by draft.state("xPosFunc") { mutableStateOf(currentXPosFunc) }
+    var yNegFunc by draft.state("yNegFunc") { mutableStateOf(currentYNegFunc) }
+    var yPosFunc by draft.state("yPosFunc") { mutableStateOf(currentYPosFunc) }
     val xHasBinding = if (xButtonMode) xNegFunc != null || xPosFunc != null else selectedX != null
     val yHasBinding = if (yButtonMode) yNegFunc != null || yPosFunc != null else selectedY != null
     val confirmLabel = if (xHasBinding && yHasBinding) "Save" else "OK"

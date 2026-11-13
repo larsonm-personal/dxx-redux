@@ -106,24 +106,35 @@ fun AutoselectEditorPage(
     filesDir: String,
     onBack: () -> Unit,
 ) {
+    val draft = rememberSettingsEditorDraft("weapon.autoselect")
     val scope = rememberCoroutineScope()
-    var activeGame by remember { mutableStateOf(gameVariant) }
+    var activeGame by draft.state("activeGame") { mutableStateOf(gameVariant) }
 
     // Weapon index -> display name maps, built from paired JNI entries
-    var primaryNameMap by remember { mutableStateOf(emptyMap<Int, String>()) }
-    var secondaryNameMap by remember { mutableStateOf(emptyMap<Int, String>()) }
+    var primaryNameMap by draft.state("primaryNameMap") { mutableStateOf(emptyMap<Int, String>()) }
+    var secondaryNameMap by draft.state("secondaryNameMap") { mutableStateOf(emptyMap<Int, String>()) }
 
     // Current ordering (mutable lists for drag reorder)
-    val primaryOrder = remember { mutableStateListOf<Int>() }
-    val secondaryOrder = remember { mutableStateListOf<Int>() }
+    val primaryOrder = draft.state("primaryOrder") { mutableStateListOf<Int>() }
+    val secondaryOrder = draft.state("secondaryOrder") { mutableStateListOf<Int>() }
 
-    var statusMessage by remember { mutableStateOf("") }
-    var hasChanges by remember { mutableStateOf(false) }
-    var hasMismatchedPilots by remember { mutableStateOf(false) }
-    var d1Ordering by remember { mutableStateOf<AutoselectShownOrdering?>(null) }
-    var d2Ordering by remember { mutableStateOf<AutoselectShownOrdering?>(null) }
-    var mismatchGeneration by remember { mutableIntStateOf(0) }
+    var statusMessage by draft.state("statusMessage") { mutableStateOf("") }
+    var hasChanges by draft.state("hasChanges") { mutableStateOf(false) }
+    var hasMismatchedPilots by draft.state("hasMismatchedPilots") { mutableStateOf(false) }
+    var d1Ordering by draft.state("d1Ordering") { mutableStateOf<AutoselectShownOrdering?>(null) }
+    var d2Ordering by draft.state("d2Ordering") { mutableStateOf<AutoselectShownOrdering?>(null) }
+    var mismatchGeneration by draft.state("mismatchGeneration") { mutableIntStateOf(0) }
     var saving by remember { mutableStateOf(false) }
+    val savedOrderings =
+        draft.state("savedOrderings") {
+            androidx.compose.runtime.mutableStateMapOf<String, AutoselectShownOrdering>()
+        }
+
+    fun hasDraftEdits(): Boolean =
+        savedOrderings.any { (game, saved) ->
+            val shown = if (game == "d1") d1Ordering else d2Ordering
+            shown != null && (shown.primary != saved.primary || shown.secondary != saved.secondary)
+        }
 
     fun weaponName(
         index: Int,
@@ -222,62 +233,83 @@ fun AutoselectEditorPage(
     }
 
     fun switchGame(game: String) {
-        if (activeGame == game) return
+        if (activeGame == game || saving) return
         syncActiveOrderingFromUi()
         activeGame = game
     }
 
-    fun saveMismatchedGames() {
+    fun saveMismatchedGames(leaveAfterSave: Boolean = false) {
+        if (saving) return
         val activeOrdering = syncActiveOrderingFromUi()
         val requestedD1 = if (activeGame == "d1") activeOrdering else d1Ordering
         val requestedD2 = if (activeGame == "d2") activeOrdering else d2Ordering
         saving = true
         scope.launch {
-            val result =
-                withContext(Dispatchers.IO) {
-                    var nextD1 = requestedD1
-                    var nextD2 = requestedD2
-                    var savedCount = 0
-                    requestedD1?.let { ordering ->
-                        if (ordering.mismatchCount > 0) {
-                            savedCount +=
-                                NativeAutoselectPatcher.writeAutoselect(
-                                    "d1",
-                                    filesDir,
-                                    ordering.primary.toIntArray(),
-                                    ordering.secondary.toIntArray(),
-                                )
-                            nextD1 = orderingWithMismatchCount("d1", ordering.primary, ordering.secondary)
+            try {
+                val results =
+                    withContext(Dispatchers.IO) {
+                        listOf("d1" to requestedD1, "d2" to requestedD2).mapNotNull { (game, requested) ->
+                            requested ?: return@mapNotNull null
+                            // Recheck here: the debounced UI mismatch count may still describe an older order
+                            val checked = orderingWithMismatchCount(game, requested.primary, requested.secondary)
+                            val savedCount =
+                                if (checked.mismatchCount > 0) {
+                                    NativeAutoselectPatcher.writeAutoselect(
+                                        game,
+                                        filesDir,
+                                        requested.primary.toIntArray(),
+                                        requested.secondary.toIntArray(),
+                                    )
+                                } else {
+                                    0
+                                }
+                            Triple(
+                                game,
+                                orderingWithMismatchCount(game, requested.primary, requested.secondary),
+                                savedCount,
+                            )
                         }
                     }
-                    requestedD2?.let { ordering ->
-                        if (ordering.mismatchCount > 0) {
-                            savedCount +=
-                                NativeAutoselectPatcher.writeAutoselect(
-                                    "d2",
-                                    filesDir,
-                                    ordering.primary.toIntArray(),
-                                    ordering.secondary.toIntArray(),
-                                )
-                            nextD2 = orderingWithMismatchCount("d2", ordering.primary, ordering.secondary)
-                        }
+                var failed = false
+                var savedCount = 0
+                results.forEach { (game, ordering, count) ->
+                    setOrderingFor(game, ordering)
+                    savedCount += count.coerceAtLeast(0)
+                    val baseline = savedOrderings[game]
+                    val edited =
+                        baseline != null &&
+                            (ordering.primary != baseline.primary || ordering.secondary != baseline.secondary)
+                    if (count < 0 || ordering.mismatchCount > 0 || (edited && ordering.pilotCount == 0)) {
+                        failed = true
+                    } else {
+                        savedOrderings[game] = ordering
                     }
-                    Triple(nextD1, nextD2, savedCount)
                 }
-            d1Ordering = result.first
-            d2Ordering = result.second
-            saving = false
-            statusMessage =
-                if (result.third > 0) {
-                    "Saved to ${result.third} pilot file(s)"
-                } else if (((if (activeGame == "d1") result.first else result.second)?.pilotCount ?: 0) == 0) {
-                    "No pilot files found - showing defaults"
-                } else {
-                    ""
-                }
-            updateSaveState(result.first, result.second)
+                updateSaveState()
+                statusMessage =
+                    if (failed) {
+                        "Some weapon ordering changes could not be saved. Check pilot files and retry"
+                    } else {
+                        "Saved to $savedCount pilot file(s)"
+                    }
+                if (!failed && leaveAfterSave) onBack()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                statusMessage = "Could not save weapon ordering. Please retry"
+            } finally {
+                saving = false
+            }
         }
     }
+
+    val requestExit =
+        rememberSettingsEditorExit(
+            dirty = hasDraftEdits(),
+            onSaveAndLeave = { saveMismatchedGames(leaveAfterSave = true) },
+            onLeave = onBack,
+            saving = saving,
+        )
 
     LaunchedEffect(activeGame) {
         val game = activeGame
@@ -295,6 +327,7 @@ fun AutoselectEditorPage(
                     )
                 Triple(ordering, primaryNames, secondaryNames)
             }
+        if (savedOrderings[game] == null) savedOrderings[game] = loaded.first
         setOrderingFor(game, loaded.first)
         primaryNameMap = loaded.second
         secondaryNameMap = loaded.third
@@ -365,7 +398,7 @@ fun AutoselectEditorPage(
                         }
                     },
                     navigationIcon = {
-                        IconButton(onClick = onBack, modifier = Modifier.tvFocusBorder()) {
+                        IconButton(onClick = requestExit, modifier = Modifier.tvFocusBorder()) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                         }
                     },
@@ -471,7 +504,8 @@ fun AutoselectEditorPage(
                         DragReorderList(
                             items = primaryOrder,
                             nameResolver = { weaponName(it, isPrimary = true) },
-                            onReorder = { from, to ->
+                            onReorder = reorder@{ from, to ->
+                                if (saving) return@reorder
                                 val item = primaryOrder.removeAt(from)
                                 primaryOrder.add(to, item)
                                 checkChanges()
@@ -491,7 +525,8 @@ fun AutoselectEditorPage(
                         DragReorderList(
                             items = secondaryOrder,
                             nameResolver = { weaponName(it, isPrimary = false) },
-                            onReorder = { from, to ->
+                            onReorder = reorder@{ from, to ->
+                                if (saving) return@reorder
                                 val item = secondaryOrder.removeAt(from)
                                 secondaryOrder.add(to, item)
                                 checkChanges()
@@ -510,6 +545,7 @@ fun AutoselectEditorPage(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     OutlinedButton(
+                        enabled = !saving,
                         onClick = {
                             primaryOrder.clear()
                             primaryOrder.addAll(primaryNameMap.keys)
@@ -527,7 +563,7 @@ fun AutoselectEditorPage(
                         onClick = {
                             saveMismatchedGames()
                         },
-                        enabled = hasChanges && !saving,
+                        enabled = (hasChanges || hasDraftEdits()) && !saving,
                         modifier = Modifier.weight(1f).height(28.dp).tvFocusBorder(),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                     ) {

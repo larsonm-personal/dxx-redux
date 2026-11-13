@@ -34,6 +34,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -41,10 +42,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,6 +62,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -4346,60 +4352,127 @@ private fun SetupScreen(
     val inputModeManager = LocalInputModeManager.current
 
     // -- Page navigation state ----------------------------
-    var showControllerPage by remember { mutableStateOf(false) }
-    var showTouchEditorPage by remember { mutableStateOf(false) }
-    var showAdvancedPage by remember { mutableStateOf(false) }
-    var showGraphicsPage by remember { mutableStateOf(false) }
-    var showEnginePrefsPage by remember { mutableStateOf(false) }
-    var showMultiplayerPage by remember { mutableStateOf(false) }
-    var showAutoselectPage by remember { mutableStateOf(false) }
-    var showMusicPage by remember { mutableStateOf(false) }
+    val destinationSaver =
+        Saver<LauncherDestination, String>(
+            save = { route ->
+                // Process recreation must never reopen a deferred editor with a missing draft
+                if (route in
+                    setOf(
+                        LauncherDestination.CONTROLLER_MAPPING,
+                        LauncherDestination.TOUCH_EDITOR,
+                        LauncherDestination.GAME_PREFERENCES,
+                        LauncherDestination.AUTOSELECT,
+                    )
+                ) {
+                    LauncherDestination.SETTINGS.name
+                } else {
+                    route.name
+                }
+            },
+            restore = LauncherDestination::valueOf,
+        )
+    val savedDestination = rememberSaveable(stateSaver = destinationSaver) { mutableStateOf(LauncherDestination.HOME) }
+    val retainedDestination = rememberSettingsRetainedState("launcher.destination") { savedDestination }
+    var destination by retainedDestination
+    val backStackSaver =
+        Saver<ArrayList<String>, ArrayList<String>>(
+            save = { stack ->
+                if (destination in
+                    setOf(
+                        LauncherDestination.CONTROLLER_MAPPING,
+                        LauncherDestination.TOUCH_EDITOR,
+                        LauncherDestination.GAME_PREFERENCES,
+                        LauncherDestination.AUTOSELECT,
+                    )
+                ) {
+                    arrayListOf(LauncherDestination.HOME.name)
+                } else {
+                    stack
+                }
+            },
+            restore = { it },
+        )
+    val savedBackStack = rememberSaveable(stateSaver = backStackSaver) { mutableStateOf(arrayListOf<String>()) }
+    val retainedBackStack = rememberSettingsRetainedState("launcher.backStack") { savedBackStack }
+    var backStack by retainedBackStack
+    SideEffect {
+        savedDestination.value = destination
+        savedBackStack.value = backStack
+    }
+    var sectionTarget by rememberSaveable { mutableStateOf<String?>(null) }
+    var settingsQuery by rememberSaveable { mutableStateOf("") }
+    var focusedSettingsEntry by rememberSaveable { mutableStateOf<String?>(null) }
+    val settingsListState = rememberLazyListState()
+    val gearFocus = remember { FocusRequester() }
+    var restoreGearFocus by remember { mutableStateOf(false) }
+    var pendingEditorJoin by remember { mutableStateOf(false) }
+
+    fun openDestination(
+        next: LauncherDestination,
+        target: String? = null,
+    ) {
+        backStack = ArrayList(backStack + destination.name)
+        sectionTarget = target
+        destination = next
+    }
+
+    fun closeDestination() {
+        showDemoInstallerOffer = gamePrefs.getBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, true)
+        sectionTarget = null
+        val leavingSettings = destination == LauncherDestination.SETTINGS
+        destination = backStack.lastOrNull()?.let(LauncherDestination::valueOf) ?: LauncherDestination.HOME
+        backStack = ArrayList(backStack.dropLast(1))
+        if (destination == LauncherDestination.HOME) restoreGearFocus = leavingSettings
+    }
     val lanHosting by com.dxxredux.app.lobby.LobbyService.isHosting
         .collectAsState()
     val lanJoined by com.dxxredux.app.lobby.LobbyService.joinedLobby
         .collectAsState()
     val joinMatchmaking by MatchmakingStateHolder.state.collectAsState()
     val joinConflict = gameRunning || lanHosting || lanJoined != null || joinMatchmaking.currentLobby != null
-    LaunchedEffect(lanJoinRequest?.id, joinConflict) {
+    val editorOpen =
+        destination in
+            setOf(
+                LauncherDestination.CONTROLLER_MAPPING,
+                LauncherDestination.TOUCH_EDITOR,
+                LauncherDestination.GAME_PREFERENCES,
+                LauncherDestination.AUTOSELECT,
+            )
+    LaunchedEffect(lanJoinRequest?.id, joinConflict, editorOpen) {
         if (lanJoinRequest != null && !joinConflict) {
-            showControllerPage = false
-            showTouchEditorPage = false
-            showAdvancedPage = false
-            showGraphicsPage = false
-            showEnginePrefsPage = false
-            showAutoselectPage = false
-            showMusicPage = false
-            MatchmakingStateHolder.update { it.copy(nav = com.dxxredux.app.multiplayer.MultiplayerNav.LAN) }
-            showMultiplayerPage = true
+            if (editorOpen) {
+                pendingEditorJoin = true
+            } else {
+                MatchmakingStateHolder.update { it.copy(nav = com.dxxredux.app.multiplayer.MultiplayerNav.LAN) }
+                backStack = arrayListOf(LauncherDestination.HOME.name)
+                destination = LauncherDestination.MULTIPLAYER
+            }
         }
     }
-
-    // Re-establish focus when returning from any sub-page
-    val anySubPageOpen =
-        showControllerPage ||
-            showTouchEditorPage ||
-            showAdvancedPage ||
-            showGraphicsPage ||
-            showEnginePrefsPage ||
-            showMultiplayerPage ||
-            showAutoselectPage ||
-            showMusicPage
-
-    fun closeEnginePrefsPage() {
-        showDemoInstallerOffer = gamePrefs.getBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, true)
-        showEnginePrefsPage = false
-    }
+    val anySubPageOpen = destination != LauncherDestination.HOME
     LaunchedEffect(anySubPageOpen, canLaunch, showResumePanel, focusResumeTrigger, shouldSeedLauncherFocus) {
         if (!anySubPageOpen) {
             if (shouldSeedLauncherFocus) {
                 inputModeManager.requestInputMode(InputMode.Keyboard)
                 withFrameNanos { }
                 withFrameNanos { }
-                initialFocus.requestFocus()
+                if (restoreGearFocus) {
+                    gearFocus.requestFocus()
+                } else if (!showResumePanel ||
+                    gameRunning
+                ) {
+                    initialFocus.requestFocus()
+                }
                 delay(300)
                 inputModeManager.requestInputMode(InputMode.Keyboard)
                 withFrameNanos { }
-                initialFocus.requestFocus()
+                if (restoreGearFocus) {
+                    gearFocus.requestFocus()
+                } else if (!showResumePanel ||
+                    gameRunning
+                ) {
+                    initialFocus.requestFocus()
+                }
             } else {
                 focusManager.clearFocus(force = true)
             }
@@ -4428,14 +4501,121 @@ private fun SetupScreen(
                 dismissButton = { TextButton(onClick = onLanJoinConsumed) { Text("Cancel") } },
             )
         }
-        if (showControllerPage) {
+        if (pendingEditorJoin) {
+            AlertDialog(
+                onDismissRequest = {
+                    pendingEditorJoin = false
+                    onLanJoinConsumed()
+                },
+                title = { Text("Finish editing before joining") },
+                text = {
+                    Text(
+                        "Use Back to save or discard your changes, then the LAN invitation will open. Your draft has not been changed.",
+                    )
+                },
+                confirmButton = { TextButton(onClick = { pendingEditorJoin = false }) { Text("Keep editing") } },
+                dismissButton = {
+                    TextButton(onClick = {
+                        pendingEditorJoin = false
+                        onLanJoinConsumed()
+                    }) { Text("Cancel invitation") }
+                },
+            )
+        }
+        if (destination == LauncherDestination.SETTINGS) {
+            BackHandler { closeDestination() }
+            SettingsHomePage(
+                query = settingsQuery,
+                onQueryChange = { settingsQuery = it },
+                listState = settingsListState,
+                focusedEntryId = focusedSettingsEntry,
+                onFocusedEntryChange = { focusedSettingsEntry = it },
+                controllerFocusActive = shouldSeedLauncherFocus,
+                onOpen = { entry -> openDestination(entry.destination, entry.section) },
+                onBack = { closeDestination() },
+            )
+            return@LauncherTheme
+        }
+        if (destination == LauncherDestination.CONTROLLER || destination == LauncherDestination.TOUCH_CONTROLS) {
+            BackHandler { closeDestination() }
+            val title = if (destination == LauncherDestination.CONTROLLER) "Controller" else "Touch controls"
+            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                val submenuFocus = remember { FocusRequester() }
+                LaunchedEffect(destination, shouldSeedLauncherFocus) {
+                    if (shouldSeedLauncherFocus && destination == LauncherDestination.TOUCH_CONTROLS &&
+                        sectionTarget == null
+                    ) {
+                        withFrameNanos { }
+                        submenuFocus.requestFocus()
+                    }
+                }
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .safeDrawingPadding()
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    TextButton(
+                        onClick = { closeDestination() },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    ) { Text("Back") }
+                    Text(title, style = MaterialTheme.typography.headlineSmall)
+                    if (destination == LauncherDestination.CONTROLLER) {
+                        ControllerSection(
+                            axes = controllerAxes,
+                            dpadAxes = dpadAxes,
+                            axisGeneration = axisGeneration,
+                            pressedButtons = pressedButtons,
+                            rawControllerInputs = rawControllerInputs,
+                            initialFocusRequester = if (shouldSeedLauncherFocus) initialFocus else null,
+                            onDefineControls = { openDestination(LauncherDestination.CONTROLLER_MAPPING) },
+                        )
+                    } else {
+                        var touchOverlay by remember {
+                            mutableStateOf(gamePrefs.getBoolean("touch_overlay_enabled", DEFAULT_TOUCH_OVERLAY_ENABLED))
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = touchOverlay,
+                                onCheckedChange = {
+                                    touchOverlay = it
+                                    gamePrefs.edit().putBoolean("touch_overlay_enabled", it).apply()
+                                },
+                                modifier =
+                                    Modifier
+                                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                        .settingsSectionTarget(SettingsSections.TOUCH_ENABLED, sectionTarget)
+                                        .semantics { contentDescription = "Touch controls overlay" }
+                                        .tvFocusBorder(),
+                            )
+                            Text("Touch controls overlay")
+                        }
+                        Text("Applies to this device", style = MaterialTheme.typography.bodySmall)
+                        Button(
+                            onClick = {
+                                openDestination(LauncherDestination.TOUCH_EDITOR)
+                            },
+                            modifier =
+                                Modifier
+                                    .heightIn(
+                                        min = 48.dp,
+                                    ).focusRequester(submenuFocus)
+                                    .tvFocusBorder(),
+                        ) { Text("Edit touch layout") }
+                    }
+                }
+            }
+            return@LauncherTheme
+        }
+        if (destination == LauncherDestination.CONTROLLER_MAPPING) {
             val activity = LocalContext.current as SetupActivity
             DisposableEffect(Unit) {
                 activity.controllerConfigActive = true
                 onDispose { activity.controllerConfigActive = false }
             }
-            BackHandler { showControllerPage = false }
             ControllerConfigPage(
+                sectionTarget = sectionTarget,
                 axes = controllerAxes,
                 dpadAxes = dpadAxes,
                 axisGeneration = axisGeneration,
@@ -4453,21 +4633,22 @@ private fun SetupScreen(
                 onDialogGenericMotionEvent = { view, event -> activity.handleControllerMotion(view, event) },
                 onDialogViewChanged = { activity.controllerConfigDialogView = it },
                 onPickerOpenChanged = { activity.controllerConfigDialogOpen = it },
-                onBack = { showControllerPage = false },
+                onBack = { closeDestination() },
             )
             return@LauncherTheme
         }
-        if (showTouchEditorPage) {
-            BackHandler { showTouchEditorPage = false }
+        if (destination == LauncherDestination.TOUCH_EDITOR) {
             TouchEditorPage(
+                sectionTarget = sectionTarget,
                 gameVariant = selectedEngine,
-                onBack = { showTouchEditorPage = false },
+                onBack = { closeDestination() },
             )
             return@LauncherTheme
         }
-        if (showAdvancedPage) {
-            BackHandler { showAdvancedPage = false }
+        if (destination == LauncherDestination.ADVANCED) {
+            BackHandler { closeDestination() }
             AdvancedSettingsPage(
+                sectionTarget = sectionTarget,
                 filesDir = filesDir,
                 fileSetManager = fileSetManager,
                 isGameReady = { game -> if (game == "d1") d1RequiredOk else d2RequiredOk },
@@ -4476,34 +4657,35 @@ private fun SetupScreen(
                 onPlayInputDemo = onPlayInputDemo,
                 onClearRouteMetadataCache = onClearRouteMetadataCache,
                 onSetRouteMetadataComputeFaster = onSetRouteMetadataComputeFaster,
-                onBack = { showAdvancedPage = false },
+                onBack = { closeDestination() },
             )
             return@LauncherTheme
         }
-        if (showGraphicsPage) {
-            BackHandler { showGraphicsPage = false }
+        if (destination == LauncherDestination.GRAPHICS) {
+            BackHandler { closeDestination() }
             GraphicsSettingsPage(
+                sectionTarget = sectionTarget,
                 gameVariant = selectedEngine,
                 filesDir = filesDir,
                 controllerFocusActive = shouldSeedLauncherFocus,
-                onBack = { showGraphicsPage = false },
+                onBack = { closeDestination() },
             )
             return@LauncherTheme
         }
-        if (showEnginePrefsPage) {
-            BackHandler { closeEnginePrefsPage() }
+        if (destination == LauncherDestination.GAME_PREFERENCES) {
             EnginePreferencesPage(
+                sectionTarget = sectionTarget,
                 gameVariant = selectedEngine,
                 filesDir = filesDir,
                 controllerFocusActive = shouldSeedLauncherFocus,
-                onBack = { closeEnginePrefsPage() },
+                onBack = { closeDestination() },
             )
             return@LauncherTheme
         }
-        if (showMultiplayerPage) {
-            BackHandler { showMultiplayerPage = false }
+        if (destination == LauncherDestination.MULTIPLAYER) {
+            BackHandler { closeDestination() }
             com.dxxredux.app.multiplayer.MultiplayerScreen(
-                onBack = { showMultiplayerPage = false },
+                onBack = { closeDestination() },
                 onLaunchGame = onMultiplayerLaunch,
                 onLaunchRequested = onMultiplayerLaunchRequested,
                 lanJoinRequest = lanJoinRequest.takeUnless { joinConflict },
@@ -4512,21 +4694,21 @@ private fun SetupScreen(
             )
             return@LauncherTheme
         }
-        if (showAutoselectPage) {
-            BackHandler { showAutoselectPage = false }
+        if (destination == LauncherDestination.AUTOSELECT) {
             AutoselectEditorPage(
                 gameVariant = selectedEngine,
                 filesDir = filesDir.absolutePath,
-                onBack = { showAutoselectPage = false },
+                onBack = { closeDestination() },
             )
             return@LauncherTheme
         }
-        if (showMusicPage) {
-            BackHandler { showMusicPage = false }
+        if (destination == LauncherDestination.MUSIC) {
+            BackHandler { closeDestination() }
             MusicPickerPage(
+                sectionTarget = sectionTarget,
                 filesDir = filesDir,
                 controllerFocusActive = shouldSeedLauncherFocus,
-                onBack = { showMusicPage = false },
+                onBack = { closeDestination() },
             )
             return@LauncherTheme
         }
@@ -4543,33 +4725,61 @@ private fun SetupScreen(
                         .safeDrawingPadding()
                         .padding(if (isLandscape) 8.dp else 16.dp),
             ) {
+                if (destination == LauncherDestination.FILES_CONTENT || destination == LauncherDestination.ABOUT) {
+                    BackHandler { closeDestination() }
+                }
                 // -- Title + About ----------------------------
-                var showAbout by remember { mutableStateOf(false) }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "${stringResource(R.string.app_brand_name)} Setup",
+                        text =
+                            when (destination) {
+                                LauncherDestination.FILES_CONTENT -> "Files & content"
+                                LauncherDestination.ABOUT -> "About"
+                                else -> "${stringResource(R.string.app_brand_name)} Setup"
+                            },
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
                     )
-                    TextButton(onClick = { showAbout = true }) {
-                        Text("About", fontSize = 12.sp)
+                    if (destination == LauncherDestination.FILES_CONTENT || destination == LauncherDestination.ABOUT) {
+                        TextButton(
+                            onClick = {
+                                closeDestination()
+                            },
+                            modifier =
+                                Modifier
+                                    .heightIn(
+                                        min = 48.dp,
+                                    ).focusRequester(initialFocus)
+                                    .tvFocusBorder(),
+                        ) { Text("Back") }
+                    } else {
+                        IconButton(onClick = {
+                            settingsQuery = ""
+                            focusedSettingsEntry = null
+                            restoreGearFocus = false
+                            scope.launch { settingsListState.scrollToItem(0) }
+                            openDestination(LauncherDestination.SETTINGS)
+                        }, modifier = Modifier.size(48.dp).focusRequester(gearFocus)) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        }
                     }
                 }
                 if (!isLandscape) Spacer(modifier = Modifier.height(8.dp))
 
                 UpdateBanner()
 
-                if (showAbout) {
+                if (destination == LauncherDestination.ABOUT) {
                     val context = LocalContext.current
                     AlertDialog(
-                        onDismissRequest = { showAbout = false },
+                        onDismissRequest = { closeDestination() },
                         confirmButton = {
-                            TextButton(onClick = { showAbout = false }) { Text("OK") }
+                            TextButton(onClick = { closeDestination() }) { Text("OK") }
                         },
                         dismissButton = {
                             TextButton(onClick = { openPlayStorePage(context) }) {
@@ -4666,10 +4876,6 @@ private fun SetupScreen(
                             }
                         }
                     }
-
-                if (!isLandscape) {
-                    resumePanel?.invoke()
-                }
 
                 if (showSaveExplorer) {
                     SaveExplorerDialog(
@@ -4934,90 +5140,109 @@ private fun SetupScreen(
                 // -- Shared composable blocks --
 
                 val filesPane: @Composable ColumnScope.() -> Unit = {
-                    Button(
-                        onClick = {
-                            com.dxxredux.app.multiplayer.MatchmakingStateHolder.update {
-                                it.copy(
-                                    nav =
-                                        com.dxxredux.app.multiplayer.initialMultiplayerNav(
-                                            BuildConfig.ONLINE_MATCHMAKING,
-                                        ),
+                    val filesContent = destination == LauncherDestination.FILES_CONTENT
+                    if (!filesContent && destination != LauncherDestination.ABOUT) {
+                        Text("Start game", style = MaterialTheme.typography.titleMedium)
+                        Text("Files in use: $activeSetName", style = MaterialTheme.typography.bodySmall)
+                        if (gameRunning) {
+                            Button(
+                                onClick = { onLaunchGame(selectedGame, null) },
+                                modifier = Modifier.fillMaxWidth().height(56.dp).focusRequester(initialFocus),
+                            ) {
+                                Text("Return to Game", fontSize = 18.sp)
+                            }
+                        } else {
+                            var blockedLaunch by remember { mutableStateOf<Pair<String, String>?>(null) }
+                            blockedLaunch?.let { (title, message) ->
+                                AlertDialog(
+                                    onDismissRequest = { blockedLaunch = null },
+                                    title = { Text(title) },
+                                    text = { Text(message, modifier = Modifier.verticalScroll(rememberScrollState())) },
+                                    confirmButton = { TextButton(onClick = { blockedLaunch = null }) { Text("OK") } },
                                 )
                             }
-                            showMultiplayerPage = true
-                        },
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .height(40.dp),
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            ),
-                    ) {
-                        Text("Multiplayer", fontSize = 14.sp)
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    if (gameRunning) {
-                        Button(
-                            onClick = { onLaunchGame(selectedGame, null) },
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                        ) {
-                            Text("Return to Game", fontSize = 18.sp)
-                        }
-                    } else {
-                        var blockedLaunch by remember { mutableStateOf<Pair<String, String>?>(null) }
-                        blockedLaunch?.let { (title, message) ->
-                            AlertDialog(
-                                onDismissRequest = { blockedLaunch = null },
-                                title = { Text(title) },
-                                text = { Text(message, modifier = Modifier.verticalScroll(rememberScrollState())) },
-                                confirmButton = { TextButton(onClick = { blockedLaunch = null }) { Text("OK") } },
-                            )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            GameLaunchTarget.launcherChoices.forEach { target ->
-                                val ready = target.filesReady(d1RequiredOk, d2RequiredOk)
-                                Button(
-                                    onClick = {
-                                        val blockers = launchDataBlockers(target.id, setDir, manifest, safManifest)
-                                        if (blockers != null) {
-                                            blockedLaunch = "${target.displayName} files not ready" to blockers
-                                        } else {
-                                            selectedGame = target.id
-                                            gamePrefs.edit().putString("selected_game", target.id).apply()
-                                            onLaunchGame(target.id, null)
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f).heightIn(min = 56.dp),
-                                    enabled = !isHashing,
-                                    colors =
-                                        ButtonDefaults.buttonColors(
-                                            containerColor =
-                                                if (ready) {
-                                                    MaterialTheme.colorScheme.primary
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                GameLaunchTarget.launcherChoices.forEach { target ->
+                                    val ready = target.filesReady(d1RequiredOk, d2RequiredOk)
+                                    Button(
+                                        onClick = {
+                                            val blockers = launchDataBlockers(target.id, setDir, manifest, safManifest)
+                                            if (blockers != null) {
+                                                blockedLaunch = "${target.displayName} files not ready" to blockers
+                                            } else {
+                                                selectedGame = target.id
+                                                gamePrefs.edit().putString("selected_game", target.id).apply()
+                                                onLaunchGame(target.id, null)
+                                            }
+                                        },
+                                        modifier =
+                                            Modifier.weight(1f).heightIn(min = 56.dp).then(
+                                                if (canLaunch && !gameRunning &&
+                                                    target ==
+                                                    GameLaunchTarget.launcherChoices.firstOrNull {
+                                                        it.filesReady(
+                                                            d1RequiredOk,
+                                                            d2RequiredOk,
+                                                        )
+                                                    }
+                                                ) {
+                                                    Modifier.focusRequester(initialFocus)
                                                 } else {
-                                                    MaterialTheme.colorScheme.surfaceVariant
+                                                    Modifier
                                                 },
-                                            contentColor =
-                                                if (ready) {
-                                                    MaterialTheme.colorScheme.onPrimary
-                                                } else {
-                                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                                },
-                                        ),
-                                ) {
-                                    Text("Launch ${target.displayName}", fontSize = 16.sp)
+                                            ),
+                                        enabled = !isHashing,
+                                        colors =
+                                            ButtonDefaults.buttonColors(
+                                                containerColor =
+                                                    if (ready) {
+                                                        MaterialTheme.colorScheme.primary
+                                                    } else {
+                                                        MaterialTheme.colorScheme.surfaceVariant
+                                                    },
+                                                contentColor =
+                                                    if (ready) {
+                                                        MaterialTheme.colorScheme.onPrimary
+                                                    } else {
+                                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                                    },
+                                            ),
+                                    ) {
+                                        Text("Launch ${target.displayName}", fontSize = 16.sp)
+                                    }
                                 }
                             }
                         }
+
+                        Button(
+                            onClick = {
+                                com.dxxredux.app.multiplayer.MatchmakingStateHolder.update {
+                                    it.copy(
+                                        nav =
+                                            com.dxxredux.app.multiplayer.initialMultiplayerNav(
+                                                BuildConfig.ONLINE_MATCHMAKING,
+                                            ),
+                                    )
+                                }
+                                openDestination(LauncherDestination.MULTIPLAYER)
+                            },
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp),
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                ),
+                        ) {
+                            Text("Multiplayer", fontSize = 14.sp)
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
                     // -- Import files button --
                     if (showImportChooser) {
                         val importChoiceFocus = remember(androidTvDevice) { FocusRequester() }
@@ -5035,7 +5260,9 @@ private fun SetupScreen(
                                     verticalArrangement = Arrangement.spacedBy(8.dp),
                                 ) {
                                     Text(
-                                        importChooserConfig.helpText,
+                                        importChooserConfig.helpText +
+                                            " Supports .hog, .ham, .pig, .zip/.7z/.rar, .cue with .bin/.img tracks, " +
+                                            ".sow archives, and GOG installers.",
                                         fontSize = 12.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -5074,7 +5301,16 @@ private fun SetupScreen(
                             showImportChooser = true
                         },
                         enabled = !scanning && !isHashing && !zipExtracting && !missionArchiveImporting,
-                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                        modifier =
+                            Modifier.fillMaxWidth().heightIn(min = 48.dp).then(
+                                if (!canLaunch &&
+                                    !gameRunning
+                                ) {
+                                    Modifier.focusRequester(initialFocus)
+                                } else {
+                                    Modifier
+                                },
+                            ),
                         colors =
                             ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.secondary,
@@ -5085,24 +5321,14 @@ private fun SetupScreen(
                                 if (scanning || zipExtracting || missionArchiveImporting) {
                                     "Importing\u2026"
                                 } else {
-                                    "\uD83D\uDCC2 Select Game Files or Archive to Import"
+                                    "Import files"
                                 },
                             fontSize = 11.sp,
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text =
-                            "${importChooserConfig.helpText}. Supports .hog, .ham, .pig files, " +
-                                ".zip/.7z/.rar archives, .cue disc images with .bin/.img tracks, " +
-                                ".sow archives, and GOG installers.",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
                     // -- Stale temp cleanup notification --------
-                    if (cleanedTmpFiles.isNotEmpty()) {
+                    if (filesContent && cleanedTmpFiles.isNotEmpty()) {
                         Row(
                             modifier =
                                 Modifier
@@ -5184,7 +5410,7 @@ private fun SetupScreen(
                     }
 
                     // -- Pruned audio sources notification --------
-                    if (prunedSourceNames.isNotEmpty()) {
+                    if (filesContent && prunedSourceNames.isNotEmpty()) {
                         Row(
                             modifier =
                                 Modifier
@@ -5222,7 +5448,7 @@ private fun SetupScreen(
                     }
 
                     // -- Pruned game data notification -----------
-                    if (prunedDataFiles.isNotEmpty()) {
+                    if (filesContent && prunedDataFiles.isNotEmpty()) {
                         Row(
                             modifier =
                                 Modifier
@@ -5259,32 +5485,36 @@ private fun SetupScreen(
                         }
                     }
 
-                    // -- Active set indicator ----------------------
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "Files in use: ",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = activeSetName,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        TextButton(
-                            onClick = { showSetDialog = true },
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                            modifier = Modifier.height(28.dp),
-                        ) {
-                            Text("Change", fontSize = 12.sp)
+                    if (filesContent) {
+                        // -- Active set indicator ----------------------
+                        SettingsTargetSection(SettingsSections.FILES_SETS, sectionTarget) {
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "Files in use: ",
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(
+                                    text = activeSetName,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                TextButton(
+                                    onClick = { showSetDialog = true },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                    modifier = Modifier.heightIn(min = 48.dp),
+                                ) {
+                                    Text("Change", fontSize = 12.sp)
+                                }
+                            }
                         }
                     }
                     // -- Missing-files help ----------------------
@@ -5294,7 +5524,7 @@ private fun SetupScreen(
                     }
 
                     // -- Demo download offers ------------------
-                    if (!gameRunning) {
+                    if (!gameRunning && (!canLaunch || filesContent || demoDownloading != null)) {
                         for (demo in demoInstallerOffers) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
@@ -5921,195 +6151,149 @@ private fun SetupScreen(
                             scanning || isHashing || zipExtracting || missionArchiveImporting || resultImporting,
                         onCleared = onRefresh,
                     )
-                    var d2Expanded by remember { mutableStateOf(false) }
-                    var d1Expanded by remember { mutableStateOf(false) }
+                    if (filesContent) {
+                        SettingsTargetSection(SettingsSections.FILES_INVENTORY, sectionTarget) {
+                            var d2Expanded by remember { mutableStateOf(false) }
+                            var d1Expanded by remember { mutableStateOf(false) }
 
-                    GameSectionHeader(
-                        title = "Descent 1",
-                        ready = d1RequiredOk,
-                        expanded = d1Expanded,
-                        onToggle = { d1Expanded = !d1Expanded },
-                    )
+                            GameSectionHeader(
+                                title = "Descent 1",
+                                ready = d1RequiredOk,
+                                expanded = d1Expanded,
+                                onToggle = { d1Expanded = !d1Expanded },
+                            )
 
-                    if (d1Expanded) {
-                        SectionHeader("Required Files")
-                        d1Statuses.filter { it.info.required }.forEach {
-                            FileStatusRow(it) {
-                                detailStatus = it
-                                detailIsD2 = false
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        SectionHeader("Optional Files")
-                        d1Statuses.filter { !it.info.required }.forEach { status ->
-                            if (!status.found && status.info.downloadUrl != null) {
-                                DownloadableFileRow(
-                                    status = status,
-                                    progress = downloadProgress[status.info.filename],
-                                    onInfo = {
-                                        detailStatus = status
+                            if (d1Expanded) {
+                                SectionHeader("Required Files")
+                                d1Statuses.filter { it.info.required }.forEach {
+                                    FileStatusRow(it) {
+                                        detailStatus = it
                                         detailIsD2 = false
-                                    },
-                                    onDownload = {
-                                        scope.launch {
-                                            setupDownloadFile(
-                                                url = status.info.downloadUrl,
-                                                destDir = setDir,
-                                                filename = status.info.filename,
-                                                onProgress = { pct ->
-                                                    downloadProgress[status.info.filename] = pct
-                                                    onDownloadStateChanged(status.info.filename, pct)
-                                                },
-                                                onDone = { success ->
-                                                    val code = if (success) -2 else -1
-                                                    downloadProgress[status.info.filename] = code
-                                                    onDownloadStateChanged(status.info.filename, code)
-                                                    if (success) {
-                                                        onRefresh()
-                                                    } else {
-                                                        Toast
-                                                            .makeText(
-                                                                context,
-                                                                "Download failed: ${status.info.filename}",
-                                                                Toast.LENGTH_LONG,
-                                                            ).show()
-                                                    }
-                                                },
-                                            )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                SectionHeader("Optional Files")
+                                d1Statuses.filter { !it.info.required }.forEach { status ->
+                                    if (!status.found && status.info.downloadUrl != null) {
+                                        DownloadableFileRow(
+                                            status = status,
+                                            progress = downloadProgress[status.info.filename],
+                                            onInfo = {
+                                                detailStatus = status
+                                                detailIsD2 = false
+                                            },
+                                            onDownload = {
+                                                scope.launch {
+                                                    setupDownloadFile(
+                                                        url = status.info.downloadUrl,
+                                                        destDir = setDir,
+                                                        filename = status.info.filename,
+                                                        onProgress = { pct ->
+                                                            downloadProgress[status.info.filename] = pct
+                                                            onDownloadStateChanged(status.info.filename, pct)
+                                                        },
+                                                        onDone = { success ->
+                                                            val code = if (success) -2 else -1
+                                                            downloadProgress[status.info.filename] = code
+                                                            onDownloadStateChanged(status.info.filename, code)
+                                                            if (success) {
+                                                                onRefresh()
+                                                            } else {
+                                                                Toast
+                                                                    .makeText(
+                                                                        context,
+                                                                        "Download failed: ${status.info.filename}",
+                                                                        Toast.LENGTH_LONG,
+                                                                    ).show()
+                                                            }
+                                                        },
+                                                    )
+                                                }
+                                            },
+                                        )
+                                    } else {
+                                        FileStatusRow(status) {
+                                            detailStatus = status
+                                            detailIsD2 = false
                                         }
-                                    },
-                                )
-                            } else {
-                                FileStatusRow(status) {
-                                    detailStatus = status
-                                    detailIsD2 = false
+                                    }
+                                }
+                            } // end if (d1Expanded)
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                            GameSectionHeader(
+                                title = "Descent 2",
+                                ready = d2DataRequiredOk,
+                                expanded = d2Expanded,
+                                onToggle = { d2Expanded = !d2Expanded },
+                            )
+
+                            if (d2Expanded) {
+                                SectionHeader("Required Files")
+                                d2Statuses.filter { it.info.required }.forEach {
+                                    FileStatusRow(it) {
+                                        detailStatus = it
+                                        detailIsD2 = true
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                SectionHeader("Optional Files")
+                                d2Statuses.filter { !it.info.required }.forEach {
+                                    FileStatusRow(it) {
+                                        detailStatus = it
+                                        detailIsD2 = true
+                                    }
                                 }
                             }
-                        }
-                    } // end if (d1Expanded)
 
-                    Spacer(modifier = Modifier.height(16.dp))
-                    GameSectionHeader(
-                        title = "Descent 2",
-                        ready = d2DataRequiredOk,
-                        expanded = d2Expanded,
-                        onToggle = { d2Expanded = !d2Expanded },
-                    )
-
-                    if (d2Expanded) {
-                        SectionHeader("Required Files")
-                        d2Statuses.filter { it.info.required }.forEach {
-                            FileStatusRow(it) {
-                                detailStatus = it
-                                detailIsD2 = true
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        SectionHeader("Optional Files")
-                        d2Statuses.filter { !it.info.required }.forEach {
-                            FileStatusRow(it) {
-                                detailStatus = it
-                                detailIsD2 = true
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    MusicInfoSection(
-                        filesDir = filesDir,
-                        setDir = setDir,
-                        refreshTrigger = refreshTrigger,
-                        hasMidiSource =
-                            d2RequiredOk || d1RequiredOk,
-                        onEditMusic = { showMusicPage = true },
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    ModsSection(
-                        filesDir = filesDir,
-                        setDir = setDir,
-                        refreshTrigger = refreshTrigger,
-                    )
-                }
-
-                val controlsPane: @Composable ColumnScope.() -> Unit = {
-                    val prefs = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
-                    ControllerSection(
-                        axes = controllerAxes,
-                        dpadAxes = dpadAxes,
-                        axisGeneration = axisGeneration,
-                        pressedButtons = pressedButtons,
-                        rawControllerInputs = rawControllerInputs,
-                        prefs = prefs,
-                        selectedGame = selectedEngine,
-                        initialFocusRequester = if (shouldSeedLauncherFocus) initialFocus else null,
-                        onDefineControls = { showControllerPage = true },
-                        onEditTouchLayout = { showTouchEditorPage = true },
-                        onAdvancedSettings = { showAdvancedPage = true },
-                        onGraphicsSettings = { showGraphicsPage = true },
-                        onEnginePreferences = { showEnginePrefsPage = true },
-                        onEditAutoselect = { showAutoselectPage = true },
-                    )
-                }
-
-                // -- Layout: landscape = side-by-side, portrait = stacked --
-
-                if (isLandscape) {
-                    Row(modifier = Modifier.weight(1f)) {
-                        val leftScroll = rememberScrollState()
-                        LaunchedEffect(focusResumeTrigger, showResumePanel) {
-                            if (showResumePanel) {
-                                leftScroll.scrollTo(0)
-                            }
-                        }
-                        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                            Column(
-                                modifier =
-                                    Modifier
-                                        .fillMaxSize()
-                                        .verticalScroll(leftScroll)
-                                        .padding(end = 8.dp),
-                            ) {
-                                resumePanel?.invoke()
-                                filesPane()
-                            }
-                            SetupScrollArrows(leftScroll)
-                        }
-                        val rightScroll = rememberScrollState()
-                        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                            Column(
-                                modifier =
-                                    Modifier
-                                        .fillMaxSize()
-                                        .verticalScroll(rightScroll)
-                                        .padding(start = 8.dp),
-                            ) {
-                                controlsPane()
-                            }
-                            SetupScrollArrows(rightScroll)
-                        }
-                    }
-                } else {
-                    val portraitScroll = rememberScrollState()
-                    LaunchedEffect(focusResumeTrigger, showResumePanel) {
-                        if (showResumePanel) {
-                            portraitScroll.scrollTo(0)
-                        }
-                    }
-                    Box(modifier = Modifier.weight(1f)) {
-                        Column(
-                            modifier =
-                                Modifier
-                                    .fillMaxSize()
-                                    .verticalScroll(portraitScroll),
-                        ) {
-                            filesPane()
                             Spacer(modifier = Modifier.height(16.dp))
-                            controlsPane()
                         }
-                        SetupScrollArrows(portraitScroll)
+                        MusicInfoSection(
+                            filesDir = filesDir,
+                            setDir = setDir,
+                            refreshTrigger = refreshTrigger,
+                            hasMidiSource = d2RequiredOk || d1RequiredOk,
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        SettingsTargetSection(SettingsSections.FILES_MODS, sectionTarget) {
+                            ModsSection(
+                                filesDir = filesDir,
+                                setDir = setDir,
+                                refreshTrigger = refreshTrigger,
+                            )
+                        }
+                        SettingsTargetSection(SettingsSections.FILES_CLEANUP, sectionTarget) {
+                            Text("Import and cleanup status", style = MaterialTheme.typography.titleMedium)
+                            Text(importStatus.ifBlank { "No import errors" })
+                        }
                     }
+                }
+
+                LaunchedEffect(destination, shouldSeedLauncherFocus) {
+                    if (shouldSeedLauncherFocus && destination == LauncherDestination.FILES_CONTENT &&
+                        sectionTarget == null
+                    ) {
+                        withFrameNanos { }
+                        initialFocus.requestFocus()
+                    }
+                }
+                val homeScroll = rememberScrollState()
+                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    Column(
+                        modifier =
+                            Modifier
+                                .widthIn(
+                                    max = 720.dp,
+                                ).fillMaxSize()
+                                .align(Alignment.TopCenter)
+                                .verticalScroll(homeScroll),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        if (destination == LauncherDestination.HOME) resumePanel?.invoke()
+                        if (destination != LauncherDestination.ABOUT) filesPane()
+                    }
+                    SetupScrollArrows(homeScroll)
                 }
             }
         }
@@ -6140,18 +6324,9 @@ private fun ControllerSection(
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
     rawControllerInputs: ControllerInputDiagnosticsSnapshot,
-    prefs: SharedPreferences,
-    selectedGame: String = "d2",
     initialFocusRequester: FocusRequester? = null,
     onDefineControls: () -> Unit = {},
-    onEditTouchLayout: () -> Unit = {},
-    onAdvancedSettings: () -> Unit = {},
-    onGraphicsSettings: () -> Unit = {},
-    onEnginePreferences: () -> Unit = {},
-    onEditAutoselect: () -> Unit = {},
 ) {
-    val context = LocalContext.current
-
     // Poll for controller connect/disconnect every 1 second
     var pollTick by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
@@ -6209,8 +6384,8 @@ private fun ControllerSection(
             modifier = Modifier.weight(1f),
         )
         Text(
-            text = displayedController?.let { "\u2713 ${it.name}" } ?: "\u2717 Not detected",
-            color = if (hasController) Color(0xFF4CAF50) else Color(0xFFF44336),
+            text = displayedController?.let { "\u2713 ${it.name}" } ?: "No controller connected",
+            color = if (hasController) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
         )
@@ -6219,7 +6394,7 @@ private fun ControllerSection(
             TextButton(
                 onClick = { expanded = !expanded },
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                modifier = Modifier.height(28.dp),
+                modifier = Modifier.heightIn(min = 48.dp),
             ) {
                 Text(
                     text = if (expanded) "Hide" else "Test",
@@ -6233,80 +6408,6 @@ private fun ControllerSection(
         modifier = Modifier.padding(bottom = 4.dp),
     )
 
-    // -- Touch overlay toggle --
-    var touchOverlay by remember {
-        mutableStateOf(prefs.getBoolean("touch_overlay_enabled", DEFAULT_TOUCH_OVERLAY_ENABLED))
-    }
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Checkbox(
-            checked = touchOverlay,
-            onCheckedChange = { checked ->
-                touchOverlay = checked
-                prefs.edit().putBoolean("touch_overlay_enabled", checked).apply()
-            },
-            modifier = Modifier.height(24.dp).tvFocusBorder(),
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = "Touch controls overlay",
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
-
-    // -- In-game orientation lock --
-    var orientLandscape by remember {
-        mutableStateOf(prefs.getString("game_orientation", "landscape") == "landscape")
-    }
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = "In-game:",
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(end = 8.dp),
-        )
-        TextButton(
-            onClick = {
-                orientLandscape = true
-                prefs.edit().putString("game_orientation", "landscape").apply()
-            },
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-            modifier = Modifier.height(28.dp),
-        ) {
-            Text(
-                "Landscape",
-                fontSize = 12.sp,
-                color = if (orientLandscape) MaterialTheme.colorScheme.primary else Color.Gray,
-            )
-        }
-        TextButton(
-            onClick = {
-                orientLandscape = false
-                prefs.edit().putString("game_orientation", "portrait").apply()
-            },
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-            modifier = Modifier.height(28.dp),
-        ) {
-            Text(
-                "Portrait",
-                fontSize = 12.sp,
-                color = if (!orientLandscape) MaterialTheme.colorScheme.primary else Color.Gray,
-            )
-        }
-    }
-
     // -- Controller Mapping button --
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(
@@ -6314,7 +6415,7 @@ private fun ControllerSection(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
             modifier =
                 Modifier
-                    .height(32.dp)
+                    .heightIn(min = 48.dp)
                     .padding(vertical = 2.dp)
                     .onGloballyPositioned {
                         defineControlsReady = true
@@ -6329,47 +6430,6 @@ private fun ControllerSection(
                     ),
         ) {
             Text("Controller Mapping", fontSize = 12.sp)
-        }
-        OutlinedButton(
-            onClick = onEditTouchLayout,
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
-        ) {
-            Text("Touch Layout", fontSize = 12.sp)
-        }
-    }
-
-    // -- Weapon Autoselect / Game Preferences / Graphics / Advanced --
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedButton(
-            onClick = onEditAutoselect,
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
-        ) {
-            Text("Weapon Autoselect", fontSize = 12.sp)
-        }
-        OutlinedButton(
-            onClick = onEnginePreferences,
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
-        ) {
-            Text("Game Preferences", fontSize = 12.sp)
-        }
-    }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedButton(
-            onClick = onGraphicsSettings,
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
-        ) {
-            Text("Graphics", fontSize = 12.sp)
-        }
-        OutlinedButton(
-            onClick = onAdvancedSettings,
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
-        ) {
-            Text("Advanced", fontSize = 12.sp)
         }
     }
 

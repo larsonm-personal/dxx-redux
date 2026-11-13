@@ -56,6 +56,7 @@ fun GraphicsSettingsPage(
     gameVariant: String,
     filesDir: File,
     controllerFocusActive: Boolean = true,
+    sectionTarget: String? = null,
     onBack: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
@@ -88,7 +89,7 @@ fun GraphicsSettingsPage(
     val lastResolutionFocus = remember { FocusRequester() }
     val fovFocus = remember { FocusRequester() }
     val firstTextureFilterFocus = remember { FocusRequester() }
-    RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
+    RequestLauncherControllerFocus(initialFocus, controllerFocusActive && sectionTarget == null)
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -131,16 +132,40 @@ fun GraphicsSettingsPage(
                                 .fillMaxSize()
                                 .verticalScroll(scrollState),
                     ) {
+                        SettingsTargetSection(SettingsSections.GRAPHICS_ORIENTATION, sectionTarget) {
+                            var orientation by remember {
+                                mutableStateOf(
+                                    prefs.getString("game_orientation", "landscape"),
+                                )
+                            }
+                            Text("In-game orientation", fontWeight = FontWeight.Bold)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                listOf("landscape" to "Landscape", "portrait" to "Portrait").forEach { (value, label) ->
+                                    FilterChip(
+                                        selected = orientation == value,
+                                        onClick = {
+                                            prefs.edit().putString("game_orientation", value).apply()
+                                            orientation = value
+                                        },
+                                        label = { Text(label) },
+                                        modifier = Modifier.heightIn(min = 48.dp).tvFocusBorder(),
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                         // -- Render Resolution --
-                        ResolutionSection(
-                            filesDir = filesDir,
-                            prefs = prefs,
-                            lastOptionModifier =
-                                Modifier.focusRequester(lastResolutionFocus).focusProperties {
-                                    down =
-                                        fovFocus
-                                },
-                        )
+                        SettingsTargetSection(SettingsSections.GRAPHICS_RESOLUTION, sectionTarget) {
+                            ResolutionSection(
+                                filesDir = filesDir,
+                                prefs = prefs,
+                                lastOptionModifier =
+                                    Modifier.focusRequester(lastResolutionFocus).focusProperties {
+                                        down =
+                                            fovFocus
+                                    },
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
@@ -148,91 +173,111 @@ fun GraphicsSettingsPage(
 
                         // -- Main View FOV --
                         // Wide sliders can lose spatial focus searches to narrow radio buttons
-                        MainViewFovSection(
-                            filesDir = filesDir,
-                            modifier =
-                                Modifier.focusRequester(fovFocus).focusProperties {
-                                    up = lastResolutionFocus
-                                    down = firstTextureFilterFocus
-                                },
-                        )
+                        SettingsTargetSection(SettingsSections.GRAPHICS_FOV, sectionTarget) {
+                            MainViewFovSection(
+                                filesDir = filesDir,
+                                modifier =
+                                    Modifier.focusRequester(fovFocus).focusProperties {
+                                        up = lastResolutionFocus
+                                        down = firstTextureFilterFocus
+                                    },
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Texture Filtering --
-                        TexFilterSection(
-                            filesDir = filesDir,
-                            firstOptionModifier =
-                                Modifier.focusRequester(firstTextureFilterFocus).focusProperties {
-                                    up =
-                                        fovFocus
-                                },
-                        )
+                        SettingsTargetSection(SettingsSections.GRAPHICS_FILTERING, sectionTarget) {
+                            TexFilterSection(
+                                filesDir = filesDir,
+                                firstOptionModifier =
+                                    Modifier.focusRequester(firstTextureFilterFocus).focusProperties {
+                                        up =
+                                            fovFocus
+                                    },
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Color Depth --
-                        ColorDepthSection(filesDir = filesDir, onColorDepthChanged = {
-                            capabilities = null
-                            requestedColorDepth =
-                                it
-                        })
+                        SettingsTargetSection(SettingsSections.GRAPHICS_COLOR_DEPTH, sectionTarget) {
+                            ColorDepthSection(filesDir = filesDir, onColorDepthChanged = {
+                                capabilities = null
+                                requestedColorDepth =
+                                    it
+                            })
+                        }
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Anti-Aliasing (MSAA) --
-                        MsaaSection(filesDir = filesDir, capabilities = capabilities)
+                        SettingsTargetSection(SettingsSections.GRAPHICS_MSAA, sectionTarget) {
+                            MsaaSection(filesDir = filesDir, capabilities = capabilities)
+                        }
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Anisotropic Filtering --
-                        AnisoSection(filesDir = filesDir, capabilities = capabilities)
+                        SettingsTargetSection(SettingsSections.GRAPHICS_AF, sectionTarget) {
+                            AnisoSection(filesDir = filesDir, capabilities = capabilities)
+                        }
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
-                        FirstBootGraphicsChooserSection(ctx.noBackupFilesDir)
+                        SettingsTargetSection(SettingsSections.GRAPHICS_CHOOSER, sectionTarget) {
+                            FirstBootGraphicsChooserSection(ctx.noBackupFilesDir)
+                        }
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Selective Filtering (menu/HUD) --
-                        SelectiveFilterSection(filesDir = filesDir)
+                        SettingsTargetSection(SettingsSections.GRAPHICS_SELECTIVE_FILTER, sectionTarget) {
+                            SelectiveFilterSection(filesDir = filesDir)
+                        }
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Rounded corner HUD text inset --
-                        CornerTextInsetSection(filesDir = filesDir)
+                        SettingsTargetSection(SettingsSections.GRAPHICS_CORNERS, sectionTarget) {
+                            CornerTextInsetSection(filesDir = filesDir)
+                        }
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Original game visual options --
-                        OriginalVisualOptionsSection(
-                            gameVariant = gameVariant,
-                            filesDir = filesDir,
-                            prefs = prefs,
-                        )
+                        SettingsTargetSection(SettingsSections.GRAPHICS_ORIGINAL, sectionTarget) {
+                            OriginalVisualOptionsSection(
+                                gameVariant = gameVariant,
+                                filesDir = filesDir,
+                                prefs = prefs,
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Debug options --
-                        DebugOptionsSection(prefs = prefs)
+                        SettingsTargetSection(SettingsSections.GRAPHICS_DEBUG, sectionTarget) {
+                            DebugOptionsSection(prefs = prefs)
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
                     }

@@ -61,7 +61,7 @@ function Wait-ForMainPageDpadReady {
             return $false
         }
         $texts = @($obj.buttons | ForEach-Object { $_.text })
-        return (($texts -contains "Controller Mapping") -and ($texts -contains "Touch Layout"))
+        return (($texts -contains "Settings") -and ($texts -contains "Multiplayer") -and ($texts -contains "Import files"))
     }
 
     if (-not $ready) {
@@ -211,88 +211,79 @@ SendSetupCommand -Command "clear_save_files"
 SendSetupCommand -Command "write_bool_pref" -Extras @("--es", "key", "show_resume_offer", "--ez", "value", "false")
 Start-Sleep -Milliseconds 500
 
-# --- Test 1: Initial page shows current launcher controls ---
-Info "Test 1: Verify main page buttons..."
-# Controller focus brings the controls into view on the stacked portrait page
+function Tap-SetupButton {
+    param([string]$Text)
+    Adb-Timeout -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.MP_COMMAND", "--es", "command", "tap_button", "--es", "text", $Text) -Seconds 8 | Out-Null
+}
+
+function Get-MusicMode {
+    $xml = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "shared_prefs/dxx_prefs.xml") -Seconds 5
+    $match = [regex]::Match(($xml -join "`n"), '<string name="music_mode">([^<]*)</string>')
+    return $match.Groups[1].Value
+}
+
+Info "Test 1: Home is focused on playing and importing, with one Settings gear"
 EnableLauncherDpadMode
 $buttons = Wait-ForMainPageDpadReady -TimeoutSeconds 15 -SettleMs 500
-Info "  Found buttons: $($buttons -join ', ')"
-if (-not (Test-ContainsButton -Buttons $buttons -Text "Controller Mapping")) {
-    Fail "Main page missing Controller Mapping button (got: $($buttons -join ', '))"
+foreach ($oldShortcut in @("Controller Mapping", "Touch Layout", "Weapon Autoselect", "Game Preferences", "Graphics", "Advanced", "About")) {
+    if ($buttons -contains $oldShortcut) { Fail "Old settings shortcut remains on Home: $oldShortcut" }
 }
-if (-not (Test-ContainsButton -Buttons $buttons -Text "Touch Layout")) {
-    Fail "Main page missing Touch Layout button (got: $($buttons -join ', '))"
-}
-Info "  PASS: Main page has expected buttons"
+if (@($buttons | Where-Object { $_ -eq "Settings" }).Count -ne 1) { Fail "Home must have exactly one Settings entry" }
+if (-not (Test-ContainsButtonMatch -Buttons $buttons -Pattern '^Launch Descent')) { Fail "Start game choices missing" }
 
-# --- Test 2: DPAD_CENTER activates Controller Mapping (initial focus target) ---
-Info "Test 2: DPAD_CENTER on initial focus (Controller Mapping)..."
-$buttons = Wait-ForMainPageDpadReady
+Info "Test 2: Home > Settings > Controller > mapping, then restore focus"
+Tap-SetupButton "Settings"
+$null = Wait-ForSetupButtons -Failure "Settings menu did not open" -Predicate { param($texts) $texts -contains "Controller" }
+Wait-ForSetupButtonFocus -Text "Controller"
+SendKey 23
+$null = Wait-ForSetupButtons -Failure "Controller submenu did not open" -Predicate { param($texts) $texts -contains "Controller Mapping" }
 Wait-ForSetupButtonFocus -Text "Controller Mapping"
-& $script:ADB logcat -c
-SendKey 23  # DPAD_CENTER
-$buttons = Wait-ForSetupButtons -Failure "DPAD_CENTER did not navigate to the controller page" -Predicate {
-    param($texts)
-    return (($texts -notcontains "Controller Mapping") -and
-        ($texts -contains "Cancel") -and
-        (@($texts | Where-Object { $_ -like "Save*" }).Count -gt 0))
-}
-if (($buttons -contains "Controller Mapping") -or
-    ($buttons -notcontains "Cancel") -or
-    (@($buttons | Where-Object { $_ -like "Save*" }).Count -eq 0)) {
-    Fail "DPAD_CENTER did not navigate to the controller page (got: $($buttons -join ', '))"
-}
-Info "  PASS: Navigated to sub-page via DPAD_CENTER"
-
-# --- Test 3: BACK key returns to main page ---
-Info "Test 3: BACK returns to main page..."
-SendKey 4  # KEYCODE_BACK
-$buttons = Wait-ForMainPageDpadReady
-if (($buttons -notcontains "Controller Mapping") -or ($buttons -notcontains "Touch Layout")) {
-    Fail "BACK did not return to the main page (got: $($buttons -join ', '))"
-}
-Info "  PASS: Returned to main page"
-
-# --- Test 4: Focus restoration after return - DPAD_CENTER works again ---
-Info "Test 4: Focus restoration after return..."
+SendKey 23
+$null = Wait-ForSetupButtons -Failure "Mapping editor did not open" -Predicate { param($texts) ($texts -contains "Cancel") -and (@($texts | Where-Object { $_ -like "Save*" }).Count -gt 0) }
+SendKey 4
+$null = Wait-ForSetupButtons -Failure "Mapping Back did not return to Controller" -Predicate { param($texts) $texts -contains "Controller Mapping" }
 Wait-ForSetupButtonFocus -Text "Controller Mapping"
-SendKey 23  # DPAD_CENTER
-$buttons = Wait-ForSetupButtons -Failure "Focus was not restored after returning from the controller page" -Predicate {
-    param($texts)
-    return (($texts -notcontains "Controller Mapping") -and
-        ($texts -contains "Cancel") -and
-        (@($texts | Where-Object { $_ -like "Save*" }).Count -gt 0))
-}
-if (($buttons -contains "Controller Mapping") -or
-    ($buttons -notcontains "Cancel") -or
-    (@($buttons | Where-Object { $_ -like "Save*" }).Count -eq 0)) {
-    Fail "Focus was not restored after returning from the controller page (got: $($buttons -join ', '))"
-}
-Info "  PASS: Focus restored, navigated to sub-page again"
+SendKey 4
+$null = Wait-ForSetupButtons -Failure "Controller Back did not return to Settings" -Predicate { param($texts) $texts -contains "Controller" }
+Wait-ForSetupButtonFocus -Text "Controller"
 
-# --- Test 5: DPAD_RIGHT moves from Controller Mapping to Touch Layout ---
-Info "Test 5: DPAD RIGHT navigation..."
-SendKey 4  # BACK to main
-$buttons = Wait-ForMainPageDpadReady
-if (($buttons -notcontains "Controller Mapping") -or ($buttons -notcontains "Touch Layout")) {
-    Fail "Did not return to the main page before DPAD_RIGHT test (got: $($buttons -join ', '))"
-}
-Wait-ForSetupButtonFocus -Text "Controller Mapping"
-SendKey 22  # DPAD_RIGHT to Touch Layout
-SendKey 23  # DPAD_CENTER
-$buttons = Wait-ForSetupButtons -Failure "DPAD_RIGHT + CENTER did not open the Touch Layout editor" -Predicate {
-    param($texts)
-    return ($texts -contains "Close Editor")
-}
-if ($buttons -notcontains "Close Editor") {
-    Info "  DEBUG: buttons after RIGHT+CENTER: $($buttons -join ', ')"
-    Fail "DPAD_RIGHT + CENTER did not open the Touch Layout editor"
-}
-Info "  PASS: DPAD_RIGHT moved focus to Touch Layout"
+Info "Test 3: Search opens Music passively and returns to the same result"
+$musicBefore = Get-MusicMode
+SendKey 19 # Up from first menu item reaches search
+SendKey 23 # Activate search without auto-opening it on entry
+Adb-Timeout -AdbArgs @("shell", "input", "text", "redbook") -Seconds 5 | Out-Null
+$null = Wait-ForSetupButtons -Failure "Search did not find CD Audio" -Predicate { param($texts) @($texts | Where-Object { $_ -like "CD Audio*" }).Count -gt 0 }
+SendKey 4 # IME consumes Back before page navigation
+SendKey 20
+SendKey 23
+$null = Wait-ForSetupButtons -Failure "Search result did not open Music" -Predicate { param($texts) ($texts -contains "MIDI") -and ($texts -contains "CD Audio") }
+if ((Get-MusicMode) -ne $musicBefore) { Fail "Opening a music search result changed music_mode" }
+SendKey 4
+$buttons = Wait-ForSetupButtons -Failure "Music Back did not restore search results" -Predicate { param($texts) ($texts -contains "Clear") -and (@($texts | Where-Object { $_ -like "CD Audio*" }).Count -gt 0) }
+$resultLabel = $buttons | Where-Object { $_ -like "CD Audio*" } | Select-Object -First 1
+Wait-ForSetupButtonFocus -Text $resultLabel
+Tap-SetupButton "Clear"
 
-# --- Cleanup ---
-SendKey 4  # BACK
+Info "Test 4: Touch submenu and full-screen editor return one level"
+Tap-SetupButton "Touch controls"
+$null = Wait-ForSetupButtons -Failure "Touch submenu did not open" -Predicate { param($texts) $texts -contains "Edit touch layout" }
+Wait-ForSetupButtonFocus -Text "Edit touch layout"
+SendKey 23
+$null = Wait-ForSetupButtons -Failure "Touch editor did not open" -Predicate { param($texts) $texts -contains "Close Editor" }
+SendKey 4
+$null = Wait-ForSetupButtons -Failure "Touch editor Back did not restore its submenu" -Predicate { param($texts) $texts -contains "Edit touch layout" }
+Wait-ForSetupButtonFocus -Text "Edit touch layout"
+SendKey 4
+$null = Wait-ForSetupButtons -Failure "Touch Back did not return to Settings" -Predicate { param($texts) $texts -contains "Controller" }
+SendKey 4
+$null = Wait-ForMainPageDpadReady
+Wait-ForSetupButtonFocus -Text "Settings"
 
-Info ""
-Info "All tests passed"
+Info "Test 5: Reopening Settings begins a new visit without the previous search"
+SendKey 23
+$buttons = Wait-ForSetupButtons -Failure "Settings did not reopen" -Predicate { param($texts) $texts -contains "Controller" }
+if ($buttons -contains "Clear") { Fail "A new Settings visit retained the old query" }
+SendKey 4
+
+Info "All launcher D-pad tests passed"
 Invoke-LauncherDpadCleanup
