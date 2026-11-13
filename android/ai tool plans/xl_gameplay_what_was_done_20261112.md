@@ -11,8 +11,11 @@ logs/manifests and the checked-in catalog. This revision is a source/evidence
 review, not a fresh engine test run. Remote status below is the **09:29 PST
 November 12 snapshot**, not a claim about subsequent GitHub activity.
 
-A subsequent user-requested architecture cleanup is an **uncommitted working-tree
-refactor** over that handoff. See the
+A subsequent user-requested architecture cleanup was published as `0d3456979` on
+[non-draft PR #468](https://github.com/larsonm-personal/dxx-redux/pull/468), based on
+layer 02. Its initial CI has real failures; the
+[CI repair report](pr468_ci_fixes_20261112.md) records the current repair and checks.
+The publication table below remains the historical wind-down snapshot. See the
 [layer-03 boundary review](xl_layer03_architecture_review_20261112.md) for moved
 code, final-source validation and new binary identities. It does not complete G2.
 The historical executable paths below have since been rebuilt; use the cleanup's
@@ -25,7 +28,7 @@ There is also a coverage gap: its failing regression is opt-in, outside the
 canonical projectile test invocation. No measured increase in playable-level
 coverage is available.
 
-## Current checkout and publication
+## Checkout and publication at the original wind-down
 
 | Item                       | Current identity                                                               |
 | -------------------------- | ------------------------------------------------------------------------------ |
@@ -39,7 +42,7 @@ coverage is available.
 | Publication                | Layer 03 has no push, PR, hosted CI or G2 acceptance                           |
 
 The handoff commit changes documentation only. Gameplay implementation was
-committed at wind-down; the later architecture cleanup is uncommitted. The
+committed at wind-down; the later architecture cleanup is now published as noted above. The
 independent untracked `pr464_ci_review_20261110.md` and original stashes are
 preserved. No merge, auto-merge or upstream push occurred.
 
@@ -57,6 +60,14 @@ PR metadata links [stack 466](https://github.com/larsonm-personal/dxx-redux/stac
 The local continuation branch is not a member: `gh stack view --json` reports
 that fact. Do not run stack checkout merely to inspect it or move this checkout
 away from the tested implementation.
+
+For subsequent work, fork PR publication and passing applicable CI are part of
+each checkpoint, including coherent partial G2 work. Do not wait for full G2
+closure before pushing. Create/update non-draft immediate-parent PRs in
+`larsonm-personal/dxx-redux`, monitor CI while continuing independent work, repair
+failures and verify the final candidate. Never merge or publish upstream. The
+[next-window plan](xl_gameplay_next_12_hours_20261112.md) and
+[kickoff prompt](xl_gameplay_kickoff_20261112.txt) contain the current procedure.
 
 ## What was done
 

@@ -16,6 +16,7 @@ Cross-platform Descent 1/2 in C/C++ with SDL; current focus is the Android port
 ## Code and workflow
 
 - Do not create Git commits, push branches, do merges, etc. unless the user specifically asks for this
+- When the user authorizes a PR-based work run, publication and passing applicable CI are part of the work. Use non-draft, immediate-parent stacked PRs in the authorized fork, publish coherent locally tested checkpoints early, monitor CI while continuing independent work, and fix failures before acceptance. Record final-candidate checks and meaningful skip/blocker reasons in the handoff and next kickoff prompt. This does not authorize merges or upstream publication
 - Match existing style, especially in `d1/` and `d2/`, including header-defined string constants. The engine is largely C-style C++; simple RAII and standard containers are welcome in `android/` when they improve safety
 - Avoid unnecessary wrappers, abstractions, and duplication. Preserve handmade comments
 - Prefer printable ASCII and UTF-8 without BOM. No emoji or em dashes. Omit terminal periods in standalone log messages and comments

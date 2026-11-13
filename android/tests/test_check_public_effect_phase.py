@@ -398,7 +398,15 @@ class EffectPhaseTests(unittest.TestCase):
             return row
 
         rows.append(
-            {"type": "object_boundary", "version": 2, "f": 0, "reset": True, "phase": "restored", "capacity": 350}
+            {
+                "type": "object_boundary",
+                "version": 2,
+                "f": 0,
+                "reset": True,
+                "phase": "restored",
+                "capacity": 350,
+                "slots": {},
+            }
         )
         rows.append(world("world_boundary", 0, self.capture["initial"], 0, "restored"))
         for frame, observation in enumerate(self.capture["observations"]):
@@ -421,6 +429,7 @@ class EffectPhaseTests(unittest.TestCase):
                 "reset": True,
                 "phase": "terminal",
                 "capacity": 350,
+                "slots": {},
             }
         )
         return rows

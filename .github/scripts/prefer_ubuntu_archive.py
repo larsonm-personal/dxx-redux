@@ -35,6 +35,12 @@ def prefer_archive(mirrors, sources, environ, release, machine):
     ):
         raise ValueError("Expected a disposable GitHub-hosted Ubuntu Noble x64 runner")
     uris = re.findall(rb"^URIs:[ \t]*(.*)$", sources, re.MULTILINE)
+    # Some hosted images retain cloud-init's official direct sources. No mirror
+    # priorities apply there; leave both files untouched and let apt use them
+    if uris and all(
+        re.fullmatch(rb"https?://(?:azure\.archive|archive|security)\.ubuntu\.com/ubuntu/?", uri) for uri in uris
+    ):
+        return mirrors
     if not uris or any(uri != b"mirror+file:/etc/apt/apt-mirrors.txt" for uri in uris):
         raise ValueError("Unexpected Ubuntu source URIs; refusing to change mirror priorities")
     if mirrors not in (ORIGINAL, PREFERRED):
@@ -51,7 +57,10 @@ def main():
         subprocess.run(["sudo", "tee", str(MIRRORS)], input=after, stdout=subprocess.DEVNULL, check=True)
     if MIRRORS.read_bytes() != after:
         raise RuntimeError("Apt mirror priority verification failed")
-    print("Apt mirror priorities: archive=1, Azure=2, security=3")
+    if after == PREFERRED:
+        print("Apt mirror priorities: archive=1, Azure=2, security=3")
+    else:
+        print("Official direct Ubuntu sources: leaving apt configuration unchanged")
 
 
 if __name__ == "__main__":

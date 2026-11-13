@@ -4233,3 +4233,25 @@ failed setup attempts, including the Linux /mnt/c timeout under the unchanged
 Known whole-save atomicity remains unresolved. No Android/macOS qualification,
 new hosted CI or final package is claimed. Preserve the new untracked helper
 files and header move along with the revised plans when starting the next worker.
+
+### November 12: PR 468 CI repair in progress
+
+The architecture cleanup is now published as `0d3456979` on non-draft fork
+[PR #468](https://github.com/larsonm-personal/dxx-redux/pull/468), based on layer 02.
+The prior local commit has identical contents and is preserved; fixes start from
+the published history on `ci468-fixes`. See the
+[repair plan and evidence](pr468_ci_fixes_20261112.md) for current results.
+
+Initial CI exposed null frees in mission cleanup under the checked Debug
+allocator, causing unattended D2 graphics replay to wait on warning dialogs.
+It also exposed source-contract drift after AI staging, effect-phase fixture
+drift after object-boundary validation, and hosted Ubuntu source-layout drift.
+Dependent steps skipped after these failures are untested, not passes.
+
+The user explicitly requires fork publication and passing applicable CI as work
+products. The next-window plan, original goal and
+[new kickoff prompt](xl_gameplay_kickoff_20261112.txt) now require early non-draft
+immediate-parent PRs in `larsonm-personal/dxx-redux`, monitoring while independent
+work continues, repair cycles, terminal final-candidate checks, and replacement
+report/plan/prompt handoffs. Partial G2 work can be published without claiming G2
+acceptance. No merges, auto-merge or upstream publication are authorized.

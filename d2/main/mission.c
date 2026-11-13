@@ -888,8 +888,9 @@ struct mission_preparation {
 
 static void release_descriptor_stage(mission_descriptor_stage *stage)
 {
+	/* Empty and transferred stages own no buffers; Debug d_free rejects NULL */
 #ifdef DXX_XL_RUNTIME
-	d_free(stage->descriptor_data);
+	if (stage->descriptor_data) d_free(stage->descriptor_data);
 #endif
 	mission_text_reference *text = stage->text;
 	while (text) {
@@ -897,10 +898,10 @@ static void release_descriptor_stage(mission_descriptor_stage *stage)
 		d_free(text);
 		text = next;
 	}
-	d_free(stage->candidate.level_names);
-	d_free(stage->candidate.secret_level_names);
-	d_free(stage->candidate.secret_level_table);
-	d_free(stage->candidate.alternate_ham_file);
+	if (stage->candidate.level_names) d_free(stage->candidate.level_names);
+	if (stage->candidate.secret_level_names) d_free(stage->candidate.secret_level_names);
+	if (stage->candidate.secret_level_table) d_free(stage->candidate.secret_level_table);
+	if (stage->candidate.alternate_ham_file) d_free(stage->candidate.alternate_ham_file);
 	stage->text = NULL;
 	stage->ready = 0;
 }
@@ -1134,7 +1135,7 @@ static void *allocate_mission_identity(size_t size, int allocation)
 static void release_mission_identity(Mission *mission)
 {
 	if (!mission) return;
-	d_free(mission->path);
+	if (mission->path) d_free(mission->path);
 	d_free(mission);
 }
 

@@ -41,7 +41,9 @@ whole-save atomicity.
 | 7-9 h     | Integrate further only if the slice is stable and commit-time operations are understood                                      | Either bounded whole-restore integration or a stabilized partial milestone. At hour eight, drop stretch scope if preparation is still incomplete |
 | 9-12 h    | Complete affected Windows/Linux builds/tests, ordinary playback, quality and evidence review; update the handoff             | Terminal results on final source, exact open failures and canonical coverage; publication follows the procedure below                            |
 
-These budgets include local build/test time. If setup or reproduction overruns,
+These budgets include local build/test and hosted CI repair time. Publish the first
+coherent tested checkpoint early enough for CI to finish while work continues;
+do not defer the first push until the verification reserve. If setup or reproduction overruns,
 reduce implementation breadth and preserve the verification reserve. Finish an
 already-started coherent operation and report an overrun; do not start a long new
 build, Android owner or CI dispatch at the end merely to leave it running. Work
@@ -253,16 +255,43 @@ not that build target. Quote PowerShell CMake `-DNAME=path` arguments.
   preserve evidence and genuine inputs, and do not hand-delete caches. If space
   prevents a build, record the exact unmet requirement and finish independent work.
 
-If the original goal's fork-publication authorization is active for the resumed
-run, commit coherent work with explicit owned paths. Incomplete G2 remains a local
-checkpoint with its failures stated. Completed G2 follows this order: **local
-acceptance -> commit/push layer 03 -> immediate-parent PR/native stack update ->
-exact-candidate public/private CI -> accepted status**. Do not require nonexistent
-hosted checks before the first push or claim hosted acceptance before they finish.
-Record the actual tested candidate in private receipts, not just the controller
-SHA. If that controller is unavailable/ineligible, name the external gate without
-weakening its security, cohort or timeouts. Never merge, enable auto-merge, push
-upstream or rewrite unrelated branches.
+## Fork publication and CI are part of implementation
+
+The user authorizes commits, pushes and PR creation/updates in
+`larsonm-personal/dxx-redux`, their fork. Passing applicable CI is a required work
+product, not a follow-up task left to the user. Reuse the existing non-draft
+[layer-03 PR #468](https://github.com/larsonm-personal/dxx-redux/pull/468) when
+working on that layer. Refresh its head, base and checks before starting; historical
+handoff hashes are not the current candidate.
+
+Publish coherent, locally tested partial milestones even while G2 remains open;
+state the missing gameplay acceptance precisely in the PR. Use feature-sized
+stacked branches, immediate-parent PR bases and native stack linking when
+available. All PRs target the fork and must be ready for review, never draft.
+Select `origin` and `--repo larsonm-personal/dxx-redux` explicitly. Do not push or
+open PRs against `dxx-redux/dxx-redux`.
+
+For each milestone: **affected local acceptance -> commit/push -> non-draft fork
+PR/stack update -> monitor and repair applicable hosted CI -> accepted checkpoint**.
+Keep doing independent work while jobs run; check at bounded intervals and after
+each meaningful work chunk. Read failing job logs and artifacts, fix the cause,
+retest and push again. A running workflow is not a terminal deliverable. Reserve
+time for at least one CI feedback/fix cycle; reduce feature breadth to preserve it.
+
+Require successful applicable public/private checks on the final pushed candidate.
+Record the tested head and merge SHA where applicable, workflow run/attempt URLs,
+controller and actual private candidate SHA, and terminal pass/fail/skip states.
+Classify skips as intentional selection/platform/stack exclusions, failure-blocked
+dependents, or unavailable external gates. A green dispatcher or a skipped required
+owner is not acceptance. Never remove tests, weaken assertions/timeouts, or change
+fixture oracles merely to obtain green CI. Fix engine regressions; update stale
+test contracts only after verifying equivalent production behavior.
+
+If a private controller, credential, runner or service is unavailable/ineligible,
+record the exact gate, evidence and next action without weakening its security or
+claiming full completion. A bounded-window handoff may describe unfinished work,
+but must label pending/failing required CI as incomplete. Never merge, enable
+auto-merge, enqueue a merge, push upstream or rewrite unrelated branches.
 
 ## Handoff at the end of the next window
 
@@ -287,3 +316,9 @@ predicates, G5 connected play, G6 platform/corpus and G7 CI/package gates.
 The full remaining list and estimates are in the wind-down report.
 Stop after the requested window's coherent checkpoint and handoff; further work
 requires the user's subsequent direction.
+
+Final work products must include an updated execution ledger, a dated what-was-done
+report, a corrected next-window plan, and a copy/paste kickoff prompt with the same
+fork/stack/non-draft/CI/no-merge requirements. Use the
+[current kickoff prompt](xl_gameplay_kickoff_20261112.txt) as the starting template;
+refresh identities and known failures instead of copying stale status.
