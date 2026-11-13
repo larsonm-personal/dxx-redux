@@ -1,4 +1,5 @@
 #include "trigger_state.h"
+#include "slow_motion_runtime.h"
 static void write_trigger_scheduler_fixture(const std::filesystem::path &root, bool device_profile = false)
 {
 	write_trigger_chain_fixture(root);
@@ -73,8 +74,8 @@ static int trigger_scheduler_test(int argc, char **argv)
 		timer_update();
 		const int player = ConsoleObject - Objects;
 		const auto pose = [&](int segment) { obj_relink(player, segment); compute_segment_center(&ConsoleObject->pos, &Segments[segment]); };
-		const auto advance = [&](fix ticks) { GameTime64 += ticks; timer_update(); triggers_frame_process(); };
-		const auto unblock = [] { timer_delay(F1_0 * 4 / 5); timer_update(); };
+		const auto advance = [&](fix ticks) { xl_input_demo_begin_input_clock(); GameTime64 += ticks; timer_update(); triggers_frame_process(); };
+		const auto unblock = [] { xl_input_demo_begin_input_clock(); timer_delay(F1_0 * 4 / 5); timer_update(); };
 		const auto state = [&](int index) { xl_trigger_state result; require(xl_wall_trigger_state(index, &result), "missing scheduler state"); return result; };
 		pose(3);
 		require(xl_wall_trigger(0, player, 1) == 1 && state(0).delay_ms == 1000 && state(0).elapsed == 0, "positive delay did not arm");

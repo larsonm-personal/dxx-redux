@@ -110,6 +110,29 @@ class MirrorTests(unittest.TestCase):
                 self.assertEqual(sources.read_bytes(), direct)
                 self.assertEqual(mirrors.read_bytes(), helper.ORIGINAL)
 
+    def test_unmanaged_sources_never_write_or_block_apt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            mirrors, sources = Path(directory, "mirrors"), Path(directory, "sources")
+            unmanaged = SOURCES + b"URIs: https://custom.example/ubuntu\n"
+            mirrors.write_bytes(helper.ORIGINAL)
+            sources.write_bytes(unmanaged)
+            with (
+                patch.object(helper, "MIRRORS", mirrors),
+                patch.object(helper, "SOURCES", sources),
+                patch.dict(helper.os.environ, ENV, clear=True),
+                patch.object(helper.platform, "freedesktop_os_release", return_value=RELEASE),
+                patch.object(helper.platform, "machine", return_value="x86_64"),
+                patch.object(helper.subprocess, "run") as run,
+            ):
+                helper.main()
+                run.assert_not_called()
+                self.assertEqual(sources.read_bytes(), unmanaged)
+                self.assertEqual(mirrors.read_bytes(), helper.ORIGINAL)
+                # Host authorization remains mandatory even for the no-write path
+                with patch.dict(helper.os.environ, {"RUNNER_ENVIRONMENT": "self-hosted"}):
+                    with self.assertRaises(ValueError):
+                        helper.main()
+
     def test_non_hosted_non_noble_and_arm_runners_fail(self):
         for key in ENV:
             env = dict(ENV)

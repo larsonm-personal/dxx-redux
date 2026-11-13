@@ -320,10 +320,13 @@ static void generator_behavior_controls(const std::filesystem::path &output)
 	}
 	{
 		char name[] = "gen-guard.xl";
+		xl_wall_trigger_reset();
+		require(check_trigger_sub(0, Player_num, 1) == 0, "cannot establish saved trigger state for generator guards");
+		// Activation creates a native light object. Capture its birth identity too,
+		// then disturb only the scheduler so generator rejection is the first failure
 		auto *file = PHYSFS_openWrite(name);
 		require(file && xl_wall_trigger_write(file) && PHYSFS_close(file), "cannot capture generator extension guard");
 		xl_wall_trigger_reset();
-		require(check_trigger_sub(0, Player_num, 1) == 0, "cannot establish live trigger state for generator guards");
 		const int station = matcen_get_station_num(0), segment = RobotCenters[0].segnum;
 		for (int variant = 0; variant < 7; ++variant) {
 			const auto saved = RobotCenters[0];
@@ -339,7 +342,7 @@ static void generator_behavior_controls(const std::filesystem::path &output)
 			file = PHYSFS_openRead(name);
 			require(file && !xl_wall_trigger_read(file) && PHYSFS_close(file), "corrupt saved generator selection/assignment accepted");
 			xl_trigger_state live;
-			require(xl_wall_trigger_state(0, &live) && live.operated, "invalid generator restore published wall state");
+			require(xl_wall_trigger_state(0, &live) && !live.operated, "invalid generator restore published wall state");
 			RobotCenters[0] = saved;
 			Num_robot_centers = count;
 			Num_fuelcenters = fuel;
@@ -348,6 +351,8 @@ static void generator_behavior_controls(const std::filesystem::path &output)
 		}
 		file = PHYSFS_openRead(name);
 		require(file && xl_wall_trigger_read(file) && PHYSFS_close(file), "valid generator extension failed after rejected controls");
+		xl_trigger_state restored;
+		require(xl_wall_trigger_state(0, &restored) && restored.operated, "valid generator restore lost saved wall state");
 		PHYSFS_delete(name);
 	}
 	reset();

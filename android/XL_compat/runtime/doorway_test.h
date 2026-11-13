@@ -1,4 +1,5 @@
 #include "doorway_fixture.h"
+#include "slow_motion_runtime.h"
 extern "C" int check_transparency(segment *, int);
 static void doorway_sample(std::ostream &out, int index)
 {
@@ -91,7 +92,8 @@ static void doorway_animation(std::ostream &out)
 	require(!game_is_time_paused(), "Native save/restore left the simulation paused");
 	FrameTime = F1_0 / 32;
 	sample();
-	// Restore retains trigger cooldowns; the animation-only loop does not advance the host clock
+	// Resume the ordinary input boundary after restore before aging its cooldown
+	xl_input_demo_begin_input_clock();
 	timer_delay(F1_0 * 4 / 5);
 	timer_update();
 	require(check_trigger_sub(0, Player_num, 1) == 0 && Walls[0].state == WALL_DOOR_CLOSING, "Open trigger unexpectedly reversed a closing door");

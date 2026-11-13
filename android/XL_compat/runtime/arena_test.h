@@ -331,8 +331,11 @@ static int arena_test(int argc, char **argv)
 		{
 			const int weapon_count = N_weapon_types;
 			N_weapon_types = 0;
+			require(xl_level_supported("rtarena.rl2", 0), "outgoing live weapon count changed retained candidate definitions");
+			xl_resource_baseline_capture();
 			const bool accepted = xl_level_supported("rtarena.rl2", 0) != 0;
 			N_weapon_types = weapon_count;
+			xl_resource_baseline_capture();
 			require(!accepted && std::strstr(xl_level_rejection(), "weapon"), "water exception bypassed common weapon dependencies");
 			require(xl_level_supported("rtarena.rl2", 0), "water resource dependency check did not recover");
 		}

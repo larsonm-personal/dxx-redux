@@ -1,4 +1,5 @@
 #include "texture_action_controls.h"
+#include "resource_validation.h"
 #include "../tests/texture_action_fixture.h"
 
 static int texture_action_test(int argc, char **argv)
@@ -22,10 +23,15 @@ static int texture_action_test(int argc, char **argv)
 			const auto before = snapshot();
 			const auto original_material = TmapInfo[4];
 			TmapInfo[4].eclip_num = short(Num_effects);
+			// Admission uses retained mission definitions, not the outgoing live table
+			require(xl_level_supported(ordinal == 1 ? "tex23.rl2" : "tex27.rl2", 0),
+			        "Live material mutation changed retained candidate definitions");
+			xl_resource_baseline_capture();
 			const bool without_action = xl_level_supported("noaction.rl2", 0) != 0;
 			const bool with_action = xl_level_supported(ordinal == 1 ? "tex23.rl2" : "tex27.rl2", 0) != 0;
 			const std::string dependency_error = xl_level_rejection();
 			TmapInfo[4] = original_material;
+			xl_resource_baseline_capture();
 			require(without_action && !with_action && dependency_error.find("texture action") != std::string::npos && snapshot() == before,
 			        "Future texture/effect dependency was not checked before admission");
 			for (const auto &bad : { std::array<const char *, 2>{ "badbase.rl2", "trigger texture" }, { "badovl.rl2", "trigger texture" }, { "badlink.rl2", "invalid trigger target" }, { "badobject.rl2", "object trigger texture" } }) {

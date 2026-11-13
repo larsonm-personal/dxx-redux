@@ -23,6 +23,10 @@ MIRRORS = Path("/etc/apt/apt-mirrors.txt")
 SOURCES = Path("/etc/apt/sources.list.d/ubuntu.sources")
 
 
+class UnmanagedSources(ValueError):
+    """The optional priority optimization does not apply to this source layout."""
+
+
 def prefer_archive(mirrors, sources, environ, release, machine):
     """Validate the known image configuration before returning replacement bytes."""
     if (
@@ -42,7 +46,7 @@ def prefer_archive(mirrors, sources, environ, release, machine):
     ):
         return mirrors
     if not uris or any(uri != b"mirror+file:/etc/apt/apt-mirrors.txt" for uri in uris):
-        raise ValueError("Unexpected Ubuntu source URIs; refusing to change mirror priorities")
+        raise UnmanagedSources("Ubuntu source layout is not managed by the mirror priority helper")
     if mirrors not in (ORIGINAL, PREFERRED):
         raise ValueError("Unexpected apt mirror list; refusing to change mirror priorities")
     return PREFERRED
@@ -50,9 +54,16 @@ def prefer_archive(mirrors, sources, environ, release, machine):
 
 def main():
     before = MIRRORS.read_bytes()
-    after = prefer_archive(
-        before, SOURCES.read_bytes(), os.environ, platform.freedesktop_os_release(), platform.machine()
-    )
+    try:
+        after = prefer_archive(
+            before, SOURCES.read_bytes(), os.environ, platform.freedesktop_os_release(), platform.machine()
+        )
+    except UnmanagedSources:
+        # This is a download optimization, not a prerequisite for valid apt
+        # sources. Unknown layouts must never be rewritten; apt still validates
+        # and installs dependencies using the runner's original configuration
+        print("Unmanaged Ubuntu source layout: leaving apt configuration unchanged")
+        return
     if before != after:
         subprocess.run(["sudo", "tee", str(MIRRORS)], input=after, stdout=subprocess.DEVNULL, check=True)
     if MIRRORS.read_bytes() != after:
