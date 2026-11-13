@@ -34,6 +34,104 @@ extern "C" void xl_test_descriptor_staged(void)
 }
 
 // Native descriptor discovery without admitting unaudited XL gameplay
+static void descriptor_retained_dependency_controls()
+{
+	const auto walk = [](xl_assets::ObjectDependencies &graph) {
+		graph.robot(0);
+		graph.weapon(CONCUSSION_ID);
+		graph.powerup(POW_SHIELD_BOOST);
+		graph.texture(0);
+		graph.effect(0);
+		graph.wall_clip(0);
+	};
+	const auto same = [](const auto &a, const auto &b) {
+		return a.robot_profiles == b.robot_profiles && a.robots == b.robots && a.weapons == b.weapons &&
+		       a.powerups == b.powerups && a.models == b.models && a.clips == b.clips &&
+		       a.bitmaps == b.bitmaps && a.sounds == b.sounds && a.textures == b.textures &&
+		       a.effects == b.effects && a.wall_clips == b.wall_clips;
+	};
+	XlPreparedResources retained("d2leva-1.rl2");
+	auto expected = retained.dependencies();
+	walk(expected);
+	bool bound_valid = false, live_rejected = false;
+	{
+		struct Restore {
+			int weapons = N_weapon_types, powerups = N_powerup_types, clips = Num_vclips, effects = Num_effects;
+			int walls = Num_wall_anims, textures = NumTextures, bitmaps = N_ObjBitmaps, low_memory = GameArg.SysLowMem;
+			weapon_info weapon = Weapon_info[CONCUSSION_ID];
+			powerup_type_info powerup = Powerup_info[POW_SHIELD_BOOST];
+			vclip clip = Vclip[Powerup_info[POW_SHIELD_BOOST].vclip_num];
+			eclip effect = Effects[0];
+			wclip wall = WallAnims[0];
+			bitmap_index texture = Textures[0];
+			tmap_info info = TmapInfo[0];
+			std::array<ubyte, MAX_SOUNDS> sounds, alternates;
+			Restore()
+			{
+				std::copy_n(Sounds, MAX_SOUNDS, sounds.begin());
+				std::copy_n(AltSounds, MAX_SOUNDS, alternates.begin());
+			}
+			~Restore()
+			{
+				N_weapon_types = weapons;
+				N_powerup_types = powerups;
+				Num_vclips = clips;
+				Num_effects = effects;
+				Num_wall_anims = walls;
+				NumTextures = textures;
+				N_ObjBitmaps = bitmaps;
+				GameArg.SysLowMem = low_memory;
+				Weapon_info[CONCUSSION_ID] = weapon;
+				Powerup_info[POW_SHIELD_BOOST] = powerup;
+				Vclip[powerup.vclip_num] = clip;
+				Effects[0] = effect;
+				WallAnims[0] = wall;
+				Textures[0] = texture;
+				TmapInfo[0] = info;
+				std::copy(sounds.begin(), sounds.end(), Sounds);
+				std::copy(alternates.begin(), alternates.end(), AltSounds);
+			}
+		} restore;
+		Weapon_info[CONCUSSION_ID].render_type = 127;
+		Powerup_info[POW_SHIELD_BOOST].vclip_num = VCLIP_MAXNUM;
+		Vclip[restore.powerup.vclip_num].num_frames = 0;
+		Effects[0].vc.num_frames = 0;
+		WallAnims[0].num_frames = 0;
+		Textures[0].index = 0;
+		TmapInfo[0].eclip_num = MAX_EFFECTS;
+		std::fill_n(Sounds, MAX_SOUNDS, ubyte(255));
+		std::fill_n(AltSounds, MAX_SOUNDS, ubyte(255));
+		GameArg.SysLowMem = !restore.low_memory;
+		N_weapon_types = N_powerup_types = Num_vclips = Num_effects = Num_wall_anims = NumTextures = N_ObjBitmaps = 0;
+		XlPreparedResources prepared("d2leva-1.rl2");
+		walk(prepared.dependencies());
+		bound_valid = same(expected, prepared.dependencies()) && N_weapon_types == 0 && NumTextures == 0 &&
+		              Weapon_info[CONCUSSION_ID].render_type == 127 && Sounds[0] == 255;
+		try {
+			xl_assets::ObjectDependencies live;
+			live.weapon(CONCUSSION_ID);
+		} catch (const std::runtime_error &) {
+			live_rejected = true;
+		}
+	}
+	require(bound_valid && live_rejected, "prepared dependency walk used or repaired the previous mission's definition tables");
+	auto invalid = retained.dependencies();
+	std::vector<weapon_info> weapons(invalid.weapon_data, invalid.weapon_data + invalid.weapon_count);
+	weapons.at(CONCUSSION_ID).render_type = 127;
+	invalid.weapon_data = weapons.data();
+	bool rejected = false;
+	try {
+		invalid.weapon(CONCUSSION_ID);
+	} catch (const std::runtime_error &) {
+		rejected = true;
+	}
+	require(rejected, "invalid retained weapon definition fell back to the valid live table");
+	xl_assets::ObjectDependencies recovered;
+	walk(recovered);
+	require(same(expected, recovered), "retained definition controls failed to restore live table mappings and counts");
+	std::cout << "Retained dependency definitions: weapons, powerups, animations, textures and sound mappings ignore previous live tables; invalid candidate rejects\n";
+}
+
 static int descriptor_test(int argc, char **argv)
 {
 	std::setvbuf(stdout, nullptr, _IONBF, 0);
@@ -44,6 +142,7 @@ static int descriptor_test(int argc, char **argv)
 		require(load_base_mission("d2", error, sizeof(error)), error);
 		require(load_level("d2leva-1.rl2") == 0, "stock baseline level failed");
 		require(!xl_resource_texture_scope_enabled() && !*mission_resource_archive(), "stock mission enabled XL resource lookup");
+		descriptor_retained_dependency_controls();
 		const auto stock_definitions = gameplay_definitions();
 		const auto stock_model = arena_model();
 		const int stock_segments = Num_segments;
@@ -188,7 +287,7 @@ static int descriptor_test(int argc, char **argv)
 			require(Current_mission == live && snapshot() == before && search_paths() == paths &&
 			            !PHYSFS_getMountPoint(archive.c_str()) && !PHYSFS_getRealDir("obsrv-xl.rl2"),
 			        "mission preparation published candidate state or archive lookup");
-			PHYSFS_file *member = mission_prepared_open(prepared, "obsrv-xl.rl2");
+			PHYSFS_file *member = mission_prepared_open(prepared, "OBSRV-XL.RL2");
 			xl_compat::Bytes bytes(original_17.size());
 			require(member && PHYSFS_readBytes(member, bytes.data(), bytes.size()) == PHYSFS_sint64(bytes.size()) &&
 			            bytes == original_17 && Current_mission == live && snapshot() == before &&

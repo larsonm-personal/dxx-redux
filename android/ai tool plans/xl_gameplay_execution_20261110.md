@@ -4001,6 +4001,106 @@ G2 raw event and mixed-producer checkpoint, November 12 at 03:57 PST:
   Actual08:43 PST; revised remaining G2 roughly12-20h, later14.5-20h, high
   uncertainty. No cutoff, scope reduction or full gameplay readiness claim.
 
+### G2 retained dependency definitions checkpoint - November 12, 09:15 PST
+
+- G2 remains open on xl_gameplay_20261111_03_continuation. Parent
+  9c61348093206fb5f2f224f8e55c759c4eac1a81, tree
+  d957bb3c1a134f58b98b079e36593d5deb0d4592. The preceding retained-mission
+  checkpoint is committed at that parent. No layer03 push/PR or current-tip
+  hosted CI is claimed. Preserve the independent review and all three stashes.
+- The existing ObjectDependencies walk now binds counts and read-only views for
+  weapons, powerups, vclips/effects/wall animations, textures/material metadata,
+  object bitmap count and sound mappings, alongside its retained robot/model
+  views. MissionDefinitions owns their captured tables. The same binder is used
+  by HXM preparation, State initialization and camera ownership transfer. Native
+  digi_xlat_sound now delegates its bounded native mapping to
+  digi_xlat_sound_from_tables; extended original-D1 translation keeps its existing
+  path. No second sound algorithm or source admission predicate was invented.
+  Missing sample diagnostics now identify logical/sample/live mapping and profile.
+- Extended the existing Observatory owner with a causal retained-definition
+  control: invalidate live counts and weapon/powerup/animation/material records,
+  silence live mappings and change the live low-memory option, then construct
+  and walk the prepared baseline. Its dependency closure matches the original;
+  live invalid fields stay untouched; a live-bound walker rejects. A separately
+  invalid retained weapon rejects instead of falling back to valid live data.
+  RAII restores the original fields/mappings, and the recovered live walk matches.
+  Completion is mandatory in the existing CMake owner; no new top-level runner.
+- Found and repaired an integration error introduced during this checkpoint,
+  before commit: the initial Windows ordinary replay timed out at60s with native
+  Error: Cannot run XL level: warplab.rl2 dependency sound has no loaded sample.
+  A direct second execution of the same95cb0fde... binary reproduced the dialog.
+  Camera preparation moved the temporary MissionDefinitions and graph into the
+  surviving State, leaving the newly added inline sound-array views pointing at
+  destroyed temporary storage. Rebind all definition views after that transfer,
+  preserving graph traversal sets. A diagnostics-only rebuild happened to pass;
+  that allocator-dependent result was NOT accepted as a fix. The final source
+  contains the ownership repair and is rebuilt/tested on both hosts.
+  Preserve g2-dependency-definitions-replay-windows, its failure.json and retained
+  sandbox/binary, plus diagnostic receipts. The failure was not a missing genuine
+  asset waiver and no timeout or expected value changed. Computer-use skill read
+  the unflushed dialog; its input API returned access denied, so only the owned
+  diagnostic process was stopped through the CLI. No user interaction needed.
+- Private candidate reads now apply the native case-normalization helper before
+  checking the real archive/directory origin. A direct isolated PhysFS probe
+  confirmed that the original lowercase HOG member was not found under uppercase
+  spelling. The existing original-level read now requests OBSRV-XL.RL2 and still
+  compares all52176 original bytes; later retained reads exercise lowercase.
+  Namespace/path and foreign-origin guards remain intact for both spellings.
+- Final source-reference Observatory owner passes on Windows and Linux, with the
+  retained-definition and uppercase-read controls, all12 firing/four contact
+  source comparisons and the complete existing native/persistence controls.
+  Original ambient224 sources/328 colors remains within1.47e-7 Windows/3e-8 Linux.
+  Evidence g2-dependency-definitions-fixed-reference-{windows,linux} and logs.
+  Both original descriptor/HOG hashes are checked unchanged by the controllers.
+- Final developer-ON engine/metadata and developer-OFF engine/compatibility targets
+  build on both hosts. Full test_upstream_compat passes Windows61.11s and
+  Linux36.80s, one combined CTest entry each, zero skips. Earlier pre-repair
+  compatibility entries also passed72.52s/33.80s, illustrating why the ordinary
+  real save-start replay remained necessary. D1 native source was not changed or
+  rebuilt here; actual D1-in-D2 translation is exercised by the D2 owner. Existing
+  fixture/string-literal warnings remain, no new warnings in the edited logic.
+- Final ordinary developer-OFF save-start replay passes twice in clean Windows
+  processes and once on Linux. All three match the original live capture through
+  the existing detailed comparator:12 object frames,16 world records,21 SIM and12
+  FX draws, no first differences. See
+  g2-dependency-definitions-fixed-compare.json and fixed-replay-* receipts. The
+  original assisted WShock20 level6 recording and its setup limits remain as
+  documented above; this does not add connected progression or headless proof.
+- Additional Windows HXM owner passed its original malformed/reachable-dependency,
+  animation and source controls plus Warp5 warm/cold actor proof, with identical
+  shields23696201 after the shot. These isolated actor controls use an assisted
+  warm setup; cold reload inherits that checkpoint. The HXM run preceded the final
+  camera rebind/case correction; final camera-path qualification is the ordinary
+  Warp6 recording above. Optional CAMERA_HOG was not supplied, as in the existing
+  canonical CMake registration; do not count that optional subcase as executed.
+  The installed genuine addon e7351d66... differs from that old optional owner's
+  pinned df69c62a... archive, so it was not substituted to manufacture coverage.
+- Source patch542546800c636c7d20bf1582e3f2bae241bc6121800ca41b526e216bd979c6e6,
+  all seven source hashes, eight executable hashes, original inputs and post-hook
+  committed head/tree are recorded in g2-dependency-definitions-build-identities.json.
+  Final Windows ordinary D24151d8f979fd479fb3afd685dedc2b242f4f74185f9f9d9c326b7580fd88d52d;
+  Linux098bf0357ef5803f9ec2cc8439d751523836a30be54bc44a74ac62fe81b3a6f8.
+  Reference2576a98b5de310e3ac7c9777df2677d1627b8bae and authentic mission bytes
+  remain unchanged. Both required catalogs pass99 JSON/315 PowerShell/547 support
+  and428 top-level entries. Scoped mixed quality passes, with final ledger quality
+  and staged review before commit. No cohort, skip, timeout or asset relaxation.
+- Still required: explicitly prepare the target mission's native HAM/extension
+  definitions and source/resource ownership, rather than capturing a selected
+  live baseline. The existing native HAM codec writes global tables; factor its
+  destination binding rather than create a second decoder. Sample/bitmap banks,
+  camera weapon checks and file lookup still have live installation dependencies.
+  Then retain the remaining native/runtime/XL restore owners and validate before
+  any publication. The bad-XL-save energy91->100 atomicity failure is NOT fixed by
+  this table binding. Guide-Bot async/cache/Android2000us and deterministic audio
+  observation remain open, followed by G3-G7. No Android run, current full CI,
+  true-headless qualification, packages or full gameplay readiness claim.
+  Actual approximately09:15 PST; remaining G2 roughly12-20h, later14.5-20h, high
+  uncertainty, no cutoff or scope reduction. Official idle cleanup preview/apply
+  removed zero eligible artifacts, leaving15.54GiB, below the50GiB target; see
+  g2-dependency-definitions-cleanup-{preview,apply}.log. Genuine inputs, evidence,
+  native caches, all replay sandboxes and emulator workspaces were excluded or
+  protected. No manual cache deletion or new WSL restart.
+
 Per-item handoff template:
 
     Item and status:

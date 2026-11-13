@@ -1323,9 +1323,12 @@ PHYSFS_file *mission_prepared_open(mission_preparation *prepared, const char *re
 	if (!prepared || !prepared->descriptor.ready || !prepared_resource_name(resource)) return NULL;
 	const char *archive = prepared->descriptor.companion_hog;
 	if (!prepared->descriptor.has_companion_hog) {
-		origin = PHYSFS_getRealDir(resource);
+		if (strlen(resource) >= sizeof(path)) return NULL;
+		strcpy(path, resource);
+		if (PHYSFSEXT_locateCorrectCase(path) != 0) return NULL;
+		origin = PHYSFS_getRealDir(path);
 		if (!origin || strcmp(origin, prepared->descriptor.descriptor_root)) return NULL;
-		return PHYSFSX_openReadBuffered(resource);
+		return PHYSFSX_openReadBuffered(path);
 	}
 	mount = PHYSFS_getMountPoint(archive);
 	if (!mount) {
@@ -1347,6 +1350,7 @@ PHYSFS_file *mission_prepared_open(mission_preparation *prepared, const char *re
 		if (strlen(resource) >= sizeof(path)) return NULL;
 		strcpy(path, resource);
 	} else return NULL;
+	if (PHYSFSEXT_locateCorrectCase(path) != 0) return NULL;
 	origin = PHYSFS_getRealDir(path);
 	if (!origin || strcmp(origin, archive)) return NULL;
 	return PHYSFSX_openReadBuffered(path);

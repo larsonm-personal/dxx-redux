@@ -56,6 +56,13 @@ endif()
 if(NOT
    stdout
    MATCHES
+   "Retained dependency definitions: weapons, powerups, animations, textures and sound mappings ignore previous live tables; invalid candidate rejects"
+)
+    message(FATAL_ERROR "Retained mission dependency definition controls did not finish")
+endif()
+if(NOT
+   stdout
+   MATCHES
    "Retained mission preparation: isolated original reads, busy leases, snapshot commit and discard preserve live state"
 )
     message(FATAL_ERROR "Retained mission preparation and isolated archive controls did not finish")

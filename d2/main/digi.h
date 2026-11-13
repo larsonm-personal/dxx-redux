@@ -67,6 +67,8 @@ extern void digi_set_max_channels(int n);
 extern int digi_get_max_channels();
 
 extern int digi_xlat_sound(int soundno);
+/* Translate a bounded logical sound against retained mission tables */
+extern int digi_xlat_sound_from_tables(int soundno, int low_memory, const ubyte *sounds, const ubyte *alternates);
 
 extern void digi_stop_sound( int channel );
 
