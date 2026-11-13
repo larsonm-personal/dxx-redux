@@ -64,6 +64,10 @@ if(NOT stdout MATCHES
    "Incoming resource definitions: retained graph and native ownership transfer passed")
     message(FATAL_ERROR "Incoming resource graph and publication controls did not finish")
 endif()
+if(NOT stdout MATCHES
+   "Incoming resource banks: independent bitmap and sound validation, malformed discard passed")
+    message(FATAL_ERROR "Incoming resource bank controls did not finish")
+endif()
 if(NOT
    stdout
    MATCHES

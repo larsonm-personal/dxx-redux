@@ -4,6 +4,7 @@
 #include "input_demo_world_trace.h"
 #include "input_demo_object_trace.h"
 #include "prepared_ham.h"
+#include "retained_resource.h"
 extern "C" {
 #include "gauges.h"
 #include "endlevel.h"
@@ -155,7 +156,57 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 		const auto *payload = incoming.tables().Polygon_models[0].model_data;
 		Weapon_info[CONCUSSION_ID].energy_usage ^= F1_0;
 		XlPreparedResources resources(std::move(incoming));
+		resources.prepare_banks("groupa.256");
 		auto &graph = resources.dependencies();
+		require(graph.resource_banks && graph.resource_banks->bitmap_count() > 1 && graph.resource_banks->sound_count() > 0,
+		        "Incoming graph omitted its retained bank owners");
+		const int bitmap = graph.texture_data[0].index;
+		int logical = -1, sample = -1;
+		for (int id = 0; id < MAX_SOUNDS; ++id) {
+			const int resolved = digi_xlat_sound_from_tables(id, graph.low_memory, graph.sound_mappings, graph.alternate_sounds);
+			if (id != 255 && resolved >= 0 && resolved != 255 && resolved < graph.resource_banks->sound_count()) {
+				logical = id;
+				sample = resolved;
+				break;
+			}
+		}
+		require(logical >= 0, "No mapped target sample for independent bank control");
+		{
+			struct RestoreBanks {
+				int count = Num_bitmap_files;
+				int sample;
+				digi_sound sound;
+				~RestoreBanks()
+				{
+					Num_bitmap_files = count;
+					GameSounds[sample] = sound;
+				}
+			} restore_banks{ Num_bitmap_files, sample, GameSounds[sample] };
+			Num_bitmap_files = 0;
+			GameSounds[sample].data = nullptr;
+			graph.bitmap(bitmap);
+			graph.sound(logical);
+			require(graph.bitmaps.count(bitmap) && graph.sounds.count(sample) &&
+			            Num_bitmap_files == 0 && !GameSounds[sample].data,
+			        "Target dependency walk paged or repaired outgoing native banks");
+		}
+		const auto bitmap_hash = graph.resource_banks->bitmap_hash(), sound_hash = graph.resource_banks->sound_hash();
+		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> pig(PHYSFS_openRead("groupa.pig"), PHYSFS_close);
+		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> snd(PHYSFS_openRead(graph.resource_banks->sample_rate() == 22050 ? "descent2.s22" : "descent2.s11"), PHYSFS_close);
+		const auto pig_bytes = xl_retain_resource(pig.get()), sound_bytes = xl_retain_resource(snd.get());
+		for (bool bad_bitmap : { false, true }) {
+			auto bitmap_copy = pig_bytes, sound_copy = sound_bytes;
+			(bad_bitmap ? bitmap_copy : sound_copy).resize(11);
+			bool rejected = false;
+			try {
+				XlResourceBanks invalid(std::move(bitmap_copy), std::move(sound_copy), graph.resource_banks->sample_rate());
+			} catch (const std::runtime_error &) {
+				rejected = true;
+			}
+			require(rejected && graph.resource_banks->bitmap_hash() == bitmap_hash && graph.resource_banks->sound_hash() == sound_hash,
+			        "Malformed bank changed the retained target or was accepted");
+		}
+
 		require(graph.weapon_count == N_weapon_types &&
 		            graph.weapon_data[CONCUSSION_ID].energy_usage == energy &&
 		            graph.weapon_data[CONCUSSION_ID].energy_usage != Weapon_info[CONCUSSION_ID].energy_usage &&
@@ -175,6 +226,7 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 	        "prepared HAM control changed live definitions, SIM RNG or resource lookup");
 	std::cout << "Prepared native HAM: independent equal-count target, complete destinations, owned models, move and malformed discard passed\n";
 	std::cout << "Incoming resource definitions: retained graph and native ownership transfer passed\n";
+	std::cout << "Incoming resource banks: independent bitmap and sound validation, malformed discard passed\n";
 }
 extern "C" int xl_test_fail_identity_allocation(int allocation)
 {
