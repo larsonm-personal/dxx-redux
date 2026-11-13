@@ -3915,6 +3915,92 @@ G2 raw event and mixed-producer checkpoint, November 12 at 03:57 PST:
   Actual approximately08:16 PST; remaining G2 revised12-20h, later14.5-20h, high
   uncertainty, no cutoff or reduction of the original gameplay closure gate.
 
+### G2 retained mission preparation checkpoint - November 12, 08:43 PST
+
+- G2 remains open. Root branch xl_gameplay_20261111_03_continuation, parent
+  c0bc13aa99b380bcc2781d053421040993f7d6a3, tree
+  219e1ee113bd1bb859a1aedf70c33be6e512bdaf. This candidate is local, with no
+  layer-03 publication or current-tip hosted CI claim. Preserve the independent
+  review and all three stashes. Earlier G0/G1 CI receipts are unchanged history.
+- d2/main/mission.c now retains the existing native descriptor parse and reserved
+  identity allocation behind mission_prepare.h. Ordinary selection uses the same
+  preparation and native commit, including existing archive handoff and Android
+  acquisition boundaries. Custom D2 descriptor tables, source text and copied
+  list identity survive list release. Builtin/original-D1 initialization remains
+  on its existing commit path; this is not pure builtin mission preparation.
+- Candidate archive members can be read through an isolated PhysFS namespace.
+  Reads require the candidate's actual archive origin; a foreign mount or unsafe
+  relative name rejects. Existing owned live archives may be borrowed. An open
+  private member prevents both commit and discard, retaining the caller's handle;
+  after close, discard releases the private mount and commit passes the same
+  retained native fields to publication. Preparation does not select the mission,
+  reset runtime state or publish candidate basenames into active resource lookup.
+  This is a prerequisite for full restore staging, not an atomic full save load.
+- Extended the existing descriptor owner and its mandatory CMake completion
+  marker. Full native world, object pool and live-object snapshots check prepare,
+  private read, busy lease, discard and malformed-descriptor rejection. The
+  original Observatory level is read privately and compared byte-for-byte.
+  Independent candidates retain their own identity. Only derived prepreg copies
+  receive a late invalid descriptor mutation; commit uses the retained valid
+  descriptor, then ordinary stock recovery restores the original resource scope.
+  Existing allocation/archive/Android handoff fault controls remain enabled.
+- Final Windows and Linux Observatory source-reference owners pass, including
+  all12 firing-gate and four contact-dispatch comparisons, native boundaries,
+  no-damage persistence, fusion/guidance and224 ambient sources/328 colors.
+  Windows max RGB delta1.47e-7; Linux3e-8. Evidence under
+  temp/pr464-ci-fixes-20261110/g2-mission-prepare-reference-{windows,linux},
+  with corresponding controller logs. Initial Windows native-only owner also
+  passed, but only the later reference run qualifies the source comparison.
+  First Linux controller invocation stopped before native execution because an
+  unquoted PowerShell -D argument lost its extension; quoted arguments pass.
+  Keep g2-mission-prepare-reference-linux-argument-failure.log as that receipt.
+  No engine failure, changed oracle, weakened cohort or increased timeout.
+- Developer-ON ordinary engine and metadata targets build on both hosts. Ordinary
+  developer-OFF D2 engine and full test_upstream_compat also build and pass:
+  Windows1/1 CTest entry60.08s, Linux1/1 entry36.28s, zero skips. These entries
+  execute the existing combined compatibility owner, not one individual case.
+  D1 source was not changed or rebuilt for this mission-only checkpoint; its
+  preceding full1.80s owner remains separately dated evidence. Logs:
+  g2-mission-prepare-{windows,linux}-stock-{build,ctest}.log and developer build
+  logs. Existing unchanged fixture string-literal/bool warnings remain visible.
+- Both ordinary rendered developer-OFF save-start replays pass strict result,
+  clean exit and RNG comparison. Detailed existing parity owner comparison to
+  the original live capture passes on both hosts:12 object frames,16 world
+  records,21 SIM draws and12 FX draws, with no masks or expected values changed.
+  See g2-mission-prepare-compare.json and g2-mission-prepare-replay-{windows,linux}.
+  Original demo SHA962de56f3c885240b6cfa8c46817e5f8c150416681599d817606bde752b98089,
+  original WShock20 level6, five setup position assists, zero inventory assists
+  and zero in-record assists. This short retained recording is not connected
+  original-content navigation/combat qualification. Linux uses the complete
+  previously verified144060897-byte/169-file runtime directory and original
+  three-file demo bundle; no subset/missing-resource waiver.
+- Authentic Observatory HOG remains
+  e89acaad09cefa0c09fc4b487c56b6077477cfe20169f364fe54f627040b01e7,
+  descriptor8a2946c7f786f4834e1c9e303a8d4248b419b89479a750d0d6c1917fbe1b6317.
+  Both controllers verify unchanged original bytes at completion. Pinned source
+  remains2576a98b5de310e3ac7c9777df2677d1627b8bae. The existing extracted oracle
+  was built on Windows using its pinned controlweapon.cpp/collide.cpp/
+  loadgeometry.cpp adapter; no copied expected implementation. Build/source/input
+  hashes and final commit/tree are recorded in
+  g2-mission-prepare-build-identities.json. No new source predicate is admitted.
+- Scoped mixed quality and required catalog validation precede commit. No new
+  top-level runner, owner membership or timeout change. No Android execution or
+  profile modification, current-tip CI, true-headless qualification or packages
+  are claimed. WSL is healthy after the earlier authorized restart; this
+  checkpoint did not require another restart. Approximately16.37GiB free, with
+  active evidence, genuine assets, reference and emulator workspaces preserved.
+- Next main G2 step: bind the existing prepared resource owner to the retained
+  mission/source and baseline definitions, then stage all native/runtime/XL
+  restore owners before any publication. XlPreparedResources currently reads
+  mission_base, Current_mission, mounted companions and live registries; passing
+  only a level name or checksum is insufficient. Native record/AI decoders are
+  already context-bound. Retain the same codecs and source ownership, without
+  serialize/rollback or a second loader. Full bad-XL-save rejection still changes
+  energy91->100 and is NOT fixed here. Guide-Bot async/cache/Android2000us and
+  deterministic audio observation remain open, followed by all G3-G7 acceptance.
+  Actual08:43 PST; revised remaining G2 roughly12-20h, later14.5-20h, high
+  uncertainty. No cutoff, scope reduction or full gameplay readiness claim.
+
 Per-item handoff template:
 
     Item and status:

@@ -49,6 +49,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "resource_validation.h"
 #include "preview.h"
+#include "mission_prepare.h"
 #endif
 
 //values that describe where a mission is located
@@ -874,6 +875,17 @@ typedef struct mission_descriptor_stage {
 #endif
 } mission_descriptor_stage;
 
+#ifdef DXX_XL_RUNTIME
+struct mission_preparation {
+	mle identity;
+	char path[PATH_MAX];
+	mission_descriptor_stage descriptor;
+	Mission *reserved_identity;
+	char private_mount[64];
+	int owns_mount;
+};
+#endif
+
 static void release_descriptor_stage(mission_descriptor_stage *stage)
 {
 #ifdef DXX_XL_RUNTIME
@@ -1196,15 +1208,168 @@ static int preflight_mission_descriptor(const mle *mission, mission_descriptor_s
 }
 #endif
 
+#ifdef DXX_XL_RUNTIME
+static mission_preparation *prepare_mission_identity(const mle *mission)
+{
+	mission_preparation *prepared;
+	const size_t length = mission->path ? strlen(mission->path) : 0;
+	if (!mission->path || !mission->filename || length >= PATH_MAX ||
+	    mission->filename < mission->path || mission->filename > mission->path + length) return NULL;
+	prepared = d_malloc(sizeof(*prepared));
+	if (!prepared) return NULL;
+	memset(prepared, 0, sizeof(*prepared));
+	prepared->identity = *mission;
+	strcpy(prepared->path, mission->path);
+	prepared->identity.path = prepared->path;
+	prepared->identity.filename = prepared->path + (mission->filename - mission->path);
+	if (!preflight_mission_descriptor(&prepared->identity, &prepared->descriptor)) {
+		d_free(prepared);
+		return NULL;
+	}
+	/* Reserve identity storage before Android preparation or prior-mission teardown */
+	prepared->reserved_identity = allocate_mission_identity(sizeof(*prepared->reserved_identity), 1);
+	if (prepared->reserved_identity) {
+		memset(prepared->reserved_identity, 0, sizeof(*prepared->reserved_identity));
+		prepared->reserved_identity->path = allocate_mission_identity(PATH_MAX, 2);
+	}
+	if (!prepared->reserved_identity || !prepared->reserved_identity->path) {
+		mission_discard_prepared(&prepared);
+		con_printf(CON_URGENT, "Cannot prepare mission identity; previous mission retained\n");
+		return NULL;
+	}
+	if (prepared->descriptor.ready) {
+		Mission *candidate = &prepared->descriptor.candidate;
+		candidate->filename = prepared->identity.filename;
+		candidate->builtin_hogsize = prepared->identity.builtin_hogsize;
+		candidate->anarchy_only_flag = prepared->identity.anarchy_only_flag;
+		memcpy(candidate->mission_name, prepared->identity.mission_name, sizeof(candidate->mission_name));
+	}
+#ifdef DXX_XL_DESCRIPTOR_TEST
+	{
+		extern void xl_test_descriptor_staged(void);
+		xl_test_descriptor_staged();
+	}
+#endif
+	return prepared;
+}
+
+const Mission *mission_prepared_descriptor(const mission_preparation *prepared)
+{
+	return prepared && prepared->descriptor.ready ? &prepared->descriptor.candidate : NULL;
+}
+const char *mission_prepared_descriptor_text(const mission_preparation *prepared)
+{
+	return prepared && prepared->descriptor.descriptor_data ? prepared->descriptor.descriptor_data : "";
+}
+const char *mission_prepared_archive(const mission_preparation *prepared)
+{
+	return prepared ? prepared->descriptor.companion_hog : "";
+}
+const char *mission_prepared_directory(const mission_preparation *prepared)
+{
+	return prepared ? prepared->descriptor.descriptor_root : "";
+}
+const char *mission_prepared_level(const mission_preparation *prepared, int level)
+{
+	const Mission *mission = mission_prepared_descriptor(prepared);
+	if (!mission) return NULL;
+	if (level > 0 && level <= mission->last_level) return mission->level_names[level - 1];
+	if (level < 0 && level >= mission->last_secret_level) return mission->secret_level_names[-level - 1];
+	return NULL;
+}
+
+static int release_prepared_mount(mission_preparation *prepared)
+{
+	if (prepared->owns_mount) {
+		const char *mount = PHYSFS_getMountPoint(prepared->descriptor.companion_hog);
+		if (mount && !strcmp(mount, prepared->private_mount) &&
+		    !PHYSFS_unmount(prepared->descriptor.companion_hog)) return 0;
+		prepared->owns_mount = 0;
+	}
+	return 1;
+}
+
+int mission_discard_prepared(mission_preparation **owner)
+{
+	mission_preparation *prepared = owner ? *owner : NULL;
+	if (!prepared) return 1;
+	if (!release_prepared_mount(prepared)) return 0;
+	release_descriptor_stage(&prepared->descriptor);
+	release_mission_identity(prepared->reserved_identity);
+	d_free(prepared);
+	*owner = NULL;
+	return 1;
+}
+
+static int prepared_resource_name(const char *name)
+{
+	const char *part = name;
+	if (!name || !*name || *name == '/' || strchr(name, '\\') || strchr(name, ':')) return 0;
+	for (;;) {
+		const char *end = strchr(part, '/');
+		const size_t length = end ? (size_t)(end - part) : strlen(part);
+		if (!length || (length == 1 && part[0] == '.') ||
+		    (length == 2 && part[0] == '.' && part[1] == '.')) return 0;
+		if (!end) return 1;
+		part = end + 1;
+	}
+}
+
+PHYSFS_file *mission_prepared_open(mission_preparation *prepared, const char *resource)
+{
+	static unsigned int next_mount;
+	char path[PATH_MAX];
+	const char *mount, *origin;
+	if (!prepared || !prepared->descriptor.ready || !prepared_resource_name(resource)) return NULL;
+	const char *archive = prepared->descriptor.companion_hog;
+	if (!prepared->descriptor.has_companion_hog) {
+		origin = PHYSFS_getRealDir(resource);
+		if (!origin || strcmp(origin, prepared->descriptor.descriptor_root)) return NULL;
+		return PHYSFSX_openReadBuffered(resource);
+	}
+	mount = PHYSFS_getMountPoint(archive);
+	if (!mount) {
+		do {
+			if (next_mount == UINT_MAX) return NULL;
+			snprintf(prepared->private_mount, sizeof(prepared->private_mount), "__mission_prepare_%u/", ++next_mount);
+		} while (PHYSFS_exists(prepared->private_mount));
+		if (!PHYSFS_mount(archive, prepared->private_mount, 1)) return NULL;
+		prepared->owns_mount = 1;
+		mount = PHYSFS_getMountPoint(archive);
+		/* PhysFS owns mount-point normalization, including the trailing slash */
+		if (!mount || strlen(mount) >= sizeof(prepared->private_mount)) return NULL;
+		strcpy(prepared->private_mount, mount);
+	}
+	if (prepared->owns_mount && mount && !strcmp(mount, prepared->private_mount)) {
+		const int size = snprintf(path, sizeof(path), "%s%s", prepared->private_mount, resource);
+		if (size < 0 || (size_t)size >= sizeof(path)) return NULL;
+	} else if (mission_owns_resource_archive(archive)) {
+		if (strlen(resource) >= sizeof(path)) return NULL;
+		strcpy(path, resource);
+	} else return NULL;
+	origin = PHYSFS_getRealDir(path);
+	if (!origin || strcmp(origin, archive)) return NULL;
+	return PHYSFSX_openReadBuffered(path);
+}
+#endif
+
 //loads the specfied mission from the mission list.
 //build_mission_list() must have been called.
 //Returns true if mission loaded ok, else false.
-static int load_mission_internal(mle *mission);
+static int load_mission_internal(mle *mission
+#ifdef DXX_XL_RUNTIME
+                                , mission_preparation *prepared
+#endif
+);
 #ifdef __ANDROID__
 #include "android_loading_progress.h"
 #endif
 int load_mission(mle *mission)
 {
+#ifdef DXX_XL_RUNTIME
+	mission_preparation *prepared = prepare_mission_identity(mission);
+	return prepared ? mission_commit_prepared(&prepared) : 0;
+#else
 #ifdef __ANDROID__
 	const int owns_progress = !android_loading_progress_is_active();
 	if (owns_progress) android_loading_progress_begin("Loading mission", 0);
@@ -1215,35 +1380,45 @@ int load_mission(mle *mission)
 	if (owns_progress) android_loading_progress_end();
 #endif
 	return loaded;
+#endif
 }
 
-static int load_mission_internal(mle *mission)
+#ifdef DXX_XL_RUNTIME
+int mission_commit_prepared(mission_preparation **owner)
+{
+	mission_preparation *prepared = owner ? *owner : NULL;
+	int loaded;
+	if (!prepared || !release_prepared_mount(prepared)) return 0;
+#ifdef __ANDROID__
+	const int owns_progress = !android_loading_progress_is_active();
+	if (owns_progress) android_loading_progress_begin("Loading mission", 0);
+	android_loading_progress_update(prepared->identity.mission_name, 0, 0);
+#endif
+	*owner = NULL;
+	loaded = load_mission_internal(&prepared->identity, prepared);
+	mission_discard_prepared(&prepared);
+#ifdef __ANDROID__
+	if (owns_progress) android_loading_progress_end();
+#endif
+	return loaded;
+}
+#endif
+
+static int load_mission_internal(mle *mission
+#ifdef DXX_XL_RUNTIME
+                                , mission_preparation *prepared
+#endif
+)
 {
 	PHYSFS_file *mfile;
 	char buf[PATH_MAX];
 	int parse_error = 0;
 	mission_descriptor_stage staged = { 0 };
 #ifdef DXX_XL_RUNTIME
-	Mission *prepared_identity;
-	if (!preflight_mission_descriptor(mission, &staged)) return 0;
-	/* Reserve identity storage before Android preparation or prior-mission teardown */
-	prepared_identity = allocate_mission_identity(sizeof(*prepared_identity), 1);
-	if (prepared_identity) {
-		memset(prepared_identity, 0, sizeof(*prepared_identity));
-		prepared_identity->path = allocate_mission_identity(PATH_MAX, 2);
-	}
-	if (!prepared_identity || !prepared_identity->path || strlen(mission->path) >= PATH_MAX) {
-		release_mission_identity(prepared_identity);
-		release_descriptor_stage(&staged);
-		con_printf(CON_URGENT, "Cannot prepare mission identity; previous mission retained\n");
-		return 0;
-	}
-#ifdef DXX_XL_DESCRIPTOR_TEST
-	{
-		extern void xl_test_descriptor_staged(void);
-		xl_test_descriptor_staged();
-	}
-#endif
+	Mission *prepared_identity = prepared->reserved_identity;
+	staged = prepared->descriptor;
+	memset(&prepared->descriptor, 0, sizeof(prepared->descriptor));
+	prepared->reserved_identity = NULL;
 #endif
 #ifdef __ANDROID__
 	mle selected = *mission;
@@ -1511,10 +1686,54 @@ static int load_mission_internal(mle *mission)
 	return 1;
 }
 
+#ifdef DXX_XL_RUNTIME
+mission_preparation *mission_prepare_by_name(const char *name)
+{
+	const int prior_count = num_missions;
+	mission_preparation *prepared = NULL;
+	mle *missions;
+	int match = -1, ambiguous = 0, i;
+	if (!name || !*name) return NULL;
+	missions = build_mission_list(1);
+	if (!missions) { num_missions = prior_count; return NULL; }
+	for (i = 0; i < num_missions; ++i)
+		if (!d_stricmp(name, missions[i].filename)
+#ifdef __ANDROID__
+		    || !d_stricmp(name, missions[i].path)
+#endif
+		) {
+			if (match >= 0) ambiguous = 1;
+			match = i;
+		}
+	if (ambiguous) Warning("Mission name '%s' is ambiguous; select an unambiguous mission package", name);
+	else if (match >= 0) prepared = prepare_mission_identity(&missions[match]);
+	free_mission_list(missions);
+	num_missions = prior_count;
+	return prepared;
+}
+
+mission_preparation *mission_prepare_from_current_dir(const char *descriptor)
+{
+	mle mission = { 0 };
+	mission_preparation *prepared;
+	char path[PATH_MAX];
+	if (!descriptor || strlen(descriptor) >= sizeof(path)) return NULL;
+	strcpy(path, descriptor);
+	if (!read_mission_file(&mission, path, ML_CURDIR)) return NULL;
+	prepared = prepare_mission_identity(&mission);
+	d_free(mission.path);
+	return prepared;
+}
+#endif
+
 //loads the named mission if exists.
 //Returns true if mission loaded ok, else false.
 int load_mission_by_name(char *mission_name)
 {
+#ifdef DXX_XL_RUNTIME
+	mission_preparation *prepared = mission_prepare_by_name(mission_name);
+	return prepared ? mission_commit_prepared(&prepared) : 0;
+#else
 	int i;
 	mle *mission_list = build_mission_list(1);
 	bool found = 0;
@@ -1541,6 +1760,7 @@ int load_mission_by_name(char *mission_name)
 
 	free_mission_list(mission_list);
 	return found;
+#endif
 }
 
 int load_mission_by_name_from_current_dir(char *mission_name)
@@ -1552,6 +1772,10 @@ int load_mission_by_name_from_current_dir(char *mission_name)
 
 int load_mission_from_current_dir(char *descriptor)
 {
+#ifdef DXX_XL_RUNTIME
+	mission_preparation *prepared = mission_prepare_from_current_dir(descriptor);
+	return prepared ? mission_commit_prepared(&prepared) : 0;
+#else
 	mle mission = { 0 };
 	int loaded;
 
@@ -1560,6 +1784,7 @@ int load_mission_from_current_dir(char *descriptor)
 	loaded = load_mission(&mission);
 	d_free(mission.path);
 	return loaded;
+#endif
 }
 
 typedef struct mission_menu

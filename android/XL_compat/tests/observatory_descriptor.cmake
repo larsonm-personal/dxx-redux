@@ -53,6 +53,13 @@ endif()
 if(NOT result EQUAL 0)
     message(FATAL_ERROR "Descriptor test failed (${result}): ${stdout}${stderr}")
 endif()
+if(NOT
+   stdout
+   MATCHES
+   "Retained mission preparation: isolated original reads, busy leases, snapshot commit and discard preserve live state"
+)
+    message(FATAL_ERROR "Retained mission preparation and isolated archive controls did not finish")
+endif()
 file(SHA256 "${HOG}" final_hog_hash)
 if(NOT
    stdout

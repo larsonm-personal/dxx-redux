@@ -1,5 +1,8 @@
 // Test-only mutation at the native preflight/commit boundary
 #include "no_damage_persistence_test.h"
+#include "mission_prepare.h"
+#include "input_demo_world_trace.h"
+#include "input_demo_object_trace.h"
 static std::string descriptor_mutation_path;
 static std::string archive_removal_path;
 static std::string archive_corruption_path;
@@ -162,6 +165,77 @@ static int descriptor_test(int argc, char **argv)
 			PHYSFS_freeList(paths);
 			return result;
 		};
+		{
+			const auto snapshot = [] {
+				auto objects = nlohmann::json::object();
+				for (int slot = 0; slot < object_capacity(); ++slot)
+					if (Objects[slot].type != OBJ_NONE) objects[std::to_string(slot)] = input_demo_object_trace_snapshot(Objects[slot], slot);
+				return nlohmann::json{ { "world", input_demo_world_trace_snapshot() }, { "pool", input_demo_object_pool_trace_snapshot() }, { "objects", objects } };
+			};
+			Mission *live = Current_mission;
+			const auto before = snapshot();
+			const auto paths = search_paths();
+			const std::string live_archive = mission_resource_archive();
+			auto *prepared = mission_prepare_by_name("obsrv-xl");
+			const Mission *candidate = mission_prepared_descriptor(prepared);
+			require(prepared && candidate && candidate->enhanced == MISSION_ENHANCED_XL &&
+			            candidate->last_level == 1 && !std::strcmp(candidate->filename, "obsrv-xl") &&
+			            !std::strcmp(mission_prepared_level(prepared, 1), "obsrv-xl.rl2") &&
+			            !mission_prepared_level(prepared, 0) && !mission_prepared_level(prepared, 2) &&
+			            !mission_prepared_level(prepared, INT_MIN) && !mission_prepared_level(prepared, INT_MAX),
+			        "retained original descriptor lost identity or level bounds");
+			const std::string archive = mission_prepared_archive(prepared);
+			require(Current_mission == live && snapshot() == before && search_paths() == paths &&
+			            !PHYSFS_getMountPoint(archive.c_str()) && !PHYSFS_getRealDir("obsrv-xl.rl2"),
+			        "mission preparation published candidate state or archive lookup");
+			PHYSFS_file *member = mission_prepared_open(prepared, "obsrv-xl.rl2");
+			xl_compat::Bytes bytes(original_17.size());
+			require(member && PHYSFS_readBytes(member, bytes.data(), bytes.size()) == PHYSFS_sint64(bytes.size()) &&
+			            bytes == original_17 && Current_mission == live && snapshot() == before &&
+			            !PHYSFS_getRealDir("obsrv-xl.rl2") && live_archive == mission_resource_archive(),
+			        "isolated candidate reads changed live lookup, world, pool, objects or RNG");
+			const auto private_paths = search_paths();
+			for (const char *bad : { "", "/obsrv-xl.rl2", "../obsrv-xl.rl2", "folder/../obsrv-xl.rl2", "folder//obsrv-xl.rl2", "C:/obsrv-xl.rl2", "folder\\obsrv-xl.rl2" })
+				require(!mission_prepared_open(prepared, bad), "candidate resource escaped its relative namespace");
+			require(!mission_commit_prepared(&prepared) && prepared && !mission_discard_prepared(&prepared) && prepared &&
+			            Current_mission == live && snapshot() == before && search_paths() == private_paths,
+			        "busy candidate lease was consumed or published");
+			require(PHYSFS_close(member) && mission_discard_prepared(&prepared) && !prepared &&
+			            mission_discard_prepared(&prepared) && search_paths() == paths && snapshot() == before && Current_mission == live,
+			        "discard did not release candidate ownership and restore the original search path");
+			// Derived copies preserve the authentic input files while the late-change control runs
+			const auto derived_descriptor = root.parent_path() / "prepreg.mn2", derived_archive = root.parent_path() / "prepreg.hog";
+			std::filesystem::copy_file(root / "obsrv-xl.hog", derived_archive);
+			std::filesystem::copy_file(root / "obsrv-xl.mn2", derived_descriptor);
+			auto *independent = mission_prepare_by_name("obsrv-xl");
+			prepared = mission_prepare_from_current_dir("prepreg.mn2");
+			require(independent && prepared && mission_discard_prepared(&independent) && !independent &&
+			            !std::strcmp(mission_prepared_descriptor(prepared)->filename, "prepreg"),
+			        "discarding another candidate invalidated retained identity storage");
+			const std::string retained = mission_prepared_descriptor_text(prepared);
+			{
+				std::ofstream changed(derived_descriptor, std::ios::trunc);
+				changed << "d2x-name = Changed after prepare\nnum_levels = 999999999999\n";
+				require(bool(changed), "cannot write derived descriptor mutation control");
+			}
+			member = mission_prepared_open(prepared, "obsrv-xl.rl2");
+			require(member && PHYSFS_fileLength(member) == PHYSFS_sint64(original_17.size()) && PHYSFS_close(member) &&
+			            Current_mission == live && snapshot() == before,
+			        "retained candidate could not read its independent archive before publication");
+			require(mission_commit_prepared(&prepared) && !prepared && Current_mission != live &&
+			            !std::strcmp(Current_mission_filename, "prepreg") && Last_level == 1 &&
+			            !std::strcmp(Level_names[0], "obsrv-xl.rl2") && retained == mission_descriptor_snapshot() &&
+			            mission_owns_resource_archive(PHYSFS_getRealDir("obsrv-xl.rl2")),
+			        "native commit reparsed changed descriptor bytes or lost retained archive ownership");
+			require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0 && search_paths() == paths,
+			        "retained mission commit did not recover the original stock resource scope");
+			live = Current_mission;
+			const auto recovered = snapshot();
+			require(!mission_prepare_from_current_dir("prepreg.mn2") && Current_mission == live &&
+			            snapshot() == recovered && search_paths() == paths,
+			        "malformed descriptor preparation changed the recovered world");
+			std::cout << "Retained mission preparation: isolated original reads, busy leases, snapshot commit and discard preserve live state\n";
+		}
 		auto fixture = [&](const char *name, const std::string &body, bool accepted) {
 			std::ofstream out(root / (std::string(name) + ".mn2"), std::ios::binary);
 			out << body;
