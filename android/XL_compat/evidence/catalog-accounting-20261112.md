@@ -68,3 +68,29 @@ remain visible; no package or entry is dropped because it is difficult or untest
 Next: verify archive/descriptor/level provenance for the existing static surveys,
 attach their overlapping feature sets as historical inspection evidence, and
 prove eligibility exclusions from descriptors and source scope.
+
+## Verified authored eligibility supplement
+
+All 23 immutable archive sizes and SHA-256 values match the fixed catalog.
+The existing safe archive extractor and `xl_readiness.levels` parser verified all
+356 descriptor hashes and their complete advertised ordinal/member lists. The
+[retained descriptor evidence](catalog-eligibility-20261112.json) preserves these
+identities and declaration line numbers; no raw catalog row was removed.
+
+Of 1,111 entries, 1,109 explicitly declare `type = normal`. Stadium
+(`levelpack.7z/missions/spaz/stadium.mn2:1`) declares `type = anarchy` on line 2;
+exclude this one entry from the original single-player scope. Azure Catacombs XL
+(`levelpack.7z/missions/darkflamewolf/acat-xl.mn2:1`) instead declares
+`type = D2X-XL`, so keep its eligibility unresolved and included. These are authored
+scope declarations, not proof of engine admission, connected gameplay or runtime
+XL activation. In particular, `normal` does not establish playability.
+
+This supersedes the initial zero-exclusion denominator above: **1,110 included,
+999 required for 90%**, with one proven authored-scope exclusion and one unresolved
+entry retained. The fully qualified numerator remains unknown. The loaded/ticked
+sample, historical candidate identity and independent qualification dimensions
+above are unchanged. Reproducible local audit and extracted evidence remain at
+`temp/xl-g2-window-20261112/catalog-eligibility.py` and `catalog-eligibility/`.
+The audit hashes source archives again after extraction. Source inputs and pinned
+catalog bytes are unchanged. This does not claim the native menu parser accepts
+every descriptor's authored type declaration.
