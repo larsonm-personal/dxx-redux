@@ -16,6 +16,7 @@
 #include "fluids.h"
 #include "spawn_points.h"
 #include "speed_boost.h"
+#include "slow_motion_runtime.h"
 #include <nlohmann/json.hpp>
 #include "gameplay_audio.h"
 #include <cstdlib>
@@ -128,7 +129,7 @@ const vms_vector *weak_spot_hit = nullptr;
 int weak_spot_sound_calls = 0;
 bool death_trace = false;
 int death_sound_events, final_sound_events, final_explosions, reactor_notifications, notification_remaining;
-int countdown_wall_calls;
+int countdown_wall_calls, slow_motion_off_calls;
 bool master_forcefield_trace = false;
 int master_forcefield_centers = 0, master_forcefield_connections = 0;
 std::array<int, 2> master_forcefield_initial{};
@@ -254,6 +255,7 @@ void reset(bool permanent = true)
 	xl_boss_spawn_clear();
 	xl_robot_generator_clear();
 	births = ai_calls = morph_calls = effect_calls = sound_calls = death_calls = 0;
+	slow_motion_off_calls = 0;
 	allocation_failure = false;
 	cheats = {};
 	extensions = true;
@@ -985,7 +987,7 @@ void countdown_setup()
 void require_countdown_pending()
 {
 	require(!Control_center_destroyed && Countdown_timer == 12345 && Total_countdown_time == 4321 &&
-	            Countdown_seconds_left == 91 && Reactor_countdown_paused == 1 && !countdown_wall_calls,
+	            Countdown_seconds_left == 91 && Reactor_countdown_paused == 1 && !countdown_wall_calls && !slow_motion_off_calls,
 	        "remaining objective must preserve every countdown/wall sentinel");
 }
 void countdown_controls()
@@ -1006,7 +1008,7 @@ void countdown_controls()
 				do_controlcen_destroyed_stuff(nullptr);
 				const int expected = base == 30 ? defaults[difficulty] : base + base * (NDL - difficulty - 1) / 2;
 				require(Control_center_destroyed && Countdown_timer == expected * F1_0 && Total_countdown_time == expected &&
-				            !Reactor_countdown_paused && Countdown_seconds_left == 91 && countdown_wall_calls == 2 && Dead_controlcen_object_num == -1,
+				            !Reactor_countdown_paused && Countdown_seconds_left == 91 && countdown_wall_calls == 2 && Dead_controlcen_object_num == -1 && slow_motion_off_calls == 1,
 				        "actual countdown difficulty/custom-base, wall-order, pause or display state");
 				death_trace = false;
 				++cases;
@@ -1084,6 +1086,21 @@ void countdown_controls()
 		require(Countdown_timer == 44 * F1_0 + 123 && countdown_wall_calls == 2 && Countdown_seconds_left == 91,
 		        "retired boss frame must not reset advanced countdown or retoggle");
 		death_trace = false;
+		++cases;
+	}
+	for (int control : { 0, 1, 2 }) {
+		reset();
+		countdown_setup();
+		trigger action{};
+		action.type = control == 1 ? 0 : 25;
+		action.time = 10;
+		extensions = control != 2;
+		require(xl_countdown_action(&action) == (control == 0), "countdown trigger admission");
+		require(slow_motion_off_calls == (control == 0), "only an accepted countdown trigger requests time-equipment shutdown");
+		if (control == 0)
+			require(Control_center_destroyed && Countdown_timer == 10 * F1_0 && !Reactor_countdown_paused,
+			        "accepted countdown trigger publishes countdown before shutdown");
+		else require_countdown_pending();
 		++cases;
 	}
 	std::cout << "Actual countdown initialization: " << cases << " profile, difficulty, custom-base, order, validation and scope cases passed\n";
@@ -4695,6 +4712,11 @@ int main(int argc, char **argv)
 // Bounded engine endpoints. No gameplay predicate or state transition from the
 // production damage/trigger/generator/boss units is implemented here.
 extern "C" {
+void xl_slow_motion_off(void)
+{
+	require(Control_center_destroyed != 0, "time-equipment shutdown follows countdown publication");
+	++slow_motion_off_calls;
+}
 object Objects[MAX_OBJECTS];
 int Highest_object_index;
 segment Segments[MAX_SEGMENTS];

@@ -15,6 +15,7 @@ class DeveloperCompileCiTests(unittest.TestCase):
         for original, replacement in (
             ("-DDXX_XL_DEVELOPER_TESTS=ON", "-DDXX_XL_DEVELOPER_TESTS=OFF"),
             ("--parallel 2 --target dxx-redux-d2-headless-metadata", "--parallel 8"),
+            ("dxx-redux-d2-headless-metadata dxx-redux-d2", "dxx-redux-d2-headless-metadata"),
             ("persist-credentials: false", "persist-credentials: true"),
             (
                 "ref: ${{ github.event.pull_request.head.sha || github.sha }}",
@@ -25,13 +26,9 @@ class DeveloperCompileCiTests(unittest.TestCase):
             with self.subTest(original=original), self.assertRaises(ValueError):
                 check_workflow(workflow.replace(original, replacement))
         with self.assertRaises(ValueError):
-            check_workflow(
-                workflow + "\n      - run: ctest --test-dir build-xl-developer-ci\n"
-            )
+            check_workflow(workflow + "\n      - run: ctest --test-dir build-xl-developer-ci\n")
         with self.assertRaises(ValueError):
-            check_workflow(
-                workflow + "\n      - run: setup_shareware_test_data --download\n"
-            )
+            check_workflow(workflow + "\n      - run: setup_shareware_test_data --download\n")
         for original, replacement in (
             ("-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_BUILD_TYPE=Debug"),
             ("-DOpenGL_GL_PREFERENCE=LEGACY", "-DOpenGL_GL_PREFERENCE=GLVND"),
@@ -80,9 +77,7 @@ class DeveloperCompileCiTests(unittest.TestCase):
             verify_build(build)
             for bad in (
                 command.replace("-DDXX_XL_DEVELOPER_PROBE ", ""),
-                command.replace(
-                    "dxx-redux-d2-headless-metadata.dir", "dxx-redux-d2-headless.dir"
-                ),
+                command.replace("dxx-redux-d2-headless-metadata.dir", "dxx-redux-d2-headless.dir"),
             ):
                 with self.subTest(command=bad), self.assertRaises(ValueError):
                     commands.write_text(json.dumps([{**entry, "command": bad}]))
@@ -105,17 +100,16 @@ class DeveloperCompileCiTests(unittest.TestCase):
                     )
                 )
                 verify_build(build)
-            release_cache = cache.replace(
-                "CMAKE_BUILD_TYPE:STRING=Debug", "CMAKE_BUILD_TYPE:STRING=Release"
-            ) + "\nOpenGL_GL_PREFERENCE:STRING=LEGACY"
+            release_cache = (
+                cache.replace("CMAKE_BUILD_TYPE:STRING=Debug", "CMAKE_BUILD_TYPE:STRING=Release")
+                + "\nOpenGL_GL_PREFERENCE:STRING=LEGACY"
+            )
             (build / "CMakeCache.txt").write_text(release_cache)
             verify_build(build, "Release")
             with self.assertRaises(ValueError):
                 verify_build(build, "Debug")
             with self.assertRaises(ValueError):
-                (build / "CMakeCache.txt").write_text(
-                    release_cache.replace("LEGACY", "GLVND")
-                )
+                (build / "CMakeCache.txt").write_text(release_cache.replace("LEGACY", "GLVND"))
                 verify_build(build, "Release")
 
 

@@ -74,10 +74,10 @@ jobs:
         run: Add-Content "$env:GITHUB_ENV" "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT"
       - name: Configure the actual developer target
         run: cmake --preset=x86-release -S d2 -B build-xl-developer-windows -DVCPKG_TARGET_TRIPLET=x86-windows -DDXX_XL_DEVELOPER_TESTS=ON -DOPENGL=ON
-      - name: Compile and link the developer target
-        run: cmake --build build-xl-developer-windows --parallel 4 --target dxx-redux-d2-headless-metadata
+      - name: Compile and link the developer metadata and desktop targets
+        run: cmake --build build-xl-developer-windows --parallel 4 --target dxx-redux-d2-headless-metadata dxx-redux-d2
 
-  # This proves the opt-in lifecycle source compiles and links, not gameplay or runtime behavior.
+  # This proves the opt-in lifecycle and desktop sources compile and link, not gameplay or runtime behavior.
   developer-compile:
     needs: stack
     if: needs.stack.outputs.run == 'true'
@@ -127,13 +127,13 @@ jobs:
             libegl1-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libglew-dev \
             libsdl1.2-dev libsdl-mixer1.2-dev libphysfs-dev libpng-dev zlib1g-dev
 
-      - name: Compile D2 developer metadata target without running it
+      - name: Compile D2 developer metadata and desktop targets without running them
         timeout-minutes: 28
         run: |
           cmake -S d2 -B build-xl-developer-ci -G Ninja \
             -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             -DBUILD_TESTING=OFF -DOPENGL=ON -DDXX_XL_DEVELOPER_TESTS=ON
-          cmake --build build-xl-developer-ci --parallel 2 --target dxx-redux-d2-headless-metadata
+          cmake --build build-xl-developer-ci --parallel 2 --target dxx-redux-d2-headless-metadata dxx-redux-d2
           python3 android/XL_compat/tests/developer_compile_ci.py --verify-build build-xl-developer-ci
 
       - name: Prepare source-only developer probe packet

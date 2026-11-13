@@ -225,7 +225,7 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 			write_readiness(path, proof, "scene_failed");
 			return 1;
 		}
-		proof["assisted_scene"] = { { "object", index }, { "segment", segment }, { "particles", particles }, { "assisted", bool{ true } }, { "view", snow_point ? "near_live_snow_particle" : "mid_segment_toward_authored_face" }, { "camera_position_fixed", { camera.x, camera.y, camera.z } }, { "camera_pitch", camera_angles.p }, { "camera_bank", camera_angles.b }, { "camera_heading", camera_angles.h }, { "face_corners", surface ? surface->count : 0 }, { "effect_screenshot", effect_screenshot }, { "empty_particle_control", empty_screenshot }, { "effect_gl_error", effect_error } };
+		proof["assisted_scene"] = { { "object", index }, { "segment", segment }, { "particles", particles }, { "assisted", bool{ true } }, { "view", snow_point ? "near_live_snow_particle" : "mid_segment_toward_authored_face" }, { "camera_position_fixed", { int(camera.x), int(camera.y), int(camera.z) } }, { "camera_pitch", int(camera_angles.p) }, { "camera_bank", int(camera_angles.b) }, { "camera_heading", int(camera_angles.h) }, { "face_corners", surface ? surface->count : 0 }, { "effect_screenshot", effect_screenshot }, { "empty_particle_control", empty_screenshot }, { "effect_gl_error", effect_error } };
 		if (effect_error != GL_NO_ERROR) {
 			write_readiness(path, proof, "scene_failed");
 			return 1;
@@ -246,8 +246,8 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 	for (const auto &system : xl_compat::particle_systems()) {
 		const int index = system.object;
 		if (index < 0 || index > Highest_object_index || !system.count()) continue;
-		nlohmann::ordered_json owner = { { "object", index }, { "segment", Objects[index].segnum }, { "kind", kinds[system.emitter.index()] }, { "particles", system.count() } };
 		const int segment = Objects[index].segnum;
+		nlohmann::ordered_json owner = { { "object", index }, { "segment", segment }, { "kind", kinds[system.emitter.index()] }, { "particles", system.count() } };
 		if (image && segment >= 0 && segment < Num_segments &&
 		    (system.emitter.index() == 2 || system.emitter.index() == 3 || system.emitter.index() == 5)) {
 			owner["scene_view"] = "assisted_owner_position_segment_only";
@@ -370,7 +370,7 @@ int original_hxm_actor_proof(const char *mode, const char *path)
 	proof["actor_index"] = actor_index;
 	object *actor = &Objects[actor_index];
 	proof["authored_segment"] = 528;
-	proof["runtime_segment"] = actor->segnum;
+	proof["runtime_segment"] = int(actor->segnum);
 	const auto &robot = Robot_info[51];
 	if (robot.model_num != 75 || robot.n_guns != 2 || robot.gun_submodels[0] != 2 ||
 	    robot.gun_submodels[1] != 4 || robot.weapon_type != 21)
@@ -413,7 +413,7 @@ int original_hxm_actor_proof(const char *mode, const char *path)
 		    actor->shields != shields - i2f(7)) return fail("Warp 5 robot did not take combat damage");
 		proof["shot_weapon"] = 21;
 		proof["shields_before"] = shields;
-		proof["shields_after"] = actor->shields;
+		proof["shields_after"] = int(actor->shields);
 		stop_time();
 		char save[] = "warp5.sav", description[] = "Original Warp 5 combat";
 		if (!state_save_all_sub(save, description)) return fail("Warp 5 normal save failed");
@@ -423,7 +423,7 @@ int original_hxm_actor_proof(const char *mode, const char *path)
 		if (!state_restore_all_sub(save, 0) || Current_level_num != 5 || !xl_level_extensions_active() ||
 		    Objects[actor_index].shields != shields - i2f(7)) return fail("Warp 5 warm restore lost combat state");
 	} else {
-		proof["shields_after"] = actor->shields;
+		proof["shields_after"] = int(actor->shields);
 		if (actor->shields <= 0 || game_is_time_paused()) return fail("Warp 5 cold restore did not resume combat state");
 	}
 	game_render_frame_mono(0);
