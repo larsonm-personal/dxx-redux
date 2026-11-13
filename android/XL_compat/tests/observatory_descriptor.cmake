@@ -56,6 +56,13 @@ endif()
 if(NOT
    stdout
    MATCHES
+   "Prepared native HAM: independent equal-count target, complete destinations, owned models, move and malformed discard passed"
+)
+    message(FATAL_ERROR "Independent native HAM destination controls did not finish")
+endif()
+if(NOT
+   stdout
+   MATCHES
    "Retained dependency definitions: weapons, powerups, animations, textures and sound mappings ignore previous live tables; invalid candidate rejects"
 )
     message(FATAL_ERROR "Retained mission dependency definition controls did not finish")
