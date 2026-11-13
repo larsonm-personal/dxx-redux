@@ -432,6 +432,8 @@ extern "C" void xl_named_audio_frame(void)
 		resume_pending = false;
 	}
 	xl_audio_sync_objects();
+	AudioLock lock;
+	if (!looping.matches(mixer)) looping = {};
 }
 extern "C" void xl_named_audio_stop(void)
 {
@@ -612,10 +614,7 @@ std::int64_t source_duration(const WaveChannels &source, unsigned rate)
 
 nlohmann::json named_audio_snapshot()
 {
-	// A removed native object can precede its next frame update. Save its stopped
-	// lifetime, never an active channel bound to a different object signature
-	xl_audio_destroy_object(-1, -1);
-	std::array<AudioVoice, audio_voice_limit> voices;
+	AudioVoices saved_mixer;
 	AudioOwners saved_owners;
 	LoopingAudioState saved_loop;
 	std::uint64_t next;
@@ -623,15 +622,16 @@ nlohmann::json named_audio_snapshot()
 	unsigned slowdown;
 	{
 		AudioLock lock;
-		owners.reconcile(mixer);
-		if (!looping.matches(mixer)) looping = {};
 		saved_loop = looping;
 		saved_owners = owners;
-		voices = mixer.voices;
+		saved_mixer.voices = mixer.voices;
 		next = mixer.next_serial;
 		cursor = mixer.cursor;
 		slowdown = mixer.slowdown;
 	}
+	normalize_linked_audio_snapshot(saved_owners, saved_mixer);
+	if (!saved_loop.matches(saved_mixer)) saved_loop = {};
+	const auto &voices = saved_mixer.voices;
 	nlohmann::json state = { { "source", bank ? bank->identity : "" }, { "rate", output_rate }, { "next", next }, { "cursor", cursor }, { "events", nlohmann::json::array() }, { "voices", nlohmann::json::array() } };
 	state["slowdown"] = slowdown;
 	state["transition"] = transition_serial;

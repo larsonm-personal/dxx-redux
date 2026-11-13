@@ -58,3 +58,22 @@ owner. XL selection, resource policy and candidate ownership belong in
 `android/XL_compat`. No native parser duplication, private-global exports or hidden
 implementation includes. Authentic inputs, pinned reference, frozen readiness,
 required private membership and timeouts remain unchanged.
+
+## Next bounded slice: audio observation ownership
+
+The existing `named_audio_snapshot()` calls missing-object retirement and
+reconciliation on live owners/mixer state and clears a stale live loop binding.
+This can make a rejection-state observation change future playback. Keep the
+serialized schema and existing save normalization semantics; copy the fixed
+voice/owner state under its existing lock and normalize only those copies.
+Retain live retirement at the existing audio frame/owner lifecycle boundary,
+including stale loop cleanup. Do not add observer fields or private-global APIs.
+
+Before accepting the change, extend the existing linked-audio owner with an
+active voice whose native object signature has changed. Repeated snapshots must
+leave raw owner/channel/counter state unchanged, while producing the same valid
+stopped-lifetime save representation. Compare subsequent real PCM with an
+unobserved control, then require the normal frame update to retire the owner.
+Run the affected canonical audio owner and assertions-enabled control, rebuild
+ordinary runtime targets, retain failures, and publish only after a coherent local
+checkpoint. This addresses observation purity, not whole-save atomicity.
