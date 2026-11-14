@@ -98,6 +98,7 @@ int bm_read_xl_extra_robots(const char *filename);
 #endif
 int bm_validate_level_hxm(PHYSFS_file *fp);
 int bm_validate_xl_level_hxm(PHYSFS_file *fp);
+int bm_validate_hxm_for_tables(PHYSFS_file *fp, int robots, int joints, int models, int xl_deferred);
 void bm_reset_mission_compatibility_warnings(void);
 void bm_reset_level_compatibility_warnings(void);
 int bm_compatibility_warning_count(void);

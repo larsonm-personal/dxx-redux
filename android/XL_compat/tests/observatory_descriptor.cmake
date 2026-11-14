@@ -60,6 +60,10 @@ if(NOT
 )
     message(FATAL_ERROR "Independent native HAM destination controls did not finish")
 endif()
+if(NOT stdout MATCHES
+   "Incoming resource definitions: retained graph and native ownership transfer passed")
+    message(FATAL_ERROR "Incoming resource graph and publication controls did not finish")
+endif()
 if(NOT
    stdout
    MATCHES

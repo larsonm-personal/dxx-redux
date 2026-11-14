@@ -61,5 +61,8 @@ typedef struct bm_ham_destination {
  * The model reader owns allocation/error handling and returns zero on failure */
 int bm_read_xl_ham_into(PHYSFS_file *fp, const bm_ham_destination *destination,
                       int (*read_model)(polymodel *, PHYSFS_file *));
+/* Publish a completely decoded native-capacity destination without I/O or
+ * allocation. Model payload ownership transfers to the native tables */
+void bm_install_xl_ham(bm_ham_destination *source);
 #endif
 #endif
