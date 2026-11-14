@@ -43,6 +43,7 @@
 #include "u_mem.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
+#include "guidebot_goal_message.h"
 #endif
 
 #include "input_demo_newdemo_shared.h"
@@ -188,6 +189,8 @@ static void input_demo_fill_extra_player_cfg(
 #ifdef DXX_BUILD_DESCENT_II
 	cfg->has_headlight_active_default = 1;
 	cfg->guidebot_routing_mode = (uint8_t) guidebot_routing_mode();
+	cfg->has_guidebot_goal_message = 1;
+	cfg->guidebot_goal_message = (uint8_t) escort_goal_message_persistent();
 	cfg->headlight_active_default =
 	    PlayerCfg.HeadlightActiveDefault;
 #else

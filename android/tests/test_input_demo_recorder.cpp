@@ -2249,6 +2249,7 @@ static int expect_environment_recording(void)
 	    !check(input_demo_recorder_begin_input_batch(1, 0, 1092, error, sizeof(error)))) return 1;
 	auto changed = settings.player_cfg;
 	changed.auto_leveling = changed.original_homing = 1;
+	changed.has_guidebot_goal_message = changed.guidebot_goal_message = 1;
 	std::swap(changed.primary_order[0], changed.primary_order[1]);
 	if (!check(input_demo_recorder_observe_player_cfg(1092, &changed, 1, error, sizeof(error))) ||
 	    !check(input_demo_recorder_observe_player_cfg(1092, &changed, 1, error, sizeof(error))) ||
@@ -2265,8 +2266,9 @@ static int expect_environment_recording(void)
 	const auto &ops = recorded.frames[0].dispatch.operations;
 	if (recorded.metadata.player_cfg.auto_leveling || ops.size() != 3 ||
 	    ops[0].kind != INPUT_DEMO_INPUT_PLAYER_CFG || !ops[0].player_cfg.auto_leveling ||
+	    !ops[0].player_cfg.has_guidebot_goal_message || !ops[0].player_cfg.guidebot_goal_message ||
 	    ops[0].player_cfg.primary_order[0] != 1 || ops[1].kind != INPUT_DEMO_INPUT_SAMPLE ||
-	    ops[2].kind != INPUT_DEMO_INPUT_PLAYER_CFG || ops[2].player_cfg.auto_leveling ||
+	    ops[2].kind != INPUT_DEMO_INPUT_PLAYER_CFG || ops[2].player_cfg.auto_leveling || ops[2].player_cfg.has_guidebot_goal_message ||
 	    recorded.input_tail.dispatch.operations.size() != 1 ||
 	    !recorded.input_tail.dispatch.operations[0].player_cfg.original_homing)
 		return report_failure("ordered configuration changed its baseline, order, deduplication or tail");
@@ -2289,8 +2291,13 @@ static int expect_environment_recording(void)
 		return !input_demo_file_parse_text(encoded, &parsed, &detail);
 	};
 	for (const auto &item : rows[1]["dispatch"]["ops"][0]["value"].items())
-		if (!rejects([&](auto &value) { value.erase(item.key()); })) return report_failure("incomplete settings operation accepted");
+		if (item.key() != "guidebot_goal_message" && !rejects([&](auto &value) { value.erase(item.key()); }))
+			return report_failure("incomplete settings operation accepted");
+	if (rejects([](auto &value) { value.erase("guidebot_goal_message"); }))
+		return report_failure("absent optional Guidebot message preference rejected");
 	if (!rejects([](auto &value) { value["original_homing"] = true; }) ||
+	    !rejects([](auto &value) { value["guidebot_goal_message"] = 2; }) ||
+	    !rejects([](auto &value) { value["guidebot_goal_message"] = true; }) ||
 	    !rejects([](auto &value) { value["auto_leveling"] = 2; }) ||
 	    !rejects([](auto &value) { value["primary_order"][0] = 255; }) ||
 	    !rejects([](auto &value) { value["future_setting"] = 1; })) return report_failure("invalid settings operation accepted");

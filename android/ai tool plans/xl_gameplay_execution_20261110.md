@@ -5386,10 +5386,61 @@ persistent_message (host 0, Android 1) at restored/frame/terminal boundaries;
 FX still fails on the 1,500 startup starfield draws. Neither field nor events are
 removed. Evidence: android-water-route-comparison/comparison.json.
 
-PR 491 applicable public checks pass. Private run 43518726105 passes exact head
+PR 491 applicable public checks were still running at the initial 14:42 snapshot
+(save integrity and ASan); both are terminal PASS by 14:49. Private run 43518726105 passes exact head
 d165257330daaad3d61a5f93a6959f5e866af96b in 752.991 seconds, with the pinned asset
 commit and manifest unchanged: 113 required owners, 16 witnesses, three modern
 levels and four assisted anchors; camera remains not_run_missing_addon. Controller
 bf40de9bc3b85c2279fe8163c621bb6c052dec12 is unchanged. Scoped quality passes;
 catalog membership is unchanged. PR 490 headed replay parity passes; its independent
 native admission timeout is retrying as attempt 2. Sampled readiness remains 4/8.
+
+### Recorded Guide-Bot message preference - November 13, 15:02 PST
+
+Fresh D2 recordings now carry optional guidebot_goal_message in the existing
+player configuration. Capture uses the native getter; initial and ordered replay
+use its setter. Presence is explicit, values must be integer 0/1, and absent
+fields retain existing playback behavior. No immutable fixture or observer field
+changes. The shared C/C++ structure remains its asserted 64-byte size.
+
+Windows D1/D2 and Linux D2 parser/recorder tests pass. The first Windows recorder
+test fails because its generic loop assumes every emitted field is mandatory;
+the revised test retains all prior required-field rejection checks and explicitly
+tests this new optional field's absence and invalid values. That failure remains
+message-preference-tests-d2-windows.log. Scoped quality passes. Windows and Linux
+canonical water capture/replay pass with an explicit recorded false preference.
+Ordinary Windows cold playback exits normally in 60.83 seconds; all 1,235 object
+frames, 1,239 world records, 196 SIM and 1,808 FX events match.
+
+Android optimized Debug probe 024b3933f8c6e6f62326d6f04dd46e9ced440f49df1be8e3a20ac69d86a35603
+passes all 1,235 object frames, 1,239 world records, 196 SIM events and the exact
+terminal result. Restore-to-terminal is 64.541 seconds. The strict FX comparison
+still FAILS on 1,500 startup starfield draws (3,308 actual versus 1,808 captured);
+events are not removed. This resolves the preference mismatch, not full G6.
+Protected profile manifests both hash to
+762f6f62af24134580d9c530da161d9276ea426fa3fca40ad44549d21e621f21.
+The ordinary three-ABI APK builds with developer probes OFF, contains D1/D2 for
+arm64-v8a, armeabi-v7a and x86_64, and passes the existing Android water owner
+59/59 in 33.257 seconds. SHA-256:
+c22bef362c0a6eb8a6347056544972aa8ebfbc3c841308b4f0aad0639b8ebe8f.
+
+Evidence under temp/xl-resource-tranche-20261113: water-message-{windows,linux},
+replay-message-water-clean, android-water-message-result/comparison and
+message-preference-identities.json. Windows metadata binary
+a8eec7bd29342d5e26ef229a376051a4663b0ab34139a3a1947d92fc295ae4e4;
+Linux metadata a86ca1ac1ef288c9e317dc4f7052d414cf9a013af6ece0ca2efd9230c2f70dda;
+Windows D2 0d68dacdc590a32784364093357ba75155b578b1152eb03853ce255c0d623eee;
+Windows D1 5ae0ccfa8e86f35ea21bbb21501d13d442e183f99a4faa80c0efb1368e05af6e;
+native capture bdfd20e2f8390f4176c243c6a75d8ebed3e87ef93da69d39a5e4a93ef833657e.
+Original arena hashes and the explicit water-physics assist remain unchanged.
+
+Current Windows birth and cold-birth continuation pass. The whole-save negative
+control still FAILS: corrupt XL trailer rejects after energy changes from 91 to 100. Receipt birth-message-current-02/birth-invalid-restore.json records
+5963776 -> 6553600, accepted=false, natural exit 1. The first reproduction omitted
+the prerequisite birth save and failed setup; birth-message-current preserves it.
+No trailer-layout regression was established. Full G2 remains OPEN.
+
+PR 490 retry attempt 2 now passes both native admission and headless playback:
+run 43510687964, job 132210963930, unchanged deadline/assertions. PR 492 is published
+at f4d83ef75a6c1a5a7ae9795954d9e5ae8b54c6b3, immediate parent PR 491, linked to
+stack 471. Its public/private qualification is still in progress at this snapshot.
