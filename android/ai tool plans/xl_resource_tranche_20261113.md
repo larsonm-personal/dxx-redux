@@ -263,3 +263,41 @@ retained map alongside HAM definitions without allocation. Extend the canonical
 descriptor owner with outgoing corruption, independent retained values, moves,
 discard and publication checks. This closes a native metadata gap required before
 bank replacement; it does not claim native bank or whole-world atomic publication.
+
+## Source-bound developer checkpoint recording
+
+The existing XL developer export adapter already writes Android's real mod-source
+trailer through the shared codec. Connect native quick checkpoint recording to
+that adapter in the existing DXX_XL_CHECKPOINT_EXPORT target only. Capture source
+definitions, extra HAM identities and level sources at the same native lifecycle
+points as Android; keep export after native save completion and before recorder
+embedding. Failed export rejects recording and deletes its owned temporary save.
+Do not rewrite a finished recording, duplicate the trailer format, or relax the
+Android source guard. Qualify a fresh canonical water capture on Windows/Linux,
+ordinary Windows playback, then the explicitly labeled Android probe. General
+Android timeline acceptance and ordinary desktop writer expansion remain outside
+this developer-export checkpoint.
+
+The first source-bound Android probe restores and matches the terminal result,
+but produces no detailed traces because Android intentionally ignores d2x.ini.
+Keep that platform policy. Explicit Android XL developer probes supply adjacent
+state/RNG paths through an XL_compat helper and a thin common-parser hook; existing
+explicit paths take priority. The canonical water runner requires both traces,
+retains a terminal result even if trace collection fails, and restores the device
+profile. General production admission stays gated pending broader qualification.
+
+The probe also logs the native Players-directory assertion for the recorder's
+owned temporary save. Respect SysUsePlayersDir when choosing and removing that
+private directory in the shared D1/D2 replay owner. Preserve the native assertion,
+exclusive temporary names and cleanup; qualify the corrected Android restore path.
+
+Full Android tracing reaches only frame 797/1235 in the existing 120-second limit
+on the first attempt; retain its partial gzip and timeout receipt. Optimizing only
+four trace units improves throughput but still times out. Temporary timing shows
+JSON snapshot construction and retirement dominate, with serialization also costly
+and comparison below one millisecond per frame. Retain those receipts and remove
+the temporary instrumentation and partial optimization. Use an explicitly optimized
+Debug Android developer probe (-O1), with assertions and strict FP retained across
+the target's translation units. Ordinary APK configuration remains unchanged.
+Require complete detailed comparison and terminal equality; do not remove fields,
+change simulation settings or extend the deadline to accommodate tracing.

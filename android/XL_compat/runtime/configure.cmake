@@ -16,6 +16,11 @@ foreach(xl_target IN LISTS xl_targets)
     target_compile_definitions(${xl_target} PRIVATE DXX_XL_RUNTIME)
     if(DXX_XL_DEVELOPER_TESTS)
         target_compile_definitions(${xl_target} PRIVATE DXX_XL_DEVELOPER_PROBE)
+        if(ANDROID)
+            # Full diagnostic snapshots need optimized templates across translation units Explicit
+            # probes retain Debug assertions and the existing strict FP options
+            target_compile_options(${xl_target} PRIVATE "$<$<CONFIG:Debug>:-O1>")
+        endif()
     endif()
     target_include_directories(${xl_target} PRIVATE "${xl_runtime_dir}")
     target_sources(

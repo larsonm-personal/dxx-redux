@@ -22,6 +22,9 @@ int xl_time_equipment_draw(struct object *actor);
 uint32_t xl_time_equipment_restore_hint(uint32_t equipment);
 const char *xl_omega_input_demo_error(void);
 const char *xl_input_demo_backend_error(void);
+#if defined(__ANDROID__) && defined(DXX_XL_DEVELOPER_PROBE)
+int xl_input_demo_probe_traces(const char *replay, const char **state, const char **rng);
+#endif
 const char *xl_input_demo_profile_error(void);
 void xl_input_demo_observe(const char *consumer, int subject, input_demo_environment_clock *clock);
 int xl_input_demo_saved_environment(input_demo_environment_clock *clock);
