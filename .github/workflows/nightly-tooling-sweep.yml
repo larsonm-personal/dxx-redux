@@ -620,6 +620,10 @@ jobs:
           rm -rf -- "$PWD/pumo-input" "$RUNNER_TEMP/pumo-pinned-stage" "$RUNNER_TEMP/pumo-stage-python"
       # No candidate checkout, executable, original resource or private artifact is published.
 
+  execution-stack:
+    needs: plan
+    uses: ./.github/workflows/stack-ci.yml
+
   nightly_release:
     name: Nightly XL developer Release compile
     needs: plan
@@ -651,10 +655,6 @@ jobs:
           cmake -S target/d2 -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTING=OFF -DOPENGL=ON -DOpenGL_GL_PREFERENCE=LEGACY -DDXX_XL_DEVELOPER_TESTS=ON
           cmake --build build --parallel 2 --target dxx-redux-d2-headless-metadata
           python3 control/android/XL_compat/tests/developer_compile_ci.py --verify-build build --mode Release
-
-  execution-stack:
-    needs: plan
-    uses: ./.github/workflows/stack-ci.yml
 
   android:
     name: ${{ matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests' }}
