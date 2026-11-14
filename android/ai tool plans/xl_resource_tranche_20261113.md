@@ -77,3 +77,13 @@ and dependency binding stay in `android/XL_compat`. This does not yet promise an
 atomic replacement of installed renderer/audio banks or whole-world state. POG
 clock/HUD checks, publication allocation and level/source context remain separate
 boundaries to finish or explicitly constrain before tranche acceptance.
+
+## Retained-owner shutdown ordering
+
+The fresh Linux Debug water owner passes functional assertions but emits an
+untracked native free at process exit. A GDB receipt shows the memory tracker's
+exit sweep runs before the static prepared-resource owner destroys an uninstalled
+`NativeModel`. Register prepared-resource retirement when it first enters the
+global owner, after native memory initialization, so its native allocations are
+released before that sweep. This addresses owner lifetime rather than suppressing
+the tracker. Verify the same canonical water path and retain the failing trace.

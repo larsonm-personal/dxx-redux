@@ -20,7 +20,7 @@ execute_process(
     ERROR_VARIABLE stderr
     TIMEOUT 90)
 file(WRITE "${OUTPUT}/water.log" "${stdout}${stderr}")
-if(NOT result EQUAL 0)
+if(NOT result EQUAL 0 OR stdout MATCHES "MEM_FREE_NOMALLOC" OR stderr MATCHES "MEM_FREE_NOMALLOC")
     message(FATAL_ERROR "Water arena failed (${result}): ${stdout}${stderr}")
 endif()
 if(NOT stdout MATCHES "Arena spawn input recording: segment=")
@@ -41,6 +41,8 @@ execute_process(
     TIMEOUT 60)
 file(WRITE "${OUTPUT}/spawn-replay.log" "${replay_stdout}${replay_stderr}")
 if(NOT replay_result EQUAL 0
+   OR replay_stdout MATCHES "MEM_FREE_NOMALLOC"
+   OR replay_stderr MATCHES "MEM_FREE_NOMALLOC"
    OR NOT replay_stdout MATCHES "Input demo replay result matched embedded trailer"
    OR replay_stdout MATCHES "mismatch"
    OR NOT replay_stdout MATCHES "Arena spawn replay completed through native ordered input")
