@@ -133,7 +133,7 @@ jobs:
           name: ${{ inputs.plan_artifact }}
           path: plan
       - name: Select bounded shard
-        if: inputs.shard != ''
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && inputs.shard != ''
         env:
           SHARD: ${{ inputs.shard }}
         run: |
@@ -165,6 +165,7 @@ jobs:
                   output.write(f"{name}={str(needed).lower()}\n")
           PYTHON
       - name: Prepare trusted asset staging
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true')
         run: |
           mkdir -p results control/android/temp control/temp "$RUNNER_TEMP/dxx-nightly-deps"
           printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > control/dependency_base.txt

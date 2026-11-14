@@ -336,7 +336,7 @@ jobs:
           retention-days: 30
 
   host:
-    name: Linux tests ${{ matrix.shard }}
+    name: ${{ matrix.shard != '' && format('Linux tests {0}', matrix.shard) || 'Linux tests' }}
     strategy:
       fail-fast: false
       max-parallel: 16
