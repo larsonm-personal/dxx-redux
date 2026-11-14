@@ -65,6 +65,35 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 	const auto live_ship = only_player_ship;
 	const int live_cockpits = Num_cockpits, live_marker = Marker_model_num;
 	{
+		const auto shadow = std::filesystem::absolute(directory / "base-shadow");
+		std::filesystem::create_directories(shadow);
+		write_bytes((shadow / "descent2.ham").string().c_str(), { 'b', 'a', 'd' });
+		const auto physical = shadow.string();
+		require(PHYSFS_mount(physical.c_str(), nullptr, 0), "Cannot mount outgoing base HAM shadow");
+		struct Unmount {
+			const std::string &physical;
+			~Unmount()
+			{
+				PHYSFS_unmount(physical.c_str());
+			}
+		} unmount{ physical };
+		require(std::string(PHYSFS_getRealDir("descent2.ham")) == physical, "Base HAM shadow did not control logical lookup");
+		const auto shadow_lookup = lookup_state();
+		auto base = XlPreparedResources::prepare_mission(mission);
+		require(base->dependencies().weapon_count == N_weapon_types &&
+		            base->dependencies().weapon_data[CONCUSSION_ID].energy_usage == energy &&
+		            base->dependencies().model_data[0].model_data != Polygon_models[0].model_data &&
+		            base->sources().count("descent2.ham"),
+		        "Incoming base HAM used shadowed lookup or outgoing definitions");
+		XlPreparedResources moved(std::move(*base));
+		base.reset();
+		require(moved.dependencies().weapon_data[CONCUSSION_ID].energy_usage == energy &&
+		            gameplay_definitions() == outgoing && Current_mission == live_mission && lookup_state() == shadow_lookup,
+		        "Incoming base HAM move changed live definitions or lookup");
+	}
+	require(lookup_state() == lookup_before && gameplay_definitions() == outgoing,
+	        "Incoming base HAM discard changed live definitions or lookup");
+	{
 		XlPreparedHam target(mission, "prepham.ham");
 		const auto &tables = target.tables();
 		require(*tables.N_weapon_types == N_weapon_types &&
@@ -246,6 +275,7 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 	std::cout << "Prepared native HAM: independent equal-count target, complete destinations, owned models, move and malformed discard passed\n";
 	std::cout << "Incoming resource definitions: retained graph and native ownership transfer passed\n";
 	std::cout << "Incoming resource banks: independent bitmap and sound validation, malformed discard passed\n";
+	std::cout << "Incoming base HAM: captured origin ignores logical shadow, independent definitions, move and discard passed\n";
 }
 extern "C" int xl_test_fail_identity_allocation(int allocation)
 {

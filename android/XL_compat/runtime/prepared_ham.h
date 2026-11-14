@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 extern "C" {
 #include "bm_ham.h"
 #include "mission_prepare.h"
@@ -16,6 +17,7 @@ class XlPreparedHam
 	explicit XlPreparedHam(mission_preparation *mission, const char *member);
 	// The caller establishes source ownership; the file remains caller-owned
 	explicit XlPreparedHam(PHYSFS_file *file);
+	explicit XlPreparedHam(std::vector<unsigned char> bytes);
 	static XlPreparedHam extra(PHYSFS_file *file);
 	int extra_bitmap_count() const;
 	int extra_pointer_count() const;

@@ -501,6 +501,7 @@ extern "C" void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file
 		auto corrected = startup_ham_name;
 		const char *origin = PHYSFSEXT_locateCorrectCase(corrected.data()) == 0 ? PHYSFS_getRealDir(corrected.c_str()) : nullptr;
 		startup_origin = origin ? origin : "";
+		if (origin) startup_ham_name = corrected;
 		startup_bank_sources.clear();
 		// Both banks matter: playback may fall back and authored durations use the canonical bank
 		for (std::size_t i = 0; i < sound_banks.size(); ++i) {
@@ -1163,15 +1164,22 @@ std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_mission(missio
 	if (mission && (!mission_prepared_descriptor(mission) || mission_prepared_descriptor(mission)->descent_version != 2))
 		throw std::runtime_error("Incoming resource preparation requires a D2 descriptor");
 	const auto ham = owned_mod_file(".ham", {}, mission);
-	if (ham.empty()) throw std::runtime_error("Incoming mission has no owned HAM definitions");
 	XlPreparedHam incoming = [&] {
+		if (ham.empty()) {
+			if (startup_ham_hash.empty() || startup_origin.empty())
+				throw std::runtime_error("Incoming mission has no trusted startup HAM origin");
+			auto bytes = xl_retain_origin_resource(startup_origin, startup_ham_name);
+			if (picosha2::hash256_hex_string(bytes) != startup_ham_hash)
+				throw std::runtime_error("Captured startup HAM changed before incoming preparation");
+			return XlPreparedHam(std::move(bytes));
+		}
 		auto file = incoming_owned_file(mission, ham);
 		return XlPreparedHam(file.get());
 	}();
 	const auto hash = incoming.source_hash();
 	auto result = std::make_unique<XlPreparedResources>(std::move(incoming));
 	result->state->complete_mission = true;
-	result->state->definition_sources[ham] = hash;
+	result->state->definition_sources[ham.empty() ? resource_key(startup_ham_name) : ham] = hash;
 	const auto hxm = owned_mod_file(".hxm", {}, mission);
 	if (!hxm.empty()) {
 		auto replacement = incoming_owned_file(mission, hxm);
