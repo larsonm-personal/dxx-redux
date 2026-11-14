@@ -5545,3 +5545,20 @@ restored all 26 original files with exact before/after hashes, retaining the
 archive and failed state. New dated report, next plan and kickoff document the
 interruption, Windows Debug timeouts, missing final capture/replay qualification
 and unchanged 4/8 result. Publication and exact-head CI inspection follow.
+
+PR 497 is published non-draft on 494 and linked stack 471. Code head
+37276daac3630e8ef63780427992c7b998a9fb8d, merge candidate
+c065987496dfa4a00ad2ddabf83beee3887aeb0f. Current controller is
+72fdd76f5f8dc24a787b3a4858de1115ec091c19; readiness runner/catalog/verifier are
+unchanged. Private run 43627821931 attempt 1 is pending/running, not pass.
+Recovered Android full owner now passes 145 named-audio and 64 seismic steps;
+both original profiles restore exactly. Windows Debug runtime timeouts and
+missing final capture/clean-playback qualification remain open. Current-head CI
+and final documentation-push checks must not be confused with baseline greens.
+
+The corrected committed-readiness-02 receipt completed at exactly 4/8 on
+37276daac3630e8ef63780427992c7b998a9fb8d with the frozen cohort, ordinary target
+and unchanged 120-frame criterion. The first receipt's trailing-CR SHA metadata
+defect is retained separately. Android final run IDs are
+ff652cf7dc1f4279bd2c1ad1881ecc99 (145/145) and
+5dc4f8bec53646b29fe1d8f11593b122 (64/64); before/after profiles match.

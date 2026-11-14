@@ -87,3 +87,81 @@ startup FX has 1,500 extra draws; camera needs its pinned addon; Windows Debug
 timeouts remain open. No G2-G7, 90% playability or unassisted campaign claims.
 Untested native sound stash 9783012e2a77dfdd4680812ae72b852cfaca5e17 and all other
 stashes remain untouched. Unrelated .codex/ stays untracked.
+
+## Resumed validation and publication receipt
+
+Published non-draft PR https://github.com/larsonm-personal/dxx-redux/pull/497
+directly on #494 and linked native stack 471. Code candidate/head:
+37276daac3630e8ef63780427992c7b998a9fb8d; synthetic merge:
+c065987496dfa4a00ad2ddabf83beee3887aeb0f. No merge was performed.
+Current trusted controller advanced to
+72fdd76f5f8dc24a787b3a4858de1115ec091c19 during the interruption. Its readiness
+runner/catalog/retail verifier compare byte-for-byte equal to this candidate.
+Private qualification run 43627821931, attempt 1, targets this exact code head:
+https://github.com/larsonm-personal/dxx-redux/actions/runs/43627821931
+It is still pending/running at this receipt, not a pass. Request workflow
+43627807247 succeeds only as a dispatcher.
+
+After recovery, the final ordinary APK passes the complete Android owner:
+xsound 145/145, run ff652cf7dc1f4279bd2c1ad1881ecc99; xseismic 64/64,
+run 5dc4f8bec53646b29fe1d8f11593b122. Both before/after profile hashes match.
+Exact receipts: android-named-audio-04.log and android-final-receipts.json.
+Earlier race/transport failures remain retained, not replaced by these passes.
+
+The committed ordinary headless cohort again measures 4/8. The first committed
+receipt records a trailing carriage return in its SHA argument; it is retained
+as a metadata defect. The same frozen cases completed again at 4/8 in
+committed-readiness-02 with the exact clean candidate SHA, unchanged inputs,
+assertions and deadlines.
+All four successful sampled loads have XL extensions inactive. This is not
+four qualified XL campaigns. A documentation-only follow-up records these
+outcomes and receives its own CI cycle, which must be inspected separately.
+
+### CI snapshot before documentation-only push
+
+2026-11-14T18:43:35.396443+00:00; code head 37276daac3630e8ef63780427992c7b998a9fb8d. Pending is not pass.
+
+| Check owner                                          | Outcome     | Receipt                                                                                        |
+| ---------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------- |
+| Android tests / Run selected tests                   | IN_PROGRESS | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807206/job/132547753300) |
+| JVM tests / Run selected tests                       | IN_PROGRESS | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807206/job/132547753227) |
+| Linux tests                                          | IN_PROGRESS | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807206/job/132547753066) |
+| execution-stack / check                              | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807206/job/132547713037) |
+| Two-player lobby to game / Run selected tests        | IN_PROGRESS | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807210/job/132547674531) |
+| scripts and ci tests (windows-2022)                  | IN_PROGRESS | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807268/job/132547582001) |
+| scripts and ci tests (ubuntu-24.04)                  | IN_PROGRESS | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807268/job/132547581980) |
+| Asset-free XL checks (ubuntu-24.04)                  | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807250/job/132547558303) |
+| XL developer source compile (no game assets)         | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807250/job/132547558315) |
+| Select tests                                         | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807206/job/132547559063) |
+| XL developer source compile (Windows x86)            | IN_PROGRESS | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807250/job/132547558287) |
+| Asset-free XL checks (windows-2022)                  | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807250/job/132547558339) |
+| Linux d1 build and tests                             | IN_PROGRESS | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807273/job/132547551321) |
+| Linux public build and save integrity                | IN_PROGRESS | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807214/job/132547552506) |
+| Linux d2 build and tests                             | IN_PROGRESS | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807273/job/132547551347) |
+| Linux public ASan runtime                            | IN_PROGRESS | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807273/job/132547551293) |
+| Verify pinned Pumo staging                           | SKIPPED     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807206/job/132547560623) |
+| XL developer Release source compile (no game assets) | SKIPPED     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807250/job/132547559457) |
+| server                                               | SKIPPED     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807281/job/132547555351) |
+| stack / check                                        | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807214/job/132547509976) |
+| CI policy and runner checks                          | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807273/job/132547509929) |
+| Select public LAN smoke                              | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807210/job/132547510025) |
+| stack / check                                        | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807273/job/132547510142) |
+| stack / check                                        | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807268/job/132547510144) |
+| stack / check                                        | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807281/job/132547509864) |
+| stack / check                                        | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807250/job/132547509983) |
+| Signal exact PR head for trusted XL qualification    | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807247/job/132547509779) |
+| Workflow syntax                                      | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807268/job/132547509927) |
+| Automation catalogs                                  | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807268/job/132547510173) |
+| stack / check                                        | SUCCESS     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807206/job/132547510838) |
+| Inspect retained online receipt                      | SKIPPED     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807206/job/132547512083) |
+| Export public timing evidence                        | SKIPPED     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627807210/job/132547511206) |
+| XL asset smoke (private assets)                      | PENDING     | [job](https://github.com/larsonm-personal/dxx-redux/actions/runs/43627821931)                  |
+
+All listed workflow runs are attempt 1: 43627807247, 43627807281, 43627807214, 43627807250, 43627807268, 43627807273, 43627807210, 43627807206.
+
+Skip reasons: Release developer compile is restricted to two named Pumo branches;
+Pumo staging requires explicit workflow_dispatch/campaign; online receipt inspection
+and public timing export require an evidence_run_id; Rust gate omits unrelated
+changes (its actual log says native non-tip or unrelated changes). These are not
+passing tests. Dynamic downstream owners still pending are not silently omitted;
+retain pr497-checks-handoff.json and pr497-private-jobs-02.json for the snapshot.

@@ -12,8 +12,9 @@ Prioritize unchanged 8/8 ordinary headless 120-frame readiness, currently 4/8.
 First reproduce exact frozen-cohort failures and revise the estimate (three
 further tranches, range two to four, low confidence). Preserve private diagnostics.
 No rerolls, deadline/assertion relaxation, substitute probes, rendered/assisted
-qualification or admission removal without implementing requirements. Recover the
-Android backup before testing; refresh current local/remote/parent/stack 471 and CI.
+qualification or admission removal without implementing requirements. Verify the
+Android recovery receipt and any newer backup before testing; refresh current
+local/remote/parent/stack 471 and CI.
 
 Only demonstrated readiness-dependent resource work or explicit G2 priority:
 reuse native codecs, owned incoming definitions/origins and retained decoded owners;

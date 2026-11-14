@@ -7,7 +7,8 @@ resource plan, and execution ledger G2-G7/latest entries.
 
 1. Refresh HEAD/tree/stashes/origin/immediate parent/stack 471 and exact current CI.
    Fix applicable failures; old green runs, pending and dispatchers are not pass.
-2. Recover/verify the interrupted Android backup before tests. Preserve failures,
+2. Verify the November 14 Android recovery receipt (26 original files matched)
+   and restore any newer interrupted backup before tests. Preserve failures,
    authentic inputs and unrelated work.
 3. Reproduce frozen assets 9dad21bd65ba05665ac6fe315f37fe7461e85725 with the exact
    ordinary developer-OFF headless 120-frame owner. Current readiness is 4/8.
