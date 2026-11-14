@@ -201,3 +201,12 @@ allocation, not all native-bank, GPU, metadata-map or whole-world boundaries.
 The published level owner/name must also remain unchanged when audio validation
 fails: allocate the name first, install prepared audio/messages, then transfer the
 global resource owner and name through nonallocating moves.
+
+## Android audio readiness
+
+The first device audio run passed real PCM checks but rejected resume while a
+graphics trial was active (pause reasons 9, result 2). Require the existing
+graphics safety phase to be idle at initial gameplay readiness in the four
+canonical audio scripts. Keep all existing audio assertions and timeouts; do not
+disable graphics safety or retry a rejected engine action. Rerun the complete
+serial owner and preserve the original failure and profile restoration receipts.
