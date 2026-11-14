@@ -5468,3 +5468,17 @@ Historical private failures on PRs 478 and 479 are the preview deadline defect
 fixed in PR 480 and qualified on later candidates. They are not relabeled green.
 No readiness failure is suppressed. The dated report, next plan and copy/paste
 kickoff carry the exact current binary/input receipts and remaining G2 defect.
+
+At 16:21 PST, implementation PR 493 and handoff PR 494 have terminal public/private
+results with only sampled readiness failing. PR 493: 31 pass / 8 intentional skip;
+PR 494: 33 pass / 6 intentional skip; neither has a pending check. PR 494 native
+save/replay and headed replay owners both pass, whereas the older PR 493's later
+replay jobs were excluded by the fresh stack-tip gate. Full URLs, attempts,
+head/merge identities and individual lane/skip explanations are in the dated
+November 13 report. Exact private target 845500bad07847b97d44c0873abc40371299885c
+passes in 987.858 seconds; documentation target
+39a6a440e76bfed5e1e57abe7ace0001d4b5fb88 passes in 765.606 seconds. Each retains
+113 required owners, 16 witnesses, three modern source levels and four assisted
+anchors. Missing camera addon and 4/8 readiness remain open. This documentation
+receipt triggers another exact-head CI cycle, monitored through the user's 22:00
+deadline. No additional feature or source fix is introduced during wind-down.

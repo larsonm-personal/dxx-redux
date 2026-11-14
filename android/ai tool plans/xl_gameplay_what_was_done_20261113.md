@@ -117,3 +117,46 @@ additional and unestimated. Use the next plan and kickoff linked below.
 
 - [Next window](xl_gameplay_next_window_20261113.md)
 - [Copy/paste kickoff](xl_gameplay_kickoff_20261113.txt)
+
+## Terminal CI receipt, November 13 at 16:21 PST
+
+Both implementation PR #493 and documentation [PR #494](https://github.com/larsonm-personal/dxx-redux/pull/494)
+have terminal results with no pending checks and no failure other than the unchanged
+sampled readiness. PR #493 has 31 passed checks, eight intentional skips and one
+readiness failure. PR #494 has 33 passed checks, six intentional skips and one
+readiness failure. This receipt is for documentation candidate
+`39a6a440e76bfed5e1e57abe7ace0001d4b5fb88`, merge candidate
+`8ccdaaaa2608e8059ba4f00e17e03888213723c4`. The documentation-only commit adding
+this receipt will trigger fresh checks and is monitored separately through 22:00.
+
+| Required lane on PR #494                                                     | Result and workflow                                                                                    |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Native public save build, native save/replay integrity, headed replay parity | PASS, [43526135402](https://github.com/larsonm-personal/dxx-redux/actions/runs/43526135402), attempt 1 |
+| D1/D2 native tests, Linux ASan, CI policy                                    | PASS, [43526135521](https://github.com/larsonm-personal/dxx-redux/actions/runs/43526135521), attempt 1 |
+| Android, Linux and JVM tooling owners and finalizer                          | PASS, [43526135530](https://github.com/larsonm-personal/dxx-redux/actions/runs/43526135530), attempt 1 |
+| Two-player LAN and required final gate                                       | PASS, [43526135527](https://github.com/larsonm-personal/dxx-redux/actions/runs/43526135527), attempt 1 |
+| Windows/Linux XL contracts and actual developer source compilation           | PASS, [43526135454](https://github.com/larsonm-personal/dxx-redux/actions/runs/43526135454), attempt 1 |
+| Windows/Linux scripts, catalog and workflow syntax                           | PASS, [43526135414](https://github.com/larsonm-personal/dxx-redux/actions/runs/43526135414), attempt 1 |
+| Exact-head private asset qualification                                       | PASS, [43526156095](https://github.com/larsonm-personal/dxx-redux/actions/runs/43526156095), attempt 1 |
+| Sampled load/tick readiness                                                  | FAIL, 4/8, retained separately                                                                         |
+
+Private PR #493 run [43524367626](https://github.com/larsonm-personal/dxx-redux/actions/runs/43524367626)
+passes its exact implementation head in 987.858 seconds. PR #494 private execution
+passes its exact documentation head in 765.606 seconds. Each has 113 required
+owners, 16 format witnesses, three modern source levels and four assisted anchors.
+Controller and private asset identities match the preceding receipt. Exact-target
+artifacts are retained as `pr493-private-results` and `pr494-private-results` under
+the tranche scratch root. All required members and their terminal result are in
+the `results.json` artifact; camera remains `not_run_missing_addon`.
+
+Skip explanations: the separate Release probe is restricted to two historical
+Pumo branches; Rust server work has no changed server input; pinned Pumo staging
+and retained online receipts are manual-only modes; LAN timing export requires an
+explicit evidence run; progress persistence is scheduled/manual-only. None is a
+failure-blocked dependent on PR #494. PR #493's two later replay jobs were excluded
+by the fresh stack-tip gate after PR #494 was linked; both actually PASS on #494.
+No skipped required owner is counted as pass.
+
+No new code fix was required during this first wind-down cycle. CI monitoring
+continues hourly until 22:00 PST unless quota is exhausted, with regressions
+investigated before acceptance. No merges or status overrides were performed.
