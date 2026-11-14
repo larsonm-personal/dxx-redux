@@ -81,6 +81,9 @@ completed owner attempts and failures separately from exact-SHA coverage. Each
 night starts at the first undone owner in each lane's stable order. A missing or
 setup-blocked receipt stays undone even if later selected owners completed.
 Executed failures advance traversal but remain explicit historical failures.
+Supplemental progress uses the trusted execution-step outcome: a failed compile
+or staging verification advances and retains its failure; a prerequisite failure
+leaves execution skipped and undone.
 A SHA change does not reset traversal. Removed or changed owner definitions lose
 credit; additions enter the same order. After every available owner has an
 execution receipt, the cycle wraps. Quick core checks intentionally repeat.
@@ -105,7 +108,9 @@ the first sampled owner may exceed that estimate; the real deadline still wins.
 Execution stops 48 minutes after planning, reserving two minutes for receipts;
 setup consumes this same allowance. Test jobs have a 55-minute ceiling and
 supplementals 45 minutes. Planning, final reporting and publication add overhead;
-GitHub queue delays can exceed the approximately one-hour elapsed target. This
+GitHub queue delays can exceed the approximately one-hour elapsed target.
+Job timeouts start when a runner starts the job, so late queued provisioning can
+also extend elapsed time despite the absolute test-execution cutoff. This
 is a proposed bound, not a measured runtime guarantee. Four test lanes consume
 at most 3 hours 40 minutes of job allocation plus 45 minutes for a supplemental
 and small controller overhead; actual use should be lower. No full run was

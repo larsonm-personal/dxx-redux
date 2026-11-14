@@ -181,15 +181,20 @@ def reconcile_sample(plan, policy, previous, receipts, supplemental_result="", r
         elif row["status"] == "PASS":
             state["failures"].pop(ident, None)
     extra = plan["sampling"]["supplemental"]
-    # A failed setup-only supplemental job has no execution receipt and must remain undone
-    if extra and supplemental_result == "success":
+    # This value is the trusted execution step outcome, never the overall job result
+    # Setup-only failures leave that step skipped and remain undone
+    if extra and supplemental_result in ("success", "failure"):
+        status = "PASS" if supplemental_result == "success" else "FAIL"
         state["done"][extra] = {
             "signature": sweep.digest(SUPPLEMENTAL[extra]),
             "target_sha": plan["target_sha"],
-            "status": "PASS",
+            "status": status,
             "run_id": run_id,
         }
-        state["failures"].pop(extra, None)
+        if status == "FAIL":
+            state["failures"][extra] = state["done"][extra]
+        else:
+            state["failures"].pop(extra, None)
     state["last_target_sha"] = plan["target_sha"]
     state["last_batch_id"] = plan["batch_id"]
     return state, coverage
@@ -382,7 +387,11 @@ def main():
     )
     core = plan["sampling"]["core_ids"]
     records = coverage["records"]
-    missing_core = [ident for ident in core if records.get(ident, {}).get("status") != "PASS"]
+    missing_core = [
+        ident
+        for ident in core
+        if records.get(ident, {}).get("status") != "PASS" or records.get(ident, {}).get("coverage_complete") is not True
+    ]
     failures = [ident for ident, row in records.items() if row["status"] in ("FAIL", "TIMEOUT")]
     summary = {
         "target_sha": plan["target_sha"],

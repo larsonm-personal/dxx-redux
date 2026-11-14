@@ -551,6 +551,8 @@ jobs:
 
   pumo_stage:
     name: Verify pinned Pumo staging
+    outputs:
+      execution_result: ${{ steps.execution.outcome }}
     needs: [stack, plan]
     if: always() && needs.stack.outputs.run == 'true' && (needs.plan.outputs.supplemental == 'pumo-stage' || (github.event_name == 'workflow_dispatch' && inputs.campaign == 'pumo-stage'))
     runs-on: ubuntu-24.04
@@ -607,6 +609,7 @@ jobs:
             xl-resources/manifest.json
           sparse-checkout-cone-mode: false
       - name: Verify private pins and stage into fresh temporary storage
+        id: execution
         run: |
           set -euo pipefail
           test "$(git -C pumo-input rev-parse HEAD)" = dc6565f6b5400d7c700fa8378e766b2354b6ceb6
@@ -638,6 +641,8 @@ jobs:
 
   nightly_release:
     name: Nightly XL developer Release compile
+    outputs:
+      execution_result: ${{ steps.execution.outcome }}
     needs: plan
     if: needs.plan.outputs.supplemental == 'release-compile'
     runs-on: ubuntu-24.04
@@ -663,6 +668,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/dxx-nightly-deps"
           printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
       - name: Compile and verify exact candidate Release target
+        id: execution
         run: |
           cmake -S target/d2 -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTING=OFF -DOPENGL=ON -DOpenGL_GL_PREFERENCE=LEGACY -DDXX_XL_DEVELOPER_TESTS=ON
           cmake --build build --parallel 2 --target dxx-redux-d2-headless-metadata
@@ -721,8 +727,8 @@ jobs:
           HOST_RESULT: ${{ needs.host.result }}
           ANDROID_RESULT: ${{ needs.android.result }}
           EXECUTION_STACK_RESULT: ${{ needs.execution-stack.result }}
-          PUMO_STAGE_RESULT: ${{ needs.pumo_stage.result }}
-          RELEASE_COMPILE_RESULT: ${{ needs.nightly_release.result }}
+          PUMO_STAGE_RESULT: ${{ needs.pumo_stage.outputs.execution_result }}
+          RELEASE_COMPILE_RESULT: ${{ needs.nightly_release.outputs.execution_result }}
           REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'xl-textures' || inputs.campaign == 'basic-use' || inputs.campaign == 'xl-originals' || inputs.campaign == 'xl-fast' }}
         run: |
           if [[ "$NIGHTLY_SAMPLE" == true ]]; then
@@ -805,8 +811,8 @@ jobs:
       - name: Publish only completed progress to dedicated state branch
         env:
           GH_TOKEN: ${{ github.token }}
-          PUMO_STAGE_RESULT: ${{ needs.pumo_stage.result }}
-          RELEASE_COMPILE_RESULT: ${{ needs.nightly_release.result }}
+          PUMO_STAGE_RESULT: ${{ needs.pumo_stage.outputs.execution_result }}
+          RELEASE_COMPILE_RESULT: ${{ needs.nightly_release.outputs.execution_result }}
           TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
         run: |
           mapfile -t receipts < <(find receipts -mindepth 1 -maxdepth 2 -type f \( -path 'receipts/results.json' -o -path 'receipts/nightly-results-*/results.json' \) 2>/dev/null | sort)

@@ -570,7 +570,10 @@ def reconcile(plan, policy, state, receipts):
             compact["exclusions"] = [str(x)[:256] for x in row.get("exclusions", [])[:32]]
             if ident.startswith("corpus:"):
                 # Many exact route leaves share a run; retain proof without duplicating verbose diagnostics.
-                compact = {key: compact[key] for key in ("status", "run_url", "coverage_complete", "reason")}
+                compact = {
+                    key: compact[key]
+                    for key in ("status", "run_url", "coverage_complete", "reason", "attempted_tests", "phase")
+                }
                 if row.get("comparison_only"):
                     compact.update(comparison_only=True, runtime_outcome=row.get("runtime_outcome", ""))
                 if cases:

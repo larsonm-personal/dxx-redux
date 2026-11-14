@@ -2634,6 +2634,101 @@ class SamplingNightlyTests(unittest.TestCase):
         )
         return receipt
 
+    def test_failed_supplemental_advances_without_starving_other_or_cycle(self):
+        import nightly_sample as sample
+        import nightly_retail as retail
+
+        policy = {"schema": 1, "suites": [], "exclusions": []}
+        catalog = {"schema": 1, "tests": []}
+        assets = {
+            "repository": retail.ASSET_REPOSITORY,
+            "commit": "8c9988a96a7e306f8aac04c85e2610492917b7ac",
+            "manifest_sha256": retail.baseline_identity(Path(__file__).resolve().parents[2], include_missions=True),
+        }
+        first, state = sample.plan_sample(SHA, catalog, policy, retail_assets=assets, core_ids=set())
+        blocked, _ = sample.reconcile_sample(first, policy, state, [], "skipped")
+        self.assertFalse(blocked["done"])
+        failed, _ = sample.reconcile_sample(first, policy, state, [], "failure")
+        first_id = first["sampling"]["supplemental"]
+        self.assertEqual(failed["failures"][first_id]["status"], "FAIL")
+        second, state = sample.plan_sample("b" * 40, catalog, policy, failed, assets, core_ids=set())
+        self.assertNotEqual(second["sampling"]["supplemental"], first_id)
+        failed, _ = sample.reconcile_sample(second, policy, state, [], "failure")
+        wrapped, state = sample.plan_sample("c" * 40, catalog, policy, failed, assets, core_ids=set())
+        self.assertEqual(wrapped["sampling"]["cycle"], 1)
+        self.assertEqual(set(state["failures"]), set(sample.SUPPLEMENTAL))
+        self.assertFalse(state["done"])
+        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        self.assertEqual(workflow.count("execution_result: ${{ steps.execution.outcome }}"), 2)
+        self.assertIn("PUMO_STAGE_RESULT: ${{ needs.pumo_stage.outputs.execution_result }}", workflow)
+        self.assertIn("RELEASE_COMPILE_RESULT: ${{ needs.nightly_release.outputs.execution_result }}", workflow)
+
+    def test_real_generated_corpus_receipt_advances_across_sha_changes(self):
+        import nightly_sample as sample
+        import nightly_retail as retail
+
+        policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
+        catalog = {
+            "schema": 1,
+            "tests": [{"name": e["args"]["suite"]} for e in policy["suites"] if e["owner"] == "master"],
+        }
+        assets = {
+            "repository": retail.ASSET_REPOSITORY,
+            "commit": "8c9988a96a7e306f8aac04c85e2610492917b7ac",
+            "manifest_sha256": retail.baseline_identity(Path(__file__).resolve().parents[2], include_missions=True),
+        }
+        inventory, _ = sweep.plan_batch(SHA, catalog, policy, retail_assets=assets, complete=True)
+        owner = next(e for e in inventory["tests"] if e["id"].startswith("corpus:") and e["lane"] == "host")
+        plan, state = sample.plan_sample(SHA, catalog, policy, retail_assets=assets, core_ids=set())
+        plan["tests"] = [owner]
+        plan = sample.phase_plan(plan, "sample")
+        for status, attempted, phase, advanced in [
+            ("PASS", True, "tests", True),
+            ("FAIL", True, "tests", True),
+            ("PASS", False, "setup", False),
+        ]:
+            with self.subTest(status=status, phase=phase):
+                receipt = self.receipt(plan, status)
+                receipt["results"][0].update(attempted_tests=attempted, phase=phase)
+                receipt["retail_assets"] = assets
+                updated, coverage = sample.reconcile_sample(plan, policy, state, [receipt])
+                self.assertEqual(owner["id"] in updated["done"], advanced)
+                if advanced:
+                    self.assertEqual(coverage["records"][owner["id"]]["phase"], "tests")
+                    self.assertTrue(coverage["records"][owner["id"]]["attempted_tests"])
+                    successor, _ = sample.plan_sample("b" * 40, catalog, policy, updated, assets, core_ids=set())
+                    self.assertNotIn(owner["id"], successor["sampling"]["pending_order"]["host"])
+                self.assertEqual(owner["id"] in updated["failures"], status == "FAIL" and advanced)
+
+    def test_report_requires_complete_core_coverage(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        policy["suites"][0]["estimated_seconds"] = 120
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids={"master:owner_0"})
+        for complete in (False, True):
+            with self.subTest(complete=complete):
+                receipt = self.receipt(plan)
+                next(row for row in receipt["results"] if row["id"] == "master:owner_0")["coverage_complete"] = complete
+
+                def read(path):
+                    if str(path).endswith("nightly_tooling_policy.json"):
+                        return policy
+                    return {"plan/plan.json": plan, "plan/traversal.json": state, "receipt.json": receipt}[str(path)]
+
+                with (
+                    patch.object(sys, "argv", ["nightly_sample.py", "report"]),
+                    patch.object(sweep, "read", side_effect=read),
+                    patch.object(Path, "glob", return_value=[Path("receipt.json")]),
+                    patch.object(sample, "write_artifact") as write,
+                    patch("builtins.print"),
+                    patch.dict(os.environ, {"RELEASE_COMPILE_RESULT": "success"}),
+                ):
+                    result = sample.main()
+                summary = write.call_args_list[0].args[1]
+                self.assertEqual(summary["core_without_pass"], [] if complete else ["master:owner_0"])
+                self.assertEqual(result, 0 if complete else 1)
+
     def test_executor_runs_core_first_and_recovers_on_deadline(self):
         import nightly_sample as sample
 
