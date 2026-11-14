@@ -74,6 +74,19 @@ def validate_traversal(state):
         or not isinstance(state.get("failures"), dict)
     ):
         raise ValueError("Invalid nightly traversal state")
+    excluded = state.get("runtime_excluded", {})
+    if not isinstance(excluded, dict):
+        raise ValueError("Invalid runtime exclusion ledger")
+    for ident, row in excluded.items():
+        if (
+            not isinstance(ident, str)
+            or not isinstance(row, dict)
+            or not isinstance(row.get("signature"), str)
+            or len(row["signature"]) != 64
+            or not isinstance(row.get("reason"), str)
+            or not sweep.SHA.fullmatch(row.get("target_sha", ""))
+        ):
+            raise ValueError("Invalid runtime exclusion receipt")
     for ident, row in state["done"].items():
         if (
             not isinstance(ident, str)
@@ -86,14 +99,36 @@ def validate_traversal(state):
             raise ValueError("Invalid completed traversal receipt")
 
 
-def reconcile_catalog(state, entries):
+def reconcile_catalog(state, entries, capability=None):
     state = json.loads(json.dumps(state or fresh_traversal()))
     validate_traversal(state)
     signatures = {entry["id"]: sweep.digest(entry) for entry in entries}
     # Removed/changed owners lose their traversal credit; additions enter the same hash ring
     state["done"] = {ident: row for ident, row in state["done"].items() if signatures.get(ident) == row["signature"]}
     state["failures"] = {ident: row for ident, row in state["failures"].items() if ident in signatures}
+    definitions = {entry["id"]: entry for entry in entries}
+    state["runtime_excluded"] = {
+        ident: row
+        for ident, row in state.get("runtime_excluded", {}).items()
+        if ident in definitions and row.get("signature") == exclusion_signature(definitions[ident], capability)
+    }
     return state
+
+
+def capability_context(sha, retail_assets):
+    root = Path(__file__).parent
+    controllers = ("nightly_regression_catalog.py", "run_host_test_suites.py", "../helpers/retail_ci_assets.py")
+    return {
+        "target_sha": sha,
+        "retail_assets": retail_assets,
+        "controller_capabilities": {
+            name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in controllers
+        },
+    }
+
+
+def exclusion_signature(entry, capability):
+    return sweep.digest({"entry": entry, "capability": capability})
 
 
 def plan_sample(sha, catalog, policy, previous=None, retail_assets=None, now=None, core_ids=CORE_IDS, host_workers=1):
@@ -107,12 +142,14 @@ def plan_sample(sha, catalog, policy, previous=None, retail_assets=None, now=Non
     if retail_assets:
         extras.append(SUPPLEMENTAL["pumo-stage"])
     sampled = [e for e in entries.values() if e["id"] not in core_ids]
-    state = reconcile_catalog(previous, sampled + list(SUPPLEMENTAL.values()))
+    capability = capability_context(sha, retail_assets)
+    state = reconcile_catalog(previous, sampled + list(SUPPLEMENTAL.values()), capability)
     eligible = {e["id"] for e in sampled + extras}
-    # A completed traversal wraps only when every currently eligible owner was actually attempted
+    # Wrap after every eligible owner was attempted or has a scoped capability exclusion
     # Historical failures survive the wrap; none of this is current-revision coverage
-    if eligible and eligible <= state["done"].keys():
+    if eligible and eligible <= (state["done"].keys() | state["runtime_excluded"].keys()):
         state["cycle"] += 1
+        state["runtime_excluded"] = {}
         state["done"] = {key: value for key, value in state["done"].items() if key not in eligible}
     ordered = hash_order(sampled)
     selected = [entries[key] for key in sorted(core_ids)]
@@ -120,7 +157,11 @@ def plan_sample(sha, catalog, policy, previous=None, retail_assets=None, now=Non
     pending_order = {}
     host_groups = [[e for e in selected if e["lane"] == "host"]] if host_workers > 1 else []
     for lane in sweep.LANES:
-        pending = [e for e in ordered if e["lane"] == lane and e["id"] not in state["done"]]
+        pending = [
+            e
+            for e in ordered
+            if e["lane"] == lane and e["id"] not in state["done"] and e["id"] not in state["runtime_excluded"]
+        ]
         pending_order[lane] = [e["id"] for e in pending]
         if lane == "host" and host_workers > 1:
             for entry in pending:
@@ -181,6 +222,7 @@ def plan_sample(sha, catalog, policy, previous=None, retail_assets=None, now=Non
         "deadline_unix": now + 3000,
         "eligible_owners": len(entries),
         "traversed_owners": len(state["done"]),
+        "runtime_excluded": state["runtime_excluded"],
         "selected_sample_ids": [e["id"] for e in selected if e["id"] not in core_ids],
     }
     sweep.validate_plan(plan, policy)
@@ -201,11 +243,21 @@ def reconcile_sample(plan, policy, previous, receipts, supplemental_result="", r
         normalized.append(receipt)
     coverage = sweep.reconcile(plan, policy, sweep.fresh_state(plan["target_sha"], plan["catalog_hash"]), normalized)
     entries = sweep.policy_entries(policy)
-    state = reconcile_catalog(previous, list(entries.values()) + list(SUPPLEMENTAL.values()))
+    capability = capability_context(plan["target_sha"], plan.get("retail_assets"))
+    state = reconcile_catalog(previous, list(entries.values()) + list(SUPPLEMENTAL.values()), capability)
+    for ident, row in coverage.get("excluded", {}).items():
+        state["runtime_excluded"][ident] = {
+            "signature": exclusion_signature(entries[ident], capability),
+            "reason": row["reason"],
+            "run_url": row["run_url"],
+            "target_sha": plan["target_sha"],
+            "run_id": run_id,
+        }
     core = set(plan["sampling"]["core_ids"])
     for ident, row in coverage["records"].items():
         if ident in core or row.get("attempted_tests") is False or row.get("phase") != "tests":
             continue
+        state["runtime_excluded"].pop(ident, None)
         state["done"][ident] = {
             "signature": sweep.digest(entries[ident]),
             "target_sha": plan["target_sha"],
@@ -270,6 +322,7 @@ def publish(plan, policy, receipts, supplemental_result):
             if previous["cycle"] + 1 != plan["sampling"]["cycle"]:
                 raise ValueError("Traversal cycle changed during execution")
             previous["cycle"] += 1
+            previous["runtime_excluded"] = {}
             selected_pool = {item for values in plan["sampling"]["pending_order"].values() for item in values}
             previous["done"] = {
                 key: value
@@ -448,7 +501,15 @@ def main():
     missing_core = [
         ident
         for ident in core
-        if records.get(ident, {}).get("status") != "PASS" or records.get(ident, {}).get("coverage_complete") is not True
+        if records.get(ident, {}).get("status") != "PASS"
+        or (
+            records.get(ident, {}).get("coverage_complete") is not True
+            and not (
+                ident == "master:test_gradle_unit_tests"
+                and records.get(ident, {}).get("core_scope") == "fixture-independent-gradle-v1"
+                and records.get(ident, {}).get("core_coverage_complete") is True
+            )
+        )
     ]
     failures = [ident for ident, row in records.items() if row["status"] in ("FAIL", "TIMEOUT")]
     summary = {
@@ -462,6 +523,11 @@ def main():
         "unavailable": plan["unavailable"],
         "excluded": plan["exclusions"],
         "historical_failures_not_current_sha_coverage": state["failures"],
+        "runtime_excluded_not_coverage": state["runtime_excluded"],
+        "current_sha_passed_owners": sum(r["status"] == "PASS" for r in records.values()),
+        "current_sha_fully_covered_owners": sum(
+            r["status"] == "PASS" and r.get("coverage_complete") is True for r in records.values()
+        ),
         "supplemental": {"selected": extra, "result": result if extra else "not-selected"},
         "outcome": "failed" if missing_core or failures or (extra and result != "success") else "sample_pass",
     }

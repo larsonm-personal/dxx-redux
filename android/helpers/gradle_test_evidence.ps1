@@ -1,11 +1,13 @@
 # Validate the real Gradle XML, independently of Gradle's successful exit status
 function Assert-GradleUnitTestEvidence {
-    param([Parameter(Mandatory)][string]$ResultsDirectory, [switch]$PassThru)
+    param([Parameter(Mandatory)][string]$ResultsDirectory, [switch]$PassThru, [hashtable]$OptionalIntegrationCases = @{})
 
     $files = @(Get-ChildItem -LiteralPath $ResultsDirectory -Filter 'TEST-*.xml' -File -ErrorAction SilentlyContinue)
     if ($files.Count -eq 0) { throw "No Gradle test XML in $ResultsDirectory" }
     $executed = 0
     $skipped = 0
+    $unavailable = @()
+    $unknownSkips = 0
     foreach ($file in $files) {
         [xml]$report = Get-Content -LiteralPath $file.FullName -Raw
         $suite = $report.DocumentElement
@@ -22,10 +24,19 @@ function Assert-GradleUnitTestEvidence {
         }
         $suiteSkipped = $suite.SelectNodes('testcase[skipped]').Count
         if ([long]$suite.GetAttribute('skipped') -ne $suiteSkipped) { throw "Skip count mismatch in $($file.FullName)" }
+        foreach ($case in @($suite.SelectNodes('testcase[skipped]'))) {
+            $id = $case.GetAttribute('classname') + '#' + $case.GetAttribute('name')
+            if ($OptionalIntegrationCases.ContainsKey($id)) {
+                $unavailable += "$id : $($OptionalIntegrationCases[$id])"
+            } else {
+                $unknownSkips++
+                $unavailable += "$id : unclassified skipped leaf"
+            }
+        }
         $skipped += $suiteSkipped
         $executed += $cases.Count - $suiteSkipped
     }
     if ($executed -le 0) { throw "No executed Gradle tests in $ResultsDirectory" }
-    if ($PassThru) { [pscustomobject]@{ Executed = $executed; Skipped = $skipped } }
+    if ($PassThru) { [pscustomobject]@{ Executed = $executed; Skipped = $skipped; UnknownSkips = $unknownSkips; Unavailable = $unavailable } }
     Write-Host "Gradle evidence: $executed executed, $skipped skipped in $ResultsDirectory"
 }

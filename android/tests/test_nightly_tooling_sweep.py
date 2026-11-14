@@ -2663,6 +2663,161 @@ class SamplingNightlyTests(unittest.TestCase):
         self.assertIn("PUMO_STAGE_RESULT: ${{ needs.pumo_stage.outputs.execution_result }}", workflow)
         self.assertIn("RELEASE_COMPILE_RESULT: ${{ needs.nightly_release.outputs.execution_result }}", workflow)
 
+    def test_runtime_exclusion_defers_without_credit_and_requalifies(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids=set())
+        receipt = self.receipt(plan, "BLOCKED")
+        receipt["results"][0].update(
+            blocker_kind="target-capability", retryable=False, reason="Archive or CD-source fixture unavailable"
+        )
+        updated, coverage = sample.reconcile_sample(plan, policy, state, [receipt])
+        ident = plan["tests"][0]["id"]
+        self.assertIn(ident, updated["runtime_excluded"])
+        self.assertNotIn(ident, updated["done"])
+        self.assertIn(ident, coverage["excluded"])
+        successor, _ = sample.plan_sample(SHA, catalog, policy, updated, core_ids=set())
+        self.assertNotIn(ident, successor["sampling"]["pending_order"]["host"])
+        revised, _ = sample.plan_sample("b" * 40, catalog, policy, updated, core_ids=set())
+        self.assertIn(ident, revised["sampling"]["pending_order"]["host"])
+        # A fixture identity or policy change also invalidates exclusion proof
+        changed = sample.reconcile_catalog(
+            updated, policy["suites"], {"target_sha": SHA, "retail_assets": {"commit": "changed"}}
+        )
+        self.assertFalse(changed["runtime_excluded"])
+        for _ in range(3):
+            successor, updated = sample.plan_sample(SHA, catalog, policy, updated, core_ids=set())
+            updated, _ = sample.reconcile_sample(successor, policy, updated, [self.receipt(successor)], "success")
+        wrapped, updated = sample.plan_sample(SHA, catalog, policy, updated, core_ids=set())
+        self.assertEqual(wrapped["sampling"]["cycle"], 1)
+        self.assertFalse(updated["runtime_excluded"])
+        self.assertIn(ident, wrapped["sampling"]["pending_order"]["host"])
+        receipt["results"][0].update(blocker_kind="infrastructure", retryable=True)
+        transient, _ = sample.reconcile_sample(plan, policy, state, [receipt])
+        self.assertFalse(transient["runtime_excluded"])
+
+    def test_matchmaking_setup_uses_stable_pin_not_multi_tool_inventory(self):
+        import re
+
+        root = Path(__file__).resolve().parents[2]
+        workflow = (root / ".github/workflows/android-nightly-tooling.yml").read_text()
+        step = workflow.split("      - name: Prepare pinned local matchmaking server", 1)[1].split("      - name:", 1)[
+            0
+        ]
+        command = "\n".join(line[10:] for line in step.split("        run: |\n", 1)[1].splitlines())
+        pin = (root / "rust-toolchain.toml").read_text()
+        version = re.search(r'channel = "([0-9.]+)"', pin)[1]
+        for contents, passed in ((pin, True), ('[toolchain]\nchannel = "nightly"\n', False)):
+            with self.subTest(passed=passed), tempfile.TemporaryDirectory() as directory:
+                work = Path(directory)
+                (work / "target/server").mkdir(parents=True)
+                (work / "bin").mkdir()
+                (work / "target/rust-toolchain.toml").write_text(contents)
+                (work / "target/server/rust_version.txt").write_text("rustc 1.99.1\nrustc 1.101.0-nightly\n")
+                for binary in ("rustup", "cargo"):
+                    path = work / "bin" / binary
+                    path.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$CALLS"\n')
+                    path.chmod(0o755)
+                env = dict(
+                    os.environ,
+                    PATH=str(work / "bin") + os.pathsep + os.environ["PATH"],
+                    GITHUB_ENV=str(work / "env"),
+                    CALLS=str(work / "calls"),
+                )
+                result = subprocess.run(["bash", "-c", command], cwd=work, env=env, capture_output=True)
+                self.assertEqual(result.returncode == 0, passed)
+                if passed:
+                    self.assertIn("RUSTUP_TOOLCHAIN=" + version, (work / "env").read_text())
+                    self.assertIn("+" + version + " build --locked", (work / "calls").read_text())
+                else:
+                    self.assertFalse((work / "calls").exists())
+        host = (root / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        self.assertIn("!results/**/build/**", host)
+
+    def test_gradle_xml_partition_to_strict_report_keeps_skips_uncovered(self):
+        import nightly_sample as sample
+        import shutil
+
+        if not shutil.which("pwsh"):
+            self.skipTest("PowerShell unavailable for XML producer integration")
+        root = Path(__file__).resolve().parents[2]
+        policy = {
+            "schema": 1,
+            "suites": [
+                {
+                    "id": "master:test_gradle_unit_tests",
+                    "owner": "master",
+                    "lane": "jvm",
+                    "args": {"suite": "test_gradle_unit_tests"},
+                    "estimated_seconds": 600,
+                }
+            ],
+            "exclusions": [],
+        }
+        catalog = {"schema": 1, "tests": [{"name": "test_gradle_unit_tests"}]}
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids={"master:test_gradle_unit_tests"})
+        plan["sampling"]["supplemental"] = ""
+        for known in (True, False):
+            with self.subTest(known=known), tempfile.TemporaryDirectory() as directory:
+                work = Path(directory)
+                method = "realVertigoInventory" if known else "unexpectedSkip"
+                (work / "TEST-fixture.xml").write_text(
+                    '<testsuite tests="2" failures="0" errors="0" skipped="1"><testcase classname="example.Core" name="assertion"/><testcase classname="com.dxxredux.app.FileSetContentManagerTest" name="'
+                    + method
+                    + '"><skipped/></testcase></testsuite>'
+                )
+                script = work / "produce.ps1"
+                script.write_text("""param($Repo, $Work, $Sha)
+. "$Repo/android/helpers/gradle_test_evidence.ps1"
+. "$Repo/android/helpers/test_execution_evidence.ps1"
+$policy = Get-Content "$Repo/android/tests/gradle_core_policy.json" -Raw | ConvertFrom-Json
+$optional = @{}
+foreach ($p in $policy.optional_integration_cases.PSObject.Properties) { $optional[$p.Name] = [string]$p.Value }
+$evidence = Assert-GradleUnitTestEvidence -ResultsDirectory $Work -PassThru -OptionalIntegrationCases $optional 6>$null
+$log = Join-Path $Work 'owner.log'
+Write-TestCompletionEvidence -Name 'test_gradle_unit_tests' -Cases @(@{id='fixture-module';status='PASS'}) -Exclusions $evidence.Unavailable -LeafCounts @{PASS=$evidence.Executed;SKIP=$evidence.Skipped} -CoreScope $policy.scope -CoreComplete ($evidence.UnknownSkips -eq 0) | Set-Content $log
+$context = @{ RepositoryRoot=$Repo;Commit=$Sha;Runtime='fixture';RunId='fixture';Dirty=$false;ReportPath='fixture' }
+$test = @{ Name='test_gradle_unit_tests';Type='ps1';Requires='host';Path="$Repo/android/tests/test_gradle_unit_tests.ps1";Arguments=@() }
+$result = @{ Status='PASS';ExitCode=0;AttemptedTests=$true;LogFile=$log;Elapsed='00:01' }
+New-TestExecutionObservation -Context $context -Test $test -Result $result -StartedUtc '2026-11-14T00:00:00Z' -SourceSha256 ('a'*64) | ConvertTo-Json -Depth 12 -Compress
+""")
+                observation = subprocess.check_output(
+                    ["pwsh", "-NoProfile", "-File", str(script), str(root), str(work), SHA], text=True
+                )
+                (work / "journal.jsonl").write_text(observation)
+                sweep.write(
+                    work / "attempt.json",
+                    {
+                        **sweep.attempt_identity(plan, "jvm"),
+                        "processes": {"master": {"completed": True, "exit_code": 0}},
+                    },
+                )
+                receipt = sweep.collect(plan, policy, "jvm", work)
+                _, coverage = sample.reconcile_sample(plan, policy, state, [receipt])
+                row = coverage["records"]["master:test_gradle_unit_tests"]
+                self.assertFalse(row["coverage_complete"])
+                self.assertEqual(row["leaf_counts"], {"PASS": 1, "SKIP": 1})
+                self.assertEqual(row["core_coverage_complete"], known)
+                self.assertIn(method, row["exclusions"][0])
+
+                def read(path):
+                    if str(path).endswith("nightly_tooling_policy.json"):
+                        return policy
+                    return {"plan/plan.json": plan, "plan/traversal.json": state, "receipt.json": receipt}[str(path)]
+
+                with (
+                    patch.object(sys, "argv", ["nightly_sample.py", "report"]),
+                    patch.object(sweep, "read", side_effect=read),
+                    patch.object(Path, "glob", return_value=[Path("receipt.json")]),
+                    patch.object(sample, "write_artifact") as write,
+                    patch("builtins.print"),
+                ):
+                    self.assertEqual(sample.main(), 0 if known else 1)
+                summary = write.call_args_list[0].args[1]
+                self.assertEqual(summary["current_sha_passed_owners"], 1)
+                self.assertEqual(summary["current_sha_fully_covered_owners"], 0)
+
     def test_parallel_receipts_preserve_next_undone_and_shard_provenance(self):
         import nightly_sample as sample
 

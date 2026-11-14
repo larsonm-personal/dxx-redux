@@ -535,7 +535,7 @@ jobs:
           name: nightly-results-host${{ matrix.shard != '' && format('-{0}', matrix.shard) || '' }}
           path: |
             results/
-            !results/build/**
+            !results/**/build/**
           retention-days: 14
           if-no-files-found: warn
       - name: Upload retail-safe owner receipts
