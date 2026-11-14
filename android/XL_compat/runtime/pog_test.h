@@ -1,6 +1,7 @@
 #include "pog_resources.h"
 #include "texture_pixels.h"
 #include "../pog.h"
+#include "prepared_ham.h"
 extern "C" {
 #include "gauges.h"
 #include "collide.h"
@@ -249,6 +250,130 @@ static void rejection(const std::filesystem::path &root, const std::vector<xl_co
 	require(xl_level_supported("rtarena.rl2", 0), "Original POG did not recover after rejection");
 	std::cout << "POG admission: truncated pixels, clocked strips, unsupported HUD and bad indices rejected before live mutation\n";
 }
+
+static void incoming(const std::filesystem::path &root)
+{
+	const auto definitions = gameplay_definitions();
+	const auto world = arena_state();
+	const auto bitmaps = std::string(reinterpret_cast<const char *>(GameBitmaps), sizeof(GameBitmaps));
+	const auto unchanged = [&] {
+		require(gameplay_definitions() == definitions && arena_state() == world &&
+		            bitmaps == std::string(reinterpret_cast<const char *>(GameBitmaps), sizeof(GameBitmaps)),
+		        "Incoming POG preparation or discard changed outgoing definitions, gameplay or bitmaps");
+	};
+	const auto ham = [] {
+		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFSX_openReadBuffered("descent2.ham"), PHYSFS_close);
+		return XlPreparedHam(file.get());
+	};
+	const auto hud = [](unsigned id) {
+		for (const auto &bitmap : cockpit_bitmap)
+			if (bitmap.index == id) return true;
+		for (int i = 0; i < MAX_GAUGE_BMS; ++i)
+			if (Gauges[i].index == id || Gauges_hires[i].index == id) return true;
+		return false;
+	};
+	unsigned unclocked = 0, clocked = 0;
+	for (int id = 1; id < Num_bitmap_files && (!unclocked || !clocked); ++id) {
+		if (hud(id)) continue;
+		const auto clock = xl_pog_strip_clock(id);
+		if (!clock && !unclocked) unclocked = id;
+		if (clock == 1 && !clocked) clocked = id;
+	}
+	require(unclocked && clocked, "Missing distinct native clock mappings for incoming POG control");
+	const auto source = root / "incoming.pog";
+	const auto prepare = [&](XlPreparedResources &resources) {
+		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFSX_openReadBuffered("incoming.pog"), PHYSFS_close);
+		resources.prepare_pog(file.get());
+	};
+	for (int mode = 0; mode < 4; ++mode) {
+		auto target = ham();
+		const auto &tables = target.tables();
+		auto image = solid(unclocked, 255);
+		if (!mode) {
+			tables.Vclip[0].num_frames = 1;
+			tables.Vclip[0].frames[0].index = unclocked;
+			image.height = 2;
+			image.pixels.resize(8);
+		} else if (mode == 1) tables.cockpit_bitmap[0].index = unclocked;
+		else if (mode == 2) tables.Gauges[0].index = unclocked;
+		else tables.Gauges_hires[0].index = unclocked;
+		write_bytes(source.string().c_str(), fixture({ image }));
+		XlPreparedResources resources(std::move(target));
+		resources.prepare_banks(Current_level_palette);
+		bool rejected = false;
+		try {
+			prepare(resources);
+		} catch (const std::runtime_error &error) {
+			rejected = std::strstr(error.what(), mode ? "cockpit/HUD" : "animation frames") != nullptr;
+		}
+		require(rejected, "Incoming POG admission borrowed the outgoing clock or HUD mappings");
+		unchanged();
+	}
+	{
+		auto target = ham();
+		const auto &tables = target.tables();
+		const auto replace = [&](bitmap_index &bitmap) { if (bitmap.index == clocked) bitmap.index = unclocked; };
+		for (int i = 0; i < *tables.Num_vclips; ++i)
+			for (auto &frame : tables.Vclip[i].frames) replace(frame);
+		for (int i = 0; i < *tables.Num_effects; ++i)
+			for (auto &frame : tables.Effects[i].vc.frames) replace(frame);
+		for (int i = 0; i < *tables.NumTextures; ++i) replace(tables.Textures[i]);
+		for (int i = 0; i < MAX_OBJ_BITMAPS; ++i) replace(tables.ObjBitmaps[i]);
+		XlPreparedResources resources(std::move(target));
+		resources.prepare_banks(Current_level_palette);
+		require(!xl_pog_target_strip_clock(clocked, resources.dependencies()) && xl_pog_strip_clock(clocked) == 1,
+		        "Incoming unclocked target did not differ from outgoing mappings");
+		auto image = solid(clocked, 255);
+		image.height = 2;
+		image.pixels.resize(8);
+		write_bytes(source.string().c_str(), fixture({ image }));
+		prepare(resources);
+	}
+	unchanged();
+	{
+		XlPreparedResources resources(ham());
+		resources.prepare_banks(Current_level_palette);
+		auto image = solid(unclocked, 255);
+		write_bytes(source.string().c_str(), fixture({ image }));
+		prepare(resources);
+		XlPreparedResources moved(std::move(resources));
+		write_bytes(source.string().c_str(), { 'B', 'A', 'D' });
+		bool rejected = false;
+		try {
+			prepare(moved);
+		} catch (const std::runtime_error &) {
+			rejected = true;
+		}
+		require(rejected, "Malformed POG retry replaced the prepared owner");
+		unchanged();
+		rejected = false;
+		try {
+			moved.prepare_banks(Current_level_palette);
+		} catch (const std::runtime_error &) {
+			rejected = true;
+		}
+		require(rejected, "Bank preparation silently invalidated admitted POG decisions");
+		moved.install_pog();
+		const auto *pixels = GameBitmaps[unclocked].bm_data;
+		require(GameBitmaps[unclocked].bm_type == BM_RGBA && pixels && !std::memcmp(pixels, image.pixels.data(), 4),
+		        "Moved POG owner did not publish its retained native pixels");
+		moved.install_pog();
+		require(GameBitmaps[unclocked].bm_data == pixels,
+		        "Repeated active POG publication allocated or retired its pixels");
+		require(xl_pog_install(nullptr), "Cannot retire incoming POG control");
+		const auto retired = GameBitmaps[unclocked];
+		rejected = false;
+		try {
+			moved.install_pog();
+		} catch (const std::runtime_error &) {
+			rejected = true;
+		}
+		require(rejected && !std::memcmp(&retired, &GameBitmaps[unclocked], sizeof(retired)),
+		        "Retired POG owner silently allocated new publication storage");
+	}
+	require(std::filesystem::remove(source), "Cannot remove incoming POG fixture");
+	std::cout << "Incoming POG: target clock/HUD decisions, discard, move, malformed retry and single native transfer passed\n";
+}
 } // namespace pog_control
 
 static int pog_test(int argc, char **argv)
@@ -280,6 +405,9 @@ static int pog_test(int argc, char **argv)
 		require(xl_pog_install(arena_resources.get()), "Cannot restore owned original POG");
 		installed(arena);
 		rejection(root, arena);
+		incoming(root);
+		require(xl_pog_install(arena_resources.get()), "Cannot restore original POG after incoming controls");
+		installed(arena);
 		// Prepared resources own their pixels after the backing file changes
 		auto rgba = solid(Textures[1].index, 32), indexed = solid(Textures[2].index, 0);
 		indexed.source_flags = 3;

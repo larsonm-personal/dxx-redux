@@ -106,3 +106,24 @@ mission, while existing candidates still pass case and origin checks. Explicit
 target leases and Android staged asset lookup retain their current source rules.
 The canonical preview, HAM, water, Observatory and Pumo owners must qualify this
 change; no deadlines, assertions or authentic fixtures may change.
+
+## POG target decisions and native storage
+
+Prepare POG admission against the retained target animation, texture, object
+bitmap, cockpit and gauge tables. Share the clock policy with the legacy native
+installer through read-only table views; do not duplicate native formats or
+export private state. Retain normalized pixels and preallocate the native arena
+inside the POG owner, transferring it once at installation. Keep the legacy
+prepare-and-install convenience path for existing repeated-install controls.
+
+A rejected POG must preserve both live resources and an earlier prepared owner.
+Extend the canonical original POG owner with different target clock/HUD mappings,
+move/discard, malformed retry and single-transfer storage checks. Keep the
+existing Arena/Pumo source and renderer/reference comparisons. Definition or
+bank preparation after a POG has been admitted must not silently invalidate its
+table decisions. Whole-world and GPU/mixer atomic publication remain separate.
+
+The existing water owner requires repeated installation of an active prepared
+POG. Preserve that behavior without allocation by recognizing the unique native
+owner token, clearing it on retirement. A retired owner needs explicit storage
+preparation before another transfer; pointer reuse must not imply identity.
