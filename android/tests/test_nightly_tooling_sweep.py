@@ -2720,7 +2720,8 @@ class SamplingNightlyTests(unittest.TestCase):
                     path.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$CALLS"\n', newline="\n")
                     path.chmod(0o755)
                 shell_command = 'export PATH="$PWD/bin:$PATH" CALLS="$PWD/calls" GITHUB_ENV="$PWD/env"\n' + command
-                result = subprocess.run(["bash", "-c", shell_command], cwd=work, capture_output=True, text=True)
+                bash = str(Path(os.environ["ProgramFiles"]) / "Git/bin/bash.exe") if os.name == "nt" else "bash"
+                result = subprocess.run([bash, "-c", shell_command], cwd=work, capture_output=True, text=True)
                 self.assertEqual(result.returncode == 0, passed, result.stdout + result.stderr)
                 if passed:
                     self.assertIn("RUSTUP_TOOLCHAIN=" + version, (work / "env").read_text())
