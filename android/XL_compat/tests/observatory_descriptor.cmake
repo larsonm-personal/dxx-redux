@@ -60,6 +60,16 @@ if(NOT
 )
     message(FATAL_ERROR "Independent native HAM destination controls did not finish")
 endif()
+if(NOT
+   stdout
+   MATCHES
+   "Incoming live continuation: equal-count target, move, malformed retry and discard preserve detailed state; 120 ordinary movement/fire frames passed"
+)
+    message(FATAL_ERROR "Incoming live continuation controls did not finish")
+endif()
+if(NOT stdout MATCHES "Incoming live outgoing profile=obsrv-xl XL=1")
+    message(FATAL_ERROR "Live XL outgoing continuation did not finish")
+endif()
 if(NOT stdout MATCHES
    "Incoming resource definitions: retained graph and native ownership transfer passed")
     message(FATAL_ERROR "Incoming resource graph and publication controls did not finish")
