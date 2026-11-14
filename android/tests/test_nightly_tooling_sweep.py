@@ -2713,20 +2713,15 @@ class SamplingNightlyTests(unittest.TestCase):
                 work = Path(directory)
                 (work / "target/server").mkdir(parents=True)
                 (work / "bin").mkdir()
-                (work / "target/rust-toolchain.toml").write_text(contents)
+                (work / "target/rust-toolchain.toml").write_text(contents, newline="\n")
                 (work / "target/server/rust_version.txt").write_text("rustc 1.99.1\nrustc 1.101.0-nightly\n")
                 for binary in ("rustup", "cargo"):
                     path = work / "bin" / binary
-                    path.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$CALLS"\n')
+                    path.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$CALLS"\n', newline="\n")
                     path.chmod(0o755)
-                env = dict(
-                    os.environ,
-                    PATH=str(work / "bin") + os.pathsep + os.environ["PATH"],
-                    GITHUB_ENV=str(work / "env"),
-                    CALLS=str(work / "calls"),
-                )
-                result = subprocess.run(["bash", "-c", command], cwd=work, env=env, capture_output=True)
-                self.assertEqual(result.returncode == 0, passed)
+                shell_command = 'export PATH="$PWD/bin:$PATH" CALLS="$PWD/calls" GITHUB_ENV="$PWD/env"\n' + command
+                result = subprocess.run(["bash", "-c", shell_command], cwd=work, capture_output=True, text=True)
+                self.assertEqual(result.returncode == 0, passed, result.stdout + result.stderr)
                 if passed:
                     self.assertIn("RUSTUP_TOOLCHAIN=" + version, (work / "env").read_text())
                     self.assertIn("+" + version + " build --locked", (work / "calls").read_text())
