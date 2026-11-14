@@ -2729,7 +2729,9 @@ class SamplingNightlyTests(unittest.TestCase):
                 else:
                     self.assertFalse((work / "calls").exists())
         host = (root / ".github/workflows/nightly-tooling-sweep.yml").read_text()
-        self.assertIn("!results/**/build/**", host)
+        for build_root in ("results/build", "results/core/build", "results/sample/build"):
+            self.assertIn("!" + build_root + "/**", host)
+        self.assertNotIn("!results/**/build/**", host)
 
     def test_gradle_xml_partition_to_strict_report_keeps_skips_uncovered(self):
         import nightly_sample as sample
@@ -2796,6 +2798,8 @@ New-TestExecutionObservation -Context $context -Test $test -Result $result -Star
                 self.assertEqual(row["leaf_counts"], {"PASS": 1, "SKIP": 1})
                 self.assertEqual(row["core_coverage_complete"], known)
                 self.assertIn(method, row["exclusions"][0])
+                if known:
+                    self.assertIn("declared optional prerequisite:", row["exclusions"][0])
 
                 def read(path):
                     if str(path).endswith("nightly_tooling_policy.json"):

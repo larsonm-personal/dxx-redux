@@ -27,7 +27,7 @@ function Assert-GradleUnitTestEvidence {
         foreach ($case in @($suite.SelectNodes('testcase[skipped]'))) {
             $id = $case.GetAttribute('classname') + '#' + $case.GetAttribute('name')
             if ($OptionalIntegrationCases.ContainsKey($id)) {
-                $unavailable += "$id : $($OptionalIntegrationCases[$id])"
+                $unavailable += "$id : declared optional prerequisite: $($OptionalIntegrationCases[$id])"
             } else {
                 $unknownSkips++
                 $unavailable += "$id : unclassified skipped leaf"
