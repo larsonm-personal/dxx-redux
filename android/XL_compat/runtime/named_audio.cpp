@@ -249,7 +249,7 @@ static std::shared_ptr<AudioResources> prepare_named_only(const char *level, con
 	return resources;
 }
 
-std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal)
+std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal, const XlResourceBanks *banks)
 {
 	auto resources = prepare_named_only(level, inventory, ordinal);
 	if (!resources) resources = std::make_shared<AudioResources>();
@@ -297,7 +297,7 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 		resources->names.push_back(resource.path);
 		external_identity += ":" + name + ":" + resource.path + ":" + picosha2::hash256_hex_string(resource.bytes);
 	}
-	const auto replacements = prepare_classic_audio(level, ordinal, classic_audio_output_rate());
+	const auto replacements = prepare_classic_audio(level, ordinal, classic_audio_output_rate(), banks);
 	for (const auto &sample : replacements.samples) resources->classic_replacements.emplace(sample.name, sample.path);
 	if (!replacements.samples.empty()) {
 #ifndef USE_SDLMIXER
@@ -305,7 +305,7 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 #endif
 		if (!GameArg.SndNoSound && !backend_ready) throw std::runtime_error("XL classic replacements require an initialized stereo 16-bit SDL_mixer output");
 	}
-	auto classic = prepare_classic_playback(replacements);
+	auto classic = prepare_classic_playback(replacements, banks);
 	for (auto &sample : classic.samples) {
 		if (sample.sample != int(resources->classic.size())) throw std::runtime_error("XL shared bank has an incomplete classic registry");
 		bytes += sample.pcm.samples.size() * sizeof(std::int16_t);

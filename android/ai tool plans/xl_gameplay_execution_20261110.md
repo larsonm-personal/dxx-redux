@@ -4908,3 +4908,36 @@ The capture uses controlled water navigation and `-xl-water-physics`; no campaig
 completion claim. PR 481 private run 43485529207 and public checks are in progress.
 PR 480 still has two public replay owners running and the separate sampled
 readiness failure; its required private owner pass is not a full gameplay pass.
+
+### Retained-bank classic PCM preparation (2026-11-13)
+
+The actual level resource constructor now passes its immutable sound bank through
+named-audio preparation. Classic replacement selection, sample identity and PCM
+conversion use retained names, bytes and sample rate instead of the outgoing
+`GameSounds` registry. Existing live-registry callers retain their validation
+path. Native record decoding remains shared; no new bank format reader exists.
+
+The existing classic controls compare all 183 stock sample receipts against the
+retained conversion, then invalidate outgoing data, bit depth, length and rate,
+and change equal-count sample bytes. Retained results stay identical while live
+registry validation still rejects invalid inputs. Existing scoped replacement,
+actual mixer PCM, disk-through-stock, rate reopen and pinned reference controls
+pass in the complete Windows and Linux Debug named-audio owners. Source input
+is unchanged audited Neptune geometry. Receipts are `target-audio-windows` under
+`temp/xl-resource-tranche-20261113` and `target-audio-linux` under the existing
+native WSL private root; their CMake wrapper logs have exit zero. Scoped mixed
+formatting and both builds pass. No top-level test was added.
+Windows binary SHA-256:
+`5127ed537ba47cb18e4929cfe14108dcc0109f7c53850a73b0fd888dc51eaa19`.
+Linux Debug binary SHA-256:
+`726d32a2256879fdb2645536aeabf64d35c0aefb83cc70d77288985af0f56620`.
+Ordinary playback qualification follows this checkpoint. Target folder/archive
+context, mixer publication allocation, actual native bank replacement and full
+G2 remain open. Existing Debug allocator warnings remain visible.
+
+Captured-base-HAM PR 482 is published at
+`cab55cf2771a34af19e582d410b0b60f231633f0`, immediate parent PR 481, linked in
+stack 471. Its private run 43486751454 is pending. PR 481's private run
+43485529207 is still running. The separate PR 480 readiness receipt records four
+load failures and four loaded/ticked levels out of eight, with only two confirmed
+assisted navigation results; it is not a general gameplay acceptance result.

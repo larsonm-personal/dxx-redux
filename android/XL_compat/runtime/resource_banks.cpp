@@ -97,6 +97,15 @@ int XlResourceBanks::sample_rate() const
 {
 	return state->rate;
 }
+const char *XlResourceBanks::sound_name(int id) const
+{
+	return id >= 0 && id < int(state->sounds.size()) ? state->sounds[id].name : nullptr;
+}
+const unsigned char *XlResourceBanks::sound_data(int id) const
+{
+	sound(id);
+	return state->sound_bytes.data() + state->sounds[id].offset;
+}
 const std::string &XlResourceBanks::bitmap_hash() const
 {
 	return state->bitmap_hash;

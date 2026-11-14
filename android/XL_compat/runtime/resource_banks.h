@@ -17,6 +17,8 @@ class XlResourceBanks
 	int bitmap_count() const;
 	int sound_count() const;
 	int sound_length(int id) const;
+	const char *sound_name(int id) const;
+	const unsigned char *sound_data(int id) const;
 	int sample_rate() const;
 	const std::string &bitmap_hash() const;
 	const std::string &sound_hash() const;
