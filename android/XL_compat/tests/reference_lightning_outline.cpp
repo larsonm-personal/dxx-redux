@@ -119,9 +119,10 @@ struct {
 } options;
 auto *gameOpts = &options;
 struct Corona {
+	bool available = true;
 	bool Load() const
 	{
-		return true;
+		return available;
 	}
 	Corona *Bitmap()
 	{
@@ -189,6 +190,17 @@ void lightning_outline_controls()
 	CLightning nonglow;
 	if (nonglow.SetupGlow() != 0 || glowRenderer.ends != 1 || glowRenderer.begins != 0)
 		throw std::runtime_error("Pinned non-glowing SetupGlow did not end the previous glow batch");
+	for (bool available : { false, true })
+		for (bool blur : { false, true }) {
+			CLightning source;
+			source.m_bGlow = 1;
+			source.m_bBlur = blur;
+			corona.available = available;
+			glowRenderer.begins = glowRenderer.ends = 0;
+			if (source.SetupGlow() != int(available) || glowRenderer.begins != unsigned(blur) || glowRenderer.ends != unsigned(!blur))
+				throw std::runtime_error("Pinned missing corona changed the authored glow batch lifetime");
+		}
+	corona.available = true;
 	for (int canvas_width : { 320, 640, 1280, 4096 })
 		for (int radius : { 0, 32768, 4 * 65536, 32 * 65536 })
 			for (float distance : { 0.f, .00001f, .001f, .01f, .1f, .25f, .5f, 1.f, 2.f, 3.f, 4.f, 5.f, 8.f, 10.f, 20.f, 30.f, 50.f, 100.f, 200.f, 500.f, 1000.f, 5000.f, 15000.f, 30000.f })

@@ -788,3 +788,29 @@ normal-menu restore. Fixed-lightning activation and live geometry pass after
 restore; original Pumo assets remain unchanged. Exact-APK delivery and controlled-
 test boundaries are recorded in [PUMO_PLAYTEST.md](../PUMO_PLAYTEST.md). These
 checks do not establish full human traversal or cosmetic shader parity.
+
+## Missing corona ownership (November 14, second tranche)
+
+The pinned SetupGlow permits failed corona Load. It keeps the authored blur
+Begin/End and returns false; Draw still consumes three presentation random values,
+uses the authored plasma viewport, and renders the core with its distance-scaled
+width. The native renderer now preserves those operations and omits only textured
+plasma. A missing corona does not suppress simulation, illumination or audio.
+Malformed images and foreign origins still reject, and missing images do not
+weaken GPU geometry validation. Present images retain native decoded ownership.
+
+Actual pinned SetupGlow/Draw controls distinguish presence and absence, batch
+lifetime, visibility, color and RNG. Real GPU controls cover core-only pixels at
+authored positive distance scale, source blur composition, occlusion, offset
+canvases, retained interleaved batches and context recreation. The missing-image
+primitive uses the existing strict core-only pixel tolerance. The full native
+owner loads a derived lightning world, saves through a stock world and restores,
+then verifies decoded commit/moves/discard and live continuation after deletion
+of the isolated source image. Equal-count incoming pixels remain independent of
+the outgoing world; existing malformed/shadow/origin controls still run.
+
+The frozen ordinary cohort remains separate: parent PR 501 measured 4/8 locally
+and in private CI. This child still needs its own ordinary measurement. Windows
+Debug effect timeout remains open; passing Linux Debug and Windows release/GPU
+checks do not replace it. These controls do not establish whole-save atomicity,
+G2-G7 completion, renderer qualification for the headless cohort, or campaign play.

@@ -91,7 +91,6 @@ void xl_compat::draw_lightning_scene_item(const LightningSceneItem &item, Partic
 		compositor.draw_unblurred(core, glow, item.random_nodes, color, width, matrix);
 		return;
 	}
-	if (!image) throw std::runtime_error("XL lightning scene lost its corona image");
 	std::array<float, 16> projection;
 #ifdef ANDROID
 	std::copy_n(gles3_shim_get_projection(), 16, projection.begin());
@@ -126,9 +125,10 @@ void xl_compat::draw_lightning_scene_item(const LightningSceneItem &item, Partic
 	bool captured = compositor.batch_active();
 	ParticleDepthRead scene_depth(depth, captured);
 	glViewport(view[0], view[1], view[2], view[3]);
-	const auto corona = image->border_handle();
+	const auto corona = image ? image->border_handle() : 0;
 	const bool stencil = scene_depth.borrowed ? scene_depth.stencil != 0 : depth.stencil != 0;
 	compositor.begin(target, scene_depth.texture, stencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT, scene_depth.width, scene_depth.height, view);
-	compositor.draw(core, glow, item.random_nodes, color, item.width, matrix, corona, extent, { .25f, .25f });
+	// SetupGlow failure preserves blur, viewport, core width and draw RNG
+	compositor.draw(core, glow, item.random_nodes, color, item.width, matrix, corona, extent, { .25f, .25f }, image != nullptr);
 #endif
 }

@@ -311,3 +311,65 @@ diff whitespace checks pass. Four stashes, including untouched native sound WIP
 9783012e2a77dfdd4680812ae72b852cfaca5e17, and unrelated .codex/ remain preserved.
 Publication is an immediate-parent child of PR 500 in origin only, stack 471;
 committed ordinary readiness and new exact-head CI are the next qualification step.
+
+PR 501 head e60bfd8e39a7ea6a01003a1d512110329d329aac, immediate parent
+36b4a3fdde87d9122fec9f1d1b8eaf9ce2f1ba09 and merge candidate
+16db0ba1a7684e6bd8d0812f51045c51e028f4b6 are published in origin, stack 471.
+Ordinary developer-OFF binary
+574983eb1df81bdf15277af714c6da27bac47b9ea10c085829a1b2297d696844
+completed the unchanged frozen cohort in particle-readiness-01: FAIL 4/8.
+All four private engine logs are retained. Boiling Point now reaches malformed
+or unsupported-normalization control2.HXM validation; Dinter and Sphere reach
+the missing corona image; Warp Shock still requires the camera addon. No
+readiness increment is claimed. Private exact-head run 43641876720 is pending.
+
+Next child qualifies missing lightning corona behavior. Pinned SetupGlow returns
+false on failed image Load but preserves its blur Begin/End; Draw still consumes
+three presentation random values, computes the plasma viewport, and renders the
+core with authored width, distance scale and blur. It omits only textured plasma.
+Implement those consumer requirements before admitting absence; keep malformed
+and foreign-origin rejection. Extend actual pinned source, real GPU/context,
+incoming resource independence and native lifetime controls. Keep all ordinary
+cohort inputs and deadlines unchanged. Camera fallback remains an audit, not an
+implemented qualification. Three tranches including this one, range two to four,
+remains a low-confidence conditional estimate with the HXM and camera blockers.
+
+PR 501 private run 43641876720 attempt 1 completed successfully on controller
+72fdd76f5f8dc24a787b3a4858de1115ec091c19 at the exact e60bfd8e head. It passed
+113 required checks, 16 format witnesses and 3 modern source levels in 676.913 s;
+assisted navigation passed one smoke/four anchors in 3746 ms. Camera subchecks
+remain not_run_missing_addon and coverage_complete=false. Distinct readiness
+is FAIL 4/8. Terminal job, host, summary and readiness artifacts are preserved.
+PR 500 now has no pending or failed non-readiness checks; PR 501 public jobs are
+still finishing. These are inspections of newly triggered CI, not hourly watching.
+
+Corona child native Linux Debug full owner passed 11 s (corona-linux-02), binary
+81737691ae33ffecd8bcc07959976d4d009049c93c99c2e9a305a35ab4d1fde1.
+Windows release passed 12.328 s, binary
+81d4ca9ff5b93f96e6d8b2edef0cd1ff93872cdd4a2f60cbe5c95e31eedcdd62.
+Dedicated pinned lightning source passed Windows 0.68 s and Linux 0.22 s;
+the effect-reference owner is a different test and does not replace that check.
+GPU passed 16.23 s before a final tightening that preserves geometry validation
+when plasma is absent and uses the strict core-only pixel tolerance. Final GPU
+and release/native refresh are due. Source snapshots 01/02 are retained.
+
+Windows Debug corona owner failed at its unchanged 80-second child deadline,
+81.469 s total, binary
+c0ebe94a3e4b635dfa881a2c42206ce2832c228d3bcd2f1721ea89eb216bcff7.
+The preceding audio/particle Debug failures remain open. The first Linux corona
+failure found an obsolete final missing-image assertion, now corrected without
+weakening malformed or foreign-origin checks. A bounded ordinary-binary GDB
+diagnostic of Boiling Point reports native HXM valid=0, inert_robot_records=0,
+normalized_empty_joint_offsets=0, ignored_trailing_bytes=0. This is diagnosis,
+not readiness qualification; the structural admission guard remains intact.
+
+Final corona refresh passes Linux Debug 12 s, binary
+b107b6b2c8660cb4c70f81af2c70d6256f82a7d94870f32f4bc044c52e44f86b,
+and Windows release 12.422 s, binary
+0989837a68dd4b1ba64cdd6e5b5f73a09b937ba4e23651ca5321b50ce48a5fb8.
+The tightened GPU owner passes 15.89 s and unchanged effect reference 0.33 s.
+Both catalogs pass with unchanged 99/547/315/428 membership. Source snapshot 04
+includes the added Android missing-corona checks; their device run is pending.
+Original Neptune/Pumo archives, descriptor and atlas hashes remain unchanged.
+The child is ready for early origin-only immediate-parent publication with Debug
+failure disclosed; exact committed ordinary readiness and triggered CI follow.

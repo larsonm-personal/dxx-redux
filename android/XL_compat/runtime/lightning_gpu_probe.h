@@ -140,7 +140,7 @@ void lightning_gpu_probe(const char *operation)
 	progress("camera monitor");
 	std::vector<unsigned char> pixels(64 * 64 * 4);
 	unsigned changed = 0;
-	unsigned line_cases = 0, bitmap_cases = 0, outline_cases = 0, wall_cases = 0, shield_cases = 0, original_shield_cases = 0, camera_target_cases = 0, camera_native_pass_cases = 0;
+	unsigned line_cases = 0, bitmap_cases = 0, outline_cases = 0, missing_corona_cases = 0, wall_cases = 0, shield_cases = 0, original_shield_cases = 0, camera_target_cases = 0, camera_native_pass_cases = 0;
 	std::vector<unsigned char> shield_pixels;
 	unsigned shield_overlap_rounding = 0;
 	GLfloat line_range[2];
@@ -253,6 +253,31 @@ void lightning_gpu_probe(const char *operation)
 		require(glGetError() == GL_NO_ERROR, "Lightning draw/readback raised a GPU error");
 		for (unsigned p = 0; p < 64 * 64; ++p) changed += pixels[p * 4 + 2] != 0;
 		require(changed > 0 && changed < 64 * 64, "Lightning GPU control produced no bounded visible glow");
+		std::vector<unsigned char> missing_direct;
+		for (float scale : { 0.f, 1.f }) {
+			auto missing = item;
+			missing.frame.glow.distance_scale = scale;
+			glDepthMask(GL_TRUE);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			d_srand_stream(D_RNG_PRESENTATION, 12345);
+			const auto before = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
+			const auto sim = d_rand_get_stream_call_count(D_RNG_SIM);
+			draw_lightning_scene_item(missing, nullptr);
+			std::vector<unsigned char> immediate(64 * 64 * 4), finished(immediate.size());
+			glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, immediate.data());
+			finish_lightning_batch();
+			glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, finished.data());
+			require((immediate == finished) == (scale == 0), "Missing corona changed authored direct/blur batch behavior");
+			require(d_rand_get_stream_call_count(D_RNG_PRESENTATION) == before + 3 && d_rand_get_stream_call_count(D_RNG_SIM) == sim,
+			        "Missing corona changed device draw RNG");
+			unsigned visible = 0;
+			for (unsigned p = 0; p < 64 * 64; ++p) visible += finished[p * 4 + 2] != 0;
+			require(visible > 0 && visible < 64 * 64, "Missing corona suppressed its bounded visible core");
+			if (!missing_direct.empty()) require(finished != missing_direct, "Missing corona lost authored blur and distance-scaled width");
+			missing_direct = finished;
+			pixels.insert(pixels.end(), finished.begin(), finished.end());
+			++missing_corona_cases;
+		}
 		item.frame.glow.vertices.clear();
 		item.frame.glow.uv.clear();
 		std::vector<unsigned char> narrow_outline;
@@ -290,5 +315,5 @@ void lightning_gpu_probe(const char *operation)
 	lightning_probe_pixels = std::move(pixels);
 	progress("complete");
 	++checks;
-	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "shield_cases", shield_cases }, { "original_shield_cases", original_shield_cases }, { "camera_target_cases", camera_target_cases }, { "camera_native_pass_cases", camera_native_pass_cases }, { "camera_scene_cases", camera_scene_cases }, { "camera_monitor_cases", camera_monitor_cases }, { "shield_overlap_rounding", shield_overlap_rounding }, { "wall_cases", wall_cases }, { "outline_cases", outline_cases }, { "line_cases", line_cases }, { "sprite_cases", 1 }, { "bitmap_cases", bitmap_cases }, { "glare_width", lightning_probe_glare->bitmap.width }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
+	report = nlohmann::json{ { "passed", true }, { "checks", checks }, { "shield_cases", shield_cases }, { "original_shield_cases", original_shield_cases }, { "camera_target_cases", camera_target_cases }, { "camera_native_pass_cases", camera_native_pass_cases }, { "camera_scene_cases", camera_scene_cases }, { "camera_monitor_cases", camera_monitor_cases }, { "shield_overlap_rounding", shield_overlap_rounding }, { "wall_cases", wall_cases }, { "outline_cases", outline_cases }, { "missing_corona_cases", missing_corona_cases }, { "line_cases", line_cases }, { "sprite_cases", 1 }, { "bitmap_cases", bitmap_cases }, { "glare_width", lightning_probe_glare->bitmap.width }, { "lightning_changed", changed }, { "line_width_min", line_range[0] }, { "line_width_max", line_range[1] }, { "corona_width", lightning_probe_image->bitmap.width } }.dump();
 }

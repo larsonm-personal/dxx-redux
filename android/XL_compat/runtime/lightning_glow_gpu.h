@@ -223,7 +223,7 @@ class LightningGlowGpu
 		primitive.draw(core, glow, random_nodes, color, line_width, matrix, 0, true);
 	}
 	bool draw(const LightningCore &core, const LightningGlow &glow, int random_nodes, const std::array<float, 4> &color,
-	          float line_width, const std::array<float, 16> &matrix, GLuint corona, const std::array<int, 4> &extent, const std::array<float, 2> &corona_map = { 1, 0 })
+	          float line_width, const std::array<float, 16> &matrix, GLuint corona, const std::array<int, 4> &extent, const std::array<float, 2> &corona_map = { 1, 0 }, bool textured_glow = true)
 	{
 		if (!active) throw std::runtime_error("XL lightning glow draw requires an active batch");
 		include_extent(extent);
@@ -231,7 +231,7 @@ class LightningGlowGpu
 		select(targets[0]);
 		// Source Draw rejects SetViewport < 0, but this overload returns only 0 or 1
 		// Keep hidden input: a later member can make the cumulative batch visible
-		primitive.draw(core, glow, random_nodes, color, line_width, matrix, corona, true, corona_map);
+		primitive.draw(core, glow, random_nodes, color, line_width, matrix, corona, true, corona_map, textured_glow);
 		return visible;
 	}
 	bool end()
