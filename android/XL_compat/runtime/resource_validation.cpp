@@ -1345,7 +1345,7 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 		}
 	}
 	if (level) state->messages = xl_compat::prepare_messages(level_filename, *level);
-	if (level) state->audio = xl_compat::prepare_named_audio(level_filename, *level, ordinal);
+	if (level) state->audio = xl_compat::prepare_named_audio(level_filename, *level, ordinal, state->banks.get());
 	if (level) {
 		state->particle_image = xl_compat::prepare_particle_image(*level);
 		state->smoke_image = xl_compat::prepare_particle_image(*level, 0);
