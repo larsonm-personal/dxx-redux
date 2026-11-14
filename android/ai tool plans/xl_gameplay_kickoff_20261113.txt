@@ -1,0 +1,43 @@
+Continue the next explicitly bounded XL gameplay window in C:/local/dxx-redux.
+Read AGENTS.md, .github/copilot-instructions.md, android/ai tool plans/xl_gameplay_what_was_done_20261113.md,
+xl_gameplay_next_window_20261113.md, xl_resource_tranche_20261113.md and the G2-G7
+acceptance sections and latest entries of xl_gameplay_execution_20261110.md.
+This prompt starts work only when explicitly invoked; it does not revive an
+unlimited-duration goal. Agree the new duration and reserve its final quarter
+for validation, CI repair and committed handoff. Work sequentially without agents.
+
+Refresh current HEAD/tree/stashes/published head/immediate parent and stack 471.
+Resolve applicable CI failures first; old green runs and dispatchers do not prove
+current qualification. The known sampled readiness 4/8 remains visible and separate.
+Preserve failed receipts, authentic assets and unrelated work. Native sound WIP is
+stash 9783012e2a77dfdd4680812ae72b852cfaca5e17; review before applying. It is untested.
+
+Continue the real incoming resource transaction through native PCM, bitmap,
+palette/GPU and world owners as the next plan specifies. Reuse existing native
+codecs, retain decoded owners through commit, validate incoming definitions and
+origins independently of the outgoing world, and prove moves/discard/live
+continuation and equal-count target independence. No duplicate format parser,
+temporary live-table swapping, guessed trailer scan or serialized rollback.
+Keep XL policy in android/XL_compat and native changes to necessary codec/state
+ownership or thin hooks. Full G2 remains open: corrupt XL trailer rejection still
+changes energy 91 to 100. A partial milestone is not whole-save atomicity.
+
+Authorized publication is only to origin, larsonm-personal/dxx-redux: feature-sized
+non-draft immediate-parent stacked PRs, linked to stack 471. Publish coherent
+tested checkpoints early and fix terminal CI failures while independent work
+continues. Never merge, auto-merge, enqueue or publish upstream. Record exact
+head/merge/controller/candidate IDs, workflow URLs/attempts and all owner outcomes.
+Explain skips and missing external prerequisites; pending is not pass.
+
+Run affected Windows/Linux Debug/assertions and ordinary developer-OFF owners,
+Android and reference/replay owners. Preserve authentic inputs, strict assertions,
+timeouts and catalog membership. Compare real captures against clean playback
+using detailed world/object/XL state and SIM RNG. Disclose assists and the Android
+startup FX mismatch. Use scoped formatting and wait until it exits before edits
+or builds. Follow the repository cleanup policy and protect active runs/assets.
+
+Commit and push a dated report, updated execution ledger, next-window plan and
+replacement kickoff with these constraints, exact source/binary/input/CI receipts,
+open defects and revised estimates. Inspect CI triggered by the final push. Do not
+claim 90% playability, G2-G7 completion or unassisted campaign qualification from
+short assisted replay, load/tick measurements or green regression checks.
