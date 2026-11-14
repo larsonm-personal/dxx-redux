@@ -37,6 +37,33 @@ function New-TestExecutionEvidenceContext {
     }
 }
 
+# Owners emit this only after inspecting all required assertions or structured leaf results
+function Write-TestCompletionEvidence {
+    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][object[]]$Cases)
+    if (-not $Cases.Count) { throw 'Completion evidence requires nonempty cases' }
+    Write-Output ('DXX_TEST_COMPLETION: ' + (@{ name = $Name; cases = $Cases } | ConvertTo-Json -Depth 6 -Compress))
+}
+
+function Get-TestCompletionEvidence {
+    param([string]$Name, [hashtable]$Result)
+    $empty = @{ coverage_complete = $false; cases = @() }
+    if (-not $Result -or $Result.Status -ne 'PASS' -or $Result.ExitCode -ne 0 -or
+        -not $Result.AttemptedTests -or -not $Result.LogFile -or -not (Test-Path -LiteralPath $Result.LogFile)) { return $empty }
+    $markers = @([IO.File]::ReadLines([IO.Path]::GetFullPath($Result.LogFile)) | Where-Object { $_.StartsWith('DXX_TEST_COMPLETION: ') })
+    if ($markers.Count -ne 1 -or $markers[0].Length -gt 65536) { return $empty }
+    try {
+        $proof = $markers[0].Substring('DXX_TEST_COMPLETION: '.Length) | ConvertFrom-Json
+        $cases = @($proof.cases)
+        if ($proof.name -cne $Name -or -not $cases.Count -or $cases.Count -gt 512) { return $empty }
+        $ids = @{}
+        foreach ($case in $cases) {
+            if (-not $case.id -or $ids.ContainsKey([string]$case.id) -or $case.status -notin @('PASS', 'FAIL', 'SKIP', 'NOT_RUN', 'BLOCKED')) { return $empty }
+            $ids[[string]$case.id] = $true
+        }
+        return @{ coverage_complete = (@($cases | Where-Object { $_.status -ne 'PASS' }).Count -eq 0); cases = $cases }
+    } catch { return $empty }
+}
+
 function New-TestExecutionObservation {
     param([hashtable]$Context, [hashtable]$Test, [hashtable]$Result, [string]$StartedUtc, [string]$SourceSha256)
     $status = if ($Result) { [string]$Result.Status } else { 'RUNNING' }
@@ -45,7 +72,10 @@ function New-TestExecutionObservation {
     if ($arguments.Length -gt 4096) { throw 'Test arguments exceed evidence limit' }
     $reason = [string]$Result.Reason
     if ($reason.Length -gt 2048) { $reason = $reason.Substring(0, 2048) }
+    $completion = Get-TestCompletionEvidence -Name $Test.Name -Result $Result
     return [ordered]@{
+        coverage_complete = $completion.coverage_complete
+        cases = $completion.cases
         name = $Test.Name
         type = $Test.Type
         requires = $Test.Requires

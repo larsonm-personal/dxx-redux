@@ -187,7 +187,7 @@ class MirrorTests(unittest.TestCase):
     def test_host_and_android_use_controller_before_apt(self):
         nightly = (ROOT / ".github/workflows/nightly-tooling-sweep.yml").read_text()
         nightly_apt_jobs = self.apt_jobs(nightly)
-        self.assertEqual(set(nightly_apt_jobs), {"host", "pumo_stage"})
+        self.assertEqual(set(nightly_apt_jobs), {"host", "pumo_stage", "nightly_release"})
         for job_name in nightly_apt_jobs:
             with self.subTest(job=job_name):
                 self.assert_controller_before_apt(nightly, job_name)

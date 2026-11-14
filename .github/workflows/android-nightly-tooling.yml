@@ -3,6 +3,15 @@ name: Android and JVM tests
 on:
   workflow_call:
     inputs:
+      shard:
+        type: string
+        default: ""
+      nightly_target_ref:
+        type: string
+        default: ""
+      nightly_activity_id:
+        type: string
+        default: ""
       target_sha:
         description: Immutable target commit selected by the trusted sweep planner
         required: true
@@ -58,12 +67,15 @@ jobs:
       run: ${{ !inputs.recheck_stack && 'true' || steps.stack.outputs.run }}
     runs-on: ubuntu-24.04
     # Provision/build time is separate from the approximately 45-minute test sample
-    timeout-minutes: 105
+    timeout-minutes: ${{ inputs.nightly_target_ref != '' && 55 || 105 }}
     # Keep deployment tracking for trusted retail jobs only
     environment:
       name: ${{ inputs.retail_assets && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'retail-ci' || 'asset-free' }}
       deployment: ${{ inputs.retail_assets && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
     env:
+      NIGHTLY_TARGET_SHA: ${{ inputs.nightly_target_ref != '' && inputs.target_sha || '' }}
+      NIGHTLY_TARGET_REF: ${{ inputs.nightly_target_ref }}
+      NIGHTLY_ACTIVITY_ID: ${{ inputs.nightly_activity_id }}
       RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
       RETAIL_CHECKOUT_COMMIT: ${{ inputs.retail_commit }}
       TARGET_SHA: ${{ inputs.target_sha }}
@@ -120,6 +132,16 @@ jobs:
         with:
           name: ${{ inputs.plan_artifact }}
           path: plan
+      - name: Select bounded shard
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && inputs.shard != ''
+        env:
+          SHARD: ${{ inputs.shard }}
+        run: |
+          [[ "$SHARD" =~ ^shard-[0-9]{3}$ ]]
+          cp "plan/$SHARD.json" plan/plan.json
+      - name: Check remaining nightly allowance before provisioning
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && inputs.nightly_target_ref != ''
+        run: python3 control/android/tests/nightly_sample.py check-deadline
       - name: Inspect fixed fixture requirement
         if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true')
         id: selection
@@ -145,6 +167,49 @@ jobs:
               for name, needed in requirements.items():
                   output.write(f"{name}={str(needed).lower()}\n")
           PYTHON
+      - name: Prepare trusted asset staging
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true')
+        run: |
+          python3 control/.github/scripts/prefer_ubuntu_archive.py
+          mkdir -p results control/android/temp control/temp "$RUNNER_TEMP/dxx-nightly-deps"
+          printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > control/dependency_base.txt
+      - name: Verify trusted retail checkout boundary
+        id: retail_gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RETAIL_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.retail_assets)
+        run: |
+          [[ -n "$RETAIL_READ_TOKEN" ]] || { echo "Retail read-only environment secret is missing" >&2; exit 1; }
+          unset RETAIL_READ_TOKEN
+          [[ "$RETAIL_CHECKOUT_COMMIT" == "$RETAIL_ASSETS_COMMIT" ]]
+          python3 control/android/tests/nightly_tooling_sweep.py retail-check \
+            --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json --lane "$SWEEP_LANE"
+      - name: Check out immutable private retail inputs
+        id: retail_checkout
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.retail_assets)
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          repository: larsonm-personal/dxx-redux-test-assets
+          ref: ${{ inputs.retail_commit }}
+          token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
+          path: retail-input
+          persist-credentials: false
+      - name: Verify supplied edition and stage base retail files
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.retail_assets)
+        id: retail_stage
+        run: |
+          [[ "$(git -C retail-input rev-parse HEAD)" == "$RETAIL_CHECKOUT_COMMIT" ]]
+          python3 control/android/helpers/retail_ci_assets.py --root retail-input --repo control --source-map control/android/tests/retail_asset_sources.json \
+            --output results/retail-verification.json --stage target/game_data/retail-ci --include-missions
+          # Original XL owners require verified, complete private inputs
+          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e['id'] == 'master:test_xl_original_assets' for e in p['tests']))"; then
+            sudo apt-get update
+            sudo apt-get install -y build-essential libsdl1.2-dev libsdl-mixer1.2-dev libphysfs-dev libpng-dev libglew-dev zlib1g-dev
+            pwsh -NoProfile -Command "\$tool = & ./control/android/get_deps/helpers/get_7zip.ps1; Set-Content -LiteralPath results/xl-seven-zip.txt -Value \$tool -NoNewline"
+            python3 control/android/tests/xl_private_assets.py --root retail-input --stage target/game_data/retail-ci/xl --seven-zip "$(cat results/xl-seven-zip.txt)"
+          fi
+          rm -rf retail-input
       - name: Prepare pinned local matchmaking server
         if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (steps.selection.outputs.online_preview == 'true')
         shell: bash
@@ -305,7 +370,6 @@ jobs:
         run: |
           set -euo pipefail
           {
-            python3 control/.github/scripts/prefer_ubuntu_archive.py
             sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o APT::Update::Error-Mode=any update
             sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends libpulse0
           } 2>&1 | tee results/setup/emulator-host-runtime.log
@@ -464,42 +528,6 @@ jobs:
             ffmpeg -version
             ffprobe -version
           } 2>&1 | tee results/setup/ffmpeg.log
-      - name: Verify trusted retail checkout boundary
-        id: retail_gate
-        env:
-          RETAIL_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
-        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.retail_assets)
-        run: |
-          [[ -n "$RETAIL_READ_TOKEN" ]] || { echo "Retail read-only environment secret is missing" >&2; exit 1; }
-          unset RETAIL_READ_TOKEN
-          [[ "$RETAIL_CHECKOUT_COMMIT" == "$RETAIL_ASSETS_COMMIT" ]]
-          python3 control/android/tests/nightly_tooling_sweep.py retail-check \
-            --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json --lane "$SWEEP_LANE"
-      - name: Check out immutable private retail inputs
-        id: retail_checkout
-        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.retail_assets)
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-        with:
-          repository: larsonm-personal/dxx-redux-test-assets
-          ref: ${{ inputs.retail_commit }}
-          token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
-          path: retail-input
-          persist-credentials: false
-      - name: Verify supplied edition and stage base retail files
-        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.retail_assets)
-        id: retail_stage
-        run: |
-          [[ "$(git -C retail-input rev-parse HEAD)" == "$RETAIL_CHECKOUT_COMMIT" ]]
-          python3 control/android/helpers/retail_ci_assets.py --root retail-input --repo control --source-map control/android/tests/retail_asset_sources.json \
-            --output results/retail-verification.json --stage target/game_data/retail-ci --include-missions
-          # Original XL owners require verified, complete private inputs
-          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e['id'] == 'master:test_xl_original_assets' for e in p['tests']))"; then
-            sudo apt-get update
-            sudo apt-get install -y build-essential libsdl1.2-dev libsdl-mixer1.2-dev libphysfs-dev libpng-dev libglew-dev zlib1g-dev
-            pwsh -NoProfile -Command "\$tool = & ./control/android/get_deps/helpers/get_7zip.ps1; Set-Content -LiteralPath results/xl-seven-zip.txt -Value \$tool -NoNewline"
-            python3 control/android/tests/xl_private_assets.py --root retail-input --stage target/game_data/retail-ci/xl --seven-zip "$(cat results/xl-seven-zip.txt)"
-          fi
-          rm -rf retail-input
       - name: Prepare isolated headless emulators
         if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (inputs.lane != 'jvm')
         timeout-minutes: 8
@@ -567,6 +595,9 @@ jobs:
           command=(python3 control/android/tests/nightly_tooling_sweep.py execute
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json
             --lane "$SWEEP_LANE" --repo "$GITHUB_WORKSPACE/target" --output "$GITHUB_WORKSPACE/results")
+          if [[ -n "${NIGHTLY_TARGET_REF:-}" ]]; then
+            command=(python3 control/android/tests/nightly_sample.py execute --lane "$SWEEP_LANE")
+          fi
           if [[ "$NATIVE_REPLAY" == true ]]; then
             # Auto-level owners record on Android, then replay in the native SDL/OpenGL executable
             command=(xvfb-run -a -s '-screen 0 1280x720x24 -nolisten tcp'
@@ -582,6 +613,10 @@ jobs:
           reason=()
           if [[ "$PROVISIONING_FAILED" == 'true' ]]; then
             reason=(--blocked-reason 'Lane provisioning failed before test execution; see setup logs')
+          fi
+          if [[ -n "${NIGHTLY_TARGET_REF:-}" ]]; then
+            python3 control/android/tests/nightly_sample.py collect --lane "$SWEEP_LANE" "${reason[@]}"
+            exit $?
           fi
           python3 control/android/tests/nightly_tooling_sweep.py collect \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
@@ -753,7 +788,7 @@ jobs:
         if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && !inputs.retail_assets)
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: nightly-results-${{ inputs.lane }}
+          name: nightly-results-${{ inputs.lane }}${{ inputs.shard != '' && format('-{0}', inputs.shard) || '' }}
           path: results/
           retention-days: 14
           if-no-files-found: error
@@ -761,7 +796,7 @@ jobs:
         if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && !inputs.retail_assets)
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: nightly-gradle-reports-${{ inputs.lane }}
+          name: nightly-gradle-reports-${{ inputs.lane }}${{ inputs.shard != '' && format('-{0}', inputs.shard) || '' }}
           path: |
             target/android/app/build/test-results/
             target/android/app/build/reports/tests/
@@ -775,7 +810,7 @@ jobs:
         if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && !inputs.retail_assets)
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: nightly-fixture-provenance-${{ inputs.lane }}
+          name: nightly-fixture-provenance-${{ inputs.lane }}${{ inputs.shard != '' && format('-{0}', inputs.shard) || '' }}
           path: |
             target/android/temp/preview_fixture_*/provenance.json
           retention-days: 14
@@ -784,7 +819,7 @@ jobs:
         if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && inputs.retail_assets)
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: nightly-results-${{ inputs.lane }}
+          name: nightly-results-${{ inputs.lane }}${{ inputs.shard != '' && format('-{0}', inputs.shard) || '' }}
           path: |
             results/results.json
             results/retail-verification.json

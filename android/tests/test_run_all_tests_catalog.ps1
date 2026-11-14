@@ -554,3 +554,6 @@ exit 0
     $producerLock.Dispose()
     Remove-Item -LiteralPath $fixtureRoot -Recurse -Force
 }
+
+. "$PSScriptRoot/../helpers/test_execution_evidence.ps1"
+Write-TestCompletionEvidence -Name "test_run_all_tests_catalog" -Cases @(@{ id = "all-catalog-integration-assertions"; status = "PASS" })

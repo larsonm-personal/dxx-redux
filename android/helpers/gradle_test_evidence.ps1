@@ -1,6 +1,6 @@
 # Validate the real Gradle XML, independently of Gradle's successful exit status
 function Assert-GradleUnitTestEvidence {
-    param([Parameter(Mandatory)][string]$ResultsDirectory)
+    param([Parameter(Mandatory)][string]$ResultsDirectory, [switch]$PassThru)
 
     $files = @(Get-ChildItem -LiteralPath $ResultsDirectory -Filter 'TEST-*.xml' -File -ErrorAction SilentlyContinue)
     if ($files.Count -eq 0) { throw "No Gradle test XML in $ResultsDirectory" }
@@ -26,5 +26,6 @@ function Assert-GradleUnitTestEvidence {
         $executed += $cases.Count - $suiteSkipped
     }
     if ($executed -le 0) { throw "No executed Gradle tests in $ResultsDirectory" }
+    if ($PassThru) { [pscustomobject]@{ Executed = $executed; Skipped = $skipped } }
     Write-Host "Gradle evidence: $executed executed, $skipped skipped in $ResultsDirectory"
 }

@@ -22,3 +22,6 @@ try {
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
 }
+
+. "$PSScriptRoot/../helpers/test_execution_evidence.ps1"
+Write-TestCompletionEvidence -Name "test_controller_overlay" -Cases @(@{ id = "controller-overlay-instrumentation"; status = "PASS" })

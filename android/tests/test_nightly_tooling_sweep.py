@@ -2549,14 +2549,14 @@ class SweepTests(unittest.TestCase):
             with self.assertRaises(subprocess.TimeoutExpired):
                 sweep.run_command([sys.executable, "-c", "import time; time.sleep(60)"], d, log, timeout=0.1)
 
-    def test_host_metadata_cli_bootstraps_before_private_inputs(self):
+    def test_host_candidate_setup_follows_private_credential_removal(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
         host = workflow[workflow.index("  host:") : workflow.index("  android:")]
         prerequisites = host.split("      - name: Install host prerequisites", 1)[1].split("      - name:", 1)[0]
         self.assertIn("timeout-minutes: 15", prerequisites)
-        self.assertIn("    timeout-minutes: 100", host.split("    steps:", 1)[0])
+        self.assertIn("&& 55 || 100", host.split("    steps:", 1)[0])
         execution = host.split("      - name: Execute admitted host owners", 1)[1].split("      - name:", 1)[0]
-        self.assertIn("timeout-minutes: 65", execution)
+        self.assertIn("timeout-minutes: 50", execution)
         setup = host.split("      - name: Prepare asset-free metadata CLI", 1)[1].split("      - name:", 1)[0]
         self.assertIn("VALIDATE_METADATA_CLI: ${{ github.event_name == 'pull_request' }}", setup)
         self.assertIn('"$VALIDATE_METADATA_CLI" != true', setup)
@@ -2572,10 +2572,10 @@ class SweepTests(unittest.TestCase):
         )
         self.assertLess(host.index("> target/dependency_base.txt"), host.index("Prepare asset-free metadata CLI"))
         self.assertLess(
-            host.index("Prepare asset-free metadata CLI"), host.index("Verify trusted retail checkout boundary")
+            host.index("Verify trusted retail checkout boundary"), host.index("Prepare asset-free metadata CLI")
         )
         self.assertLess(
-            host.index("Prepare asset-free metadata CLI"), host.index("Check out immutable private retail inputs")
+            host.index("Check out immutable private retail inputs"), host.index("Prepare asset-free metadata CLI")
         )
         self.assertNotIn("secrets.", setup)
         self.assertIn("steps.metadata_cli_prerequisites.outcome == 'failure'", host)
@@ -2590,12 +2590,491 @@ class SweepTests(unittest.TestCase):
         self.assertIn("cancel-in-progress: false", workflow)
         self.assertIn("persist-credentials: false", workflow)
         self.assertIn("Recover completed receipts", workflow)
-        self.assertEqual(workflow.count("> target/dependency_base.txt"), 2)
+        self.assertEqual(workflow.count("> target/dependency_base.txt"), 3)
         self.assertLess(
             workflow.index("> target/dependency_base.txt"), workflow.index("Export authoritative master catalog")
         )
         host = workflow[workflow.index("  host:") : workflow.index("  android:")]
         self.assertLess(host.index("> target/dependency_base.txt"), host.index("Execute admitted host owners"))
+
+
+class SamplingNightlyTests(unittest.TestCase):
+    def fixture(self):
+        policy = {
+            "schema": 1,
+            "suites": [
+                {
+                    "id": f"master:owner_{i}",
+                    "owner": "master",
+                    "lane": "host",
+                    "args": {"suite": f"owner_{i}"},
+                    "estimated_seconds": 1800,
+                }
+                for i in range(4)
+            ],
+            "exclusions": [],
+        }
+        return policy, {"schema": 1, "tests": [{"name": e["args"]["suite"]} for e in policy["suites"]]}
+
+    def receipt(self, plan, status="PASS"):
+        receipt = {key: plan[key] for key in ("schema", "target_sha", "catalog_hash", "batch_id")}
+        receipt.update(
+            lane="host",
+            results=[
+                {
+                    "id": e["id"],
+                    "status": status,
+                    "coverage_complete": True,
+                    "attempted_tests": status != "BLOCKED",
+                    "phase": "setup" if status == "BLOCKED" else "tests",
+                    "run_url": "https://github.com/run/1",
+                }
+                for e in plan["tests"]
+            ],
+        )
+        return receipt
+
+    def test_failed_supplemental_advances_without_starving_other_or_cycle(self):
+        import nightly_sample as sample
+        import nightly_retail as retail
+
+        policy = {"schema": 1, "suites": [], "exclusions": []}
+        catalog = {"schema": 1, "tests": []}
+        assets = {
+            "repository": retail.ASSET_REPOSITORY,
+            "commit": "8c9988a96a7e306f8aac04c85e2610492917b7ac",
+            "manifest_sha256": retail.baseline_identity(Path(__file__).resolve().parents[2], include_missions=True),
+        }
+        first, state = sample.plan_sample(SHA, catalog, policy, retail_assets=assets, core_ids=set())
+        blocked, _ = sample.reconcile_sample(first, policy, state, [], "skipped")
+        self.assertFalse(blocked["done"])
+        failed, _ = sample.reconcile_sample(first, policy, state, [], "failure")
+        first_id = first["sampling"]["supplemental"]
+        self.assertEqual(failed["failures"][first_id]["status"], "FAIL")
+        second, state = sample.plan_sample("b" * 40, catalog, policy, failed, assets, core_ids=set())
+        self.assertNotEqual(second["sampling"]["supplemental"], first_id)
+        failed, _ = sample.reconcile_sample(second, policy, state, [], "failure")
+        wrapped, state = sample.plan_sample("c" * 40, catalog, policy, failed, assets, core_ids=set())
+        self.assertEqual(wrapped["sampling"]["cycle"], 1)
+        self.assertEqual(set(state["failures"]), set(sample.SUPPLEMENTAL))
+        self.assertFalse(state["done"])
+        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        self.assertEqual(workflow.count("execution_result: ${{ steps.execution.outcome }}"), 2)
+        self.assertIn("PUMO_STAGE_RESULT: ${{ needs.pumo_stage.outputs.execution_result }}", workflow)
+        self.assertIn("RELEASE_COMPILE_RESULT: ${{ needs.nightly_release.outputs.execution_result }}", workflow)
+
+    def test_parallel_receipts_preserve_next_undone_and_shard_provenance(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids=set(), host_workers=3)
+        shards = list(sample.shard_plans(plan).values())
+        self.assertEqual(len(shards), 3)
+        receipts = [self.receipt(shard) for shard in reversed(shards[1:])]
+        updated, _ = sample.reconcile_sample(plan, policy, state, receipts)
+        missing = shards[0]["tests"][0]["id"]
+        self.assertNotIn(missing, updated["done"])
+        next_plan, _ = sample.plan_sample("b" * 40, catalog, policy, updated, core_ids=set(), host_workers=3)
+        self.assertEqual(next_plan["sampling"]["pending_order"]["host"][0], missing)
+        forged = self.receipt(shards[0])
+        forged["results"][0]["id"] = shards[1]["tests"][0]["id"]
+        with self.assertRaises(ValueError):
+            sample.reconcile_sample(plan, policy, state, [forged])
+
+    def test_parallel_real_catalog_separates_public_and_private_and_bounds_artifacts(self):
+        import nightly_sample as sample
+        import nightly_retail as retail
+
+        policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
+        catalog = {
+            "schema": 1,
+            "tests": [{"name": e["args"]["suite"]} for e in policy["suites"] if e["owner"] == "master"],
+        }
+        assets = {
+            "repository": retail.ASSET_REPOSITORY,
+            "commit": "8c9988a96a7e306f8aac04c85e2610492917b7ac",
+            "manifest_sha256": retail.baseline_identity(Path(__file__).resolve().parents[2], include_missions=True),
+        }
+        plan, _ = sample.plan_sample(SHA, catalog, policy, retail_assets=assets, host_workers=16)
+        shards = sample.shard_plans(plan)
+        self.assertEqual(len(shards), 16)
+        ids = [e["id"] for shard in shards.values() for e in shard["tests"]]
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertEqual(set(ids), {e["id"] for e in plan["tests"] if e["lane"] == "host"})
+        for shard in shards.values():
+            sweep.validate_plan(shard, policy)
+            self.assertLessEqual(shard["estimated_seconds"], 2700)
+            self.assertEqual(len({retail.lane_requires_retail({"tests": [e]}, "host") for e in shard["tests"]}), 1)
+            self.assertLess(len(json.dumps(shard)), 100000)
+        self.assertLess(len(json.dumps(plan)), 8 * 1024 * 1024)
+
+    def test_real_powershell_producer_to_collect_reconcile_and_report(self):
+        import nightly_sample as sample
+        import shutil
+
+        if not shutil.which("pwsh"):
+            self.skipTest("PowerShell unavailable for producer integration")
+        policy, catalog = self.fixture()
+        policy["suites"] = [
+            dict(
+                policy["suites"][0],
+                id="master:test_download_verification",
+                args={"suite": "test_download_verification"},
+            )
+        ]
+        catalog["tests"] = [{"name": "test_download_verification"}]
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids={"master:test_download_verification"})
+        helper = Path(__file__).resolve().parents[1] / "helpers/test_execution_evidence.ps1"
+        owner = Path(__file__).resolve().with_name("test_download_verification.ps1")
+        for leaf_status in ("PASS", "SKIP", "NOT_RUN", "MISSING"):
+            with self.subTest(leaf_status=leaf_status), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                script = root / "produce.ps1"
+                script.write_text("""param($Helper, $Owner, $Root, $Sha, $LeafStatus)
+. $Helper
+$log = Join-Path $Root 'owner.log'
+if ($LeafStatus -eq 'MISSING') { 'ordinary zero-exit output' | Set-Content $log }
+else { Write-TestCompletionEvidence -Name 'test_download_verification' -Cases @(@{id='required-assertions';status=$LeafStatus}) | Set-Content $log }
+$context = @{ RepositoryRoot = (Split-Path $Owner); Commit=$Sha; Runtime='fixture'; RunId='fixture'; Dirty=$false; ReportPath='fixture' }
+$test = @{ Name='test_download_verification'; Type='ps1'; Requires='host'; Path=$Owner; Arguments=@() }
+$result = @{ Status='PASS'; ExitCode=0; AttemptedTests=$true; LogFile=$log; Elapsed='00:01' }
+New-TestExecutionObservation -Context $context -Test $test -Result $result -StartedUtc '2026-11-14T00:00:00Z' -SourceSha256 ('a'*64) | ConvertTo-Json -Depth 12 -Compress
+""")
+                observation = subprocess.check_output(
+                    ["pwsh", "-NoProfile", "-File", str(script), str(helper), str(owner), str(root), SHA, leaf_status],
+                    text=True,
+                )
+                (root / "journal.jsonl").write_text(observation)
+                sweep.write(
+                    root / "attempt.json",
+                    {
+                        **sweep.attempt_identity(plan, "host"),
+                        "processes": {"master": {"completed": True, "exit_code": 0}},
+                    },
+                )
+                receipt = sweep.collect(plan, policy, "host", root)
+                _, coverage = sample.reconcile_sample(plan, policy, state, [receipt])
+                self.assertEqual(
+                    coverage["records"].get("master:test_download_verification", {}).get("coverage_complete", False),
+                    leaf_status == "PASS",
+                )
+
+                def read(path):
+                    if str(path).endswith("nightly_tooling_policy.json"):
+                        return policy
+                    return {"plan/plan.json": plan, "plan/traversal.json": state, "receipt.json": receipt}[str(path)]
+
+                with (
+                    patch.object(sys, "argv", ["nightly_sample.py", "report"]),
+                    patch.object(sweep, "read", side_effect=read),
+                    patch.object(Path, "glob", return_value=[Path("receipt.json")]),
+                    patch.object(sample, "write_artifact"),
+                    patch("builtins.print"),
+                    patch.dict(os.environ, {"RELEASE_COMPILE_RESULT": "success"}),
+                ):
+                    self.assertEqual(sample.main(), 0 if leaf_status == "PASS" else 1)
+
+    def test_real_generated_corpus_receipt_advances_across_sha_changes(self):
+        import nightly_sample as sample
+        import nightly_retail as retail
+
+        policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
+        catalog = {
+            "schema": 1,
+            "tests": [{"name": e["args"]["suite"]} for e in policy["suites"] if e["owner"] == "master"],
+        }
+        assets = {
+            "repository": retail.ASSET_REPOSITORY,
+            "commit": "8c9988a96a7e306f8aac04c85e2610492917b7ac",
+            "manifest_sha256": retail.baseline_identity(Path(__file__).resolve().parents[2], include_missions=True),
+        }
+        inventory, _ = sweep.plan_batch(SHA, catalog, policy, retail_assets=assets, complete=True)
+        owner = next(e for e in inventory["tests"] if e["id"].startswith("corpus:") and e["lane"] == "host")
+        plan, state = sample.plan_sample(SHA, catalog, policy, retail_assets=assets, core_ids=set())
+        plan["tests"] = [owner]
+        plan = sample.phase_plan(plan, "sample")
+        for status, attempted, phase, advanced in [
+            ("PASS", True, "tests", True),
+            ("FAIL", True, "tests", True),
+            ("PASS", False, "setup", False),
+        ]:
+            with self.subTest(status=status, phase=phase):
+                receipt = self.receipt(plan, status)
+                receipt["results"][0].update(attempted_tests=attempted, phase=phase)
+                receipt["retail_assets"] = assets
+                updated, coverage = sample.reconcile_sample(plan, policy, state, [receipt])
+                self.assertEqual(owner["id"] in updated["done"], advanced)
+                if advanced:
+                    self.assertEqual(coverage["records"][owner["id"]]["phase"], "tests")
+                    self.assertTrue(coverage["records"][owner["id"]]["attempted_tests"])
+                    successor, _ = sample.plan_sample("b" * 40, catalog, policy, updated, assets, core_ids=set())
+                    self.assertNotIn(owner["id"], successor["sampling"]["pending_order"]["host"])
+                self.assertEqual(owner["id"] in updated["failures"], status == "FAIL" and advanced)
+
+    def test_report_requires_complete_core_coverage(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        policy["suites"][0]["estimated_seconds"] = 120
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids={"master:owner_0"})
+        for complete in (False, True):
+            with self.subTest(complete=complete):
+                receipt = self.receipt(plan)
+                next(row for row in receipt["results"] if row["id"] == "master:owner_0")["coverage_complete"] = complete
+
+                def read(path):
+                    if str(path).endswith("nightly_tooling_policy.json"):
+                        return policy
+                    return {"plan/plan.json": plan, "plan/traversal.json": state, "receipt.json": receipt}[str(path)]
+
+                with (
+                    patch.object(sys, "argv", ["nightly_sample.py", "report"]),
+                    patch.object(sweep, "read", side_effect=read),
+                    patch.object(Path, "glob", return_value=[Path("receipt.json")]),
+                    patch.object(sample, "write_artifact") as write,
+                    patch("builtins.print"),
+                    patch.dict(os.environ, {"RELEASE_COMPILE_RESULT": "success"}),
+                ):
+                    result = sample.main()
+                summary = write.call_args_list[0].args[1]
+                self.assertEqual(summary["core_without_pass"], [] if complete else ["master:owner_0"])
+                self.assertEqual(result, 0 if complete else 1)
+
+    def test_executor_runs_core_first_and_recovers_on_deadline(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        policy["suites"][0]["estimated_seconds"] = 120
+        plan, _ = sample.plan_sample(SHA, catalog, policy, now=100, core_ids={"master:owner_0"})
+        with (
+            patch.object(sys, "argv", ["nightly_sample.py", "execute", "--lane", "host"]),
+            patch.object(
+                sweep,
+                "read",
+                side_effect=lambda path: policy if str(path).endswith("nightly_tooling_policy.json") else plan,
+            ),
+            patch.object(sample, "write_artifact"),
+            patch.object(sample.time, "time", return_value=101),
+            patch.object(sample, "collect_sample") as collect,
+            patch.object(
+                sweep, "run_command", side_effect=[subprocess.CompletedProcess([], 0), subprocess.TimeoutExpired([], 1)]
+            ) as run,
+        ):
+            self.assertEqual(sample.main(), 0)
+        self.assertIn("results/core", run.call_args_list[0].args[0])
+        self.assertIn("results/sample", run.call_args_list[1].args[0])
+        self.assertEqual(collect.call_count, 2)
+        self.assertEqual(run.call_args_list[0].kwargs["timeout"], 2879)
+
+    def test_hash_order_matches_original_menu_t_helper(self):
+        import nightly_sample as sample
+        import shutil
+
+        if not shutil.which("pwsh"):
+            self.skipTest("PowerShell unavailable for original helper parity")
+        policy, _ = self.fixture()
+        entries = policy["suites"]
+        entries[0]["lane"] = "android-single"
+        rows = [dict(e, category=sample.category(e)) for e in entries]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "entries.json"
+            path.write_text(json.dumps(rows))
+            script = Path(directory) / "order.ps1"
+            helper = Path(__file__).resolve().parents[1] / "helpers/runtime_targeted_sampling.ps1"
+            script.write_text(
+                "param($Helper, $Data)\n. $Helper\n$items = @(Get-Content -Raw $Data | ConvertFrom-Json)\n@(Get-RuntimeHashOrder -Items $items -GroupProperties @('lane','category') -NameProperty 'id' | ForEach-Object { $_.id }) | ConvertTo-Json\n"
+            )
+            actual = json.loads(
+                subprocess.check_output(["pwsh", "-NoProfile", "-File", str(script), str(helper), str(path)], text=True)
+            )
+        self.assertEqual(actual, [e["id"] for e in sample.hash_order(entries)])
+
+    def test_publication_preserves_legacy_tree_and_uses_nonforce_update(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids=set())
+        responses = [{"sha": "blob"}, {"tree": {"sha": "legacy-tree"}}, {"sha": "tree"}, {"sha": "commit"}, {}]
+        with (
+            patch.object(sample, "read_remote", return_value=("head", state)),
+            patch.object(sweep, "github_api", side_effect=responses) as api,
+            patch.dict(os.environ, {"GITHUB_RUN_ID": "42"}),
+        ):
+            published = sample.publish(plan, policy, [self.receipt(plan)], "success")
+        self.assertTrue(published["done"])
+        self.assertEqual(api.call_args_list[2].args[2]["base_tree"], "legacy-tree")
+        self.assertEqual(api.call_args_list[-1].args[2], {"sha": "commit", "force": False})
+
+    def test_cross_revision_next_undone_and_exact_sha_coverage(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        first, state = sample.plan_sample(SHA, catalog, policy, now=100, core_ids=set())
+        self.assertEqual(len(first["tests"]), 1)
+        same, _ = sample.plan_sample(SHA, catalog, policy, now=100, core_ids=set())
+        self.assertEqual(first, same)
+        untouched, _ = sample.reconcile_sample(first, policy, state, [])
+        self.assertFalse(untouched["done"])
+        state, coverage = sample.reconcile_sample(first, policy, state, [self.receipt(first)])
+        second, _ = sample.plan_sample("b" * 40, catalog, policy, state, now=200, core_ids=set())
+        self.assertNotEqual(first["tests"], second["tests"])
+        _, new_coverage = sample.reconcile_sample(second, policy, state, [])
+        self.assertTrue(coverage["records"])
+        self.assertFalse(new_coverage["records"])
+        self.assertEqual(second["sampling"]["deadline_unix"], 3200)
+
+    def test_failure_advances_but_setup_does_not_and_cycle_retains_failure(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids=set())
+        blocked, _ = sample.reconcile_sample(plan, policy, state, [self.receipt(plan, "BLOCKED")])
+        self.assertFalse(blocked["done"])
+        failed, _ = sample.reconcile_sample(plan, policy, state, [self.receipt(plan, "FAIL")])
+        self.assertTrue(failed["done"])
+        self.assertTrue(failed["failures"])
+        for _ in range(4):
+            plan, failed = sample.plan_sample(SHA, catalog, policy, failed, core_ids=set())
+            failed, _ = sample.reconcile_sample(plan, policy, failed, [self.receipt(plan)], "success")
+        wrapped, _ = sample.plan_sample(SHA, catalog, policy, failed, core_ids=set())
+        self.assertEqual(wrapped["sampling"]["cycle"], 1)
+
+    def test_catalog_reconciliation_and_bounded_artifacts(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids=set())
+        state, _ = sample.reconcile_sample(plan, policy, state, [self.receipt(plan)])
+        changed = [dict(e, estimated_seconds=1700) for e in policy["suites"]]
+        self.assertFalse(sample.reconcile_catalog(state, changed)["done"])
+        self.assertFalse(sample.reconcile_catalog(state, [])["done"])
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "plan.json"
+            sample.write_artifact(path, plan)
+            self.assertEqual(sweep.read(path), plan)
+            with self.assertRaisesRegex(ValueError, "bounded size"):
+                sample.write_artifact(path, {"value": "x" * (8 * 1024 * 1024)})
+
+    def test_real_catalog_opt_ins_accounted_and_core_precedes_sample(self):
+        import nightly_sample as sample
+
+        policy = dict(sweep.read(Path(__file__).with_name("nightly_tooling_policy.json")), mission_corpus=False)
+        catalog = {
+            "schema": 1,
+            "tests": [{"name": e["args"]["suite"]} for e in policy["suites"] if e["owner"] == "master"],
+        }
+        plan, _ = sample.plan_sample(SHA, catalog, policy)
+        pending = {ident for values in plan["sampling"]["pending_order"].values() for ident in values}
+        self.assertTrue(sweep.ONLINE_TRANSPORT_IDS <= pending)
+        self.assertTrue(sweep.PUBLIC_ONLINE_IDS <= pending)
+        self.assertTrue(sweep.THREE_PLAYER_IDS <= pending)
+        self.assertEqual({e["id"] for e in sample.phase_plan(plan, "core")["tests"]}, sample.CORE_IDS)
+        self.assertFalse(sample.CORE_IDS & {e["id"] for e in sample.phase_plan(plan, "sample")["tests"]})
+        with tempfile.TemporaryDirectory() as directory:
+            receipt = sample.collect_sample(plan, policy, "host", Path(directory))
+        self.assertTrue(all(row["status"] == "NOT_RUN" for row in receipt["results"]))
+        self.assertEqual(receipt["batch_id"], plan["batch_id"])
+
+    def test_full_budget_owner_is_not_starved_by_repeated_core(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        policy["suites"][0]["estimated_seconds"] = 120
+        for entry in policy["suites"][1:]:
+            entry["estimated_seconds"] = 2700
+        plan, _ = sample.plan_sample(SHA, catalog, policy, core_ids={"master:owner_0"})
+        self.assertEqual(len(plan["tests"]), 2)
+        self.assertEqual(plan["budget_seconds"], 2820)
+        sweep.validate_plan(plan, policy)
+
+
+class NightlyRevisionTests(unittest.TestCase):
+    def activity(self, sha=SHA, ref="refs/heads/cmake", ident=1, actor=265118235, timestamp="2026-11-14T00:00:00Z"):
+        return dict(
+            after=sha,
+            ref=ref,
+            id=ident,
+            actor={"id": actor, "login": "spoofable-name"},
+            timestamp=timestamp,
+            activity_type="push",
+        )
+
+    def test_branch_and_cmake_order_is_server_time_then_activity_id(self):
+        import nightly_revision as revision
+
+        other = "b" * 40
+        refs = {"refs/heads/cmake": SHA, "refs/heads/topic": other}
+        rows = [self.activity(), self.activity(other, "refs/heads/topic", 2)]
+        self.assertEqual(revision.select(refs, rows)["sha"], other)
+        rows[0]["timestamp"] = "2026-11-14T01:00:00Z"
+        self.assertEqual(revision.select(refs, rows)["sha"], SHA)
+        rows[0]["actor"]["id"] = 42
+        self.assertEqual(revision.select(refs, rows)["sha"], other)
+
+    def test_deleted_unreachable_and_foreign_actor_are_not_candidates(self):
+        import nightly_revision as revision
+
+        for refs, rows in [
+            ({}, [self.activity()]),
+            ({"refs/heads/cmake": SHA}, [self.activity(actor=1)]),
+            ({"refs/heads/cmake": "b" * 40}, [self.activity()]),
+        ]:
+            with self.subTest(refs=refs), self.assertRaises(ValueError):
+                revision.select(refs, rows, lambda _: {"status": "diverged"})
+        self.assertEqual(
+            revision.select({"refs/heads/cmake": "b" * 40}, [self.activity()], lambda _: {"status": "ahead"})["sha"],
+            SHA,
+        )
+
+    def test_pagination_follows_links_and_keeps_later_pages(self):
+        import nightly_revision as revision
+
+        result = subprocess.CompletedProcess(
+            [], 0, "\n".join(json.dumps(row) for row in [self.activity(actor=2), self.activity(ident=2)])
+        )
+        with patch.object(revision.subprocess, "run", return_value=result) as run:
+            rows = revision.pages("activity?per_page=100")
+        self.assertIn("--paginate", run.call_args.args[0])
+        self.assertIn(".[] | @json", run.call_args.args[0])
+        self.assertEqual(revision.select({"refs/heads/cmake": SHA}, rows)["activity_id"], 2)
+
+    def test_races_retry_and_forks_fail_closed(self):
+        import nightly_revision as revision
+
+        first = ({"refs/heads/cmake": SHA}, [self.activity()])
+        second = ({"refs/heads/cmake": SHA}, [self.activity(ident=2)])
+        with patch.object(revision, "snapshot", side_effect=[first, second, second, second]):
+            self.assertEqual(revision.resolve(fetch=lambda _: {"id": revision.REPOSITORY_ID})["activity_id"], 2)
+        with (
+            patch.object(revision, "snapshot", side_effect=[first, second] * 3),
+            self.assertRaisesRegex(ValueError, "changed"),
+        ):
+            revision.resolve(fetch=lambda _: {"id": revision.REPOSITORY_ID})
+        with self.assertRaisesRegex(ValueError, "identity"):
+            revision.resolve(fetch=lambda _: {"id": 1})
+
+    def test_private_gate_revalidates_exact_sha_and_reachability(self):
+        import nightly_revision as revision
+
+        env = {
+            "GITHUB_REPOSITORY": sweep.retail.REPOSITORY,
+            "GITHUB_REF": "refs/heads/cmake",
+            "GITHUB_WORKFLOW_REF": sweep.retail.WORKFLOW,
+            "GITHUB_EVENT_NAME": "schedule",
+            "NIGHTLY_TARGET_SHA": SHA,
+            "NIGHTLY_TARGET_REF": "refs/heads/cmake",
+            "NIGHTLY_ACTIVITY_ID": "1",
+        }
+        fetch = lambda path: {"id": revision.REPOSITORY_ID} if not path else {"object": {"sha": SHA}}
+        self.assertEqual(revision.verify(SHA, env, fetch, lambda _: [self.activity()]), SHA)
+        for overrides in (
+            {"NIGHTLY_TARGET_SHA": "b" * 40},
+            {"GITHUB_EVENT_NAME": "pull_request"},
+            {"NIGHTLY_ACTIVITY_ID": "999"},
+            {"GITHUB_REPOSITORY": "foreign/fork"},
+        ):
+            with self.subTest(overrides=overrides), self.assertRaises(ValueError):
+                revision.verify(SHA, dict(env, **overrides), fetch, lambda _: [self.activity()])
 
 
 if __name__ == "__main__":
