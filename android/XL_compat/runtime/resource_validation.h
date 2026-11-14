@@ -35,6 +35,7 @@ int xl_camera_hitbox_query(const struct object *camera, const struct object *mov
 #include <memory>
 #include <map>
 #include <string>
+#include "particle_resources.h"
 const std::map<std::string, std::string> &xl_resource_mod_sources();
 std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal);
 struct object;
@@ -93,6 +94,7 @@ class XlPreparedResources
 	bool pog_receipt(int bitmap, unsigned *bytes, unsigned *fnv1a) const;
 	int custom_model_radius(int model, int fallback) const;
 	const xl_compat::ParticleImageResource *particle_image(int subtype = 3) const;
+	xl_compat::ParticleImages particle_images() const;
 	const xl_compat::ParticleImageResource *lightning_image() const;
 	const xl_compat::ParticleImageResource *powerup_glare_image() const;
 	const xl_compat::AnimatedImageResource *time_equipment_image(unsigned index) const;
@@ -106,6 +108,7 @@ class XlPreparedResources
 };
 void xl_set_prepared_resources(const char *level_filename, std::unique_ptr<XlPreparedResources> resources);
 const xl_compat::ParticleImageResource *xl_prepared_particle_image(int subtype = 3);
+xl_compat::ParticleImages xl_prepared_particle_images();
 const xl_compat::ParticleImageResource *xl_prepared_lightning_image();
 const xl_compat::ParticleImageResource *xl_prepared_powerup_glare_image();
 const xl_compat::AnimatedImageResource *xl_prepared_time_equipment_image(unsigned index);

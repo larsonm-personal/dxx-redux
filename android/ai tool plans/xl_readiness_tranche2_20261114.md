@@ -205,3 +205,109 @@ reports coverage_complete=false. Its distinct sampled readiness remains FAILURE
 The earlier Windows Debug audio owner/focused timeout failures remain open; the
 passing time-image Debug owner does not replace them. Android/capture/replay
 validation remains due for the final candidate.
+
+PR 500 publishes 36b4a3fdde87d9122fec9f1d1b8eaf9ce2f1ba09 against immediate
+parent 499/96f071e2f, stack 471. Synthetic merge is
+07e919984761e4ea5d68606824b1941d99b1278e. Private run 43637407964 attempt 1
+uses controller 72fdd76f5f8dc24a787b3a4858de1115ec091c19 and is pending.
+Committed ordinary developer-OFF binary
+73663f69c387a37686c43da27ee1fd6b8dfbd6048201753d4f3d21a3e011b717 measures
+4/8 in time-readiness-01. Warp Shock now reaches the missing owned cambot.hxm or
+data/d2x-xl.hog camera addon guard. Preserve that prerequisite and audit source
+behavior; do not substitute geometry or inject assets into the frozen cohort.
+Boiling Point still needs smoke; Dinter and Sphere still need smokingfire.
+The three-tranche estimate (range two to four, low confidence) is now conditional
+on resolving the newly exposed camera dependency; an unconditional 8/8 schedule
+is not justified. No readiness increment was earned by this image checkpoint.
+
+Next child addresses particle-image absence only with its native consumer
+requirements: source CParticleManager::Create checks image Load before pool
+allocation, and DoStaticParticles returns on failure before jitter, bubble sound
+or later emitter setup. Retain authored owner activation/lifetime and prove no
+invented systems, particles, audio or FX/SIM consumption. Native binding should
+retain decoded image owners rather than consulting an unrelated outgoing world.
+Existing positive native controls must prepare real decoded synthetic fixture
+owners, never use a developer availability bypass. Preserve malformed/foreign
+rejection and resource transaction independence. Rendering and assisted paths
+remain separate from the ordinary frozen readiness measurement.
+
+Particle-image implementation now follows the pinned manager's failed-Load path
+before allocation, audio linking and point jitter. Native particle binding retains
+shared decoded image owners through commit, moves and source-file deletion;
+malformed inputs and foreign origins still reject. Present bubble images still
+require their smoke support image until that partial rendering profile is qualified.
+No developer availability bypass or synthetic readiness assets were introduced.
+
+Linux Debug/assertions effect owner passed in 5 seconds (particle-linux-02), with
+14 native point/face missing-image rows compared to actual pinned
+CParticleManager::Create plus DoStaticParticles. Positive decoded fixtures retain
+all existing emitter controls. Added controls cover missing-image activation,
+restore and recycled lifetime, real disk-through-stock restoration, complete
+resource moves/assignment/discard and live continuation after source-file deletion.
+Windows release passed in 11.688 seconds; Windows Debug is pending. Existing
+80-second child/90-second owner limits remain unchanged. The bubble PCM owner
+also checks absence before running its positive linked-output controls; its rerun
+is still due. Source snapshot: source-particle-02/receipt.json. Preserved failures:
+the first build exposed a generated-name collision, the second an inner-block
+extraction boundary, and particle-linux-01 reached the obsolete required-atlas
+assertion in the secret fixture. The full pinned function extraction and the
+source-backed missing-atlas save/load controls replace those faulty expectations.
+
+PR 500 private run 43637407964 attempt 1 passed at exact head 36b4a3fdd with 113
+required checks, 16 format witnesses and 3 modern source levels in 667.146 seconds.
+Its assisted navigation smoke/four anchors took 3595 ms. Camera subchecks remain
+not_run_missing_addon and coverage_complete=false; distinct sampled readiness
+remains FAIL 4/8. Private host/summary/readiness artifacts and terminal job receipts
+are retained. Public Android and Linux owners were still pending at this check.
+
+Windows Debug particle owner failures are retained as particle-windows-debug-01
+(81.031 s) and -02 (80.922 s), both at the unchanged 80-second child deadline.
+Grouping all fourteen absent profiles into one native world removes repeated
+geometry setup but does not turn the full Debug owner green. No assertion,
+catalog case or timeout was removed. Final Linux effect receipt is
+particle-linux-03 (5 s), exact source source-particle-03/receipt.json and binary
+0601cdc0710f31a0d72032149ff5743ca924cfbd61ef7ba8cdfb77c2c3a5e68f.
+Final Debug binary 3902938cf8b676976449a9338bd4d1f6c925e622f69824ef67db73d9cdb902c8
+is a failed qualification. Performance diagnosis remains due alongside the
+previous Debug audio timeouts; do not replace them with release or Linux passes.
+
+The canonical Linux Debug named-audio owner passed in 80 seconds including the
+new absent-bubble-image check and all existing positive linked PCM controls.
+Affected asset-free GPU owner passed in 22.99 seconds; the complete pinned effect
+reference owner passed in 0.38 seconds. The GPU owner's data-only adapter still
+rejects unexpected requests for level-bound images. Private log:
+particle-source-gpu-linux-01.log. PR 498 has no remaining pending/non-readiness
+failures; its distinct readiness failure remains visible. No completed hourly
+watch has been restarted.
+
+Original Pumo validation exposed the preserved skybox guard in the hub, not the
+fog guard expected by the first revised assertion. The unchanged original HOG,
+descriptor and smokingfire atlas hashes match the existing owner's pins. The
+private failed run particle-pumo-linux-01 and bounded debugger receipt preserve
+that discovery; no guard was removed. Corrected full canonical owner with Pumo
+passed in 11 seconds (particle-pumo-linux-02). Its hub requires an active skybox
+renderer and level 2 requires an active fog renderer. Final source snapshot is
+source-particle-04/receipt.json. Windows release effect refresh passed 12.188 s;
+canonical Windows audio passed 116.641 s. Only test diagnostic wording and the
+original Pumo expected guard changed after those audio runs; production code and
+bubble audio controls are unchanged. Windows original-Pumo refresh is pending.
+
+Final Windows full original-Pumo owner passed 14.781 seconds, binary
+89332d18aaa6b57c45163580ff1ca95e8cdfacdfc2d7e9eeaba0b5d74b2ad2f0.
+Final Linux counterpart binary is
+465993048b4fa48fca39cd2c73bc1d63307582a98e1f404ed76ae8e1d5aa1ea1.
+Original Pumo HOG 6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043,
+descriptor 45b4138e0a0d49ab8ee09334b7cfa97c0ec75ac6c6b6406b21eba28ddaa19cfd and
+atlas b7bd821c02ba917a4cb0ff503f2e83d4e2007c19f0450728525df2f3af7f738f are unchanged.
+These copied original inputs are isolated owner controls, not additions to the
+frozen readiness cohort. PR 499 now has no pending/non-readiness failures; PR 500
+still has pending public headed replay and native save/replay owners. Distinct
+readiness failures remain 4/8 on each published checkpoint.
+
+Both required catalog checks pass with unchanged membership: 99 standalone JSON,
+547 support scripts, 315 standalone PowerShell and 428 top-level entries. Full
+Windows pinned effect-reference owner also passes (1.95 s). Scoped formatting and
+diff whitespace checks pass. Four stashes, including untouched native sound WIP
+9783012e2a77dfdd4680812ae72b852cfaca5e17, and unrelated .codex/ remain preserved.
+Publication is an immediate-parent child of PR 500 in origin only, stack 471;
+committed ordinary readiness and new exact-head CI are the next qualification step.

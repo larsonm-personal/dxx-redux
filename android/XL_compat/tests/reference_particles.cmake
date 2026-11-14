@@ -8,6 +8,8 @@ foreach(
         "include/audio.h|7a0977cfefbc5de6c4805665d9b251264732179b99eb5ccd8b908b192bf3779f"
         "include/piggy.h|4ecf8941d1c81166051e74c38de877f45557d163ad0c4f92d9bcdeee21033a34"
         "gameio/loadsounds.cpp|997970aafdfbea0b8cba5c248ce9f8cfd559f0d94f329d2b3b7e4ea2c39b28e2"
+        "effects/particle_manager.cpp|dabb8a4e3942bdaa2b346ba31499c218216c43d97b687cf98421f88a17ab8dae"
+        "effects/particle_images.cpp|1cd950eee425c26a8ac476a6a5245ce386e5b92ce00f5b52a600e83cfa9473f1"
         "effects/objsmoke.cpp|ce39fc41866b703f0978af4ec0af6b4b98e30071b6c8015eaa60b719f8d32b80"
         "include/maths.h|43adf417dd1c282a39c8fed02bdad9d05a7f3ad5850a39a87897fd533eb857cd"
         "include/segment.h|4f43198ba394971128c81373940b5a58283cbbbc2851ca6a6e4187e78382a667"
@@ -694,4 +696,18 @@ string(APPEND extracted "${alive_body}\n")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h"
                       "inline CFixVector& CFixVector::Assign (const CFloatVector&")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_fire_emitter.h"
+     CONTENT "${extracted}")
+
+set(extracted "// Actual pinned image-load-before-allocation implementation\n")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/effects/particle_manager.cpp" manager_source)
+string(FIND "${manager_source}" "int32_t CParticleManager::Create (" start)
+string(FIND "${manager_source}" "return pSystem->Id ();\n}" end)
+if(start LESS 0 OR end LESS start)
+    message(FATAL_ERROR "Missing pinned particle manager creation boundaries")
+endif()
+string(LENGTH "return pSystem->Id ();\n}" suffix)
+math(EXPR length "${end} + ${suffix} - ${start}")
+string(SUBSTRING "${manager_source}" ${start} ${length} manager_create)
+string(APPEND extracted "${manager_create}\n")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_particle_manager_create.h"
      CONTENT "${extracted}")

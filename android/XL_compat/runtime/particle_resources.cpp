@@ -146,14 +146,14 @@ std::shared_ptr<Resource> read_addon_image(const char *name, const std::string &
 	image->bitmap = bytes[0] == 137 && bytes[1] == 'P' ? read_effect_png(bytes, image->path) : read_particle_image(bytes.data(), bytes.size());
 	return image;
 }
-std::shared_ptr<const ParticleImageResource> prepare_addon_image(const char *name, const std::string &kind, unsigned atlas_side, bool optional = false, TargetSources *target = nullptr)
+std::shared_ptr<const ParticleImageResource> prepare_addon_image(const char *name, const std::string &kind, unsigned atlas_side, bool optional = false, TargetSources *target = nullptr, bool require_soft_depth = true)
 {
 	auto image = read_addon_image<ParticleImageResource>(name, kind, optional, "textures/d2x-xl/", target);
 	if (!image) return {};
 	const unsigned width = image->bitmap.width;
 	if (atlas_side && (width < 2 * atlas_side || image->bitmap.height != width || (width & (width - 1))))
 		throw std::runtime_error("XL particle image requires a square power-of-two " + std::to_string(atlas_side) + "-by-" + std::to_string(atlas_side) + " atlas with room for its one-pixel cell borders: " + image->path);
-	image->texture = std::make_unique<ParticleTexture>(image->bitmap, image->path.c_str(), !optional);
+	image->texture = std::make_unique<ParticleTexture>(image->bitmap, image->path.c_str(), require_soft_depth);
 	return image;
 }
 } // namespace
@@ -181,10 +181,10 @@ std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Invent
 		required |= subtype == 0 && object.render_data[11] == 2;
 	}
 	if (!required) return {};
-	if (subtype == 2) return prepare_addon_image(bubble_image_name, "bubble", bubble_image_atlas_side, false, target);
-	if (subtype == 5) return prepare_addon_image(rain_image_name, "rain", 1, false, target);
-	if (subtype == 6) return prepare_addon_image(snow_image_name, "snow", 1, false, target);
-	return prepare_addon_image(subtype == 3 ? fire_image_name : smoke_image_name, subtype == 3 ? "fire" : "smoke", subtype == 3 ? fire_image_atlas_side : smoke_image_atlas_side, false, target);
+	if (subtype == 2) return prepare_addon_image(bubble_image_name, "bubble", bubble_image_atlas_side, true, target);
+	if (subtype == 5) return prepare_addon_image(rain_image_name, "rain", 1, true, target);
+	if (subtype == 6) return prepare_addon_image(snow_image_name, "snow", 1, true, target);
+	return prepare_addon_image(subtype == 3 ? fire_image_name : smoke_image_name, subtype == 3 ? "fire" : "smoke", subtype == 3 ? fire_image_atlas_side : smoke_image_atlas_side, true, target);
 }
 
 std::shared_ptr<const ParticleImageResource> prepare_lightning_image(const Inventory &level, TargetSources *target)
@@ -197,7 +197,7 @@ std::shared_ptr<const ParticleImageResource> prepare_lightning_image(const Inven
 std::shared_ptr<const ParticleImageResource> prepare_powerup_glare_image(TargetSources *target)
 {
 	// Source omits optional powerup coronas when glare.Load fails
-	return prepare_addon_image("glare", "powerup glare", 0, true, target);
+	return prepare_addon_image("glare", "powerup glare", 0, true, target, false);
 }
 std::shared_ptr<const AnimatedImageResource> prepare_time_equipment_image(unsigned index, TargetSources *target)
 {

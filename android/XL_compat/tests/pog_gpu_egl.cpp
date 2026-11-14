@@ -130,10 +130,13 @@ void Error(const char *format, ...)
 	throw std::runtime_error(text);
 }
 }
-const xl_compat::ParticleImageResource *xl_prepared_particle_image(int)
+namespace xl_compat
 {
-	throw std::runtime_error("Asset-free GPU owner unexpectedly requested a mission-prepared particle image");
+const ParticleImageResource *bound_particle_image(unsigned)
+{
+	throw std::runtime_error("Asset-free GPU owner unexpectedly requested a level-bound particle image");
 }
+} // namespace xl_compat
 namespace
 {
 unsigned cases = 0, pixels = 0, maximum_error = 0;

@@ -5,6 +5,7 @@
 #endif
 #include "../pog.h"
 #include <memory>
+#include <array>
 #include <string>
 namespace xl_compat
 {
@@ -35,6 +36,7 @@ struct AnimatedImageResource {
 	AnimatedImageResource();
 	~AnimatedImageResource();
 };
+using ParticleImages = std::array<std::shared_ptr<const ParticleImageResource>, 7>;
 std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Inventory &level, int subtype = 3, TargetSources *target = nullptr);
 std::shared_ptr<const ParticleImageResource> prepare_lightning_image(const Inventory &level, TargetSources *target = nullptr);
 std::shared_ptr<const ParticleImageResource> prepare_powerup_glare_image(TargetSources *target = nullptr);

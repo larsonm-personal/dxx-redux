@@ -1,6 +1,7 @@
 // Geometry queries are explicit inputs; the actual pinned conversion is executed
 #include "particle_effect.h"
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <vector>
 namespace particle_reference
@@ -129,11 +130,48 @@ bool IsWaterTexture(int)
 struct {
 	struct {
 		struct {
-			int bDisperse = 1, bBubbles = 1, bStatic = 1;
+			int bDisperse = 1, bBubbles = 1, bStatic = 1, nQuality = 1;
 		} particles;
 	} render;
 } options;
 auto *gameOpts = &options;
+struct CParticleSystem {
+	int creates = 0;
+	template <class... Args>
+	int Create(Args...)
+	{
+		++creates;
+		return 1;
+	}
+	int Id() const
+	{
+		return 7;
+	}
+};
+struct {
+	bool available = true;
+	unsigned loads = 0;
+	bool Load(int)
+	{
+		++loads;
+		return available;
+	}
+} particleImageManager;
+struct CParticleManager {
+	struct {
+		CParticleSystem system;
+		unsigned pops = 0;
+		CParticleSystem *Pop()
+		{
+			++pops;
+			return &system;
+		}
+	} m_systems;
+	int32_t Create(CFixVector *, CFixVector *, CFixMatrix *, int16_t, int32_t, int32_t, float, int32_t, int32_t, char, int32_t, CFloatVector *, int32_t, char);
+} allocation;
+#define USE_OPENMP 0
+#include "xl_reference_particle_manager_create.h"
+#undef USE_OPENMP
 struct ParticleManager {
 	xl_compat::ParticleEmitterDefinition created{};
 	std::array<int, 3> position{};
@@ -152,11 +190,13 @@ struct ParticleManager {
 		if (system != owner || life != 0) throw std::runtime_error("Unexpected source particle stop");
 		++kills;
 	}
-	int Create(CFixVector *, CFixVector *direction, CFixMatrix *, int segment_index, int emitters, int count, float scale, int life,
+	int Create(CFixVector *position, CFixVector *direction, CFixMatrix *orientation, int segment_index, int emitters, int count, float scale, int life,
 	           int speed, int type, int object, CFloatVector *color, int blow, int side)
 	{
 		if (segment_index != 0 || emitters != 1 || object != 0 || side < -1 || side >= 6)
 			throw std::runtime_error("Unexpected source particle creation binding");
+		const int id = allocation.Create(position, direction, orientation, int16_t(segment_index), emitters, count, scale, life, speed, char(type), object, color, blow, char(side));
+		if (id < 0) return id;
 		++creates;
 		created = {};
 		created.count = MaxParticles(count, 2);
@@ -281,6 +321,48 @@ void compare(const std::vector<int> &payload, int version, float face_size, bool
 	compare_emitter(actual);
 }
 } // namespace particle_reference
+
+void particle_missing_runtime_controls(const char *path)
+{
+	using namespace particle_reference;
+	std::ifstream input(path);
+	std::string token;
+	int version;
+	if (!(input >> token >> version) || token != "XL_PARTICLE_MISSING" || version != 1)
+		throw std::runtime_error("Invalid missing particle receipt");
+	unsigned cases = 0;
+	for (int kind = 0; kind < 7; ++kind)
+		for (int side : { 0, 1 }) {
+			int observed_kind, observed_side, systems, fx, enabled, alive;
+			if (!(input >> token >> observed_kind >> observed_side >> systems >> fx >> enabled >> alive) || token != "case" || kind != observed_kind || side != observed_side)
+				throw std::runtime_error("Invalid missing particle case");
+			CObject object;
+			auto &p = object.rType.particleInfo;
+			p = { 2, { 2, 0 }, 4, 2, 2, 9, side, kind, 1, { { 0, 0, 0, 100 } } };
+			gameData.segData.nLevelVersion = 27;
+			segment.face_size = 1;
+			water = false;
+			object.SetupSmoke();
+			particleManager = {};
+			audio = {};
+			allocation = {};
+			particleImageManager = { false, 0 };
+			PositionRandom random{ 17, {} };
+			position_random = &random;
+			for (unsigned frame = 0; frame < 2; ++frame)
+				for (unsigned pass = 0; pass < 2; ++pass) DoStaticParticles(&object);
+			position_random = nullptr;
+			if (particleManager.owner != -1 || particleManager.creates != systems || systems || fx != int(random.trace.size()) ||
+			    enabled != p.bEnabled || alive != 1 || audio.creates || allocation.m_systems.pops || allocation.m_systems.system.creates || particleImageManager.loads != 4)
+				throw std::runtime_error("Native missing-image creation differs from pinned source");
+			++cases;
+		}
+	unsigned count;
+	if (!(input >> token >> count) || token != "end" || count != cases || (input >> token))
+		throw std::runtime_error("Incomplete missing particle receipt");
+	particleImageManager = {};
+	std::cout << "Pinned missing particle images: 14 native point/face cases match actual creation, no pool allocation, audio or jitter\n";
+}
 
 void particle_emitter_position_controls()
 {

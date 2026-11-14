@@ -1,4 +1,5 @@
 #include "particle_objects.h"
+#include "particle_image_fixture.h"
 #include "../particle_admission.h"
 #include "mission_progress.h"
 #include "particle_state.h"
@@ -120,7 +121,7 @@ static void bubble_objects_native_case(xl_compat::Inventory source)
 	for (bool wet : { true, false }) {
 		for (auto &segment : source.segments)
 			segment.properties = (segment.properties & ~segment_water) | (wet ? segment_water : 0);
-		bind_particle_objects(source);
+		bind_particle_objects(source, particle_fixture_images(source));
 		const auto before = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 		particle_objects_frame(0);
 		require(particle_systems().size() == 1 && std::holds_alternative<BubbleEmitter>(particle_systems().front().emitter), "Native bubble selected a different particle emitter");
@@ -163,7 +164,7 @@ static void bubble_objects_native_case(xl_compat::Inventory source)
 	         std::vector<int>{ 2, 3, 3, 5, 4, 9, 0, 0, 0, 0, 3, 2, 1 },
 	         std::vector<int>{ 5, 3, 3, 4, 2, 1, 0, 0, 0, 0, 0, 2, 1 } }) {
 		source.objects[1].render_data = payload;
-		bind_particle_objects(source);
+		bind_particle_objects(source, particle_fixture_images(source));
 		const auto before = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 		particle_objects_frame(0);
 		require(particle_systems().size() == 1 && std::holds_alternative<BubbleEmitter>(particle_systems().front().emitter), "Original 21/40 bubble profile chose the wrong native emitter");
@@ -195,7 +196,7 @@ static void waterfall_objects_native_case(xl_compat::Inventory source)
 	source.game_version = 40;
 	source.objects[1].render_data = { 1, 4, 7, 8, 1, 10, 180, 200, 255, 60, 2, 4, 1 };
 	source.objects[2].render_data[12] = 0;
-	bind_particle_objects(source);
+	bind_particle_objects(source, particle_fixture_images(source));
 	particle_objects_frame(0);
 	require(particle_systems().size() == 1 && std::holds_alternative<WaterfallEmitter>(particle_systems().front().emitter), "Dinter waterfall selected a different native emitter");
 	auto &emitter = std::get<WaterfallEmitter>(particle_systems().front().emitter);
@@ -237,7 +238,7 @@ static void weather_objects_native_case(xl_compat::Inventory source)
 	         std::vector<int>{ 10, 6, 10, 6, 1, 10, 255, 255, 255, 128, 5, 5, 1 } }) {
 		const bool snow = payload[11] == 6;
 		source.objects[1].render_data = payload;
-		bind_particle_objects(source);
+		bind_particle_objects(source, particle_fixture_images(source));
 		particle_objects_frame(0);
 		require(particle_systems().size() == 1 &&
 		            (snow ? std::holds_alternative<SnowEmitter>(particle_systems().front().emitter)
@@ -270,6 +271,70 @@ static void weather_objects_native_case(xl_compat::Inventory source)
 	xl_particle_objects_clear();
 	require(d_rand_get_stream_call_count(D_RNG_SIM) == simulation, "Weather lifecycle consumed simulation RNG");
 	std::cout << "XL weather native ownership: original Dinter snow and Boiling rain payloads, distinct image/motion/scene, disable and fresh save cloud passed\n";
+}
+
+static void particle_missing_image_case(xl_compat::Inventory source)
+{
+	using namespace xl_compat;
+	const auto root = std::filesystem::path(mission_resource_archive()).parent_path().parent_path();
+	std::ofstream receipt(root / "particle-missing.txt");
+	receipt << "XL_PARTICLE_MISSING 1\n";
+	const auto sim = d_rand_get_stream_call_count(D_RNG_SIM);
+	const auto fx = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
+	source.level_version = 27;
+	source.game_version = 40;
+	struct Owners {
+		std::vector<int> indices;
+		~Owners()
+		{
+			xl_particle_objects_clear();
+			for (int index : indices) obj_delete(index);
+		}
+	} owners;
+	// One real mixed world exercises all fourteen profiles without repeatedly
+	// compiling the same geometry; every owner still uses ordinary native binding
+	for (int kind = 0; kind < 7; ++kind)
+		for (int side : { 0, 1 }) {
+			const auto &origin = Objects[1];
+			const int index = obj_create(object_type_t(20), 0, origin.segnum, &origin.pos, &origin.orient, F1_0, CT_NONE, MT_NONE, RT_NONE);
+			require(index >= 0, "Cannot allocate missing-image fixture owner");
+			owners.indices.push_back(index);
+			if (source.objects.size() <= unsigned(index)) source.objects.resize(unsigned(index) + 1);
+			source.objects[index] = source.objects[1];
+			source.objects[index].render_data = { 2, 2, 4, 2, 2, 9, 0, 0, 0, 100, side, kind, 1 };
+		}
+	bind_particle_objects(source);
+	const auto saved = particle_objects_snapshot();
+	particle_objects_frame(0);
+	particle_objects_frame(100);
+	require(saved == particle_objects_snapshot() && particle_systems().empty(), "Absent image changed authored activation or created a system");
+	xl_particle_render_scene(nullptr, 0);
+	unsigned cases = 0;
+	for (int index : owners.indices) {
+		const auto row = std::find_if(saved.begin(), saved.end(), [index](const auto &value) { return value[0] == index; });
+		require(row != saved.end(), "Missing particle fixture lost its native binding");
+		receipt << "case " << cases / 2 << ' ' << cases % 2 << ' ' << particle_systems().size() << ' '
+		        << d_rand_get_stream_call_count(D_RNG_PRESENTATION) - fx << ' '
+		        << (*row)[2].get<bool>() << ' ' << (*row)[3].get<bool>() << '\n';
+		require(xl_particle_object_set_enabled(index, 0), "Cannot disable absent-image owner");
+		particle_objects_frame(125);
+		require(xl_particle_object_set_enabled(index, 1), "Cannot re-enable absent-image owner");
+		particle_objects_frame(150);
+		require(restore_particle_objects(saved, true), "Cannot restore absent-image authored state");
+		particle_objects_frame(0);
+		++Objects[index].signature;
+		particle_objects_frame(25);
+		require(!xl_particle_object_set_enabled(index, 1), "Missing image bypassed recycled owner rejection");
+		--Objects[index].signature;
+		require(!xl_particle_object_set_enabled(index, 1), "Missing image resurrected dead binding");
+		require(restore_particle_objects(saved, true), "Cannot reset missing-image lifetime control");
+		require(particle_systems().empty() && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == fx && d_rand_get_stream_call_count(D_RNG_SIM) == sim,
+		        "Missing-image lifecycle allocated a cloud or consumed RNG");
+		++cases;
+	}
+	receipt << "end " << cases << '\n';
+	require(bool(receipt), "Cannot write missing particle source receipt");
+	std::cout << "XL missing particle images: 14 point/face profiles, activation, restore, recycled lifetime, no clouds/audio-jitter and SIM isolation passed\n";
 }
 
 static void particle_objects_native_case(bool active)
@@ -348,7 +413,8 @@ static void particle_objects_native_case(bool active)
 		authored.orientation = { 65536, 0, 0, 0, 65536, 0, 0, 0, 65536 };
 		authored.render_data = { 1, 1, 1, 1, 1, 10, 255, 128, 0, 128, 1, 3, 0 };
 	}
-	bind_particle_objects(source);
+	particle_missing_image_case(source);
+	bind_particle_objects(source, particle_fixture_images(source));
 	{
 		const auto position = Objects[1].pos;
 		compute_segment_center(&Objects[1].pos, &Segments[1]);
@@ -443,7 +509,7 @@ static void particle_objects_native_case(bool active)
 	// before the manager's next 25-ms update; face emitters consume none
 	source.objects[1].render_data[10] = 0;
 	source.objects[1].render_data[12] = 1;
-	bind_particle_objects(source);
+	bind_particle_objects(source, particle_fixture_images(source));
 	const auto jitter_calls = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
 	particle_objects_frame(0);
 	require(particle_systems().size() == 1 && d_rand_get_stream_call_count(D_RNG_PRESENTATION) == jitter_calls + 12, "Native point emitter lost one of the source's two jitter visits");
@@ -470,7 +536,7 @@ static void particle_objects_native_case(bool active)
 			smoke.render_data[11] = 0;
 			require(prepared.effect.particles == 4 * prepare_authored_particle(source, smoke).effect.particles && prepared.definition.image == 1 && prepared.definition.fade == 1, "Spray lost source face density or smoke image/fade");
 		}
-		bind_particle_objects(source);
+		bind_particle_objects(source, particle_fixture_images(source));
 		particle_objects_frame(0);
 		particle_objects_frame(25);
 		particle_objects_frame(50);

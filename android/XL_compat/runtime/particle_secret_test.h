@@ -122,8 +122,25 @@ static void particle_secret_native_case(const xl_compat::Bytes &original_archive
 	xl_preview_clear_mission();
 	char error[256]{};
 	require(load_base_mission("pfsecret", error, sizeof(error)), error);
-	require(!xl_level_supported_at("pbase.rl2", 0, 1) && std::strstr(xl_level_rejection(), "Missing XL fire image"),
-	        "Normal fire admission bypassed the required atlas");
+	require(xl_level_supported_at("pbase.rl2", 0, 1), "Absent particle atlas did not admit its failed-creation profile");
+	StartNewGame(1);
+	const auto absent_state = particle_objects_snapshot();
+	const auto absent_fx = d_rand_get_stream_call_count(D_RNG_PRESENTATION), absent_sim = d_rand_get_stream_call_count(D_RNG_SIM);
+	particle_objects_frame(0);
+	particle_objects_frame(100);
+	require(!xl_prepared_particle_image() && particle_systems().empty() && particle_objects_snapshot() == absent_state &&
+	            d_rand_get_stream_call_count(D_RNG_PRESENTATION) == absent_fx && d_rand_get_stream_call_count(D_RNG_SIM) == absent_sim,
+	        "Loaded missing-atlas mission created clouds or changed authored state/RNG");
+	char absent_save[] = "xl-particle-absent.sav", absent_description[64] = "Missing particle atlas";
+	stop_time();
+	require(state_save_all_sub(absent_save, absent_description), "Cannot save absent-image particle world");
+	require(load_base_mission("fxstock", error, sizeof(error)), error);
+	StartNewGame(1);
+	require(state_restore_all_sub(absent_save, 0) && particle_objects_snapshot() == absent_state && !xl_prepared_particle_image(),
+	        "Disk restore through stock lost missing-image particle ownership");
+	particle_objects_frame(0);
+	require(particle_systems().empty(), "Restored missing image created an emitter");
+	PHYSFS_delete(absent_save);
 	write_bytes(image_path.string().c_str(), image);
 	require(xl_level_supported_at("pbase.rl2", 0, 1), "Normal fire admission did not recover after restoring its atlas");
 	PHYSFS_delete(SECRETB_FILENAME);
@@ -132,6 +149,25 @@ static void particle_secret_native_case(const xl_compat::Bytes &original_archive
 	StartNewGame(1);
 	require(xl_prepared_particle_image() != nullptr, "Derived particle base lacks its image");
 	const auto image_pixels = xl_prepared_particle_image()->bitmap.pixels;
+	{
+		const auto inventory = inspect_level(bytes);
+		XlPreparedResources candidate("pbase.rl2", &inventory, 1);
+		const auto *retained = candidate.particle_image();
+		XlPreparedResources moved(std::move(candidate));
+		candidate = std::move(moved);
+		require(retained && candidate.particle_image() == retained && retained->bitmap.pixels == image_pixels,
+		        "Particle resource moves lost decoded ownership");
+		std::filesystem::remove(image_path);
+		XlPreparedResources absent("pbase.rl2", &inventory, 1);
+		require(!absent.particle_image() && retained->bitmap.pixels == image_pixels && bound_particle_image(3)->bitmap.pixels == image_pixels,
+		        "Absent candidate borrowed live pixels or discarded retained storage");
+	}
+	particle_objects_frame(0);
+	particle_objects_frame(25);
+	require(particle_systems().size() == 1 && particle_systems().front().count() > 0 && bound_particle_image(3)->bitmap.pixels == image_pixels,
+	        "Discarded candidate or deleted source file stopped live particle continuation");
+	write_bytes(image_path.string().c_str(), image);
+	require(restore_particle_objects(particle_objects_snapshot(), true), "Cannot reset transient clouds after particle resource continuation");
 	const int first = int(level.objects.size()), second = first + 1;
 	const auto verify = [&](int ordinal, const nlohmann::json &state) {
 		require(Current_level_num == ordinal && xl_level_extensions_active() && particle_objects_snapshot() == state,

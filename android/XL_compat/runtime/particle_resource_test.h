@@ -61,7 +61,8 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 		}
 		throw std::runtime_error("Particle image preparation unexpectedly accepted a bad resource");
 	};
-	failure(missing);
+	if (Shield || lightning) failure(missing);
+	else require(!prepare(level), "Absent particle image did not retain failed creation input");
 	if (lightning) {
 		auto nonglow = level;
 		nonglow.objects[0].render_data[17] = 0;
@@ -178,11 +179,12 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 		};
 		bool rejected = false;
 		try {
-			(void) incoming();
+			const auto absent = incoming();
+			require(!absent && !Shield && !lightning, "Absent incoming image borrowed outgoing pixels");
 		} catch (const std::runtime_error &) {
 			rejected = true;
 		}
-		require(rejected, "Absent incoming image borrowed outgoing pixels");
+		require(rejected == (Shield || lightning), "Absent incoming image did not preserve its resource policy");
 		const auto path = directory / mod;
 		std::filesystem::create_directories(path.parent_path());
 		write_bytes(path.string().c_str(), image(79));
@@ -246,7 +248,8 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 	require(prepare(level)->bitmap.pixels[0] == 47, "Particle addon lookup lost source case-insensitive behavior");
 	std::filesystem::remove(mixed_case);
 	std::filesystem::remove(global_path);
-	failure(missing);
+	if (Shield || lightning) failure(missing);
+	else require(!prepare(level), "Absent particle image did not retain failed creation input");
 	write_bytes(installation_path.string().c_str(), image(61));
 	const char *installation_origin = PHYSFS_getRealDir(global.c_str());
 	require(installation_origin && xl_resource_owns_installation(installation_origin) && !mission_owns_resource_directory(installation_origin), "Particle fallback did not use a distinct trusted startup installation");
@@ -272,11 +275,12 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 	write_bytes(installation_path.string().c_str(), { 0, 1, 2 });
 	failure("truncated");
 	std::filesystem::remove(installation_path);
-	failure(missing);
+	if (Shield || lightning) failure(missing);
+	else require(!prepare(level), "Absent particle image did not retain failed creation input");
 	require(installed->bitmap.pixels[0] == 61, "Installation image storage depended on a live file");
 	require(selected->bitmap.pixels.size() == extent * extent * frames * 4 && selected->bitmap.frames == frames && selected->bitmap.pixels[0] == 47, "Particle image storage depended on a live file");
 	require(!xl_prepared_particle_image(), "Particle resource probe replaced the current level's prepared images");
-	std::cout << (Shield ? "XL shield image resources: " : "XL particle image resources: ") << " distinct startup installation, owned default/mod precedence, missing/malformed/default-and-mod-shadow rejection, case-insensitive lookup, retained pixels and recovery passed\n";
+	std::cout << (Shield ? "XL shield image resources: " : "XL particle image resources: ") << " distinct startup installation, owned default/mod precedence, absence policy, malformed/default-and-mod-shadow rejection, case-insensitive lookup, retained pixels and recovery passed\n";
 }
 
 static void particle_resource_native_case(const std::filesystem::path &root, const std::filesystem::path &installation)
