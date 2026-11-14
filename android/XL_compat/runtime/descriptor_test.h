@@ -40,6 +40,18 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 		}
 	} discard{ &mission };
 	const auto original = gameplay_definitions();
+	std::array<ushort, MAX_BITMAP_FILES> original_translation{};
+	piggy_copy_bitmap_translation(original_translation.data());
+	auto outgoing_translation = original_translation;
+	outgoing_translation[1] = original_translation[1] ? 0 : 1;
+	piggy_install_bitmap_translation(outgoing_translation.data());
+	struct RestoreTranslation {
+		const std::array<ushort, MAX_BITMAP_FILES> &original;
+		~RestoreTranslation()
+		{
+			piggy_install_bitmap_translation(original.data());
+		}
+	} restore_translation{ original_translation };
 	const auto live_mission = Current_mission;
 	uint32_t sim_before;
 	d_rand_get_state(&sim_before);
@@ -98,6 +110,8 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 	{
 		XlPreparedHam target(mission, "prepham.ham");
 		const auto &tables = target.tables();
+		require(!std::memcmp(tables.GameBitmapXlat, original_translation.data(), sizeof(original_translation)),
+		        "incoming HAM borrowed outgoing bitmap translations");
 		require(*tables.N_weapon_types == N_weapon_types &&
 		            tables.Weapon_info[CONCUSSION_ID].energy_usage == energy &&
 		            tables.Weapon_info[CONCUSSION_ID].energy_usage != Weapon_info[CONCUSSION_ID].energy_usage,
@@ -117,8 +131,46 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 			        "prepared HAM model payload is not independently owned");
 		}
 		const auto *models = tables.Polygon_models;
+		// Ask the native decoder for the shortest complete definition prefix
+		// Retail HAM can have fewer tail entries than the engine's current capacity
+		std::size_t lower = 0, translation_offset = bytes.size();
+		while (lower < translation_offset) {
+			const auto middle = lower + (translation_offset - lower) / 2;
+			try {
+				XlPreparedHam prefix(std::vector<unsigned char>(bytes.begin(), bytes.begin() + middle));
+				translation_offset = middle;
+			} catch (const std::runtime_error &) {
+				lower = middle + 1;
+			}
+		}
+		const auto translation_count = (bytes.size() - translation_offset) / 2;
+		require(translation_count > 1 && translation_count <= MAX_BITMAP_FILES,
+		        "retail HAM has no bounded translation control tail");
+		for (std::size_t id = 0; id < translation_count; ++id)
+			require(unsigned(bytes[translation_offset + id * 2]) +
+			                (unsigned(bytes[translation_offset + id * 2 + 1]) << 8) ==
+			            tables.GameBitmapXlat[id],
+			        "retail translation control tail differs from native decoder");
+		auto invalid_translation = bytes;
+		invalid_translation[translation_offset + 2] = 0xff;
+		invalid_translation[translation_offset + 3] = 0xff;
+		bool translation_rejected = false;
+		try {
+			XlPreparedHam invalid(std::move(invalid_translation));
+		} catch (const std::runtime_error &) {
+			translation_rejected = true;
+		}
+		require(translation_rejected && tables.GameBitmapXlat[1] == original_translation[1],
+		        "invalid incoming translation was accepted or changed retained map");
+		auto short_tail = bytes;
+		short_tail.resize(translation_offset);
+		XlPreparedHam without_tail(std::move(short_tail));
+		for (int id = 0; id < MAX_BITMAP_FILES; ++id)
+			require(without_tail.tables().GameBitmapXlat[id] == id,
+			        "absent optional translation tail borrowed outgoing mappings");
 		XlPreparedHam moved(std::move(target));
-		require(moved.tables().Polygon_models == models && moved.tables().Weapon_info[CONCUSSION_ID].energy_usage == energy,
+		require(moved.tables().Polygon_models == models && moved.tables().Weapon_info[CONCUSSION_ID].energy_usage == energy &&
+		            !std::memcmp(moved.tables().GameBitmapXlat, original_translation.data(), sizeof(original_translation)),
 		        "moving candidate invalidated destination or model views");
 		write_bytes((directory / "prepham.ham").string().c_str(), { 'b', 'a', 'd' });
 		bool rejected = false;
@@ -131,6 +183,9 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 		            moved.tables().Polygon_models == models && gameplay_definitions() == outgoing,
 		        "malformed incoming HAM changed live or retained candidate definitions");
 	}
+	std::array<ushort, MAX_BITMAP_FILES> discarded_translation{};
+	piggy_copy_bitmap_translation(discarded_translation.data());
+	require(discarded_translation == outgoing_translation, "discarding incoming HAM changed bitmap translations");
 	require(gameplay_definitions() == outgoing && Current_mission == live_mission &&
 	            !std::memcmp(&live_ship, &only_player_ship, sizeof(live_ship)) &&
 	            Num_cockpits == live_cockpits && Marker_model_num == live_marker,
@@ -176,6 +231,9 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 		        "malformed HXM changed retained target or live definitions");
 		const auto original_robot = Robot_info[0];
 		candidate.install_hxm();
+		std::array<ushort, MAX_BITMAP_FILES> published_translation{};
+		piggy_copy_bitmap_translation(published_translation.data());
+		require(published_translation == original_translation, "incoming HAM did not publish retained bitmap translations");
 		require(Robot_info[0].mass == replacement.mass, "incoming HXM was not published from retained definitions");
 		reset_level_robots_file();
 		require(Robot_info[0].mass == replacement.mass,

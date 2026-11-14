@@ -304,6 +304,7 @@ static bm_ham_destination bm_live_ham_destination(void)
 		&Marker_model_num,
 		&exit_modelnum,
 		&destroyed_exit_modelnum,
+		NULL,
 	};
 	return destination;
 }
@@ -330,10 +331,14 @@ int bm_read_xl_ham_into(PHYSFS_file *fp, const bm_ham_destination *destination,
                       int (*read_model)(polymodel *, PHYSFS_file *))
 {
 	d2_ham_validation_report report;
-	if (!fp || !destination || !read_model || !bm_validate_main_ham_report(fp, &report) || !PHYSFS_seek(fp, 0)) return 0;
+	if (!fp || !destination || !destination->GameBitmapXlat || !read_model || !bm_validate_main_ham_report(fp, &report) || !PHYSFS_seek(fp, 0)) return 0;
 	if (PHYSFSX_readInt(fp) != MAKE_SIG('!','M','A','H') || PHYSFSX_readInt(fp) != 3) return 0;
-	/* Native HAM admission permits unused trailing data */
-	return bm_read_ham_data(fp, 3, destination, read_model);
+	/* Native HAM admission permits a short optional translation tail */
+	if (!bm_read_ham_data(fp, 3, destination, read_model)) return 0;
+	piggy_read_bitmap_translation(fp, destination->GameBitmapXlat);
+	for (int i = 0; i < MAX_BITMAP_FILES; ++i)
+		if (destination->GameBitmapXlat[i] >= MAX_BITMAP_FILES) return 0;
+	return 1;
 }
 
 void bm_install_xl_ham(bm_ham_destination *source)
@@ -381,6 +386,7 @@ void bm_install_xl_ham(bm_ham_destination *source)
 	BM_COPY_COUNT(Marker_model_num);
 	BM_COPY_COUNT(exit_modelnum);
 	BM_COPY_COUNT(destroyed_exit_modelnum);
+	piggy_install_bitmap_translation(source->GameBitmapXlat);
 #undef BM_COPY_TABLE
 #undef BM_COPY_COUNT
 	for (i = 0; i < N_polygon_models; ++i)
