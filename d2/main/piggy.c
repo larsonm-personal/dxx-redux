@@ -1056,6 +1056,28 @@ int piggy_read_sound_bank(PHYSFS_file *file, void *context,
 }
 #endif
 
+void piggy_read_bitmap_translation(PHYSFS_file *file, ushort *destination)
+{
+	int i;
+	for (i = 0; i < MAX_BITMAP_FILES; ++i) {
+		PHYSFS_uint16 value;
+		if (!PHYSFS_readULE16(file, &value)) break;
+		destination[i] = value;
+	}
+}
+
+#ifdef DXX_XL_RUNTIME
+void piggy_copy_bitmap_translation(ushort *destination)
+{
+	memcpy(destination, GameBitmapXlat, sizeof(GameBitmapXlat));
+}
+
+void piggy_install_bitmap_translation(const ushort *source)
+{
+	memcpy(GameBitmapXlat, source, sizeof(GameBitmapXlat));
+}
+#endif
+
 int read_hamfile()
 {
 	PHYSFS_file * ham_fp = NULL;
@@ -1129,22 +1151,15 @@ int read_hamfile()
 
 	#if 1 //ndef EDITOR
 	{
-		int i;
-
 #if defined(__ANDROID__) || defined(DXX_XL_RUNTIME)
+		int i;
 		/* Re-reading mission HAM must release the previous model allocations */
 		for (i = 0; i < N_polygon_models; ++i)
 			if (Polygon_models[i].model_data) free_model(&Polygon_models[i]);
 		init_polygon_models();
 #endif
 		bm_read_all(ham_fp);
-		//PHYSFS_read( ham_fp, GameBitmapXlat, sizeof(ushort)*MAX_BITMAP_FILES, 1 );
-		for (i = 0; i < MAX_BITMAP_FILES; i++)
-		{
-			GameBitmapXlat[i] = PHYSFSX_readShort(ham_fp);
-			if (PHYSFS_eof(ham_fp))
-				break;
-		}
+		piggy_read_bitmap_translation(ham_fp, GameBitmapXlat);
 	}
 	#endif
 

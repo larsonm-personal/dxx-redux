@@ -251,3 +251,15 @@ failed receipt; qualification requires a source-bound cross-platform save contra
 or a genuine Android capture, not a fabricated trailer or skipped validation.
 The ordinary APK is restored and hash verified after probing. This checkpoint
 adds diagnostic capability only; Android timeline acceptance remains OPEN.
+
+## Retained native bitmap translations
+
+Incoming HAM currently omits GameBitmapXlat, used by native low-memory paging.
+Extract the existing trailing-short reader into piggy's native owner and share it
+between ordinary loading and explicit HAM destinations. Incoming storage starts
+with identity mappings for an absent/short optional tail, never outgoing state;
+reject out-of-capacity mappings during incoming preparation. Publish the complete
+retained map alongside HAM definitions without allocation. Extend the canonical
+descriptor owner with outgoing corruption, independent retained values, moves,
+discard and publication checks. This closes a native metadata gap required before
+bank replacement; it does not claim native bank or whole-world atomic publication.
