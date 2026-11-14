@@ -1,12 +1,9 @@
 # Nightly tooling
 
-The scheduled/manual `nightly` workflow runs all admitted unattended owners on
-one revision selected using authorized GitHub push provenance. The trusted
-`android/run_all_tests.ps1 -ListTests` catalog discovers master owners;
-`android/tests/nightly_tooling_policy.json` admits supported owners and estimates,
-and `host_test_suites.json` defines fixed host adapters. The complete campaign
-uses independent bounded shards and starts fresh each night, without advancing
-or consuming the old rotating ledger on `ci/nightly-tooling-state`.
+The scheduled/manual `nightly` workflow verifies a roughly one-hour sample on the
+latest authenticated authorized revision. Five quick core owners run first; the
+remaining admitted unattended owners rotate in a persistent pseudorandom order.
+The trusted catalog and policy define admission, estimates and explicit exclusions.
 
 PR validation remains a read-only representative sample using shareware/generated
 fixtures. Named manual campaigns remain bounded. A passing owner does not certify
@@ -22,7 +19,7 @@ The default PR sample runs the existing two-emulator public gameplay owner:
 native D1, native D2, and imported D1 level-one starts with matching peers and a
 cold role swap. Network engine, shared networking/co-op, Android lobby/multiplayer,
 and LAN-owner changes trigger the same sample. Its dual-lane estimate is 1500
-seconds; fixture-free discovery and broadcast are included in full nightly coverage.
+seconds; fixture-free discovery and broadcast are included in the nightly sampling pool.
 
 The fixed public D1 host-migration variant reuses `test_lan.ps1`: graceful host
 leave, rejoin, forced host process loss, and a second migration/rejoin. It is
@@ -53,76 +50,76 @@ Vertigo descriptor receives explicit LF-to-CRLF normalization in staging. The cu
 `8c9988a96a7e306f8aac04c85e2610492917b7ac`; older configured commits can leave
 newer private owners unavailable. Supplied originals are never modified.
 
-## Every-night coverage and revision provenance
+## Nightly sampling and revision provenance
 
-Scheduled runs (02:15 America/Los_Angeles) and the manual `nightly` campaign use
-`nightly_revision.py` and `nightly_complete.py`. This behavior starts only after
-these changes reach the default branch, `cmake`. PR samples and explicitly named
-manual campaigns retain their selections.
+Scheduled runs (02:15 America/Los_Angeles) and manual `nightly` runs use
+`nightly_revision.py` and `nightly_sample.py`. This starts only after these changes
+reach the scheduler's default branch, `cmake`. PR samples retain their selections.
 
-Revision selection uses GitHub's repository activity API, with full Link-cursor
-pagination, immutable repository ID 1171374860 and authorized account ID 265118235. It chooses the latest server-timestamped push, force push, branch
-creation or merge whose resulting SHA remains reachable from that same-repository
-branch. Commit author names, email addresses and commit timestamps are not
-credentials. Ties use activity ID, ref and SHA. Deleted branches and unreachable
-revisions are ineligible; no candidate or unstable snapshots fail closed without
-falling back to cmake. A stable snapshot pins one SHA for all shards; later pushes
-do not retarget an active run. Private lanes revalidate the recorded activity and
-reachability before accessing assets. `nightly-plan/revision.json` records the
-selection evidence.
+Revision selection paginates GitHub repository activity and branches, checking
+immutable repository ID 1171374860 and authorized account ID 265118235. It chooses
+the latest server-timestamped authenticated push/merge/branch creation whose SHA
+is still reachable from its branch, including cmake. Author text and commit dates
+are not credentials. Ties use activity ID, ref and SHA. Deleted/unreachable refs,
+no candidate and unstable snapshots fail closed. A stable snapshot pins one SHA;
+private gates revalidate the activity and reachability. `revision.json` retains
+this evidence. Later pushes do not retarget an active run.
 
-The trusted workflow catalog selects all admitted unattended owners every night,
-including online-preview, D2 online-preview, the three transport owners, and the
-explicit three-player owner. Exact master selection uses FullSuite, FullExtracts,
-FullRouteCorpus, ExtendedGraphics and ExtendedMultiplayer. FullSuite alone is not
-a claim of exhaustive coverage. The host XL originals/fast and Android originals
-owners run when the reviewed immutable private fixture is available. Pumo staging
-and the asset-free XL developer Release compile run as supplemental jobs. Pumo
-staging verifies the pinned inputs; it does not prove candidate Pumo gameplay.
+Core owners are the master catalog check, verified-download check, D1 CTest,
+Gradle unit tests and controller overlay check. They execute before the sampled
+phase in their lanes. Missing or failing core receipts fail the summary. The
+remaining pool includes admitted host adapters, generated mission corpus owners,
+private XL owners, public online D1/D2, transports and three-player tests. At most
+one supplemental Pumo staging or developer Release compile is selected. Unavailable
+fixtures/capabilities, physical/manual and unadmitted tests remain machine-readable
+in `plan.json` and `summary.json`. Pumo staging is not gameplay qualification.
 
-`nightly-plan/complete.json` contains every bounded shard and machine-readable
-exclusions/unavailable reasons. Public and private work use separate shards so
-public artifacts cannot contain private lane output. Host shards have a 90-minute
-estimated test budget; other shards have 45 minutes. Job limits include setup and
-allow a single retained long-running owner to finish. At most 16 host shards and
-three Android/JVM shards run concurrently, subject to GitHub account limits.
-A matrix exceeding 256 shards fails explicitly instead of dropping work.
+Ordering restores menu T's `Get-RuntimeHashOrder`: SHA256 of owner names within
+SHA256-ordered lane/category groups, interleaved across groups. It never invokes
+baseline regeneration. `nightly-sample.json` on `ci/nightly-tooling-state` records
+completed owner attempts and failures separately from exact-SHA coverage. Each
+night starts at the first undone owner in each lane's stable order. A missing or
+setup-blocked receipt stays undone even if later selected owners completed.
+Executed failures advance traversal but remain explicit historical failures.
+A SHA change does not reset traversal. Removed or changed owner definitions lose
+credit; additions enter the same order. After every available owner has an
+execution receipt, the cycle wraps. Quick core checks intentionally repeat.
 
-At the initial cmake catalog with the reviewed XL asset revision, planning yields
-2,762 selected owners in 198 shards (162 host, 29 Android single, six Android
-multi-device, one JVM), 377 unavailable owners and 235 catalog/policy exclusions.
-These are planning counts, not executed test results. Estimates total roughly
-267 runner-hours before setup; account concurrency, queues and actual runtime can
-extend the run beyond one night. This deliberately replaces the old 45-minute
-per-lane rotating sample and needs corresponding Actions capacity/budget. No
-progress from an earlier SHA suppresses a later night's tests.
+Selected sampled master owners use their existing bounded case sampling with a
+reproducible cycle seed, not FullSuite/FullExtracts/FullRouteCorpus. Owner traversal
+is not exhaustive child-case coverage: only actual current-SHA receipts and their
+coverage_complete fields describe this run's coverage. Historical failures are
+labelled separately. A passing sample does not certify unselected work.
 
-Only exact-SHA, exact-batch execution receipts retire selected work. The summary
-requires PASS plus complete coverage evidence for every selected owner; missing,
-skipped, failed or partially covered owners and unavailable configuration make
-the result incomplete. If only documented target-capability/manual exclusions
-remain, the result is `passed_with_exclusions`, never `complete_pass`. Supplemental jobs must also succeed. Stable unsupported corpus levels,
-missing fixtures, unadmitted owners and physical/manual checks stay visible; they
-are never reported as passing coverage. New branch-only catalog owners require
-trusted policy admission on cmake before they can run with private fixtures.
+A dry run on the current catalog with reviewed XL assets admits 2,762 owners,
+selects 32 (five core plus 27 sampled), and selects Pumo staging. Estimates are
+2,670/600/2,400/2,700 seconds for host/JVM/single/dual lanes: 2.33 runner-hours
+plus the supplemental estimate. There are 377 unavailable owners and 235 explicit
+catalog/policy exclusions. The plan serializes to 247 KB and the report parses it
+under the unchanged 8 MiB limit. These are planning measurements, not executions.
 
-The controller is checked out at the workflow SHA. Private inputs are gated,
-checked out with `persist-credentials: false`, staged by trusted code, and removed
-before candidate setup/build/test code runs. Candidate jobs have read-only GitHub
-permissions and no persistent checkout credentials. Private jobs upload only the
-existing sanitized owner receipts. The old progress publisher does not run for
-complete nightly campaigns. Existing `retail-ci`, `RETAIL_ASSETS_READ_TOKEN` and
-`RETAIL_ASSETS_COMMIT` configuration remain prerequisites; missing configuration
-is recorded as unavailable coverage. No scheduler or secret change is activated
-by merely opening the PR.
+There is one host lane and at most three Android/JVM lanes, plus at most one
+supplemental job. The usual planned execution allowance is 45 minutes per lane,
+including core. To avoid starving a single 45-minute owner behind repeated core,
+the first sampled owner may exceed that estimate; the real deadline still wins.
+Execution stops 48 minutes after planning, reserving two minutes for receipts;
+setup consumes this same allowance. Test jobs have a 55-minute ceiling and
+supplementals 45 minutes. Planning, final reporting and publication add overhead;
+GitHub queue delays can exceed the approximately one-hour elapsed target. This
+is a proposed bound, not a measured runtime guarantee. Four test lanes consume
+at most 3 hours 40 minutes of job allocation plus 45 minutes for a supplemental
+and small controller overhead; actual use should be lower. No full run was
+performed to validate these estimates.
 
-Overlap is bounded with GitHub's default single pending slot and
-`cancel-in-progress: false`: one active sweep finishes and at most one successor
-waits. A newer trigger replaces a still-pending, unstarted successor; GitHub marks
-that superseded run cancelled. It never cancels already executing shard coverage.
-A delayed successor selects the latest authorized revision when it actually starts.
-This prevents an unbounded backlog, but does not guarantee a result for every
-calendar night or every intermediate commit. With the initial catalog the ideal
-host lower bound is about 15 hours at 16 workers; the three-hour per-job ceiling
-allows up to 33 hours across 11 host waves before queue/setup variability. A
-sub-24-hour finish is unproven and must not be assumed when approving deployment.
+Overlap uses one active workflow and GitHub's single pending slot, with
+cancel-in-progress false. An unstarted successor can be superseded; running work
+is not silently cancelled. Receipt publication runs even after test failures,
+using a trusted isolated writer, bounded JSON and non-force updates; the older
+ledger file is preserved. This prevents both unbounded queues and SHA resets.
+
+The controller is pinned to the workflow SHA. Candidate checkout credentials are
+not persisted. Private inputs are gated/staged by trusted code before candidate
+code runs, and private lanes upload sanitized receipts only. Existing retail-ci
+branch protection, read-only RETAIL_ASSETS_READ_TOKEN and immutable
+RETAIL_ASSETS_COMMIT remain prerequisites. New branch-only owners require trusted
+policy admission. Opening this draft PR does not activate the scheduler.

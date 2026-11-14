@@ -67,7 +67,7 @@ jobs:
       run: ${{ !inputs.recheck_stack && 'true' || steps.stack.outputs.run }}
     runs-on: ubuntu-24.04
     # Provision/build time is separate from the approximately 45-minute test sample
-    timeout-minutes: 180
+    timeout-minutes: ${{ inputs.nightly_target_ref != '' && 55 || 105 }}
     # Keep deployment tracking for trusted retail jobs only
     environment:
       name: ${{ inputs.retail_assets && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'retail-ci' || 'asset-free' }}
@@ -139,6 +139,9 @@ jobs:
         run: |
           [[ "$SHARD" =~ ^shard-[0-9]{3}$ ]]
           cp "plan/$SHARD.json" plan/plan.json
+      - name: Check remaining nightly allowance before provisioning
+        if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && inputs.nightly_target_ref != ''
+        run: python3 control/android/tests/nightly_sample.py check-deadline
       - name: Inspect fixed fixture requirement
         if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true')
         id: selection
@@ -580,7 +583,7 @@ jobs:
       - name: Execute reviewed test selection
         if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true')
         id: execute
-        timeout-minutes: 150
+        timeout-minutes: 50
         shell: bash
         env:
           NATIVE_REPLAY: ${{ steps.selection.outputs.native_replay }}
@@ -592,6 +595,9 @@ jobs:
           command=(python3 control/android/tests/nightly_tooling_sweep.py execute
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json
             --lane "$SWEEP_LANE" --repo "$GITHUB_WORKSPACE/target" --output "$GITHUB_WORKSPACE/results")
+          if [[ -n "${NIGHTLY_TARGET_REF:-}" ]]; then
+            command=(python3 control/android/tests/nightly_sample.py execute --lane "$SWEEP_LANE")
+          fi
           if [[ "$NATIVE_REPLAY" == true ]]; then
             # Auto-level owners record on Android, then replay in the native SDL/OpenGL executable
             command=(xvfb-run -a -s '-screen 0 1280x720x24 -nolisten tcp'
@@ -607,6 +613,10 @@ jobs:
           reason=()
           if [[ "$PROVISIONING_FAILED" == 'true' ]]; then
             reason=(--blocked-reason 'Lane provisioning failed before test execution; see setup logs')
+          fi
+          if [[ -n "${NIGHTLY_TARGET_REF:-}" ]]; then
+            python3 control/android/tests/nightly_sample.py collect --lane "$SWEEP_LANE" "${reason[@]}"
+            exit $?
           fi
           python3 control/android/tests/nightly_tooling_sweep.py collect \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \

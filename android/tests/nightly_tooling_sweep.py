@@ -399,7 +399,10 @@ def validate_plan(plan, policy):
         raise ValueError("Three-player evidence requires an asset-free lane batch")
     if plan.get("budget_scope") != "per-lane" or not (
         1 <= plan.get("budget_seconds", 0) <= 2700
-        or (plan.get("budget_seconds") == 5400 and plan.get("lanes") == ["host"])
+        or (
+            plan.get("sampling", {}).get("schema") == "dxx-nightly-traversal-v1"
+            and 2700 < plan.get("budget_seconds", 0) <= 3600
+        )
     ):
         raise ValueError("Invalid per-lane budget")
     if any(
@@ -900,6 +903,13 @@ def execute(plan, policy, lane, repo, output):
             "-ReportDir",
             str(output / "master"),
         ]
+        if plan.get("sample_phase"):
+            command = [
+                arg
+                for arg in command
+                if arg not in ("-FullSuite", "-FullExtracts", "-FullRouteCorpus", "-ExtendedMultiplayer")
+            ]
+            command += ["-SampleSeed", str(plan["sampling"]["cycle"] + 1)]
         if lane in ("host", "jvm"):
             command.append("-HostOnly")
         # Master owns setup/cleanup and per-test timeout; outer hosted cancellation remains pending.

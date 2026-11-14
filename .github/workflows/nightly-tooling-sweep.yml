@@ -68,7 +68,7 @@ permissions:
   contents: read
 
 env:
-  FULL_NIGHTLY: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.campaign == 'nightly' && !inputs.evidence_run_id) }}
+  NIGHTLY_SAMPLE: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.campaign == 'nightly' && !inputs.evidence_run_id) }}
   CANDIDATE_PR: ${{ inputs.candidate_pr }}
   CANDIDATE_SHA: ${{ inputs.candidate_sha }}
   CANDIDATE_CAMPAIGN: ${{ inputs.campaign }}
@@ -213,6 +213,7 @@ jobs:
       lanes: ${{ steps.plan.outputs.lanes }}
       android_lanes: ${{ steps.plan.outputs.android_lanes }}
       count: ${{ steps.plan.outputs.count }}
+      supplemental: ${{ steps.plan.outputs.supplemental }}
       retail_lanes: ${{ steps.plan.outputs.retail_lanes }}
       retail_commit: ${{ steps.plan.outputs.retail_commit }}
     steps:
@@ -229,7 +230,7 @@ jobs:
           PR_SHA: ${{ github.event.pull_request.head.sha }}
           CAMPAIGN_SHA: ${{ github.event_name == 'workflow_dispatch' && (inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'xl-textures' || inputs.campaign == 'xl-originals' || inputs.campaign == 'xl-fast' || inputs.campaign == 'basic-use' || inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports') && github.sha || '' }}
         run: |
-          if [[ "$FULL_NIGHTLY" == true ]]; then
+          if [[ "$NIGHTLY_SAMPLE" == true ]]; then
             python3 control/android/tests/nightly_revision.py
             exit 0
           fi
@@ -250,7 +251,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
           printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
-          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" || "$FULL_NIGHTLY" == true ]]; then
+          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" || "$NIGHTLY_SAMPLE" == true ]]; then
             printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > control/dependency_base.txt
           fi
       - name: Export authoritative master catalog
@@ -258,7 +259,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path plan -Force | Out-Null
           $catalogRoot = if ($env:CANDIDATE_PR -or $env:CANDIDATE_SHA) { "control" } else { "target" }
-          if ($env:FULL_NIGHTLY -eq "true") { $catalogRoot = "control" }
+          if ($env:NIGHTLY_SAMPLE -eq "true") { $catalogRoot = "control" }
           & ./$catalogRoot/android/run_all_tests.ps1 -ListTests -ExtendedGraphics -ExtendedMultiplayer | Set-Content plan/catalog.json -Encoding utf8
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Plan unfinished tests without advancing progress
@@ -279,8 +280,8 @@ jobs:
           GRAPHICS_CAPABILITIES: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'graphics-capabilities' }}
           RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
         run: |
-          if [[ "$FULL_NIGHTLY" == true ]]; then
-            python3 control/android/tests/nightly_complete.py plan
+          if [[ "$NIGHTLY_SAMPLE" == true ]]; then
+            python3 control/android/tests/nightly_sample.py plan
             exit 0
           fi
           python3 control/android/tests/nightly_tooling_sweep.py fetch-state --output plan/previous.json
@@ -339,13 +340,13 @@ jobs:
     name: ${{ matrix.shard != '' && format('Linux tests {0}', matrix.shard) || 'Linux tests' }}
     strategy:
       fail-fast: false
-      max-parallel: 16
+      max-parallel: 1
       matrix:
         include: ${{ fromJSON(needs.plan.outputs.host_matrix) }}
     needs: [plan, execution-stack]
     if: needs.execution-stack.outputs.run == 'true' && contains(fromJSON(needs.plan.outputs.lanes), 'host')
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    timeout-minutes: ${{ (github.event_name == 'schedule' || inputs.campaign == 'nightly') && 55 || 100 }}
     permissions:
       contents: read
       actions: read
@@ -384,6 +385,9 @@ jobs:
         run: |
           [[ "$SHARD" =~ ^shard-[0-9]{3}$ ]]
           cp "plan/$SHARD.json" plan/plan.json
+      - name: Check remaining nightly allowance before provisioning
+        if: env.NIGHTLY_SAMPLE == 'true'
+        run: python3 control/android/tests/nightly_sample.py check-deadline
       - name: Prepare trusted dependency location
         run: |
           mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" control/android/temp control/temp
@@ -463,7 +467,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
           printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
-          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" || "$FULL_NIGHTLY" == true ]]; then
+          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" || "$NIGHTLY_SAMPLE" == true ]]; then
             printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > control/dependency_base.txt
           fi
       - name: Prepare verified public fixture runtime
@@ -502,8 +506,12 @@ jobs:
           npm ci --prefix "$setup/android/tools/code-quality" --ignore-scripts
       - name: Execute admitted host owners
         id: execute
-        timeout-minutes: 150
+        timeout-minutes: 50
         run: |
+          if [[ "$NIGHTLY_SAMPLE" == true ]]; then
+            python3 control/android/tests/nightly_sample.py execute --lane host
+            exit $?
+          fi
           python3 control/android/tests/nightly_tooling_sweep.py execute \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --lane host --repo target --output results
@@ -514,6 +522,10 @@ jobs:
         run: |
           blocked=()
           if [[ "$SETUP_FAILED" == true ]]; then blocked=(--blocked-reason 'host lane provisioning failed; inspect setup logs'); fi
+          if [[ "$NIGHTLY_SAMPLE" == true ]]; then
+            python3 control/android/tests/nightly_sample.py collect --lane host "${blocked[@]}"
+            exit $?
+          fi
           python3 control/android/tests/nightly_tooling_sweep.py collect \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --lane host --output results "${blocked[@]}"
@@ -539,8 +551,8 @@ jobs:
 
   pumo_stage:
     name: Verify pinned Pumo staging
-    needs: stack
-    if: needs.stack.outputs.run == 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.campaign == 'nightly' || inputs.campaign == 'pumo-stage')))
+    needs: [stack, plan]
+    if: always() && needs.stack.outputs.run == 'true' && (needs.plan.outputs.supplemental == 'pumo-stage' || (github.event_name == 'workflow_dispatch' && inputs.campaign == 'pumo-stage'))
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
@@ -563,7 +575,7 @@ jobs:
           import os, sys
           sys.path.insert(0, 'control/android/tests')
           import nightly_retail
-          assert os.environ['CANDIDATE_CAMPAIGN'] == 'pumo-stage' or os.environ['FULL_NIGHTLY'] == 'true'
+          assert os.environ['CANDIDATE_CAMPAIGN'] == 'pumo-stage' or os.environ['NIGHTLY_SAMPLE'] == 'true'
           assert not os.environ['CANDIDATE_PR'] and not os.environ['CANDIDATE_SHA']
           assert nightly_retail.trusted_context()
           PYTHON
@@ -627,7 +639,7 @@ jobs:
   nightly_release:
     name: Nightly XL developer Release compile
     needs: plan
-    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.campaign == 'nightly')
+    if: needs.plan.outputs.supplemental == 'release-compile'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
@@ -713,10 +725,10 @@ jobs:
           RELEASE_COMPILE_RESULT: ${{ needs.nightly_release.result }}
           REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'xl-textures' || inputs.campaign == 'basic-use' || inputs.campaign == 'xl-originals' || inputs.campaign == 'xl-fast' }}
         run: |
-          if [[ "$FULL_NIGHTLY" == true ]]; then
+          if [[ "$NIGHTLY_SAMPLE" == true ]]; then
             status=0
-            python3 control/android/tests/nightly_complete.py report || status=$?
-            { echo '## Complete nightly receipts'; echo '```json'; cat summary.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            python3 control/android/tests/nightly_sample.py report || status=$?
+            { echo '## Nightly sample receipts'; echo '```json'; cat summary.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
             exit "$status"
           fi
           qualification=()
@@ -747,7 +759,7 @@ jobs:
           retention-days: 30
 
       - name: Require no unresolved failures or infrastructure blocks
-        if: always() && steps.reconcile.outcome == 'success' && env.FULL_NIGHTLY != 'true'
+        if: always() && steps.reconcile.outcome == 'success' && env.NIGHTLY_SAMPLE != 'true'
         env:
           EXECUTION_STACK_RESULT: ${{ needs.execution-stack.result }}
           HOST_RESULT: ${{ needs.host.result }}
@@ -769,8 +781,8 @@ jobs:
 
   publish:
     name: Save nightly progress (scheduled/manual only)
-    needs: [plan, finish]
-    if: always() && github.event_name != 'schedule' && inputs.campaign != 'nightly' && needs.plan.result == 'success' && needs.finish.outputs.reconciled == 'true' && github.event_name != 'workflow_run' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'xl-browser' && inputs.campaign != 'xl-textures' && inputs.campaign != 'xl-originals' && inputs.campaign != 'xl-fast' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && inputs.campaign != 'online-transports' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
+    needs: [plan, finish, pumo_stage, nightly_release]
+    if: always() && needs.plan.result == 'success' && (github.event_name == 'schedule' || inputs.campaign == 'nightly' || needs.finish.outputs.reconciled == 'true') && github.event_name != 'workflow_run' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'xl-browser' && inputs.campaign != 'xl-textures' && inputs.campaign != 'xl-originals' && inputs.campaign != 'xl-fast' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && inputs.campaign != 'online-transports' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -793,9 +805,15 @@ jobs:
       - name: Publish only completed progress to dedicated state branch
         env:
           GH_TOKEN: ${{ github.token }}
+          PUMO_STAGE_RESULT: ${{ needs.pumo_stage.result }}
+          RELEASE_COMPILE_RESULT: ${{ needs.nightly_release.result }}
           TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
         run: |
           mapfile -t receipts < <(find receipts -mindepth 1 -maxdepth 2 -type f \( -path 'receipts/results.json' -o -path 'receipts/nightly-results-*/results.json' \) 2>/dev/null | sort)
+          if [[ "$NIGHTLY_SAMPLE" == true ]]; then
+            python3 control/android/tests/nightly_sample.py publish
+            exit $?
+          fi
           python3 control/android/tests/nightly_tooling_sweep.py publish \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --expected-target "$TARGET_SHA" --output published-state.json --receipts "${receipts[@]}"

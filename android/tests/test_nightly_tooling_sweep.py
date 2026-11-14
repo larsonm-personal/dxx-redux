@@ -2554,9 +2554,9 @@ class SweepTests(unittest.TestCase):
         host = workflow[workflow.index("  host:") : workflow.index("  android:")]
         prerequisites = host.split("      - name: Install host prerequisites", 1)[1].split("      - name:", 1)[0]
         self.assertIn("timeout-minutes: 15", prerequisites)
-        self.assertIn("    timeout-minutes: 180", host.split("    steps:", 1)[0])
+        self.assertIn("&& 55 || 100", host.split("    steps:", 1)[0])
         execution = host.split("      - name: Execute admitted host owners", 1)[1].split("      - name:", 1)[0]
-        self.assertIn("timeout-minutes: 150", execution)
+        self.assertIn("timeout-minutes: 50", execution)
         setup = host.split("      - name: Prepare asset-free metadata CLI", 1)[1].split("      - name:", 1)[0]
         self.assertIn("VALIDATE_METADATA_CLI: ${{ github.event_name == 'pull_request' }}", setup)
         self.assertIn('"$VALIDATE_METADATA_CLI" != true', setup)
@@ -2598,117 +2598,188 @@ class SweepTests(unittest.TestCase):
         self.assertLess(host.index("> target/dependency_base.txt"), host.index("Execute admitted host owners"))
 
 
-class CompleteNightlyTests(unittest.TestCase):
-    def test_complete_artifacts_round_trip_without_repeating_global_accounting(self):
-        import nightly_complete as complete
-
+class SamplingNightlyTests(unittest.TestCase):
+    def fixture(self):
         policy = {
             "schema": 1,
             "suites": [
                 {
-                    "id": f"master:owner_{index}",
+                    "id": f"master:owner_{i}",
                     "owner": "master",
-                    "lane": "android-single",
-                    "args": {"suite": f"owner_{index}"},
-                    "estimated_seconds": 2700,
-                }
-                for index in range(198)
-            ],
-            "exclusions": [{"id": f"manual_{index}", "reason": "physical hardware " * 30} for index in range(235)],
-        }
-        policy["suites"].append(
-            {
-                "id": "master:unavailable",
-                "owner": "master",
-                "lane": "host",
-                "args": {"suite": "unavailable"},
-                "estimated_seconds": 1,
-                "unavailable_reason": "fixture unavailable",
-            }
-        )
-        catalog = {"schema": 1, "tests": [{"name": e["args"]["suite"]} for e in policy["suites"]]}
-        manifest = complete.plan_all(SHA, catalog, policy)
-        self.assertEqual(len(manifest["batches"]), 198)
-        self.assertEqual(manifest["exclusions"], policy["exclusions"])
-        self.assertEqual([r["id"] for r in manifest["unavailable"]], ["master:unavailable"])
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            complete.write_artifact(root / "complete.json", manifest)
-            self.assertLess((root / "complete.json").stat().st_size, 1024 * 1024)
-            for index, plan in enumerate(manifest["batches"]):
-                self.assertEqual(plan["exclusions"], [])
-                self.assertEqual(plan["unavailable"], [])
-                path = root / f"shard-{index:03d}.json"
-                complete.write_artifact(path, plan)
-                sweep.validate_plan(sweep.read(path), policy)
-            summary = complete.report(sweep.read(root / "complete.json"), policy, [])
-            self.assertEqual(summary["outcome"], "incomplete")
-            self.assertEqual(len(summary["selected_without_pass"]), 198)
-            self.assertEqual(summary["excluded"], manifest["exclusions"])
-            self.assertEqual(summary["unavailable_pending"], manifest["unavailable"])
-            with self.assertRaisesRegex(ValueError, "bounded size"):
-                complete.write_artifact(root / "oversized.json", {"value": "x" * (8 * 1024 * 1024)})
-
-    def test_complete_partition_includes_opt_ins_and_receipts_are_required(self):
-        import nightly_complete as complete
-
-        policy = {
-            "schema": 1,
-            "suites": [
-                {
-                    "id": ident,
-                    "owner": "master",
-                    "lane": "android-dual",
-                    "args": {"suite": ident.split(":")[1]},
+                    "lane": "host",
+                    "args": {"suite": f"owner_{i}"},
                     "estimated_seconds": 1800,
                 }
-                for ident in sorted(sweep.PUBLIC_ONLINE_IDS | sweep.PUBLIC_ONLINE_D2_IDS | sweep.ONLINE_TRANSPORT_IDS)
+                for i in range(4)
             ],
-            "exclusions": [{"id": "physical", "reason": "manual hardware"}],
+            "exclusions": [],
         }
-        catalog = {"schema": 1, "tests": [{"name": e["args"]["suite"]} for e in policy["suites"]]}
-        manifest = complete.plan_all(SHA, catalog, policy)
-        self.assertEqual(manifest["selected_count"], 5)
-        self.assertEqual(len(manifest["batches"]), 5)
-        self.assertEqual(complete.report(manifest, policy, [])["outcome"], "incomplete")
-        receipts = []
-        for plan in manifest["batches"]:
-            receipt = {k: plan[k] for k in ("schema", "target_sha", "catalog_hash", "batch_id")}
-            receipt.update(
-                lane="android-dual",
-                results=[
-                    {"id": e["id"], "status": "PASS", "coverage_complete": True, "run_url": "https://github.com/run/1"}
-                    for e in plan["tests"]
-                ],
+        return policy, {"schema": 1, "tests": [{"name": e["args"]["suite"]} for e in policy["suites"]]}
+
+    def receipt(self, plan, status="PASS"):
+        receipt = {key: plan[key] for key in ("schema", "target_sha", "catalog_hash", "batch_id")}
+        receipt.update(
+            lane="host",
+            results=[
+                {
+                    "id": e["id"],
+                    "status": status,
+                    "coverage_complete": True,
+                    "attempted_tests": status != "BLOCKED",
+                    "phase": "setup" if status == "BLOCKED" else "tests",
+                    "run_url": "https://github.com/run/1",
+                }
+                for e in plan["tests"]
+            ],
+        )
+        return receipt
+
+    def test_executor_runs_core_first_and_recovers_on_deadline(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        policy["suites"][0]["estimated_seconds"] = 120
+        plan, _ = sample.plan_sample(SHA, catalog, policy, now=100, core_ids={"master:owner_0"})
+        with (
+            patch.object(sys, "argv", ["nightly_sample.py", "execute", "--lane", "host"]),
+            patch.object(
+                sweep,
+                "read",
+                side_effect=lambda path: policy if str(path).endswith("nightly_tooling_policy.json") else plan,
+            ),
+            patch.object(sample, "write_artifact"),
+            patch.object(sample.time, "time", return_value=101),
+            patch.object(sample, "collect_sample") as collect,
+            patch.object(
+                sweep, "run_command", side_effect=[subprocess.CompletedProcess([], 0), subprocess.TimeoutExpired([], 1)]
+            ) as run,
+        ):
+            self.assertEqual(sample.main(), 0)
+        self.assertIn("results/core", run.call_args_list[0].args[0])
+        self.assertIn("results/sample", run.call_args_list[1].args[0])
+        self.assertEqual(collect.call_count, 2)
+        self.assertEqual(run.call_args_list[0].kwargs["timeout"], 2879)
+
+    def test_hash_order_matches_original_menu_t_helper(self):
+        import nightly_sample as sample
+        import shutil
+
+        if not shutil.which("pwsh"):
+            self.skipTest("PowerShell unavailable for original helper parity")
+        policy, _ = self.fixture()
+        entries = policy["suites"]
+        entries[0]["lane"] = "android-single"
+        rows = [dict(e, category=sample.category(e)) for e in entries]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "entries.json"
+            path.write_text(json.dumps(rows))
+            script = Path(directory) / "order.ps1"
+            helper = Path(__file__).resolve().parents[1] / "helpers/runtime_targeted_sampling.ps1"
+            script.write_text(
+                "param($Helper, $Data)\n. $Helper\n$items = @(Get-Content -Raw $Data | ConvertFrom-Json)\n@(Get-RuntimeHashOrder -Items $items -GroupProperties @('lane','category') -NameProperty 'id' | ForEach-Object { $_.id }) | ConvertTo-Json\n"
             )
-            receipts.append(receipt)
-        self.assertEqual(complete.report(manifest, policy, receipts)["outcome"], "passed_with_exclusions")
-        receipts[0]["results"][0]["coverage_complete"] = False
-        self.assertEqual(complete.report(manifest, policy, receipts)["outcome"], "incomplete")
-        receipts[0]["target_sha"] = "f" * 40
-        with self.assertRaisesRegex(ValueError, "provenance"):
-            complete.report(manifest, policy, receipts)
+            actual = json.loads(
+                subprocess.check_output(["pwsh", "-NoProfile", "-File", str(script), str(helper), str(path)], text=True)
+            )
+        self.assertEqual(actual, [e["id"] for e in sample.hash_order(entries)])
 
-    def test_complete_catalog_accounting_and_private_isolation(self):
-        import nightly_complete as complete
+    def test_publication_preserves_legacy_tree_and_uses_nonforce_update(self):
+        import nightly_sample as sample
 
-        policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
-        policy = dict(policy, mission_corpus=False)
+        policy, catalog = self.fixture()
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids=set())
+        responses = [{"sha": "blob"}, {"tree": {"sha": "legacy-tree"}}, {"sha": "tree"}, {"sha": "commit"}, {}]
+        with (
+            patch.object(sample, "read_remote", return_value=("head", state)),
+            patch.object(sweep, "github_api", side_effect=responses) as api,
+            patch.dict(os.environ, {"GITHUB_RUN_ID": "42"}),
+        ):
+            published = sample.publish(plan, policy, [self.receipt(plan)], "success")
+        self.assertTrue(published["done"])
+        self.assertEqual(api.call_args_list[2].args[2]["base_tree"], "legacy-tree")
+        self.assertEqual(api.call_args_list[-1].args[2], {"sha": "commit", "force": False})
+
+    def test_cross_revision_next_undone_and_exact_sha_coverage(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        first, state = sample.plan_sample(SHA, catalog, policy, now=100, core_ids=set())
+        self.assertEqual(len(first["tests"]), 1)
+        same, _ = sample.plan_sample(SHA, catalog, policy, now=100, core_ids=set())
+        self.assertEqual(first, same)
+        untouched, _ = sample.reconcile_sample(first, policy, state, [])
+        self.assertFalse(untouched["done"])
+        state, coverage = sample.reconcile_sample(first, policy, state, [self.receipt(first)])
+        second, _ = sample.plan_sample("b" * 40, catalog, policy, state, now=200, core_ids=set())
+        self.assertNotEqual(first["tests"], second["tests"])
+        _, new_coverage = sample.reconcile_sample(second, policy, state, [])
+        self.assertTrue(coverage["records"])
+        self.assertFalse(new_coverage["records"])
+        self.assertEqual(second["sampling"]["deadline_unix"], 3200)
+
+    def test_failure_advances_but_setup_does_not_and_cycle_retains_failure(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids=set())
+        blocked, _ = sample.reconcile_sample(plan, policy, state, [self.receipt(plan, "BLOCKED")])
+        self.assertFalse(blocked["done"])
+        failed, _ = sample.reconcile_sample(plan, policy, state, [self.receipt(plan, "FAIL")])
+        self.assertTrue(failed["done"])
+        self.assertTrue(failed["failures"])
+        for _ in range(4):
+            plan, failed = sample.plan_sample(SHA, catalog, policy, failed, core_ids=set())
+            failed, _ = sample.reconcile_sample(plan, policy, failed, [self.receipt(plan)], "success")
+        wrapped, _ = sample.plan_sample(SHA, catalog, policy, failed, core_ids=set())
+        self.assertEqual(wrapped["sampling"]["cycle"], 1)
+
+    def test_catalog_reconciliation_and_bounded_artifacts(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids=set())
+        state, _ = sample.reconcile_sample(plan, policy, state, [self.receipt(plan)])
+        changed = [dict(e, estimated_seconds=1700) for e in policy["suites"]]
+        self.assertFalse(sample.reconcile_catalog(state, changed)["done"])
+        self.assertFalse(sample.reconcile_catalog(state, [])["done"])
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "plan.json"
+            sample.write_artifact(path, plan)
+            self.assertEqual(sweep.read(path), plan)
+            with self.assertRaisesRegex(ValueError, "bounded size"):
+                sample.write_artifact(path, {"value": "x" * (8 * 1024 * 1024)})
+
+    def test_real_catalog_opt_ins_accounted_and_core_precedes_sample(self):
+        import nightly_sample as sample
+
+        policy = dict(sweep.read(Path(__file__).with_name("nightly_tooling_policy.json")), mission_corpus=False)
         catalog = {
             "schema": 1,
             "tests": [{"name": e["args"]["suite"]} for e in policy["suites"] if e["owner"] == "master"],
         }
-        catalog["tests"].append({"name": "physical-only", "manual": True})
-        manifest = complete.plan_all(SHA, catalog, policy)
-        selected = [e["id"] for p in manifest["batches"] for e in p["tests"]]
-        self.assertEqual(len(selected), len(set(selected)))
-        accounted = set(selected) | {e["id"] for e in manifest["unavailable"]}
-        self.assertEqual(accounted, set(sweep.policy_entries(policy)))
-        self.assertTrue(any(e["id"] == "physical-only" for e in manifest["exclusions"]))
-        self.assertTrue(sweep.ONLINE_TRANSPORT_IDS <= set(selected))
-        for plan in manifest["batches"]:
-            sweep.validate_plan(plan, policy)
-            self.assertEqual(len({bool(e.get("fixture")) for e in plan["tests"]}), 1)
+        plan, _ = sample.plan_sample(SHA, catalog, policy)
+        pending = {ident for values in plan["sampling"]["pending_order"].values() for ident in values}
+        self.assertTrue(sweep.ONLINE_TRANSPORT_IDS <= pending)
+        self.assertTrue(sweep.PUBLIC_ONLINE_IDS <= pending)
+        self.assertTrue(sweep.THREE_PLAYER_IDS <= pending)
+        self.assertEqual({e["id"] for e in sample.phase_plan(plan, "core")["tests"]}, sample.CORE_IDS)
+        self.assertFalse(sample.CORE_IDS & {e["id"] for e in sample.phase_plan(plan, "sample")["tests"]})
+        with tempfile.TemporaryDirectory() as directory:
+            receipt = sample.collect_sample(plan, policy, "host", Path(directory))
+        self.assertTrue(all(row["status"] == "NOT_RUN" for row in receipt["results"]))
+        self.assertEqual(receipt["batch_id"], plan["batch_id"])
+
+    def test_full_budget_owner_is_not_starved_by_repeated_core(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        policy["suites"][0]["estimated_seconds"] = 120
+        for entry in policy["suites"][1:]:
+            entry["estimated_seconds"] = 2700
+        plan, _ = sample.plan_sample(SHA, catalog, policy, core_ids={"master:owner_0"})
+        self.assertEqual(len(plan["tests"]), 2)
+        self.assertEqual(plan["budget_seconds"], 2820)
+        sweep.validate_plan(plan, policy)
 
 
 class NightlyRevisionTests(unittest.TestCase):
