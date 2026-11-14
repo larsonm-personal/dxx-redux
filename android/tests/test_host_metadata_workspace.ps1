@@ -8,6 +8,63 @@ $androidRoot = Split-Path -Parent $PSScriptRoot
 $root = Join-Path $androidRoot ('temp/metadata-workspace-test-' + [guid]::NewGuid().ToString('N'))
 try {
     New-Item -ItemType Directory -Path $root | Out-Null
+    # Exercise real archive staging on case-sensitive and case-insensitive hosts
+    & {
+        . (Join-Path $androidRoot 'helpers/normalized_json_text.ps1')
+        $ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $androidRoot 'helpers/regenerate_all_mission_metadata_host.ps1'), [ref]$null, [ref]$null)
+        foreach ($name in @('Write-HostMetadataText', 'Write-JsonValue', 'Copy-StageAlias', 'Copy-RawMissionFileSet', 'Copy-CdMissionFileSet', 'Get-MissionDescriptorInfo', 'Invoke-HeadlessScan')) {
+            $definition = $ast.Find({ param($node)
+                    $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
+                }, $true)
+            if (-not $definition) { throw "Missing real metadata staging function: $name" }
+            . ([scriptblock]::Create($definition.Extent.Text))
+        }
+        $raw = Join-Path $root 'alias-raw'
+        $stagesDir = Join-Path $root 'alias-stages'
+        $stage = Join-Path $stagesDir 'mission'
+        New-Item -ItemType Directory -Path $raw, $stagesDir -Force | Out-Null
+        $names = @('FIXTURE.MN2', 'second.msn', 'FIXTURE.HOG', 'LEVEL.RL2')
+        foreach ($generation in @('first', 'replacement')) {
+            foreach ($name in $names) { [IO.File]::WriteAllText((Join-Path $raw $name), "$generation $name") }
+            $descriptors = @(Copy-RawMissionFileSet -RawDirPath $raw -StageDir $stage -VariantSelection ([pscustomobject]@{ MaskedDirectories = @() }))
+            if ($descriptors.Count -ne 2 -or $descriptors[0].Name -cne 'FIXTURE.MN2' -or $descriptors[1].Name -cne 'second.msn') { throw 'Archive aliases changed original descriptor identity or selection count' }
+            foreach ($name in $names) {
+                foreach ($relative in @($name, $name.ToLowerInvariant(), "missions/$name", "missions/$($name.ToLowerInvariant())")) {
+                    $alias = Join-Path $stage $relative
+                    if (-not [IO.File]::Exists($alias) -or [IO.File]::ReadAllText($alias) -cne "$generation $name") {
+                        throw "Metadata staging alias is absent or stale: $relative"
+                    }
+                }
+            }
+        }
+        $cdStage = Join-Path $stagesDir 'cd-mission'
+        $cdSource = [pscustomobject]@{ Discover = $true; SourceDir = $raw }
+        $descriptors = @(Copy-CdMissionFileSet -Source $cdSource -StageDir $cdStage)
+        if ($descriptors.Count -ne 2 -or $descriptors[0].Name -cne 'FIXTURE.MN2' -or $descriptors[1].Name -cne 'second.msn') { throw 'CD aliases changed original descriptor identity or selection count' }
+        foreach ($name in $names) {
+            foreach ($relative in @($name, $name.ToLowerInvariant(), "missions/$name", "missions/$($name.ToLowerInvariant())")) {
+                $alias = Join-Path $cdStage $relative
+                if (-not [IO.File]::Exists($alias) -or [IO.File]::ReadAllText($alias) -cne "replacement $name") { throw "CD staging alias absent or stale: $relative" }
+            }
+        }
+        function Invoke-MetadataKotlinWorker {
+            param($Worker, $Request)
+            return @{ valid = $true; display_name = 'Fixture'; filename = [IO.Path]::GetFileName($Request.path); type = 'normal'; mode_flags = @(); normal_level_files = @('LEVEL.RL2'); secret_level_files = @() }
+        }
+        function Invoke-MetadataWorker { param($Worker, $Request, $RawOutputPath, $LogPath, $TimeoutSeconds); return $Request }
+        $script:metadataKotlinWorker = 'synthetic-worker'
+        $request = Invoke-HeadlessScan -Descriptor $descriptors[0] -StageDir $cdStage -Executables @{d2 = 'synthetic-worker' } -DataDirs @{d2 = 'synthetic-data' } -RawOutputPath (Join-Path $root 'unused.json') -LogPath (Join-Path $root 'unused.log')
+        if ($request.mission_filename -cne 'FIXTURE.MN2' -or @($request.hog_paths).Count -ne 1) { throw 'Metadata worker request duplicated aliases or changed descriptor identity' }
+        $request = Invoke-HeadlessScan -Descriptor $descriptors[0] -StageDir $cdStage -Executables @{d2 = 'synthetic-worker' } -DataDirs @{d2 = 'synthetic-data' } -RawOutputPath (Join-Path $root 'unused.json') -LogPath (Join-Path $root 'unused.log') -DescriptorHogOnly
+        if (@($request.hog_paths).Count -ne 0) { throw 'Descriptor-only HOG resolution was not preserved' }
+        $source = Join-Path $stage 'FIXTURE.HOG'
+        $alias = Join-Path $stage 'fixture.hog'
+        [IO.File]::WriteAllText($source, 'updated source')
+        Copy-StageAlias -Source $source -Target $alias
+        Copy-StageAlias -Source $source -Target $source
+        if ([IO.File]::ReadAllText($alias) -cne 'updated source') { throw 'Existing case-only alias was not refreshed' }
+        Write-Output 'PASS: real mission staging preserves original/lowercase names and refreshes case-only aliases'
+    }
     # Exercise atomic publication while a Windows reader temporarily denies deletion
     if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
         Add-Type -TypeDefinition @'

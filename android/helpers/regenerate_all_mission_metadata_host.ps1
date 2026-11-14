@@ -269,7 +269,13 @@ function Copy-StageAlias {
         [Parameter(Mandatory = $true)][string]$Target
     )
 
-    if ((Resolve-Path -LiteralPath $Source).Path -eq [IO.Path]::GetFullPath($Target)) {
+    $sourcePath = (Resolve-Path -LiteralPath $Source).Path
+    $targetPath = [IO.Path]::GetFullPath($Target)
+    if ($sourcePath -ceq $targetPath) { return }
+    # PowerShell equality ignores case even on Linux. An absent case-only alias
+    # must be created; existing aliases must still reflect the source bytes.
+    if ($sourcePath -eq $targetPath -and (Test-Path -LiteralPath $targetPath -PathType Leaf) -and
+        (Get-FileHash -LiteralPath $sourcePath).Hash -eq (Get-FileHash -LiteralPath $targetPath).Hash) {
         return
     }
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Target) | Out-Null
@@ -382,6 +388,7 @@ function Copy-RawMissionFileSet {
         $VariantSelection = Get-MissionVariantMaskSelection -RawDirPath $RawDirPath
     }
     $used = @{}
+    $descriptors = [Collections.Generic.List[IO.FileInfo]]::new()
     $selectedDates = @()
     foreach ($file in Get-ChildItem -LiteralPath $RawDirPath -Recurse -File) {
         if ($VariantSelection -and @($VariantSelection.MaskedDirectories | Where-Object {
@@ -403,6 +410,7 @@ function Copy-RawMissionFileSet {
         $target = Join-Path $StageDir $leaf
         Copy-Item -LiteralPath $file.FullName -Destination $target -Force
         $ext = [IO.Path]::GetExtension($leaf).ToLowerInvariant()
+        if ($ext -in @(".msn", ".mn2")) { $descriptors.Add((Get-Item -LiteralPath $target)) }
         if ($ext -in @(".msn", ".mn2", ".hog", ".rdl", ".rl2", ".sdl", ".sl2")) {
             $lower = $leaf.ToLowerInvariant()
             Copy-StageAlias -Source $target -Target (Join-Path $StageDir $lower)
@@ -420,6 +428,7 @@ function Copy-RawMissionFileSet {
         Copy-StageAlias -Source $legacySongLists[0].FullName -Target (Join-Path $StageDir "descent.sng")
     }
     Write-JsonValue -Path (Join-Path $StageDir '.provenance-dates.json') -Value ([object[]]@($selectedDates | Sort-Object { $_.file }))
+    return @($descriptors.ToArray() | Sort-Object Name)
 }
 
 function Copy-CdMissionFileSet {
@@ -448,6 +457,7 @@ function Copy-CdMissionFileSet {
         @($Source.Files)
     }
     $used = @{}
+    $descriptors = [Collections.Generic.List[IO.FileInfo]]::new()
     foreach ($file in $sourceFiles) {
         $key = $file.Name.ToLowerInvariant()
         if ($used.ContainsKey($key)) {
@@ -458,6 +468,7 @@ function Copy-CdMissionFileSet {
         if ($file.Extension.ToLowerInvariant() -in @(".msn", ".mn2")) {
             $descriptorText = [IO.File]::ReadAllText($file.FullName).Replace(([char]0x1a).ToString(), "")
             [IO.File]::WriteAllText($target, $descriptorText, [Text.UTF8Encoding]::new($false))
+            $descriptors.Add((Get-Item -LiteralPath $target))
         } else {
             Copy-Item -LiteralPath $file.FullName -Destination $target -Force
         }
@@ -469,6 +480,7 @@ function Copy-CdMissionFileSet {
         Copy-StageAlias -Source $target -Target (Join-Path (Join-Path $StageDir "missions") $lower)
         Copy-StageAlias -Source $target -Target (Join-Path (Join-Path $StageDir "missions") $upper)
     }
+    return @($descriptors.ToArray() | Sort-Object Name)
 }
 
 function Expand-MissionArchive {
@@ -496,16 +508,6 @@ function Expand-MissionArchive {
     Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     Expand-MissionZipContent -ArchivePath $Archive.FullName -Destination $RawArchiveDir
-}
-
-function Get-MissionDescriptor {
-    param([Parameter(Mandatory = $true)][string]$StageDir)
-
-    return @(
-        Get-ChildItem -LiteralPath $StageDir -File |
-            Where-Object { $_.Extension.ToLowerInvariant() -in @(".msn", ".mn2") } |
-            Sort-Object Name
-    )
 }
 
 function Get-MissionDescriptorInfo {
@@ -566,8 +568,14 @@ function Invoke-HeadlessScan {
     $dataDir = $DataDirs[$game]
     # Mission collections contain unrelated and sometimes malformed HOGs
     # Let the engine resolve the descriptor's HOG and any declared override
+    $seenHogs = @{}
     $missionHogs = if ($DescriptorHogOnly) { @() } else {
-        @(Get-ChildItem -LiteralPath $StageDir -File -Filter '*.hog' | ForEach-Object { $_.FullName })
+        @(Get-ChildItem -LiteralPath $StageDir -File -Filter '*.hog' | Where-Object {
+                $key = $_.Name.ToLowerInvariant()
+                if ($seenHogs.ContainsKey($key)) { return $false }
+                $seenHogs[$key] = $true
+                return $true
+            } | ForEach-Object { $_.FullName })
     }
     $request = [ordered]@{
         schema = 'dxx-level-metadata-request-v1'; request_id = [guid]::NewGuid().ToString('N')
@@ -681,9 +689,9 @@ try {
         }
         Write-Status "Host CD metadata: $($source.Id)"
         try {
-            Copy-CdMissionFileSet -Source $source -StageDir $stageDir
+            $stagedDescriptors = @(Copy-CdMissionFileSet -Source $source -StageDir $stageDir)
             $descriptors = if ($source.Discover) {
-                @(Get-MissionDescriptor -StageDir $stageDir)
+                $stagedDescriptors
             } else {
                 @(Get-Item -LiteralPath (Join-Path $stageDir $source.Descriptor.Name))
             }
@@ -942,8 +950,8 @@ try {
                             $archiveDateResult = Invoke-MetadataKotlinWorker -Worker $script:metadataKotlinWorker -Request ([ordered]@{ op = 'archive_dates'; path = $archive.FullName })
                             $archiveDates = @{}
                             foreach ($property in $archiveDateResult.PSObject.Properties) { $archiveDates[$property.Name] = $property.Value }
-                            Copy-RawMissionFileSet -RawDirPath $rawArchiveDir -StageDir $stageDir -VariantSelection $variantSelection -ProvenanceDates $archiveDates
-                            $descriptors = @(Get-MissionDescriptor -StageDir $stageDir)
+                            # Keep original descriptor identity; aliases are runtime lookup names
+                            $descriptors = @(Copy-RawMissionFileSet -RawDirPath $rawArchiveDir -StageDir $stageDir -VariantSelection $variantSelection -ProvenanceDates $archiveDates)
                             if ($descriptors.Count -eq 0) {
                                 $record["status"] = "skipped_no_descriptor"
                                 $record["reason"] = "archive contains no .msn or .mn2 mission descriptor"
