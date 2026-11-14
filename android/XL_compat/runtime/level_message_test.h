@@ -1,4 +1,7 @@
 #include "level_messages.h"
+#include "mission_prepare.h"
+#include "retained_resource.h"
+#include "named_audio_state.h"
 #include "input_demo_newdemo_shared.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
@@ -73,6 +76,46 @@ static void message_expect(int id, int seconds, const char *text)
 {
 	const auto state = message_snapshot();
 	require(state.id == id && state.duration == seconds && !std::strcmp(xl_message_text(), text), "Message event lost ID, duration or exact text");
+}
+static void message_incoming_sources()
+{
+	const auto before = message_snapshot();
+	const std::string identity = xl_message_identity(), text = xl_message_text();
+	const auto audio = xl_compat::named_audio_snapshot();
+	const auto live = Current_mission;
+	const auto definitions = gameplay_definitions();
+	const auto inventory = xl_compat::inspect_level(runtime_layout_read("msg23.rl2"));
+	XlPreparedResources outgoing("msg23.rl2", &inventory, 1);
+	auto *mission = mission_prepare_by_name("xchanged");
+	require(mission, "Cannot retain different incoming message descriptor");
+	struct Release {
+		mission_preparation **mission;
+		~Release()
+		{
+			mission_discard_prepared(mission);
+		}
+	} release{ &mission };
+	std::string expected;
+	{
+		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(mission_prepared_open(mission, "msg23.msg"), PHYSFS_close);
+		expected = picosha2::hash256_hex_string(xl_retain_resource(file.get()));
+	}
+	auto incoming = XlPreparedResources::prepare_level(mission, 1);
+	XlPreparedResources moved(std::move(*incoming));
+	incoming.reset();
+	require(mission_discard_prepared(&mission), "Incoming messages retained busy archive handles");
+	const auto preserved = message_snapshot();
+	require(expected != identity && identity == xl_message_identity() && text == xl_message_text() &&
+	            preserved.id == before.id && preserved.duration == before.duration && preserved.elapsed_ms == before.elapsed_ms &&
+	            audio == xl_compat::named_audio_snapshot() && Current_mission == live && definitions == gameplay_definitions(),
+	        "Incoming message preparation or move changed outgoing text, audio or definitions");
+	moved.install_messages();
+	require(expected == xl_message_identity() && xl_message_restore(&before, 1), "Incoming message publication used outgoing MSG bytes");
+	message_expect(before.id, before.duration, text.c_str());
+	outgoing.install_messages();
+	require(identity == xl_message_identity() && xl_message_restore(&before, 1) && xl_compat::restore_named_audio(audio, true),
+	        "Outgoing message and audio state did not resume after incoming publication");
+	std::cout << "Incoming level messages: overlapping level/table names, distinct target bytes, move/discard and retained publication passed\n";
 }
 static void message_bad_state(const std::filesystem::path &root)
 {
@@ -199,6 +242,7 @@ static int level_message_test(int argc, char **argv)
 			message_expect(10, 100, "Repeat message");
 			require(identity == xl_message_identity() && PHYSFS_removeFromSearchPath(shadow.string().c_str()) && xl_level_supported(filename, 0), "Message ownership rejection did not recover without mutation");
 			message_bad_state(root);
+			if (ordinal == 1) message_incoming_sources();
 			char save[] = "message-earned.sav", description[] = "XL message phase";
 			stop_time();
 			const auto earned = message_snapshot();

@@ -93,11 +93,15 @@ void xl_camera_splash_rotation(object &actor, const vms_vector &input)
 
 bool xl_camera_splash_profile(int id)
 {
-	if (id < 0 || id >= N_weapon_types) return false;
-	const auto &definition = Weapon_info[id];
+	return xl_camera_splash_profile(id, Weapon_info, N_weapon_types);
+}
+bool xl_camera_splash_profile(int id, const weapon_info *weapons, int count)
+{
+	if (!weapons || count < 0 || count > MAX_WEAPON_TYPES || id < 0 || id >= count) return false;
+	const auto &definition = weapons[id];
 	const bool mine = is_proximity_bomb_or_smart_mine_or_placed_mine(static_cast<weapon_type_t>(id)) || id == ROBOT_SUPERPROX_ID;
 	// Source flash processing is driven by the weapon data, including custom missiles
-	if ((!xl_camera_contact_projectile(id) && !mine) || definition.flash < 0 || definition.children < -1 || definition.children >= N_weapon_types) return false;
+	if ((!xl_camera_contact_projectile(id, weapons, count) && !mine) || definition.flash < 0 || definition.children < -1 || definition.children >= count) return false;
 	const int radius = definition.damage_radius;
 	for (int difficulty = 0; difficulty < NDL; ++difficulty) {
 		const int strength = definition.strength[difficulty];

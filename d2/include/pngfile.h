@@ -22,6 +22,10 @@ typedef struct _png_data {
 } png_data;
 
 extern int read_png(const char *filename, png_data *pdata);
+#ifndef ANDROID
+/* Decode retained source bytes through the same native PNG reader */
+extern int read_png_memory(const unsigned char *bytes, int size, png_data *pdata);
+#endif
 extern int write_png(const char *filename, png_data *pdata);
 
 #ifdef ANDROID

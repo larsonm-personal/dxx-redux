@@ -2,6 +2,8 @@
 #include "resource_validation.h"
 #include "../scoped_texture.h"
 #include "../particle_image.h"
+#include "target_sources.h"
+#include "mission_prepare.h"
 
 template <bool Shield = false>
 static void particle_resource_profile(const std::filesystem::path &root, const std::filesystem::path &installation, int subtype, bool spray = false, bool lightning = false)
@@ -105,6 +107,34 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 			const auto decoded = prepare(level);
 			require(decoded && decoded->bitmap.pixels == read_particle_image(tga.data(), tga.size()).pixels,
 			        "PNG effect changed source RGBA orientation or soft alpha");
+			{
+				auto *mission = mission_prepare_by_name(Current_mission_filename);
+				require(mission, "Cannot retain PNG target descriptor");
+				struct Release {
+					mission_preparation **mission;
+					~Release()
+					{
+						mission_discard_prepared(mission);
+					}
+				} release{ &mission };
+				TargetSources target(mission, installation.string());
+				const auto shadow = root / "incoming-png-shadow";
+				const auto shadow_png = shadow / (global.substr(0, global.size() - 4) + ".png");
+				std::filesystem::create_directories(shadow_png.parent_path());
+				write_bytes(shadow_png.string().c_str(), { 'b', 'a', 'd' });
+				const auto physical = shadow.string();
+				require(PHYSFS_mount(physical.c_str(), nullptr, 0), "Cannot mount logical PNG shadow");
+				struct Unmount {
+					const std::string &physical;
+					~Unmount()
+					{
+						PHYSFS_unmount(physical.c_str());
+					}
+				} unmount{ physical };
+				const auto incoming = prepare_particle_image(level, subtype, &target);
+				require(incoming && incoming->bitmap.pixels == decoded->bitmap.pixels,
+				        "Incoming PNG decoder reopened a shadowing logical filename");
+			}
 			write_bytes(mod_path.string().c_str(), image(47));
 			require(prepare(level)->bitmap.pixels[0] == 47, "Mission TGA did not override installed PNG");
 			std::filesystem::remove(mod_path);
@@ -115,6 +145,60 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 	write_bytes(mod_path.string().c_str(), image(47));
 	const auto selected = prepare(level);
 	require(selected && selected->path == mod && selected->bitmap.pixels[0] == 47, "Mission particle image did not take precedence over the default");
+	{
+		const auto directory = root / "incoming-images" / (std::string(name) + (spray ? "-spray" : ""));
+		std::filesystem::create_directories(directory);
+		const auto archive_name = std::filesystem::path(mission_resource_archive()).filename();
+		auto descriptor_name = archive_name;
+		descriptor_name.replace_extension(".mn2");
+		auto *source = mission_prepare_by_name(Current_mission_filename);
+		require(source, "Cannot retain particle source descriptor");
+		{
+			std::ofstream descriptor(directory / descriptor_name);
+			descriptor << mission_prepared_descriptor_text(source);
+			require(bool(descriptor), "Cannot write independent image descriptor");
+		}
+		require(mission_discard_prepared(&source), "Cannot release particle source descriptor");
+		std::filesystem::copy_file(mission_resource_archive(), directory / archive_name, std::filesystem::copy_options::overwrite_existing);
+		const auto physical = std::filesystem::absolute(directory).string();
+		require(PHYSFS_mount(physical.c_str(), "__incoming_images", 1), "Cannot mount image descriptor context");
+		auto *mission = mission_prepare_from_current_dir(("__incoming_images/" + descriptor_name.string()).c_str());
+		struct Release {
+			mission_preparation **mission;
+			~Release()
+			{
+				mission_discard_prepared(mission);
+			}
+		} release{ &mission };
+		require(mission && PHYSFS_unmount(physical.c_str()), "Cannot retain isolated image descriptor");
+		const auto incoming = [&] {
+			TargetSources target(mission, installation.string());
+			if constexpr (Shield) return prepare_shield_image(unsigned(subtype), &target);
+			else return lightning ? prepare_lightning_image(level, &target) : prepare_particle_image(level, subtype, &target);
+		};
+		bool rejected = false;
+		try {
+			(void) incoming();
+		} catch (const std::runtime_error &) {
+			rejected = true;
+		}
+		require(rejected, "Absent incoming image borrowed outgoing pixels");
+		const auto path = directory / mod;
+		std::filesystem::create_directories(path.parent_path());
+		write_bytes(path.string().c_str(), image(79));
+		const auto retained = incoming();
+		require(retained && retained->bitmap.pixels[0] == 79 && selected->bitmap.pixels[0] == 47,
+		        "Incoming image selected the outgoing equal-name source");
+		write_bytes(path.string().c_str(), { 0, 1, 2 });
+		rejected = false;
+		try {
+			(void) incoming();
+		} catch (const std::runtime_error &) {
+			rejected = true;
+		}
+		require(rejected && retained->bitmap.pixels[0] == 79 && selected->bitmap.pixels[0] == 47,
+		        "Incoming image rejection changed retained pixels or used a fallback");
+	}
 	require(!prepare_particle_image(level, subtype == 3 ? 0 : 3), "Particle image request selected the other authored subtype");
 	if (!Shield && !lightning && subtype == 0) {
 		Inventory mixed = level;

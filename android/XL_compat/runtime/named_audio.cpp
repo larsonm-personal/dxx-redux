@@ -1,4 +1,5 @@
 #include "named_audio.h"
+#include "target_sources.h"
 #include "slow_motion_runtime.h"
 #include "named_audio_state.h"
 #include "classic_audio.h"
@@ -115,8 +116,13 @@ std::string external_key(const std::string &filename)
 	return key;
 }
 
-std::string owned_bytes(std::string name, std::size_t limit)
+std::string owned_bytes(std::string name, std::size_t limit, xl_compat::TargetSources *target)
 {
+	if (target) {
+		const auto bytes = target->archive_bytes(name, limit);
+		if (!bytes) throw std::runtime_error("Missing incoming XL named-audio table: " + name);
+		return std::string(bytes->begin(), bytes->end());
+	}
 	if (PHYSFSEXT_locateCorrectCase(name.data()) != 0)
 		throw std::runtime_error("Missing XL named-audio resource in the mission HOG: " + name);
 	if (!mission_owns_resource_archive(PHYSFS_getRealDir(name.c_str())))
@@ -191,7 +197,7 @@ bool xl_compat::audio_runtime::external_sample_valid(unsigned sample)
 
 namespace xl_compat
 {
-static std::shared_ptr<AudioResources> prepare_named_only(const char *level, const Inventory &inventory, int ordinal)
+static std::shared_ptr<AudioResources> prepare_named_only(const char *level, const Inventory &inventory, int ordinal, TargetSources *target)
 {
 	auto resources = std::make_shared<AudioResources>();
 	const auto add = [&](const Trigger &action, int key) {
@@ -215,7 +221,7 @@ static std::shared_ptr<AudioResources> prepare_named_only(const char *level, con
 	if (dot == std::string::npos) throw std::runtime_error("XL named-audio level has no filename extension");
 	name.resize(dot);
 	name += ".snd";
-	const auto text = owned_bytes(name, 1024 * 1024);
+	const auto text = owned_bytes(name, 1024 * 1024, target);
 	const auto table = decode_level_text(text);
 	std::string identity = picosha2::hash256_hex_string(text);
 	std::size_t bytes = 0;
@@ -229,7 +235,7 @@ static std::shared_ptr<AudioResources> prepare_named_only(const char *level, con
 			action.sample = previous->second;
 			continue;
 		}
-		const auto resource = load_audio_resource(row->text, level, ordinal);
+		const auto resource = load_audio_resource(row->text, level, ordinal, target);
 		const auto &wav = resource.bytes;
 		WaveChannels pcm;
 		try {
@@ -249,9 +255,9 @@ static std::shared_ptr<AudioResources> prepare_named_only(const char *level, con
 	return resources;
 }
 
-std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal, const XlResourceBanks *banks)
+std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal, const XlResourceBanks *banks, TargetSources *target)
 {
-	auto resources = prepare_named_only(level, inventory, ordinal);
+	auto resources = prepare_named_only(level, inventory, ordinal, target);
 	if (!resources) resources = std::make_shared<AudioResources>();
 	std::size_t bytes = 0;
 	for (const auto &pcm : resources->sources) bytes += pcm.samples.size() * sizeof(std::int16_t);
@@ -283,7 +289,7 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 		if (!GameArg.SndNoSound && !backend_ready) throw std::runtime_error("XL object sounds require an initialized stereo 16-bit SDL_mixer output");
 		const auto key = external_key(name);
 		if (resources->external.count(key)) continue;
-		const auto resource = load_audio_resource(name, level, ordinal);
+		const auto resource = load_audio_resource(name, level, ordinal, target);
 		WaveChannels pcm;
 		try {
 			pcm = decode_wave_channels(reinterpret_cast<const std::uint8_t *>(resource.bytes.data()), resource.bytes.size());
@@ -297,7 +303,7 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 		resources->names.push_back(resource.path);
 		external_identity += ":" + name + ":" + resource.path + ":" + picosha2::hash256_hex_string(resource.bytes);
 	}
-	const auto replacements = prepare_classic_audio(level, ordinal, classic_audio_output_rate(), banks);
+	const auto replacements = prepare_classic_audio(level, ordinal, classic_audio_output_rate(), banks, target);
 	for (const auto &sample : replacements.samples) resources->classic_replacements.emplace(sample.name, sample.path);
 	if (!replacements.samples.empty()) {
 #ifndef USE_SDLMIXER

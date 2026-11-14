@@ -46,10 +46,10 @@ int classic_audio_output_rate()
 	return GameArg.SndDigiSampleRate > 0 ? GameArg.SndDigiSampleRate : 22050;
 }
 
-ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int bank_rate, const XlResourceBanks *banks)
+ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int bank_rate, const XlResourceBanks *banks, TargetSources *target)
 {
 	ClassicAudioResources result;
-	auto scope = prepare_classic_audio_scope(level, ordinal, bank_rate);
+	auto scope = prepare_classic_audio_scope(level, ordinal, bank_rate, target);
 	if (!scope) return result;
 	std::string identity;
 	std::size_t storage = 0;
