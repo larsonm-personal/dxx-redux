@@ -5088,3 +5088,47 @@ Receipts use `prepared-audio-*`, with `-02` for final helper reruns, and
 `observatory-prepared-audio-*`, `hxm-prepared-audio-linux`, `water-prepared-audio-windows`.
 This removes the playback-vector allocation; metadata maps, native bitmap banks,
 GPU publication and whole-world staging remain separate open boundaries.
+
+PR 486 is published at `7e92fdb938ef1cffdb2f459abc89778523cd5623`, immediate
+parent PR 485, linked in stack 471. Fresh ordinary developer-OFF playback passes
+1,235 object frames, 1,239 world/XL records, 196 SIM and 1,808 FX events and exact
+terminal equality, normal exit in 57.38 seconds. Binary SHA-256:
+`bf2ee908693f0c3f758c66c40c06d521763a419262a4ead7c97848ee5984a28d`.
+Receipts: `water-prepared-audio-windows-02`, `replay-prepared-audio-water-clean`.
+Controlled navigation and `-xl-water-physics` remain disclosed assists.
+
+The same source builds Android Debug for armeabi-v7a, arm64-v8a and x86_64 with
+developer tests OFF. APK SHA-256
+`a358c10af0c40fd9623b9282b8c169bcb269887a3bf8a629157b5b4ed09f66f5`
+matches installed `base.apk` on emulator-5554, Nexus5X_Light_1, x86_64. The first
+audio owner fails resume at step 19/65: real PCM passed, but graphics safety was
+still in trial, pause reasons 9 and rejected action result 2. The trial later
+times out, leaving the debug overlay paused. Original receipt and profile
+restoration hashes are retained. An explicit idle graphics precondition is being
+qualified with unchanged audio assertions and deadlines.
+
+Message fixture audit reconstructs the canonical pre-modal archive by excluding
+only the ten modal23/modal27 members introduced by 738bea10f13fad851149314efc87d08995639912.
+The existing HOG reader/member writer reproduces the exact Android-pinned
+`54b1d6a89c3d43df371639c9c811790e10a46328e59fa4313ac24818a51c8a80` from the
+current generated fixture. Receipt: `message-fixture-audit`, 29 retained members.
+Authentic Neptune and the Android hash guard remain unchanged; this historical
+derived fixture does not supply Android coverage of the newer modal-chain cases.
+
+PR 485 private run 43496297449 attempt 1 passes exact target 9f6b925 with 113
+required owners, 16 format witnesses, three modern levels and four assisted
+anchors in 1061.049 seconds. Controller and asset cohort remain unchanged;
+camera subchecks are not_run_missing_addon. Receipt: `pr485-private-results`.
+Its public Android, LAN and ASan owners pass; public save integrity was pending
+at this poll. PR 486 public LAN run 43498690142 attempt 1 fails during provisioning:
+raw.githubusercontent.com returns HTTP 429 for the Gradle 9.8.0 wrapper after
+the existing retries. No LAN test executes. The failed log is retained and one
+failed-job rerun has been requested. Sampled readiness remains separately red.
+
+The Android audio rerun passes all four canonical scripts: scoped audio 65/65,
+classic rejection 35/35, static explosions 75/75 and mission sound banks 119/119.
+Only the initial graphics-idle precondition changed; native APK remains the
+exact PR 486 binary above. Automation catalog and master catalog checks pass
+(428 top-level entries, 547 support scripts). Receipts:
+`android-audio-scopes-ready.log` and `temp/xl-audio-scopes-android`; the prior
+failure remains retained by the standard artifact helper.
