@@ -4874,3 +4874,37 @@ in this invocation. An initial different-addon hash rejection and a Vertigo-data
 profile failure are retained. The latter reproduces on the pre-POG optimized
 binary in `hxm-camera-vertigo-baseline.log`; no assertion or input hash gate was
 changed. Existing allocator warnings remain visible.
+
+### Captured base HAM for incoming missions (2026-11-13)
+
+Incoming descriptors without a custom HAM now retain the startup HAM from its
+captured physical origin and corrected member spelling, verify its startup hash,
+and decode through the existing native HAM codec. The retained-byte constructor
+avoids another source read and does not nest the private decoder mount. Owned
+custom HAM selection and malformed-custom rejection remain unchanged.
+
+The existing canonical descriptor owner now prepends a malformed logical
+`descent2.ham` shadow while outgoing weapon definitions differ. The incoming
+base still has original definitions and independent model storage; move/discard
+preserve lookup, mission identity, definitions and SIM state. Windows runtime
+and Linux Debug/assertions Observatory owners pass, including existing live D2
+and XL continuation, retained banks and native/reference gates. Receipts are
+`observatory-base-ham-windows.log` and `observatory-base-ham-linux.log` under
+`temp/xl-resource-tranche-20261113`. Scoped mixed formatting passes.
+Windows binary SHA-256:
+`46e370c14f90504ce630d7e938f3c21a9cbc856e516e667250c01fa4e8d75e96`.
+Linux Debug binary SHA-256:
+`563efc6e744da31d90b230ba22f30a54be5e7a12009596e29efc57a0b3e5dd35`.
+Target level source context and complete renderer/mixer/world publication remain
+open; this checkpoint does not close full G2.
+
+PR 481's final developer-OFF replay at source
+`1f91d923d2ec875ee34820784462553634809ca9` exits normally in 44.42 seconds,
+with exact terminal equality and all detailed comparisons passing: 1,235 object
+frames, 1,239 world/XL records, 196 SIM and 1,808 FX events. Binary SHA-256:
+`7d4716f3980fd78443a3350a556e209085b09d2f4edab76f9383f668d80e0664`.
+Receipts: `replay-pog-final-water-clean/{process,comparison,terminal-comparison}.json`.
+The capture uses controlled water navigation and `-xl-water-physics`; no campaign
+completion claim. PR 481 private run 43485529207 and public checks are in progress.
+PR 480 still has two public replay owners running and the separate sampled
+readiness failure; its required private owner pass is not a full gameplay pass.

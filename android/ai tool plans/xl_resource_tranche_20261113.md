@@ -127,3 +127,14 @@ The existing water owner requires repeated installation of an active prepared
 POG. Preserve that behavior without allocation by recognizing the unique native
 owner token, clearing it on retirement. A retired owner needs explicit storage
 preparation before another transfer; pointer reuse must not imply identity.
+
+## Incoming missions without custom HAM
+
+Use the captured startup HAM origin and corrected member spelling when an
+incoming mission has no owned custom HAM. Retain and hash-check those physical
+bytes before decoding through the existing native codec. Do not resolve the
+logical base basename through the outgoing mission. Keep custom HAM precedence
+and malformed-custom rejection. Extend the canonical descriptor controls with
+a shadowed logical base and different live definitions; preparation, move and
+discard must preserve lookup, definitions and SIM state. This supplies base
+definitions only; target level sources and full bank/world publication remain open.
