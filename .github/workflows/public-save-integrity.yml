@@ -15,6 +15,66 @@ jobs:
   stack:
     uses: ./.github/workflows/stack-ci.yml
 
+  replay-admission:
+    name: Public replay admission controls
+    needs: stack
+    if: needs.stack.outputs.run == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      SDL_AUDIODRIVER: dummy
+      SDL_VIDEODRIVER: invalid
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      POWERSHELL_TELEMETRY_OPTOUT: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Prepare media-free helper workspace
+        run: |
+          mkdir -p "$RUNNER_TEMP/dxx-public-admission-deps"
+          printf '%s\n' "$RUNNER_TEMP/dxx-public-admission-deps" > dependency_base.txt
+      # These controls need no native build or game data. Run while build-public
+      # builds, then gate save-integrity on every group. The old combined 4-minute
+      # step exhausted its budget before the catalog integration could finish.
+      # Ordered codec and conversion helpers already gate build-public
+      - name: Check compact replay admission
+        timeout-minutes: 1
+        run: |
+          python3 android/tests/test_public_secondary_replay.py
+          python3 android/tests/test_compact_public_replay.py
+          python3 android/tests/test_run_compact_public_replays.py
+          python3 android/tests/test_public_switch_replay.py
+          python3 android/tests/test_public_robot_combat_replay.py
+          python3 android/tests/test_public_guidebot_replay.py
+          python3 android/tests/test_public_loot_replay.py
+          python3 android/tests/test_public_door_replay.py
+          python3 android/tests/test_public_incoming_robot_hits.py
+          python3 android/tests/test_compact_public_gameplay_parity.py
+
+      - name: Check replay process and identity controls
+        timeout-minutes: 4
+        run: |
+          pwsh -NoProfile -File android/tests/test_input_demo_host_build_guard.ps1
+          pwsh -NoProfile -File android/tests/test_input_demo_comparison_policy.ps1
+          pwsh -NoProfile -File android/tests/test_input_demo_replay_failures.ps1
+
+      - name: Check automation catalogs
+        timeout-minutes: 3
+        run: |
+          pwsh -NoProfile -File android/tests/test_validate_automation_catalog.ps1
+          pwsh -NoProfile -File android/tests/test_run_all_tests_catalog.ps1
+
+      - name: Retain replay admission diagnostics
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: public-replay-admission-reports
+          path: temp/input_demo_replay_failures_*/
+          retention-days: 3
+          if-no-files-found: ignore
+
   build-public:
     needs: stack
     if: needs.stack.outputs.run == 'true'
@@ -396,7 +456,7 @@ jobs:
   save-integrity:
     name: Linux public native save and replay integrity
     timeout-minutes: 105
-    needs: [build-public, replay-stack]
+    needs: [build-public, replay-stack, replay-admission]
     if: needs.replay-stack.outputs.run == 'true'
     runs-on: ubuntu-24.04
     env:
@@ -445,26 +505,6 @@ jobs:
               exit 1
             fi
           done
-
-      - name: Check compact public replay admission
-        timeout-minutes: 4
-        # Ordered codec and conversion helpers already gate build-public
-        run: |
-          python3 android/tests/test_public_secondary_replay.py
-          python3 android/tests/test_compact_public_replay.py
-          python3 android/tests/test_run_compact_public_replays.py
-          python3 android/tests/test_public_switch_replay.py
-          python3 android/tests/test_public_robot_combat_replay.py
-          python3 android/tests/test_public_guidebot_replay.py
-          python3 android/tests/test_public_loot_replay.py
-          python3 android/tests/test_public_door_replay.py
-          python3 android/tests/test_public_incoming_robot_hits.py
-          python3 android/tests/test_compact_public_gameplay_parity.py
-          pwsh -NoProfile -File android/tests/test_input_demo_host_build_guard.ps1
-          pwsh -NoProfile -File android/tests/test_input_demo_comparison_policy.ps1
-          pwsh -NoProfile -File android/tests/test_input_demo_replay_failures.ps1
-          pwsh -NoProfile -File android/tests/test_validate_automation_catalog.ps1
-          pwsh -NoProfile -File android/tests/test_run_all_tests_catalog.ps1
 
       - name: Qualify compact public replays without a display
         # Primary native gate: actual console mains, no X server or OpenGL context

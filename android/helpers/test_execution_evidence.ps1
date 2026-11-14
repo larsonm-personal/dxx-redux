@@ -39,14 +39,14 @@ function New-TestExecutionEvidenceContext {
 
 # Owners emit this only after inspecting all required assertions or structured leaf results
 function Write-TestCompletionEvidence {
-    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][object[]]$Cases)
+    param([Parameter(Mandatory)][string]$Name, [Parameter(Mandatory)][object[]]$Cases, [string[]]$Exclusions = @(), [hashtable]$LeafCounts = @{}, [string]$CoreScope = "", [bool]$CoreComplete = $false)
     if (-not $Cases.Count) { throw 'Completion evidence requires nonempty cases' }
-    Write-Output ('DXX_TEST_COMPLETION: ' + (@{ name = $Name; cases = $Cases } | ConvertTo-Json -Depth 6 -Compress))
+    Write-Output ('DXX_TEST_COMPLETION: ' + (@{ name = $Name; cases = $Cases; exclusions = $Exclusions; leaf_counts = $LeafCounts; core_scope = $CoreScope; core_coverage_complete = $CoreComplete } | ConvertTo-Json -Depth 6 -Compress))
 }
 
 function Get-TestCompletionEvidence {
     param([string]$Name, [hashtable]$Result)
-    $empty = @{ coverage_complete = $false; cases = @() }
+    $empty = @{ coverage_complete = $false; cases = @(); exclusions = @(); leaf_counts = @{}; core_scope = ""; core_coverage_complete = $false }
     if (-not $Result -or $Result.Status -ne 'PASS' -or $Result.ExitCode -ne 0 -or
         -not $Result.AttemptedTests -or -not $Result.LogFile -or -not (Test-Path -LiteralPath $Result.LogFile)) { return $empty }
     $markers = @([IO.File]::ReadLines([IO.Path]::GetFullPath($Result.LogFile)) | Where-Object { $_.StartsWith('DXX_TEST_COMPLETION: ') })
@@ -60,7 +60,16 @@ function Get-TestCompletionEvidence {
             if (-not $case.id -or $ids.ContainsKey([string]$case.id) -or $case.status -notin @('PASS', 'FAIL', 'SKIP', 'NOT_RUN', 'BLOCKED')) { return $empty }
             $ids[[string]$case.id] = $true
         }
-        return @{ coverage_complete = (@($cases | Where-Object { $_.status -ne 'PASS' }).Count -eq 0); cases = $cases }
+        $excluded = @($proof.exclusions | Where-Object { $_ })
+        $complete = (@($cases | Where-Object { $_.status -ne 'PASS' }).Count -eq 0)
+        return @{
+            coverage_complete = ($complete -and $excluded.Count -eq 0)
+            cases = $cases
+            exclusions = $excluded
+            leaf_counts = $proof.leaf_counts
+            core_scope = $proof.core_scope
+            core_coverage_complete = ($complete -and $Name -eq 'test_gradle_unit_tests' -and $proof.core_scope -eq 'fixture-independent-gradle-v1' -and $proof.core_coverage_complete -eq $true)
+        }
     } catch { return $empty }
 }
 
@@ -76,6 +85,10 @@ function New-TestExecutionObservation {
     return [ordered]@{
         coverage_complete = $completion.coverage_complete
         cases = $completion.cases
+        exclusions = $completion.exclusions
+        leaf_counts = $completion.leaf_counts
+        core_scope = $completion.core_scope
+        core_coverage_complete = $completion.core_coverage_complete
         name = $Test.Name
         type = $Test.Type
         requires = $Test.Requires

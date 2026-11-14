@@ -92,7 +92,15 @@ try {
         }, $true)
     . ([scriptblock]::Create($identityFunction.Extent.Text))
     $script:avdReply = "OwnedFixture`r`nOK`r`n"
-    function Invoke-PogAdb { param($Arguments); return $script:avdReply }
+    $script:bootAvdReply = ''
+    function Invoke-PogAdb {
+        param($Arguments)
+        switch ($Arguments -join ' ') {
+            'emu avd name' { return $script:avdReply }
+            'shell getprop ro.boot.qemu.avd_name' { return $script:bootAvdReply }
+            default { throw "Unexpected identity command: $Arguments" }
+        }
+    }
     Assert-Equal 'OwnedFixture' (Get-PogAvdName) 'Capture caller-owned emulator name'
     Assert-Equal 'OwnedFixture' (Get-PogAvdName -Expected OwnedFixture) 'Allow restoration on the same profile'
     $script:avdReply = "OtherFixture`r`nOK`r`n"
@@ -102,7 +110,14 @@ try {
     $script:avdReply = 'OK'
     $refused = $false
     try { Get-PogAvdName | Out-Null } catch { $refused = $_ -match 'Cannot verify' }
-    Assert-Equal $true $refused 'Missing emulator name is not an identity'
+    Assert-Equal $true $refused 'Missing console and boot-property names are not an identity'
+    $script:bootAvdReply = 'OwnedFixture'
+    Assert-Equal 'OwnedFixture' (Get-PogAvdName -Expected OwnedFixture) 'Boot property identifies an empty console response'
+    $script:bootAvdReply = 'OtherFixture'
+    $refused = $false
+    try { Get-PogAvdName -Expected OwnedFixture | Out-Null } catch { $refused = $_ -match 'refusing app mutation and restoration' }
+    Assert-Equal $true $refused 'Boot-property fallback cannot restore onto a replacement profile'
+    $script:bootAvdReply = ''
 
     function Get-FakeAdbDevices {
         'List of devices attached'

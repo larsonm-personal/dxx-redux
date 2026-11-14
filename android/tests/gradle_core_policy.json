@@ -1,0 +1,18 @@
+{
+    "schema": 1,
+    "scope": "fixture-independent-gradle-v1",
+    "optional_integration_cases": {
+        "com.dxxredux.app.BaseGameAssetAuditTest#actualMacAndGogPigFilesReplaceEachOtherWithoutMasking": "Extracted Mac and GOG fixtures",
+        "com.dxxredux.app.DiscContentImportTest#anniversaryExtractedMediaRetainsEveryMissionAndLooseLevel": "DXX_DISC_CONTENT_FIXTURE Anniversary extraction",
+        "com.dxxredux.app.ExtendedHogOriginalPackageTest#importsOriginalPumoDistributionAndPreservesItsOwnedResources": "Original Pumo distribution",
+        "com.dxxredux.app.FileSetContentManagerTest#realVertigoInventory": "Local retail Vertigo fixture",
+        "com.dxxredux.app.ModManagerMissionZipTest#missionRarUsesStructuredNativeBackendOrFailsClosed": "reetus.rar fixture",
+        "com.dxxredux.app.ModManagerMissionZipTest#localEnemyWithinAndMaximumKeepRealReplacementBankOwned": "Enemy Within and Maximum archives",
+        "com.dxxredux.app.OriginalStaticTextureTest#originalArchiveImportsPublishesAndResolvesStaticTexture": "Pinned private archive, textures, retail data and native engine",
+        "com.dxxredux.app.ResourceModStoreTest#suppliedDistributionExtractsOnlySelectedFiles": "Optional user-owned distribution",
+        "com.dxxredux.app.multiplayer.GoogleLoginHttpsTest#signedLoginAndRevocationAcrossHttps": "Owned signed-login HTTPS server binary",
+        "com.dxxredux.app.multiplayer.OnlineCandidateDiscoveryTest#actualServiceRedeemsReceiptsAndHandsTheProvenSocketToDirectAndRelayProxies": "Owned real matchmaking server binary",
+        "com.dxxredux.app.multiplayer.OnlineInstallationAuthTest#actualServiceAuthenticatesAndReconnectsToLoopbackDevServer": "Owned real matchmaking server binary",
+        "com.dxxredux.app.multiplayer.OnlineOutageOrderingTest#joinerTimeoutBeforeHostTimeoutPreservesHostOnlyRoom": "Owned real matchmaking server binary"
+    }
+}

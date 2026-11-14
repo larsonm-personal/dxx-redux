@@ -215,7 +215,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          version="$(awk '$1 == "rustc" {print $2}' target/server/rust_version.txt)"
+          version="$(sed -n 's/^channel = "\([0-9][0-9.]*\)"$/\1/p' target/rust-toolchain.toml)"
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           rustup toolchain install "$version" --profile minimal
           echo "RUSTUP_TOOLCHAIN=$version" >> "$GITHUB_ENV"
