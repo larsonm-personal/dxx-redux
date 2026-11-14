@@ -5737,3 +5737,24 @@ filters and restore player settings. Current failed GPU receipts remain
 visible. The native sound WIP stash is untouched and untested. Full G2 and
 the corrupt-trailer energy 91-to-100 defect remain open; no whole-save
 atomicity, G2-G7 completion or campaign qualification is claimed.
+
+### November 14 second tranche: Android GPU and audio qualification
+
+At source b9eb3cc6abc56e327cc9c2d3243a533f5121bf96 plus the separate Android
+fixture/runner repair, ordinary developer-OFF Debug APK
+3f84942ca3c0028417c3d6e1fc25570bb61d5452d27f361b1f94a52de9c4ce26 builds
+both games for all three ABIs. GPU owner PASS 35/35, including both context
+generations and two missing-corona cases with original assets and unchanged
+strict pixels. Named audio PASS 145/145 and seismic PASS 64/64. Every protected
+before/after file hash matches. Catalogs and scoped formatting pass. Exact
+source/library/input and failed-attempt receipts remain in
+`temp/xl-readiness-tranche2-20261114`; see the tranche plan.
+
+The repair waits for the existing graphics trial and isolates explicit analytical
+fixture filters while restoring player preferences. Audio now protects graphics
+safety state and prevents emulator replacement during its backed-up run. This is
+emulator rendering/audio qualification, not the unchanged 120-frame readiness
+criterion. Current ordinary readiness remains 4/8; HXM external definitions and
+missing owned camera addon remain unresolved. PR 502 non-readiness checks are
+terminal green; PR 503 private qualification and fresh capture/playback remain
+pending. Full G2 and the energy 91-to-100 rejection defect remain open.

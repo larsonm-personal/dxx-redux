@@ -7,6 +7,8 @@
     { "action": "set_debug", "field": "xl_pog_probe", "value": "skybox_start_hub" },
     { "action": "skip_briefing", "timeout_ms": 30000 },
     { "action": "wait_for", "expect": { "in_game": true, "xl_pilot.runtime_active": true }, "timeout_ms": 30000 },
+    // Let a pending launcher graphics trial finish before requesting a new one
+    { "action": "wait_for", "expect": { "graphics_safety.phase": "idle" }, "timeout_ms": 10000 },
     { "action": "set_debug", "field": "graphics_option", "value": "msaa_level:4" },
     {
         "action": "controller_input",
@@ -68,6 +70,7 @@
     { "action": "key", "key": "escape" },
     { "action": "wait_for", "expect": { "time_paused": false, "game_window_is_front": true }, "timeout_ms": 20000 },
     // Resume reapplies launcher graphics options; restore the already accepted MSAA choice
+    { "action": "wait_for", "expect": { "graphics_safety.phase": "idle" }, "timeout_ms": 10000 },
     { "action": "set_debug", "field": "graphics_option", "value": "msaa_level:4" },
     {
         "action": "wait_for",

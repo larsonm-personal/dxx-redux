@@ -120,7 +120,7 @@ unsigned additive_wall_device_controls()
 								}
 								for (unsigned c = 0; c < 4; ++c)
 									if (std::abs(int(pixels[(y * 64 + x) * 4 + c]) - int(std::lround(value[c] * 255))) > 1)
-										throw std::runtime_error("Additive wall device pixel differs: case=" + std::to_string(cases) + " x=" + std::to_string(x) + " y=" + std::to_string(y) + " channel=" + std::to_string(c));
+										throw std::runtime_error("Additive wall device pixel differs: case=" + std::to_string(cases) + " x=" + std::to_string(x) + " y=" + std::to_string(y) + " channel=" + std::to_string(c) + " expected=" + std::to_string(int(std::lround(value[c] * 255))) + " actual=" + std::to_string(pixels[(y * 64 + x) * 4 + c]));
 							}
 						require(glGetError() == GL_NO_ERROR, "Additive wall device draw raised a GL error");
 						++cases;
