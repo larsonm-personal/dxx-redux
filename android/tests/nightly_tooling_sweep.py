@@ -181,7 +181,7 @@ def owner_category(entry):
     return "tooling"
 
 
-def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None):
+def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None, complete=False):
     if not SHA.fullmatch(sha) or type(budget) is not int or not 1 <= budget <= 2700:
         raise ValueError("Invalid revision/budget")
     entries = policy_entries(policy)
@@ -216,7 +216,7 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
     rings = {}
     for ident, entry in entries.items():
         # Preview campaigns are explicit opt-ins; preserve the scheduled LAN budget
-        if ident in PUBLIC_ONLINE_IDS | PUBLIC_ONLINE_D2_IDS | ONLINE_TRANSPORT_IDS:
+        if not complete and ident in PUBLIC_ONLINE_IDS | PUBLIC_ONLINE_D2_IDS | ONLINE_TRANSPORT_IDS:
             continue
         if ident in state["records"] or ident in state.get("excluded", {}):
             continue
@@ -266,11 +266,15 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
             continue
         # Named public leaf evidence must not enter a retail-redacted lane receipt
         # Defer the other group without retiring it; normal retry/ring ordering remains fair
-        if (ident in THREE_PLAYER_IDS and retail.lane_requires_retail({"tests": selected}, entry["lane"])) or (
-            entry.get("fixture") and any(e["id"] in THREE_PLAYER_IDS and e["lane"] == entry["lane"] for e in selected)
+        if not complete and (
+            (ident in THREE_PLAYER_IDS and retail.lane_requires_retail({"tests": selected}, entry["lane"]))
+            or (
+                entry.get("fixture")
+                and any(e["id"] in THREE_PLAYER_IDS and e["lane"] == entry["lane"] for e in selected)
+            )
         ):
             continue
-        if used[entry["lane"]] + entry["estimated_seconds"] <= budget:
+        if complete or used[entry["lane"]] + entry["estimated_seconds"] <= budget:
             selected.append(entry)
             used[entry["lane"]] += entry["estimated_seconds"]
     identity = {"target_sha": sha, "catalog_hash": catalog_hash, "tests": selected}
@@ -393,7 +397,10 @@ def validate_plan(plan, policy):
         seen.add(ident)
     if any(e["id"] in THREE_PLAYER_IDS and retail.lane_requires_retail(plan, e["lane"]) for e in selected):
         raise ValueError("Three-player evidence requires an asset-free lane batch")
-    if plan.get("budget_scope") != "per-lane" or not 1 <= plan.get("budget_seconds", 0) <= 2700:
+    if plan.get("budget_scope") != "per-lane" or not (
+        1 <= plan.get("budget_seconds", 0) <= 2700
+        or (plan.get("budget_seconds") == 5400 and plan.get("lanes") == ["host"])
+    ):
         raise ValueError("Invalid per-lane budget")
     if any(
         sum(e["estimated_seconds"] for e in selected if e["lane"] == lane) > plan["budget_seconds"] for lane in LANES

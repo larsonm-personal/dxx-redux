@@ -18,7 +18,7 @@ CAMPAIGNS = ("xl-fast", "xl-originals")
 
 def api(path):
     # Retry only a timed-out read, never rejected provenance or a failed API response
-    command = ["gh", "api", "repos/" + retail.REPOSITORY + "/" + path]
+    command = ["gh", "api", ("repos/" + retail.REPOSITORY + "/" + path).rstrip("/")]
     try:
         result = subprocess.run(command, text=True, capture_output=True, timeout=30, check=True)
     except subprocess.TimeoutExpired:
@@ -31,6 +31,10 @@ def api(path):
 def verify(target_sha=None, env=None, fetch=api):
     """Return the explicitly endorsed SHA, or None for the unchanged normal path."""
     env = os.environ if env is None else env
+    if env.get("NIGHTLY_TARGET_SHA"):
+        from nightly_revision import verify as verify_nightly
+
+        return verify_nightly(target_sha or env["NIGHTLY_TARGET_SHA"], env, fetch)
     number, sha = env.get("CANDIDATE_PR", ""), env.get("CANDIDATE_SHA", "")
     if env.get("GITHUB_EVENT_NAME") == "workflow_run":
         from nightly_pr_candidate import verify as verify_automatic

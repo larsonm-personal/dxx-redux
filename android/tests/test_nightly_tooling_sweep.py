@@ -2549,14 +2549,14 @@ class SweepTests(unittest.TestCase):
             with self.assertRaises(subprocess.TimeoutExpired):
                 sweep.run_command([sys.executable, "-c", "import time; time.sleep(60)"], d, log, timeout=0.1)
 
-    def test_host_metadata_cli_bootstraps_before_private_inputs(self):
+    def test_host_candidate_setup_follows_private_credential_removal(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
         host = workflow[workflow.index("  host:") : workflow.index("  android:")]
         prerequisites = host.split("      - name: Install host prerequisites", 1)[1].split("      - name:", 1)[0]
         self.assertIn("timeout-minutes: 15", prerequisites)
-        self.assertIn("    timeout-minutes: 100", host.split("    steps:", 1)[0])
+        self.assertIn("    timeout-minutes: 180", host.split("    steps:", 1)[0])
         execution = host.split("      - name: Execute admitted host owners", 1)[1].split("      - name:", 1)[0]
-        self.assertIn("timeout-minutes: 65", execution)
+        self.assertIn("timeout-minutes: 150", execution)
         setup = host.split("      - name: Prepare asset-free metadata CLI", 1)[1].split("      - name:", 1)[0]
         self.assertIn("VALIDATE_METADATA_CLI: ${{ github.event_name == 'pull_request' }}", setup)
         self.assertIn('"$VALIDATE_METADATA_CLI" != true', setup)
@@ -2572,10 +2572,10 @@ class SweepTests(unittest.TestCase):
         )
         self.assertLess(host.index("> target/dependency_base.txt"), host.index("Prepare asset-free metadata CLI"))
         self.assertLess(
-            host.index("Prepare asset-free metadata CLI"), host.index("Verify trusted retail checkout boundary")
+            host.index("Verify trusted retail checkout boundary"), host.index("Prepare asset-free metadata CLI")
         )
         self.assertLess(
-            host.index("Prepare asset-free metadata CLI"), host.index("Check out immutable private retail inputs")
+            host.index("Check out immutable private retail inputs"), host.index("Prepare asset-free metadata CLI")
         )
         self.assertNotIn("secrets.", setup)
         self.assertIn("steps.metadata_cli_prerequisites.outcome == 'failure'", host)
@@ -2590,12 +2590,164 @@ class SweepTests(unittest.TestCase):
         self.assertIn("cancel-in-progress: false", workflow)
         self.assertIn("persist-credentials: false", workflow)
         self.assertIn("Recover completed receipts", workflow)
-        self.assertEqual(workflow.count("> target/dependency_base.txt"), 2)
+        self.assertEqual(workflow.count("> target/dependency_base.txt"), 3)
         self.assertLess(
             workflow.index("> target/dependency_base.txt"), workflow.index("Export authoritative master catalog")
         )
         host = workflow[workflow.index("  host:") : workflow.index("  android:")]
         self.assertLess(host.index("> target/dependency_base.txt"), host.index("Execute admitted host owners"))
+
+
+class CompleteNightlyTests(unittest.TestCase):
+    def test_complete_partition_includes_opt_ins_and_receipts_are_required(self):
+        import nightly_complete as complete
+
+        policy = {
+            "schema": 1,
+            "suites": [
+                {
+                    "id": ident,
+                    "owner": "master",
+                    "lane": "android-dual",
+                    "args": {"suite": ident.split(":")[1]},
+                    "estimated_seconds": 1800,
+                }
+                for ident in sorted(sweep.PUBLIC_ONLINE_IDS | sweep.PUBLIC_ONLINE_D2_IDS | sweep.ONLINE_TRANSPORT_IDS)
+            ],
+            "exclusions": [{"id": "physical", "reason": "manual hardware"}],
+        }
+        catalog = {"schema": 1, "tests": [{"name": e["args"]["suite"]} for e in policy["suites"]]}
+        manifest = complete.plan_all(SHA, catalog, policy)
+        self.assertEqual(manifest["selected_count"], 5)
+        self.assertEqual(len(manifest["batches"]), 5)
+        self.assertEqual(complete.report(manifest, policy, [])["outcome"], "incomplete")
+        receipts = []
+        for plan in manifest["batches"]:
+            receipt = {k: plan[k] for k in ("schema", "target_sha", "catalog_hash", "batch_id")}
+            receipt.update(
+                lane="android-dual",
+                results=[
+                    {"id": e["id"], "status": "PASS", "coverage_complete": True, "run_url": "https://github.com/run/1"}
+                    for e in plan["tests"]
+                ],
+            )
+            receipts.append(receipt)
+        self.assertEqual(complete.report(manifest, policy, receipts)["outcome"], "passed_with_exclusions")
+        receipts[0]["results"][0]["coverage_complete"] = False
+        self.assertEqual(complete.report(manifest, policy, receipts)["outcome"], "incomplete")
+        receipts[0]["target_sha"] = "f" * 40
+        with self.assertRaisesRegex(ValueError, "provenance"):
+            complete.report(manifest, policy, receipts)
+
+    def test_complete_catalog_accounting_and_private_isolation(self):
+        import nightly_complete as complete
+
+        policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
+        policy = dict(policy, mission_corpus=False)
+        catalog = {
+            "schema": 1,
+            "tests": [{"name": e["args"]["suite"]} for e in policy["suites"] if e["owner"] == "master"],
+        }
+        catalog["tests"].append({"name": "physical-only", "manual": True})
+        manifest = complete.plan_all(SHA, catalog, policy)
+        selected = [e["id"] for p in manifest["batches"] for e in p["tests"]]
+        self.assertEqual(len(selected), len(set(selected)))
+        accounted = set(selected) | {e["id"] for e in manifest["unavailable"]}
+        self.assertEqual(accounted, set(sweep.policy_entries(policy)))
+        self.assertTrue(any(e["id"] == "physical-only" for e in manifest["exclusions"]))
+        self.assertTrue(sweep.ONLINE_TRANSPORT_IDS <= set(selected))
+        for plan in manifest["batches"]:
+            sweep.validate_plan(plan, policy)
+            self.assertEqual(len({bool(e.get("fixture")) for e in plan["tests"]}), 1)
+
+
+class NightlyRevisionTests(unittest.TestCase):
+    def activity(self, sha=SHA, ref="refs/heads/cmake", ident=1, actor=265118235, timestamp="2026-11-14T00:00:00Z"):
+        return dict(
+            after=sha,
+            ref=ref,
+            id=ident,
+            actor={"id": actor, "login": "spoofable-name"},
+            timestamp=timestamp,
+            activity_type="push",
+        )
+
+    def test_branch_and_cmake_order_is_server_time_then_activity_id(self):
+        import nightly_revision as revision
+
+        other = "b" * 40
+        refs = {"refs/heads/cmake": SHA, "refs/heads/topic": other}
+        rows = [self.activity(), self.activity(other, "refs/heads/topic", 2)]
+        self.assertEqual(revision.select(refs, rows)["sha"], other)
+        rows[0]["timestamp"] = "2026-11-14T01:00:00Z"
+        self.assertEqual(revision.select(refs, rows)["sha"], SHA)
+        rows[0]["actor"]["id"] = 42
+        self.assertEqual(revision.select(refs, rows)["sha"], other)
+
+    def test_deleted_unreachable_and_foreign_actor_are_not_candidates(self):
+        import nightly_revision as revision
+
+        for refs, rows in [
+            ({}, [self.activity()]),
+            ({"refs/heads/cmake": SHA}, [self.activity(actor=1)]),
+            ({"refs/heads/cmake": "b" * 40}, [self.activity()]),
+        ]:
+            with self.subTest(refs=refs), self.assertRaises(ValueError):
+                revision.select(refs, rows, lambda _: {"status": "diverged"})
+        self.assertEqual(
+            revision.select({"refs/heads/cmake": "b" * 40}, [self.activity()], lambda _: {"status": "ahead"})["sha"],
+            SHA,
+        )
+
+    def test_pagination_follows_links_and_keeps_later_pages(self):
+        import nightly_revision as revision
+
+        result = subprocess.CompletedProcess(
+            [], 0, "\n".join(json.dumps(row) for row in [self.activity(actor=2), self.activity(ident=2)])
+        )
+        with patch.object(revision.subprocess, "run", return_value=result) as run:
+            rows = revision.pages("activity?per_page=100")
+        self.assertIn("--paginate", run.call_args.args[0])
+        self.assertIn(".[] | @json", run.call_args.args[0])
+        self.assertEqual(revision.select({"refs/heads/cmake": SHA}, rows)["activity_id"], 2)
+
+    def test_races_retry_and_forks_fail_closed(self):
+        import nightly_revision as revision
+
+        first = ({"refs/heads/cmake": SHA}, [self.activity()])
+        second = ({"refs/heads/cmake": SHA}, [self.activity(ident=2)])
+        with patch.object(revision, "snapshot", side_effect=[first, second, second, second]):
+            self.assertEqual(revision.resolve(fetch=lambda _: {"id": revision.REPOSITORY_ID})["activity_id"], 2)
+        with (
+            patch.object(revision, "snapshot", side_effect=[first, second] * 3),
+            self.assertRaisesRegex(ValueError, "changed"),
+        ):
+            revision.resolve(fetch=lambda _: {"id": revision.REPOSITORY_ID})
+        with self.assertRaisesRegex(ValueError, "identity"):
+            revision.resolve(fetch=lambda _: {"id": 1})
+
+    def test_private_gate_revalidates_exact_sha_and_reachability(self):
+        import nightly_revision as revision
+
+        env = {
+            "GITHUB_REPOSITORY": sweep.retail.REPOSITORY,
+            "GITHUB_REF": "refs/heads/cmake",
+            "GITHUB_WORKFLOW_REF": sweep.retail.WORKFLOW,
+            "GITHUB_EVENT_NAME": "schedule",
+            "NIGHTLY_TARGET_SHA": SHA,
+            "NIGHTLY_TARGET_REF": "refs/heads/cmake",
+            "NIGHTLY_ACTIVITY_ID": "1",
+        }
+        fetch = lambda path: {"id": revision.REPOSITORY_ID} if not path else {"object": {"sha": SHA}}
+        self.assertEqual(revision.verify(SHA, env, fetch, lambda _: [self.activity()]), SHA)
+        for overrides in (
+            {"NIGHTLY_TARGET_SHA": "b" * 40},
+            {"GITHUB_EVENT_NAME": "pull_request"},
+            {"NIGHTLY_ACTIVITY_ID": "999"},
+            {"GITHUB_REPOSITORY": "foreign/fork"},
+        ):
+            with self.subTest(overrides=overrides), self.assertRaises(ValueError):
+                revision.verify(SHA, dict(env, **overrides), fetch, lambda _: [self.activity()])
 
 
 if __name__ == "__main__":

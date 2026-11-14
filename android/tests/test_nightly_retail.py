@@ -478,7 +478,7 @@ class RetailBoundaryTests(unittest.TestCase):
         check = callee.split("      - name: Check admitted retail credential availability\n", 1)[1].split(
             "      - name: Check out immutable private retail inputs", 1
         )[0]
-        self.assertIn("if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')", check)
+        self.assertIn("if: matrix.retail", check)
         self.assertNotIn("secrets: inherit", caller)
 
     @unittest.skipUnless(sys.platform == "linux", "The retail host shell guard runs on Linux")
@@ -505,11 +505,7 @@ class RetailBoundaryTests(unittest.TestCase):
     def test_workflow_secret_and_artifact_boundary_is_explicit(self):
         for name in ("nightly-tooling-sweep.yml", "android-nightly-tooling.yml"):
             source = (ROOT / ".github/workflows" / name).read_text()
-            requested = (
-                "contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')"
-                if name == "nightly-tooling-sweep.yml"
-                else "inputs.retail_assets"
-            )
+            requested = "matrix.retail" if name == "nightly-tooling-sweep.yml" else "inputs.retail_assets"
             trusted_retail = (
                 requested + " && github.repository == 'larsonm-personal/dxx-redux'"
                 " && github.ref == 'refs/heads/cmake'"

@@ -68,6 +68,7 @@ permissions:
   contents: read
 
 env:
+  FULL_NIGHTLY: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.campaign == 'nightly' && !inputs.evidence_run_id) }}
   CANDIDATE_PR: ${{ inputs.candidate_pr }}
   CANDIDATE_SHA: ${{ inputs.candidate_sha }}
   CANDIDATE_CAMPAIGN: ${{ inputs.campaign }}
@@ -76,6 +77,7 @@ env:
 concurrency:
   group: ${{ inputs.evidence_run_id && format('online-evidence-{0}', inputs.evidence_run_id) || github.event_name == 'pull_request' && format('nightly-tooling-pr-{0}', github.event.pull_request.number) || (inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports') && format('online-preview-{0}', github.ref) || github.event_name == 'workflow_run' && format('xl-pr-assets-{0}', inputs.candidate_pr) || 'nightly-cmake-tooling-sweep' }}
   cancel-in-progress: false
+  # Default single pending slot: finish the active sweep and replace only unstarted successors
 
 jobs:
   stack:
@@ -203,6 +205,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
+      target_ref: ${{ steps.target.outputs.ref }}
+      activity_id: ${{ steps.target.outputs.activity_id }}
+      host_matrix: ${{ steps.plan.outputs.host_matrix }}
+      android_matrix: ${{ steps.plan.outputs.android_matrix }}
       target_sha: ${{ steps.plan.outputs.target_sha }}
       lanes: ${{ steps.plan.outputs.lanes }}
       android_lanes: ${{ steps.plan.outputs.android_lanes }}
@@ -223,6 +229,10 @@ jobs:
           PR_SHA: ${{ github.event.pull_request.head.sha }}
           CAMPAIGN_SHA: ${{ github.event_name == 'workflow_dispatch' && (inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'xl-textures' || inputs.campaign == 'xl-originals' || inputs.campaign == 'xl-fast' || inputs.campaign == 'basic-use' || inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports') && github.sha || '' }}
         run: |
+          if [[ "$FULL_NIGHTLY" == true ]]; then
+            python3 control/android/tests/nightly_revision.py
+            exit 0
+          fi
           sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/cmake" --jq .object.sha)"
           if [[ -n "$PR_SHA" ]]; then sha="$PR_SHA"; fi
           if [[ -n "$CAMPAIGN_SHA" ]]; then sha="$CAMPAIGN_SHA"; fi
@@ -240,7 +250,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
           printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
-          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then
+          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" || "$FULL_NIGHTLY" == true ]]; then
             printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > control/dependency_base.txt
           fi
       - name: Export authoritative master catalog
@@ -248,7 +258,8 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path plan -Force | Out-Null
           $catalogRoot = if ($env:CANDIDATE_PR -or $env:CANDIDATE_SHA) { "control" } else { "target" }
-          & ./$catalogRoot/android/run_all_tests.ps1 -ListTests -ExtendedGraphics | Set-Content plan/catalog.json -Encoding utf8
+          if ($env:FULL_NIGHTLY -eq "true") { $catalogRoot = "control" }
+          & ./$catalogRoot/android/run_all_tests.ps1 -ListTests -ExtendedGraphics -ExtendedMultiplayer | Set-Content plan/catalog.json -Encoding utf8
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Plan unfinished tests without advancing progress
         id: plan
@@ -268,6 +279,10 @@ jobs:
           GRAPHICS_CAPABILITIES: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'graphics-capabilities' }}
           RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
         run: |
+          if [[ "$FULL_NIGHTLY" == true ]]; then
+            python3 control/android/tests/nightly_complete.py plan
+            exit 0
+          fi
           python3 control/android/tests/nightly_tooling_sweep.py fetch-state --output plan/previous.json
           validation=()
           if [[ "$ONLINE_PREVIEW" == true ]]; then
@@ -305,6 +320,8 @@ jobs:
           from nightly_retail import lane_requires_retail
           p=json.load(open('plan/plan.json'))
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write('host_matrix='+json.dumps([{'shard':'', 'lane':'host', 'retail':lane_requires_retail(p,'host')}])+'\n')
+              f.write('android_matrix='+json.dumps([{'shard':'', 'lane':lane, 'retail':lane_requires_retail(p,lane)} for lane in p['lanes'] if lane!='host'])+'\n')
               f.write('target_sha='+p['target_sha']+'\n')
               f.write('lanes='+json.dumps(p['lanes'])+'\n')
               f.write('android_lanes='+json.dumps([x for x in p['lanes'] if x!='host'])+'\n')
@@ -319,20 +336,28 @@ jobs:
           retention-days: 30
 
   host:
-    name: Linux tests
+    name: Linux tests ${{ matrix.shard }}
+    strategy:
+      fail-fast: false
+      max-parallel: 16
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.host_matrix) }}
     needs: [plan, execution-stack]
     if: needs.execution-stack.outputs.run == 'true' && contains(fromJSON(needs.plan.outputs.lanes), 'host')
     runs-on: ubuntu-24.04
-    timeout-minutes: 100
+    timeout-minutes: 180
     permissions:
       contents: read
       actions: read
       pull-requests: read
     # Keep deployment tracking for trusted retail jobs only
     environment:
-      name: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), 'host') && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && ((github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) || (github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/xl-pr-assets.yml@refs/heads/cmake' && github.event_name == 'workflow_run')) && 'retail-ci' || 'asset-free' }}
-      deployment: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), 'host') && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && ((github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) || (github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/xl-pr-assets.yml@refs/heads/cmake' && github.event_name == 'workflow_run')) }}
+      name: ${{ matrix.retail && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && ((github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) || (github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/xl-pr-assets.yml@refs/heads/cmake' && github.event_name == 'workflow_run')) && 'retail-ci' || 'asset-free' }}
+      deployment: ${{ matrix.retail && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && ((github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) || (github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/xl-pr-assets.yml@refs/heads/cmake' && github.event_name == 'workflow_run')) }}
     env:
+      NIGHTLY_TARGET_SHA: ${{ needs.plan.outputs.target_ref != '' && needs.plan.outputs.target_sha || '' }}
+      NIGHTLY_TARGET_REF: ${{ needs.plan.outputs.target_ref }}
+      NIGHTLY_ACTIVITY_ID: ${{ needs.plan.outputs.activity_id }}
       RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
       RETAIL_CHECKOUT_COMMIT: ${{ needs.plan.outputs.retail_commit }}
       SDL_AUDIODRIVER: dummy
@@ -352,6 +377,68 @@ jobs:
         with:
           name: nightly-plan
           path: plan
+      - name: Select bounded shard
+        if: matrix.shard != ''
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          [[ "$SHARD" =~ ^shard-[0-9]{3}$ ]]
+          cp "plan/$SHARD.json" plan/plan.json
+      - name: Prepare trusted dependency location
+        run: |
+          mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" control/android/temp control/temp
+          printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > control/dependency_base.txt
+      - name: Verify trusted retail checkout boundary
+        id: retail_gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        if: matrix.retail
+        run: |
+          [[ "$RETAIL_CHECKOUT_COMMIT" == "$RETAIL_ASSETS_COMMIT" ]]
+          python3 control/android/tests/nightly_tooling_sweep.py retail-check \
+            --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json --lane host
+      - name: Check admitted retail credential availability
+        if: matrix.retail
+        env:
+          RETAIL_TOKEN_AVAILABLE: ${{ secrets.RETAIL_ASSETS_READ_TOKEN != '' }}
+        run: |
+          if [[ "$RETAIL_TOKEN_AVAILABLE" != 'true' ]]; then
+            echo '::error::Private retail checkout token unavailable; check named reusable secret forwarding and retail-ci secret configuration'
+            exit 1
+          fi
+      - name: Check out immutable private retail inputs
+        id: retail_checkout
+        if: matrix.retail
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          repository: larsonm-personal/dxx-redux-test-assets
+          ref: ${{ needs.plan.outputs.retail_commit }}
+          token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
+          path: retail-input
+          persist-credentials: false
+      - name: Verify supplied edition and stage base retail files
+        if: matrix.retail
+        id: retail_stage
+        run: |
+          [[ "$(git -C retail-input rev-parse HEAD)" == "$RETAIL_CHECKOUT_COMMIT" ]]
+          python3 control/android/helpers/retail_ci_assets.py --root retail-input --repo control --source-map control/android/tests/retail_asset_sources.json \
+            --output results/retail-verification.json --stage target/game_data/retail-ci --include-missions
+          # Stage only the immutable demo pair when its owner was admitted
+          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-demos' for e in p['tests']))"; then
+            python3 control/android/tests/private_input_demos.py --stage --demos retail-input/demos --output target/game_data/retail-ci/demos
+          fi
+          # The existing immutable checkout and trusted gate also own corpus staging
+          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-corpus' for e in p['tests']))"; then
+            python3 control/android/tests/nightly_regression_catalog.py --source retail-input --repo target --commit "$RETAIL_CHECKOUT_COMMIT"
+          fi
+          # Original XL owners require verified, complete private inputs
+          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e['id'] in ('host-profile:retail-xl-originals', 'host-profile:retail-xl-fast') for e in p['tests']))"; then
+            pwsh -NoProfile -Command "\$tool = & ./control/android/get_deps/helpers/get_7zip.ps1; Set-Content -LiteralPath results/xl-seven-zip.txt -Value \$tool -NoNewline"
+            modern=()
+            if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e['id'] == 'host-profile:retail-xl-fast' for e in p['tests']))"; then modern=(--modern); fi
+            python3 control/android/tests/xl_private_assets.py --root retail-input --stage target/game_data/retail-ci/xl --seven-zip "$(cat results/xl-seven-zip.txt)" "${modern[@]}"
+          fi
+          rm -rf retail-input
       - name: Install host prerequisites
         id: prerequisites
         timeout-minutes: 15
@@ -376,7 +463,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
           printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
-          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then
+          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" || "$FULL_NIGHTLY" == true ]]; then
             printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > control/dependency_base.txt
           fi
       - name: Prepare verified public fixture runtime
@@ -413,60 +500,9 @@ jobs:
           setup=target
           if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then setup=control; fi
           npm ci --prefix "$setup/android/tools/code-quality" --ignore-scripts
-      - name: Verify trusted retail checkout boundary
-        id: retail_gate
-        env:
-          GH_TOKEN: ${{ github.token }}
-        if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
-        run: |
-          [[ "$RETAIL_CHECKOUT_COMMIT" == "$RETAIL_ASSETS_COMMIT" ]]
-          python3 control/android/tests/nightly_tooling_sweep.py retail-check \
-            --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json --lane host
-      - name: Check admitted retail credential availability
-        if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
-        env:
-          RETAIL_TOKEN_AVAILABLE: ${{ secrets.RETAIL_ASSETS_READ_TOKEN != '' }}
-        run: |
-          if [[ "$RETAIL_TOKEN_AVAILABLE" != 'true' ]]; then
-            echo '::error::Private retail checkout token unavailable; check named reusable secret forwarding and retail-ci secret configuration'
-            exit 1
-          fi
-      - name: Check out immutable private retail inputs
-        id: retail_checkout
-        if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-        with:
-          repository: larsonm-personal/dxx-redux-test-assets
-          ref: ${{ needs.plan.outputs.retail_commit }}
-          token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
-          path: retail-input
-          persist-credentials: false
-      - name: Verify supplied edition and stage base retail files
-        if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
-        id: retail_stage
-        run: |
-          [[ "$(git -C retail-input rev-parse HEAD)" == "$RETAIL_CHECKOUT_COMMIT" ]]
-          python3 control/android/helpers/retail_ci_assets.py --root retail-input --repo control --source-map control/android/tests/retail_asset_sources.json \
-            --output results/retail-verification.json --stage target/game_data/retail-ci --include-missions
-          # Stage only the immutable demo pair when its owner was admitted
-          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-demos' for e in p['tests']))"; then
-            python3 control/android/tests/private_input_demos.py --stage --demos retail-input/demos --output target/game_data/retail-ci/demos
-          fi
-          # The existing immutable checkout and trusted gate also own corpus staging
-          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-corpus' for e in p['tests']))"; then
-            python3 control/android/tests/nightly_regression_catalog.py --source retail-input --repo target --commit "$RETAIL_CHECKOUT_COMMIT"
-          fi
-          # Original XL owners require verified, complete private inputs
-          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e['id'] in ('host-profile:retail-xl-originals', 'host-profile:retail-xl-fast') for e in p['tests']))"; then
-            pwsh -NoProfile -Command "\$tool = & ./control/android/get_deps/helpers/get_7zip.ps1; Set-Content -LiteralPath results/xl-seven-zip.txt -Value \$tool -NoNewline"
-            modern=()
-            if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e['id'] == 'host-profile:retail-xl-fast' for e in p['tests']))"; then modern=(--modern); fi
-            python3 control/android/tests/xl_private_assets.py --root retail-input --stage target/game_data/retail-ci/xl --seven-zip "$(cat results/xl-seven-zip.txt)" "${modern[@]}"
-          fi
-          rm -rf retail-input
       - name: Execute admitted host owners
         id: execute
-        timeout-minutes: 65
+        timeout-minutes: 150
         run: |
           python3 control/android/tests/nightly_tooling_sweep.py execute \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
@@ -482,19 +518,19 @@ jobs:
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --lane host --output results "${blocked[@]}"
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        if: always() && !contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
+        if: always() && !matrix.retail
         with:
-          name: nightly-results-host
+          name: nightly-results-host${{ matrix.shard != '' && format('-{0}', matrix.shard) || '' }}
           path: |
             results/
             !results/build/**
           retention-days: 14
           if-no-files-found: warn
       - name: Upload retail-safe owner receipts
-        if: always() && contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
+        if: always() && matrix.retail
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: nightly-results-host
+          name: nightly-results-host${{ matrix.shard != '' && format('-{0}', matrix.shard) || '' }}
           path: |
             results/results.json
             results/retail-verification.json
@@ -504,7 +540,7 @@ jobs:
   pumo_stage:
     name: Verify pinned Pumo staging
     needs: stack
-    if: needs.stack.outputs.run == 'true' && github.event_name == 'workflow_dispatch' && inputs.campaign == 'pumo-stage'
+    if: needs.stack.outputs.run == 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.campaign == 'nightly' || inputs.campaign == 'pumo-stage')))
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
@@ -527,7 +563,7 @@ jobs:
           import os, sys
           sys.path.insert(0, 'control/android/tests')
           import nightly_retail
-          assert os.environ['CANDIDATE_CAMPAIGN'] == 'pumo-stage'
+          assert os.environ['CANDIDATE_CAMPAIGN'] == 'pumo-stage' or os.environ['FULL_NIGHTLY'] == 'true'
           assert not os.environ['CANDIDATE_PR'] and not os.environ['CANDIDATE_SHA']
           assert nightly_retail.trusted_context()
           PYTHON
@@ -584,6 +620,38 @@ jobs:
           rm -rf -- "$PWD/pumo-input" "$RUNNER_TEMP/pumo-pinned-stage" "$RUNNER_TEMP/pumo-stage-python"
       # No candidate checkout, executable, original resource or private artifact is published.
 
+  nightly_release:
+    name: Nightly XL developer Release compile
+    needs: plan
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.campaign == 'nightly')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ needs.plan.outputs.target_sha }}
+          path: target
+          persist-credentials: false
+      - name: Install Release build dependencies
+        run: |
+          python3 control/.github/scripts/prefer_ubuntu_archive.py
+          sudo apt-get -o Acquire::Retries=3 update
+          sudo apt-get -o Acquire::Retries=3 install -y --no-install-recommends libegl1-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libglew-dev libsdl1.2-dev libsdl-mixer1.2-dev libphysfs-dev libpng-dev zlib1g-dev
+          mkdir -p "$RUNNER_TEMP/dxx-nightly-deps"
+          printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
+      - name: Compile and verify exact candidate Release target
+        run: |
+          cmake -S target/d2 -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTING=OFF -DOPENGL=ON -DOpenGL_GL_PREFERENCE=LEGACY -DDXX_XL_DEVELOPER_TESTS=ON
+          cmake --build build --parallel 2 --target dxx-redux-d2-headless-metadata
+          python3 control/android/XL_compat/tests/developer_compile_ci.py --verify-build build --mode Release
+
   execution-stack:
     needs: plan
     uses: ./.github/workflows/stack-ci.yml
@@ -596,13 +664,16 @@ jobs:
       fail-fast: false
       max-parallel: 3 # Plus the separate host executor: at most four test lanes.
       matrix:
-        lane: ${{ fromJSON(needs.plan.outputs.android_lanes) }}
+        include: ${{ fromJSON(needs.plan.outputs.android_matrix) }}
     uses: ./.github/workflows/android-nightly-tooling.yml
     with:
       target_sha: ${{ needs.plan.outputs.target_sha }}
+      shard: ${{ matrix.shard }}
+      nightly_target_ref: ${{ needs.plan.outputs.target_ref }}
+      nightly_activity_id: ${{ needs.plan.outputs.activity_id }}
       plan_artifact: nightly-plan
       lane: ${{ matrix.lane }}
-      retail_assets: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), matrix.lane) }}
+      retail_assets: ${{ matrix.retail }}
       retail_commit: ${{ needs.plan.outputs.retail_commit }}
     # Explicitly name the environment-only secret; the callee keeps its trusted retail-ci gate
     secrets:
@@ -610,7 +681,7 @@ jobs:
 
   finish:
     name: Check results
-    needs: [plan, execution-stack, host, android]
+    needs: [plan, execution-stack, host, android, pumo_stage, nightly_release]
     outputs:
       reconciled: ${{ steps.reconcile.outcome == 'success' }}
     if: always() && needs.plan.result == 'success' && (needs.execution-stack.outputs.run != 'false' || needs.host.result == 'failure' || needs.host.result == 'cancelled' || needs.android.result == 'failure' || needs.android.result == 'cancelled')
@@ -635,8 +706,19 @@ jobs:
         id: reconcile
         env:
           TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
+          HOST_RESULT: ${{ needs.host.result }}
+          ANDROID_RESULT: ${{ needs.android.result }}
+          EXECUTION_STACK_RESULT: ${{ needs.execution-stack.result }}
+          PUMO_STAGE_RESULT: ${{ needs.pumo_stage.result }}
+          RELEASE_COMPILE_RESULT: ${{ needs.nightly_release.result }}
           REQUIRE_SELECTED: ${{ inputs.campaign == 'online-preview' || inputs.campaign == 'online-preview-d2' || inputs.campaign == 'online-transports' || github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'xl-browser' || inputs.campaign == 'xl-textures' || inputs.campaign == 'basic-use' || inputs.campaign == 'xl-originals' || inputs.campaign == 'xl-fast' }}
         run: |
+          if [[ "$FULL_NIGHTLY" == true ]]; then
+            status=0
+            python3 control/android/tests/nightly_complete.py report || status=$?
+            { echo '## Complete nightly receipts'; echo '```json'; cat summary.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            exit "$status"
+          fi
           qualification=()
           if [[ "$REQUIRE_SELECTED" == 'true' ]]; then qualification=(--require-selected); fi
           status=0
@@ -665,7 +747,7 @@ jobs:
           retention-days: 30
 
       - name: Require no unresolved failures or infrastructure blocks
-        if: always() && steps.reconcile.outcome == 'success'
+        if: always() && steps.reconcile.outcome == 'success' && env.FULL_NIGHTLY != 'true'
         env:
           EXECUTION_STACK_RESULT: ${{ needs.execution-stack.result }}
           HOST_RESULT: ${{ needs.host.result }}
@@ -688,7 +770,7 @@ jobs:
   publish:
     name: Save nightly progress (scheduled/manual only)
     needs: [plan, finish]
-    if: always() && needs.plan.result == 'success' && needs.finish.outputs.reconciled == 'true' && github.event_name != 'workflow_run' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'xl-browser' && inputs.campaign != 'xl-textures' && inputs.campaign != 'xl-originals' && inputs.campaign != 'xl-fast' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && inputs.campaign != 'online-transports' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
+    if: always() && github.event_name != 'schedule' && inputs.campaign != 'nightly' && needs.plan.result == 'success' && needs.finish.outputs.reconciled == 'true' && github.event_name != 'workflow_run' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'xl-browser' && inputs.campaign != 'xl-textures' && inputs.campaign != 'xl-originals' && inputs.campaign != 'xl-fast' && inputs.campaign != 'basic-use' && inputs.campaign != 'online-preview' && inputs.campaign != 'online-preview-d2' && inputs.campaign != 'online-transports' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
