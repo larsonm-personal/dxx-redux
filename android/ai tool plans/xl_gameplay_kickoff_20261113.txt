@@ -1,10 +1,18 @@
-Continue the next explicitly bounded XL gameplay window in C:/local/dxx-redux.
+Run the next 12-hour XL gameplay tranche in C:/local/dxx-redux when this prompt is
+explicitly invoked. Prioritize progress toward the unchanged 8/8 sampled readiness
+test; the current planning budget is three tranches, range two to four, low
+confidence. First reproduce all four load failures using the exact ordinary
+headless CI target and pinned cohort, preserve private engine diagnostics, and
+revise the estimate. Do not substitute developer probes, reroll cases, relax
+deadlines, remove admission safeguards without implementing their requirements,
+or count rendering/assisted navigation as the 120-frame load/tick criterion.
 Read AGENTS.md, .github/copilot-instructions.md, android/ai tool plans/xl_gameplay_what_was_done_20261113.md,
 xl_gameplay_next_window_20261113.md, xl_resource_tranche_20261113.md and the G2-G7
 acceptance sections and latest entries of xl_gameplay_execution_20261110.md.
 This prompt starts work only when explicitly invoked; it does not revive an
-unlimited-duration goal. Agree the new duration and reserve its final quarter
-for validation, CI repair and committed handoff. Work sequentially without agents.
+unlimited-duration goal. Reserve hours 8-12 for validation, CI repair and committed
+handoff. Work sequentially without agents. The prior user canceled hourly watching
+after all non-readiness checks passed; do not restart that completed watch.
 
 Refresh current HEAD/tree/stashes/published head/immediate parent and stack 471.
 Resolve applicable CI failures first; old green runs and dispatchers do not prove
@@ -13,7 +21,9 @@ Preserve failed receipts, authentic assets and unrelated work. Native sound WIP 
 stash 9783012e2a77dfdd4680812ae72b852cfaca5e17; review before applying. It is untested.
 
 Continue the real incoming resource transaction through native PCM, bitmap,
-palette/GPU and world owners as the next plan specifies. Reuse existing native
+palette/GPU and world owners only where it is a demonstrated readiness dependency
+or the user chooses G2 priority. Full G2 is not automatically a prerequisite for
+the two-second load/tick test. Follow the next plan and reuse existing native
 codecs, retain decoded owners through commit, validate incoming definitions and
 origins independently of the outgoing world, and prove moves/discard/live
 continuation and equal-count target independence. No duplicate format parser,

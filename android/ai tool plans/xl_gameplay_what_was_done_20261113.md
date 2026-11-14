@@ -157,6 +157,31 @@ failure-blocked dependent on PR #494. PR #493's two later replay jobs were exclu
 by the fresh stack-tip gate after PR #494 was linked; both actually PASS on #494.
 No skipped required owner is counted as pass.
 
-No new code fix was required during this first wind-down cycle. CI monitoring
-continues hourly until 22:00 PST unless quota is exhausted, with regressions
-investigated before acceptance. No merges or status overrides were performed.
+No new code fix was required during this first wind-down cycle. No merges or
+status overrides were performed.
+
+## Final user-directed closure and readiness estimate
+
+At about 19:22 PST the user ended the hourly-watch requirement once all checks
+except readiness passed, and requested the next plan/prompt plus an estimate for
+8/8. The owned monitoring process was stopped; no unrelated process was stopped.
+The final implementation and documentation source at that time,
+81b4046f7bb61410ba85fd0da87504d294561ffd, has 33 passed checks, six intentional
+skips, no pending jobs and only the known readiness failure. Merge candidate:
+d0616118745485cbb8b6d8a951cb841d8d1453fd. Exact-head private
+[run 43533928032](https://github.com/larsonm-personal/dxx-redux/actions/runs/43533928032)
+passes attempt 1 in 1183.281 seconds: 113 required owners, 16 format witnesses,
+three modern source levels and four assisted anchors. Controller and asset
+identities are unchanged. Camera remains not_run_missing_addon. Final receipts:
+pr494-final-checks.json, pr494-final-private-results/results.json and
+pr494-readiness/results.json under the tranche scratch root.
+
+Estimate for the specific unchanged sampled test: **three 12-hour tranches as a
+planning budget, range two to four (24-48 hours), low confidence**. All four
+remaining rows fail before the 120-frame simulation: BoilingPoint level 7,
+Dinter level 1, Sphere level 2 and WShock20 level 6. The public receipt omits
+private engine diagnostics; it cannot establish each underlying cause. Start
+the next tranche with exact ordinary headless reproduction and revise the range.
+This estimate is separate from full G2, connected gameplay and 90% playability.
+The next plan and kickoff now carry the readiness-first sequence and safeguards.
+This final documentation adjustment receives its own CI verification after push.

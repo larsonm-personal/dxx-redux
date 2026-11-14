@@ -1,8 +1,51 @@
 # Next XL gameplay window after November 13
 
-This plan does not start work. The current user instruction is CI wind-down until
-22:00 PST, or quota exhaustion. Read the [report](xl_gameplay_what_was_done_20261113.md)
-and its final CI addendum before choosing the next candidate.
+This plan does not start work. The user's final instruction ends monitoring once
+all applicable checks except sampled readiness pass. That condition was reached;
+finish the handoff and qualify its final documentation push. Read the
+[report](xl_gameplay_what_was_done_20261113.md) and final CI addendum first.
+
+## Estimate for the specific 8/8 readiness test
+
+Budget **three 12-hour tranches**, with a provisional range of **two to four
+tranches (24-48 hours)**. This is an engineering judgment, not a measured forecast.
+Confidence is low until the exact four failures are diagnosed. A shared admission
+dependency could shorten it; independent resource/simulation defects could exceed
+the range. Do not treat two to four as a guarantee or as the estimate for all G2-G7.
+
+The latest exact-head receipt for 81b4046f7bb61410ba85fd0da87504d294561ffd,
+workflow 43533928032, pins cohort assets to
+9dad21bd65ba05665ac6fe315f37fe7461e85725. Failures are BoilingPoint-XL level 7
+(control2.rl2), Dinter level 1 (dinter.rl2), Sphere level 2 (sp-02.rl2), and
+WShock20 level 6 (warplab.rl2). Each reports load_failed and zero frames.
+The published artifact deliberately omits raw engine diagnostics, so it does not
+establish four distinct root causes. The four successes are XL inactive.
+
+The criterion is the requested original level loading and running 120 unassisted
+simulation frames at 60 Hz without death or transition, using the ordinary
+dxx-redux-d2-headless-route target. It does not require campaign completion,
+rendering or confirmed assisted navigation. Keep all eight cases, exact assets,
+deadlines and criterion unchanged. Developer metadata or rendered success does
+not qualify this headless owner, and changing its flags to bypass admission does
+not establish correct support.
+
+Suggested sequence:
+
+| Tranche        | Focus and evidence                                                                                                                                                                                                |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1              | Reproduce all four failures privately with the exact CI target; map shared and individual causes; implement and qualify the smallest real headless/resource dependency. Revise the estimate from raw diagnostics. |
+| 2              | Finish source-backed loading and simulation dependencies; prove optional output cannot alter the 120-frame simulation; retest all eight unchanged cases and affected regression owners.                           |
+| 3              | Resolve remaining cases and platform regressions; obtain exact-head hosted 8/8 plus all existing public/private owners, then commit handoff.                                                                      |
+| 4, contingency | Independent later blockers or a second CI repair cycle. If needed beyond this, revise openly rather than weaken the gate.                                                                                         |
+
+For the next 12 hours: use hours 0-2 for exact reproduction and ownership review,
+2-3 to select a bounded cause, 3-8 for implementation and local canonical controls,
+and 8-12 for CI repair, final qualification and handoff. Publish coherent tested
+checkpoints early. Full atomic restore need not be completed merely to run this
+two-second load/tick test; pursue G2 work below only where it is an actual
+dependency or the user chooses that priority. Keep its known defect explicit.
+
+## Remaining G2 dependency work
 
 1. Refresh current fork HEAD, tree, stashes, stack 471 and exact candidate CI.
    Fix applicable regression failures first. Preserve unrelated work and failed

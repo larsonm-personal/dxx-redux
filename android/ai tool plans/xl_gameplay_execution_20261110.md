@@ -5482,3 +5482,21 @@ passes in 987.858 seconds; documentation target
 anchors. Missing camera addon and 4/8 readiness remain open. This documentation
 receipt triggers another exact-head CI cycle, monitored through the user's 22:00
 deadline. No additional feature or source fix is introduced during wind-down.
+
+At about 19:22 PST the user ends hourly watching once the non-readiness checks
+pass and requests the next tranche plan/prompt and an 8/8 estimate. The exact
+81b4046f7bb61410ba85fd0da87504d294561ffd tip has 33 pass, six intentional skips,
+zero pending and only readiness FAIL. Private run 43533928032 attempt 1 passes
+113 required owners in 1183.281 seconds; immutable asset/controller identities
+are unchanged. The owned monitor process is stopped. The final documentation
+adjustment will be pushed and qualified without resuming the hourly watch.
+
+Planning estimate for the unchanged 120-frame headless readiness test: three
+12-hour tranches, range two to four, low confidence. Current failures are four
+zero-frame load_failed rows, not diagnosed root causes: BoilingPoint 7, Dinter 1,
+Sphere 2 and WShock20 6. Next tranche starts by reproducing the exact ordinary
+headless owner against frozen cohort 9dad21bd65ba05665ac6fe315f37fe7461e85725,
+then chooses a bounded dependency fix and reserves hours 8-12 for CI/handoff.
+Full G2 is not automatically required for this two-second load/tick criterion.
+Detailed sequence and uncertainty are in xl_gameplay_next_window_20261113.md;
+the replacement kickoff preserves all publication, architecture and test rules.
