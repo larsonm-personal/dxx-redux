@@ -4668,3 +4668,22 @@ publication. POG clock/HUD views and allocation, full incoming level source
 context, actual live-continuation evidence and whole-world G2 remain open. The
 15-hour goal continues. Receipts are under
 `temp/xl-resource-tranche-20261113/`, with `banks` in their filenames.
+
+#### Bank rejection diagnostic correction
+
+The broader water owner exposed a diagnostic regression: the retained-bank
+check rejected the invalid HXM bitmap but changed the established phrase from
+`missing bitmap` to `missing target bitmap`. A diagnostic-only reproduction
+records the exact rejection in `water-bank-diagnostic-02.log`. The runtime now
+preserves the established phrase and adds target-bank context. The original
+assertion remains intact; its failure now includes the actual rejection reason.
+Earlier failed runs and an accidentally reused failed fixture receipt remain
+retained. Fresh derived fixtures are used for revalidation.
+
+The complete Windows and Linux Debug water capture/replay owners pass after the
+fix (`water-bank-fixed-windows.log`, `water-bank-fixed-linux.log`). The ordinary
+developer-OFF Windows D2 build passes, and fresh clean-process water playback
+exits normally. Detailed trace comparison is underway. Linux reports an
+untracked-free diagnostic at shutdown; its backtrace is being investigated, so
+this checkpoint does not claim clean memory diagnostics. No timeout, assertion,
+authentic source or required owner was weakened.

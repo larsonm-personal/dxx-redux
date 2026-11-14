@@ -532,8 +532,9 @@ static int arena_test(int argc, char **argv)
 			PHYSFS_file *control = PHYSFSX_openReadBuffered("rtarena.HXM");
 			require(control && bm_validate_level_hxm(control), "missing-bitmap control did not pass structural validation");
 			PHYSFS_close(control);
-			require(!xl_level_supported("rtarena.rl2", 0) && std::strstr(xl_level_rejection(), "missing bitmap"),
-			        "structurally valid HXM escaped loaded dependency validation");
+			const bool dependency_supported = xl_level_supported("rtarena.rl2", 0) != 0;
+			require(!dependency_supported && std::strstr(xl_level_rejection(), "missing bitmap"),
+			        (std::string("structurally valid HXM escaped loaded dependency validation: ") + xl_level_rejection()).c_str());
 			require(gameplay_definitions() == definitions && ObjBitmaps[0].index == original_bitmap.index && arena_model() == original_model,
 			        "staged HXM validation changed live resources");
 			require(PHYSFS_removeFromSearchPath(resource_shadow.string().c_str()), "cannot unmount HXM dependency control");

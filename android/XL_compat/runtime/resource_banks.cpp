@@ -59,7 +59,7 @@ XlResourceBanks::~XlResourceBanks() = default;
 
 void XlResourceBanks::bitmap(int id) const
 {
-	if (id <= 0 || id >= int(state->bitmaps.size())) throw std::runtime_error("Dependency references missing target bitmap");
+	if (id <= 0 || id >= int(state->bitmaps.size())) throw std::runtime_error("object dependency references missing bitmap in target bank");
 }
 
 void XlResourceBanks::sound(int id) const
