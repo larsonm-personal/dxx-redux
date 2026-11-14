@@ -332,7 +332,7 @@ void do_controlcen_destroyed_stuff(object *objp)
 	xl_slow_motion_off();
 #endif
 	reactor_countdown_reset_pause();
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	escort_route_notify_reactor_changed();
 #endif
 

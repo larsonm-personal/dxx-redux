@@ -5350,3 +5350,46 @@ combined step reaches the four-minute deadline; its failed log/artifacts are ret
 and retry awaits the workflow finishing. PR 489 applicable public checks are terminal
 PASS. Sampled readiness remains FAIL 4/8 independently of private required-owner passes.
 Full G2 atomicity, actual native bank replacement and GPU/world publication remain OPEN.
+
+### Native planner notifications - November 13, 14:42 PST
+
+The strict Android world comparison exposed missing desktop/headless route
+invalidation. Existing object, wall, reactor and visibility hooks now run whenever
+the shared route planner is built. Android-only speech/UI hooks remain separate.
+The shared CPU visibility collector uses the same condition. This is native
+planner behavior, not an observer correction or rewritten expected trace.
+
+The canonical water owner now requires real traversal to advance both visibility
+and object-retirement generations. Its first Windows/Linux runs fail, exposing
+the separate shared-collector omission; those receipts remain water-route-windows
+and water-route-linux. Corrected -02 owners pass on both hosts. Windows ordinary
+cold playback exits normally in 70.59 seconds and matches all 1,235 object frames,
+1,239 world records, 196 SIM events and 1,808 FX events. Existing live Guide-Bot
+navigation passes twice identically on both hosts. Same-mode save continuity
+passes both modes on levels 1 and 11, twice on Windows. The Linux script times
+out at its unchanged 90-second limit on /mnt/c; the identical native cases on the
+Linux filesystem pass all four runs in 8.5 seconds with the same deadline and
+matching repeated JSON. The failed mounted-filesystem log is retained.
+
+Evidence root: temp/xl-resource-tranche-20261113. Windows metadata binary
+45836121d296d4f94316280a403ca1ed77777d2e085eac7259ebc85ff06a3f4f;
+Linux metadata 5e9c832bbe1231f4df49135631419b7513deb481de2265a1d9054fcdd7385f8d;
+ordinary Windows 43ffe1b61c676d5190513b5eb7fa4eec04a3e40f2ed7b9723da6b3bccb5a405e.
+Fresh native capture 1e7602d0cd86006a8571951ceb3b70d46257b85a3251ec62128cb751df031466.
+The retained optimized Debug Android probe (4135c4e15c1236aa6fb945f91eedae67db6428607477e64426ee119ca92cc1c2)
+matches the 1,235-frame terminal result; restore-to-terminal takes 76.142 seconds.
+Android preprocessing is unchanged by this guard-only fix. Protected profile
+manifests match 762f6f62af24134580d9c530da161d9276ea426fa3fca40ad44549d21e621f21.
+Detailed Android comparison passes all object frames and SIM events. All route
+generation/event differences are gone. World comparison still fails solely on
+persistent_message (host 0, Android 1) at restored/frame/terminal boundaries;
+FX still fails on the 1,500 startup starfield draws. Neither field nor events are
+removed. Evidence: android-water-route-comparison/comparison.json.
+
+PR 491 applicable public checks pass. Private run 43518726105 passes exact head
+d165257330daaad3d61a5f93a6959f5e866af96b in 752.991 seconds, with the pinned asset
+commit and manifest unchanged: 113 required owners, 16 witnesses, three modern
+levels and four assisted anchors; camera remains not_run_missing_addon. Controller
+bf40de9bc3b85c2279fe8163c621bb6c052dec12 is unchanged. Scoped quality passes;
+catalog membership is unchanged. PR 490 headed replay parity passes; its independent
+native admission timeout is retrying as attempt 2. Sampled readiness remains 4/8.

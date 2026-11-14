@@ -657,10 +657,16 @@ static int arena_test(int argc, char **argv)
 			        error);
 			input_demo_trace_boundary("restored");
 		}
+		const auto route_automap = escort_get_route_automap_generation();
+		const auto route_objects = escort_get_route_object_generation();
 		arena_recording = true;
 		const int into = arena_traverse(187);
 		arena_recording = false;
 		input_demo_stop_quick_recording_common();
+		require(escort_get_route_automap_generation() > route_automap &&
+		            escort_get_route_object_generation() > route_objects,
+		        "water traversal omitted native route visibility or object retirement notifications");
+		std::cout << "Arena route notifications: ordinary visibility and pickup retirement advance native planner generations\n";
 		{
 			const auto root = std::filesystem::path(PHYSFS_getWriteDir());
 			bool exported = false;
