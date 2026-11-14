@@ -338,10 +338,11 @@ extern "C" int xl_time_equipment_draw(object *actor)
 {
 	if (!xl_level_extensions_active() || actor->type != OBJ_POWERUP || !xl_compat::time_equipment_powerup(actor->id)) return 0;
 	try {
-		const auto *image = xl_prepared_time_equipment_image(unsigned(actor->id - 48));
-		if (!image || image->textures.size() != 16) throw std::runtime_error("XL time equipment lost its owned image strip");
 		const int frame = actor->rtype.vclip_info.framenum;
 		if (frame < 0 || frame >= 16) throw std::runtime_error("XL time equipment has an invalid animation frame");
+		const auto *image = xl_prepared_time_equipment_image(unsigned(actor->id - 48));
+		if (!image) return 1;
+		if (image->textures.size() != 16) throw std::runtime_error("XL time equipment lost its owned image strip");
 		auto quad = powerup_billboard(actor->pos, actor->size, actor->size, { 1, 1, 1, 1 }, xl_compat::ParticleBlend::alpha);
 		image->textures[unsigned(frame)]->draw_sprite(quad);
 		return 1;

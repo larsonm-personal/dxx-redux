@@ -94,6 +94,16 @@ if(image_witness LESS 0)
 endif()
 if(particle_world_args)
     execute_process(
+        COMMAND "${REFERENCE}" --time-images "${OUTPUT}/time-images.txt"
+        RESULT_VARIABLE time_result
+        OUTPUT_VARIABLE time_log
+        ERROR_VARIABLE time_error
+        TIMEOUT 15)
+    file(WRITE "${OUTPUT}/time-image-reference.log" "${time_log}${time_error}")
+    if(NOT time_result EQUAL 0 OR NOT time_log MATCHES "32 native present/absent time image steps")
+        message(FATAL_ERROR "Time image source comparison failed: ${time_log}${time_error}")
+    endif()
+    execute_process(
         COMMAND "${REFERENCE}" --particle-world "${OUTPUT}/particle-world.txt"
         RESULT_VARIABLE result
         OUTPUT_VARIABLE log

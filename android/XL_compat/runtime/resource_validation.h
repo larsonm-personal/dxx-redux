@@ -96,6 +96,7 @@ class XlPreparedResources
 	const xl_compat::ParticleImageResource *lightning_image() const;
 	const xl_compat::ParticleImageResource *powerup_glare_image() const;
 	const xl_compat::AnimatedImageResource *time_equipment_image(unsigned index) const;
+	bool time_equipment_required() const;
 
   private:
 	void prepare_level_resources(const char *filename, const xl_compat::Inventory *level, int ordinal, mission_preparation *mission, xl_compat::TargetSources *target);
@@ -108,6 +109,7 @@ const xl_compat::ParticleImageResource *xl_prepared_particle_image(int subtype =
 const xl_compat::ParticleImageResource *xl_prepared_lightning_image();
 const xl_compat::ParticleImageResource *xl_prepared_powerup_glare_image();
 const xl_compat::AnimatedImageResource *xl_prepared_time_equipment_image(unsigned index);
+bool xl_prepared_time_equipment_required();
 #endif
 
 #endif

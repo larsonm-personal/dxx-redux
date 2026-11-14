@@ -46,9 +46,11 @@ CObject *OBJECT(int index)
 	return &objects.at(unsigned(index));
 }
 struct AddonBitmap {
+	int frames = -1;
 	int FrameCount() const
 	{
-		throw std::runtime_error("Unqualified addon animation path");
+		if (frames < 0) throw std::runtime_error("Unqualified addon animation path");
+		return frames;
 	}
 };
 struct {
@@ -111,6 +113,33 @@ struct Audio {
 } audio;
 #include "xl_reference_static_explosion.h"
 } // namespace static_explosion_reference
+
+void time_image_runtime_controls(const char *path)
+{
+	using namespace static_explosion_reference;
+	std::ifstream input(path);
+	std::string tag;
+	unsigned version = 0, count = 0;
+	if (!(input >> tag >> version) || tag != "XL_TIME_IMAGE" || version != 1)
+		throw std::runtime_error("Invalid native time image receipt");
+	while (input >> tag && tag == "case") {
+		int owner, image, frames, now, timestamp, frame, expected_timestamp, expected_frame;
+		if (!(input >> owner >> image >> frames >> now >> timestamp >> frame >> expected_timestamp >> expected_frame) ||
+		    image < 0 || image > 1 || (frames != 0 && frames != 16) || count >= 64)
+			throw std::runtime_error("Invalid native time image row");
+		gameData.pigData.tex.addonBitmaps[image].frames = frames;
+		gameStates.app.nSDLTicks[0] = now;
+		tAnimationState clip{ 0, frame, -1 - image, timestamp };
+		UpdatePowerupClip(nullptr, &clip, owner);
+		if (clip.nCurFrame != expected_frame || clip.xTotalTime != expected_timestamp)
+			throw std::runtime_error("Native time image animation differs from pinned source");
+		++count;
+	}
+	unsigned total = 0;
+	if (tag != "end" || !(input >> total) || total != count || count != 32 || input >> tag)
+		throw std::runtime_error("Incomplete native time image coverage");
+	std::cout << "PASS: 32 native present/absent time image steps match actual source\n";
+}
 
 void static_explosion_source_controls()
 {

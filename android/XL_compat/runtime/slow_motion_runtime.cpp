@@ -177,7 +177,7 @@ extern "C" int xl_time_equipment_animate(object *actor)
 		elapsed = 0;
 	}
 	const auto steps = elapsed / 80;
-	if (steps) {
+	if (steps && xl_prepared_time_equipment_image(unsigned(actor->id - 48))) {
 		clip.frametime = fix(std::int64_t(clip.frametime) + steps * 80);
 		const auto frame = std::int64_t(clip.framenum) + ((actor - Objects) & 1 ? steps : -steps);
 		// Retain the source's reverse-animation wrap at exact multiples of sixteen
@@ -561,7 +561,7 @@ extern "C" const char *xl_omega_input_demo_error(void)
 {
 	if (const auto *error = xl_input_demo_profile_error()) return error;
 	if (input_demo_recorder_uses_environment() || input_demo_replay_format_version() == 6) return nullptr;
-	if (enabled() && (xl_prepared_time_equipment_image(0) || (Players[Player_num].flags & (xl_compat::slow_motion_equipment | xl_compat::bullet_time_equipment))))
+	if (enabled() && (xl_prepared_time_equipment_required() || (Players[Player_num].flags & (xl_compat::slow_motion_equipment | xl_compat::bullet_time_equipment))))
 		return "XL time-equipment input demos require a recorded real-time clock timeline";
 	return enabled() && (Players[Player_num].primary_weapon_flags & (1 << OMEGA_INDEX))
 	           ? "XL Omega input demos require a recorded render-clock timeline"

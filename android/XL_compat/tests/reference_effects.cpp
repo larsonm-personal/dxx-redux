@@ -403,10 +403,15 @@ void particle_original_geometry_controls(const xl_compat::Inventory &);
 void static_explosion_source_controls();
 void static_explosion_render_source_controls();
 void static_explosion_runtime_controls(const char *);
+void time_image_runtime_controls(const char *);
 void ambient_activation_runtime_controls(const char *);
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--time-images") {
+			time_image_runtime_controls(argv[2]);
+			return 0;
+		}
 		if (argc == 3 && std::string(argv[1]) == "--camera-controller") {
 			camera_controller_runtime_controls(argv[2]);
 			return 0;
