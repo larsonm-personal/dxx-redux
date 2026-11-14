@@ -421,6 +421,25 @@ def validate_plan(plan, policy):
         raise ValueError("Plan batch identity mismatch")
 
 
+def core_diagnostics(row, ident):
+    if ident != "master:test_gradle_unit_tests":
+        return {}
+    counts = row.get("leaf_counts") or {}
+    counts = {
+        key: value
+        for key, value in counts.items()
+        if key in ("PASS", "SKIP") and type(value) is int and 0 <= value <= 1000000
+    }
+    scope = row.get("core_scope", "")
+    return {
+        "leaf_counts": counts,
+        "core_scope": scope if scope == "fixture-independent-gradle-v1" else "",
+        "core_coverage_complete": row.get("core_coverage_complete") is True
+        and scope == "fixture-independent-gradle-v1"
+        and counts.get("PASS", 0) > 0,
+    }
+
+
 def normalize_result(row, entry=None):
     """Never certify a PASS contradicted by the owner's structured evidence."""
     row = dict(row)
@@ -564,6 +583,7 @@ def reconcile(plan, policy, state, receipts):
                 coverage_complete=row.get("coverage_complete") is True,
                 attempted_tests=row.get("attempted_tests", True),
                 phase=row.get("phase", "tests"),
+                **core_diagnostics(row, ident),
             )
             diagnostics = retail.public_diagnostics(row)
             if "experimental_acceptance" in diagnostics:
@@ -725,6 +745,7 @@ def collect(plan, policy, lane, output, blocked_reason=""):
                 "exclusions": row.get("exclusions", []),
                 "cases": row.get("cases", []),
                 "coverage_complete": row.get("coverage_complete", False),
+                **core_diagnostics(row, entry["id"]),
                 "comparison_only": row.get("comparison_only", False),
                 "runtime_outcome": row.get("runtime_outcome", ""),
                 "attempted_tests": row.get("attempted_tests", status in TERMINAL),

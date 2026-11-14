@@ -536,6 +536,8 @@ jobs:
           path: |
             results/
             !results/build/**
+            !results/core/build/**
+            !results/sample/build/**
           retention-days: 14
           if-no-files-found: warn
       - name: Upload retail-safe owner receipts
