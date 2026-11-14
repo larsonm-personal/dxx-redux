@@ -135,3 +135,6 @@ try {
 }
 
 Write-Host 'All downloaded dependency verification tests passed'
+
+. "$PSScriptRoot/../helpers/test_execution_evidence.ps1"
+Write-TestCompletionEvidence -Name "test_download_verification" -Cases @(@{ id = "all-dependency-verification-assertions"; status = "PASS" })

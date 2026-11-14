@@ -96,7 +96,9 @@ def reconcile_catalog(state, entries):
     return state
 
 
-def plan_sample(sha, catalog, policy, previous=None, retail_assets=None, now=None, core_ids=CORE_IDS):
+def plan_sample(sha, catalog, policy, previous=None, retail_assets=None, now=None, core_ids=CORE_IDS, host_workers=1):
+    if type(host_workers) is not int or not 1 <= host_workers <= 16:
+        raise ValueError("Host concurrency must be between one and sixteen")
     inventory, _ = sweep.plan_batch(sha, catalog, policy, retail_assets=retail_assets, complete=True)
     entries = {e["id"]: e for e in inventory["tests"]}
     if not core_ids <= entries.keys():
@@ -116,9 +118,31 @@ def plan_sample(sha, catalog, policy, previous=None, retail_assets=None, now=Non
     selected = [entries[key] for key in sorted(core_ids)]
     used = {lane: sum(e["estimated_seconds"] for e in selected if e["lane"] == lane) for lane in sweep.LANES}
     pending_order = {}
+    host_groups = [[e for e in selected if e["lane"] == "host"]] if host_workers > 1 else []
     for lane in sweep.LANES:
         pending = [e for e in ordered if e["lane"] == lane and e["id"] not in state["done"]]
         pending_order[lane] = [e["id"] for e in pending]
+        if lane == "host" and host_workers > 1:
+            for entry in pending:
+                private = retail.lane_requires_retail({"tests": [entry]}, "host")
+                group = next(
+                    (
+                        group
+                        for group in host_groups
+                        if (not group or retail.lane_requires_retail({"tests": group}, "host") == private)
+                        and sum(e["estimated_seconds"] for e in group) + entry["estimated_seconds"] <= 2700
+                    ),
+                    None,
+                )
+                if group is None:
+                    if len(host_groups) >= host_workers:
+                        break
+                    group = []
+                    host_groups.append(group)
+                group.append(entry)
+                selected.append(entry)
+                used[lane] += entry["estimated_seconds"]
+            continue
         for entry in pending:
             # Do not jump past the next undone owner merely because a later one is cheaper
             if used[lane] + entry["estimated_seconds"] > 2700 and any(
@@ -137,7 +161,7 @@ def plan_sample(sha, catalog, policy, previous=None, retail_assets=None, now=Non
         tests=selected,
         lanes=[lane for lane in sweep.LANES if used[lane]],
         estimated_seconds=sum(used.values()),
-        budget_seconds=max(2700, max(used.values())),
+        budget_seconds=max(2700, max(value for lane, value in used.items() if lane != "host" or host_workers == 1)),
     )
     identity = {key: plan[key] for key in ("target_sha", "catalog_hash", "tests")}
     if plan.get("retail_assets"):
@@ -147,6 +171,8 @@ def plan_sample(sha, catalog, policy, previous=None, retail_assets=None, now=Non
     plan["sampling"] = {
         "schema": SCHEMA,
         "core_ids": sorted(core_ids),
+        "host_workers": host_workers,
+        "host_shards": [[e["id"] for e in group] for group in host_groups if group],
         "cycle": state["cycle"],
         "order": "Get-RuntimeHashOrder SHA256(name), grouped interleave",
         "pending_order": pending_order,
@@ -163,7 +189,17 @@ def plan_sample(sha, catalog, policy, previous=None, retail_assets=None, now=Non
 
 def reconcile_sample(plan, policy, previous, receipts, supplemental_result="", run_id="local"):
     # Reconcile against a FRESH exact-SHA coverage state, never traversal from another revision
-    coverage = sweep.reconcile(plan, policy, sweep.fresh_state(plan["target_sha"], plan["catalog_hash"]), receipts)
+    expected = {shard["batch_id"]: shard for shard in shard_plans(plan).values()}
+    normalized = []
+    for receipt in receipts:
+        if expected and receipt.get("lane") == "host":
+            shard = expected.get(receipt.get("batch_id"))
+            if shard is None:
+                raise ValueError("Unknown host shard receipt provenance")
+            sweep.reconcile(shard, policy, sweep.fresh_state(shard["target_sha"], shard["catalog_hash"]), [receipt])
+            receipt = dict(receipt, batch_id=plan["batch_id"])
+        normalized.append(receipt)
+    coverage = sweep.reconcile(plan, policy, sweep.fresh_state(plan["target_sha"], plan["catalog_hash"]), normalized)
     entries = sweep.policy_entries(policy)
     state = reconcile_catalog(previous, list(entries.values()) + list(SUPPLEMENTAL.values()))
     core = set(plan["sampling"]["core_ids"])
@@ -272,10 +308,22 @@ def publish(plan, policy, receipts, supplemental_result):
     raise RuntimeError("Traversal publication conflict")
 
 
+def shard_plans(plan):
+    shards = {}
+    for index, ids in enumerate(plan["sampling"].get("host_shards", [])):
+        shard = dict(
+            plan, tests=[e for e in plan["tests"] if e["id"] in ids], lanes=["host"], exclusions=[], unavailable=[]
+        )
+        shard["sampling"] = dict(plan["sampling"], host_shards=[], host_workers=1, pending_order={})
+        shard = phase_plan(shard, "all")
+        shards[f"shard-{index:03d}"] = shard
+    return shards
+
+
 def phase_plan(plan, phase):
     result = dict(plan)
     core = set(plan["sampling"]["core_ids"])
-    result["tests"] = [e for e in plan["tests"] if (e["id"] in core) == (phase == "core")]
+    result["tests"] = [e for e in plan["tests"] if phase == "all" or (e["id"] in core) == (phase == "core")]
     result["sample_phase"] = phase == "sample"
     result["estimated_seconds"] = sum(e["estimated_seconds"] for e in result["tests"])
     identity = {key: result[key] for key in ("target_sha", "catalog_hash", "tests")}
@@ -309,7 +357,13 @@ def main():
         sha = os.environ["NIGHTLY_TARGET_SHA"]
         candidate.verify(sha)
         _, previous = read_remote()
-        plan, state = plan_sample(sha, sweep.read("plan/catalog.json"), policy, previous, retail.configured_identity())
+        plan, state = plan_sample(
+            sha, sweep.read("plan/catalog.json"), policy, previous, retail.configured_identity(), host_workers=16
+        )
+        shards = shard_plans(plan)
+        for name, shard in shards.items():
+            sweep.validate_plan(shard, policy)
+            write_artifact("plan/" + name + ".json", shard)
         write_artifact(args.plan, plan)
         write_artifact("plan/traversal.json", state)
         with open(os.environ["GITHUB_OUTPUT"], "a") as output:
@@ -317,7 +371,11 @@ def main():
                 "target_sha": sha,
                 "lanes": plan["lanes"],
                 "android_lanes": [lane for lane in plan["lanes"] if lane != "host"],
-                "host_matrix": [{"shard": "", "lane": "host", "retail": retail.lane_requires_retail(plan, "host")}],
+                "host_matrix": [
+                    {"shard": name, "lane": "host", "retail": retail.lane_requires_retail(shard, "host")}
+                    for name, shard in shards.items()
+                ]
+                or [{"shard": "", "lane": "host", "retail": retail.lane_requires_retail(plan, "host")}],
                 "android_matrix": [
                     {"shard": "", "lane": lane, "retail": retail.lane_requires_retail(plan, lane)}
                     for lane in plan["lanes"]

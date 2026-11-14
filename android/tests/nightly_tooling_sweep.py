@@ -405,8 +405,13 @@ def validate_plan(plan, policy):
         )
     ):
         raise ValueError("Invalid per-lane budget")
+    workers = plan.get("sampling", {}).get("host_workers", 1)
+    if type(workers) is not int or not 1 <= workers <= 16:
+        raise ValueError("Invalid host worker count")
     if any(
-        sum(e["estimated_seconds"] for e in selected if e["lane"] == lane) > plan["budget_seconds"] for lane in LANES
+        sum(e["estimated_seconds"] for e in selected if e["lane"] == lane)
+        > plan["budget_seconds"] * (workers if lane == "host" else 1)
+        for lane in LANES
     ):
         raise ValueError("Plan exceeds lane budget")
     identity = {key: plan[key] for key in ("target_sha", "catalog_hash", "tests")}

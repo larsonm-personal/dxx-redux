@@ -94,27 +94,53 @@ is not exhaustive child-case coverage: only actual current-SHA receipts and thei
 coverage_complete fields describe this run's coverage. Historical failures are
 labelled separately. A passing sample does not certify unselected work.
 
-A dry run on the current catalog with reviewed XL assets admits 2,762 owners,
-selects 32 (five core plus 27 sampled), and selects Pumo staging. Estimates are
-2,670/600/2,400/2,700 seconds for host/JVM/single/dual lanes: 2.33 runner-hours
-plus the supplemental estimate. There are 377 unavailable owners and 235 explicit
-catalog/policy exclusions. The plan serializes to 247 KB and the report parses it
-under the unchanged 8 MiB limit. These are planning measurements, not executions.
+A configured-assets dry run admits 2,762 owners: 2,596 host, one JVM, 149
+Android-single and 16 Android-dual. Their estimates are respectively 873,060,
+600, 71,130 and 14,760 seconds (266.54 runner-hours total). Generated corpus
+entries account for 2,406 host owners and 846,540 seconds; aggregate owners can
+contain many leaf tests, so owner counts are not leaf coverage percentages.
 
-There is one host lane and at most three Android/JVM lanes, plus at most one
-supplemental job. The usual planned execution allowance is 45 minutes per lane,
-including core. To avoid starving a single 45-minute owner behind repeated core,
-the first sampled owner may exceed that estimate; the real deadline still wins.
+The sampler configures up to 16 parallel host shards, three Android/JVM workers
+and one supplemental (20 workers maximum). Public/private host owners use separate
+shards; the same deterministic prefix is partitioned without duplicating owners.
+A missing receipt from an early shard remains the next undone owner even when
+later shards finish. Each receipt is validated against its exact shard before
+aggregation. Quick host core runs once in its shard before that shard's sample;
+other host shards can sample concurrently.
+
+The current dry run selects 229 owners: 220 host (88 corpus), one JVM, six
+Android-single and two Android-dual. Estimates are 41,370/600/2,400/2,700 seconds,
+or 13.075 runner-hours plus supplemental staging. There are 377 unavailable owners
+and 235 explicit catalog/policy exclusions. These are estimates, not measured
+execution or leaf coverage. The earlier 15.16-hour host lower bound was
+242.52 host runner-hours divided by 16 workers; a one-hour sampler retains that
+parallel capacity rather than additionally reducing it to one host worker.
+
+Host shards each select at most 45 estimated test minutes, including core. Other
+lanes normally have the same allowance; their first sampled owner can exceed the
+estimate behind repeated core to avoid starvation, but the real deadline wins.
 Execution stops 48 minutes after planning, reserving two minutes for receipts;
-setup consumes this same allowance. Test jobs have a 55-minute ceiling and
-supplementals 45 minutes. Planning, final reporting and publication add overhead;
-GitHub queue delays can exceed the approximately one-hour elapsed target.
-Job timeouts start when a runner starts the job, so late queued provisioning can
-also extend elapsed time despite the absolute test-execution cutoff. This
-is a proposed bound, not a measured runtime guarantee. Four test lanes consume
-at most 3 hours 40 minutes of job allocation plus 45 minutes for a supplemental
-and small controller overhead; actual use should be lower. No full run was
-performed to validate these estimates.
+setup consumes that same allowance. Test jobs have 55-minute ceilings and the
+supplemental 45 minutes. Planning/reporting/publication and GitHub queues add
+overhead. Job timeouts start when runners start jobs, so late queued provisioning
+can extend elapsed duration despite the absolute test-execution cutoff.
+
+Effective 16-host concurrency is unverified. The connected account reports no
+plan; the runner API denies access, and no spending limit is visible. GitHub's
+[standard concurrency limits](https://docs.github.com/en/actions/reference/limits)
+are 20 on Free and 40 on Pro, shared with other workflows. Recent November 11-13
+nightlies used three/four test workers; host jobs lasted 8m21s, 21m11s and 39m57s,
+Android single 20m56s-23m20s, dual 18m31s-27m39s, JVM about 4m26s. Those different
+samples do not establish runtime or capacity for this design. No trial run was
+launched. Full job ceilings permit 18h10m of worker allocation plus controllers;
+the planned test estimate is lower, and neither is an actual billing measurement.
+
+Core completeness is explicit producer evidence, never inferred from exit zero.
+Fixed core assertion suites emit a completion marker after all required assertions;
+Gradle inspects each required XML report and marks skipped tests incomplete. The
+master observation carries those cases into the collector and strict report.
+Missing, skipped or unattempted evidence fails closed. Older candidate code without
+these producers cannot claim complete core coverage.
 
 Overlap uses one active workflow and GitHub's single pending slot, with
 cancel-in-progress false. An unstarted successor can be superseded; running work

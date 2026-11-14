@@ -18,7 +18,10 @@ $gradleScript = Resolve-RegressionGradleWrapper -AndroidDir $androidDir
 # retaining incremental compilation. A successful NO-SOURCE task is not evidence
 & $gradleScript -p $androidDir :app:cleanTestDebugUnitTest :mission-metadata-core:cleanTest :proxy-tests:cleanTest :app:testAuthenticationConfig :app:testDebugUnitTest :mission-metadata-core:test :proxy-tests:test --console=plain --no-daemon --no-build-cache
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-foreach ($relativePath in @('app/build/test-results/testDebugUnitTest', 'mission-metadata-core/build/test-results/test', 'proxy-tests/build/test-results/test')) {
-    Assert-GradleUnitTestEvidence -ResultsDirectory (Join-Path $androidDir $relativePath)
-}
+$completionCases = @(foreach ($relativePath in @('app/build/test-results/testDebugUnitTest', 'mission-metadata-core/build/test-results/test', 'proxy-tests/build/test-results/test')) {
+        $evidence = Assert-GradleUnitTestEvidence -ResultsDirectory (Join-Path $androidDir $relativePath) -PassThru
+        @{ id = $relativePath; status = if ($evidence.Skipped -eq 0) { "PASS" } else { "SKIP" } }
+    })
+. "$PSScriptRoot/../helpers/test_execution_evidence.ps1"
+Write-TestCompletionEvidence -Name "test_gradle_unit_tests" -Cases $completionCases
 exit 0

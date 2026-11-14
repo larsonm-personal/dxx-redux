@@ -340,7 +340,7 @@ jobs:
     name: ${{ matrix.shard != '' && format('Linux tests {0}', matrix.shard) || 'Linux tests' }}
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 16
       matrix:
         include: ${{ fromJSON(needs.plan.outputs.host_matrix) }}
     needs: [plan, execution-stack]

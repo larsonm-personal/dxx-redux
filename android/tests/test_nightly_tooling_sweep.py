@@ -2663,6 +2663,117 @@ class SamplingNightlyTests(unittest.TestCase):
         self.assertIn("PUMO_STAGE_RESULT: ${{ needs.pumo_stage.outputs.execution_result }}", workflow)
         self.assertIn("RELEASE_COMPILE_RESULT: ${{ needs.nightly_release.outputs.execution_result }}", workflow)
 
+    def test_parallel_receipts_preserve_next_undone_and_shard_provenance(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids=set(), host_workers=3)
+        shards = list(sample.shard_plans(plan).values())
+        self.assertEqual(len(shards), 3)
+        receipts = [self.receipt(shard) for shard in reversed(shards[1:])]
+        updated, _ = sample.reconcile_sample(plan, policy, state, receipts)
+        missing = shards[0]["tests"][0]["id"]
+        self.assertNotIn(missing, updated["done"])
+        next_plan, _ = sample.plan_sample("b" * 40, catalog, policy, updated, core_ids=set(), host_workers=3)
+        self.assertEqual(next_plan["sampling"]["pending_order"]["host"][0], missing)
+        forged = self.receipt(shards[0])
+        forged["results"][0]["id"] = shards[1]["tests"][0]["id"]
+        with self.assertRaises(ValueError):
+            sample.reconcile_sample(plan, policy, state, [forged])
+
+    def test_parallel_real_catalog_separates_public_and_private_and_bounds_artifacts(self):
+        import nightly_sample as sample
+        import nightly_retail as retail
+
+        policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
+        catalog = {
+            "schema": 1,
+            "tests": [{"name": e["args"]["suite"]} for e in policy["suites"] if e["owner"] == "master"],
+        }
+        assets = {
+            "repository": retail.ASSET_REPOSITORY,
+            "commit": "8c9988a96a7e306f8aac04c85e2610492917b7ac",
+            "manifest_sha256": retail.baseline_identity(Path(__file__).resolve().parents[2], include_missions=True),
+        }
+        plan, _ = sample.plan_sample(SHA, catalog, policy, retail_assets=assets, host_workers=16)
+        shards = sample.shard_plans(plan)
+        self.assertEqual(len(shards), 16)
+        ids = [e["id"] for shard in shards.values() for e in shard["tests"]]
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertEqual(set(ids), {e["id"] for e in plan["tests"] if e["lane"] == "host"})
+        for shard in shards.values():
+            sweep.validate_plan(shard, policy)
+            self.assertLessEqual(shard["estimated_seconds"], 2700)
+            self.assertEqual(len({retail.lane_requires_retail({"tests": [e]}, "host") for e in shard["tests"]}), 1)
+            self.assertLess(len(json.dumps(shard)), 100000)
+        self.assertLess(len(json.dumps(plan)), 8 * 1024 * 1024)
+
+    def test_real_powershell_producer_to_collect_reconcile_and_report(self):
+        import nightly_sample as sample
+        import shutil
+
+        if not shutil.which("pwsh"):
+            self.skipTest("PowerShell unavailable for producer integration")
+        policy, catalog = self.fixture()
+        policy["suites"] = [
+            dict(
+                policy["suites"][0],
+                id="master:test_download_verification",
+                args={"suite": "test_download_verification"},
+            )
+        ]
+        catalog["tests"] = [{"name": "test_download_verification"}]
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids={"master:test_download_verification"})
+        helper = Path(__file__).resolve().parents[1] / "helpers/test_execution_evidence.ps1"
+        owner = Path(__file__).resolve().with_name("test_download_verification.ps1")
+        for leaf_status in ("PASS", "SKIP", "NOT_RUN", "MISSING"):
+            with self.subTest(leaf_status=leaf_status), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                script = root / "produce.ps1"
+                script.write_text("""param($Helper, $Owner, $Root, $Sha, $LeafStatus)
+. $Helper
+$log = Join-Path $Root 'owner.log'
+if ($LeafStatus -eq 'MISSING') { 'ordinary zero-exit output' | Set-Content $log }
+else { Write-TestCompletionEvidence -Name 'test_download_verification' -Cases @(@{id='required-assertions';status=$LeafStatus}) | Set-Content $log }
+$context = @{ RepositoryRoot = (Split-Path $Owner); Commit=$Sha; Runtime='fixture'; RunId='fixture'; Dirty=$false; ReportPath='fixture' }
+$test = @{ Name='test_download_verification'; Type='ps1'; Requires='host'; Path=$Owner; Arguments=@() }
+$result = @{ Status='PASS'; ExitCode=0; AttemptedTests=$true; LogFile=$log; Elapsed='00:01' }
+New-TestExecutionObservation -Context $context -Test $test -Result $result -StartedUtc '2026-11-14T00:00:00Z' -SourceSha256 ('a'*64) | ConvertTo-Json -Depth 12 -Compress
+""")
+                observation = subprocess.check_output(
+                    ["pwsh", "-NoProfile", "-File", str(script), str(helper), str(owner), str(root), SHA, leaf_status],
+                    text=True,
+                )
+                (root / "journal.jsonl").write_text(observation)
+                sweep.write(
+                    root / "attempt.json",
+                    {
+                        **sweep.attempt_identity(plan, "host"),
+                        "processes": {"master": {"completed": True, "exit_code": 0}},
+                    },
+                )
+                receipt = sweep.collect(plan, policy, "host", root)
+                _, coverage = sample.reconcile_sample(plan, policy, state, [receipt])
+                self.assertEqual(
+                    coverage["records"].get("master:test_download_verification", {}).get("coverage_complete", False),
+                    leaf_status == "PASS",
+                )
+
+                def read(path):
+                    if str(path).endswith("nightly_tooling_policy.json"):
+                        return policy
+                    return {"plan/plan.json": plan, "plan/traversal.json": state, "receipt.json": receipt}[str(path)]
+
+                with (
+                    patch.object(sys, "argv", ["nightly_sample.py", "report"]),
+                    patch.object(sweep, "read", side_effect=read),
+                    patch.object(Path, "glob", return_value=[Path("receipt.json")]),
+                    patch.object(sample, "write_artifact"),
+                    patch("builtins.print"),
+                    patch.dict(os.environ, {"RELEASE_COMPILE_RESULT": "success"}),
+                ):
+                    self.assertEqual(sample.main(), 0 if leaf_status == "PASS" else 1)
+
     def test_real_generated_corpus_receipt_advances_across_sha_changes(self):
         import nightly_sample as sample
         import nightly_retail as retail
