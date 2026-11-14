@@ -31,7 +31,8 @@ void mod_identity_save()
 	std::memset(&Segments[0], 0, sizeof(Segments[0]));
 	Highest_object_index = -1;
 	Num_walls = 0;
-	mod_save_capture_definitions();
+	// Mission loading captures definitions and extra HAM sources through the real hooks
+	// Recapturing here would erase the extension identities before writing the save
 	mod_save_capture_level("pmlev1.rl2");
 	rewind_file file;
 	rewind_file_init_physfs(&file, PHYSFS_openWrite("xl-source-identity.sg0"));

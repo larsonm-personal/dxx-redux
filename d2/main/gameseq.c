@@ -146,6 +146,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_route_metadata.h"
 #include "merged_wall_debug.h"
 #endif
+#ifdef DXX_XL_CHECKPOINT_EXPORT
+#include "mod_save_compat.h"
+#endif
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
@@ -1100,8 +1103,10 @@ void LoadLevel(int level_num,int page_in_textures)
 	if (!xl_classic_lighting_prepare(level_name))
 		Error("Cannot prepare experimental XL lighting: %s", xl_level_rejection());
 #endif
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_XL_CHECKPOINT_EXPORT)
 	mod_save_capture_level(level_name);
+#endif
+#ifdef __ANDROID__
 	secret_area_prepare_current_level();
 	if (escort_route_metadata_request_allowed(
 	        (Game_mode & GM_MULTI) != 0,

@@ -410,7 +410,10 @@ static int mod_data_test(int argc, char **argv)
 		std::cout << "Malformed HAM/HXM/VHAM/OOF/skin rejection, stock isolation and valid recovery passed\n";
 		require(load_base_mission("pmines", error, sizeof(error)), error);
 		mod_identity_save();
-		require(mod_identity_restore(), mod_save_reason());
+		{
+			const bool restored = mod_identity_restore();
+			require(restored, mod_save_reason());
+		}
 		{
 			const auto path = root / "mods/pmines/models/emberbody.tga";
 			std::ifstream input(path, std::ios::binary);
@@ -436,7 +439,10 @@ static int mod_data_test(int argc, char **argv)
 		}
 		require(load_base_mission("pmines", error, sizeof(error)), error);
 		require(xl_resource_mod_sources() == original_sources, "Restored mission did not recover original save identity");
-		require(mod_identity_restore(), mod_save_reason());
+		{
+			const bool restored = mod_identity_restore();
+			require(restored, mod_save_reason());
+		}
 		std::cout << "XL save admission accepts unchanged assets, rejects changed skin, and recovers original identity\n";
 		{
 			const auto path = root / "mods/pmines/models/model17.ase";

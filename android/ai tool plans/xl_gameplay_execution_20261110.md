@@ -5277,3 +5277,76 @@ The local owner passes in 5.064 seconds; job rerun attempt 2 passes without sour
 assertion or timeout changes. Logs and pr489-private-results are retained.
 PR 488 applicable public checks are now terminal PASS. Sampled readiness remains
 separately FAIL 4/8, not catalog-wide gameplay acceptance.
+
+### Source-bound developer checkpoints and Android trace qualification (2026-11-13)
+
+The existing developer checkpoint exporter now receives the native definition,
+extra-HAM and level capture hooks, including custom XL HAM/VHAM publication, and
+finishes the real mod-source trailer before a quick recording embeds its save.
+Ordinary desktop save format and production Android timeline admission stay
+unchanged. The shared D1/D2 replay temporary file respects SysUsePlayersDir;
+the Android Players-path assertion remains enabled and no longer fires.
+
+Android ignores d2x.ini by design. Explicit XL developer probes now choose adjacent
+state/RNG trace paths unless explicit paths were supplied. The water owner requires
+both traces and uses a fresh timestamped evidence directory for each attempt.
+Two unoptimized attempts timed out at the unchanged 120-second limit; the first
+retains 798 frame observations. Optimizing only four trace units still timed out.
+Temporary timing showed snapshot construction/retirement and serialization dominate;
+comparison costs less than one millisecond per frame. Those experiments and timing
+logs are retained, and their code is removed. Explicit Android developer probes use
+-O1 Debug with assertions and strict FP retained. Ordinary builds are unchanged.
+
+Windows and Linux water and message owners pass. Ordinary Windows cold playback
+exits normally in 61.8 seconds with exact terminal equality and all 1,235 object
+frames, 1,239 world records, 196 SIM and 1,808 FX events matching live capture.
+Receipts: water-checkpoint-traces-{windows,linux}, messages-checkpoint-sources-*,
+replay-checkpoint-sources-water-clean under temp/xl-resource-tranche-20261113.
+Ordinary Windows executable SHA-256:
+052c4a492ca4206374452709691f1ce25bcac18efbdd8c0fed638727856c85b0.
+Capture SHA-256:
+6f98bf1f50bf0c6549b2bb4feb22bfee744712c27cba4a66e7749cbd09db1584.
+
+Android x86_64 optimized Debug probe SHA-256 (also verified on device):
+4135c4e15c1236aa6fb945f91eedae67db6428607477e64426ee119ca92cc1c2.
+Checkpoint restore 14:03:44 to terminal match 14:04:37 takes approximately 53 seconds.
+The owner passes and restores the protected profile exactly (both SHA-256 manifests
+762f6f62af24134580d9c530da161d9276ea426fa3fca40ad44549d21e621f21).
+Detailed comparison is still FAIL: objects 1,235/1,235 and SIM RNG 196/196 pass,
+but escort persistent_message is 1 instead of 0, and route automap/object/event
+notification generations differ. FX includes 1,500 additional generate_starfield
+draws at startup before checkpoint RNG restoration; subsequent execution resumes
+from the expected state. No fields or events are discarded to make the comparator
+pass. Evidence: temp/xl-water-android-20261113-140328 and
+android-water-checkpoint-comparison. This remains a developer probe, not general
+Android timeline acceptance. The water-physics assist remains explicitly required.
+
+Additional original Pumo controls exposed a late save-identity failure: custom
+HAM/VHAM capture hooks were still Android-only, and the synthetic save helper
+recaptured definitions, clearing real extension identities. The export path now
+uses the same hooks and the synthetic helper retains them; positive restore checks
+fetch the rejection reason after the operation so argument evaluation cannot hide
+it. The failed 58.875-second receipt remains pumo-checkpoint-sources-windows.log;
+final Windows rerun passes in 63.344 seconds (-02), and the Linux owner passes.
+The final ordinary APK builds all three packaged ABIs with developer probes OFF,
+is installed and hash verified, and passes the existing water runtime owner 59/59
+in 31.755 seconds. APK SHA-256:
+14a90de2652a0eccedb352c07e4d42d3c602c50bc61a2c77c62c8c9cd6d42acd.
+Final scoped formatting and catalog checks pass (428 top-level, 547 support).
+Latest metadata binaries:
+Windows 830a0d25cb9ec4284bd912ef2e5f5ce141a94c9d7fecb60d92a27d79c00f07f6;
+Linux 90e9208db0adf8159fe7405ce912384696edd8213b8ee01c93bfeb42626fe428.
+WSL twice returned E_UNEXPECTED before compilation; preserved failed logs and
+restarted only Ubuntu under the user's existing recovery authorization.
+
+PR 490's serial water rerun and ordinary cold playback subsequently passed:
+1,235 object frames, 1,239 world records, 196 SIM and 1,808 FX events, exact terminal
+result and normal exit. Its private run 43510717383 passes exact head
+cf1c165dd71ea10c2a09025d853c86b88ae3193b in 1179.452 seconds, with the unchanged
+controller and pinned asset commit/manifest, 113 required owners, 16 witnesses,
+three modern levels and four assisted anchors. Camera remains not_run_missing_addon.
+Public native save integrity reports its individual admission tests passing but the
+combined step reaches the four-minute deadline; its failed log/artifacts are retained
+and retry awaits the workflow finishing. PR 489 applicable public checks are terminal
+PASS. Sampled readiness remains FAIL 4/8 independently of private required-owner passes.
+Full G2 atomicity, actual native bank replacement and GPU/world publication remain OPEN.

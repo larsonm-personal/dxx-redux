@@ -314,7 +314,7 @@ static void bm_read_all_internal(PHYSFS_file *fp, int apply_global_patch)
 	const bm_ham_destination destination = bm_live_ham_destination();
 	bm_read_ham_data(fp, Piggy_hamfile_version, &destination, bm_read_live_model);
 	if (apply_global_patch) dxa_metadata_patch_apply_d2_ham();
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_XL_CHECKPOINT_EXPORT)
 	extern void mod_save_capture_definitions(void);
 	mod_save_capture_definitions();
 #endif
@@ -739,6 +739,8 @@ static int bm_read_extra_robots_internal(const char *fname, int type, int xl_sta
 
 #ifdef __ANDROID__
 	android_sound_trace_asset_open("extra_ham", fname);
+#endif
+#if defined(__ANDROID__) || defined(DXX_XL_CHECKPOINT_EXPORT)
 	extern void mod_save_capture_extra_ham(const char *filename);
 	mod_save_capture_extra_ham(fname);
 #endif
