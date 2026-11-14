@@ -2599,6 +2599,56 @@ class SweepTests(unittest.TestCase):
 
 
 class CompleteNightlyTests(unittest.TestCase):
+    def test_complete_artifacts_round_trip_without_repeating_global_accounting(self):
+        import nightly_complete as complete
+
+        policy = {
+            "schema": 1,
+            "suites": [
+                {
+                    "id": f"master:owner_{index}",
+                    "owner": "master",
+                    "lane": "android-single",
+                    "args": {"suite": f"owner_{index}"},
+                    "estimated_seconds": 2700,
+                }
+                for index in range(198)
+            ],
+            "exclusions": [{"id": f"manual_{index}", "reason": "physical hardware " * 30} for index in range(235)],
+        }
+        policy["suites"].append(
+            {
+                "id": "master:unavailable",
+                "owner": "master",
+                "lane": "host",
+                "args": {"suite": "unavailable"},
+                "estimated_seconds": 1,
+                "unavailable_reason": "fixture unavailable",
+            }
+        )
+        catalog = {"schema": 1, "tests": [{"name": e["args"]["suite"]} for e in policy["suites"]]}
+        manifest = complete.plan_all(SHA, catalog, policy)
+        self.assertEqual(len(manifest["batches"]), 198)
+        self.assertEqual(manifest["exclusions"], policy["exclusions"])
+        self.assertEqual([r["id"] for r in manifest["unavailable"]], ["master:unavailable"])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            complete.write_artifact(root / "complete.json", manifest)
+            self.assertLess((root / "complete.json").stat().st_size, 1024 * 1024)
+            for index, plan in enumerate(manifest["batches"]):
+                self.assertEqual(plan["exclusions"], [])
+                self.assertEqual(plan["unavailable"], [])
+                path = root / f"shard-{index:03d}.json"
+                complete.write_artifact(path, plan)
+                sweep.validate_plan(sweep.read(path), policy)
+            summary = complete.report(sweep.read(root / "complete.json"), policy, [])
+            self.assertEqual(summary["outcome"], "incomplete")
+            self.assertEqual(len(summary["selected_without_pass"]), 198)
+            self.assertEqual(summary["excluded"], manifest["exclusions"])
+            self.assertEqual(summary["unavailable_pending"], manifest["unavailable"])
+            with self.assertRaisesRegex(ValueError, "bounded size"):
+                complete.write_artifact(root / "oversized.json", {"value": "x" * (8 * 1024 * 1024)})
+
     def test_complete_partition_includes_opt_ins_and_receipts_are_required(self):
         import nightly_complete as complete
 

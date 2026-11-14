@@ -36,6 +36,9 @@ def plan_all(sha, catalog, policy, retail_assets=None):
                 full,
                 budget_seconds=budget,
                 tests=bucket,
+                # Global accounting belongs only in the manifest, not every shard
+                exclusions=[],
+                unavailable=[],
                 lanes=[key[0]],
                 estimated_seconds=sum(e["estimated_seconds"] for e in bucket),
             )
@@ -105,6 +108,12 @@ def report(manifest, policy, receipts):
     }
 
 
+def write_artifact(path, value):
+    sweep.write(path, value)
+    # Fail planning before upload if a producer exceeds the consumer's read bound
+    sweep.read(path)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("plan", "report"))
@@ -114,11 +123,11 @@ def main():
         sha = os.environ["NIGHTLY_TARGET_SHA"]
         candidate.verify(sha)
         manifest = plan_all(sha, sweep.read("plan/catalog.json"), policy, retail.configured_identity())
-        sweep.write("plan/complete.json", manifest)
+        write_artifact("plan/complete.json", manifest)
         rows = []
         for index, plan in enumerate(manifest["batches"]):
             shard = f"shard-{index:03d}"
-            sweep.write(f"plan/{shard}.json", plan)
+            write_artifact(f"plan/{shard}.json", plan)
             rows.append({"shard": shard, "lane": plan["lanes"][0], "retail": bool(plan.get("retail_assets"))})
         with open(os.environ["GITHUB_OUTPUT"], "a") as output:
             values = {
@@ -148,7 +157,7 @@ def main():
     }
     if any(value != "success" for value in summary["supplemental_jobs"].values()):
         summary["outcome"] = "incomplete"
-    sweep.write("summary.json", summary)
+    write_artifact("summary.json", summary)
     print(json.dumps(summary, indent=2))
     return int(summary["outcome"] == "incomplete")
 
