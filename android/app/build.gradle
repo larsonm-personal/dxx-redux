@@ -624,3 +624,5 @@ dependencies {
     testImplementation "junit:junit:${toolVersions['JUNIT_VERSION']}"
     testImplementation "org.json:json:${toolVersions['ORG_JSON_VERSION']}"
 }
+
+apply from: rootProject.file('XL_compat/android/developer.gradle')

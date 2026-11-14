@@ -1,0 +1,5 @@
+// Explicit qualification builds use the existing XL developer probes
+// Release artifacts always retain ordinary backend admission gates
+def xlDeveloperTests = (project.findProperty('xlDeveloperTests') ?: 'false').toBoolean()
+android.buildTypes.debug.externalNativeBuild.cmake.arguments "-DDXX_XL_DEVELOPER_TESTS=${xlDeveloperTests ? 'ON' : 'OFF'}"
+android.buildTypes.release.externalNativeBuild.cmake.arguments '-DDXX_XL_DEVELOPER_TESTS=OFF'
