@@ -5562,3 +5562,43 @@ and unchanged 120-frame criterion. The first receipt's trailing-CR SHA metadata
 defect is retained separately. Android final run IDs are
 ff652cf7dc1f4279bd2c1ad1881ecc99 (145/145) and
 5dc4f8bec53646b29fe1d8f11593b122 (64/64); before/after profiles match.
+
+## November 14, second explicit 12-hour tranche: transition cue ownership
+
+The user explicitly invoked a new tranche at 10:54:45 PST, ending 22:54:45 PST.
+Final four hours start 18:54:45 PST. No repeated reset wait, agents or hourly watch.
+Refreshed parent 497 at 32bb1f436e6164c17988bd2ecbe737d534626e13 and frozen assets
+9dad21bd65ba05665ac6fe315f37fe7461e85725. A fresh ordinary CI-target build reproduces
+all four failures and 4/8 readiness; all four successes report XL inactive.
+Private engine diagnostics and both pre-rebuild/fresh receipts are retained in
+temp/xl-readiness-tranche2-20261114. The sampled criterion remains 120 unassisted
+simulation frames at 60 Hz, separate from the runner's assisted navigation checks.
+
+Private parent code run 43627821931 attempt 1 passed Linux qualification but its
+final publication correctly rejected stale candidate 37276daa after the PR head
+advanced. The documentation tip has no checks/potential merge at this refresh.
+This is not current qualification; the exact-head safeguard remains intact.
+
+Transition-cue absence is now represented by unavailable output indices, with
+separate diagnostics. Native decoding, origin checks and malformed rejection stay
+strict. Required action sounds remain required. Existing pinned-source tests pass
+for playback failure; source slowmotion.cpp SHA256 remains
+577260e0a2119e87e0ba7232553facd12efebafee962c737152bdd8b74f88fab.
+The existing audio owner now compares retained present/absent native PCM resources,
+420-frame controlled clock/energy/control/event trajectories, actual callback
+output, save restoration and native world/object/pool/SIM observations. This is
+component evidence, not a campaign capture or an ordinary-readiness substitute.
+
+Full Linux optimized Debug/assertions audio owner passed in 74 seconds, Windows
+RelWithDebInfo in 108.516 seconds. The original derived xsound HOG stays at
+87faf44175cf565e857baee2edfafd10c7feed8b57cb4cda0258b85e3e9d44f9.
+Windows Debug compiled but its production owner again timed out at 45 seconds
+before the new transition control; assertions/checked iterators/deadlines remain.
+Linux developer binary SHA256:
+8228d2c991fd14a9eaf548822dcfa4b1219fa86fa0dfaf739c1b0adfb67a0cba.
+Windows release developer binary SHA256:
+7451d565eec6ca181791d6cab7a2bf383a832fa4ba80065a7f2443b52421e715.
+New ordinary-head measurement, Android and capture/clean-playback qualification
+remain due. Estimate: three tranches including this one, range two to four, low
+confidence. Full G2 energy 91->100, startup FX mismatch and camera prerequisite
+remain open. See xl_readiness_tranche2_20261114.md for constraints and next steps.
