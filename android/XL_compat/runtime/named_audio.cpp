@@ -69,7 +69,7 @@ struct AudioResources {
 	std::map<int, Action> actions;
 	std::map<std::string, unsigned> external;
 	std::set<unsigned> unavailable;
-	std::set<unsigned> unavailable_ambient, unavailable_transition;
+	std::set<unsigned> unavailable_ambient, unavailable_transition, unavailable_action;
 	unsigned prepared_rate = 0;
 	std::shared_ptr<const std::vector<AudioSample>> prepared_samples;
 };
@@ -161,7 +161,7 @@ std::vector<AudioSample> convert_bank(const AudioResources &resources, unsigned 
 	}
 	for (const auto &[key, action] : resources.actions) {
 		(void) key;
-		if (action.repetitions > 0 && duration(result.at(action.sample)) * action.repetitions > INT32_MAX)
+		if (!resources.unavailable.count(action.sample) && action.repetitions > 0 && duration(result.at(action.sample)) * action.repetitions > INT32_MAX)
 			throw std::runtime_error("Named-audio repetition cooldown exceeds the source clock range");
 	}
 	return result;
@@ -239,21 +239,32 @@ static std::shared_ptr<AudioResources> prepare_named_only(const char *level, con
 			action.sample = previous->second;
 			continue;
 		}
-		const auto resource = load_audio_resource(row->text, level, ordinal, target);
-		const auto &wav = resource.bytes;
+		const auto resource = find_audio_resource(row->text, level, ordinal, target);
+		if (!resource) {
+			action.sample = unsigned(resources->sources.size());
+			resources->external.emplace(filename, action.sample);
+			resources->unavailable.insert(action.sample);
+			resources->unavailable_action.insert(action.sample);
+			resources->sources.emplace_back();
+			resources->names.push_back(filename);
+			identity += ":" + filename + ":absent-action-output";
+			con_printf(CON_NORMAL, "XL named action output unavailable: %s; failed starts retain authored trigger timing and flags\n", filename.c_str());
+			continue;
+		}
+		const auto &wav = resource->bytes;
 		WaveChannels pcm;
 		try {
 			pcm = decode_wave_channels(reinterpret_cast<const std::uint8_t *>(wav.data()), wav.size());
 		} catch (const std::exception &error) {
-			throw std::runtime_error("Invalid XL named sound " + resource.path + ": " + error.what());
+			throw std::runtime_error("Invalid XL named sound " + resource->path + ": " + error.what());
 		}
 		bytes += pcm.samples.size() * sizeof(std::int16_t);
 		if (bytes > 128 * 1024 * 1024) throw std::runtime_error("Named-audio bank exceeds 128 MiB of source storage");
 		action.sample = unsigned(resources->sources.size());
 		resources->external.emplace(filename, action.sample);
 		resources->sources.push_back(std::move(pcm));
-		resources->names.push_back(resource.path);
-		identity += ":" + resource.path + ":" + picosha2::hash256_hex_string(wav);
+		resources->names.push_back(resource->path);
+		identity += ":" + resource->path + ":" + picosha2::hash256_hex_string(wav);
 	}
 	resources->identity = picosha2::hash256_hex_string(identity);
 	return resources;
@@ -630,7 +641,9 @@ extern "C" int xl_named_audio_action(trigger *action, int owner)
 	if (slot < 0) {
 		if (!GameArg.SndNoSound) {
 			++failed_starts;
-			failure = backend_ready ? "XL named-audio voice allocation failed" : "XL named-audio output is unavailable";
+			failure = bank->unavailable.count(authored.sample) ? "XL named action output is unavailable: " + bank->names.at(authored.sample)
+			          : backend_ready                          ? "XL named-audio voice allocation failed"
+			                                                   : "XL named-audio output is unavailable";
 		}
 		event.started = GameTime64;
 		return 1;
@@ -760,6 +773,8 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 			if (event.serial && !event_serials.insert(event.serial).second) throw std::runtime_error("Duplicate named-audio event serial");
 			event.rate = unsigned(integer(row[4], 0, 192000));
 			event.playing = row[5].get<bool>();
+			if (bank->unavailable.count(authored.sample) && (event.serial || event.rate || event.playing || event.cooldown != -1))
+				throw std::runtime_error("Unavailable named action has fabricated playback or duration");
 			if (elapsed < 0 && (event.cooldown != -1 || event.serial || event.rate || event.playing)) throw std::runtime_error("Unstarted named-audio action has live state");
 			if (event.playing && !event.serial) throw std::runtime_error("Playing named-audio action has no voice identity");
 			if (event.rate) {
@@ -874,9 +889,11 @@ nlohmann::json named_audio_diagnostics()
 	result["external_resources"] = nlohmann::json::object();
 	result["unavailable_ambient_output"] = nlohmann::json::array();
 	result["unavailable_transition_output"] = nlohmann::json::array();
+	result["unavailable_action_output"] = nlohmann::json::array();
 	if (bank) {
 		for (const auto index : bank->unavailable_ambient) result["unavailable_ambient_output"].push_back(bank->names.at(index));
 		for (const auto index : bank->unavailable_transition) result["unavailable_transition_output"].push_back(bank->names.at(index));
+		for (const auto index : bank->unavailable_action) result["unavailable_action_output"].push_back(bank->names.at(index));
 		for (const auto &[key, action] : bank->actions) {
 			(void) key;
 			named_files.insert(bank->names.at(action.sample));

@@ -4,6 +4,7 @@
 #include "level_text.h"
 #include "named_sound.h"
 #include "wave.h"
+#include "named_action_receipt.h"
 #include <algorithm>
 #include <array>
 #include <cctype>
@@ -323,6 +324,34 @@ void source_actions()
 	std::cout << "Named audio source: " << cases + 1 << " action/duration controls\n";
 }
 
+void missing_action_runtime(const char *path)
+{
+	using namespace reference;
+	std::ifstream input(path);
+	const auto cases = xl_named_action_receipt::read(input);
+	for (const auto &row : cases) {
+		reset();
+		const auto &v = row.values;
+		tTextIndex text{ 1, row.filename.c_str() };
+		gameData.soundData = { &text, 1 };
+		gameData.timeData.xGame = v[2];
+		CTrigger trigger;
+		trigger.time = { v[0], v[4] };
+		trigger.flags = (v[1] ? TF_DISABLED : 0) | (v[5] ? TF_PLAYING_SOUND : 0);
+		trigger.m_info.tOperated = v[3];
+		audio.result = -1;
+		// Operate initializes an enabled action's first timestamp before dispatch,
+		// then refreshes it only when the actual DoPlaySound accepts the attempt
+		if (!v[1] && trigger.m_info.tOperated < 0) trigger.m_info.tOperated = v[2];
+		const auto accepted = trigger.DoPlaySound(0);
+		if (accepted) trigger.m_info.tOperated = v[2];
+		require(accepted == v[6] && trigger.m_info.tOperated == v[7] && trigger.GetTime(1) == v[8] &&
+		            int(trigger.Flagged(TF_PLAYING_SOUND)) == v[9] && int(audio.calls.size()) == v[10],
+		        "Absent native action differs from source timing, playing flags or output attempts");
+	}
+	std::cout << "PASS: " << cases.size() << " absent native action attempts match actual source timing and playing state\n";
+}
+
 void source_resources()
 {
 	using namespace reference;
@@ -591,6 +620,10 @@ void ambient_audio_runtime_controls(const char *);
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--missing-action-runtime") {
+			missing_action_runtime(argv[2]);
+			return 0;
+		}
 		if (argc == 3 && std::string(argv[1]) == "--bank-original") {
 			classic_bank_original(argv[2]);
 			return 0;

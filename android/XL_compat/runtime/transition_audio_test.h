@@ -20,8 +20,10 @@ inline void run(const std::filesystem::path &root, int ordinal)
 		~Guard()
 		{
 			SDL_PauseAudio(1);
-			xl_named_audio_slow_motion_reset();
-			install_named_audio(std::move(bank));
+			if (bank) {
+				xl_named_audio_slow_motion_reset();
+				install_named_audio(std::move(bank));
+			}
 			std::error_code error;
 			std::filesystem::remove(slow, error);
 			std::filesystem::remove(fast, error);
@@ -123,6 +125,7 @@ inline void run(const std::filesystem::path &root, int ordinal)
 	xl_named_audio_slow_motion_reset();
 	install_named_audio(original_bank);
 	require(restore_named_audio(initial, true) && world() == before, "Transition control changed native world, objects or SIM RNG");
+	guard.bank.reset();
 	std::ofstream receipt(root / ("transition-audio-" + std::to_string(ordinal) + ".json"));
 	receipt << receipts.dump(2) << '\n';
 	require(bool(receipt), "Cannot preserve transition trajectory receipt");

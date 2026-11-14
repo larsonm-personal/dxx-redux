@@ -98,3 +98,41 @@ emitter allocation, effects RNG and bubble-audio behavior. Any later absence cha
 must implement and compare that consumer behavior. Time-equipment image presence
 also currently participates in the input-demo environment admission check, so it
 cannot be removed without retaining the logical requirement independently.
+
+PR 498 publishes the transition checkpoint at
+4f8b0d2ebc9bce7915b95a589f9869a409476d9c, immediate parent 497/32bb1f, linked to
+stack 471. Initial synthetic merge: 24f2387de69ea70802927cfc9ca44cb5ed26a7b1.
+Private run 43631438613 attempt 1 admits this exact head under controller 72fdd76;
+its measurement and Linux owners are running, not passed. Local committed ordinary
+binary 5f9cd28b4d9886391de55911ae4f532fc643e661058f78187b9b7962ee18abe8 again
+measures 4/8 (transition-readiness-01). New barriers are smoke for Boiling Point
+and slowmotion#0 for Warp Shock; Dinter/Sphere retain falling-rocks.wav/smokingfire.
+
+Next child branch xl_gameplay_20261114_31_action_audio implements source failure
+semantics for missing named-action output. It must retain the authored table/ID,
+resource index, trigger dispatch/timestamp and post-flags while leaving cooldown
+and playing state unchanged on failed output. Never invent a half-second PCM
+duration for an empty resource. Reject forged saved serial/rate/playing/duration
+before any empty-source arithmetic. Missing table/ID and malformed/foreign data
+still reject. Separate derived xactmiss fixtures omit WAV members without changing
+the pinned xsound HOG. Native wall/master/object/autoplay and disk-through-stock
+controls feed attempt receipts to the actual pinned DoPlaySound routine. Existing
+master/child deadlines and catalog membership stay unchanged. No readiness gain
+is claimed until the ordinary frozen cohort is measured again.
+
+Named-action checkpoint validation: Linux Debug/assertions full canonical owner
+passed in 95 seconds (action-debug-linux-04); Windows RelWithDebInfo passed in
+123.454 seconds (action-release-windows-03), within unchanged 150-second master
+and 15/45-second child limits. Both formats compare 36 failed native attempts
+against pinned DoPlaySound, plus real dispatch, flags, silence, forged-save
+rejection, scoped owner retention and disk-through-stock restoration. Earlier
+failed receipts remain: overlong derived mission title, obsolete scope expectation,
+and Windows true-as-integer fixture typing. The latter now constructs an explicit
+JSON boolean; rejection assertions remain strict. Windows Debug and ordinary
+readiness are still pending for this child; Android and capture/replay remain due.
+
+PR 498 private run 43631438613 attempt 1 completed successfully, including Linux
+asset owners and exact-head result publication. Its distinct sampled readiness
+status is FAILURE, 4/8. Public scripts, contracts, sample and LAN checks passed;
+public save/replay owners were still running at the 11:51 PST inspection. These
+checks qualify 4f8b0d2 only, not this uncommitted child.
