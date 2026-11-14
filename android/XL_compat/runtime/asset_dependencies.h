@@ -21,6 +21,8 @@ extern "C" {
 #include "wall.h"
 #include "digi.h"
 #include "args.h"
+#include "cntrlcen.h"
+#include "player.h"
 }
 namespace xl_assets
 {
@@ -53,6 +55,8 @@ struct ObjectDependencies {
 	const tmap_info *texture_info = TmapInfo;
 	const ubyte *sound_mappings = Sounds, *alternate_sounds = AltSounds;
 	int low_memory = GameArg.SysLowMem;
+	int player_model = Player_ship->model_num, reactor_count = Num_reactors;
+	const char (*model_names)[FILENAME_LEN] = Pof_names;
 	std::set<std::pair<int, bool>> robot_profiles;
 	std::set<int> robots, weapons, powerups, models, clips, bitmaps, sounds, textures, effects, wall_clips;
 	void sound(int id)

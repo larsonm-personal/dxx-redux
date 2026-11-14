@@ -39,6 +39,7 @@
 #include "prepared_ham.h"
 #include "retained_resource.h"
 #include "target_sources.h"
+#include "level_requirements.h"
 #include "mission_resource_scope.h"
 #ifdef __ANDROID__
 #include "../../app/src/main/cpp/shared/android_mission_assets.h"
@@ -70,6 +71,7 @@ namespace
 static_assert(MAX_SUBMODELS == 10, "Update the bounded XL model geometry capacity with native submodels");
 using File = std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)>;
 std::string startup_ham_name, startup_ham_hash, startup_origin, base_rejection;
+std::array<std::array<char, FILENAME_LEN>, MAX_POLYGON_MODELS> startup_model_names{};
 std::string vertigo_rejection, mod_rejection;
 const std::array<const char *, 2> sound_banks{ "descent2.s11", "descent2.s22" };
 std::array<std::string, 2> startup_sound_hashes;
@@ -188,12 +190,15 @@ struct MissionDefinitions {
 	std::array<bitmap_index, MAX_GAUGE_BMS> gauges{}, gauges_hires{};
 	int object_bitmap_count = N_ObjBitmaps;
 	int low_memory = GameArg.SysLowMem;
+	int player_model = Player_ship->model_num, reactor_count = Num_reactors;
+	std::array<std::array<char, FILENAME_LEN>, MAX_POLYGON_MODELS> model_names{};
 	std::vector<std::vector<ubyte>> payloads;
 	std::vector<int> custom_radii;
 	std::vector<int> base_radii;
 
 	MissionDefinitions() : payloads(models.size()), custom_radii(models.size()), base_radii(models.size())
 	{
+		for (int i = 0; i < MAX_POLYGON_MODELS; ++i) std::copy_n(Pof_names[i], FILENAME_LEN, model_names[i].begin());
 		std::copy_n(cockpit_bitmap, cockpits.size(), cockpits.begin());
 		std::copy_n(Gauges, gauges.size(), gauges.begin());
 		std::copy_n(Gauges_hires, gauges_hires.size(), gauges_hires.begin());
@@ -226,6 +231,9 @@ struct MissionDefinitions {
 	                                                                payloads(models.size()), custom_radii(models.size()), base_radii(models.size())
 	{
 		std::copy_n(target.Sounds, MAX_SOUNDS, sounds.begin());
+		player_model = target.only_player_ship->model_num;
+		reactor_count = *target.Num_reactors;
+		model_names = startup_model_names;
 		std::copy_n(target.cockpit_bitmap, cockpits.size(), cockpits.begin());
 		std::copy_n(target.Gauges, gauges.size(), gauges.begin());
 		std::copy_n(target.Gauges_hires, gauges_hires.size(), gauges_hires.begin());
@@ -241,6 +249,9 @@ struct MissionDefinitions {
 	}
 	void bind_dependencies(xl_assets::ObjectDependencies &graph) const
 	{
+		graph.player_model = player_model;
+		graph.reactor_count = reactor_count;
+		graph.model_names = reinterpret_cast<const char (*)[FILENAME_LEN]>(model_names.data());
 		graph.robot_data = robots.data();
 		graph.joint_data = joints.data();
 		graph.model_data = models.data();
@@ -499,6 +510,7 @@ extern "C" void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file
 	try {
 		startup_ham_hash = resource_hash(file, name);
 		startup_ham_name = name;
+		for (int i = 0; i < MAX_POLYGON_MODELS; ++i) std::copy_n(Pof_names[i], FILENAME_LEN, startup_model_names[i].begin());
 		auto corrected = startup_ham_name;
 		const char *origin = PHYSFSEXT_locateCorrectCase(corrected.data()) == 0 ? PHYSFS_getRealDir(corrected.c_str()) : nullptr;
 		startup_origin = origin ? origin : "";
@@ -1212,6 +1224,7 @@ std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_level(mission_
 	auto inventory = std::make_unique<xl_compat::Inventory>(xl_compat::inspect_level(*bytes));
 	auto result = prepare_mission(mission);
 	result->prepare_level_resources(filename, inventory.get(), ordinal, mission, &target);
+	xl_validate_incoming_requirements(*inventory, false, false, result->state->graph, mission, target);
 	result->state->level_bytes = std::move(*bytes);
 	result->state->level_inventory = std::move(inventory);
 	return result;
