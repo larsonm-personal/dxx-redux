@@ -14,6 +14,7 @@
 #include <chrono>
 #include <sstream>
 #include <vector>
+#include "picosha2.h"
 #include <nlohmann/json.hpp>
 #include "input_demo_replay.h"
 
@@ -2326,8 +2327,51 @@ static int expect_environment_recording(void)
 	return 0;
 }
 
+static int expect_sha_block_boundaries()
+{
+	// Independent Python hashlib vectors include both SHA padding boundaries
+	const struct {
+		size_t size;
+		const char *hash;
+	} vectors[] = {
+		{ 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+		{ 1, "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d" },
+		{ 55, "c3294c0750f7fb2a7788353368baea62d92bf01d71fddc8029d5f03ce113d2a3" },
+		{ 56, "1b1fe80aa5bf23d13f6cd148471e1db7641d71667a30fa5bbd98ccde4bd0efc7" },
+		{ 63, "eb2e5915240d5dfc8442864f6a3294d2e6b3add94bedc73d865f7a871c19bcd0" },
+		{ 64, "76adff1a4f9f7a3d415756d9947202d6fae79ff0a3f6520536b451c3dd8a3a20" },
+		{ 65, "1d74102369eb666cd20edc92b268e9ea603285105ce2591d7439d654686f80b5" },
+		{ 119, "b3a747d5ea9d5d52917c90a1277726e0d933935b1c6595f2cf1f1c28af189963" },
+		{ 120, "ce66228b7bccbac55e01bafde5945a244e512c132641683a0b9fe91a37937aee" },
+		{ 127, "cbadc867b8c1c650aa97c3fc46790026a016e5a080105d099834d62185c81779" },
+		{ 128, "947d64db3ddc9f6a37684a340471874de99d8c2f1d981e63691d8304c2356883" },
+		{ 129, "cf6bd8964b6b656cda402a9f403dca516e87f1c90d1f937c4a247c896a41ea3f" },
+		{ 1024, "6ae82e070667045042d923ab747d475adcd8f7bb8b1a3e984b414f7dc83b71b9" },
+	};
+	for (const auto &entry : vectors) {
+		std::vector<unsigned char> bytes(entry.size);
+		for (size_t i = 0; i < bytes.size(); ++i) bytes[i] = static_cast<unsigned char>((i * 71) ^ (i >> 7));
+		if (picosha2::hash256_hex_string(bytes) != entry.hash) return report_failure("SHA block boundary differs");
+		for (size_t chunk : { 1u, 7u, 55u, 64u, 65u, 127u }) {
+			picosha2::hash256_one_by_one hasher;
+			for (size_t i = 0; i < bytes.size();) {
+				const size_t count = (std::min) (chunk, bytes.size() - i);
+				hasher.process(bytes.data() + i, bytes.data() + i + count);
+				i += count;
+			}
+			hasher.finish();
+			if (picosha2::get_hash_hex_string(hasher) != entry.hash) return report_failure("Incremental SHA block boundary differs");
+		}
+	}
+	const std::string million(1000000, 'a');
+	if (picosha2::hash256_hex_string(million) != "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0")
+		return report_failure("SHA million-a vector differs");
+	return 0;
+}
+
 int main(void)
 {
+	if (expect_sha_block_boundaries()) return 1;
 	// Checkpoint hashing must retain the SHA contract across multiple bounded chunks
 	std::vector<unsigned char> checkpoint(INPUT_DEMO_CHECKPOINT_MAX_BYTES);
 	for (size_t i = 0; i < checkpoint.size(); ++i) checkpoint[i] = static_cast<unsigned char>(i);

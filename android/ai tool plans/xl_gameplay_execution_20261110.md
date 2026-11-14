@@ -5694,3 +5694,46 @@ Windows release passes; Windows Debug fails its unchanged 80-second child limit
 open. The first corona run's obsolete required-image assertion is preserved as
 a failed receipt. Full G2/corrupt-trailer energy 91-to-100 remains open. Current
 child ordinary readiness and CI are pending, not inferred from these controls.
+
+## 2026-11-14 tranche 2: bounded SHA transport checkpoint
+
+Immediate parent is PR 502 at 09837d0001cb5fd4d7c9cf91662fc651fcad7b71,
+merge 99744912679e8fc8e3c752f182ba7e66bb276f1d. Its private run
+43643975460 attempt 1 passes 113 required checks, 16 format witnesses and
+3 modern source levels (1080.839 s), controller
+72fdd76f5f8dc24a787b3a4858de1115ec091c19. Assisted navigation is separate:
+1 smoke and 4 anchors, 5623 ms; camera subchecks remain missing and coverage
+is incomplete. Exact ordinary/private readiness remains FAIL 4/8. Three HXM
+failures reference robot definitions beyond the frozen runtime's 66 entries;
+genuine Vertigo definitions are absent. Warp Shock still needs the camera
+addon or a fully evidenced fallback. There is no finite unconditional 8/8
+estimate with these fixed inputs. The prior three-tranche, range two-to-four,
+low-confidence estimate is conditional on resolving that prerequisite.
+
+Profiling the exact failed Windows Debug binary identified checked-iterator
+locking and per-byte buffer insertion in pinned PicoSHA2. The build now
+creates a separate header from the exact hash-verified original and changes
+only buffer transport: checked bulk insertion and bounded contiguous block
+pointers. SHA rounds, padding, length accounting, full-byte hashing and the
+block assertion remain unchanged. No Debug assertions, global checked
+iterators, owner deadlines, assets or admission checks were disabled.
+
+The final Windows Debug effect/Pumo owner passes 14.281 s; full canonical
+audio/source comparisons pass 121.625 s. Binary SHA256:
+2140c91da7fa50da89027ba14e4d81228e4fc64249c32fa079a475bd6d585395.
+Linux Debug effect/Pumo passes 13 s and full audio/source comparisons 73 s;
+binary 4d196aae3e2c9a60afe469c1ffe801563c9d2d9b5614737850220be00e1b1967.
+Recorder/replay pass on both systems, including independent SHA boundary,
+incremental and million-a vectors plus the existing maximum checkpoint hash.
+Verified-dependency tests pass, including modified-header rejection before
+output mutation. Intermediate 80/150-second failures and diagnostic receipts
+remain preserved. Developer-OFF, Android and final actual capture/playback
+validation remain pending for this checkpoint; passing Debug owners do not
+replace them. Details and exact source/input receipts are in the tranche plan.
+
+Separate Android control repairs are still unpublished: settle an existing
+graphics trial before requesting MSAA, preserve explicit analytical texture
+filters and restore player settings. Current failed GPU receipts remain
+visible. The native sound WIP stash is untouched and untested. Full G2 and
+the corrupt-trailer energy 91-to-100 defect remain open; no whole-save
+atomicity, G2-G7 completion or campaign qualification is claimed.
