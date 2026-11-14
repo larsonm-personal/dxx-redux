@@ -224,3 +224,30 @@ standard arrays. Extend canonical descriptor/Pumo controls with outgoing name
 corruption, retained publication and consumed-owner rejection, then qualify
 Windows/Linux assertions, camera reload and ordinary replay. This bounds metadata
 publication only; native bank/GPU and whole-world staging remain open.
+
+## Android checkpoint replay qualification
+
+The water owner still accepts only new-level recordings, but the canonical live
+capture now embeds a native save checkpoint and XL clock/input profile. Extend
+that existing owner to accept the supported checkpoint mode and let the native
+replay codec validate the embedded data. Preserve mission/frame/terminal checks,
+strict native projection checks and deadlines. Configure the device to the
+recorded supported viewport using backed-up test profile state, retain diagnostic
+traces, and compare the unchanged capture with ordinary Android playback. Do not
+rewrite headers, discard state fields or normalize mismatches to obtain a pass.
+
+The ordinary APK correctly rejects format-6 Android timelines through
+`xl_input_demo_backend_error`. Keep that gate. Expose the existing
+`DXX_XL_DEVELOPER_TESTS` option only in Android Debug configuration for explicit
+qualification builds; Release remains OFF. Keep its Gradle policy under
+XL_compat with a thin application hook. Label probe APK hashes and results
+separately, restore the ordinary APK afterward, and do not infer general Android
+acceptance from a single emulator trace.
+
+The explicit probe reaches checkpoint restore but Android rejects the desktop
+checkpoint: `Missing mod source definitions in save`. The desktop native writer
+does not emit Android's mod-source trailer. Preserve that admission check and the
+failed receipt; qualification requires a source-bound cross-platform save contract
+or a genuine Android capture, not a fabricated trailer or skipped validation.
+The ordinary APK is restored and hash verified after probing. This checkpoint
+adds diagnostic capability only; Android timeline acceptance remains OPEN.

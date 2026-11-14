@@ -5181,3 +5181,56 @@ Final direct-swap reruns now pass: Pumo Windows/Linux -02, Windows water -02 and
 Linux camera/HXM -02. Warp 5 remains NOT RUN. Ordinary clean-process replay of
 the fresh final capture follows publication; earlier capture/replay evidence is
 not relabeled as this candidate.
+
+PR 488 publishes prepared metadata at `ef60ad4538273ae9ff1f66708c433db72c60c0f3`.
+Final ordinary Windows playback passes detailed comparison: 1,235 object frames,
+1,239 world/XL records, 196 SIM and 1,808 FX draws, exact terminal state and normal
+exit in 65.92 seconds. Binary SHA-256 is
+`822332ff5c03cabac292bc19c766c229d7c5be455d490ab7c9b3699792d5c6cc`;
+receipts are `replay-prepared-metadata-water-clean`. This uses the disclosed
+water-physics assist, not unassisted connected-campaign proof.
+Private run 43503322597 passes this exact candidate in 670.152 seconds with 113
+required owners, 16 witnesses, three modern levels and four assisted anchors.
+Controller bf40de9 and 8c9988a/527427b assets are unchanged; camera subchecks remain
+not_run_missing_addon. Receipt: `pr488-private-results`. At 13:02 PST, public
+Android, ASan and save integrity remain pending; other applicable checks pass.
+PR 487 applicable checks are now terminal PASS. Sampled readiness stays FAIL 4/8,
+separate from the required-owner pass; it is not 90% gameplay qualification.
+
+### Android checkpoint qualification boundary (2026-11-13)
+
+The canonical water owner now accepts native format-6 save_checkpoint captures,
+retains state/RNG diagnostics and restores an exact backed-up test display/profile.
+The unchanged native projection check requires the capture's 1920x1080 viewport.
+Android Debug can explicitly opt into existing developer probes with
+`-PxlDeveloperTests=true`; default Debug and all Release configurations stay OFF.
+Gradle inspection verifies both property states and the forced Release boundary.
+No production Android backend gate is removed.
+
+Qualification remains FAILED, with three retained stages: ordinary APK rejects
+the unqualified Android timeline; developer probe rejects the original mismatched
+viewport; corrected test viewport passes projection but save restore rejects
+`Missing mod source definitions in save`. Desktop checkpoints do not contain the
+Android-required mod-source trailer. No guard, save bytes or terminal comparison
+is weakened. The replay also logs the existing Players-directory debug assertion
+for its owned temporary checkpoint path. No replay frames or terminal result are
+claimed. Native water runtime's earlier 59/59 result is separate evidence.
+
+Probe APK SHA-256:
+`366d1a0fa50c8c5fc4c579e022796ba93e17e48fdc5ea424e0203d17afa7151c`,
+source ef60ad4 plus this Gradle/runner patch, Debug x86_64 developer ON.
+Failure logs: `android-water-checkpoint.log`,
+`android-water-checkpoint-probe.log`, `android-water-checkpoint-profile.log`,
+and retained generations of `temp/xl-water-android`. Final profile before/after
+hashes both equal `762f6f62af24134580d9c530da161d9276ea426fa3fca40ad44549d21e621f21`.
+Restored ordinary PR 488 APK SHA-256, verified on device:
+`4c484b46127bb21362043c725492854a106955301a834aac0539a3ffac7cd240`.
+The ordinary build passes all three ABIs. Further Android timeline qualification
+needs a real source-bound save contract or native Android recording; a probe
+build is not an Android acceptance result.
+
+The final runner passes the existing Android water runtime owner 59/59 on the
+restored ordinary PR 488 APK. Catalog validation passes with unchanged membership:
+428 top-level entries and 547 support scripts. Scoped formatting passes. Receipts:
+android-water-owner-final.log, android-checkpoint-catalog.log and
+android-checkpoint-master-catalog.log under the tranche scratch directory.
