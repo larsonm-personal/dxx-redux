@@ -27,6 +27,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "input_demo_assets.h"
 #include <stdio.h>
+#include <limits.h>
+#include "piggy_bank.h"
 #include <string.h>
 
 #include "pstypes.h"
@@ -286,6 +288,37 @@ void DiskSoundHeader_read(DiskSoundHeader *dsh, PHYSFS_file *fp)
 	dsh->data_length = PHYSFSX_readInt(fp);
 	dsh->offset = PHYSFSX_readInt(fp);
 }
+
+/* Keep native header interpretation shared by live registries and retained banks */
+static int bitmap_bank_record(const DiskBitmapHeader *header, int data_start, piggy_bank_bitmap *record)
+{
+	char name[9];
+	memset(record, 0, sizeof(*record));
+	memcpy(name, header->name, 8); name[8] = 0;
+	if (header->dflags & DBM_FLAG_ABM)
+		snprintf(record->name, sizeof(record->name), "%s#%d", name, header->dflags & DBM_NUM_FRAMES);
+	else
+		strcpy(record->name, name);
+	record->width = header->width + ((header->wh_extra & 0x0f) << 8);
+	record->height = header->height + ((header->wh_extra & 0xf0) << 4);
+	record->flags = header->flags & BM_FLAGS_TO_COPY;
+	record->average_index = header->avg_color;
+	if (header->offset < 0 || header->offset > INT_MAX - data_start) return 0;
+	record->offset = header->offset + data_start;
+	record->size = record->width * record->height;
+	return record->width > 0 && record->height > 0;
+}
+
+static int sound_bank_record(const DiskSoundHeader *header, int data_start, piggy_bank_sound *record)
+{
+	memset(record, 0, sizeof(*record));
+	memcpy(record->name, header->name, 8);
+	if (header->length < 0 || header->offset < 0 || header->offset > INT_MAX - data_start) return 0;
+	record->length = header->length;
+	record->offset = header->offset + data_start;
+	return 1;
+}
+
 
 int piggy_is_substitutable_bitmap( char * name, char * subst_name );
 
@@ -566,8 +599,8 @@ void piggy_init_pigfile(char *filename)
 	int i;
 	const char *opened_name = filename;
 	char temp_name[16];
-	char temp_name_read[16];
 	DiskBitmapHeader bmh;
+	piggy_bank_bitmap bank_record;
 	int header_size, N_bitmaps, data_start;
 #if defined(EDITOR) || defined(ANDROID)
 	int data_size;
@@ -624,6 +657,7 @@ void piggy_init_pigfile(char *filename)
 	strncpy(Current_pigfile,filename,sizeof(Current_pigfile));
 
 	N_bitmaps = PHYSFSX_readInt(Piggy_fp);
+	if (N_bitmaps < 0 || N_bitmaps >= MAX_BITMAP_FILES) Error("Invalid native bitmap count");
 
 	header_size = N_bitmaps * sizeof(DiskBitmapHeader);
 
@@ -639,20 +673,16 @@ void piggy_init_pigfile(char *filename)
 		grs_bitmap *bm = &GameBitmaps[i + 1];
 		
 		DiskBitmapHeader_read(&bmh, Piggy_fp);
-		memcpy( temp_name_read, bmh.name, 8 );
-		temp_name_read[8] = 0;
-		if ( bmh.dflags & DBM_FLAG_ABM )        
-			sprintf( temp_name, "%s#%d", temp_name_read, bmh.dflags & DBM_NUM_FRAMES );
-		else
-			strcpy( temp_name, temp_name_read );
-		width = bmh.width + ((short) (bmh.wh_extra & 0x0f) << 8);
-		gr_init_bitmap(bm, 0, 0, 0, width, bmh.height + ((short) (bmh.wh_extra & 0xf0) << 4), width, NULL);
+		if (!bitmap_bank_record(&bmh, data_start, &bank_record)) Error("Invalid native bitmap header");
+		strcpy(temp_name, bank_record.name);
+		width = bank_record.width;
+		gr_init_bitmap(bm, 0, 0, 0, width, bank_record.height, width, NULL);
 		bm->bm_flags = BM_FLAG_PAGED_OUT;
-		bm->avg_color = bmh.avg_color;
+		bm->avg_color = bank_record.average_index;
 
-		GameBitmapFlags[i+1] = bmh.flags & BM_FLAGS_TO_COPY;
+		GameBitmapFlags[i+1] = bank_record.flags;
 
-		GameBitmapOffset[i+1] = bmh.offset + data_start;
+		GameBitmapOffset[i+1] = bank_record.offset;
 		Assert( (i+1) == Num_bitmap_files );
 		piggy_register_bitmap(bm, temp_name, 1);
 	}
@@ -707,8 +737,8 @@ void piggy_new_pigfile(char *pigname)
 {
 	int i;
 	char temp_name[16];
-	char temp_name_read[16];
 	DiskBitmapHeader bmh;
+	piggy_bank_bitmap bank_record;
 	int header_size, N_bitmaps, data_start;
 #ifdef EDITOR
 	int must_rewrite_pig = 0;
@@ -766,6 +796,7 @@ void piggy_new_pigfile(char *pigname)
 		input_demo_assets_note_file("d2_pig", opened_name, Piggy_fp);
 
 		N_bitmaps = PHYSFSX_readInt(Piggy_fp);
+		if (N_bitmaps < 0 || N_bitmaps >= MAX_BITMAP_FILES) Error("Invalid native bitmap count");
 
 		header_size = N_bitmaps * sizeof(DiskBitmapHeader);
 
@@ -777,13 +808,8 @@ void piggy_new_pigfile(char *pigname)
 			int width;
 			
 			DiskBitmapHeader_read(&bmh, Piggy_fp);
-			memcpy( temp_name_read, bmh.name, 8 );
-			temp_name_read[8] = 0;
-	
-			if ( bmh.dflags & DBM_FLAG_ABM )        
-				sprintf( temp_name, "%s#%d", temp_name_read, bmh.dflags & DBM_NUM_FRAMES );
-			else
-				strcpy( temp_name, temp_name_read );
+			if (!bitmap_bank_record(&bmh, data_start, &bank_record)) Error("Invalid native bitmap header");
+			strcpy(temp_name, bank_record.name);
 
 #ifdef EDITOR
 			//Make sure name matches
@@ -795,15 +821,15 @@ void piggy_new_pigfile(char *pigname)
 	
 			strcpy(AllBitmaps[i].name,temp_name);
 
-			width = bmh.width + ((short) (bmh.wh_extra & 0x0f) << 8);
+			width = bank_record.width;
 			gr_set_bitmap_data(bm, NULL);	// free ogl texture
-			gr_init_bitmap(bm, 0, 0, 0, width, bmh.height + ((short) (bmh.wh_extra & 0xf0) << 4), width, NULL);
+			gr_init_bitmap(bm, 0, 0, 0, width, bank_record.height, width, NULL);
 			bm->bm_flags = BM_FLAG_PAGED_OUT;
-			bm->avg_color = bmh.avg_color;
+			bm->avg_color = bank_record.average_index;
 
-			GameBitmapFlags[i] = bmh.flags & BM_FLAGS_TO_COPY;
+			GameBitmapFlags[i] = bank_record.flags;
 	
-			GameBitmapOffset[i] = bmh.offset + data_start;
+			GameBitmapOffset[i] = bank_record.offset;
 		}
 	}
 	else
@@ -974,6 +1000,61 @@ digi_sound bogus_sound;
 int piggy_is_needed(int soundnum);
 
 static int ham_sound_headers_once = 1;
+
+#ifdef DXX_XL_RUNTIME
+int piggy_read_bitmap_bank(PHYSFS_file *file, void *context,
+                          int (*record)(void *, int, const piggy_bank_bitmap *))
+{
+	int count, data_start, i;
+	PHYSFS_sint64 length;
+	if (!file || !record || !PHYSFS_seek(file, 0)) return -1;
+	length = PHYSFS_fileLength(file);
+	if (length < 12 || length > INT_MAX || PHYSFSX_readInt(file) != PIGFILE_ID ||
+	    PHYSFSX_readInt(file) != PIGFILE_VERSION) return -1;
+	count = PHYSFSX_readInt(file);
+	if (count < 0 || count >= MAX_BITMAP_FILES) return -1;
+	data_start = 12 + count * sizeof(DiskBitmapHeader);
+	if (data_start > length) return -1;
+	for (i = 0; i < count; ++i) {
+		DiskBitmapHeader header;
+		piggy_bank_bitmap value;
+		PHYSFS_sint64 next;
+		DiskBitmapHeader_read(&header, file);
+		next = PHYSFS_tell(file);
+		if (!bitmap_bank_record(&header, data_start, &value) || value.offset > length) return -1;
+		if (value.flags & BM_FLAG_RLE) {
+			if (length - value.offset < 4 || !PHYSFS_seek(file, value.offset)) return -1;
+			value.size = PHYSFSX_readInt(file);
+			if (value.size < 4 || !PHYSFS_seek(file, next)) return -1;
+		}
+		if (value.size > length - value.offset || !record(context, i + 1, &value)) return -1;
+	}
+	return count;
+}
+
+int piggy_read_sound_bank(PHYSFS_file *file, void *context,
+                         int (*record)(void *, int, const piggy_bank_sound *))
+{
+	int count, data_start, i;
+	PHYSFS_sint64 length;
+	if (!file || !record || !PHYSFS_seek(file, 0)) return -1;
+	length = PHYSFS_fileLength(file);
+	if (length < 12 || length > INT_MAX || PHYSFSX_readInt(file) != SNDFILE_ID ||
+	    PHYSFSX_readInt(file) != SNDFILE_VERSION) return -1;
+	count = PHYSFSX_readInt(file);
+	if (count < 0 || count > MAX_SOUND_FILES) return -1;
+	data_start = 12 + count * sizeof(DiskSoundHeader);
+	if (data_start > length) return -1;
+	for (i = 0; i < count; ++i) {
+		DiskSoundHeader header;
+		piggy_bank_sound value;
+		DiskSoundHeader_read(&header, file);
+		if (!sound_bank_record(&header, data_start, &value) || value.offset > length ||
+		    value.length > length - value.offset || !record(context, i, &value)) return -1;
+	}
+	return count;
+}
+#endif
 
 int read_hamfile()
 {
@@ -1208,8 +1289,8 @@ int read_sndfile()
 	int header_size;
 	int i;
 	DiskSoundHeader sndh;
+	piggy_bank_sound bank_record;
 	digi_sound temp_sound;
-	char temp_name_read[16];
 	int sbytes = 0;
 	char filename[PATH_MAX];
 	const char *sndfile_dir;
@@ -1254,6 +1335,7 @@ int read_sndfile()
 	snprintf(LastSndfileDir, sizeof(LastSndfileDir), "%s", sndfile_dir ? sndfile_dir : "");
 
 	N_sounds = PHYSFSX_readInt(snd_fp);
+	if (N_sounds < 0 || N_sounds > MAX_SOUND_FILES) Error("Invalid native sound count");
 
 	sound_start = PHYSFS_tell(snd_fp);
 	header_size = N_sounds*sizeof(DiskSoundHeader);
@@ -1264,16 +1346,15 @@ int read_sndfile()
 
 	for (i=0; i<N_sounds; i++ ) {
 		DiskSoundHeader_read(&sndh, snd_fp);
+		if (!sound_bank_record(&sndh, header_size + sound_start, &bank_record)) Error("Invalid native sound header");
 		temp_sound.bits = 8;
 		temp_sound.freq = sample_rate;
-		temp_sound.length = sndh.length;
-		temp_sound.data = (ubyte *)(size_t)(sndh.offset + header_size + sound_start);
-		SoundOffset[Num_sound_files] = sndh.offset + header_size + sound_start;
-		memcpy( temp_name_read, sndh.name, 8 );
-		temp_name_read[8] = 0;
-		piggy_register_sound( &temp_sound, temp_name_read, 1 );
+		temp_sound.length = bank_record.length;
+		temp_sound.data = (ubyte *)(size_t)(bank_record.offset);
+		SoundOffset[Num_sound_files] = bank_record.offset;
+		piggy_register_sound( &temp_sound, bank_record.name, 1 );
 		if (piggy_is_needed(i))
-			sbytes += sndh.length;
+			sbytes += bank_record.length;
 	}
 
 	if ( SoundBits )

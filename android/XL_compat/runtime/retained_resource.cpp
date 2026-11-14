@@ -5,6 +5,8 @@
 #include <mutex>
 #include <stdexcept>
 #include <string>
+#include <filesystem>
+#include <fstream>
 
 namespace
 {
@@ -135,5 +137,47 @@ std::vector<unsigned char> xl_retain_resource(PHYSFS_file *file)
 	const auto read = PHYSFS_readBytes(file, bytes.data(), length);
 	const bool restored = PHYSFS_seek(file, position) != 0;
 	if (read != length || !restored) throw std::runtime_error("Cannot retain resource bytes");
+	return bytes;
+}
+
+std::vector<unsigned char> xl_retain_origin_resource(const std::string &origin, const std::string &member)
+{
+	if (origin.empty() || member.empty() || member == "." || member == ".." || member.find_first_of("/\\:") != std::string::npos)
+		throw std::runtime_error("Invalid retained flat resource origin");
+	const auto read_physical = [](const std::filesystem::path &path) {
+		std::ifstream input(path, std::ios::binary | std::ios::ate);
+		const auto length = input ? input.tellg() : std::streampos(-1);
+		if (length <= 0 || length > 64 * 1024 * 1024) throw std::runtime_error("Cannot retain physical resource within source bounds");
+		std::vector<unsigned char> bytes(static_cast<std::size_t>(length));
+		input.seekg(0);
+		if (!input.read(reinterpret_cast<char *>(bytes.data()), bytes.size())) throw std::runtime_error("Cannot read retained physical source");
+		return bytes;
+	};
+	if (std::filesystem::is_directory(std::filesystem::u8path(origin))) return read_physical(std::filesystem::u8path(origin) / std::filesystem::u8path(member));
+	// Reuse the native archive reader under a private prefix; no resource basename
+	// is mounted into the active mission's namespace
+	auto archive = read_physical(std::filesystem::u8path(origin));
+	static unsigned long serial;
+	std::string name;
+	do {
+		name = "__xl_bank_origin_" + std::to_string(++serial) + std::filesystem::path(origin).extension().string();
+	} while (PHYSFS_exists(name.c_str()) || PHYSFS_getMountPoint(name.c_str()));
+	if (!PHYSFS_mountMemory(archive.data(), archive.size(), nullptr, name.c_str(), name.c_str(), 1))
+		throw std::runtime_error("Cannot open retained native archive origin");
+	struct Mount {
+		const std::string &name;
+		bool active = true;
+		~Mount()
+		{
+			if (active) PHYSFS_unmount(name.c_str());
+		}
+	} mount{ name };
+	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead((name + "/" + member).c_str()), PHYSFS_close);
+	if (!file) throw std::runtime_error("Captured archive member is no longer available");
+	auto bytes = xl_retain_resource(file.get());
+	if (!PHYSFS_close(file.get())) throw std::runtime_error("Cannot close captured archive member");
+	file.release();
+	if (!PHYSFS_unmount(name.c_str())) throw std::runtime_error("Cannot release captured archive origin");
+	mount.active = false;
 	return bytes;
 }

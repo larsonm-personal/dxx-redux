@@ -72,6 +72,10 @@ std::string vertigo_rejection, mod_rejection;
 const std::array<const char *, 2> sound_banks{ "descent2.s11", "descent2.s22" };
 std::array<std::string, 2> startup_sound_hashes;
 std::map<std::string, std::string> startup_graphics_hashes;
+struct TrustedBankSource {
+	std::string origin, member, hash;
+};
+std::map<std::string, TrustedBankSource> startup_bank_sources;
 bool mission_requires_xl = false;
 std::map<int, std::shared_ptr<xl_compat::OofResource>> mission_oof_models;
 std::map<std::string, std::string> mission_mod_sources;
@@ -125,6 +129,37 @@ std::string resource_key(std::string name)
 	for (char &c : name)
 		if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
 	return name;
+}
+
+std::pair<std::string, std::string> graphics_bank_names(const std::string &palette)
+{
+	if (palette.empty() || palette.size() >= FILENAME_LEN || palette.find_first_of("/\\:") != std::string::npos)
+		throw std::runtime_error("unsupported level palette name: " + palette);
+	const auto name = resource_key(palette);
+	const auto dot = name.find_last_of('.');
+	if (dot == std::string::npos || name.substr(dot) != ".256")
+		throw std::runtime_error("unsupported level palette extension: " + palette);
+	return { name, name.substr(0, dot) + ".pig" };
+}
+
+void capture_bank_origin(const std::string &name, const std::string &hash)
+{
+	if (hash.empty()) return;
+	std::string actual = name;
+	if (PHYSFSEXT_locateCorrectCase(actual.data()) != 0) throw std::runtime_error("Cannot retain startup bank member identity");
+	const char *origin = PHYSFS_getRealDir(actual.c_str());
+	if (!origin || actual.find_first_of("/\\:") != std::string::npos) throw std::runtime_error("Cannot retain flat startup bank origin");
+	startup_bank_sources[resource_key(name)] = { origin, actual, hash };
+}
+
+std::vector<unsigned char> retained_bank_source(const std::string &name)
+{
+	const auto found = startup_bank_sources.find(name);
+	if (found == startup_bank_sources.end()) throw std::runtime_error("No qualified startup bank origin: " + name);
+	auto bytes = xl_retain_origin_resource(found->second.origin, found->second.member);
+	if (picosha2::hash256_hex_string(bytes) != found->second.hash)
+		throw std::runtime_error("Qualified startup bank changed: " + name);
+	return bytes;
 }
 
 struct MissionDefinitions {
@@ -453,17 +488,23 @@ extern "C" void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file
 		auto corrected = startup_ham_name;
 		const char *origin = PHYSFSEXT_locateCorrectCase(corrected.data()) == 0 ? PHYSFS_getRealDir(corrected.c_str()) : nullptr;
 		startup_origin = origin ? origin : "";
+		startup_bank_sources.clear();
 		// Both banks matter: playback may fall back and authored durations use the canonical bank
-		for (std::size_t i = 0; i < sound_banks.size(); ++i)
+		for (std::size_t i = 0; i < sound_banks.size(); ++i) {
 			startup_sound_hashes[i] = optional_resource_hash(sound_banks[i]);
+			capture_bank_origin(sound_banks[i], startup_sound_hashes[i]);
+		}
 		startup_graphics_hashes.clear();
 		std::unique_ptr<char *, decltype(&PHYSFS_freeList)> files(PHYSFS_enumerateFiles(""), PHYSFS_freeList);
 		if (!files) throw std::runtime_error("cannot enumerate startup graphics resources");
 		for (char **entry = files.get(); *entry; ++entry) {
 			const auto key = resource_key(*entry);
 			const auto dot = key.find_last_of('.');
-			if (dot != std::string::npos && (key.substr(dot) == ".256" || key.substr(dot) == ".pig"))
-				startup_graphics_hashes.emplace(key, optional_resource_hash(*entry));
+			if (dot != std::string::npos && (key.substr(dot) == ".256" || key.substr(dot) == ".pig")) {
+				const auto hash = optional_resource_hash(*entry);
+				startup_graphics_hashes.emplace(key, hash);
+				capture_bank_origin(*entry, hash);
+			}
 		}
 	} catch (...) {
 		startup_ham_hash.clear();
@@ -471,6 +512,7 @@ extern "C" void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file
 		startup_origin.clear();
 		startup_sound_hashes = {};
 		startup_graphics_hashes.clear();
+		startup_bank_sources.clear();
 	}
 }
 
@@ -932,14 +974,8 @@ extern "C" const char *xl_resource_base_rejection(void)
 
 void xl_validate_level_graphics(const std::string &palette)
 {
-	// Match the stock fixed-size palette name and flat basename-to-PIG selection
-	if (palette.empty() || palette.size() >= FILENAME_LEN || palette.find_first_of("/\\:") != std::string::npos)
-		throw std::runtime_error("unsupported level palette name: " + palette);
-	const auto name = resource_key(palette);
-	const auto dot = name.find_last_of('.');
-	if (dot == std::string::npos || name.substr(dot) != ".256")
-		throw std::runtime_error("unsupported level palette extension: " + palette);
-	const auto pig = name.substr(0, dot) + ".pig";
+	const auto names = graphics_bank_names(palette);
+	const auto &name = names.first, &pig = names.second;
 	for (const auto &resource : { name, pig }) {
 		const auto trusted = startup_graphics_hashes.find(resource);
 		if (trusted == startup_graphics_hashes.end() || trusted->second.empty())
@@ -970,6 +1006,8 @@ extern "C" void xl_resource_baseline_capture(void)
 }
 
 struct XlPreparedResources::State {
+	std::shared_ptr<const XlResourceBanks> banks;
+	std::vector<unsigned char> palette_bytes;
 	std::unique_ptr<XlPreparedHam> incoming_ham;
 	std::unique_ptr<XlPreparedHam> incoming_extra;
 	std::map<std::string, std::string> definition_sources;
@@ -1063,6 +1101,8 @@ struct XlPreparedResources::State {
 	{
 		graph = xl_assets::ObjectDependencies{};
 		definitions.bind_dependencies(graph);
+		graph.resource_banks = banks.get();
+		graph.require_owned_banks = mission_definitions;
 		graph.xl_boss_spawning = true;
 	}
 };
@@ -1082,6 +1122,7 @@ XlPreparedResources::XlPreparedResources(XlPreparedHam incoming)
 	state = std::make_unique<State>(MissionDefinitions(incoming.tables()));
 	state->incoming_ham = std::make_unique<XlPreparedHam>(std::move(incoming));
 	state->mission_definitions = true;
+	state->bind_graph();
 }
 
 std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_mission(mission_preparation *mission)
@@ -1128,6 +1169,21 @@ XlPreparedResources &XlPreparedResources::operator=(XlPreparedResources &&other)
 	state = std::move(other.state);
 	if (installed_resources == &other) installed_resources = this;
 	return *this;
+}
+
+void XlPreparedResources::prepare_banks(const std::string &palette)
+{
+	if (state->installed) throw std::runtime_error("Cannot prepare banks after resource publication");
+	const auto names = graphics_bank_names(palette);
+	auto palette_bytes = retained_bank_source(names.first);
+	auto bitmap_bytes = retained_bank_source(names.second);
+	std::size_t bank = GameArg.SndDigiSampleRate == 22050 ? 1 : 0;
+	if (startup_sound_hashes[bank].empty()) bank = 1 - bank;
+	auto sound_bytes = retained_bank_source(sound_banks[bank]);
+	auto prepared = std::make_shared<XlResourceBanks>(std::move(bitmap_bytes), std::move(sound_bytes), bank ? 22050 : 11025);
+	state->banks = std::move(prepared);
+	state->palette_bytes = std::move(palette_bytes);
+	state->bind_graph();
 }
 
 std::string XlPreparedResources::prepare_hxm(PHYSFS_file *file)
@@ -1220,6 +1276,7 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 	if (!counts_match(*mission_base) && !(prepared_resources && prepared_resources->state->installed && counts_match(prepared_resources->state->definitions)))
 		throw std::runtime_error("definition registry changed outside the owned mission resources");
 	state = std::make_unique<State>(*mission_base);
+	if (level) prepare_banks(level->palette);
 	if (!ordinal) {
 		for (int candidate = Last_secret_level; candidate <= Last_level; ++candidate) {
 			if (!candidate) continue;
@@ -1270,7 +1327,7 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 	const auto pog_name = base + ".POG";
 	if (auto file = companion(pog_name)) {
 		char error[256]{};
-		state->pog.reset(xl_pog_prepare(file.get(), Num_bitmap_files, error, sizeof(error)));
+		state->pog.reset(xl_pog_prepare(file.get(), state->banks ? state->banks->bitmap_count() : Num_bitmap_files, error, sizeof(error)));
 		if (!state->pog) throw std::runtime_error(pog_name + ": " + error);
 		for (int i = 0; i < xl_pog_count(state->pog.get()); ++i) {
 			const auto *entry = xl_pog_entry(state->pog.get(), i);
