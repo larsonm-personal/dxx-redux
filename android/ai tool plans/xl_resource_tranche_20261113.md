@@ -210,3 +210,17 @@ graphics safety phase to be idle at initial gameplay readiness in the four
 canonical audio scripts. Keep all existing audio assertions and timeouts; do not
 disable graphics safety or retry a rejected engine action. Rerun the complete
 serial owner and preserve the original failure and profile restoration receipts.
+
+## Prepared metadata publication
+
+Prepare independent model/source/generated-model registry copies alongside the
+incoming CPU models. Transfer these maps at incoming publication without copying
+or replenishing native model buffers. Reject a second incoming install before any
+live mutation; selected-mission reloads keep their existing replenishment path.
+Retain source receipts in the candidate after transfer. Publish the retained
+startup model-name registry with incoming HAM, since the native HAM format does
+not encode it. Use native-shaped character arrays rather than casting nested
+standard arrays. Extend canonical descriptor/Pumo controls with outgoing name
+corruption, retained publication and consumed-owner rejection, then qualify
+Windows/Linux assertions, camera reload and ordinary replay. This bounds metadata
+publication only; native bank/GPU and whole-world staging remain open.

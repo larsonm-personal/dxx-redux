@@ -5132,3 +5132,52 @@ exact PR 486 binary above. Automation catalog and master catalog checks pass
 (428 top-level entries, 547 support scripts). Receipts:
 `android-audio-scopes-ready.log` and `temp/xl-audio-scopes-android`; the prior
 failure remains retained by the standard artifact helper.
+
+PR 487 publishes the audio readiness fix at
+`0e9b5e448253b59e6bb4bc2290f9a85ccf4fad98`, parent PR 486, stack 471.
+On the exact PR 486 APK, Android messages pass 80/80 and water runtime passes
+59/59. Observatory first fails difficulty 3 while graphics safety is in challenge
+(pause reason 8); the same explicit idle precondition fixes it, then all 45 steps
+pass. Message and Observatory before/after profile hashes match exactly.
+Receipts: `android-messages.log`, `android-observatory.log` (failed),
+`android-observatory-ready.log`, `android-water-probe.log` and canonical device
+receipt directories. Water cross-platform replay is NOT yet qualified: its helper
+requires new_level while the current canonical capture correctly uses
+save_checkpoint. The rejected invocation changed no device state; no capture
+header or guard was weakened to bypass it.
+
+PR 486 private run 43498728874 attempt 1 passes exact head 7e92fdb, controller
+bf40de9, unchanged 8c9988a/527427b asset cohort: 113 required owners, 16 witnesses,
+three modern levels, four assisted anchors in 1065.506 seconds. Camera subchecks
+remain not_run_missing_addon. Receipt: `pr486-private-results`. Public Android,
+ASan and LAN attempt 2 remain pending; sampled readiness remains red at 4/8.
+
+### Prepared metadata publication (2026-11-13)
+
+Incoming preparation now owns independent publication copies of model/source and
+generated-model registries. Commit swaps prepared maps directly; it does not
+construct even empty maps on the incoming path (MSVC map sentinels may allocate),
+copy registry nodes or replenish model buffers. Selected-mission reloads retain
+their existing buffer replenishment behavior. A consumed incoming owner rejects
+before any live changes. Candidate source receipts remain readable after transfer.
+Retained startup model names now publish with incoming HAM and use native-shaped
+arrays, without a nested-array reinterpret cast.
+
+Both Windows and Linux Observatory and Pumo controls initially pass; the descriptor
+owner proves corrupt outgoing names do not affect incoming admission/publication,
+and consumed installs preserve exact model pointers, definitions and sources.
+Full audio passes both platforms, pinned Linux camera/HXM passes and Windows
+water passes. Linux Observatory first times out with output under /mnt/c; the
+same binary and unchanged 60-second limit pass with Linux-local output. Both
+receipts are retained. The final direct-swap refinement is rebuilt on both
+platforms and ordinary Windows; final Observatory reruns pass (Windows -02,
+Linux -03), with Pumo/water/camera reruns following. Final metadata SHA-256:
+Windows `0c9892cbeda320a355d0c033f036ea62602f76325326bd92b60d9392f41c0c46`,
+Linux Debug `c922f9ffd63cfcfd18b2d61622ee4c6e4247528293ea8cdaff1f70b191654db8`.
+Native bitmap-bank replacement, GPU publication and whole-save staging remain
+open. No full G2 or rendered Pumo campaign claim follows from this milestone.
+
+Final direct-swap reruns now pass: Pumo Windows/Linux -02, Windows water -02 and
+Linux camera/HXM -02. Warp 5 remains NOT RUN. Ordinary clean-process replay of
+the fresh final capture follows publication; earlier capture/replay evidence is
+not relabeled as this candidate.

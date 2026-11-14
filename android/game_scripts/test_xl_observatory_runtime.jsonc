@@ -51,8 +51,10 @@
     },
     {
         "action": "wait_for",
-        "field": "in_game",
-        "value": "true",
+        "expect": {
+            "in_game": true,
+            "graphics_safety.phase": "idle",
+        },
         "timeout_ms": 20000,
     },
     {
