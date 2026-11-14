@@ -130,6 +130,36 @@ static void camera_resource_controls(const std::filesystem::path &root)
 	xl_compat::Bytes installed;
 	for (int cycle = 0; cycle < 3; ++cycle) {
 		auto prepared = std::make_unique<XlPreparedResources>("__camera__.rl2");
+		if (!cycle) {
+			const auto weapon = Weapon_info[PROXIMITY_ID];
+			struct Restore {
+				weapon_info weapon;
+				~Restore()
+				{
+					Weapon_info[PROXIMITY_ID] = weapon;
+				}
+			} restore{ weapon };
+			Weapon_info[PROXIMITY_ID].flash = -1;
+			bool rejected = false;
+			try {
+				xl_camera_validate_weapon_definitions();
+			} catch (const std::runtime_error &) {
+				rejected = true;
+			}
+			prepared->prepare_camera_model();
+			require(rejected && Weapon_info[PROXIMITY_ID].flash == -1,
+			        "Target camera preparation borrowed or repaired outgoing weapon definitions");
+			const auto &target = prepared->dependencies();
+			std::vector<weapon_info> invalid(target.weapon_data, target.weapon_data + target.weapon_count);
+			invalid[PROXIMITY_ID].flash = -1;
+			rejected = false;
+			try {
+				xl_camera_validate_weapon_definitions(invalid.data(), int(invalid.size()));
+			} catch (const std::runtime_error &) {
+				rejected = true;
+			}
+			require(rejected, "Camera profile accepted an invalid retained weapon table");
+		}
 		prepared->prepare_camera_model();
 		prepared->prepare_camera_model();
 		require(prepared->camera_robot_id() == robots && prepared->camera_model_id() == models, "Camera addon replaced serialized slots instead of appending");

@@ -16,7 +16,8 @@ struct MissionLightingCompanions {
 };
 // Selected-HOG resources only; loose/context-root companions are not qualified
 // A foreign shadow or malformed present resource throws rather than falling back
-MissionLightingCompanions load_mission_lighting_companions(const std::string &level);
+class TargetSources;
+MissionLightingCompanions load_mission_lighting_companions(const std::string &level, TargetSources *target = nullptr);
 } // namespace xl_compat
 #ifdef _MSC_VER
 #pragma pack(pop)

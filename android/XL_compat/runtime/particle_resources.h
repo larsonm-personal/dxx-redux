@@ -9,6 +9,7 @@
 namespace xl_compat
 {
 struct Inventory;
+class TargetSources;
 class ParticleTexture;
 class ShieldTexture;
 struct ShieldImageResource {
@@ -18,7 +19,7 @@ struct ShieldImageResource {
 	ShieldImageResource();
 	~ShieldImageResource();
 };
-std::shared_ptr<const ShieldImageResource> prepare_shield_image(unsigned index);
+std::shared_ptr<const ShieldImageResource> prepare_shield_image(unsigned index, TargetSources *target = nullptr);
 struct ParticleImageResource {
 	std::string path;
 	PogBitmap bitmap;
@@ -34,10 +35,10 @@ struct AnimatedImageResource {
 	AnimatedImageResource();
 	~AnimatedImageResource();
 };
-std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Inventory &level, int subtype = 3);
-std::shared_ptr<const ParticleImageResource> prepare_lightning_image(const Inventory &level);
-std::shared_ptr<const ParticleImageResource> prepare_powerup_glare_image();
-std::shared_ptr<const AnimatedImageResource> prepare_time_equipment_image(unsigned index);
+std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Inventory &level, int subtype = 3, TargetSources *target = nullptr);
+std::shared_ptr<const ParticleImageResource> prepare_lightning_image(const Inventory &level, TargetSources *target = nullptr);
+std::shared_ptr<const ParticleImageResource> prepare_powerup_glare_image(TargetSources *target = nullptr);
+std::shared_ptr<const AnimatedImageResource> prepare_time_equipment_image(unsigned index, TargetSources *target = nullptr);
 } // namespace xl_compat
 #ifdef _MSC_VER
 #pragma pack(pop)

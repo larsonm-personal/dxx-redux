@@ -50,6 +50,7 @@ struct Inventory;
 struct ParticleImageResource;
 struct AnimatedImageResource;
 class ModelHitboxTransform;
+class TargetSources;
 struct RenderModelSphere;
 } // namespace xl_compat
 
@@ -63,6 +64,8 @@ class XlPreparedResources
 	explicit XlPreparedResources(XlPreparedHam incoming);
 	// NULL uses the already selected mission; non-NULL never consults its identity
 	static std::unique_ptr<XlPreparedResources> prepare_mission(mission_preparation *mission);
+	static std::unique_ptr<XlPreparedResources> prepare_level(mission_preparation *mission, int ordinal);
+	const xl_compat::Inventory &level_inventory() const;
 	const std::map<std::string, std::string> &sources() const;
 	XlPreparedResources(XlPreparedResources &&) noexcept;
 	XlPreparedResources &operator=(XlPreparedResources &&) noexcept;
@@ -75,7 +78,7 @@ class XlPreparedResources
 	void install_hxm();
 	void install_pog();
 	void install_messages();
-	void prepare_camera_model();
+	void prepare_camera_model(PHYSFS_file *file = nullptr);
 	int camera_robot_id() const;
 	int camera_model_id() const;
 	int camera_query(const object &camera, const object &moving, const vms_vector &start, const vms_vector &end, int radius, vms_vector &hit, vms_vector &normal);
@@ -95,6 +98,7 @@ class XlPreparedResources
 	const xl_compat::AnimatedImageResource *time_equipment_image(unsigned index) const;
 
   private:
+	void prepare_level_resources(const char *filename, const xl_compat::Inventory *level, int ordinal, mission_preparation *mission, xl_compat::TargetSources *target);
 	void validate_camera_query(const object &camera, const object &moving) const;
 	struct State;
 	std::unique_ptr<State> state;

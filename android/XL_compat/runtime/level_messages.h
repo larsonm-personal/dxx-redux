@@ -35,7 +35,8 @@ namespace xl_compat
 {
 struct Inventory;
 struct MessageResources;
-std::shared_ptr<const MessageResources> prepare_messages(const char *level, const Inventory &inventory);
+class TargetSources;
+std::shared_ptr<const MessageResources> prepare_messages(const char *level, const Inventory &inventory, TargetSources *target = nullptr);
 void install_messages(std::shared_ptr<const MessageResources> resources);
 } // namespace xl_compat
 #endif

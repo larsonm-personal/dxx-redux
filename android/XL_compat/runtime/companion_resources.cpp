@@ -1,4 +1,5 @@
 #include "companion_resources.h"
+#include "target_sources.h"
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -12,8 +13,13 @@ namespace xl_compat
 {
 namespace
 {
-std::optional<std::vector<std::uint8_t>> read_owned(std::string name, std::size_t expected)
+std::optional<std::vector<std::uint8_t>> read_owned(std::string name, std::size_t expected, TargetSources *target)
 {
+	if (target) {
+		auto bytes = target->archive_bytes(name, expected);
+		if (bytes && bytes->size() != expected) throw std::runtime_error("Invalid incoming lighting companion length: " + name);
+		return bytes;
+	}
 	if (PHYSFSEXT_locateCorrectCase(name.data()) != 0) return std::nullopt;
 	const char *origin = PHYSFS_getRealDir(name.c_str());
 	if (!mission_owns_resource_archive(origin))
@@ -29,10 +35,10 @@ std::optional<std::vector<std::uint8_t>> read_owned(std::string name, std::size_
 }
 } // namespace
 
-MissionLightingCompanions load_mission_lighting_companions(const std::string &level)
+MissionLightingCompanions load_mission_lighting_companions(const std::string &level, TargetSources *target)
 {
 	MissionLightingCompanions result;
-	result.archive = mission_resource_archive();
+	result.archive = target ? target->archive() : mission_resource_archive();
 	if (result.archive.empty()) return result;
 	// HOG members are flat, and this API must not interpret arbitrary paths
 	if (level.empty() || level.find_first_of("/\\:") != std::string::npos || level.find("..") != std::string::npos)
@@ -43,12 +49,12 @@ MissionLightingCompanions load_mission_lighting_companions(const std::string &le
 	if (extension != ".rdl" && extension != ".rl2")
 		throw std::runtime_error("Lighting companions require an RDL or RL2 level identity");
 	auto corrected = level;
-	if (PHYSFSEXT_locateCorrectCase(corrected.data()) != 0 || !mission_owns_resource_archive(PHYSFS_getRealDir(corrected.c_str())))
+	if (target ? !target->archive_contains(level) : (PHYSFSEXT_locateCorrectCase(corrected.data()) != 0 || !mission_owns_resource_archive(PHYSFS_getRealDir(corrected.c_str()))))
 		throw std::runtime_error("Lighting companion level is not owned by the selected mission HOG: " + level);
 	const auto stem = corrected.substr(0, corrected.find_last_of('.'));
-	if (const auto bytes = read_owned(stem + ".lgt", companion_texture_count * 4))
+	if (const auto bytes = read_owned(stem + ".lgt", companion_texture_count * 4, target))
 		result.brightness = decode_texture_brightness(bytes->data(), bytes->size());
-	if (const auto bytes = read_owned(stem + ".clr", companion_texture_count * 13))
+	if (const auto bytes = read_owned(stem + ".clr", companion_texture_count * 13, target))
 		result.colors = decode_texture_colors(bytes->data(), bytes->size());
 	return result;
 }
