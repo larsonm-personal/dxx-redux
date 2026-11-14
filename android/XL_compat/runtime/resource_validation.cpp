@@ -39,6 +39,7 @@
 #include "retained_resource.h"
 #ifdef __ANDROID__
 #include "../../app/src/main/cpp/shared/android_mission_assets.h"
+#include "../../app/src/main/cpp/shared/android_sound_trace.h"
 #include "../../app/src/main/cpp/shared/mod_save_compat.h"
 #endif
 extern "C" {
@@ -237,7 +238,7 @@ struct NativeModel {
 	}
 	~NativeModel()
 	{
-		free_model(&model);
+		if (model.model_data) free_model(&model);
 	}
 };
 
@@ -251,7 +252,7 @@ File companion(const std::string &name)
 }
 
 struct HxmChanges {
-	std::set<int> robots, joints, models, bitmaps, pointers;
+	std::set<int> robots, joints, models, bitmaps, pointers, weapons;
 };
 
 std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefinitions &definitions, xl_assets::ObjectDependencies &graph, HxmChanges &changes, bool camera = false, bool defer_dependencies = false, bool defer_robots = false)
@@ -743,18 +744,30 @@ extern "C" int xl_resource_load_mod_data(void)
 				File replacement(PHYSFSX_openReadBuffered(hxm.c_str()), PHYSFS_close);
 				sources[hxm] = target.prepare_hxm(replacement.get());
 			}
+			if (!vham.empty()) {
+				File extension(PHYSFSX_openReadBuffered(vham.c_str()), PHYSFS_close);
+				sources[vham] = target.prepare_vham(extension.get());
+			}
 			target.install_hxm();
 #ifdef __ANDROID__
 			mod_save_capture_definitions();
 #endif
 			input_demo_assets_extra_ham_loaded(ham.c_str(), file.get());
+			if (!vham.empty()) {
+#ifdef __ANDROID__
+				android_sound_trace_asset_open("extra_ham", vham.c_str());
+				mod_save_capture_extra_ham(vham.c_str());
+#endif
+				File extension(PHYSFSX_openReadBuffered(vham.c_str()), PHYSFS_close);
+				input_demo_assets_extra_ham_loaded(vham.c_str(), extension.get());
+			}
 		}
 		if (ham.empty() && !hxm.empty()) {
 			File file(PHYSFSX_openReadBuffered(hxm.c_str()), PHYSFS_close);
 			sources[hxm] = resource_hash(file.get(), hxm);
 			install_mission_hxm(file.get());
 		}
-		if (!vham.empty() && !bm_read_xl_extra_robots(vham.c_str()))
+		if (ham.empty() && !vham.empty() && !bm_read_xl_extra_robots(vham.c_str()))
 			throw std::runtime_error("Malformed XL mission V-HAM: " + vham);
 		auto staged_models = xl_prepare_owned_models(0);
 		mission_definition_sources = sources;
@@ -894,6 +907,7 @@ extern "C" void xl_resource_baseline_capture(void)
 
 struct XlPreparedResources::State {
 	std::unique_ptr<XlPreparedHam> incoming_ham;
+	std::unique_ptr<XlPreparedHam> incoming_extra;
 	std::vector<std::vector<unsigned char>> definition_layers;
 	xl_compat::OwnedModelSet owned_models;
 	MissionDefinitions definitions;
@@ -1019,6 +1033,64 @@ std::string XlPreparedResources::prepare_hxm(PHYSFS_file *file)
 	state->definitions = std::move(staged->definitions);
 	state->changes = std::move(staged->changes);
 	state->native_models = std::move(staged->native_models);
+	state->bind_graph();
+	state->has_hxm = true;
+	return hash;
+}
+
+std::string XlPreparedResources::prepare_vham(PHYSFS_file *file)
+{
+	if (state->installed) throw std::runtime_error("Cannot prepare VHAM after resource publication");
+	auto extra = std::make_unique<XlPreparedHam>(XlPreparedHam::extra(file));
+	const auto &target = extra->tables();
+	auto staged = std::make_unique<State>(state->definitions);
+	staged->changes = state->changes;
+	auto &definitions = staged->definitions;
+	auto &changes = staged->changes;
+	// Native VHAM replaces suffixes at fixed stock ordinals, after mission HXM
+	auto replace = [](auto &values, const auto *source, int first, int total, auto &changed) {
+		if (int(values.size()) < first) throw std::runtime_error("Incoming HAM lacks the native VHAM base tables");
+		values.resize(total);
+		changed.erase(changed.lower_bound(total), changed.end());
+		for (int id = first; id < total; ++id) {
+			values[id] = source[id];
+			changed.insert(id);
+		}
+	};
+	replace(definitions.weapons, target.Weapon_info, N_D2_WEAPON_TYPES, *target.N_weapon_types, changes.weapons);
+	replace(definitions.robots, target.Robot_info, N_D2_ROBOT_TYPES, *target.N_robot_types, changes.robots);
+	replace(definitions.joints, target.Robot_joints, N_D2_ROBOT_JOINTS, *target.N_robot_joints, changes.joints);
+	replace(definitions.models, target.Polygon_models, N_D2_POLYGON_MODELS, *target.N_polygon_models, changes.models);
+	definitions.payloads.resize(definitions.models.size());
+	definitions.dying.resize(definitions.models.size());
+	definitions.dead.resize(definitions.models.size());
+	definitions.base_radii.resize(definitions.models.size());
+	definitions.custom_radii.resize(definitions.models.size());
+	for (int id = N_D2_POLYGON_MODELS; id < *target.N_polygon_models; ++id) {
+		auto &model = definitions.models[id];
+		auto &payload = definitions.payloads[id];
+		payload.assign(model.model_data, model.model_data + model.model_data_size);
+		model.model_data = payload.data();
+		definitions.dying[id] = target.Dying_modelnums[id];
+		definitions.dead[id] = target.Dead_modelnums[id];
+		definitions.base_radii[id] = model.rad;
+		definitions.custom_radii[id] = 0;
+	}
+	for (int id = N_D2_OBJBITMAPS; id < N_D2_OBJBITMAPS + extra->extra_bitmap_count(); ++id) {
+		definitions.bitmaps[id] = target.ObjBitmaps[id];
+		changes.bitmaps.insert(id);
+	}
+	for (int id = N_D2_OBJBITMAPPTRS; id < N_D2_OBJBITMAPPTRS + extra->extra_pointer_count(); ++id) {
+		definitions.pointers[id] = target.ObjBitmapPtrs[id];
+		changes.pointers.insert(id);
+	}
+	staged->bind_graph();
+	staged->prepare_native_models();
+	auto hash = extra->source_hash();
+	state->definitions = std::move(staged->definitions);
+	state->changes = std::move(staged->changes);
+	state->native_models = std::move(staged->native_models);
+	state->incoming_extra = std::move(extra);
 	state->bind_graph();
 	state->has_hxm = true;
 	return hash;
@@ -1402,6 +1474,15 @@ void XlPreparedResources::install_hxm()
 	}
 	state->hitboxes.clear();
 	auto &definitions = state->definitions;
+	if (state->incoming_extra) {
+		bm_free_extra_objbitmaps();
+		for (int id = int(definitions.models.size()); id < N_polygon_models; ++id) {
+			free_model(&Polygon_models[id]);
+			Polygon_models[id].model_data = nullptr;
+		}
+	}
+	for (const int id : state->changes.weapons) Weapon_info[id] = definitions.weapons[id];
+	if (state->incoming_extra) N_weapon_types = int(definitions.weapons.size());
 	for (const int id : state->changes.robots) Robot_info[id] = definitions.robots[id];
 	for (const int id : state->changes.joints) Robot_joints[id] = definitions.joints[id];
 	for (const int id : state->changes.bitmaps) ObjBitmaps[id] = definitions.bitmaps[id];
