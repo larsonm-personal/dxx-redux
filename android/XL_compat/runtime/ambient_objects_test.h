@@ -116,7 +116,7 @@ inline void malformed_trailers(const xl_compat::Bytes &encoded)
 	}
 }
 template <class Output, class Record, class Activation>
-void run(Output output, Record record, Activation activation)
+void run(Output output, Record record, Activation activation, bool missing_output = false)
 {
 	using namespace xl_compat;
 	using namespace xl_compat::audio_runtime;
@@ -166,7 +166,7 @@ void run(Output output, Record record, Activation activation)
 		                                                     : 19661;
 		check(entry.external && entry.sound == -1 && entry.sound_class == 1 && entry.decay == 1 && entry.ambient &&
 		          entry.max_volume == volume && entry.max_distance == 256 * F1_0 && entry.loop_start == 0 && entry.loop_end == 0 &&
-		          (entry.flags & sound_permanent) && (entry.channel >= 0) == (index != 50 || default_enabled),
+		          (entry.flags & sound_permanent) && (entry.channel >= 0) == (index != 50 || (default_enabled && !missing_output)),
 		      "Actual ambient initialization lost source volume, deferred ownership or disabled playback");
 	}
 	output();
@@ -188,11 +188,11 @@ void run(Output output, Record record, Activation activation)
 		xl_audio_sync_objects();
 	};
 	operate(2);
-	check(xl_ambient_object_enabled(50) && owner(50).channel >= 0 && owner(50).serial == serial, "Enable did not start the existing disabled ambient owner");
+	check(xl_ambient_object_enabled(50) && (owner(50).channel >= 0) == !missing_output && owner(50).serial == serial, "Enable lost the existing ambient owner or misreported available output");
 	output();
 	operate(7);
 	check(Triggers[0].flags & TF_DISABLED, "Mixed effect/wall list did not reach its wall-trigger target");
-	check(!xl_ambient_object_enabled(49) && owner(49).channel < 0 && owner(50).channel >= 0, "Disable removed the owner or stopped an unrelated sound");
+	check(!xl_ambient_object_enabled(49) && owner(49).channel < 0 && (owner(50).channel >= 0) == !missing_output, "Disable removed the owner or changed unrelated output availability");
 	output();
 	operate(9);
 	check(!xl_ambient_object_enabled(50), "Second ambient disable failed");
@@ -227,7 +227,7 @@ void run(Output output, Record record, Activation activation)
 		activation_state(receipt, true);
 		activation(receipt);
 		xl_audio_sync_objects();
-		check(xl_ambient_object_enabled(49) && xl_ambient_object_enabled(50) == !i && (owner(50).channel >= 0) == !i &&
+		check(xl_ambient_object_enabled(49) && xl_ambient_object_enabled(50) == !i && (owner(50).channel >= 0) == (!i && !missing_output) &&
 		          state.type == (i ? 32 : 33) && (state.flags & TF_DISABLED) && state.operated == i,
 		      "Attached ambient action lost early stop, permanent reset, flags or playback");
 		if (!i) check(!(Triggers[0].flags & TF_DISABLED), "Attached enable failed to reach the mixed wall target");

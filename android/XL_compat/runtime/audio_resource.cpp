@@ -92,7 +92,7 @@ std::optional<AudioResource> read_target_audio(TargetSources &target, const std:
 }
 } // namespace
 
-AudioResource load_audio_resource(const std::string &authored, const char *level, int ordinal, TargetSources *target)
+std::optional<AudioResource> find_audio_resource(const std::string &authored, const char *level, int ordinal, TargetSources *target)
 {
 	auto filename = named_sound_filename(authored);
 	if (target) {
@@ -103,7 +103,7 @@ AudioResource load_audio_resource(const std::string &authored, const char *level
 		const auto addon = "sounds/d2x-xl/" + filename;
 		if (auto resource = read_target_audio(*target, addon, false)) return std::move(*resource);
 		if (auto resource = read_target_audio(*target, addon, false, max_wave_bytes, true)) return std::move(*resource);
-		throw std::runtime_error("Missing incoming XL sound in target HOG, sound folders or startup addon: " + filename);
+		return std::nullopt;
 	}
 	// Archive resources do not depend on an ordinal, including diagnostic loads
 	if (owned_path(filename, true)) return read_audio(std::move(filename));
@@ -115,7 +115,13 @@ AudioResource load_audio_resource(const std::string &authored, const char *level
 	}
 	auto addon = "sounds/d2x-xl/" + filename;
 	if (owned_path(addon, false, true)) return read_audio(std::move(addon));
-	throw std::runtime_error("Missing XL sound " + filename + "; checked the mission HOG, " + paths[1] + " and " + paths.back() + "; checked global addon " + addon + " in the owned startup installation");
+	return std::nullopt;
+}
+
+AudioResource load_audio_resource(const std::string &authored, const char *level, int ordinal, TargetSources *target)
+{
+	if (auto resource = find_audio_resource(authored, level, ordinal, target)) return std::move(*resource);
+	throw std::runtime_error("Missing XL sound " + named_sound_filename(authored) + "; checked the selected mission HOG, level/mission sound folders and global addon in the owned startup installation");
 }
 
 std::optional<ClassicAudioScope> prepare_classic_audio_scope(const char *level, int ordinal, int bank_rate, TargetSources *target)

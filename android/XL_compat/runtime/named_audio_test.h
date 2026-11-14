@@ -247,6 +247,7 @@ static int named_audio_test(int argc, char **argv)
 		const char *selected = find_arg_value(argc, argv, "-audio-level");
 		const bool static_objects = !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "static");
 		const bool legacy = !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient-legacy");
+		const bool missing_output = !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient-missing");
 		require(selected && (!std::strcmp(selected, "1") || !std::strcmp(selected, "2") || ((legacy || static_objects) && !std::strcmp(selected, "3")) || (static_objects && !std::strcmp(selected, "-1"))), "Named audio controls require a valid fixture ordinal");
 		const int ordinal = std::atoi(selected);
 		if (!std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "seismic")) {
@@ -257,18 +258,46 @@ static int named_audio_test(int argc, char **argv)
 			xl_static_explosion_control::run(root, ordinal);
 			Mix_SetPostMix(nullptr, nullptr);
 			return 0;
-		} else if (legacy || !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient")) {
-			require(load_base_mission(legacy ? "xambold" : "xsound", error, sizeof(error)), error);
+		} else if (legacy || missing_output || !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient")) {
+			require(load_base_mission(legacy ? "xambold" : missing_output ? "xambmiss"
+			                                                              : "xsound",
+			                          error, sizeof(error)),
+			        error);
 			std::strcpy(Players[Player_num].callsign, "XLTest");
 			input_demo_set_skip_level_intro(1);
-			StartNewGame(legacy ? ordinal : ordinal + 2);
+			StartNewGame(legacy || missing_output ? ordinal : ordinal + 2);
 			require(xl_source_level_version() == (legacy ? (ordinal == 3 ? 17 : 15) : (ordinal == 1 ? 23 : 27)), "Ambient fixture loaded the wrong version");
 			require(xl_source_game_version() == (legacy ? (ordinal == 3 ? 36 : 32 + ordinal) : 40), "Ambient fixture loaded the wrong game-data version");
 			SDL_PauseAudio(1);
+			const auto unavailable = xl_compat::named_audio_diagnostics().at("unavailable_ambient_output");
+			require(unavailable == (missing_output ? nlohmann::json::array({ "absent.wav" }) : nlohmann::json::array()), "Ambient fixture output availability differs from the authored control");
+			if (missing_output) {
+				const auto before = snapshot();
+				const auto ambient_before = xl_compat::ambient_objects_snapshot();
+				const auto malformed = root / "mods/xambmiss/sounds/absent.wav";
+				require(!std::filesystem::exists(malformed), "Missing ambient control would overwrite an existing file");
+				std::filesystem::create_directories(malformed.parent_path());
+				write_bytes(malformed.string().c_str(), { 0, 1, 2 });
+				const bool rejected = !xl_level_supported(Gamesave_current_filename, 0) && std::strstr(xl_level_rejection(), "Invalid XL object sound");
+				std::filesystem::remove(malformed);
+				require(rejected && snapshot() == before && xl_compat::ambient_objects_snapshot() == ambient_before, "Malformed optional output was ignored or changed the live world");
+			}
 			std::ofstream activation(root / "ambient-activation.txt");
 			activation << "XL_AMBIENT_ACTIVATION 1\n";
 			unsigned activation_cases = 0;
-			xl_ambient_objects_control::run([] { xl_linked_audio_control::output(); }, [&] {
+			xl_ambient_objects_control::run([&] {
+				const auto before = snapshot();
+				if (missing_output) {
+					auto voice = before;
+					require(!voice.at("voices").empty(), "Unavailable voice rejection needs a real live output control");
+					voice["voices"][0][2] = xl_compat::named_audio_diagnostics().at("external_resources").at("absent.wav").at("sample");
+					require(!xl_compat::restore_named_audio(voice, false) && std::strstr(xl_named_audio_error(), "no available PCM") && snapshot() == before,
+					        "Saved voice fabricated PCM for absent ambient output");
+				}
+				begin_capture();
+				xl_named_audio_pause(0);
+				run_output(2048);
+				xl_shared_audio_pcm::output(before, captured.data(), nullptr, captured_samples, 128, missing_output ? 5 : 4); }, [&] {
 				using namespace xl_compat;
 				xl_ambient_audio_receipt::Case receipt;
 				const auto source = xl_ambient_objects_control::source_level();
@@ -298,7 +327,7 @@ static int named_audio_test(int argc, char **argv)
 				xl_ambient_audio_receipt::write(out, receipt);
 				require(bool(out), "Cannot write actual ambient initializer receipt"); }, [&](const auto &receipt) {
 				activation << "case " << activation_cases++ << '\n';
-				xl_ambient_activation_receipt::write(activation, receipt); });
+				xl_ambient_activation_receipt::write(activation, receipt); }, missing_output);
 			activation << "end " << activation_cases << '\n';
 			require(bool(activation) && activation_cases == 6, "Cannot record complete ambient activation coverage");
 			Mix_SetPostMix(nullptr, nullptr);

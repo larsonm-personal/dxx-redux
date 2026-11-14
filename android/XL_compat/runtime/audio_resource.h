@@ -12,6 +12,8 @@ struct AudioResource {
 };
 // Selected HOG, owned mission/level folders, then owned startup addon sounds
 AudioResource load_audio_resource(const std::string &authored, const char *level, int ordinal, TargetSources *target = nullptr);
+// Only absence returns nullopt; invalid reads and foreign origins still reject
+std::optional<AudioResource> find_audio_resource(const std::string &authored, const char *level, int ordinal, TargetSources *target = nullptr);
 // Classic replacements use bank suppression and CFile folder/HOG fallback, without aliases
 struct ClassicAudioScope {
 	std::string mission, bank;

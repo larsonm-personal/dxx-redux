@@ -110,7 +110,7 @@ Bytes constant_wave(int left, int right)
 	return bytes;
 }
 
-Bytes ambient_objects(const Bytes &source)
+Bytes ambient_objects(const Bytes &source, bool missing_output = false)
 {
 	auto bytes = source;
 	const auto level = xl_compat::inspect_level(source);
@@ -131,7 +131,7 @@ Bytes ambient_objects(const Bytes &source)
 		xl_test::layout_patch(object, 9, std::uint32_t(player->position[0] + (index + 1) * 16384));
 		xl_test::layout_patch(object, 17, std::uint32_t(player->position[2] + (index + 1) * 16384));
 		xl_test::layout_patch(object, 57, 8192);
-		const char *name = index == 0 ? "SOUND" : index == 1 ? "mono"
+		const char *name = index == 0 ? "SOUND" : index == 1 ? (missing_output ? "absent" : "mono")
 		                                                     : "long";
 		const auto offset = object.size();
 		object.resize(offset + 40);
@@ -346,28 +346,29 @@ void fixture(const char *original, const std::filesystem::path &directory)
 	require(source.level_version == 23 && source.game_version == 40 && source.segments.size() == 93 && source.objects.size() == 49, "Unexpected audio geometry source");
 	const auto level = actions(found->bytes);
 	const std::string sounds = "1:sound.wav\r\n2:long.wav\r\n3:mono.wav\r\n4:tiny.wav";
-	Bytes output{ 'D', 'H', 'F' }, changed{ 'D', 'H', 'F' };
-	for (const std::string name : { "audio23", "audio27", "amb23", "amb27", "nosnd", "badsnd", "badid", "badwave" }) {
-		auto data = name.substr(0, 3) == "amb" ? ambient_objects(level) : level;
-		if (name == "audio27" || name == "amb27") data = xl_test::runtime_layout_fixture(data, 27).bytes;
-		xl_test::hog_member(output, name + ".rl2", data, false);
+	Bytes output{ 'D', 'H', 'F' }, changed{ 'D', 'H', 'F' }, missing{ 'D', 'H', 'F' };
+	for (const std::string name : { "audio23", "audio27", "amb23", "amb27", "ambm23", "ambm27", "nosnd", "badsnd", "badid", "badwave" }) {
+		auto &archive_out = name.substr(0, 4) == "ambm" ? missing : output;
+		auto data = name.substr(0, 3) == "amb" ? ambient_objects(level, name.substr(0, 4) == "ambm") : level;
+		if (name == "audio27" || name == "amb27" || name == "ambm27") data = xl_test::runtime_layout_fixture(data, 27).bytes;
+		xl_test::hog_member(archive_out, name + ".rl2", data, false);
 		if (name == "audio23") xl_test::hog_member(changed, name + ".rl2", level, false);
 		if (name != "nosnd") {
 			const auto value = name == "badsnd" ? "1:First\n1:Duplicate" : name == "badid" ? "1:sound.wav"
 			                                                           : name == "badwave" ? "1:broken.wav\n2:long.wav\n3:mono.wav\n4:tiny.wav"
 			                                                                               : sounds;
-			xl_test::hog_member(output, name + ".snd", text(value), false);
+			xl_test::hog_member(archive_out, name + ".snd", text(value), false);
 			if (name == "audio23") xl_test::hog_member(changed, name + ".snd", text(sounds + "\r\n99:Changed identity"), false);
 		}
 		for (const auto &member : members) {
 			if (member.name.size() <= 8 || member.name.substr(0, 8) != "neptunxl") continue;
 			const auto extension = member.name.substr(8);
 			if (extension == ".rl2" || extension == ".mn2" || extension == ".snd") continue;
-			xl_test::hog_member(output, name + extension, member.bytes, false);
+			xl_test::hog_member(archive_out, name + extension, member.bytes, false);
 			if (name == "audio23") xl_test::hog_member(changed, name + extension, member.bytes, false);
 		}
 	}
-	for (auto *archive_out : { &output, &changed }) {
+	for (auto *archive_out : { &output, &changed, &missing }) {
 		xl_test::hog_member(*archive_out, "sound.wav", wave(44100, 2, 22050), false);
 		xl_test::hog_member(*archive_out, "long.wav", wave(44100, 2, 44100), false);
 		xl_test::hog_member(*archive_out, "mono.wav", wave(22050, 1, 11025), false);
@@ -381,6 +382,8 @@ void fixture(const char *original, const std::filesystem::path &directory)
 	write(directory.parent_path() / "sounds/d2x-xl/airbubbles.wav", wave(44100, 2, 22050));
 	write(directory / "xsound.hog", output);
 	write(directory / "xsound.mn2", text("d2x-name = Derived XL sounds\nnum_levels = 4\naudio23.rl2\naudio27.rl2\namb23.rl2\namb27.rl2\n"));
+	write(directory / "xambmiss.hog", missing);
+	write(directory / "xambmiss.mn2", text("d2x-name = Derived absent ambience\nnum_levels = 2\nambm23.rl2\nambm27.rl2\n"));
 	write(directory / "xschange.hog", changed);
 	write(directory / "xschange.mn2", text("d2x-name = Changed XL sounds\nnum_levels = 1\naudio23.rl2\n"));
 	Bytes legacy{ 'D', 'H', 'F' };
