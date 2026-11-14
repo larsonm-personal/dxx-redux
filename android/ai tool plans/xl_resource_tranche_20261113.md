@@ -87,3 +87,22 @@ exit sweep runs before the static prepared-resource owner destroys an uninstalle
 global owner, after native memory initialization, so its native allocations are
 released before that sweep. This addresses owner lifetime rather than suppressing
 the tracker. Verify the same canonical water path and retain the failing trace.
+
+## Repeated preparation performance
+
+The optimized Windows preview lifecycle exceeds its unchanged 60-second limit;
+the optimized Linux build also reproduces the deadline failure. Debug Linux had
+passed, so one build's result cannot stand in for the runtime configuration.
+Temporary timing isolates repeated bank decoding and, after bounded bank reuse,
+about 160-230 ms of absent model-directory searches on Windows per reload.
+Retain the failed receipts and remove instrumentation before publication.
+
+Keep one immutable decoded bitmap/sound pair. Reread physical origins on every
+preparation; exact byte equality with the hash-verified owner permits reuse,
+otherwise require startup hashes and complete decoding again. Candidate owners
+retain independent shared references, including after another candidate discards.
+Check model directory absence once per preparation for the selected desktop
+mission, while existing candidates still pass case and origin checks. Explicit
+target leases and Android staged asset lookup retain their current source rules.
+The canonical preview, HAM, water, Observatory and Pumo owners must qualify this
+change; no deadlines, assertions or authentic fixtures may change.
