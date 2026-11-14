@@ -220,6 +220,11 @@ static bool parse_player_cfg(const ordered_json &value,
 			if (!parse_uint8_field(it.value(), &parsed.guidebot_routing_mode, error, "player_cfg guidebot_routing_mode") ||
 			    parsed.guidebot_routing_mode > 1)
 				return fail(error, "player_cfg guidebot_routing_mode must be 0 or 1");
+		} else if (name == "guidebot_goal_message") {
+			if (!parse_uint8_field(it.value(), &parsed.guidebot_goal_message, error, "player_cfg guidebot_goal_message") ||
+			    parsed.guidebot_goal_message > 1)
+				return fail(error, "player_cfg guidebot_goal_message must be 0 or 1");
+			parsed.has_guidebot_goal_message = 1;
 		} else if (name == "primary_order") {
 			if (!parse_player_cfg_order(it.value(), parsed.primary_order,
 			                            INPUT_DEMO_PLAYER_CFG_PRIMARY_ORDER_MAX,
@@ -303,6 +308,9 @@ static bool validate_player_cfg(const input_demo_player_cfg &player_cfg,
 		return fail(error, "metadata player_cfg requires a valid game");
 	if (player_cfg.guidebot_routing_mode > 1)
 		return fail(error, "player_cfg guidebot_routing_mode must be 0 or 1");
+	if (player_cfg.has_guidebot_goal_message > 1 ||
+	    (player_cfg.has_guidebot_goal_message && player_cfg.guidebot_goal_message > 1))
+		return fail(error, "player_cfg guidebot_goal_message must be 0 or 1 when present");
 	if (player_cfg.d1_primary_order_count || player_cfg.d1_secondary_order_count) {
 		if (game != "d2")
 			return fail(error, "separate D1 weapon orders require a D2 recording");
@@ -366,6 +374,8 @@ static void player_cfg_to_json(const input_demo_player_cfg &player_cfg,
 	(*json)["autoselect_only_once"] = player_cfg.autoselect_only_once;
 	(*json)["original_homing"] = player_cfg.original_homing;
 	(*json)["guidebot_routing_mode"] = player_cfg.guidebot_routing_mode;
+	if (player_cfg.has_guidebot_goal_message)
+		(*json)["guidebot_goal_message"] = player_cfg.guidebot_goal_message;
 	for (i = 0; i != player_cfg.primary_order_count; ++i)
 		primary.push_back(player_cfg.primary_order[i]);
 	for (i = 0; i != player_cfg.secondary_order_count; ++i)
