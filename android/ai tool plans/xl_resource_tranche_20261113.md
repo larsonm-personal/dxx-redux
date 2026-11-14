@@ -301,3 +301,27 @@ Debug Android developer probe (-O1), with assertions and strict FP retained acro
 the target's translation units. Ordinary APK configuration remains unchanged.
 Require complete detailed comparison and terminal equality; do not remove fields,
 change simulation settings or extend the deadline to accommodate tracing.
+
+## Native route notifications across planner builds
+
+Android trace comparison exposes omitted desktop notifications: the same native
+object retirement and visibility updates change route generations only under
+Android guards even though desktop/headless D2 build the same route planner.
+Enable the existing object, wall, reactor and automap notification hooks whenever
+DXX_GUIDEBOT_ROUTE_PLANNER is compiled. Keep Android-only UI and Guide-Bot speech
+hooks separate. No new notification framework or XL-specific native policy.
+
+Extend the canonical water owner to require real traversal visibility and pickup
+retirement to advance the planner generations. Regenerate this unfrozen candidate
+capture after the engine fix, preserving the failed previous capture/comparison.
+Run Windows/Linux water owners, ordinary Windows detailed playback and Android
+probe comparison; keep persistent-message preference and startup FX differences
+open unless their actual owners are resolved. Run affected native Guide-Bot checks
+and qualify the exact new PR head. Catalog membership remains unchanged.
+
+The first Windows/Linux traversal runs fail the new assertion because the shared
+CPU visibility collector has a separate Android-only notification guard. Preserve
+those failed receipts and include that collector in the same planner condition.
+The corrected captures pass on both hosts. Existing live Guide-Bot navigation and
+same-mode save continuity qualify the native invalidation behavior, not only the
+water recording. Android preprocessing is unchanged by these guard expansions.

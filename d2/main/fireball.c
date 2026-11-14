@@ -1733,7 +1733,7 @@ void do_exploding_wall_frame()
 			if (expl_wall_list[i].time>(EXPL_WALL_TIME*3)/4) {
 				segment *seg,*csegp;
 				int cside,a,n;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 				int notify_route;
 #endif
 
@@ -1747,13 +1747,15 @@ void do_exploding_wall_frame()
 
 				wall_set_tmap_num(seg,sidenum,csegp,cside,a,n-1);
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 				notify_route = !(Walls[seg->sides[sidenum].wall_num].flags & WALL_BLASTED);
 #endif
 				Walls[seg->sides[sidenum].wall_num].flags |= WALL_BLASTED;
 				Walls[csegp->sides[cside].wall_num].flags |= WALL_BLASTED;
 #ifdef __ANDROID__
 				escort_notify_blastable_wall_destroyed();
+#endif
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 				if (notify_route) {
 					escort_route_notify_wall_changed(seg->sides[sidenum].wall_num);
 					escort_route_notify_wall_changed(csegp->sides[cside].wall_num);

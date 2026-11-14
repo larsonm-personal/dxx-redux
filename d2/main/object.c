@@ -1842,7 +1842,7 @@ void obj_delete(int objnum)
 	xl_projectile_forget(objnum);
 #endif
 	input_demo_log_robot_lifecycle_delete(objnum, obj);
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	escort_route_notify_object_changed(objnum);
 #endif
 

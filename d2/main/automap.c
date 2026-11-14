@@ -549,7 +549,7 @@ void automap_clear_visited()
 		changed |= Automap_visited[i] != 0;
 		Automap_visited[i] = 0;
 	}
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	if (changed)
 		escort_route_notify_automap_changed(-1);
 #endif
@@ -996,7 +996,7 @@ int automap_key_command(window *wind, d_event *event, automap *am)
 					changed |= Automap_visited[i] == 0;
 					Automap_visited[i] = 1;
 				}
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 				if (changed)
 					escort_route_notify_automap_changed(-1);
 #endif
