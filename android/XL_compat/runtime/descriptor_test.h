@@ -5,6 +5,8 @@
 #include "input_demo_object_trace.h"
 #include "prepared_ham.h"
 #include "retained_resource.h"
+#include "level_requirements.h"
+#include "target_sources.h"
 extern "C" {
 #include "gauges.h"
 #include "endlevel.h"
@@ -474,9 +476,42 @@ static void descriptor_incoming_live_controls(const std::filesystem::path &root,
 		}
 	} release{ &target };
 	{
-		auto incoming = XlPreparedResources::prepare_level(target, 1);
+		std::unique_ptr<XlPreparedResources> incoming;
+		{
+			const auto ship = *Player_ship;
+			const int textures = NumTextures, reactors = Num_reactors, robots = N_robot_types, clips = Num_vclips;
+			struct RestoreTables {
+				player_ship ship;
+				int textures, reactors, robots, clips;
+				~RestoreTables()
+				{
+					*Player_ship = ship;
+					NumTextures = textures;
+					Num_reactors = reactors;
+					N_robot_types = robots;
+					Num_vclips = clips;
+				}
+			} restore{ ship, textures, reactors, robots, clips };
+			Player_ship->model_num = -1;
+			NumTextures = Num_reactors = N_robot_types = Num_vclips = 0;
+			incoming = XlPreparedResources::prepare_level(target, 1);
+			require(Player_ship->model_num == -1 && !NumTextures && !Num_reactors && !N_robot_types && !Num_vclips,
+			        "Incoming requirement walk repaired outgoing definition registries");
+		}
 		require(!incoming->level_inventory().segments.empty(), "Incoming target did not retain its parsed level");
 		require(incoming->dependencies().resource_banks, "Incoming level did not prepare its target banks");
+		{
+			auto invalid = incoming->dependencies();
+			invalid.player_model = -1;
+			xl_compat::TargetSources sources(target, "");
+			bool rejected = false;
+			try {
+				xl_validate_incoming_requirements(incoming->level_inventory(), false, false, invalid, target, sources);
+			} catch (const std::runtime_error &) {
+				rejected = true;
+			}
+			require(rejected, "Incoming requirement walk accepted an invalid retained player model");
+		}
 		require(incoming->dependencies().robot_count == N_robot_types && incoming->dependencies().robot_data[0].mass == robot.mass &&
 		            Robot_info[0].mass != robot.mass,
 		        "Live target did not retain different equal-count definitions");
@@ -505,6 +540,7 @@ static void descriptor_incoming_live_controls(const std::filesystem::path &root,
 	require(GameTime64 > time && Players[Player_num].energy < energy && vm_vec_dist(&position, &ConsoleObject->pos) > F1_0,
 	        "Outgoing game did not continue movement and firing after incoming discard");
 	std::cout << "Incoming live outgoing profile=" << outgoing << " XL=" << expected_xl << '\n';
+	std::cout << "Incoming requirement walk: invalid outgoing ship/counts ignored, invalid target player model rejected, live state retained\n";
 	std::cout << "Incoming live continuation: equal-count target, move, malformed retry and discard preserve detailed state; 120 ordinary movement/fire frames passed\n";
 }
 
