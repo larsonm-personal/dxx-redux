@@ -5001,3 +5001,46 @@ sampled readiness gate still fails at 4/8 load/tick and is not suppressed.
 The current layer's ordinary developer-OFF Windows build and original Pumo Linux
 CPU/model controls also pass. Rendered Pumo startup remains a separate required
 check; ordinary replay and exact-head hosted CI follow publication.
+
+PR 484 is published at `03630df121860d2488bccc987ed18b8942e04046`, immediate
+parent PR 483, linked in stack 471. Fresh water controls and clean-process
+developer-OFF playback pass: normal exit in 43.91 seconds, 1,235 object frames,
+1,239 world/XL records, 196 SIM and 1,808 FX events, plus exact terminal equality.
+Binary SHA-256 `bb4bd58a3e6bd2027097018dd30956db3bb1317c7fa95bb1b53d53b8a011decf`.
+Receipts: `water-level-sources-windows` and `replay-level-sources-water-clean`.
+The same controlled water navigation and physics opt-in apply. Private run
+43493923296 and public checks are pending; sampled readiness remains separate.
+
+### Incoming target requirement walk (2026-11-13)
+
+The explicit incoming factory now invokes the existing complete requirement walk.
+Target descriptor declarations and companion presence use its retained snapshot
+and archive. Ship model, reactor count, model names, animation timing, robot and
+texture counts, weapons and static-explosion sound mappings bind to target
+definitions/banks. Native HAM has no model names, so the startup native name
+registry is captured independently of later outgoing mutations. The selected
+mission keeps its existing live-native checks and graphics-origin guards.
+
+Initial Windows/Linux link failures identified a native header included outside
+its C linkage block; corrected and both builds passed. Both canonical Observatory
+owners pass new controls that set outgoing ship model invalid and zero native
+robot/texture/clip/reactor counts while incoming admission succeeds, then reject
+an invalid retained target player model. Detailed live state and ordinary
+continuation remain unchanged. Both platforms' message/effect owners pass.
+
+The full named-audio owner caught a selected-path regression in static-animation
+timing validation on both platforms. The shared walk now selects original live
+views for selected-mission checks and retained views for incoming checks; the
+failed receipts are retained as `requirements-audio-{windows,linux}`. Full audio
+reruns subsequently pass on both platforms, including the original invalid timing
+assertion and all source/PCM/static explosion/seismic comparisons. No assertion
+changed. Final Observatory reruns also pass both platforms and the ordinary
+developer-OFF Windows build passes. Receipts use suffix `-02` for audio and
+Observatory; builds use `-03` for metadata and `-02` for ordinary playback.
+Final Windows metadata SHA-256:
+`c4aac19f77c27dd05fcb9bbc05f891754e93c95d00984ca7e0eeb1cd8440ea04`.
+Final Linux Debug SHA-256:
+`36e832ac566698caecc78dce869e7dae9fc07da3d49c6c2c412261f6cb613cc0`.
+Fresh water/playback and exact-head hosted qualification follow this checkpoint.
+Native bank/GPU/mixer publication and whole-save staging remain open; target
+admission alone does not establish full G2 atomicity or rendered playability.

@@ -169,3 +169,20 @@ candidate. Extend canonical owners with different A/B companions, overlapping
 names, absent optional target resources and malformed retries, and prove live
 continuation. Source qualification does not imply allocation-free GPU/mixer or
 whole-world publication; those remaining boundaries stay explicit.
+
+## Target requirement walk
+
+Reuse the existing complete requirement walk for explicit incoming preparation.
+Bind ship, reactor counts, native model names, clip timing, weapons, robot counts,
+textures and sound-name mappings to retained target definitions/banks. Descriptor
+declarations and companion presence must use the target snapshot and archive.
+Keep the selected-mission path and its graphics-origin guards intact. Incoming
+graphics bytes are already checked by retained bank preparation. Renderer
+capability checks still apply; no GPU transaction claim follows from this work.
+
+Extend canonical live continuation with deliberately invalid outgoing tables and
+valid target admission, and invalid retained target dependency rejection. Preserve
+the running world, source identities and RNG through failures and moves. Qualify
+the broader walk with the existing messages/audio/effects owners and ordinary
+playback. Native HAM does not encode model names; retain the startup native name
+registry independently of outgoing mission changes, rather than invent mappings.

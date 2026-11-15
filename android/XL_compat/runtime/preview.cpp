@@ -61,7 +61,11 @@
 #include <iomanip>
 #include <cctype>
 #include "asset_dependencies.h"
+#include "level_requirements.h"
+#include "target_sources.h"
+#include "../static_explosion.h"
 extern "C" {
+#include "mission_prepare.h"
 #include "inferno.h"
 #include "segment.h"
 #include "gameseg.h"
@@ -259,18 +263,30 @@ bool mission_has_companion(const char *extension)
 	return false;
 }
 
-void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot, xl_assets::ObjectDependencies &graph)
+void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot, xl_assets::ObjectDependencies &graph,
+                           mission_preparation *incoming = nullptr, xl_compat::TargetSources *target = nullptr)
 {
 	graph.xl_boss_spawning = true;
 	graph.xl_time_equipment = true;
+	// Selected-mission admission also checks the currently installed native tables
+	const int texture_count = incoming ? graph.texture_count : NumTextures;
+	const int robot_count = incoming ? graph.robot_count : N_robot_types;
+	const int clip_count = incoming ? graph.clip_count : Num_vclips;
+	const auto *clips = incoming ? graph.clip_data : Vclip;
+	const int reactor_count = incoming ? graph.reactor_count : Num_reactors;
+	const int player_model = incoming ? graph.player_model : Player_ship->model_num;
+	const int model_count = incoming ? graph.model_count : N_polygon_models;
+	const auto *model_names = incoming ? graph.model_names : Pof_names;
+	const auto *weapons = incoming ? graph.weapon_data : Weapon_info;
 	auto blockers = xl_compat::runtime_blockers(level, water_pilot);
 	if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
 	if (multiplayer) throw std::runtime_error("multiplayer: XL synchronization is not implemented; use singleplayer");
 	// Both callers checked mission context before reading or translating the level
-	if (Current_mission && (Current_mission->alternate_ham_file || (Current_mission->enhanced && Current_mission->enhanced != MISSION_ENHANCED_XL)))
+	const auto *mission = incoming ? mission_prepared_descriptor(incoming) : Current_mission;
+	if (!incoming && mission && (mission->alternate_ham_file || (mission->enhanced && mission->enhanced != MISSION_ENHANCED_XL)))
 		throw std::runtime_error("custom HAM definitions: XL gameplay-definition support is not verified");
-	if (Current_mission && Current_mission->path) {
-		const char *descriptor = mission_descriptor_snapshot();
+	if (mission && mission->path) {
+		const char *descriptor = incoming ? mission_prepared_descriptor_text(incoming) : mission_descriptor_snapshot();
 		if (!descriptor) throw std::runtime_error("mission descriptor snapshot unavailable for XL requirement checks");
 		std::istringstream input(descriptor);
 		bool custom_robots = false, custom_textures = false;
@@ -302,19 +318,33 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 				throw std::runtime_error("unsupported mission descriptor option: " + key);
 		}
 		// Declarations apply to the mission, not necessarily every individual level
-		if (custom_robots && !mission_has_companion(".HXM"))
+		const auto has_companion = [&](const char *extension) {
+			if (!incoming) return mission_has_companion(extension);
+			for (int ordinal = mission->last_secret_level; ordinal <= mission->last_level; ++ordinal) {
+				if (!ordinal) continue;
+				const char *name = mission_prepared_level(incoming, ordinal);
+				if (!name) continue;
+				std::string member = name;
+				const auto dot = member.find_last_of('.');
+				if (dot != std::string::npos) member.resize(dot);
+				if (target->archive_contains(member + extension)) return true;
+			}
+			return false;
+		};
+		if (custom_robots && !has_companion(".HXM"))
 			throw std::runtime_error("mission declares custom robots, but no level HXM was found; install the complete mission package (other custom definition formats remain unqualified)");
-		if (custom_textures && !mission_has_companion(".POG"))
+		if (custom_textures && !has_companion(".POG"))
 			throw std::runtime_error("mission declares custom textures, but no level POG was found; install the complete mission package (custom PIG replacements remain unqualified)");
 	}
-	xl_validate_level_graphics(level.palette);
+	if (!incoming) xl_validate_level_graphics(level.palette);
+	else xl_assets::asset_require(graph.require_owned_banks && graph.resource_banks, "Incoming requirement walk needs retained target banks");
 	if (std::any_of(level.segments.begin(), level.segments.end(), [](const xl_compat::Segment &segment) { return segment.function == 10; }) && !xl_skybox_renderer_ready())
 		throw std::runtime_error("XL skybox requires an active OpenGL renderer");
 	if (xl_compat::volumetric_fog_required(level)) {
 		(void) xl_compat::fog_colors(level);
 		if (const char *reason = ogl_xl_fog_prepare()) throw std::runtime_error(reason);
 	}
-	if (NumTextures <= 404 && std::any_of(level.segments.begin(), level.segments.end(), [&](const xl_compat::Segment &segment) { return (xl_compat::segment_property_bits(level.level_version, segment) & xl_compat::segment_lava) != 0; }))
+	if (texture_count <= 404 && std::any_of(level.segments.begin(), level.segments.end(), [&](const xl_compat::Segment &segment) { return (xl_compat::segment_property_bits(level.level_version, segment) & xl_compat::segment_lava) != 0; }))
 		throw std::runtime_error("lava volumes require the loaded D2 texture 404 damage definition");
 	// Weapons can be collected or restored even when not placed as weapon objects
 	for (const auto id : Primary_weapon_to_weapon_info) graph.weapon(id);
@@ -338,7 +368,7 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 		if (entry.object < 0) continue;
 		if (entry.action.type == 26) {
 			const auto &owner = level.objects.at(entry.object);
-			if (owner.type != OBJ_ROBOT || owner.id < 0 || owner.id >= N_robot_types || !graph.robot_data[owner.id].boss_flag)
+			if (owner.type != OBJ_ROBOT || owner.id < 0 || owner.id >= robot_count || !graph.robot_data[owner.id].boss_flag)
 				throw std::runtime_error("spawn-bot action requires a robot boss owner: object " + std::to_string(entry.object) + ", robot definition " + std::to_string(owner.id));
 			graph.robot(owner.id);
 			bool arbitrary = entry.action.targets.empty() || entry.action.targets[0][0] < 0;
@@ -351,7 +381,7 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 			}
 			if (arbitrary) {
 				int eligible = 0;
-				for (int id = 0; id < N_robot_types; ++id) {
+				for (int id = 0; id < robot_count; ++id) {
 					const auto &robot = graph.robot_data[id];
 					if (!robot.boss_flag && !robot.companion && robot.score_value >= 700) {
 						graph.robot(id);
@@ -390,15 +420,22 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 				}
 			}
 			if (obj.type == 19) {
-				const int sound = xl_static_explosion_sound();
+				int sample = -1;
+				if (incoming && graph.resource_banks)
+					for (int index = 0; index < graph.resource_banks->sound_count(); ++index)
+						if (!std::strcmp(graph.resource_banks->sound_name(index), "explode2")) {
+							sample = index;
+							break;
+						}
+				const int sound = incoming ? xl_compat::static_explosion_logical_sound(sample, graph.low_memory ? graph.alternate_sounds : graph.sound_mappings, MAX_SOUNDS) : xl_static_explosion_sound();
 				if (sound >= 0) graph.sound(sound);
 				graph.clip(obj.id); // Explosion lighting uses the ID independently of rendering
 				const int clip = sound >= 0 ? obj.id : obj.render_data.at(0);
 				graph.clip(clip);
-				if (obj.id < 0 || obj.id >= Num_vclips || clip < 0 || clip >= Num_vclips)
+				if (obj.id < 0 || obj.id >= clip_count || clip < 0 || clip >= clip_count)
 					throw std::runtime_error("static explosion references an invalid animation ID");
-				const auto &animation = Vclip[clip];
-				if (Vclip[obj.id].play_time <= 0 || animation.frame_time <= 0 ||
+				const auto &animation = clips[clip];
+				if (clips[obj.id].play_time <= 0 || animation.frame_time <= 0 ||
 				    obj.render_data.at(2) < 0 || obj.render_data.at(2) >= animation.num_frames)
 					throw std::runtime_error("static explosion requires a valid clip, positive timing and an in-range initial frame");
 				graph.clip(VCLIP_POWERUP_DISAPPEARANCE);
@@ -410,7 +447,7 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 			}
 			if (obj.type == OBJ_WEAPON) graph.weapon(obj.id);
 			if (obj.type == OBJ_CNTRLCEN) {
-				if (obj.id >= Num_reactors || obj.id >= MAX_REACTORS) throw std::runtime_error("required reactor definition is missing");
+				if (obj.id < 0 || obj.id >= reactor_count || obj.id >= MAX_REACTORS) throw std::runtime_error("required reactor definition is missing");
 				graph.weapon(CONTROLCEN_WEAPON_NUM);
 			}
 			if (obj.contains_count > 0) graph.contents(obj.contains_type, obj.contains_id);
@@ -421,15 +458,15 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 				if (!(obj.type == OBJ_ROBOT && obj.render == RT_POLYOBJ) &&
 				    (saved < 0 || std::size_t(saved) >= level.model_names.size())) throw std::runtime_error("model index outside level model table");
 				int resolved = -1;
-				if (obj.type == OBJ_PLAYER) resolved = Player_ship->model_num;
+				if (obj.type == OBJ_PLAYER) resolved = player_model;
 				else if (obj.type == OBJ_ROBOT) resolved = graph.robot_data[obj.id].model_num;
 				// Both XL Verify and Redux verify_object replace placed-mine models
 				else if (obj.type == OBJ_WEAPON && obj.id == PMINE_ID) {
-					resolved = Weapon_info[obj.id].model_num;
+					resolved = weapons[obj.id].model_num;
 					if (resolved < 0) throw std::runtime_error("placed mine requires a polygon model");
 				} else if (obj.type == OBJ_CNTRLCEN) resolved = saved;
-				for (int model = 0; resolved < 0 && model < N_polygon_models; ++model)
-					if (!d_stricmp(level.model_names[saved].c_str(), Pof_names[model])) {
+				for (int model = 0; resolved < 0 && model < model_count; ++model)
+					if (!d_stricmp(level.model_names[saved].c_str(), model_names[model])) {
 						resolved = model;
 						break;
 					}
@@ -485,6 +522,13 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) texture_action(level.object_trigger_records[i].action, int(i), "object texture action");
 }
 } // namespace
+
+void xl_validate_incoming_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot,
+                                       xl_assets::ObjectDependencies &graph, mission_preparation *mission, xl_compat::TargetSources &sources)
+{
+	if (!mission) throw std::runtime_error("Incoming requirements need a retained mission descriptor");
+	validate_requirements(level, multiplayer, water_pilot, graph, mission, &sources);
+}
 
 #ifdef __ANDROID__
 extern "C" int xl_preview_set_water_test_profile(int enabled)
