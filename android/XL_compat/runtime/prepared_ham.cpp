@@ -121,9 +121,11 @@ XlPreparedHam::XlPreparedHam(mission_preparation *mission, const char *member)
 	*this = XlPreparedHam(file.get());
 }
 
-XlPreparedHam::XlPreparedHam(PHYSFS_file *file) : state(std::make_unique<State>())
+XlPreparedHam::XlPreparedHam(PHYSFS_file *file) : XlPreparedHam(xl_retain_resource(file)) {}
+
+XlPreparedHam::XlPreparedHam(std::vector<unsigned char> bytes) : state(std::make_unique<State>())
 {
-	state->source_bytes = xl_retain_resource(file);
+	state->source_bytes = std::move(bytes);
 	xl_read_retained_resource(state->source_bytes, [&](PHYSFS_file *retained) {
 		if (!bm_read_xl_ham_into(retained, &state->destination, read_owned_model))
 			throw std::runtime_error("Cannot decode target mission HAM");
