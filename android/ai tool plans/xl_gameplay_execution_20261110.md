@@ -5874,3 +5874,15 @@ conditional estimates. The runnable package is hash-verified. No further native
 implementation is in flight. Final documentation publication is an immediate-parent
 child of PR 506; its own final-push CI and refreshed identities belong in the
 post-push final-handoff-receipt.json and PR description. No merges are authorized.
+
+### November 14 objective edit: next window ends at 10 AM
+
+The updated goal file was read before further work. It permits wrapping up after
+CI qualification and requests the next tranche plan to run until 10:00 AM
+tomorrow, resolved as November 15, 2026 PST. The next-window plan and replacement
+kickoff now specify 10:00 PM November 14 to 10:00 AM November 15, with a late
+explicit invocation shortening the window. The last four hours, 6:00-10:00 AM,
+remain reserved for validation, CI repair and committed handoff. This is a plan,
+not a new invocation or permission to merge. Sampled 4/8 remains a failed check;
+green applicable regressions alone do not make the stack fully green/merge-ready.
+The planning update is a separate immediate-parent child of PR 507 in stack 471.

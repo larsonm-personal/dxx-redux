@@ -313,3 +313,11 @@ controller/candidate IDs, workflow URLs/attempts, complete checks and workspace
 refresh are recorded in temp/xl-readiness-tranche2-20261114/final-handoff-receipt.json
 and its PR description after publication. A commit cannot contain its own hash
 or future CI result. Pending remains pending until that exact-head inspection.
+
+The user's later objective edit targets the next explicitly invoked tranche to
+finish at 10:00 AM PST November 15, 2026. The revised next-window plan and kickoff
+define the planned 10:00 PM-to-10:00 AM window, shorten it for a late invocation
+and reserve 6:00-10:00 AM for validation/handoff. This planning update does not
+start another tranche or authorize merging. The planning checkpoint is an
+immediate-parent child of handoff PR 507; final-handoff-receipt.json will identify
+that latest published tip and its own CI, preserving PR 507's separate receipts.
