@@ -338,11 +338,14 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 	}
 	if (!incoming) xl_validate_level_graphics(level.palette);
 	else xl_assets::asset_require(graph.require_owned_banks && graph.resource_banks, "Incoming requirement walk needs retained target banks");
-	if (std::any_of(level.segments.begin(), level.segments.end(), [](const xl_compat::Segment &segment) { return segment.function == 10; }) && !xl_skybox_renderer_ready())
+	// Explicit no-render execution retains skybox geometry/collision and authored
+	// fog state, but does not require a framebuffer for presentation qualification
+	if (!GameArg.SysInputDemoNoRender && std::any_of(level.segments.begin(), level.segments.end(), [](const xl_compat::Segment &segment) { return segment.function == 10; }) && !xl_skybox_renderer_ready())
 		throw std::runtime_error("XL skybox requires an active OpenGL renderer");
 	if (xl_compat::volumetric_fog_required(level)) {
 		(void) xl_compat::fog_colors(level);
-		if (const char *reason = ogl_xl_fog_prepare()) throw std::runtime_error(reason);
+		if (!GameArg.SysInputDemoNoRender)
+			if (const char *reason = ogl_xl_fog_prepare()) throw std::runtime_error(reason);
 	}
 	if (texture_count <= 404 && std::any_of(level.segments.begin(), level.segments.end(), [&](const xl_compat::Segment &segment) { return (xl_compat::segment_property_bits(level.level_version, segment) & xl_compat::segment_lava) != 0; }))
 		throw std::runtime_error("lava volumes require the loaded D2 texture 404 damage definition");

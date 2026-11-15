@@ -55,17 +55,32 @@ trusted default branch through normal review; they cannot self-activate from a P
 
 ## Local reproduction
 
-With the pinned private assets checkout and verified combined D1/D2 retail data:
+The reviewed provisioned profile adds authentic Vertigo `d2x.hog` and the XL
+camera `d2x-xl.hog` from private resource revision
+`dc6565f6b5400d7c700fa8378e766b2354b6ceb6`. Mission archives remain at the original
+`9dad21bd65ba05665ac6fe315f37fe7461e85725` revision. The producer verifies both
+resource sizes and SHA256 values and records this separate profile; the trusted
+reporter requires the same identity. Historical stock-only receipts remain
+distinct. Adding authentic definitions does not change the selected levels or
+their pass criterion.
+
+With the two pinned private checkouts and verified separate D1/D2 retail data:
 
 ```sh
+python android/tests/xl_readiness.py prepare \
+  --assets PRIVATE_MISSIONS --data VERIFIED_RETAIL_DATA \
+  --resources PRIVATE_RESOURCES \
+  --catalog android/tests/xl_readiness_inventory.json --work temp/readiness-input
 python android/tests/xl_readiness.py run \
   --engine BUILD/main/dxx-redux-d2-headless-route \
-  --assets PRIVATE_ASSETS --data RETAIL_RUNTIME \
+  --assets temp/readiness-input --data temp/readiness-input/runtime \
   --catalog android/tests/xl_readiness_inventory.json \
-  --work temp/readiness-new --seven-zip /path/to/7z --target-sha HEAD_SHA
+  --work temp/readiness-new --seven-zip /path/to/7z --target-sha HEAD_SHA \
+  --require-resources
 python android/tests/xl_readiness_report.py \
   --receipt temp/readiness-new/results.json \
-  --catalog android/tests/xl_readiness_inventory.json --local-sha HEAD_SHA
+  --catalog android/tests/xl_readiness_inventory.json --local-sha HEAD_SHA \
+  --require-resources
 ```
 
 Build the executable from `d2` with `BUILD_TESTING=ON`. Keep raw logs and extracted
