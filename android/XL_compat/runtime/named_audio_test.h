@@ -231,6 +231,7 @@ static int named_audio_original(int argc, char **argv)
 #include "lightning_audio_test.h"
 #include "bubble_audio_test.h"
 #include "transition_audio_test.h"
+#include "missing_action_test.h"
 #include "static_explosion_test.h"
 #include "seismic_test.h"
 #endif
@@ -251,7 +252,11 @@ static int named_audio_test(int argc, char **argv)
 		const bool missing_output = !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient-missing");
 		require(selected && (!std::strcmp(selected, "1") || !std::strcmp(selected, "2") || ((legacy || static_objects) && !std::strcmp(selected, "3")) || (static_objects && !std::strcmp(selected, "-1"))), "Named audio controls require a valid fixture ordinal");
 		const int ordinal = std::atoi(selected);
-		if (!std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "seismic")) {
+		if (!std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "action-missing")) {
+			xl_missing_action_control::run(root, ordinal);
+			Mix_SetPostMix(nullptr, nullptr);
+			return 0;
+		} else if (!std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "seismic")) {
 			native_seismic_test(root, ordinal);
 			Mix_SetPostMix(nullptr, nullptr);
 			return 0;

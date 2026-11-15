@@ -5602,3 +5602,20 @@ New ordinary-head measurement, Android and capture/clean-playback qualification
 remain due. Estimate: three tranches including this one, range two to four, low
 confidence. Full G2 energy 91->100, startup FX mismatch and camera prerequisite
 remain open. See xl_readiness_tranche2_20261114.md for constraints and next steps.
+
+### 2026-11-14 tranche 2: absent named-action output checkpoint
+
+Immediate parent: PR 498 / 4f8b0d2ebc9bce7915b95a589f9869a409476d9c,
+stack 471. Missing WAV output now retains authored action identity and follows
+failed-start timing/flags without inventing PCM duration, voices or saved playback.
+Missing SND definitions, malformed WAV and foreign origins still reject. Native
+controls and pinned source compare 36 attempts per 23/27 fixture, with scoped
+prepare/commit retention and disk-through-stock continuation. Canonical Linux
+Debug/assertions owner passed in 95 seconds; Windows release owner passed in
+123.454 seconds. Unchanged deadlines and catalog membership. Private failed
+receipts and exact source/binary snapshots remain in
+`temp/xl-readiness-tranche2-20261114`; authentic xsound inputs are unchanged.
+Windows Debug and ordinary frozen readiness for this child remain pending.
+Known readiness stays 4/8; full G2 and energy 91-to-100 corrupt-trailer defect
+remain open. No campaign qualification follows from these component controls.
+See `xl_readiness_tranche2_20261114.md` for window, prior CI IDs and constraints.

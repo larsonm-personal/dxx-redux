@@ -211,10 +211,20 @@ static int audio_scope_test(int argc, char **argv)
 			require(foreign && snapshot() == earned && xl_level_supported_at(filename, 0, ordinal), "Foreign sound was accepted or damaged current playback");
 			const auto mission_sound = root / "mods" / "xscope" / "sounds" / "mission.wav";
 			const auto withheld = mission_sound.string() + ".withheld";
+			const auto inventory = xl_ambient_objects_control::source_level();
+			const auto present_bank = xl_compat::prepare_named_audio(filename, inventory, ordinal);
 			std::filesystem::rename(mission_sound, withheld);
-			const bool missing = !xl_level_supported_at(filename, 0, ordinal) && std::strstr(xl_level_rejection(), "Missing XL sound mission.wav") && std::strstr(xl_level_rejection(), "global addon");
+			const bool missing = xl_level_supported_at(filename, 0, ordinal);
+			const auto absent_bank = xl_compat::prepare_named_audio(filename, inventory, ordinal);
 			std::filesystem::rename(withheld, mission_sound);
-			require(missing && snapshot() == earned && xl_level_supported_at(filename, 0, ordinal), "Missing sound rejection omitted the searched scopes or changed playback");
+			require(missing && snapshot() == earned && xl_level_supported_at(filename, 0, ordinal), "Absent scoped output changed the live owner during preparation");
+			xl_compat::install_named_audio(absent_bank);
+			require(xl_compat::named_audio_diagnostics().at("unavailable_action_output") == nlohmann::json::array({ "mission.wav" }), "Absent scope borrowed outgoing or newly restored file content");
+			const auto absent = snapshot();
+			require(!xl_compat::restore_named_audio(earned, true) && snapshot() == absent, "Absent scope accepted present-resource playback identity");
+			require(xl_named_audio_action(&Triggers[2], 2) == 1 && snapshot().at("voices").empty() && event(2)[2] == -1 && !event(2)[5].get<bool>(), "Absent scope fabricated a voice or repetition duration");
+			xl_compat::install_named_audio(present_bank);
+			require(xl_compat::restore_named_audio(earned, true) && snapshot() == earned, "Scoped output recovery lost the outgoing playhead");
 			// Capture normal level two, whose filename is also used by level one
 			if (ordinal == 2) {
 				char save[] = "scope-earned.sav", description[] = "XL level two sound scope";

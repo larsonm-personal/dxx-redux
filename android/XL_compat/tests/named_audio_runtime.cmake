@@ -105,6 +105,30 @@ foreach(ordinal IN ITEMS 1 2)
         endif()
     endif()
     check_ambient(${ordinal} "${version}/40" ambient)
+    execute_process(
+        COMMAND "${ENGINE}" -named-audio-test action-missing -audio-level "${ordinal}" -hogdir
+                "${DATA}" -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nomusic
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE log
+        ERROR_VARIABLE error
+        TIMEOUT 15)
+    file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+    if(NOT result EQUAL 0 OR NOT log MATCHES "Missing named actions passed:")
+        message(FATAL_ERROR "Absent named action ${version} failed (${result}): ${log}${error}")
+    endif()
+    if(REFERENCE)
+        execute_process(
+            COMMAND "${REFERENCE}" --missing-action-runtime "${OUTPUT}/missing-action.txt"
+            RESULT_VARIABLE result
+            OUTPUT_VARIABLE log
+            ERROR_VARIABLE error
+            TIMEOUT 15)
+        file(APPEND "${OUTPUT}/runtime.log" "${log}${error}")
+        if(NOT result EQUAL 0 OR NOT log MATCHES
+                                 "absent native action attempts match actual source")
+            message(FATAL_ERROR "Absent action differs from source (${result}): ${log}${error}")
+        endif()
+    endif()
     file(READ "${OUTPUT}/ambient-activation.txt" available_activation)
     check_ambient(${ordinal} "${version}/40" ambient-missing)
     file(READ "${OUTPUT}/ambient-activation.txt" unavailable_activation)

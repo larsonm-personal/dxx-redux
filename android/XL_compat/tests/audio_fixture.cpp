@@ -382,6 +382,13 @@ void fixture(const char *original, const std::filesystem::path &directory)
 	write(directory.parent_path() / "sounds/d2x-xl/airbubbles.wav", wave(44100, 2, 22050));
 	write(directory / "xsound.hog", output);
 	write(directory / "xsound.mn2", text("d2x-name = Derived XL sounds\nnum_levels = 4\naudio23.rl2\naudio27.rl2\namb23.rl2\namb27.rl2\n"));
+	Bytes absent_actions{ 'D', 'H', 'F' };
+	for (const auto &member : xl_compat::read_hog(output)) {
+		if (member.name.size() > 4 && member.name.substr(member.name.size() - 4) == ".wav") continue;
+		xl_test::hog_member(absent_actions, member.name, member.bytes, false);
+	}
+	write(directory / "xactmiss.hog", absent_actions);
+	write(directory / "xactmiss.mn2", text("d2x-name = Derived absent sounds\nnum_levels = 2\naudio23.rl2\naudio27.rl2\n"));
 	write(directory / "xambmiss.hog", missing);
 	write(directory / "xambmiss.mn2", text("d2x-name = Derived absent ambience\nnum_levels = 2\nambm23.rl2\nambm27.rl2\n"));
 	write(directory / "xschange.hog", changed);
