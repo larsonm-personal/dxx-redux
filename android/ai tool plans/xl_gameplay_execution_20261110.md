@@ -5444,3 +5444,59 @@ PR 490 retry attempt 2 now passes both native admission and headless playback:
 run 43510687964, job 132210963930, unchanged deadline/assertions. PR 492 is published
 at f4d83ef75a6c1a5a7ae9795954d9e5ae8b54c6b3, immediate parent PR 491, linked to
 stack 471. Its public/private qualification is still in progress at this snapshot.
+
+### User-directed quota wind-down - November 13, 15:17 PST
+
+The user replaces the remaining feature window with CI repair and longer polling
+cycles until 22:00 PST, leaving the known 4/8 readiness failure explicitly open.
+Native sound-bank work is incomplete and untested; all five modified files are
+preserved in stash 9783012e2a77dfdd4680812ae72b852cfaca5e17 on branch
+xl_gameplay_20261113_28_native_sound_banks. The working tree now contains only
+handoff documentation on xl_gameplay_20261113_28_ci_handoff, parent PR 493.
+Prior stashes remain unchanged. No new gameplay scope is started.
+
+PR 492 public qualification is terminal PASS. Private run 43521768238 passes
+exact f4d83ef75a6c1a5a7ae9795954d9e5ae8b54c6b3 in 858.281 seconds, with
+113 required owners, 16 witnesses and three modern source levels. Controller
+bf40de9bc3b85c2279fe8163c621bb6c052dec12 and pinned asset identities are unchanged.
+Camera remains not_run_missing_addon. Receipt: pr492-private-results/results.json.
+PR 493 at 845500bad07847b97d44c0873abc40371299885c has no new terminal regression
+failure at wind-down entry; several public/private checks remain running.
+Its merge candidate at this snapshot is 34ce1a231fffaafd474caba97d8b535c0a55cd1a.
+
+Historical private failures on PRs 478 and 479 are the preview deadline defect
+fixed in PR 480 and qualified on later candidates. They are not relabeled green.
+No readiness failure is suppressed. The dated report, next plan and copy/paste
+kickoff carry the exact current binary/input receipts and remaining G2 defect.
+
+At 16:21 PST, implementation PR 493 and handoff PR 494 have terminal public/private
+results with only sampled readiness failing. PR 493: 31 pass / 8 intentional skip;
+PR 494: 33 pass / 6 intentional skip; neither has a pending check. PR 494 native
+save/replay and headed replay owners both pass, whereas the older PR 493's later
+replay jobs were excluded by the fresh stack-tip gate. Full URLs, attempts,
+head/merge identities and individual lane/skip explanations are in the dated
+November 13 report. Exact private target 845500bad07847b97d44c0873abc40371299885c
+passes in 987.858 seconds; documentation target
+39a6a440e76bfed5e1e57abe7ace0001d4b5fb88 passes in 765.606 seconds. Each retains
+113 required owners, 16 witnesses, three modern source levels and four assisted
+anchors. Missing camera addon and 4/8 readiness remain open. This documentation
+receipt triggers another exact-head CI cycle, monitored through the user's 22:00
+deadline. No additional feature or source fix is introduced during wind-down.
+
+At about 19:22 PST the user ends hourly watching once the non-readiness checks
+pass and requests the next tranche plan/prompt and an 8/8 estimate. The exact
+81b4046f7bb61410ba85fd0da87504d294561ffd tip has 33 pass, six intentional skips,
+zero pending and only readiness FAIL. Private run 43533928032 attempt 1 passes
+113 required owners in 1183.281 seconds; immutable asset/controller identities
+are unchanged. The owned monitor process is stopped. The final documentation
+adjustment will be pushed and qualified without resuming the hourly watch.
+
+Planning estimate for the unchanged 120-frame headless readiness test: three
+12-hour tranches, range two to four, low confidence. Current failures are four
+zero-frame load_failed rows, not diagnosed root causes: BoilingPoint 7, Dinter 1,
+Sphere 2 and WShock20 6. Next tranche starts by reproducing the exact ordinary
+headless owner against frozen cohort 9dad21bd65ba05665ac6fe315f37fe7461e85725,
+then chooses a bounded dependency fix and reserves hours 8-12 for CI/handoff.
+Full G2 is not automatically required for this two-second load/tick criterion.
+Detailed sequence and uncertainty are in xl_gameplay_next_window_20261113.md;
+the replacement kickoff preserves all publication, architecture and test rules.
