@@ -1,9 +1,20 @@
 # Next explicitly invoked XL gameplay window
 
-This plan does not start work. Start one new 12-hour tranche only when explicitly
-invoked. Do not resume unlimited work or the completed hourly watch. Work
-sequentially without agents and reserve hours 8-12 for validation, applicable CI
-repair and committed handoff.
+This plan does not start work. The user's updated target is a next tranche ending
+at 10:00 AM PST on November 15, 2026 (18:00 UTC). Its planned twelve-hour window
+is 10:00 PM PST November 14 through that deadline. Begin only on explicit
+invocation, at the later of that planned start or invocation, after the current
+tranche has ended. A later start shortens the window; it never extends the end.
+Do not resume unlimited work or the completed hourly watch. Work sequentially
+without agents. Reserve 6:00-10:00 AM PST November 15 for validation, applicable
+CI repair and committed handoff. An invocation in that reserved period permits
+only work that fits the remaining validation/handoff time. If the deadline has
+already passed, obtain a new bounded window instead of silently rolling it forward.
+
+The current tranche may wrap up early after final applicable CI qualification
+and committed handoff. Sampled readiness is still a separate failed 4/8 check;
+passing regression owners must not be called a fully green or merge-ready stack.
+No merge, auto-merge or enqueue is authorized by the user's wrap-up instruction.
 
 Read AGENTS.md, .github/copilot-instructions.md,
 xl_gameplay_what_was_done_20261114_tranche2.md,

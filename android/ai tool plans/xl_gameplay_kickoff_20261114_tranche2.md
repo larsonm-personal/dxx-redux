@@ -1,9 +1,15 @@
 # Replacement kickoff: explicit invocation only
 
-Run one new 12-hour XL gameplay tranche in C:/local/dxx-redux only when this prompt
-is explicitly invoked. Work sequentially without agents. This does not revive
-unlimited work or the canceled/completed hourly watch. Reserve hours 8-12 for
-validation, applicable CI repair and committed handoff.
+Run one new bounded XL gameplay tranche in C:/local/dxx-redux only when this prompt
+is explicitly invoked. Target 10:00 PM PST November 14, 2026 through 10:00 AM PST
+November 15, 2026 (06:00-18:00 UTC November 15). Start at the later of the planned
+start or explicit invocation, after the current tranche ends; a later start
+shortens the window and never extends the 10:00 AM deadline. Work sequentially
+without agents. This does not revive unlimited work or the canceled/completed
+hourly watch. Reserve 6:00-10:00 AM PST November 15 for validation, applicable CI
+repair and committed handoff. If invoked during that reservation, do only work
+that fits the remaining validation/handoff time. If the deadline has passed,
+request a new bounded window rather than silently rolling it forward.
 
 Read AGENTS.md, .github/copilot-instructions.md,
 xl_gameplay_what_was_done_20261114_tranche2.md,
