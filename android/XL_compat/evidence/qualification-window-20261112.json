@@ -1,0 +1,272 @@
+{
+    "note": "Native implementation matches commit 283d63d9. Windows/Linux audio runtime binaries were built immediately before publication from the same native source; exact SHA-256 values identify tested binaries. Temporary scope logging was removed before the final Windows metadata build. D1 and Android packages were built after publication with only documentation/evidence changes in the working tree.",
+    "native_source_commit": "283d63d9d88de0103a1edf9a82c64843a1161c16",
+    "native_source_tree": "6a609304f0aed49160a0581458b1e33ed1cfe32d",
+    "files": [
+        {
+            "path": "temp/xl-overnight-20261104/boost-crossing-native/main/xl-preview-lifecycle.exe",
+            "bytes": 19115008,
+            "sha256": "9defb1d6b8a6c3f7c6b814e29933861a88fe53b538f342bacf8a23c7391a100a"
+        },
+        {
+            "path": "temp/xl-day-20261110/build-d2-reference/main/d2x-redux.exe",
+            "bytes": 13581312,
+            "sha256": "e2b67e754ce2b40f9fcfae110e76132a32f2964f29572b10ac1a0ea316a18bc9"
+        },
+        {
+            "path": "temp/xl-g2-window-20261112/replay-audio-water-clean/d2x-redux.exe",
+            "bytes": 13581312,
+            "sha256": "e2b67e754ce2b40f9fcfae110e76132a32f2964f29572b10ac1a0ea316a18bc9"
+        },
+        {
+            "path": "temp/xl-g2-window-20261112/water-current/missions/rtarena.hog",
+            "bytes": 1311972,
+            "sha256": "adbfea019c1ac29ac922e15876c22ca6ce30eb02d598a98e6ef7dfdce2b2dd3e"
+        },
+        {
+            "path": "temp/xl-g2-window-20261112/water-current/missions/rtarena.mn2",
+            "bytes": 392,
+            "sha256": "14150755f14e210b284aa03c45d75e1b2f96be7b567bbc324bf4986b96928a71"
+        },
+        {
+            "path": "temp/xl-g2-window-20261112/water-current/preview-user/input_demo_recordings/new/d2_rtarena_level1_20261112_220605.dximdemo",
+            "bytes": 35810032,
+            "sha256": "690cb1946cf8c93efcd05ee78bc52e4e3c08960b12094e02bed51b328d10164a"
+        },
+        {
+            "path": "temp/xl-g2-window-20261112/water-current/preview-user/xl-water-capture.jsonl.gz",
+            "bytes": 47213256,
+            "sha256": "2cec9bd29a5ae77d115e3f681d94bc71365ca21648d27386d4caf19504448c60"
+        },
+        {
+            "path": "temp/pr464-ci-fixes-20261110/g2-time-continuation-windows-rng/user/input_demo_recordings/new/d2_wshock20_level6_20261112_065220.dximdemo",
+            "bytes": 550542,
+            "sha256": "962de56f3c885240b6cfa8c46817e5f8c150416681599d817606bde752b98089"
+        },
+        {
+            "path": "temp/xl-implementation-20261109/native-effect-combined/missions/neptunxl.hog",
+            "bytes": 93342,
+            "sha256": "4016618d24238803135dabf2b33daee2a2c34a670c3f016d94ae4639c8887303"
+        }
+    ],
+    "linux_binaries": [
+        {
+            "sha256": "36fb6359594d54b4341fa8c39f6b581b249916d69c9000e7eaf0d3edbc4f5751",
+            "path": "/var/tmp/dxx-pr464-20261111/private/preview/main/xl-preview-lifecycle"
+        },
+        {
+            "sha256": "9ba90937305dce5496d807e0d4418856ee5b8b97d757b40eadff5bf31166ddfd",
+            "path": "/var/tmp/dxx-pr464-20261111/private/stock/main/d2x-redux"
+        },
+        {
+            "sha256": "e347e00f7c4de91621937e7f9aa908cc7ad0b485350ee5cefee6b72b47f6d44c",
+            "path": "/var/tmp/dxx-pr468-debug/d2/main/xl-preview-lifecycle"
+        }
+    ],
+    "replay_comparisons": {
+        "replay-audio-short": {
+            "objects": {
+                "status": "pass",
+                "frames_compared": 12,
+                "first_field_differences": {}
+            },
+            "world": {
+                "status": "pass",
+                "records_compared": 16,
+                "first_field_differences": {}
+            },
+            "sim_rng": {
+                "status": "pass",
+                "simulation_events_compared": 21,
+                "first_difference": null,
+                "first_value_difference": null
+            },
+            "fx_rng": {
+                "status": "pass",
+                "effects_events_compared": 12,
+                "first_difference": null,
+                "first_value_difference": null
+            }
+        },
+        "replay-audio-linux": {
+            "objects": {
+                "status": "pass",
+                "frames_compared": 12,
+                "first_field_differences": {}
+            },
+            "world": {
+                "status": "pass",
+                "records_compared": 16,
+                "first_field_differences": {}
+            },
+            "sim_rng": {
+                "status": "pass",
+                "simulation_events_compared": 21,
+                "first_difference": null,
+                "first_value_difference": null
+            },
+            "fx_rng": {
+                "status": "pass",
+                "effects_events_compared": 12,
+                "first_difference": null,
+                "first_value_difference": null
+            }
+        },
+        "replay-audio-water-clean": {
+            "objects": {
+                "status": "pass",
+                "frames_compared": 1235,
+                "first_field_differences": {}
+            },
+            "world": {
+                "status": "pass",
+                "records_compared": 1239,
+                "first_field_differences": {}
+            },
+            "sim_rng": {
+                "status": "pass",
+                "simulation_events_compared": 196,
+                "first_difference": null,
+                "first_value_difference": null
+            },
+            "fx_rng": {
+                "status": "pass",
+                "effects_events_compared": 1808,
+                "first_difference": null,
+                "first_value_difference": null
+            }
+        }
+    },
+    "limitations": [
+        "Short replay has five setup position assists",
+        "Water replay uses controlled navigation and original experimental water profile",
+        "Not sustained unassisted connected gameplay or Android acceptance"
+    ],
+    "packages": [
+        {
+            "path": "temp/xl-g2-window-20261112/packages/windows-d1/d1x-redux.exe",
+            "bytes": 4275712,
+            "sha256": "c09e45ef01b273d369467a859068071e088e18a655dff63b557f71f7f403441d"
+        },
+        {
+            "path": "temp/xl-g2-window-20261112/packages/windows-d2/d2x-redux.exe",
+            "bytes": 13581312,
+            "sha256": "e2b67e754ce2b40f9fcfae110e76132a32f2964f29572b10ac1a0ea316a18bc9"
+        },
+        {
+            "path": "temp/xl-g2-window-20261112/packages/dxx-redux-283d63d.aab",
+            "bytes": 76786294,
+            "sha256": "3175e6b702a6e32396d1d057422dd210e43917c75834d6377b564a6f02ed56d4"
+        },
+        {
+            "path": "temp/xl-g2-window-20261112/packages/dxx-redux-283d63d-universal.apk",
+            "bytes": 84874482,
+            "sha256": "427dc2c2f7b238ac137a9999e72e6c85bfd05608397a12b6a53f9da976c32a8d"
+        }
+    ],
+    "android": {
+        "package": "com.dxxrevival.app",
+        "variant": "Debug",
+        "signature_verified_by_build_helper": true,
+        "native_libraries": [
+            {
+                "member": "lib/arm64-v8a/libdxx-redux-d1.so",
+                "sha256": "c4812bff24a278f557c31a892e9c9b834ab40c2c94da4c361561a11c168476a0"
+            },
+            {
+                "member": "lib/arm64-v8a/libdxx-redux-d2.so",
+                "sha256": "27fc3f78fab94ea82beaae0755405747210d0c25694b3f52b8367fb11497470a"
+            },
+            {
+                "member": "lib/armeabi-v7a/libdxx-redux-d1.so",
+                "sha256": "dab1980bfc221d334a238d407136b43575421f256fc60d06c9c8866532a43140"
+            },
+            {
+                "member": "lib/armeabi-v7a/libdxx-redux-d2.so",
+                "sha256": "ccb819acabe7735502539f019e8bbc2977d0e05ddf133ccb2e21c32044e92b5d"
+            },
+            {
+                "member": "lib/x86_64/libdxx-redux-d1.so",
+                "sha256": "3f36af00e3a7701c8c0c862d78233fb3ef23489aca536a0a75e8c9283474cb91"
+            },
+            {
+                "member": "lib/x86_64/libdxx-redux-d2.so",
+                "sha256": "72f43e3ffe81b20fc56799d66cebaeb28c77563d8387bb8bc4de43c1f0f7866b"
+            }
+        ],
+        "local_gameplay_tested": false
+    },
+    "windows_runtime_dlls": {
+        "windows-d1": [
+            "FLAC.dll",
+            "glew32.dll",
+            "libpng16.dll",
+            "mikmod.dll",
+            "mpg123.dll",
+            "ogg.dll",
+            "physfs.dll",
+            "SDL.dll",
+            "SDL_mixer.dll",
+            "vorbis.dll",
+            "vorbisfile.dll",
+            "zlib1.dll"
+        ],
+        "windows-d2": [
+            "FLAC++.dll",
+            "FLAC.dll",
+            "fmt.dll",
+            "glew32.dll",
+            "libpng16.dll",
+            "mikmod.dll",
+            "mpg123.dll",
+            "ogg.dll",
+            "OpenAL32.dll",
+            "out123.dll",
+            "physfs.dll",
+            "SDL.dll",
+            "SDL_mixer.dll",
+            "syn123.dll",
+            "vorbis.dll",
+            "vorbisenc.dll",
+            "vorbisfile.dll",
+            "zlib1.dll"
+        ]
+    },
+    "water_asset_fingerprints": {
+        "status": "complete",
+        "mode": "native_d2",
+        "files": [
+            {
+                "role": "d2_hog",
+                "name": "descent2.hog",
+                "size": 7595079,
+                "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"
+            },
+            {
+                "role": "mission_hog",
+                "name": "rtarena.hog",
+                "size": 1311972,
+                "sha256": "adbfea019c1ac29ac922e15876c22ca6ce30eb02d598a98e6ef7dfdce2b2dd3e"
+            },
+            {
+                "role": "d2_pig",
+                "name": "groupa.pig",
+                "size": 4931752,
+                "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"
+            },
+            {
+                "role": "d2_ham",
+                "name": "descent2.ham",
+                "size": 1307598,
+                "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"
+            }
+        ]
+    },
+    "build_profiles": {
+        "windows_d2": "MSVC x86 RelWithDebInfo; developer ON metadata owner and developer OFF ordinary runtime",
+        "windows_d1": "MSVC x86 ordinary runtime",
+        "linux_runtime": "GCC RelWithDebInfo; developer ON metadata and OFF ordinary runtime",
+        "linux_assertions": "GCC Debug -g -O1 without NDEBUG",
+        "android": "Repository 1_build_aab_apk.ps1 Debug universal helper, JDK 21"
+    }
+}

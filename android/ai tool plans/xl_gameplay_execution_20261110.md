@@ -4465,3 +4465,53 @@ PR 470's corrective head `f555025e604e0c79e4c3391f4ab3761ccbfa5181` passes priva
 run 43379549135 attempt 1. Its broad master receipt still explicitly reports
 incomplete overall coverage. Public downstream replay owners remain pending;
 sampled readiness remains a distinct failed four-of-eight diagnostic.
+
+### Audio publication and final local continuation
+
+PR 472 publishes `283d63d9d88de0103a1edf9a82c64843a1161c16`, based on PR 470,
+linked as the third layer of native stack 471. It is non-draft and fork-only.
+Ordinary developer-OFF Windows and Linux playback both pass strict terminal,
+12 object-frame/16 world-record, 21 SIM and 12 FX comparisons after the audio fix.
+The clean ordinary Windows water continuation also passes terminal exit and all
+1,235 object frames, 1,239 world/XL records, 196 SIM and 1,808 FX events. Its
+controlled-navigation assists and experimental water profile remain disclosed.
+A first direct launch used the executable directory's configuration instead of
+the intended working-directory configuration; that failed receipt is retained.
+The passing run stages the unchanged binary beside its own config, matching the
+established wrapper's native launch layout.
+
+Archive eligibility verification reuses the existing safe extractor and advertised
+level parser. All 23 archive hashes/sizes and 356 descriptor hashes/ordinal lists
+match the immutable catalog. One authored anarchy entry is excluded; 1,109 entries
+declare normal, and one D2X-XL declaration remains unresolved and included.
+The interim single-player denominator is 1,110, threshold 999; the full
+playability numerator remains unknown. Detailed descriptor provenance is retained
+in `android/XL_compat/evidence/catalog-eligibility-20261112.json`. Final local
+source/binary/input identities and comparison counts are retained in
+`qualification-window-20261112.json` alongside it. Hosted audio qualification
+remains pending and is not inferred from these local passes.
+
+### Native delivery packages
+
+The normal debug universal Android helper completes successfully on native source
+283d63d9 with only documentation/evidence changes in the working tree. Signature
+and package verification pass, with both D1/D2 libraries for armeabi-v7a,
+arm64-v8a and x86_64. APK SHA-256 is
+`427dc2c2f7b238ac137a9999e72e6c85bfd05608397a12b6a53f9da976c32a8d`.
+The AAB, staged Windows D1/D2 runtime folders, executable hashes and all six APK
+native-library hashes are recorded in the qualification manifest. Both Windows
+staged executables pass `-help`. Assets are not bundled. This verifies packaging,
+not fresh local Android gameplay, platform replay parity or full G7 closure.
+
+### Handoff publication checkpoint
+
+The dated continuation report, next bounded plan, replacement kickoff prompt,
+verified authored-eligibility evidence and source/binary/input/package manifest
+are prepared on a documentation/evidence layer above PR 472. At 23:34 PST,
+PR 470's corrective head has 33 successful selected checks, six intentional skips
+and the separate 4/8 readiness failure. PR 472 private run 43383830406 attempt 1
+passes 113 required tests, 16 format witnesses and three modern source levels;
+public ASan/save workflows are still running. All three private controllers use
+bf40de9bc, distinct from their tested candidate heads. Final pushed-candidate
+qualification will be recorded in the handoff PR after publication. No pending
+owner is counted as a pass; no merges were performed.
