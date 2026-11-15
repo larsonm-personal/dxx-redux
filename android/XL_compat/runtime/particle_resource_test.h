@@ -61,7 +61,7 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 		}
 		throw std::runtime_error("Particle image preparation unexpectedly accepted a bad resource");
 	};
-	if (Shield || lightning) failure(missing);
+	if (Shield) failure(missing);
 	else require(!prepare(level), "Absent particle image did not retain failed creation input");
 	if (lightning) {
 		auto nonglow = level;
@@ -180,11 +180,11 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 		bool rejected = false;
 		try {
 			const auto absent = incoming();
-			require(!absent && !Shield && !lightning, "Absent incoming image borrowed outgoing pixels");
+			require(!absent && !Shield, "Absent incoming image borrowed outgoing pixels");
 		} catch (const std::runtime_error &) {
 			rejected = true;
 		}
-		require(rejected == (Shield || lightning), "Absent incoming image did not preserve its resource policy");
+		require(rejected == Shield, "Absent incoming image did not preserve its resource policy");
 		const auto path = directory / mod;
 		std::filesystem::create_directories(path.parent_path());
 		write_bytes(path.string().c_str(), image(79));
@@ -248,7 +248,7 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 	require(prepare(level)->bitmap.pixels[0] == 47, "Particle addon lookup lost source case-insensitive behavior");
 	std::filesystem::remove(mixed_case);
 	std::filesystem::remove(global_path);
-	if (Shield || lightning) failure(missing);
+	if (Shield) failure(missing);
 	else require(!prepare(level), "Absent particle image did not retain failed creation input");
 	write_bytes(installation_path.string().c_str(), image(61));
 	const char *installation_origin = PHYSFS_getRealDir(global.c_str());
@@ -275,7 +275,7 @@ static void particle_resource_profile(const std::filesystem::path &root, const s
 	write_bytes(installation_path.string().c_str(), { 0, 1, 2 });
 	failure("truncated");
 	std::filesystem::remove(installation_path);
-	if (Shield || lightning) failure(missing);
+	if (Shield) failure(missing);
 	else require(!prepare(level), "Absent particle image did not retain failed creation input");
 	require(installed->bitmap.pixels[0] == 61, "Installation image storage depended on a live file");
 	require(selected->bitmap.pixels.size() == extent * extent * frames * 4 && selected->bitmap.frames == frames && selected->bitmap.pixels[0] == 47, "Particle image storage depended on a live file");

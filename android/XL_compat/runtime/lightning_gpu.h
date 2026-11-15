@@ -197,14 +197,15 @@ class LightningGpu
 		line_program = 0;
 	}
 	void draw(const LightningCore &core, const LightningGlow &glow, int random_nodes, const std::array<float, 4> &color,
-	          float width, const std::array<float, 16> &matrix, GLuint corona, bool blur, const std::array<float, 2> &corona_map = { 1, 0 })
+	          float width, const std::array<float, 16> &matrix, GLuint corona, bool blur, const std::array<float, 2> &corona_map = { 1, 0 }, bool textured_glow = true)
 	{
 		if (core.vertices.size() < 6 || random_nodes < 0 || std::size_t(random_nodes) + 6 > core.vertices.size() || glow.vertices.size() != glow.uv.size())
 			throw std::runtime_error("XL lightning GPU received inconsistent geometry");
 		const auto count = core.vertices.size() - 4 - random_nodes;
 		const auto layer = (count - 1) * 4;
-		const bool draw_glow = glow.distance_scale > 0;
-		if (draw_glow && (!corona || glow.vertices.size() != layer * 2)) throw std::runtime_error("XL lightning glow requires two layers and its corona texture");
+		const bool draw_glow = textured_glow && glow.distance_scale > 0;
+		if (glow.distance_scale > 0 && (glow.vertices.size() != layer * 2 || (textured_glow && !corona)))
+			throw std::runtime_error("XL lightning glow requires two layers and its corona texture");
 		// Source UVs are bounded: border clamp matches GL_CLAMP without changing LOD gradients
 		for (const auto &uv : glow.uv)
 			for (float value : uv)

@@ -71,7 +71,9 @@ static void lightning_primitive_gpu_controls()
 			for (bool blur : { false, true })
 				for (float scene_depth : { .25f, .75f })
 					for (unsigned sampling = 0; sampling < 3; ++sampling)
-						for (unsigned isolated = 0; isolated < 9; ++isolated) {
+						for (unsigned isolated = 0; isolated < 10; ++isolated) {
+							if (isolated == 9 && sampling != 0) continue;
+							const bool available = isolated != 9;
 							auto core = original_core;
 							auto glow = lightning_glow_geometry(nodes, 1, width, true, { 0, 0, 3 }, core.average_depth, 9999);
 							if (isolated == 3) glow.distance_scale = 0;
@@ -124,7 +126,7 @@ static void lightning_primitive_gpu_controls()
 								glDisable(GL_LINE_SMOOTH);
 								glLineWidth(1);
 								if (profile) {
-									renderer.draw(core, glow, 1, color, width, camera, profile == 2 ? padded_corona : textures[1], blur, profile == 2 ? std::array<float, 2>{ .25f, .25f } : std::array<float, 2>{ 1, 0 });
+									renderer.draw(core, glow, 1, color, width, camera, available ? (profile == 2 ? padded_corona : textures[1]) : 0, blur, profile == 2 ? std::array<float, 2>{ .25f, .25f } : std::array<float, 2>{ 1, 0 }, available);
 									std::array<int, 4> restored_view{}, restored_scissor{};
 									glGetIntegerv(GL_VIEWPORT, restored_view.data());
 									glGetIntegerv(GL_SCISSOR_BOX, restored_scissor.data());
@@ -147,7 +149,7 @@ static void lightning_primitive_gpu_controls()
 									glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 									glVertexPointer(3, GL_FLOAT, sizeof(LightningVertex), glow.vertices.data());
 									glTexCoordPointer(2, GL_FLOAT, sizeof(std::array<float, 2>), glow.uv.data());
-									for (int pass = glow.distance_scale > 0 ? 1 : -1; pass >= 0; --pass) {
+									for (int pass = available && glow.distance_scale > 0 ? 1 : -1; pass >= 0; --pass) {
 										glDrawArrays(GL_QUADS, GLint(pass * layer), GLsizei(layer));
 									}
 									glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -178,7 +180,7 @@ static void lightning_primitive_gpu_controls()
 								// Separate geometry from UNORM border filtering: same-texture
 								// comparisons retain the original limit. Padded filtering may
 								// round by two units, or three after additive layer overlap
-								const bool core_only = isolated == 3 || isolated == 8;
+								const bool core_only = isolated == 3 || isolated == 8 || isolated == 9;
 								const int tolerance = profile == 1 ? (isolated || blur ? 1 : 2) : core_only      ? 1
 								                                                              : isolated || blur ? 2
 								                                                                                 : 3;

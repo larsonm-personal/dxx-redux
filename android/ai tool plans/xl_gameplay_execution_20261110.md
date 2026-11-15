@@ -5665,3 +5665,32 @@ The hub specifically reaches its skybox guard; level 2 reaches its fog guard.
 Private failed assertion/debugger receipts preserve how the next guard was found.
 Final Linux/Windows binaries and original Pumo input hashes are recorded in the
 tranche plan; Android and final capture/replay still require current-candidate runs.
+
+### 2026-11-14 tranche 2: absent lightning corona checkpoint
+
+Immediate parent PR 501 / e60bfd8e39a7ea6a01003a1d512110329d329aac, stack 471.
+That parent's exact ordinary/private readiness remains FAIL 4/8. The particle
+dependency moved Boiling Point to HXM structural validation, Dinter/Sphere to
+corona absence and Warp Shock to the camera addon. Private host run 43641876720
+attempt 1 passed 113 required checks, 16 format witnesses and 3 modern levels;
+camera subchecks remain missing and assisted navigation is separate. Exact
+controller, merge, binaries and private failure receipts are in the tranche plan.
+
+Missing corona now follows source SetupGlow/Draw: retain the authored core, blur,
+viewport, distance-scaled width and three draw RNG values; omit textured plasma.
+Simulation and audio continue. Malformed/foreign image rejection and geometry
+guards remain strict. Real native load/save-through-stock, decoded commit/moves,
+discard/source-deletion continuation and incoming equal-count independence pass.
+Actual pinned source and real GPU controls cover absence/presence, depth, blend,
+batch lifetime and context recreation. Synthetic assets are isolated fixtures,
+not additions to the fixed readiness cohort. Android's existing GPU owner now
+requires two missing-corona cases on both context generations; device run is due.
+
+Final Linux Debug effect owner passes in 12 s, binary
+b107b6b2c8660cb4c70f81af2c70d6256f82a7d94870f32f4bc044c52e44f86b;
+GPU passes 15.89 s. Dedicated pinned lightning source passes Windows/Linux.
+Windows release passes; Windows Debug fails its unchanged 80-second child limit
+(81.469 s total). Prior Debug audio/particle failures and this receipt remain
+open. The first corona run's obsolete required-image assertion is preserved as
+a failed receipt. Full G2/corrupt-trailer energy 91-to-100 remains open. Current
+child ordinary readiness and CI are pending, not inferred from these controls.

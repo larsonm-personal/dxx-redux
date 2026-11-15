@@ -120,10 +120,11 @@ struct CLightning {
 	int m_nFrames = 2, m_nLife = -300, m_nTTL = 200, m_bBlur = 1;
 	CFloatVector m_color, observed;
 	unsigned core_calls = 0, glow_calls = 0, setup_calls = 0;
+	bool corona_available = true;
 	int SetupGlow()
 	{
 		++setup_calls;
-		return m_bGlow;
+		return m_bGlow && corona_available;
 	}
 	void RenderCore(CFloatVector *color, int, int)
 	{
@@ -258,40 +259,42 @@ void lightning_render_controls()
 	std::cout << "Pinned lightning geometry: " << cases << " core/depth/billboard/layer/endpoint/UV cases passed\n";
 	unsigned draws = 0;
 	for (bool blur : { false, true })
-		for (int visible : { -1, 0, 1 })
-			for (float average : { 0.f, depth_range * .9f, depth_range })
-				for (unsigned seed : { 0u, 17u, 991u }) {
-					CLightning source;
-					source.m_nNodes = 9;
-					source.m_nodes.values.resize(9);
-					source.m_plasmaVerts.values.resize(64);
-					source.m_bBlur = blur;
-					source.m_fAvgDist = average;
-					source.m_color.Set(.12f, .58f, .83f, .37f);
-					glowRenderer.viewport = visible;
-					glowRenderer.done = 0;
-					blend_calls.clear();
-					random_index = seed;
-					source.Draw(0, 0);
-					const unsigned source_end = random_index;
-					struct Random {
-						double unit()
-						{
-							return RandDouble();
-						}
-					} random;
-					random_index = seed;
-					const bool shown = !blur || visible >= 0;
-					const auto color = xl_compat::lightning_draw_color({ .12f, .58f, .83f, .37f }, blur && shown, random);
-					const bool glow = source.m_fDistScale > 0;
-					if (source_end != seed + 3 || random_index != source_end || source.core_calls != unsigned(shown) || source.glow_calls != unsigned(shown && glow) || source.setup_calls != unsigned(glow) || glowRenderer.done != 1)
-						throw std::runtime_error("Lightning draw visibility or RNG order differs from source");
-					if (shown)
-						for (unsigned channel = 0; channel < 4; ++channel)
-							if (color[channel] != source.observed.v.values[channel]) throw std::runtime_error("Lightning draw color differs from source");
-					if (blend_calls != (blur && shown ? std::vector<int>{ GL_MAX, GL_FUNC_ADD } : std::vector<int>{}))
-						throw std::runtime_error("Lightning blur blend equation sequence changed");
-					++draws;
-				}
+		for (bool available : { false, true })
+			for (int visible : { -1, 0, 1 })
+				for (float average : { 0.f, depth_range * .9f, depth_range })
+					for (unsigned seed : { 0u, 17u, 991u }) {
+						CLightning source;
+						source.corona_available = available;
+						source.m_nNodes = 9;
+						source.m_nodes.values.resize(9);
+						source.m_plasmaVerts.values.resize(64);
+						source.m_bBlur = blur;
+						source.m_fAvgDist = average;
+						source.m_color.Set(.12f, .58f, .83f, .37f);
+						glowRenderer.viewport = visible;
+						glowRenderer.done = 0;
+						blend_calls.clear();
+						random_index = seed;
+						source.Draw(0, 0);
+						const unsigned source_end = random_index;
+						struct Random {
+							double unit()
+							{
+								return RandDouble();
+							}
+						} random;
+						random_index = seed;
+						const bool shown = !blur || visible >= 0;
+						const auto color = xl_compat::lightning_draw_color({ .12f, .58f, .83f, .37f }, blur && shown, random);
+						const bool glow = source.m_fDistScale > 0;
+						if (source_end != seed + 3 || random_index != source_end || source.core_calls != unsigned(shown) || source.glow_calls != unsigned(shown && glow && available) || source.setup_calls != unsigned(glow) || glowRenderer.done != 1)
+							throw std::runtime_error("Lightning draw visibility or RNG order differs from source");
+						if (shown)
+							for (unsigned channel = 0; channel < 4; ++channel)
+								if (color[channel] != source.observed.v.values[channel]) throw std::runtime_error("Lightning draw color differs from source");
+						if (blend_calls != (blur && shown ? std::vector<int>{ GL_MAX, GL_FUNC_ADD } : std::vector<int>{}))
+							throw std::runtime_error("Lightning blur blend equation sequence changed");
+						++draws;
+					}
 	std::cout << "Pinned lightning draw: " << draws << " visibility/color/RNG/blend cases passed\n";
 }

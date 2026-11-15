@@ -192,7 +192,8 @@ std::shared_ptr<const ParticleImageResource> prepare_lightning_image(const Inven
 	bool required = false;
 	for (const auto &object : level.objects)
 		if (object.render == 12 && authored_lightning_emits(object)) required |= prepare_authored_lightning(level, object).glow != 0;
-	return required ? prepare_addon_image("corona", "lightning corona", 0, false, target) : nullptr;
+	// Failed source SetupGlow omits textured plasma but retains the core and blur
+	return required ? prepare_addon_image("corona", "lightning corona", 0, true, target) : nullptr;
 }
 std::shared_ptr<const ParticleImageResource> prepare_powerup_glare_image(TargetSources *target)
 {

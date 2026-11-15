@@ -34,7 +34,7 @@ static void lightning_scene_context_controls(Recreate recreate)
 	item.random_nodes = 1;
 	item.width = .7f;
 	item.color = { .1f, .3f, .5f, .5f };
-	const auto draw = [&](bool direct = false, bool sprite = false, bool outline = false) {
+	const auto draw = [&](bool direct = false, bool sprite = false, bool outline = false, bool missing = false) {
 		GLuint target, color, scene_depth;
 		glGenFramebuffers(1, &target);
 		glGenTextures(1, &color);
@@ -69,7 +69,7 @@ static void lightning_scene_context_controls(Recreate recreate)
 			rendered.frame.glow.distance_scale = 0;
 			rendered.width = 3;
 		}
-		draw_lightning_scene_item(rendered, outline ? nullptr : image.texture.get());
+		draw_lightning_scene_item(rendered, outline || missing ? nullptr : image.texture.get());
 		std::array<unsigned char, 64 * 64 * 4> sprite_scene{};
 		if (sprite) {
 			ParticleQuad quad{};
@@ -86,7 +86,7 @@ static void lightning_scene_context_controls(Recreate recreate)
 			glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, sprite_scene.data());
 			check(std::any_of(sprite_scene.begin(), sprite_scene.end(), [](unsigned char value) { return value != 0; }), "Negative corona failed to draw directly into the scene");
 		}
-		draw_lightning_scene_item(rendered, outline ? nullptr : image.texture.get());
+		draw_lightning_scene_item(rendered, outline || missing ? nullptr : image.texture.get());
 		if (sprite) {
 			std::array<unsigned char, 64 * 64 * 4> pending{};
 			glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pending.data());
@@ -122,6 +122,11 @@ static void lightning_scene_context_controls(Recreate recreate)
 	const auto direct_expected = draw(true);
 	const auto sprite_expected = draw(false, true);
 	const auto outline_expected = draw(false, false, true);
+	const auto missing_expected = draw(false, false, false, true);
+	const auto missing_sprite = draw(false, true, false, true);
+	check(missing_expected != expected && missing_expected != outline_expected && missing_expected != direct_expected,
+	      "Missing corona lost authored blurred core or retained textured plasma");
+	check(draw(true, false, false, true) == direct_expected, "Zero-scale lightning consulted an unused corona image");
 	check(outline_expected != expected && outline_expected != direct_expected, "Non-glowing lightning did not distinguish additive source color and outline width");
 	check(draw(true, false, true) == outline_expected, "Non-glowing outline changed with glow distance scale");
 	canvas.cv_bitmap.bm_w = 4096;
@@ -131,6 +136,8 @@ static void lightning_scene_context_controls(Recreate recreate)
 	check(sprite_expected != expected, "Mixed corona/lightning scene did not distinguish the corona");
 	check(direct_expected != expected, "Zero-scale native lightning did not distinguish core-only drawing");
 	recreate();
+	check(draw(false, false, false, true) == missing_expected && draw(false, true, false, true) == missing_sprite,
+	      "Missing corona changed retained blur/core pixels across context recreation");
 	check(draw(false, false, true) == outline_expected, "Non-glowing lightning changed across context recreation");
 	canvas.cv_bitmap.bm_w = 4096;
 	check(draw(false, false, true) == wide_outline, "Wide non-glowing lightning changed across context recreation");
@@ -139,6 +146,7 @@ static void lightning_scene_context_controls(Recreate recreate)
 	check(draw(true) == direct_expected, "Zero-scale native lightning pixels changed across real context recreation");
 	check(draw(false, true) == sprite_expected, "Mixed corona/lightning pixels changed across real context recreation");
 	discard_lightning_context(false);
+	check(draw(false, false, false, true) == missing_expected, "Missing corona changed after GPU resource release");
 	check(draw(false, false, true) == outline_expected, "Non-glowing lightning changed after GPU resource release");
 	check(draw() == expected, "Native lightning pixels changed after explicit GPU resource release");
 	check(draw(true) == direct_expected, "Zero-scale native lightning pixels changed after explicit GPU resource release");

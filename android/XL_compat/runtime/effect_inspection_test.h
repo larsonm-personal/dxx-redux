@@ -9,6 +9,7 @@
 #include "addon_audio_resource_test.h"
 #include "particle_original_test.h"
 #include "particle_secret_test.h"
+#include "lightning_image_test.h"
 #include "camera_controller.h"
 #include "camera_renderer.h"
 #include "camera_save.h"
@@ -172,6 +173,7 @@ static int effect_inspection_test(int argc, char **argv)
 			std::cout << "XL effect inspection version " << version << ": stock/XL rejection and supported recovery passed\n";
 		}
 		if (particle_receipt.is_open()) particle_receipt << "end 4\n";
+		lightning_image_native_case(archive, root);
 		particle_secret_native_case(archive, root, find_arg_value(argc, argv, "-particle-installation-fixture"));
 		additive_wall_lifecycle_case(archive, root);
 		if (const auto *package = find_arg_value(argc, argv, "-pumo-package"))
