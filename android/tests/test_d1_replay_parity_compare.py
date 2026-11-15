@@ -33,6 +33,27 @@ def schema_example(schema):
 
 
 class ParityTests(unittest.TestCase):
+    def test_homogeneous_integer_ranges_recheck_every_leaf_and_keep_diagnostics(self):
+        for native_range in (range(-128, 128), range(0, 2**64), range(-8, 9, 2)):
+            for schema in ([native_range], (native_range,) * 1001):
+                value = [native_range.start] * 1001
+                parity.validate_world_value(value, schema, "$.pool")
+                for index in (0, 500, 1000):
+                    for invalid in (True, False, None, 0.0, "0", native_range.start - 1, native_range.stop):
+                        value[index] = invalid
+                        with self.subTest(schema=schema[:1], index=index, invalid=invalid):
+                            with self.assertRaises(parity.EvidenceError) as error:
+                                parity.validate_world_value(value, schema, "$.pool")
+                            self.assertEqual(
+                                str(error.exception),
+                                f"World integer is outside its native range: $.pool[{index}]",
+                            )
+                        value[index] = native_range.start
+                        parity.validate_world_value(value, schema, "$.pool")
+        parity.validate_world_value([2, True, 1.0], (range(0, 3), bool, float), "$.mixed")
+        with self.assertRaisesRegex(parity.EvidenceError, "invalid array shape"):
+            parity.validate_world_value([0], (int, int), "$.pool")
+
     def test_integer_leaf_fast_path_preserves_types_paths_and_rechecks_mutations(self):
         schema = {"counter": int, "vector": {"x": int}, "pool": [int], "fixed": (int, int, int)}
         value = {"counter": 1, "vector": {"x": 2}, "pool": list(range(1000)), "fixed": [3, 4, 5]}
