@@ -35,9 +35,10 @@ $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
 $root = Split-Path (Split-Path $PSScriptRoot)
-$output = Join-Path $root 'temp/xl-water-android'
+$output = Join-Path $root "temp/xl-water-android-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
+Write-Host "Water runtime evidence: $output"
 
 function Invoke-WaterAdb {
     param([string[]]$Arguments)
@@ -90,8 +91,8 @@ try {
         $appRoot = ([string](Invoke-WaterAdb -Arguments @('shell', 'run-as', $script:PACKAGE, 'pwd'))).Trim()
         $deviceReplay = "$appRoot/$backup/spawn.dximdemo"
         $deviceResult = "$deviceReplay.actual.json"
-        $deviceState = "$appRoot/$backup/spawn-state.jsonl.gz"
-        $deviceRng = "$appRoot/$backup/spawn-rng.jsonl"
+        $deviceState = "$deviceReplay.state.jsonl.gz"
+        $deviceRng = "$deviceReplay.rngtrace.jsonl"
         if ($replayHeader.version -eq 6) {
             # Use the recorded viewport, not a rewritten capture or relaxed native check
             $profile = [ordered]@{ TexFilt = 0; AnisoLevel = 0; MsaaLevel = 0; MenuTexFilt = 0; HudTexFilt = 0;
@@ -110,11 +111,6 @@ try {
                 Invoke-WaterShell "cp /data/local/tmp/xl-water-config.txt $config" | Out-Null
             }
         }
-        $originalIni = [string](Invoke-WaterShell 'if test -f files/d2x-redux/d2x.ini; then cat files/d2x-redux/d2x.ini; fi')
-        "$originalIni`n-inputdemo-state-log $deviceState`n-inputdemo-rng-trace $deviceRng`n" |
-            Set-Content "$output/replay.ini" -Encoding utf8NoBOM
-        Invoke-WaterAdb -Arguments @('push', "$output/replay.ini", '/data/local/tmp/xl-water-config.txt') | Out-Null
-        Invoke-WaterShell 'cp /data/local/tmp/xl-water-config.txt files/d2x-redux/d2x.ini' | Out-Null
         Invoke-WaterAdb -Arguments @('push', (Resolve-Path -LiteralPath $Replay).Path, '/data/local/tmp/xl-water-spawn.dximdemo') | Out-Null
         Invoke-WaterShell "cp /data/local/tmp/xl-water-spawn.dximdemo $backup/spawn.dximdemo" | Out-Null
         Invoke-WaterAdb -Arguments @('logcat', '-c') | Out-Null
@@ -135,15 +131,19 @@ try {
         Invoke-WaterAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content (Join-Path $output 'spawn-replay-logcat.txt') -Encoding utf8
         Invoke-WaterShell "if test -f $backup/ai_schedule_probe.log; then cat $backup/ai_schedule_probe.log; fi" |
             Set-Content (Join-Path $output 'spawn-replay-ai-schedule.log') -Encoding utf8
+        if ($actualText.Trim()) {
+            $actualText | Set-Content (Join-Path $output 'spawn-replay-actual.json') -Encoding utf8
+        }
         foreach ($trace in @(@{ Remote = $deviceState; Local = 'spawn-replay-state.jsonl.gz' },
                 @{ Remote = $deviceRng; Local = 'spawn-replay-rng.jsonl' })) {
             if (([string](Invoke-WaterShell "if test -f $($trace.Remote); then echo yes; fi")).Trim() -eq 'yes') {
                 $encoded = Invoke-WaterAdb -Arguments @('exec-out', 'run-as', $script:PACKAGE, 'base64', '-w', '0', $trace.Remote)
                 [IO.File]::WriteAllBytes((Join-Path $output $trace.Local), [Convert]::FromBase64String($encoded))
+            } elseif ($actualText.Trim()) {
+                throw "Android replay trace missing: $($trace.Local); use the explicit XL developer probe build"
             }
         }
         if (!$actualText.Trim()) { throw 'Android spawn replay exited or timed out without a result; inspect spawn-replay-logcat.txt' }
-        $actualText | Set-Content (Join-Path $output 'spawn-replay-actual.json') -Encoding utf8
         $expectedText = $replayTrailer.result | ConvertTo-Json -Depth 30
         $expectedText | Set-Content (Join-Path $output 'spawn-replay-expected.json') -Encoding utf8
         if (![System.Text.Json.Nodes.JsonNode]::DeepEquals(
@@ -163,7 +163,7 @@ try {
             $after = ([string](Invoke-WaterShell "find $($existing -join ' ') -type f -exec sha256sum {} \;")) -split '\r?\n' | Where-Object { $_ } | Sort-Object
             $after | Set-Content "$output/after.sha256" -Encoding utf8
             if (Compare-Object $before $after) { throw "Water test state restoration differs; backup retained at $backup" }
-            Invoke-WaterShell "rm -f $backup/mount-probe/test.mn2 && rmdir $backup/mount-probe/tail $backup/mount-probe && rm -f $backup/spawn.dximdemo $backup/spawn.dximdemo.actual.json $backup/ai_schedule_probe.log $backup/spawn-state.jsonl.gz $backup/spawn-rng.jsonl $backup/spawn-rng.jsonl.events.tmp && rm $backup/state.tar && rmdir $backup" | Out-Null
+            Invoke-WaterShell "rm -f $backup/mount-probe/test.mn2 && rmdir $backup/mount-probe/tail $backup/mount-probe && rm -f $backup/spawn.dximdemo $backup/spawn.dximdemo.actual.json $backup/ai_schedule_probe.log $backup/spawn.dximdemo.state.jsonl.gz $backup/spawn.dximdemo.rngtrace.jsonl $backup/spawn.dximdemo.rngtrace.jsonl.events.tmp && rm $backup/state.tar && rmdir $backup" | Out-Null
         }
         if ($owned) {
             Invoke-WaterAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-water-runtime.hog', '/data/local/tmp/xl-water-runtime.mn2', '/data/local/tmp/xl-water-spawn.dximdemo', '/data/local/tmp/xl-water-graphics.json', '/data/local/tmp/xl-water-config.txt') | Out-Null

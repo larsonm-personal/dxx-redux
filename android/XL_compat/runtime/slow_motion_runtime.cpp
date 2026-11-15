@@ -11,6 +11,7 @@
 #include <SDL.h>
 #include <algorithm>
 #include <cmath>
+#include <string>
 extern "C" {
 #include "inferno.h"
 #include "object.h"
@@ -501,6 +502,27 @@ extern "C" int xl_slow_motion_omega_fired(void)
 	last_omega_frame = observe("omega_fired").render_frame;
 	return 1;
 }
+
+#if defined(__ANDROID__) && defined(DXX_XL_DEVELOPER_PROBE)
+extern "C" int xl_input_demo_probe_traces(const char *replay, const char **state, const char **rng)
+{
+	// Android does not read d2x.ini; explicit probe builds retain adjacent evidence
+	static std::string state_path, rng_path;
+	try {
+		if (!*state) {
+			state_path = std::string(replay) + ".state.jsonl.gz";
+			*state = state_path.c_str();
+		}
+		if (!*rng) {
+			rng_path = std::string(replay) + ".rngtrace.jsonl";
+			*rng = rng_path.c_str();
+		}
+		return 1;
+	} catch (...) {
+		return 0;
+	}
+}
+#endif
 
 extern "C" const char *xl_input_demo_backend_error(void)
 {

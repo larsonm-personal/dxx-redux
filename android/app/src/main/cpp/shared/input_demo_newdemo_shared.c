@@ -46,6 +46,9 @@
 #endif
 
 #include "input_demo_newdemo_shared.h"
+#ifdef DXX_XL_CHECKPOINT_EXPORT
+#include "checkpoint_export.h"
+#endif
 
 #if defined(__ANDROID__)
 extern volatile int g_demo_record_per_frame_state;
@@ -246,6 +249,15 @@ static int input_demo_capture_recorder_checkpoint(input_demo_recorder_settings *
 			snprintf(error, error_size, "%s", "could not create input demo checkpoint save");
 		return 0;
 	}
+#ifdef DXX_XL_CHECKPOINT_EXPORT
+	/* Developer captures carry the same source-bound trailer as Android saves */
+	if (xl_level_extensions_active() && !xl_checkpoint_finish_export(logical_path)) {
+		if (error && error_size)
+			snprintf(error, error_size, "%s", "could not export input demo checkpoint sources");
+		PHYSFS_delete(logical_path);
+		return 0;
+	}
+#endif
 #ifdef DXX_XL_RUNTIME
 	if (settings->has_environment && !xl_input_demo_saved_environment(&settings->environment)) {
 		if (error && error_size) snprintf(error, error_size, "%s", "checkpoint did not capture an XL environment origin");

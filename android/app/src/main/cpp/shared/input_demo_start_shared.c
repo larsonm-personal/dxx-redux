@@ -380,6 +380,12 @@ int input_demo_parse_replay_cmdline(input_demo_replay_cmdline_options *options)
 		if (!options->rng_trace_path)
 			return 1;
 	}
+#if defined(__ANDROID__) && defined(DXX_XL_RUNTIME) && defined(DXX_XL_DEVELOPER_PROBE)
+	if (!xl_input_demo_probe_traces(options->demo_path, &options->state_log_path, &options->rng_trace_path)) {
+		printf("Cannot prepare developer replay trace paths\n");
+		return 1;
+	}
+#endif
 	return 0;
 }
 
@@ -461,6 +467,11 @@ static int input_demo_prepare_loaded_replay_context(
 	return 1;
 }
 
+static const char *input_demo_checkpoint_temp_directory(void)
+{
+	return GameArg.SysUsePlayersDir ? "Players/" INPUT_DEMO_CHECKPOINT_TEMP_DIR : INPUT_DEMO_CHECKPOINT_TEMP_DIR;
+}
+
 static PHYSFS_file *input_demo_open_owned_checkpoint_temp(
     char *path, size_t path_size)
 {
@@ -469,13 +480,15 @@ static PHYSFS_file *input_demo_open_owned_checkpoint_temp(
 	if (!path || !path_size)
 		return NULL;
 	path[0] = '\0';
-	PHYSFS_mkdir(INPUT_DEMO_CHECKPOINT_TEMP_DIR);
+	const char *directory = input_demo_checkpoint_temp_directory();
+	if (GameArg.SysUsePlayersDir) PHYSFS_mkdir("Players");
+	PHYSFS_mkdir(directory);
 	for (attempt = 0; attempt != INPUT_DEMO_CHECKPOINT_TEMP_ATTEMPTS; ++attempt) {
 		PHYSFS_file *file;
 		const unsigned long id = input_demo_checkpoint_temp_id++;
 		const int length = snprintf(
-		    path, path_size, INPUT_DEMO_CHECKPOINT_TEMP_DIR "/checkpoint-%ld-%lu.dgss",
-		    (long) input_demo_getpid(), id);
+		    path, path_size, "%s/checkpoint-%ld-%lu.dgss",
+		    directory, (long) input_demo_getpid(), id);
 
 		if (length < 0 || (size_t) length >= path_size) {
 			path[0] = '\0';
@@ -497,7 +510,7 @@ static int input_demo_remove_owned_checkpoint_temp(const char *path)
 		return 0;
 	if (!PHYSFS_delete(path))
 		return 0;
-	PHYSFS_delete(INPUT_DEMO_CHECKPOINT_TEMP_DIR);
+	PHYSFS_delete(input_demo_checkpoint_temp_directory());
 	return 1;
 }
 

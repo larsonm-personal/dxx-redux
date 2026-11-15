@@ -44,6 +44,8 @@
 #ifdef __ANDROID__
 #include "../../app/src/main/cpp/shared/android_mission_assets.h"
 #include "../../app/src/main/cpp/shared/android_sound_trace.h"
+#endif
+#if defined(__ANDROID__) || defined(DXX_XL_CHECKPOINT_EXPORT)
 #include "../../app/src/main/cpp/shared/mod_save_compat.h"
 #endif
 extern "C" {
@@ -899,13 +901,15 @@ extern "C" int xl_resource_load_mod_data(void)
 			File file(PHYSFSX_openReadBuffered(ham.c_str()), PHYSFS_close);
 			auto target = XlPreparedResources::prepare_mission(nullptr);
 			target->install_hxm();
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_XL_CHECKPOINT_EXPORT)
 			mod_save_capture_definitions();
 #endif
 			input_demo_assets_extra_ham_loaded(ham.c_str(), file.get());
 			if (!vham.empty()) {
 #ifdef __ANDROID__
 				android_sound_trace_asset_open("extra_ham", vham.c_str());
+#endif
+#if defined(__ANDROID__) || defined(DXX_XL_CHECKPOINT_EXPORT)
 				mod_save_capture_extra_ham(vham.c_str());
 #endif
 				File extension(PHYSFSX_openReadBuffered(vham.c_str()), PHYSFS_close);
