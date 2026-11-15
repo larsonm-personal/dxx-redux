@@ -9,6 +9,8 @@ struct LinkedAudioState {
 	bool deferred = false;
 };
 nlohmann::json encode_linked_audio(const AudioOwners &owners, bool deferred);
+// Normalize retained copies for serialization without retiring live playback
+void normalize_linked_audio_snapshot(AudioOwners &owners, AudioVoices &voices);
 LinkedAudioState decode_linked_audio(const nlohmann::json &state, const AudioVoices &voices);
 } // namespace xl_compat
 #endif

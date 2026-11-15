@@ -1,4 +1,5 @@
 // Native object/segment consumers and real PCM; source math is qualified separately
+#include "linked_audio_state.h"
 extern "C" int digi_looping_channel;
 extern "C" int Dont_start_sound_objects;
 namespace xl_linked_audio_control
@@ -19,6 +20,64 @@ void output()
 	xl_named_audio_pause(0);
 	run_output(2048);
 	xl_shared_audio_control::compare_output(before);
+}
+void observe_missing_lifetime(std::int64_t token)
+{
+	using namespace xl_compat;
+	using namespace xl_compat::audio_runtime;
+	SDL_PauseAudio(1);
+	const auto original_mixer = mixer;
+	const auto original_owners = owners;
+	const auto original_loop = looping;
+	const auto slot = owner(token).channel;
+	require(slot >= 0, "Observation control requires a live missing-object voice");
+	// A stale loop binding must also be observed without rewriting its live owner
+	looping = { slot, mixer.voices[unsigned(slot)].serial };
+	const auto stale_loop = looping;
+	const auto before = named_audio_diagnostics();
+	const auto before_owners = encode_linked_audio(owners, deferred);
+	const auto sim = d_rand_get_stream_call_count(D_RNG_SIM);
+	const auto fx = d_rand_get_stream_call_count(D_RNG_FX);
+	const auto random_states = [] {
+		std::array<unsigned, 2> values{};
+		require(d_rand_get_stream_state(D_RNG_SIM, &values[0]) && d_rand_get_stream_state(D_RNG_FX, &values[1]), "Audio observation RNG state is unavailable");
+		return values;
+	};
+	const auto random_before = random_states();
+	const auto saved = snapshot();
+	for (int sample = 0; sample < 4; ++sample)
+		require(snapshot() == saved, "Repeated audio observations changed their saved representation");
+	require(named_audio_diagnostics() == before && encode_linked_audio(owners, deferred) == before_owners &&
+	            looping.channel == stale_loop.channel && looping.serial == stale_loop.serial &&
+	            random_states() == random_before &&
+	            d_rand_get_stream_call_count(D_RNG_SIM) == sim && d_rand_get_stream_call_count(D_RNG_FX) == fx,
+	        "Audio observation retired live owners, channels, loop bindings or RNG");
+	require(saved.at("voices").empty() && saved.at("loop").empty() &&
+	            saved.at("linked").at("owners").size() == 1 && saved.at("linked").at("owners")[0].at("channel") == -1,
+	        "Audio snapshot did not retain a valid stopped missing lifetime");
+	const auto render = [&](bool observe) {
+		begin_capture();
+		// Test-only paired controls start from the same raw callback/owner state
+		mixer = original_mixer;
+		owners = original_owners;
+		looping = stale_loop;
+		xl_named_audio_pause(0);
+		if (observe)
+			for (int sample = 0; sample < 4; ++sample) (void) snapshot();
+		run_output(2048);
+		return std::vector<std::int16_t>(captured.begin(), captured.begin() + 4096);
+	};
+	const auto unobserved = render(false);
+	const auto observed = render(true);
+	require(observed == unobserved && std::any_of(observed.begin(), observed.end(), [](auto value) { return value != 0; }),
+	        "Audio observations changed subsequent real PCM output");
+	require(!game_is_time_paused(), "Audio observation control requires the running frame boundary");
+	xl_named_audio_frame();
+	require(!owners.count && looping.channel < 0, "Audio frame did not retire missing ownership and stale loop binding");
+	mixer = original_mixer;
+	owners = original_owners;
+	looping = original_loop;
+	std::cout << "Audio observation purity: repeated snapshots preserve live owners and subsequent PCM; frame retirement passed\n";
 }
 void malformed(const nlohmann::json &earned)
 {
@@ -474,6 +533,7 @@ void run(const std::filesystem::path &root, const nlohmann::json &initial)
 	reset();
 	const auto retained = create();
 	++Objects[source].signature;
+	observe_missing_lifetime(retained);
 	xl_audio_destroy_object(-1, -1);
 	require(owners.count == 1 && owner(retained).channel < 0, "Missing-object cleanup did not retain the stopped forever owner");
 	const auto stopped = snapshot();

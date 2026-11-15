@@ -1,4 +1,5 @@
 #include "linked_audio.h"
+#include "linked_audio_state.h"
 #include "ambient_objects.h"
 #include "shared_audio.h"
 #include "shared_audio_internal.h"
@@ -218,6 +219,14 @@ extern "C" int xl_audio_destroy_object(int object_index, int sample)
 	if (object_index < 0)
 		return owners.destroy_missing([](int index, int signature) { return valid_object(index) && Objects[index].signature == signature; }, mixer);
 	return owners.destroy_object(object_index, sample, mixer);
+}
+void xl_compat::normalize_linked_audio_snapshot(AudioOwners &snapshot_owners, AudioVoices &snapshot_mixer)
+{
+	// A removed object can precede its next frame update. Encode its stopped
+	// lifetime in the copy, leaving the actual owner and channel for that frame
+	if (xl_level_extensions_active())
+		snapshot_owners.destroy_missing([](int index, int signature) { return valid_object(index) && Objects[index].signature == signature; }, snapshot_mixer);
+	snapshot_owners.reconcile(snapshot_mixer);
 }
 extern "C" int xl_audio_destroy_position(int segment, int side, int sample)
 {

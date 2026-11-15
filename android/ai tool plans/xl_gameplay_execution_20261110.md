@@ -4426,3 +4426,42 @@ finished successfully on `b00c75304`; private run 43375288766 attempt 1 retains
 16 format witnesses and three modern source levels. Sampled readiness still
 reports failure (four of eight); it is not suppressed or counted as playable.
 PR 470's corrective candidate must still complete hosted qualification.
+
+### Checkpoint 06: audio observation ownership
+
+The existing named-audio snapshot retired missing-object owners, reconciled live
+channels and cleared stale loop bindings. A new control in the canonical linked
+audio owner reproduced that mutation before the production fix. The retained
+negative receipt is `audio-observation-negative.log` under the window root.
+
+Snapshots now copy fixed voice/owner state under the existing audio lock and
+normalize only that copy. The save schema and stopped-lifetime representation
+remain unchanged. Live missing-owner retirement remains at the normal audio
+frame boundary, which also clears stale loop bindings. All production changes
+are in `android/XL_compat`; no native format or private-global API was added.
+
+Both production layouts require repeated observations to preserve live owner,
+channel, loop and SIM/FX state/counters, then compare subsequent real PCM with an
+unobserved control. The same test requires ordinary frame retirement afterward.
+The existing canonical owner requires the new completion predicate, with original
+membership, reference comparisons and timeouts unchanged.
+
+Linux RelWithDebInfo and assertions-enabled Debug (`-g -O1`, no `NDEBUG`) full
+canonical audio owners pass. The initial unoptimized Debug production owner hit
+its unchanged 45-second deadline and remains retained. Windows completed both
+production purity controls but two full repeats timed out in the later sound
+scope owner. A fresh isolated scope passed its original 45-second deadline;
+rerunning a timed-out fixture exposed leftover classic replacement files, so
+failed fixtures are preserved and not treated as clean reruns. Temporary stage
+logging was removed. Final uninstrumented Windows qualification passes in `audio-final` (exit 0), including both production layouts, all reference comparisons, sound scopes, banks, static owners and seismic. Earlier deadline failures remain retained; no timing assertion was changed.
+
+Both ordinary developer-OFF builds pass, as do the two Windows automation catalog
+owners (99 standalone JSON, 315 standalone PowerShell and 428 master entries).
+The full Linux Debug Observatory owner also passed with 12 pinned firing and four
+contact controls before the audio slice. This closes that earlier assertions
+coverage gap, not the retained Windows full-Debug timeout.
+
+PR 470's corrective head `f555025e604e0c79e4c3391f4ab3761ccbfa5181` passes private
+run 43379549135 attempt 1. Its broad master receipt still explicitly reports
+incomplete overall coverage. Public downstream replay owners remain pending;
+sampled readiness remains a distinct failed four-of-eight diagnostic.
