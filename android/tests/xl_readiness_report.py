@@ -8,14 +8,16 @@ import os
 from pathlib import Path
 
 import nightly_pr_candidate as candidate
-from xl_readiness import ASSET_COMMIT, NEW_CAMPAIGNS, OUTCOMES, summary
+from xl_readiness import ASSET_COMMIT, NEW_CAMPAIGNS, OUTCOMES, resource_identity, summary
 
 CONTEXT = "D2X readiness (sampled load/tick)"
 
 
-def validate(receipt, catalog, sha):
+def validate(receipt, catalog, sha, require_resources=False):
     if not isinstance(receipt, dict) or not isinstance(catalog, dict):
         raise TypeError("Readiness receipt and catalog must be objects")
+    if (require_resources or "resources" in receipt) and receipt.get("resources") != resource_identity():
+        raise ValueError("Readiness resource profile mismatch")
     if (
         receipt.get("schema") != "dxx-xl-readiness-v1"
         or receipt.get("target_sha") != sha
@@ -105,6 +107,12 @@ def markdown(receipt, catalog, result, expected=False):
         "",
         f"**{result['passed']}/{result['denominator']} sampled levels confirmed**: original load plus 120 unassisted frames at 60 Hz, without death or level transition.",
         "",
+        (
+            "Runtime resources: authentic Vertigo and XL camera addon, pinned independently from the unchanged mission cohort. The historical stock-only 4/8 baseline uses different runtime inputs."
+            if receipt.get("resources")
+            else "Runtime resources: legacy stock-only measurement; authentic Vertigo/XL provisioning is not attested."
+        ),
+        "",
         f"**Newly uploaded XL campaigns: {new_passed}/{len(new_rows)} confirmed.** Passing runtime paths: {xl_passed} XL-active, {classic_passed} classic/imported. Failed loads have unknown runtime classification; the overall percentage must not be interpreted as XL-specific compatibility.",
         "",
         f"Fixed cohort covers {len(catalog['selected'])}/{len(catalog['cases'])} advertised levels from {len(catalog['archives'])} uploaded archives. This is not a random population estimate, full playability score, rendering test, or campaign completion claim.",
@@ -146,6 +154,9 @@ def main():
     parser.add_argument("--expected-failures", type=Path, help="Trusted controller baseline, never candidate input")
     parser.add_argument("--measurement-result", default=os.environ.get("READINESS_RESULT"))
     parser.add_argument("--local-sha", help="Render locally without GitHub access or status mutation")
+    parser.add_argument(
+        "--require-resources", action="store_true", help="Reject receipts lacking the pinned authentic resource profile"
+    )
     args = parser.parse_args()
     sha = args.local_sha or os.environ["CANDIDATE_SHA"]
     candidate.STATUS_CONTEXT = CONTEXT
@@ -156,7 +167,7 @@ def main():
             raise ValueError("Readiness receipt exceeds its bound")
         catalog = json.loads(args.catalog.read_text())
         receipt = json.loads(args.receipt.read_text())
-        result = validate(receipt, catalog, sha)
+        result = validate(receipt, catalog, sha, args.require_resources)
         expected = False
         if args.expected_failures:
             expected = expected_failures_match(

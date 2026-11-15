@@ -1818,6 +1818,44 @@ class NavigationSmokeTests(unittest.TestCase):
 
 
 class ReadinessTests(unittest.TestCase):
+    def test_authentic_resources_are_verified_before_staging(self):
+        import xl_readiness as readiness
+
+        payload = b"authentic-resource-fixture"
+        pins = (("private/addon.hog", "addon.hog", len(payload), hashlib.sha256(payload).hexdigest()),)
+        with tempfile.TemporaryDirectory() as temporary, patch.object(readiness, "RESOURCE_FILES", pins):
+            root = Path(temporary)
+            source, runtime = root / "source", root / "runtime"
+            (source / "private").mkdir(parents=True)
+            runtime.mkdir()
+            addon = source / "private/addon.hog"
+            addon.write_bytes(payload[:-1] + b"x")
+            with self.assertRaises(ValueError):
+                readiness.stage_resources(source, runtime)
+            self.assertEqual(list(runtime.iterdir()), [])
+            addon.write_bytes(payload)
+            identity = readiness.stage_resources(source, runtime)
+            self.assertEqual(identity, readiness.resource_identity())
+            self.assertEqual((runtime / "addon.hog").read_bytes(), payload)
+            with self.assertRaises(ValueError):
+                readiness.stage_resources(source, runtime)
+            (runtime / "addon.hog").write_bytes(payload[:-1] + b"x")
+            with self.assertRaises(ValueError):
+                readiness.verify_resources(runtime)
+
+    def test_provisioned_report_cannot_accept_legacy_or_changed_resources(self):
+        import xl_readiness as readiness
+        import xl_readiness_report as reporter
+
+        receipt, catalog, _, _ = self.expected_fixture()
+        with self.assertRaises(ValueError):
+            reporter.validate(receipt, catalog, "a" * 40, require_resources=True)
+        receipt["resources"] = readiness.resource_identity()
+        self.assertEqual(reporter.validate(receipt, catalog, "a" * 40, True)["passed"], 4)
+        receipt["resources"]["commit"] = "a" * 40
+        with self.assertRaises(ValueError):
+            reporter.validate(receipt, catalog, "a" * 40, True)
+
     def test_score_never_counts_rejections_or_unknowns_as_passes(self):
         import xl_readiness as readiness
 

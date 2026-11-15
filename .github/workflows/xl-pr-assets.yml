@@ -155,11 +155,24 @@ jobs:
             /missions/d2xxl_downloads/wshock20.7z
           token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
           persist-credentials: false
+      - name: Check out pinned authentic Vertigo and XL runtime resources
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          repository: larsonm-personal/dxx-redux-test-assets
+          ref: dc6565f6b5400d7c700fa8378e766b2354b6ceb6
+          path: readiness-resources
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /descent_2_vertigo/d2x.hog
+            /xl-resources/d2x-xl.hog
+          token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
+          persist-credentials: false
       - name: Stage hash-verified inputs with trusted tooling
         run: |
           python3 control/android/helpers/retail_ci_assets.py --root retail-input --repo control --source-map control/android/tests/retail_asset_sources.json --output retail-verification.json --stage retail-data
-          python3 control/android/tests/xl_readiness.py prepare --assets retail-input --catalog control/android/tests/xl_readiness_inventory.json --work survey-input --data retail-data
+          python3 control/android/tests/xl_readiness.py prepare --assets retail-input --catalog control/android/tests/xl_readiness_inventory.json --work survey-input --data retail-data --resources readiness-resources
           rm -rf retail-input
+          rm -rf readiness-resources
       - name: Install native prerequisites
         run: |
           sudo apt-get -o Acquire::Retries=3 update
@@ -172,7 +185,7 @@ jobs:
           cmake --build build --parallel 2 --target dxx-redux-d2-headless-route
       - name: Measure every frozen case without rerolling failures
         run: |
-          python3 control/android/tests/xl_readiness.py run --engine build/main/dxx-redux-d2-headless-route --assets survey-input --data survey-input/runtime --catalog control/android/tests/xl_readiness_inventory.json --work readiness --seven-zip /usr/bin/7z --target-sha "$CANDIDATE_SHA"
+          python3 control/android/tests/xl_readiness.py run --engine build/main/dxx-redux-d2-headless-route --assets survey-input --data survey-input/runtime --catalog control/android/tests/xl_readiness_inventory.json --work readiness --seven-zip /usr/bin/7z --target-sha "$CANDIDATE_SHA" --require-resources
       - name: Publish bounded measurement only
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -210,4 +223,4 @@ jobs:
           CANDIDATE_SHA: ${{ needs.admit.outputs.sha }}
           CANDIDATE_PR: ${{ needs.admit.outputs.number }}
           READINESS_RESULT: ${{ needs.readiness.result }}
-        run: python3 control/android/tests/xl_readiness_report.py --receipt receipt/results.json --catalog control/android/tests/xl_readiness_inventory.json --expected-failures control/android/tests/xl_readiness_expected.json
+        run: python3 control/android/tests/xl_readiness_report.py --receipt receipt/results.json --catalog control/android/tests/xl_readiness_inventory.json --expected-failures control/android/tests/xl_readiness_expected.json --require-resources
