@@ -122,6 +122,44 @@ static int mod_data_test(int argc, char **argv)
 			require(xl_resource_mod_sources().empty(), "XL source identity survived stock selection");
 		}
 		std::cout << "Original Pumo HAM/HXM/V-HAM loading and stock round-trip passed\n";
+		{
+			using Input = std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)>;
+			Input ham(PHYSFS_openRead("mods/pmines/pmines.ham"), PHYSFS_close);
+			XlPreparedResources target{ XlPreparedHam(ham.get()) };
+			Input hxm(PHYSFS_openRead("mods/pmines/pmines.hxm"), PHYSFS_close);
+			target.prepare_hxm(hxm.get());
+			Input vham(PHYSFS_openRead("mods/pmines/pmines.vham"), PHYSFS_close);
+			const auto hash = target.prepare_vham(vham.get());
+			vham.reset();
+			require(hash == original_sources.at("mods/pmines/pmines.vham") &&
+			            target.dependencies().robot_count == 78 && target.dependencies().robot_data[68].model_num == 17 &&
+			            gameplay_definitions() == stock && mod_render_definitions() == stock_render,
+			        "Incoming VHAM borrowed or modified the outgoing mission definitions");
+			const auto path = root / "mods/pmines/pmines.vham";
+			std::ifstream input(path, std::ios::binary);
+			const xl_compat::Bytes original{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
+			input.close();
+			write_bytes(path.string().c_str(), xl_compat::Bytes{ 'b', 'a', 'd' });
+			bool rejected = false;
+			try {
+				Input invalid(PHYSFS_openRead("mods/pmines/pmines.vham"), PHYSFS_close);
+				target.prepare_vham(invalid.get());
+			} catch (const std::runtime_error &) {
+				rejected = true;
+			}
+			require(rejected && target.dependencies().robot_data[68].model_num == 17 &&
+			            gameplay_definitions() == stock && mod_render_definitions() == stock_render,
+			        "Malformed VHAM changed retained target or outgoing state");
+			target.install_hxm();
+			require(N_robot_types == 78 && N_weapon_types == 65 && Robot_info[68].model_num == 17,
+			        "VHAM publication reread the changed source instead of retained definitions");
+			write_bytes(path.string().c_str(), original);
+			require(load_base_mission("d2", error, sizeof(error)), error);
+			require(gameplay_definitions() == stock && mod_render_definitions() == stock_render,
+			        "Retained VHAM publication leaked through stock mission reload");
+		}
+		std::cout << "Retained incoming VHAM: source replacement, failed retry and native publication passed\n";
+
 		require(load_base_mission("pmines", error, sizeof(error)), error);
 		{
 			const auto installed_ship = xl_owned_oof_model(108);

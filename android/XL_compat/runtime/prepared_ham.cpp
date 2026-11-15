@@ -15,7 +15,8 @@ extern "C" {
 }
 
 struct XlPreparedHam::State {
-	bool installed = false;
+	bool installed = false, extra = false;
+	int extra_bitmaps = 0, extra_pointers = 0;
 	std::vector<ubyte> source_bytes;
 	int NumTextures{};
 	std::array<bitmap_index, MAX_TEXTURES> Textures{};
@@ -129,6 +130,32 @@ XlPreparedHam::XlPreparedHam(PHYSFS_file *file) : state(std::make_unique<State>(
 	});
 }
 
+XlPreparedHam::XlPreparedHam() : state(std::make_unique<State>()) {}
+
+XlPreparedHam XlPreparedHam::extra(PHYSFS_file *file)
+{
+	XlPreparedHam result;
+	result.state->extra = true;
+	result.state->source_bytes = xl_retain_resource(file);
+	xl_read_retained_resource(result.state->source_bytes, [&](PHYSFS_file *retained) {
+		if (!bm_read_xl_extra_ham_into(retained, &result.state->destination, read_owned_model,
+		                               &result.state->extra_bitmaps, &result.state->extra_pointers))
+			throw std::runtime_error("Cannot decode target mission VHAM");
+	});
+	return result;
+}
+
+int XlPreparedHam::extra_bitmap_count() const
+{
+	if (!state || !state->extra) throw std::runtime_error("Not an extra HAM owner");
+	return state->extra_bitmaps;
+}
+int XlPreparedHam::extra_pointer_count() const
+{
+	if (!state || !state->extra) throw std::runtime_error("Not an extra HAM owner");
+	return state->extra_pointers;
+}
+
 XlPreparedHam::~XlPreparedHam() = default;
 XlPreparedHam::XlPreparedHam(XlPreparedHam &&) noexcept = default;
 XlPreparedHam &XlPreparedHam::operator=(XlPreparedHam &&) noexcept = default;
@@ -140,7 +167,7 @@ const bm_ham_destination &XlPreparedHam::tables() const
 
 void XlPreparedHam::install()
 {
-	if (!state || state->installed) throw std::runtime_error("Target mission HAM was already consumed");
+	if (!state || state->installed || state->extra) throw std::runtime_error("Target mission HAM cannot be published as a complete base");
 	bm_install_xl_ham(&state->destination);
 	state->installed = true;
 }

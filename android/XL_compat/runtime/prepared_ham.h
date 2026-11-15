@@ -16,6 +16,9 @@ class XlPreparedHam
 	explicit XlPreparedHam(mission_preparation *mission, const char *member);
 	// The caller establishes source ownership; the file remains caller-owned
 	explicit XlPreparedHam(PHYSFS_file *file);
+	static XlPreparedHam extra(PHYSFS_file *file);
+	int extra_bitmap_count() const;
+	int extra_pointer_count() const;
 	~XlPreparedHam();
 	XlPreparedHam(XlPreparedHam &&) noexcept;
 	XlPreparedHam &operator=(XlPreparedHam &&) noexcept;
@@ -26,6 +29,7 @@ class XlPreparedHam
 	void install();
 
   private:
+	XlPreparedHam();
 	struct State;
 	std::unique_ptr<State> state;
 };

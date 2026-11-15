@@ -55,6 +55,13 @@ typedef struct bm_ham_destination {
 	int *destroyed_exit_modelnum;
 } bm_ham_destination;
 
+#define N_D2_ROBOT_TYPES		66
+#define N_D2_ROBOT_JOINTS		1145
+#define N_D2_POLYGON_MODELS     166
+#define N_D2_OBJBITMAPS			422
+#define N_D2_OBJBITMAPPTRS		502
+#define N_D2_WEAPON_TYPES		62
+
 #ifdef DXX_XL_RUNTIME
 /* Decode a validated version-3 mission HAM into independent destinations
  * No global patch, Android capture or live definition publication occurs
@@ -64,5 +71,9 @@ int bm_read_xl_ham_into(PHYSFS_file *fp, const bm_ham_destination *destination,
 /* Publish a completely decoded native-capacity destination without I/O or
  * allocation. Model payload ownership transfers to the native tables */
 void bm_install_xl_ham(bm_ham_destination *source);
+/* Extra-HAM destinations are native-capacity arrays with empty extra model slots */
+int bm_read_xl_extra_ham_into(PHYSFS_file *fp, const bm_ham_destination *destination,
+                             int (*read_model)(polymodel *, PHYSFS_file *),
+                             int *bitmap_count, int *pointer_count);
 #endif
 #endif

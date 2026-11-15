@@ -4564,3 +4564,32 @@ replacement flag; the fix preserves mission definitions across
 This is a partial checkpoint: VHAM still loads after publication, target archive
 scope and bitmap/sample bank ownership are not fully integrated, and whole-world
 G2 atomicity remains open. The 15-hour goal continues after publication.
+
+### Retained VHAM extension checkpoint
+
+PR [474](https://github.com/larsonm-personal/dxx-redux/pull/474), head
+`90705b6db59b44fb7a52fc09f8ef41989bbc0aa7`, publishes the preceding HAM/HXM
+slice above PR 473 in native stack 471. Its initial public checks pass; longer
+engine and private owners remain in progress. Private controller run 43458841004
+uses `bf40de9bc` and explicitly tests that candidate. Sampled readiness is still
+the separate known failure, not regression qualification.
+
+The next layer shares the existing native extra-HAM decoder between live loading
+and independent destinations. Native format offsets have one definition in the
+native destination header. Retained VHAM bytes validate into independent arrays;
+`XlPreparedResources` composes those suffixes after HXM, stages native model
+allocations, and only then publishes HAM/HXM/VHAM. Android capture and trace
+hooks remain at publication. Ordinary native extra-HAM loading uses the same
+record decoder and retains its validation and lifecycle hooks.
+
+The canonical Pumo owner now prepares original HAM/HXM/VHAM while stock remains
+installed, replaces the derived VHAM source, rejects a malformed retry without
+changing either owner, and successfully publishes the retained definitions.
+Stock reload restores the original definition/render state. Windows and Linux
+Debug builds and Pumo controls pass; receipts are in the tranche scratch root.
+The transferred `NativeModel` destructor now frees only buffers it still owns,
+removing null-free diagnostics from this ownership path. Authentic source
+archives, the native deadlines and existing owner membership are unchanged.
+
+Target source lookup, independent bitmap/sample banks and whole-world restore
+still require work. These passes do not complete the active tranche goal.

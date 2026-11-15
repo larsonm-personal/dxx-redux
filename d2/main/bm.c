@@ -264,7 +264,7 @@ static int bm_read_live_model(polymodel *model, PHYSFS_file *fp)
 	return 1;
 }
 
-static void bm_read_all_internal(PHYSFS_file *fp, int apply_global_patch)
+static bm_ham_destination bm_live_ham_destination(void)
 {
 	const bm_ham_destination destination = {
 		&NumTextures,
@@ -305,6 +305,12 @@ static void bm_read_all_internal(PHYSFS_file *fp, int apply_global_patch)
 		&exit_modelnum,
 		&destroyed_exit_modelnum,
 	};
+	return destination;
+}
+
+static void bm_read_all_internal(PHYSFS_file *fp, int apply_global_patch)
+{
+	const bm_ham_destination destination = bm_live_ham_destination();
 	bm_read_ham_data(fp, Piggy_hamfile_version, &destination, bm_read_live_model);
 	if (apply_global_patch) dxa_metadata_patch_apply_d2_ham();
 #ifdef __ANDROID__
@@ -400,12 +406,6 @@ int bm_read_xl_main_ham(PHYSFS_file *fp)
 
 //these values are the number of each item in the release of d2
 //extra items added after the release get written in an additional hamfile
-#define N_D2_ROBOT_TYPES		66
-#define N_D2_ROBOT_JOINTS		1145
-#define N_D2_POLYGON_MODELS     166
-#define N_D2_OBJBITMAPS			422
-#define N_D2_OBJBITMAPPTRS		502
-#define N_D2_WEAPON_TYPES		62
 
 static d2_ham_validation_report Main_ham_validation_report;
 static d2_ham_validation_report Mission_ham_validation_report;
@@ -646,11 +646,76 @@ void bm_free_extra_models()
 		free_model(&Polygon_models[--N_polygon_models]);
 }
 
+/* Shared native extra-HAM record decoder; callers validate and own destinations */
+static int bm_read_extra_ham_data(PHYSFS_file *fp, const bm_ham_destination *destination,
+                                  int (*read_model)(polymodel *, PHYSFS_file *),
+                                  int *bitmap_count, int *pointer_count)
+{
+	int t, i;
+	//read extra weapons
+
+	t = PHYSFSX_readInt(fp);
+	(*destination->N_weapon_types) = N_D2_WEAPON_TYPES+t;
+	weapon_info_read_n(&destination->Weapon_info[N_D2_WEAPON_TYPES], t, fp, 3);
+
+	//now read robot info
+
+	t = PHYSFSX_readInt(fp);
+	(*destination->N_robot_types) = N_D2_ROBOT_TYPES+t;
+	robot_info_read_n(&destination->Robot_info[N_D2_ROBOT_TYPES], t, fp);
+
+	t = PHYSFSX_readInt(fp);
+	(*destination->N_robot_joints) = N_D2_ROBOT_JOINTS+t;
+	jointpos_read_n(&destination->Robot_joints[N_D2_ROBOT_JOINTS], t, fp);
+
+	t = PHYSFSX_readInt(fp);
+	(*destination->N_polygon_models) = N_D2_POLYGON_MODELS+t;
+	polymodel_read_n(&destination->Polygon_models[N_D2_POLYGON_MODELS], t, fp);
+
+	for (i=N_D2_POLYGON_MODELS; i<(*destination->N_polygon_models); i++ )
+		if (!read_model(&destination->Polygon_models[i], fp)) return 0;
+
+	for (i = N_D2_POLYGON_MODELS; i < (*destination->N_polygon_models); i++)
+		destination->Dying_modelnums[i] = PHYSFSX_readInt(fp);
+	for (i = N_D2_POLYGON_MODELS; i < (*destination->N_polygon_models); i++)
+		destination->Dead_modelnums[i] = PHYSFSX_readInt(fp);
+
+	t = PHYSFSX_readInt(fp);
+	*bitmap_count = t;
+	bitmap_index_read_n(&destination->ObjBitmaps[N_D2_OBJBITMAPS], t, fp);
+
+	t = PHYSFSX_readInt(fp);
+	*pointer_count = t;
+	for (i = N_D2_OBJBITMAPPTRS; i < (N_D2_OBJBITMAPPTRS + t); i++)
+		destination->ObjBitmapPtrs[i] = PHYSFSX_readShort(fp);
+
+	return 1;
+}
+
+#ifdef DXX_XL_RUNTIME
+int bm_read_xl_extra_ham_into(PHYSFS_file *fp, const bm_ham_destination *destination,
+                             int (*read_model)(polymodel *, PHYSFS_file *),
+                             int *bitmap_count, int *pointer_count)
+{
+	d2_ham_validation_limits limits = bm_validation_limits();
+	d2_ham_validation_report report;
+	ubyte *data;
+	size_t size;
+	int valid;
+	if (!fp || !destination || !read_model || !bitmap_count || !pointer_count ||
+	    !bm_read_validation_bytes(fp, &data, &size)) return 0;
+	valid = d2_ham_validate_xl_extra(data, size, &limits, &report);
+	d_free(data);
+	if (!valid || !PHYSFS_seek(fp, 8)) return 0;
+	return bm_read_extra_ham_data(fp, destination, read_model, bitmap_count, pointer_count);
+}
+#endif
+
 //type==1 means 1.1, type==2 means 1.2 (with weapons)
 static int bm_read_extra_robots_internal(const char *fname, int type, int xl_staged)
 {
 	PHYSFS_file *fp;
-	int t,i,version;
+	int version;
 
 	bm_reset_mission_compatibility_warnings();
 	fp = PHYSFSX_openReadBuffered(fname);
@@ -688,52 +753,12 @@ static int bm_read_extra_robots_internal(const char *fname, int type, int xl_sta
 	bm_free_extra_models();
 	bm_free_extra_objbitmaps();
 
-	//read extra weapons
-
-	t = PHYSFSX_readInt(fp);
-	N_weapon_types = N_D2_WEAPON_TYPES+t;
-	if (N_weapon_types > MAX_WEAPON_TYPES)
-		Error("Too many weapons (%d) in <%s>.  Max is %d.",t,fname,MAX_WEAPON_TYPES-N_D2_WEAPON_TYPES);
-	weapon_info_read_n(&Weapon_info[N_D2_WEAPON_TYPES], t, fp, 3);
-
-	//now read robot info
-
-	t = PHYSFSX_readInt(fp);
-	N_robot_types = N_D2_ROBOT_TYPES+t;
-	if (N_robot_types > MAX_ROBOT_TYPES)
-		Error("Too many robots (%d) in <%s>.  Max is %d.",t,fname,MAX_ROBOT_TYPES-N_D2_ROBOT_TYPES);
-	robot_info_read_n(&Robot_info[N_D2_ROBOT_TYPES], t, fp);
-
-	t = PHYSFSX_readInt(fp);
-	N_robot_joints = N_D2_ROBOT_JOINTS+t;
-	if (N_robot_joints > MAX_ROBOT_JOINTS)
-		Error("Too many robot joints (%d) in <%s>.  Max is %d.",t,fname,MAX_ROBOT_JOINTS-N_D2_ROBOT_JOINTS);
-	jointpos_read_n(&Robot_joints[N_D2_ROBOT_JOINTS], t, fp);
-
-	t = PHYSFSX_readInt(fp);
-	N_polygon_models = N_D2_POLYGON_MODELS+t;
-	if (N_polygon_models > MAX_POLYGON_MODELS)
-		Error("Too many polygon models (%d) in <%s>.  Max is %d.",t,fname,MAX_POLYGON_MODELS-N_D2_POLYGON_MODELS);
-	polymodel_read_n(&Polygon_models[N_D2_POLYGON_MODELS], t, fp);
-
-	for (i=N_D2_POLYGON_MODELS; i<N_polygon_models; i++ )
-		polygon_model_data_read(&Polygon_models[i], fp);
-
-	for (i = N_D2_POLYGON_MODELS; i < N_polygon_models; i++)
-		Dying_modelnums[i] = PHYSFSX_readInt(fp);
-	for (i = N_D2_POLYGON_MODELS; i < N_polygon_models; i++)
-		Dead_modelnums[i] = PHYSFSX_readInt(fp);
-
-	t = PHYSFSX_readInt(fp);
-	if (N_D2_OBJBITMAPS+t > MAX_OBJ_BITMAPS)
-		Error("Too many object bitmaps (%d) in <%s>.  Max is %d.",t,fname,MAX_OBJ_BITMAPS-N_D2_OBJBITMAPS);
-	bitmap_index_read_n(&ObjBitmaps[N_D2_OBJBITMAPS], t, fp);
-
-	t = PHYSFSX_readInt(fp);
-	if (N_D2_OBJBITMAPPTRS+t > MAX_OBJ_BITMAPS)
-		Error("Too many object bitmap pointers (%d) in <%s>.  Max is %d.",t,fname,MAX_OBJ_BITMAPS-N_D2_OBJBITMAPPTRS);
-	for (i = N_D2_OBJBITMAPPTRS; i < (N_D2_OBJBITMAPPTRS + t); i++)
-		ObjBitmapPtrs[i] = PHYSFSX_readShort(fp);
+	const bm_ham_destination destination = bm_live_ham_destination();
+	int bitmap_count, pointer_count;
+	if (!bm_read_extra_ham_data(fp, &destination, bm_read_live_model, &bitmap_count, &pointer_count)) {
+		PHYSFS_close(fp);
+		return 0;
+	}
 
 	input_demo_assets_extra_ham_loaded(fname, fp);
 	PHYSFS_close(fp);
