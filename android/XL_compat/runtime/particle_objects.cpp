@@ -39,6 +39,7 @@ struct Entry {
 std::map<int, Entry> entries;
 std::list<xl_compat::ParticleSystem> systems;
 xl_compat::ParticleWorld world;
+xl_compat::ParticleImages images;
 Uint32 epoch = 0;
 int last_update = 0, last_frame = 0;
 xl_compat::ParticleAnimationClock animation_clock;
@@ -71,6 +72,11 @@ void stop(Entry &entry)
 
 void xl_compat::bind_particle_objects(const Inventory &level)
 {
+	bind_particle_objects(level, xl_prepared_particle_images());
+}
+
+void xl_compat::bind_particle_objects(const Inventory &level, ParticleImages incoming_images)
+{
 	std::map<int, Entry> prepared;
 	for (unsigned index = 0; index < level.objects.size(); ++index) {
 		const auto &object = level.objects[index];
@@ -88,6 +94,7 @@ void xl_compat::bind_particle_objects(const Inventory &level)
 	systems.clear();
 	entries = std::move(prepared);
 	world = std::move(geometry);
+	images = std::move(incoming_images);
 	epoch = SDL_GetTicks();
 	last_update = last_frame = 0;
 	animation_clock = {};
@@ -99,6 +106,7 @@ extern "C" void xl_particle_objects_clear(void)
 	entries.clear();
 	systems.clear();
 	world = {};
+	images = {};
 	last_update = last_frame = 0;
 	animation_clock = {};
 }
@@ -120,6 +128,11 @@ extern "C" int xl_particle_depth_projection(void)
 const std::list<xl_compat::ParticleSystem> &xl_compat::particle_systems()
 {
 	return systems;
+}
+
+const xl_compat::ParticleImageResource *xl_compat::bound_particle_image(unsigned subtype)
+{
+	return images.at(subtype).get();
 }
 
 nlohmann::json xl_compat::particle_objects_snapshot()
@@ -300,8 +313,8 @@ extern "C" void xl_particle_render_scene(const short *segments, int count)
 {
 	if (!xl_level_extensions_active() || systems.empty()) return;
 	try {
-		const auto *fire = xl_prepared_particle_image(), *smoke = xl_prepared_particle_image(0), *bubble = xl_prepared_particle_image(2);
-		const auto *rain = xl_prepared_particle_image(5), *snow = xl_prepared_particle_image(6);
+		const auto *fire = images[3].get(), *smoke = images[0].get(), *bubble = images[2].get();
+		const auto *rain = images[5].get(), *snow = images[6].get();
 		const auto *image = fire ? fire : smoke ? smoke
 		                              : bubble  ? bubble
 		                              : rain    ? rain
@@ -358,6 +371,9 @@ void xl_compat::particle_objects_frame(int time)
 				continue;
 			}
 			const auto &object = Objects[index];
+			// Source Create fails before allocating a system, linking bubble audio
+			// or jittering its point when the selected image cannot be loaded
+			if (!entry.system && !images[unsigned(entry.effect.kind)]) continue;
 			if (!entry.system && entry.definition.count && systems.size() < particle_system_limit) {
 				const int segment = object.segnum;
 				if (segment < 0 || std::size_t(segment) >= world.segments.size()) throw std::runtime_error("XL particle owner moved outside its loaded mine");

@@ -1,6 +1,7 @@
 #ifndef DXX_XL_BUBBLE_AUDIO_TEST_H
 #define DXX_XL_BUBBLE_AUDIO_TEST_H
 #include "particle_objects.h"
+#include "particle_image_fixture.h"
 #include "particle_state.h"
 namespace xl_bubble_audio_control
 {
@@ -56,7 +57,15 @@ inline void run(int ordinal)
 		authored.render_data = { 2, 2, 4, 2, 2, 9, 0, 0, 0, 100, 0, 2, index == 1 };
 	}
 	install_named_audio(prepare_named_audio(Gamesave_current_filename, source, ordinal));
-	bind_particle_objects(source);
+	bind_particle_objects(source, {});
+	const auto absent_audio = snapshot();
+	const auto absent_fx = d_rand_get_stream_call_count(D_RNG_PRESENTATION), absent_sim = d_rand_get_stream_call_count(D_RNG_SIM);
+	particle_objects_frame(0);
+	particle_objects_frame(100);
+	require(particle_systems().empty() && snapshot() == absent_audio &&
+	            d_rand_get_stream_call_count(D_RNG_PRESENTATION) == absent_fx && d_rand_get_stream_call_count(D_RNG_SIM) == absent_sim,
+	        "Absent bubble image allocated audio, particles or RNG");
+	bind_particle_objects(source, particle_fixture_images(source));
 	const auto resource = load_audio_resource(bubble_sound_name, Gamesave_current_filename, ordinal);
 	const auto pcm = decode_wave_channels(reinterpret_cast<const std::uint8_t *>(resource.bytes.data()), resource.bytes.size());
 	const auto sample = prepare_audio_sample(pcm, 44100);

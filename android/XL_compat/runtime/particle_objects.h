@@ -6,6 +6,7 @@
 #endif
 #include "../fire_emitter.h"
 #include "../particle_render.h"
+#include "particle_resources.h"
 #include <list>
 #include <variant>
 namespace xl_compat
@@ -23,6 +24,8 @@ struct ParticleSystem {
 	}
 };
 void bind_particle_objects(const Inventory &level);
+void bind_particle_objects(const Inventory &level, ParticleImages images);
+const ParticleImageResource *bound_particle_image(unsigned subtype);
 // The same frame consumer accepts a controlled clock in native integration tests
 void particle_objects_frame(int milliseconds);
 const std::list<ParticleSystem> &particle_systems();

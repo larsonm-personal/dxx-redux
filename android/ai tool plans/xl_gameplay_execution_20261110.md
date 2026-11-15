@@ -5635,3 +5635,33 @@ preserved. Authentic Neptune and readiness cohort remain untouched. Readiness fo
 this new checkpoint is pending; last committed ordinary/CI measurement is 4/8.
 Full G2 and the corrupt-trailer energy 91-to-100 defect remain open. See the current
 tranche plan for exact source/binary/input and preceding private CI receipts.
+
+### 2026-11-14 tranche 2: absent stationary particle image checkpoint
+
+Immediate parent PR 500 / 36b4a3fdde87d9122fec9f1d1b8eaf9ce2f1ba09, stack 471.
+The native particle owner now retains decoded image storage through binding and
+follows pinned source failed creation when a selected image is absent: no system,
+cloud, bubble audio or point-jitter RNG. Authored activation and lifetime remain.
+Malformed/foreign resources and unqualified partial bubble rendering still reject.
+All seven subtypes and point/face profiles are checked against actual pinned
+Create/DoStaticParticles, alongside existing positive PCM and emitter controls.
+Resource moves/discard/live continuation, disk-through-stock restore and incoming
+equal-count pixels are tested without changing authentic inputs or cohort cases.
+
+Linux Debug effect owner passed 5 s; full owner including original Pumo passed
+11 s. Windows release effect owner passed 12.188 s. Canonical named-audio owner
+passed Linux Debug 80 s and Windows release 116.641 s. GPU 22.99 s and full pinned
+effect reference 0.38 s passed. Windows Debug effect owner timed out at the unchanged
+80-second child deadline (81.031/80.922 s total); preserve both failed receipts.
+It remains open along with prior Windows Debug audio timeouts. No deadline,
+assertion or catalog case was relaxed. Ordinary readiness for this child is still
+pending; last committed local/private readiness is 4/8. Original Pumo's hub skybox
+and level-2 fog renderer guards remain closed headlessly. Full G2 and corrupt XL
+trailer energy 91-to-100 remain open. See the tranche plan/private source snapshots
+for exact binaries, inputs, failed diagnostics and preceding PR CI IDs.
+
+Final original-Pumo refresh also passed on Windows release in 14.781 seconds.
+The hub specifically reaches its skybox guard; level 2 reaches its fog guard.
+Private failed assertion/debugger receipts preserve how the next guard was found.
+Final Linux/Windows binaries and original Pumo input hashes are recorded in the
+tranche plan; Android and final capture/replay still require current-candidate runs.

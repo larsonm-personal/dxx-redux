@@ -18,13 +18,13 @@ static void particle_original_native_case(const char *package, const char *image
 	write_bytes(atlas.string().c_str(), pixels);
 	require(load_base_mission("pmines", error, sizeof(error)), error);
 	// This fire owner deliberately installs only smokingfire.tga
-	require(!xl_level_supported_at("pm-hub.rl2", 0, 1), "Pumo hub accepted a missing smoke dependency");
-	require(std::strstr(xl_level_rejection(), "Missing XL smoke image"), "Original Pumo hub lost its smoke dependency rejection");
-	std::cout << "Original Pumo hub missing-smoke rejection preserved; complete resources use the headed hub owner\n";
+	require(!xl_level_supported_at("pm-hub.rl2", 0, 1), "Headless Pumo hub bypassed renderer qualification");
+	require(std::strstr(xl_level_rejection(), "XL skybox requires an active OpenGL renderer"), "Original Pumo hub lost its headless visibility rejection");
+	std::cout << "Original Pumo hub reaches its skybox visibility rejection with smoke absent\n";
 	require(!xl_level_supported_at("mvlev1.rl2", 0, 2), "Headless Pumo fire scene unexpectedly bypassed renderer qualification");
 	require(std::strstr(xl_level_rejection(), "XL fog requires an active OpenGL renderer"), "Original Pumo fire scene lost its headless visibility rejection");
 	xl_preview_clear_mission();
 	std::filesystem::remove(atlas);
 	require(PHYSFS_removeFromSearchPath(package), "Cannot unmount original Pumo package");
-	std::cout << "Original Pumo native admission: hub smoke dependency and level-2 headless visibility rejection preserved\n";
+	std::cout << "Original Pumo native admission: hub skybox and level-2 fog visibility rejection preserved\n";
 }

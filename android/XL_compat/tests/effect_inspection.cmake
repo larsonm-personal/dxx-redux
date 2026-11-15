@@ -94,6 +94,17 @@ if(image_witness LESS 0)
 endif()
 if(particle_world_args)
     execute_process(
+        COMMAND "${REFERENCE}" --particle-missing "${OUTPUT}/particle-missing.txt"
+        RESULT_VARIABLE missing_result
+        OUTPUT_VARIABLE missing_log
+        ERROR_VARIABLE missing_error
+        TIMEOUT 15)
+    file(WRITE "${OUTPUT}/particle-missing-reference.log" "${missing_log}${missing_error}")
+    if(NOT missing_result EQUAL 0 OR NOT missing_log MATCHES "14 native point/face cases")
+        message(
+            FATAL_ERROR "Missing particle source comparison failed: ${missing_log}${missing_error}")
+    endif()
+    execute_process(
         COMMAND "${REFERENCE}" --time-images "${OUTPUT}/time-images.txt"
         RESULT_VARIABLE time_result
         OUTPUT_VARIABLE time_log

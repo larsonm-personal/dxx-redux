@@ -1406,6 +1406,9 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 		state->particle_image = xl_compat::prepare_particle_image(*level, 3, target);
 		state->smoke_image = xl_compat::prepare_particle_image(*level, 0, target);
 		state->bubble_image = xl_compat::prepare_particle_image(*level, 2, target);
+		// Partial bubble atlases still require the qualified multi-texture path
+		if (state->bubble_image && !state->smoke_image)
+			throw std::runtime_error("XL bubble rendering requires its smoke support image when the bubble image is present");
 		state->rain_image = xl_compat::prepare_particle_image(*level, 5, target);
 		state->snow_image = xl_compat::prepare_particle_image(*level, 6, target);
 		state->lightning_image = xl_compat::prepare_lightning_image(*level, target);
@@ -1730,6 +1733,16 @@ const xl_compat::ParticleImageResource *XlPreparedResources::particle_image(int 
 const xl_compat::ParticleImageResource *xl_prepared_particle_image(int subtype)
 {
 	return prepared_resources ? prepared_resources->particle_image(subtype) : nullptr;
+}
+
+xl_compat::ParticleImages XlPreparedResources::particle_images() const
+{
+	return { state->smoke_image, state->smoke_image, state->bubble_image, state->particle_image, state->smoke_image, state->rain_image, state->snow_image };
+}
+
+xl_compat::ParticleImages xl_prepared_particle_images()
+{
+	return prepared_resources ? prepared_resources->particle_images() : xl_compat::ParticleImages{};
 }
 
 const xl_compat::ParticleImageResource *XlPreparedResources::lightning_image() const

@@ -1046,3 +1046,39 @@ W2–W5 receipts and source hashes are in
 `temp/xl-day-20261110/HANDOFF.md`. The W5 root binary passes 120 rendered frames
 for original Warp 5, Sphere 2 and Warp 6; those are separate HXM/time-equipment
 controls, not particle rendering evidence.
+
+## Missing stationary particle images (2026-11-14)
+
+The earlier mandatory-atlas admission described above is superseded for absence
+only. At pinned source 2576a98b5de310e3ac7c9777df2677d1627b8bae,
+CParticleManager::Create calls image Load before taking a system from the pool.
+DoStaticParticles returns on failed creation before binding the system, creating
+bubble sound or applying point jitter. The native owner now retains decoded
+image ownership alongside its world and follows that failure path. Authored
+activation and object lifetime remain live; missing files do not invent clouds,
+linked sound, PCM or presentation/SIM RNG consumption. Malformed images and
+foreign origins still reject. Present images retain their existing atlas and
+soft-depth requirements. A present bubble image without its smoke support image
+still rejects until that partial rendering profile is qualified.
+
+Existing effect inspection compares fourteen native point/face profiles against
+the actual pinned Create and DoStaticParticles bodies. All seven subtypes share
+one real mixed world, with activation, saved-state restoration and recycled
+signature controls. Positive controls prepare actual decoded synthetic atlases
+inside isolated fixture directories and retain them after deletion; no synthetic
+assets enter the frozen readiness cohort. The owner also exercises absent-image
+normal loading and disk restoration through stock, complete resource move and
+assignment, discard, equal-count independent incoming pixels and live emission
+after source-file deletion. Original Pumo headless visibility rejection remains;
+missing smoke no longer masks that renderer requirement.
+
+Linux Debug/assertions passes the complete owner in five seconds, and the full
+original-Pumo variant in eleven seconds. Windows release passes the original-Pumo
+variant in 14.781 seconds. Windows Debug timed out at the
+unchanged 80-second child deadline, including after consolidating the fourteen
+profiles; it is a retained failure, not a pass. The affected asset-free GPU owner
+and full pinned effect-reference owner pass. Canonical audio passes on Linux Debug (80 seconds) and Windows release
+(116.641 seconds). Private exact source/binary/input
+receipts are in temp/xl-readiness-tranche2-20261114. Known sampled readiness remains
+4/8 until the committed ordinary developer-OFF measurement is rerun. This is not
+whole-save atomicity, completed G2-G7 or unassisted campaign qualification.

@@ -6,6 +6,7 @@
 #endif
 #include "particle_renderer.h"
 #include "particle_resources.h"
+#include "particle_objects.h"
 #include "resource_validation.h"
 #include "lightning_renderer.h"
 #include "shield_renderer.h"
@@ -124,7 +125,7 @@ void ParticleTexture::draw(const ParticleQuad *quads, std::size_t count)
 {
 	if (!count) return;
 	if (quads[0].image >= 0) {
-		const auto *smoke = xl_prepared_particle_image(0), *bubble = xl_prepared_particle_image(2);
+		const auto *smoke = bound_particle_image(0), *bubble = bound_particle_image(2);
 		if (!smoke || !bubble || !smoke->texture || !bubble->texture) throw std::runtime_error("XL multi-image particles lost their prepared source textures");
 		draw_multi_particle_quads(*smoke->texture, *bubble->texture, quads, count);
 		return;
