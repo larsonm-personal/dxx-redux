@@ -2,6 +2,7 @@
 #define DXX_XL_POG_RESOURCES_H
 #include "physfs.h"
 #include <stddef.h>
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,11 +22,22 @@ int xl_pog_count(const struct xl_pog_resources *resources);
 const struct xl_pog_bitmap *xl_pog_entry(const struct xl_pog_resources *resources, int row);
 const unsigned char *xl_pog_pixels(const struct xl_pog_resources *resources, size_t *size);
 int xl_pog_install(struct xl_pog_resources *resources);
+/* Native storage is allocated before publication and transfers only once */
+int xl_pog_prepare_storage(struct xl_pog_resources *resources);
+unsigned char *xl_pog_take_storage(struct xl_pog_resources *resources, size_t *size);
+uint64_t xl_pog_owner_token(const struct xl_pog_resources *resources);
+/* Repeating publication is allocation-free while this owner remains installed */
+int xl_pog_install_prepared(struct xl_pog_resources *resources);
 /* 0: unclocked static strip; 1: live animation clock; -1: invalid native table bounds */
 int xl_pog_strip_clock(unsigned bitmap);
 /* Diagnostic receipt for the live installed payload, not source-file metadata */
 int xl_pog_bitmap_receipt(const struct xl_pog_resources *resources, int bitmap, unsigned *bytes, unsigned *fnv1a);
 #ifdef __cplusplus
 }
+namespace xl_assets
+{
+struct ObjectDependencies;
+}
+int xl_pog_target_strip_clock(unsigned bitmap, const xl_assets::ObjectDependencies &tables);
 #endif
 #endif

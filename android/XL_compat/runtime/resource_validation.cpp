@@ -183,6 +183,8 @@ struct MissionDefinitions {
 	std::vector<bitmap_index> textures{ Textures, Textures + NumTextures };
 	std::vector<tmap_info> texture_info{ TmapInfo, TmapInfo + NumTextures };
 	std::array<ubyte, MAX_SOUNDS> sounds, alternate_sounds;
+	std::array<bitmap_index, N_COCKPIT_BITMAPS> cockpits{};
+	std::array<bitmap_index, MAX_GAUGE_BMS> gauges{}, gauges_hires{};
 	int object_bitmap_count = N_ObjBitmaps;
 	int low_memory = GameArg.SysLowMem;
 	std::vector<std::vector<ubyte>> payloads;
@@ -191,6 +193,9 @@ struct MissionDefinitions {
 
 	MissionDefinitions() : payloads(models.size()), custom_radii(models.size()), base_radii(models.size())
 	{
+		std::copy_n(cockpit_bitmap, cockpits.size(), cockpits.begin());
+		std::copy_n(Gauges, gauges.size(), gauges.begin());
+		std::copy_n(Gauges_hires, gauges_hires.size(), gauges_hires.begin());
 		std::copy_n(Sounds, MAX_SOUNDS, sounds.begin());
 		std::copy_n(AltSounds, MAX_SOUNDS, alternate_sounds.begin());
 		for (std::size_t id = 0; id < models.size(); ++id) {
@@ -220,6 +225,9 @@ struct MissionDefinitions {
 	                                                                payloads(models.size()), custom_radii(models.size()), base_radii(models.size())
 	{
 		std::copy_n(target.Sounds, MAX_SOUNDS, sounds.begin());
+		std::copy_n(target.cockpit_bitmap, cockpits.size(), cockpits.begin());
+		std::copy_n(target.Gauges, gauges.size(), gauges.begin());
+		std::copy_n(target.Gauges_hires, gauges_hires.size(), gauges_hires.begin());
 		std::copy_n(target.AltSounds, MAX_SOUNDS, alternate_sounds.begin());
 		for (std::size_t id = 0; id < models.size(); ++id) {
 			auto &model = models[id];
@@ -1199,6 +1207,7 @@ XlPreparedResources &XlPreparedResources::operator=(XlPreparedResources &&other)
 void XlPreparedResources::prepare_banks(const std::string &palette)
 {
 	if (state->installed) throw std::runtime_error("Cannot prepare banks after resource publication");
+	if (state->pog) throw std::runtime_error("Banks must be prepared before POG admission");
 	const auto names = graphics_bank_names(palette);
 	auto palette_bytes = retained_bank_source(names.first);
 	std::size_t bank = GameArg.SndDigiSampleRate == 22050 ? 1 : 0;
@@ -1228,6 +1237,7 @@ void XlPreparedResources::prepare_banks(const std::string &palette)
 std::string XlPreparedResources::prepare_hxm(PHYSFS_file *file)
 {
 	if (state->installed) throw std::runtime_error("Cannot prepare HXM after resource publication");
+	if (state->pog) throw std::runtime_error("HXM must be prepared before POG admission");
 	const auto &graph = state->graph;
 	auto retained = xl_retain_resource(file);
 	auto staged = std::make_unique<State>(state->definitions);
@@ -1251,6 +1261,7 @@ std::string XlPreparedResources::prepare_hxm(PHYSFS_file *file)
 std::string XlPreparedResources::prepare_vham(PHYSFS_file *file)
 {
 	if (state->installed) throw std::runtime_error("Cannot prepare VHAM after resource publication");
+	if (state->pog) throw std::runtime_error("VHAM must be prepared before POG admission");
 	auto extra = std::make_unique<XlPreparedHam>(XlPreparedHam::extra(file));
 	const auto &target = extra->tables();
 	auto staged = std::make_unique<State>(state->definitions);
@@ -1363,38 +1374,52 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 		}
 	}
 	state->prepare_models(ordinal);
-	const auto pog_name = base + ".POG";
-	if (auto file = companion(pog_name)) {
-		char error[256]{};
-		state->pog.reset(xl_pog_prepare(file.get(), state->banks ? state->banks->bitmap_count() : Num_bitmap_files, error, sizeof(error)));
-		if (!state->pog) throw std::runtime_error(pog_name + ": " + error);
-		for (int i = 0; i < xl_pog_count(state->pog.get()); ++i) {
-			const auto *entry = xl_pog_entry(state->pog.get(), i);
-			if (!entry->rgba) continue;
-			if (entry->frames > 1) {
-				const int clock = xl_pog_strip_clock(entry->index);
-				if (clock < 0) throw std::runtime_error(pog_name + ": native bitmap animation tables exceed supported bounds");
-				if (clock) throw std::runtime_error(pog_name + ": RGBA bitmap " + std::to_string(entry->index) +
-					                                " has clocked animation frames; playback is not implemented");
-			}
-			bool cockpit = false;
-			for (const auto &bitmap : cockpit_bitmap) cockpit = cockpit || bitmap.index == entry->index;
-			for (int gauge = 0; gauge < MAX_GAUGE_BMS; ++gauge)
-				cockpit = cockpit || Gauges[gauge].index == entry->index || Gauges_hires[gauge].index == entry->index;
-			if (cockpit) throw std::runtime_error(pog_name + ": RGBA bitmap " + std::to_string(entry->index) +
-				                                  " replaces a cockpit/HUD image; true-color cockpit layout is not implemented");
-			if (const char *reason = ogl_xl_rgba_prepare(int(entry->width), int(entry->frame_height)))
-				throw std::runtime_error(pog_name + ": " + reason);
-		}
-	}
 	if (level && std::any_of(level->objects.begin(), level->objects.end(), [](const xl_compat::Object &object) { return object.type == 16; }))
 		prepare_camera_model();
+	const auto pog_name = base + ".POG";
+	if (auto file = companion(pog_name)) {
+		try {
+			prepare_pog(file.get());
+		} catch (const std::exception &error) {
+			throw std::runtime_error(pog_name + ": " + error.what());
+		}
+	}
+}
+
+void XlPreparedResources::prepare_pog(PHYSFS_file *file)
+{
+	if (state->installed) throw std::runtime_error("Cannot prepare POG after resource publication");
+	if (state->mission_definitions && !state->banks) throw std::runtime_error("Incoming POG requires prepared target banks");
+	char error[256]{};
+	std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)> prepared(xl_pog_prepare(file, state->banks ? state->banks->bitmap_count() : Num_bitmap_files, error, sizeof(error)), xl_pog_free);
+	if (!prepared) throw std::runtime_error(std::string("POG: ") + error);
+	for (int i = 0; i < xl_pog_count(prepared.get()); ++i) {
+		const auto *entry = xl_pog_entry(prepared.get(), i);
+		if (!entry->rgba) continue;
+		if (entry->frames > 1) {
+			const int clock = xl_pog_target_strip_clock(entry->index, state->graph);
+			if (clock < 0) throw std::runtime_error(std::string("POG: native bitmap animation tables exceed supported bounds"));
+			if (clock) throw std::runtime_error(std::string("POG: RGBA bitmap ") + std::to_string(entry->index) +
+				                                " has clocked animation frames; playback is not implemented");
+		}
+		bool cockpit = false;
+		for (const auto &bitmap : state->definitions.cockpits) cockpit = cockpit || bitmap.index == entry->index;
+		for (int gauge = 0; gauge < MAX_GAUGE_BMS; ++gauge)
+			cockpit = cockpit || state->definitions.gauges[gauge].index == entry->index || state->definitions.gauges_hires[gauge].index == entry->index;
+		if (cockpit) throw std::runtime_error(std::string("POG: RGBA bitmap ") + std::to_string(entry->index) +
+			                                  " replaces a cockpit/HUD image; true-color cockpit layout is not implemented");
+		if (const char *reason = ogl_xl_rgba_prepare(int(entry->width), int(entry->frame_height)))
+			throw std::runtime_error(std::string("POG: ") + reason);
+	}
+	if (!xl_pog_prepare_storage(prepared.get())) throw std::runtime_error("Cannot prepare native POG pixel storage");
+	state->pog = std::move(prepared);
 }
 
 void XlPreparedResources::prepare_camera_model()
 {
 	xl_camera_validate_weapon_definitions();
 	if (state->camera_model >= 0) return;
+	if (state->pog) throw std::runtime_error("Camera definitions must be prepared before POG admission");
 	if (state->installed) throw std::runtime_error("Camera resources must be prepared before installation");
 	CameraAddonFile addon;
 	if (!bm_validate_level_hxm(addon.file.get())) throw std::runtime_error("Camera addon HXM is malformed or uses unqualified serialized indices");
@@ -1577,7 +1602,7 @@ void XlPreparedResources::initialize_camera_objects()
 
 void XlPreparedResources::install_pog()
 {
-	if (!xl_pog_install(state->pog.get())) throw std::runtime_error("cannot allocate prepared POG bitmap storage");
+	if (!xl_pog_install_prepared(state->pog.get())) throw std::runtime_error("Prepared POG storage or animation tables are unavailable");
 }
 
 extern "C" void xl_initialize_camera_objects(void)

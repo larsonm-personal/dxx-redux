@@ -4801,3 +4801,76 @@ Linux Debug Pumo source/model controls also pass in 37.56 seconds under the
 unchanged 120-second limit. Its existing allocator warnings remain visible in
 `pumo-bank-verified-linux.stderr.log`; no renderer/campaign claim follows from
 these CPU controls.
+
+### POG decisions and native pixel storage before publication
+
+PR [480](https://github.com/larsonm-personal/dxx-redux/pull/480), head
+`6ec2a56f8d9de0807f12c19f9e5d9a1c74a971a6`, publishes the repeated-preparation
+repair. Its exact-head private controller is
+[43481163111](https://github.com/larsonm-personal/dxx-redux/actions/runs/43481163111),
+attempt 1, still running at this checkpoint. Its sampled readiness failure is
+separate from the regression lane; no pending owner is counted as passed.
+
+POG preparation now reads animation clocks and cockpit/gauge mappings from the
+retained target definitions. The legacy installer and target preparation share
+one clock policy in the XL runtime. Native pixel storage is allocated inside the
+prepared POG owner before publication, then transferred to the existing native
+bitmap owner. Definition and bank changes cannot silently invalidate an already
+admitted POG; camera preparation precedes POG admission in the level path.
+
+The first full water test caught an existing repeated-install contract. Its
+failed Windows/Linux receipts are retained as `water-pog-windows.log` and
+`water-pog-linux.log`. The corrected implementation treats a repeated call as
+allocation-free while the same unique owner remains installed. Retirement clears
+the native owner token; a consumed, retired owner cannot silently allocate and
+publish again. Legacy direct reinstall callers explicitly prepare new storage.
+No existing repeated-install assertion was weakened.
+
+The canonical POG owner adds differing decoded target clock, cockpit, low/high
+resolution gauge mappings, allowed target strips despite outgoing clocks,
+discard, move, malformed retry, successful retained publication and retirement
+controls. Original Arena/Pumo POG, transparency, paging, disk-through-stock and
+pinned source comparisons pass on Windows and Linux Debug. Linux production GPU
+qualification passes 810 cases and 55,170,048 pixels, including all 19 Arena and
+26 Pumo uploads/mipmaps and source shader comparisons. Receipts are
+`pog-prepared-windows-02.log` and `pog-prepared-linux-02.log`.
+
+Windows and Linux Debug full water owners pass after the repeated-install fix,
+including source rejection, gameplay preservation, save/replay and the explicit
+invalid-free check. Windows Observatory and its pinned references pass both real
+outgoing continuation profiles. Linux Debug Pumo CPU loading/source controls pass
+in 41.58 seconds. Failed and passing receipts remain separate.
+
+Fresh developer-OFF Windows playback exits normally in 43.97 seconds and exactly
+matches the captured terminal JSON. Binary SHA-256:
+`4e1488df72073a2adc064a80b645e4d764549dc8e4030df2138d1efd3fbb47dd`.
+Detailed object/world/XL and RNG comparison is in progress in
+`replay-pog-water-clean`. The existing controlled water navigation and
+`-xl-water-physics` assist remain explicit; this is not campaign completion.
+Target level source context, actual renderer/mixer bank replacement, whole-world
+atomic restore and final Android qualification remain open.
+
+PR 480's private run 43481163111 attempt 1 now passes on exact target
+`6ec2a56f8d9de0807f12c19f9e5d9a1c74a971a6`: all 113 required owners, 16 format
+witnesses and three modern source levels, plus navigation smoke/four anchors.
+The receipt explicitly skips camera subchecks for its missing addon; that is not
+camera coverage. Public Android/ASan/save-parity checks are still running.
+
+The POG replay's detailed comparison also passes: 1,235 object frames, 1,239
+world/XL records, 196 SIM and 1,808 FX events. Final review then removed a hidden
+MSVC allocation in the legacy clock wrapper: a full dependency graph with empty
+sets was replaced by a small read-only table view. Rebuilt Windows, Linux Debug
+and ordinary binaries pass; both final `pog-prepared-*-03.log` owners, including
+Linux GPU/reference coverage, pass. A fresh final-view water capture/replay is
+being produced separately rather than relabeling the earlier binary receipt.
+
+Additional Linux Debug HXM/camera qualification passes with the pinned original
+addon `df69c62aad949f2d92bc1bbea4b597623cd29d0a0f594cdcc3d66568d6ce482a` and the
+owner's retail-only profile. It exercises native append, five malformed targets,
+unowned shadow, repeated installation/reset, initialization and contact. Receipt:
+`hxm-pog-camera-linux-03.log`, with full controls/reference logs under the same
+named native WSL output directory. Warp 5 actor coverage is explicitly not run
+in this invocation. An initial different-addon hash rejection and a Vertigo-data
+profile failure are retained. The latter reproduces on the pre-POG optimized
+binary in `hxm-camera-vertigo-baseline.log`; no assertion or input hash gate was
+changed. Existing allocator warnings remain visible.
