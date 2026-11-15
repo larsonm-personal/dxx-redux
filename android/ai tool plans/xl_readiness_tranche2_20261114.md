@@ -640,3 +640,58 @@ Both complete catalog owners PASS: 99 standalone JSON, 315 standalone PowerShell
 547 support scripts and 428 master entries, including scheduling/timeout controls.
 Receipts: world-trace-windows-d1-build-01.log, trace-windows-d1-binaries-01.json,
 trace-catalog-01.log and trace-master-catalog-01.log.
+
+### Published trace private qualification
+
+PR 506 head 8d5f7ebb66936bf3fdcdd49098d3defaf6b69e8a, parent PR 505/e83c1718,
+synthetic merge 4011541a52adeda82013cb8bf42387dcf8301499, is linked to stack 471.
+Private run 43663432462 attempt 1 SUCCESS under controller
+72fdd76f5f8dc24a787b3a4858de1115ec091c19: actual host receipt PASS 113 required,
+16 format, 3 modern in 732.595 s; assisted navigation one smoke/four anchors,
+3908 ms. Camera subchecks remain not_run_missing_addon and coverage_complete=false.
+The separate exact-head readiness artifact completes unchanged at 4/8. Remaining
+public checks are pending, not qualified by this private pass.
+
+Artifacts: host 14141856476, summary 14141876465, readiness 14141096969 and plan
+14140659389, retained in pr506-ci-host/summary/readiness/plan. Smoke assets are
+8c9988a96a7e306f8aac04c85e2610492917b7ac, manifest
+527427b5490e873c651b833d048e3f95fc13cb3306a92a452218ada17f9a95c9; frozen
+readiness inputs remain separately 9dad21bd65ba05665ac6fe315f37fe7461e85725.
+
+Runnable local handoff-package-01 copies the verified ordinary Windows D1/D2
+binaries and DLLs plus the frozen ordinary all-three-ABI APK. Both executables
+exit 0 on -help; all 18 D2 DLLs match the qualified clean playback folder. No
+retail assets or capture profiles are copied. Manifest SHA256
+657e236c0a1b041a956e38253b4e3ddae1af4ed3b9942be2dd5e96efa4d3bb6a records
+all 42 initial files and build/cache/source identity. The packaged native bytes
+match PR 506, with embedded build base e83c1718 disclosed.
+
+PR 506 hosted compact replay admission passes in 196 s (01:56:19-01:59:35 UTC),
+unchanged 240-second limit, run 43663420444/job 132663339437. Native runtime
+replay starts afterward and remains pending at this entry. Receipt:
+pr506-native-admission-03.json. All earlier admission failures remain preserved.
+
+### November 14 second-tranche implementation qualification and handoff
+
+PR 506 head 8d5f7ebb66936bf3fdcdd49098d3defaf6b69e8a, synthetic merge
+4011541a52adeda82013cb8bf42387dcf8301499, now has all applicable non-readiness
+checks terminal SUCCESS in pr506-checks-final.json. Public run 43663420444
+attempt 1 includes native job 132663339437 and headed job 132663339435. Each
+backend passes 34 native runs/17 cases and three negative controls. Headed
+imported D1 flight passes the existing gameplay-state/SIM-RNG scope, while
+frame.diag/object_states/world_states, four other paired cases and three excluded
+cases remain outside that qualification. Broader imported parity is incomplete.
+Headed report artifact 14143367631 is retained locally. Private run 43663432462
+attempt 1/controller 72fdd76f5f8dc24a787b3a4858de1115ec091c19 passes its bounded
+113 required/16 format/3 modern controls; sampled readiness stays FAIL 4/8.
+
+The dated report, next plan and replacement kickoff are
+xl_gameplay_what_was_done_20261114_tranche2.md,
+xl_gameplay_next_window_20261114_tranche2.md and
+xl_gameplay_kickoff_20261114_tranche2.md. They preserve the latest user priority
+for useful tested progress, exact source/binary/input receipts, assisted capture
+disclosure, Android FX mismatch, retention loss, full G2 energy defect and
+conditional estimates. The runnable package is hash-verified. No further native
+implementation is in flight. Final documentation publication is an immediate-parent
+child of PR 506; its own final-push CI and refreshed identities belong in the
+post-push final-handoff-receipt.json and PR description. No merges are authorized.

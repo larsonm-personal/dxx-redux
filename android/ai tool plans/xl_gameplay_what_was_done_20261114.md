@@ -1,5 +1,8 @@
 # XL gameplay tranche, November 14, 2026
 
+This first-tranche report is historical. Later changes and current qualification
+are recorded in the [second-tranche report](xl_gameplay_what_was_done_20261114_tranche2.md).
+
 Readiness remains **4/8**, not campaign qualification. The exact ordinary Linux
 CI target reproduced all four frozen zero-frame failures. Ambient/effect output
 now retains logical objects and linked owners when PCM is absent, without a fake

@@ -1,5 +1,9 @@
 # Next bounded XL gameplay window
 
+Historical first-tranche plan. Use the
+[second-tranche next-window plan](xl_gameplay_next_window_20261114_tranche2.md)
+for the latest explicit-invocation scope, user priorities and prerequisites.
+
 Start only on explicit invocation for 12 hours. Reserve hours 8-12 for validation,
 CI repair and committed handoff. Work sequentially without agents or hourly watch.
 Read AGENTS.md, copilot instructions, November 14 report/readiness plan, November 13
