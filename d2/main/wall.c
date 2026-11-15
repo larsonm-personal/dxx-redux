@@ -329,7 +329,7 @@ void blast_blastable_wall(segment *seg, int side)
 		escort_notify_blastable_wall_destroyed();
 #endif
 	}
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	escort_route_notify_wall_changed(seg->sides[side].wall_num);
 	if (cwall_num > -1)
 		escort_route_notify_wall_changed(cwall_num);
@@ -489,7 +489,7 @@ void wall_open_door(segment *seg, int side)
 	}
 	else
 		con_printf(CON_URGENT, "Illegal Connectside %i in wall_open_door. Trying to hop over. Please check your level!\n", side);
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	escort_route_notify_wall_changed(wall_num);
 	if (cwall_num > -1)
 		escort_route_notify_wall_changed(cwall_num);
@@ -624,7 +624,7 @@ void start_wall_cloak(segment *seg, int side)
 		if (cwall_num > -1)
 			d->back_ls[i] = csegp->sides[Connectside].uvls[i].l;
 	}
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	escort_route_notify_wall_changed(seg->sides[side].wall_num);
 	if (cwall_num > -1)
 		escort_route_notify_wall_changed(cwall_num);
@@ -719,7 +719,7 @@ void start_wall_decloak(segment *seg, int side)
 		if (cwall_num > -1)
 			d->back_ls[i] = csegp->sides[Connectside].uvls[i].l;
 	}
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	escort_route_notify_wall_changed(seg->sides[side].wall_num);
 	if (cwall_num > -1)
 		escort_route_notify_wall_changed(cwall_num);
@@ -1096,7 +1096,7 @@ void wall_illusion_off(segment *seg, int side)
 
 	kill_stuck_objects(seg->sides[side].wall_num);
 	kill_stuck_objects(csegp->sides[cside].wall_num);
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	escort_route_notify_wall_changed(seg->sides[side].wall_num);
 	escort_route_notify_wall_changed(csegp->sides[cside].wall_num);
 #endif
@@ -1120,7 +1120,7 @@ void wall_illusion_on(segment *seg, int side)
 
 	Walls[seg->sides[side].wall_num].flags &= ~WALL_ILLUSION_OFF;
 	Walls[csegp->sides[cside].wall_num].flags &= ~WALL_ILLUSION_OFF;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	escort_route_notify_wall_changed(seg->sides[side].wall_num);
 	escort_route_notify_wall_changed(csegp->sides[cside].wall_num);
 #endif

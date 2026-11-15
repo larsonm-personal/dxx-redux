@@ -1075,7 +1075,7 @@ void render_segment(int segnum, int window_num)
 		    )
 		{
 			if (!Automap_visited[segnum]) {
-#ifdef ANDROID
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 				escort_route_notify_automap_changed(segnum);
 #endif
 			}
@@ -2506,7 +2506,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 					  )
 					{
 						if (!Automap_visited[segnum]) {
-#ifdef ANDROID
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 							escort_route_notify_automap_changed(segnum);
 #endif
 						}
@@ -2650,7 +2650,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 					  )
 					{
 						if (!Automap_visited[segnum]) {
-#ifdef ANDROID
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 							escort_route_notify_automap_changed(segnum);
 #endif
 						}

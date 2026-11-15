@@ -35,7 +35,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #if defined(ANDROID) || defined(__ANDROID__)
 #include "android_render_fov.h"
 #endif
-#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+#if (defined(ANDROID) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)) && defined(DXX_BUILD_DESCENT_II)
 #include "guidebot_extensions.h"
 #endif
 
@@ -307,7 +307,7 @@ static int render_update_view_automap(grs_canvas *canvas, int window_num)
 		    && !xl_skybox_segment(segnum)
 #endif
 		) {
-#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+#if (defined(ANDROID) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)) && defined(DXX_BUILD_DESCENT_II)
 			if (!Automap_visited[segnum])
 				escort_route_notify_automap_changed(segnum);
 #endif
