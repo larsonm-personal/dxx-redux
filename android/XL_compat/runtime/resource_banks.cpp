@@ -57,6 +57,18 @@ XlResourceBanks::XlResourceBanks(std::vector<unsigned char> bitmaps, std::vector
 
 XlResourceBanks::~XlResourceBanks() = default;
 
+bool XlResourceBanks::matches(const std::vector<unsigned char> &bitmaps, const std::vector<unsigned char> &sounds, int rate) const
+{
+	return state->rate == rate && state->bitmap_bytes == bitmaps && state->sound_bytes == sounds;
+}
+
+const std::string *XlResourceBanks::verified_hash(const std::vector<unsigned char> &bytes) const
+{
+	if (state->bitmap_bytes == bytes) return &state->bitmap_hash;
+	if (state->sound_bytes == bytes) return &state->sound_hash;
+	return nullptr;
+}
+
 void XlResourceBanks::bitmap(int id) const
 {
 	if (id <= 0 || id >= int(state->bitmaps.size())) throw std::runtime_error("object dependency references missing bitmap in target bank");

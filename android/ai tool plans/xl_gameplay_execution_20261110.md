@@ -4752,3 +4752,52 @@ Debug binary, so its hosted failure remains under investigation rather than
 being dismissed. The fixed PR 477 controller retry succeeded but intentionally
 skipped private execution below the native stack tip; that is not an asset-test
 pass. The rebased top-head private run is queued.
+
+### Repeated incoming preparation and runtime deadline repair
+
+PR 479 publishes prepared-owner shutdown ordering at
+`118bc3fdef7ee97461d12113dce94932f067219b`. Private runs
+[43473731629](https://github.com/larsonm-personal/dxx-redux/actions/runs/43473731629)
+for PR 478's `e126ff4fd825485ee194e374d2608b3e3e1a7d7a` and
+[43475877429](https://github.com/larsonm-personal/dxx-redux/actions/runs/43475877429)
+for PR 479 both finish with only `xl_preview_lifecycle` reported failing. Their
+exact-target receipts are retained in `pr478-current-private-results` and
+`pr479-first-private-results` under the tranche scratch root.
+
+The unchanged 60-second preview deadline reproduces on optimized Windows and
+Linux. Passing Debug Linux was insufficient. Temporary timing shows repeated
+bank decoding and about 160-230 ms of unsuccessful optional model-directory
+searches per Windows reload. The initial bank-only changes still timed out;
+those failed receipts and the diagnostic patch are retained. Instrumentation is
+removed from the candidate.
+
+Preparation now retains one immutable decoded bank pair, rereads physical
+sources on each call, and reuses records and hashes only after exact byte
+comparison with previously verified bytes. Startup hashes and sample rate still
+bind admission; changed bytes require full hash checks and decode. Independent
+candidate ownership survives another candidate's discard. Canonical HAM controls
+also reject one-byte same-size changes for both PIG and sound data. Missing model
+directories are checked once per preparation, with normal case/origin checks
+retained for every existing candidate. Explicit incoming leases and Android
+staged asset lookup keep their existing rules.
+
+Windows and optimized Linux canonical preview now pass the original deadline.
+Windows and Linux Debug Observatory pass HAM/bank controls, both real outgoing
+profiles, and pinned reference comparisons. Both platforms' full water owners
+pass changed-source rejection, retained active gameplay and replay. Windows
+Pumo CPU loading/source controls pass in 70.19 seconds under the original
+120-second limit; rendered campaign startup remains a separate qualification.
+Receipts use `*-bank-verified-*` under the tranche scratch root. The known Debug
+Observatory `MEM_FREE_NULL` diagnostic is also present in pre-change receipts;
+it is not hidden or claimed resolved.
+
+Next: publish this coherent repair and follow its exact tip through hosted CI,
+then prepare POG animation/HUD decisions from target tables and native storage
+before publication. Full atomic world restore, actual renderer/mixer bank
+publication and final Android/ordinary qualification remain open. The 15-hour
+tranche remains active; final reserve still starts at 19:30 PST.
+
+Linux Debug Pumo source/model controls also pass in 37.56 seconds under the
+unchanged 120-second limit. Its existing allocator warnings remain visible in
+`pumo-bank-verified-linux.stderr.log`; no renderer/campaign claim follows from
+these CPU controls.

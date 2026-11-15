@@ -160,6 +160,14 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 		auto &graph = resources.dependencies();
 		require(graph.resource_banks && graph.resource_banks->bitmap_count() > 1 && graph.resource_banks->sound_count() > 0,
 		        "Incoming graph omitted its retained bank owners");
+		{
+			XlPreparedResources second{ XlPreparedHam(mission, "prepham.ham") };
+			second.prepare_banks("groupa.256");
+			require(second.dependencies().resource_banks == graph.resource_banks,
+			        "Identical verified bank bytes were decoded again for an independent candidate");
+		}
+		graph.resource_banks->bitmap(1);
+		graph.resource_banks->sound(0);
 		const int bitmap = graph.texture_data[0].index;
 		int logical = -1, sample = -1;
 		for (int id = 0; id < MAX_SOUNDS; ++id) {
@@ -194,8 +202,19 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> pig(PHYSFS_openRead("groupa.pig"), PHYSFS_close);
 		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> snd(PHYSFS_openRead(graph.resource_banks->sample_rate() == 22050 ? "descent2.s22" : "descent2.s11"), PHYSFS_close);
 		const auto pig_bytes = xl_retain_resource(pig.get()), sound_bytes = xl_retain_resource(snd.get());
+		require(graph.resource_banks->matches(pig_bytes, sound_bytes, graph.resource_banks->sample_rate()),
+		        "Retained bank bytes differ from their verified source");
+		require(graph.resource_banks->verified_hash(pig_bytes) && graph.resource_banks->verified_hash(sound_bytes) &&
+		            *graph.resource_banks->verified_hash(pig_bytes) == bitmap_hash &&
+		            *graph.resource_banks->verified_hash(sound_bytes) == sound_hash,
+		        "Exact retained bytes did not preserve their verified hash");
 		for (bool bad_bitmap : { false, true }) {
 			auto bitmap_copy = pig_bytes, sound_copy = sound_bytes;
+			(bad_bitmap ? bitmap_copy : sound_copy).back() ^= 1;
+			require(!graph.resource_banks->verified_hash(bad_bitmap ? bitmap_copy : sound_copy),
+			        "Verified bank hash ignored a same-size source byte change");
+			require(!graph.resource_banks->matches(bitmap_copy, sound_copy, graph.resource_banks->sample_rate()),
+			        "Bank reuse ignored a same-size source byte change");
 			(bad_bitmap ? bitmap_copy : sound_copy).resize(11);
 			bool rejected = false;
 			try {

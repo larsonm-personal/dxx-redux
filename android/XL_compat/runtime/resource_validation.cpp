@@ -77,6 +77,8 @@ struct TrustedBankSource {
 	std::string origin, member, hash;
 };
 std::map<std::string, TrustedBankSource> startup_bank_sources;
+// Retain only the latest immutable pair; individual candidates own their references
+std::shared_ptr<const XlResourceBanks> prepared_bank_cache;
 bool mission_requires_xl = false;
 std::map<int, std::shared_ptr<xl_compat::OofResource>> mission_oof_models;
 std::map<std::string, std::string> mission_mod_sources;
@@ -114,6 +116,8 @@ std::string resource_hash(PHYSFS_file *file, const std::string &name)
 	const auto read = PHYSFS_readBytes(file, bytes.data(), length);
 	const bool restored = PHYSFS_seek(file, position) != 0;
 	if (read != length || !restored) throw std::runtime_error("base resource read failed: " + name);
+	if (prepared_bank_cache)
+		if (const auto *hash = prepared_bank_cache->verified_hash(bytes)) return *hash;
 	return picosha2::hash256_hex_string(bytes);
 }
 
@@ -652,7 +656,7 @@ IncomingSourceFile incoming_owned_file(mission_preparation *target, const std::s
 	return result;
 }
 
-std::string owned_mod_file(const char *extension, const std::string &relative = {}, mission_preparation *target = nullptr)
+std::string owned_mod_path(const char *extension, const std::string &relative, mission_preparation *target)
 {
 	const std::string archive = target ? mission_prepared_archive(target) : mission_resource_archive();
 	const auto slash = archive.find_last_of("/\\");
@@ -662,7 +666,13 @@ std::string owned_mod_file(const char *extension, const std::string &relative = 
 	const auto name = leaf.substr(0, dot);
 	if (name.empty() || name == "." || name == ".." || name.find_first_of(":/\\") != std::string::npos)
 		throw std::runtime_error("Invalid XL mission resource identity");
-	std::string path = "mods/" + name + "/" + (relative.empty() ? name + extension : relative);
+	return "mods/" + name + "/" + (relative.empty() ? name + extension : relative);
+}
+
+std::string owned_mod_file(const char *extension, const std::string &relative = {}, mission_preparation *target = nullptr)
+{
+	auto path = owned_mod_path(extension, relative, target);
+	if (path.empty()) return {};
 	if (target) return incoming_owned_file(target, path) ? path : std::string{};
 #ifdef __ANDROID__
 	if (*android_mission_assets_key()) {
@@ -726,6 +736,20 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *
 		folders.push_back(std::string("models/") + (ordinal < 0 ? "slevel" : "level") + (number.size() < 2 ? "0" : "") + number + "/");
 	}
 	folders.push_back("models/");
+	// Check absent directories once per preparation instead of walking them for
+	// every optional model name. Existing files still pass the owned-file checks
+	if (!target
+#ifdef __ANDROID__
+	    && !*android_mission_assets_key()
+#endif
+	) {
+		folders.erase(std::remove_if(folders.begin(), folders.end(), [](const std::string &folder) {
+			              auto path = owned_mod_path("", folder.substr(0, folder.size() - 1), nullptr);
+			              return path.empty() || PHYSFSEXT_locateCorrectCase(path.data()) != 0;
+		              }),
+		              folders.end());
+	}
+	if (folders.empty()) return result;
 	std::map<std::string, std::shared_ptr<xl_compat::OofResource>> by_path;
 	std::map<std::string, std::shared_ptr<const xl_compat::PogBitmap>> skins_by_path;
 	for (int id = 0; id < MAX_POLYGON_MODELS; ++id) {
@@ -1177,11 +1201,25 @@ void XlPreparedResources::prepare_banks(const std::string &palette)
 	if (state->installed) throw std::runtime_error("Cannot prepare banks after resource publication");
 	const auto names = graphics_bank_names(palette);
 	auto palette_bytes = retained_bank_source(names.first);
-	auto bitmap_bytes = retained_bank_source(names.second);
 	std::size_t bank = GameArg.SndDigiSampleRate == 22050 ? 1 : 0;
 	if (startup_sound_hashes[bank].empty()) bank = 1 - bank;
-	auto sound_bytes = retained_bank_source(sound_banks[bank]);
-	auto prepared = std::make_shared<XlResourceBanks>(std::move(bitmap_bytes), std::move(sound_bytes), bank ? 22050 : 11025);
+	const auto bitmap_source = startup_bank_sources.find(names.second);
+	const auto sound_source = startup_bank_sources.find(sound_banks[bank]);
+	if (bitmap_source == startup_bank_sources.end() || sound_source == startup_bank_sources.end())
+		throw std::runtime_error("No qualified startup bitmap or sound bank origin");
+	auto bitmap_bytes = xl_retain_origin_resource(bitmap_source->second.origin, bitmap_source->second.member);
+	auto sound_bytes = xl_retain_origin_resource(sound_source->second.origin, sound_source->second.member);
+	const int rate = bank ? 22050 : 11025;
+	auto prepared = prepared_bank_cache;
+	// Compare every reread byte against the previously hash-verified immutable owner
+	if (!prepared || prepared->bitmap_hash() != bitmap_source->second.hash ||
+	    prepared->sound_hash() != sound_source->second.hash || !prepared->matches(bitmap_bytes, sound_bytes, rate)) {
+		if (picosha2::hash256_hex_string(bitmap_bytes) != bitmap_source->second.hash ||
+		    picosha2::hash256_hex_string(sound_bytes) != sound_source->second.hash)
+			throw std::runtime_error("Qualified startup bitmap or sound bank changed");
+		prepared = std::make_shared<XlResourceBanks>(std::move(bitmap_bytes), std::move(sound_bytes), rate);
+		prepared_bank_cache = prepared;
+	}
 	state->banks = std::move(prepared);
 	state->palette_bytes = std::move(palette_bytes);
 	state->bind_graph();

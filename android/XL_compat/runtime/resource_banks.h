@@ -20,6 +20,8 @@ class XlResourceBanks
 	int sample_rate() const;
 	const std::string &bitmap_hash() const;
 	const std::string &sound_hash() const;
+	bool matches(const std::vector<unsigned char> &bitmaps, const std::vector<unsigned char> &sounds, int rate) const;
+	const std::string *verified_hash(const std::vector<unsigned char> &bytes) const;
 
   private:
 	struct State;
