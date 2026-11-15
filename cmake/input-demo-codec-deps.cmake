@@ -1,14 +1,17 @@
 include_guard(GLOBAL)
 
 include(${CMAKE_CURRENT_LIST_DIR}/dxx-verified-dependencies.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/picosha2-bounded-block.cmake)
 
 function(dxx_input_demo_prepare_codec_deps)
     if(NOT TARGET input_demo_picosha2)
         dxx_verified_fetchcontent_declare(input_demo_picosha2_src INPUT_DEMO_PICOSHA2)
         FetchContent_MakeAvailable(input_demo_picosha2_src)
+        set(picosha2_include "${CMAKE_CURRENT_BINARY_DIR}/input-demo-picosha2")
+        dxx_picosha2_bounded_block("${input_demo_picosha2_src_SOURCE_DIR}/picosha2.h"
+                                   "${picosha2_include}/picosha2.h")
         add_library(input_demo_picosha2 INTERFACE)
-        target_include_directories(input_demo_picosha2
-                                   INTERFACE ${input_demo_picosha2_src_SOURCE_DIR})
+        target_include_directories(input_demo_picosha2 INTERFACE "${picosha2_include}")
     endif()
 
     if(NOT TARGET input_demo_cpp_base64)

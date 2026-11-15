@@ -125,6 +125,23 @@ class VerifiedNativeDependenciesTest(unittest.TestCase):
         self.assertEqual(replacement, output.read_bytes())
         self.assertEqual(1, len(tuple(cache.glob("FIXTURE-*.source"))))
 
+    def test_picosha_block_patch_rejects_changed_source_before_writing(self):
+        source = self.work / "picosha2.h"
+        source.write_bytes(b"unreviewed header\n")
+        output = self.work / "generated.h"
+        output.write_bytes(b"previous generated header\n")
+        script = self.work / "patch.cmake"
+        helper = ROOT / "cmake/picosha2-bounded-block.cmake"
+        script.write_text(
+            f'include("{helper.as_posix()}")\n'
+            f'dxx_picosha2_bounded_block("{source.as_posix()}" "{output.as_posix()}")\n',
+            encoding="ascii",
+        )
+        result = subprocess.run([CMAKE, "-P", str(script)], capture_output=True, text=True)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("requires the pinned unmodified header", result.stdout + result.stderr)
+        self.assertEqual(b"previous generated header\n", output.read_bytes())
+
 
 if __name__ == "__main__":
     unittest.main()

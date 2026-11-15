@@ -373,3 +373,80 @@ includes the added Android missing-corona checks; their device run is pending.
 Original Neptune/Pumo archives, descriptor and atlas hashes remain unchanged.
 The child is ready for early origin-only immediate-parent publication with Debug
 failure disclosed; exact committed ordinary readiness and triggered CI follow.
+
+PR 502 head 09837d0001cb5fd4d7c9cf91662fc651fcad7b71, parent
+e60bfd8e39a7ea6a01003a1d512110329d329aac, merge candidate
+99744912679e8fc8e3c752f182ba7e66bb276f1d is published in origin, stack 471.
+Exact ordinary developer-OFF binary
+58198cbaf8f93ddfcee8403deab6b89fa64b546f0c6aa0b1485a5960b9817239
+completed corona-readiness-01: FAIL 4/8. All four private failures are retained.
+Boiling Point, Dinter and Sphere now reach structural HXM validation; Warp Shock
+still requires the owned camera addon. No readiness increment is earned.
+
+Next child investigates that demonstrated shared HXM dependency using the native
+validator and pinned LoadRobotReplacements. Do not add a parser, guess a trailer,
+normalize reachable behavior without its source requirements, swap live tables,
+or widen admission without validating independent incoming definitions. The
+bounded native debugger retained the actual Boiling Point HXM (22526 bytes,
+SHA256 3032b7a2896db9e3388126fda5c36af65aafa288717ca04f38c6bbaa1f67832d)
+and native limits/table counts privately in hxm-diagnostic-02. Diagnosis is not
+readiness qualification. Estimate stays three tranches including current, range
+two to four, low confidence; three HXM failures and one camera dependency now
+replace the earlier image blockers. Windows Debug performance diagnosis, Android
+and exact capture/playback remain due within this tranche's reserved validation.
+
+Native HXM diagnosis identifies missing incoming definitions, not an image or
+codec fix to bypass. Boiling Point replacement record 11 names robot 75 with only
+66 loaded definitions. Sphere replacement record 56 names robot 66. Dinter first
+rejects its 78-record header against that table; a standalone native-validator
+diagnostic with an explicitly hypothetical 85-slot bound then observes actual
+record/index 66. That hypothetical capacity is not an engine run or qualification
+and was never applied to live tables or ordinary CI. Retained original HXM hashes:
+Dinter ff3803980449813cd54380eaddf059b016fae78ed0f2f329d543e17587070dd2,
+Sphere 78686e51eaf9849e8cd9bb798920ce7d6eec81249a92c4f5ca40560383d128d9.
+Pinned LoadRobotReplacements rejects these indices; LoadLevel propagates its
+negative return. Its earlier load path tries genuine Vertigo d2x.ham. The frozen
+runtime has no d2x.ham/d2x.hog, and none is injected. Accordingly no unconditional
+finite 8/8 schedule is supported with inputs fixed; three tranches (two to four,
+low confidence) is conditional on resolving that external asset prerequisite.
+
+The user has been asked whether remaining development should prioritize camera
+fallback or G2. Until answered, independent Android qualification and bounded
+Windows Debug diagnosis continue. The working child is native_qualification;
+no HXM safeguard was changed. APK build uses JDK 21, ordinary developer-OFF,
+all three ABIs and two workers. Prior Android recovery restored 26 original files;
+its archive and failed-state backup remain protected. Original corona/glare and
+three shield image hashes match their existing owner pins. PR 502 private run
+43643975460 is pending; public dispatcher success is not qualification.
+
+### Current Android and camera diagnosis, 2026-11-14 14:00 PST
+
+- Ordinary developer-OFF Android APK at source 09837d0001cb5fd4d7c9cf91662fc651fcad7b71 built all three ABIs successfully; APK SHA256 90d3d414fcabcd7a134c27ba361416f64d6618f7b6b63a569dedc861862ab9f1. Receipt android-corona-apk-01.json retains all six native library hashes.
+- android-corona-gpu-01 stopped at preflight because PumoMods/SmokeImage were omitted. android-corona-gpu-02 used the complete original Pumo mod directory and failed step 7 before GPU controls: an existing launcher texture-filter trial was in graphics_safety phase challenge, so a new MSAA request correctly rejected. before.sha256 and after.sha256 are identical. Both failures retained.
+- Test synchronization fix waits up to the existing graphics-owner 10-second settling bound for phase idle before each MSAA request. The production safety transaction, confirmation, rendering assertions, 480-second owner deadline and original assets remain unchanged. Validation pending.
+- Camera source audit confirms a material source-build distinction: release CGameData::RobotInfo(CObject*) rejects CAMBOT type; Debug ROBOTINFO uses GAMEDATA_ERRLOG_DEFAULT (buffer/overflow only), so the type guard is absent and authored id 0 reaches robot info. InitCamBots returns when nCamBotId < 0, leaving the authored CT_AI object unchanged. Collision consumers also differ by pointer-vs-id lookup. An inert missing-camera fallback is not yet justified; all admission guards remain in force.
+- Bounded debug-profile-01 samples the exact owned Windows Debug process without changing its canonical 80-second child or 90-second master deadline. This run is diagnostic, not qualification.
+
+### Planned bounded SHA loop repair
+
+Windows Debug stack sampling (179 samples, exact c0ebe94a3e4b635dfa881a2c42206ce2832c228d3bcd2f1721ea89eb216bcff7 binary) places 118 sampled frames in PicoSHA2's block routine instantiated with checked vector iterators. The temporary two-line experiment uses the vector's contiguous data only inside its existing full-block size guard; SHA rounds, padding, byte inputs, length accounting and block assertion remain the pinned library code. A 4 MiB differential benchmark with _ITERATOR_DEBUG_LEVEL=2 returned the same SHA256 1c52a33cd0cf2543af5542626b4e5c86e7b891a8d0a3625ee97199d031eafaa0, 435 ms original versus 102 ms bounded-pointer blocks. This is diagnostic evidence, not canonical qualification.
+
+Proposed implementation: generate a build-local copy from the hash-verified pinned PicoSHA2 header, requiring its exact source SHA256; change only the two block iterator expressions. Preserve fetched source/cache, all Debug assertions and checked iterators elsewhere. Extend the existing recorder codec owner with independent SHA vectors around padding/block boundaries and incremental updates. Run Windows/Linux Debug and ordinary developer-OFF owners, Android, replay/reference and unchanged readiness. Publish separately from Android GPU fixture repair. No parser or resource admission policy changes.
+
+The first bounded-block candidate passed the full Windows Debug effect owner in 34.172 s (binary 5ba5fe3e5e7aa5e8a5903550b78f73886303205afead5ecc9ce6fb6c28140f7e), but the canonical Debug audio owner still reached its unchanged 150-second master limit. Preserve hash-audio-debug-windows-01; this is not a pass. No surviving native/CMake process remained after completion. A second measured change uses vector::insert for the checked input range instead of per-byte back_inserter copies into the same private buffer. The source SHA rounds, padding, length accounting and block assertion stay unchanged. The differential 4 MiB Debug benchmark improved from 420 ms original to 15 ms with both changes, identical digest and _ITERATOR_DEBUG_LEVEL=2. Canonical qualification pending.
+
+Generator control hash-generator-01 initially compared native Windows CRLF bytes against LF source and failed. hash-generator-02 verifies exactly the two token changes after newline normalization, preserves repeat output timestamp, rejects a modified source and preserves the prior generated header. This diagnostic failure is retained. The final generator includes the additional range-insert change and requires fresh receipts.
+
+Further missing-camera audit: pinned InitAIObjects initializes robots only, while SetPlayerAwarenessAll visits every CT_AI object. Thus even the release early return from DoAIFrame does not mean every camera AI field is immutable. Missing-addon camera contacts use a mixture of object-based RobotInfo (type-gated in release) and id-based lookup (including ApplyDamageToRobot), so neither synthetic immortality nor treating the authored id as a normal robot throughout is supported. InitCamBots also forms the addon-definition reference before its negative-id guard; CArray's DBG_ARRAYS path reports the invalid index. A fallback needs explicit initialization, awareness/frame, contact/death, geometry, monitor retirement and save-restore evidence. The current normalized-camera admission and restore guards remain unchanged. Exact source hashes: camera-missing-audit-source-02.json.
+
+### Final bounded SHA candidate qualification (in progress)
+
+Final generator retains the pinned SHA rounds, padding and length accounting, with three transport substitutions: bulk checked range insertion and two contiguous block-pointer expressions under the existing full-block bound/assertion. Fetched source/cache remain unchanged. Source header b13c180161ffac8d0adc81e033e493c409457c4d1258ab9781ac80579ba3bdd8 is mandatory. Windows generated bytes 9e8a347a63c6512cb9063c0d18daa99be5bfda9a327415b75b8f5d2c755b3348 (native CRLF); Linux generated bytes 0fed36abd54a69c86ac74dece539be308a4c6b4c16f54285e40ded628ae091eb (LF). hash-generator-03 proves exactly the three substitutions after newline normalization, unchanged repeat timestamp and modified-source rejection with previous output preserved.
+
+- Windows Debug binary 2140c91da7fa50da89027ba14e4d81228e4fc64249c32fa079a475bd6d585395: full effect/Pumo owner PASS 14.281 s; full canonical audio owner PASS 121.625 s. Original 80/90-second effect and 15/45-second child /150-second audio master bounds unchanged. Earlier failed candidates remain preserved.
+- Windows Debug recorder/replay PASS 43.63/0.70 s; new independent SHA padding/block-boundary, incremental-chunk and million-a vectors plus existing maximum checkpoint digest pass. First build caught Windows min macro collision in new test code; corrected with the existing parenthesized std::min convention, failure retained.
+- Linux Debug binary 4d196aae3e2c9a60afe469c1ffe801563c9d2d9b5614737850220be00e1b1967: recorder/replay PASS 2.51/0.06 s; effect/Pumo PASS 13 s. Audio pending. First ctest launch had WSL shell quoting failure before test execution; corrected shell-script launch retains identical selection.
+- Existing verified native dependency Python owner PASS all four tests, including new changed-header rejection before output mutation. source-hash-01 retains exact working source and Windows binaries; later Python guard-test addition does not alter those binaries.
+- The Android GPU repair remains a separate unpublished change: scoped analytical filter state now covers sprite and additive-wall fixtures, restores player filtering and asserts restoration. GPU-04 passed sprite controls then exposed the same override in walls. Every failed run restored protected file hashes. Latest APK/GPU run remains due. Named-audio owner also needs to preserve graphics safety files and avoid emulator replacement during its protected run; those runner changes are pending device validation.
+
+Linux final audio/source owner PASS 73 s. This hash checkpoint will publish before the remainder of the matrix completes, with developer-OFF, Android and actual capture/playback explicitly pending. Native Debug failures are resolved for this candidate, not retroactively for prior heads. Android GPU/script/runner changes stay separate and unpublished until validated.
