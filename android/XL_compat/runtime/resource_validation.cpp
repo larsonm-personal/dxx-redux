@@ -38,6 +38,7 @@
 #include <utility>
 #include "prepared_ham.h"
 #include "retained_resource.h"
+#include "target_sources.h"
 #include "mission_resource_scope.h"
 #ifdef __ANDROID__
 #include "../../app/src/main/cpp/shared/android_mission_assets.h"
@@ -1040,6 +1041,8 @@ extern "C" void xl_resource_baseline_capture(void)
 }
 
 struct XlPreparedResources::State {
+	std::vector<unsigned char> level_bytes;
+	std::unique_ptr<xl_compat::Inventory> level_inventory;
 	std::shared_ptr<const XlResourceBanks> banks;
 	std::vector<unsigned char> palette_bytes;
 	std::unique_ptr<XlPreparedHam> incoming_ham;
@@ -1199,6 +1202,27 @@ const std::map<std::string, std::string> &XlPreparedResources::sources() const
 	return state->owned_models.sources;
 }
 
+std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_level(mission_preparation *mission, int ordinal)
+{
+	xl_compat::TargetSources target(mission, startup_origin);
+	const char *filename = mission_prepared_level(mission, ordinal);
+	if (!filename) throw std::runtime_error("Incoming resource level is absent from its descriptor");
+	auto bytes = target.archive_bytes(filename, 64 * 1024 * 1024);
+	if (!bytes) throw std::runtime_error("Incoming level is missing from its target HOG");
+	auto inventory = std::make_unique<xl_compat::Inventory>(xl_compat::inspect_level(*bytes));
+	auto result = prepare_mission(mission);
+	result->prepare_level_resources(filename, inventory.get(), ordinal, mission, &target);
+	result->state->level_bytes = std::move(*bytes);
+	result->state->level_inventory = std::move(inventory);
+	return result;
+}
+
+const xl_compat::Inventory &XlPreparedResources::level_inventory() const
+{
+	if (!state || !state->level_inventory) throw std::runtime_error("Resource owner has no retained incoming level");
+	return *state->level_inventory;
+}
+
 XlPreparedResources::XlPreparedResources(XlPreparedResources &&other) noexcept : state(std::move(other.state))
 {
 	if (installed_resources == &other) installed_resources = this;
@@ -1334,6 +1358,12 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 	if (!counts_match(*mission_base) && !(prepared_resources && prepared_resources->state->installed && counts_match(prepared_resources->state->definitions)))
 		throw std::runtime_error("definition registry changed outside the owned mission resources");
 	state = std::make_unique<State>(*mission_base);
+	prepare_level_resources(level_filename, level, ordinal, nullptr, nullptr);
+}
+
+void XlPreparedResources::prepare_level_resources(const char *level_filename, const xl_compat::Inventory *level, int ordinal, mission_preparation *mission, xl_compat::TargetSources *target)
+{
+	if (target) ordinal = target->ordinal(level_filename, ordinal);
 	if (level) prepare_banks(level->palette);
 	if (!ordinal) {
 		for (int candidate = Last_secret_level; candidate <= Last_level; ++candidate) {
@@ -1344,54 +1374,78 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 			ordinal = candidate;
 		}
 	}
-	if (level) state->messages = xl_compat::prepare_messages(level_filename, *level);
-	if (level) state->audio = xl_compat::prepare_named_audio(level_filename, *level, ordinal, state->banks.get());
+	if (level) state->messages = xl_compat::prepare_messages(level_filename, *level, target);
+	if (level) state->audio = xl_compat::prepare_named_audio(level_filename, *level, ordinal, state->banks.get(), target);
 	if (level) {
-		state->particle_image = xl_compat::prepare_particle_image(*level);
-		state->smoke_image = xl_compat::prepare_particle_image(*level, 0);
-		state->bubble_image = xl_compat::prepare_particle_image(*level, 2);
-		state->rain_image = xl_compat::prepare_particle_image(*level, 5);
-		state->snow_image = xl_compat::prepare_particle_image(*level, 6);
-		state->lightning_image = xl_compat::prepare_lightning_image(*level);
-		state->powerup_glare_image = xl_compat::prepare_powerup_glare_image();
+		state->particle_image = xl_compat::prepare_particle_image(*level, 3, target);
+		state->smoke_image = xl_compat::prepare_particle_image(*level, 0, target);
+		state->bubble_image = xl_compat::prepare_particle_image(*level, 2, target);
+		state->rain_image = xl_compat::prepare_particle_image(*level, 5, target);
+		state->snow_image = xl_compat::prepare_particle_image(*level, 6, target);
+		state->lightning_image = xl_compat::prepare_lightning_image(*level, target);
+		state->powerup_glare_image = xl_compat::prepare_powerup_glare_image(target);
 		if (xl_runtime::time_equipment_resources_required(*level))
-			for (unsigned i = 0; i < 2; ++i) state->time_equipment_images[i] = xl_compat::prepare_time_equipment_image(i);
+			for (unsigned i = 0; i < 2; ++i) state->time_equipment_images[i] = xl_compat::prepare_time_equipment_image(i, target);
 	}
 	std::string base = level_filename;
 	const auto dot = base.find_last_of('.');
 	if (dot != std::string::npos) base.resize(dot);
-	if (PHYSFSX_exists((base + ".lgt").c_str(), 1) || PHYSFSX_exists((base + ".clr").c_str(), 1)) {
-		if (!*mission_resource_archive())
+	if (target || PHYSFSX_exists((base + ".lgt").c_str(), 1) || PHYSFSX_exists((base + ".clr").c_str(), 1)) {
+		if (target ? target->archive().empty() : !*mission_resource_archive())
 			throw std::runtime_error("D2 XL lighting companions require an owned mission HOG: " + base);
-		state->lighting = xl_compat::load_mission_lighting_companions(level_filename);
+		state->lighting = xl_compat::load_mission_lighting_companions(level_filename, target);
 		// The pinned modern loader reads CLR first, then replaces every texture color
 		// from the embedded table. Ownership and decoding still apply to the companion
 		if (state->lighting.colors && !(level && xl_compat::modern_runtime_layout(*level) && level->texture_colors.size() == xl_compat::companion_texture_count))
 			throw std::runtime_error("D2 XL CLR companion overrides are not supported: " + std::string(level_filename));
 	}
 	const auto hxm_name = base + ".HXM";
-	if (auto file = companion(hxm_name)) {
-		if (!bm_validate_xl_level_hxm(file.get()))
+	const auto prepare_level_hxm = [&](PHYSFS_file *file) {
+		if (!bm_validate_hxm_for_tables(file, state->graph.robot_count, state->graph.joint_count, state->graph.model_count, 1))
 			throw std::runtime_error("HXM definitions are malformed or require unsupported normalization: " + hxm_name);
 		try {
-			validate_hxm_dependencies(file.get(), state->definitions, state->graph, state->changes, false, false, true);
+			validate_hxm_dependencies(file, state->definitions, state->graph, state->changes, false, false, true);
 			state->has_hxm = true;
 			state->prepare_native_models();
 		} catch (const std::exception &error) {
 			throw std::runtime_error("HXM dependencies: " + hxm_name + ": " + error.what());
 		}
+	};
+	if (target) {
+		if (const auto bytes = target->archive_bytes(hxm_name, 64 * 1024 * 1024)) xl_read_retained_resource(*bytes, prepare_level_hxm);
+	} else if (auto file = companion(hxm_name)) prepare_level_hxm(file.get());
+	state->prepare_models(ordinal, mission);
+	if (level && std::any_of(level->objects.begin(), level->objects.end(), [](const xl_compat::Object &object) { return object.type == 16; })) {
+		if (!target) prepare_camera_model();
+		else {
+			auto camera = target->archive_bytes("cambot.hxm", 64 * 1024 * 1024);
+			if (!camera) camera = target->directory_bytes("cambot.hxm", 64 * 1024 * 1024);
+			if (!camera) camera = target->directory_bytes("cambot.hxm", 64 * 1024 * 1024, true);
+			if (!camera) {
+				for (const char *path : { "data/d2x-xl.hog", "d2x-xl.hog" }) {
+					auto archive = target->directory_bytes(path, 64 * 1024 * 1024);
+					if (!archive) archive = target->directory_bytes(path, 64 * 1024 * 1024, true);
+					if (!archive) continue;
+					camera = xl_find_archive_resource(*archive, ".hog", "cambot.hxm", 64 * 1024 * 1024);
+					if (!camera) throw std::runtime_error("Incoming camera addon lacks cambot.hxm");
+					break;
+				}
+			}
+			if (!camera) throw std::runtime_error("Missing incoming target or startup camera addon");
+			xl_read_retained_resource(*camera, [&](PHYSFS_file *file) { prepare_camera_model(file); });
+		}
 	}
-	state->prepare_models(ordinal);
-	if (level && std::any_of(level->objects.begin(), level->objects.end(), [](const xl_compat::Object &object) { return object.type == 16; }))
-		prepare_camera_model();
 	const auto pog_name = base + ".POG";
-	if (auto file = companion(pog_name)) {
+	const auto prepare_level_pog = [&](PHYSFS_file *file) {
 		try {
-			prepare_pog(file.get());
+			prepare_pog(file);
 		} catch (const std::exception &error) {
 			throw std::runtime_error(pog_name + ": " + error.what());
 		}
-	}
+	};
+	if (target) {
+		if (const auto bytes = target->archive_bytes(pog_name, 64 * 1024 * 1024)) xl_read_retained_resource(*bytes, prepare_level_pog);
+	} else if (auto file = companion(pog_name)) prepare_level_pog(file.get());
 }
 
 void XlPreparedResources::prepare_pog(PHYSFS_file *file)
@@ -1423,18 +1477,23 @@ void XlPreparedResources::prepare_pog(PHYSFS_file *file)
 	state->pog = std::move(prepared);
 }
 
-void XlPreparedResources::prepare_camera_model()
+void XlPreparedResources::prepare_camera_model(PHYSFS_file *file)
 {
-	xl_camera_validate_weapon_definitions();
+	xl_camera_validate_weapon_definitions(state->graph.weapon_data, state->graph.weapon_count);
 	if (state->camera_model >= 0) return;
 	if (state->pog) throw std::runtime_error("Camera definitions must be prepared before POG admission");
 	if (state->installed) throw std::runtime_error("Camera resources must be prepared before installation");
-	CameraAddonFile addon;
-	if (!bm_validate_level_hxm(addon.file.get())) throw std::runtime_error("Camera addon HXM is malformed or uses unqualified serialized indices");
+	std::unique_ptr<CameraAddonFile> addon;
+	if (!file) {
+		addon = std::make_unique<CameraAddonFile>();
+		file = addon->file.get();
+	}
+	if (!bm_validate_hxm_for_tables(file, state->graph.robot_count, state->graph.joint_count, state->graph.model_count, 0))
+		throw std::runtime_error("Camera addon HXM is malformed or uses unqualified serialized indices");
 	// Prepare transactionally; a rejected addon leaves this owner's prior definitions intact
 	auto staged = std::make_unique<State>(state->definitions);
 	staged->graph = state->graph;
-	const auto ids = validate_hxm_dependencies(addon.file.get(), staged->definitions, staged->graph, staged->changes, true);
+	const auto ids = validate_hxm_dependencies(file, staged->definitions, staged->graph, staged->changes, true);
 	// Validate the camera append independently of earlier level model replacements
 	// Those robots are checked by the level walk with their authored activation mode
 	staged->changes.robots.insert(state->changes.robots.begin(), state->changes.robots.end());

@@ -7,6 +7,7 @@ class XlResourceBanks;
 
 namespace xl_compat
 {
+class TargetSources;
 struct ClassicAudioSample {
 	int sample;
 	std::string name, path, source_hash;
@@ -16,7 +17,7 @@ struct ClassicAudioResources {
 	std::string identity;
 	std::vector<ClassicAudioSample> samples;
 };
-ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int bank_rate, const XlResourceBanks *banks = nullptr);
+ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int bank_rate, const XlResourceBanks *banks = nullptr, TargetSources *target = nullptr);
 ClassicAudioResources prepare_classic_playback(const ClassicAudioResources &replacements, const XlResourceBanks *banks = nullptr);
 int classic_audio_output_rate();
 } // namespace xl_compat

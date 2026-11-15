@@ -34,6 +34,9 @@ void xl_camera_physics_unstick(struct object *actor, const struct object *camera
 #include <vector>
 void xl_camera_validate_weapon_definitions();
 bool xl_camera_contact_projectile(int id);
+struct weapon_info;
+void xl_camera_validate_weapon_definitions(const weapon_info *weapons, int count);
+bool xl_camera_contact_projectile(int id, const weapon_info *weapons, int count);
 namespace xl_compat
 {
 struct CameraHitState;

@@ -1,4 +1,5 @@
 #include "particle_resources.h"
+#include "target_sources.h"
 #include "particle_renderer.h"
 #include "shield_renderer.h"
 #include "resource_validation.h"
@@ -57,7 +58,7 @@ PogBitmap read_effect_png(const Bytes &bytes, const std::string &path)
 	    stbi_load_from_memory(bytes.data(), int(bytes.size()), &w, &h, &channels, 0), stbi_image_free);
 #else
 	png_data decoded{};
-	const bool loaded = read_png(path.c_str(), &decoded) != 0;
+	const bool loaded = read_png_memory(bytes.data(), int(bytes.size()), &decoded) != 0;
 	std::unique_ptr<unsigned char, decltype(&std::free)> pixels(decoded.data, std::free);
 	std::free(decoded.palette);
 	const unsigned w = decoded.width, h = decoded.height, channels = decoded.channels;
@@ -100,16 +101,26 @@ bool locate(std::string &path, bool installation, const std::string &kind)
 	return true;
 }
 template <typename Resource>
-std::shared_ptr<Resource> read_addon_image(const char *name, const std::string &kind, bool optional, const char *directory = "textures/d2x-xl/")
+std::shared_ptr<Resource> read_addon_image(const char *name, const std::string &kind, bool optional, const char *directory = "textures/d2x-xl/", TargetSources *target = nullptr)
 {
-	auto mission = std::strchr(name, '#') ? animation_mission_texture_path(mission_resource_archive(), name)
-	                                      : addon_mission_texture_path(mission_resource_archive(), name);
+	auto mission = std::strchr(name, '#') ? animation_mission_texture_path(target ? target->archive().c_str() : mission_resource_archive(), name)
+	                                      : addon_mission_texture_path(target ? target->archive().c_str() : mission_resource_archive(), name);
 	if (mission.empty()) throw std::runtime_error("XL " + kind + " images require a selected mission HOG identity");
 	std::string selected;
+	Bytes bytes;
 	for (bool installation : { false, true }) {
 		const auto base = installation ? std::string(directory) + name : mission.substr(0, mission.size() - 4);
 		for (const char *extension : { ".tga", ".png" }) {
 			auto candidate = base + extension;
+			if (target) {
+				auto retained = target->directory_bytes(candidate, pog_file_limit + 65536);
+				if (!retained && installation) retained = target->directory_bytes(candidate, pog_file_limit + 65536, true);
+				if (!retained) continue;
+				bytes = std::move(*retained);
+				if (bytes.size() < 18) throw std::runtime_error("Truncated incoming XL image: " + candidate);
+				selected = std::move(candidate);
+				break;
+			}
 			if (locate(candidate, installation, kind)) {
 				selected = std::move(candidate);
 				break;
@@ -121,21 +132,23 @@ std::shared_ptr<Resource> read_addon_image(const char *name, const std::string &
 		if (optional) return {};
 		throw std::runtime_error("Missing XL " + kind + " image in the selected mission or enabled resource mods: " + name);
 	}
-	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(selected.c_str()), PHYSFS_close);
-	const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
-	if (length < 18 || std::uint64_t(length) > pog_file_limit + 65536)
-		throw std::runtime_error("XL " + kind + " image file is missing, oversized or truncated: " + selected);
-	Bytes bytes(static_cast<std::size_t>(length));
-	if (PHYSFS_readBytes(file.get(), bytes.data(), bytes.size()) != length)
-		throw std::runtime_error("Cannot read complete XL " + kind + " image: " + selected);
+	if (!target) {
+		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(selected.c_str()), PHYSFS_close);
+		const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
+		if (length < 18 || std::uint64_t(length) > pog_file_limit + 65536)
+			throw std::runtime_error("XL " + kind + " image file is missing, oversized or truncated: " + selected);
+		bytes.resize(static_cast<std::size_t>(length));
+		if (PHYSFS_readBytes(file.get(), bytes.data(), bytes.size()) != length)
+			throw std::runtime_error("Cannot read complete XL " + kind + " image: " + selected);
+	}
 	auto image = std::make_shared<Resource>();
 	image->path = std::move(selected);
 	image->bitmap = bytes[0] == 137 && bytes[1] == 'P' ? read_effect_png(bytes, image->path) : read_particle_image(bytes.data(), bytes.size());
 	return image;
 }
-std::shared_ptr<const ParticleImageResource> prepare_addon_image(const char *name, const std::string &kind, unsigned atlas_side, bool optional = false)
+std::shared_ptr<const ParticleImageResource> prepare_addon_image(const char *name, const std::string &kind, unsigned atlas_side, bool optional = false, TargetSources *target = nullptr)
 {
-	auto image = read_addon_image<ParticleImageResource>(name, kind, optional);
+	auto image = read_addon_image<ParticleImageResource>(name, kind, optional, "textures/d2x-xl/", target);
 	if (!image) return {};
 	const unsigned width = image->bitmap.width;
 	if (atlas_side && (width < 2 * atlas_side || image->bitmap.height != width || (width & (width - 1))))
@@ -145,16 +158,16 @@ std::shared_ptr<const ParticleImageResource> prepare_addon_image(const char *nam
 }
 } // namespace
 
-std::shared_ptr<const ShieldImageResource> prepare_shield_image(unsigned index)
+std::shared_ptr<const ShieldImageResource> prepare_shield_image(unsigned index, TargetSources *target)
 {
 	if (index > 2) throw std::runtime_error("Unsupported XL shield image index");
 	const char *names[] = { "forcefield", "forcefield2", "forcefield3" };
-	auto image = read_addon_image<ShieldImageResource>(names[index], "shield", false);
+	auto image = read_addon_image<ShieldImageResource>(names[index], "shield", false, "textures/d2x-xl/", target);
 	image->texture = std::make_unique<ShieldTexture>(image->bitmap);
 	return image;
 }
 
-std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Inventory &level, int subtype)
+std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Inventory &level, int subtype, TargetSources *target)
 {
 	if (subtype != 0 && subtype != 2 && subtype != 3 && subtype != 5 && subtype != 6) throw std::runtime_error("Unsupported XL particle image subtype");
 	bool required = false;
@@ -168,28 +181,28 @@ std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Invent
 		required |= subtype == 0 && object.render_data[11] == 2;
 	}
 	if (!required) return {};
-	if (subtype == 2) return prepare_addon_image(bubble_image_name, "bubble", bubble_image_atlas_side);
-	if (subtype == 5) return prepare_addon_image(rain_image_name, "rain", 1);
-	if (subtype == 6) return prepare_addon_image(snow_image_name, "snow", 1);
-	return prepare_addon_image(subtype == 3 ? fire_image_name : smoke_image_name, subtype == 3 ? "fire" : "smoke", subtype == 3 ? fire_image_atlas_side : smoke_image_atlas_side);
+	if (subtype == 2) return prepare_addon_image(bubble_image_name, "bubble", bubble_image_atlas_side, false, target);
+	if (subtype == 5) return prepare_addon_image(rain_image_name, "rain", 1, false, target);
+	if (subtype == 6) return prepare_addon_image(snow_image_name, "snow", 1, false, target);
+	return prepare_addon_image(subtype == 3 ? fire_image_name : smoke_image_name, subtype == 3 ? "fire" : "smoke", subtype == 3 ? fire_image_atlas_side : smoke_image_atlas_side, false, target);
 }
 
-std::shared_ptr<const ParticleImageResource> prepare_lightning_image(const Inventory &level)
+std::shared_ptr<const ParticleImageResource> prepare_lightning_image(const Inventory &level, TargetSources *target)
 {
 	bool required = false;
 	for (const auto &object : level.objects)
 		if (object.render == 12 && authored_lightning_emits(object)) required |= prepare_authored_lightning(level, object).glow != 0;
-	return required ? prepare_addon_image("corona", "lightning corona", 0) : nullptr;
+	return required ? prepare_addon_image("corona", "lightning corona", 0, false, target) : nullptr;
 }
-std::shared_ptr<const ParticleImageResource> prepare_powerup_glare_image()
+std::shared_ptr<const ParticleImageResource> prepare_powerup_glare_image(TargetSources *target)
 {
 	// Source omits optional powerup coronas when glare.Load fails
-	return prepare_addon_image("glare", "powerup glare", 0, true);
+	return prepare_addon_image("glare", "powerup glare", 0, true, target);
 }
-std::shared_ptr<const AnimatedImageResource> prepare_time_equipment_image(unsigned index)
+std::shared_ptr<const AnimatedImageResource> prepare_time_equipment_image(unsigned index, TargetSources *target)
 {
 	if (index > 1) throw std::runtime_error("Invalid XL time-equipment image");
-	auto image = read_addon_image<AnimatedImageResource>(index ? "bullettime#0" : "slowmotion#0", "time equipment", false, "textures/d2/");
+	auto image = read_addon_image<AnimatedImageResource>(index ? "bullettime#0" : "slowmotion#0", "time equipment", false, "textures/d2/", target);
 	if (image->bitmap.frames != 16 || image->bitmap.height != image->bitmap.width * 16)
 		throw std::runtime_error("XL time equipment requires sixteen vertical square frames: " + image->path);
 	// The source animation owns square frame textures, not one tall GPU texture

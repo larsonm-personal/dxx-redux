@@ -7,6 +7,9 @@
 #include <string>
 #include <filesystem>
 #include <fstream>
+extern "C" {
+#include "physfsx.h"
+}
 
 namespace
 {
@@ -157,10 +160,21 @@ std::vector<unsigned char> xl_retain_origin_resource(const std::string &origin, 
 	// Reuse the native archive reader under a private prefix; no resource basename
 	// is mounted into the active mission's namespace
 	auto archive = read_physical(std::filesystem::u8path(origin));
+	auto bytes = xl_find_archive_resource(archive, std::filesystem::path(origin).extension().string(), member, 64 * 1024 * 1024);
+	if (!bytes) throw std::runtime_error("Captured archive member is no longer available");
+	return std::move(*bytes);
+}
+
+std::optional<std::vector<unsigned char>> xl_find_archive_resource(const std::vector<unsigned char> &archive, const std::string &extension, const std::string &member, std::size_t limit)
+{
+	if (member.empty() || member.front() == '/' || member.find_first_of("\\:") != std::string::npos || extension.find_first_of("/\\:") != std::string::npos)
+		throw std::runtime_error("Invalid retained archive member identity");
+	for (const auto &part : std::filesystem::path(member))
+		if (part == "." || part == "..") throw std::runtime_error("Invalid retained archive member component");
 	static unsigned long serial;
 	std::string name;
 	do {
-		name = "__xl_bank_origin_" + std::to_string(++serial) + std::filesystem::path(origin).extension().string();
+		name = "__xl_bank_origin_" + std::to_string(++serial) + extension;
 	} while (PHYSFS_exists(name.c_str()) || PHYSFS_getMountPoint(name.c_str()));
 	if (!PHYSFS_mountMemory(archive.data(), archive.size(), nullptr, name.c_str(), name.c_str(), 1))
 		throw std::runtime_error("Cannot open retained native archive origin");
@@ -172,9 +186,14 @@ std::vector<unsigned char> xl_retain_origin_resource(const std::string &origin, 
 			if (active) PHYSFS_unmount(name.c_str());
 		}
 	} mount{ name };
-	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead((name + "/" + member).c_str()), PHYSFS_close);
-	if (!file) throw std::runtime_error("Captured archive member is no longer available");
-	auto bytes = xl_retain_resource(file.get());
+	auto path = name + "/" + member;
+	if (PHYSFSEXT_locateCorrectCase(path.data()) != 0) return std::nullopt;
+	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(path.c_str()), PHYSFS_close);
+	if (!file) throw std::runtime_error("Cannot open retained archive member");
+	const auto length = PHYSFS_fileLength(file.get());
+	if (length < 0 || static_cast<PHYSFS_uint64>(length) > limit) throw std::runtime_error("Retained archive member exceeds its bound");
+	std::vector<unsigned char> bytes(static_cast<std::size_t>(length));
+	if (PHYSFS_readBytes(file.get(), bytes.data(), bytes.size()) != length) throw std::runtime_error("Cannot read retained archive member");
 	if (!PHYSFS_close(file.get())) throw std::runtime_error("Cannot close captured archive member");
 	file.release();
 	if (!PHYSFS_unmount(name.c_str())) throw std::runtime_error("Cannot release captured archive origin");

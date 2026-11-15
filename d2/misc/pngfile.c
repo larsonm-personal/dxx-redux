@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <limits.h>
 #include <string.h>
 #include <png.h>
 #include <SDL/SDL.h>
@@ -17,39 +18,33 @@ static void PNGCBAPI png_read_data(png_structp png_ptr, png_bytep data, size_t l
 
 int read_png(const char *filename, png_data *pdata)
 {
-	//ubyte header[8];
+	PHYSFS_file *fp;
+	PHYSFS_sint64 size;
+	unsigned char *bytes;
+	int result;
+	if (!filename || !pdata || !(fp = PHYSFS_openRead(filename))) return 0;
+	size = PHYSFS_fileLength(fp);
+	if (size <= 0 || size > INT_MAX || !(bytes = malloc((size_t)size))) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	result = PHYSFS_readBytes(fp, bytes, size) == size;
+	PHYSFS_close(fp);
+	if (result) result = read_png_memory(bytes, (int)size, pdata);
+	free(bytes);
+	return result;
+}
+
+int read_png_memory(const unsigned char *bytes, int size, png_data *pdata)
+{
 	png_structp png_ptr = NULL;
 	png_infop info_ptr = NULL;
 	png_bytepp volatile row_pointers = NULL;
 	png_uint_32 width, height;
 	int depth, color_type;
 	int i;
-	PHYSFS_file *fp = NULL;
-	char *fbuf = NULL;
-	PHYSFS_sint64 fsize;
 	SDL_RWops *rw;
-
-	if (!filename || !pdata)
-		return 0;
-
-	if ((fp = PHYSFS_openRead(filename)) == NULL)
-		return 0;
-
-	if ((fsize = PHYSFS_fileLength(fp)) == -1 ||
-		!(fbuf = malloc(fsize))) {
-		PHYSFS_close(fp);
-		return 0;
-	}
-
-	if (PHYSFS_readBytes(fp, fbuf, fsize) != fsize ||
-		//!png_check_sig(fbuf, 8) ||
-		!(rw = SDL_RWFromConstMem(fbuf, fsize))) {
-		free(fbuf);
-		PHYSFS_close(fp);
-		return 0;
-	}
-
-	PHYSFS_close(fp);
+	if (!bytes || size <= 0 || !pdata || !(rw = SDL_RWFromConstMem(bytes, size))) return 0;
 
 	//SDL_RWseek(rw, 8, RW_SEEK_SET);
 
@@ -59,7 +54,6 @@ int read_png(const char *filename, png_data *pdata)
 		if (png_ptr)
 			png_destroy_read_struct(&png_ptr, NULL, NULL);
 		SDL_RWclose(rw);
-		free(fbuf);
 		return 0;
 	}
 
@@ -76,7 +70,6 @@ int read_png(const char *filename, png_data *pdata)
 		if (row_pointers)
 			free(row_pointers);
 		SDL_RWclose(rw);
-		free(fbuf);
 		return 0;
 	}
 
@@ -129,7 +122,6 @@ int read_png(const char *filename, png_data *pdata)
 	png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 
 	SDL_RWclose(rw);
-	free(fbuf);
 
 	return 1;
 }

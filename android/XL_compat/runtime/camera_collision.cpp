@@ -122,14 +122,18 @@ extern "C" int xl_nonphysical_bump_reflection(const object *actor, vms_vector *f
 
 bool xl_camera_contact_projectile(int id)
 {
-	if (id < 0 || id >= N_weapon_types) return false;
+	return xl_camera_contact_projectile(id, Weapon_info, N_weapon_types);
+}
+bool xl_camera_contact_projectile(int id, const weapon_info *weapons, int count)
+{
+	if (!weapons || count < 0 || count > MAX_WEAPON_TYPES || id < 0 || id >= count) return false;
 	std::array<bool, MAX_WEAPON_TYPES> reachable{};
-	for (int root = 0; root < N_weapon_types; ++root) {
+	for (int root = 0; root < count; ++root) {
 		if (!player_projectile(root)) continue;
 		int child = root;
-		while (child >= 0 && child < N_weapon_types && !reachable[child]) {
+		while (child >= 0 && child < count && !reachable[child]) {
 			reachable[child] = true;
-			child = Weapon_info[child].children;
+			child = weapons[child].children;
 			if (child < 1) break;
 		}
 	}
@@ -138,15 +142,20 @@ bool xl_camera_contact_projectile(int id)
 
 void xl_camera_validate_weapon_definitions()
 {
+	xl_camera_validate_weapon_definitions(Weapon_info, N_weapon_types);
+}
+void xl_camera_validate_weapon_definitions(const weapon_info *weapons, int count)
+{
+	if (!weapons || count < 0 || count > MAX_WEAPON_TYPES) throw std::runtime_error("Invalid camera weapon table bounds");
 	for (int mine : { PROXIMITY_ID, SUPERPROX_ID, PMINE_ID, ROBOT_SUPERPROX_ID })
-		if (mine < N_weapon_types && !xl_camera_splash_profile(mine))
+		if (mine < count && !xl_camera_splash_profile(mine, weapons, count))
 			throw std::runtime_error("Camera mine-chain definition is unsupported: " + std::to_string(mine));
-	for (int id = 0; id < N_weapon_types; ++id) {
-		if (!xl_camera_contact_projectile(id)) continue;
-		const auto &definition = Weapon_info[id];
+	for (int id = 0; id < count; ++id) {
+		if (!xl_camera_contact_projectile(id, weapons, count)) continue;
+		const auto &definition = weapons[id];
 		// Source CollideWeaponAndRobot applies flash through radial explosions only
 		// A zero-radius custom weapon can carry an unused flash value
-		if (definition.damage_radius ? !xl_camera_splash_profile(id) : definition.children != -1)
+		if (definition.damage_radius ? !xl_camera_splash_profile(id, weapons, count) : definition.children != -1)
 			throw std::runtime_error("Camera weapon definition exceeds the qualified gameplay profile: " + std::to_string(id) +
 			                         " radius=" + std::to_string(definition.damage_radius) +
 			                         " children=" + std::to_string(definition.children) +

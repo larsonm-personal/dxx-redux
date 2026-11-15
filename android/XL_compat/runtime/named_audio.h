@@ -28,7 +28,8 @@ namespace xl_compat
 bool slow_motion_audio_event(SlowMotionEvent event);
 struct Inventory;
 struct AudioResources;
-std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal = 0, const XlResourceBanks *banks = nullptr);
+class TargetSources;
+std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal = 0, const XlResourceBanks *banks = nullptr, TargetSources *target = nullptr);
 void install_named_audio(std::shared_ptr<const AudioResources> resources);
 } // namespace xl_compat
 #endif

@@ -1,4 +1,5 @@
 #include "level_messages.h"
+#include "target_sources.h"
 #include "slow_motion_runtime.h"
 #include "preview.h"
 #include "../level_text.h"
@@ -61,7 +62,7 @@ std::int64_t age()
 
 namespace xl_compat
 {
-std::shared_ptr<const MessageResources> prepare_messages(const char *level, const Inventory &inventory)
+std::shared_ptr<const MessageResources> prepare_messages(const char *level, const Inventory &inventory, TargetSources *target)
 {
 	auto resources = std::make_shared<MessageResources>();
 	const auto action = [&](const Trigger &entry) {
@@ -80,14 +81,21 @@ std::shared_ptr<const MessageResources> prepare_messages(const char *level, cons
 	if (dot == std::string::npos) throw std::runtime_error("XL message level has no filename extension");
 	name.resize(dot);
 	name += ".msg";
-	if (PHYSFSEXT_locateCorrectCase(name.data()) != 0) throw std::runtime_error("Missing XL message table: " + name);
-	if (!mission_owns_resource_archive(PHYSFS_getRealDir(name.c_str())))
-		throw std::runtime_error("XL message table is shadowed outside the selected mission HOG: " + name);
-	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(name.c_str()), PHYSFS_close);
-	const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
-	if (length < 0 || length > 1024 * 1024) throw std::runtime_error("Cannot read bounded XL message table: " + name);
-	std::string bytes(static_cast<std::size_t>(length), '\0');
-	if (PHYSFS_readBytes(file.get(), bytes.data(), bytes.size()) != length) throw std::runtime_error("Incomplete XL message table: " + name);
+	std::string bytes;
+	if (target) {
+		const auto retained = target->archive_bytes(name, 1024 * 1024);
+		if (!retained) throw std::runtime_error("Missing incoming XL message table: " + name);
+		bytes.assign(retained->begin(), retained->end());
+	} else {
+		if (PHYSFSEXT_locateCorrectCase(name.data()) != 0) throw std::runtime_error("Missing XL message table: " + name);
+		if (!mission_owns_resource_archive(PHYSFS_getRealDir(name.c_str())))
+			throw std::runtime_error("XL message table is shadowed outside the selected mission HOG: " + name);
+		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead(name.c_str()), PHYSFS_close);
+		const auto length = file ? PHYSFS_fileLength(file.get()) : -1;
+		if (length < 0 || length > 1024 * 1024) throw std::runtime_error("Cannot read bounded XL message table: " + name);
+		bytes.resize(static_cast<std::size_t>(length));
+		if (PHYSFS_readBytes(file.get(), bytes.data(), bytes.size()) != length) throw std::runtime_error("Incomplete XL message table: " + name);
+	}
 	resources->table = decode_level_text(bytes);
 	resources->identity = picosha2::hash256_hex_string(bytes);
 	for (const auto &entry : resources->authored)

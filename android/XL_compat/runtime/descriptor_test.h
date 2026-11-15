@@ -418,12 +418,10 @@ static void descriptor_incoming_live_controls(const std::filesystem::path &root,
 	std::filesystem::create_directories(mods);
 	{
 		std::ofstream descriptor(directory / "livetgt.mn2");
-		descriptor << "d2x-name = Live target control\nnum_levels = 1\nd2leva-1.rl2\n";
+		descriptor << "d2x-name = Live target control\nnum_levels = 1\nobsrv-xl.rl2\n";
 		require(bool(descriptor), "Cannot write live target descriptor");
 	}
-	const char *archive = PHYSFS_getRealDir("d2leva-1.rl2");
-	require(archive, "Cannot locate authentic live source archive");
-	std::filesystem::copy_file(archive, directory / "livetgt.hog", std::filesystem::copy_options::overwrite_existing);
+	std::filesystem::copy_file(root / "missions/obsrv-xl.hog", directory / "livetgt.hog", std::filesystem::copy_options::overwrite_existing);
 	{
 		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> ham(PHYSFS_openRead("descent2.ham"), PHYSFS_close);
 		write_bytes((mods / "livetgt.ham").string().c_str(), xl_retain_resource(ham.get()));
@@ -476,8 +474,9 @@ static void descriptor_incoming_live_controls(const std::filesystem::path &root,
 		}
 	} release{ &target };
 	{
-		auto incoming = XlPreparedResources::prepare_mission(target);
-		incoming->prepare_banks("groupa.256");
+		auto incoming = XlPreparedResources::prepare_level(target, 1);
+		require(!incoming->level_inventory().segments.empty(), "Incoming target did not retain its parsed level");
+		require(incoming->dependencies().resource_banks, "Incoming level did not prepare its target banks");
 		require(incoming->dependencies().robot_count == N_robot_types && incoming->dependencies().robot_data[0].mass == robot.mass &&
 		            Robot_info[0].mass != robot.mass,
 		        "Live target did not retain different equal-count definitions");

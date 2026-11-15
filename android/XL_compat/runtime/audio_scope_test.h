@@ -1,4 +1,79 @@
 // Real scoped resources and SDL output on repeated normal/secret filenames
+#include "mission_prepare.h"
+static void audio_incoming_source_controls(const std::filesystem::path &root)
+{
+#ifdef USE_SDLMIXER
+	using namespace named_audio_control;
+	const auto directory = root / "incoming-audio";
+	std::filesystem::create_directories(directory);
+	for (const char *extension : { ".mn2", ".hog" })
+		std::filesystem::copy_file(root / "missions" / (std::string("xscope") + extension), directory / (std::string("xscope") + extension), std::filesystem::copy_options::overwrite_existing);
+	std::filesystem::create_directories(directory / "mods/xscope");
+	std::filesystem::copy(root / "mods/xscope/sounds", directory / "mods/xscope/sounds", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+	const auto changed = directory / "mods/xscope/sounds/level02/scoped.wav";
+	std::filesystem::copy_file(root / "mods/xscope/sounds/level01/scoped.wav", changed, std::filesystem::copy_options::overwrite_existing);
+	const auto original_level = [] {
+		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFS_openRead("scope23.rl2"), PHYSFS_close);
+		return xl_compat::inspect_level(xl_retain_resource(file.get()));
+	}();
+	XlPreparedResources outgoing("scope23.rl2", &original_level, 2);
+	const auto before = snapshot();
+	const auto definitions = gameplay_definitions();
+	const auto live = Current_mission;
+	const auto game_time = GameTime64;
+	uint32_t sim;
+	d_rand_get_state(&sim);
+	const auto calls = d_rand_get_call_count();
+	const std::string origin = PHYSFS_getRealDir("scope23.rl2");
+	const auto physical = std::filesystem::absolute(directory).string();
+	require(PHYSFS_mount(physical.c_str(), "__incoming_audio", 1), "Cannot mount incoming audio descriptor");
+	auto *mission = mission_prepare_from_current_dir("__incoming_audio/xscope.mn2");
+	struct Release {
+		mission_preparation **mission;
+		~Release()
+		{
+			mission_discard_prepared(mission);
+		}
+	} release{ &mission };
+	require(mission && PHYSFS_unmount(physical.c_str()), "Cannot retain isolated incoming audio descriptor");
+	{
+		auto discarded = XlPreparedResources::prepare_level(mission, 2);
+		require(discarded->level_inventory().level_version == original_level.level_version, "Incoming audio lost target level bytes");
+	}
+	auto incoming = XlPreparedResources::prepare_level(mission, 2);
+	XlPreparedResources moved(std::move(*incoming));
+	incoming.reset();
+	write_bytes(changed.string().c_str(), { 'b', 'a', 'd' });
+	bool rejected = false;
+	try {
+		auto invalid = XlPreparedResources::prepare_level(mission, 2);
+	} catch (const std::runtime_error &) {
+		rejected = true;
+	}
+	require(rejected && mission_discard_prepared(&mission), "Malformed incoming sound was accepted or retained busy source handles");
+	uint32_t after_sim;
+	d_rand_get_state(&after_sim);
+	require(snapshot() == before && Current_mission == live && GameTime64 == game_time && definitions == gameplay_definitions() &&
+	            after_sim == sim && d_rand_get_call_count() == calls && origin == PHYSFS_getRealDir("scope23.rl2"),
+	        "Incoming audio preparation, move, retry or discard changed the live game");
+	moved.install_messages();
+	require(snapshot().at("source") != before.at("source") && Current_mission == live,
+	        "Incoming audio publication reused outgoing equal-name sound sources");
+	begin_capture();
+	xl_named_audio_pause(0);
+	require(xl_named_audio_action(&Triggers[1], 1), "Incoming scoped audio did not accept its retained action");
+	run_output(4096);
+	for (std::size_t i = 0; i < captured_samples; ++i)
+		require(captured[i] == std::int16_t(float(i % 2 ? -7500 : 2500) * (127.0f / 255.0f)),
+		        "Incoming audio publication reread malformed files or played outgoing PCM");
+	outgoing.install_messages();
+	require(xl_compat::restore_named_audio(before, true) && snapshot() == before,
+	        "Outgoing audio did not resume its retained bank and saved voices");
+	std::cout << "Incoming level audio: isolated equal-name sources, malformed retry, move/discard and retained actual PCM publication passed\n";
+#else
+	(void) root;
+#endif
+}
 static int audio_scope_test(int argc, char **argv)
 {
 #ifdef USE_SDLMIXER
@@ -124,6 +199,7 @@ static int audio_scope_test(int argc, char **argv)
 			require(captured[i] == std::int16_t(float(i % 2 ? -1500 : 1500) * (127.0f / 255.0f)), "Scoped disk restore did not produce the saved PCM");
 		checked += captured_samples;
 		classic_audio_controls(root);
+		audio_incoming_source_controls(root);
 		Mix_SetPostMix(nullptr, nullptr);
 		xl_named_audio_clear();
 		SDL_PauseAudio(0);

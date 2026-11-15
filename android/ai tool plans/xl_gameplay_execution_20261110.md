@@ -4941,3 +4941,63 @@ stack 471. Its private run 43486751454 is pending. PR 481's private run
 43485529207 is still running. The separate PR 480 readiness receipt records four
 load failures and four loaded/ticked levels out of eight, with only two confirmed
 assisted navigation results; it is not a general gameplay acceptance result.
+
+### Explicit incoming level sources (2026-11-13)
+
+The incoming level factory now retains target HOG level bytes and inventory,
+then prepares target messages, lighting, audio, images, HXM, models, camera and
+POG against owned definitions. A local target context binds descriptor ordinals,
+physical archive and folder origins, case-correct components and captured startup
+addon fallback. Archive extraction shares PHYSFS; desktop retained PNG decoding
+shares the native memory codec. No selected mission swap is used. Camera weapon
+and HXM validation now use the prepared tables rather than outgoing counts.
+
+Windows and Linux Debug canonical audio, messages and effects owners pass.
+Controls cover equal-name different PCM/message/image bytes, malformed retry,
+move/discard, retained publication and logical PNG shadows. Both Observatory
+owners pass with an authentic XL incoming level, including 120 ordinary movement
+and firing frames for each outgoing D2/XL profile and detailed state preservation.
+The pinned Linux camera/HXM owner passes its appended target-weapon independence
+controls and existing source comparisons. Warp 5 remains NOT RUN (missing inputs).
+Receipts use `level-sources-*`, `observatory-level-sources-*-03` and
+`hxm-level-sources-linux` under the tranche scratch/native private roots.
+
+Retained failed receipts: the first Linux build exposed native min/max include
+ordering, corrected before rebuilding; the first Observatory test incorrectly
+supplied a stock version-6 level, replaced with authentic Observatory XL; the
+second redundantly prepared banks after POG admission, replaced with an assertion
+that the factory already owns banks. No production assertion or deadline changed.
+Latest Windows metadata binary SHA-256:
+`ec7a4ac68bd38e4c7b74e46e9d23151b6c51ec288c393786a96c51ff22d01a8c`.
+Linux Debug SHA-256:
+`8e8d3aab4cf649096d293e3d0484f2df3112459bd2463688c72a0274acb372f4`.
+Scoped formatting passes; existing compiler/Debug allocator warnings remain visible.
+
+This is resource preparation, not full gameplay admission: the shared requirement
+walk still needs explicit target bindings. Renderer/mixer native bank replacement,
+allocation-free publication, whole-world staging and the known birth-atomic late
+restore defect remain open. No full G2 or Android gameplay acceptance claim.
+
+PR 483 ordinary developer-OFF playback at source
+`2161ebe837189241db0a12cb44723b157ecca662` exits normally in 40.84 seconds.
+Detailed comparisons pass: 1,235 object frames, 1,239 world/XL records, 196 SIM,
+1,808 FX events and exact terminal equality. Binary SHA-256:
+`09e1a8ad2ccbd9f89f92cc1ea504133f4d07d9dfa3920feb625b60a7f8db221c`.
+Receipts: `replay-target-audio-water-clean`. Controlled water navigation and
+`-xl-water-physics` remain disclosed assists.
+
+Private runs 43485529207 (PR 481), 43486751454 (PR 482) and 43487752451
+(PR 483), attempt 1, pass on their exact published heads: 113 required owners,
+16 format witnesses, three modern levels and four assisted route anchors each.
+Controller is `bf40de9bc3b85c2279fe8163c621bb6c052dec12`; required assets
+are `8c9988a96a7e306f8aac04c85e2610492917b7ac`, manifest
+`527427b5490e873c651b833d048e3f95fc13cb3306a92a452218ada17f9a95c9`.
+Camera subchecks are explicitly not_run_missing_addon in these hosted receipts;
+local pinned-addon coverage is separate. At 11:35 Pacific PR 483 public Android,
+ASan, Windows/Linux compile, catalogs and LAN checks pass; two replay owners
+remain pending. PR 482 replay owners are stack-excluded, not passes. The separate
+sampled readiness gate still fails at 4/8 load/tick and is not suppressed.
+
+The current layer's ordinary developer-OFF Windows build and original Pumo Linux
+CPU/model controls also pass. Rendered Pumo startup remains a separate required
+check; ordinary replay and exact-head hosted CI follow publication.

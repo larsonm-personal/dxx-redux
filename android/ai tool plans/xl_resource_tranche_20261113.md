@@ -150,3 +150,22 @@ the canonical classic owner with corrupted live samples while retained conversio
 stays identical. Verify existing replacement precedence, sample-rate identity,
 bounded conversion and live mixer state. Target folder identity is the next
 boundary; no whole-world or mixer publication claim follows from this slice.
+
+## Explicit incoming level sources
+
+Pass a local target source context through level messages, lighting, named and
+classic sound lookup, effect images and camera resources. It binds descriptor
+ordinals and exact target archive/directory origins, with a separately captured
+startup installation for addon fallback. No selected-mission swap, search-path
+reordering, temporary global context or fallback to outgoing resources is allowed.
+Reuse native codecs and existing resource policy. Desktop PNG decoding must use
+the retained bytes rather than reopen a logical filename. Preserve the selected
+mission APIs and their existing shadow rejection contracts.
+
+Connect the context to one incoming level preparation factory built on the owned
+mission definitions. Prepare level HXM, models, camera and POG in dependency order;
+retain messages/audio/images/lighting together, with failure discarding the whole
+candidate. Extend canonical owners with different A/B companions, overlapping
+names, absent optional target resources and malformed retries, and prove live
+continuation. Source qualification does not imply allocation-free GPU/mixer or
+whole-world publication; those remaining boundaries stay explicit.

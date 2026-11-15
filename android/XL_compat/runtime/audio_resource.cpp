@@ -1,4 +1,5 @@
 #include "audio_resource.h"
+#include "target_sources.h"
 #include "resource_validation.h"
 #include "../named_sound.h"
 #include "../scoped_sound.h"
@@ -72,9 +73,9 @@ AudioResource read_audio(std::string path, std::size_t limit = max_wave_bytes)
 	return { std::move(path), std::move(bytes) };
 }
 
-std::string mission_sound_identity()
+std::string mission_sound_identity(TargetSources *target = nullptr)
 {
-	std::string mission = mission_resource_archive();
+	std::string mission = target ? target->archive() : mission_resource_archive();
 	const auto slash = mission.find_last_of("/\\");
 	if (slash != std::string::npos) mission.erase(0, slash + 1);
 	const auto dot = mission.find_last_of('.');
@@ -83,11 +84,27 @@ std::string mission_sound_identity()
 	mission.resize(dot);
 	return mission;
 }
+std::optional<AudioResource> read_target_audio(TargetSources &target, const std::string &name, bool archive, std::size_t limit = max_wave_bytes, bool installation = false)
+{
+	const auto bytes = archive ? target.archive_bytes(name, limit) : target.directory_bytes(name, limit, installation);
+	if (!bytes) return std::nullopt;
+	return AudioResource{ name, std::string(bytes->begin(), bytes->end()) };
+}
 } // namespace
 
-AudioResource load_audio_resource(const std::string &authored, const char *level, int ordinal)
+AudioResource load_audio_resource(const std::string &authored, const char *level, int ordinal, TargetSources *target)
 {
 	auto filename = named_sound_filename(authored);
+	if (target) {
+		if (auto resource = read_target_audio(*target, filename, true)) return std::move(*resource);
+		const auto paths = named_sound_paths(mission_sound_identity(target), authored, target->ordinal(level, ordinal));
+		for (std::size_t i = 1; i < paths.size(); ++i)
+			if (auto resource = read_target_audio(*target, paths[i], false)) return std::move(*resource);
+		const auto addon = "sounds/d2x-xl/" + filename;
+		if (auto resource = read_target_audio(*target, addon, false)) return std::move(*resource);
+		if (auto resource = read_target_audio(*target, addon, false, max_wave_bytes, true)) return std::move(*resource);
+		throw std::runtime_error("Missing incoming XL sound in target HOG, sound folders or startup addon: " + filename);
+	}
 	// Archive resources do not depend on an ordinal, including diagnostic loads
 	if (owned_path(filename, true)) return read_audio(std::move(filename));
 	const auto mission = mission_sound_identity();
@@ -101,17 +118,24 @@ AudioResource load_audio_resource(const std::string &authored, const char *level
 	throw std::runtime_error("Missing XL sound " + filename + "; checked the mission HOG, " + paths[1] + " and " + paths.back() + "; checked global addon " + addon + " in the owned startup installation");
 }
 
-std::optional<ClassicAudioScope> prepare_classic_audio_scope(const char *level, int ordinal, int bank_rate)
+std::optional<ClassicAudioScope> prepare_classic_audio_scope(const char *level, int ordinal, int bank_rate, TargetSources *target)
 {
-	if (!*mission_resource_archive()) return std::nullopt;
-	const auto mission = mission_sound_identity();
+	if (target ? target->archive().empty() : !*mission_resource_archive()) return std::nullopt;
+	const auto mission = mission_sound_identity(target);
 	// A diagnostic translation with no mod folder needs no descriptor ordinal
 	std::string root = "mods/" + mission;
-	if (PHYSFSEXT_locateCorrectCase(root.data()) != 0) return std::nullopt;
-	const int incoming = incoming_ordinal(level, ordinal);
+	if (target ? !target->directory_exists(root) : PHYSFSEXT_locateCorrectCase(root.data()) != 0) return std::nullopt;
+	const int incoming = target ? target->ordinal(level, ordinal) : incoming_ordinal(level, ordinal);
 	const std::string bank = "mods/" + mission + "/" + mission + (bank_rate >= 22050 ? ".s22" : ".s11");
 	auto corrected_bank = bank;
 	ClassicAudioScope scope{ mission, bank, incoming, bank_rate, {}, {} };
+	if (target) {
+		scope.target = target;
+		scope.selected_bank = read_target_audio(*target, bank, false, max_classic_bank_bytes);
+		if (!scope.selected_bank)
+			scope.selected_bank = read_target_audio(*target, mission + (bank_rate >= 22050 ? ".s22" : ".s11"), true, max_classic_bank_bytes);
+		return scope;
+	}
 	if (owned_path(corrected_bank, false))
 		scope.selected_bank = read_audio(std::move(corrected_bank), max_classic_bank_bytes);
 	else {
@@ -125,7 +149,12 @@ std::optional<ClassicAudioScope> prepare_classic_audio_scope(const char *level, 
 std::optional<AudioResource> load_classic_audio_resource(const std::string &sample, ClassicAudioScope &scope)
 {
 	if (scope.selected_bank) return std::nullopt;
+	std::optional<AudioResource> retained;
 	const auto locate = [&](const std::string &candidate, bool archive) {
+		if (scope.target) {
+			retained = read_target_audio(*scope.target, candidate, archive);
+			return retained ? candidate : std::string{};
+		}
 		const auto slash = candidate.find_last_of('/');
 		const auto directory = slash == std::string::npos ? std::string{} : candidate.substr(0, slash);
 		auto [entry, inserted] = scope.directories.try_emplace(directory);
@@ -154,6 +183,7 @@ std::optional<AudioResource> load_classic_audio_resource(const std::string &samp
 		                                           return locate(candidate, candidate.find('/') == std::string::npos);
 	                                           });
 	if (selected.path.empty()) return std::nullopt;
+	if (scope.target) return retained;
 	return read_audio(selected.path);
 }
 } // namespace xl_compat
