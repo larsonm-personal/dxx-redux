@@ -1,6 +1,10 @@
 foreach(
     pair IN
     ITEMS "objects/powerup.cpp|5312c9cd927adbfaa71d298aadeacee8bab7d5190a27db4534d55c4dbbf4d366"
+          "2d/bitmap.cpp|542b40e7af08883e88884408da811bf346c7d46c26c18c25e909b9efa12e4c21"
+          "include/bitmap.h|9044979682a8e219fa0526cc092150e562d04d2d772b23ce1e63d164d58c7024"
+          "gameio/loadtextures.cpp|bf1ae25e058d6ca745e5833ea0e2c0e425c5716571f6dc5f109a49d67c5452b6"
+          "gameio/paging.cpp|017fc593c857a5a3453d2893d2866ad9f55ddf1975a9c1c4201b9a5e5a2a0bde"
           "include/vclip.h|995af8528e7838cdc5439c632beca3b4c2a5eef3996acb6147979a89644fb1ef"
           "include/powerup.h|b786e1bc642a7ad867c52e8df06a6c49a3c89d744513e22f9da91de04c77fd6d"
           "include/piggy.h|4ecf8941d1c81166051e74c38de877f45557d163ad0c4f92d9bcdeee21033a34"

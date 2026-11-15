@@ -136,3 +136,72 @@ asset owners and exact-head result publication. Its distinct sampled readiness
 status is FAILURE, 4/8. Public scripts, contracts, sample and LAN checks passed;
 public save/replay owners were still running at the 11:51 PST inspection. These
 checks qualify 4f8b0d2 only, not this uncommitted child.
+
+### Committed action measurement and next image dependency
+
+PR 499 head 96f071e2f5c8498b35f0c496f32afa58f2d5eae9, immediate parent
+4f8b0d2ebc9bce7915b95a589f9869a409476d9c, synthetic merge
+d68128c94b6422141c10a7aeadc2b8197982abf0, stack 471. Private run
+43634601513 attempt 1 uses controller 72fdd76f5f8dc24a787b3a4858de1115ec091c19;
+current owners are pending. Local ordinary developer-OFF RelWithDebInfo binary
+854684c62b2e84559167aed0b0b0cedaf3509b4e8aa358d2db458a77b887711d measures
+4/8 in action-readiness-01. Dinter now fails on smokingfire, not falling-rocks.wav.
+Other failures remain Boiling Point smoke, Sphere smokingfire, Warp Shock
+slowmotion#0. Private engine diagnostics and every failed receipt remain retained.
+Windows Debug full owner again timed out at 45.125s; focused missing-action mode
+also timed out at its unchanged 15s deadline (15.032s), without a useful flushed
+engine diagnostic. Neither is a pass. Assertions, checked iterators and C /RTC1
+remain enabled. Windows release and Linux Debug full owners pass as recorded above.
+
+Estimate after both audio barriers: three tranches including this tranche, range
+two to four, low confidence. All remaining sampled failures are image-related,
+but later admission/runtime barriers are not yet known. No readiness increment
+was earned by the audio checkpoints.
+
+Next bounded dependency is Warp Shock time-equipment images. Pinned source
+CBitmap::Reset zeroes frame count; PageInBitmap returns when the missing addon has
+no hires image. UpdatePowerupClip preserves frame and timestamp for zero frames
+(except backwards-clock reset), and DrawObjectBitmap omits failed bitmap binding.
+Implement absence through those consumers, retain logical time-equipment replay
+clock admission independently of image presence, and retain malformed/foreign
+rejection. Prove native animation, pickup/state, resource moves/discard and incoming
+independence using existing decoders and actual pinned source. Rendering controls
+remain separate from ordinary 120-frame readiness. Full G2 is still open.
+
+Time-image checkpoint validation: existing effect-inspection owner passed with
+32 native animation rows compared against the actual pinned UpdatePowerupClip,
+including both slot parities, absent/present strips, full reverse wrap and backwards
+clock reset. Linux Debug/assertions passed in 5s; Windows RelWithDebInfo in 10.203s;
+Windows Debug/assertions/checked iterators/C /RTC1 in 68.484s. The 80-second native
+child and 90-second owner deadlines remain unchanged. Positive images are labeled
+synthetic fixtures; no synthetic files enter the pinned readiness cohort.
+
+The native owner also proves absent drawing returns without stock fallback,
+ordinary pickup grants, replay environment admission independent of image presence,
+disk-through-stock restore, strict malformed/frame-layout/foreign rejection,
+prepared owner move/assignment/discard, live animation after source-file deletion,
+and independently prepared incoming equal-count strips. This is a resource
+milestone, not full G2 or whole-save atomicity. The input-demo environment guard
+remains strict even after device flags are cleared in the loaded control.
+
+Receipts: source-time-image-05/receipt.json and time-image-linux-05 under the private
+tranche root; Windows receipts include exact argv, binary/reference/fixture/input
+hashes. Linux binary cf97c5d3780339fe86ceabd7dc584256f08d5362a6bbb8b51131f558bd2d4837;
+Windows release 39aa4d3457786c14c9867a667120388c814f2d86047f63e1083007c93ebc2960;
+Windows Debug aa98194e3832654414652f1db2460739ed98146684f411372db11e29239a40b5.
+Original Neptune remains 4016618d24238803135dabf2b33daee2a2c34a670c3f016d94ae4639c8887303.
+Earlier failures remain preserved: the long effect fixture name truncated in native
+save restoration (debugger-confirmed), then a test reused a cached directory
+snapshot after writing new inputs. A short derived fxclock mission and a fresh
+incoming transaction per preparation fix those controls without changing native
+save formats, resource snapshots, deadlines or assertions. Ordinary readiness for
+this new image checkpoint remains pending; known committed readiness is 4/8.
+
+PR 499 private run 43634601513 attempt 1 completed successfully at its exact head:
+113 required checks, 16 format witnesses, 3 modern source levels, assisted navigation
+one smoke/four anchors. Camera subchecks remain not_run_missing_addon and the owner
+reports coverage_complete=false. Its distinct sampled readiness remains FAILURE
+4/8. Retained nightly plan/host/summary artifacts explain every excluded owner.
+The earlier Windows Debug audio owner/focused timeout failures remain open; the
+passing time-image Debug owner does not replace them. Android/capture/replay
+validation remains due for the final candidate.

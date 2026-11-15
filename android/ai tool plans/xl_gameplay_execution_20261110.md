@@ -5619,3 +5619,19 @@ Windows Debug and ordinary frozen readiness for this child remain pending.
 Known readiness stays 4/8; full G2 and energy 91-to-100 corrupt-trailer defect
 remain open. No campaign qualification follows from these component controls.
 See `xl_readiness_tranche2_20261114.md` for window, prior CI IDs and constraints.
+
+### 2026-11-14 tranche 2: absent time-equipment image checkpoint
+
+Immediate parent PR 499 / 96f071e2f5c8498b35f0c496f32afa58f2d5eae9, stack 471.
+Missing time images now preserve the source's zero-frame animation behavior and
+omit drawing while retaining logical pickup/device and replay-clock requirements.
+Malformed images, invalid sixteen-frame layouts, foreign origins and invalid draw
+frames remain rejected. Existing effect-inspection owner compares 32 native rows
+to pinned source and covers actual pickups, disk-through-stock restore, retained
+moves/discard/live continuation and equal-count incoming image independence.
+Linux Debug passed 5s; Windows release 10.203s; Windows Debug 68.484s, all within
+unchanged 80/90-second child/owner limits. Earlier failed fixture receipts are
+preserved. Authentic Neptune and readiness cohort remain untouched. Readiness for
+this new checkpoint is pending; last committed ordinary/CI measurement is 4/8.
+Full G2 and the corrupt-trailer energy 91-to-100 defect remain open. See the current
+tranche plan for exact source/binary/input and preceding private CI receipts.

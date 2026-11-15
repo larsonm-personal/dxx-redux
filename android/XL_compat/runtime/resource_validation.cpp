@@ -1093,6 +1093,7 @@ struct XlPreparedResources::State {
 	std::shared_ptr<const xl_compat::ParticleImageResource> lightning_image;
 	std::shared_ptr<const xl_compat::ParticleImageResource> powerup_glare_image;
 	std::array<std::shared_ptr<const xl_compat::AnimatedImageResource>, 2> time_equipment_images;
+	bool time_equipment_required = false;
 	std::vector<std::unique_ptr<NativeModel>> native_models;
 	struct CollisionModel {
 		xl_compat::RenderModelSphere sphere;
@@ -1409,7 +1410,8 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 		state->snow_image = xl_compat::prepare_particle_image(*level, 6, target);
 		state->lightning_image = xl_compat::prepare_lightning_image(*level, target);
 		state->powerup_glare_image = xl_compat::prepare_powerup_glare_image(target);
-		if (xl_runtime::time_equipment_resources_required(*level))
+		state->time_equipment_required = xl_runtime::time_equipment_resources_required(*level);
+		if (state->time_equipment_required)
 			for (unsigned i = 0; i < 2; ++i) state->time_equipment_images[i] = xl_compat::prepare_time_equipment_image(i, target);
 	}
 	std::string base = level_filename;
@@ -1756,6 +1758,16 @@ const xl_compat::AnimatedImageResource *XlPreparedResources::time_equipment_imag
 const xl_compat::AnimatedImageResource *xl_prepared_time_equipment_image(unsigned index)
 {
 	return prepared_resources ? prepared_resources->time_equipment_image(index) : nullptr;
+}
+
+bool XlPreparedResources::time_equipment_required() const
+{
+	return state->time_equipment_required;
+}
+
+bool xl_prepared_time_equipment_required()
+{
+	return prepared_resources && prepared_resources->time_equipment_required();
 }
 
 bool XlPreparedResources::texture_brightness(int texture, int &brightness) const

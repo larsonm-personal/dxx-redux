@@ -202,7 +202,9 @@ std::shared_ptr<const ParticleImageResource> prepare_powerup_glare_image(TargetS
 std::shared_ptr<const AnimatedImageResource> prepare_time_equipment_image(unsigned index, TargetSources *target)
 {
 	if (index > 1) throw std::runtime_error("Invalid XL time-equipment image");
-	auto image = read_addon_image<AnimatedImageResource>(index ? "bullettime#0" : "slowmotion#0", "time equipment", false, "textures/d2/", target);
+	auto image = read_addon_image<AnimatedImageResource>(index ? "bullettime#0" : "slowmotion#0", "time equipment", true, "textures/d2/", target);
+	// A missing source addon has zero frames and no drawable bitmap
+	if (!image) return {};
 	if (image->bitmap.frames != 16 || image->bitmap.height != image->bitmap.width * 16)
 		throw std::runtime_error("XL time equipment requires sixteen vertical square frames: " + image->path);
 	// The source animation owns square frame textures, not one tall GPU texture

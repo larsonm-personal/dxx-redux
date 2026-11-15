@@ -5,6 +5,7 @@
 #include "lightning_objects_test.h"
 #include "additive_wall_test.h"
 #include "particle_resource_test.h"
+#include "time_image_test.h"
 #include "addon_audio_resource_test.h"
 #include "particle_original_test.h"
 #include "particle_secret_test.h"
@@ -158,6 +159,7 @@ static int effect_inspection_test(int argc, char **argv)
 					require(installation && *installation, "Particle resource controls require an isolated installation fixture");
 					particle_resource_native_case(root.parent_path(), installation);
 					addon_audio_resource_native_case(root.parent_path(), installation);
+					time_image_native_case(root.parent_path(), installation);
 				}
 				const auto vertex = Vertices[0], position = ConsoleObject->pos;
 				const int segments = Num_segments, objects = Highest_object_index, player = ConsoleObject - Objects;
