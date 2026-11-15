@@ -35,8 +35,11 @@
 #include "../particle_image.h"
 #include "../time_equipment.h"
 #include <utility>
+#include "prepared_ham.h"
+#include "retained_resource.h"
 #ifdef __ANDROID__
 #include "../../app/src/main/cpp/shared/android_mission_assets.h"
+#include "../../app/src/main/cpp/shared/mod_save_compat.h"
 #endif
 extern "C" {
 #include "inferno.h"
@@ -157,6 +160,34 @@ struct MissionDefinitions {
 			}
 		}
 	}
+	explicit MissionDefinitions(const bm_ham_destination &target) : robots(target.Robot_info, target.Robot_info + *target.N_robot_types),
+	                                                                joints(target.Robot_joints, target.Robot_joints + *target.N_robot_joints),
+	                                                                models(target.Polygon_models, target.Polygon_models + *target.N_polygon_models),
+	                                                                dying(target.Dying_modelnums, target.Dying_modelnums + *target.N_polygon_models),
+	                                                                dead(target.Dead_modelnums, target.Dead_modelnums + *target.N_polygon_models),
+	                                                                bitmaps(target.ObjBitmaps, target.ObjBitmaps + MAX_OBJ_BITMAPS),
+	                                                                pointers(target.ObjBitmapPtrs, target.ObjBitmapPtrs + MAX_OBJ_BITMAPS),
+	                                                                weapons(target.Weapon_info, target.Weapon_info + *target.N_weapon_types),
+	                                                                powerups(target.Powerup_info, target.Powerup_info + *target.N_powerup_types),
+	                                                                clips(target.Vclip, target.Vclip + *target.Num_vclips),
+	                                                                effects(target.Effects, target.Effects + *target.Num_effects),
+	                                                                wall_clips(target.WallAnims, target.WallAnims + *target.Num_wall_anims),
+	                                                                textures(target.Textures, target.Textures + *target.NumTextures),
+	                                                                texture_info(target.TmapInfo, target.TmapInfo + *target.NumTextures),
+	                                                                object_bitmap_count(*target.N_ObjBitmaps),
+	                                                                payloads(models.size()), custom_radii(models.size()), base_radii(models.size())
+	{
+		std::copy_n(target.Sounds, MAX_SOUNDS, sounds.begin());
+		std::copy_n(target.AltSounds, MAX_SOUNDS, alternate_sounds.begin());
+		for (std::size_t id = 0; id < models.size(); ++id) {
+			auto &model = models[id];
+			base_radii[id] = model.rad;
+			if (model.model_data && model.model_data_size > 0) {
+				payloads[id].assign(model.model_data, model.model_data + model.model_data_size);
+				model.model_data = payloads[id].data();
+			}
+		}
+	}
 	void bind_dependencies(xl_assets::ObjectDependencies &graph) const
 	{
 		graph.robot_data = robots.data();
@@ -202,7 +233,7 @@ struct NativeModel {
 		model.model_data = static_cast<ubyte *>(d_malloc(source.model_data_size));
 		if (!model.model_data) throw std::bad_alloc();
 		std::memcpy(model.model_data, source.model_data, source.model_data_size);
-		polygon_model_data_init(&model);
+		polygon_model_data_init_scoped(&model);
 	}
 	~NativeModel()
 	{
@@ -697,7 +728,7 @@ extern "C" int xl_resource_load_mod_data(void)
 	try {
 		std::map<std::string, std::string> sources;
 		const auto ham = owned_mod_file(".ham"), hxm = owned_mod_file(".hxm"), vham = owned_mod_file(".vham");
-		for (const auto &path : { ham, hxm, vham }) {
+		for (const auto &path : { vham }) {
 			if (path.empty()) continue;
 			File file(PHYSFSX_openReadBuffered(path.c_str()), PHYSFS_close);
 			if (!file) throw std::runtime_error("Cannot read XL mission definition: " + path);
@@ -705,11 +736,22 @@ extern "C" int xl_resource_load_mod_data(void)
 		}
 		if (!ham.empty()) {
 			File file(PHYSFSX_openReadBuffered(ham.c_str()), PHYSFS_close);
-			if (!bm_read_xl_main_ham(file.get())) throw std::runtime_error("Malformed or unsupported XL mission HAM: " + ham);
+			XlPreparedHam incoming(file.get());
+			sources[ham] = incoming.source_hash();
+			XlPreparedResources target{ std::move(incoming) };
+			if (!hxm.empty()) {
+				File replacement(PHYSFSX_openReadBuffered(hxm.c_str()), PHYSFS_close);
+				sources[hxm] = target.prepare_hxm(replacement.get());
+			}
+			target.install_hxm();
+#ifdef __ANDROID__
+			mod_save_capture_definitions();
+#endif
 			input_demo_assets_extra_ham_loaded(ham.c_str(), file.get());
 		}
-		if (!hxm.empty()) {
+		if (ham.empty() && !hxm.empty()) {
 			File file(PHYSFSX_openReadBuffered(hxm.c_str()), PHYSFS_close);
+			sources[hxm] = resource_hash(file.get(), hxm);
 			install_mission_hxm(file.get());
 		}
 		if (!vham.empty() && !bm_read_xl_extra_robots(vham.c_str()))
@@ -851,11 +893,14 @@ extern "C" void xl_resource_baseline_capture(void)
 }
 
 struct XlPreparedResources::State {
+	std::unique_ptr<XlPreparedHam> incoming_ham;
+	std::vector<std::vector<unsigned char>> definition_layers;
 	xl_compat::OwnedModelSet owned_models;
 	MissionDefinitions definitions;
 	xl_assets::ObjectDependencies graph;
 	bool has_hxm = false;
 	bool installed = false;
+	bool mission_definitions = false;
 	int camera_robot = -1, camera_model = -1;
 	HxmChanges changes;
 	xl_compat::MissionLightingCompanions lighting;
@@ -923,7 +968,7 @@ struct XlPreparedResources::State {
 		prepare_native_models();
 	}
 
-	explicit State(const MissionDefinitions &base) : definitions(base)
+	explicit State(MissionDefinitions base) : definitions(std::move(base))
 	{
 		// Vector copying owns bytes, but model headers still need their pointers rebound
 		for (std::size_t id = 0; id < definitions.models.size(); ++id)
@@ -947,6 +992,36 @@ XlPreparedResources::~XlPreparedResources()
 xl_assets::ObjectDependencies &XlPreparedResources::dependencies()
 {
 	return state->graph;
+}
+
+XlPreparedResources::XlPreparedResources(XlPreparedHam incoming)
+{
+	state = std::make_unique<State>(MissionDefinitions(incoming.tables()));
+	state->incoming_ham = std::make_unique<XlPreparedHam>(std::move(incoming));
+	state->mission_definitions = true;
+}
+
+std::string XlPreparedResources::prepare_hxm(PHYSFS_file *file)
+{
+	if (state->installed) throw std::runtime_error("Cannot prepare HXM after resource publication");
+	const auto &graph = state->graph;
+	auto retained = xl_retain_resource(file);
+	auto staged = std::make_unique<State>(state->definitions);
+	staged->changes = state->changes;
+	xl_read_retained_resource(retained, [&](PHYSFS_file *input) {
+		if (!bm_validate_hxm_for_tables(input, graph.robot_count, graph.joint_count, graph.model_count, 0))
+			throw std::runtime_error("HXM definitions do not match the target tables");
+		validate_hxm_dependencies(input, staged->definitions, staged->graph, staged->changes, false, true);
+	});
+	staged->prepare_native_models();
+	auto hash = picosha2::hash256_hex_string(retained);
+	state->definition_layers.push_back(std::move(retained));
+	state->definitions = std::move(staged->definitions);
+	state->changes = std::move(staged->changes);
+	state->native_models = std::move(staged->native_models);
+	state->bind_graph();
+	state->has_hxm = true;
+	return hash;
 }
 
 XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_compat::Inventory *level, int ordinal)
@@ -1307,6 +1382,16 @@ void XlPreparedResources::install_hxm()
 	// Allocate publication copies before changing any live definitions
 	auto models = state->owned_models.models;
 	auto sources = state->owned_models.sources;
+	// Repeated native reloads need fresh buffers, also before incoming publication
+	for (const int id : state->changes.models)
+		if (!state->native_models[id]->model.model_data) {
+			state->prepare_native_models();
+			break;
+		}
+	if (state->incoming_ham) {
+		state->incoming_ham->install();
+		state->incoming_ham.reset();
+	}
 	if (!state->has_hxm) {
 		xl_oof_renderer_clear();
 		mission_oof_models = std::move(models);
@@ -1316,12 +1401,6 @@ void XlPreparedResources::install_hxm()
 		return;
 	}
 	state->hitboxes.clear();
-	// A repeated native reload gets fresh buffers before any live definitions change
-	for (const int id : state->changes.models)
-		if (!state->native_models[id]->model.model_data) {
-			state->prepare_native_models();
-			break;
-		}
 	auto &definitions = state->definitions;
 	for (const int id : state->changes.robots) Robot_info[id] = definitions.robots[id];
 	for (const int id : state->changes.joints) Robot_joints[id] = definitions.joints[id];
@@ -1337,7 +1416,7 @@ void XlPreparedResources::install_hxm()
 	N_robot_types = int(definitions.robots.size());
 	N_robot_joints = int(definitions.joints.size());
 	N_polygon_models = int(definitions.models.size());
-	Robot_replacements_loaded = 1;
+	if (!state->mission_definitions) Robot_replacements_loaded = 1;
 	xl_oof_renderer_clear();
 	mission_oof_models = std::move(models);
 	mission_mod_sources = std::move(sources);

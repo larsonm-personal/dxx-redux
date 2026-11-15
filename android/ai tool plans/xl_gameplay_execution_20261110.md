@@ -4515,3 +4515,52 @@ public ASan/save workflows are still running. All three private controllers use
 bf40de9bc, distinct from their tested candidate heads. Final pushed-candidate
 qualification will be recorded in the handoff PR after publication. No pending
 owner is counted as a pass; no merges were performed.
+
+### November 13, 07:30 PST: new 15-hour incoming-resource tranche
+
+The user explicitly invoked a new run until 22:30 PST, weekly quota exhaustion,
+or completion of the tranche goal including qualification. The
+[tranche plan](xl_resource_tranche_20261113.md) defines real incoming resource
+preparation/publication, not another disconnected helper. Final three hours are
+reserved for validation, CI fixes and delivery. Work remains sequential without
+agents, fork-only, non-draft stacked PRs and no merges.
+
+Refreshed clean baseline is PR 473 head `0af3f536`, with all selected regression
+owners terminal pass and known sampled readiness failure unchanged at 4/8.
+Three stashes preserved; Ubuntu works and space is sufficient. Fresh native
+`birth` passes and `birth-atomic` again fails after energy changes 91 to 100;
+receipts are under `temp/xl-resource-tranche-20261113/`. Full G2 remains open.
+
+First implementation in progress connects retained HAM to `XlPreparedResources`
+and native ownership transfer, with target-count HXM validation and staged model
+allocation. The new equal-count/target-count control passes on Windows. Existing
+Pumo native controls pass in 54.14 seconds using freshly extracted original
+`pmines_v11.7z` (SHA-256
+`82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf`).
+These precede the retained-file refactor and do not qualify final source yet.
+Source-retained validation/decode, Linux assertions, full Observatory and
+publication CI are next. V-HAM, target bank/source contexts and whole-world
+publication are still unfinished. Build setup/compiler failures are retained.
+
+### Incoming HAM/HXM publication checkpoint
+
+The ordinary mission HAM path now retains and decodes source bytes once, builds
+`MissionDefinitions` from those incoming tables, and transfers their native model
+ownership through a bounded publication hook. HXM validation uses explicit target
+counts; validation and preparation share retained bytes. Failed HXM preparation
+preserves both the previously prepared target and live definitions. The private
+PhysicsFS adapter was extracted from the existing HAM owner, not replaced with a
+second format decoder.
+
+Windows runtime and Linux Debug (`-g -O1`, assertions enabled) builds pass. Full
+canonical Observatory owners pass on both, including 12 pinned firing and four
+contact comparisons. Receipts: `observatory-windows-02.log` and
+`observatory-linux-debug-02.log` under the tranche scratch root. A new causal
+regression first failed because mission HXM publication set the temporary level
+replacement flag; the fix preserves mission definitions across
+`reset_level_robots_file`. The failing receipt is retained as
+`mission-retirement-negative.log`. Scoped mixed quality and diff checks pass.
+
+This is a partial checkpoint: VHAM still loads after publication, target archive
+scope and bitmap/sample bank ownership are not fully integrated, and whole-world
+G2 atomicity remains open. The 15-hour goal continues after publication.

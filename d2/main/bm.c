@@ -330,6 +330,58 @@ int bm_read_xl_ham_into(PHYSFS_file *fp, const bm_ham_destination *destination,
 	return bm_read_ham_data(fp, 3, destination, read_model);
 }
 
+void bm_install_xl_ham(bm_ham_destination *source)
+{
+	int i;
+	for (i = 0; i < N_polygon_models; ++i)
+		if (Polygon_models[i].model_data) free_model(&Polygon_models[i]);
+	init_polygon_models();
+#define BM_COPY_COUNT(name) name = *source->name
+#define BM_COPY_TABLE(name) memcpy(name, source->name, sizeof(name))
+	BM_COPY_COUNT(NumTextures);
+	BM_COPY_TABLE(Textures);
+	BM_COPY_TABLE(TmapInfo);
+	BM_COPY_TABLE(Sounds);
+	BM_COPY_TABLE(AltSounds);
+	BM_COPY_COUNT(Num_vclips);
+	BM_COPY_TABLE(Vclip);
+	BM_COPY_COUNT(Num_effects);
+	BM_COPY_TABLE(Effects);
+	BM_COPY_COUNT(Num_wall_anims);
+	BM_COPY_TABLE(WallAnims);
+	BM_COPY_COUNT(N_robot_types);
+	BM_COPY_TABLE(Robot_info);
+	BM_COPY_COUNT(N_robot_joints);
+	BM_COPY_TABLE(Robot_joints);
+	BM_COPY_COUNT(N_weapon_types);
+	BM_COPY_TABLE(Weapon_info);
+	BM_COPY_COUNT(N_powerup_types);
+	BM_COPY_TABLE(Powerup_info);
+	BM_COPY_COUNT(N_polygon_models);
+	BM_COPY_TABLE(Polygon_models);
+	BM_COPY_TABLE(Dying_modelnums);
+	BM_COPY_TABLE(Dead_modelnums);
+	BM_COPY_TABLE(Gauges);
+	BM_COPY_TABLE(Gauges_hires);
+	BM_COPY_COUNT(N_ObjBitmaps);
+	BM_COPY_TABLE(ObjBitmaps);
+	BM_COPY_TABLE(ObjBitmapPtrs);
+	BM_COPY_COUNT(only_player_ship);
+	BM_COPY_COUNT(Num_cockpits);
+	BM_COPY_TABLE(cockpit_bitmap);
+	BM_COPY_COUNT(First_multi_bitmap_num);
+	BM_COPY_COUNT(Num_reactors);
+	BM_COPY_TABLE(Reactors);
+	BM_COPY_COUNT(Marker_model_num);
+	BM_COPY_COUNT(exit_modelnum);
+	BM_COPY_COUNT(destroyed_exit_modelnum);
+#undef BM_COPY_TABLE
+#undef BM_COPY_COUNT
+	for (i = 0; i < N_polygon_models; ++i)
+		source->Polygon_models[i].model_data = NULL;
+	Piggy_hamfile_version = 3;
+}
+
 /* Mission-owned version-3 HAM only; validate the complete file before mutation */
 int bm_read_xl_main_ham(PHYSFS_file *fp)
 {
@@ -455,7 +507,8 @@ static int bm_validate_hxm(PHYSFS_file *fp)
 }
 
 /* Read-only companion preflight; do not replace the active warning report */
-static int bm_validate_level_hxm_internal(PHYSFS_file *fp, int xl_deferred)
+static int bm_validate_level_hxm_internal(PHYSFS_file *fp, int xl_deferred,
+                                          int robots, int joints, int models)
 {
 	d2_ham_validation_limits limits = bm_validation_limits();
 	d2_ham_validation_report report;
@@ -464,7 +517,7 @@ static int bm_validate_level_hxm_internal(PHYSFS_file *fp, int xl_deferred)
 	int valid;
 	if (!bm_read_validation_bytes(fp, &data, &size)) return 0;
 	valid = (xl_deferred ? d2_ham_validate_xl_hxm : d2_ham_validate_hxm)(data, size, &limits,
-	                          N_robot_types, N_robot_joints, N_polygon_models, &report);
+	                          robots, joints, models, &report);
 	d_free(data);
 	/* Empty joint lists are not dereferenced; XL closes after the five tables */
 	return valid && !report.inert_robot_records;
@@ -472,12 +525,17 @@ static int bm_validate_level_hxm_internal(PHYSFS_file *fp, int xl_deferred)
 
 int bm_validate_level_hxm(PHYSFS_file *fp)
 {
-	return bm_validate_level_hxm_internal(fp, 0);
+	return bm_validate_level_hxm_internal(fp, 0, N_robot_types, N_robot_joints, N_polygon_models);
 }
 
 int bm_validate_xl_level_hxm(PHYSFS_file *fp)
 {
-	return bm_validate_level_hxm_internal(fp, 1);
+	return bm_validate_level_hxm_internal(fp, 1, N_robot_types, N_robot_joints, N_polygon_models);
+}
+
+int bm_validate_hxm_for_tables(PHYSFS_file *fp, int robots, int joints, int models, int xl_deferred)
+{
+	return bm_validate_level_hxm_internal(fp, xl_deferred, robots, joints, models);
 }
 
 void bm_reset_mission_compatibility_warnings(void)
