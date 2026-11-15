@@ -4716,3 +4716,39 @@ Next: prepare POG animation/HUD decisions from target tables and allocate native
 replacement storage before publication, then finish target level source context.
 Whole-world late-restore rejection and final ordinary/Android qualification
 remain open. The 15-hour run remains active.
+
+### Prepared native owner shutdown and fresh ordinary replay
+
+The bank diagnostic correction is published in PR 477 at
+`5f6ed98e738564a6945f0a984d9dfda370e8c294`. PR 478 was rebased onto it at
+`e126ff4fd825485ee194e374d2608b3e3e1a7d7a`; the ledger conflict preserved both
+items. Intermediate public jobs use the repository's stack exclusions; top-head
+qualification remains required. No branches outside this tranche were rewritten.
+
+Fresh water capture on the bank/fix source matches clean-process developer-OFF
+Windows playback: 1,235 object frames, 1,239 world/XL records, 196 SIM and 1,808 FX
+events, plus exact terminal JSON and normal process exit. Binary SHA-256:
+`d7d353da7ebb536aeac7eea5e17be62c509602a26f1f4659c09ed9c47fb1a99a`.
+Receipts live in `replay-bank-water-clean` under the tranche scratch root.
+The existing controlled water navigation and `-xl-water-physics` profile remain
+explicit assists; this is not unassisted campaign completion.
+
+GDB traces the Linux Debug untracked-free diagnostic to a retained, uninstalled
+`NativeModel` destroyed after `mem_display_blocks` has already swept its native
+allocation. Prepared-resource publication now registers retirement after native
+memory initialization, so the global owner's native buffers retire before the
+allocator exit sweep. The same full Linux Debug water owner passes without that
+diagnostic; Windows canonical Observatory also passes both live profiles. The
+water owner now rejects this specific invalid-free diagnostic during capture or
+replay, rather than silently accepting a zero exit code. Other existing shutdown
+allocation reports are not suppressed or claimed resolved. The failed trace is
+retained in `water-memory.log`.
+
+The strengthened Linux water owner also passes with its explicit invalid-free
+check (`water-shutdown-assert-linux.log`). The old bank head's hosted artifact
+reports `xl_water_arena` and `xl_preview_lifecycle` failures. The water cause is
+fixed above; the canonical preview lifecycle passes locally on the current Linux
+Debug binary, so its hosted failure remains under investigation rather than
+being dismissed. The fixed PR 477 controller retry succeeded but intentionally
+skipped private execution below the native stack tip; that is not an asset-test
+pass. The rebased top-head private run is queued.

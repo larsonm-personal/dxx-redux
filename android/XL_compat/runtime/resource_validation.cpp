@@ -9,6 +9,7 @@
 #include "../model_render_geometry.h"
 #include "../camera_object_state.h"
 #include <cstring>
+#include <cstdlib>
 #include <algorithm>
 #include <memory>
 #include <stdexcept>
@@ -1699,6 +1700,14 @@ extern "C" int xl_custom_model_radius(int model, int fallback)
 
 void xl_set_prepared_resources(const char *level_filename, std::unique_ptr<XlPreparedResources> resources)
 {
+	// Register after the native memory tracker, so retained native allocations
+	// retire before its exit sweep and before static C++ owner destruction
+	static const bool cleanup_registered = [] {
+		if (std::atexit(xl_discard_prepared_resources) != 0)
+			throw std::runtime_error("Cannot register prepared resource shutdown");
+		return true;
+	}();
+	(void) cleanup_registered;
 	prepared_level = level_filename;
 	prepared_resources = std::move(resources);
 	prepared_resources->install_messages();
