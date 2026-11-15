@@ -145,6 +145,7 @@ void lightning_gpu_probe(const char *operation)
 	unsigned shield_overlap_rounding = 0;
 	GLfloat line_range[2];
 	glGetFloatv(GL_ALIASED_LINE_WIDTH_RANGE, line_range);
+	const int original_filter = GameCfg.TexFilt, original_anisotropy = ogl_aniso_level;
 	{
 		LightningGlowState restore;
 		Readback readback;
@@ -152,6 +153,7 @@ void lightning_gpu_probe(const char *operation)
 		glBindRenderbuffer(GL_RENDERBUFFER, target.color);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 64, 64);
 		struct NativeState {
+			int filter = GameCfg.TexFilt, anisotropy = ogl_aniso_level;
 			vms_vector eye = View_position;
 			vms_matrix view = View_matrix;
 			grs_screen *screen = grd_curscreen;
@@ -165,6 +167,10 @@ void lightning_gpu_probe(const char *operation)
 			NativeState()
 			{
 				require(d_rand_get_stream_state(D_RNG_PRESENTATION, &random_state) != 0, "Lightning control cannot preserve effects RNG");
+				// Analytical textures select explicit filters. Native Android binds
+				// must not replace them with the active player's filter preferences
+				GameCfg.TexFilt = 0;
+				ogl_aniso_level = 0;
 				probe.sc_w = probe.sc_h = 64;
 				grd_curscreen = &probe;
 				probe_viewer.size = 65536;
@@ -181,6 +187,8 @@ void lightning_gpu_probe(const char *operation)
 			}
 			~NativeState()
 			{
+				GameCfg.TexFilt = filter;
+				ogl_aniso_level = anisotropy;
 				View_position = eye;
 				View_matrix = view;
 				grd_curscreen = screen;
@@ -310,6 +318,7 @@ void lightning_gpu_probe(const char *operation)
 		}
 	}
 	require(glGetError() == GL_NO_ERROR, "Lightning GPU control restoration raised a GPU error");
+	require(GameCfg.TexFilt == original_filter && ogl_aniso_level == original_anisotropy, "Lightning GPU control changed player filtering");
 	pixels.insert(pixels.end(), shield_pixels.begin(), shield_pixels.end());
 	if (!lightning_probe_pixels.empty()) require(pixels == lightning_probe_pixels, "Lightning/shield pixels changed across graphics context recreation");
 	lightning_probe_pixels = std::move(pixels);

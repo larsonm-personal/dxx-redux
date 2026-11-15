@@ -51,6 +51,10 @@ unsigned sprite_bitmap_device_controls()
 						}
 						glDepthFunc(GL_GREATER);
 						draw_bitmap_sprite(image.bitmap, quad);
+						GLint actual_min, actual_mag;
+						glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &actual_min);
+						glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, &actual_mag);
+						require(actual_min == GLint(filter) && actual_mag == (filter == GL_NEAREST ? GL_NEAREST : GL_LINEAR), "Sprite body device control lost its explicit filter");
 						GLint depth_function;
 						glGetIntegerv(GL_DEPTH_FUNC, &depth_function);
 						require(depth_function == GL_GREATER && bool(glIsEnabled(GL_SCISSOR_TEST)) == scissored, "Sprite body device control leaked draw state");

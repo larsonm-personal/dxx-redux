@@ -49,6 +49,7 @@ function Invoke-NamedAudioPrivate {
 $backup = 'files/xl-named-audio-runtime-backup'
 $paths = @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d2x-redux/d2x.ini',
     'files/d2x-redux/mod_usage.json', 'files/descent.cfg', 'files/file_sets.json', 'shared_prefs',
+    'files/graphics_safety.json', 'files/.graphics_safety.lock',
     "files/d2x-redux/missions/$mission.hog", "files/d2x-redux/missions/$mission.mn2")
 $ready = $false
 try {
@@ -64,7 +65,7 @@ try {
     Invoke-NamedAudioAdb -Arguments @('push', (Resolve-Path -LiteralPath $Descriptor).Path, '/data/local/tmp/xl-named-audio.mn2') | Out-Null
     Invoke-NamedAudioPrivate "mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-named-audio.hog files/d2x-redux/missions/$mission.hog && cp /data/local/tmp/xl-named-audio.mn2 files/d2x-redux/missions/$mission.mn2" | Out-Null
     Invoke-NamedAudioAdb -Arguments @('logcat', '-c') | Out-Null
-    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scriptName -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
+    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scriptName -Game d2 -Serial $Serial -PreserveState -LeaveRunning -NoEmulatorRecovery -TimeoutSeconds 480
     $testExit = $LASTEXITCODE
     Invoke-NamedAudioAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/logcat.txt" -Encoding utf8
     Invoke-NamedAudioPrivate 'cat files/automation_result.json' | Set-Content "$output/result.json" -Encoding utf8
