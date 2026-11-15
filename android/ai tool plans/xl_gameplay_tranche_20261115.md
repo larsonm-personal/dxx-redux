@@ -153,3 +153,30 @@ public_level_replay_fixture.hpp. No error originates in the guarded new observer
 software-build-01.log preserves the failure; software-existing-fixture-errors.txt
 identifies those same calls in the baseline. software-native-build-01.log records
 the successful production link. Software fixture execution is not qualified.
+
+## Published implementation and cross-platform qualification
+
+PR 509 publishes def09a9e98f209088ad0c0de9b60d9739f5583fe directly against cmake.
+The qualification child records the dated report, updated ledger, ordered next
+window and replacement kickoff. Source/runtime changes remain confined to the
+seven tested native/test files; the child changes documentation only.
+
+The new water capture d68ce6e430b7738b5f3d41f3170547055b3f9a55a4ace51acfcdca9590b7db12
+matches ordinary Windows/Linux and Android developer playback in all 1235 object
+frames, 1239 world records, 196 SIM events, 1808 FX events and the final result.
+This repairs the specific Android extra-1500-FX defect. No events, comparisons or
+RNG state are altered. Ordinary Android runtime passes 59/59; the restored
+ordinary APK still rejects XL timeline playback through its unchanged native
+guard, with exact protected-state restoration.
+
+Linux Debug's complete water owner passes with unchanged 90/60-second deadlines.
+Windows Debug's capture completes, but replay times out at frame 1145/1235; its
+failed receipt is retained. The first ordinary Windows harness also failed
+mission discovery because ordinary startup does not parse extra-dir. A new run
+uses verified original inputs beneath supported hogdir and passes; no asset is
+modified or substituted. All 61 pinned public references/GPU/audio controls pass.
+The exact candidate readiness remains separately 4/8, as on the baseline.
+
+See xl_gameplay_what_was_done_20261115.md for exact binary/APK/input hashes,
+failed receipts, assists and current CI. The final-push CI audit is still required;
+pending workflows and eligibility-based skips are not gameplay passes.
