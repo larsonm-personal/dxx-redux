@@ -29,6 +29,18 @@ bool slow_motion_audio_event(SlowMotionEvent event);
 struct Inventory;
 struct AudioResources;
 class TargetSources;
+class PreparedAudioInstall
+{
+  public:
+	explicit PreparedAudioInstall(std::shared_ptr<const AudioResources> resources);
+	~PreparedAudioInstall();
+	void validate() const;
+	void install();
+
+  private:
+	struct State;
+	std::unique_ptr<State> state;
+};
 std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal = 0, const XlResourceBanks *banks = nullptr, TargetSources *target = nullptr);
 void install_named_audio(std::shared_ptr<const AudioResources> resources);
 } // namespace xl_compat

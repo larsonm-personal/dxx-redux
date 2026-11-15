@@ -5044,3 +5044,47 @@ Final Linux Debug SHA-256:
 Fresh water/playback and exact-head hosted qualification follow this checkpoint.
 Native bank/GPU/mixer publication and whole-save staging remain open; target
 admission alone does not establish full G2 atomicity or rendered playability.
+
+PR 485 is published at `9f6b925860636666e218b4780f5961b54e9e24ab`, immediate
+parent PR 484, linked in stack 471. Fresh ordinary developer-OFF playback exits
+normally in 45.33 seconds and passes 1,235 object frames, 1,239 world/XL records,
+196 SIM and 1,808 FX events, plus exact terminal equality. Binary SHA-256:
+`abeeeb47e891546a20dc30b9612a475e536175fb3a4f511a7b4a42e6d11c7d0b`.
+Receipts: `water-target-requirements-windows`, `replay-target-requirements-water-clean`.
+Controlled navigation and `-xl-water-physics` remain disclosed assists. Its
+private run 43496297449 is pending.
+
+PR 484 private run 43493923296, attempt 1, passes at exact target
+`03630df121860d2488bccc987ed18b8942e04046`, controller
+`bf40de9bc3b85c2279fe8163c621bb6c052dec12`: 113 required owners, 16 format
+witnesses, three modern levels and four assisted route anchors, 883.911 seconds.
+Required asset commit/manifest remain the pinned 8c9988a/527427b cohort above.
+Camera subchecks remain not_run_missing_addon; the local pinned camera receipt
+is separate. Receipt: `pr484-private-results`. Public Android/LAN/ASan/replay
+owners were still running at the last poll, and sampled readiness remains red.
+
+### Prepared audio publication (2026-11-13)
+
+The level resource owner now allocates mutable playback storage before publication.
+Prepared audio validates the output rate and single-transfer ownership before
+messages change, transfers its buffer under the existing mixer lock, and supports
+an active repeat without allocation. Retired consumed owners reject before changing
+text or voices. The published global level owner/name now transfer only after audio
+validation/publication succeeds; name allocation precedes all mutations. Legacy
+audio clear retains its allocation-free path through the shared publication helper.
+
+Both platforms' complete audio suites initially pass, including real 48-kHz device
+reopen rejection, unchanged outgoing voices, rejected global resource handoff,
+44100-Hz recovery, active repeats and retired-owner rejection. Message owners pass
+both platforms and prove retired rejection retains exact text, timing and audio.
+Observatory live continuation passes Windows/Linux, pinned Linux camera/HXM passes,
+and water controls and the ordinary Windows build pass. Warp 5 remains NOT RUN.
+The final helper extraction preserving allocation-free native clear has rebuilt
+successfully; final Windows/Linux full audio, Windows message and water reruns pass.
+Final metadata binaries: Windows
+`eb82364fcf8dce1d0bc3ace5d0d050b8c405ec09ffbfb04920945c7271a976cd`,
+Linux Debug `e408a0ec2addd093fd8cee283c551e957454c54566b598211851912aa56c1ed7`.
+Receipts use `prepared-audio-*`, with `-02` for final helper reruns, and
+`observatory-prepared-audio-*`, `hxm-prepared-audio-linux`, `water-prepared-audio-windows`.
+This removes the playback-vector allocation; metadata maps, native bitmap banks,
+GPU publication and whole-world staging remain separate open boundaries.

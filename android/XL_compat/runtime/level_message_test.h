@@ -110,11 +110,24 @@ static void message_incoming_sources()
 	            audio == xl_compat::named_audio_snapshot() && Current_mission == live && definitions == gameplay_definitions(),
 	        "Incoming message preparation or move changed outgoing text, audio or definitions");
 	moved.install_messages();
+	moved.install_messages();
 	require(expected == xl_message_identity() && xl_message_restore(&before, 1), "Incoming message publication used outgoing MSG bytes");
 	message_expect(before.id, before.duration, text.c_str());
 	outgoing.install_messages();
 	require(identity == xl_message_identity() && xl_message_restore(&before, 1) && xl_compat::restore_named_audio(audio, true),
 	        "Outgoing message and audio state did not resume after incoming publication");
+	bool rejected = false;
+	try {
+		moved.install_messages();
+	} catch (const std::runtime_error &) {
+		rejected = true;
+	}
+	const auto retained = message_snapshot();
+	require(rejected && identity == xl_message_identity() && text == xl_message_text() &&
+	            retained.id == before.id && retained.duration == before.duration && retained.elapsed_ms == before.elapsed_ms &&
+	            audio == xl_compat::named_audio_snapshot(),
+	        "Retired audio publication changed outgoing message or audio before rejection");
+	std::cout << "Prepared message/audio publication: active repeat and retired rejection preserve outgoing text and voices\n";
 	std::cout << "Incoming level messages: overlapping level/table names, distinct target bytes, move/discard and retained publication passed\n";
 }
 static void message_bad_state(const std::filesystem::path &root)

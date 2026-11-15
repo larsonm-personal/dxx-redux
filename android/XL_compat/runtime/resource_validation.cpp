@@ -1074,6 +1074,7 @@ struct XlPreparedResources::State {
 	xl_compat::MissionLightingCompanions lighting;
 	std::shared_ptr<const xl_compat::MessageResources> messages;
 	std::shared_ptr<const xl_compat::AudioResources> audio;
+	std::unique_ptr<xl_compat::PreparedAudioInstall> audio_install;
 	std::shared_ptr<const xl_compat::ParticleImageResource> particle_image;
 	std::shared_ptr<const xl_compat::ParticleImageResource> smoke_image;
 	std::shared_ptr<const xl_compat::ParticleImageResource> bubble_image;
@@ -1459,6 +1460,7 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 	if (target) {
 		if (const auto bytes = target->archive_bytes(pog_name, 64 * 1024 * 1024)) xl_read_retained_resource(*bytes, prepare_level_pog);
 	} else if (auto file = companion(pog_name)) prepare_level_pog(file.get());
+	state->audio_install = std::make_unique<xl_compat::PreparedAudioInstall>(state->audio);
 }
 
 void XlPreparedResources::prepare_pog(PHYSFS_file *file)
@@ -1697,8 +1699,10 @@ extern "C" void xl_initialize_camera_objects(void)
 
 void XlPreparedResources::install_messages()
 {
+	if (!state->audio_install) throw std::runtime_error("Level audio publication has not been prepared");
+	state->audio_install->validate();
 	xl_compat::install_messages(state->messages);
-	xl_compat::install_named_audio(state->audio);
+	state->audio_install->install();
 }
 
 const xl_compat::ParticleImageResource *XlPreparedResources::particle_image(int subtype) const
@@ -1851,9 +1855,11 @@ void xl_set_prepared_resources(const char *level_filename, std::unique_ptr<XlPre
 		return true;
 	}();
 	(void) cleanup_registered;
-	prepared_level = level_filename;
+	if (!resources || !level_filename) throw std::runtime_error("Prepared level publication requires an owner and name");
+	std::string level(level_filename);
+	resources->install_messages();
+	prepared_level.swap(level);
 	prepared_resources = std::move(resources);
-	prepared_resources->install_messages();
 }
 
 extern "C" void xl_discard_prepared_resources(void)

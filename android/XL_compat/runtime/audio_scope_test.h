@@ -41,6 +41,7 @@ static void audio_incoming_source_controls(const std::filesystem::path &root)
 		require(discarded->level_inventory().level_version == original_level.level_version, "Incoming audio lost target level bytes");
 	}
 	auto incoming = XlPreparedResources::prepare_level(mission, 2);
+	auto stale_publication = XlPreparedResources::prepare_level(mission, 2);
 	XlPreparedResources moved(std::move(*incoming));
 	incoming.reset();
 	write_bytes(changed.string().c_str(), { 'b', 'a', 'd' });
@@ -56,6 +57,33 @@ static void audio_incoming_source_controls(const std::filesystem::path &root)
 	require(snapshot() == before && Current_mission == live && GameTime64 == game_time && definitions == gameplay_definitions() &&
 	            after_sim == sim && d_rand_get_call_count() == calls && origin == PHYSFS_getRealDir("scope23.rl2"),
 	        "Incoming audio preparation, move, retry or discard changed the live game");
+	xl_named_audio_backend_close();
+	Mix_CloseAudio();
+	require(Mix_OpenAudio(48000, AUDIO_S16SYS, 2, 1024) == 0, "Cannot reopen incoming audio control at 48 kHz");
+	SDL_PauseAudio(1);
+	require(xl_named_audio_backend_open(48000, AUDIO_S16SYS, 2) && xl_compat::restore_named_audio(before, true), "Cannot retain outgoing voices after rate change");
+	const auto changed_rate = snapshot();
+	rejected = false;
+	try {
+		xl_set_prepared_resources("__rejected_audio__.rl2", std::move(stale_publication));
+	} catch (const std::runtime_error &) {
+		rejected = true;
+	}
+	require(rejected && snapshot() == changed_rate && !xl_install_prepared_hxm("__rejected_audio__.rl2"),
+	        "Stale audio handoff replaced the published level owner or changed live voices");
+	rejected = false;
+	try {
+		moved.install_messages();
+	} catch (const std::runtime_error &) {
+		rejected = true;
+	}
+	require(rejected && snapshot() == changed_rate, "Stale prepared audio rate changed live voices before rejection");
+	xl_named_audio_backend_close();
+	Mix_CloseAudio();
+	require(Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 1024) == 0, "Cannot recover incoming audio control output");
+	SDL_PauseAudio(1);
+	require(xl_named_audio_backend_open(44100, AUDIO_S16SYS, 2) && xl_compat::restore_named_audio(before, true), "Cannot recover outgoing audio before publication");
+	moved.install_messages();
 	moved.install_messages();
 	require(snapshot().at("source") != before.at("source") && Current_mission == live,
 	        "Incoming audio publication reused outgoing equal-name sound sources");
@@ -69,6 +97,14 @@ static void audio_incoming_source_controls(const std::filesystem::path &root)
 	outgoing.install_messages();
 	require(xl_compat::restore_named_audio(before, true) && snapshot() == before,
 	        "Outgoing audio did not resume its retained bank and saved voices");
+	rejected = false;
+	try {
+		moved.install_messages();
+	} catch (const std::runtime_error &) {
+		rejected = true;
+	}
+	require(rejected && snapshot() == before, "Retired prepared audio owner replaced live voices");
+	std::cout << "Prepared audio publication: real output-rate rejection, active repeat and retired-owner rejection preserve live voices\n";
 	std::cout << "Incoming level audio: isolated equal-name sources, malformed retry, move/discard and retained actual PCM publication passed\n";
 #else
 	(void) root;

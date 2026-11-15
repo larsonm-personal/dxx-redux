@@ -186,3 +186,18 @@ the running world, source identities and RNG through failures and moves. Qualify
 the broader walk with the existing messages/audio/effects owners and ordinary
 playback. Native HAM does not encode model names; retain the startup native name
 registry independently of outgoing mission changes, rather than invent mappings.
+
+## Prepared audio publication
+
+Allocate mutable mixer playback storage with the level resource candidate, after
+PCM preparation. A distinct prepared installation owner must validate output-rate
+compatibility and consumption before either message or audio publication. Commit
+transfers the preallocated playback buffer under the existing audio lock; retain
+the convenience prepare/install API for legacy callers. Reinstalling the active
+owner may reset it without allocation; a retired consumed owner must fail before
+changing live messages or voices. Move/discard and output-rate rejection belong
+in the existing audio/message owners. This removes one concrete publication
+allocation, not all native-bank, GPU, metadata-map or whole-world boundaries.
+The published level owner/name must also remain unchanged when audio validation
+fails: allocate the name first, install prepared audio/messages, then transfer the
+global resource owner and name through nonallocating moves.

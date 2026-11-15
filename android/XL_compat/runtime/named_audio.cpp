@@ -330,28 +330,68 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 	return resources;
 }
 
-void install_named_audio(std::shared_ptr<const AudioResources> resources)
+struct PreparedAudioInstall::State {
+	std::shared_ptr<const AudioResources> resources;
+	std::vector<AudioPlayback> playback;
+	bool consumed = false;
+};
+
+PreparedAudioInstall::PreparedAudioInstall(std::shared_ptr<const AudioResources> resources) : state(std::make_unique<State>())
+{
+	state->resources = std::move(resources);
+	validate();
+	state->playback.resize(state->resources ? state->resources->sources.size() : 0);
+}
+PreparedAudioInstall::~PreparedAudioInstall() = default;
+
+void PreparedAudioInstall::validate() const
 {
 	// Preparation and installation run on the game thread without reopening audio
+	const auto &resources = state->resources;
 	if (resources && resources->prepared_rate != output_rate) throw std::runtime_error("XL named-audio output changed during level preparation");
+	if (state->consumed && (bank != resources || mixer.playback.size() != (resources ? resources->sources.size() : 0)))
+		throw std::runtime_error("Retired audio installation requires fresh playback preparation");
+}
+
+static void publish_named_audio(const std::shared_ptr<const AudioResources> &resources, std::vector<AudioPlayback> *playback)
+{
 	auto samples = resources ? resources->prepared_samples : nullptr;
-	std::vector<AudioPlayback> playback(resources ? resources->sources.size() : 0);
 	std::shared_ptr<const AudioResources> previous;
 	{
 		AudioLock lock;
 		owners.clear(mixer);
 		mixer.clear();
-		mixer.playback.swap(playback);
+		if (playback) mixer.playback.swap(*playback);
+		else std::fill(mixer.playback.begin(), mixer.playback.end(), AudioPlayback{});
 		looping = {};
 		events.fill({});
 		// Reset XL cadence on level/resource transitions without touching stock-only loads
 		if (bank || resources) reset_seismic_audio();
 		previous = std::move(bank);
-		bank = std::move(resources);
+		bank = resources;
 		converted.swap(samples);
 		failure.clear();
 	}
 	clear_linked_scene();
+}
+
+void PreparedAudioInstall::install()
+{
+	validate();
+	publish_named_audio(state->resources, state->consumed ? nullptr : &state->playback);
+	state->consumed = true;
+}
+
+void install_named_audio(std::shared_ptr<const AudioResources> resources)
+{
+	// Native teardown must remain allocation-free, including an empty owner
+	if (!resources) {
+		std::vector<AudioPlayback> playback;
+		publish_named_audio({}, &playback);
+		return;
+	}
+	PreparedAudioInstall prepared(std::move(resources));
+	prepared.install();
 }
 } // namespace xl_compat
 
