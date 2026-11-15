@@ -154,6 +154,19 @@ static void mod_incoming_source_controls(const std::filesystem::path &root)
 	require(Robot_info[0].mass == robot.mass && !xl_owned_oof_model(17) && xl_owned_oof_model(171) &&
 	            xl_resource_mod_sources() == moved.sources(),
 	        "Moved incoming publication reread source or retained the outgoing model set");
+	const auto published_definitions = gameplay_definitions();
+	const auto published_sources = xl_resource_mod_sources();
+	const auto published_model = xl_owned_oof_model(171);
+	bool consumed = false;
+	try {
+		moved.install_hxm();
+	} catch (const std::runtime_error &) {
+		consumed = true;
+	}
+	require(consumed && gameplay_definitions() == published_definitions &&
+	            xl_resource_mod_sources() == published_sources && moved.sources() == published_sources &&
+	            xl_owned_oof_model(171) == published_model,
+	        "Consumed incoming publication changed definitions, source receipts or model registry");
 	char error[256]{};
 	require(load_base_mission("pmines", error, sizeof(error)), error);
 	require(gameplay_definitions() == before && mod_render_definitions() == render_before &&

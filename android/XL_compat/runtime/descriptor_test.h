@@ -186,9 +186,15 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 		XlPreparedHam incoming(mission, "prepham.ham");
 		const auto *payload = incoming.tables().Polygon_models[0].model_data;
 		Weapon_info[CONCUSSION_ID].energy_usage ^= F1_0;
+		char original_names[MAX_POLYGON_MODELS][FILENAME_LEN];
+		std::memcpy(original_names, Pof_names, sizeof(original_names));
+		Pof_names[0][0] ^= 1;
 		XlPreparedResources resources(std::move(incoming));
 		resources.prepare_banks("groupa.256");
 		auto &graph = resources.dependencies();
+		require(!std::memcmp(graph.model_names, original_names, sizeof(original_names)) &&
+		            Pof_names[0][0] != original_names[0][0],
+		        "Incoming model names borrowed or changed the outgoing registry");
 		require(graph.resource_banks && graph.resource_banks->bitmap_count() > 1 && graph.resource_banks->sound_count() > 0,
 		        "Incoming graph omitted its retained bank owners");
 		{
@@ -263,8 +269,18 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 		            graph.model_data[0].model_data != Polygon_models[0].model_data,
 		        "incoming resource graph borrowed outgoing equal-count definitions");
 		resources.install_hxm();
-		require(Polygon_models[0].model_data == payload && gameplay_definitions() == original,
+		require(Polygon_models[0].model_data == payload && gameplay_definitions() == original &&
+		            !std::memcmp(Pof_names, original_names, sizeof(original_names)),
 		        "incoming resource publication did not transfer its decoded target definitions");
+		const auto published = gameplay_definitions();
+		bool consumed = false;
+		try {
+			resources.install_hxm();
+		} catch (const std::runtime_error &) {
+			consumed = true;
+		}
+		require(consumed && gameplay_definitions() == published && Polygon_models[0].model_data == payload,
+		        "consumed incoming definitions changed live model ownership");
 		graph.weapon(CONCUSSION_ID);
 		require(graph.weapon_data[CONCUSSION_ID].energy_usage == Weapon_info[CONCUSSION_ID].energy_usage,
 		        "published target differs from its retained dependency graph");

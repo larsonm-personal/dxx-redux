@@ -71,7 +71,7 @@ namespace
 static_assert(MAX_SUBMODELS == 10, "Update the bounded XL model geometry capacity with native submodels");
 using File = std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)>;
 std::string startup_ham_name, startup_ham_hash, startup_origin, base_rejection;
-std::array<std::array<char, FILENAME_LEN>, MAX_POLYGON_MODELS> startup_model_names{};
+char startup_model_names[MAX_POLYGON_MODELS][FILENAME_LEN]{};
 std::string vertigo_rejection, mod_rejection;
 const std::array<const char *, 2> sound_banks{ "descent2.s11", "descent2.s22" };
 std::array<std::string, 2> startup_sound_hashes;
@@ -191,14 +191,14 @@ struct MissionDefinitions {
 	int object_bitmap_count = N_ObjBitmaps;
 	int low_memory = GameArg.SysLowMem;
 	int player_model = Player_ship->model_num, reactor_count = Num_reactors;
-	std::array<std::array<char, FILENAME_LEN>, MAX_POLYGON_MODELS> model_names{};
+	char model_names[MAX_POLYGON_MODELS][FILENAME_LEN]{};
 	std::vector<std::vector<ubyte>> payloads;
 	std::vector<int> custom_radii;
 	std::vector<int> base_radii;
 
 	MissionDefinitions() : payloads(models.size()), custom_radii(models.size()), base_radii(models.size())
 	{
-		for (int i = 0; i < MAX_POLYGON_MODELS; ++i) std::copy_n(Pof_names[i], FILENAME_LEN, model_names[i].begin());
+		std::memcpy(model_names, Pof_names, sizeof(model_names));
 		std::copy_n(cockpit_bitmap, cockpits.size(), cockpits.begin());
 		std::copy_n(Gauges, gauges.size(), gauges.begin());
 		std::copy_n(Gauges_hires, gauges_hires.size(), gauges_hires.begin());
@@ -233,7 +233,7 @@ struct MissionDefinitions {
 		std::copy_n(target.Sounds, MAX_SOUNDS, sounds.begin());
 		player_model = target.only_player_ship->model_num;
 		reactor_count = *target.Num_reactors;
-		model_names = startup_model_names;
+		std::memcpy(model_names, startup_model_names, sizeof(model_names));
 		std::copy_n(target.cockpit_bitmap, cockpits.size(), cockpits.begin());
 		std::copy_n(target.Gauges, gauges.size(), gauges.begin());
 		std::copy_n(target.Gauges_hires, gauges_hires.size(), gauges_hires.begin());
@@ -251,7 +251,7 @@ struct MissionDefinitions {
 	{
 		graph.player_model = player_model;
 		graph.reactor_count = reactor_count;
-		graph.model_names = reinterpret_cast<const char (*)[FILENAME_LEN]>(model_names.data());
+		graph.model_names = model_names;
 		graph.robot_data = robots.data();
 		graph.joint_data = joints.data();
 		graph.model_data = models.data();
@@ -510,7 +510,7 @@ extern "C" void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file
 	try {
 		startup_ham_hash = resource_hash(file, name);
 		startup_ham_name = name;
-		for (int i = 0; i < MAX_POLYGON_MODELS; ++i) std::copy_n(Pof_names[i], FILENAME_LEN, startup_model_names[i].begin());
+		std::memcpy(startup_model_names, Pof_names, sizeof(startup_model_names));
 		auto corrected = startup_ham_name;
 		const char *origin = PHYSFSEXT_locateCorrectCase(corrected.data()) == 0 ? PHYSFS_getRealDir(corrected.c_str()) : nullptr;
 		startup_origin = origin ? origin : "";
@@ -1053,6 +1053,12 @@ extern "C" void xl_resource_baseline_capture(void)
 }
 
 struct XlPreparedResources::State {
+	struct Publication {
+		xl_compat::OwnedModelSet owned_models;
+		std::map<std::string, std::string> definition_sources;
+		std::set<int> generated_models;
+	};
+	Publication publication;
 	std::vector<unsigned char> level_bytes;
 	std::unique_ptr<xl_compat::Inventory> level_inventory;
 	std::shared_ptr<const XlResourceBanks> banks;
@@ -1137,6 +1143,7 @@ struct XlPreparedResources::State {
 		}
 		bind_graph();
 		prepare_native_models();
+		if (mission_definitions) publication = { owned_models, definition_sources, generated_models };
 	}
 
 	explicit State(MissionDefinitions base) : definitions(std::move(base))
@@ -1771,29 +1778,38 @@ extern "C" int xl_prepared_pog_receipt(int bitmap, unsigned *bytes, unsigned *fn
 
 void XlPreparedResources::install_hxm()
 {
-	// Allocate publication copies before changing any live definitions
-	auto models = state->owned_models.models;
-	auto sources = state->owned_models.sources;
-	auto definition_sources = state->definition_sources;
-	auto generated_models = state->generated_models;
-	// Repeated native reloads need fresh buffers, also before incoming publication
-	for (const int id : state->changes.models)
-		if (!state->native_models[id]->model.model_data) {
-			state->prepare_native_models();
-			break;
-		}
+	if (state->mission_definitions && state->installed)
+		throw std::runtime_error("Incoming definitions have already been published");
+	std::unique_ptr<State::Publication> selected_publication;
+	auto *publication = &state->publication;
+	if (state->mission_definitions) {
+		// All incoming model buffers and registry nodes were allocated during preparation
+		for (const int id : state->changes.models)
+			if (!state->native_models[id] || !state->native_models[id]->model.model_data)
+				throw std::runtime_error("Incoming model publication storage is unavailable");
+	} else {
+		selected_publication = std::make_unique<State::Publication>(State::Publication{ state->owned_models, state->definition_sources, state->generated_models });
+		publication = selected_publication.get();
+		// Selected-mission reloads may have freed the previously transferred buffers
+		for (const int id : state->changes.models)
+			if (!state->native_models[id]->model.model_data) {
+				state->prepare_native_models();
+				break;
+			}
+	}
 	if (state->incoming_ham) {
 		state->incoming_ham->install();
+		std::memcpy(Pof_names, state->definitions.model_names, sizeof(Pof_names));
 		state->incoming_ham.reset();
 	}
 	if (state->complete_mission) {
-		mission_definition_sources = std::move(definition_sources);
-		mission_generated_models = std::move(generated_models);
+		mission_definition_sources.swap(publication->definition_sources);
+		mission_generated_models.swap(publication->generated_models);
 	}
 	if (!state->has_hxm) {
 		xl_oof_renderer_clear();
-		mission_oof_models = std::move(models);
-		mission_mod_sources = std::move(sources);
+		mission_oof_models.swap(publication->owned_models.models);
+		mission_mod_sources.swap(publication->owned_models.sources);
 		state->installed = true;
 		installed_resources = this;
 		return;
@@ -1825,8 +1841,8 @@ void XlPreparedResources::install_hxm()
 	N_polygon_models = int(definitions.models.size());
 	if (!state->mission_definitions) Robot_replacements_loaded = 1;
 	xl_oof_renderer_clear();
-	mission_oof_models = std::move(models);
-	mission_mod_sources = std::move(sources);
+	mission_oof_models.swap(publication->owned_models.models);
+	mission_mod_sources.swap(publication->owned_models.sources);
 	state->installed = true;
 	state->hitbox_frame = 1;
 	installed_resources = this;
