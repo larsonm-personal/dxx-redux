@@ -30,6 +30,7 @@
 #include "input_demo_start_shared.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "guidebot_routing.h"
+#include "guidebot_goal_message.h"
 #endif
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
@@ -948,6 +949,8 @@ static int input_demo_apply_ordered_input(uint32_t frame, char *error, size_t er
 				input_demo_apply_player_cfg(&operation.player_cfg);
 #ifdef DXX_BUILD_DESCENT_II
 				guidebot_routing_set_mode(operation.player_cfg.guidebot_routing_mode);
+				if (operation.player_cfg.has_guidebot_goal_message)
+					escort_set_goal_message_persistent(operation.player_cfg.guidebot_goal_message);
 #endif
 				break;
 			case INPUT_DEMO_INPUT_COCKPIT:

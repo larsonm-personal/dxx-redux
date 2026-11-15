@@ -480,6 +480,12 @@ captured at its ordinary setter before resetting AI routing; two changes between
 frames remain two operations even when the final mode equals the original mode.
 Playback uses that same setter, not the save-restoration path that preserves AI.
 
+New D2 captures also include optional `player_cfg.guidebot_goal_message` (integer
+0 or 1). It records the native persistent Guide-Bot message preference, which can
+differ between desktop defaults and Android launcher settings. Startup and ordered
+settings playback apply the recorded value through its native setter. An absent
+field leaves the current preference unchanged; existing fixtures are not rewritten.
+
 XL world observations use schema 19 and require `xl_player_cfg`, `xl_births` and `xl_native`
 at restored, per-frame and terminal boundaries. Birth observations contain every
 live slot/signature, birth time, creation order and the next creation counter;

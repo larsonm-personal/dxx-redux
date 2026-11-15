@@ -325,3 +325,15 @@ those failed receipts and include that collector in the same planner condition.
 The corrected captures pass on both hosts. Existing live Guide-Bot navigation and
 same-mode save continuity qualify the native invalidation behavior, not only the
 water recording. Android preprocessing is unchanged by these guard expansions.
+
+## Recorded Guide-Bot message preference
+
+After the route fix, Android detailed world comparison differs only in the native
+persistent-message preference: desktop captures false while the launcher supplies
+true. Extend the existing player-settings record with an optional presence/value
+pair. Capture the native getter, validate boolean values, serialize only when
+present, and apply through the native setter at replay startup and ordered settings
+changes. Old recordings without the field retain their existing behavior. Keep
+the observer field and immutable fixtures unchanged. Qualify parser round trips,
+invalid values, fresh Windows/Linux capture, ordinary playback and Android detailed
+comparison. Startup FX draws remain a separately reported presentation difference.

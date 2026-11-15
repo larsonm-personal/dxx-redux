@@ -475,6 +475,26 @@ static int expect_player_cfg_order_validation(void)
 		return report_failure("Autoselect Only Once recording setting did not roundtrip");
 	if (restored.player_cfg.guidebot_routing_mode != 0)
 		return report_failure("Original Guidebot replay setting did not roundtrip");
+	if (restored.player_cfg.has_guidebot_goal_message || serialized.find("guidebot_goal_message") != std::string::npos)
+		return report_failure("absent Guidebot message preference was invented");
+	metadata.player_cfg.has_guidebot_goal_message = 1;
+	for (uint8_t enabled : { uint8_t(0), uint8_t(1) }) {
+		metadata.player_cfg.guidebot_goal_message = enabled;
+		if (!input_demo_metadata_to_header_line(metadata, &serialized, &error) ||
+		    !input_demo_metadata_parse_header_line(serialized, &restored, &error) ||
+		    !restored.player_cfg.has_guidebot_goal_message || restored.player_cfg.guidebot_goal_message != enabled)
+			return report_failure("Guidebot message preference did not roundtrip");
+	}
+	auto invalid_message = nlohmann::ordered_json::parse(serialized);
+	for (const auto &value : { nlohmann::ordered_json(-1), nlohmann::ordered_json(2), nlohmann::ordered_json(true) }) {
+		invalid_message["player_cfg"]["guidebot_goal_message"] = value;
+		if (input_demo_metadata_parse_header_line(invalid_message.dump(), &restored, &error))
+			return report_failure("invalid Guidebot message preference parsed");
+	}
+	metadata.player_cfg.guidebot_goal_message = 2;
+	if (input_demo_metadata_to_header_line(metadata, &serialized, &error))
+		return report_failure("invalid Guidebot message preference serialized");
+	metadata.player_cfg.guidebot_goal_message = 0;
 	metadata.player_cfg.guidebot_routing_mode = 2;
 	if (input_demo_metadata_to_header_line(metadata, &serialized, &error))
 		return report_failure("invalid Guidebot replay setting unexpectedly serialized");

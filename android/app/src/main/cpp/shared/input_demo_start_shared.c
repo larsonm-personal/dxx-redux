@@ -38,6 +38,7 @@
 #ifdef DXX_BUILD_DESCENT_II
 #include "replay_debug_overlay.h"
 #include "guidebot_routing.h"
+#include "guidebot_goal_message.h"
 #endif
 #ifdef __ANDROID__
 #include "android_crash_handler.h"
@@ -652,6 +653,8 @@ static int input_demo_restore_loaded_replay(const char *native_path,
 	have_replay_player_cfg = replay_context.have_replay_player_cfg;
 #ifdef DXX_BUILD_DESCENT_II
 	guidebot_routing_restore_mode(have_replay_player_cfg ? replay_player_cfg->guidebot_routing_mode : GUIDEBOT_ROUTING_ENHANCED);
+	if (have_replay_player_cfg && replay_player_cfg->has_guidebot_goal_message)
+		escort_set_goal_message_persistent(replay_player_cfg->guidebot_goal_message);
 #endif
 	if (!strcmp(start_mode, "new_level")) {
 		return input_demo_start_replay_new_level(&replay_context);
