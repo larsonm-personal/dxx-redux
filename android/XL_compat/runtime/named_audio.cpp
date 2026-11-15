@@ -68,6 +68,7 @@ struct AudioResources {
 	std::map<std::string, std::string> classic_replacements;
 	std::map<int, Action> actions;
 	std::map<std::string, unsigned> external;
+	std::set<unsigned> unavailable;
 	unsigned prepared_rate = 0;
 	std::shared_ptr<const std::vector<AudioSample>> prepared_samples;
 };
@@ -149,8 +150,10 @@ std::vector<AudioSample> convert_bank(const AudioResources &resources, unsigned 
 {
 	std::vector<AudioSample> result;
 	std::size_t bytes = 0;
-	for (const auto &source : resources.sources) {
-		auto sample = prepare_audio_sample(source, rate);
+	for (unsigned index = 0; index < resources.sources.size(); ++index) {
+		// An absent ambient resource owns an index for persistent linked state,
+		// but has no decoded or converted PCM and cannot acquire a mixer channel
+		auto sample = resources.unavailable.count(index) ? AudioSample{} : prepare_audio_sample(resources.sources[index], rate);
 		bytes += sample.stereo.size() * sizeof(std::int16_t);
 		if (bytes > 128 * 1024 * 1024) throw std::runtime_error("Named-audio bank exceeds 128 MiB of mixer storage");
 		result.push_back(std::move(sample));
@@ -262,7 +265,7 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 	std::size_t bytes = 0;
 	for (const auto &pcm : resources->sources) bytes += pcm.samples.size() * sizeof(std::int16_t);
 	std::string external_identity;
-	std::vector<std::string> external_names;
+	std::vector<std::pair<std::string, bool>> external_names;
 	for (const auto &object : inventory.objects) {
 		std::string name;
 		if (object.render == 13) {
@@ -275,33 +278,47 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 		else if (object.render == 11 && prepare_authored_particle(inventory, object).effect.kind == ParticleKind::bubbles)
 			name = bubble_sound_name;
 		else continue;
-		external_names.push_back(std::move(name));
+		external_names.emplace_back(std::move(name), true);
 	}
 	// The source requests transition WAVs only with an enabled mixer
 	if (!GameArg.SndNoSound && xl_runtime::time_equipment_resources_required(inventory)) {
-		external_names.push_back("slowdown.wav");
-		external_names.push_back("speedup.wav");
+		external_names.emplace_back("slowdown.wav", false);
+		external_names.emplace_back("speedup.wav", false);
 	}
-	for (const auto &name : external_names) {
+	for (const auto &[name, optional] : external_names) {
 #ifndef USE_SDLMIXER
 		throw std::runtime_error("XL object sounds require the SDL_mixer backend");
 #endif
 		if (!GameArg.SndNoSound && !backend_ready) throw std::runtime_error("XL object sounds require an initialized stereo 16-bit SDL_mixer output");
 		const auto key = external_key(name);
-		if (resources->external.count(key)) continue;
-		const auto resource = load_audio_resource(name, level, ordinal, target);
+		if (const auto found = resources->external.find(key); found != resources->external.end()) {
+			if (!optional && resources->unavailable.count(found->second))
+				throw std::runtime_error("Missing XL sound " + key + "; the required resource was absent during ambient preparation");
+			continue;
+		}
+		const auto resource = optional ? find_audio_resource(name, level, ordinal, target) : std::optional<AudioResource>(load_audio_resource(name, level, ordinal, target));
+		if (!resource) {
+			const auto index = unsigned(resources->sources.size());
+			resources->external.emplace(key, index);
+			resources->unavailable.insert(index);
+			resources->sources.emplace_back();
+			resources->names.push_back(name);
+			external_identity += ":" + name + ":absent-ambient-output";
+			con_printf(CON_NORMAL, "XL ambient output unavailable: %s; authored object and linked lifetime retained\n", name.c_str());
+			continue;
+		}
 		WaveChannels pcm;
 		try {
-			pcm = decode_wave_channels(reinterpret_cast<const std::uint8_t *>(resource.bytes.data()), resource.bytes.size());
+			pcm = decode_wave_channels(reinterpret_cast<const std::uint8_t *>(resource->bytes.data()), resource->bytes.size());
 		} catch (const std::exception &error) {
-			throw std::runtime_error("Invalid XL object sound " + resource.path + ": " + error.what());
+			throw std::runtime_error("Invalid XL object sound " + resource->path + ": " + error.what());
 		}
 		bytes += pcm.samples.size() * sizeof(std::int16_t);
 		if (bytes > 128 * 1024 * 1024) throw std::runtime_error("XL shared bank exceeds 128 MiB of source storage");
 		resources->external.emplace(key, unsigned(resources->sources.size()));
 		resources->sources.push_back(std::move(pcm));
-		resources->names.push_back(resource.path);
-		external_identity += ":" + name + ":" + resource.path + ":" + picosha2::hash256_hex_string(resource.bytes);
+		resources->names.push_back(resource->path);
+		external_identity += ":" + name + ":" + resource->path + ":" + picosha2::hash256_hex_string(resource->bytes);
 	}
 	const auto replacements = prepare_classic_audio(level, ordinal, classic_audio_output_rate(), banks, target);
 	for (const auto &sample : replacements.samples) resources->classic_replacements.emplace(sample.name, sample.path);
@@ -363,6 +380,8 @@ static void publish_named_audio(const std::shared_ptr<const AudioResources> &res
 		mixer.clear();
 		if (playback) mixer.playback.swap(*playback);
 		else std::fill(mixer.playback.begin(), mixer.playback.end(), AudioPlayback{});
+		if (resources)
+			for (const auto index : resources->unavailable) mixer.playback.at(index).available = false;
 		looping = {};
 		events.fill({});
 		// Reset XL cadence on level/resource transitions without touching stock-only loads
@@ -747,6 +766,7 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 			voice.serial = std::uint64_t(integer(row[1], 1, std::int64_t(next - 1)));
 			voice.subframe = unsigned(integer(row[13], 0, slowdown - 1));
 			voice.sample = unsigned(integer(row[2], 0, std::int64_t(bank->sources.size() - 1)));
+			if (bank->unavailable.count(voice.sample)) throw std::runtime_error("Saved audio voice has no available PCM resource");
 			voice.owner = int(integer(row[4], -1, event_limit - 1));
 			voice.remaining = int(integer(row[5], -1, INT32_MAX));
 			voice.kind = static_cast<AudioOwnerKind>(integer(row[7], 0, 3));
@@ -841,7 +861,9 @@ nlohmann::json named_audio_diagnostics()
 	result["classic_replacements"] = bank ? nlohmann::json(bank->classic_replacements) : nlohmann::json::object();
 	std::set<std::string> named_files;
 	result["external_resources"] = nlohmann::json::object();
+	result["unavailable_ambient_output"] = nlohmann::json::array();
 	if (bank) {
+		for (const auto index : bank->unavailable) result["unavailable_ambient_output"].push_back(bank->names.at(index));
 		for (const auto &[key, action] : bank->actions) {
 			(void) key;
 			named_files.insert(bank->names.at(action.sample));

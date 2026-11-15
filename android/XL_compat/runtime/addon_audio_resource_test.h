@@ -59,6 +59,7 @@ static void addon_audio_resource_native_case(const std::filesystem::path &root, 
 		throw std::runtime_error("Addon audio accepted a missing, malformed or foreign resource");
 	};
 	failure("Missing XL sound");
+	require(!find_audio_resource("08:lightning.wav", Level_names[0], 1), "Absent optional sound produced resource bytes");
 	write_bytes(installed.string().c_str(), wave(1234));
 	const char *origin = PHYSFS_getRealDir(addon.c_str());
 	require(origin && xl_resource_owns_installation(origin) && !mission_owns_resource_directory(origin), "Addon audio did not select a distinct owned startup installation");

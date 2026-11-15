@@ -42,6 +42,10 @@ int main()
 
 		AudioVoices voices;
 		voices.playback.resize(bank.size());
+		voices.playback[0].available = false;
+		require(voices.start(0, 2, 3) == -1 && voices.next_serial == 1 && voices.cursor == 0 && voices.starts == 0 && voices.playback[0].failed == 1,
+		        "Unavailable output acquired a voice or advanced mixer allocation");
+		voices.playback[0] = {};
 		const int slot = voices.start(0, 2, 3);
 		require(slot == 0, "First voice slot was not available");
 		std::array<std::int16_t, 24> output{};

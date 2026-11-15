@@ -48,6 +48,8 @@ struct AudioVoice {
 
 struct AudioPlayback {
 	std::uint64_t attempts = 0, completed = 0, stopped = 0, failed = 0;
+	// Missing optional output retains a logical resource, never a fabricated PCM voice
+	bool available = true;
 };
 
 // The engine owns the immutable sample bank and excludes concurrent control

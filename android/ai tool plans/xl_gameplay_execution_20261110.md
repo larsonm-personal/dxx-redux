@@ -5500,3 +5500,65 @@ then chooses a bounded dependency fix and reserves hours 8-12 for CI/handoff.
 Full G2 is not automatically required for this two-second load/tick criterion.
 Detailed sequence and uncertainty are in xl_gameplay_next_window_20261113.md;
 the replacement kickoff preserves all publication, architecture and test rules.
+
+### First bounded readiness dependency (2026-11-14 UTC)
+
+The explicitly invoked 12-hour tranche started at 06:51 UTC after the requested
+49-minute delay. Fresh ordinary developer-OFF Linux headless CI configuration
+reproduced the pinned cohort's four zero-frame load failures: BoilingPoint and
+Sphere lack lightning.wav, Dinter lacks falling-rocks.wav, WShock20 lacks
+computer.wav. Baseline head d37a794c5204803c093cbd010a6e8ee711414bdb, controller
+bf40de9bc3b85c2279fe8163c621bb6c052dec12 and frozen cohort
+9dad21bd65ba05665ac6fe315f37fe7461e85725 are unchanged. Baseline engine SHA-256 is
+e6b33022a7311ffcc3c0a18d7241dc1b3eacb69fed0f581bed45bced6921f65f. Private failures
+remain under temp/xl-readiness-tranche-20261114/baseline; no receipt is replaced.
+
+The first patch preserves persistent ambient/effect sound owners when optional
+PCM is absent. It does not fabricate a silent wave or successful voice. Invalid
+payloads and foreign origins still reject, and named trigger/time-transition
+resources remain required. Missing and present 23/40 and 27/40 fixtures retain
+identical activation receipts and pass the actual-source owner comparisons.
+The original Android xsound HOG hash is unchanged; new cases use xambmiss.
+
+Final local full audio owners pass on Linux optimized Debug/assertions (92s) and
+Windows RelWithDebInfo (115.25s), with the unchanged 150-second master and child
+limits. Windows Debug runtime controls time out and remain FAIL, including with
+C++ optimization and checked iterators/assertions retained; its mixer contract
+passes. No timeout was relaxed. Ordinary Windows/Linux targets and the three-ABI
+Android APK build. Android named-audio passed 145 steps after the startup wait
+also required time_paused=false; seismic exposed the same graphics-pause race
+and now has the same wait condition. Final combined Android rerun is pending.
+
+The intermediate ordinary cohort remains 4/8. Subsequent actual barriers are
+slowdown.wav in BoilingPoint/WShock20, smokingfire in Sphere and the required
+falling-rocks.wav action in Dinter. This is dependency progress, not improved
+sampled qualification. Full G2 still rejects a corrupt trailer after energy
+changes 91 to 100; Android startup FX mismatch and missing camera addon remain
+open. Estimate: three tranches, range two to four, low confidence. The native
+sound WIP stash is untouched. See xl_readiness_tranche_20261114.md for the bounded
+plan, retained failures and validation boundaries.
+
+Execution resumed at 10:34 PST after an interruption; none of the old test
+handles or emulator remained live. No new feature work began. The final Android
+rerun had lost ADB during stock transition and is not a pass. Emulator recovery
+restored all 26 original files with exact before/after hashes, retaining the
+archive and failed state. New dated report, next plan and kickoff document the
+interruption, Windows Debug timeouts, missing final capture/replay qualification
+and unchanged 4/8 result. Publication and exact-head CI inspection follow.
+
+PR 497 is published non-draft on 494 and linked stack 471. Code head
+37276daac3630e8ef63780427992c7b998a9fb8d, merge candidate
+c065987496dfa4a00ad2ddabf83beee3887aeb0f. Current controller is
+72fdd76f5f8dc24a787b3a4858de1115ec091c19; readiness runner/catalog/verifier are
+unchanged. Private run 43627821931 attempt 1 is pending/running, not pass.
+Recovered Android full owner now passes 145 named-audio and 64 seismic steps;
+both original profiles restore exactly. Windows Debug runtime timeouts and
+missing final capture/clean-playback qualification remain open. Current-head CI
+and final documentation-push checks must not be confused with baseline greens.
+
+The corrected committed-readiness-02 receipt completed at exactly 4/8 on
+37276daac3630e8ef63780427992c7b998a9fb8d with the frozen cohort, ordinary target
+and unchanged 120-frame criterion. The first receipt's trailing-CR SHA metadata
+defect is retained separately. Android final run IDs are
+ff652cf7dc1f4279bd2c1ad1881ecc99 (145/145) and
+5dc4f8bec53646b29fe1d8f11593b122 (64/64); before/after profiles match.
