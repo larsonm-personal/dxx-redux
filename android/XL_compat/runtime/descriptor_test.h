@@ -353,6 +353,113 @@ static void descriptor_retained_dependency_controls()
 	std::cout << "Retained dependency definitions: weapons, powerups, animations, textures and sound mappings ignore previous live tables; invalid candidate rejects\n";
 }
 
+static void descriptor_incoming_live_controls(const std::filesystem::path &root, const char *outgoing = "d2")
+{
+	char error[256]{};
+	require(load_base_mission(outgoing, error, sizeof(error)), error);
+	new_player_config();
+	input_demo_set_skip_level_intro(1);
+	Difficulty_level = 2;
+	StartNewGame(1);
+	const bool expected_xl = std::strcmp(outgoing, "d2") != 0;
+	require(bool(xl_preview_pilot_active()) == expected_xl, "Live continuation started the wrong runtime profile");
+	require(!Player_is_dead && !Game_suspended && !cheats.enabled, "Incoming continuation requires ordinary live gameplay");
+	const auto directory = root / "preview-user";
+	const auto mods = directory / "mods/livetgt";
+	std::filesystem::create_directories(mods);
+	{
+		std::ofstream descriptor(directory / "livetgt.mn2");
+		descriptor << "d2x-name = Live target control\nnum_levels = 1\nd2leva-1.rl2\n";
+		require(bool(descriptor), "Cannot write live target descriptor");
+	}
+	const char *archive = PHYSFS_getRealDir("d2leva-1.rl2");
+	require(archive, "Cannot locate authentic live source archive");
+	std::filesystem::copy_file(archive, directory / "livetgt.hog", std::filesystem::copy_options::overwrite_existing);
+	{
+		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> ham(PHYSFS_openRead("descent2.ham"), PHYSFS_close);
+		write_bytes((mods / "livetgt.ham").string().c_str(), xl_retain_resource(ham.get()));
+	}
+	auto robot = Robot_info[0];
+	robot.mass += 17;
+	PHYSFS_file *hxm = PHYSFS_openWrite("mods/livetgt/livetgt.hxm");
+	require(hxm, "Cannot write live target HXM");
+	PHYSFS_writeSLE32(hxm, 0x21584d48);
+	PHYSFS_writeSLE32(hxm, 1);
+	PHYSFS_writeSLE32(hxm, 1);
+	PHYSFS_writeSLE32(hxm, 0);
+	require(robot_info_write_n(&robot, 1, hxm), "Cannot encode live target robot");
+	for (int section = 0; section < 4; ++section) PHYSFS_writeSLE32(hxm, 0);
+	require(PHYSFS_close(hxm), "Cannot close live target HXM");
+	int remainder = 0;
+	const auto advance = [&] {
+		for (int frame = 0; frame < 60; ++frame) {
+			remainder += F1_0;
+			FrameTime = remainder / 60;
+			remainder %= 60;
+			std::memset(&Controls, 0, sizeof(Controls));
+			Controls.forward_thrust_time = FrameTime;
+			Controls.fire_primary_state = 1;
+			calc_game_time();
+			GameProcessFrame();
+			require(!Player_is_dead, "Live incoming control lost its pilot");
+		}
+		std::memset(&Controls, 0, sizeof(Controls));
+	};
+	advance();
+	const auto snapshot = [] {
+		auto objects = nlohmann::json::object();
+		for (int slot = 0; slot < object_capacity(); ++slot)
+			if (Objects[slot].type != OBJ_NONE) objects[std::to_string(slot)] = input_demo_object_trace_snapshot(Objects[slot], slot);
+		uint32_t sim;
+		require(d_rand_get_state(&sim), "Cannot observe live continuation SIM state");
+		return nlohmann::json{ { "world", input_demo_world_trace_snapshot() }, { "pool", input_demo_object_pool_trace_snapshot() }, { "objects", objects }, { "sim_state", sim }, { "sim_calls", d_rand_get_call_count() } };
+	};
+	const auto before = snapshot();
+	const auto definitions = gameplay_definitions();
+	const auto live = Current_mission;
+	auto *target = mission_prepare_from_current_dir("livetgt.mn2");
+	require(target, "Cannot prepare live incoming descriptor");
+	struct Release {
+		mission_preparation **target;
+		~Release()
+		{
+			mission_discard_prepared(target);
+		}
+	} release{ &target };
+	{
+		auto incoming = XlPreparedResources::prepare_mission(target);
+		incoming->prepare_banks("groupa.256");
+		require(incoming->dependencies().robot_count == N_robot_types && incoming->dependencies().robot_data[0].mass == robot.mass &&
+		            Robot_info[0].mass != robot.mass,
+		        "Live target did not retain different equal-count definitions");
+		XlPreparedResources moved(std::move(*incoming));
+		incoming.reset();
+		moved.dependencies().weapon(CONCUSSION_ID);
+		moved.dependencies().texture(0);
+		write_bytes((mods / "livetgt.ham").string().c_str(), { 'b', 'a', 'd' });
+		bool rejected = false;
+		try {
+			auto invalid = XlPreparedResources::prepare_mission(target);
+		} catch (const std::runtime_error &) {
+			rejected = true;
+		}
+		require(rejected && moved.dependencies().robot_data[0].mass == robot.mass && Current_mission == live &&
+		            definitions == gameplay_definitions() && snapshot() == before,
+		        "Incoming preparation, move or malformed retry changed running world, objects, XL state or SIM RNG");
+	}
+	require(mission_discard_prepared(&target), "Live incoming descriptor still has busy leases");
+	require(Current_mission == live && definitions == gameplay_definitions() && snapshot() == before,
+	        "Discarding incoming resources changed the running game");
+	const auto time = GameTime64;
+	const auto energy = Players[Player_num].energy;
+	const auto position = ConsoleObject->pos;
+	advance();
+	require(GameTime64 > time && Players[Player_num].energy < energy && vm_vec_dist(&position, &ConsoleObject->pos) > F1_0,
+	        "Outgoing game did not continue movement and firing after incoming discard");
+	std::cout << "Incoming live outgoing profile=" << outgoing << " XL=" << expected_xl << '\n';
+	std::cout << "Incoming live continuation: equal-count target, move, malformed retry and discard preserve detailed state; 120 ordinary movement/fire frames passed\n";
+}
+
 static int descriptor_test(int argc, char **argv)
 {
 	std::setvbuf(stdout, nullptr, _IONBF, 0);
@@ -367,6 +474,10 @@ static int descriptor_test(int argc, char **argv)
 		descriptor_prepared_ham_controls(std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")));
 		// Supplemental assertions-enabled selection; canonical Observatory always continues
 		if (!std::strcmp(find_arg_value(argc, argv, "-descriptor-test"), "ham-prepare")) return 0;
+		if (!std::strcmp(find_arg_value(argc, argv, "-descriptor-test"), "incoming-live")) {
+			descriptor_incoming_live_controls(std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")));
+			return 0;
+		}
 		const auto stock_definitions = gameplay_definitions();
 		const auto stock_model = arena_model();
 		const int stock_segments = Num_segments;
@@ -731,6 +842,8 @@ static int descriptor_test(int argc, char **argv)
 		asset_mount_test(argc, argv);
 		format17_layout_test(original_17, find_arg_value(argc, argv, "-extra-dir"));
 		no_damage_persistence_test(original_17);
+		descriptor_incoming_live_controls(std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")));
+		descriptor_incoming_live_controls(std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")), "obsrv-xl");
 		return 0;
 	} catch (const std::exception &e) {
 		std::fprintf(stderr, "XL descriptor FAIL: %s\n", e.what());

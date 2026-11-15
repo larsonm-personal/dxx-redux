@@ -4687,3 +4687,32 @@ exits normally. Detailed trace comparison is underway. Linux reports an
 untracked-free diagnostic at shutdown; its backtrace is being investigated, so
 this checkpoint does not claim clean memory diagnostics. No timeout, assertion,
 authentic source or required owner was weakened.
+
+### Actual outgoing gameplay during incoming preparation
+
+PR [477](https://github.com/larsonm-personal/dxx-redux/pull/477), head
+`5f6ed98e738564a6945f0a984d9dfda370e8c294`, publishes owned dependency banks above
+PR 476. Its public/private qualification is in progress; sampled readiness keeps
+its separate known failure.
+
+The canonical Observatory owner now starts real stock and original Observatory
+XL games, advances 60 ordinary forward/fire frames, then prepares a different
+same-count target HAM/HXM with owned banks. Move, malformed source retry and
+discard preserve the detailed world/XL observation, object pool, every live
+object, SIM state/draw count, mission identity and definition tables. Another
+60 ordinary frames must advance time, move the pilot and consume firing energy.
+No position assist, invulnerability or combat suspension is introduced. This is
+actual outgoing continuation, not a static reload comparison or proof of mission
+completion. Successful retained incoming publication remains covered separately
+by the HAM/HXM/VHAM and explicit-source controls.
+
+Windows runtime and Linux Debug canonical Observatory owners pass both outgoing
+profiles, including the existing pinned reference comparisons. Receipts:
+`observatory-live-windows-01.log` and `observatory-live-linux-01.log` under the
+tranche scratch root. The focused stock controls also pass. Existing deadlines
+and canonical membership remain intact; scoped quality and diff checks pass.
+
+Next: prepare POG animation/HUD decisions from target tables and allocate native
+replacement storage before publication, then finish target level source context.
+Whole-world late-restore rejection and final ordinary/Android qualification
+remain open. The 15-hour run remains active.
