@@ -55,11 +55,17 @@ struct RenderModelSphere;
 
 // Own the definitions used by both companion and level dependency checks
 class XlPreparedHam;
+struct mission_preparation;
 class XlPreparedResources
 {
   public:
 	explicit XlPreparedResources(const char *level_filename, const xl_compat::Inventory *level = nullptr, int ordinal = 0);
 	explicit XlPreparedResources(XlPreparedHam incoming);
+	// NULL uses the already selected mission; non-NULL never consults its identity
+	static std::unique_ptr<XlPreparedResources> prepare_mission(mission_preparation *mission);
+	const std::map<std::string, std::string> &sources() const;
+	XlPreparedResources(XlPreparedResources &&) noexcept;
+	XlPreparedResources &operator=(XlPreparedResources &&) noexcept;
 	~XlPreparedResources();
 	xl_assets::ObjectDependencies &dependencies();
 	std::string prepare_hxm(PHYSFS_file *file);

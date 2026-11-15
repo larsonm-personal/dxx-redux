@@ -60,6 +60,108 @@ static std::vector<unsigned char> mod_render_definitions()
 	return result;
 }
 
+static void mod_incoming_source_controls(const std::filesystem::path &root)
+{
+	const auto live = Current_mission;
+	const auto lookup = [] {
+		std::vector<std::string> paths;
+		char **search = PHYSFS_getSearchPath();
+		for (char **entry = search; entry && *entry; ++entry) paths.emplace_back(*entry);
+		PHYSFS_freeList(search);
+		return paths;
+	};
+	const auto lookup_before = lookup();
+	const auto before = gameplay_definitions(), render_before = mod_render_definitions();
+	const auto sources_before = xl_resource_mod_sources();
+	const auto outgoing_model = xl_owned_oof_model(17);
+	const auto original_model = xl_owned_oof_model(171);
+	require(outgoing_model && original_model, "Missing outgoing Pumo models for origin control");
+	uint32_t rng;
+	d_rand_get_state(&rng);
+	const auto calls = d_rand_get_call_count();
+	const auto directory = root / "incoming-owner";
+	const auto mods = directory / "Mods/PMines";
+	std::filesystem::create_directories(mods / "models");
+	{
+		std::ofstream descriptor(directory / "pmines.mn2");
+		descriptor << "d2x-name = Incoming owner control\nnum_levels = 1\n"
+		           << Level_names[0] << "\n";
+		require(bool(descriptor), "Cannot write independent target descriptor");
+	}
+	std::filesystem::copy_file(mission_resource_archive(), directory / "pmines.hog", std::filesystem::copy_options::overwrite_existing);
+	for (const char *extension : { ".ham", ".vham" })
+		std::filesystem::copy_file(root / "mods/pmines" / (std::string("pmines") + extension),
+		                           mods / (std::string("pmines") + extension), std::filesystem::copy_options::overwrite_existing);
+	std::filesystem::copy_file(root / original_model->path, mods / "models/model171.oof", std::filesystem::copy_options::overwrite_existing);
+	for (auto texture : original_model->model.textures) {
+		if (texture.size() < 4 || texture.substr(texture.size() - 4) != ".tga") texture += ".tga";
+		std::filesystem::copy_file(root / "mods/pmines/models" / texture, mods / "models" / texture,
+		                           std::filesystem::copy_options::overwrite_existing);
+	}
+	auto robot = Robot_info[0];
+	robot.mass += 17;
+	PHYSFS_file *hxm = PHYSFS_openWrite("incoming-owner.hxm");
+	require(hxm, "Cannot write target-origin HXM control");
+	PHYSFS_writeSLE32(hxm, 0x21584d48);
+	PHYSFS_writeSLE32(hxm, 1);
+	PHYSFS_writeSLE32(hxm, 1);
+	PHYSFS_writeSLE32(hxm, 0);
+	require(robot_info_write_n(&robot, 1, hxm), "Cannot encode target-origin robot");
+	for (int section = 0; section < 4; ++section) PHYSFS_writeSLE32(hxm, 0);
+	require(PHYSFS_close(hxm), "Cannot close target-origin HXM");
+	std::filesystem::copy_file(root / "preview-user/incoming-owner.hxm", mods / "pmines.hxm", std::filesystem::copy_options::overwrite_existing);
+	const auto physical = std::filesystem::absolute(directory).string();
+	require(PHYSFS_mount(physical.c_str(), "__incoming_owner_test", 1), "Cannot mount independent descriptor directory");
+	auto *mission = mission_prepare_from_current_dir("__incoming_owner_test/pmines.mn2");
+	require(mission, "Cannot retain independent target descriptor");
+	struct Release {
+		mission_preparation **mission;
+		const std::string &directory;
+		bool mounted = true;
+		~Release()
+		{
+			mission_discard_prepared(mission);
+			if (mounted) PHYSFS_unmount(directory.c_str());
+		}
+	} release{ &mission, physical };
+	require(PHYSFS_unmount(physical.c_str()), "Cannot remove descriptor-only mount before target preparation");
+	release.mounted = false;
+	{
+		auto discarded = XlPreparedResources::prepare_mission(mission);
+		require(discarded->dependencies().robot_data[0].mass == robot.mass, "Target HXM resolved the outgoing source");
+	}
+	auto prepared = XlPreparedResources::prepare_mission(mission);
+	require(prepared->dependencies().robot_count == N_robot_types &&
+	            prepared->dependencies().weapon_count == N_weapon_types &&
+	            prepared->dependencies().robot_data[0].mass == robot.mass &&
+	            prepared->sources().at("mods/pmines/pmines.hxm") != sources_before.at("mods/pmines/pmines.hxm") &&
+	            prepared->sources().count("mods/pmines/models/model171.oof") &&
+	            !prepared->sources().count("mods/pmines/models/model17.ase"),
+	        "Equal-count incoming resources borrowed outgoing definitions, origins or optional models");
+	XlPreparedResources moved(std::move(*prepared));
+	prepared.reset();
+	require(mission_discard_prepared(&mission), "Incoming descriptor retained a busy source");
+	require(!PHYSFS_getMountPoint(physical.c_str()), "Incoming resources recreated the descriptor mount");
+	uint32_t after_rng;
+	d_rand_get_state(&after_rng);
+	require(Current_mission == live && gameplay_definitions() == before && mod_render_definitions() == render_before &&
+	            xl_resource_mod_sources() == sources_before && xl_owned_oof_model(17) == outgoing_model &&
+	            after_rng == rng && d_rand_get_call_count() == calls && lookup() == lookup_before,
+	        "Incoming preparation/discard/move changed outgoing definitions, identity or SIM state");
+	for (const char *name : { "pmines.ham", "pmines.hxm", "pmines.vham", "models/model171.oof" })
+		write_bytes((mods / name).string().c_str(), xl_compat::Bytes{ 'b', 'a', 'd' });
+	moved.install_hxm();
+	require(Robot_info[0].mass == robot.mass && !xl_owned_oof_model(17) && xl_owned_oof_model(171) &&
+	            xl_resource_mod_sources() == moved.sources(),
+	        "Moved incoming publication reread source or retained the outgoing model set");
+	char error[256]{};
+	require(load_base_mission("pmines", error, sizeof(error)), error);
+	require(gameplay_definitions() == before && mod_render_definitions() == render_before &&
+	            xl_resource_mod_sources() == sources_before,
+	        "Outgoing mission did not continue after bounded incoming publication");
+	std::cout << "Incoming target origins: equal-count HAM/HXM/VHAM, model isolation, discard, move and retained publication passed\n";
+}
+
 static int mod_data_test(int argc, char **argv)
 {
 	try {
@@ -161,6 +263,7 @@ static int mod_data_test(int argc, char **argv)
 		std::cout << "Retained incoming VHAM: source replacement, failed retry and native publication passed\n";
 
 		require(load_base_mission("pmines", error, sizeof(error)), error);
+		mod_incoming_source_controls(root);
 		{
 			const auto installed_ship = xl_owned_oof_model(108);
 			for (int ordinal = 1; ordinal <= Last_level; ++ordinal) {

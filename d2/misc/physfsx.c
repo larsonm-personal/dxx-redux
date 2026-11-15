@@ -308,8 +308,21 @@ int PHYSFSX_getRealPath(const char *stdPath, char *realPath)
 		if (!realDir)
 			return 0;
 	}
+	else
+	{
+		/* Virtual mount prefixes are not components of the physical source path */
+		const char *mount = PHYSFS_getMountPoint(realDir);
+		const char *relative = stdPath;
+		while (*relative == '/') relative++;
+		if (mount) {
+			while (*mount == '/') mount++;
+			if (*mount && !strncmp(relative, mount, strlen(mount)))
+				stdPath = relative + strlen(mount);
+		}
+	}
 	
 	strncpy(realPath, realDir, PATH_MAX - 1);
+	realPath[PATH_MAX - 1] = 0;
 	if (strlen(realPath) >= strlen(sep))
 	{
 		p = realPath + strlen(realPath) - strlen(sep);
