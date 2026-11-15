@@ -486,11 +486,28 @@ differ between desktop defaults and Android launcher settings. Startup and order
 settings playback apply the recorded value through its native setter. An absent
 field leaves the current preference unchanged; existing fixtures are not rewritten.
 
-XL world observations use schema 19 and require `xl_player_cfg`, `xl_births` and `xl_native`
+XL world observations use schema 20 and require `xl_player_cfg`, `xl_births` and `xl_native`
 at restored, per-frame and terminal boundaries. Birth observations contain every
 live slot/signature, birth time, creation order and the next creation counter;
 the reader checks live object identities at both boundaries and validates the
 times, orders and bounds on every frame. Stock world schema 10 is unchanged.
+Schema 20 records the complete Guide-Bot metadata owner as a separate `xl_metadata`
+delta section and the complete AI path pool as `ai_paths`. Reset and restore/terminal boundaries include both in full. On later
+frames, an omitted section means exact reuse of the preceding observation; any
+byte change in the complete pointer-free native snapshot emits the full section.
+The snapshot includes every fixed workspace, not just active counts. Padding can
+cause an extra observation but cannot hide a changed field. This avoids rebuilding
+and serializing a large unchanged JSON tree when unrelated native clocks change.
+The existing `segments` section is complete at reset and restore/terminal
+boundaries. Later `segment_updates` map canonical segment indices to complete
+changed rows, using complete native-storage comparisons before building JSON.
+The reader rejects missing baselines, out-of-range indices, malformed rows and
+mixed full/delta owners, and reconstructs every segment before validation.
+Automap state is observed independently every frame.
+The reader reconstructs `xl_native.metadata` and `ai.paths` before applying every existing field
+and capacity check. It also accepts retained schema-19 receipts for comparison,
+rejects version changes within a trace, and rejects missing or mixed native
+owners. The original wire records remain intact; no per-frame state is discarded.
 The native extension observes Omega and afterburner charge, the 16-bit wiggle
 phase, every object-slot afterburner clock, all eight guided-missile pointer/slot
 and signature associations, and the actual XL seismic

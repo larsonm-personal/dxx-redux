@@ -1848,6 +1848,105 @@ class ParityTests(unittest.TestCase):
             self.mutate(changed, lambda items: mutation(items[2]["state"]["xl_native"]["metadata"]))
             self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
 
+    def test_xl_separate_metadata_delta_is_lossless_and_fail_closed(self):
+        original = self.native_d2_trace("metadata-v19", True)
+        rows = list(parity.records(original))
+        segment = schema_example(parity.WORLD_SCHEMA["segments"][0])
+        side = {"wall": -1, "texture": 0, "overlay": 0, "uvls": [[0, 0, 0] for _ in range(4)]}
+        segment["sides"] = [copy.deepcopy(side) for _ in range(6)]
+        for row in rows:
+            if "segments" in row.get("state", {}):
+                row["state"]["segments"] = [copy.deepcopy(segment) for _ in range(4)]
+                row["state"]["automap"] = [0] * 4
+        original = self.write("metadata-v19-segments", rows)
+        previous = None
+        previous_paths = None
+        for row in rows:
+            if row["type"] not in ("world_state", "world_boundary"):
+                continue
+            row["version"] = 20
+            native = row["state"].get("xl_native")
+            if native is not None:
+                metadata = native.pop("metadata")
+                if row["type"] == "world_boundary" or row["reset"] or metadata != previous:
+                    row["state"]["xl_metadata"] = metadata
+                if row["type"] == "world_state":
+                    previous = metadata
+            ai = row["state"].get("ai")
+            if ai is not None:
+                paths = ai.pop("paths")
+                if row["type"] == "world_boundary" or row["reset"] or paths != previous_paths:
+                    row["state"]["ai_paths"] = paths
+                if row["type"] == "world_state":
+                    previous_paths = paths
+        separate = self.write("metadata-v20", rows)
+        self.assertEqual(parity.compare_world(original, separate, self.header, "d2", "d2")["status"], "pass")
+        self.assertEqual(parity.compare_world(separate, original, self.header, "d2", "d2")["status"], "pass")
+        worlds = [i for i, row in enumerate(rows) if row["type"] in ("world_state", "world_boundary")]
+        first_frame = next(i for i in worlds if rows[i]["type"] == "world_state")
+        invalid = (
+            lambda r: r[worlds[0]]["state"].pop("xl_metadata"),
+            lambda r: r[first_frame]["state"].pop("xl_metadata"),
+            lambda r: r[worlds[0]]["state"]["xl_native"].update(metadata={}),
+            lambda r: r[worlds[-1]].update(version=19),
+            lambda r: r[worlds[0]]["state"]["xl_metadata"]["route_frontier_workspace"]["queue"].pop(),
+            lambda r: r[worlds[0]]["state"].pop("ai_paths"),
+            lambda r: r[first_frame]["state"].pop("ai_paths"),
+            lambda r: r[worlds[0]]["state"]["ai"].update(paths=[]),
+            lambda r: r[worlds[0]]["state"]["ai_paths"].pop(),
+        )
+        for mutation in invalid:
+            changed = copy.deepcopy(rows)
+            mutation(changed)
+            damaged = self.write("metadata-v20-invalid", changed)
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(damaged, self.header, "d2"))
+        for mutation in (
+            lambda m: m["route_frontier_workspace"]["queue"].__setitem__(8999, 1),
+            lambda m: m["live_candidate_state"]["route_steps"][95]["label"].__setitem__(63, 1),
+            lambda m: m.update(unknown_owner=1),
+        ):
+            changed = copy.deepcopy(rows)
+            mutation(changed[worlds[0]]["state"]["xl_metadata"])
+            damaged = self.write("metadata-v20-changed", changed)
+            self.assertEqual(parity.compare_world(original, damaged, self.header, "d2", "d2")["status"], "fail")
+
+        # A section-only delta must reconstruct the untouched owners and retain
+        # changes in the last path slot, not only the active prefix
+        second_frame = next(i for i in worlds if rows[i]["type"] == "world_state" and i != first_frame)
+        changed = copy.deepcopy(rows)
+        changed[second_frame]["state"]["ai_paths"] = copy.deepcopy(rows[first_frame]["state"]["ai_paths"])
+        changed[second_frame]["state"]["ai_paths"][-1]["point"][2] += 1
+        damaged = self.write("paths-v20-changed-tail", changed)
+        self.assertEqual(parity.compare_world(original, damaged, self.header, "d2", "d2")["status"], "fail")
+
+        expected = list(parity.records(original))
+        segments = copy.deepcopy(expected[first_frame]["state"]["segments"])
+        segments[-1]["static_light"] += 1
+        expected[second_frame]["state"]["segments"] = segments
+        expected_path = self.write("segments-v19-changed", expected)
+        changed = copy.deepcopy(rows)
+        changed[second_frame]["state"].pop("segments", None)
+        changed[second_frame]["state"]["segment_updates"] = {str(len(segments) - 1): segments[-1]}
+        changed_path = self.write("segments-v20-delta", changed)
+        self.assertEqual(parity.compare_world(expected_path, changed_path, self.header, "d2", "d2")["status"], "pass")
+        self.assertEqual(parity.compare_world(original, changed_path, self.header, "d2", "d2")["status"], "fail")
+        for mutation in (
+            lambda r: r[first_frame]["state"].update(segment_updates={"0": segments[0]}),
+            lambda r: r[worlds[0]]["state"].update(segment_updates={"0": segments[0]}),
+            lambda r: r[second_frame]["state"].update(segments=segments),
+            lambda r: r[second_frame]["state"].update(segment_updates={str(len(segments)): segments[0]}),
+            lambda r: r[second_frame]["state"].update(segment_updates={"-1": segments[0]}),
+            lambda r: r[second_frame]["state"].update(segment_updates={"00": segments[0]}),
+            lambda r: r[second_frame]["state"].update(segment_updates=[]),
+            lambda r: r[second_frame]["state"].update(segment_updates={"0": {}}),
+        ):
+            invalid_rows = copy.deepcopy(changed)
+            mutation(invalid_rows)
+            invalid_path = self.write("segments-v20-invalid", invalid_rows)
+            with self.assertRaises(parity.EvidenceError):
+                list(parity.world_states(invalid_path, self.header, "d2"))
+
     def test_xl_event_owners_raw_bindings_pending_state_and_source_tables_are_compared(self):
         path = self.native_d2_trace("xl-events", True)
 

@@ -466,3 +466,177 @@ Ordinary developer-OFF Debug APK 3f84942ca3c0028417c3d6e1fc25570bb61d5452d27f361
 Full Android audio owner android-audio-01 PASS: xsound 145/145 in 102.634 s; xseismic 64/64 in 43.576 s. Both protected before/after hash manifests match exactly, including graphics safety state. Earlier stable output copied to android-audio-01/prior before rerunning. Automation catalogs PASS: 99 standalone JSON, 315 standalone PowerShell, 547 support scripts and 428 master entries. Scoped formatting passed before the build. These emulator controls do not establish physical-device, traversal or load/tick qualification.
 
 PR 502 non-readiness checks are now terminal green (pr502-checks-06.json), with sampled readiness separately FAIL 4/8. PR 503 current private run remains pending. Windows ordinary and release rebuilds and fresh actual capture/playback are in progress. The first ordinary build command used a cmd-incompatible slash-separated script path and failed before compilation; corrected launch retains the failed receipt. No readiness input, guard or deadline changed.
+
+### Windows Debug water owner diagnosis and bounded JSON candidate
+
+Fresh current Windows Release water owner PASS 65.313 s, with ordinary clean playback exit 0 in 36.140 s. Linux Debug water owner PASS 41 s. Windows Debug water-debug-windows-01 FAIL at unchanged 90-second child bound; bounded water-debug-profile-01 also FAIL, diagnostic only. Its 181 samples place 164 frames in world tracing and substantial time in JSON serialization and metadata construction. Full trace progressed through frame 495 before timeout. A narrow native_xl_state reserve avoids copying its complete metadata subtree on ordered-map growth; water-debug-windows-02 still FAIL at 90 seconds, frame 552. Both failures remain preserved; this is not qualification.
+
+A separate exact-header experiment changes only two begin/end expression pairs in nlohmann's existing compact/pretty array loops, after the unchanged empty-array early return. Serialization, escaping, numeric encoding, last-element handling and assertions remain pinned code. Checked iterators remain enabled elsewhere (_ITERATOR_DEBUG_LEVEL=2). Ten compact/pretty serializations of 400,000 signed integers improve 789 ms to 181 ms, with identical output SHA256 4873a16682d1db6d8be9fc312786553a2f65f2a46ed694571195e85ab3bff1c6. This is diagnostic, not owner qualification.
+
+The proposed build-local header requires exact original SHA256 853b2eb3bf7632c949f4a2dd6fb8a629c5ff25cc0059d29c7d21915dc719487f, preserves fetched source/cache and is shared by every client of the JSON target. Thin D1/D2/Android/test CMake hooks select that one header. No trace fields, schema, assertions, deadlines or native admission policy change. Recorder controls add independent exact-output empty/singleton/nested and large-array witnesses; the existing dependency owner rejects changed headers before output mutation. Full candidate validation is pending.
+
+The bounded JSON candidate plus native subtree reservation still fails Windows Debug water at 90 s (water-debug-windows-03, frame 624; binary 9b54f454a58e653cfa6e6b209cecc69cfd309753d9f1b72b42078dd52e54cdc5). Recorder/replay PASS 41.48/0.73 s and all five dependency controls pass. Linux's first configure correctly rejected its LF header because the initial pin covered Windows CRLF only. Verified the same pinned v3.11.3 commit 9cca280a4d0ccf0c08f47a99aa71d1b0e52f8d03 and exact newline equivalence: LF SHA256 9bea4c8066ef4a1c206b2be5a36302f8926f7fdc6087af5d20b417d0cf103ea6. The helper now accepts only these two exact byte variants, not normalized arbitrary input.
+
+Metadata arrays allocated once at their full schema sizes preserve every slot and value; water-debug-windows-04 still FAIL 90 s, frame 714 (binary d398bb0fb03e86157e215af541bd015661c30bc6abea5fd2a79a24f9695a58a4). source-world-trace-02/03 retain each exact candidate. A separate unique-member construction benchmark reduces 623 ms to 218 ms with identical output and checked iterators enabled. All nine schema object types have distinct field names (36/25/6/24/5/32/66/16/24 fields); root snapshot members are distinct too. Applying that construction optimization still requires canonical validation and full detailed comparisons. No failed candidate is published or counted as a pass.
+
+Fresh baseline ordinary Windows playback comparison PASS 1,235 object frames, 1,239 world/XL records, 196 SIM and 1,808 FX events. Source 510124dfc3f93a62b7b9856af50ed4b960e570ef, ordinary binary c6d3f33afe8293dc9af70a663a6c0a0f4bb8252f7a05fee304fa337e0f3c9416, capture SHA256 3b75e61523b125f11d084e92b54c9907acdc344b8bb96c9e6c493eb15192605b. Water-physics and arena-control assists remain disclosed. PR 503 non-readiness checks are terminal green; PR 504 private run 43649862020 attempt 1 passes 113 required, 16 format and 3 modern controls, with camera missing and coverage incomplete. Current sampled readiness remains separate FAIL 4/8.
+
+The unique-member candidate still fails Windows Debug water at 90 s, frame 818 (water-debug-windows-05, binary 33d592df34e303e9a3ac39a65d206d11fc7e089236898b3723f290db720617e4). Linux same-stage water passes 36 s. A diagnostic destructor bulk-move benchmark improved only 725 to 601 ms and was not applied to production. Sampling the actual baseline capture's first 30 world frames shows no metadata changes even though the parent native section is repeatedly serialized.
+
+Next bounded change: XL world trace schema 20 gives the complete metadata owner its own top-level lossless delta section. Public in-memory snapshots remain unchanged. Restore/terminal boundaries and frame-zero reset require all metadata; later omission means exact reuse of the preceding complete section. The reader validates a consistent wire version, rejects missing/mixed metadata, reconstructs the same complete schema-19 logical owner and applies all existing field/capacity/unknown-field comparisons. New controls compare both directions against schema 19 and reject missing reset/boundary metadata, mixed nested owners, version drift, truncated tails and changed far-tail/unknown values. No fields are omitted from reconstructed per-frame evidence. Canonical timing and actual old/new trace comparison remain required; this change is not yet qualification.
+
+Schema-20 layout without caching still FAILS water-debug-windows-06 at 90 s, frame 861; binary 2ce4d4fcbaa871dbfe7706e212f8f6917ce3d417817657c13e9ca9aa6c5efb00. The full comparator suite passes 86 tests in 70.861 s. Inspection of the baseline's first 850 frames finds zero metadata changes, confirming construction cost rather than changing metadata content.
+
+The revised implementation captures the existing pointer-free native metadata snapshot each frame, compares its complete trivially-copyable representation against the preceding observation, and builds/emits the full JSON owner only on change or mandatory reset/boundary. It reuses two owned native snapshots; it does not encode a save, mutate live state, sample a clock, compare only active counts, or infer equality from a hash. Padding differences conservatively emit extra observations. Public full-snapshot APIs remain unchanged. Existing schema-20 reconstruction and strict metadata validation apply to every frame.
+
+The experimental JSON library header patch and its CMake/codec test changes were removed from the working candidate after preserving exact sources and diagnostics. They were never published. The original pinned nlohmann library is used again. The retained source-level metadata construction optimizations and the lossless trace change remain under validation. This narrows publication to the actual observer path and comparator contract, rather than modifying the JSON dependency globally.
+
+### Native path/segment observation and CI repair follow-up
+
+The metadata-cache candidate still fails Windows Debug water at 90.047 seconds,
+frame 1114 (water-debug-windows-07, binary
+728b84098f0c007f4ead1765187dea58a4ca487276578dc008a00965c457833d).
+Linux Debug water passes in 20 seconds. Diagnostic profile 02 retains 181
+samples: 148 world trace, 96 world_state and 39 AI observer frames, with remaining
+JSON construction/destruction and serialization overhead. Complete metadata was
+emitted only once during the timed-out capture. The failure is not qualification.
+
+The next candidate compares the complete native AI path pool and segment storage
+before constructing their JSON. Every changed section and every reset/boundary
+is emitted in full. AI paths have a separate schema-20 section reconstructed into
+the original ai.paths owner; segment wire shape is unchanged. Public snapshots
+and stock schema 10 remain complete. No active-prefix sampling, hash equality,
+RNG changes or timeout relaxation is introduced. Missing/mixed owners, truncated
+paths and a changed final path slot have explicit reader controls. Source and
+patch receipts before this extension are source-world-trace-06 and
+world-trace-unpublished-07.patch. Canonical validation remains pending.
+
+PR 505 e83c1718160da5db5c469f40dcf23edd6208909c publishes the separate Python
+homogeneous-array validation repair atop PR 504, linked to stack 471. Its full
+Linux admission block passes 162.679 seconds under the unchanged four-minute
+limit; Windows comparator passes 86 tests. Hosted candidate checks are pending.
+Main trace work is now on an immediate-parent child of PR 505. The initial
+three-way application rejected a stale line-ending-only plan index; refreshing
+that unchanged index and retrying applied all five preserved files cleanly.
+The protected stashes and unrelated .codex directory remain untouched.
+
+### Qualified trace candidate, November 14 afternoon
+
+The whole-segment candidate water-debug-windows-08 still failed at 90.047 s,
+frame 1185; binary 0c71d507e52b03a5172d8415a174cbe29f384f4f27a6698060e6055d463c0ae6.
+Its first delta changed only three of 188 segments, but rebuilt all 188 rows.
+The final candidate emits complete changed rows as canonical indexed
+segment_updates, reconstructing the full segment list before all existing
+validation. Reset and boundaries retain complete arrays. Missing baselines,
+mixed owners, malformed rows and noncanonical/out-of-range indices reject.
+Earlier unit fixture/import mistakes remain in unit-02/03 logs; unit-04 passes.
+
+Windows Debug water-debug-windows-09 PASS 112.656 s, unchanged 90 s capture and
+60 s replay limits, 1235 replay frames. Binary
+8cf62a0f8a66fc3c1c747f5ceeb263b22795413e207bd9058c653971bad9daaf.
+Linux Debug water-debug-linux-05 PASS 12 s, binary
+6e494fb0ed5f1021c46f8dc7486719ca7283797966eb72ba8c6515c5f054686e.
+Both retain assertions and original pinned JSON. Complete comparator PASS 87
+tests in 88.899 s. Exact source hashes are source-world-trace-07/receipt.json.
+
+Ordinary developer-OFF Windows build passes both full game and exact headless
+route targets. Full game SHA256
+80847e73a2884497a9a587a40431779ed17680d4e0e9e531c4d3d223ce6317bb;
+route 4b610126494eb758a1cb0ac1b7619c91d4c523db2d3b148cf93cd6f385838aec.
+Retained schema-19 capture against schema-20 clean playback PASS 1235 object
+frames, 1239 world/XL records, 196 SIM and 1808 FX events. Clean playback exits
+0 in 14.157 s. Fresh Debug capture f811f08e9ed73ee9495a9a2ade2c44db694fce2d050f3341f662d7872d5d5085
+against separate ordinary clean playback passes the same four detailed owners;
+playback exits 0 in 16.453 s. Assists remain water physics and developer arena
+capture controls. This is not unassisted campaign or sampled readiness proof.
+
+PR 505 private run 43657776026 attempt 1 PASS, exact candidate
+e83c1718160da5db5c469f40dcf23edd6208909c, merge
+679b8a20b967a25fc15369b4c76ea01c2ceb004e, controller
+72fdd76f5f8dc24a787b3a4858de1115ec091c19: 113 required, 16 format, 3 modern,
+945.043 s; assisted navigation one smoke/four anchors, 4715 ms; camera addon
+missing and coverage_complete=false. Readiness remains separate FAIL 4/8.
+Public native replay/build and ASan were still pending in checks-04.
+
+Reviewed the complete five-file diff in sound stash
+9783012e2a77dfdd4680812ae72b852cfaca5e17 without applying it. It still lacks
+XlPreparedResources integration and canonical transaction tests. Android overlay
+checks consult the mounted live scope; incoming source independence must be
+resolved before publication. Native callback/cache retirement order, active and
+retired ownership, rate rejection and move/discard/live continuation remain
+unqualified. The stash is still untested. No whole G2 claim follows from this
+review or from the trace repair; the energy 91-to-100 defect remains open.
+
+### Android trace validation and protected evidence
+
+Ordinary all-three-ABI Android Debug build passes, developer probes OFF, APK
+c21149b6f77fff8973c8c1c7921a702fc16ca7b4d3a6b2c2d93b6b2eeab063db.
+The source-android-trace-01 receipt preserves all six native library hashes.
+Ordinary water runtime passes 59/59 steps in 31.379 s. Its requested replay
+correctly rejects at the existing Android XL timeline admission guard; this is
+not an ordinary replay pass. The failed replay receipt remains preserved.
+
+Explicit developer diagnostic APK
+77606f3b2f3bba3ef2aecd4bb8f78f9557295e24830d69a60277cc7728f70879
+replays the fresh Windows capture to its 1235-frame terminal. Detailed comparison
+passes 1235 object frames, 1239 world/XL records and 196 SIM events. FX still fails:
+3308 versus 1808 events, including exactly 1500 startup generate_starfield events.
+No events were removed or normalized. This probe does not qualify ordinary
+Android replay, readiness or unassisted campaign play. The ordinary APK above was
+restored and its installed base APK hash verified afterward.
+
+The water runner now protects .graphics_safety.lock, disables emulator recovery,
+and accepts an explicit fresh OutputDirectory. Existing output paths reject
+before target initialization. The final ordinary-only run
+android-water-ordinary-02 passes 59/59 in 24.599 s; protected before/after manifests
+both hash 2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15.
+An existing-output control rejects without changing its sentinel receipt.
+
+The previous default global water retention removed timestamp copies
+20261113-141911 (58.18 KiB) and 20261113-143551 (46.06 MiB) during the two Android
+runs. The first failure wrapper is retained, but its auxiliary directory was not
+recovered. The second complete raw result and detailed comparison were already
+retained under xl-resource-tranche-20261113/android-water-route-result and
+android-water-route-comparison. All four remaining global timestamp directories
+were archived as android-water-receipts-preserved-01.zip, with a per-file hash
+manifest: 37 files, 65,831,535 bytes. Future tranche water runs use explicit unique
+output directories within this tranche to avoid the global timestamp family.
+
+PR 505 native save/replay CI is now SUCCESS, run 43657764111, job 132646908300;
+the repaired admission step completed in 190 s under its unchanged 240 s limit.
+ASan job 132640054435 is also SUCCESS. Headed replay remains pending in
+pr505-checks-06.json; sampled readiness remains separately FAIL 4/8.
+
+### Ordinary Linux rerun and terminal parent CI
+
+Ordinary Linux developer-OFF build passes full d2x-redux and the exact CI route
+target. Binary hashes: full game
+e9f1a3dc37295acf14b495c6257647f58e69d4a6c859268047f41e5e943e8e17;
+headless route b33a9447714dcc73d40554b9c9278733dfecbc5ad5649114516b6120fa4c52b4.
+The unchanged readiness owner completes the same pinned eight cases with four
+loaded_ticked and four load_failed. trace-readiness-01 retains all engine output,
+fixed asset commit 9dad21bd65ba05665ac6fe315f37fe7461e85725 and the unchanged
+120-unassisted-frame criterion. Its target_sha records base e83c1718; the dirty
+native source is identified exactly by source-world-trace-07/receipt.json.
+
+Initial Linux clean playback rejects before simulation because the platform
+default profile is 640x480. Its failure receipt remains in
+replay-schema20-fresh-linux-01. The second run uses the existing
+-route-confirm-user-dir option to select the copied original 1920x1080 profile;
+no projection comparison or capture setting changes. It exits 0 in 17.181 s.
+Detailed comparisons PASS 1235 object frames, 1239 world/XL records, 196 SIM and
+1808 FX events with no differences. Both Linux attempt directories are retained;
+the complete successful output is also copied into the tranche evidence root.
+
+PR 505 headed replay job 132646908335 is now SUCCESS in run 43657764111.
+pr505-checks-07.json records all applicable non-readiness checks terminal green,
+with workflow-selected skips separate. Readiness remains FAIL 4/8. The completed
+checkpoint watch is stopped; only the next published candidate needs fresh CI.
+
+Windows ordinary D1 full-game and headless builds also PASS. Their SHA256 values
+are 2f95ed7b87c1757e723f6289058ee79c14728c8c421077721e6274ccbb6bc459 and
+d716ab4750bbd5642eff77e671b6e98e5672ae2cac49987563c581f41b2ba154, respectively.
+Both complete catalog owners PASS: 99 standalone JSON, 315 standalone PowerShell,
+547 support scripts and 428 master entries, including scheduling/timeout controls.
+Receipts: world-trace-windows-d1-build-01.log, trace-windows-d1-binaries-01.json,
+trace-catalog-01.log and trace-master-catalog-01.log.

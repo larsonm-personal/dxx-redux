@@ -12,6 +12,7 @@ import itertools
 import json
 import math
 import platform
+import re
 import shutil
 import struct
 import subprocess
@@ -2076,6 +2077,26 @@ def validate_world_state(state, engine=None, xl=False, objects=None):
                 raise EvidenceError("Incomplete AI submodel state")
 
 
+def reconstruct_world_metadata(state, version):
+    """Decode schema 20's separate lossless sections to the full owners."""
+    if "segment_updates" in state:
+        raise EvidenceError("Segment updates require an existing per-frame owner")
+    if version != 20:
+        if "xl_metadata" in state or "ai_paths" in state:
+            raise EvidenceError("Separate native sections in an older world schema")
+        return state
+    native = state.get("xl_native")
+    if not isinstance(native, dict) or "metadata" in native or "xl_metadata" not in state:
+        raise EvidenceError("Missing or mixed schema-20 metadata owner")
+    ai = state.get("ai")
+    if not isinstance(ai, dict) or "paths" in ai or "ai_paths" not in state:
+        raise EvidenceError("Missing or mixed schema-20 AI path owner")
+    restored = {key: value for key, value in state.items() if key not in ("xl_metadata", "ai_paths")}
+    restored["xl_native"] = {**native, "metadata": state["xl_metadata"]}
+    restored["ai"] = {**ai, "paths": state["ai_paths"]}
+    return restored
+
+
 def world_states(path, header, engine="d1"):
     """Require both raw boundaries and every lossless world delta in order."""
     state = {}
@@ -2086,6 +2107,7 @@ def world_states(path, header, engine="d1"):
     xl = xl_storage_profile(header, engine)
     object_capacity = None
     boundary_objects = None
+    world_version = None
     for row in records(path):
         kind = row.get("type")
         if kind == "meta":
@@ -2100,9 +2122,13 @@ def world_states(path, header, engine="d1"):
         if (
             not meta_seen
             or type(row.get("version")) is not int
-            or row["version"] != (2 if kind == "object_boundary" else 19 if xl else 10)
+            or row["version"] not in ((2,) if kind == "object_boundary" else (19, 20) if xl else (10,))
         ):
             raise EvidenceError("Missing world metadata or unsupported schema")
+        if kind != "object_boundary":
+            if world_version is not None and world_version != row["version"]:
+                raise EvidenceError("World schema changed during the trace")
+            world_version = row["version"]
         if kind.endswith("boundary"):
             phase = row.get("phase")
             key = (kind, phase)
@@ -2121,6 +2147,9 @@ def world_states(path, header, engine="d1"):
             if kind == "world_boundary":
                 if not isinstance(row.get("state"), dict) or not all(group in row["state"] for group in WORLD_GROUPS):
                     raise EvidenceError("Incomplete world boundary")
+                row = {**row, "state": reconstruct_world_metadata(row["state"], world_version)}
+                if world_version == 20:
+                    row["version"] = 19
                 validate_world_state(row["state"], engine, xl, boundary_objects)
                 if row["state"]["ai"]["local_capacity"] != object_capacity:
                     raise EvidenceError("AI and object capacities disagree")
@@ -2138,14 +2167,38 @@ def world_states(path, header, engine="d1"):
                 raise EvidenceError("World simulation precedes its restored-state boundaries")
             if not isinstance(row.get("state"), dict):
                 raise EvidenceError("Missing world delta")
-            state.update(row["state"])
+            delta = row["state"]
+            if "segment_updates" in delta:
+                updates = delta["segment_updates"]
+                if (
+                    world_version != 20
+                    or row["reset"]
+                    or "segments" in delta
+                    or not isinstance(state.get("segments"), list)
+                    or not isinstance(updates, dict)
+                    or not updates
+                ):
+                    raise EvidenceError("Missing or mixed segment delta owner")
+                segments = list(state["segments"])
+                for key, segment in updates.items():
+                    if (
+                        len(key) > len(str(len(segments)))
+                        or not re.fullmatch(r"0|[1-9][0-9]*", key)
+                        or int(key) >= len(segments)
+                    ):
+                        raise EvidenceError("Invalid segment delta index")
+                    segments[int(key)] = segment
+                delta = {key: value for key, value in delta.items() if key != "segment_updates"}
+                delta["segments"] = segments
+            state.update(delta)
             if not all(group in state for group in WORLD_GROUPS):
                 raise EvidenceError("Incomplete per-frame world state")
-            validate_world_state(state, engine, xl)
-            if state["ai"]["local_capacity"] != object_capacity:
+            restored = reconstruct_world_metadata(state, world_version)
+            validate_world_state(restored, engine, xl)
+            if restored["ai"]["local_capacity"] != object_capacity:
                 raise EvidenceError("AI and object capacities disagree")
             count += 1
-            yield {**row, "state": state}
+            yield {**row, "version": 19 if world_version == 20 else world_version, "state": restored}
     required = {(kind, phase) for kind in ("object_boundary", "world_boundary") for phase in ("restored", "terminal")}
     if boundaries != required or count != header["frame_count"]:
         raise EvidenceError("Missing complete world frames or restore/terminal boundaries")
