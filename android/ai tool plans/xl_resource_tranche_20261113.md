@@ -138,3 +138,15 @@ and malformed-custom rejection. Extend the canonical descriptor controls with
 a shadowed logical base and different live definitions; preparation, move and
 discard must preserve lookup, definitions and SIM state. This supplies base
 definitions only; target level sources and full bank/world publication remain open.
+
+## Classic audio from retained target banks
+
+Before binding target level sources, remove classic PCM preparation's dependency
+on the outgoing native sample registry. Expose immutable names and sample views
+from the already decoded bank records, and use them in replacement selection and
+complete PCM conversion. Pass the retained bank through the real level resource
+path, keeping the existing live-registry convenience API for diagnostics. Extend
+the canonical classic owner with corrupted live samples while retained conversion
+stays identical. Verify existing replacement precedence, sample-rate identity,
+bounded conversion and live mixer state. Target folder identity is the next
+boundary; no whole-world or mixer publication claim follows from this slice.

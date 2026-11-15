@@ -1,4 +1,5 @@
 #include "classic_audio.h"
+#include "resource_banks.h"
 #include "audio_resource.h"
 #include "../classic_sample.h"
 #include "../classic_bank.h"
@@ -15,6 +16,24 @@ extern "C" {
 #include "args.h"
 }
 
+namespace
+{
+const char *sample_name(const XlResourceBanks *banks, int id)
+{
+	return banks ? banks->sound_name(id) : piggy_sound_name(id);
+}
+struct SampleSource {
+	const unsigned char *data;
+	int length, freq, bits;
+};
+SampleSource sample_source(const XlResourceBanks *banks, int id)
+{
+	if (banks) return { banks->sound_data(id), banks->sound_length(id), banks->sample_rate(), 8 };
+	const auto &native = GameSounds[id];
+	return { native.data, native.length, native.freq, native.bits };
+}
+} // namespace
+
 namespace xl_compat
 {
 int classic_audio_output_rate()
@@ -27,7 +46,7 @@ int classic_audio_output_rate()
 	return GameArg.SndDigiSampleRate > 0 ? GameArg.SndDigiSampleRate : 22050;
 }
 
-ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int bank_rate)
+ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int bank_rate, const XlResourceBanks *banks)
 {
 	ClassicAudioResources result;
 	auto scope = prepare_classic_audio_scope(level, ordinal, bank_rate);
@@ -38,7 +57,7 @@ ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int 
 		const auto &resource = *scope->selected_bank;
 		try {
 			std::vector<std::string> names;
-			for (int sample = 0; const char *name = piggy_sound_name(sample); ++sample) names.emplace_back(name);
+			for (int sample = 0; const char *name = sample_name(banks, sample); ++sample) names.emplace_back(name);
 			if (names.empty()) throw std::runtime_error("native sample registry is empty");
 			const auto *data = reinterpret_cast<const std::uint8_t *>(resource.bytes.data());
 			const auto selected = select_classic_bank(data, resource.bytes.size(), names);
@@ -57,7 +76,7 @@ ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int 
 			throw std::runtime_error("Invalid XL mission sound bank " + resource.path + ": " + error.what());
 		}
 	}
-	for (int sample = 0; const char *name = piggy_sound_name(sample); ++sample) {
+	for (int sample = 0; const char *name = sample_name(banks, sample); ++sample) {
 		if (!*name) throw std::runtime_error("XL sound replacement requires a named native sample registry");
 		const auto resource = load_classic_audio_resource(name, *scope);
 		if (!resource) continue;
@@ -76,11 +95,11 @@ ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int 
 	if (!result.samples.empty()) result.identity = picosha2::hash256_hex_string(identity);
 	return result;
 }
-ClassicAudioResources prepare_classic_playback(const ClassicAudioResources &replacements)
+ClassicAudioResources prepare_classic_playback(const ClassicAudioResources &replacements, const XlResourceBanks *banks)
 {
 	std::map<int, const ClassicAudioSample *> selected;
 	for (const auto &sample : replacements.samples) {
-		const char *name = piggy_sound_name(sample.sample);
+		const char *name = sample_name(banks, sample.sample);
 		if (!name || sample.name != name || !selected.emplace(sample.sample, &sample).second)
 			throw std::runtime_error("XL classic replacement does not identify a unique native sample");
 	}
@@ -91,12 +110,12 @@ ClassicAudioResources prepare_classic_playback(const ClassicAudioResources &repl
 	std::string identity = "xl-classic-s16-44100-v1";
 	if (!replacements.identity.empty()) identity += ":" + replacements.identity;
 	std::size_t storage = 0;
-	for (int index = 0; const char *name = piggy_sound_name(index); ++index) {
+	for (int index = 0; const char *name = sample_name(banks, index); ++index) {
 		ClassicAudioSample sample;
 		const auto replacement = selected.find(index);
 		if (replacement != selected.end()) sample = *replacement->second;
 		else {
-			const auto &native = GameSounds[index];
+			const auto native = sample_source(banks, index);
 			if (native.bits != 8 || !native.data || native.data == reinterpret_cast<const unsigned char *>(-1) || native.length <= 0)
 				throw std::runtime_error("XL classic playback requires loaded 8-bit native sample " + std::to_string(index) + " (" + name + ")");
 			if ((native.freq != 11025 && native.freq != 22050) ||
@@ -119,7 +138,7 @@ ClassicAudioResources prepare_classic_playback(const ClassicAudioResources &repl
 	if (selected.empty() && result.identity == stock_cache.identity) return stock_cache;
 	for (auto &sample : result.samples) {
 		if (selected.count(sample.sample)) continue;
-		const auto &native = GameSounds[sample.sample];
+		const auto native = sample_source(banks, sample.sample);
 		sample.pcm.samples = prepare_classic_sample(native.data, std::size_t(native.length), unsigned(native.freq), 44100).stereo;
 	}
 	if (selected.empty()) stock_cache = result;

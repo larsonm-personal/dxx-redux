@@ -3,6 +3,7 @@
 #include "../wave.h"
 #include <string>
 #include <vector>
+class XlResourceBanks;
 
 namespace xl_compat
 {
@@ -15,8 +16,8 @@ struct ClassicAudioResources {
 	std::string identity;
 	std::vector<ClassicAudioSample> samples;
 };
-ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int bank_rate);
-ClassicAudioResources prepare_classic_playback(const ClassicAudioResources &replacements);
+ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int bank_rate, const XlResourceBanks *banks = nullptr);
+ClassicAudioResources prepare_classic_playback(const ClassicAudioResources &replacements, const XlResourceBanks *banks = nullptr);
 int classic_audio_output_rate();
 } // namespace xl_compat
 #endif

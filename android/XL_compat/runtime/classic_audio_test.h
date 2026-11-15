@@ -1,6 +1,8 @@
 // Resource preparation and loaded replacement playback controls
 #include "audio_geometry_test.h"
 #include "classic_playback_test.h"
+#include "resource_banks.h"
+#include "retained_resource.h"
 static nlohmann::json classic_audio_receipt(const xl_compat::ClassicAudioResources &resources)
 {
 	nlohmann::json result = nlohmann::json::array();
@@ -32,12 +34,21 @@ static void classic_audio_controls(const std::filesystem::path &root)
 	}
 	require(!piggy_sound_name(int(native_samples)), "Complete native bank omitted trailing samples");
 	const auto native_before = GameSounds[0];
+	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> bitmap_file(PHYSFS_openRead("groupa.pig"), PHYSFS_close);
+	std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> sound_file(PHYSFS_openRead(native_before.freq == 22050 ? "descent2.s22" : "descent2.s11"), PHYSFS_close);
+	XlResourceBanks retained(xl_retain_resource(bitmap_file.get()), xl_retain_resource(sound_file.get()), native_before.freq);
+	const auto retained_baseline = xl_compat::prepare_classic_playback({}, &retained);
+	require(classic_audio_receipt(retained_baseline) == classic_audio_receipt(baseline) && retained_baseline.identity == baseline.identity,
+	        "Retained sound bank changed native PCM, names or source identity");
 	for (int malformed : { 0, 1, 2, 3 }) {
 		GameSounds[0] = native_before;
 		if (malformed == 0) GameSounds[0].data = nullptr;
 		if (malformed == 1) GameSounds[0].bits = 16;
 		if (malformed == 2) GameSounds[0].freq = 12345;
 		if (malformed == 3) GameSounds[0].length = 0;
+		const auto independent = xl_compat::prepare_classic_playback({}, &retained);
+		require(independent.identity == retained_baseline.identity && classic_audio_receipt(independent) == classic_audio_receipt(retained_baseline),
+		        "Retained sound conversion borrowed invalid outgoing samples");
 		bool rejected = false;
 		try {
 			xl_compat::prepare_classic_playback({});
@@ -53,6 +64,9 @@ static void classic_audio_controls(const std::filesystem::path &root)
 	changed[changed.size() / 2] ^= 1;
 	GameSounds[0].data = changed.data();
 	const auto changed_bytes = xl_compat::prepare_classic_playback({});
+	const auto independent_bytes = xl_compat::prepare_classic_playback({}, &retained);
+	require(independent_bytes.identity == baseline.identity && independent_bytes.samples[0].pcm.samples == baseline.samples[0].pcm.samples,
+	        "Retained sound conversion used outgoing equal-count changed bytes");
 	require(changed_bytes.identity != baseline.identity && changed_bytes.samples[0].source_hash != baseline.samples[0].source_hash && changed_bytes.samples[0].pcm.samples != baseline.samples[0].pcm.samples, "Stock conversion cache ignored changed native bytes");
 	changed[changed.size() / 2] ^= 1;
 	const auto same_allocation = xl_compat::prepare_classic_playback({});
@@ -60,6 +74,8 @@ static void classic_audio_controls(const std::filesystem::path &root)
 	GameSounds[0] = native_before;
 	GameSounds[0].freq = native_before.freq == 11025 ? 22050 : 11025;
 	const auto changed_rate = xl_compat::prepare_classic_playback({});
+	require(xl_compat::prepare_classic_playback({}, &retained).identity == baseline.identity,
+	        "Retained sound conversion used the outgoing sample rate");
 	require(changed_rate.identity != baseline.identity && changed_rate.samples[0].pcm.samples.size() != baseline.samples[0].pcm.samples.size(), "Stock conversion cache ignored the native sample rate");
 	GameSounds[0] = native_before;
 	const auto recovered = xl_compat::prepare_classic_playback({});

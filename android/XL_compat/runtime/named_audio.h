@@ -22,12 +22,13 @@ const char *xl_named_audio_error(void);
 #include <memory>
 #include <string>
 #include "../slow_motion.h"
+class XlResourceBanks;
 namespace xl_compat
 {
 bool slow_motion_audio_event(SlowMotionEvent event);
 struct Inventory;
 struct AudioResources;
-std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal = 0);
+std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal = 0, const XlResourceBanks *banks = nullptr);
 void install_named_audio(std::shared_ptr<const AudioResources> resources);
 } // namespace xl_compat
 #endif
