@@ -1679,6 +1679,16 @@ def validate_world_value(value, schema, path):
         fixed = isinstance(schema, tuple)
         if not isinstance(value, list) or (fixed and len(value) != len(schema)):
             raise EvidenceError(f"World field has an invalid array shape: {path}")
+        if value:
+            first = schema[0]
+            if not fixed or schema.count(first) == len(schema):
+                # Check every leaf, retaining the indexed diagnostic below on failure
+                if first is int and all(type(item) is int for item in value):
+                    return
+                if isinstance(first, range) and first.step == 1:
+                    lower, upper = first.start, first.stop
+                    if all(type(item) is int and lower <= item < upper for item in value):
+                        return
         for index, item in enumerate(value):
             child = schema[index] if fixed else schema[0]
             if child is int:

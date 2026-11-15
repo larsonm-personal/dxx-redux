@@ -5758,3 +5758,25 @@ criterion. Current ordinary readiness remains 4/8; HXM external definitions and
 missing owned camera addon remain unresolved. PR 502 non-readiness checks are
 terminal green; PR 503 private qualification and fresh capture/playback remain
 pending. Full G2 and the energy 91-to-100 rejection defect remain open.
+
+### November 14 public replay admission timeout repair
+
+PR 504 head 510124dfc3f93a62b7b9856af50ed4b960e570ef failed the
+four-minute admission step in run 43649849268, job 132622648156. Native replay
+never started. Other applicable public checks and the exact-head private smoke
+are terminal green; sampled readiness remains separately 4/8.
+
+The isolated child validates homogeneous integer arrays without repeating schema
+selection for every leaf. Every value retains exact typing/range checks; failed
+values retain indexed diagnostics, and mutations are revalidated. No deadlines,
+workflow commands, assertions, capacities or catalog entries change. Windows
+comparator PASS 86 tests in 61.550 seconds. The exact fifteen-command Linux
+admission block PASSes in 162.679 seconds under its 240-second limit, with all
+catalog controls intact. Earlier setup and mounted-filesystem failures remain
+preserved. See xl_ci_admission_20261114.md and the ci-admission receipts in
+temp/xl-readiness-tranche2-20261114. Hosted child qualification remains pending.
+
+The user now prioritizes useful gameplay progress without requiring a specific
+8/8 endpoint. The readiness criterion itself is unchanged. Missing external
+robot definitions, camera ownership, full G2 and energy 91-to-100 rejection
+remain open. Unpublished native trace work remains separate from this repair.
