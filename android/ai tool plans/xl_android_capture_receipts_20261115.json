@@ -1,0 +1,1443 @@
+{
+    "implementation_head": "67c8dcf083757d37c4ff53074864a33040021dda",
+    "source_sha256": {
+        "android/XL_compat/runtime/slow_motion_runtime.cpp": "d98e0b4102418b1ae40f4604f1dfd303072c8be8765680111441fb4556f65bec",
+        "android/XL_compat/runtime/slow_motion_runtime.h": "62e0386f2b8a8faa95e6ce37d3c3a37606d9ad8d4da821442d248d2e6764dc16",
+        "android/app/src/main/cpp/shared/input_demo_newdemo_shared.c": "c4e745f77022818c4576c1f1b61407b960e29f3e4e8bc59243d71b75cd49abde",
+        "android/tests/test_xl_water_runtime.ps1": "3ce5cf3af63615d2a1aaec4bfc32a158b7b263618ff1c3e57cf4ca65d3b03565",
+        "android/tests/test_xl_addon_import.ps1": "cf98a1c8b83440d0cb7020111d37ce6459705417b27573bb876401faf40830a8",
+        "android/helpers/xl_android_timeline_replay.ps1": "4339f3eec54bdeef148a01aba37c763ebf1ed4fd691025590b4341b46231926b",
+        "android/game_scripts/test_xl_water_capture.jsonc": "d66f42938bd7407a70ee5da2f26b1a1b6cd8dd42829f42be2b90a9a28ca8ed2a",
+        "android/game_scripts/test_xl_water_level_capture.jsonc": "e84fed6b49ba7916bc0e0ff434d3d7cadc4d5c0ea7ee2a0ca46b0f1520e1d556"
+    },
+    "local_evidence_root": "temp\\xl-android-capture-20261115",
+    "readiness": {
+        "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+        "inventory_archives": 23,
+        "inventory_levels": 1111,
+        "limitations": "Fixed stratified sample, not a statistical estimate or full playability; no rendering or player input; camera addon subchecks not covered",
+        "rows": [
+            {
+                "archive": "missions/d2xxl_downloads/BoilingPoint-XL.zip",
+                "assisted_navigation": "not_run",
+                "frames": 0,
+                "id": "BoilingPoint-XL.zip/missions/boilpnt.mn2:7",
+                "level": 7,
+                "level_file": "control2.rl2",
+                "mission": "boilpnt",
+                "outcome": "load_failed",
+                "seconds": 4.25,
+                "xl_active": null
+            },
+            {
+                "archive": "missions/d2xxl_downloads/diehard.7z",
+                "assisted_navigation": "confirmed",
+                "frames": 120,
+                "id": "diehard.7z/missions/single/diehard.mn2:17",
+                "level": 17,
+                "level_file": "dh17.rl2",
+                "mission": "diehard",
+                "navigation_target_segment": 20,
+                "outcome": "loaded_ticked",
+                "seconds": 3.812,
+                "xl_active": false
+            },
+            {
+                "archive": "missions/d2xxl_downloads/dinter-1.5.7z",
+                "assisted_navigation": "not_run",
+                "frames": 0,
+                "id": "dinter-1.5.7z/missions/single/dinter.mn2:1",
+                "level": 1,
+                "level_file": "dinter.rl2",
+                "mission": "dinter",
+                "outcome": "load_failed",
+                "seconds": 3.063,
+                "xl_active": null
+            },
+            {
+                "archive": "missions/d2xxl_downloads/ironstar.7z",
+                "assisted_navigation": "confirmed",
+                "frames": 120,
+                "id": "ironstar.7z/missions/geld/ironstar.msn:6",
+                "level": 6,
+                "level_file": "chapel.rdl",
+                "mission": "ironstar",
+                "navigation_target_segment": 20,
+                "outcome": "loaded_ticked",
+                "seconds": 5.062,
+                "xl_active": false
+            },
+            {
+                "archive": "missions/d2xxl_downloads/orionneb.7z",
+                "assisted_navigation": "unconfirmed",
+                "frames": 120,
+                "id": "orionneb.7z/orionneb.msn:4",
+                "level": 4,
+                "level_file": "level04.rdl",
+                "mission": "orionneb",
+                "navigation_target_segment": 20,
+                "outcome": "loaded_ticked",
+                "seconds": 2.547,
+                "xl_active": false
+            },
+            {
+                "archive": "missions/d2xxl_downloads/phobos-e.7z",
+                "assisted_navigation": "unconfirmed",
+                "frames": 120,
+                "id": "phobos-e.7z/missions/single/phobos-e.mn2:4",
+                "level": 4,
+                "level_file": "phobos4.rl2",
+                "mission": "phobos-e",
+                "navigation_target_segment": 20,
+                "outcome": "loaded_ticked",
+                "seconds": 2.422,
+                "xl_active": false
+            },
+            {
+                "archive": "missions/d2xxl_downloads/sphere-1.6.zip",
+                "assisted_navigation": "not_run",
+                "frames": 0,
+                "id": "sphere-1.6.zip/missions/single/sphere.mn2:2",
+                "level": 2,
+                "level_file": "sp-02.rl2",
+                "mission": "sphere",
+                "outcome": "load_failed",
+                "seconds": 2.203,
+                "xl_active": null
+            },
+            {
+                "archive": "missions/d2xxl_downloads/wshock20.7z",
+                "assisted_navigation": "not_run",
+                "frames": 0,
+                "id": "wshock20.7z/missions/single/wshock20.mn2:6",
+                "level": 6,
+                "level_file": "warplab.rl2",
+                "mission": "wshock20",
+                "outcome": "load_failed",
+                "seconds": 6.328,
+                "xl_active": null
+            }
+        ],
+        "schema": "dxx-xl-readiness-v1",
+        "selection_seed": "d2x-readiness-cohort-v1",
+        "summary": {
+            "complete": true,
+            "counts": {
+                "load_failed": 4,
+                "loaded_ticked": 4
+            },
+            "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+            "denominator": 8,
+            "passed": 4,
+            "readiness_percent": 50.0
+        },
+        "target_sha": "67c8dcf083757d37c4ff53074864a33040021dda"
+    },
+    "apks": {
+        "developer-02": {
+            "head": "ac628f537a3a6c208da34fe3607f1346b9b28681",
+            "mode": "developer",
+            "apk_sha256": "46dd38c6ed7df81d36265f9d5f244a2928f79a51d40a8c3ce9cfbd26f830dc97",
+            "libraries": {
+                "lib/x86_64/lib7-Zip-JBinding.so": "a84a703a4a87f6c9a87e831cfdfa904ed5e45be35660acc41ec63b9fe5198751",
+                "lib/x86_64/libSDL12.so": "0b766f9d43908a636a8c82061eb335f105341cbb64578ec82f33d5248a75b1c0",
+                "lib/x86_64/libSDL_mixer.so": "4117c258cf5ab692b9a14da076afd1f6c63aac084f9cfd08ccd47742accd65ab",
+                "lib/x86_64/libandroidx.graphics.path.so": "4e56c996f13670e70082658de7880c4020eabf4f25e43387f88ed78a713fc9f0",
+                "lib/x86_64/libc++_shared.so": "39faf2d59346e65a18980f207794fab2f1faff8a8de3f087b8319a181fa16fbd",
+                "lib/x86_64/libchromaprint.so": "ac9c01c73f285527e231a26b1a2b35a809897185a3d04866be8ef524b3206595",
+                "lib/x86_64/libdxx-graphics-safety.so": "20f84ca5487b3b19f6d2f83c82120eff37cf88b53bded3f05bb3d6ce64b6f5ab",
+                "lib/x86_64/libdxx-redux-d1.so": "2f66ee5c586ac1242e927a64e6a96d1155e828d95d45b2782f5e2f4ffdad3e98",
+                "lib/x86_64/libdxx_fingerprint.so": "6ef32a53f30f7aefc28f7a72c159b685eed084db4485d1c7baf9d5effb8b3d0b",
+                "lib/x86_64/libdxx_hog_reader.so": "6138e25a8ad80f3214a01e109b8389afaf9f5408b1f7b13a537d7d70c7c91e3e",
+                "lib/x86_64/libfluidsynth.so": "ed70021bf4e38463a1ffeec4707b57eb43aba711e3331cb40e79ec198f6a5f18",
+                "lib/x86_64/liblzma_sdk_c.so": "08e81bca8cab58a61ee50c97df142dde7bdd4fce3983964bfe3a905401453566",
+                "lib/x86_64/libphysfs.so": "04309655b0c03c7944295383ac1e484510136f9c0968e636c0eb450eba186013",
+                "lib/x86_64/libtsf.so": "3a185f829c71c3a401718f30b049c026654b1255f80c7c8dc14718fc068adacc",
+                "lib/x86_64/libxcrash.so": "0ff91bde66aeadd84c4e542b7054489f5963fb4cbd48465a3f36b29603cc4d7b",
+                "lib/x86_64/libxcrash_dumper.so": "598d915effd054e3bacf947ad0bd9c6bc33a29cbc4b357950e4f0f502276293e",
+                "lib/x86_64/libxl_compat_metadata.so": "2ab938936ada9f37cecf7b4722c9390315a0e3bad2ed96390234b51336a9fb1d",
+                "lib/x86_64/libdxx-redux-d2.so": "09a335f987f4f97591d2a65822505d6c35cc2fffdeb61a4bf59e50d89336de9f"
+            },
+            "matching_caches": [
+                {
+                    "path": "android\\app\\.cxx\\Debug\\166n6i37\\x86_64\\CMakeCache.txt",
+                    "sha256": "9d7e938ab7f0a95ef54d532d5d745cf515f1da31389cf8770a08045e269ffa84",
+                    "configuration": [
+                        "ANDROID_ABI:UNINITIALIZED=x86_64",
+                        "CMAKE_BUILD_TYPE:STRING=Debug",
+                        "DXX_XL_DEVELOPER_TESTS:BOOL=ON",
+                        "CMAKE_HOME_DIRECTORY:INTERNAL=C:/local/dxx-redux/android/app/src/main/cpp"
+                    ]
+                }
+            ]
+        },
+        "ordinary-01": {
+            "head": "67c8dcf083757d37c4ff53074864a33040021dda",
+            "mode": "ordinary",
+            "apk_sha256": "91121130dc0167d969a9ddb8d093daf84d39384a198e97905250ebb010818639",
+            "libraries": {
+                "lib/arm64-v8a/lib7-Zip-JBinding.so": "ba8d8edce292b2a3f8979e9505ecce4886300848a2f6d487cbac23f59ee417c9",
+                "lib/arm64-v8a/libSDL12.so": "ac2083ac92c6683eb77aaf78b7f6989effaa7178417e604de953a1f7f5abc579",
+                "lib/arm64-v8a/libSDL_mixer.so": "e49146767597b9d352aba4bc5ec68c7a13f4f416bdf8295c12724cecbc2703e9",
+                "lib/arm64-v8a/libandroidx.graphics.path.so": "41e9a793c43a0f4fddb19e33f346bace464f30f888ba7b9eaf96294ea115bfb6",
+                "lib/arm64-v8a/libc++_shared.so": "b5d97c38a728afe28d341cda3369f512d35eaf9c680c1b0563cd6a63e395230f",
+                "lib/arm64-v8a/libchromaprint.so": "cbeaa10923096f8e1dc432daac2a60b484ec4d2ee2890a4f1d8c9dafa7dd63cf",
+                "lib/arm64-v8a/libdxx-graphics-safety.so": "cb600a51b314ee68442c7be175590221d8d75bb954ba8399509dd64f0d3a1a76",
+                "lib/arm64-v8a/libdxx-redux-d1.so": "5eb74efaf49b62d4b533ab9a6f9bda58b2353752731114aeca3d40ae2a57eaa4",
+                "lib/arm64-v8a/libdxx-redux-d2.so": "da97da278ed3c9b4a6c4bd3ddbbf1a5d98aa1680412ca385d85aa3c1ba4d9567",
+                "lib/arm64-v8a/libdxx_fingerprint.so": "bc2a452cf77cc43a5294012c8fc97131d4a57d1ed6cbea876166eb5dd731c615",
+                "lib/arm64-v8a/libdxx_hog_reader.so": "1af27812dbd7d01f24d0d2474c8cf8626dbddac44c21d630e0c1f8ffd603d78c",
+                "lib/arm64-v8a/libfluidsynth.so": "3b91ff0f7c0e9f31a2d68513918a2c36e11378ace91d0109e81ab9914e517a6f",
+                "lib/arm64-v8a/liblzma_sdk_c.so": "26a5cdb2db3aecaad68e763cae65059378edf6a2a56936a11c6a578577312a64",
+                "lib/arm64-v8a/libphysfs.so": "d1552930dee595baa1127fba8d4cac32d2a224d049996b8f589a61fdbac92dcd",
+                "lib/arm64-v8a/libtsf.so": "c82af1b11687e74eee544f2d74fe0be3ec0e9ae98dbabc089b7489a1cfe0ff8f",
+                "lib/arm64-v8a/libxcrash.so": "902da277557aa0c24677694093626b8111e4106d56434bb7f921017cd7f55c89",
+                "lib/arm64-v8a/libxcrash_dumper.so": "6af4bb5fad010fe869b7cb5048d7b3f68d973e6b45e2bbcce096956ee5fb5226",
+                "lib/arm64-v8a/libxl_compat_metadata.so": "45e7168b6a01e2409a87814795b1d03f6d9dbc3b93a3132d5e6d1d4ea905e1f2",
+                "lib/armeabi-v7a/lib7-Zip-JBinding.so": "fcd6d67497e8fdf7d05a0d1145374e5a436a1346ce72ca1cc80c9ee25e095c3a",
+                "lib/armeabi-v7a/libSDL12.so": "ddeb7a3f9e7f04e8a12e4d73fb239ad6ffc0530892e4c73c5e3f5375ef23ec6a",
+                "lib/armeabi-v7a/libSDL_mixer.so": "538ab98fd6fe6b850a13784fc73a464e0b3220661345b91eaeeab0a5ddc2664c",
+                "lib/armeabi-v7a/libandroidx.graphics.path.so": "41399eba6fc2a60f6f14642375c1824f3cf25eb8fec7397d753730a3ceda3e2b",
+                "lib/armeabi-v7a/libc++_shared.so": "38331a1efcb446eb1a0db440a8db8f41fa4fb698d15c061ab8c491426531c2c0",
+                "lib/armeabi-v7a/libchromaprint.so": "b86eedfef929270b5cd0c379e7f04f131328bf23d3141b4bc9f614518908e288",
+                "lib/armeabi-v7a/libdxx-graphics-safety.so": "9f707429cc76c41a25d8ea596d9e24981d580754d700c92a40d74c0a6e9ca5c4",
+                "lib/armeabi-v7a/libdxx-redux-d1.so": "160e1391289431556ec2bb557a9901eba7caeab533993da9e9d4744c0eb0fff3",
+                "lib/armeabi-v7a/libdxx-redux-d2.so": "f5d400a09ab02f4d32c7d2b643f043fd91dfc9cb069b2b40e882fe482b5c08da",
+                "lib/armeabi-v7a/libdxx_fingerprint.so": "8ae13e9eed4787ccf76a2b255988ee4f513dd8cbe774bec31dc12d2d7533aa82",
+                "lib/armeabi-v7a/libdxx_hog_reader.so": "0773f9aa2ebc5e961aa3d8d8a35629ca8ce5c95db027556ddc33b6c1df242dc3",
+                "lib/armeabi-v7a/libfluidsynth.so": "98c00c8de1cd6e47e114b29243e762fa487a4b2b019baefa2579ab46efc008e2",
+                "lib/armeabi-v7a/liblzma_sdk_c.so": "75f0dca093d0e002f7554407898e17d3eb19030f19ea4dc3d869b24eb8539ea4",
+                "lib/armeabi-v7a/libphysfs.so": "d985402eb19699c74deb7eed5c47ec949fa782f93fe7e9002c538ccf2cc75bce",
+                "lib/armeabi-v7a/libtsf.so": "2e7cdd8d0d8f6fefb53a5e81d8f6f6d882442f34c9fc543acdc511489b076587",
+                "lib/armeabi-v7a/libxcrash.so": "f339839d703e2c19d98ddc5ad0b83058f06453eb83ba543ca78cc740245e1589",
+                "lib/armeabi-v7a/libxcrash_dumper.so": "fa455d6037f17569356fbe5910ba296719829e12f681906d68678a6cb9634922",
+                "lib/armeabi-v7a/libxl_compat_metadata.so": "85c29e75f766c0004f13f0f801408d02f64cc38cc2082044a0cb00eec0c6fbbc",
+                "lib/x86_64/lib7-Zip-JBinding.so": "a84a703a4a87f6c9a87e831cfdfa904ed5e45be35660acc41ec63b9fe5198751",
+                "lib/x86_64/libSDL12.so": "891484e8c3d44816df11c3a58568579f2fce1211c7cb19d5081ad329f02c96e7",
+                "lib/x86_64/libSDL_mixer.so": "b5be06e31c6f88e434df198e9d4bbcc8c7b04ff0cf92f1d52d94e05334445ed4",
+                "lib/x86_64/libandroidx.graphics.path.so": "4e56c996f13670e70082658de7880c4020eabf4f25e43387f88ed78a713fc9f0",
+                "lib/x86_64/libc++_shared.so": "39faf2d59346e65a18980f207794fab2f1faff8a8de3f087b8319a181fa16fbd",
+                "lib/x86_64/libchromaprint.so": "207f2cdf91eb0967117069a99254d67affd0897e577130444a710017ecbf9c22",
+                "lib/x86_64/libdxx-graphics-safety.so": "45424dbd293a6b6e2a417436ff26f8897b49b32411ee57829b23acf3ebf796bf",
+                "lib/x86_64/libdxx-redux-d1.so": "2b827efbd64f50d3f36e0671951795eaabbe16ded7825a14028171347b1e5a1a",
+                "lib/x86_64/libdxx-redux-d2.so": "1ab06cc00919117f18da42f3e18cad53e227b7c26dda63b22948aa15e36789cb",
+                "lib/x86_64/libdxx_fingerprint.so": "8dd72c26a9b615be8112713493cc8a13d72c8e273c93215a99ec82ad8a64ba95",
+                "lib/x86_64/libdxx_hog_reader.so": "31b8f38d6bf1a1bae7b989034ba7df12484ea3551e507c7efd571b021b14d519",
+                "lib/x86_64/libfluidsynth.so": "33768fce2bfcf050bcede67f4991bf3e56f2cb457b778cc2ae24640d5189964a",
+                "lib/x86_64/liblzma_sdk_c.so": "6b11340ab4ed6429bebf251356af4c540927d9cbfe76bbe0d2444a15b75b6770",
+                "lib/x86_64/libphysfs.so": "6ab92b4613da2f8019bfc886c4f9ba984388d1a0ee3165cdeffe00978b70f402",
+                "lib/x86_64/libtsf.so": "46613546c0e411adfdd61846538fe11fdcaca73075cd5f732c5888a1edaf1525",
+                "lib/x86_64/libxcrash.so": "0ff91bde66aeadd84c4e542b7054489f5963fb4cbd48465a3f36b29603cc4d7b",
+                "lib/x86_64/libxcrash_dumper.so": "598d915effd054e3bacf947ad0bd9c6bc33a29cbc4b357950e4f0f502276293e",
+                "lib/x86_64/libxl_compat_metadata.so": "b52e867ebdcf5143fd180f7d34a018c2ed0ebcc3c931918ef2e1f223ce71875a"
+            },
+            "matching_caches": [
+                {
+                    "path": "android\\app\\.cxx\\Debug\\56z1h2d2\\arm64-v8a\\CMakeCache.txt",
+                    "sha256": "62f552d16cf85c111a3065f78d3673a4846299de82ab6b87682215c1db2d73b2",
+                    "configuration": [
+                        "ANDROID_ABI:UNINITIALIZED=arm64-v8a",
+                        "CMAKE_BUILD_TYPE:STRING=Debug",
+                        "DXX_XL_DEVELOPER_TESTS:BOOL=OFF",
+                        "CMAKE_HOME_DIRECTORY:INTERNAL=C:/local/dxx-redux/android/app/src/main/cpp"
+                    ]
+                },
+                {
+                    "path": "android\\app\\.cxx\\Debug\\56z1h2d2\\armeabi-v7a\\CMakeCache.txt",
+                    "sha256": "320cb2ee78494e169b9ef6507c0b8c3a77a04582fd09991c431e745f0caf8d80",
+                    "configuration": [
+                        "ANDROID_ABI:UNINITIALIZED=armeabi-v7a",
+                        "CMAKE_BUILD_TYPE:STRING=Debug",
+                        "DXX_XL_DEVELOPER_TESTS:BOOL=OFF",
+                        "CMAKE_HOME_DIRECTORY:INTERNAL=C:/local/dxx-redux/android/app/src/main/cpp"
+                    ]
+                },
+                {
+                    "path": "android\\app\\.cxx\\Debug\\56z1h2d2\\x86_64\\CMakeCache.txt",
+                    "sha256": "75cb6c2c26e21b27648c2de1654feeacfdfae407778b8a87206771089010f728",
+                    "configuration": [
+                        "ANDROID_ABI:UNINITIALIZED=x86_64",
+                        "CMAKE_BUILD_TYPE:STRING=Debug",
+                        "DXX_XL_DEVELOPER_TESTS:BOOL=OFF",
+                        "CMAKE_HOME_DIRECTORY:INTERNAL=C:/local/dxx-redux/android/app/src/main/cpp"
+                    ]
+                }
+            ]
+        }
+    },
+    "restored_apk": {
+        "package": "com.dxxredux.app",
+        "apk_sha256": "504848a52babb1c5c286e1c013d52f436cf6d1ffeaddf725444d93a41172dbb5",
+        "state_preserved": true,
+        "apk": "temp/xl-gameplay-20261115/apk-ordinary-02/app-debug.apk",
+        "serial": "emulator-5554"
+    },
+    "input_hashes": {
+        "descent2.ham": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+        "descent2.hog": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+        "descent2.s11": "d444c6f93476f8941936164d2981387a26b0a25e3f9d5e930ef96bfbb86c1e68",
+        "descent2.s22": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+        "groupa.pig": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+        "alien1.pig": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+        "alien2.pig": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+        "fire.pig": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+        "ice.pig": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+        "water.pig": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1",
+        "wshock20.hog": "2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c",
+        "wshock20.mn2": "e4ee4da1dfc16b48b91be3409216e73cf43dd74e6e20d1be40b6bb310fe5a42a",
+        "d2x.ham": "faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f",
+        "d2x-xl-2-1-8.7z": "2cfc020fbf25a048f099511b71599c7be1b77836be8fc1112e5eb310c65beb9d"
+    },
+    "imported_resources": {
+        "resource_group": "xl-resources",
+        "files": [
+            {
+                "path": "d2x-xl.hog",
+                "source": "D2X-XL/data/d2x-xl.hog",
+                "size": 3815963,
+                "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6"
+            },
+            {
+                "path": "sounds/d2x-xl/airbubbles.wav",
+                "source": "D2X-XL/sounds/d2x-xl/airbubbles.wav",
+                "size": 179714,
+                "sha256": "539b434ca912a17442017e4f68aad21953c285ba2d816bb5bb7c2d6678f0e5cc"
+            },
+            {
+                "path": "sounds/d2x-xl/ambientlava.wav",
+                "source": "D2X-XL/sounds/d2x-xl/ambientlava.wav",
+                "size": 62428,
+                "sha256": "05a14c541f872d269f8c35ec20445a67860b1444f4c48350041e746fdf3bf569"
+            },
+            {
+                "path": "sounds/d2x-xl/beep.wav",
+                "source": "D2X-XL/sounds/d2x-xl/beep.wav",
+                "size": 43708,
+                "sha256": "5f48271b69fdf2ac81650ec0009e3944bfd4047ab99d5e54034bef875fe7b9ff"
+            },
+            {
+                "path": "sounds/d2x-xl/boiling-lava.wav",
+                "source": "D2X-XL/sounds/d2x-xl/boiling-lava.wav",
+                "size": 1202420,
+                "sha256": "1fb87d8ad24cd5ab294c0824c7937dd191b8cab118bb186bc5084cb8cd8d104a"
+            },
+            {
+                "path": "sounds/d2x-xl/busy-machine.wav",
+                "source": "D2X-XL/sounds/d2x-xl/busy-machine.wav",
+                "size": 526572,
+                "sha256": "d7469c1f5e20dae9725a740ca4fb6e9a4713b89b63bf9cfaf7776e8822b0d2e8"
+            },
+            {
+                "path": "sounds/d2x-xl/computer.wav",
+                "source": "D2X-XL/sounds/d2x-xl/computer.wav",
+                "size": 4277216,
+                "sha256": "44ea1d3dc5c9329161eb059a7de06a845e61ba7d8a77beb7253d6526c3f4d8ed"
+            },
+            {
+                "path": "sounds/d2x-xl/deep-hum.wav",
+                "source": "D2X-XL/sounds/d2x-xl/deep-hum.wav",
+                "size": 1006524,
+                "sha256": "9e2d02c509fdaa785fae0199cc70e0c8f5a72e4209117af68b0473d89d25e52b"
+            },
+            {
+                "path": "sounds/d2x-xl/dripping-water-2.wav",
+                "source": "D2X-XL/sounds/d2x-xl/dripping-water-2.wav",
+                "size": 440684,
+                "sha256": "20d6b03ddf79ba0d56e4f80589de56faceea635be88632fe6fccc59bb70e0aa0"
+            },
+            {
+                "path": "sounds/d2x-xl/dripping-water-3.wav",
+                "source": "D2X-XL/sounds/d2x-xl/dripping-water-3.wav",
+                "size": 351940,
+                "sha256": "53bc4a5411fd9affc61a812a44d1d1cc2839fb9d866afb18c9acbd0d1e1442ec"
+            },
+            {
+                "path": "sounds/d2x-xl/dripping-water.wav",
+                "source": "D2X-XL/sounds/d2x-xl/dripping-water.wav",
+                "size": 1323564,
+                "sha256": "03b028c00cd2e0bc9c76d2aee45097c452fb347624a5fc32aaaa82d203977058"
+            },
+            {
+                "path": "sounds/d2x-xl/earthquake.wav",
+                "source": "D2X-XL/sounds/d2x-xl/earthquake.wav",
+                "size": 580028,
+                "sha256": "bbb206a7175614d1ee10422d39cab6e842de1deabe31c62956be6ac3ba92f3d8"
+            },
+            {
+                "path": "sounds/d2x-xl/energy.wav",
+                "source": "D2X-XL/sounds/d2x-xl/energy.wav",
+                "size": 5318836,
+                "sha256": "532f5bcd635fad42def5988e65226999312d36adbe6e5198313714ad1cae5e55"
+            },
+            {
+                "path": "sounds/d2x-xl/falling-rocks-2.wav",
+                "source": "D2X-XL/sounds/d2x-xl/falling-rocks-2.wav",
+                "size": 937948,
+                "sha256": "5a67a4ef3119df84e55a988b6da4be7f32b1bd98af7877efaf3079e4c4eeca9b"
+            },
+            {
+                "path": "sounds/d2x-xl/falling-rocks.wav",
+                "source": "D2X-XL/sounds/d2x-xl/falling-rocks.wav",
+                "size": 656180,
+                "sha256": "f8044f2af840011186ba90243a5ff737856f39590edebf835da814eaea809e0e"
+            },
+            {
+                "path": "sounds/d2x-xl/fast-fan.wav",
+                "source": "D2X-XL/sounds/d2x-xl/fast-fan.wav",
+                "size": 813680,
+                "sha256": "fafb7b79f1a78d6a50810afe9fc97a908dba43004287d1ac27b6fe4b693fbde6"
+            },
+            {
+                "path": "sounds/d2x-xl/fire.wav",
+                "source": "D2X-XL/sounds/d2x-xl/fire.wav",
+                "size": 1477028,
+                "sha256": "d49893d505b5a2e99399267dbcced9065b33449ae1cde8df112f326cda2779ff"
+            },
+            {
+                "path": "sounds/d2x-xl/flowing-lava.wav",
+                "source": "D2X-XL/sounds/d2x-xl/flowing-lava.wav",
+                "size": 1196884,
+                "sha256": "bc22da63bdf1d763503dd645e7def1ad310f93497b01a27e668fc31eeb411aad"
+            },
+            {
+                "path": "sounds/d2x-xl/flowing-water.wav",
+                "source": "D2X-XL/sounds/d2x-xl/flowing-water.wav",
+                "size": 704508,
+                "sha256": "242ba8adce20e38adfa427ea23a433b60cab865e036b2aa5b332a2da47bc32e6"
+            },
+            {
+                "path": "sounds/d2x-xl/gatling-slowdown.wav",
+                "source": "D2X-XL/sounds/d2x-xl/gatling-slowdown.wav",
+                "size": 174478,
+                "sha256": "4bbfa3c21fccac81ab2708b66c48c2bbb26613a31fef1de120ae0971628d4547"
+            },
+            {
+                "path": "sounds/d2x-xl/gatling-speedup.wav",
+                "source": "D2X-XL/sounds/d2x-xl/gatling-speedup.wav",
+                "size": 257856,
+                "sha256": "dbb5f7cd9a05abdf6a080bcb8709d4f85e2b21a295bca6bee7e8097195726b2a"
+            },
+            {
+                "path": "sounds/d2x-xl/gauss-firing.wav",
+                "source": "D2X-XL/sounds/d2x-xl/gauss-firing.wav",
+                "size": 174520,
+                "sha256": "8ad6fda41cb3a085191bdd1b2d6561c7645b8454ad5e31e7901338b7daa16f3c"
+            },
+            {
+                "path": "sounds/d2x-xl/headlight.wav",
+                "source": "D2X-XL/sounds/d2x-xl/headlight.wav",
+                "size": 203868,
+                "sha256": "03b94c69025c5367a61e164ae759d2c1e1b1c7b15e0ae00188bbc9f831d5cf9b"
+            },
+            {
+                "path": "sounds/d2x-xl/headlight2.wav",
+                "source": "D2X-XL/sounds/d2x-xl/headlight2.wav",
+                "size": 86480,
+                "sha256": "953a348b960287c39878e35645be1c280ab5e78f60b68aaf620a3ccb2e51d47d"
+            },
+            {
+                "path": "sounds/d2x-xl/heavyrain.wav",
+                "source": "D2X-XL/sounds/d2x-xl/heavyrain.wav",
+                "size": 1324398,
+                "sha256": "b18612a249632050cf7a0665a38ef3cf4b913ac6f2a4cd7e5c258ec3292fa8bf"
+            },
+            {
+                "path": "sounds/d2x-xl/highping.wav",
+                "source": "D2X-XL/sounds/d2x-xl/highping.wav",
+                "size": 63052,
+                "sha256": "30debf55fb737c35d06fcf1b472dd40b117a17daa3d299a9a119404bd7b5af74"
+            },
+            {
+                "path": "sounds/d2x-xl/insects.wav",
+                "source": "D2X-XL/sounds/d2x-xl/insects.wav",
+                "size": 2381964,
+                "sha256": "03b9164c21c9232df8e1ce349fbb4bd8711012f2385d004de6d98e2e5d962496"
+            },
+            {
+                "path": "sounds/d2x-xl/jet-engine.wav",
+                "source": "D2X-XL/sounds/d2x-xl/jet-engine.wav",
+                "size": 1420828,
+                "sha256": "8e895550606201527fe2195fdad50868f83f7b7817c4d61ca8d494229f63a22e"
+            },
+            {
+                "path": "sounds/d2x-xl/lightning.wav",
+                "source": "D2X-XL/sounds/d2x-xl/lightning.wav",
+                "size": 786476,
+                "sha256": "149382490dfec4517e2594921c8dcb71518c372846b73ee3c157a0f9ca3efd30"
+            },
+            {
+                "path": "sounds/d2x-xl/lowping.wav",
+                "source": "D2X-XL/sounds/d2x-xl/lowping.wav",
+                "size": 86956,
+                "sha256": "f158e13f2828c134fad1289cfc987a045beb4654fb1b1fe84edae710cdc2465e"
+            },
+            {
+                "path": "sounds/d2x-xl/machine-gear.wav",
+                "source": "D2X-XL/sounds/d2x-xl/machine-gear.wav",
+                "size": 341024,
+                "sha256": "483cdd0ad2d62c0ddb2d78aeaee7ca44fca5a7003b77774dd4206d570f7de372"
+            },
+            {
+                "path": "sounds/d2x-xl/mighty-machine.wav",
+                "source": "D2X-XL/sounds/d2x-xl/mighty-machine.wav",
+                "size": 1049036,
+                "sha256": "47fb5e80fe30e2b57140786dfd810599033561e334b132fd559ea8850b0ed1fc"
+            },
+            {
+                "path": "sounds/d2x-xl/missileflight-big.wav",
+                "source": "D2X-XL/sounds/d2x-xl/missileflight-big.wav",
+                "size": 284716,
+                "sha256": "454cc626fbaaa7e2ab2b484cb6ceb7893383a5ac59d69df5b7c6bcb3cc3cfed6"
+            },
+            {
+                "path": "sounds/d2x-xl/missileflight-small.wav",
+                "source": "D2X-XL/sounds/d2x-xl/missileflight-small.wav",
+                "size": 350492,
+                "sha256": "233255b7531bba54c63a584cfdedcc90fb6a4580442b7e7a1180a47643b6ea6f"
+            },
+            {
+                "path": "sounds/d2x-xl/playermissile-small.wav",
+                "source": "D2X-XL/sounds/d2x-xl/playermissile-small.wav",
+                "size": 208072,
+                "sha256": "7b849cbcaf0e3f5bbda916289212f2de313937c0c5390295086d5c2bf5879add"
+            },
+            {
+                "path": "sounds/d2x-xl/rain1.wav",
+                "source": "D2X-XL/sounds/d2x-xl/rain1.wav",
+                "size": 1324370,
+                "sha256": "3940f1b27c268e766a8b9c243e92cf1c6e1d67d4fef338876787005115e733d9"
+            },
+            {
+                "path": "sounds/d2x-xl/rain2.wav",
+                "source": "D2X-XL/sounds/d2x-xl/rain2.wav",
+                "size": 1324370,
+                "sha256": "0d40d84199e41adcca3fbd0ee056c021809101c3a078e536d73d341a5bd3aa4d"
+            },
+            {
+                "path": "sounds/d2x-xl/robotmissile-big.wav",
+                "source": "D2X-XL/sounds/d2x-xl/robotmissile-big.wav",
+                "size": 284716,
+                "sha256": "454cc626fbaaa7e2ab2b484cb6ceb7893383a5ac59d69df5b7c6bcb3cc3cfed6"
+            },
+            {
+                "path": "sounds/d2x-xl/robotmissile-small.wav",
+                "source": "D2X-XL/sounds/d2x-xl/robotmissile-small.wav",
+                "size": 247680,
+                "sha256": "c0a1bdb38560f5968f9945efdbe33a8256b297c73f1858ff0d0526c95a4db46f"
+            },
+            {
+                "path": "sounds/d2x-xl/scrape.wav",
+                "source": "D2X-XL/sounds/d2x-xl/scrape.wav",
+                "size": 217684,
+                "sha256": "62cf6b1cf50e94baec2108183430e2766c8da4ca1be3d10559ecfa2e64c259cb"
+            },
+            {
+                "path": "sounds/d2x-xl/scrape2.wav",
+                "source": "D2X-XL/sounds/d2x-xl/scrape2.wav",
+                "size": 217684,
+                "sha256": "5fa0c795d8068050044e2596c8bf12428d497df03ceee6e2c3e7ba4a9c5d12ac"
+            },
+            {
+                "path": "sounds/d2x-xl/scrape3.wav",
+                "source": "D2X-XL/sounds/d2x-xl/scrape3.wav",
+                "size": 217684,
+                "sha256": "fb904e2f16918eb67fd25c5aaf70a6d09d5e6e6f528d1399e7b60ed9d57ae2cc"
+            },
+            {
+                "path": "sounds/d2x-xl/scrape4.wav",
+                "source": "D2X-XL/sounds/d2x-xl/scrape4.wav",
+                "size": 217684,
+                "sha256": "5df5839cb1a2c626957d47387205e5d2d3a96c972c3c04600268c621788ad4aa"
+            },
+            {
+                "path": "sounds/d2x-xl/slowdown.wav",
+                "source": "D2X-XL/sounds/d2x-xl/slowdown.wav",
+                "size": 356212,
+                "sha256": "164f7a067bdbc58f818a3d94aa45585cfdfc120e3ad5c0a9d490a18a2407e1ee"
+            },
+            {
+                "path": "sounds/d2x-xl/speedup.wav",
+                "source": "D2X-XL/sounds/d2x-xl/speedup.wav",
+                "size": 356212,
+                "sha256": "30e563902212883f36c66ebc4bc4d74dcb069e60ac1dd9f08b9ae18bb64e711e"
+            },
+            {
+                "path": "sounds/d2x-xl/static-buzz.wav",
+                "source": "D2X-XL/sounds/d2x-xl/static-buzz.wav",
+                "size": 884860,
+                "sha256": "f2f09007e1086077d42caebec5016bfd3ce3e0a2ebf3727dc88714a066aebd07"
+            },
+            {
+                "path": "sounds/d2x-xl/steam.wav",
+                "source": "D2X-XL/sounds/d2x-xl/steam.wav",
+                "size": 429220,
+                "sha256": "9ac5a4a1a7343dc70dd820cb0bae967e68f4c7e2e2a16b2568b27aa6d513f49c"
+            },
+            {
+                "path": "sounds/d2x-xl/teleporter.wav",
+                "source": "D2X-XL/sounds/d2x-xl/teleporter.wav",
+                "size": 325864,
+                "sha256": "d9322847b87f8135f4291394a85117df54153c849df2b28101307907715a6c8b"
+            },
+            {
+                "path": "sounds/d2x-xl/vulcan-firing.wav",
+                "source": "D2X-XL/sounds/d2x-xl/vulcan-firing.wav",
+                "size": 174520,
+                "sha256": "cd75e23bf0a4dd7d1b8775228b3d95145eaa80724e45dedb822f0eabe8d82820"
+            },
+            {
+                "path": "sounds/d2x-xl/waterfall.wav",
+                "source": "D2X-XL/sounds/d2x-xl/waterfall.wav",
+                "size": 876596,
+                "sha256": "04bce040a157b6bcc71ef1a1dbae1262364aac174b21208cac51418df5db219f"
+            },
+            {
+                "path": "sounds/d2x-xl/zoom1.wav",
+                "source": "D2X-XL/sounds/d2x-xl/zoom1.wav",
+                "size": 52956,
+                "sha256": "f836fac90150dc1736aa908f621b9f7bd5fb0ca6128a4812dc59f2f1e7c2ef1b"
+            },
+            {
+                "path": "sounds/d2x-xl/zoom2.wav",
+                "source": "D2X-XL/sounds/d2x-xl/zoom2.wav",
+                "size": 176412,
+                "sha256": "f6c2cf2b585e0b7d2c8517a55890a532f472bd316973e2bb9f044d813d8ceff5"
+            },
+            {
+                "path": "textures/d2/bullettime#0.png",
+                "source": "D2X-XL/textures/D2/bullettime#0.png",
+                "size": 826728,
+                "sha256": "6b0de9039a3a90312e0193d88f9aa804a50d2334454afc52e1a5c5e74eadc1c0"
+            },
+            {
+                "path": "textures/d2/slowmotion#0.png",
+                "source": "D2X-XL/textures/D2/slowmotion#0.png",
+                "size": 551831,
+                "sha256": "3133036494c8ef656433842850598072ab4dadde58870389c41745f73977113e"
+            },
+            {
+                "path": "textures/d2x-xl/bubble.png",
+                "source": "D2X-XL/textures/d2x-xl/bubble.png",
+                "size": 140069,
+                "sha256": "17d49b51447677609bba7568f3d82d46156c65cc4dfa3a05820adf7b041fc17d"
+            },
+            {
+                "path": "textures/d2x-xl/corona.png",
+                "source": "D2X-XL/textures/d2x-xl/corona.png",
+                "size": 17894,
+                "sha256": "7c04c813cdd025da7ccc72cb5c1fa7a6213e2ff296f75d6c79f4d3db8119e1dd"
+            },
+            {
+                "path": "textures/d2x-xl/forcefield.png",
+                "source": "D2X-XL/textures/d2x-xl/forcefield.png",
+                "size": 185719,
+                "sha256": "e1d89db6391e7992548074c9d0c55059b057eb69f9bc9a5ecb6baeb8680fda0f"
+            },
+            {
+                "path": "textures/d2x-xl/forcefield2.png",
+                "source": "D2X-XL/textures/d2x-xl/forcefield2.png",
+                "size": 190906,
+                "sha256": "c61197e0bcf7ab00d7fcf7841ebc814ce1b5b7e0f7700b9898119ce1edf07b6a"
+            },
+            {
+                "path": "textures/d2x-xl/forcefield3.png",
+                "source": "D2X-XL/textures/d2x-xl/forcefield3.png",
+                "size": 192640,
+                "sha256": "8c56efb55bac52049d264b472a13644744928a20ecf3463a17253187019cf965"
+            },
+            {
+                "path": "textures/d2x-xl/glare.png",
+                "source": "D2X-XL/textures/d2x-xl/glare.png",
+                "size": 34779,
+                "sha256": "5a2b8107bfe8013a1c56dd170dd07d9922473cd69b54a40d1a37bf928c77665a"
+            },
+            {
+                "path": "textures/d2x-xl/rain.png",
+                "source": "D2X-XL/textures/d2x-xl/rain.png",
+                "size": 700,
+                "sha256": "2fa050b3cf433a363595a41e6604336d053b7d9d7e9e938540a844d7cde110d3"
+            },
+            {
+                "path": "textures/d2x-xl/simplesmoke.png",
+                "source": "D2X-XL/textures/d2x-xl/simplesmoke.png",
+                "size": 18379,
+                "sha256": "8c39135fddbc35dc85e2132ece9fb0449625ae9b86df3e3eae8cf7fa44bf8c48"
+            },
+            {
+                "path": "textures/d2x-xl/smoke.png",
+                "source": "D2X-XL/textures/d2x-xl/smoke.png",
+                "size": 114856,
+                "sha256": "bb6214803846ad7a664b8693c828259110014c9f6b21443fb27fda85f5dc7f0d"
+            },
+            {
+                "path": "textures/d2x-xl/smokingfire.png",
+                "source": "D2X-XL/textures/d2x-xl/smokingfire.png",
+                "size": 8979,
+                "sha256": "32a671890d4845b6e72433dff1bb8f6053dda5373a337c8db2007ac0770c0bef"
+            }
+        ]
+    },
+    "captures": {
+        "capture-03\\d2_rtarena_level1_20261115_103230.dximdemo": {
+            "sha256": "89658ecd89d0c0fb0984301ad22cb41775c7f8b03223a1cebf77801e74e536c4",
+            "bytes": 1319283
+        },
+        "capture-03\\d2_rtarena_level1_20261115_103230.dximdemo.rngtrace.jsonl": {
+            "sha256": "055e91442554de6bc707b6c294989facb6a99171dc06c4cc649ee49f3639c56d",
+            "bytes": 33670
+        },
+        "capture-03\\live-7906.jsonl.gz": {
+            "sha256": "45e285a5b4f9ac98f510eb3214ffc73ebb71328ed26fb6e3321c8ea3f18b591a",
+            "bytes": 653961
+        },
+        "level-capture-01\\d2_rtarena_level1_20261115_105822.dximdemo": {
+            "sha256": "2547f72b54dfe29256d72e27e14831ec63396d59772bca6ba3a44afdb7a2e10c",
+            "bytes": 3745819
+        },
+        "level-capture-01\\d2_rtarena_level1_20261115_105822.dximdemo.rngtrace.jsonl": {
+            "sha256": "c802cf9f423ed2486a658ae0f2a96e8ed022d7a8277f64f56460dfc0576c1aab",
+            "bytes": 27989
+        },
+        "level-capture-01\\live-9413.jsonl.gz": {
+            "sha256": "e191c930269d9c376262807b30bcabc410e3847780450a21a036c3d93d2de478",
+            "bytes": 1719001
+        },
+        "time-capture-03\\cold-capture\\d2_wshock20_level6_20261115_110630.dximdemo": {
+            "sha256": "102efaff20b18c52bde78c801b90f5f9a30fab2c7eb2a7dd309d0cd0655f7024",
+            "bytes": 3752170
+        },
+        "time-capture-03\\cold-capture\\d2_wshock20_level6_20261115_110630.dximdemo.rngtrace.jsonl": {
+            "sha256": "2bd6478e2939a4ebc6400665366fec58720d6c88b3e665f09e5f0fe71fc6ed96",
+            "bytes": 278609
+        },
+        "time-capture-03\\cold-capture\\d2_wshock20_level6_20261115_110642.dximdemo": {
+            "sha256": "375172aab821a522191e276abac575eb89d321faeef3eae96ca7560f3143ba1e",
+            "bytes": 3651876
+        },
+        "time-capture-03\\cold-capture\\d2_wshock20_level6_20261115_110642.dximdemo.rngtrace.jsonl": {
+            "sha256": "d0e9349cd6a1d04cb4f73e0f4f1cd0967c605ea636e52461ca90c5ff3ac89aae",
+            "bytes": 3446
+        },
+        "time-capture-03\\cold-capture\\d2_wshock20_level6_20261115_110728.dximdemo": {
+            "sha256": "9e3142cbe80eac3313ae18970c8f884a2c03d7afc5c16d4507b1b7db0e0b978f",
+            "bytes": 3694931
+        },
+        "time-capture-03\\cold-capture\\d2_wshock20_level6_20261115_110728.dximdemo.rngtrace.jsonl": {
+            "sha256": "ab6fffc901a3beb4c10063dbc0738a97829c270715c9305a7871b5e42e66200c",
+            "bytes": 17877
+        },
+        "time-capture-03\\cold-capture\\live-23018.jsonl.gz": {
+            "sha256": "8750233b94f14cce004fa3fdf75878767c5dd19c6ca6b54cb526622d3bec6b7f",
+            "bytes": 5844211
+        },
+        "time-capture-03\\cold-capture\\live-35392.jsonl.gz": {
+            "sha256": "8358553b46695ef9bf1bc9f05b159f8ff2dc538a9959e76cf5a6085358cd926b",
+            "bytes": 5863169
+        },
+        "time-capture-03\\cold-capture\\live-7380.jsonl.gz": {
+            "sha256": "b7efc9cc7a3d75d929fd4c0e036f4c3a22999102ceb9a41a027fbde7d20b5264",
+            "bytes": 5864812
+        }
+    },
+    "comparisons": {
+        "replay-android-02": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 44,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 44
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 48
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 64,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 87,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "40869f73ee6a49f8f4daa2c39d2bc7edb0b82bc0dce1bc39a8c3135555af28d0"
+        },
+        "replay-windows-01": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 44,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 44
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 48
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 64,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 87,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "99f396fef703cecdb4ceaf783df77fbf7bb608952fb126e71908fe3cee2a927e",
+            "binary_sha256": "23496c04af71bf3437f90cc95e82fe853574ace95b7abd44754efef09ba483c5",
+            "capture_sha256": "89658ecd89d0c0fb0984301ad22cb41775c7f8b03223a1cebf77801e74e536c4",
+            "exit_code": 0,
+            "elapsed_seconds": 7.454,
+            "input_manifest": "fbf08ab3e161e03016fa8a6d2b2ac9afe98d27577d5deada3028c5f6d9aabffb"
+        },
+        "replay-linux-02": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 44,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 44
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 48
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 64,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 87,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "aa39105697dc2f9c750af3d6afa8d143ad261b7d615a292182cd4dc4465ed52b",
+            "binary_sha256": "422a28bacc8625f3e840d7efabcacdf476f841782e7c4e006c68cef7349817ca",
+            "capture_sha256": "89658ecd89d0c0fb0984301ad22cb41775c7f8b03223a1cebf77801e74e536c4",
+            "exit_code": 0,
+            "elapsed_seconds": 7.85,
+            "input_manifest": "fbf08ab3e161e03016fa8a6d2b2ac9afe98d27577d5deada3028c5f6d9aabffb"
+        },
+        "level-android-01": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 129,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 129
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 133
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 0,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 128,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "27161870623fb89dbf909ad88745630d1ff60afedf2e923d87921768663d9307"
+        },
+        "level-windows-01": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 129,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 129
+                },
+                "world": {
+                    "status": "fail",
+                    "records_compared": 133
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 0,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 128,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "211333c35006d66f66736b2a61fe0973eb399fc25299641248366e2f069d4977",
+            "binary_sha256": "23496c04af71bf3437f90cc95e82fe853574ace95b7abd44754efef09ba483c5",
+            "capture_sha256": "2547f72b54dfe29256d72e27e14831ec63396d59772bca6ba3a44afdb7a2e10c",
+            "exit_code": 0,
+            "elapsed_seconds": 8.859,
+            "input_manifest": "fbf08ab3e161e03016fa8a6d2b2ac9afe98d27577d5deada3028c5f6d9aabffb"
+        },
+        "level-linux-01": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 129,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 129
+                },
+                "world": {
+                    "status": "fail",
+                    "records_compared": 133
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 0,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 128,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "ec8564d8fc2bd80eaec5e732bb3597bff4701b6e77c4ffd8d14962b4397357ea",
+            "binary_sha256": "422a28bacc8625f3e840d7efabcacdf476f841782e7c4e006c68cef7349817ca",
+            "capture_sha256": "2547f72b54dfe29256d72e27e14831ec63396d59772bca6ba3a44afdb7a2e10c",
+            "exit_code": 0,
+            "elapsed_seconds": 11.685,
+            "input_manifest": "fbf08ab3e161e03016fa8a6d2b2ac9afe98d27577d5deada3028c5f6d9aabffb"
+        },
+        "time-windows-slow-07": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 85,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 85
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 89
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 1172,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "a2135a9c07140aeb9e5957a738b50b45a9798bb76426492d9f85f1d9d58fa106",
+            "binary_sha256": "75ba3ab9e08c36c0b6d08fb63241160b8d7cd7ffc5f9e41ea7729133c248276a",
+            "capture_sha256": "102efaff20b18c52bde78c801b90f5f9a30fab2c7eb2a7dd309d0cd0655f7024",
+            "exit_code": 0,
+            "elapsed_seconds": 13.875,
+            "input_manifest": "17c99b85dfec89e54457407d866435f4589f89f9af41ca296c99dcfe48fee4ce"
+        },
+        "time-windows-bullet-03": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 85,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 85
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 89
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 15,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "728d090643df6a4a4eca9e23ebee09145bab93be50a36d428522f7e38a49a295",
+            "binary_sha256": "75ba3ab9e08c36c0b6d08fb63241160b8d7cd7ffc5f9e41ea7729133c248276a",
+            "capture_sha256": "375172aab821a522191e276abac575eb89d321faeef3eae96ca7560f3143ba1e",
+            "exit_code": 0,
+            "elapsed_seconds": 15.937,
+            "input_manifest": "17c99b85dfec89e54457407d866435f4589f89f9af41ca296c99dcfe48fee4ce"
+        },
+        "time-windows-cold-03": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 85,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 85
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 89
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 75,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "80dadc9c52bf1cc02aeb997c2fffebfd439b0b61089c8a7c3b6dc774f2cb8727",
+            "binary_sha256": "75ba3ab9e08c36c0b6d08fb63241160b8d7cd7ffc5f9e41ea7729133c248276a",
+            "capture_sha256": "9e3142cbe80eac3313ae18970c8f884a2c03d7afc5c16d4507b1b7db0e0b978f",
+            "exit_code": 0,
+            "elapsed_seconds": 15.0,
+            "input_manifest": "17c99b85dfec89e54457407d866435f4589f89f9af41ca296c99dcfe48fee4ce"
+        },
+        "time-linux-slow-03": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 85,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 85
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 89
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 1172,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "20818fd9663380de0ea0a48a95d67f3173524ed79337b8384c37ac18af1a4755",
+            "binary_sha256": "54e88ff85a1424f8444875df6f2eb0729cfccebb3c9bda068e5fcf16910b99cc",
+            "capture_sha256": "102efaff20b18c52bde78c801b90f5f9a30fab2c7eb2a7dd309d0cd0655f7024",
+            "exit_code": 0,
+            "elapsed_seconds": 16.913,
+            "input_manifest": "17c99b85dfec89e54457407d866435f4589f89f9af41ca296c99dcfe48fee4ce"
+        },
+        "time-linux-bullet-03": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 85,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 85
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 89
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 15,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "211ce8f64ab350193f9ce21570cc5776a2a5fe27543a453baae4c07787e8e253",
+            "binary_sha256": "54e88ff85a1424f8444875df6f2eb0729cfccebb3c9bda068e5fcf16910b99cc",
+            "capture_sha256": "375172aab821a522191e276abac575eb89d321faeef3eae96ca7560f3143ba1e",
+            "exit_code": 0,
+            "elapsed_seconds": 14.252,
+            "input_manifest": "17c99b85dfec89e54457407d866435f4589f89f9af41ca296c99dcfe48fee4ce"
+        },
+        "time-linux-cold-03": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 85,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 85
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 89
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 75,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "8c7cb52e1df67815d3f1d1565c73da9e23fff7037eec372241dba6831b7d3e7f",
+            "binary_sha256": "54e88ff85a1424f8444875df6f2eb0729cfccebb3c9bda068e5fcf16910b99cc",
+            "capture_sha256": "9e3142cbe80eac3313ae18970c8f884a2c03d7afc5c16d4507b1b7db0e0b978f",
+            "exit_code": 0,
+            "elapsed_seconds": 14.255,
+            "input_manifest": "17c99b85dfec89e54457407d866435f4589f89f9af41ca296c99dcfe48fee4ce"
+        },
+        "time-capture-03\\replay-d2_wshock20_level6_20261115_110630": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 85,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 85
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 89
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 1172,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "8cf5cf18fdc30df52bc6bfc291f589de2288843d2c64bb9d69b7af959379b264"
+        },
+        "time-capture-03\\replay-d2_wshock20_level6_20261115_110642": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 85,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 85
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 89
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 15,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "15c31b21454e77bfbb9cdae4a56e7a28da3a7f49718b60f323af725ca4a7bd5f"
+        },
+        "time-capture-03\\replay-d2_wshock20_level6_20261115_110728": {
+            "checks": {
+                "frames": {
+                    "frames_compared": 85,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 85
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 89
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 75,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "raw_receipt_sha256": "1c350d9fae84eccbd901684e44085429d1d07647c1e58452a9e6f7e60caa1b8d"
+        }
+    },
+    "input_manifests": {
+        "fbf08ab3e161e03016fa8a6d2b2ac9afe98d27577d5deada3028c5f6d9aabffb": {
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/alien1.pig": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/alien2.pig": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/descent2.ham": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/descent2.hog": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/descent2.s22": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/fire.pig": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/groupa.pig": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/ice.pig": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/water.pig": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1",
+            "game_data/retail-ci/xl/missions/spotlight/rtarena.hog": "adbfea019c1ac29ac922e15876c22ca6ce30eb02d598a98e6ef7dfdce2b2dd3e",
+            "game_data/retail-ci/xl/missions/spotlight/rtarena.mn2": "14150755f14e210b284aa03c45d75e1b2f96be7b567bbc324bf4986b96928a71"
+        },
+        "17c99b85dfec89e54457407d866435f4589f89f9af41ca296c99dcfe48fee4ce": {
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/alien1.pig": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/alien2.pig": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/descent2.ham": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/descent2.hog": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/descent2.s22": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/fire.pig": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/groupa.pig": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/ice.pig": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+            "temp/xl-readiness-tranche-20261114/retail-data/d2/water.pig": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1",
+            "temp/xl-implementation-20261109/complete-runtime/d2x-xl.hog": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/airbubbles.wav": "539b434ca912a17442017e4f68aad21953c285ba2d816bb5bb7c2d6678f0e5cc",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/ambientlava.wav": "05a14c541f872d269f8c35ec20445a67860b1444f4c48350041e746fdf3bf569",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/beep.wav": "5f48271b69fdf2ac81650ec0009e3944bfd4047ab99d5e54034bef875fe7b9ff",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/boiling-lava.wav": "1fb87d8ad24cd5ab294c0824c7937dd191b8cab118bb186bc5084cb8cd8d104a",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/busy-machine.wav": "d7469c1f5e20dae9725a740ca4fb6e9a4713b89b63bf9cfaf7776e8822b0d2e8",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/computer.wav": "44ea1d3dc5c9329161eb059a7de06a845e61ba7d8a77beb7253d6526c3f4d8ed",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/deep-hum.wav": "9e2d02c509fdaa785fae0199cc70e0c8f5a72e4209117af68b0473d89d25e52b",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/dripping-water-2.wav": "20d6b03ddf79ba0d56e4f80589de56faceea635be88632fe6fccc59bb70e0aa0",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/dripping-water-3.wav": "53bc4a5411fd9affc61a812a44d1d1cc2839fb9d866afb18c9acbd0d1e1442ec",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/dripping-water.wav": "03b028c00cd2e0bc9c76d2aee45097c452fb347624a5fc32aaaa82d203977058",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/earthquake.wav": "bbb206a7175614d1ee10422d39cab6e842de1deabe31c62956be6ac3ba92f3d8",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/energy.wav": "532f5bcd635fad42def5988e65226999312d36adbe6e5198313714ad1cae5e55",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/falling-rocks-2.wav": "5a67a4ef3119df84e55a988b6da4be7f32b1bd98af7877efaf3079e4c4eeca9b",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/falling-rocks.wav": "f8044f2af840011186ba90243a5ff737856f39590edebf835da814eaea809e0e",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/fast-fan.wav": "fafb7b79f1a78d6a50810afe9fc97a908dba43004287d1ac27b6fe4b693fbde6",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/fire.wav": "d49893d505b5a2e99399267dbcced9065b33449ae1cde8df112f326cda2779ff",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/flowing-lava.wav": "bc22da63bdf1d763503dd645e7def1ad310f93497b01a27e668fc31eeb411aad",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/flowing-water.wav": "242ba8adce20e38adfa427ea23a433b60cab865e036b2aa5b332a2da47bc32e6",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/gatling-slowdown.wav": "4bbfa3c21fccac81ab2708b66c48c2bbb26613a31fef1de120ae0971628d4547",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/gatling-speedup.wav": "dbb5f7cd9a05abdf6a080bcb8709d4f85e2b21a295bca6bee7e8097195726b2a",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/gauss-firing.wav": "8ad6fda41cb3a085191bdd1b2d6561c7645b8454ad5e31e7901338b7daa16f3c",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/headlight.wav": "03b94c69025c5367a61e164ae759d2c1e1b1c7b15e0ae00188bbc9f831d5cf9b",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/headlight2.wav": "953a348b960287c39878e35645be1c280ab5e78f60b68aaf620a3ccb2e51d47d",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/heavyrain.wav": "b18612a249632050cf7a0665a38ef3cf4b913ac6f2a4cd7e5c258ec3292fa8bf",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/highping.wav": "30debf55fb737c35d06fcf1b472dd40b117a17daa3d299a9a119404bd7b5af74",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/insects.wav": "03b9164c21c9232df8e1ce349fbb4bd8711012f2385d004de6d98e2e5d962496",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/jet-engine.wav": "8e895550606201527fe2195fdad50868f83f7b7817c4d61ca8d494229f63a22e",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/lightning.wav": "149382490dfec4517e2594921c8dcb71518c372846b73ee3c157a0f9ca3efd30",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/lowping.wav": "f158e13f2828c134fad1289cfc987a045beb4654fb1b1fe84edae710cdc2465e",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/machine-gear.wav": "483cdd0ad2d62c0ddb2d78aeaee7ca44fca5a7003b77774dd4206d570f7de372",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/mighty-machine.wav": "47fb5e80fe30e2b57140786dfd810599033561e334b132fd559ea8850b0ed1fc",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/missileflight-big.wav": "454cc626fbaaa7e2ab2b484cb6ceb7893383a5ac59d69df5b7c6bcb3cc3cfed6",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/missileflight-small.wav": "233255b7531bba54c63a584cfdedcc90fb6a4580442b7e7a1180a47643b6ea6f",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/playermissile-small.wav": "7b849cbcaf0e3f5bbda916289212f2de313937c0c5390295086d5c2bf5879add",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/rain1.wav": "3940f1b27c268e766a8b9c243e92cf1c6e1d67d4fef338876787005115e733d9",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/rain2.wav": "0d40d84199e41adcca3fbd0ee056c021809101c3a078e536d73d341a5bd3aa4d",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/robotmissile-big.wav": "454cc626fbaaa7e2ab2b484cb6ceb7893383a5ac59d69df5b7c6bcb3cc3cfed6",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/robotmissile-small.wav": "c0a1bdb38560f5968f9945efdbe33a8256b297c73f1858ff0d0526c95a4db46f",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/scrape.wav": "62cf6b1cf50e94baec2108183430e2766c8da4ca1be3d10559ecfa2e64c259cb",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/scrape2.wav": "5fa0c795d8068050044e2596c8bf12428d497df03ceee6e2c3e7ba4a9c5d12ac",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/scrape3.wav": "fb904e2f16918eb67fd25c5aaf70a6d09d5e6e6f528d1399e7b60ed9d57ae2cc",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/scrape4.wav": "5df5839cb1a2c626957d47387205e5d2d3a96c972c3c04600268c621788ad4aa",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/slowdown.wav": "164f7a067bdbc58f818a3d94aa45585cfdfc120e3ad5c0a9d490a18a2407e1ee",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/speedup.wav": "30e563902212883f36c66ebc4bc4d74dcb069e60ac1dd9f08b9ae18bb64e711e",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/static-buzz.wav": "f2f09007e1086077d42caebec5016bfd3ce3e0a2ebf3727dc88714a066aebd07",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/steam.wav": "9ac5a4a1a7343dc70dd820cb0bae967e68f4c7e2e2a16b2568b27aa6d513f49c",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/teleporter.wav": "d9322847b87f8135f4291394a85117df54153c849df2b28101307907715a6c8b",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/vulcan-firing.wav": "cd75e23bf0a4dd7d1b8775228b3d95145eaa80724e45dedb822f0eabe8d82820",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/waterfall.wav": "04bce040a157b6bcc71ef1a1dbae1262364aac174b21208cac51418df5db219f",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/zoom1.wav": "f836fac90150dc1736aa908f621b9f7bd5fb0ca6128a4812dc59f2f1e7c2ef1b",
+            "temp/xl-implementation-20261109/complete-runtime/sounds/d2x-xl/zoom2.wav": "f6c2cf2b585e0b7d2c8517a55890a532f472bd316973e2bb9f044d813d8ceff5",
+            "temp/xl-implementation-20261109/complete-runtime/textures/d2/bullettime#0.png": "6b0de9039a3a90312e0193d88f9aa804a50d2334454afc52e1a5c5e74eadc1c0",
+            "temp/xl-implementation-20261109/complete-runtime/textures/d2/slowmotion#0.png": "3133036494c8ef656433842850598072ab4dadde58870389c41745f73977113e",
+            "temp/xl-implementation-20261109/complete-runtime/textures/d2x-xl/bubble.png": "17d49b51447677609bba7568f3d82d46156c65cc4dfa3a05820adf7b041fc17d",
+            "temp/xl-implementation-20261109/complete-runtime/textures/d2x-xl/corona.png": "7c04c813cdd025da7ccc72cb5c1fa7a6213e2ff296f75d6c79f4d3db8119e1dd",
+            "temp/xl-implementation-20261109/complete-runtime/textures/d2x-xl/forcefield.png": "e1d89db6391e7992548074c9d0c55059b057eb69f9bc9a5ecb6baeb8680fda0f",
+            "temp/xl-implementation-20261109/complete-runtime/textures/d2x-xl/forcefield2.png": "c61197e0bcf7ab00d7fcf7841ebc814ce1b5b7e0f7700b9898119ce1edf07b6a",
+            "temp/xl-implementation-20261109/complete-runtime/textures/d2x-xl/forcefield3.png": "8c56efb55bac52049d264b472a13644744928a20ecf3463a17253187019cf965",
+            "temp/xl-implementation-20261109/complete-runtime/textures/d2x-xl/glare.png": "5a2b8107bfe8013a1c56dd170dd07d9922473cd69b54a40d1a37bf928c77665a",
+            "temp/xl-implementation-20261109/complete-runtime/textures/d2x-xl/smoke.png": "bb6214803846ad7a664b8693c828259110014c9f6b21443fb27fda85f5dc7f0d",
+            "temp/xl-implementation-20261109/complete-runtime/textures/d2x-xl/smokingfire.png": "32a671890d4845b6e72433dff1bb8f6053dda5373a337c8db2007ac0770c0bef",
+            "temp/xl-implementation-20261109/time-inputs/d2x.ham": "faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f",
+            "temp/xl-implementation-20261109/desktop-play/game-data/missions/wshock20.hog": "2054dca034ea9aac0d13c37a5867b18fa84d9b307b36702b56bcc9ed3a61b45c",
+            "temp/xl-implementation-20261109/desktop-play/game-data/missions/wshock20.mn2": "e4ee4da1dfc16b48b91be3409216e73cf43dd74e6e20d1be40b6bb310fe5a42a"
+        }
+    },
+    "time-capture-02": {
+        "owner": {
+            "phase": "complete",
+            "disabled_recovery_run_id": null,
+            "attempt_id": "fed09d8d22394240beba56e1c90c4925",
+            "profile_hashes_restored": true,
+            "disabled_negative_run_id": null,
+            "warm_run_id": "162e7ca9186241c9b48cd7b0d40320f4",
+            "cold_run_id": "e886268f2a144c808f2aec44aa06d2c1",
+            "status": "PASS",
+            "failure": null
+        },
+        "cold": {
+            "resources_verified": 64,
+            "cold_pid": "14727",
+            "fresh_process": true,
+            "warm_pid": "14163"
+        }
+    },
+    "time-capture-03": {
+        "owner": {
+            "profile_hashes_restored": true,
+            "attempt_id": "86140daab8734cd7a0af798376303b8c",
+            "status": "PASS",
+            "disabled_recovery_run_id": null,
+            "failure": null,
+            "cold_run_id": "9258d915759946139227c5419e3f5f54",
+            "warm_run_id": "5d3e6eb294a04bac8211d76ff14f40f0",
+            "phase": "complete",
+            "disabled_negative_run_id": null
+        },
+        "cold": {
+            "resources_verified": 64,
+            "warm_pid": "21360",
+            "fresh_process": true,
+            "cold_pid": "21969"
+        }
+    },
+    "protection": {
+        "capture-01": {
+            "before_sha256": "2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15",
+            "after_sha256": "2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15"
+        },
+        "capture-02": {
+            "before_sha256": "2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15",
+            "after_sha256": "2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15"
+        },
+        "capture-03": {
+            "before_sha256": "2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15",
+            "after_sha256": "2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15"
+        },
+        "level-capture-01": {
+            "before_sha256": "2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15",
+            "after_sha256": "2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15"
+        },
+        "level-android-01": {
+            "before_sha256": "2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15",
+            "after_sha256": "2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15"
+        },
+        "ordinary-guard-01": {
+            "before_sha256": "2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15",
+            "after_sha256": "2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15"
+        },
+        "ordinary-water-01": {
+            "before_sha256": "2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15",
+            "after_sha256": "2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15"
+        }
+    },
+    "readiness_binary_sha256": "6ab97fdcea670b0950adc8ddc0a27f8e0c09e9c597d365849bed011d98f2bdd4",
+    "limitations": [
+        "Ordinary Android XL timelines remain guarded",
+        "Cross-platform new-level world metadata mismatch retained: 207 fields; no filtering",
+        "Frozen ordinary readiness remains 4/8",
+        "No physical Android device qualification",
+        "No true-headless XL timeline qualification",
+        "Five disclosed pose assists outside time-equipment recordings; native pilot unlock",
+        "Short directed cases do not establish campaign or G2-G7 completion"
+    ]
+}

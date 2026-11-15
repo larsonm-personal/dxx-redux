@@ -6013,3 +6013,43 @@ URLs, attempts and all job outcomes. Inspect the separate final documentation
 push and retain final-handoff-receipt.json plus PR 512's final handoff body;
 pending or superseded runs are not final-candidate passes. Another tranche
 requires explicit invocation with new bounds.
+
+### November 15 Android-origin capture and lifecycle tranche
+
+The user explicitly selected "no bound" for the next invocation, superseding the
+expired window requirement above. No agents were used. PR 513 at
+51edd57ede67a8e70fd8b06c344dd17b36431a5e extends PR 512; PR 514 implementation
+67c8dcf083757d37c4ff53074864a33040021dda extends PR 513 in native stack 511.
+Nothing is merged, queued or published upstream.
+
+An Android developer-only observer hook uses the existing native recorder and
+complete state/RNG observers. Protected water and addon owners retain genuine
+live recordings, partial failures and exact restoration. A 44-frame portal
+capture matches Android and ordinary Windows/Linux in all comparisons. The same
+three final time-equipment recordings each match all three platforms: 85 frame
+and object records, 89 world records, SIM counts 1172/15/75, zero FX events and
+terminal results. Warm/cold controls pass 39/39 and 14/14 with distinct process
+IDs, 64 verified original resources and unchanged saves. Five original poses are
+outside recordings; the pilot unlock and all assists are disclosed in the report.
+
+The 129-frame automatic level-start capture matches Android completely but both
+ordinary hosts retain 207 canonical route metadata differences in complete world
+comparison. Every other comparator passes. No fields are filtered. Deferred
+Android versus host-populated metadata startup needs an owned native contract;
+ordinary Android and true-headless admission remain guarded. Actual multi-level
+progression, physical-device and broad campaign qualification remain open.
+
+Four Windows/Linux D1/D2 Debug native contracts, all 61 public reference tests,
+both catalogs (549 support scripts), ordinary Android water 59/59 and the
+expected ordinary Android/low-memory rejection controls pass. Exact ordinary
+headless readiness with pinned assets is still 4/8. No reroll or input relaxation.
+The original ordinary APK 504848a52babb1c5c286e1c013d52f436cf6d1ffeaddf725444d93a41172dbb5
+is restored and hash-verified; test backups/disposable set are absent. Original
+fixtures, failed receipts, all stashes and .codex/ are retained.
+
+See xl_android_capture_what_was_done_20261115.md and its structured receipts for
+hashes, comparisons, initial failures and open defects. The CI snapshot records
+pending jobs honestly; the documentation push needs its own final-head audit,
+including private controller and skipped/incomplete owners. Final results belong
+in the local final-handoff receipt and PR 514 body. No full G2-G7, unconditional
+8/8 estimate or unassisted campaign claim is made. Another tranche is explicit.
