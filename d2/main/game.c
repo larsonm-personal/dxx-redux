@@ -1750,6 +1750,7 @@ void close_game()
 {
 	close_gauges();
 	restore_effect_bitmap_icons();
+	close_endlevel();
 }
 
 

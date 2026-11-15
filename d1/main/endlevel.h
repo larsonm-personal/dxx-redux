@@ -32,6 +32,8 @@ void do_endlevel_frame();
 void draw_exit_model();
 void free_endlevel_data();
 void init_endlevel();
+// Retire procedural presentation state at engine shutdown, not resource reload
+void close_endlevel();
 void stop_endlevel_sequence();
 
 

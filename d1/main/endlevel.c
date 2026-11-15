@@ -118,6 +118,7 @@ fix cur_fly_speed,desired_fly_speed;
 
 extern int matt_find_connect_side(int seg0,int seg1);
 void generate_starfield();
+static int starfield_initialized;
 static void position_endlevel_exterior(int segment, int side);
 void draw_stars();
 int find_exit_side(object *obj);
@@ -199,10 +200,19 @@ void init_endlevel()
 //!!	exit_modelnum = load_polygon_model("exit01.pof",1,exit_bitmap_list,NULL);
 //!!	destroyed_exit_modelnum = load_polygon_model("exit01d.pof",1,exit_bitmap_list,NULL);
 
-	generate_starfield();
+	// Procedural stars belong to the engine session, not reloadable mission assets
+	if (!starfield_initialized) {
+		generate_starfield();
+		starfield_initialized = 1;
+	}
 
 	gr_init_bitmap_data (&terrain_bm_instance);
 	gr_init_bitmap_data (&satellite_bm_instance);
+}
+
+void close_endlevel()
+{
+	starfield_initialized = 0;
 }
 
 object external_explosion;
