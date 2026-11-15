@@ -6,10 +6,14 @@ param(
     [Parameter(Mandatory)][string]$Descriptor,
     [string]$Replay,
     [switch]$ReplayOnly,
+    [switch]$CaptureLive,
+    [switch]$LevelStart,
     [string]$OutputDirectory
 )
 $ErrorActionPreference = 'Stop'
 if ($ReplayOnly -and !$Replay) { throw 'ReplayOnly requires Replay' }
+if ($CaptureLive -and ($Replay -or $ReplayOnly)) { throw 'CaptureLive requires a separate fresh capture run' }
+if ($LevelStart -and !$CaptureLive -and !$ReplayOnly) { throw 'LevelStart requires live capture or isolated replay' }
 if ($Replay) {
     $replayHeader = Get-Content -LiteralPath $Replay -TotalCount 1 | ConvertFrom-Json
     $replayTrailer = Get-Content -LiteralPath $Replay -Tail 1 | ConvertFrom-Json
@@ -17,7 +21,9 @@ if ($Replay) {
         $replayHeader.level -ne 1 -or $replayHeader.frame_count -le 0 -or
         ($replayHeader.start_mode -eq 'save_checkpoint' -and
         ($replayHeader.version -ne 6 -or [string]::IsNullOrWhiteSpace($replayHeader.start_save))) -or
-        $replayTrailer.type -ne 'result' -or $replayTrailer.result.position.segment -ne 187) {
+        $replayTrailer.type -ne 'result' -or
+        (!$LevelStart -and $replayTrailer.result.position.segment -ne 187) -or
+        ($LevelStart -and ($replayHeader.start_mode -ne 'new_level' -or $replayHeader.frame_count -lt 120))) {
         throw 'Requires the native original-arena spawn-to-water recording and its supported startup profile'
     }
     if ($replayHeader.version -eq 6 -and
@@ -60,8 +66,10 @@ $backup = 'files/xl-water-runtime-backup'
 $paths = @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d2x-redux/d2x.ini',
     'files/d2x-redux/mod_usage.json', 'files/d2x-redux/missions/rtarena.hog', 'files/d2x-redux/missions/rtarena.mn2',
     'files/descent.cfg', 'files/graphics_safety.json', 'files/.graphics_safety.lock', 'files/file_sets.json', 'shared_prefs')
+if ($CaptureLive) { $paths += @('files/d2x-redux/input_demo_recordings', 'files/d2x-redux/xl_capture_traces') }
 $ready = $false
 $owned = $false
+$captureExported = $false
 try {
     Invoke-WaterAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     Invoke-WaterShell "mkdir $backup" | Out-Null
@@ -82,20 +90,35 @@ try {
     Invoke-WaterShell 'mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-water-runtime.hog files/d2x-redux/missions/rtarena.hog && cp /data/local/tmp/xl-water-runtime.mn2 files/d2x-redux/missions/rtarena.mn2' | Out-Null
     Invoke-WaterAdb -Arguments @('logcat', '-c') | Out-Null
     if (!$ReplayOnly) {
-        & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName test_xl_water_runtime.jsonc -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -TimeoutSeconds 240
+        $scenario = 'test_xl_water_runtime.jsonc'
+        if ($CaptureLive) {
+            Invoke-WaterShell 'rm -rf files/d2x-redux/input_demo_recordings files/d2x-redux/xl_capture_traces' | Out-Null
+            $scenario = 'test_xl_water_capture.jsonc'
+            if ($LevelStart) { $scenario = 'test_xl_water_level_capture.jsonc' }
+        }
+        & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scenario -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -TimeoutSeconds 240
         $testExit = $LASTEXITCODE
         Invoke-WaterShell 'cat files/automation_result.json' | Set-Content (Join-Path $output 'result.json') -Encoding utf8
         Invoke-WaterShell 'cat files/automation_log.jsonl' | Set-Content (Join-Path $output 'steps.jsonl') -Encoding utf8
         Invoke-WaterShell 'cat files/introspect.json' | Set-Content (Join-Path $output 'state.json') -Encoding utf8
+        Invoke-WaterAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content (Join-Path $output 'runtime-logcat.txt') -Encoding utf8
         if ($testExit -ne 0) { throw "Android water probe failed ($testExit); see $output" }
+        if ($CaptureLive) {
+            $recordings = @(([string](Invoke-WaterShell 'find files/d2x-redux/input_demo_recordings/new -type f -name "*.dximdemo"')) -split '\r?\n' | Where-Object { $_ })
+            $traces = @(([string](Invoke-WaterShell 'find files/d2x-redux/xl_capture_traces -type f -name "*.jsonl.gz"')) -split '\r?\n' | Where-Object { $_ })
+            if ($recordings.Count -ne 1 -or $traces.Count -ne 1) { throw 'Expected one live recording and one complete observation trace' }
+            if ($recordings[0] -cnotmatch '^files/d2x-redux/input_demo_recordings/new/[^/\\\x00-\x1f]+\.dximdemo$' -or
+                $traces[0] -cnotmatch '^files/d2x-redux/xl_capture_traces/live-[0-9]+\.jsonl\.gz$') { throw 'Invalid capture export path' }
+            foreach ($remote in @($recordings[0], ($recordings[0] + '.rngtrace.jsonl'), $traces[0])) {
+                $encoded = Invoke-WaterAdb -Arguments @('exec-out', 'run-as', $script:PACKAGE, 'base64', '-w', '0', $remote)
+                [IO.File]::WriteAllBytes((Join-Path $output ([IO.Path]::GetFileName($remote))), [Convert]::FromBase64String($encoded))
+            }
+            Write-Host 'PASS: exported Android live recording, RNG events and complete observation trace'
+            $captureExported = $true
+        }
     }
     if ($Replay) {
         Invoke-WaterAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
-        $appRoot = ([string](Invoke-WaterAdb -Arguments @('shell', 'run-as', $script:PACKAGE, 'pwd'))).Trim()
-        $deviceReplay = "$appRoot/$backup/spawn.dximdemo"
-        $deviceResult = "$deviceReplay.actual.json"
-        $deviceState = "$deviceReplay.state.jsonl.gz"
-        $deviceRng = "$deviceReplay.rngtrace.jsonl"
         if ($replayHeader.version -eq 6) {
             # Use the recorded viewport, not a rewritten capture or relaxed native check
             $profile = [ordered]@{ TexFilt = 0; AnisoLevel = 0; MsaaLevel = 0; MenuTexFilt = 0; HudTexFilt = 0;
@@ -114,52 +137,24 @@ try {
                 Invoke-WaterShell "cp /data/local/tmp/xl-water-config.txt $config" | Out-Null
             }
         }
-        Invoke-WaterAdb -Arguments @('push', (Resolve-Path -LiteralPath $Replay).Path, '/data/local/tmp/xl-water-spawn.dximdemo') | Out-Null
-        Invoke-WaterShell "cp /data/local/tmp/xl-water-spawn.dximdemo $backup/spawn.dximdemo" | Out-Null
-        Invoke-WaterAdb -Arguments @('logcat', '-c') | Out-Null
-        Invoke-WaterAdb -Arguments @('shell', 'am', 'start', '-n', "$script:PACKAGE/.SetupActivity", '--es', 'input_demo_replay', $deviceReplay, '--ez', 'xl_water_physics', 'true') | Out-Null
-        if (!(Wait-SetupActivityReady)) { throw 'Replay launcher did not become ready' }
-        Invoke-WaterAdb -Arguments @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND', '--es', 'command', 'launch', '--es', 'game', 'd2') | Out-Null
-        $deadline = [DateTime]::UtcNow.AddSeconds(120)
-        $actualText = ''
-        $sawReplayProcess = $false
-        while ([DateTime]::UtcNow -lt $deadline) {
-            $actualText = [string](Invoke-WaterShell "if test -s $deviceResult; then cat $deviceResult; fi")
-            if ($actualText.Trim()) { break }
-            $running = [string](Invoke-WaterAdb -Arguments @('shell', 'sh', '-c', "'if pidof $($script:PACKAGE):game >/dev/null; then echo running; fi'"))
-            if ($running.Trim()) { $sawReplayProcess = $true }
-            elseif ($sawReplayProcess) { break }
-            Start-Sleep -Seconds 1
-        }
-        Invoke-WaterAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content (Join-Path $output 'spawn-replay-logcat.txt') -Encoding utf8
-        Invoke-WaterShell "if test -f $backup/ai_schedule_probe.log; then cat $backup/ai_schedule_probe.log; fi" |
-            Set-Content (Join-Path $output 'spawn-replay-ai-schedule.log') -Encoding utf8
-        if ($actualText.Trim()) {
-            $actualText | Set-Content (Join-Path $output 'spawn-replay-actual.json') -Encoding utf8
-        }
-        foreach ($trace in @(@{ Remote = $deviceState; Local = 'spawn-replay-state.jsonl.gz' },
-                @{ Remote = $deviceRng; Local = 'spawn-replay-rng.jsonl' })) {
-            if (([string](Invoke-WaterShell "if test -f $($trace.Remote); then echo yes; fi")).Trim() -eq 'yes') {
-                $encoded = Invoke-WaterAdb -Arguments @('exec-out', 'run-as', $script:PACKAGE, 'base64', '-w', '0', $trace.Remote)
-                [IO.File]::WriteAllBytes((Join-Path $output $trace.Local), [Convert]::FromBase64String($encoded))
-            } elseif ($actualText.Trim()) {
-                throw "Android replay trace missing: $($trace.Local); use the explicit XL developer probe build"
-            }
-        }
-        if (!$actualText.Trim()) { throw 'Android spawn replay exited or timed out without a result; inspect spawn-replay-logcat.txt' }
-        $expectedText = $replayTrailer.result | ConvertTo-Json -Depth 30
-        $expectedText | Set-Content (Join-Path $output 'spawn-replay-expected.json') -Encoding utf8
-        if (![System.Text.Json.Nodes.JsonNode]::DeepEquals(
-                [System.Text.Json.Nodes.JsonNode]::Parse($expectedText),
-                [System.Text.Json.Nodes.JsonNode]::Parse($actualText))) {
-            throw "Android spawn replay differs from native result; see $output"
-        }
-        Write-Host "PASS: Android original spawn-to-water input replay matches native result ($($replayHeader.frame_count) frames)"
+        . "$PSScriptRoot/../helpers/xl_android_timeline_replay.ps1"
+        Invoke-XlAndroidTimelineReplay -Replay $Replay -DeviceDirectory $backup -OutputDirectory $output -WaterPhysics
     }
 } finally {
     try {
         Invoke-WaterAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
         if ($ready) {
+            if ($CaptureLive -and !$captureExported) {
+                # Retain partial observations before restoring test-owned directories
+                $partial = Join-Path $output 'partial-capture'
+                New-Item -ItemType Directory -Force $partial | Out-Null
+                $files = ([string](Invoke-WaterShell 'for p in files/d2x-redux/input_demo_recordings files/d2x-redux/xl_capture_traces; do if test -d $p; then find $p -type f; fi; done')) -split '\r?\n' | Where-Object { $_ }
+                foreach ($remote in $files) {
+                    if ($remote -cnotmatch '^files/d2x-redux/(input_demo_recordings|xl_capture_traces)/[A-Za-z0-9_./-]+$') { throw 'Invalid partial capture path; backup retained' }
+                    $encoded = Invoke-WaterAdb -Arguments @('exec-out', 'run-as', $script:PACKAGE, 'base64', '-w', '0', $remote)
+                    [IO.File]::WriteAllBytes((Join-Path $partial ($remote.Replace('/', '_'))), [Convert]::FromBase64String($encoded))
+                }
+            }
             # Exact test-owned paths only; preserve unrelated missions and caches
             foreach ($path in $paths) { Invoke-WaterShell "rm -rf $path" | Out-Null }
             Invoke-WaterShell "tar -xf $backup/state.tar" | Out-Null
