@@ -10,6 +10,7 @@
 #include "prepared_ham.h"
 extern "C" {
 #include "gauges.h"
+#include "piggy.h"
 #include "sounds.h"
 #include "u_mem.h"
 }
@@ -55,6 +56,7 @@ struct XlPreparedHam::State {
 	int Marker_model_num{};
 	int exit_modelnum{};
 	int destroyed_exit_modelnum{};
+	std::array<ushort, MAX_BITMAP_FILES> GameBitmapXlat{};
 	bm_ham_destination destination{
 		&NumTextures,
 		Textures.data(),
@@ -93,7 +95,12 @@ struct XlPreparedHam::State {
 		&Marker_model_num,
 		&exit_modelnum,
 		&destroyed_exit_modelnum,
+		GameBitmapXlat.data(),
 	};
+	State()
+	{
+		for (int i = 0; i < MAX_BITMAP_FILES; ++i) GameBitmapXlat[i] = ushort(i);
+	}
 	~State()
 	{
 		for (auto &model : Polygon_models)

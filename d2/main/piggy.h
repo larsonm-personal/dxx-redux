@@ -104,6 +104,13 @@ ubyte piggy_bitmap_get_file_flags(int bitmap_index);
 void piggy_bitmap_set_file_state(int bitmap_index, int offset, ubyte flags);
 
 #define MAX_BITMAP_FILES    2620 // Upped for CD Enhanced
+
+/* Read the optional HAM translation tail into an initialized native-capacity map */
+void piggy_read_bitmap_translation(PHYSFS_file *file, ushort *destination);
+#ifdef DXX_XL_RUNTIME
+void piggy_copy_bitmap_translation(ushort *destination);
+void piggy_install_bitmap_translation(const ushort *source);
+#endif
 #define MAX_SOUND_FILES     MAX_SOUNDS
 
 extern digi_sound GameSounds[MAX_SOUND_FILES];

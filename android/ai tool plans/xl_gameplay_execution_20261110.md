@@ -5234,3 +5234,46 @@ restored ordinary PR 488 APK. Catalog validation passes with unchanged membershi
 428 top-level entries and 547 support scripts. Scoped formatting passes. Receipts:
 android-water-owner-final.log, android-checkpoint-catalog.log and
 android-checkpoint-master-catalog.log under the tranche scratch directory.
+
+### Retained native bitmap translation map (2026-11-13)
+
+Incoming HAM now owns and publishes its native low-memory bitmap translation map.
+The existing native trailing-short reader is shared with ordinary HAM loading;
+short optional tails leave initialized defaults rather than importing outgoing
+state. Incoming out-of-capacity entries reject before publication. Native owner
+copy/install functions keep the registry private; publication allocates nothing.
+The descriptor owner proves outgoing corruption cannot alter retained values,
+move/discard preserve ownership and live state, and publication installs the map.
+
+Windows and Linux Debug descriptor owners pass, including malformed mappings and
+an absent optional tail. The first edge-case test assumed the retail tail filled
+current engine capacity and failed; corrected coverage locates the boundary via
+the native decoder, without duplicating HAM offsets. Failed receipt:
+observatory-bitmap-mapping-windows-02; final receipts Windows -03 and Linux.
+Final metadata binary SHA-256: Windows
+781e803f468a12ee68354427141e2fe28eab03355449dbf1c17cdfd7909dc05c;
+Linux f7b1f26773e332673872beb1391835373da82f475dd9f906a005d0f742653499.
+Ordinary Windows builds, SHA-256
+b75c00554474ae5af2aac5e2b178af0f019a1c306786c62358f7ccccfa0b7384.
+Android Debug builds all three ABIs developer-OFF, APK SHA-256
+51c3d275e4d7bc424c243ddfcdff05a33168cd7d346eca55c038e7bee8ebf36e.
+
+Original Pumo CPU controls pass in 55.015 seconds on the serial rerun (-02).
+The initial concurrent-build run exceeded the 120-second watchdog and was stopped
+at 127.5 seconds; its receipt remains retained. The initial water capture passes,
+but replay times out at its unchanged 60-second limit during the full Android
+build. Serial water rerun and ordinary playback are pending, not passed. No
+rendered Pumo campaign, native bank replacement or whole-save atomicity claim.
+Scoped formatting passes; no catalog membership changes.
+
+PR 489 (Android qualification diagnostics) is published at
+d5d2f57264e01930a1feba1a74bdb94e491b1fb6, parent 488, stack 471.
+Private run 43507089017 passes that exact head in 851.386 seconds with the
+unchanged controller/assets, 113 required owners, 16 witnesses, three modern
+levels and four assisted anchors; camera remains not_run_missing_addon.
+Windows tooling attempt 1 times out after 30 seconds in unchanged
+CorpusStageTests.test_prepared_route_rejects_multi_owner_reuse_before_execution.
+The local owner passes in 5.064 seconds; job rerun attempt 2 passes without source,
+assertion or timeout changes. Logs and pr489-private-results are retained.
+PR 488 applicable public checks are now terminal PASS. Sampled readiness remains
+separately FAIL 4/8, not catalog-wide gameplay acceptance.

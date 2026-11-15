@@ -53,6 +53,7 @@ typedef struct bm_ham_destination {
 	int *Marker_model_num;
 	int *exit_modelnum;
 	int *destroyed_exit_modelnum;
+	ushort *GameBitmapXlat;
 } bm_ham_destination;
 
 #define N_D2_ROBOT_TYPES		66
