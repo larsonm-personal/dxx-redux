@@ -205,6 +205,12 @@ vm_vec_zero(&delta_i);vm_vec_zero(&delta_j);vm_vec_zero(&tv);
 	viewer_i = vm_vec_dot(&tv,&surface_orient.rvec) / GRID_SCALE;
 	viewer_j = vm_vec_dot(&tv,&surface_orient.fvec) / GRID_SCALE;
 
+	// The camera may leave the terrain; only the painter traversal split is bounded
+	if (viewer_i < low_i) viewer_i = low_i;
+	if (viewer_i > high_i) viewer_i = high_i;
+	if (viewer_j < low_j) viewer_j = low_j;
+	if (viewer_j > high_j) viewer_j = high_j;
+
 	g3_rotate_point(&last_p,&start_point);
 	save_p_low = last_p;
 

@@ -147,6 +147,10 @@ void start_endlevel_flythrough(int n, object *obj, fix speed);
 void gameseq_init_network_players(void);
 void do_endlevel_flythrough(int n);
 void draw_stars();
+extern vms_matrix surface_orient;
+extern vms_vector mine_ground_exit_point;
+extern ubyte *height_array, *light_array;
+extern int grid_w, grid_h, mine_tiles_drawn;
 void apply_force_damage(object *obj, fix force, object *other);
 void kill_stuck_objects(int wallnum);
 void InitWeaponOrdering(void);
@@ -10195,12 +10199,32 @@ static void write_endlevel_lifetime_trace()
 		require(game_is_time_paused() == pause_before_save, "rejected flyout save balances only its caller's pause");
 		unsigned phases = 0;
 		bool explosion_seen = false;
+		bool off_grid_rendered = false;
 		for (int frame = 0; frame < 900 && Endlevel_sequence; ++frame) {
 			FrameTime = F1_0 / 60;
 			GameTime64 += FrameTime;
 			phases |= 1u << Endlevel_sequence;
 			const int previous_phase = Endlevel_sequence;
 			do_endlevel_frame();
+#ifdef OGL
+			if (!off_grid_rendered && Endlevel_sequence == 3) {
+				const auto position = Viewer->pos;
+				const auto height = height_array, light = light_array;
+				const int width = grid_w, depth = grid_h;
+				for (const int right : { -1, 1 })
+					for (const int forward : { -1, 1 }) {
+						Viewer->pos = mine_ground_exit_point;
+						vm_vec_scale_add2(&Viewer->pos, &surface_orient.rvec, right * 5120 * F1_0);
+						vm_vec_scale_add2(&Viewer->pos, &surface_orient.fvec, forward * 5120 * F1_0);
+						game_render_frame();
+						require(height_array == height && light_array == light && grid_w == width && grid_h == depth,
+						        "off-grid exterior rendering preserves terrain resource owners and dimensions");
+						require(mine_tiles_drawn == -1, "every off-grid quadrant traverses all four mine tiles");
+					}
+				Viewer->pos = position;
+				off_grid_rendered = true;
+			}
+#endif
 			for (int pass = 0; pass < run_number && Endlevel_sequence; ++pass)
 				game_render_frame();
 			require(d_rand_get_state(&observed_sim_state) && observed_sim_state == sim_state && d_rand_get_call_count() == sim,
@@ -10219,6 +10243,7 @@ static void write_endlevel_lifetime_trace()
 		require(!Endlevel_sequence && Current_level_num == level + 1, "rendered flyout finishes through actual campaign travel");
 		require(phases == 30 && explosion_seen, "flyout observes tunnel, lookback, outside, stopped and external explosion");
 		run["next_level"] = Current_level_num;
+		run["off_grid_quadrants"] = off_grid_rendered ? 4 : 0;
 		std::fprintf(stderr, "Endlevel %d: %zu frames, all phases and external explosion\n", level, run["frames"].size());
 		trace.push_back(std::move(run));
 		++run_number;

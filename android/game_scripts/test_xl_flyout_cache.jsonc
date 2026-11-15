@@ -8,7 +8,8 @@
     { "action": "skip_briefing", "timeout_ms": 30000 },
     { "action": "wait_for", "expect": { "in_game": true, "xl_pilot.runtime_active": true }, "timeout_ms": 30000 },
     { "action": "set_debug", "field": "android_game_request", "value": "overlay_pause" },
-    { "action": "wait_for", "expect": { "time_paused": true }, "timeout_ms": 20000 },
+    // Graphics validation may still own a pause when the overlay first opens
+    { "action": "wait_for", "expect": { "time_paused": true, "pause.can_resume": true }, "timeout_ms": 20000 },
     { "action": "set_debug", "field": "xl_pog_probe", "value": "flyout_prepare" },
     { "action": "set_debug", "field": "android_game_request", "value": "resume" },
     { "action": "wait_for", "expect": { "time_paused": false }, "timeout_ms": 20000 },
