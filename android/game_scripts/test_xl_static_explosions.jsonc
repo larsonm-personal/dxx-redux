@@ -19,7 +19,12 @@
     { "action": "skip_briefing", "timeout_ms": 20000 },
     {
         "action": "wait_for",
-        "expect": { "in_game": true, "xl_pilot.source_level_version": 23, "xl_named_audio.backend_ready": true },
+        "expect": {
+            "in_game": true,
+            "graphics_safety.phase": "idle",
+            "xl_pilot.source_level_version": 23,
+            "xl_named_audio.backend_ready": true,
+        },
         "timeout_ms": 20000,
     },
     { "action": "set_debug", "field": "robots_suspended", "value": "true", "post_delay_ms": 0 },
