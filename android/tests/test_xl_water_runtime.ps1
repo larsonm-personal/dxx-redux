@@ -5,7 +5,8 @@ param(
     [Parameter(Mandatory)][string]$Hog,
     [Parameter(Mandatory)][string]$Descriptor,
     [string]$Replay,
-    [switch]$ReplayOnly
+    [switch]$ReplayOnly,
+    [string]$OutputDirectory
 )
 $ErrorActionPreference = 'Stop'
 if ($ReplayOnly -and !$Replay) { throw 'ReplayOnly requires Replay' }
@@ -31,11 +32,13 @@ if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne 'adbfea019c1ac29
     (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne '14150755f14e210b284aa03c45d75e1b2f96be7b567bbc324bf4986b96928a71') {
     throw 'Requires the audited original Robotech HOG and descriptor'
 }
+$root = Split-Path (Split-Path $PSScriptRoot)
+$output = if ($OutputDirectory) { [IO.Path]::GetFullPath($OutputDirectory, $root) }
+else { Join-Path $root "temp/xl-water-android-$(Get-Date -Format 'yyyyMMdd-HHmmss')" }
+if (Test-Path -LiteralPath $output) { throw "Water evidence output already exists: $output" }
 $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
-$root = Split-Path (Split-Path $PSScriptRoot)
-$output = Join-Path $root "temp/xl-water-android-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 Write-Host "Water runtime evidence: $output"
@@ -56,7 +59,7 @@ function Invoke-WaterShell {
 $backup = 'files/xl-water-runtime-backup'
 $paths = @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d2x-redux/d2x.ini',
     'files/d2x-redux/mod_usage.json', 'files/d2x-redux/missions/rtarena.hog', 'files/d2x-redux/missions/rtarena.mn2',
-    'files/descent.cfg', 'files/graphics_safety.json', 'files/file_sets.json', 'shared_prefs')
+    'files/descent.cfg', 'files/graphics_safety.json', 'files/.graphics_safety.lock', 'files/file_sets.json', 'shared_prefs')
 $ready = $false
 $owned = $false
 try {
@@ -79,7 +82,7 @@ try {
     Invoke-WaterShell 'mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-water-runtime.hog files/d2x-redux/missions/rtarena.hog && cp /data/local/tmp/xl-water-runtime.mn2 files/d2x-redux/missions/rtarena.mn2' | Out-Null
     Invoke-WaterAdb -Arguments @('logcat', '-c') | Out-Null
     if (!$ReplayOnly) {
-        & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName test_xl_water_runtime.jsonc -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 240
+        & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName test_xl_water_runtime.jsonc -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -TimeoutSeconds 240
         $testExit = $LASTEXITCODE
         Invoke-WaterShell 'cat files/automation_result.json' | Set-Content (Join-Path $output 'result.json') -Encoding utf8
         Invoke-WaterShell 'cat files/automation_log.jsonl' | Set-Content (Join-Path $output 'steps.jsonl') -Encoding utf8

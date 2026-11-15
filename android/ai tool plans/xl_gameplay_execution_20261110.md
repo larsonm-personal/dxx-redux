@@ -5780,3 +5780,51 @@ The user now prioritizes useful gameplay progress without requiring a specific
 8/8 endpoint. The readiness criterion itself is unchanged. Missing external
 robot definitions, camera ownership, full G2 and energy 91-to-100 rejection
 remain open. Unpublished native trace work remains separate from this repair.
+
+### November 14 lossless XL trace performance and Android water validation
+
+The child of PR 505 retains complete metadata, AI path storage and segment rows
+while avoiding unchanged JSON construction. XL wire schema 20 reconstructs the
+same full schema-19 owners before strict validation/comparison; stock schema 10
+and public snapshots retain their shape. Every reset/boundary is complete;
+changed segment rows have canonical indices and require a validated baseline.
+No clock/input/RNG behavior, active-prefix sampling or deadline changes occur.
+Malformed, missing and mixed owners reject in the expanded 87-test comparator.
+
+Windows Debug water now passes in 112.656 s under unchanged 90 s capture/60 s
+replay limits; Linux Debug passes in 12 s. Windows/Linux effects and audio owners
+pass. Fresh capture against separate ordinary Windows clean playback passes
+1235 object frames, 1239 world/XL records, 196 SIM and 1808 FX events. Retained
+schema-19 capture also passes against schema-20 playback. Source, binary and
+original input hashes, failed attempts and exact owner receipts are recorded in
+xl_readiness_tranche2_20261114.md and temp/xl-readiness-tranche2-20261114.
+
+Ordinary Android Debug builds both games/all three ABIs and water passes 59/59.
+Ordinary XL replay remains rejected by the existing admission guard. An explicit
+developer replay passes objects/world/SIM but retains the known FX failure:
+3308 versus 1808 events, with 1500 startup generate_starfield records. The
+ordinary APK was restored and verified. Protected state hashes match. Developer
+arena capture controls and the water-physics assist remain disclosed.
+
+The water runner additionally protects the graphics lock, disables emulator
+recovery and supports a fresh explicit output directory. Default retention had
+removed two older timestamp copies; the plan records precisely which complete
+raw results survive and which auxiliary directory was not recovered. Remaining
+timestamp directories have a hash-manifested archive. Future tranche runs use
+unique explicit output directories to avoid that global family.
+
+PR 505 native save/replay and ASan are now SUCCESS; repaired hosted admission
+finished in 190 s under 240 s. Headed replay remains pending in checks-06.
+Sampled readiness remains separately 4/8. Full G2, missing external definitions,
+camera ownership and energy 91-to-100 rejection remain open. Sound stash
+9783012e2a77dfdd4680812ae72b852cfaca5e17 was reviewed but not applied or tested.
+
+The ordinary Linux full game and exact headless CI target now build successfully.
+The unchanged pinned readiness owner again completes 4/8, with all four original
+load failures retained. Fresh assisted capture versus separate ordinary Linux
+clean playback passes all 1235 object frames, 1239 world/XL records, 196 SIM and
+1808 FX events. Playback exits 0 in 17.181 s. The first Linux attempt rejected a
+640x480 default profile before simulation; the retained second attempt selects
+the copied original profile via the existing explicit profile-directory option.
+PR 505 headed replay is now SUCCESS as well: checks-07 records all applicable
+non-readiness checks terminal green. Its completed watch is stopped.

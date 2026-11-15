@@ -81,7 +81,14 @@ nlohmann::ordered_json input_demo_ai_local_trace_snapshot(int slot)
 	return local_state(Ai_local_info[slot]);
 }
 
-nlohmann::ordered_json input_demo_ai_trace_snapshot()
+nlohmann::ordered_json input_demo_ai_paths_trace_snapshot()
+{
+	json paths = json::array();
+	for (const auto &p : Point_segs) paths.push_back({ { "segment", p.segnum }, { "point", vector(p.point) } });
+	return paths;
+}
+
+nlohmann::ordered_json input_demo_ai_trace_snapshot(bool include_paths)
 {
 	json out = json::object();
 	// ordered_json vector growth copies const-key pairs and their nested storage
@@ -131,8 +138,7 @@ nlohmann::ordered_json input_demo_ai_trace_snapshot()
 	FIELD(runtime, path, last_buddy_polish_path_tick);
 #endif
 	out["path_free_index"] = Point_segs_free_ptr - Point_segs;
-	out["paths"] = json::array();
-	for (const auto &p : Point_segs) out["paths"].push_back({ { "segment", p.segnum }, { "point", vector(p.point) } });
+	if (include_paths) out["paths"] = input_demo_ai_paths_trace_snapshot();
 	out["cloak"] = json::array();
 	for (const auto &c : Ai_cloak_info) {
 		json row = { { "last_time", c.last_time }, { "last_position", vector(c.last_position) } };

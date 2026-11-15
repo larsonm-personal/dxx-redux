@@ -27,6 +27,10 @@
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <cstring>
+#include <type_traits>
+#include <array>
+#include <vector>
 #include <nlohmann/json.hpp>
 
 extern "C" {
@@ -34,6 +38,7 @@ extern "C" {
 #include "cntrlcen.h"
 #include "collide.h"
 #ifdef DXX_XL_RUNTIME
+#include "ai.h"
 #include "controls.h"
 #include "guidebot_escort_state.h"
 #include "guidebot_route_state.h"
@@ -213,6 +218,15 @@ json metadata_long_double(long double value)
 	return { { "negative", std::signbit(value) }, { "bits", bits }, { "exponent", exponent - static_cast<int>(bits.size()) } };
 }
 
+json &metadata_member(json &out, const char *name)
+{
+	// The typed schema supplies unique names in fixed order. Append each once
+	// instead of searching every previously emitted field in ordered_json
+	auto &members = out.get_ref<json::object_t &>();
+	members.emplace_back(name, json{});
+	return members.back().second;
+}
+
 #define METADATA_TRACE_GB_SIGNED(value)      static_cast<int64_t>(value)
 #define METADATA_TRACE_GB_UNSIGNED(value)    static_cast<uint64_t>(value)
 #define METADATA_TRACE_GB_BYTES(value)       static_cast<int>(value)
@@ -226,31 +240,38 @@ json metadata_long_double(long double value)
 #define METADATA_END() \
 	return out;        \
 	}
-#define METADATA_FIELD(name, kind)            out[#name] = METADATA_TRACE_##kind(v.name);
+#define METADATA_FIELD(name, kind)            metadata_member(out, #name) = METADATA_TRACE_##kind(v.name);
 #define METADATA_LIMIT(name, kind, low, high) METADATA_FIELD(name, kind)
-#define METADATA_TEXT(name)                                                              \
-	{                                                                                    \
-		auto &array = out[#name];                                                        \
-		array = json::array();                                                           \
-		for (const unsigned char byte : v.name) array.push_back(static_cast<int>(byte)); \
+#define METADATA_TEXT(name)                                                                     \
+	{                                                                                           \
+		auto &array = (metadata_member(out, #name) = json::array()).get_ref<json::array_t &>(); \
+		array.resize(sizeof(v.name));                                                           \
+		for (size_t i0 = 0; i0 < sizeof(v.name); ++i0)                                          \
+			array[i0] = static_cast<int>(static_cast<unsigned char>(v.name[i0]));               \
 	}
-#define METADATA_ARRAY(name, count, kind)                                                         \
-	{                                                                                             \
-		auto &array = out[#name];                                                                 \
-		array = json::array();                                                                    \
-		for (size_t i0 = 0; i0 < count; ++i0) array.push_back(METADATA_TRACE_##kind(v.name[i0])); \
+#define METADATA_ARRAY(name, count, kind)                                                       \
+	{                                                                                           \
+		auto &array = (metadata_member(out, #name) = json::array()).get_ref<json::array_t &>(); \
+		array.resize(count);                                                                    \
+		for (size_t i0 = 0; i0 < count; ++i0) array[i0] = METADATA_TRACE_##kind(v.name[i0]);    \
 	}
-#define METADATA_MATRIX(name, rows, columns, kind)                                                    \
-	out[#name] = json::array();                                                                       \
-	for (size_t i0 = 0; i0 < rows; ++i0) {                                                            \
-		json row = json::array();                                                                     \
-		for (size_t i1 = 0; i1 < columns; ++i1) row.push_back(METADATA_TRACE_##kind(v.name[i0][i1])); \
-		out[#name].push_back(std::move(row));                                                         \
+#define METADATA_MATRIX(name, rows, columns, kind)                                                   \
+	{                                                                                                \
+		auto &array = (metadata_member(out, #name) = json::array()).get_ref<json::array_t &>();      \
+		array.resize(rows);                                                                          \
+		for (size_t i0 = 0; i0 < rows; ++i0) {                                                       \
+			auto &row = (array[i0] = json::array()).get_ref<json::array_t &>();                      \
+			row.resize(columns);                                                                     \
+			for (size_t i1 = 0; i1 < columns; ++i1) row[i1] = METADATA_TRACE_##kind(v.name[i0][i1]); \
+		}                                                                                            \
 	}
-#define METADATA_STRUCT(name, type) out[#name] = metadata_trace_##type(v.name);
-#define METADATA_STRUCT_ARRAY(name, type, count) \
-	out[#name] = json::array();                  \
-	for (size_t i0 = 0; i0 < count; ++i0) out[#name].push_back(metadata_trace_##type(v.name[i0]));
+#define METADATA_STRUCT(name, type) metadata_member(out, #name) = metadata_trace_##type(v.name);
+#define METADATA_STRUCT_ARRAY(name, type, count)                                                \
+	{                                                                                           \
+		auto &array = (metadata_member(out, #name) = json::array()).get_ref<json::array_t &>(); \
+		array.resize(count);                                                                    \
+		for (size_t i0 = 0; i0 < count; ++i0) array[i0] = metadata_trace_##type(v.name[i0]);    \
+	}
 #include "guidebot_metadata_fields.h"
 #undef METADATA_BEGIN
 #undef METADATA_END
@@ -262,20 +283,25 @@ json metadata_long_double(long double value)
 #undef METADATA_STRUCT
 #undef METADATA_STRUCT_ARRAY
 
+json metadata_xl_state(const guidebot_metadata_snapshot &snapshot)
+{
+	json out = { { "version", 1 } };
+	// ordered_json otherwise copies prior full arrays when its key vector grows
+	out.get_ref<json::object_t &>().reserve(64);
+#define METADATA_STRUCT(type, name, serializer) metadata_member(out, #name) = metadata_trace_##type(snapshot.name);
+#define METADATA_VALUE(type, name, kind)        metadata_member(out, #name) = METADATA_TRACE_##kind(snapshot.name);
+#include "guidebot_metadata_save_members.h"
+#undef METADATA_STRUCT
+#undef METADATA_VALUE
+	return out;
+}
+
 json metadata_xl_state()
 {
 	// This snapshot contains full fixed workspaces; keep it off the native stack
 	std::unique_ptr<guidebot_metadata_snapshot> snapshot(new guidebot_metadata_snapshot{});
 	level_metadata_capture_snapshot(snapshot.get());
-	json out = { { "version", 1 } };
-	// ordered_json otherwise copies prior full arrays when its key vector grows
-	out.get_ref<json::object_t &>().reserve(64);
-#define METADATA_STRUCT(type, name, serializer) out[#name] = metadata_trace_##type(snapshot->name);
-#define METADATA_VALUE(type, name, kind)        out[#name] = METADATA_TRACE_##kind(snapshot->name);
-#include "guidebot_metadata_save_members.h"
-#undef METADATA_STRUCT
-#undef METADATA_VALUE
-	return out;
+	return metadata_xl_state(*snapshot);
 }
 #undef METADATA_TRACE_GB_SIGNED
 #undef METADATA_TRACE_GB_UNSIGNED
@@ -298,9 +324,11 @@ json environment_xl_state()
 	return out;
 }
 
-json native_xl_state()
+json native_xl_state(bool include_metadata = true)
 {
 	json out = { { "version", 1 }, { "omega_charge", Omega_charge }, { "wiggle_phase", controls_get_wiggle_phase() }, { "afterburner_charge", json::array() }, { "afterburner_times", json::array() }, { "guided", json::array() } };
+	// Keep later keys from copying the complete metadata subtree on vector growth
+	out.get_ref<json::object_t &>().reserve(16);
 	for (int i = 0; i < N_players; ++i) out["afterburner_charge"].push_back(static_cast<int>(Players[i].afterburner_charge));
 	for (int i = 0; i < object_capacity(); ++i) out["afterburner_times"].push_back(Last_afterburner_time[i]);
 	for (int player = 0; player < MAX_PLAYERS; ++player) {
@@ -365,7 +393,7 @@ json native_xl_state()
 	// Observe the actual seismic owner, including the magnitude used by guidance
 	const auto seismic = xl_compat::seismic_gameplay_snapshot();
 	out["seismic"] = { { "strength", seismic[0] }, { "pending", seismic[1] }, { "magnitude", seismic[4] }, { "phase", seismic[5] }, { "fraction", seismic[6] }, { "interval", seismic[2].is_null() ? json::array() : json(seismic[2]) }, { "detonations", json::array() } };
-	out["metadata"] = metadata_xl_state();
+	if (include_metadata) out["metadata"] = metadata_xl_state();
 	out["events"] = { { "version", 1 }, { "objects", xl_compat::object_trigger_snapshot() }, { "bosses", xl_compat::boss_spawn_snapshot() }, { "equipment", xl_compat::equipment_snapshot() }, { "producers", xl_compat::robot_generator_snapshot() } };
 	out["motion"] = { { "version", 1 }, { "boosts", xl_compat::speed_boost_snapshot() }, { "spawns", xl_compat::spawn_points_snapshot() }, { "progression", xl_compat::mission_progress_trace_snapshot() }, { "projectiles", xl_compat::projectile_snapshot() } };
 	out["environment"] = environment_xl_state();
@@ -420,13 +448,41 @@ json producer_state()
 	return out;
 }
 
-json world_state()
+json segment_row(const segment &s)
 {
+	json row = json::object();
+	FIELD(row, s, value);
+	FIELD(row, s, special);
+	FIELD(row, s, matcen_num);
+	FIELD(row, s, static_light);
+	row["sides"] = json::array();
+	for (const auto &side : s.sides) {
+		json face = { { "wall", side.wall_num }, { "texture", side.tmap_num }, { "overlay", side.tmap_num2 }, { "uvls", json::array() } };
+		for (const auto &uv : side.uvls) face["uvls"].push_back({ uv.u, uv.v, uv.l });
+		row["sides"].push_back(std::move(face));
+	}
+	return row;
+}
+
+json segment_state()
+{
+	json out = json::array();
+	for (int i = 0; i <= Highest_segment_index; ++i) out.push_back(segment_row(Segments[i]));
+	return out;
+}
+
+json world_state(bool include_metadata = true)
+{
+	(void) include_metadata;
+	bool cached_sections = false;
+#ifdef DXX_XL_RUNTIME
+	cached_sections = !include_metadata && xl_level_extensions_active();
+#endif
 	json out = json::object();
 	// ordered_json stores const-key pairs in a vector: growing it copies whole
 	// subtrees instead of moving them, including the large AI and segment arrays
 	out.get_ref<json::object_t &>().reserve(32);
-	out["ai"] = input_demo_ai_trace_snapshot();
+	out["ai"] = input_demo_ai_trace_snapshot(!cached_sections);
 	out["endlevel"] = endlevel_state();
 	player_death_runtime_state death = {};
 	player_death_get_runtime_state(&death);
@@ -539,22 +595,9 @@ json world_state()
 		row["sides"] = scalars(t.side);
 		out["triggers"].push_back(std::move(row));
 	}
-	out["segments"] = json::array();
+	if (!cached_sections) out["segments"] = segment_state();
 	out["automap"] = json::array();
 	for (int i = 0; i <= Highest_segment_index; ++i) {
-		const auto &s = Segments[i];
-		json row = json::object();
-		FIELD(row, s, value);
-		FIELD(row, s, special);
-		FIELD(row, s, matcen_num);
-		FIELD(row, s, static_light);
-		row["sides"] = json::array();
-		for (const auto &side : s.sides) {
-			json face = { { "wall", side.wall_num }, { "texture", side.tmap_num }, { "overlay", side.tmap_num2 }, { "uvls", json::array() } };
-			for (const auto &uv : side.uvls) face["uvls"].push_back({ uv.u, uv.v, uv.l });
-			row["sides"].push_back(std::move(face));
-		}
-		out["segments"].push_back(std::move(row));
 		out["automap"].push_back(static_cast<int>(Automap_visited[i]));
 	}
 	auto &reactor = out["reactor"];
@@ -635,7 +678,7 @@ json world_state()
 		out["xl_player_cfg"] = json::parse(encoded).at("value");
 		out["xl_time"] = xl_runtime::slow_motion_trace_snapshot();
 		out["xl_births"] = xl_object_birth_snapshot();
-		out["xl_native"] = native_xl_state();
+		out["xl_native"] = native_xl_state(include_metadata);
 		out["xl_cameras"] = xl_camera_trace_snapshot();
 		out["xl_triggers"] = trigger_state_snapshot();
 	}
@@ -714,18 +757,54 @@ int input_demo_door_trace_write(uint32_t frame, const char *phase, char *error, 
 int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error, size_t error_size)
 {
 	static json previous;
-	json current = world_state();
+	json current = world_state(false);
+	const bool xl = current.contains("xl_player_cfg");
 	const bool boundary = phase != nullptr;
-	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", current.contains("xl_player_cfg") ? 19 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
-	record["state"].get_ref<json::object_t &>().reserve(current.size());
+	json record = { { "type", boundary ? "world_boundary" : "world_state" }, { "version", xl ? 20 : 10 }, { "f", frame }, { "reset", boundary || frame == 0 }, { "state", json::object() } };
+	record["state"].get_ref<json::object_t &>().reserve(current.size() + (xl ? 3 : 0));
 	if (boundary) record["phase"] = phase;
 	for (auto it = current.begin(); it != current.end(); ++it)
 		if (boundary || frame == 0 || !previous.contains(it.key()) || previous[it.key()] != it.value()) record["state"][it.key()] = std::move(it.value());
+#ifdef DXX_XL_RUNTIME
+	if (xl) {
+		static_assert(std::is_trivially_copyable<guidebot_metadata_snapshot>::value, "Metadata observation requires a plain owned snapshot");
+		static std::unique_ptr<guidebot_metadata_snapshot> prior(new guidebot_metadata_snapshot{});
+		static std::unique_ptr<guidebot_metadata_snapshot> observed(new guidebot_metadata_snapshot{});
+		static bool valid = false;
+		static std::array<point_seg, MAX_POINT_SEGS> prior_paths{};
+		static std::vector<segment> prior_segments;
+		static_assert(std::is_trivially_copyable<point_seg>::value && std::is_trivially_copyable<segment>::value, "Trace sections require plain native storage");
+		level_metadata_capture_snapshot(observed.get());
+		// Compare the complete pointer-free owner, including every fixed workspace
+		// Padding differences can only cause an extra full observation, never hide one
+		if (boundary || frame == 0 || !valid || std::memcmp(prior.get(), observed.get(), sizeof(*observed)) != 0)
+			record["state"]["xl_metadata"] = metadata_xl_state(*observed);
+		if (boundary || frame == 0 || !valid || std::memcmp(prior_paths.data(), Point_segs, sizeof(Point_segs)) != 0)
+			record["state"]["ai_paths"] = input_demo_ai_paths_trace_snapshot();
+		const size_t segment_count = static_cast<size_t>(Highest_segment_index + 1);
+		if (boundary || frame == 0 || !valid || prior_segments.size() != segment_count)
+			record["state"]["segments"] = segment_state();
+		else {
+			json updates = json::object();
+			for (size_t i = 0; i < segment_count; ++i)
+				if (std::memcmp(&prior_segments[i], &Segments[i], sizeof(segment)) != 0)
+					updates[std::to_string(i)] = segment_row(Segments[i]);
+			if (!updates.empty()) record["state"]["segment_updates"] = std::move(updates);
+		}
+		if (!boundary) {
+			prior.swap(observed);
+			std::memcpy(prior_paths.data(), Point_segs, sizeof(Point_segs));
+			prior_segments.resize(segment_count);
+			if (segment_count) std::memcpy(prior_segments.data(), Segments, segment_count * sizeof(segment));
+			valid = true;
+		}
+	}
+#endif
 	// Serialize the complete changed sections without cloning their large subtrees
 	const std::string encoded = record.dump();
 	if (!boundary) {
 		for (auto it = record["state"].begin(); it != record["state"].end(); ++it)
-			current[it.key()] = std::move(it.value());
+			if (!xl || (it.key() != "xl_metadata" && it.key() != "ai_paths" && it.key() != "segments" && it.key() != "segment_updates")) current[it.key()] = std::move(it.value());
 		previous = std::move(current);
 	}
 	return input_demo_state_trace_write_json(encoded.c_str(), error, error_size) && input_demo_door_trace_write(frame, phase, error, error_size);
