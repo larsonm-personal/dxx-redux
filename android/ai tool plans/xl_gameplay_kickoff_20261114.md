@@ -1,5 +1,9 @@
 # Replacement kickoff: explicit invocation only
 
+Historical first-tranche kickoff. The replacement is
+[the second-tranche kickoff](xl_gameplay_kickoff_20261114_tranche2.md), which carries
+the latest user priorities, qualification receipts and unchanged safeguards.
+
 Run one 12-hour XL gameplay tranche in C:/local/dxx-redux, sequentially without
 agents. This does not revive unlimited work or the canceled hourly watch. Read
 AGENTS.md, .github/copilot-instructions.md, xl_gameplay_what_was_done_20261114.md,

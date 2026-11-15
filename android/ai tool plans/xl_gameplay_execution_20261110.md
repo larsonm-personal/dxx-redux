@@ -5828,3 +5828,49 @@ clean playback passes all 1235 object frames, 1239 world/XL records, 196 SIM and
 the copied original profile via the existing explicit profile-directory option.
 PR 505 headed replay is now SUCCESS as well: checks-07 records all applicable
 non-readiness checks terminal green. Its completed watch is stopped.
+
+### November 14 trace checkpoint publication and startup FX audit
+
+PR 506 publishes 8d5f7ebb66936bf3fdcdd49098d3defaf6b69e8a atop PR 505,
+synthetic merge 4011541a52adeda82013cb8bf42387dcf8301499, linked to stack 471.
+Private run 43663432462 attempt 1 uses controller
+72fdd76f5f8dc24a787b3a4858de1115ec091c19. At checks-02 its sampled readiness
+is FAILURE and private smoke/public owners remain pending; no regression owner
+has a terminal failure. Local Windows D1 ordinary full/headless builds, both
+complete catalogs and scoped format-15 pass; qualified native/Python source
+hashes remain unchanged. The tree contains only the intended handoff drafts and
+unrelated .codex/. All four protected stashes remain unchanged.
+
+android-startup-fx-audit-01.json identifies exactly 1500 generate_starfield draws
+at game time zero without simulation context, call counts 1501-3000. Android
+baseline asset restoration invokes gamedata_init -> init_endlevel again; the
+native initializer generates 500 stars. The raw Android trace has 3308 FX events,
+the Windows capture 1808. No trace was filtered or rewritten. A generic native
+fix requires D1/D2 first-initialization, asset reload, teardown/reentry and endlevel
+presentation lifetime controls. No speculative initializer guard, RNG rewind or
+replay compensation was applied, and ordinary Android XL admission stays guarded.
+
+### November 14 second-tranche implementation qualification and handoff
+
+PR 506 head 8d5f7ebb66936bf3fdcdd49098d3defaf6b69e8a, synthetic merge
+4011541a52adeda82013cb8bf42387dcf8301499, now has all applicable non-readiness
+checks terminal SUCCESS in pr506-checks-final.json. Public run 43663420444
+attempt 1 includes native job 132663339437 and headed job 132663339435. Each
+backend passes 34 native runs/17 cases and three negative controls. Headed
+imported D1 flight passes the existing gameplay-state/SIM-RNG scope, while
+frame.diag/object_states/world_states, four other paired cases and three excluded
+cases remain outside that qualification. Broader imported parity is incomplete.
+Headed report artifact 14143367631 is retained locally. Private run 43663432462
+attempt 1/controller 72fdd76f5f8dc24a787b3a4858de1115ec091c19 passes its bounded
+113 required/16 format/3 modern controls; sampled readiness stays FAIL 4/8.
+
+The dated report, next plan and replacement kickoff are
+xl_gameplay_what_was_done_20261114_tranche2.md,
+xl_gameplay_next_window_20261114_tranche2.md and
+xl_gameplay_kickoff_20261114_tranche2.md. They preserve the latest user priority
+for useful tested progress, exact source/binary/input receipts, assisted capture
+disclosure, Android FX mismatch, retention loss, full G2 energy defect and
+conditional estimates. The runnable package is hash-verified. No further native
+implementation is in flight. Final documentation publication is an immediate-parent
+child of PR 506; its own final-push CI and refreshed identities belong in the
+post-push final-handoff-receipt.json and PR description. No merges are authorized.

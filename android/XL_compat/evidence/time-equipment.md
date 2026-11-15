@@ -17,6 +17,14 @@ The standard resource sound bank and camera HOG use that same owned resource
 mount. Retail, mission and any required genuine Vertigo resources remain separate
 user-supplied inputs
 
+The November 14 absence controls also qualify missing time-image strips and
+transition output cues through their native consumer behavior. They do not invent
+frames, successful playback or PCM duration. Malformed/foreign resources still
+reject, and logical time-equipment replay requirements remain independent of
+whether image output is present. This does not make missing camera/robot
+definitions optional or qualify an entire mission; see the
+[second-tranche report](../../ai%20tool%20plans/xl_gameplay_what_was_done_20261114_tranche2.md)
+
 On Windows, keep the selected resources at their original relative paths inside
 the game-data directory: `d2x-xl.hog`, `textures/d2/` and `sounds/d2x-xl/` are
 examples. Place the original mission HOG/MN2 files under `missions/` and its

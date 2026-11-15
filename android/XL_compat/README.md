@@ -21,16 +21,22 @@ in `mission.c`. Desktop screenshot framebuffer policy is in
 `runtime/screenshot_readback.c`; naming, image writing and native pause/resume stay
 in `arch/ogl/gr.c`. These separations do not complete the whole-save transaction.
 
-The current root working diff extends stationary single-player particle runtime
-support to bubbles, waterfall, snow and rain through the shared emitter and
-resource owners. The [particle record](evidence/particle-effects.md) gives the
-source/native checks and exact original-level limits. Zero particle admission
-findings do not certify a level: Dinter now passes its static POG strips but
-still needs generated-boss lifecycle support,
-Boiling waterworks lacks its authored POG, and Boiling canyons lack exact authored
-sound filenames. Original Warp Shock level 5's HXM animation slots now load in
-the normal OpenGL renderer; its [HXM record](evidence/hxm-gameplay.md) separates
-controlled actor and Android save evidence from full-level traversal.
+Stationary single-player particle support includes bubbles, waterfall, snow and
+rain through the shared emitter and resource owners. The
+[particle record](evidence/particle-effects.md) gives source/native checks and
+original-level limits. Qualified absent transition/action audio and
+time/particle/corona images follow their native consumer failure semantics;
+malformed or foreign resources still reject. Missing geometry, definitions or
+other gameplay dependencies are not optional presentation.
+The November 14 frozen readiness sample remains 4/8: three cases now reject
+missing incoming robot definitions and Warp Shock level 6 still requires its
+owned camera addon. The four passing cases report XL inactive. See the
+[second-tranche report](../ai%20tool%20plans/xl_gameplay_what_was_done_20261114_tranche2.md)
+for exact inputs, source/owner receipts and remaining limits. Original Warp Shock
+level 5's HXM animation slots have separate normal OpenGL evidence; its
+[HXM record](evidence/hxm-gameplay.md) distinguishes controlled actor and Android
+save evidence from full-level traversal. Boiling waterworks' absent authored POG
+still needs its own gameplay-material proof.
 
 XL single-player time equipment now uses normal pickups, desktop Alt+S/Alt+B and
 Android Extra-button actions. Genuine addon import, ownership, clocks and cold
