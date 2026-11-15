@@ -12,8 +12,8 @@ xl_gameplay_what_was_done_20261115.md, xl_gameplay_next_window_20261115.md,
 xl_gameplay_tranche_20261115.md, xl_ci_admission_20261114.md,
 xl_resource_tranche_20261113.md and the G2-G7 acceptance/latest ledger entries.
 Refresh actual HEAD/tree/stashes/origin/immediate parent/native stack and final
-CI receipts. PR 509 starts a fresh stack from cmake after historical stack 471
-was merged. Do not silently reuse merged branches. Resolve applicable terminal
+CI receipts. Native stack 511 contains PRs 509, 510 and 512, starting from cmake
+after historical stack 471 was merged. Do not silently reuse merged branches. Resolve applicable terminal
 failures and distinguish skipped/request/controller jobs from gameplay passes.
 
 Prioritize useful tested gameplay progress without requiring a specific 8/8
@@ -34,10 +34,16 @@ for Android live capture/clock/input qualification and any future guard changes.
 
 Use identified frozen APKs, verify installed hashes/flags, protect profiles and
 exclusive backups, and use fresh explicit water output directories. Ordinary APK
-SHA256 is d41857cb8d0d762eed54bab3444794c9ae80d8f967a9462de126855b7db878f5.
+SHA256 is 504848a52babb1c5c286e1c013d52f436cf6d1ffeaddf725444d93a41172dbb5
+at temp/xl-gameplay-20261115/apk-ordinary-02/app-debug.apk.
 The raw Gradle output can be a developer probe. Preserve the Windows Debug water
 timeout and software-fixture build failure; other platform passes are not their
 qualification. Keep original deadlines and complete traces.
+
+Preserve both games' bounded terrain painter traversal for off-grid exterior
+cameras. Keep the four-quadrant host renders and Android flyout/cache owner,
+including its pause.can_resume prerequisite. Derived scenery, controlled poses
+and return triggers remain disclosed assists, not readiness evidence.
 
 Continue full G2 incoming resource ownership only for demonstrated readiness need
 or explicit priority. Re-review unapplied/untested sound stash

@@ -199,3 +199,12 @@ past save_row and corrupt height_array. Bound the traversal split to valid grid
 vertices in both native games, without changing camera position or terrain data.
 Extend the existing rendered flyout owner with all four off-grid quadrants,
 then rerun affected host/Android owners and preserve the failing APK and receipts.
+
+The terrain repair is published as non-draft PR 512, immediate parent PR 510,
+in native stack 511. Its runtime head is e086949010e07773c2c2e531485b507698a537a2.
+All six native flyout owners and four upstream contracts pass. Ordinary Android
+flyout/cache passes 19/19; ordinary water passes 59/59; complete Windows/Linux
+and Android developer replay comparisons pass. Frozen readiness remains 4/8.
+The identified ordinary APK 504848a52babb1c5c286e1c013d52f436cf6d1ffeaddf725444d93a41172dbb5
+is restored, its guard remains enforced and protected state matches. Final CI
+inspection and documentation push are the remaining handoff work.

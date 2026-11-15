@@ -7,6 +7,10 @@ Work is sequential, without agents. This report is published while candidate CI
 is completing; pending jobs are not passes. No merge, auto-merge or enqueue is
 authorized or performed.
 
+The final runtime implementation is PR 512 at e086949010e07773c2c2e531485b507698a537a2.
+The terrain follow-up section records its qualification and the currently restored
+ordinary APK. Earlier sections retain the separate starfield checkpoint evidence.
+
 ## Delivered behavior
 
 [PR 509](https://github.com/larsonm-personal/dxx-redux/pull/509) preserves the native
@@ -115,6 +119,103 @@ Android protected manifests hash to
 2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15.
 The game is stopped and the fixed water backup directory is absent.
 
+## Rendered terrain follow-up
+
+[PR 512](https://github.com/larsonm-personal/dxx-redux/pull/512) extends
+[native stack 511](https://github.com/larsonm-personal/dxx-redux/stack/511)
+after immediate parent PR 510. Its implementation head is
+e086949010e07773c2c2e531485b507698a537a2, tree
+0f8e1be52d51d19679acd4c16cb9633ca58ea04f, initial merge candidate
+a909462c431a9437defed29d58f453ee24ca5453. The preceding qualification head is
+6800111f97f16d1617bee8bfebda691e2b7ee4f6, tree
+4557a5a068159b152ba966a08b0cbf96e7c1ebce, merge candidate
+383189ce0d0c4767f9fa97fbdf3af98c20a970fa. Historical merged stack 471 remains
+linked; no stack is merged or queued by this tranche.
+
+The additional ordinary Android flyout owner exposed two failures. In
+android-flyout-01, the fixture requested Resume while graphics validation held
+pause reason 8 alongside the overlay. The native guard correctly rejected it.
+The existing paused-state wait now also requires pause.can_resume within its
+unchanged 20-second limit; no guard or assertion was weakened.
+
+That correction exposed a real native exterior crash in android-flyout-02.
+The x86_64 backtrace identifies render_terrain at PC 0x94891e, terrain.c:217,
+build ID fccc9e0abbbf7aeab6d8780303896d1704dd9102. The renderer used unclamped
+camera grid coordinates as painter traversal limits. Off-grid writes could
+overrun the 64-entry save_row buffer and corrupt the immediately adjacent
+height_array pointer. Both games now bound only the traversal split to valid
+grid vertices; camera position, terrain data and draw ordering remain intact.
+The crashed owner reached its existing timeout and restored protected state.
+
+All four Debug rendered owners pass three complete flyouts with four off-grid
+camera quadrants each. They verify terrain pointers/dimensions and traversal of
+the four mine tiles, restore the diagnostic camera position, then finish normal
+campaign advancement. The additional camera poses are test assists. Evidence:
+
+| Owner                 |     Time | Binary SHA256                                                    |
+| --------------------- | -------: | ---------------------------------------------------------------- |
+| terrain-windows-d1-01 |  5.906 s | 4bd5ccbd9d1e8cbcf2ff743f5f8e40219869818962770ab692c00093a5fbada6 |
+| terrain-windows-d2-01 |  8.125 s | b7db2031fde0403a6010813adaa5d44b8d4cc51b5e7c395b1f5dc26ed70269eb |
+| terrain-linux-d1-01   | 15.051 s | df8ecdef546e69ca222100aa97e1c4d84bae4636874aabc9678b5708dda653c1 |
+| terrain-linux-d2-01   | 25.076 s | 40dc2b6d89b206707ef34984058dae34cce91f8d7a1c6e326592215883de642b |
+
+Original fan-mission owners also pass: Windows 13.297 s, Linux 22.071 s, using
+the corresponding D2 binaries. All four upstream contracts pass again in
+terrain-native-contracts-01: Windows D1/D2 10.89/65.86 s and Linux D1/D2
+2.29/23.71 s. Scoped formatting and both automation catalogs pass unchanged
+counts. The new test-source SHA256 is
+fac1d13dcc894e2ff668558ed992f21fb21929642de84c89fd29d7f1025a5d21.
+qualified-terrain-source-01.json pins ten source files, and
+terrain-commit-source-identity.json verifies that the pre-commit build sources
+match the published implementation without changes.
+
+The ordinary all-ABI/both-game APK is now frozen separately at
+apk-ordinary-02/app-debug.apk, SHA256
+504848a52babb1c5c286e1c013d52f436cf6d1ffeaddf725444d93a41172dbb5.
+Its installed hash is verified. android-flyout-03 passes all 19 steps in
+37.142 s: real rendered exterior, score advancement and cached return to level 2.
+Its three Pumo before/after manifest pairs each match SHA256
+9c3b5a0240e73c80ad477c2f0671301e5764912e37ea276beddef2569dcabb66.
+The derived fixture adds scenery to original Pumo geometry and uses controlled
+exit pose/player energy, presentation dismissal and a derived return trigger.
+It does not establish unassisted campaign or frozen readiness qualification.
+Both failed runs and the earlier APK remain retained.
+
+readiness-terrain-01 again reports the same frozen 4/8 on the exact ordinary
+headless route, binary SHA256
+5440f93822b1a07db651c928b72d6ea6dd362cbf5e4782cbe6c3dbd1080c64c4.
+The rebuilt ordinary Windows/Linux engines both match the retained capture's
+1235 object frames, 1239 world records, 196 SIM events, 1808 FX events and exact
+trailer in replay-terrain-windows-01 and replay-terrain-linux-01. This reuses the
+original capture without rerolling or filtering it. A failed build invocation
+using the output filename d2x-redux as a CMake target is retained; the actual
+dxx-redux-d2 target builds successfully.
+
+The ordinary replay binaries are Windows
+23496c04af71bf3437f90cc95e82fe853574ace95b7abd44754efef09ba483c5
+(14.266 s playback) and Linux
+422a28bacc8625f3e840d7efabcacdf476f841782e7c4e006c68cef7349817ca
+(19.160 s playback). Detailed comparisons finish separately after playback.
+android-water-ordinary-02 passes 59/59 steps in 26.391 s on ordinary APK 504848a5.
+The matching x86_64 developer APK, apk-developer-02/app-debug.apk, hashes to
+10c99a60de601c40e0313fe7cc5c1d8970ee865e519c6d1946cb008232100219.
+android-water-developer-02 matches the embedded 1235-frame result;
+android-water-comparison-02.json independently confirms all 1235 object frames,
+1239 world records, 196 SIM and 1808 FX events with no filtering.
+
+The ordinary 504848a5 APK is restored and hash-verified. Its pre-commit version
+code 30600 is lower than the source-equivalent developer build's 30610, so the
+initial install -r refusal is retained and restoration uses install -r -d for
+the debuggable APK, preserving app data. android-ordinary-guard-02 failed on an
+ADB connection error before backup/test evidence; it is not a guard pass.
+After connectivity recovered and absent backup/stopped game were verified,
+android-ordinary-guard-03 records the actual native XL timeline rejection,
+owner exit 1, no replay result and exact restoration. All three final water
+manifest pairs match 2f1ef35b4d183307e257eeb3b1c351d7b2821011f28c9d80e6b82558023bed15.
+The raw Gradle APK remains the developer artifact. The receipt verifier
+verify-terrain-handoff-01.log passes source, six flyout owners, four upstream
+contracts, full traces, APK hashes, readiness and state restoration checks.
+
 ## Retained failures and open limits
 
 All failed native starfield setup attempts and the genuine baseline reload
@@ -135,37 +236,57 @@ unapplied and untested. Ordinary Android and true-headless XL timeline admission
 Android live capture-to-host, physical-device evidence and broader G2-G7 campaign
 acceptance remain incomplete. There is no 90% playability claim.
 
-## Candidate CI (qualification in progress)
+## Candidate CI and final-push verification
 
-All listed runs are attempt 1 for implementation head def09a9e9, with the exact
-merge candidate above. As of 08:12 UTC, eligibility/request successes are not
-native gameplay qualification:
+The committed xl_gameplay_ci_20261115.json receipt records exact PR heads, bases,
+merge candidates, workflow/controller heads, requested candidates, URLs, attempt
+numbers and every returned job outcome. All initial runs are attempt 1. Its
+observed_utc field defines the snapshot; pending entries are not passes.
 
-- [Extended sample 43690324711](https://github.com/larsonm-personal/dxx-redux/actions/runs/43690324711):
-  workflow success; execution owners skipped by the standalone extended-path
-  eligibility filter. No extended gameplay pass is claimed.
-- [Server 43690324759](https://github.com/larsonm-personal/dxx-redux/actions/runs/43690324759):
-  eligibility success; server job skipped because there is no server change.
-- [XL request 43690324787](https://github.com/larsonm-personal/dxx-redux/actions/runs/43690324787):
-  signal success only.
-- [Private XL controller 43692210110](https://github.com/larsonm-personal/dxx-redux/actions/runs/43692210110):
-  queued, controller 5f8ab3535bec69b86a287f6516a5bddd6b81c383, requested candidate
-  def09a9e98f209088ad0c0de9b60d9739f5583fe. Admission and owner results are pending.
-- [XL contracts 43690324761](https://github.com/larsonm-personal/dxx-redux/actions/runs/43690324761),
-  [scripts 43690324717](https://github.com/larsonm-personal/dxx-redux/actions/runs/43690324717),
-  [engine 43690324782](https://github.com/larsonm-personal/dxx-redux/actions/runs/43690324782),
-  [shareware 43690324751](https://github.com/larsonm-personal/dxx-redux/actions/runs/43690324751)
-  and [LAN 43690324786](https://github.com/larsonm-personal/dxx-redux/actions/runs/43690324786): pending.
+All nine workflows for PR 509 and all nine for PR 510 completed successfully.
+PR 509's engine artifacts record 95 D1 and 104 D2 CTest passes. The private
+readiness artifacts for both heads reproduce 4/8 with the pinned cohort.
+Important limits remain despite workflow success:
 
-The qualification child will form the native published stack. Inspect its exact
-tip and final-push CI before handoff; do not recycle old green runs. Source and
-runtime bytes remain those tested above. Final candidate receipts will be retained
-under this tranche's evidence root and reflected in the handoff update.
+- PR 509 extended sample 43690324711 skipped execution by eligibility. PR 512's
+  initial extended sample 43696337139 likewise skipped expensive coverage with
+  the native non-tip/unrelated-changes eligibility message before stack linking.
+- Server execution is skipped without a server change. LAN timing export and
+  retained-online inspection are skipped; the two-player LAN owner executes.
+  Separate native-save/replay and headed-parity jobs can be skipped by their
+  replay eligibility; the public build/save-integrity and admission owners pass.
+- Private controllers 43692210110 and 43694256733 use controller
+  5f8ab3535bec69b86a287f6516a5bddd6b81c383 and candidates def09a9e9 and 6800111f9
+  respectively. Their host-profile:retail-xl-fast owners report PASS but
+  coverage_complete=false, zero counted leaf cases and aggregate incomplete.
+  Android, pinned-Pumo staging and nightly Release compile are skipped by
+  selection. No full private gameplay acceptance is claimed.
+- PR 510 extended sample 43694244952 executes Linux, JVM and Android jobs,
+  reports 159 passing leaves and four fully covered owners, but aggregate
+  incomplete with seven incomplete owners. Extractor coverage excludes one
+  explicitly skipped registration and three missing real-media fixture cases.
+  Gradle coverage lacks optional Mac/GOG, Anniversary, Pumo, Vertigo, RAR,
+  replacement-bank/static-texture/distribution and real-server fixtures. Other
+  incomplete aggregate owners lack complete counted leaf evidence. Exact names,
+  reasons and exclusions are preserved in the structured receipt.
+- PR 512's implementation-head scripts, XL contracts, LAN, server and request
+  workflows have completed successfully at this snapshot. Engine, public
+  shareware and private controller 43696348519 remain in progress. The request
+  workflow is only a signal. Controller 5f8ab3535bec69b86a287f6516a5bddd6b81c383
+  requests e086949010e07773c2c2e531485b507698a537a2.
+
+The handoff documentation push creates a new candidate identity. Inspect that
+push separately and retain final-handoff-receipt.json under the evidence root;
+PR 512's handoff body records its exact final head/merge/controller/candidate,
+workflow URLs, attempts, outcomes and skips. This committed snapshot does not
+claim that subsequent jobs passed, and old green runs are not substitutes.
 
 ## Revised estimate
 
 The procedural FX defect is repaired and its detailed Android developer replay
-is qualified in this tranche. This does not reduce the external readiness
+is qualified in this tranche. The off-grid terrain crash is also repaired and
+qualified by host quadrant renders and the ordinary Android flyout/cache owner.
+These fixes do not reduce the external readiness
 dependencies: no finite unconditional 8/8 estimate is supported with the frozen
 inputs. The earlier two-to-four-tranche range remains conditional and low
 confidence, not a delivery commitment. Broader G2-G7 completion cannot be inferred

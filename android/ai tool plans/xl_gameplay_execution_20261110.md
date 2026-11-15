@@ -5964,3 +5964,52 @@ gameplay passes. Private controller 43692210110 requests def09a9e9 using control
 5f8ab3535bec69b86a287f6516a5bddd6b81c383. Final owner outcomes and final-push CI
 must be inspected before bounded handoff. Another tranche requires explicit
 invocation with new bounds; the replacement kickoff does not schedule it.
+
+### November 15 rendered terrain follow-up and final local qualification
+
+Native stack 511 now contains PRs 509, 510 and 512. PR 512's implementation
+head e086949010e07773c2c2e531485b507698a537a2, tree
+0f8e1be52d51d19679acd4c16cb9633ca58ea04f, follows qualification parent
+6800111f97f16d1617bee8bfebda691e2b7ee4f6. The initial merge candidate is
+a909462c431a9437defed29d58f453ee24ca5453. Nothing is merged or queued.
+
+The additional Android rendered flyout first exposed a stale fixture resume
+request during graphics validation. The existing paused-state wait now requires
+pause.can_resume within the unchanged 20-second limit. This exposed a native
+terrain crash: off-grid camera indices overran save_row and corrupted the
+adjacent height_array pointer. Both games now bound painter traversal to the
+terrain grid without changing the camera or terrain. Failed runs remain retained.
+
+Windows/Linux Debug D1/D2 each pass three full flyouts with all four off-grid
+quadrants; both original fan owners and all four upstream contracts pass again.
+The ordinary Android derived Pumo flyout/cache owner passes 19/19 in 37.142 s,
+including score advancement and cached level return. Controlled camera/player
+poses, added scenery, presentation dismissal and derived return are disclosed
+assists. Protected state restores exactly. This is not readiness or unassisted
+campaign qualification.
+
+The final ordinary all-ABI/both-game APK is apk-ordinary-02/app-debug.apk, SHA256
+504848a52babb1c5c286e1c013d52f436cf6d1ffeaddf725444d93a41172dbb5. Ordinary water
+passes 59/59 in 26.391 s. The matching developer APK hashes to
+10c99a60de601c40e0313fe7cc5c1d8970ee865e519c6d1946cb008232100219. Both ordinary
+host replays and this developer APK match the retained capture completely:
+1235 object frames, 1239 world records, 196 SIM and 1808 FX events, plus the
+embedded result. No capture reroll, event filter or RNG compensation is used.
+
+Ordinary APK 504848a5 is restored with its installed hash verified. Its lower
+debug version code required install -r -d; app data was preserved. The first
+final guard attempt failed on ADB connectivity before backup/test evidence;
+a fresh attempt after recovery confirms the native guard rejection, no replay
+result and exact restoration. Preserve both receipts. The frozen readiness
+measurement remains 4/8 on the exact ordinary headless target and pinned inputs.
+The Windows Debug water timeout, software-fixture compilation limitation,
+missing HXM/camera dependencies and broader G2-G7 acceptance remain open.
+
+All initial PR 509/510 workflows are green, but private owners remain coverage
+incomplete. PR 510's extended sample records 159 passing leaves, four fully
+covered owners and seven incomplete owners with explicit missing prerequisites.
+The structured xl_gameplay_ci_20261115.json snapshot preserves exact identities,
+URLs, attempts and all job outcomes. Inspect the separate final documentation
+push and retain final-handoff-receipt.json plus PR 512's final handoff body;
+pending or superseded runs are not final-candidate passes. Another tranche
+requires explicit invocation with new bounds.
