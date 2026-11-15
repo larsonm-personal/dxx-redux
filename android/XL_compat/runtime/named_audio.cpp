@@ -69,6 +69,7 @@ struct AudioResources {
 	std::map<int, Action> actions;
 	std::map<std::string, unsigned> external;
 	std::set<unsigned> unavailable;
+	std::set<unsigned> unavailable_ambient, unavailable_transition;
 	unsigned prepared_rate = 0;
 	std::shared_ptr<const std::vector<AudioSample>> prepared_samples;
 };
@@ -151,7 +152,7 @@ std::vector<AudioSample> convert_bank(const AudioResources &resources, unsigned 
 	std::vector<AudioSample> result;
 	std::size_t bytes = 0;
 	for (unsigned index = 0; index < resources.sources.size(); ++index) {
-		// An absent ambient resource owns an index for persistent linked state,
+		// An absent output resource owns an index for persistent linked state,
 		// but has no decoded or converted PCM and cannot acquire a mixer channel
 		auto sample = resources.unavailable.count(index) ? AudioSample{} : prepare_audio_sample(resources.sources[index], rate);
 		bytes += sample.stereo.size() * sizeof(std::int16_t);
@@ -265,7 +266,9 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 	std::size_t bytes = 0;
 	for (const auto &pcm : resources->sources) bytes += pcm.samples.size() * sizeof(std::int16_t);
 	std::string external_identity;
-	std::vector<std::pair<std::string, bool>> external_names;
+	enum class OutputKind { ambient,
+		                    transition };
+	std::vector<std::pair<std::string, OutputKind>> external_names;
 	for (const auto &object : inventory.objects) {
 		std::string name;
 		if (object.render == 13) {
@@ -278,33 +281,41 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 		else if (object.render == 11 && prepare_authored_particle(inventory, object).effect.kind == ParticleKind::bubbles)
 			name = bubble_sound_name;
 		else continue;
-		external_names.emplace_back(std::move(name), true);
+		external_names.emplace_back(std::move(name), OutputKind::ambient);
 	}
 	// The source requests transition WAVs only with an enabled mixer
 	if (!GameArg.SndNoSound && xl_runtime::time_equipment_resources_required(inventory)) {
-		external_names.emplace_back("slowdown.wav", false);
-		external_names.emplace_back("speedup.wav", false);
+		external_names.emplace_back("slowdown.wav", OutputKind::transition);
+		external_names.emplace_back("speedup.wav", OutputKind::transition);
 	}
-	for (const auto &[name, optional] : external_names) {
+	for (const auto &[name, kind] : external_names) {
 #ifndef USE_SDLMIXER
 		throw std::runtime_error("XL object sounds require the SDL_mixer backend");
 #endif
 		if (!GameArg.SndNoSound && !backend_ready) throw std::runtime_error("XL object sounds require an initialized stereo 16-bit SDL_mixer output");
 		const auto key = external_key(name);
+		auto &unavailable = kind == OutputKind::ambient ? resources->unavailable_ambient : resources->unavailable_transition;
 		if (const auto found = resources->external.find(key); found != resources->external.end()) {
-			if (!optional && resources->unavailable.count(found->second))
-				throw std::runtime_error("Missing XL sound " + key + "; the required resource was absent during ambient preparation");
+			if (resources->unavailable.count(found->second)) unavailable.insert(found->second);
 			continue;
 		}
-		const auto resource = optional ? find_audio_resource(name, level, ordinal, target) : std::optional<AudioResource>(load_audio_resource(name, level, ordinal, target));
+		const auto resource = find_audio_resource(name, level, ordinal, target);
 		if (!resource) {
 			const auto index = unsigned(resources->sources.size());
 			resources->external.emplace(key, index);
 			resources->unavailable.insert(index);
+			unavailable.insert(index);
 			resources->sources.emplace_back();
 			resources->names.push_back(name);
-			external_identity += ":" + name + ":absent-ambient-output";
-			con_printf(CON_NORMAL, "XL ambient output unavailable: %s; authored object and linked lifetime retained\n", name.c_str());
+			if (kind == OutputKind::ambient) {
+				external_identity += ":" + name + ":absent-ambient-output";
+				con_printf(CON_NORMAL, "XL ambient output unavailable: %s; authored object and linked lifetime retained\n", name.c_str());
+			} else {
+				// Source PlayWAV failure leaves the transition handle absent; clocks,
+				// energy and control consumption still follow the normal frame path
+				external_identity += ":" + name + ":absent-transition-output";
+				con_printf(CON_NORMAL, "XL transition output unavailable: %s; time-equipment state retained\n", name.c_str());
+			}
 			continue;
 		}
 		WaveChannels pcm;
@@ -862,8 +873,10 @@ nlohmann::json named_audio_diagnostics()
 	std::set<std::string> named_files;
 	result["external_resources"] = nlohmann::json::object();
 	result["unavailable_ambient_output"] = nlohmann::json::array();
+	result["unavailable_transition_output"] = nlohmann::json::array();
 	if (bank) {
-		for (const auto index : bank->unavailable) result["unavailable_ambient_output"].push_back(bank->names.at(index));
+		for (const auto index : bank->unavailable_ambient) result["unavailable_ambient_output"].push_back(bank->names.at(index));
+		for (const auto index : bank->unavailable_transition) result["unavailable_transition_output"].push_back(bank->names.at(index));
 		for (const auto &[key, action] : bank->actions) {
 			(void) key;
 			named_files.insert(bank->names.at(action.sample));
