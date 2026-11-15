@@ -58,3 +58,22 @@ The continuation report, continuation kickoff and G2-G7 acceptance sections in
 `xl_gameplay_execution_20261110.md` remain applicable. This tranche does not
 inherit the original unlimited-duration instruction or shorten itself merely
 because a partial helper passes.
+
+## Bank ownership implementation boundary
+
+After PRs 474-476 connect retained definitions, extensions and isolated mod/model
+sources, dependency walks still page `GameBitmaps` and inspect `GameSounds`.
+The next slice retains the selected qualified base PIG/sound bytes from their
+captured startup origins, uses shared native header interpretation to build
+independent records, and validates RLE payloads through the existing bounded
+codec. Incoming graphs must not fall back to installed banks. Actual level
+preparation chooses the target inventory palette; absent target palette context
+must remain explicit. Base-source hashes still enforce the existing qualification
+policy, and private archive reads do not change logical mission lookup.
+
+Native `piggy.c` edits are justified by keeping header interpretation shared with
+normal bitmap/sound registration. New resource ownership, source-origin policy
+and dependency binding stay in `android/XL_compat`. This does not yet promise an
+atomic replacement of installed renderer/audio banks or whole-world state. POG
+clock/HUD checks, publication allocation and level/source context remain separate
+boundaries to finish or explicitly constrain before tranche acceptance.

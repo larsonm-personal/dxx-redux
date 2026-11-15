@@ -70,6 +70,7 @@ class XlPreparedResources
 	xl_assets::ObjectDependencies &dependencies();
 	std::string prepare_hxm(PHYSFS_file *file);
 	std::string prepare_vham(PHYSFS_file *file);
+	void prepare_banks(const std::string &palette);
 	void install_hxm();
 	void install_pog();
 	void install_messages();

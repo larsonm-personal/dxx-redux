@@ -4634,3 +4634,56 @@ no new diagnostic suppression was added.
 Independent target bitmap/sample banks and actual live gameplay continuation
 still need qualification. Full G2 remains open, and this checkpoint does not end
 the 15-hour tranche.
+
+### Owned bitmap and sample dependency banks
+
+PR [476](https://github.com/larsonm-personal/dxx-redux/pull/476), head
+`fe56d19ddde8870c6503d6dc00b4025bc2dfca49`, publishes isolated target sources above
+PR 475. Private qualification runs 43460757021 (PR 475) and 43465390700 (PR 476)
+are terminal success, attempt 1, controller `bf40de9bc3b85c2279fe8163c621bb6c052dec12`.
+PR 474 and 475 public regression jobs are terminal success or intentional skips;
+the separate sampled readiness baseline remains failed. PR 476 long public jobs
+are still being monitored.
+
+The next slice retains qualified palette/PIG/sound data from captured physical
+startup origins, rather than resolving the current mission namespace. Archive
+reads reuse the native PhysicsFS archiver under a private prefix. Native PIG/SND
+header interpretation is shared with ordinary registration in `piggy.c`; the XL
+owner retains records and bytes, validates payload bounds and RLE through the
+existing codec, and binds dependency checks to those records. Incoming graphs
+reject bitmap/sample walks until banks are prepared. Level preparation selects
+the inventory palette and uses the owned bitmap count for POG admission.
+
+The canonical HAM control removes the installed bitmap count and sample pointer
+while walking retained dependencies, verifies both resources were visited, and
+checks malformed bitmap/sample candidates leave the retained bank unchanged.
+Windows and Linux Debug Observatory controls pass. Pumo CPU controls pass in
+64.81 seconds on Windows and 44.98 seconds on Linux, within the unchanged
+120-second owner timeout. Ordinary developer-OFF Windows D2 builds and help
+startup pass. Scoped mixed formatting passes. Initial native builds caught a
+macro declaration-order error; the failed build receipts remain retained.
+
+This proves independent dependency banks, not atomic renderer/mixer bank
+publication. POG clock/HUD views and allocation, full incoming level source
+context, actual live-continuation evidence and whole-world G2 remain open. The
+15-hour goal continues. Receipts are under
+`temp/xl-resource-tranche-20261113/`, with `banks` in their filenames.
+
+#### Bank rejection diagnostic correction
+
+The broader water owner exposed a diagnostic regression: the retained-bank
+check rejected the invalid HXM bitmap but changed the established phrase from
+`missing bitmap` to `missing target bitmap`. A diagnostic-only reproduction
+records the exact rejection in `water-bank-diagnostic-02.log`. The runtime now
+preserves the established phrase and adds target-bank context. The original
+assertion remains intact; its failure now includes the actual rejection reason.
+Earlier failed runs and an accidentally reused failed fixture receipt remain
+retained. Fresh derived fixtures are used for revalidation.
+
+The complete Windows and Linux Debug water capture/replay owners pass after the
+fix (`water-bank-fixed-windows.log`, `water-bank-fixed-linux.log`). The ordinary
+developer-OFF Windows D2 build passes, and fresh clean-process water playback
+exits normally. Detailed trace comparison is underway. Linux reports an
+untracked-free diagnostic at shutdown; its backtrace is being investigated, so
+this checkpoint does not claim clean memory diagnostics. No timeout, assertion,
+authentic source or required owner was weakened.

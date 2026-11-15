@@ -5,6 +5,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include "resource_banks.h"
 extern "C" {
 #include "inferno.h"
 #include "object.h"
@@ -28,6 +29,8 @@ inline void asset_require(bool condition, const char *message)
 	if (!condition) throw std::runtime_error(message);
 }
 struct ObjectDependencies {
+	const XlResourceBanks *resource_banks = nullptr;
+	bool require_owned_banks = false;
 	bool xl_boss_spawning = false;
 	bool xl_time_equipment = false;
 	int robot_count = N_robot_types, joint_count = N_robot_joints, model_count = N_polygon_models;
@@ -64,6 +67,12 @@ struct ObjectDependencies {
 		const int resolved = digi_xlat_sound_from_tables(id, low_memory, sound_mappings, alternate_sounds);
 		if (resolved < 0 || resolved >= MAX_SOUND_FILES)
 			throw std::runtime_error("dependency references unmapped sound " + std::to_string(id));
+		if (resource_banks) {
+			resource_banks->sound(resolved);
+			sounds.insert(resolved);
+			return;
+		}
+		asset_require(!require_owned_banks, "Incoming sound dependencies require prepared target banks");
 		const auto &s = GameSounds[resolved];
 		if (!s.data || s.data == reinterpret_cast<ubyte *>(-1) || s.length <= 0)
 			throw std::runtime_error("dependency sound has no loaded sample: logical=" + std::to_string(id) +
@@ -73,6 +82,12 @@ struct ObjectDependencies {
 	}
 	void bitmap(int id)
 	{
+		if (resource_banks) {
+			resource_banks->bitmap(id);
+			bitmaps.insert(id);
+			return;
+		}
+		asset_require(!require_owned_banks, "Incoming bitmap dependencies require prepared target banks");
 		asset_require(id > 0 && id < Num_bitmap_files, "object dependency references missing bitmap");
 		if (!bitmaps.insert(id).second) return;
 		bitmap_index index{};
