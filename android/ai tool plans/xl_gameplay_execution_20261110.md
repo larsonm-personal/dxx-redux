@@ -4266,3 +4266,82 @@ immediate-parent PRs in `larsonm-personal/dxx-redux`, monitoring while independe
 work continues, repair cycles, terminal final-candidate checks, and replacement
 report/plan/prompt handoffs. Partial G2 work can be published without claiming G2
 acceptance. No merges, auto-merge or upstream publication are authorized.
+
+### November 12, 21:07 PST: bounded continuation baseline and reproduction
+
+- Invoked the next 12-hour window sequentially, without agents. The current
+  [window plan](xl_gameplay_window_20261112.md) records ownership and validation
+  reserve. The previous stack has been merged externally; clean `cmake` and
+  `origin/cmake` both point to `bf40de9bc3b85c2279fe8163c621bb6c052dec12`.
+  Created `xl_gameplay_20261112_04_target_definitions` from that immediate parent.
+  PR 468's final published head was `2edc3875`; no merge occurred in this work.
+- Refreshed public checks and downloaded private run 43357326772 receipts.
+  Required private cohort: 113 passed; broad master coverage remains incomplete
+  by design. Controller `b3bb12cbe`, actual candidate `2edc3875` are distinct.
+  Sampled readiness still fails 4/8; all four load/tick successes were XL inactive.
+  These are baseline identities, not acceptance of newly edited source.
+- [Catalog accounting](../XL_compat/evidence/catalog-accounting-20261112.md)
+  preserves 1,111 IDs, 1,020 normal/91 secret entries and 356 descriptors across
+  23 archives. Eligibility is unresolved; conservative denominator 1,111 and
+  threshold 1,000. Exact-ID receipt join: four load/tick, four load failures and
+  1,103 untested. No full playability numerator or marginal coverage gain claimed.
+- Rebuilt current Windows developer metadata owner from the verified root-bound
+  cache. Initial build failed because this shell lacked the MSVC environment;
+  retained that log, initialized the existing VS development shell, and rebuilt
+  successfully. An initial atomic probe lacked the prerequisite generated birth
+  save; retained both setup attempts. Fresh `birth` then passes, and
+  `birth-atomic` reproduces rejection with energy 5963776 -> 6553600 (91 -> 100).
+  Evidence: `temp/xl-g2-window-20261112/birth-atomic-after-birth.log` and derived
+  fixture directory. No authentic input changed. Full G2 remains open.
+- Ubuntu WSL startup returns `Wsl/Service/E_UNEXPECTED`; requested permission for
+  a WSL shutdown/restart because it could interrupt unrelated Linux work.
+  Independent Windows implementation continues while that answer is pending.
+- Three stashes retained, about 187 GiB initially free. No cleanup deletion,
+  upstream write, PR creation, push or merge at this baseline checkpoint.
+
+## Checkpoint 04: independent native HAM preparation
+
+The existing native typed HAM reader now accepts an explicit destination. The
+ordinary wrapper keeps version behavior and metadata/Android publication hooks.
+`XlPreparedHam` retains origin-checked mission bytes, owns every destination and
+model payload, and invokes that same codec through a scoped read-only PhysicsFS
+byte adapter. Model initialization has local scratch; serialized pointers are
+ignored. Candidate moves keep destination views valid. The existing Observatory
+owner checks independent equal-count incoming definitions, owned model data,
+malformed rejection/discard, live lookup and SIM preservation.
+
+This is the bounded native-reader milestone. It does not yet supply
+`XlPreparedResources`, publish incoming definitions, stage extended HAM/HXM or
+bitmap/sample banks, or make whole-save restore atomic. `birth-atomic` still
+reproduces energy 91 -> 100 on late rejection. No acceptance claim for G2,
+Android, sustained connected gameplay or 90% follows from this checkpoint.
+
+Local receipts under `temp/xl-g2-window-20261112`:
+
+- Windows developer-ON and ordinary developer-OFF RelWithDebInfo rebuilds pass
+  (`build-developer-final.log`, `build-ordinary-final.log`).
+- Full canonical Observatory passes (`ham-owner-final.log`), including the new
+  controls and original 12 firing / 4 contact gates; membership/timeouts unchanged.
+- Assertions-enabled Debug build passes (`build-assertions-final.log`), and the
+  supplemental `ham-prepare` selection passes in 6.45 seconds. Full Debug
+  Observatory twice exceeded its unchanged 60-second deadline later in existing
+  controls. Those failures remain retained; full Debug is not claimed passed.
+- Ordinary upstream compatibility passes 1/1 (`compatibility-windows.log`).
+- Ordinary strict short continuation passes: 12 object frames, 16 world records,
+  21 SIM and 12 FX samples (`replay-short/comparison.json`). Original recording
+  uses five position setup assists; it is not sustained/connected qualification.
+- A 2,549-frame recording cannot restore because its development checkpoint is
+  schema 40 while both baseline and current source require 41. Failed receipt
+  and checksum-verified diagnosis retained in `replay-sustained`; no shim or
+  checkpoint/expectation modification. A schema-41 water recording also exits
+  before its result after strict assets pass (`replay-water-staged`); investigation
+  remains open, so no longer ordinary continuation is claimed yet.
+- Automation catalog passes (99 standalone JSON, 547 support, 315 PowerShell);
+  master catalog integration passes (428 top-level entries, 547 support scripts).
+- Scoped formatting completed; source rebuilt afterward. Linux startup is
+  externally blocked by `Wsl/Service/E_UNEXPECTED`; restart approval is pending
+  because shutdown affects other distributions. Hosted Linux still required.
+
+Authentic inputs and failed receipts retained. Current catalog accounting is
+linked in `android/XL_compat/evidence/catalog-accounting-20261112.md`; 1,111 IDs
+remain in the conservative denominator and none has complete playability proof.

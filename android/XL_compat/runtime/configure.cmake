@@ -98,6 +98,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/visibility.cpp"
                 "${xl_runtime_dir}/menu_indicator.c"
                 "${xl_runtime_dir}/resource_validation.cpp"
+                "${xl_runtime_dir}/prepared_ham.cpp"
                 "${xl_runtime_dir}/oof_renderer.cpp"
                 "${xl_runtime_dir}/camera_collision.cpp"
                 "${xl_runtime_dir}/camera_splash.cpp"

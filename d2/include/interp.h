@@ -32,6 +32,8 @@ bool g3_draw_polygon_model(ubyte *model_ptr,grs_bitmap **model_bitmaps,vms_angve
 
 //init code for bitmap models
 void g3_init_polygon_model(void *model_ptr);
+/* Initialize candidate model bytes without changing interpreter scratch state */
+short g3_init_polygon_model_scoped(void *model_ptr);
 
 //un-initialize, i.e., convert color entries back to RGB15
 static inline void g3_uninit_polygon_model(void *model_ptr)

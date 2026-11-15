@@ -64,6 +64,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "xmodel.h"
 #include "dxa_metadata_patch.h"
 #include "d2_ham_validation.h"
+#include "bm_ham.h"
 
 ubyte Sounds[MAX_SOUNDS];
 ubyte AltSounds[MAX_SOUNDS];
@@ -171,88 +172,140 @@ int gamedata_init()
 	return 0;
 }
 
-static void bm_read_all_internal(PHYSFS_file * fp, int apply_global_patch)
+static int bm_read_ham_data(PHYSFS_file *fp, int version, const bm_ham_destination *destination,
+                            int (*read_model)(polymodel *, PHYSFS_file *))
 {
 	int i,t;
 	REWIND_PHYSFS_FILE(rewind_fp, fp);
 
-	NumTextures = PHYSFSX_readInt(fp);
-	bitmap_index_read_n(Textures, NumTextures, fp );
-	tmap_info_read_n(TmapInfo, NumTextures, fp);
+	(*destination->NumTextures) = PHYSFSX_readInt(fp);
+	bitmap_index_read_n(destination->Textures, (*destination->NumTextures), fp );
+	tmap_info_read_n(destination->TmapInfo, (*destination->NumTextures), fp);
 
 	t = PHYSFSX_readInt(fp);
-	PHYSFS_read( fp, Sounds, sizeof(ubyte), t );
-	PHYSFS_read( fp, AltSounds, sizeof(ubyte), t );
+	PHYSFS_read( fp, destination->Sounds, sizeof(ubyte), t );
+	PHYSFS_read( fp, destination->AltSounds, sizeof(ubyte), t );
 
-	Num_vclips = PHYSFSX_readInt(fp);
-	vclip_read_n(Vclip, Num_vclips, fp);
+	(*destination->Num_vclips) = PHYSFSX_readInt(fp);
+	vclip_read_n(destination->Vclip, (*destination->Num_vclips), fp);
 
-	Num_effects = PHYSFSX_readInt(fp);
-	eclip_read_n(Effects, Num_effects, fp);
+	(*destination->Num_effects) = PHYSFSX_readInt(fp);
+	eclip_read_n(destination->Effects, (*destination->Num_effects), fp);
 
-	Num_wall_anims = PHYSFSX_readInt(fp);
-	wclip_read_n(WallAnims, Num_wall_anims, rewind_fp);
+	(*destination->Num_wall_anims) = PHYSFSX_readInt(fp);
+	wclip_read_n(destination->WallAnims, (*destination->Num_wall_anims), rewind_fp);
 
-	N_robot_types = PHYSFSX_readInt(fp);
-	robot_info_read_n(Robot_info, N_robot_types, fp);
+	(*destination->N_robot_types) = PHYSFSX_readInt(fp);
+	robot_info_read_n(destination->Robot_info, (*destination->N_robot_types), fp);
 
-	N_robot_joints = PHYSFSX_readInt(fp);
-	jointpos_read_n(Robot_joints, N_robot_joints, fp);
+	(*destination->N_robot_joints) = PHYSFSX_readInt(fp);
+	jointpos_read_n(destination->Robot_joints, (*destination->N_robot_joints), fp);
 
-	N_weapon_types = PHYSFSX_readInt(fp);
-	weapon_info_read_n(Weapon_info, N_weapon_types, fp, Piggy_hamfile_version);
+	(*destination->N_weapon_types) = PHYSFSX_readInt(fp);
+	weapon_info_read_n(destination->Weapon_info, (*destination->N_weapon_types), fp, version);
 
-	N_powerup_types = PHYSFSX_readInt(fp);
-	powerup_type_info_read_n(Powerup_info, N_powerup_types, fp);
+	(*destination->N_powerup_types) = PHYSFSX_readInt(fp);
+	powerup_type_info_read_n(destination->Powerup_info, (*destination->N_powerup_types), fp);
 
-	N_polygon_models = PHYSFSX_readInt(fp);
-	polymodel_read_n(Polygon_models, N_polygon_models, fp);
+	(*destination->N_polygon_models) = PHYSFSX_readInt(fp);
+	polymodel_read_n(destination->Polygon_models, (*destination->N_polygon_models), fp);
 
-	for (i=0; i<N_polygon_models; i++ )
-		polygon_model_data_read(&Polygon_models[i], fp);
+	for (i=0; i<(*destination->N_polygon_models); i++ )
+		if (!read_model(&destination->Polygon_models[i], fp)) return 0;
 
-	for (i = 0; i < N_polygon_models; i++)
-		Dying_modelnums[i] = PHYSFSX_readInt(fp);
-	for (i = 0; i < N_polygon_models; i++)
-		Dead_modelnums[i] = PHYSFSX_readInt(fp);
+	for (i = 0; i < (*destination->N_polygon_models); i++)
+		destination->Dying_modelnums[i] = PHYSFSX_readInt(fp);
+	for (i = 0; i < (*destination->N_polygon_models); i++)
+		destination->Dead_modelnums[i] = PHYSFSX_readInt(fp);
 
 	t = PHYSFSX_readInt(fp);
-	bitmap_index_read_n(Gauges, t, fp);
-	bitmap_index_read_n(Gauges_hires, t, fp);
+	bitmap_index_read_n(destination->Gauges, t, fp);
+	bitmap_index_read_n(destination->Gauges_hires, t, fp);
 
-	N_ObjBitmaps = PHYSFSX_readInt(fp);
-	bitmap_index_read_n(ObjBitmaps, N_ObjBitmaps, fp);
-	for (i = 0; i < N_ObjBitmaps; i++)
-		ObjBitmapPtrs[i] = PHYSFSX_readShort(fp);
+	(*destination->N_ObjBitmaps) = PHYSFSX_readInt(fp);
+	bitmap_index_read_n(destination->ObjBitmaps, (*destination->N_ObjBitmaps), fp);
+	for (i = 0; i < (*destination->N_ObjBitmaps); i++)
+		destination->ObjBitmapPtrs[i] = PHYSFSX_readShort(fp);
 
-	player_ship_read(&only_player_ship, fp);
+	player_ship_read(&(*destination->only_player_ship), fp);
 
-	Num_cockpits = PHYSFSX_readInt(fp);
-	bitmap_index_read_n(cockpit_bitmap, Num_cockpits, fp);
+	(*destination->Num_cockpits) = PHYSFSX_readInt(fp);
+	bitmap_index_read_n(destination->cockpit_bitmap, (*destination->Num_cockpits), fp);
 
 //@@	PHYSFS_read( fp, &Num_total_object_types, sizeof(int), 1 );
 //@@	PHYSFS_read( fp, ObjType, sizeof(byte), Num_total_object_types );
 //@@	PHYSFS_read( fp, ObjId, sizeof(byte), Num_total_object_types );
 //@@	PHYSFS_read( fp, ObjStrength, sizeof(fix), Num_total_object_types );
 
-	First_multi_bitmap_num = PHYSFSX_readInt(fp);
+	(*destination->First_multi_bitmap_num) = PHYSFSX_readInt(fp);
 
-	Num_reactors = PHYSFSX_readInt(fp);
-	reactor_read_n(Reactors, Num_reactors, rewind_fp);
+	(*destination->Num_reactors) = PHYSFSX_readInt(fp);
+	reactor_read_n(destination->Reactors, (*destination->Num_reactors), rewind_fp);
 
-	Marker_model_num = PHYSFSX_readInt(fp);
+	(*destination->Marker_model_num) = PHYSFSX_readInt(fp);
 
 	//@@PHYSFS_read( fp, &N_controlcen_guns, sizeof(int), 1 );
 	//@@PHYSFS_read( fp, controlcen_gun_points, sizeof(vms_vector), N_controlcen_guns );
 	//@@PHYSFS_read( fp, controlcen_gun_dirs, sizeof(vms_vector), N_controlcen_guns );
 
-	if (Piggy_hamfile_version < 3) {
-		exit_modelnum = PHYSFSX_readInt(fp);
-		destroyed_exit_modelnum = PHYSFSX_readInt(fp);
+	if (version < 3) {
+		(*destination->exit_modelnum) = PHYSFSX_readInt(fp);
+		(*destination->destroyed_exit_modelnum) = PHYSFSX_readInt(fp);
 	}
 	else
-		exit_modelnum = destroyed_exit_modelnum = N_polygon_models;
+		(*destination->exit_modelnum) = (*destination->destroyed_exit_modelnum) = (*destination->N_polygon_models);
 
+	return 1;
+}
+
+static int bm_read_live_model(polymodel *model, PHYSFS_file *fp)
+{
+	polygon_model_data_read(model, fp);
+	return 1;
+}
+
+static void bm_read_all_internal(PHYSFS_file *fp, int apply_global_patch)
+{
+	const bm_ham_destination destination = {
+		&NumTextures,
+		Textures,
+		TmapInfo,
+		Sounds,
+		AltSounds,
+		&Num_vclips,
+		Vclip,
+		&Num_effects,
+		Effects,
+		&Num_wall_anims,
+		WallAnims,
+		&N_robot_types,
+		Robot_info,
+		&N_robot_joints,
+		Robot_joints,
+		&N_weapon_types,
+		Weapon_info,
+		&N_powerup_types,
+		Powerup_info,
+		&N_polygon_models,
+		Polygon_models,
+		Dying_modelnums,
+		Dead_modelnums,
+		Gauges,
+		Gauges_hires,
+		&N_ObjBitmaps,
+		ObjBitmaps,
+		ObjBitmapPtrs,
+		&only_player_ship,
+		&Num_cockpits,
+		cockpit_bitmap,
+		&First_multi_bitmap_num,
+		&Num_reactors,
+		Reactors,
+		&Marker_model_num,
+		&exit_modelnum,
+		&destroyed_exit_modelnum,
+	};
+	bm_read_ham_data(fp, Piggy_hamfile_version, &destination, bm_read_live_model);
 	if (apply_global_patch) dxa_metadata_patch_apply_d2_ham();
 #ifdef __ANDROID__
 	extern void mod_save_capture_definitions(void);
@@ -266,6 +319,17 @@ void bm_read_all(PHYSFS_file *fp)
 }
 
 #ifdef DXX_XL_RUNTIME
+static int bm_validate_main_ham_report(PHYSFS_file *fp, d2_ham_validation_report *report);
+int bm_read_xl_ham_into(PHYSFS_file *fp, const bm_ham_destination *destination,
+                      int (*read_model)(polymodel *, PHYSFS_file *))
+{
+	d2_ham_validation_report report;
+	if (!fp || !destination || !read_model || !bm_validate_main_ham_report(fp, &report) || !PHYSFS_seek(fp, 0)) return 0;
+	if (PHYSFSX_readInt(fp) != MAKE_SIG('!','M','A','H') || PHYSFSX_readInt(fp) != 3) return 0;
+	/* Native HAM admission permits unused trailing data */
+	return bm_read_ham_data(fp, 3, destination, read_model);
+}
+
 /* Mission-owned version-3 HAM only; validate the complete file before mutation */
 int bm_read_xl_main_ham(PHYSFS_file *fp)
 {
@@ -337,17 +401,22 @@ static int bm_read_validation_bytes(PHYSFS_file *fp, ubyte **data, size_t *size)
 	return 1;
 }
 
-int bm_validate_main_ham(PHYSFS_file *fp)
+static int bm_validate_main_ham_report(PHYSFS_file *fp, d2_ham_validation_report *report)
 {
 	d2_ham_validation_limits limits = bm_validation_limits();
 	ubyte *data;
 	size_t size;
 	int valid;
 	if (!bm_read_validation_bytes(fp, &data, &size)) return 0;
-	valid = d2_ham_validate_main(data, size, &limits, &Main_ham_validation_report);
-	if (!valid) memset(&Main_ham_validation_report, 0, sizeof(Main_ham_validation_report));
+	valid = d2_ham_validate_main(data, size, &limits, report);
+	if (!valid) memset(report, 0, sizeof(*report));
 	d_free(data);
 	return valid;
+}
+
+int bm_validate_main_ham(PHYSFS_file *fp)
+{
+	return bm_validate_main_ham_report(fp, &Main_ham_validation_report);
 }
 
 static int bm_validate_extra_ham(PHYSFS_file *fp, int type, int xl_staged)
