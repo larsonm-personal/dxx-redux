@@ -1,11 +1,12 @@
 #!/usr/bin/env pwsh
-param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [string]$TimeEquipmentPilot, [switch]$CaptureLive, [string]$OutputDirectory)
+param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [switch]$BoilingPoint, [string]$TimeEquipmentPilot, [switch]$CaptureLive, [string]$OutputDirectory)
 $ErrorActionPreference = 'Stop'
-if ($CaptureLive -and (!$TimeEquipment -or $Warp5 -or $Dinter)) { throw 'CaptureLive requires the original time-equipment mode' }
+if ($CaptureLive -and (!$TimeEquipment -or $Warp5 -or $Dinter -or $BoilingPoint)) { throw 'CaptureLive requires the original time-equipment mode' }
+if ($BoilingPoint -and (!$TimeEquipment -or $Warp5 -or $Dinter)) { throw 'BoilingPoint uses the protected original gameplay import mode alone' }
 if ($Warp5 -and !$TimeEquipment) { throw 'Warp5 uses the protected original gameplay import mode' }
 if ($Dinter -and (!$TimeEquipment -or $Warp5)) { throw 'Dinter uses the protected original gameplay import mode alone' }
 if ($TimeEquipment -and ($PumoUiImport -or !$DistributionName -or !(Test-Path -LiteralPath $TimeEquipmentPilot -PathType Leaf))) {
-    throw 'TimeEquipment requires DistributionName and an engine-written pilot with original Warp Shock level6 unlocked, in its own mode'
+    throw 'TimeEquipment requires DistributionName and an engine-written pilot with the selected original level unlocked, in its own mode'
 }
 if ($PumoUiCold -and !$PumoUiImport) { throw 'PumoUiCold requires PumoUiImport' }
 if ($PumoUiIsolation -and (!$PumoUiImport -or $PumoUiCold)) { throw 'PumoUiIsolation requires PumoUiImport in its own mode' }
@@ -21,6 +22,7 @@ if ($PumoUiCold) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-cold
 if ($PumoUiIsolation) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-isolation-android' }
 if ($PumoUiDisabledOwner) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-disabled-android' }
 if ($TimeEquipment) { $output = Join-Path $PSScriptRoot $(if ($Dinter) { '../../temp/xl-dinter-android' } elseif ($Warp5) { '../../temp/xl-warp5-android' } else { '../../temp/xl-time-equipment-android' }) }
+if ($BoilingPoint) { $output = Join-Path $PSScriptRoot '../../temp/xl-boiling-point-android' }
 if ($OutputDirectory) {
     $output = [IO.Path]::GetFullPath($OutputDirectory)
     if (Test-Path -LiteralPath $output) { throw 'Use a fresh addon evidence output directory' }
@@ -83,8 +85,9 @@ if ($TimeEquipment) {
     if (([string](Invoke-AddonPrivate 'if test -e files/imported/sets/xl-picker-check; then echo yes; fi')).Trim() -eq 'yes') {
         throw 'Reserved disposable gameplay set already exists; inspect it before rerunning'
     }
-    $missionName = if ($Dinter) { 'dinter' } else { 'wshock20' }
+    $missionName = if ($BoilingPoint) { 'boilpnt' } elseif ($Dinter) { 'dinter' } else { 'wshock20' }
     $paths += @('files/imported/sets/xl-picker-check', "files/d2x-redux/missions/$missionName.hog", "files/d2x-redux/missions/$missionName.mn2")
+    if ($BoilingPoint) { $paths += 'files/d2x-redux/mods/boilpnt' }
 }
 $ready = $false
 $hostBackup = $null
@@ -155,6 +158,7 @@ try {
     if ($DistributionName) { $instrument += @('-e', 'xl_addon_distribution', $DistributionName) }
     if ($TimeEquipment) { $instrument += @('-e', 'xl_time_equipment', 'true') }
     if ($Dinter) { $instrument += @('-e', 'xl_dinter', 'true') }
+    if ($BoilingPoint) { $instrument += @('-e', 'xl_boiling_point', 'true') }
     $instrument += "$($script:PACKAGE).test/com.dxxredux.app.RecoveryInstrumentation"
     $result = Invoke-AddonAdb -Arguments $instrument
     $result | Set-Content "$output/instrumentation.txt" -Encoding utf8
@@ -194,12 +198,13 @@ try {
         }
         $scenario = Join-Path $PSScriptRoot '../game_scripts/test_xl_time_equipment_runtime.jsonc'
         $steps = @(Get-Content $scenario -Raw | ConvertFrom-Json)
-        if ($Warp5 -or $Dinter) {
+        if ($Warp5 -or $Dinter -or $BoilingPoint) {
             # Reuse original picker, launcher, pilot and normal save ownership
-            $level = if ($Dinter) { 1 } else { 5 }
+            $level = if ($BoilingPoint) { 7 } elseif ($Dinter) { 1 } else { 5 }
             # Dinter's single level enters its briefing directly after Ok.
             $warm = if ($Dinter) { @($steps[0..10]) + @($steps[12], $steps[13]) } else { @($steps[0..13]) }
             if ($Dinter) { $warm[7].text = 'D.I: Monolevel' }
+            if ($BoilingPoint) { $warm[7].text = 'Boiling Point' }
             $warm[9].key = [string]$level
             $warm[-1].expect = @{ in_game = $true; game_window_is_front = $true; current_level_num = $level;
                 'xl_pilot.runtime_active' = $true; 'resolution.render_width' = 960; 'resolution.render_height' = 540
@@ -339,6 +344,9 @@ try {
             if ($Dinter -and ($gameState.mission_asset_owner -notmatch '^content/[0-9a-f]+$' -or $gameState.current_level_num -ne 1 -or !$gameState.xl_pilot.runtime_active)) {
                 throw "Original Dinter mission or XL runtime is absent in $phase Android scene"
             }
+            if ($BoilingPoint -and ($gameState.mission_asset_owner -ne 'mod/BoilingPoint-XL.zip' -or $gameState.current_level_num -ne 7 -or !$gameState.xl_pilot.runtime_active)) {
+                throw "Original Boiling Point archive owner or XL runtime is absent in $phase Android scene"
+            }
             if ($phase -eq 'warm') { $warmRun = $receipt.run_id } else { $coldRun = $receipt.run_id }
             $pids[$phase] = ([string](Invoke-AddonAdb -Arguments @('shell', 'pidof', "$($script:PACKAGE):game"))).Trim()
             if ($pids[$phase] -notmatch '^\d+$') { throw "Missing Android $phase game process" }
@@ -346,6 +354,15 @@ try {
             Invoke-AddonAdb -Arguments @('pull', "/data/local/tmp/xl-time-$phase.png", "$output/$phase.png") | Out-Null
             Invoke-AddonAdb -Arguments @('shell', 'rm', '-f', "/data/local/tmp/xl-time-$phase.png") | Out-Null
             Invoke-AddonPrivate 'find files/d2x-redux/Players -type f -name *.sg* -exec sha256sum {} \;' | Set-Content "$output/$phase-saves.sha256" -Encoding utf8
+            if ($BoilingPoint -and $phase -eq 'warm') {
+                # Preserve the actual native checkpoint even if cold restore rejects it
+                $save = "files/d2x-redux/Players/save_sets/single/$pilot/boilpnt/$pilot.sg0"
+                $encoded = Invoke-AddonAdb -Arguments @('exec-out', 'run-as', $script:PACKAGE, 'base64', '-w', '0', $save)
+                $savedFile = Join-Path $output 'warm-original.sg0'
+                [IO.File]::WriteAllBytes($savedFile, [Convert]::FromBase64String($encoded))
+                $saveHash = (Get-FileHash -LiteralPath $savedFile -Algorithm SHA256).Hash.ToLowerInvariant()
+                if (([string](Invoke-AddonPrivate "sha256sum $save")).Trim() -ne "$saveHash  $save") { throw 'Exported original checkpoint hash differs' }
+            }
             if ($CaptureLive) {
                 $captureOutput = Join-Path $output "$phase-capture"
                 Save-AddonCaptureEvidence -Destination $captureOutput
@@ -382,7 +399,8 @@ try {
                 Invoke-XlAndroidTimelineReplay -Replay $demo.FullName -DeviceDirectory $backup -OutputDirectory $replayOutput
             }
         }
-        if ($Dinter) { Write-Output 'PASS: Original Android Dinter controller movement, imported owner, save and cold continuation' }
+        if ($BoilingPoint) { Write-Output 'PASS: Original Android Boiling Point controller movement, original archive owner, save and cold continuation' }
+        elseif ($Dinter) { Write-Output 'PASS: Original Android Dinter controller movement, imported owner, save and cold continuation' }
         elseif ($Warp5) { Write-Output 'PASS: Original Android Warp 5 actor, controller movement, imported owner, save and cold continuation' }
         else { Write-Output 'PASS: Original Android time pickups, touch controls, imported owner, energy, save and cold continuation' }
     }

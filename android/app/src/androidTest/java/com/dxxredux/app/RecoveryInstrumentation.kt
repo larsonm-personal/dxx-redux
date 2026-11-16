@@ -59,6 +59,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var xlAddonDistributionName: String? = null
     private var xlTimeEquipment = false
     private var xlDinter = false
+    private var xlBoilingPoint = false
     private var pumoUiImportOnly = false
     private var controllerOverlayOnly = false
     private var installationWorkOnly = false
@@ -90,6 +91,7 @@ class RecoveryInstrumentation : Instrumentation() {
         xlAddonDistributionName = arguments?.getString("xl_addon_distribution")
         xlTimeEquipment = arguments?.getString("xl_time_equipment") == "true"
         xlDinter = arguments?.getString("xl_dinter") == "true"
+        xlBoilingPoint = arguments?.getString("xl_boiling_point") == "true"
         pumoUiImportOnly = arguments?.getString("suite") == "pumo_ui_import"
         controllerOverlayOnly = arguments?.getString("suite") == "controller_overlay"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
@@ -123,7 +125,14 @@ class RecoveryInstrumentation : Instrumentation() {
                         source,
                         originalDistribution = true,
                         retainForGameplay = xlTimeEquipment,
-                        originalMission = if (xlDinter) "dinter" else "wshock20",
+                        originalMission =
+                            if (xlBoilingPoint) {
+                                "boilpnt"
+                            } else if (xlDinter) {
+                                "dinter"
+                            } else {
+                                "wshock20"
+                            },
                     )
                 }
                 result.putString(
