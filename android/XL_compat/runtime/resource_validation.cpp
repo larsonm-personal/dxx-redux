@@ -961,10 +961,18 @@ const std::map<std::string, std::string> &xl_resource_mod_sources()
 
 std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal)
 {
-	auto result = mission_definition_sources;
-	const auto models = xl_prepare_owned_models(ordinal);
-	result.insert(models.sources.begin(), models.sources.end());
-	return result;
+	if (!mission_requires_xl || !Current_mission || Current_mission->descent_version != 2) return {};
+	if (!ordinal || ordinal > Last_level || ordinal < Last_secret_level)
+		throw std::runtime_error("Invalid XL save source level ordinal");
+	const char *filename = ordinal < 0 ? Secret_level_names[-ordinal - 1] : Level_names[ordinal - 1];
+	xl_compat::TargetSources target(startup_origin);
+	const auto bytes = target.archive_bytes(filename, 64 * 1024 * 1024);
+	if (!bytes) throw std::runtime_error("XL save source level is missing from its original archive");
+	const auto level = xl_compat::inspect_level(*bytes);
+	// Reconstruct the same retained source set as level entry, including scoped
+	// texture precedence and native HXM/bank dependencies, without installing it
+	XlPreparedResources resources(filename, &level, ordinal);
+	return resources.sources();
 }
 
 extern "C" int xl_model_gun_point(int model, int gun, vms_vector *point)

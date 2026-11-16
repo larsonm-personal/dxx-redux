@@ -143,6 +143,36 @@ static int scoped_texture_live_test(int argc, char **argv, const std::filesystem
 	const auto time = GameTime64;
 	advance();
 	require(GameTime64 > time, "Outgoing level did not continue after texture rejection");
-	native_continuation_receipt(root / "texture-dependency-audit.json", { { "outgoing", outgoing }, { "outgoing_level", outgoing_level }, { "incoming", "boilpnt:7" }, { "rejections", rejections }, { "equal_count_independence", true }, { "before", before }, { "after_continuation", snapshot() }, { "ordinary_frames", 120 }, { "limitation", "Controlled incoming preparation while outgoing level runs; separate from sampled readiness" } });
+	const auto after_continuation = snapshot();
+	require(load_base_mission("boilpnt", error, sizeof(error)), error);
+	input_demo_set_skip_level_intro(1);
+	StartNewGame(7);
+	const auto saved_sources = xl_resource_mod_sources();
+	const auto saved_world = snapshot();
+	const auto saved_definitions = gameplay_definitions();
+	require(saved_sources.count("mods/boilpnt/textures/force01#0.tga") &&
+	            xl_resource_sources_for_level(7) == saved_sources,
+	        "Original save preflight omitted retained scoped texture identity");
+	std::filesystem::create_directory(override_directory);
+	std::filesystem::copy_file(textures / "ceil002.tga", override_file);
+	const auto different_sources = xl_resource_sources_for_level(7);
+	require(different_sources != saved_sources && different_sources.count("mods/boilpnt/textures/level07/metl060.tga") &&
+	            !different_sources.count("mods/boilpnt/textures/metl060.tga"),
+	        "Original save preflight admitted changed priority texture identity");
+	require(snapshot() == saved_world && gameplay_definitions() == saved_definitions && xl_resource_mod_sources() == saved_sources,
+	        "Save source preflight changed the live world or installed resource owner");
+	write_bytes(override_file.string().c_str(), { 'B', 'A', 'D' });
+	bool malformed_rejected = false;
+	try {
+		(void) xl_resource_sources_for_level(7);
+	} catch (const std::runtime_error &failure) {
+		malformed_rejected = std::string(failure.what()).find("invalid TGA file size") != std::string::npos;
+	}
+	require(malformed_rejected && snapshot() == saved_world && gameplay_definitions() == saved_definitions && xl_resource_mod_sources() == saved_sources,
+	        "Malformed save source preflight failed rejection or live-state isolation");
+	std::filesystem::remove(override_file);
+	std::filesystem::remove(override_directory);
+	require(xl_resource_sources_for_level(7) == saved_sources, "Restored original texture did not recover save source identity");
+	native_continuation_receipt(root / "texture-dependency-audit.json", { { "outgoing", outgoing }, { "outgoing_level", outgoing_level }, { "incoming", "boilpnt:7" }, { "rejections", rejections }, { "equal_count_independence", true }, { "before", before }, { "after_continuation", after_continuation }, { "ordinary_frames", 120 }, { "save_source_controls", { { "original", true }, { "changed_priority", true }, { "malformed_rejected", true }, { "live_state_unchanged", true }, { "recovered", true }, { "source_count", saved_sources.size() } } }, { "limitation", "Controlled incoming preparation and save source preflight; separate from sampled readiness or a full cold restore" } });
 	return 0;
 }

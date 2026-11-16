@@ -137,6 +137,17 @@ def main():
                     and {row["case"] for row in report.get("rejections", [])}
                     == {"malformed_priority_override", "missing_set"}
                     and all(row.get("valid_recovery") == 1 for row in report["rejections"])
+                    and all(
+                        report.get("save_source_controls", {}).get(key) == 1
+                        for key in (
+                            "original",
+                            "changed_priority",
+                            "malformed_rejected",
+                            "live_state_unchanged",
+                            "recovered",
+                        )
+                    )
+                    and report.get("save_source_controls", {}).get("source_count", 0) > 0
                 )
             elif args.mode == "guns":
                 record["requested_controls_present"] = (

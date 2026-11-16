@@ -2133,3 +2133,73 @@ verifier rechecks the actual device trace successfully; compiled fixture and
 unit-test source hashes still match the receipt. Protected stashes and pinned
 XL reference tree remain unchanged. PR529 private Linux owner is still live;
 readiness and admission jobs passed, with full-run acceptance pending.
+
+### Original Boiling Point Android import and cold load
+
+PR530 publishes00338d77f8ae25958853395e28f0d66ebce1e19a on529; its
+CI is pending. Next reuse the protected addon picker/gameplay runner to import
+the original BoilingPoint-XL.zip, including authored scoped textures, through
+the launcher. Extend its existing original-mission selector and warm/cold flow
+for level7, using an engine-written pilot from the already passing ordinary
+headless run. Explicitly disclose the pilot unlock; no pose/inventory assists.
+Require imported owner, XL runtime, ordinary controller movement, normal save
+and fresh-process menu load. Freeze installed APK/test APK before replacement,
+protect app-state hashes through the existing runner, and restore exact APKs.
+This is supplemental rendered Android evidence, not a replacement readiness score.
+
+Android-boiling-runtime-01 imports the complete original archive and passes
+20/20 warm steps: level7, XL active, imported mod owner, ordinary controller
+movement and normal manual save. Fresh process cold load fails at the existing
+mod-save identity guard: XL mission definitions or models changed. Original
+input hashes are unchanged. The failed run and logcat are retained; all profile
+hashes and both original APK hashes are restored successfully. This exposes a
+real source-identity lifecycle dependency beyond the narrow8/8 score.
+Before a fix, add targeted saved/current source-map diagnostics at the existing
+guard and export the genuine warm save before cold restore so failed checkpoints
+survive profile restoration. Do not bypass source checks or duplicate save parsing.
+
+Targeted Android diagnostics confirm saved46/current30: all16 differences are
+saved-only original scoped TGA paths; model identities match. Diagnostic02 and
+its actual native warm save remain retained. The fix reuses XlPreparedResources
+against the original archive level to reconstruct the full independently owned
+source map without installing it. Exact source comparison remains unchanged.
+No filtering of texture keys, trust of saved hashes or duplicate parsing.
+
+Android-boiling-runtime-fix-01 PASS: original ZIP SHA256
+0994e8a70a91988a5ecf9a05f593b6960514a6579a9fa2fe762138808775f5f8;
+ordinary developer-OFF x86_64 APK SHA256
+5efb95d7f70eb2e8c13e72268b0e64933be937f7d3fb2eb05cd8f35d7ad2ba31.
+Warm20/20 in27.131s and fresh-process cold8/8 in23.502s, original level7,
+archive owner, controller movement, normal manual save and menu restore.
+Native-written pilot unlock only; no pose or inventory assists. Existing profile
+hashes, both original APK hashes and all four preference hashes restored exactly.
+This is rendered Android save/load evidence, separate from sampled readiness.
+
+Windows Debug save-source-recovery-01 exposed a test setup error: the second
+StartNewGame consumed no renewed skip-intro flag and entered an unavailable
+headless briefing. Retained failure c0000005; corrected only that test setup.
+Save-source-recovery-02 PASS24.094s, native engine SHA256
+6c239b67b602adbb4d546df531474cdc1c58782924630d30d6f12df40c32c94a.
+All46 original source identities match; changed priority texture identity differs;
+malformed priority texture rejects; world, objects, gameplay definitions, live
+pixel owners and SIM RNG stay unchanged; restoring original input recovers.
+Existing incoming resource move/discard/equal-count isolation and120 ordinary
+outgoing frames also pass. Authentic input hashes unchanged.
+
+Readiness-save-sources-01 remains8/8 under the unchanged original120unassisted
+frame criterion and provisioned authentic resource profile. Historical stock-only
+4/8 remains separate. Scoped formatting passes; catalog owners being finalized.
+PRs526-528 now all eight public workflows pass. PRs529/530 private exact-candidate
+readiness8/8 and host profile pass; each has seven public passes with shareware
+still pending. Trusted controller71e6ef still lacks candidate527's camera provision,
+so private host coverage_complete=false and missing-camera skips remain explicit.
+
+Supplemental save-source-recovery-warp-01 PASS40.984s with original Warp Shock
+as the live outgoing owner, including120ordinaryframes and all46source controls.
+Both catalog owners PASS:99standaloneJSON/549support/315PowerShell and428top-level.
+Ordinary readiness engine SHA256
+b4221f20d070a5fd555571bc2390285978bafcc5676bf48c972b1cfeac5ee792;
+readiness result SHA256
+65a8e752fdb238aa1b8e898452166fcc9dd94fc715dd68469b067c1b4a493c4d.
+No production edits followed the passing Android/source-isolation/readiness runs;
+only the renewed headless skip-intro test flag and documentation followed Android.
