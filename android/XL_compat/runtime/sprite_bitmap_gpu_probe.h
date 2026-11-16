@@ -1,6 +1,6 @@
 // Source glareFS uses eye-depth distance, disables hardware depth while soft,
 // and fixes additive output alpha at one regardless of texture/material alpha
-unsigned sprite_bitmap_soft_controls()
+[[maybe_unused]] unsigned sprite_bitmap_soft_controls()
 {
 	using namespace xl_compat;
 	struct Image {

@@ -60,6 +60,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var xlTimeEquipment = false
     private var xlDinter = false
     private var xlBoilingPoint = false
+    private var xlSphere = false
     private var pumoUiImportOnly = false
     private var controllerOverlayOnly = false
     private var installationWorkOnly = false
@@ -92,6 +93,7 @@ class RecoveryInstrumentation : Instrumentation() {
         xlTimeEquipment = arguments?.getString("xl_time_equipment") == "true"
         xlDinter = arguments?.getString("xl_dinter") == "true"
         xlBoilingPoint = arguments?.getString("xl_boiling_point") == "true"
+        xlSphere = arguments?.getString("xl_sphere") == "true"
         pumoUiImportOnly = arguments?.getString("suite") == "pumo_ui_import"
         controllerOverlayOnly = arguments?.getString("suite") == "controller_overlay"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
@@ -128,6 +130,8 @@ class RecoveryInstrumentation : Instrumentation() {
                         originalMission =
                             if (xlBoilingPoint) {
                                 "boilpnt"
+                            } else if (xlSphere) {
+                                "sphere"
                             } else if (xlDinter) {
                                 "dinter"
                             } else {

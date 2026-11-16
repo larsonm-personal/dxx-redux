@@ -6082,3 +6082,72 @@ CI are pending at this snapshot. The trusted controller runs from cmake, so its
 new private provisioning requires reviewed integration before hosted results can
 be claimed. No merge, queue, full-gameplay or 8/8 claim is made. Unrelated quality
 evidence changes, .codex/, all four stashes and authentic originals are retained.
+
+### November 16 readiness and retained-resource tranche (in progress)
+
+The new approximately20-hour invocation starts from merged cmake
+71e6efb90419b8e8a2f4ceed116e5ab3871c80d2. Detailed execution and failed receipts
+are indexed in xl_readiness_20h_20261116.md. The fresh immediate-parent stack is
+517,518,520-531 (stack519, historical471); nothing is merged or queued.
+This entry records qualified progress, not completion of G2-G7 or the tranche.
+
+The unchanged eight selected levels now pass the original120unassisted-frame
+criterion on ordinary developer-OFF Windows and exact-candidate hosted Linux.
+PR531 candidate3ef353765d797ccb4bce0eac802da4f9fe49b103 has a downloaded8/8
+receipt in private run43877406263 attempt1, under controller71e6efb9. Inputs remain
+cohort9dad21bd65ba05665ac6fe315f37fe7461e85725 and authorized private authentic
+resourcesdc6565f6b5400d7c700fa8378e766b2354b6ceb6. Historical stock-only4/8
+remains separate. Zero additional tranches are needed for this narrow8/8 measure;
+there is no justified finite estimate for broad campaign qualification.
+
+G2 progress: retained scoped texture source identity now survives actual Android
+Boiling Point7 manual save and fresh-process normal menu load. The original
+failure was saved46/current30 identities;16scopedtexture paths were omitted from
+load preflight. Reusing the native retained resource preparation restores exact
+comparison without installing a candidate. Windows Debug controls prove changed
+priority/malformed texture rejection, unchanged live world/definitions/pixels/SIM
+and valid recovery with both stock and Warp Shock outgoing owners. Native
+owner/codec changes also preserve afterburner custom lifetimes and thruster render
+identity. Complete cold-versus-uninterrupted state coverage and corrupt-trailer
+energy91-to100 atomicity remain open; these narrower controls do not close G2.
+
+G3 progress: actual original TGA pixels, whole-strip collision/transparency views,
+frame selection and native decoded ownership enable Boiling Point7 without a
+renderer-bound fallback. Ordinary no-device Linux and Windows retain8/8. Genuine
+Android EGL tests qualify original pixels and four live-owner context recreations.
+Full rendered/headless gameplay timeline equivalence remains unqualified and
+ordinary Android XL timeline admission remains guarded.
+
+G4 progress: original Boiling Point gun transforms match60/60 pinned-source cases,
+including fixed-header parent links. Original fireball/afterburner frames, lifetime,
+source glow materials, model-bound emission geometry and RT_THRUSTER identity
+receive source/native/raster controls. This is not closure of the complete G0
+feature inventory or all authored gameplay predicates. Parent attachment,
+PF_WIGGLE and broader rod behavior remain open.
+
+G5 progress: ordinary developer-OFF Android Boiling Point7 and Warp Shock5
+controller movement, normal saving and fresh-process normal menu loading pass,
+with native-written pilot unlocks and no pose/inventory assists. Original input,
+APK, profile and preference restoration are verified. Sphere2 full-original-archive
+import, controller/save and cold-load coverage also passes20/20 and8/8, with
+exact protected state restoration. None proves connected combat, earned key/exit progression,
+a whole original level completion, physical-device play or a campaign.
+
+G6 progress: fresh original Warp Shock Omega capture and clean replay compare
+242frame/object snapshots,246world records,3552SIM and436FX events and exact
+trailer. Disclose two position/one inventory assists before recording, none during,
+and66warmupframes. Android original animation proof covers112draws/336pixel
+samples and four deliberate live-owner EGL recreations. Ordinary all-three-ABI
+APK builds; only x86_64 device execution is claimed. Android startup1500FX draws,
+startup route-metadata differences and the ordinary timeline guard remain open.
+
+G7 remains in progress: all eight public workflows for517-529 now pass;530/531
+still have pending checks at this snapshot. Private readiness is provisioned, but
+the trusted host regression controller predates527's camera/Vertigo provisioning
+change. Its passing required profile explicitly has coverage_complete=false and
+missing-camera subchecks; candidate workflow text is not controller deployment.
+No merge, credential change or guard relaxation was used. Full original Pumo
+still exceeds the decoded texture bound on both candidate and clean parent;
+keep that failure separate from passing original model geometry controls.
+Final report, complete CI/package/source audit, next plan and replacement kickoff
+remain outstanding. Another tranche still requires explicit invocation.
