@@ -43,7 +43,10 @@ class ParticleTexture
 // Vertices use the current renderer's camera coordinates and projection
 void draw_particle_quads(_grs_bitmap &image, const ParticleQuad *quads, std::size_t count);
 void draw_multi_particle_quads(ParticleTexture &smoke, ParticleTexture &bubble, const ParticleQuad *quads, std::size_t count, bool soft = true);
-void draw_bitmap_sprite(_grs_bitmap &image, ParticleQuad quad);
+void draw_bitmap_sprite(_grs_bitmap &image, ParticleQuad quad, float soft_radius = 0);
+void draw_fireball_sprite(_grs_bitmap &image, const ParticleQuad &quad);
+void finish_sprite_glow();
+void discard_sprite_glow(bool abandoned);
 } // namespace xl_compat
 #ifdef _MSC_VER
 #pragma pack(pop)

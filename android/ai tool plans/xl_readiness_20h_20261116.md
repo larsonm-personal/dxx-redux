@@ -1148,3 +1148,346 @@ b390131fd1e223469268b7d208e772235389316d on PR522. Publish the locally qualified
 child now to obtain exact-candidate hosted Linux and private-asset CI; local
 qualification does not imply hosted acceptance. PR522 Linux shareware workflow
 43823401815 is still in progress, while its other public workflows are successful.
+
+### Published afterburner checkpoint and sprite-material dependency
+
+PR523 is published non-draft at ced5b54f625368a12911de31cb4cb78ba1111774,
+immediate parent PR522/b390131fd1e223469268b7d208e772235389316d, merge candidate
+83be7de4791c57e2402c7d9915aaa32b5fb94d7f. Its private workflow 43829449552
+uses trusted controller 71e6efb90419b8e8a2f4ceed116e5ab3871c80d2. Admission
+133170964096 passes; readiness 133171082007 and host selection 133171182043
+are running. Public Rust and asset request pass; remaining public jobs are still
+running at this inspection. Initial exact refs/runs are in pr523-initial.json.
+No hosted acceptance is claimed yet.
+
+Continue on xl_readiness_20261116_07_sprite_material, immediate child of PR523.
+Pinned source main/vclip.cpp DrawVClipObject applies a 30-frame visibility bound
+before draw, fireball opacity 0.8 minus frame/count times 0.8, reversed thruster
+frames at base opacity 0.25, and weapon opacity 0.7 (mines 1). The native vclip
+consumer currently selects pixels but passes no such material to draw_object_blob.
+Pinned render/objrender.cpp DrawObjectBitmap then selects additive mode 1 and
+RGB 0.5 for translucent fireballs. render/transprender.cpp passes the color and
+mode into its queued sprite; include/ogl_lib.h maps mode 1 to GL_ONE/GL_ONE.
+The existing native bitmap-sprite GPU helper hardcodes normal alpha blending,
+so simply supplying a ParticleBlend value would not implement the source rule.
+The existing transparency Sprite queue and bitmap renderer are the appropriate
+owners to extend; preserve per-item clip/frame binding and GL-state restoration.
+Source glow/soft-depth policy must also be evaluated rather than silently claiming
+complete fidelity from alpha alone. No device mutation is authorized by this audit.
+
+The reference harness now extracts actual DrawVClipObject and its material
+constants, with capture-only drawing adapters; include/vclip.h is additionally
+hash pinned (995af8528e7838cdc5439c632beca3b4c2a5eef3996acb6147979a89644fb1ef).
+Standard Debug build-vclip-material-source-01 and test-vclip-material-source-01
+pass: 744 draw frame/opacity controls, 14308 afterburner timing comparisons and
+all existing texture animation/POG/TGA controls. This is source-policy evidence,
+not a runtime rendering fix; runtime integration, actual GPU pixel/state checks
+and fresh rendered replay remain required before publishing the next checkpoint.
+
+Sprite material backend progress: draw_sprite_bitmap_gpu now honors the queued
+ParticleBlend alpha/additive choice (GL_SRC_ALPHA/GL_ONE_MINUS_SRC_ALPHA versus
+GL_ONE/GL_ONE), rejecting unsupported modes instead of silently drawing them as
+alpha. The existing analytical sprite probe now runs 216 cases: both blends,
+nonblack destination colors, RGB modulation, three shapes/filters/sizes, depth
+occlusion and scissoring. Each draw must restore disabled blending, independently
+chosen RGB/alpha factors and equations, depth function and scissor state. Existing
+Android automation expectations and the EGL owner count advance from 108 to 216;
+no existing cases are removed. Device execution is not claimed.
+
+A developer-only desktop route entry -xl-sprite-material-proof runs the same
+analytical controls in an isolated RGBA8/depth target after normal original level
+startup. It requires an explicit proof path, route output and isolated user dir,
+and cannot be combined with readiness. It preserves the parent GL attributes,
+matrices and target bindings around the control. This supports Windows GPU proof
+without changing a protected emulator or starting the unavailable WSL instance.
+
+sprite-material-windows-01 completes 216 GPU controls but exits 0xc0000409 after
+writing complete as integer 1: native true/false macros selected JSON integer
+storage, then the outside-catch boolean exit check threw. The failure and dump are
+preserved. Explicit bool construction fixes the reporting error. Fresh rebuild
+and sprite-material-windows-02 pass with exit 0 in 6.5 seconds on Intel Arc 140T,
+all 216 controls, under an unchanged 60-second timeout. Renderer SHA256 is
+58bf676c78f888f28ba6410f71eb8b5f83271da4feb416d1782b7fc592302835.
+Its source-receipt.json pins code, binary, runtime inputs and output. Source-policy
+queue integration, original authored fireball raster verification, fresh replay,
+Android compilation and hosted coverage remain pending; backend controls alone
+do not complete the fireball material dependency. PR523's remaining public CI is
+still running; no failure is reported at the latest inspection.
+
+Fireball queue integration now derives frame visibility and opacity through
+fireball_material.h, compared directly with the extracted DrawVClipObject result.
+Native RT_FIREBALL/OBJ_FIREBALL billboards enter the existing copied Sprite queue
+with source RGB 0.5 and additive blend, preserving per-item replacement clip/frame
+bindings. Expired objects submit no sprite. Rods retain their existing native
+rod drawing path; full rod/thruster and glow/soft-depth fidelity remain open.
+
+build-fireball-queue-01, build-fireball-reference-01 and
+build-fireball-rendered-01 pass. test-fireball-reference-01 passes the 744 source
+draw controls including the new production material comparison, plus prior texture
+and afterburner source controls. native-fireball-queue-01 is a lifecycle regression
+PASS in 52.04 seconds, including afterburner disk/fresh-process continuation, but
+its owner does not execute queue assertions. The separately invoked canonical
+effect_inspection.cmake owner fireball-effect-owner-01 passes the actual three
+original-lifetime queue assertions (copied material/frame and expired rejection),
+plus source loaded-particle-world comparison: four stock/XL cases, 507 segments
+and 9633 native lookup/collision queries. The distinction is explicit; lifecycle
+success alone is not used as queue qualification.
+
+Fresh omega-fireball-capture-01 passes the original 242-frame rendered capture
+with the unchanged 45-second watchdog and the existing disclosed setup assists.
+It still requires strict rendered replay and full object/world/SIM/FX comparison.
+Original fireball raster/ordering proof, remaining material semantics, Android
+compilation and exact-candidate hosted validation remain unfinished.
+
+PR523 contracts workflow 43829428311 passes all selected Linux/Windows owners,
+including Linux linked boss gameplay and both developer source builds; developer
+Release is skipped by selection. Private readiness job 133171082007 and percentage
+job 133172949100 are success in workflow 43829449552; download and inspect their
+exact-case receipt before asserting its score. Linux private owner 133171542883
+is still executing. Online, Pumo, nightly Release and Android/JVM lanes are skipped,
+not coverage. These hosted outcomes apply to PR523, not this unpublished child.
+
+Follow-up qualification: omega-fireball-replay-01 exits cleanly and its strict
+wrapper passes. The full production comparison also passes 242 frame/object
+snapshots, 246 world records, 3552 SIM events, 436 FX events and exact trailer.
+Comparison SHA256 is
+af07b9ea640325987efc358cf5b76dee4864d89ca85dd018aab14524ed69a86d.
+The existing capture setup has two positioning and one inventory assist before
+recording, none during recording. This proves state parity, not authored raster
+output. android-fireball-01.log records successful Android x86_64 D1/D2 native
+compilation in 44 seconds; no device installation or runtime test was performed.
+
+PR523 private workflow 43829449552 attempt 1 is now terminal success. Downloaded
+ci-pr523-readiness/results.json identifies ced5b54f625368a12911de31cb4cb78ba1111774
+and proves all eight original cases with the unchanged 120-unassisted-frame
+criterion. ci-pr523-host/results.json identifies the same head and passes 113
+required XL checks. Camera-addon subchecks are uncovered and coverage_complete
+remains false. Public contracts, scripts/CI, Rust, LAN and asset-request workflows
+pass; test sample, engine smoke and Linux shareware remain in progress. PR523's
+body now records these outcomes, merge candidate
+83be7de4791c57e2402c7d9915aaa32b5fb94d7f and private controller
+71e6efb90419b8e8a2f4ceed116e5ab3871c80d2. No parent result is substituted for child
+qualification.
+
+Next material work remains original authored fireball raster/queue-order proof
+and source soft-depth/glow behavior. Pinned DrawObjectBitmap passes radius 10 for
+fireballs; CTranspSprite selects GLOW_SPRITES strength 2 and brightness 0.85 for
+additive mode 1. Existing particle_soft_shader.h hardcodes radius 5 for its current
+owners. Reusing that corona path unchanged would not reproduce fireball depth
+fading. Keep existing owners' semantics and qualify the new radius and optional
+shader/glow failure behavior against source before claiming this dependency done.
+
+Fireball soft-depth implementation now carries radius 10 in the copied Sprite
+and passes it through draw_bitmap_sprite. The bitmap shader retains its existing
+GL_CLAMP sampling, then applies the pinned glareFS eye-depth equation; additive
+soft output uses alpha 1, and hardware depth testing is disabled only while the
+soft path is active. Radius zero preserves the prior bitmap path. Depth capture
+uses the existing scene-owned snapshot and preparation failure falls back before
+drawing. Glow remains unimplemented here.
+
+New shared GPU controls cover 84 combinations of radii 0/5/10, seven front/behind
+depth gaps, alpha/additive blend and viewport offsets, checking numeric output
+and caller depth state restoration. Existing 216 material checks remain intact.
+sprite-soft-windows-01 times out at the unchanged 60 seconds because the launch
+script omitted its isolated user directory; no proof was produced. The directory
+creation is fixed for subsequent runs. Runs -02 and -03 reach controls and fail:
+depth verification used unprepared particle probe buffers and silently selected
+the hard-depth fallback. The diagnosis is demonstrated by additive output alpha
+166 rather than the source soft-path 255. Initializing the existing particle
+shader/buffers before verification fixes that ordering. The diagnostic also uses
+constant center UVs to isolate depth equations from the separately tested border
+sampling; no pixel tolerance is relaxed.
+
+build-fireball-soft-03 and sprite-soft-windows-04 pass. The latter exits zero in
+6.5 seconds, with all 216 material and 84 soft-depth controls on Intel Arc 140T;
+renderer SHA256 e144d7c153fb7670266093e401812b431dea1bfb2d4f1d251a30d39a6a5a1eba.
+Failed receipts remain preserved. This is controlled GPU proof, not original
+authored raster qualification or complete source shader/glow qualification.
+Android compilation, fresh gameplay replay and hosted coverage must be refreshed
+after this runtime change. PR523's test-sample workflow is now success; engine
+smoke and Linux shareware are still in progress at the latest inspection.
+
+Original authored raster follow-up: the shared soft-depth probe now also removes
+its real depth renderbuffer and compares optional-soft output with ordinary
+output for alpha and additive modes. Both fallback cases pass; total soft-depth
+controls is 86. original_fireball_raster_probe.h independently retains Warp Shock
+level 6 resources, verifies the live strip bytes, disturbs the shared frame
+selection before each target frame, and compares 160 GPU texel samples across
+all five authored frames with retained pixels and source material/depth equations.
+It covers ordinary additive and radius-10 soft additive draws, including texture
+alpha and source soft alpha 1. It does not exercise scene queue ordering or glow.
+
+build-fireball-authored-01 fails because the new probe omitted mission_prepare.h;
+adding the existing API header resolves compilation. build-fireball-authored-02
+and sprite-authored-windows-01 pass. The GPU proof exits zero in 9.031 seconds
+under the unchanged 60-second timeout, with 216 material checks, 86 depth/fallback
+checks and 160 original raster samples. Maximum channel error is 1. Original
+mods/wshock20/textures/exp23#0.tga SHA256 remains
+197c44ad09e5ec6b0abace877c1e6bc172bc1dacc7e6f4837e110076f068f70b.
+Renderer SHA256 is
+d0c3ba8d8633ac3ac1320e970066f3f3769285ef70cc2c49b3d9b2e3c106f231.
+android-fireball-soft-01 compiles D1/D2 x86_64 native code successfully in 10
+seconds. No device execution is claimed. PR523 engine-smoke workflow is now
+success; Linux shareware remains in progress. Child publication still requires
+fresh replay, queue/glow qualification, final scoped checks and its own hosted CI.
+
+Glow compositor preparation: LightningGlowGpu now accepts source strength,
+replace and brightness settings while retaining defaults 3/true/1.05 for existing
+lightning calls. Its batch compatibility includes those settings, pass count is
+twice strength, and non-replacing profiles composite the unblurred input after
+blur. A sprite callback can temporarily detach the shared depth attachment before
+sampling it and restores it afterward. This reuses the existing source-qualified
+blur owner. Fireball gameplay is not connected to this callback yet.
+
+The extracted End/Render GPU comparison now includes profiles 2/false/0.85 and
+1/false/0.95 alongside the original lightning profile, retaining all prior depth,
+batch and viewport combinations. That expanded Linux test is not executed yet.
+Windows developer controls independently evaluate the blur equations, UNORM8
+intermediate images and source viewport mapping for twelve profile/offset/depth
+attachment cases, checking compatible Begin retention, one-time composition and
+unchanged scene depth. sprite-glow-windows-01 through -03 fail against an invalid
+scalar constant-image expectation; offset viewport mapping resamples intermediate
+images and the final copy. A diagnostic build records correct per-pass values
+followed by the differing final offset sample, establishing this test-oracle
+defect. The final oracle evaluates full 64x64 images instead; no output tolerance
+is increased. Temporary diagnostics are removed and all failed runs retained.
+
+build-glow-profile-04 and sprite-glow-windows-04 pass. The latter exits zero in
+6.312 seconds with 12 glow-profile cases plus the previous 216 material, 86 depth
+and 160 authored raster checks. Renderer SHA256 is
+e837b1064e56f3efa86faf54a1ac4cca4ecfacd8c4137b5c31e9c681b200d6a9.
+Next connect sprite glow to the native scene queue with source-compatible batch
+boundaries and qualified depth ownership, exercise ordering with original frames,
+and run the expanded source compositor comparison. This is not yet a claim of
+complete fireball glow behavior.
+
+Fireball scene integration now calls draw_fireball_sprite from the native copied
+Sprite queue. The renderer prepares retained scene depth, begins source profile
+2/false/0.85, detaches that depth attachment while sampling it, and draws through
+the existing bitmap shader. Optional preparation failure uses ordinary soft/hard
+bitmap fallback; failures during drawing are not retried. Context disposal and
+transparency error handling discard the sprite compositor. Queue boundaries retain
+consecutive fireballs, negative coronas and zero-scale lightning, and finish for
+alpha bodies, positive-scale lightning and other incompatible scene work.
+
+build-fireball-glow-01 and sprite-glow-runtime-01 pass. GPU proof exits zero in
+6.39 seconds and includes two retained runtime fireballs, visible surrounding blur,
+deferred composition, idempotent finish and unchanged scene depth, in addition to
+216 material, 86 depth, 160 authored texel and 12 compositor-profile checks.
+Renderer SHA256 is
+064098a23124cb9925e6fdfd46e2443322c2a0fce15c829109929556bc7cd276.
+build-fireball-glow-audit-01 and canonical fireball-glow-effect-owner-01 also pass;
+the latter executes new native sprite/lightning boundary assertions. Android
+D1/D2 x86_64 compilation passes in android-fireball-glow-01 (10 seconds).
+
+omega-fireball-glow-capture-01 passes fresh rendered recording, using original
+Warp Shock level 6, 66 warmup frames and the same two positioning/one inventory
+assists before recording, none during. Strict replay is currently running in
+omega-fireball-glow-replay-01; its full object/world/SIM/FX comparison is still
+required. No parity result is inferred from capture success.
+
+Source re-review identified a remaining viewport detail to resolve after current
+replay exits: sprite SetViewport retains cumulative item extents, whereas the new
+adapter currently rejects an individually offscreen extent before passing it to
+the compositor. Preserve source cumulative bounds and add a visible/offscreen
+sequence control; do not claim viewport equivalence from the current two-sprite
+control. Expanded extracted-source compositor execution and original queued-frame
+ordering proof remain required. PR523's Linux shareware workflow is still live;
+all other inspected public workflows are success as of 09:08 UTC.
+
+omega-fireball-glow-replay-01 finishes with strict wrapper PASS and clean engine
+exit. Full comparison also passes 242 frame/object snapshots, 246 world records,
+3552 SIM events, 436 FX events and exact trailer. Comparison SHA256 is
+c7e4e5ec0efce7958312f42568c82a9993e16812ca8bebadf8fa1a0d7696c31c.
+This evidence applies to renderer 064098a2 before the following viewport fix.
+
+Cumulative viewport correction: removed the adapter's individual-offscreen early
+return. The compositor now includes every sprite extent and rejects its draw only
+when the cumulative bounds remain invisible, matching source SetViewport's item
+extent lifetime. Four new controls cover offscreen/visible/offscreen, visible then
+offscreen, repeated same-side offscreen and opposite offscreen extents. Expected
+callback counts are 2, 3, 0 and 1; composition occurs only for a visible cumulative
+extent. build-glow-bounds-01 and sprite-glow-bounds-01 pass. The latter completes
+all prior GPU controls plus these four sequences in 7.922 seconds, exit zero,
+under the unchanged 60-second timeout. Renderer SHA256 is
+203c6c285b92b481c561563f299df85608e10b81d39880ce05454c7b9ff9eee5.
+
+Next original queue proof should submit two native fireballs sharing the authored
+strip with different clocks, then compare the actual queue flush against retained
+independent frame images through the qualified renderer. Keep this distinct from
+the existing direct-bitmap authored samples and three native queue metadata cases.
+Expanded extracted-source GPU comparisons and final-candidate replay/Android/CI
+remain pending. PR523 body now records test-sample and engine-smoke success while
+leaving the still-running Linux shareware workflow pending.
+
+Original shared-strip queue proof is implemented in the developer-only
+fireball_queue_raster_probe.h, called with independently retained authored pixels.
+It creates two native fireballs, selects five different frame pairs, submits both
+through the production queue, disturbs the shared strip selection, and invokes
+the actual xl_transparency_flush. Each full 64x64 RGBA output is compared against
+separate retained frame images through the same qualified GPU renderer. It also
+asserts source reverse insertion order for the equal-depth pair and visible RGB
+output. Geometry and clock settings are controlled probe inputs, not a campaign
+qualification claim.
+
+sprite-original-queue-01 fails because native object admission rejects the probe's
+outside-mine camera coordinates. The corrected setup creates objects at the real
+player location and only then moves their raster fixture coordinates. Native
+admission safeguards are unchanged. build-original-queue-02 and
+sprite-original-queue-02 pass: five original frame pairs and all prior material,
+depth, authored samples, profile, runtime glow and cumulative-bounds checks. The
+probe exits zero in 7.609 seconds with unchanged 60-second timeout. Renderer SHA256
+is ffaebcb824afa867151bad9305c988749308f99e26692842a84fc966a0f9eae7.
+The failed setup receipt is retained. Scoped checkpoint formatting passes.
+
+build-sprite-contracts-01 and test-sprite-contracts-01 pass all 51 standard Windows
+Debug contracts in 45.53 seconds. The expanded extracted-source GPU compositor
+test remains a Linux hosted requirement; these Windows contracts do not execute
+it. Final ordinary readiness, Android and fresh rendered parity must still be
+refreshed for the publishable child.
+
+PR523 public workflow 43829428390 is now terminal success, including build/save
+integrity 133170992602, admission 133170992651, headed replay 133184975426 and
+native save/replay 133184975456. All eight inspected public workflows and private
+43829449552 are terminal success for ced5b54f625368a12911de31cb4cb78ba1111774.
+PR523's description records these final outcomes; they do not qualify the current
+unpublished sprite-material child.
+
+Final sprite checkpoint refresh: build-sprite-ordinary-01 and
+readiness-sprite-windows-01 pass the unchanged eight-case ordinary developer-OFF
+cohort, 120 unassisted frames each, using the authorized authentic resource
+profile. Ordinary binary SHA256 is
+3a7ee282542cda4f7545d7a88185fc1c083b4fb808c44c6ba3f12a14942873b5;
+results SHA256 is b0957af95b360928d6da069f95a25dafddf8e3c4ad516e3f1d9776e52b084b36.
+The source receipt pins the uncommitted candidate separately from parent ced5b54f.
+
+build-sprite-final-01 and sprite-final-windows-01 pass with final renderer SHA256
+6ff3e42c1b0957e3db6e4bd18f0cfcdf7a57bcb75e4c0c7a58e4d43c9eb97e4d.
+The GPU proof exits zero in 8.359 seconds: 216 material controls, 86 soft-depth
+controls, 160 original-image samples, five original queued frame pairs, 12 glow
+profiles, two retained runtime fireballs and four cumulative-bounds sequences.
+Android D1/D2 x86_64 compilation passes in android-sprite-final-01 (20 seconds).
+Both required automation catalog checks pass: 99 standalone JSON tests,
+549 support scripts, 315 standalone PowerShell tests and 428 top-level entries.
+These are compile/catalog results, not Android device execution.
+
+omega-sprite-final-capture-01 passes in 21 seconds, with two positioning and one
+inventory assist before recording, none during, and 66 warmup frames. Recording:
+d2_wshock20_level6_20261116_012755.dximdemo. Strict replay is running in
+omega-sprite-final-replay-01; full state and RNG comparison is still pending.
+Expanded extracted-source GPU execution remains a hosted Linux gate.
+
+Final strict replay wrapper and full comparison both PASS with clean engine exit.
+omega-sprite-final-replay-01 compares 242 frame/object snapshots, 246 world
+records, 3552 SIM events, 436 FX events and exact trailer. Comparison SHA256 is
+444de1fe018cad5bc9967e74b8fa31a79086bf551141654e280d07593bd421ac.
+The recording SHA256 is
+ac064277937a13a3f551fd604be6c3b8de7bb32b4157ab576801ab3e96e119fa.
+This qualifies the final renderer's controlled host continuation only; original
+cohort readiness, Android compile coverage and remaining device/campaign limits
+stay separately stated. All four protected stashes are unchanged.
+
+Cleanup preview/apply -03, after all local jobs exited, found no eligible files
+outside the protected evidence, authentic-input and emulator workspaces. Apply
+correctly reports that the 50 GiB target was not reached; 22.54 GiB remains.
+No caches or receipts were hand-deleted. Reuse existing build directories.
