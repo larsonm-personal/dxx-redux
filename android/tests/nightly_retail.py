@@ -640,6 +640,29 @@ def public_diagnostics(value):
     return clean
 
 
+# Keep synchronized with Write-SuiteSetupStage in run_all_tests.ps1
+MASTER_SETUP_STAGES = frozenset(
+    {
+        "runner-initialization",
+        "catalog-selection",
+        "host-prerequisites",
+        "emulator-target-validation",
+        "emulator-acceleration",
+        "apk-build",
+        "apk-retention",
+        "emulator-health",
+        "apk-and-game-data",
+        "launcher-reset",
+        "launcher-ready",
+        "launcher-introspection",
+        "game-data-ready",
+        "instrumentation-install",
+        "matchmaking-server",
+        "tests-ready",
+    }
+)
+
+
 def public_receipt(receipt):
     """Publish fixed owner/status diagnostics, never arbitrary test strings or files."""
     result = {key: receipt[key] for key in ("schema", "target_sha", "catalog_hash", "batch_id", "lane")}
@@ -682,6 +705,11 @@ def public_receipt(receipt):
             ],
         }
         clean.update(public_diagnostics(row))
+        stage = row.get("last_setup_stage")
+        if isinstance(stage, str) and stage in MASTER_SETUP_STAGES and status == "NOT_RUN":
+            clean["last_setup_stage"] = stage
+            clean["reason"] += "; last observed runner setup stage: " + stage
+
         sites = clean.get("master_diagnostics", {}).get("source_matches", [])
         if sites and status in ("FAIL", "TIMEOUT", "BLOCKED"):
             clean["reason"] = (

@@ -688,6 +688,115 @@ class SweepTests(unittest.TestCase):
             },
         )
 
+    def test_master_setup_stage_survives_collection_and_retail_sanitizing(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.attempt(root, exit_code=1)
+            sweep.write(
+                root / "setup-stage.json", {"schema": 1, "stage": "game-data-ready", "secret": "private-canary"}
+            )
+            receipt = sweep.collect(self.plan, self.policy, "host", root)
+            public = sweep.retail.public_receipt(receipt)
+            for row in public["results"]:
+                self.assertEqual(row["status"], "NOT_RUN")
+                self.assertFalse(row["attempted_tests"])
+                self.assertFalse(row["coverage_complete"])
+                self.assertEqual(row["last_setup_stage"], "game-data-ready")
+                self.assertIn("last observed runner setup stage: game-data-ready", row["reason"])
+            self.assertNotIn("private-canary", json.dumps(public))
+            # A completed sibling's own evidence always wins over runner setup
+            (root / "journal.jsonl").write_text(
+                json.dumps(
+                    {
+                        "name": "first",
+                        "commit": SHA,
+                        "status": "PASS",
+                        "exit_code": 0,
+                    }
+                )
+                + "\n"
+            )
+            receipt = sweep.collect(self.plan, self.policy, "host", root)
+            first = next(row for row in receipt["results"] if row["id"] == "master:first")
+            self.assertEqual(first["status"], "PASS")
+            self.assertNotIn("last_setup_stage", first)
+
+    def test_master_setup_stage_is_bounded_allowlisted_and_provenance_gated(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for payload in (
+                {"schema": 1, "stage": "private-canary"},
+                {"schema": 2, "stage": "apk-build"},
+                [],
+                "x" * 2048,
+            ):
+                sweep.write(root / "setup-stage.json", payload)
+                self.assertEqual(sweep.master_setup_stage(root), {})
+            (root / "setup-stage.json").write_text("{")
+            self.assertEqual(sweep.master_setup_stage(root), {})
+            sweep.write(root / "elsewhere.json", {"schema": 1, "stage": "apk-build"})
+            (root / "setup-stage.json").unlink()
+            (root / "setup-stage.json").symlink_to(root / "elsewhere.json")
+            self.assertEqual(sweep.master_setup_stage(root), {})
+            (root / "setup-stage.json").unlink()
+            sweep.write(root / "setup-stage.json", {"schema": 1, "stage": "apk-build"})
+            receipt = sweep.collect(self.plan, self.policy, "host", root)
+            self.assertTrue(all("last_setup_stage" not in row for row in receipt["results"]))
+
+    def test_real_setup_stage_writer_is_atomic_and_stops_at_tests(self):
+        import shutil
+
+        pwsh = shutil.which("pwsh")
+        if not pwsh:
+            self.skipTest("PowerShell is unavailable")
+        source = Path(__file__).parents[1] / "run_all_tests.ps1"
+        script = r"""
+param($Source, $OutputPath)
+$ErrorActionPreference = 'Stop'
+$tokens = $null; $errors = $null
+$ast = [Management.Automation.Language.Parser]::ParseFile($Source, [ref]$tokens, [ref]$errors)
+if ($errors.Count) { throw 'Master runner parse failed' }
+$function = $ast.Find({ param($node)
+    $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Write-SuiteSetupStage'
+}, $true)
+. ([scriptblock]::Create($function.Extent.Text))
+$SetupEvidencePath = $OutputPath
+$ListTests = $true
+Write-SuiteSetupStage 'runner-initialization'
+if (Test-Path $OutputPath) { throw 'Catalog listing wrote setup evidence' }
+$ListTests = $false
+Write-SuiteSetupStage 'runner-initialization'
+Write-SuiteSetupStage 'apk-build'
+if ((Get-Content $OutputPath -Raw | ConvertFrom-Json).stage -ne 'apk-build') { throw 'Stage update failed' }
+Write-SuiteSetupStage 'tests-ready'
+$script:suiteSetupComplete = $true
+Write-SuiteSetupStage 'launcher-reset'
+"""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            runner = root / "probe.ps1"
+            runner.write_text(script)
+            result = subprocess.run(
+                [pwsh, "-NoProfile", "-File", str(runner), str(source), str(root / "setup-stage.json")],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(sweep.master_setup_stage(root), {"last_setup_stage": "tests-ready"})
+            self.assertFalse((root / "setup-stage.json.tmp").exists())
+
+    def test_setup_stage_producer_and_allowlist_remain_synchronized(self):
+        import re
+
+        source = (Path(__file__).parents[1] / "run_all_tests.ps1").read_text()
+        stages = set(re.findall(r"Write-SuiteSetupStage '([^']+)'", source))
+        self.assertEqual(stages, sweep.retail.MASTER_SETUP_STAGES)
+        self.assertLess(source.index("Write-SuiteSetupStage 'runner-initialization'"), source.index('. "$helpersDir'))
+        self.assertLess(
+            source.index("Write-SuiteSetupStage 'host-prerequisites'"),
+            source.index("-not (Test-HostToolPrerequisites)"),
+        )
+
     def test_representative_validation_covers_four_lanes_within_budgets(self):
         policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
         entries = sweep.policy_entries(policy)

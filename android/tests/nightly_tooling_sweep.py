@@ -649,6 +649,23 @@ def online_failure_summary(output):
     return f"Online qualification failed: {phase}, {category}; see retained owner log"
 
 
+def master_setup_stage(output):
+    """Retain only an enumerated stage, never setup log text or private paths"""
+    path = Path(output) / "setup-stage.json"
+    try:
+        if path.is_symlink() or path.stat().st_size > 1024:
+            return {}
+        value = read(path)
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(value, dict) or value.get("schema") != 1:
+        return {}
+    stage = value.get("stage")
+    if isinstance(stage, str) and stage in retail.MASTER_SETUP_STAGES:
+        return {"last_setup_stage": stage}
+    return {}
+
+
 def collect(plan, policy, lane, output, blocked_reason=""):
     validate_plan(plan, policy)
     output = Path(output)
@@ -685,7 +702,8 @@ def collect(plan, policy, lane, output, blocked_reason=""):
                     row = {**row, "master_diagnostics": {"log_available": False}}
             if not row and exit_code:
                 row = {
-                    "reason": f"Master runner exited {exit_code} without this test receipt; see master.log. Remains pending."
+                    "reason": f"Master runner exited {exit_code} without this test receipt; see master.log. Remains pending.",
+                    **master_setup_stage(output),
                 }
             if status == "SKIP":
                 status = "BLOCKED"
@@ -743,6 +761,11 @@ def collect(plan, policy, lane, output, blocked_reason=""):
                 **retail.public_diagnostics({**row, "id": entry["id"]}),
                 "run_url": run_url,
                 "exclusions": row.get("exclusions", []),
+                **(
+                    {"last_setup_stage": row["last_setup_stage"]}
+                    if row.get("last_setup_stage") in retail.MASTER_SETUP_STAGES
+                    else {}
+                ),
                 "cases": row.get("cases", []),
                 "coverage_complete": row.get("coverage_complete", False),
                 **core_diagnostics(row, entry["id"]),
@@ -913,6 +936,8 @@ def execute(plan, policy, lane, repo, output):
         names = output / "selected.json"
         write(names, [e["args"]["suite"] for e in masters])
         journal = output / "journal.jsonl"
+        setup_stage = output / "setup-stage.json"
+        setup_stage.unlink(missing_ok=True)
         command = [
             "pwsh",
             "-NoProfile",
@@ -922,6 +947,8 @@ def execute(plan, policy, lane, repo, output):
             str(names),
             "-EvidenceJournalPath",
             str(journal),
+            "-SetupEvidencePath",
+            str(setup_stage),
             "-TestBudgetSeconds",
             str(sum(e["estimated_seconds"] for e in masters)),
             "-FullSuite",

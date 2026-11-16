@@ -59,7 +59,21 @@ class AndroidMixerDiagnosticsContracts(unittest.TestCase):
 
                 self.assertNotIn("<android/log.h>", source)
                 self.assertNotIn("MIXLOG", source)
-                self.assertNotIn("Mix_QuerySpec", init_body)
+                # XL needs the actual negotiated format for functional audio, not logging
+                xl_backend = re.search(
+                    r"#ifdef DXX_XL_RUNTIME\s*\{[^{}]*Mix_QuerySpec[^{}]*"
+                    r"xl_named_audio_backend_open[^{}]*\}\s*#endif",
+                    init_body,
+                )
+                diagnostic_body = init_body
+                if xl_backend:
+                    self.assertLess(init_body.index("Mix_OpenAudio("), xl_backend.start())
+                    diagnostic_body = init_body[: xl_backend.start()] + init_body[xl_backend.end() :]
+                    self.assertRegex(
+                        function_body(source, "digi_mixer_close"),
+                        r"#ifdef DXX_XL_RUNTIME\s*xl_named_audio_backend_close\(\);\s*#endif",
+                    )
+                self.assertNotIn("Mix_QuerySpec", diagnostic_body)
                 self.assertNotRegex(init_body, r"actual_(freq|fmt|ch)")
                 self.assertEqual(
                     init_body.count("androidaud_log_mixer_open_failed(SDL_GetError());"),
