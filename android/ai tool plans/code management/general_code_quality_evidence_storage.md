@@ -16,6 +16,15 @@ Run an immediate backup after a completed audit publication:
 pwsh -NoProfile -File android/helpers/backup-quality-evidence-ledger.ps1
 ```
 
+Check, pause, or resume the scheduled backup with:
+
+```powershell
+pwsh -NoProfile -File android/helpers/manage-quality-evidence-backup-task.ps1
+pwsh -NoProfile -File android/helpers/manage-quality-evidence-backup-task.ps1 -Action Check
+pwsh -NoProfile -File android/helpers/manage-quality-evidence-backup-task.ps1 -Action StopDisable
+pwsh -NoProfile -File android/helpers/manage-quality-evidence-backup-task.ps1 -Action EnableStart
+```
+
 The helper skips an identical verified backup. It verifies both the copied bytes and unchanged source before replacing the previous backup. If Drive is unavailable or the ledger changes during copying, it fails without replacing the previous backup. A stale checksum after an interrupted publication is repaired on the next run. Task Scheduler records failures; it does not display a notification.
 
 On another machine, copy the Drive ledger to android/ai tool plans/code management/general_code_quality_evidence_ledger_20260811.md, then compare its SHA-256 with the Drive sidecar before resuming audit work. Run the helper with -DestinationDirectory for a different local Drive path. The Windows task is machine-local and must be registered separately on another machine.
