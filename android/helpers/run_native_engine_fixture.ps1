@@ -17,7 +17,7 @@ $ErrorActionPreference = 'Stop'
 $assetFiles = @($DataFiles | ForEach-Object { Get-Item -LiteralPath $_ -ErrorAction Stop })
 $assetNames = @{}
 foreach ($asset in $assetFiles) {
-    if ($asset.PSIsContainer -or $asset.Name -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$' -or $assetNames.ContainsKey($asset.Name)) {
+    if ($asset.PSIsContainer -or $asset.Name -notmatch '^[A-Za-z0-9][A-Za-z0-9._#-]*$' -or $assetNames.ContainsKey($asset.Name)) {
         throw 'Native fixture assets require unique plain filenames'
     }
     $assetNames[$asset.Name] = $true

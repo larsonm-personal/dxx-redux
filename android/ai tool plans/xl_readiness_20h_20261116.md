@@ -2016,3 +2016,79 @@ Scoped formatting passes. This is Android14 x86_64 native EGL resource ownership
 and GPU-pixel evidence; no full mission load, physical device, Android timeline
 replay or startup-FX parity claim follows. The only code change is resolving the
 host verifier through the existing cross-platform Python helper before staging.
+
+### Original Android animation consumer
+
+Child12 begins at PR528/6eefbb53af47b55ffa3a00b2b976217369e3bf29. The existing
+Android EGL owner checks original static ceil002 pixels and synthetic animated
+strips. Extend that maintained fixture with optional hash-pinned original
+force01#0.tga from BoilingPoint:128x768RGB/sixframes, SHA256
+ce0ed3f3874c1e01fb27c46a2eb2cfba0034559fc3464052e40fa2fa4ac73dac.
+Exercise the real eight-frame native effect clock selecting six replacement
+frames through production wall drawing, with unchanged authored bytes. Compare
+readback at analytically mapped texel locations against independently decoded
+original pixels. Cover A/B/stock/return-to-A over two EGL contexts, including
+restoration of ordinary stock pixels outside the original owner. Verify no
+rendering mutation of native effect state or SIM/FX RNG. Preserve the static
+owner's existing cases and watchdog. Extend the existing private trace verifier
+and require explicit original-animation evidence only when requested. Reuse the
+isolated native runner; no APK installation or app-data mutation is needed.
+
+Initial Android original-animation01/02 pass the existing fallback lookup and
+all six original-frame pixels. Two packed-member address warnings in01 are
+corrected with aligned local clock outputs;02 builds without those warnings.
+Review distinguishes this fallback from the retained native owner introduced by
+the tranche: source-native effective count is six at period6144, whereas the
+fallback maps six display frames across the authored eight-frame clock. Preserve
+that evidence and require both paths rather than calling the fallback sufficient.
+
+The stronger fixture reuses XlResourceBanks with standard hash-pinned groupa.pig
+and descent2.s22, the existing TGA decoder and xl_pog_prepare_scoped/install owner.
+It verifies original aliases1998-2005 and hides only the isolated fallback copy
+during native drawing. Native effective counts, separate768-row physics views,
+all original pixels and retirement are required. Native-animation01 fails a
+test-header include path (corrected). Native-animation02 reaches actual native
+RGBA upload but exits with "active graphics context is unavailable": the direct
+EGL fixture had never published gl_initialized despite having a current context.
+Set that native context marker after successful EGL creation and clear it before
+context release, matching gr_init lifecycle; do not change the production guard.
+The failing native logcat is retained beside the owner receipt.
+
+Native-animation03 passes both paths. Final-original-native-animation01 adds
+last-to-first cycle wrap and passes112production draws/336RGBA pixel vectors
+across eight visits/two EGL contexts, half from original artwork and half stock
+isolation. The native path requires six effective frames at6144 while authored
+definitions remain eight; it uses the actual retained owner with fallback input
+hidden, original bank aliases1998-2005,768-row physics view, native phase mapping,
+all-six-frame and wrap readback, and retirement of all borrowed views. Rendering
+preserves effect state and SIM/FX RNG. Both D1/D2 base fixture owners and original
+static-texture verification remain passing. No new compiler warnings appear.
+
+Final evidence directory android-original-native-animation-final-01, D2 fixture
+SHA256fba6615d9cd7c15c0c565b77682c9f262758fccedcfa4e8d2ef124deadb8aefe;
+receiptSHA2564ac214eb3744c5d70085acbb818d93d1f2b58c16617a67ce38f764742aad939a.
+The receipt hashes every changed source (including the new header), the two
+fixture executables, actual engine libraries and all four authentic inputs.
+Installed APK, four preference files and stopped-app state remain identical to
+the pre-fixture baseline; the known UUID device directory is verified removed.
+The final private-assets suite passes53tests, rejecting missing native-path
+evidence, incorrect effective counts, duplicate/missing frames, bad pixels and
+stock-owner leakage. Scoped formatting passes. This remains controlled Android
+EGL evidence, not full-mission loading or Android timeline/playability coverage.
+
+PR527 private run43865160875 attempt1 is terminalsuccess under controller71e6efb9.
+Downloaded exactcandidatecd07fd6326ebd2082f1e71bc885fffb08d697e07 receipts confirm
+8/8 readiness and113requiredLinuxchecks; coverage_complete=false and
+camera_subchecks=not_run_missing_addon remain explicit because current trusted
+controller staging predates527. Readinessartifact14224704387 SHA256
+aedef5ec29307958dd1be3157e2c29f4af1b004fdde5975533cc3ce9ddf7a0cb;
+hostartifact14226866509 SHA2562a60851190da0ee0c3d60e3ebf338c4bcfdda3751696c7530465ac75352b8abf.
+Sixpublicworkflows pass including Linux/Windows script suites; engine and
+shareware are still executing. The prior local symlink-privilege limitation is
+not a failure in these hosted suites. PR528 private admission/readiness/Linux
+jobs pass, but the overall run43866044450 is not yet terminal at inspection.
+
+Final Android-animation catalog checks pass: 99 standalone JSON tests, 549
+support scripts, 315 standalone PowerShell tests and 428 top-level entries.
+All seven tested code-source hashes still match the final device receipt; only
+this explanatory plan has advanced since that receipt.

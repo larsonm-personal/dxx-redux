@@ -6,6 +6,8 @@ if(GAME STREQUAL "d2")
     if(NOT XL_ENABLED)
         message(FATAL_ERROR "Scoped texture qualification requires the normal OpenGL runtime")
     endif()
+    target_include_directories(${FIXTURE_TARGET}
+                               PRIVATE "${ENGINE_BUILD_DIR}/_deps/input_demo_picosha2_src-src")
 endif()
 target_compile_definitions(${FIXTURE_TARGET} PRIVATE OGL OGLES OGL_MERGE)
 target_link_libraries(${FIXTURE_TARGET} PRIVATE EGL GLESv3)
