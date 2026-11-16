@@ -65,6 +65,20 @@ class CorpusComparisons(unittest.TestCase):
             "mission.json",
         )["status"]
 
+    def test_malformed_geometry_containers_and_entries_fail_without_throwing(self):
+        for levels in (3, {}, {"PRIVATE": "SECRET"}, None, [], [3], [None], ["PRIVATE"], [{}]):
+            with self.subTest(levels=levels):
+                output = copy.deepcopy(self.metadata)
+                output[0]["levels"] = levels
+                for baseline in (self.metadata, output):
+                    result = compare_metadata(baseline, output, self.metadata_summary, "mission.zip")
+                    self.assertEqual(result["status"], "FAIL")
+                    self.assertNotIn("PRIVATE", str(result))
+                    self.assertNotIn("SECRET", str(result))
+        output = copy.deepcopy(self.metadata)
+        output[0]["levels"] = [{"segment_count": 0, "route_problem": "level file is missing"}, None]
+        self.assertEqual(compare_metadata(output, output, self.metadata_summary, "mission.zip")["status"], "FAIL")
+
     def test_known_missing_geometry_is_blocked_not_passed(self):
         level = self.metadata[0]["levels"][0]
         level.update(segment_count=0, status="failed", route_problem="level file is missing")

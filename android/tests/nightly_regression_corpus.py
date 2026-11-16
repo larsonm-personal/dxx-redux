@@ -64,13 +64,20 @@ DIAGNOSTIC_FIELDS = frozenset(('levels', 'status', 'segment_count', 'level_num',
 
 
 # Public diagnostics describe schema positions and fixed failure classes only
-GEOMETRY_CATEGORIES = frozenset(("missing-level", "unsupported-level", "invalid-header", "load-failed", "empty-geometry"))
+GEOMETRY_CATEGORIES = frozenset(("missing-level", "unsupported-level", "invalid-header", "load-failed", "empty-geometry", "invalid-structure"))
 
 
 def geometry_diagnostics(missions):
     rows = []
     for mission_index, mission in enumerate(missions):
-        for level_index, level in enumerate(mission.get("levels", []) or []):
+        levels = mission.get("levels")
+        if not isinstance(levels, list) or not levels:
+            rows.append({"mission_index": mission_index, "level_index": 0, "category": "invalid-structure"})
+            continue
+        for level_index, level in enumerate(levels):
+            if not isinstance(level, dict):
+                rows.append({"mission_index": mission_index, "level_index": level_index, "category": "invalid-structure"})
+                continue
             if type(level.get("segment_count")) is int and level["segment_count"] > 0:
                 continue
             problem = str(level.get("route_problem", ""))
@@ -264,7 +271,7 @@ def compare_metadata(baseline, generated, summary, archive_name):
     if any(
         not isinstance(m.get("levels"), list)
         or not m["levels"]
-        or any(type(level.get("segment_count")) is not int or level["segment_count"] <= 0 for level in m["levels"])
+        or any(not isinstance(level, dict) or type(level.get("segment_count")) is not int or level["segment_count"] <= 0 for level in m["levels"])
         for m in actual
     ):
         diagnostics = geometry_diagnostics(actual)
