@@ -1,0 +1,351 @@
+{
+    "source_head": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+    "source_tree": "f6d876b46178e9e611cab699aac397765dfd7d24",
+    "source_status": "Only the new tranche plan was untracked during baseline builds; no engine edits",
+    "ordinary_developer_tests": false,
+    "windows_binary_sha256": "0e1ae76453dec252d8f92d59de15684b6889aee72f4bc6d490e0a3bd9ec354c4",
+    "linux_binary_sha256": "ac8f72192d442de56ade8921e6da31106ee4a96119bd037837fd337d544fddac",
+    "linux_environment": {
+        "DISPLAY": null,
+        "WAYLAND_DISPLAY": null,
+        "SDL_VIDEODRIVER": "invalid",
+        "SDL_AUDIODRIVER": "dummy"
+    },
+    "catalog_sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+    "private_runtime_sha256": {
+        "alien1.pig": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+        "alien2.pig": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+        "d2x-xl.hog": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+        "d2x.hog": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+        "descent.hog": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052",
+        "descent.pig": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe",
+        "descent2.ham": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+        "descent2.hog": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+        "descent2.s22": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+        "fire.pig": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+        "groupa.pig": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+        "ice.pig": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+        "water.pig": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"
+    },
+    "results": {
+        "windows": {
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "inventory_archives": 23,
+            "inventory_levels": 1111,
+            "limitations": "Fixed stratified sample, not a statistical estimate or full playability; no rendering or player input; camera addon subchecks not covered",
+            "resources": {
+                "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+                "files": [
+                    {
+                        "path": "d2x.hog",
+                        "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                        "size": 4371791,
+                        "source": "descent_2_vertigo/d2x.hog"
+                    },
+                    {
+                        "path": "d2x-xl.hog",
+                        "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                        "size": 3815963,
+                        "source": "xl-resources/d2x-xl.hog"
+                    }
+                ],
+                "profile": "authentic-vertigo-xl-v1",
+                "repository": "larsonm-personal/dxx-redux-test-assets"
+            },
+            "rows": [
+                {
+                    "archive": "missions/d2xxl_downloads/BoilingPoint-XL.zip",
+                    "assisted_navigation": "not_run",
+                    "frames": 0,
+                    "id": "BoilingPoint-XL.zip/missions/boilpnt.mn2:7",
+                    "level": 7,
+                    "level_file": "control2.rl2",
+                    "mission": "boilpnt",
+                    "outcome": "load_failed",
+                    "seconds": 3.938,
+                    "xl_active": null
+                },
+                {
+                    "archive": "missions/d2xxl_downloads/diehard.7z",
+                    "assisted_navigation": "confirmed",
+                    "frames": 120,
+                    "id": "diehard.7z/missions/single/diehard.mn2:17",
+                    "level": 17,
+                    "level_file": "dh17.rl2",
+                    "mission": "diehard",
+                    "navigation_target_segment": 20,
+                    "outcome": "loaded_ticked",
+                    "seconds": 4.344,
+                    "xl_active": false
+                },
+                {
+                    "archive": "missions/d2xxl_downloads/dinter-1.5.7z",
+                    "assisted_navigation": "unconfirmed",
+                    "frames": 120,
+                    "id": "dinter-1.5.7z/missions/single/dinter.mn2:1",
+                    "level": 1,
+                    "level_file": "dinter.rl2",
+                    "mission": "dinter",
+                    "navigation_target_segment": 20,
+                    "outcome": "loaded_ticked",
+                    "seconds": 22.688,
+                    "xl_active": true
+                },
+                {
+                    "archive": "missions/d2xxl_downloads/ironstar.7z",
+                    "assisted_navigation": "confirmed",
+                    "frames": 120,
+                    "id": "ironstar.7z/missions/geld/ironstar.msn:6",
+                    "level": 6,
+                    "level_file": "chapel.rdl",
+                    "mission": "ironstar",
+                    "navigation_target_segment": 20,
+                    "outcome": "loaded_ticked",
+                    "seconds": 4.812,
+                    "xl_active": false
+                },
+                {
+                    "archive": "missions/d2xxl_downloads/orionneb.7z",
+                    "assisted_navigation": "unconfirmed",
+                    "frames": 120,
+                    "id": "orionneb.7z/orionneb.msn:4",
+                    "level": 4,
+                    "level_file": "level04.rdl",
+                    "mission": "orionneb",
+                    "navigation_target_segment": 20,
+                    "outcome": "loaded_ticked",
+                    "seconds": 2.375,
+                    "xl_active": false
+                },
+                {
+                    "archive": "missions/d2xxl_downloads/phobos-e.7z",
+                    "assisted_navigation": "unconfirmed",
+                    "frames": 120,
+                    "id": "phobos-e.7z/missions/single/phobos-e.mn2:4",
+                    "level": 4,
+                    "level_file": "phobos4.rl2",
+                    "mission": "phobos-e",
+                    "navigation_target_segment": 20,
+                    "outcome": "loaded_ticked",
+                    "seconds": 2.078,
+                    "xl_active": false
+                },
+                {
+                    "archive": "missions/d2xxl_downloads/sphere-1.6.zip",
+                    "assisted_navigation": "confirmed",
+                    "frames": 120,
+                    "id": "sphere-1.6.zip/missions/single/sphere.mn2:2",
+                    "level": 2,
+                    "level_file": "sp-02.rl2",
+                    "mission": "sphere",
+                    "navigation_target_segment": 20,
+                    "outcome": "loaded_ticked",
+                    "seconds": 5.391,
+                    "xl_active": true
+                },
+                {
+                    "archive": "missions/d2xxl_downloads/wshock20.7z",
+                    "assisted_navigation": "confirmed",
+                    "frames": 120,
+                    "id": "wshock20.7z/missions/single/wshock20.mn2:6",
+                    "level": 6,
+                    "level_file": "warplab.rl2",
+                    "mission": "wshock20",
+                    "navigation_target_segment": 20,
+                    "outcome": "loaded_ticked",
+                    "seconds": 7.031,
+                    "xl_active": true
+                }
+            ],
+            "schema": "dxx-xl-readiness-v1",
+            "selection_seed": "d2x-readiness-cohort-v1",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "load_failed": 1,
+                    "loaded_ticked": 7
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 7,
+                "readiness_percent": 87.5
+            },
+            "target_sha": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2"
+        },
+        "linux": {
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "inventory_archives": 23,
+            "inventory_levels": 1111,
+            "limitations": "Fixed stratified sample, not a statistical estimate or full playability; no rendering or player input; camera addon subchecks not covered",
+            "resources": {
+                "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+                "files": [
+                    {
+                        "path": "d2x.hog",
+                        "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                        "size": 4371791,
+                        "source": "descent_2_vertigo/d2x.hog"
+                    },
+                    {
+                        "path": "d2x-xl.hog",
+                        "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                        "size": 3815963,
+                        "source": "xl-resources/d2x-xl.hog"
+                    }
+                ],
+                "profile": "authentic-vertigo-xl-v1",
+                "repository": "larsonm-personal/dxx-redux-test-assets"
+            },
+            "rows": [
+                {
+                    "archive": "missions/d2xxl_downloads/BoilingPoint-XL.zip",
+                    "assisted_navigation": "not_run",
+                    "frames": 0,
+                    "id": "BoilingPoint-XL.zip/missions/boilpnt.mn2:7",
+                    "level": 7,
+                    "level_file": "control2.rl2",
+                    "mission": "boilpnt",
+                    "outcome": "load_failed",
+                    "seconds": 22.014,
+                    "xl_active": null
+                },
+                {
+                    "archive": "missions/d2xxl_downloads/diehard.7z",
+                    "assisted_navigation": "confirmed",
+                    "frames": 120,
+                    "id": "diehard.7z/missions/single/diehard.mn2:17",
+                    "level": 17,
+                    "level_file": "dh17.rl2",
+                    "mission": "diehard",
+                    "navigation_target_segment": 20,
+                    "outcome": "loaded_ticked",
+                    "seconds": 8.995,
+                    "xl_active": false
+                },
+                {
+                    "archive": "missions/d2xxl_downloads/dinter-1.5.7z",
+                    "assisted_navigation": "unconfirmed",
+                    "frames": 120,
+                    "id": "dinter-1.5.7z/missions/single/dinter.mn2:1",
+                    "level": 1,
+                    "level_file": "dinter.rl2",
+                    "mission": "dinter",
+                    "navigation_target_segment": 20,
+                    "outcome": "loaded_ticked",
+                    "seconds": 15.783,
+                    "xl_active": true
+                },
+                {
+                    "archive": "missions/d2xxl_downloads/ironstar.7z",
+                    "assisted_navigation": "confirmed",
+                    "frames": 120,
+                    "id": "ironstar.7z/missions/geld/ironstar.msn:6",
+                    "level": 6,
+                    "level_file": "chapel.rdl",
+                    "mission": "ironstar",
+                    "navigation_target_segment": 20,
+                    "outcome": "loaded_ticked",
+                    "seconds": 9.261,
+                    "xl_active": false
+                },
+                {
+                    "archive": "missions/d2xxl_downloads/orionneb.7z",
+                    "assisted_navigation": "unconfirmed",
+                    "frames": 120,
+                    "id": "orionneb.7z/orionneb.msn:4",
+                    "level": 4,
+                    "level_file": "level04.rdl",
+                    "mission": "orionneb",
+                    "navigation_target_segment": 20,
+                    "outcome": "loaded_ticked",
+                    "seconds": 4.43,
+                    "xl_active": false
+                },
+                {
+                    "archive": "missions/d2xxl_downloads/phobos-e.7z",
+                    "assisted_navigation": "unconfirmed",
+                    "frames": 120,
+                    "id": "phobos-e.7z/missions/single/phobos-e.mn2:4",
+                    "level": 4,
+                    "level_file": "phobos4.rl2",
+                    "mission": "phobos-e",
+                    "navigation_target_segment": 20,
+                    "outcome": "loaded_ticked",
+                    "seconds": 4.539,
+                    "xl_active": false
+                },
+                {
+                    "archive": "missions/d2xxl_downloads/sphere-1.6.zip",
+                    "assisted_navigation": "confirmed",
+                    "frames": 120,
+                    "id": "sphere-1.6.zip/missions/single/sphere.mn2:2",
+                    "level": 2,
+                    "level_file": "sp-02.rl2",
+                    "mission": "sphere",
+                    "navigation_target_segment": 20,
+                    "outcome": "loaded_ticked",
+                    "seconds": 7.091,
+                    "xl_active": true
+                },
+                {
+                    "archive": "missions/d2xxl_downloads/wshock20.7z",
+                    "assisted_navigation": "timeout",
+                    "frames": 120,
+                    "id": "wshock20.7z/missions/single/wshock20.mn2:6",
+                    "level": 6,
+                    "level_file": "warplab.rl2",
+                    "mission": "wshock20",
+                    "navigation_target_segment": 20,
+                    "outcome": "loaded_ticked",
+                    "seconds": 40.966,
+                    "xl_active": true
+                }
+            ],
+            "schema": "dxx-xl-readiness-v1",
+            "selection_seed": "d2x-readiness-cohort-v1",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "load_failed": 1,
+                    "loaded_ticked": 7
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 7,
+                "readiness_percent": 87.5
+            },
+            "target_sha": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2"
+        }
+    },
+    "per_case_engine_log_sha256": {
+        "windows": {
+            "0\\engine.log": "9e26a47ab4c59b555036bd2a80c1a6509b30fed481acd0420cb192c1bd4e454a",
+            "1\\engine.log": "03ef02316e6154bfe8a9657732717c2d0942921e1b4ef7d32a7033d5f79e1ead",
+            "2\\engine.log": "7494da314b19481d8daed5065b1df8ba57dc89f8e8ecea874f52cf42e1f39d53",
+            "3\\engine.log": "d9d98ccf94282d9664f5f020a158b5220fddda910cdf764489acc6d8e0b4aeb8",
+            "4\\engine.log": "c4ac7e1e6c8af76838eeb6b8f5ab61740552ea1759873614ce593411326774da",
+            "5\\engine.log": "8432d81f9b4b474749ae96fc749edaa517afc4a3d868250c2f0372028113e32c",
+            "6\\engine.log": "ae18d3aea511e59adc3ca17dc819475725f32e9a820029160aa870b6d187f4b4",
+            "7\\engine.log": "4a4e4be9a15fec08551578d587e430a3cb1243c94a31be08b06bc31041ae622a"
+        },
+        "linux": {
+            "0\\engine.log": "6f11e15438c3c19301ca6b9519400bff9f263930f4871b3ab1b99f05ed96c729",
+            "1\\engine.log": "459649fc5d53504ccdd7a73fd57f03e301360900bdc65d1415dbc4b75f024c0a",
+            "2\\engine.log": "0e2541ae4b1a49d0e94f758c2efac4cc182aae6f5975ac4f4bd65af81cb19e39",
+            "3\\engine.log": "c0c60145b91fe3c52476852e90fed7b3e6cead3fbd1bd36730bacb347105d7b6",
+            "4\\engine.log": "8dd60f660c07df8db889abab12da3a5868978efa3e08361bf8111fb62f29c0b7",
+            "5\\engine.log": "51f870f9be2e2ba2e7107e9ae0e0579fa05626d16c657f568f19f58abca54220",
+            "6\\engine.log": "15205629fd05395f7d84300d12e64e713edab6b155f61ab3b72090e4027f74b5",
+            "7\\engine.log": "989da7a624748868122d28ab8e23ea8913e07c9400aa28158b96f3f32b126f31"
+        }
+    },
+    "stashes": [
+        "9783012e2a77dfdd4680812ae72b852cfaca5e17",
+        "fb2507be376de70dc9eaeb867e0969738b3b6dcd",
+        "6e6bbf4e8b8a3b5ec03d674a26de99599249dab4",
+        "527eba407caed64d3a8b905fb55855bdab102d62"
+    ],
+    "hosted_provisioned_result": "pending first exact-candidate controller run after the merged stack",
+    "preservation": "No emulator installation or state mutation; original inputs and previous tranche evidence preserved",
+    "cleanup": "Preview and TemporaryOnly apply preserved temp/ and authentic input/emulator trees; 2.7 MiB removed, 39.34 GiB free, 50 GiB target not reached"
+}
