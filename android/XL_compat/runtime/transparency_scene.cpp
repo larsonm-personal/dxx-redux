@@ -159,6 +159,7 @@ void add(Item item, const ParticlePoint &position, int bias = 0, bool clamp = fa
 bool transparent_object(const object &obj)
 {
 	switch (obj.render_type) {
+		case RT_THRUSTER:
 		case RT_FIREBALL:
 		case RT_WEAPON_VCLIP:
 		case RT_HOSTAGE:
@@ -373,7 +374,7 @@ extern "C" int xl_transparency_object(int index)
 		rendered_objects.insert(index);
 		if (!transparent_object(Objects[index])) return 0;
 		const auto &obj = Objects[index];
-		if (obj.type == OBJ_FIREBALL && obj.render_type == RT_FIREBALL) {
+		if (obj.type == OBJ_FIREBALL && (obj.render_type == RT_FIREBALL || obj.render_type == RT_THRUSTER)) {
 			if (obj.lifeleft <= 0) return 1;
 			if (obj.id >= Num_vclips) throw std::runtime_error("XL fireball clip is out of range");
 			const auto &clip = Vclip[obj.id];

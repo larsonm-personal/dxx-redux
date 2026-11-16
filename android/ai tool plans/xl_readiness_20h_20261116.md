@@ -1784,3 +1784,102 @@ ordinary high-resolution profile. Dedicated RT_THRUSTER identity, PF_WIGGLE,
 parent attachment, broader rod behavior, Pumo full-level admission, Android
 runtime qualification and wholecampaign playability remain open. Publication
 is a non-draft immediate-parent child of524; its own CI must still be inspected.
+
+### Afterburner light identity baseline and readiness refresh
+
+PR525 readiness job133264002475 in private workflow43856378105 explicitly
+reports candidate fb75005753c3a9cb1d5041518a1ab20314a4be4e / PR525 and
+8/8 original loads plus120 unassisted frames at60Hz. Artifact14220749424,
+SHA2568c3d64f5cd628898c171c551cde1b911bbef25c9b5d0c53cf7b7f1353a60c2e0.
+Authentic resources are admitted from the private repository. The historical
+stock-only4/8 remains separate. Linux host owners are still running; this is
+not an all-CI-pass claim. No further tranche is needed for the narrow8/8 target.
+
+On child branch09, a diagnostic assertion against the real native light consumer
+reproduces an original-asset mismatch. Scoped formatter and build pass.
+Native-thruster-light-baseline-01 fails42.04s with clip95 light196608,
+render_type2, emitted RGB196608/196608/196608; pinned XL uses RT_THRUSTER8
+and emits zero light. The failure is the new assertion in preview-error.log,
+not the earlier expected negative-probe message. No production fix yet.
+The next checkpoint must preserve explicit thruster identity through native
+rendering, codecs, save/resume and tracing while keeping ordinary fireballs
+and stock behavior intact. Audit all render-type switches and admission before
+implementation; do not suppress light merely by clip number. Parent attachment
+and PF_WIGGLE remain separately unqualified. All test/build processes exited.
+
+The dedicated native representation is RT_THRUSTER8, matching pinned XL. Only
+XL afterburner creation assigns it. Native render dispatch, save/object byte
+swapping, classic demo codecs and shared object traces preserve the vclip payload.
+Native light emission returns zero before both intensity and colored-light paths.
+Initial identity01 failed42.47s because colored lighting promotes zero intensity
+to F1_0; the corrected early return addresses that observed consumer behavior.
+Identity02 PASS51.71s, including actual demo record/read in gameplay and capacity
+modes, save-codec round trips, ordinary same-clip fireball slot-reuse isolation,
+and fresh-process save continuation with render identity and RGB in observations.
+
+Source objectio distinguishes level files (RT_THRUSTER has no payload) from saves
+(vclip payload). The tentative level-file codec additions were removed; incoming
+level admission is unchanged. Native transport conversions retain representation,
+but UDP join filtering excludes fireballs and its admission remains unchanged;
+no thruster network-play claim follows. PF_WIGGLE/parent attachment remain open.
+Pinned lighting/light.cpp SHA256
+ca95b9183729c7f3665ef0706206afce093b53b0d97aa6ba11379dd5fdf5f36f.
+Pinned DrawVClipObject comparisons now include ordinary non-wiggling thrusters.
+The prior test adapter used7 for RT_THRUSTER; it now matches source8.
+Build03 succeeds; C4715 weapon.c and C4805 changing-light warnings also occur in
+the clean parent524 build. Build02 failed on an ambiguous test-only infile/outfile
+declaration; declarations are now at translation-unit scope and build03 resolves it.
+The final original-strip test additionally checks identity/light/save payload on
+every live blob. No timeout, asset, assertion or readiness criterion was relaxed.
+
+Final identity validation: native-thruster-identity-final-01 PASS51.33s with
+unchanged60/120-second process/owner limits. Binary
+2599df66b2101d02189cbd093ed5b40c806138dc88f6bdafcac6da38ab817350.
+All51 Windows Debug contracts PASS72.14s, including1488 pinned vclip draw controls
+with ordinary and non-wiggling thruster render types. Native endian checks inspect
+the first byte reversal as well as round trips; demo read/write covers allfive
+lifetimes in gameplay and capacity-only decode. Transport conversions are tested
+locally without changing UDP admission. Original Warp Shock afterburner strip
+PASS:300pixel selections/allfiveframes/120ticks/sixretired blobs, with native
+identity, color-off/color-on zero light and codec checks for each live blob.
+
+Readiness-thruster-identity-01 PASS8/8,67.641s, original120unassistedframes,
+ordinarydeveloper-OFF binary
+5083da5ebafbaf09e5e82e022ab3a1f20f9090f64c38ed1f9840d668172bcd1e;
+resultd93239b0b1b98083e6ae662a7a69af38ec8d2fbd8edcef9e4e897ea542b25450.
+All16candidatefiles matched that run's source receipt before this documentation
+update. Android-thruster-identity-01 D1/D2x86_64 native compile PASS47s.
+Bothcatalogowners pass99standaloneJSON/549support/315PowerShell and428topentries.
+No emulator/device mutation occurred; scheduling tests use their existing guards.
+
+Sprite-thruster-identity-01 PASS9.672s under unchanged60-second timeout on
+IntelArc140T. The real queue now exercises20 original-frame pairs: ordinary,
+thruster and both mixed combinations. It compares actualflush pixels against
+independent retained original frames after perturbing the shared frame selection.
+Allfiveframes/160analyticalsamples,216materialcases,86softdepthcases,
+12glowprofiles/twoglowingfireballs/fourboundscontrols pass; maxchannelerror1.
+Renderer92f100fa3a1797f7e0dea695fb55f28acc5ef60a44059a334ed577a67562296b.
+This is controlled desktop raster evidence, not campaign/device qualification.
+Fresh Omega capture succeeds; strict replay and full state/RNG comparison pending.
+
+PR525 private workflow43856378105 is terminalsuccess at exactfb75005753c3a9cb1d5041518a1ab20314a4be4e.
+Hostreceipt14221727548 SHA256
+8aa26411d6ebef88a15c70871e69ea37a26e6e52c3dadc1f9ca105f48f40ff1a
+reports113requiredchecksPASS, coverage_complete=false and
+camera_subchecks=not_run_missing_addon. Pumo/online/developerRelease/Android/JVM
+jobs skipped. Sevenpublicworkflows pass; Linuxshareware43856354736 stillrunning
+at this inspection. Do not infer its terminal outcome. Allfour protected stashes
+and the clean pinned XL reference tree remain unchanged.
+
+Fresh Omega-thruster-capture-01 and strict clean replay01 PASS. Full comparison
+passes242frame/object snapshots,246worldrecords,3552SIM and436FX events,
+and exact trailer. Demod2_wshock20_level6_20261116_034502.dximdemo, SHA2568e1247ec928cc1219f5472118066c66461005efb00957c83cbdf482efe0c9a0d.
+ComparisonSHA25620cc9dffdbea78cc4cda769bcff3a1b11ade819e25f072ba6ceaf5b669405f83.
+Assists remain2position/1inventory before recording,0during and66warmupframes.
+This is separate assisted-setup replay evidence and does not raise readiness.
+This checkpoint preserves ordinary/non-wiggling thruster identity and light;
+parent attachment, PF_WIGGLE, broader rod behavior, Android runtime, fullPumo
+admission and wholecampaign qualification remain open. The source changes are
+16files, with native edits limited to representation/codec/render-dispatch
+support and the light consumer. Final publication is an immediate-parent child
+of525, with no merge/automerge/enqueue. Its own CI remains to be inspected.

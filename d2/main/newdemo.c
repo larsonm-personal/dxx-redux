@@ -797,7 +797,7 @@ static int nd_demo_control_type_valid(ubyte type)
 
 static int nd_demo_render_type_valid(ubyte type)
 {
-	return type <= RT_WEAPON_VCLIP;
+	return type <= RT_THRUSTER;
 }
 
 static int nd_demo_model_valid(int model_num)
@@ -1119,6 +1119,7 @@ void nd_read_object(object *obj, int capacity_only)
 
 	case RT_POWERUP:
 	case RT_WEAPON_VCLIP:
+	case RT_THRUSTER:
 	case RT_FIREBALL:
 	case RT_HOSTAGE: {
 		int clip_count, frame_count;
@@ -1301,6 +1302,7 @@ void nd_write_object(object *obj)
 
 	case RT_POWERUP:
 	case RT_WEAPON_VCLIP:
+	case RT_THRUSTER:
 	case RT_FIREBALL:
 	case RT_HOSTAGE:
 		nd_write_int(obj->rtype.vclip_info.vclip_num);
@@ -4218,7 +4220,7 @@ void interpolate_frame(fix d_play, fix d_recorded)
 					//  Some of this code taken from ai_turn_towards_vector
 					//  Don't do the interpolation on certain render types which don't use an orientation matrix
 
-					if (!((render_type == RT_LASER) || (render_type == RT_FIREBALL) || (render_type == RT_POWERUP))) {
+					if (!((render_type == RT_LASER) || (render_type == RT_FIREBALL) || (render_type == RT_THRUSTER) || (render_type == RT_POWERUP))) {
 						vms_vector  fvec1, fvec2, rvec1, rvec2;
 						fix         mag1;
 

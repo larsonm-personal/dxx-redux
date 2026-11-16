@@ -110,6 +110,7 @@ extern "C" {
 #include "ai.h"
 extern fix flash_scale, Seismic_tremor_magnitude;
 extern int Do_dynamic_light;
+extern PHYSFS_file *infile, *outfile;
 void GameProcessFrame(void);
 void do_weapon_n_item_stuff(void);
 void set_ambient_sound_flags(void);
@@ -156,7 +157,7 @@ void object_dependencies()
 		if (o.type == OBJ_CNTRLCEN) graph.weapon(CONTROLCEN_WEAPON_NUM);
 		if (o.contains_count > 0) graph.contents(o.contains_type, o.contains_id);
 		if (o.render_type == RT_POLYOBJ) graph.model(o.rtype.pobj_info.model_num);
-		if (o.render_type == RT_POWERUP || o.render_type == RT_HOSTAGE || o.render_type == RT_FIREBALL)
+		if (o.render_type == RT_POWERUP || o.render_type == RT_HOSTAGE || o.render_type == RT_FIREBALL || o.render_type == RT_THRUSTER)
 			graph.clip(o.rtype.vclip_info.vclip_num);
 	}
 	// Conservative player arsenal coverage includes pickups and replacement loot

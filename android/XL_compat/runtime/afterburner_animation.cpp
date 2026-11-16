@@ -49,8 +49,10 @@ extern "C" int xl_drop_afterburner_blobs(const object *emitter, int size, int li
 			vms_vector position{ p[0], p[1], p[2] };
 			const int segment = find_point_seg(&position, emitter->segnum);
 			if (segment < 0) continue;
-			if (auto *created = object_create_explosion(segment, &position, size, VCLIP_AFTERBURNER_BLOB))
+			if (auto *created = object_create_explosion(segment, &position, size, VCLIP_AFTERBURNER_BLOB)) {
 				xl_afterburner_lifetime(int(created - Objects), lifetime);
+				created->render_type = RT_THRUSTER;
+			}
 		}
 		return 1;
 	} catch (const std::exception &error) {

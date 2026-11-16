@@ -1769,6 +1769,7 @@ void state_object_to_object_rw(object *obj, object_rw *obj_rw)
 		case RT_WEAPON_VCLIP:
 		case RT_HOSTAGE:
 		case RT_POWERUP:
+		case RT_THRUSTER:
 		case RT_FIREBALL:
 			obj_rw->rtype.vclip_info.vclip_num = obj->rtype.vclip_info.vclip_num;
 			obj_rw->rtype.vclip_info.frametime = obj->rtype.vclip_info.frametime;
@@ -1953,6 +1954,7 @@ int state_decode_object(const object_rw *obj_rw, object *obj, int native_ai_form
 		case RT_WEAPON_VCLIP:
 		case RT_HOSTAGE:
 		case RT_POWERUP:
+		case RT_THRUSTER:
 		case RT_FIREBALL:
 			obj->rtype.vclip_info.vclip_num = obj_rw->rtype.vclip_info.vclip_num;
 			obj->rtype.vclip_info.frametime = obj_rw->rtype.vclip_info.frametime;

@@ -1035,6 +1035,7 @@ void render_object(object *obj)
 			draw_morph_object(obj);
 			break;
 
+		case RT_THRUSTER:
 		case RT_FIREBALL:
 			if ( PlayerCfg.AlphaEffects ) // set nice transparency/blending for certrain objects
 				gr_settransblend( GR_FADE_OFF, GR_BLEND_ADDITIVE_C );
@@ -3367,6 +3368,7 @@ int object_rw_swap_for_context(object_rw *obj, int swap, int native_ai_format,
 		case RT_WEAPON_VCLIP:
 		case RT_HOSTAGE:
 		case RT_POWERUP:
+		case RT_THRUSTER:
 		case RT_FIREBALL:
 			obj->rtype.vclip_info.vclip_num = SWAPINT(obj->rtype.vclip_info.vclip_num);
 			obj->rtype.vclip_info.frametime = SWAPINT(obj->rtype.vclip_info.frametime);

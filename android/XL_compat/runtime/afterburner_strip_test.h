@@ -63,6 +63,7 @@ static int original_afterburner_strip_test(const std::filesystem::path &root)
 				continue;
 			}
 			int frame = -999;
+			afterburner_identity_control(owner.first);
 			require(xl_afterburner_frame(owner.first, object.id, object.lifeleft, int(pixels.frames), &frame), "Live original blob lost its animation clock");
 			const int bitmap = xl_pog_vclip_bitmap(object.id, frame);
 			if (frame < 0) {

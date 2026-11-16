@@ -102,6 +102,7 @@ enum object_type_t
 #define RT_POWERUP      5   // a powerup
 #define RT_MORPH        6   // a robot being morphed
 #define RT_WEAPON_VCLIP 7   // a weapon that renders as a vclip
+#define RT_THRUSTER     8   // XL fireball rendering without light emission
 
 // misc object flags
 #define OF_EXPLODING        1   // this object is exploding
