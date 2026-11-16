@@ -25,7 +25,7 @@ unsigned char gr_ugpixel( grs_bitmap * bitmap, int x, int y )
 	{
 		case BM_RGBA: {
 			const unsigned char *pixel = bitmap->bm_data + bitmap->bm_rowsize * y + x * 4;
-			const int transparency = dxx_xl_rgba_transparency(pixel);
+			const int transparency = bitmap->bm_rgb_opaque ? 0 : dxx_xl_rgba_transparency(pixel);
 			if (transparency) return transparency < 0 ? 254 : TRANSPARENCY_COLOR;
 			/* Legacy indexed consumers quantize explicitly; GL and physics use RGBA */
 			return gr_find_closest_color(pixel[0] / 4, pixel[1] / 4, pixel[2] / 4);

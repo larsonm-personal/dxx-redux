@@ -8,11 +8,13 @@
 struct mission_preparation;
 namespace xl_compat
 {
-// Synchronous read-only view; the caller retains the descriptor for its lifetime
+// Snapshot native mission identity and read its physical resources without live lookup
 class TargetSources
 {
   public:
 	TargetSources(mission_preparation *mission, std::string installation);
+	// Snapshot the already-selected native identity, without searching by name
+	explicit TargetSources(std::string installation);
 	~TargetSources();
 	const std::string &archive() const;
 	int ordinal(const char *level, int requested) const;

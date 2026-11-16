@@ -143,9 +143,14 @@ XlPreparedHam::XlPreparedHam() : state(std::make_unique<State>()) {}
 
 XlPreparedHam XlPreparedHam::extra(PHYSFS_file *file)
 {
+	return extra(xl_retain_resource(file));
+}
+
+XlPreparedHam XlPreparedHam::extra(std::vector<unsigned char> bytes)
+{
 	XlPreparedHam result;
 	result.state->extra = true;
-	result.state->source_bytes = xl_retain_resource(file);
+	result.state->source_bytes = std::move(bytes);
 	xl_read_retained_resource(result.state->source_bytes, [&](PHYSFS_file *retained) {
 		if (!bm_read_xl_extra_ham_into(retained, &result.state->destination, read_owned_model,
 		                               &result.state->extra_bitmaps, &result.state->extra_pointers))

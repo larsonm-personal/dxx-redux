@@ -2,6 +2,7 @@
 #include "../static_explosion.h"
 #include "gameplay_audio.h"
 #include "preview.h"
+#include "pog_resources.h"
 #include <cstring>
 extern "C" {
 #include "inferno.h"
@@ -22,7 +23,8 @@ const vclip &checked_clip(const object &object)
 	const auto &state = object.rtype.vclip_info;
 	if (state.vclip_num < 0 || state.vclip_num >= Num_vclips) throw std::runtime_error("XL static explosion references a missing clip");
 	const auto &clip = Vclip[state.vclip_num];
-	if (clip.num_frames <= 0 || clip.num_frames > VCLIP_MAX_FRAMES || clip.frame_time <= 0 || state.framenum < 0 || state.framenum >= clip.num_frames)
+	const int frames = xl_pog_vclip_frames(state.vclip_num) ? xl_pog_vclip_frames(state.vclip_num) : clip.num_frames;
+	if (clip.num_frames <= 0 || clip.num_frames > VCLIP_MAX_FRAMES || clip.frame_time <= 0 || state.framenum < 0 || state.framenum >= frames)
 		throw std::runtime_error("XL static explosion has an invalid animation state");
 	return clip;
 }
@@ -57,7 +59,8 @@ extern "C" int xl_static_explosion_animate(object *object)
 	try {
 		const auto &clip = checked_clip(*object);
 		auto &state = object->rtype.vclip_info;
-		const auto next = xl_compat::advance_static_explosion({ state.frametime, state.framenum }, clip.num_frames, clip.frame_time, FrameTime);
+		const int frames = xl_pog_vclip_frames(state.vclip_num) ? xl_pog_vclip_frames(state.vclip_num) : clip.num_frames;
+		const auto next = xl_compat::advance_static_explosion({ state.frametime, state.framenum }, frames, clip.frame_time, FrameTime);
 		state.frametime = next.remaining;
 		state.framenum = static_cast<sbyte>(next.frame);
 	} catch (const std::exception &error) {
@@ -71,7 +74,10 @@ extern "C" int xl_static_explosion_draw(object *object)
 	try {
 		const auto &clip = checked_clip(*object);
 		gr_settransblend(GR_FADE_OFF, PlayerCfg.AlphaEffects ? GR_BLEND_ADDITIVE_C : GR_BLEND_NORMAL);
-		draw_object_blob(object, clip.frames[object->rtype.vclip_info.framenum]);
+		const auto &state = object->rtype.vclip_info;
+		const int scoped = xl_pog_vclip_bitmap(state.vclip_num, state.framenum);
+		const bitmap_index bitmap = scoped >= 0 ? bitmap_index{ static_cast<ushort>(scoped) } : clip.frames[state.framenum];
+		draw_object_blob(object, bitmap);
 	} catch (const std::exception &error) {
 		Error("XL static explosion draw failed: %s", error.what());
 	}

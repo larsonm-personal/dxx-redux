@@ -15,6 +15,7 @@ class XlResourceBanks
 	void bitmap(int id) const;
 	void sound(int id) const;
 	int bitmap_count() const;
+	const char *bitmap_name(int id) const;
 	int sound_count() const;
 	int sound_length(int id) const;
 	const char *sound_name(int id) const;

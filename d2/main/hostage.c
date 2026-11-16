@@ -30,6 +30,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "vclip.h"
 #include "newdemo.h"
 #include "text.h"
+#ifdef DXX_XL_RUNTIME
+#include "pog_resources.h"
+#endif
 
 
 //------------- Globaly used hostage variables --------------------------------
@@ -41,6 +44,19 @@ int Hostage_vclip_num[MAX_HOSTAGE_TYPES];	// vclip num for each tpye of hostage
 //-------------- Renders a hostage --------------------------------------------
 void draw_hostage(object *obj)
 {
+#ifdef DXX_XL_RUNTIME
+	int index = xl_pog_vclip_bitmap(obj->rtype.vclip_info.vclip_num, obj->rtype.vclip_info.framenum);
+	if (index < 0 && xl_pog_vclip_frames(obj->rtype.vclip_info.vclip_num)) {
+		Error("Invalid scoped hostage animation frame");
+		return;
+	}
+	if (index >= 0) {
+		bitmap_index bitmap;
+		bitmap.index = (ushort) index;
+		draw_object_tmap_rod(obj, bitmap, 1);
+		return;
+	}
+#endif
 	draw_object_tmap_rod(obj, Vclip[obj->rtype.vclip_info.vclip_num].frames[obj->rtype.vclip_info.framenum], 1);
 }
 

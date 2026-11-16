@@ -26,7 +26,7 @@ struct StaticExplosionFrame {
 // Elapsed time is simulation time; high-resolution replacement animations are separate
 inline StaticExplosionFrame advance_static_explosion(StaticExplosionFrame state, int frames, std::int32_t duration, std::int32_t elapsed)
 {
-	if (frames <= 0 || frames > 127 || duration <= 0 || elapsed < 0 || state.frame < 0 || state.frame >= frames)
+	if (frames <= 0 || frames > 128 || duration <= 0 || elapsed < 0 || state.frame < 0 || state.frame >= frames)
 		throw std::runtime_error("Invalid XL static explosion animation");
 	// XL divides by a float slow-motion speed even at normal speed, rounding
 	// large elapsed values before converting back to fixed-point simulation time

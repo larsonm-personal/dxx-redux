@@ -7,6 +7,13 @@ static void compare_particle_image(const std::vector<uint8_t> &bytes)
 	CTGA source{ &bitmap, {} };
 	require(source.m_header.Read(input, &bitmap) && source.ReadData(input, -1, 1.0, 0, source.m_header.m_data.yStart != 0), "Source particle TGA did not load");
 	require(actual.width == unsigned(bitmap.Width()) && actual.height == unsigned(bitmap.Height()) && actual.flags == unsigned(bitmap.Flags()), "Particle TGA dimensions or flags differ from source");
+	require(actual.rgb_opaque == (bytes[16] == 24), "TGA lost its original RGB pixel semantics");
+	selected_bitmap = &bitmap;
+	for (unsigned y = 0; y < actual.height; ++y)
+		for (unsigned x = 0; x < actual.width; ++x)
+			require(actual.transparency(std::size_t(y) * actual.width + x) ==
+			            PixelTranspType(0, 0, 0, fix(x * 65536 / actual.width), fix(y * 65536 / actual.height)),
+			        "TGA point transparency differs from source RGB/RGBA semantics");
 	for (std::size_t i = 0; i < actual.pixels.size() / 4; ++i)
 		for (unsigned c = 0; c < 4; ++c) {
 			const auto expected = c == 3 && bitmap.BPP() == 3 ? 255 : bitmap.pixels[i * bitmap.BPP() + c];

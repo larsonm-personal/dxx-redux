@@ -62,6 +62,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "static_explosion_runtime.h"
 #include "slow_motion_runtime.h"
 #include "preview.h"
+#include "pog_resources.h"
 #endif
 #ifdef ANDROID
 #include "android_visual_policy.h"
@@ -83,24 +84,27 @@ void do_powerup_frame(object *obj)
 #endif
 		!d1_in_d2_animate_powerup(obj)) {
 		vclip *vc = &Vclip[vci->vclip_num];
+		int frame_count = vc->num_frames;
+#ifdef DXX_XL_RUNTIME
+		if (xl_pog_vclip_frames(vci->vclip_num)) frame_count = xl_pog_vclip_frames(vci->vclip_num);
+#endif
 		fudge = (FrameTime * ((obj-Objects)&3)) >> 4;
 
 		vci->frametime -= FrameTime+fudge;
 
 		while (vci->frametime < 0 ) {
+			int frame;
 
 			vci->frametime += vc->frame_time;
 
-			if ((obj-Objects)&1)
-				vci->framenum--;
-			else
-				vci->framenum++;
+			frame = vci->framenum + (((obj-Objects)&1) ? -1 : 1);
 
-			if (vci->framenum >= vc->num_frames)
-				vci->framenum=0;
+			if (frame >= frame_count)
+				frame=0;
 
-			if (vci->framenum < 0)
-				vci->framenum = vc->num_frames-1;
+			if (frame < 0)
+				frame = frame_count-1;
+			vci->framenum = (sbyte) frame;
 		}
 	}
 
@@ -180,7 +184,23 @@ void draw_powerup(object *obj)
 	blob_vertices[0] = 0x80000;
 	#endif
 
-	draw_object_blob(obj, Vclip[obj->rtype.vclip_info.vclip_num].frames[obj->rtype.vclip_info.framenum] );
+#ifdef DXX_XL_RUNTIME
+	{
+		int index = xl_pog_vclip_bitmap(obj->rtype.vclip_info.vclip_num, obj->rtype.vclip_info.framenum);
+		if (index < 0 && xl_pog_vclip_frames(obj->rtype.vclip_info.vclip_num)) {
+			Error("Invalid scoped powerup animation frame");
+			return;
+		}
+		if (index >= 0) {
+			bitmap_index bitmap;
+			bitmap.index = (ushort) index;
+			draw_object_blob(obj, bitmap);
+		} else
+#endif
+		draw_object_blob(obj, Vclip[obj->rtype.vclip_info.vclip_num].frames[obj->rtype.vclip_info.framenum] );
+#ifdef DXX_XL_RUNTIME
+	}
+#endif
 
 	#ifdef EDITOR
 	if (EditorWindow && (Cur_object_index == obj-Objects))

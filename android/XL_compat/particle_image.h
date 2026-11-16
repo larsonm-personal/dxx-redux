@@ -35,6 +35,7 @@ inline PogBitmap read_particle_image(const unsigned char *data, std::size_t size
 	if (result.frames > 128 || (result.frames > 1 && height != width * result.frames))
 		throw std::runtime_error("XL particle image has an invalid source frame layout");
 	result.truecolor = true;
+	result.rgb_opaque = channels == 3;
 	result.flags = pog_rgba;
 	result.pixels.resize(pixels * 4);
 	// CTGA::Load selects raw RGB/order for a nonzero yStart marker. Otherwise

@@ -251,8 +251,16 @@ struct ObjectDependencies {
 		// Pinned AIB_STATIC installs CT_NONE/MT_NONE, so no AI joint animation runs
 		if (!animated) return;
 		asset_require(r.n_guns >= 0 && r.n_guns <= MAX_GUNS, "robot gun count invalid");
-		for (int gun = 0; gun < r.n_guns; ++gun)
-			asset_require(r.gun_submodels[gun] < model_data[r.model_num].n_models, "robot gun references missing submodel");
+		for (int gun = 0; gun < r.n_guns; ++gun) {
+			// CalcGunPoint in both engines follows fixed header storage, including
+			// authored slots beyond the rendered submodel count
+			int part = r.gun_submodels[gun], remaining = MAX_SUBMODELS;
+			while (part) {
+				asset_require(part >= 0 && part < MAX_SUBMODELS && remaining-- > 0,
+				              "robot gun submodel chain is out of range or cyclic");
+				part = model_data[r.model_num].submodel_parents[part];
+			}
+		}
 		for (int gun = 0; gun <= r.n_guns; ++gun)
 			for (int state = 0; state < N_ANIM_STATES; ++state) {
 				const auto &j = r.anim_states[gun][state];

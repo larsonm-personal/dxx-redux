@@ -20,6 +20,7 @@ struct PogBitmap {
 	std::array<std::uint32_t, 4> transparent_frames{}, super_frames{};
 	std::array<unsigned char, 3> average_rgb{};
 	bool truecolor = false;
+	bool rgb_opaque = false; // Authored 24-bit TGA pixels have no alpha/key semantics
 	// Indexed records retain their validated encoded bytes. True-color records
 	// retain RGBA in source row/channel order, with XL's alpha/key normalization
 	std::vector<unsigned char> pixels;
@@ -33,4 +34,5 @@ struct PogBitmap {
 
 std::vector<PogBitmap> read_pog(const unsigned char *data, std::size_t size, unsigned max_bitmaps);
 void prepare_pog_rgba(PogBitmap &bitmap);
+void validate_pog_rgba(const PogBitmap &bitmap);
 } // namespace xl_compat

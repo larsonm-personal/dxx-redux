@@ -32,13 +32,19 @@ bool span(std::size_t size, std::size_t offset, std::size_t count)
 }
 } // namespace
 
-void prepare_pog_rgba(PogBitmap &bitmap)
+void validate_pog_rgba(const PogBitmap &bitmap)
 {
 	if (!bitmap.width || bitmap.width > 4096 || !bitmap.height || bitmap.height > 32767 || bitmap.frames > 128 || !bitmap.frames ||
 	    bitmap.frames != (bitmap.height / bitmap.width ? bitmap.height / bitmap.width : 1) ||
 	    (bitmap.frames > 1 && bitmap.height != bitmap.width * bitmap.frames) ||
 	    bitmap.pixels.size() != std::size_t(bitmap.width) * bitmap.height * 4)
 		throw std::runtime_error("POG RGBA dimensions or storage are invalid");
+}
+
+void prepare_pog_rgba(PogBitmap &bitmap)
+{
+	validate_pog_rgba(bitmap);
+	bitmap.rgb_opaque = false;
 	bitmap.flags = (bitmap.source_flags & pog_no_lighting) | pog_rgba;
 	bitmap.transparent_frames.fill(0);
 	bitmap.super_frames.fill(0);
@@ -89,7 +95,7 @@ void prepare_pog_rgba(PogBitmap &bitmap)
 
 int PogBitmap::transparency(std::size_t pixel) const
 {
-	if (!truecolor || pixel >= pixels.size() / 4) return 0;
+	if (!truecolor || rgb_opaque || pixel >= pixels.size() / 4) return 0;
 	const auto *p = pixels.data() + pixel * 4;
 	if (p[0] == 120 && p[1] == 88 && p[2] == 128) return -1;
 	return p[3] == 0 ? 1 : 0;

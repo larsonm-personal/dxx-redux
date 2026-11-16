@@ -67,6 +67,7 @@ void gr_init_bitmap( grs_bitmap *bm, int mode, int x, int y, int w, int h, int b
 	bm->bm_h = h;
 	bm->bm_flags = 0;
 	bm->bm_type = mode;
+	bm->bm_rgb_opaque = 0;
 	bm->bm_rowsize = bytesperline;
 
 	bm->bm_data = NULL;
@@ -138,6 +139,7 @@ void gr_init_sub_bitmap (grs_bitmap *bm, grs_bitmap *bmParent, int x, int y, int
 	bm->bm_h = h;
 	bm->bm_flags = bmParent->bm_flags;
 	bm->bm_type = bmParent->bm_type;
+	bm->bm_rgb_opaque = bmParent->bm_rgb_opaque;
 	bm->bm_rowsize = bmParent->bm_rowsize;
 
 #ifdef OGL

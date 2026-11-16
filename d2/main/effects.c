@@ -33,6 +33,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "textures.h"
 #include "cntrlcen.h"
 #include "dxxerror.h"
+#ifdef DXX_XL_RUNTIME
+#include "pog_resources.h"
+#endif
 #if defined(ANDROID) && defined(DXX_XL_RUNTIME) && defined(OGL_MERGE)
 #include "xl_animation_phase.h"
 #endif
@@ -82,7 +85,13 @@ void do_special_effects()
 			ec->time_left += ec->vc.frame_time;
 			
 			ec->frame_count++;
-			if (ec->frame_count >= ec->vc.num_frames) {
+			if (ec->frame_count >=
+#ifdef DXX_XL_RUNTIME
+			    xl_pog_effect_frames(ec)
+#else
+			    ec->vc.num_frames
+#endif
+			) {
 				if (ec->flags & EF_ONE_SHOT) {
 					Assert(ec->segnum!=-1);
 					Assert(ec->sidenum>=0 && ec->sidenum<6);
@@ -110,6 +119,9 @@ void restore_effect_bitmap_icons()
 	
 	for (i=0;i<Num_effects;i++)
 		if (! (Effects[i].flags & EF_CRITICAL))	{
+#ifdef DXX_XL_RUNTIME
+			xl_pog_apply_effect(i, 0);
+#endif
 			if (Effects[i].changing_wall_texture != -1)
 				Textures[Effects[i].changing_wall_texture] = Effects[i].vc.frames[0];
 	
@@ -130,13 +142,16 @@ void stop_effect(int effect_num)
 	ec->flags |= EF_STOPPED;
 
 	ec->frame_count = 0;
+#ifdef DXX_XL_RUNTIME
+	xl_pog_apply_effect(effect_num, 0);
+#endif
 	//*ec->bm_ptr = &GameBitmaps[ec->vc.frames[0].index];
 
 	if (ec->changing_wall_texture != -1) {
 		Textures[ec->changing_wall_texture] = ec->vc.frames[0];
 #if defined(ANDROID) && defined(DXX_XL_RUNTIME) && defined(OGL_MERGE)
 		dxx_xl_wall_mapped_phase(effect_num, ec->vc.frames[0].index,
-		                         ec->vc.num_frames, ec->vc.frame_time, 0, ec->vc.frame_time, 1);
+		                         xl_pog_effect_frames(ec), ec->vc.frame_time, 0, ec->vc.frame_time, 1);
 #endif
 	}
 	
