@@ -2497,7 +2497,7 @@ internal fun MusicInfoSection(
     setDir: File,
     refreshTrigger: Int,
     hasMidiSource: Boolean = false,
-    onEditMusic: () -> Unit = {},
+    onEditMusic: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -2578,12 +2578,14 @@ internal fun MusicInfoSection(
             fontWeight = FontWeight.SemiBold,
         )
         Spacer(modifier = Modifier.width(4.dp))
-        TextButton(
-            onClick = onEditMusic,
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-            modifier = Modifier.height(28.dp),
-        ) {
-            Text("Settings", fontSize = 12.sp)
+        if (onEditMusic != null) {
+            TextButton(
+                onClick = onEditMusic,
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                modifier = Modifier.height(28.dp),
+            ) {
+                Text("Settings", fontSize = 12.sp)
+            }
         }
         TextButton(
             onClick = { expanded = !expanded },

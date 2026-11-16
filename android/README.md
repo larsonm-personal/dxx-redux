@@ -251,7 +251,7 @@ and [PGS platform identity guidance](https://developer.android.com/games/pgs/pla
 
 ## crash reports
 
-- Crash reports are exportable from the launcher's Advanced page
+- Open the launcher's Settings gear, then Advanced, to export crash reports
 - If xCrash only shows the child exit stub or another incomplete native report, inspect the exported tombstone's `dxx-redux breadcrumbs` section before digging into gameplay logs
 - If the tombstone is missing custom sections or the crash callback only had emergency data, also inspect any exported `crash_error_*.txt` fallback report from the same Advanced page export
 

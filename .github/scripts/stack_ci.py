@@ -28,6 +28,7 @@ EXTENDED_PATHS = (
     "android/app/src/main/cpp/shared/net/*",
     "android/app/src/main/cpp/shared/coop/*",
     "android/app/src/main/cpp/shared/android_network_profile.*",
+    "android/tests/test_launcher_dpad.ps1",
     "android/app/src/main/java/com/dxxredux/app/lobby/*",
     "android/app/src/main/java/com/dxxredux/app/multiplayer/*",
     "android/tests/test_lan*",

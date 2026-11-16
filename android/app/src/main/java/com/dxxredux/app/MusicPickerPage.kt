@@ -125,6 +125,7 @@ internal fun buildCdPreviewTracks(
 fun MusicPickerPage(
     filesDir: File,
     controllerFocusActive: Boolean = true,
+    sectionTarget: String? = null,
     onBack: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
@@ -134,7 +135,7 @@ fun MusicPickerPage(
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
     val initialFocus = remember { FocusRequester() }
-    RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
+    RequestLauncherControllerFocus(initialFocus, controllerFocusActive && sectionTarget == null)
 
     var musicMode by remember {
         val stored = prefs.getString("music_mode", MUSIC_MODE_MIDI) ?: MUSIC_MODE_MIDI
@@ -241,19 +242,34 @@ fun MusicPickerPage(
                     selected = musicMode == MUSIC_MODE_MIDI,
                     onClick = { saveMusicMode(MUSIC_MODE_MIDI) },
                     label = { Text("MIDI") },
-                    modifier = Modifier.weight(1f).tvFocusBorder(),
+                    modifier =
+                        Modifier
+                            .weight(
+                                1f,
+                            ).settingsSectionTarget(SettingsSections.MUSIC_MIDI, sectionTarget)
+                            .tvFocusBorder(),
                 )
                 FilterChip(
                     selected = musicMode == MUSIC_MODE_CD,
                     onClick = { saveMusicMode(MUSIC_MODE_CD) },
                     label = { Text("CD Audio") },
-                    modifier = Modifier.weight(1f).tvFocusBorder(),
+                    modifier =
+                        Modifier
+                            .weight(
+                                1f,
+                            ).settingsSectionTarget(SettingsSections.MUSIC_CD, sectionTarget)
+                            .tvFocusBorder(),
                 )
                 FilterChip(
                     selected = musicMode == MUSIC_MODE_FILES,
                     onClick = { saveMusicMode(MUSIC_MODE_FILES) },
                     label = { Text("Audio Files") },
-                    modifier = Modifier.weight(1f).tvFocusBorder(),
+                    modifier =
+                        Modifier
+                            .weight(
+                                1f,
+                            ).settingsSectionTarget(SettingsSections.MUSIC_FILES, sectionTarget)
+                            .tvFocusBorder(),
                 )
             }
 
