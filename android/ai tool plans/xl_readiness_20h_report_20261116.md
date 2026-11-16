@@ -1,7 +1,7 @@
 # November 16 XL readiness tranche handoff
 
 This report records the explicitly invoked approximately 20-hour tranche,
-starting 02:03 UTC and targeting 22:03 UTC on November 16, 2026. It is the
+starting 02:03 UTC and targeting 22:03 UTC on November 16, 2026. It is the updated
 publication snapshot: local verification and preservation audits are complete;
 the checks identified as pending below must finish before acceptance. Exact
 post-publication head, merge, workflow attempts/outcomes and actual handoff time
@@ -20,20 +20,22 @@ stock-only 4/8 result remains separate. The explicitly authorized authentic
 Vertigo and XL camera resources are supplied through the private assets repo;
 they do not change the selected eight levels or their original archive bytes.
 
-Current rechecked readiness evidence is PR534 candidate
-6cea684bd8570f58e04ed6e7cf6c8d845b969d3a, private workflow43903630046 attempt1,
+Current hosted readiness evidence is PR536 candidate
+4caf3b48bcaaac6b6a273d0e15796f36b9a9949c, private workflow43911667597 attempt1,
 trusted controller71e6efb90419b8e8a2f4ceed116e5ab3871c80d2. Readiness artifact
-14246305024 has archive SHA256
-897d9dac1b19a87add4d3c9e48e64e170c9742b7f6ffee49240ab0bbee30d0ac.
-Its exact candidate, original ordered cases and authentic resources match the
-final ordinary Windows8/8 run in48.187s. That local result SHA256 is
-8bf7745cf224320a6729247bb168115493db2461791d1ed2344b1efc145b61b3.
-Other534CI remains pending at this snapshot.
+14248444528 has archive SHA256
+663f1b35599aab844df71569e25f46794b8a90b78551c4a644f77c06d7e10b8a.
+Its exact candidate, original ordered cases and authentic resources are verified.
+The ordinary Windows8/8 run at runtime checkpoint5346cea684b passes in48.187s;
+result SHA2568bf7745cf224320a6729247bb168115493db2461791d1ed2344b1efc145b61b3.
+Native/app source is unchanged since532, verified through current536; later
+changes concern test protection, diagnostics, selection and documentation.
+The Windows result is not relabeled as a new execution at536.
 
-The separate preceding PR532 host regression artifact14234840516 has archive SHA256
-41fac1e1e64407debf4bb4da4b7e509b94d644627afd107571a7d6bcfe910114,
-113 required checks passing, coverage_complete=false and missing-camera
-subchecks. A green required profile does not imply complete feature coverage.
+The same536 private workflow is terminal SUCCESS. Host artifact14251176405 has
+archive SHA256079449ccd4def6a4349254c36105ce2b716186ef7d1c0e32da3978af70974b9f,
+113 required checks passing, coverage_complete=false and missing-camera subchecks.
+A green required profile does not imply complete feature coverage.
 
 No additional tranche is required to reach this narrow 8/8 criterion. There is
 no evidence-backed finite estimate for whole G2-G7 or campaign completion.
@@ -44,11 +46,11 @@ no evidence-backed finite estimate for whole G2-G7 or campaign completion.
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Reproduce the merged ordinary baseline                 | Committed baseline receipt records Windows and no-display Linux7/8 at71e6efb9, with Boiling Point7 rejected; the older stock-only4/8 remains separate                                                                          |
 | Establish authored-resource ownership before admission | Native retained texture/definition owners, original TGA/strip semantics, malformed/foreign/precedence and independent incoming-owner controls are recorded in the execution plan and checkpoint PRs                            |
-| Preserve original readiness inputs and criterion       | Current534Windows and downloaded hosted receipts both pass the same ordered eight cases and120frames; resource revision, seed and original catalog are verified                                                                |
+| Preserve original readiness inputs and criterion       | Checkpoint534Windows and current536hosted receipts both pass the same ordered eight cases and120frames; resource revision, seed and original catalog are verified                                                              |
 | Qualify affected rendered and Android continuation     | Original pixels, live EGL ownership, Boiling/Sphere HOME and screen-lock transitions, normal movement/save/load, and Windows capture/replay controls pass within their documented scope                                        |
 | Preserve both games and platforms                      | Windows D1/D2 packages and ordinary three-ABI Android package are hash-verified; hosted Linux validation is identified separately from unavailable local WSL; ARM runtime is not claimed                                       |
 | Preserve user data and authentic inputs                | Current handoff audit matches13runtime files, catalog, four stashes, clean reference/assets repositories,32Windows package files and54Android libraries; all completed device runs restore protected profiles/APKs/preferences |
-| Publish only authorized immediate-parent PRs           | Stack517,518,520-532,534 is open and non-draft in the authorized fork; none was merged or queued; current534CI is pending                                                                                                      |
+| Publish only authorized immediate-parent PRs           | Stack517,518,520-532,534-536 is open and non-draft in the authorized fork; none was merged or queued; final CI remains open                                                                                                    |
 | Commit the final handoff and inspect its push          | This checkpoint contains the report, validation receipt, updated ledger, next plan and kickoff; final-push CI and post-publication receipt remain required before acceptance                                                   |
 
 ## Source, inputs and publication
@@ -56,7 +58,7 @@ no evidence-backed finite estimate for whole G2-G7 or campaign completion.
 The fresh stack starts from cmake 71e6efb90419b8e8a2f4ceed116e5ab3871c80d2.
 Only non-draft immediate-parent PRs in larsonm-personal/dxx-redux are authorized;
 none is merged, queued or set to auto-merge by this work. The verified chain
-begins with PR517, then518,520-532 and534; historical
+begins with PR517, then518,520-532 and534-536; historical
 PR 471 is retained as context. The earlier 519 reference does not resolve and
 must not be used as a stack identifier. The detailed plan records each checkpoint, head,
 immediate parent, merge identity, workflow attempts and retained diagnostics.
@@ -150,13 +152,49 @@ packaging its already built executable.
 
 ## Failures and remaining work
 
+The later PR534 selected workflow43903595453 attempt1 fails its first MIDI
+pause assertion in master:test_launcher_media_controls_generated. The original
+failure artifact14245318540 is retained. Two unchanged protected local runs,
+including one after a fresh emulator boot, pass MIDI/CD/MP3 controls. Neither
+establishes the hosted cause. A controlled user_setup_complete=0 negative
+retains FAIL/exit1 and demonstrates the new bounded failure diagnostics; setup,
+the complete protected profile, original APKs and preferences are restored.
+The validation JSON pins all three receipts and their before/after file hashes.
+
+PR536 adds those diagnostics and fixes the demonstrated CI-selection omission
+for the media helper, wrapper and JSON script. All six new edit/rename policy
+cases fail before the selection fix and pass afterward; all20 policy tests pass.
+No production playback timing, media assertion or test deadline changes.
+Its current candidate4caf3b48bcaaac6b6a273d0e15796f36b9a9949c passes selected
+workflow43911638595 attempt1. Android artifact14249228435 confirms all five
+selected owners executed and passed, including generated media controls;
+run29a62d9d978e49929972780080b987a0 passes2/2 steps in7073ms. Current private
+readiness also passes8/8 in artifact14248444528, with successful publication;
+private workflow43911667597 is terminal SUCCESS, with113required host checks
+passing in artifact14251176405. coverage_complete=false and missing-camera
+subchecks remain explicit. Remaining public checks are pending. The original media
+failure cause remains unproven; no production playback fix is claimed.
+Original534 attempt2 repeats the same first MIDI pause failure at7082ms;
+artifact14250796021 retains that result. The diagnostic536 Android job is now
+being repeated once to capture platform state if the failure recurs. Its first
+passing attempt remains evidence, but the newly requested execution must finish
+before acceptance. Neither534 failure is replaced or waived.
+
+The superseded536 candidatefa3f6ed46adae8c8c571e5afd92697a5d4beb646 produces8/8
+in artifact14246809811, but workflow43911030662's publication job fails its
+current-open-PR head provenance check after the branch advances. Both outcomes
+remain recorded. That artifact is not current-head acceptance, and the guard
+is unchanged. The report's initial publication snapshot and later investigation
+must be reconciled with terminal current-head CI before declaring completion.
+
 Historical private workflows for PR 518 (43806857739) and PR 520 (43808829854)
 remain failed at their old candidates despite their readiness jobs passing 8/8.
 Their six failing native owners were repaired in PR 521, exact candidate
 883ea2a5175a4b4ed36fec2b6b4d52610bc907ff, qualified locally and in hosted private
 workflow 43819147217. Subsequent private candidates through PR 532 pass. Do not
-relabel the two earlier workflows as green. The current public-workflow audit
-separately confirms eight passing public workflows for every published PR.
+relabel the two earlier workflows as green. The retained public-workflow snapshot
+confirms eight passing public workflows for PRs517,518 and520-532 only. It does
+not establish outcomes for the later lifecycle, handoff or media-diagnostic PRs.
 
 The first actual Android HOME/resume and screen-lock attempt,
 android-original-lifecycle-01, failed before gameplay when adb lost its server
