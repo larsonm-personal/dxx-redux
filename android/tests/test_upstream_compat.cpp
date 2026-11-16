@@ -146,6 +146,7 @@ int do_robot_dying_frame(object *, fix64, fix, sbyte *, int, fix, fix);
 void start_endlevel_flythrough(int n, object *obj, fix speed);
 void gameseq_init_network_players(void);
 void do_endlevel_flythrough(int n);
+void draw_stars();
 void apply_force_damage(object *obj, fix force, object *other);
 void kill_stuck_objects(int wallnum);
 void InitWeaponOrdering(void);
@@ -10068,6 +10069,74 @@ static void test_incomplete_endlevel_data()
 	}
 }
 
+#ifdef OGL
+static void test_endlevel_resource_lifetime()
+{
+	// This isolated draw precedes the level's normal palette activation
+	gr_palette_load(gr_palette);
+	const auto render_stars = [] {
+		gr_set_current_canvas(nullptr);
+		glClearColor(0, 0, 0, 1);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		g3_start_frame();
+		vms_vector eye = {};
+		vms_matrix orientation = vmd_identity_matrix;
+		g3_set_view_matrix(&eye, &orientation, F1_0);
+		draw_stars();
+		g3_end_frame();
+		bytes pixels(SWIDTH * SHEIGHT * 3);
+		glPixelStorei(GL_PACK_ALIGNMENT, 1);
+		GLint draw_buffer = 0, read_buffer = 0;
+		glGetIntegerv(GL_DRAW_BUFFER, &draw_buffer);
+		glGetIntegerv(GL_READ_BUFFER, &read_buffer);
+		glReadBuffer(draw_buffer);
+		glReadPixels(0, 0, SWIDTH, SHEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+		glReadBuffer(read_buffer);
+		const auto error = glGetError();
+		const auto visible = std::count_if(pixels.begin(), pixels.end(), [](ubyte value) { return value != 0; });
+		std::fprintf(stderr, "Starfield render: GL error=%u nonzero channels=%zu\n", unsigned(error), size_t(visible));
+		require(error == GL_NO_ERROR, "native endlevel starfield rendering has no GL errors");
+		require(visible != 0, "native endlevel starfield produces visible pixels");
+		return pixels;
+	};
+	const auto original = render_stars();
+	const auto sim_count = d_rand_get_call_count();
+	unsigned int sim_state = 0;
+	require(d_rand_get_state(&sim_state), "observe starfield SIM state");
+	nlohmann::json receipt = nlohmann::json::array();
+	for (int session = 0; session < 2; ++session) {
+		const auto pixels = render_stars();
+		const auto fx_count = d_rand_get_stream_call_count(D_RNG_FX);
+		unsigned int fx_state = 0;
+		require(d_rand_get_stream_state(D_RNG_FX, &fx_state), "observe starfield FX state");
+		for (int reload = 0; reload < 3; ++reload) {
+			// The resource teardown/reload used by gamedata_close/gamedata_init
+			free_endlevel_data();
+			init_endlevel();
+			unsigned int current_sim = 0, current_fx = 0;
+			require(d_rand_get_state(&current_sim) && current_sim == sim_state && d_rand_get_call_count() == sim_count,
+			        "endlevel resource reload preserves SIM state and draw count");
+			require(d_rand_get_stream_state(D_RNG_FX, &current_fx) && current_fx == fx_state &&
+			            d_rand_get_stream_call_count(D_RNG_FX) == fx_count,
+			        "endlevel resource reload does not regenerate the session starfield");
+			require(render_stars() == pixels, "endlevel resource reload preserves every rendered starfield pixel");
+			receipt.push_back({ { "session", session }, { "reload", reload }, { "sim_draws", 0 }, { "fx_draws", 0 }, { "pixels_equal", true } });
+		}
+		if (!session) {
+			close_game();
+			free_endlevel_data();
+			init_endlevel();
+			require(d_rand_get_stream_call_count(D_RNG_FX) - fx_count == 1500,
+			        "engine teardown and reentry generate exactly one new 500-star field");
+			init_game();
+			require(render_stars() != original, "new engine session owns freshly generated star positions");
+		}
+	}
+	const std::string output = receipt.dump(2) + "\n";
+	write_fixture("starfield-lifetime.json", bytes(output.begin(), output.end()));
+}
+#endif
+
 static void write_endlevel_lifetime_trace()
 {
 	using nlohmann::json;
@@ -10120,7 +10189,10 @@ static void write_endlevel_lifetime_trace()
 		require(input_demo_endlevel_trace_snapshot()["exit_segment"] == exit, "flyout uses its own reachable exterior");
 		require(d_rand_get_state(&observed_sim_state) && observed_sim_state == sim_state && d_rand_get_call_count() == sim, "starting the exit animation leaves SIM RNG untouched");
 		char active[] = "active-flyout.sav", description[21] = "Active flyout";
+		const auto pause_before_save = game_is_time_paused();
+		stop_time(); // The native save subroutine balances its caller's pause on every exit
 		require(!state_save_all_sub(active, description), "active flyouts cannot create incomplete gameplay checkpoints");
+		require(game_is_time_paused() == pause_before_save, "rejected flyout save balances only its caller's pause");
 		unsigned phases = 0;
 		bool explosion_seen = false;
 		for (int frame = 0; frame < 900 && Endlevel_sequence; ++frame) {
@@ -10378,7 +10450,11 @@ static void write_campaign_trace(const char *directory, const char *d2_directory
 	mouse_init();
 	gr_use_palette_table("palette.256");
 	gamefont_init();
+	const auto startup_fx_count = d_rand_get_stream_call_count(D_RNG_FX);
 	gamedata_init();
+	if (endlevel_only)
+		require(d_rand_get_stream_call_count(D_RNG_FX) - startup_fx_count == 1500,
+		        "first resource initialization generates exactly one 500-star field");
 #ifdef DXX_BUILD_DESCENT_II
 	d1_in_d2_init_startup_bitmaps();
 	char mission[] = "descent";
@@ -10387,6 +10463,9 @@ static void write_campaign_trace(const char *directory, const char *d2_directory
 #endif
 	texmerge_init(10);
 	init_game();
+#ifdef OGL
+	if (endlevel_only) test_endlevel_resource_lifetime();
+#endif
 	require(load_mission_by_name(mission), "select native campaign");
 	Player_num = 0;
 	N_players = 1;

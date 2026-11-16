@@ -32,6 +32,8 @@ void render_external_scene(fix eye_offset);
 void draw_exit_model();
 void free_endlevel_data();
 void init_endlevel();
+// Retire procedural presentation state at engine shutdown, not resource reload
+void close_endlevel();
 
 extern grs_bitmap *terrain_bitmap;  //*satellite_bitmap,*station_bitmap,
 extern int exit_segnum;

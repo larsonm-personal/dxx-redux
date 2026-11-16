@@ -5886,3 +5886,35 @@ remain reserved for validation, CI repair and committed handoff. This is a plan,
 not a new invocation or permission to merge. Sampled 4/8 remains a failed check;
 green applicable regressions alone do not make the stack fully green/merge-ready.
 The planning update is a separate immediate-parent child of PR 507 in stack 471.
+
+### November 14-15 new stack: native endlevel lifetime
+
+The next tranche was explicitly invoked at 22:37:54 PST November 14 after the
+previous stack was merged. Fresh stack base is cmake/origin
+5f8ab3535bec69b86a287f6516a5bddd6b81c383, with initial branch
+xl_gameplay_20261115_01_endlevel_lifetime. Deadline remains November 15 10:00 PST;
+06:00-10:00 is reserved for validation, CI repair and handoff. No agents or merges.
+
+Fresh exact ordinary developer-OFF headless route reproduces all four load
+failures with the pinned eight-case assets. Sampled readiness remains separately
+FAIL 4/8, including three HXM definition dependencies and one owned camera addon.
+No original asset, admission guard, deadline or assertion changed. Private logs
+and exact source/binary/input receipts are in temp/xl-gameplay-20261115.
+
+Both native endlevel owners now retain their procedural 500-star field across
+mission resource reloads and retire it at engine shutdown. The generation
+algorithm and RNG state are unchanged; no replay event filtering or compensation
+was introduced. The existing native flyout owner first reproduces redundant FX
+generation, then proves first initialization, six resource reloads across two
+engine sessions, visible pixel equality, unchanged SIM/FX state and real flyout
+presentation. Windows/Linux Debug D1 and D2 pass their complete three-flyout
+controls. Both platforms also pass the original fan-mission flyout controls.
+The fixture now supplies the native save subroutine's required caller pause when
+checking active-flyout rejection, retaining the native start_time assertion.
+
+Exit positioning, reactor flags and presentation dismissal remain explicit
+test assists. Android comparison and ordinary developer-OFF candidate owners are
+still pending; the recorded Android 3308-versus-1808 FX failure remains unqualified.
+Ordinary Android XL replay stays guarded. Full G2, corrupt-trailer energy 91 to
+100, missing definitions/camera semantics and broader G3-G7 acceptance remain
+open. See xl_gameplay_tranche_20261115.md for failure and qualification details.
