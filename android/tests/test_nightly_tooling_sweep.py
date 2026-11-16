@@ -1427,6 +1427,10 @@ Write-SuiteSetupStage 'launcher-reset'
             def run(command, *args, **kwargs):
                 self.assertFalse(source.exists())
                 self.assertFalse(destination.exists())
+                if command[0] == "bash":
+                    self.assertTrue(command[1].endswith("refresh_nightly_kvm_access.sh"))
+                    self.assertEqual(kwargs["timeout"], 60)
+                    return subprocess.CompletedProcess(command, 0)
                 self.assertEqual(command[:4], ["pwsh", "-NoProfile", "-File", str(root / "android/run_all_tests.ps1")])
                 self.assertEqual(
                     sweep.read(command[command.index("-SelectedTestsPath") + 1]), ["test_lan_three_player_startup"]
