@@ -11,7 +11,8 @@ xl_gameplay_tranche_20261115.md, the latest execution ledger, xl_ci_admission_20
 and xl_resource_tranche_20261113.md. Refresh actual HEAD/tree/stashes, published
 origin head, immediate parent, native stack and the final-push receipt before
 relying on CI. The previous merged stack is historical stack 471; the new stack
-starts with PR 509 from cmake. Never attach new work to merged branches by habit.
+is stack 511, starting with PR 509 from cmake, followed by PRs 510 and 512.
+Never attach new work to merged branches by habit.
 
 ## Ordered work
 
@@ -57,16 +58,25 @@ starts with PR 509 from cmake. Never attach new work to merged branches by habit
    before changing code; no deadline, assertion, trace completeness or pinned
    JSON relaxation. The D1 software test fixture also has older unguarded GL
    observers; its production target builds, but fixture execution is unqualified.
+8. Preserve the repaired terrain traversal boundary in both games. An off-grid
+   exterior camera previously overran save_row and corrupted height_array.
+   Keep the four-quadrant rendered owners and ordinary Android derived
+   flyout/cache owner. The Android fixture must wait for pause.can_resume;
+   do not bypass graphics pause ownership. This rendered regression evidence
+   remains separate from frozen readiness and unassisted campaign acceptance.
 
 ## Inputs, platform state and publication
 
 The frozen ordinary APK is
-temp/xl-gameplay-20261115/apk-ordinary-01/app-debug.apk, SHA256
-d41857cb8d0d762eed54bab3444794c9ae80d8f967a9462de126855b7db878f5,
+temp/xl-gameplay-20261115/apk-ordinary-02/app-debug.apk, SHA256
+504848a52babb1c5c286e1c013d52f436cf6d1ffeaddf725444d93a41172dbb5,
 all three ABIs and both games, developer probes OFF. It is restored on
 emulator-5554. The raw Gradle output may instead be the explicit x86_64 developer
-APK c8ebaa62f7d2b83cd8e753a1d3c816075f91412830e2237f2da64ec2111cf92e.
+APK 10c99a60de601c40e0313fe7cc5c1d8970ee865e519c6d1946cb008232100219.
 Always identify and verify the installed artifact and flags before testing.
+The developer build has version code 30610; the source-equivalent frozen
+ordinary debug build has 30600. Restoring that identified ordinary APK required
+adb install -r -d, preserving app data. Never uninstall to bypass the version check.
 
 Use a fresh explicit water OutputDirectory, the owner's exclusive backup and
 exact manifest restoration. Do not recover/reset/uninstall an emulator while

@@ -180,3 +180,31 @@ The exact candidate readiness remains separately 4/8, as on the baseline.
 See xl_gameplay_what_was_done_20261115.md for exact binary/APK/input hashes,
 failed receipts, assists and current CI. The final-push CI audit is still required;
 pending workflows and eligibility-based skips are not gameplay passes.
+
+## Supplemental Android flyout owner
+
+The ordinary APK's derived Pumo flyout/cache owner failed before flyout in
+android-flyout-01: Resume was correctly rejected while graphics validation held
+pause reason 8 alongside the overlay. Strengthen the existing paused-state wait
+with pause.can_resume, retaining its 20-second timeout and every flyout assertion.
+Validate the corrected existing owner on the same frozen ordinary APK in a fresh
+output directory. Preserve the failed receipt and exact protected-state manifests;
+this derived scenery/controlled-pose owner is separate from frozen readiness.
+
+The corrected wait exposes a native exterior crash in android-flyout-02.
+Symbolized PC 0x94891e is d2/main/terrain.c:217; save_row occupies 64 entries
+immediately before height_array in the crashing x86_64 library. Terrain painter
+loops use unclamped viewer grid coordinates, allowing off-grid cameras to write
+past save_row and corrupt height_array. Bound the traversal split to valid grid
+vertices in both native games, without changing camera position or terrain data.
+Extend the existing rendered flyout owner with all four off-grid quadrants,
+then rerun affected host/Android owners and preserve the failing APK and receipts.
+
+The terrain repair is published as non-draft PR 512, immediate parent PR 510,
+in native stack 511. Its runtime head is e086949010e07773c2c2e531485b507698a537a2.
+All six native flyout owners and four upstream contracts pass. Ordinary Android
+flyout/cache passes 19/19; ordinary water passes 59/59; complete Windows/Linux
+and Android developer replay comparisons pass. Frozen readiness remains 4/8.
+The identified ordinary APK 504848a52babb1c5c286e1c013d52f436cf6d1ffeaddf725444d93a41172dbb5
+is restored, its guard remains enforced and protected state matches. Final CI
+inspection and documentation push are the remaining handoff work.
