@@ -80,6 +80,53 @@ class RenderedReadinessTests(unittest.TestCase):
 
 
 class XlPrivateTests(unittest.TestCase):
+    def test_native_resource_stage_preserves_archive_identity_and_derived_definitions(self):
+        import xl_readiness as readiness
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source, stage = root / "source", root / "stage"
+            source.mkdir()
+            stage.mkdir()
+            ham = b"original robot definitions"
+            hog = b"DHF" + struct.pack("<13sI", b"d2x.ham", len(ham)) + ham
+            files = []
+            for relative, name, content in (
+                ("vertigo/d2x.hog", "d2x.hog", hog),
+                ("xl/d2x-xl.hog", "d2x-xl.hog", b"camera"),
+            ):
+                path = source / relative
+                path.parent.mkdir()
+                path.write_bytes(content)
+                files.append((relative, name, len(content), hashlib.sha256(content).hexdigest()))
+            with (
+                patch.object(readiness, "RESOURCE_FILES", tuple(files)),
+                patch.object(assets, "RESOURCE_FILES", tuple(files)),
+            ):
+                self.assertEqual(assets.native_resources(stage), {})
+                assets.stage_native_resources(source, stage)
+                parameters = assets.native_resources(stage)
+                self.assertEqual(parameters["XL_VERTIGO_HAM"].read_bytes(), ham)
+                self.assertEqual(parameters["XL_CAMERA_HOG"].read_bytes(), b"camera")
+                with self.assertRaises(FileExistsError):
+                    assets.stage_native_resources(source, stage)
+                parameters["XL_VERTIGO_HAM"].write_bytes(ham[:-1] + b"x")
+                with self.assertRaisesRegex(ValueError, "definitions differ"):
+                    assets.native_resources(stage)
+                parameters["XL_VERTIGO_HAM"].write_bytes(ham)
+                parameters["XL_CAMERA_HOG"].write_bytes(b"camerx")
+                with self.assertRaisesRegex(ValueError, "resource identity mismatch"):
+                    assets.native_resources(stage)
+                parameters["XL_CAMERA_HOG"].unlink()
+                with self.assertRaises(FileNotFoundError):
+                    assets.native_resources(stage)
+                (source / "vertigo/d2x.hog").write_bytes(hog[:-1] + b"x")
+                other = root / "other"
+                other.mkdir()
+                with self.assertRaisesRegex(ValueError, "resource identity mismatch"):
+                    assets.stage_native_resources(source, other)
+                self.assertFalse((other / "resources/d2x.ham").exists())
+
     def test_time_continuation_requires_fractional_native_restore_and_terminal_evidence(self):
         proof = dict(
             schema="xl-time-equipment-gameplay-v1",
@@ -512,6 +559,18 @@ class XlPrivateTests(unittest.TestCase):
                 self.assertEqual(
                     runner.validate_controller_summary(receipt, path, fast=True)["required_passed"], len(required)
                 )
+                provisioned = {**receipt, "resources": runner.resource_identity()}
+                self.assertEqual(
+                    runner.validate_controller_summary(provisioned, path, fast=True)["resources"],
+                    runner.resource_identity(),
+                )
+                for change in (
+                    {"resources": {}},
+                    {"resources": {**runner.resource_identity(), "commit": "0" * 40}},
+                    {"camera_subchecks": "not_run_missing_addon"},
+                ):
+                    with self.assertRaisesRegex(ValueError, "resource controls did not execute"):
+                        runner.validate_controller_summary({**provisioned, **change}, path, fast=True)
                 from nightly_pr_candidate import positive_receipt
 
                 checks = runner.validate_controller_summary(receipt, path, fast=True)
@@ -806,6 +865,11 @@ class XlPrivateTests(unittest.TestCase):
             with (
                 patch("sys.argv", ["runner", "--repo", str(root), "--work", str(work)]),
                 patch.object(runner, "verify", return_value={}),
+                patch.object(
+                    runner,
+                    "native_resources",
+                    return_value={"XL_CAMERA_HOG": root / "d2x-xl.hog", "XL_VERTIGO_HAM": root / "d2x.ham"},
+                ),
                 patch.object(runner, "reference_sources", return_value=root),
                 patch.object(runner.Path, "exists", return_value=True),
                 patch.object(runner.subprocess, "run", side_effect=command),
@@ -824,6 +888,14 @@ class XlPrivateTests(unittest.TestCase):
             self.assertEqual(argv[argv.index("--parallel") + 1], "1")
             self.assertEqual((work / "native-ctest.log").read_text(), "PRIVATE_OUTPUT\n")
             self.assertEqual(retail.xl_stage(work / "xl-progress.json"), "complete")
+            configure = next(
+                call[0] for call in calls if "-DBUILD_TESTING=ON" in call[0] and "-DXL_WARP_HOG=" in call[0]
+            )
+            self.assertIn("-DXL_CAMERA_HOG=" + str(root / "d2x-xl.hog"), configure)
+            self.assertIn("-DXL_VERTIGO_HAM=" + str(root / "d2x.ham"), configure)
+            self.assertEqual(
+                json.loads((work / "original-status.json").read_text())["resources"], runner.resource_identity()
+            )
 
     def test_original_pilot_inventory_remains_complete_and_unqualified(self):
         levels = [
@@ -1318,7 +1390,16 @@ class XlPrivateTests(unittest.TestCase):
                     assets.require_original_gpu_trace(path)
 
     def test_staging_zip_members_collisions_and_rollback(self):
-        for mode in ("valid", "missing", "bad-hash", "collision", "case-collision", "valid-modern", "bad-modern"):
+        for mode in (
+            "valid",
+            "missing",
+            "bad-hash",
+            "collision",
+            "case-collision",
+            "valid-modern",
+            "bad-modern",
+            "missing-resources",
+        ):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary) / "source"
                 destination = Path(temporary) / "stage"
@@ -1410,8 +1491,14 @@ class XlPrivateTests(unittest.TestCase):
                             with self.assertRaises(OSError):
                                 assets.verify(destination, modern=True)
                     else:
-                        with self.assertRaises(ValueError):
-                            assets.stage_inputs(root, destination, None, modern=modern)
+                        with self.assertRaises(FileNotFoundError if mode == "missing-resources" else ValueError):
+                            assets.stage_inputs(
+                                root,
+                                destination,
+                                None,
+                                modern=modern,
+                                resources=root if mode == "missing-resources" else None,
+                            )
                         self.assertFalse(destination.exists())
                 self.assertEqual((root / "pack.7z").read_bytes(), b"pack")
 

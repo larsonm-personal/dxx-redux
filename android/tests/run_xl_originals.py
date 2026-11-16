@@ -12,7 +12,8 @@ import time
 import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from xl_private_assets import verify
+from xl_private_assets import native_resources, verify
+from xl_readiness import resource_identity
 from nightly_retail import XL_STAGES
 from run_xl_navigation_smoke import run_anchors
 
@@ -262,6 +263,11 @@ def validate_controller_summary(receipt, junit, fast=False):
 
 
 def _validate_summary(receipt, required, fast):
+    resources = {}
+    if "resources" in receipt:
+        if receipt["resources"] != resource_identity() or receipt.get("camera_subchecks") != "executed":
+            raise ValueError("Provisioned XL resource controls did not execute with the pinned inputs")
+        resources["resources"] = resource_identity()
     experimental = receipt.get("experimental")
     if (
         type(receipt.get("required_passed")) is not int
@@ -298,6 +304,7 @@ def _validate_summary(receipt, required, fast):
             "navigation_smoke_milliseconds": elapsed,
         }
     return {
+        **resources,
         **navigation,
         "required_passed": len(required),
         "camera_subchecks": receipt["camera_subchecks"],
@@ -565,6 +572,8 @@ def main():
         "XL_STOCK_METADATA": stock / "main/dxx-redux-d2-headless-metadata",
         "XL_REFERENCE_GEOMETRY_ROOT": reference,
     }
+    resource_parameters = native_resources(stage)
+    parameters.update(resource_parameters)
     if not args.fast:
         parameters["XL_STOCK_ROUTE"] = stock / "main/dxx-redux-d2-headless-route"
     else:
@@ -593,6 +602,8 @@ def main():
             "-DXL_WARP_HOG=",
             "-DXL_WARP_DATA=",
             "-DXL_WARP_ENGINE=",
+            "-DXL_CAMERA_HOG=",
+            "-DXL_VERTIGO_HAM=",
             *["-D" + key + "=" + str(value) for key, value in parameters.items()],
         ]
     )
@@ -629,6 +640,8 @@ def main():
         log_path=work / "native-ctest.log",
     )
     receipt = native_receipt(report, result.returncode, fast=args.fast)
+    if resource_parameters:
+        receipt["resources"] = resource_identity()
     mark_stage(work, "format-probes", owner_started)
     formats = format_results(contracts / "xl_inspect", stage, work, data)
     mark_stage(work, "modern-probes", owner_started)
@@ -647,6 +660,8 @@ def main():
         receipt["navigation_smoke_milliseconds"] = round(navigation["seconds"] * 1000)
     mark_stage(work, "verify-receipt", owner_started)
     verify(stage, modern=args.fast)
+    if native_resources(stage) != resource_parameters:
+        raise ValueError("XL native resource provisioning changed during execution")
     receipt.update(
         required_tests=sorted(required),
         format_witnesses=formats + modern_count,

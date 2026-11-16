@@ -120,6 +120,10 @@ static void static_robot_native_controls(const std::filesystem::path &root, bool
 	ConsoleObject->mtype.phys_info.velocity = { 32 * F1_0, 0, 0 };
 	ConsoleObject->mtype.phys_info.rotvel = {};
 	ConsoleObject->mtype.phys_info.drag = 0;
+	// This contact probe coasts at a fixed velocity without a thrust controller
+	ConsoleObject->mtype.phys_info.flags &= ~PF_USES_THRUST;
+	ConsoleObject->mtype.phys_info.thrust = {};
+	ConsoleObject->mtype.phys_info.rotthrust = {};
 	FrameTime = F1_0 / 4;
 	const auto before = *ConsoleObject;
 	const int count = num_objects, awareness = Num_awareness_events;

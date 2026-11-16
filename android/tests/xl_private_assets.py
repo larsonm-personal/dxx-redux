@@ -11,6 +11,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "helpers"))
 from retail_ci_assets import file_identity, reject_links
 from nightly_corpus_stage import extract_archive, member_path
+from xl_readiness import RESOURCE_FILES, stage_resources, verify_resources
 
 ASSETS_COMMIT = "8c9988a96a7e306f8aac04c85e2610492917b7ac"
 MANIFEST_SHA256 = "cfa5a81f003958798cb37ee177f07b74c77812c4ab43d1986ccff37244347647"
@@ -117,6 +118,34 @@ def expected_files(data):
     return result
 
 
+def native_resources(stage):
+    resources = Path(stage) / "resources"
+    reject_links(resources)
+    if not resources.exists():
+        return {}
+    for _, name, _, _ in RESOURCE_FILES:
+        reject_links(resources / name)
+    verify_resources(resources)
+    ham = resources / "d2x.ham"
+    reject_links(ham)
+    original = hog_member(resources / "d2x.hog", "d2x.ham")
+    if file_identity(ham) != (len(original), hashlib.sha256(original).hexdigest()):
+        raise ValueError("XL staged Vertigo definitions differ from the original archive")
+    return {"XL_CAMERA_HOG": resources / "d2x-xl.hog", "XL_VERTIGO_HAM": ham}
+
+
+def stage_native_resources(source, stage):
+    source, resources = Path(source), Path(stage) / "resources"
+    reject_links(source)
+    reject_links(resources)
+    for relative, _, _, _ in RESOURCE_FILES:
+        reject_links(source / relative)
+    resources.mkdir()
+    stage_resources(source, resources)
+    (resources / "d2x.ham").write_bytes(hog_member(resources / "d2x.hog", "d2x.ham"))
+    native_resources(stage)
+
+
 def verify(stage, modern=False):
     stage = Path(stage)
     reject_links(stage)
@@ -146,10 +175,11 @@ def verify(stage, modern=False):
         for name, identity in MODERN_FILES.items():
             if file_identity(stage / name) != identity:
                 raise ValueError("XL modern original identity mismatch")
+    native_resources(stage)
     return data
 
 
-def stage_inputs(root, destination, seven_zip, modern=False):
+def stage_inputs(root, destination, seven_zip, modern=False, resources=None):
     root, destination = Path(root), Path(destination)
     reject_links(root)
     reject_links(destination)
@@ -212,6 +242,8 @@ def stage_inputs(root, destination, seven_zip, modern=False):
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(matches[0], target)
             shutil.rmtree(temporary)
+        if resources is not None:
+            stage_native_resources(resources, destination)
         verify(destination, modern=modern)
     except BaseException:
         shutil.rmtree(destination)
@@ -249,6 +281,7 @@ def main():
     mode.add_argument("--stage", type=Path)
     mode.add_argument("--gpu-trace", type=Path)
     parser.add_argument("--seven-zip")
+    parser.add_argument("--resources", type=Path, help="Separately pinned authentic Vertigo and XL resource checkout")
     parser.add_argument("--modern", action="store_true", help="Require the pinned original Boiling Point HOG")
     args = parser.parse_args()
     if args.gpu_trace:
@@ -256,8 +289,10 @@ def main():
         print("Verified four original GPU witnesses across two GL contexts")
         return
     if args.root:
-        stage_inputs(args.root, args.stage, args.seven_zip, modern=args.modern)
+        stage_inputs(args.root, args.stage, args.seven_zip, modern=args.modern, resources=args.resources)
     else:
+        if args.resources:
+            parser.error("--resources requires --root staging")
         verify(args.stage, modern=args.modern)
     print(
         "Verified pinned XL original fixtures and nine format witnesses"

@@ -316,6 +316,10 @@ if(BUILD_TESTING)
     set(XL_STOCK_METADATA "" CACHE FILEPATH "Unmodified D2 headless metadata executable")
     set(XL_STOCK_ROUTE "" CACHE FILEPATH "Unmodified D2 headless route diagnostic executable")
     set(XL_RETAIL_DATA "" CACHE PATH "Private retail D2 data directory")
+    set(XL_CAMERA_HOG "" CACHE FILEPATH
+                               "Pinned original XL camera addon for native resource controls")
+    set(XL_VERTIGO_HAM "" CACHE FILEPATH
+                                "Pinned original Vertigo robot definitions for native controls")
     set(XL_PREVIEW_LIFECYCLE "" CACHE FILEPATH "Isolated XL preview lifecycle executable")
     if(XL_NEPTUNE_HOG AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
         add_test(
@@ -586,6 +590,7 @@ if(BUILD_TESTING)
                 COMMAND
                     ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
                     -DDATA=${XL_RETAIL_DATA} -DDESCRIPTOR=${XL_NEPTUNE_DESCRIPTOR}
+                    -DCAMERA_HOG=${XL_CAMERA_HOG} -DVERTIGO_HAM=${XL_VERTIGO_HAM}
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/projectiles ${xl_projectile_args} -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/projectile.cmake)
             set_tests_properties(xl_projectiles PROPERTIES TIMEOUT 150)
@@ -681,8 +686,8 @@ if(BUILD_TESTING)
                 NAME xl_boss_spawning
                 COMMAND
                     ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
-                    -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/boss-spawning
-                    -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/boss_spawn.cmake)
+                    -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/boss-spawning -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/boss_spawn.cmake)
             set_tests_properties(xl_boss_spawning PROPERTIES TIMEOUT 90)
             set(xl_boss_route_args)
             if(TARGET xl_boss_routes_reference)
@@ -708,8 +713,7 @@ if(BUILD_TESTING)
                 COMMAND
                     ${CMAKE_COMMAND} -DHOG=${XL_NEPTUNE_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
                     -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/boss-groups
-                    ${xl_boss_oracle_args} -P
-                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/boss_groups.cmake)
+                    ${xl_boss_oracle_args} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/boss_groups.cmake)
             set_tests_properties(xl_boss_groups PROPERTIES TIMEOUT 90)
             add_test(
                 NAME xl_player_resources
@@ -874,7 +878,7 @@ if(BUILD_TESTING)
             COMMAND
                 ${CMAKE_COMMAND} -DHOG=${XL_APOCALYPTIC_HOG} -DENGINE=${XL_PREVIEW_LIFECYCLE}
                 -DDATA=${XL_RETAIL_DATA} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/hxm
-                -DWARP_HOG=${XL_WARP_HOG} -DWARP_DATA=${XL_WARP_DATA}
+                -DCAMERA_HOG=${XL_CAMERA_HOG} -DWARP_HOG=${XL_WARP_HOG} -DWARP_DATA=${XL_WARP_DATA}
                 -DWARP_ENGINE=${XL_WARP_ENGINE} ${hxm_reference_args} -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/hxm.cmake)
         set_tests_properties(xl_hxm_native PROPERTIES TIMEOUT 270)
