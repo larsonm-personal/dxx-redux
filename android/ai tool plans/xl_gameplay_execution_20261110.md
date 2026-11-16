@@ -5918,3 +5918,49 @@ still pending; the recorded Android 3308-versus-1808 FX failure remains unqualif
 Ordinary Android XL replay stays guarded. Full G2, corrupt-trailer energy 91 to
 100, missing definitions/camera semantics and broader G3-G7 acceptance remain
 open. See xl_gameplay_tranche_20261115.md for failure and qualification details.
+
+### November 15 qualification update: Android FX mismatch repaired
+
+PR 509 publishes def09a9e98f209088ad0c0de9b60d9739f5583fe against cmake,
+starting the fresh stack after historical stack 471 was merged. A non-draft
+immediate-parent qualification child records the evidence and next invocation.
+No merge, auto-merge, enqueue or upstream write is authorized or performed.
+
+The six final native Windows/Linux D1/D2 flyout/fan owners pass on test source
+65d715b5e36c82935f96f39d22579496742cb55713f30061900edde089766cb4.
+All four upstream contracts and both automation catalogs pass. Linux D1 software
+production builds; its shared test fixture still fails on older unguarded GL
+observers. All 61 pinned public XL source/reference/GPU/audio contracts pass.
+
+A new native water capture is compared without filtering to ordinary
+developer-OFF Windows and Linux playback and the Android developer probe.
+All three match 1235 object frames, 1239 world/XL records, 196 SIM events, 1808
+FX events and the embedded final result. Android's prior 3308-versus-1808 FX
+failure is therefore repaired for this captured route by genuine native owner
+lifetime, not trace or RNG compensation. Linux Debug's complete water owner
+passes in 29.032 s. Windows Debug's capture completes but its paired replay
+times out at frame 1145/1235 under the unchanged 60-second limit; retain that
+failed owner separately.
+
+Ordinary Android water passes all 59 steps. The ordinary all-ABI/both-game APK
+d41857cb8d0d762eed54bab3444794c9ae80d8f967a9462de126855b7db878f5 is restored
+and verified after the diagnostic APK. Protected manifests match exactly.
+Its ordinary XL timeline guard is explicitly exercised and rejects the capture;
+the expected negative owner exits 1 with no replay result and restores state.
+The game is stopped and no water backup remains. The raw Gradle APK is still
+the developer artifact; use the frozen identified ordinary APK for installation.
+
+The candidate's exact ordinary headless route again yields the same sampled
+FAIL 4/8 with pinned original assets. Missing HXM definitions/camera support,
+full G2 and corrupt-trailer energy 91-to-100, Android live capture-to-host,
+ordinary Android/true-headless XL admission and broad campaign acceptance remain
+open. All assists and retained failures are detailed in
+xl_gameplay_what_was_done_20261115.md. The prior readiness estimate remains
+conditional and low confidence; no finite unconditional 8/8 estimate is supported.
+
+At this checkpoint, new-candidate CI remains in progress. The standalone PR's
+extended and server workflows have eligibility-based execution skips, not
+gameplay passes. Private controller 43692210110 requests def09a9e9 using controller
+5f8ab3535bec69b86a287f6516a5bddd6b81c383. Final owner outcomes and final-push CI
+must be inspected before bounded handoff. Another tranche requires explicit
+invocation with new bounds; the replacement kickoff does not schedule it.
