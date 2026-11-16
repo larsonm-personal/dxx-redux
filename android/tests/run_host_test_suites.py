@@ -1226,10 +1226,11 @@ def run_suite(suite, repo, build_root, output, timeout):
             )
             if code:
                 return finish(
-                    "BLOCKED",
+                    "FAIL",
                     "Standalone CMake build failed; see log",
                     code,
-                    retryable=True,
+                    retryable=False,
+                    blocker_kind="build-failure",
                 )
         elif suite["kind"] == "extractor":
             source = target_file(repo, "android/app/src/main/cpp/extract")

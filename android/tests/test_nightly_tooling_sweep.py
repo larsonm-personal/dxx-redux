@@ -2973,6 +2973,45 @@ New-TestExecutionObservation -Context $context -Test $test -Result $result -Star
                     self.assertNotIn(owner["id"], successor["sampling"]["pending_order"]["host"])
                 self.assertEqual(owner["id"] in updated["failures"], status == "FAIL" and advanced)
 
+    def test_report_partitions_current_selection_without_historical_exclusion_overlap(self):
+        import nightly_sample as sample
+
+        policy, catalog = self.fixture()
+        policy["suites"] = [
+            dict(policy["suites"][0], id=f"master:owner_{i}", args={"suite": f"owner_{i}"}, estimated_seconds=10)
+            for i in range(8)
+        ]
+        catalog["tests"] = [{"name": e["args"]["suite"]} for e in policy["suites"]]
+        plan, state = sample.plan_sample(SHA, catalog, policy, core_ids=set())
+        receipt = self.receipt(plan)
+        rows = receipt["results"]
+        rows[1]["coverage_complete"] = False
+        rows[1]["comparison_only"] = True
+        rows[2]["status"] = "FAIL"
+        rows[3]["status"] = "TIMEOUT"
+        rows[4].update(status="BLOCKED", attempted_tests=False, retryable=False, blocker_kind="target-capability")
+        rows[5].update(status="BLOCKED", attempted_tests=False, retryable=True)
+        rows[6]["status"] = "NOT_RUN"
+        missing = rows.pop()["id"]
+        updated, coverage = sample.reconcile_sample(plan, policy, state, [receipt])
+        groups = sample.sample_status_ids(plan, coverage)
+        self.assertEqual([len(group) for group in groups.values()], [1, 1, 1, 1, 1, 1, 2])
+        flattened = [ident for group in groups.values() for ident in group]
+        self.assertEqual(len(flattened), len(set(flattened)))
+        self.assertEqual(set(flattened), set(plan["sampling"]["selected_sample_ids"]))
+        self.assertIn(missing, groups["pending"])
+        self.assertIn(rows[4]["id"], updated["runtime_excluded"])
+        self.assertNotIn(rows[4]["id"], groups["pending"])
+        # Prior exclusions carry no current evidence if this run has no receipt
+        self.assertEqual(
+            sample.sample_status_ids(plan, {"records": {}})["pending"], plan["sampling"]["selected_sample_ids"]
+        )
+        # Setup failures are visible failures but cannot advance traversal
+        rows[2].update(phase="setup", attempted_tests=False)
+        updated, coverage = sample.reconcile_sample(plan, policy, state, [receipt])
+        self.assertIn(rows[2]["id"], sample.sample_status_ids(plan, coverage)["fail"])
+        self.assertNotIn(rows[2]["id"], updated["done"])
+
     def test_report_requires_complete_core_coverage(self):
         import nightly_sample as sample
 

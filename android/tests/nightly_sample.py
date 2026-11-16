@@ -398,6 +398,25 @@ def collect_sample(plan, policy, lane, output, blocked_reason=""):
     return receipt
 
 
+def sample_status_ids(plan, coverage):
+    # Partition this selection only; historical exclusions are not current receipts
+    groups = {key: [] for key in ("pass_full", "pass_partial", "fail", "timeout", "excluded", "blocked", "pending")}
+    for ident in plan["sampling"]["selected_sample_ids"]:
+        row = coverage["records"].get(ident)
+        if row:
+            status = row["status"].lower()
+            if status == "pass":
+                status = "pass_full" if row.get("coverage_complete") is True else "pass_partial"
+        elif ident in coverage.get("excluded", {}):
+            status = "excluded"
+        elif ident in coverage.get("retryable", {}):
+            status = "blocked"
+        else:
+            status = "pending"
+        groups[status].append(ident)
+    return groups
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("plan", "report", "publish", "execute", "collect", "check-deadline"))
@@ -512,6 +531,7 @@ def main():
         )
     ]
     failures = [ident for ident, row in records.items() if row["status"] in ("FAIL", "TIMEOUT")]
+    statuses = sample_status_ids(plan, coverage)
     summary = {
         "target_sha": plan["target_sha"],
         "batch_id": plan["batch_id"],
@@ -519,7 +539,9 @@ def main():
         "core_without_pass": missing_core,
         "current_sha_records": records,
         "failures": failures,
-        "sample_pending": [ident for ident in plan["sampling"]["selected_sample_ids"] if ident not in records],
+        "sample_pending": statuses["pending"],
+        "sample_status_ids": statuses,
+        "sample_blocked_not_coverage": coverage.get("retryable", {}),
         "unavailable": plan["unavailable"],
         "excluded": plan["exclusions"],
         "historical_failures_not_current_sha_coverage": state["failures"],

@@ -1777,6 +1777,42 @@ class ObsidianExtractionTests(unittest.TestCase):
 
 
 class StandaloneCMakeTests(unittest.TestCase):
+    def test_build_failure_is_not_a_retryable_prerequisite_or_test_attempt(self):
+        for failed_phase in ("configure", "build"):
+            with self.subTest(phase=failed_phase), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory).resolve()
+                suite = adapter.load_suites()["cmake:etc2-limits"]
+                source = root / suite["source"]
+                source.mkdir(parents=True)
+                (source / "CMakeLists.txt").touch()
+                calls = []
+
+                class Process:
+                    def __init__(self, argv, **kwargs):
+                        calls.append(argv)
+                        self.phase = "build" if "--build" in argv else "configure"
+
+                    def wait(self, **kwargs):
+                        return 2 if self.phase == failed_phase else 0
+
+                with (
+                    patch.object(adapter.sys, "platform", "linux"),
+                    patch.object(adapter.shutil, "which", return_value="tool"),
+                    patch.object(adapter.subprocess, "Popen", Process),
+                ):
+                    code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
+                receipt = json.loads((root / "receipt.json").read_text())
+                build_failed = failed_phase == "build"
+                self.assertEqual(code, 1 if build_failed else 2)
+                self.assertEqual(receipt["status"], "FAIL" if build_failed else "BLOCKED")
+                self.assertEqual(receipt["blocker_kind"], "build-failure" if build_failed else "transient-prerequisite")
+                self.assertEqual(receipt["retryable"], not build_failed)
+                self.assertEqual(receipt["exit_code"], 2)
+                self.assertEqual(receipt["phase"], "setup")
+                self.assertFalse(receipt["attempted_tests"])
+                self.assertFalse(receipt["coverage_complete"])
+                self.assertFalse(any(argv[0] == "ctest" for argv in calls))
+
     def test_ctest_null_and_excluded_only_receipts_cannot_pass(self):
         for leaves, expected_code, passed, excluded, skipped in [
             ("", 2, 0, 0, 0),
