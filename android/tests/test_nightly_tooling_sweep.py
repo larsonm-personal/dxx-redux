@@ -3320,6 +3320,91 @@ class RefillNightlyTests(unittest.TestCase):
             self.assertEqual(sample.execute_refills(plan, policy, "host", Path(temporary)), 0)
             run.assert_not_called()
 
+    def test_live_collection_and_validation_scale_linearly_to_full_shard(self):
+        import nightly_sample as sample
+
+        policy, _, plan, _ = self.fixture(count=243)
+        for count in (25, 100, 243):
+            with self.subTest(count=count), tempfile.TemporaryDirectory() as temporary:
+                output = Path(temporary)
+                with (
+                    patch.object(sweep, "collect", wraps=sweep.collect) as collect,
+                    patch.object(sweep, "reconcile", wraps=sweep.reconcile) as reconcile,
+                    patch.object(sample, "refill_plans", wraps=sample.refill_plans) as derive,
+                    patch.object(sample, "write_artifact", wraps=sample.write_artifact) as write,
+                ):
+                    _, launched, receipt = self.run_fake(plan, policy, output, [1] * (count - 1) + [2880 - count])
+                self.assertEqual(len(launched), count)
+                self.assertEqual(len(receipt["refill_batches"]), count)
+                # One live check and one independent end recovery for every child
+                self.assertEqual(collect.call_count, 2 * count)
+                self.assertEqual(reconcile.call_count, 2 * count)
+                self.assertEqual(derive.call_count, 3)
+                aggregate_writes = [call for call in write.call_args_list if call.args[0] == output / "results.json"]
+                self.assertEqual(len(aggregate_writes), 1)
+
+    def test_live_cache_cannot_mask_changes_to_an_earlier_completed_receipt(self):
+        import nightly_sample as sample
+
+        policy, _, plan, _ = self.fixture(count=2)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            calls = []
+
+            def run(command, cwd, log, timeout):
+                child = sweep.read(command[command.index("--plan") + 1])
+                directory = Path(command[command.index("--output") + 1])
+                self.write_attempt(child, directory)
+                calls.append(child)
+                if len(calls) == 2:
+                    prior = output / "refill/0000/journal.jsonl"
+                    row = json.loads(prior.read_text())
+                    row["status"] = "FAIL"
+                    prior.write_text(json.dumps(row) + "\n")
+                return subprocess.CompletedProcess(command, 0)
+
+            with (
+                patch.object(sample.time, "time", return_value=101),
+                patch.object(sweep, "run_command", side_effect=run),
+            ):
+                with self.assertRaisesRegex(ValueError, "changed after collection"):
+                    sample.execute_refills(plan, policy, "host", output)
+            self.assertFalse((output / "results.json").exists())
+            # The workflow's later recovery must not erase an observed integrity failure
+            with self.assertRaisesRegex(ValueError, "integrity failure"):
+                sample.collect_refills(plan, policy, "host", output)
+
+    def test_interruption_recovers_durable_children_without_live_aggregate_rewrites(self):
+        import nightly_sample as sample
+
+        policy, _, plan, state = self.fixture(count=3)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            calls = []
+
+            def run(command, cwd, log, timeout):
+                self.assertFalse((output / "results.json").exists())
+                child = sweep.read(command[command.index("--plan") + 1])
+                calls.append(child)
+                if len(calls) == 2:
+                    self.assertTrue((output / "refill/0000/results.json").exists())
+                    raise KeyboardInterrupt()
+                self.write_attempt(child, Path(command[command.index("--output") + 1]))
+                return subprocess.CompletedProcess(command, 0)
+
+            with (
+                patch.object(sample.time, "time", return_value=101),
+                patch.object(sweep, "run_command", side_effect=run),
+            ):
+                with self.assertRaises(KeyboardInterrupt):
+                    sample.execute_refills(plan, policy, "host", output)
+            receipt = sweep.read(output / "results.json")
+            self.assertEqual(len(receipt["refill_batches"]), 2)
+            self.assertEqual([row["status"] for row in receipt["results"]], ["PASS", "NOT_RUN"])
+            self.assertEqual(sample.collect_refills(plan, policy, "host", output), receipt)
+            updated, _ = sample.reconcile_sample(plan, policy, state, [receipt])
+            self.assertEqual(len(updated["done"]), 1)
+
     def test_large_reservation_display_is_bounded_without_discarding_evidence(self):
         import nightly_sample as sample
 

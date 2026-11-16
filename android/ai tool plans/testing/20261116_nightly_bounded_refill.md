@@ -45,3 +45,24 @@ This PR must remain stacked on #539. No merge, history rewrite, cmake push, base
 - Scoped mixed-language formatting and diff whitespace checks passed
 
 Final full-suite and exact-head hosted checks are recorded in the PR. No actual one-hour hosted run or private-asset execution is claimed by these local tests. Review and deployment of this controller on cmake remain separate
+
+## Review follow-up: collection scaling
+
+Independent review found that live execution collected and reconciled every prior child after every completion. Replace this with one live collection/reconciliation per child, durable per-child receipts, and one independent full re-read at completion or handled interruption. Workflow recovery still independently reconstructs the full admitted prefix after a hard interruption. The aggregate is written once rather than rewritten after every child
+
+The final re-read compares each child's sanitized receipt with a digest retained in controller memory when that child completed. Changed or disappeared completed evidence prevents aggregate publication; a typed integrity-error marker prevents a subsequent recovery step from silently clearing an observed mismatch. Recovery still validates admission order, exact attempt/child/reservation identity, target and retail provenance. The aggregate validator now slices its already-verified ordered rows once instead of scanning all rows for each child
+
+Count-based regressions cover 25, 100 and 243 admissions with a fixed reservation: exactly 2N collection calls and 2N reconciliation calls (live plus full recovery), three queue derivations and one aggregate write. Additional tests modify an earlier completed receipt during a later child and interrupt execution before the next receipt exists
+
+A local no-payload benchmark uses the actual 3139-owner materialized policy and prefixes of a real 243-owner private shard. It writes synthetic child evidence and exercises actual controller collection/reconciliation; it does not execute tests, stage private assets or establish coverage. Each timing below is one warm local measurement, not a hosted performance guarantee
+
+| Controller | Children | Live execution plus final recovery (seconds) | Collection calls | Reconciliation calls | Separate fresh recovery (seconds) |
+| ---------- | -------: | -------------------------------------------: | ---------------: | -------------------: | --------------------------------: |
+| Before     |       25 |                                        4.028 |              350 |                  350 |                             0.293 |
+| After      |       25 |                                        0.587 |               50 |                   50 |                             0.306 |
+| After      |      100 |                                        2.549 |              200 |                  200 |                             1.152 |
+| After      |      243 |                                        5.399 |              486 |                  486 |                             2.364 |
+
+The old 243-child execution was not timed; its prefix algorithm performs 29889 collection and reconciliation calls each, versus 486 each after this change. Benchmark script and measurements are retained under temp/refill-scaling-20261116. The committed count-based tests enforce scaling without timing-dependent assertions
+
+Follow-up validation: all 150 planner/workflow tests pass after scoped formatting, including 18 refill tests. Automation catalog validation passes; the master catalog remains blocked by the same unsupported local /proc child-supervisor interface (exit 125). No baseline, timeout or coverage rule changed

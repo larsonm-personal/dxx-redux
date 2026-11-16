@@ -618,16 +618,27 @@ def validate_refill_receipt(plan, policy, receipt):
     expected_ids = [e["id"] for child in children[: len(admitted)] for e in child["tests"]]
     if [row.get("id") for row in rows] != expected_ids:
         raise ValueError("Refill receipt contains unadmitted or duplicate owners")
+    offset = 0
     for child in children[: len(admitted)]:
-        ids = {e["id"] for e in child["tests"]}
-        selected = [row for row in rows if row["id"] in ids]
+        # Exact ordered IDs were checked above; slice each row once
+        selected = rows[offset : offset + len(child["tests"])]
+        offset += len(selected)
         if any(row.get("refill_batch_id") != child["batch_id"] for row in selected):
             raise ValueError("Refill child receipt provenance mismatch")
         child_receipt = dict(receipt, batch_id=child["batch_id"], results=selected)
         sweep.reconcile(child, policy, sweep.fresh_state(child["target_sha"], child["catalog_hash"]), [child_receipt])
 
 
-def collect_refills(plan, policy, lane, output, blocked_reason=""):
+def collect_refill_child(child, policy, lane, directory):
+    if sweep.read(directory / "admission.json") != child["refill_parent"]:
+        raise ValueError("Invalid refill admission journal")
+    return sweep.collect(child, policy, lane, directory)
+
+
+def collect_refills(plan, policy, lane, output, blocked_reason="", expected_receipts=None):
+    integrity_error = output / "refill-integrity-error.json"
+    if integrity_error.exists():
+        raise ValueError("Refill evidence integrity failure requires investigation")
     policy = materialized_policy(policy)
     receipt = {key: plan[key] for key in ("schema", "target_sha", "catalog_hash", "batch_id")}
     if plan.get("retail_assets"):
@@ -640,11 +651,17 @@ def collect_refills(plan, policy, lane, output, blocked_reason=""):
         if not admission.exists():
             gap = True
             continue
-        if gap or sweep.read(admission) != child["refill_parent"]:
+        if gap:
             raise ValueError("Invalid refill admission journal")
-        collected = sweep.collect(child, policy, lane, directory)
+        collected = collect_refill_child(child, policy, lane, directory)
+        if expected_receipts is not None and expected_receipts.get(child["batch_id"]) != sweep.digest(collected):
+            write_artifact(integrity_error, {"schema": 1, "reason": "completed-evidence-changed"})
+            raise ValueError("Completed refill evidence changed after collection")
         receipt["refill_batches"].append(child["batch_id"])
         receipt["results"].extend(dict(row, refill_batch_id=child["batch_id"]) for row in collected["results"])
+    if expected_receipts is not None and receipt["refill_batches"] != list(expected_receipts):
+        write_artifact(integrity_error, {"schema": 1, "reason": "completed-evidence-disappeared"})
+        raise ValueError("Completed refill evidence disappeared after collection")
     if blocked_reason and not receipt["refill_batches"]:
         receipt["results"] = sweep.collect(plan, policy, lane, output / "unstarted", blocked_reason)["results"]
         receipt["provisioning_blocked"] = True
@@ -665,57 +682,70 @@ def execute_refills(plan, policy, lane, output):
     if (output / "refill").exists():
         raise ValueError("Refill execution requires a fresh output directory; recover existing receipts instead")
     failed = 0
-    for index, child in enumerate(refill_plans(plan, lane)):
-        if remaining() <= 0:
-            break
-        directory = output / "refill" / f"{index:04d}"
-        write_artifact(directory / "plan.json", child)
-        write_artifact(directory / "admission.json", child["refill_parent"])
-        command = [
-            sys.executable,
-            str(Path(sweep.__file__).resolve()),
-            "execute",
-            "--plan",
-            str(directory / "plan.json"),
-            "--policy",
-            str(Path(__file__).with_name("nightly_tooling_policy.json").resolve()),
-            "--lane",
-            lane,
-            "--repo",
-            "target",
-            "--output",
-            str(directory),
-            "--build-root",
-            str(output / "build"),
-        ]
-        timed_out = False
-        try:
-            budget = remaining()
-            if budget <= 0:
+    expected_receipts = {}
+    try:
+        for index, child in enumerate(refill_plans(plan, lane)):
+            if remaining() <= 0:
                 break
-            failed |= int(sweep.run_command(command, Path.cwd(), sys.stdout, timeout=budget).returncode != 0)
-        except subprocess.TimeoutExpired:
-            failed = 1
-            timed_out = True
-        finally:
-            receipt = collect_refills(plan, policy, lane, output)
-        if timed_out:
-            break
-        current = [row for row in receipt["results"] if row["refill_batch_id"] == child["batch_id"]]
-        # Stop on a setup/incomplete attempt instead of replaying a shared prerequisite
-        # A scoped capability exclusion may advance the queue, but grants no coverage
-        if any(
-            not (row["status"] in sweep.TERMINAL and row.get("attempted_tests") is True and row.get("phase") == "tests")
-            and not (
-                row["status"] == "BLOCKED"
-                and row.get("retryable") is False
-                and row.get("blocker_kind") == "target-capability"
-            )
-            for row in current
-        ):
-            failed = 1
-            break
-    collect_refills(plan, policy, lane, output)
+            directory = output / "refill" / f"{index:04d}"
+            write_artifact(directory / "plan.json", child)
+            write_artifact(directory / "admission.json", child["refill_parent"])
+            command = [
+                sys.executable,
+                str(Path(sweep.__file__).resolve()),
+                "execute",
+                "--plan",
+                str(directory / "plan.json"),
+                "--policy",
+                str(Path(__file__).with_name("nightly_tooling_policy.json").resolve()),
+                "--lane",
+                lane,
+                "--repo",
+                "target",
+                "--output",
+                str(directory),
+                "--build-root",
+                str(output / "build"),
+            ]
+            timed_out = False
+            try:
+                budget = remaining()
+                if budget <= 0:
+                    break
+                failed |= int(sweep.run_command(command, Path.cwd(), sys.stdout, timeout=budget).returncode != 0)
+            except subprocess.TimeoutExpired:
+                failed = 1
+                timed_out = True
+            finally:
+                collected = collect_refill_child(child, policy, lane, directory)
+                sweep.reconcile(
+                    child, policy, sweep.fresh_state(child["target_sha"], child["catalog_hash"]), [collected]
+                )
+                expected_receipts[child["batch_id"]] = sweep.digest(collected)
+            if timed_out:
+                break
+            current = collected["results"]
+            # Stop on a setup/incomplete attempt instead of replaying a shared prerequisite
+            # A scoped capability exclusion may advance the queue, but grants no coverage
+            if any(
+                not (
+                    row["status"] in sweep.TERMINAL
+                    and row.get("attempted_tests") is True
+                    and row.get("phase") == "tests"
+                )
+                and not (
+                    row["status"] == "BLOCKED"
+                    and row.get("retryable") is False
+                    and row.get("blocker_kind") == "target-capability"
+                )
+                for row in current
+            ):
+                failed = 1
+                break
+    finally:
+        # Child evidence is durable after each attempt. Re-read the full prefix once
+        # at completion/cancellation; never trust cached rows for publication
+        collect_refills(plan, policy, lane, output, expected_receipts=expected_receipts)
     return failed
 
 
