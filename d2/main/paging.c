@@ -209,6 +209,7 @@ void paging_touch_object( object * obj )
 
 		case RT_MORPH:	break;
 
+		case RT_THRUSTER:
 		case RT_FIREBALL: break;
 
 		case RT_WEAPON_VCLIP: break;

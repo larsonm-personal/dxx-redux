@@ -247,7 +247,10 @@ g3s_lrgb compute_light_emission(int objnum)
 	int compute_color = 0;
 	float cscale = 255.0;
 	fix hoardlight,s,light_intensity = 0;
-	g3s_lrgb lemission, obj_color = { 255, 255, 255 };
+	g3s_lrgb lemission = { 0, 0, 0 }, obj_color = { 255, 255, 255 };
+
+	if (obj->type == OBJ_FIREBALL && obj->render_type == RT_THRUSTER)
+		return lemission;
         
 	switch (obj->type)
 	{

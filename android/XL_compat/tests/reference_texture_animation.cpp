@@ -170,7 +170,7 @@ namespace release
 }
 #include "xl_reference_texture_animation.h"
 #include "xl_reference_vclip_animation.h"
-constexpr int RT_THRUSTER = 7, PF_WIGGLE = 32, OBJ_FIREBALL = 1, OBJ_EXPLOSION = 2, OBJ_WEAPON = 3, VF_ROD = 4;
+constexpr int RT_THRUSTER = 8, PF_WIGGLE = 32, OBJ_FIREBALL = 1, OBJ_EXPLOSION = 2, OBJ_WEAPON = 3, VF_ROD = 4;
 struct CFloatVector {
 };
 struct DrawObservation {
@@ -242,31 +242,33 @@ void texture_animation_source_controls()
 	for (int frames : { 5, 17, 30, 64 })
 		for (int frame = -1; frame <= frames; ++frame)
 			for (int type : { OBJ_FIREBALL, OBJ_EXPLOSION, OBJ_WEAPON })
-				for (bool rod : { false, true }) {
-					draw_clip.nFrameCount = frames;
-					draw_clip.flags = rod ? VF_ROD : 0;
-					CObject object;
-					object.info.nType = type;
-					// Negative CurFrame requires an explicit object clock; ordinary clocks wrap
-					const int remaining = frame < 0 ? draw_clip.xTotalTime : draw_clip.xTotalTime - frame * draw_clip.xFrameTime;
-					const int selected = CurFrame(&object, 4, remaining, frames);
-					drawn = {};
-					DrawVClipObject(&object, remaining, 0, 4, nullptr);
-					if (type == OBJ_FIREBALL && !rod) {
-						const auto material = xl_compat::fireball_material(selected, frames);
-						check(material.visible == (drawn.frame >= 0) && (!material.visible || material.color[3] == drawn.alpha),
-						      "Native fireball material differs from pinned draw policy");
-					}
-					if (selected >= 30) check(drawn.frame == -1, "Pinned vclip draw did not apply its 30-frame visibility bound");
-					else {
-						check(drawn.frame == selected && drawn.bitmap == selected + 100 && drawn.rod == int(rod), "Pinned vclip draw selection differs");
-						if (!rod) {
-							const float alpha = type == OBJ_WEAPON ? .7f : float(.8 - double(selected) / frames * .8);
-							check(drawn.alpha == alpha, "Pinned vclip material alpha differs");
+				for (bool rod : { false, true })
+					for (int render : { 2, RT_THRUSTER }) {
+						draw_clip.nFrameCount = frames;
+						draw_clip.flags = rod ? VF_ROD : 0;
+						CObject object;
+						object.info.nType = type;
+						object.info.renderType = render;
+						// Negative CurFrame requires an explicit object clock; ordinary clocks wrap
+						const int remaining = frame < 0 ? draw_clip.xTotalTime : draw_clip.xTotalTime - frame * draw_clip.xFrameTime;
+						const int selected = CurFrame(&object, 4, remaining, frames);
+						drawn = {};
+						DrawVClipObject(&object, remaining, 0, 4, nullptr);
+						if (type == OBJ_FIREBALL && !rod) {
+							const auto material = xl_compat::fireball_material(selected, frames);
+							check(material.visible == (drawn.frame >= 0) && (!material.visible || material.color[3] == drawn.alpha),
+							      "Native fireball material differs from pinned draw policy");
 						}
+						if (selected >= 30) check(drawn.frame == -1, "Pinned vclip draw did not apply its 30-frame visibility bound");
+						else {
+							check(drawn.frame == selected && drawn.bitmap == selected + 100 && drawn.rod == int(rod), "Pinned vclip draw selection differs");
+							if (!rod) {
+								const float alpha = type == OBJ_WEAPON ? .7f : float(.8 - double(selected) / frames * .8);
+								check(drawn.alpha == alpha, "Pinned vclip material alpha differs");
+							}
+						}
+						++draw_cases;
 					}
-					++draw_cases;
-				}
 	std::cout << "Pinned vclip draw frame/alpha policy: " << draw_cases << " controls\n";
 	auto &afterburner = gameData.effectData.animations[0][ANIM_AFTERBURNER_BLOB];
 	afterburner.xTotalTime = 65537;

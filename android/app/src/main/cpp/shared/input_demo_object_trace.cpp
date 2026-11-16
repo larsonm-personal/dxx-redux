@@ -180,6 +180,9 @@ json object_state(const object &o, int slot)
 		r["anim_angles"] = json::array();
 		for (int i = 0; i < MAX_SUBMODELS; ++i) r["anim_angles"].push_back(angles(p.anim_angles[i]));
 	} else if (o.render_type == RT_FIREBALL || o.render_type == RT_HOSTAGE ||
+#ifdef DXX_XL_RUNTIME
+	           o.render_type == RT_THRUSTER ||
+#endif
 	           o.render_type == RT_POWERUP || o.render_type == RT_WEAPON_VCLIP) {
 		const auto &v = o.rtype.vclip_info;
 		auto &r = out["vclip"];

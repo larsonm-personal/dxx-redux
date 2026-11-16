@@ -2,6 +2,80 @@
 #include "../xl_vclip_frame.h"
 extern "C" {
 #include "fireball.h"
+g3s_lrgb compute_light_emission(int objnum);
+void state_object_to_object_rw(object *, object_rw *);
+void state_object_rw_to_object(object_rw *, object *, int);
+void multi_object_to_object_rw(object *, object_rw *);
+void multi_object_rw_to_object(object_rw *, object *);
+void nd_write_object(object *);
+void nd_read_object(object *, int);
+}
+
+static void afterburner_demo_control(int slot)
+{
+	outfile = PHYSFSX_openWriteBuffered("thruster-object.bin");
+	require(outfile, "Cannot write thruster demo object");
+	nd_write_object(&Objects[slot]);
+	const auto length = PHYSFS_tell(outfile);
+	const uint8_t eof = 0;
+	require(PHYSFS_writeBytes(outfile, &eof, 1) == 1 && PHYSFS_close(outfile), "Cannot close thruster demo object");
+	outfile = nullptr;
+	for (int capacity_only : { 0, 1 }) {
+		infile = PHYSFSX_openReadBuffered("thruster-object.bin");
+		require(infile, "Cannot read thruster demo object");
+		object decoded{};
+		nd_read_object(&decoded, capacity_only);
+		require(PHYSFS_tell(infile) == length && PHYSFS_close(infile), "Thruster demo codec lost object framing");
+		infile = nullptr;
+		const auto &source = Objects[slot];
+		require(decoded.type == source.type && decoded.id == source.id && decoded.render_type == RT_THRUSTER &&
+		            decoded.rtype.vclip_info.vclip_num == source.rtype.vclip_info.vclip_num &&
+		            decoded.rtype.vclip_info.frametime == source.rtype.vclip_info.frametime &&
+		            decoded.rtype.vclip_info.framenum == source.rtype.vclip_info.framenum,
+		        "Thruster demo codec lost native vclip identity");
+	}
+}
+
+static void afterburner_identity_control(int slot)
+{
+	auto &source = Objects[slot];
+	require(source.render_type == RT_THRUSTER, "Afterburner lost its source thruster identity");
+	for (int colored : { 0, 1 }) {
+		const int previous = PlayerCfg.DynLightColor;
+		PlayerCfg.DynLightColor = colored;
+		const auto light = compute_light_emission(slot);
+		PlayerCfg.DynLightColor = previous;
+		require(light.r == 0 && light.g == 0 && light.b == 0, "Thruster incorrectly casts native dynamic light");
+	}
+	object_rw saved{};
+	state_object_to_object_rw(&source, &saved);
+	const auto original = saved;
+	object_rw_swap(&saved, 1, 1);
+	const auto reversed = [](const int &before, const int &after) {
+		const auto *a = reinterpret_cast<const unsigned char *>(&before);
+		const auto *b = reinterpret_cast<const unsigned char *>(&after);
+		return std::equal(a, a + sizeof(before), std::reverse_iterator<const unsigned char *>(b + sizeof(after)));
+	};
+	require(reversed(original.rtype.vclip_info.vclip_num, saved.rtype.vclip_info.vclip_num) &&
+	            reversed(original.rtype.vclip_info.frametime, saved.rtype.vclip_info.frametime),
+	        "Thruster native endian codec omitted its vclip fields");
+	object_rw_swap(&saved, 1, 1);
+	require(std::memcmp(&saved, &original, sizeof(saved)) == 0, "Thruster native endian codec changed its object payload");
+	object decoded{};
+	state_object_rw_to_object(&saved, &decoded, 1);
+	require(decoded.render_type == RT_THRUSTER && decoded.type == source.type && decoded.id == source.id &&
+	            decoded.rtype.vclip_info.vclip_num == source.rtype.vclip_info.vclip_num &&
+	            decoded.rtype.vclip_info.frametime == source.rtype.vclip_info.frametime &&
+	            decoded.rtype.vclip_info.framenum == source.rtype.vclip_info.framenum,
+	        "Thruster native save codec lost its vclip payload");
+	saved = {};
+	decoded = {};
+	multi_object_to_object_rw(&source, &saved);
+	multi_object_rw_to_object(&saved, &decoded);
+	require(decoded.render_type == RT_THRUSTER && decoded.rtype.vclip_info.vclip_num == source.rtype.vclip_info.vclip_num &&
+	            decoded.rtype.vclip_info.frametime == source.rtype.vclip_info.frametime &&
+	            decoded.rtype.vclip_info.framenum == source.rtype.vclip_info.framenum,
+	        "Native transport object conversion lost thruster vclip payload");
 }
 
 static void afterburner_segment_controls(const object &source)
@@ -149,6 +223,8 @@ static nlohmann::json afterburner_animation_control()
 				++found;
 				emitted_positions.insert({ object.pos.x, object.pos.y, object.pos.z });
 				require(object.type == OBJ_FIREBALL && object.id == VCLIP_AFTERBURNER_BLOB, "Afterburner created an unexpected object");
+				afterburner_identity_control(slot);
+				if (count == 0) afterburner_demo_control(slot);
 				const int duration = lifetime == -1 ? clip.play_time : lifetime;
 				const int period = lifetime == -1 ? 0 : int(int64_t(clip.frame_time) * lifetime / clip.play_time);
 				require(object.lifeleft == duration && object.rtype.vclip_info.frametime == period, "Native afterburner lost supplied lifetime or scaled period");
@@ -170,6 +246,9 @@ static nlohmann::json afterburner_animation_control()
 	auto *replacement = object_create_explosion(emitter.segnum, &emitter.pos, F1_0 / 16, VCLIP_AFTERBURNER_BLOB);
 	require(replacement && replacement - Objects == reused_slot && replacement->signature != old_signature,
 	        "Afterburner reuse control did not replace its native slot identity");
+	const auto ordinary_light = compute_light_emission(reused_slot);
+	require(replacement->render_type == RT_FIREBALL && (ordinary_light.r || ordinary_light.g || ordinary_light.b),
+	        "Ordinary fireball sharing the afterburner clip inherited thruster light suppression");
 	const auto after_reuse = xl_afterburner_animation_snapshot();
 	for (const auto &row : after_reuse["objects"])
 		if (row[0] == reused_slot) require(row[2] == 0 && row[3] == 0, "Afterburner slot reuse retained its old animation clock");
@@ -201,7 +280,9 @@ static nlohmann::json afterburner_animation_continuation()
 			if (object.type != OBJ_FIREBALL || object.id != VCLIP_AFTERBURNER_BLOB) continue;
 			int frame = -999;
 			require(xl_afterburner_frame(slot, object.id, object.lifeleft, Vclip[object.id].num_frames, &frame), "Afterburner continuation lost frame ownership");
-			frames.push_back({ slot, int(object.signature), int(object.lifeleft), frame });
+			const auto light = compute_light_emission(slot);
+			if (object.render_type == RT_THRUSTER) afterburner_identity_control(slot);
+			frames.push_back({ slot, int(object.signature), int(object.lifeleft), frame, int(object.render_type), light.r, light.g, light.b });
 		}
 		unsigned sim_state = 0;
 		require(d_rand_get_stream_state(D_RNG_SIM, &sim_state), "Cannot inspect afterburner continuation SIM state");
