@@ -194,6 +194,25 @@ void texture_animation_source_controls()
 		}
 	unsigned cases = 0;
 	unsigned vclip_cases = 0;
+	unsigned afterburner_cases = 0;
+	auto &afterburner = gameData.effectData.animations[0][ANIM_AFTERBURNER_BLOB];
+	afterburner.xTotalTime = 65537;
+	afterburner.xFrameTime = 4097;
+	afterburner.nFrameCount = 16;
+	for (int lifetime : { 0, 1, 16385, 32769, 65537, 98307, 131075 }) {
+		CObject object;
+		object.rType.animationInfo.xTotalTime = lifetime;
+		object.rType.animationInfo.xFrameTime = int(int64_t(afterburner.xFrameTime) * lifetime / afterburner.xTotalTime);
+		for (int frames : { 2, 16, 30, 128 })
+			for (int remaining = -1; remaining <= 2 * afterburner.xTotalTime; remaining += 257) {
+				check(dxx_xl_vclip_object_frame(afterburner.xTotalTime, afterburner.xFrameTime, frames, remaining,
+				                                object.rType.animationInfo.xTotalTime, object.rType.animationInfo.xFrameTime) ==
+				          CurFrame(&object, ANIM_AFTERBURNER_BLOB, remaining, frames),
+				      "Afterburner object lifetime frame differs from pinned source");
+				++afterburner_cases;
+			}
+	}
+	std::cout << "Pinned afterburner object lifetime frames: " << afterburner_cases << " controls\n";
 	// Cache-time setup initializes shared strips without consuming object RNG
 	for (int native_frames : { 4, 17, 30 }) {
 		for (int replacement_frames : { 2, 17, 30 }) {

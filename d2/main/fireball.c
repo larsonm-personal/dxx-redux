@@ -77,6 +77,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
+#ifdef DXX_XL_RUNTIME
+#include "afterburner_animation.h"
+#endif
 #ifdef __ANDROID__
 #include "escort.h"
 #endif
@@ -1850,16 +1853,26 @@ void drop_afterburner_blobs(object *obj, int count, fix size_scale, fix lifetime
 		vm_vec_avg(&pos_left, &pos_left, &pos_right);
 
 	segnum = find_point_seg(&pos_left, obj->segnum);
-	if (segnum != -1)
-		object_create_explosion(segnum, &pos_left, size_scale, VCLIP_AFTERBURNER_BLOB );
+	if (segnum != -1) {
+		object *blob_obj = object_create_explosion(segnum, &pos_left, size_scale, VCLIP_AFTERBURNER_BLOB );
+#ifdef DXX_XL_RUNTIME
+		if (blob_obj) xl_afterburner_lifetime(blob_obj - Objects, lifetime);
+#else
+		(void)blob_obj;
+#endif
+	}
 
 	if (count > 1) {
 		segnum = find_point_seg(&pos_right, obj->segnum);
 		if (segnum != -1) {
 			object	*blob_obj;
 			blob_obj = object_create_explosion(segnum, &pos_right, size_scale, VCLIP_AFTERBURNER_BLOB );
-			if (lifetime != -1)
-				blob_obj->lifeleft = lifetime;
+			if (blob_obj && lifetime != -1) {
+#ifdef DXX_XL_RUNTIME
+				if (!xl_afterburner_lifetime(blob_obj - Objects, lifetime))
+#endif
+					blob_obj->lifeleft = lifetime;
+			}
 		}
 	}
 }

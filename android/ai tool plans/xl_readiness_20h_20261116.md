@@ -992,3 +992,159 @@ entries. Readiness-render-replay-01 result SHA256 is
 ade77847235154ed43daad83cb80fcd604f217a0d8a666ec72f5132106dbe70d.
 The parent PR521 Linux shareware workflow has completed its build/save and
 admission jobs; its headed and headless replay jobs are still running.
+
+### Published render/replay checkpoint and next ownership work
+
+PR522 is non-draft with exact head b390131fd1e223469268b7d208e772235389316d,
+immediate parent 883ea2a5175a4b4ed36fec2b6b4d52610bc907ff and merge candidate
+6b8655d0c198addc195346459d9f9b9f075adfe5. Scoped formatting changed none of the
+tested files; the worktree was clean after commit. Public workflows start at
+07:22:34 UTC; Rust and asset-request pass initially. Private workflow 43823424233
+uses controller 71e6efb90419b8e8a2f4ceed116e5ab3871c80d2. Admission job 133151535035
+passes; readiness job 133151623747 and test selection are running. Retained online
+receipt inspection is skipped by selection. Other initial workflows are pending,
+not passes. Continue on immediate child xl_readiness_20261116_06_animation_lifetime.
+
+Next demonstrated animation dependency: original scoped vclip 95 afterburner
+lifetimes. Native drop_afterburner_blobs ignores a supplied lifetime for its first
+blob and only sets lifeleft on its second, without a null allocation check. Pinned
+main/dropobject.cpp retains per-object xTotalTime and a FixMulDiv-scaled xFrameTime
+for every successfully created blob when a lifetime is supplied. Pinned CurFrame
+in main/vclip.cpp first wraps remaining time by the base clip total, then uses
+the afterburner object's total/period when its period is nonzero. Preserve that
+order in the source comparison; do not infer birth duration from remaining time.
+
+Before implementation, finish tracing source CreateExplosion initialization and
+the native explosion render/save paths. Keep XL behavior in its runtime owner,
+with thin necessary native creation/render hooks. Retain exact earned duration
+and period with object/signature identity, clear on reuse/level retirement, and
+include them in trace and validated forward-save ownership. Test explicit and
+default lifetime, one/two blobs, allocation failure, low-bit fixed-point scaling,
+replacement strip frame selection, slot reuse and fresh-process save continuation.
+Extend the existing pinned CurFrame oracle, which currently covers only ordinary
+clip durations. Keep stock behavior separate and do not compensate RNG/replay.
+
+### Afterburner lifetime ownership implementation
+
+Source CreateFireball delegates to zero-initialized CreateObject; CreateExplosion
+sets the default life but leaves the per-object animation clock zero. Explicit
+lifetimes retain their total and scaled frame period in DropAfterburnerBlobs.
+The new XL afterburner owner retains total duration by slot/signature and reuses
+the native object's already-serialized vclip frametime for its period. Creation
+and level resets clear registry entries. Both native blobs apply the explicit XL
+lifetime, and allocation failure is checked before touching the second blob.
+Stock first-blob lifetime behavior remains unchanged.
+
+The shared frame helper now supports the source's optional object total/period,
+preserving base-clip wrapping before object-clock selection, including negative
+invisible frames and zero scaled periods. The extracted pinned CurFrame oracle
+passes 14308 afterburner controls across seven lifetimes and four frame counts;
+the rest of the original POG/TGA/animation source checks pass too.
+
+Forward XL state schema is now 42 and includes afterburner clocks. Restore checks
+complete live slot/signature bindings, integer bounds, remaining life, native
+period and scaled source timing before publishing. World traces and the strict
+parity validator require the same owner, including native object timing bindings.
+The first parity run passes 87 tests; a subsequent focused new corruption/binding
+test passes. Fresh captures are required for this prerelease schema change.
+
+build-afterburner-01 passes. native-afterburner-01 passes 15 real one/two-blob
+creation controls (default, one-tick and low-bit explicit lifetimes), five rejected
+corrupt owner states and native save/restore in 44.48 seconds. The subsequent
+native-afterburner-02 owner passes in 45.42 seconds, adding a separate-process
+restore from the native disk save and exact continuation over three normal
+simulation ticks. Remaining lifetimes, selected frames, owner records and SIM RNG
+all match. Full rendered capture/replay and cross-platform qualification remain
+pending. Existing native weapon-order/changing-light warnings remain unchanged.
+
+Allocation exhaustion through real nonreclaimable objects and actual slot reuse
+are added next; build-afterburner-03 passes and native-afterburner-03 is running.
+No new watchdog increase or replay compensation is introduced. These changes are
+unpublished and require the remaining qualification before their own checkpoint.
+
+PR522 private workflow 43823424233 is terminal success. Downloaded readiness
+confirms exact b390131fd1e223469268b7d208e772235389316d at 8/8; result SHA256 is
+5b276c9125faedd8a3431fa471d3e582bff822641e1cdf69e2b5a3adb9822722.
+Downloaded host receipts confirm 113 required checks passed. Camera subchecks
+remain not_run_missing_addon and coverage_complete=false. Skipped online,
+developer Release, Pumo and Android/JVM lanes remain explicit noncoverage.
+
+native-afterburner-03 completes PASS in 45.09 seconds with actual allocator
+exhaustion, replacement of a deleted slot/signature, the 15 lifetime controls,
+five corrupt-state controls, native disk restore and the separate-process
+three-tick continuation/SIM comparison. Its source-receipt.json pins current
+uncommitted source, binary, original inputs and output hashes. Android x86_64
+D1/D2 compilation passes in 19 seconds. The full updated parity suite passes
+88 tests in 77.831 seconds. Original replacement-strip consumption, fresh full
+rendered capture/replay, ordinary readiness and Linux qualification of this new
+candidate remain pending before publication. Prior PR522 receipts do not qualify
+these unpublished changes. All four protected stashes remain unchanged.
+
+Fresh schema-42 rendered qualification: build-afterburner-rendered-01 passes.
+omega-afterburner-capture-01 passes in 20.797 seconds under the unchanged
+45-second timeout: 242 recorded frames, 66 warmup frames, two positioning and
+one inventory assist before recording, none during recording. Renderer SHA256
+76800469611754cede27787f5d970f8b933f70d0d1822e7cbe7d0683c721a7da;
+demo SHA256 b9ba19c8a7672b253eb3af934431508fbd80171530856f2a1e0afb015919bdae.
+omega-afterburner-replay-01 exits cleanly and the strict wrapper passes. Full
+comparison passes 242 frame/object snapshots, 246 world records, 3552 SIM events,
+436 FX events and the exact trailer. Comparison SHA256 is
+c8881b3f998f3a1241056d173aaae15f5ccf2d1bce3d31e5068a100d0d26bcef.
+Its source-receipt.json verifies unchanged code against native-afterburner-03 and
+pins binary, capture and comparison artifacts. This covers the new checkpoint
+and world-trace schema, not dedicated afterburner replacement-strip rendering.
+Original-strip consumption, ordinary developer-OFF readiness and Linux candidate
+qualification remain pending. PR522 engine smoke 43823401816 is now success;
+Linux shareware 43823401815 remains in progress at the last inspection.
+
+Ordinary candidate qualification: build-afterburner-ordinary-01 passes metadata,
+route and HAM validation targets with DXX_XL_DEVELOPER_TESTS=OFF. The subsequent
+readiness-afterburner-01 passes all eight pinned original levels at the unchanged
+120-frame criterion. Its source-receipt.json verifies source stability through
+the run and records uncommitted candidate hashes, binary and result hashes;
+target_sha identifies parent b390, not a published afterburner candidate.
+
+Correction to the planned original strip control: retained audit-vclip-native-02,
+audit-vclip-ticks-01 and reusable-texture-vclip-01/02 receipts identify Warp Shock
+level 6 clip 95, mods/wshock20/textures/exp23#0.tga, five native/replacement frames
+and period 5242. Use that verified original mission for real blob creation and
+retained-strip consumption; the earlier Boiling Point assumption was unsupported.
+The schema-42 Omega replay confirms state/trace plumbing but alone does not prove
+live afterburner objects exercise the replacement strip. That control and Linux
+qualification remain outstanding before publication.
+
+Original afterburner strip consumer added through the existing texture-audit
+runner (--mode afterburner). It retains an independent original mission descriptor
+and decoded strip, starts actual Warp Shock level 6, creates six native blobs
+(default, 32769 and 98307 lifetimes, two each), and advances 120 normal gameplay
+ticks. It compares selected pixels and transparency against the independent
+original owner, requires every authored frame, and verifies all blobs retire.
+This is native gameplay/bitmap-consumer coverage, not raster-output certification.
+
+native-afterburner-strip-01 failed during independent-owner setup because the
+preparation call required a retained descriptor; no gameplay result was obtained.
+That receipt is preserved. The test now supplies an owned mission descriptor.
+After scoped formatting and a successful native rebuild,
+native-afterburner-strip-02 passes in 5.781 seconds: 300 pixel comparisons, all
+five frames and six retired blobs, with authentic inputs unchanged. Source image
+mods/wshock20/textures/exp23#0.tga SHA256 is
+197c44ad09e5ec6b0abace877c1e6bc172bc1dacc7e6f4837e110076f068f70b.
+Report SHA256 is 7151c3f2700f4b0dcc82a71389c033622cd28de1e8bbe3a1554d828c7643cdf1.
+Its source-receipt.json pins candidate sources and binary. Only developer test
+code and the reusable runner changed after the ordinary readiness/rendered replay
+qualification; runtime implementation remains unchanged. Linux candidate coverage,
+remaining final contract/format review and publication are still pending.
+
+Both afterburner catalog checks are terminal PASS: automation validation reports
+99 standalone JSON tests, 549 support scripts and 315 standalone PowerShell tests;
+master-runner integration reports 428 top-level entries and 549 support scripts.
+These checks validate catalog wiring only and do not execute device gameplay.
+
+Afterburner checkpoint review: all 51 standard Debug contracts pass in 50.00
+seconds (test-afterburner-contracts-01.xml). Final scoped mixed-language formatting
+passes and changes only plan Markdown; all tested code hashes remain unchanged.
+Four protected stashes are unchanged. Origin immediate parent is still
+b390131fd1e223469268b7d208e772235389316d on PR522. Publish the locally qualified
+child now to obtain exact-candidate hosted Linux and private-asset CI; local
+qualification does not imply hosted acceptance. PR522 Linux shareware workflow
+43823401815 is still in progress, while its other public workflows are successful.

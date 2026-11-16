@@ -82,6 +82,21 @@ if(NOT result EQUAL 0)
     message(FATAL_ERROR "XL preview lifecycle failed: ${result}; see ${fixture}")
 endif()
 file(READ "${fixture}/preview.log" report)
+if(PILOT_DESCRIPTOR AND PILOT_HOG)
+    execute_process(
+        COMMAND "${PREVIEW}" -afterburner-resume 1 -hogdir "${DATA}" -extra-dir "${fixture}"
+                -userdir "${fixture}/preview-user"
+        RESULT_VARIABLE afterburner_result
+        TIMEOUT 30
+        OUTPUT_FILE "${fixture}/afterburner-resume.log"
+        ERROR_FILE "${fixture}/afterburner-resume-error.log")
+    if(NOT afterburner_result EQUAL 0)
+        message(
+            FATAL_ERROR
+                "Fresh-process afterburner continuation failed: ${afterburner_result}; see ${fixture}"
+        )
+    endif()
+endif()
 if(LEVEL_TWO_ROUTE
    AND NOT
        report

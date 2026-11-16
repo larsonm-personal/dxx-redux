@@ -1,6 +1,7 @@
 #include "object_birth.h"
 #include "preview.h"
 #include "camera_collision.h"
+#include "afterburner_animation.h"
 #include <array>
 #include <algorithm>
 #include <set>
@@ -27,11 +28,13 @@ extern "C" void xl_object_birth_clear(void)
 	births.fill({});
 	next_order = 0;
 	xl_camera_hit_state_clear();
+	xl_afterburner_animation_clear();
 }
 extern "C" void xl_object_birth_created(int owner)
 {
 	if (owner < 0 || owner >= object_capacity()) return;
 	xl_camera_hit_state_created(owner);
+	xl_afterburner_animation_created(owner);
 	if (xl_level_extensions_active() && next_order == UINT64_MAX - 1) Error("XL object creation order exhausted");
 	births[owner] = xl_level_extensions_active() ? Birth{ Objects[owner].signature, GameTime64, ++next_order } : Birth{};
 }
