@@ -6088,13 +6088,13 @@ evidence changes, .codex/, all four stashes and authentic originals are retained
 The new approximately20-hour invocation starts from merged cmake
 71e6efb90419b8e8a2f4ceed116e5ab3871c80d2. Detailed execution and failed receipts
 are indexed in xl_readiness_20h_20261116.md. The fresh immediate-parent stack is
-517,518,520-531 (stack519, historical471); nothing is merged or queued.
+517,518,520-532 (stack517, historical471); nothing is merged or queued.
 This entry records qualified progress, not completion of G2-G7 or the tranche.
 
 The unchanged eight selected levels now pass the original120unassisted-frame
 criterion on ordinary developer-OFF Windows and exact-candidate hosted Linux.
-PR531 candidate3ef353765d797ccb4bce0eac802da4f9fe49b103 has a downloaded8/8
-receipt in private run43877406263 attempt1, under controller71e6efb9. Inputs remain
+PR532 candidate7936cd671c6396464384468103484d79c8df16a0 has a downloaded8/8
+receipt in private run43881996802 attempt1, under controller71e6efb9. Inputs remain
 cohort9dad21bd65ba05665ac6fe315f37fe7461e85725 and authorized private authentic
 resourcesdc6565f6b5400d7c700fa8378e766b2354b6ceb6. Historical stock-only4/8
 remains separate. Zero additional tranches are needed for this narrow8/8 measure;
@@ -6130,7 +6130,12 @@ controller movement, normal saving and fresh-process normal menu loading pass,
 with native-written pilot unlocks and no pose/inventory assists. Original input,
 APK, profile and preference restoration are verified. Sphere2 full-original-archive
 import, controller/save and cold-load coverage also passes20/20 and8/8, with
-exact protected state restoration. None proves connected combat, earned key/exit progression,
+exact protected state restoration. Boiling Point7 actual HOME/resume and screen-
+lock cycles now pass35/35 warm checks and8/8 cold checks: two EGL recreations,
+two parks/wakes, restored controller movement and exact protected-state recovery.
+Three earlier infrastructure/import failures remain retained as failures; the
+passing retry followed a verified same-AVD graceful restart, without changing
+gameplay deadlines or assertions. None proves connected combat, earned key/exit progression,
 a whole original level completion, physical-device play or a campaign.
 
 G6 progress: fresh original Warp Shock Omega capture and clean replay compare
@@ -6141,8 +6146,10 @@ samples and four deliberate live-owner EGL recreations. Ordinary all-three-ABI
 APK builds; only x86_64 device execution is claimed. Android startup1500FX draws,
 startup route-metadata differences and the ordinary timeline guard remain open.
 
-G7 remains in progress: all eight public workflows for517-529 now pass;530/531
-still have pending checks at this snapshot. Private readiness is provisioned, but
+G7 remains in progress: all eight public workflows for all15published PRs through
+532 pass at their exact current heads. Historical private runs for518and520
+remain failed; their six native-owner failures were repaired and qualified in521.
+Subsequent private candidates through532 pass. Private readiness is provisioned, but
 the trusted host regression controller predates527's camera/Vertigo provisioning
 change. Its passing required profile explicitly has coverage_complete=false and
 missing-camera subchecks; candidate workflow text is not controller deployment.
