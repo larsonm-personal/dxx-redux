@@ -65,7 +65,11 @@ static inline int etc2tool_level_sizes(int width, int height,
 static inline int etc2tool_image_layout(int width, int height, int channels,
                                         int generate_mips, struct etc2tool_layout *layout)
 {
+#ifdef __cplusplus
+	struct etc2tool_layout result = {};
+#else
 	struct etc2tool_layout result = { 0 };
+#endif
 	int mip_width;
 	int mip_height;
 
