@@ -2092,3 +2092,44 @@ Final Android-animation catalog checks pass: 99 standalone JSON tests, 549
 support scripts, 315 standalone PowerShell tests and 428 top-level entries.
 All seven tested code-source hashes still match the final device receipt; only
 this explanatory plan has advanced since that receipt.
+
+### Live retained Android texture across EGL recreation
+
+PR529 publishes5905842d2a6e8cee79892c68532f1f11495a3438 on parent528.
+Its eight public workflows and private run43870270594 are executing.
+The next scoped qualification keeps the retained original owner alive while
+destroying and recreating the actual EGL context between authored frames.
+Use existing graphics teardown/reinitialization, preserve decoded CPU views,
+effect state and RNG, and require later original-pixel readback with the
+fallback input still hidden. This addresses graphics recreation during a live
+level; prior two-context runs retired the owner before recreating EGL.
+
+Android-live-context-01 passes both games and all112draws/336pixel samples.
+Four original-owner sequences destroy/recreate actual EGL contexts at frame3,
+then require correct original pixels through cycle wrap. The CPU display buffer,
+whole-strip physics address/content, native effect state and SIM/FX RNG remain
+unchanged, and fallback input stays hidden. Original owner retirement still
+restores eight authored frames and removes all borrowed physics views.
+This qualifies deliberate context teardown/recreation, not spontaneous driver
+context loss, Activity lifecycle or ordinary Android timeline replay.
+No new compiler warnings; installed APK/four preferences/stopped state unchanged.
+Receipt android-live-context-01/receipt.json SHA256
+d452d2e15cab6f711da03802b4b405f19ad99a05dbfe52c605531a29900ba8c9;
+D2 fixture SHA256b49c33b6e8b438dbef4e08d9d37ca70027f63c6480872ff906d5958371b7bcb3.
+All53private-assets tests pass, including missing/false/nonboolean recreation
+rejection. Source changes after receipt only clarify verifier output and this plan.
+
+PR528 private43866044450 attempt1 terminalsuccess: downloaded readiness and
+host artifacts identify6eefbb53af47b55ffa3a00b2b976217369e3bf29. Readiness8/8;
+host coverage_complete=false/missingcamera remain explicit. Artifact14226076958
+archiveSHA2567d070a68a072309e0d073e79dad306271a900c46b18f7fa0ac9ca11eaa69fec5;
+host14226478987 archiveSHA25633b5e326e138be2c472f3adc16a747a14ffa3c6ad4591dafd8ca13ee9a23fce9.
+PR527 sevenpublicPASS/sharewarepending;528 sixPASS/engineandsharewarepending.
+Their PR bodies now record exact candidate evidence and controller limitation.
+
+Final scoped formatting and both catalog owners pass (99 standalone JSON,
+549 support scripts, 315 PowerShell tests, 428 top-level entries). The final
+verifier rechecks the actual device trace successfully; compiled fixture and
+unit-test source hashes still match the receipt. Protected stashes and pinned
+XL reference tree remain unchanged. PR529 private Linux owner is still live;
+readiness and admission jobs passed, with full-run acceptance pending.
