@@ -357,6 +357,10 @@ static int named_audio_test(int argc, char **argv)
 			Game_suspended = SUSP_ROBOTS;
 			GameTime64 = 10 * F1_0;
 			require(xl_source_level_version() == (ordinal == 1 ? 23 : 27) && Num_triggers == 10 && xl_object_trigger_count() == 2, "Named audio fixture layout did not load");
+			for (int warning = 0; warning < gamesave_level_data_warning_count(); ++warning) {
+				char message[512]{};
+				if (gamesave_level_data_warning_text(warning, message, sizeof(message))) std::cerr << message << '\n';
+			}
 			require(gamesave_level_data_warning_count() == 0, "Inert sound links produced a level repair warning");
 			const auto startup = snapshot();
 			require(startup.at("linked").at("owners").size() == 1 && startup.at("voices").size() == 1 &&

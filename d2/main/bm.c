@@ -213,6 +213,9 @@ static int bm_read_ham_data(PHYSFS_file *fp, int version, const bm_ham_destinati
 	for (i=0; i<(*destination->N_polygon_models); i++ )
 		if (!read_model(&destination->Polygon_models[i], fp)) return 0;
 
+	/* Reused destinations must retire mappings beyond the incoming base count */
+	memset(destination->Dying_modelnums, 0, sizeof(*destination->Dying_modelnums) * MAX_POLYGON_MODELS);
+	memset(destination->Dead_modelnums, 0, sizeof(*destination->Dead_modelnums) * MAX_POLYGON_MODELS);
 	for (i = 0; i < (*destination->N_polygon_models); i++)
 		destination->Dying_modelnums[i] = PHYSFSX_readInt(fp);
 	for (i = 0; i < (*destination->N_polygon_models); i++)
@@ -477,7 +480,7 @@ int bm_validate_main_ham(PHYSFS_file *fp)
 	return bm_validate_main_ham_report(fp, &Main_ham_validation_report);
 }
 
-static int bm_validate_extra_ham(PHYSFS_file *fp, int type, int xl_staged)
+static int bm_validate_extra_ham(PHYSFS_file *fp, int type, int xl_staged, d2_ham_validation_report *report)
 {
 	d2_ham_validation_limits limits = bm_validation_limits();
 	ubyte *data;
@@ -485,14 +488,14 @@ static int bm_validate_extra_ham(PHYSFS_file *fp, int type, int xl_staged)
 	int valid;
 	if (!bm_read_validation_bytes(fp, &data, &size)) return 0;
 	if (xl_staged)
-		valid = d2_ham_validate_xl_extra(data, size, &limits, &Mission_ham_validation_report);
+		valid = d2_ham_validate_xl_extra(data, size, &limits, report);
 	else
 	valid = d2_ham_validate_extra(data, size, type, &limits,
 	                              N_D2_WEAPON_TYPES, N_D2_ROBOT_TYPES,
 	                              N_D2_ROBOT_JOINTS, N_D2_POLYGON_MODELS,
 	                              N_D2_OBJBITMAPS, N_D2_OBJBITMAPPTRS,
-	                              &Mission_ham_validation_report);
-	if (!valid) memset(&Mission_ham_validation_report, 0, sizeof(Mission_ham_validation_report));
+	                              report);
+	if (!valid) memset(report, 0, sizeof(*report));
 	d_free(data);
 	return valid;
 }
@@ -718,20 +721,23 @@ int bm_read_xl_extra_ham_into(PHYSFS_file *fp, const bm_ham_destination *destina
 #endif
 
 //type==1 means 1.1, type==2 means 1.2 (with weapons)
-static int bm_read_extra_robots_internal(const char *fname, int type, int xl_staged)
+static int bm_read_extra_robots_internal(const char *fname, int type, int xl_staged, int base_resource)
 {
 	PHYSFS_file *fp;
 	int version;
+	d2_ham_validation_report base_report;
 
-	bm_reset_mission_compatibility_warnings();
+	if (!base_resource) bm_reset_mission_compatibility_warnings();
 	fp = PHYSFSX_openReadBuffered(fname);
 	if (!fp)
 	{
 		con_printf(CON_URGENT, "Failed to open HAM file \"%s\"\n", fname);
 		return 0;
 	}
-	if (!bm_validate_extra_ham(fp, type, xl_staged)) {
-		Mission_ham_rejected = 1;
+	/* Installation-wide extensions retain full validation without reporting
+	 * their legacy format details as mission or level repairs */
+	if (!bm_validate_extra_ham(fp, type, xl_staged, base_resource ? &base_report : &Mission_ham_validation_report)) {
+		if (!base_resource) Mission_ham_rejected = 1;
 		con_printf(CON_URGENT, "Rejected malformed extra HAM file \"%s\"\n", fname);
 		PHYSFS_close(fp);
 		return 0;
@@ -775,12 +781,16 @@ static int bm_read_extra_robots_internal(const char *fname, int type, int xl_sta
 
 void bm_read_extra_robots(const char *fname, int type)
 {
-	(void)bm_read_extra_robots_internal(fname, type, 0);
+	(void)bm_read_extra_robots_internal(fname, type, 0, 0);
 }
 #ifdef DXX_XL_RUNTIME
 int bm_read_xl_extra_robots(const char *fname)
 {
-	return bm_read_extra_robots_internal(fname, 2, 1);
+	return bm_read_extra_robots_internal(fname, 2, 1, 0);
+}
+int bm_read_base_extra_robots(const char *fname, int type)
+{
+	return bm_read_extra_robots_internal(fname, type, 0, 1);
 }
 #endif
 

@@ -34,7 +34,7 @@ static int texture_action_test(int argc, char **argv)
 			xl_resource_baseline_capture();
 			require(without_action && !with_action && dependency_error.find("texture action") != std::string::npos && snapshot() == before,
 			        "Future texture/effect dependency was not checked before admission");
-			for (const auto &bad : { std::array<const char *, 2>{ "badbase.rl2", "trigger texture" }, { "badovl.rl2", "trigger texture" }, { "badlink.rl2", "invalid trigger target" }, { "badobject.rl2", "object trigger texture" } }) {
+			for (const auto &bad : { std::array<const char *, 2>{ "badbase.rl2", "trigger texture" }, { "badovl.rl2", "trigger texture" }, { "badlink.rl2", "invalid trigger target" }, { "badobjct.rl2", "object trigger texture" } }) {
 				require(!xl_level_supported(bad[0], 0) && std::strstr(xl_level_rejection(), bad[1]) && load_level(bad[0]) != 0,
 				        "Invalid texture admission lacks its feature/record reason");
 				require(snapshot() == before, "Rejected texture source changed active sides");

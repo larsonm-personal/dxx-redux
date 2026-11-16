@@ -224,7 +224,15 @@ void write_runtime_fixture(const std::filesystem::path &path, const std::filesys
 	xl_compat::Bytes output{ 'D', 'H', 'F' }, reader{ 'D', 'H', 'F' };
 	std::filesystem::create_directories(directory);
 	std::ofstream descriptor(directory / "rtlayout.mn2", std::ios::binary);
-	descriptor << "d2x-name = Derived XL layouts\nnum_levels = " << (include_v21 ? "5\nrt21.rl2\n" : "4\n") << "rt23.rl2\nrt25.rl2\nrt27.rl2\nfg27.rl2\n";
+	const int level_count = (include_v21 ? 5 : 4) + 3 + (damage ? 4 * (include_v21 ? 4 : 3) : 0);
+	descriptor << "d2x-name = Derived XL layouts\nnum_levels = " << level_count << '\n';
+	if (include_v21) descriptor << "rt21.rl2\n";
+	descriptor << "rt23.rl2\nrt25.rl2\nrt27.rl2\nfg27.rl2\nbadprop.rl2\nbadside.rl2\nbadcorn.rl2\n";
+	if (damage)
+		for (int version : { 21, 23, 25, 27 }) {
+			if (version == 21 && !include_v21) continue;
+			for (const char *variant : { "dr", "ds", "dm", "dz" }) descriptor << variant << version << ".rl2\n";
+		}
 	for (int version : { 21, 23, 25, 27 }) {
 		if (version == 21 && !include_v21) continue;
 		auto fixture = version <= 23 ? xl_test::RuntimeLayoutFixture{ base, {}, {}, 0 } : xl_test::runtime_layout_fixture(base, version);

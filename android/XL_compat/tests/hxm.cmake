@@ -33,7 +33,7 @@ if(CAMERA_HOG)
 endif()
 configure_file("${HOG}" "${OUTPUT}/missions/hxmtest.hog" COPYONLY)
 file(WRITE "${OUTPUT}/missions/hxmtest.mn2"
-     "d2x-name = Alarlof HXM control\nnum_levels = 1\nalarlof.rl2\n")
+     "d2x-name = Alarlof HXM control\nnum_levels = 3\nalarlof.rl2\novrstart.rl2\nbadfirst.rl2\n")
 execute_process(
     COMMAND "${ENGINE}" -hxm-test "${MODE}" -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir
             "${OUTPUT}/preview-user" -nosound -nomusic

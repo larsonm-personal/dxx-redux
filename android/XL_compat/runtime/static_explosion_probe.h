@@ -115,9 +115,9 @@ void static_control(const char *operation)
 	} else if (!std::strcmp(operation, "reject")) {
 		const auto before = snapshot();
 		for (const char *name : { "stbadid.rl2", "stbadfr.rl2", "stbadct.rl2", "stbadmv.rl2", "stbadrn.rl2" })
-			require(!xl_level_supported_at(name, 0, 1) && *xl_level_rejection() && snapshot() == before && Objects[49].type == 19,
+			require(!xl_level_supported_at(name, 0, 0) && *xl_level_rejection() && snapshot() == before && Objects[49].type == 19,
 			        "Malformed static object was admitted or changed current Android state");
-		require(xl_level_supported_at("stbadtm.rl2", 0, 1) && snapshot() == before && Objects[49].type == 19,
+		require(xl_level_supported_at("stbadtm.rl2", 0, 0) && snapshot() == before && Objects[49].type == 19,
 		        "Source-valid negative static timer was rejected or changed current Android state");
 		static_checks += 6;
 	} else throw std::runtime_error("Unknown Android static explosion operation");

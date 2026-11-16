@@ -699,3 +699,160 @@ Android x86_64 externalNativeBuildDebug succeeds in 38 seconds. The native
 Ninja log confirms robot.c and resource_validation.cpp were recompiled, and
 native-gun-builds-01.json records the resulting D1/D2 shared libraries. This is
 native compilation only; no APK installation/device execution is claimed.
+
+### Rendered continuation and owned animation color
+
+Rendered original Boiling Point 7 and Warp Shock 6 each pass 120 simulation and
+120 rendered frames in rendered-boil-01 and rendered-warp-01 on Intel Arc 140T.
+These short runs are separate from ordinary headless readiness. Memory controls
+show the same remaining SDL window allocation in stock and XL shutdown. A
+Boiling Point null-free warning is traced through free_model to install_hxm;
+guarding the empty model slot removes that warning in rendered-boil-02. Temporary
+stack diagnostics in mem.c are restored before the final build.
+
+The original Warp Shock Omega recording fails in omega-warp-capture-01 with
+"XL animation bitmap unavailable" after pickup. animation_frame_color accepts
+only indexed bitmaps, while owned replacements are RGBA. Pinned CBitmap::GetAvgColor
+uses the retained byte RGB average for true-color images. Preserve those bytes
+in the installed owner and query them independently of the selected display
+frame, avoiding palette approximation or fixed-point conversion. Retired owners
+reject the query. The existing indexed path is unchanged.
+
+Scoped formatting, build-render-average-01 and build-average-audit-01 pass.
+average-owner-audit-01 passes the original Boiling Point clock/pixel controls,
+including exact retained RGB averages for original pixels and strip controls,
+and rejection after retirement. This is local developer evidence only.
+
+omega-warp-capture-02 no longer logs the bitmap exception but still fails: the
+unchanged 45-second timeout expires, with no finalized recording or proof.
+Elapsed time is 46.484 seconds; renderer SHA256 is
+9a89df96cf56af40633c14effe899952a984d08a06b75b9a9cc1b3e9432f69a6.
+Preserve the incomplete trace and both failed receipts. Capture/replay acceptance,
+source-reference color controls and new-candidate CI remain pending; this change
+is not published or qualified yet.
+
+### Capture cost and exact PR520 CI follow-up
+
+The incomplete omega-warp-capture-02 trace contains complete object/world
+observations through frame 75, so it was advancing rather than blocked on pickup.
+omega-warp-profile-01 adds developer timing around process/render/present calls.
+At 90 frames, process time is 27152 ms versus 523 ms rendering and 20 ms presenting.
+Temporary shared recording-hook timings in omega-trace-profile-01 isolate the
+cost: frame 30 uses 184 ms for object serialization and 103 ms for world tracing;
+frame 60 uses 166 ms and 94 ms respectively. Neither capture finishes by 45 s.
+
+The shared hook file is restored byte-for-byte afterward. Because restoration
+preserved an older modification time, build-trace-copy-02 still linked the old
+diagnostic object; omega-trace-copy-01 consequently retains the trace timing lines.
+The restored source timestamp is now refreshed and build-native-fixture-01 rebuilds
+that hook for the metadata target. Rebuild the rendered target before further
+acceptance runs; the current rendered binary still contains temporary diagnostics.
+
+Object tracing now reserves ordered JSON storage, appends unique slot IDs without
+searching prior keys, and moves changed subtrees into history after serialization
+instead of copying them before serialization. AI-local tracing reserves its fixed
+field set and appends unique slot IDs directly. These changes preserve every
+field and emission order; full replay comparison and both-game qualification are
+pending. build-trace-copy-01 fails because ordered_map hides vector indexing;
+using iterators fixes compilation in build-trace-copy-02. The subsequent capture
+still times out, although frame-30 object serialization falls to 130 ms and world
+serialization to 88 ms. No timeout or capture criterion changes are made.
+
+PR520 exact head 21fe343725ce4800ad0a33e39e29cdc55db44eb5 passes hosted readiness
+8/8 in workflow 43808829854, job 133105794020. Downloaded results in
+ci-pr520-artifacts/xl-readiness/results.json have SHA256
+4f9f1f92a8ed58a5256ebe26c7b06f7ebd30e5050b357edee347d2d736ea655b.
+However, the same workflow's retail-xl-fast owner fails in job 133106296149:
+xl_boss_spawning, xl_hxm_native, xl_modern_runtime_layouts,
+xl_named_audio_runtime, xl_preview_lifecycle and xl_texture_actions.
+The sanitized receipts and summary are preserved in ci-pr520-artifacts.
+Public contracts, scripts, test sample, Rust and asset-request workflows pass;
+engine smoke, Linux shareware and public LAN remain in progress at inspection.
+
+native-texture-actions-01 reproduces the dependency-control failure on Windows.
+The fixture writes seven levels but declares only two, so retained source ordinal
+lookup rejects the undeclared noaction level before its dependency check.
+Declare all seven fixture levels, preserving the positive levels at ordinals 1/2.
+native-texture-actions-02 then exposes the old 13-character badobject.rl2 name,
+which cannot appear in a native descriptor. Rename that synthetic control to
+badobjct.rl2 consistently. Scoped formatting and build-native-fixture-02 pass;
+native-texture-actions-03 passes both 23/40 and 27/40 controls, including original
+dependency rejection, invalid texture reasons and disk-through-stock continuation.
+No production admission rule or expected failure assertion is weakened. The
+other five CI failures still require reproduction, and this repair is unpublished.
+
+### Native owner repairs with authentic Vertigo resources
+
+The remaining PR520 public workflows finish successfully, including all six
+Linux shareware jobs in run 43808811965. Private retail-xl-fast remains failed;
+its independent 8/8 readiness result does not qualify those native owners.
+
+native-boss-spawn-02 passes after declaring the two generated negative levels.
+native-layouts-02 passes with both pinned source oracles after declaring all
+layout/damage variants while preserving original positive ordinals. Damage
+comparison exercises 8400 native frames and 115248 leaf/caller comparisons.
+
+Authentic Vertigo base loading exposed a native report ownership defect: the
+legitimate extra-HAM pointer trailer was reported as a mission repair. A narrow
+base-resource wrapper now validates into its own report while mission HAMs
+retain the existing warning/rejection behavior. Named-audio zero-repair checks
+then pass. Its six generated static negative levels also need declaration in
+the fixture mission; that follow-up is awaiting the full source-backed rerun.
+
+HXM stock restoration exposed stale unused death-model mapping entries after
+Vertigo. The native HAM reader now clears the destination mapping arrays before
+reading their active entries, preserving all decoded values. Full stock receipt
+comparison passes afterward. HXM negative/preflight controls snapshot the actual
+selected XL baseline separately from stock. Fixed gun header slot 9 is valid
+per source; retain a positive slot-9 control and reject slot 10 at native malformed
+HXM validation. Rename the synthetic overstart level to valid 8.3 ovrstart and
+declare it together with badfirst. native-hxm-07 passes those controls and all
+three camera contact cycles, then exposes the same stock-versus-Vertigo baseline
+mistake in the camera test. Capture stock before selecting hxmtest and compare
+the final stock restoration against that full receipt; native-hxm-08 is running.
+The Warp 5 actor owner has not run in these HXM reproductions.
+
+Preview fixture controls now use explicit derived mission descriptors for wide
+light and renamed level checks, with valid 8.3 widelite naming. The main translated
+fixture must reselect its own xlprobe mission before preparation. The unchanged
+original d2-xl descriptor remains separate. native-preview-03 passes the wide and
+renamed checks; the final mission-selection repair awaits native-preview-04.
+All failed outputs remain preserved. No admission, timeout, catalog, or original
+asset constraint is relaxed. These changes remain unpublished and require full
+candidate validation and hosted CI.
+
+native-hxm-08 passes normal HXM, camera append/contact/reset/stock restoration,
+and all supplied pinned HXM/animation/player-start source comparisons. Warp 5
+remains explicitly not run. native-preview-04 exposes the translated fixture's
+missing mission HOG identity; give xlprobe its own derived alias of the original
+pilot archive without changing the original descriptor. native-preview-05 then
+passes the complete lifecycle owner, including stock isolation and disk controls.
+
+native-named-audio-04 passes sound-bank and ambient source comparisons, then fails
+static malformed admission because the test explicitly asks for ordinal 1 for
+levels declared at other ordinals. Resolve those uniquely named negative controls
+through descriptor lookup (ordinal zero), including the Android probe, and capture
+the rejection before forming diagnostics. static-ordinal-recheck-01 passes the
+23/40 static owner, actual PCM, animation, malformed and disk-through-stock checks.
+The complete native-named-audio-05 rerun with both source references is running.
+
+### Native owner checkpoint isolation
+
+native-named-audio-05 reaches the unchanged 45-second scope timeout on host audio.
+A standalone instrumented scope passes in 38.438 seconds. The initial SDL timing
+starts before SDL initialization and is invalid; replace it with a steady clock.
+CI's native suite explicitly selects SDL dummy audio/video, whereas the direct
+local reruns had used host defaults. native-named-audio-06 uses CI's driver settings
+and a 150-second outer watchdog matching CTest. It passes the entire owner with
+both source oracles in 136.672 seconds; scoped playback takes 37.640 seconds.
+Binary SHA256 cfc63226014b6fb2ef06ef91ca1361b3cf61d99302ada5cc1f9b295b0736c364.
+All six previously failing private native owners now pass locally. Hosted repair
+qualification is still pending. No timeout or acceptance assertion was increased.
+
+Before isolating the CI repair checkpoint, preserve the seven uncommitted rendered
+RGB-average/trace-performance files in render-pending-01.patch plus per-file hashes,
+and reverse-check the patch. Temporarily remove only those preserved changes;
+keep the empty-model free guard with the native resource fix. Rename the unpublished
+fourth branch to xl_readiness_20261116_04_native_owners. Rebuild and validate this
+isolated candidate before publication; restore the preserved rendering work on
+its own subsequent child branch. Existing user stashes are unchanged.

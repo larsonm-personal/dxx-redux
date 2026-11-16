@@ -435,7 +435,7 @@ static void write_boss_fixture(const std::filesystem::path &root)
 	write_bytes((root / "bosses.hog").string().c_str(), output);
 	write_bytes((root / "bossmk.hog").string().c_str(), maker_output);
 	std::ofstream descriptor(root / "bosses.mn2");
-	descriptor << "d2x-name = Derived XL boss spawning\nnum_levels = 1\nneptunxl.rl2\n";
+	descriptor << "d2x-name = Derived XL boss spawning\nnum_levels = 3\nneptunxl.rl2\nbadowner.rl2\nbadmaker.rl2\n";
 	std::ofstream maker_descriptor(root / "bossmk.mn2");
 	maker_descriptor << "d2x-name = XL boss maker\nnum_levels = 1\nneptunxl.rl2\n";
 }

@@ -600,8 +600,7 @@ extern "C" int xl_resource_load_vertigo(void)
 			if (!file || resource_hash(file.get(), path) != original_vertigo_hash)
 				throw std::runtime_error("XL requires the qualified original Vertigo d2x.ham");
 		}
-		bm_read_extra_robots(path.c_str(), 2);
-		if (N_robot_types != 78 || Robot_info[68].model_num < 0 || Robot_info[76].model_num < 0)
+		if (!bm_read_base_extra_robots(path.c_str(), 2) || N_robot_types != 78 || Robot_info[68].model_num < 0 || Robot_info[76].model_num < 0)
 			throw std::runtime_error("Original Vertigo robot extension failed validated loading");
 		if (mounted) PHYSFS_unmount(mount);
 		return 1;
@@ -1988,7 +1987,7 @@ void XlPreparedResources::install_hxm()
 	for (const int id : state->changes.bitmaps) ObjBitmaps[id] = definitions.bitmaps[id];
 	for (const int id : state->changes.pointers) ObjBitmapPtrs[id] = definitions.pointers[id];
 	for (const int id : state->changes.models) {
-		free_model(&Polygon_models[id]);
+		if (Polygon_models[id].model_data) free_model(&Polygon_models[id]);
 		Polygon_models[id] = state->native_models[id]->model;
 		Dying_modelnums[id] = definitions.dying[id];
 		Dead_modelnums[id] = definitions.dead[id];
