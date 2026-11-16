@@ -35,6 +35,9 @@ static nlohmann::json decoded_texture_owner_test(xl_compat::TargetSources &sourc
 	Owner moved(std::move(prepared));
 	require(xl_pog_install_prepared(moved.get()), "Cannot install retained original RGB image");
 	const auto *pixels = GameBitmaps[original.index].bm_data;
+	unsigned char average[3];
+	require(xl_pog_average_rgb(original.index, average) && !std::memcmp(average, original.average_rgb.data(), 3),
+	        "Native owned RGB average differs from the decoded source");
 	require(pixels && GameBitmaps[original.index].bm_rgb_opaque &&
 	            !std::memcmp(pixels, original.pixels.data(), original.pixels.size()),
 	        "Original RGB bytes changed during native publication");
@@ -89,6 +92,8 @@ static nlohmann::json decoded_texture_owner_test(xl_compat::TargetSources &sourc
 		xl_compat::prepare_pog_rgba(strip);
 		Owner candidate(xl_pog_prepare_rgba({ strip }, Num_bitmap_files, scoped), xl_pog_free);
 		require(xl_pog_install(candidate.get()), "Cannot install independent strip views");
+		require(xl_pog_average_rgb(strip.index, average) && !std::memcmp(average, strip.average_rgb.data(), 3),
+		        "Native strip average differs from the whole decoded source");
 		xl_pog_pixel_view view{};
 		require(xl_pog_physics_view(strip.index, &view) && view.width == 2 && view.height == (scoped ? 4u : 2u) &&
 		            view.pixels == GameBitmaps[strip.index].bm_data && GameBitmaps[strip.index].bm_h == 2,
@@ -105,6 +110,7 @@ static nlohmann::json decoded_texture_owner_test(xl_compat::TargetSources &sourc
 	require(xl_pog_install(nullptr), "Cannot retire decoded pixel controls");
 	xl_pog_pixel_view retired_view{};
 	require(!xl_pog_physics_view(original.index, &retired_view), "Retired pixel owner still exposes a physics view");
+	require(!xl_pog_average_rgb(original.index, average), "Retired pixel owner still exposes an average");
 	require(GameBitmaps[original.index].bm_type == saved.bm_type &&
 	            GameBitmaps[original.index].bm_rgb_opaque == saved.bm_rgb_opaque,
 	        "Decoded pixel retirement lost outgoing bitmap type");

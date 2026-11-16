@@ -157,6 +157,8 @@ static int xl_omega_recording_probe(const char *path)
 		require(Game_wind && xl_level_extensions_active() && !game_is_time_paused() && !(Game_mode & GM_MULTI),
 		        "Omega recording requires an ordinary single-player XL world");
 		bool recording = false;
+		unsigned measured_frames = 0;
+		uint64_t process_ms = 0, render_ms = 0, present_ms = 0;
 		const auto frames = [&](int count, bool firing) {
 			for (int i = 0; i < count; ++i) {
 				SDL_Delay(17);
@@ -166,9 +168,21 @@ static int xl_omega_recording_probe(const char *path)
 				Controls.fire_primary_state = firing;
 				do_weapon_n_item_stuff();
 				calc_game_time();
+				const auto before_process = SDL_GetTicks();
 				GameProcessFrame();
+				const auto before_render = SDL_GetTicks();
 				game_render_frame();
+				const auto before_present = SDL_GetTicks();
 				gr_flip();
+				if (recording) {
+					process_ms += before_render - before_process;
+					render_ms += before_present - before_render;
+					present_ms += SDL_GetTicks() - before_present;
+					if (++measured_frames % 30 == 0)
+						std::cout << "Omega recording profile: frames=" << measured_frames << " process_ms=" << process_ms
+						          << " render_ms=" << render_ms << " present_ms=" << present_ms << '\n'
+						          << std::flush;
+				}
 				require(glGetError() == GL_NO_ERROR && Current_level_num == proof["level"] && !Player_is_dead && (!recording || input_demo_recorder_is_active()),
 				        "Ordinary Omega capture stopped, died or changed level");
 			}

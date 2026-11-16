@@ -42,6 +42,7 @@
 #include "equipment.h"
 #include "no_damage_test_binding.h"
 #include "resource_validation.h"
+#include "pog_resources.h"
 #include "light_sources.h"
 #include "companion_resources.h"
 #include "../probe.h"
@@ -156,6 +157,12 @@ xl_compat::Rgb animation_frame_color(bitmap_index index)
 	if (index.index >= Num_bitmap_files) throw std::runtime_error("XL animation bitmap ID invalid");
 	PIGGY_PAGE_IN(index);
 	const auto &bitmap = GameBitmaps[index.index];
+	if (bitmap.bm_type == BM_RGBA) {
+		unsigned char rgb[3];
+		if (!xl_pog_average_rgb(index.index, rgb)) throw std::runtime_error("XL animation bitmap has no owned average");
+		// Pinned CBitmap::GetAvgColor uses the retained true-color image average
+		return { rgb[0] / 255.0f, rgb[1] / 255.0f, rgb[2] / 255.0f };
+	}
 	if (!bitmap.bm_data || bitmap.bm_type != BM_LINEAR || bitmap.bm_w <= 0 || bitmap.bm_h <= 0)
 		throw std::runtime_error("XL animation bitmap unavailable");
 	unsigned average = bitmap.avg_color;

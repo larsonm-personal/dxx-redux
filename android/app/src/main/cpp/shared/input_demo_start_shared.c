@@ -331,10 +331,12 @@ int input_demo_parse_replay_cmdline(input_demo_replay_cmdline_options *options)
 	int debug_log_arg_index = 0;
 	int state_log_arg_index;
 	int rng_trace_arg_index;
+	int extra_dir_arg_index;
 
 	if (!options)
 		return 1;
 	options->demo_path = NULL;
+	options->extra_dir = NULL;
 	options->actual_result_path = NULL;
 	options->state_log_path = NULL;
 	options->rng_trace_path = NULL;
@@ -350,6 +352,7 @@ int input_demo_parse_replay_cmdline(input_demo_replay_cmdline_options *options)
 #endif
 	state_log_arg_index = input_demo_find_cmd_arg("-inputdemo-state-log");
 	rng_trace_arg_index = input_demo_find_cmd_arg("-inputdemo-rng-trace");
+	extra_dir_arg_index = input_demo_find_cmd_arg("-extra-dir");
 
 	input_demo_debug_set_enabled(debug_log_arg_index ? 1 : 0);
 	options->replay_labels_enabled = replay_labels_arg_index ? 1 : 0;
@@ -363,6 +366,11 @@ int input_demo_parse_replay_cmdline(input_demo_replay_cmdline_options *options)
 	options->demo_path = input_demo_cmd_arg_value(arg_index, "-inputdemo-replay");
 	if (!options->demo_path)
 		return 1;
+	if (extra_dir_arg_index) {
+		options->extra_dir = input_demo_cmd_arg_value(extra_dir_arg_index, "-extra-dir");
+		if (!options->extra_dir)
+			return 1;
+	}
 	if (actual_result_arg_index) {
 		options->actual_result_path = input_demo_cmd_arg_value(
 		    actual_result_arg_index, "-inputdemo-actual-result");
@@ -397,6 +405,12 @@ int input_demo_apply_replay_common_setup(
 {
 	if (!options)
 		return 0;
+	/* Match the mission search path used by capture before restoring its checkpoint */
+	if (options->extra_dir && !PHYSFS_addToSearchPath(options->extra_dir, 0)) {
+		snprintf(error, error_size, "could not mount replay extra dir %s", options->extra_dir);
+		input_demo_replay_unload();
+		return 0;
+	}
 	/* Command-line playback bypasses pilot creation in the normal menu path */
 	if (!Players[Player_num].callsign[0])
 		new_player_config();

@@ -19,7 +19,12 @@ static void compare_particle_image(const std::vector<uint8_t> &bytes)
 			const auto expected = c == 3 && bitmap.BPP() == 3 ? 255 : bitmap.pixels[i * bitmap.BPP() + c];
 			require(actual.pixels[i * 4 + c] == expected, "Particle TGA row/channel/alpha conversion differs from source");
 		}
-	for (unsigned c = 0; c < 3; ++c) require(actual.average_rgb[c] == bitmap.average.values[c], "Particle TGA average color differs from source");
+	CFloatVector color{};
+	require(bitmap.GetAvgColor(&color) == &color && color.Alpha() == 1.0f, "Source TGA average color result differs");
+	for (unsigned c = 0; c < 3; ++c) {
+		require(actual.average_rgb[c] == bitmap.m_info.avgColor.values[c], "Particle TGA average color differs from source");
+		require(actual.average_rgb[c] / 255.0f == color.values[c], "Source TGA float average differs");
+	}
 	for (unsigned frame = 0; frame < 4; ++frame)
 		require(actual.transparent_frames[frame] == uint32_t(bitmap.transparent[frame]) && actual.super_frames[frame] == uint32_t(bitmap.super[frame]), "Particle TGA transparency frames differ from source");
 }

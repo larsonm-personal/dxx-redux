@@ -12,6 +12,7 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_face_transparency
 foreach(
     pair IN
     ITEMS
+        "2d/bitmap.cpp|542b40e7af08883e88884408da811bf346c7d46c26c18c25e909b9efa12e4c21"
         "gameio/tga.cpp|9f1c15043e89acd2481eee1b0b9466e0c522c84ab1ae94a7195e1a22d99e687d"
         "gameio/addon_bitmaps.cpp|fba2bb3befbd5264788210b7c346b1203404c42a25790f0aff929bd6d67edc94"
         "effects/particle_images.cpp|1cd950eee425c26a8ac476a6a5245ce386e5b92ce00f5b52a600e83cfa9473f1"
@@ -34,6 +35,8 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/tga.cpp" "int32_t CT
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/tga.cpp" "void CTGA::ConvertToRGB (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/tga.cpp" "void CTGA::SetProperties (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/tga.cpp" "int32_t CTGA::ReadData (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/2d/bitmap.cpp"
+                      "CFloatVector *CBitmap::GetAvgColor (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/physics/visibility.cpp"
                       "int32_t PixelTranspType (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_pog.h" CONTENT "${extracted}")

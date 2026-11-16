@@ -128,16 +128,31 @@ struct CFile {
 };
 struct CBitmap {
 	int16_t width = 0, height = 0, row = 0;
-	int bpp = 4, flags = 0;
+	int flags = 0;
 	std::vector<uint8_t> pixels;
 	std::array<int32_t, 4> transparent{}, super{};
-	CRGBColor average{};
+	struct Palette {
+		CRGBColor *Color()
+		{
+			throw std::runtime_error("Indexed palette is outside this true-color source comparison");
+		}
+	};
+	struct {
+		int nBPP = 4;
+		Palette *palette = nullptr;
+		CRGBColor avgColor{};
+	} m_info;
+	int AvgColorIndex()
+	{
+		throw std::runtime_error("Indexed average is outside this true-color source comparison");
+	}
+	CFloatVector *GetAvgColor(CFloatVector *);
 	void Init(int, int, int, int w, int h, int bytes, void *, bool)
 	{
 		width = int16_t(w);
 		height = int16_t(h);
 		row = int16_t(w * bytes);
-		bpp = bytes;
+		m_info.nBPP = bytes;
 	}
 	int Width() const
 	{
@@ -165,11 +180,11 @@ struct CBitmap {
 	}
 	int BPP() const
 	{
-		return bpp;
+		return m_info.nBPP;
 	}
 	void SetBPP(int value)
 	{
-		bpp = value;
+		m_info.nBPP = value;
 	}
 	int Flags() const
 	{
@@ -210,7 +225,7 @@ struct CBitmap {
 	}
 	int CreateBuffer()
 	{
-		pixels.resize(size_t(width) * height * bpp);
+		pixels.resize(size_t(width) * height * BPP());
 		return 1;
 	}
 	void Read(CFile &file)
@@ -219,7 +234,7 @@ struct CBitmap {
 	}
 	void SetAvgColor(CRGBColor value)
 	{
-		average = value;
+		m_info.avgColor = value;
 	}
 	int Type() const
 	{
@@ -341,8 +356,12 @@ static void compare_entry(const xl_compat::PogBitmap &got, const uint8_t *header
 	CTGA tga{ &bm };
 	require(tga.ReadData(input, -1, 1.0, 0, 1) == 1, "source POG read failed");
 	require(got.flags == unsigned(bm.Flags()), "source POG flags differ");
-	for (unsigned c = 0; c < 3; ++c)
-		require(got.average_rgb[c] == bm.average.values[c], "source POG average color differs");
+	CFloatVector color{};
+	require(bm.GetAvgColor(&color) == &color && color.Alpha() == 1.0f, "Source POG average color result differs");
+	for (unsigned c = 0; c < 3; ++c) {
+		require(got.average_rgb[c] == bm.m_info.avgColor.values[c], "source POG average color differs");
+		require(got.average_rgb[c] / 255.0f == color.values[c], "Source POG float average differs");
+	}
 	for (unsigned frame = 0; frame < 4; ++frame)
 		require(got.transparent_frames[frame] == uint32_t(bm.transparent[frame]) &&
 		            got.super_frames[frame] == uint32_t(bm.super[frame]),

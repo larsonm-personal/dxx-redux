@@ -71,7 +71,7 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 	if (!input_demo_apply_replay_common_setup(&cmdline, replay_error,
 		sizeof(replay_error)))
 	{
-		printf("Input demo replay rng trace start failed: %s\n", replay_error);
+		printf("Input demo replay setup failed: %s\n", replay_error);
 		return 1;
 	}
 	if (!input_demo_start_replay_state_trace_and_log_paths(&cmdline,
