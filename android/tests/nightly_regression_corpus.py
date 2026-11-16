@@ -63,6 +63,40 @@ DIAGNOSTIC_FIELDS = frozenset(('levels', 'status', 'segment_count', 'level_num',
     'mission_filename', 'robot_count', 'object_count', 'version', 'reactor', 'secret_exit'))
 
 
+# Public diagnostics describe schema positions and fixed failure classes only
+GEOMETRY_CATEGORIES = frozenset(("missing-level", "unsupported-level", "invalid-header", "load-failed", "empty-geometry"))
+
+
+def geometry_diagnostics(missions):
+    rows = []
+    for mission_index, mission in enumerate(missions):
+        for level_index, level in enumerate(mission.get("levels", []) or []):
+            if type(level.get("segment_count")) is int and level["segment_count"] > 0:
+                continue
+            problem = str(level.get("route_problem", ""))
+            category = "empty-geometry"
+            for text, kind in (("level file is missing", "missing-level"),
+                               ("unsupported level version", "unsupported-level"),
+                               ("invalid level header", "invalid-header")):
+                if text in problem.lower():
+                    category = kind
+                    break
+            else:
+                if level.get("status") == "failed":
+                    category = "load-failed"
+            rows.append({"mission_index": mission_index, "level_index": level_index, "category": category})
+    return rows
+
+
+def warning_counts(value):
+    if not isinstance(value, str):
+        return None
+    match = re.fullmatch(r"Level HXM legacy handling: ([0-9]{1,7}) unused joint offsets normalized; ([0-9]{1,7}) trailer bytes ignored", value)
+    if match:
+        return {"normalized_joint_offsets": int(match[1]), "ignored_trailer_bytes": int(match[2])}
+    return None
+
+
 def metadata_differences(expected, actual, path=()):
     differences = []
 
@@ -85,7 +119,12 @@ def metadata_differences(expected, actual, path=()):
             for index, (a, b) in enumerate(zip(left, right)):
                 visit(a, b, at + (index,))
         else:
-            differences.append({"path": list(at), "kind": "value"})
+            row = {"path": list(at), "kind": "value"}
+            if "data_warnings" in at:
+                expected_counts, actual_counts = warning_counts(left), warning_counts(right)
+                if expected_counts is not None and actual_counts is not None:
+                    row.update(expected_warning=expected_counts, actual_warning=actual_counts)
+            differences.append(row)
 
     visit(expected, actual, path)
     return differences
@@ -228,7 +267,16 @@ def compare_metadata(baseline, generated, summary, archive_name):
         or any(type(level.get("segment_count")) is not int or level["segment_count"] <= 0 for level in m["levels"])
         for m in actual
     ):
-        return _receipt("FAIL", "Generated mission contains absent or empty level geometry")
+        diagnostics = geometry_diagnostics(actual)
+        # A faithfully reproduced known unavailable leaf is not a new regression,
+        # but must never count as tested geometry or complete archive coverage
+        if baseline == generated and diagnostics and all(m.get("levels") for m in actual) and all(
+            row["category"] in ("missing-level", "unsupported-level", "invalid-header") for row in diagnostics
+        ):
+            return _receipt("BLOCKED", "Committed unavailable geometry reproduced unchanged",
+                            geometry_failures=diagnostics[:16], retryable=False, blocker_kind="target-capability")
+        return _receipt("FAIL", "Generated mission contains absent or empty level geometry",
+                        geometry_failures=diagnostics[:16])
     if any(m.get("status") != "ok" for m in actual):
         return _receipt("FAIL", "Generated mission metadata contains a non-ok outcome")
     if any(m.get("status") != "ok" for m in expected):

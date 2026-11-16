@@ -65,6 +65,46 @@ class CorpusComparisons(unittest.TestCase):
             "mission.json",
         )["status"]
 
+    def test_known_missing_geometry_is_blocked_not_passed(self):
+        level = self.metadata[0]["levels"][0]
+        level.update(segment_count=0, status="failed", route_problem="level file is missing")
+        result = compare_metadata(self.metadata, copy.deepcopy(self.metadata), self.metadata_summary, "mission.zip")
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertFalse(result["retryable"])
+        self.assertEqual(result["geometry_failures"], [
+            {"mission_index": 0, "level_index": 0, "category": "missing-level"}])
+        output = copy.deepcopy(self.metadata)
+        output[0]["levels"][0]["travel_time_seconds"] += 1
+        self.assertEqual(self.metadata_result(output), "FAIL")
+
+    def test_new_missing_geometry_and_unknown_known_failure_remain_failures(self):
+        output = copy.deepcopy(self.metadata)
+        output[0]["levels"][0].update(segment_count=0, status="failed", route_problem="level file is missing PRIVATE")
+        result = compare_metadata(self.metadata, output, self.metadata_summary, "mission.zip")
+        self.assertEqual(result["status"], "FAIL")
+        self.assertNotIn("PRIVATE", str(result))
+        self.metadata = output
+        self.metadata[0]["levels"][0]["route_problem"] = "unknown engine failure"
+        self.assertEqual(self.metadata_result(), "FAIL")
+
+    def test_geometry_classification_checks_beyond_diagnostic_cap(self):
+        level = self.metadata[0]["levels"][0]
+        level.update(segment_count=0, status="failed", route_problem="level file is missing")
+        self.metadata[0]["levels"] = [copy.deepcopy(level) for _ in range(17)]
+        self.metadata[0]["levels"][-1]["route_problem"] = "unexpected failure"
+        result = compare_metadata(self.metadata, copy.deepcopy(self.metadata), self.metadata_summary, "mission.zip")
+        self.assertEqual(result["status"], "FAIL")
+        self.assertEqual(len(result["geometry_failures"]), 16)
+
+    def test_hxm_warning_counts_are_structured_not_raw_text(self):
+        from nightly_regression_corpus import metadata_differences
+        before = {"data_warnings": ["Level HXM legacy handling: 30 unused joint offsets normalized; 4 trailer bytes ignored"]}
+        after = {"data_warnings": ["Level HXM legacy handling: 5 unused joint offsets normalized; 4 trailer bytes ignored"]}
+        result = metadata_differences(before, after)
+        self.assertEqual(result[0]["expected_warning"]["normalized_joint_offsets"], 30)
+        self.assertEqual(result[0]["actual_warning"]["normalized_joint_offsets"], 5)
+        self.assertNotIn("legacy handling", str(result))
+
     def test_metadata_difference_paths_are_bounded_and_do_not_expose_values(self):
         from nightly_regression_corpus import metadata_differences
 
