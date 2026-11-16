@@ -66,3 +66,34 @@ A local no-payload benchmark uses the actual 3139-owner materialized policy and 
 The old 243-child execution was not timed; its prefix algorithm performs 29889 collection and reconciliation calls each, versus 486 each after this change. Benchmark script and measurements are retained under temp/refill-scaling-20261116. The committed count-based tests enforce scaling without timing-dependent assertions
 
 Follow-up validation: all 150 planner/workflow tests pass after scoped formatting, including 18 refill tests. Automation catalog validation passes; the master catalog remains blocked by the same unsupported local /proc child-supervisor interface (exit 125). No baseline, timeout or coverage rule changed
+
+### Live admission-loss review follow-up
+
+An observed loss of the current child's admission after launch could previously
+raise before its receipt entered the live digest map. Final recovery then accepted
+the shorter prefix. The live collection/reconciliation boundary now durably
+latches a fixed `live-child-evidence-invalid` reason and child batch identity before
+unwinding. Final collection checks the latch before publishing any aggregate.
+Errors during final independent collection also latch `final-evidence-invalid`
+unless a more specific integrity marker already exists. Exception text is never
+written into these markers.
+
+Child collection now verifies the on-disk plan against the independently derived
+child and rejects present but malformed or mismatched attempt identities. Missing
+attempt evidence remains NOT_RUN: it can legitimately follow admission and a hard
+kill before executor startup. An unadmitted tail remains acceptable to standalone
+recovery when no live integrity loss was observed. No inferred crash-tail failure
+is latched by standalone recovery.
+
+Regression coverage corrupts/deletes the CURRENT admission or plan after an earlier
+PASS, corrupts present attempt identities, and corrupts an earlier child's attempt
+during a later subprocess. It requires a durable typed marker, no prior-only
+aggregate publication, and rejection by subsequent recovery. A separate recovery
+fixture retains an admitted child with no attempt and a truly unadmitted plan-only
+tail, with exactly one terminal traversal credit.
+
+Validation: all 153 planner/workflow tests passed without skips (186.572 seconds),
+including the existing 25/100/243-child operation-count checks. Scoped formatting
+and the automation catalog passed (99 JSON, 549 support, 315 PowerShell). The
+master catalog reached the same unsupported `/proc/self/task/PID/children`
+supervisor restriction (exit 125); it remains blocked, not passed.
