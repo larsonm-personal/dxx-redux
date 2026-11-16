@@ -274,16 +274,81 @@ def require_original_gpu_trace(path):
         raise ValueError("Required original GPU witness is missing")
 
 
+# Independent original-pixel expectations match original_animation_fixture.hpp
+ORIGINAL_FORCE_SAMPLES = (
+    ((51, 0, 0), (214, 42, 42), (52, 0, 0)),
+    ((111, 9, 9), (70, 0, 0), (32, 0, 0)),
+    ((59, 0, 0), (31, 0, 0), (14, 0, 0)),
+    ((91, 4, 4), (0, 0, 0), (131, 14, 14)),
+    ((23, 0, 0), (60, 0, 0), (79, 0, 0)),
+    ((23, 0, 0), (70, 0, 0), (80, 1, 1)),
+)
+
+
+def require_original_animation_trace(path):
+    rows = json.loads(Path(path).read_text())
+    if not isinstance(rows, list) or len(rows) != 8:
+        raise ValueError("Required original animation witness count differs")
+    seen = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("Invalid original animation witness")
+        context, visit = row.get("context"), row.get("visit")
+        if type(context) is not int or type(visit) is not int or context not in (0, 1) or visit not in range(4):
+            raise ValueError("Invalid original animation context or visit")
+        if (context, visit) in seen:
+            raise ValueError("Duplicated original animation witness")
+        seen.add((context, visit))
+        owner = ("a", "b", "stock", "a")[visit]
+        if row.get("owner") != owner or row.get("correct") is not True:
+            raise ValueError("Missing original animation execution")
+        for key in ("animation_samples", "native_animation_samples"):
+            frames = row.get(key)
+            if not isinstance(frames, list) or len(frames) != 7:
+                raise ValueError("Missing original animation execution")
+            for frame, record in enumerate(frames):
+                if (
+                    not isinstance(record, dict)
+                    or type(record.get("frame")) is not int
+                    or record["frame"] != frame % 6
+                    or record.get("original") is not (owner == "a")
+                ):
+                    raise ValueError("Original animation frame identity differs")
+                if key == "native_animation_samples" and (
+                    type(record.get("native_frames")) is not int
+                    or record["native_frames"] != (6 if owner == "a" else 8)
+                ):
+                    raise ValueError("Original retained animation clock differs")
+                pixels = record.get("pixels")
+                if not isinstance(pixels, list) or len(pixels) != 3:
+                    raise ValueError("Original animation pixel samples missing")
+                for sample, pixel in enumerate(pixels):
+                    expected = ORIGINAL_FORCE_SAMPLES[frame % 6][sample] if owner == "a" else (10, 40, 30)
+                    if (
+                        not isinstance(pixel, list)
+                        or len(pixel) != 4
+                        or any(type(v) is not int or not 0 <= v <= 255 for v in pixel)
+                        or pixel[3] != 255
+                        or any(abs(pixel[i] - expected[i]) > 2 for i in range(3))
+                    ):
+                        raise ValueError("Original animation GPU pixels differ")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--stage", type=Path)
     mode.add_argument("--gpu-trace", type=Path)
+    mode.add_argument("--animation-trace", type=Path)
     parser.add_argument("--seven-zip")
     parser.add_argument("--resources", type=Path, help="Separately pinned authentic Vertigo and XL resource checkout")
     parser.add_argument("--modern", action="store_true", help="Require the pinned original Boiling Point HOG")
     args = parser.parse_args()
+    if args.animation_trace:
+        require_original_animation_trace(args.animation_trace)
+        print("Verified all six original animation frames, cycle wrap and stock isolation across two GL contexts")
+        return
     if args.gpu_trace:
         require_original_gpu_trace(args.gpu_trace)
         print("Verified four original GPU witnesses across two GL contexts")

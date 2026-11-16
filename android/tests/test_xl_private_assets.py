@@ -1355,6 +1355,74 @@ class XlPrivateTests(unittest.TestCase):
                         with self.assertRaises((ValueError, subprocess.CalledProcessError)):
                             runner.modern_results(Path("inspect"), Path("reference"), work, work)
 
+    def test_original_animation_trace_requires_all_frames_pixels_and_owner_transitions(self):
+        rows = []
+        for context in range(2):
+            for visit, owner in enumerate(("a", "b", "stock", "a")):
+                rows.append(
+                    dict(
+                        context=context,
+                        visit=visit,
+                        owner=owner,
+                        correct=True,
+                        animation_samples=[
+                            dict(
+                                frame=frame % 6,
+                                original=owner == "a",
+                                pixels=[list(pixel if owner == "a" else (10, 40, 30)) + [255] for pixel in samples],
+                            )
+                            for frame, samples in enumerate(
+                                (*assets.ORIGINAL_FORCE_SAMPLES, assets.ORIGINAL_FORCE_SAMPLES[0])
+                            )
+                        ],
+                    )
+                )
+                rows[-1]["native_animation_samples"] = [
+                    {**copy.deepcopy(record), "native_frames": 6 if owner == "a" else 8}
+                    for record in rows[-1]["animation_samples"]
+                ]
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "trace.json"
+            path.write_text(json.dumps(rows))
+            assets.require_original_animation_trace(path)
+            invalid = [[], rows[:-1], rows + [rows[0]], [*rows[:-1], rows[0]]]
+            for field, value in (
+                ("context", True),
+                ("visit", 4),
+                ("owner", "stock"),
+                ("correct", False),
+                ("animation_samples", []),
+                ("native_animation_samples", []),
+            ):
+                changed = copy.deepcopy(rows)
+                changed[0][field] = value
+                invalid.append(changed)
+            for frame in range(7):
+                for field, value in (
+                    ("frame", True),
+                    ("frame", (frame + 1) % 6),
+                    ("original", False),
+                    ("pixels", [[0, 0, 0, 255]] * 3),
+                ):
+                    changed = copy.deepcopy(rows)
+                    changed[0]["animation_samples"][frame][field] = value
+                    invalid.append(changed)
+            changed = copy.deepcopy(rows)
+            changed[1]["animation_samples"] = copy.deepcopy(rows[0]["animation_samples"])
+            invalid.append(changed)
+            for value in (8, True, None):
+                changed = copy.deepcopy(rows)
+                changed[0]["native_animation_samples"][0]["native_frames"] = value
+                invalid.append(changed)
+            for value in (True, -1, 256, 1.5):
+                changed = copy.deepcopy(rows)
+                changed[0]["animation_samples"][0]["pixels"][0][0] = value
+                invalid.append(changed)
+            for changed in invalid:
+                path.write_text(json.dumps(changed))
+                with self.assertRaises(ValueError):
+                    assets.require_original_animation_trace(path)
+
     def test_original_gpu_trace_requires_unique_real_witnesses(self):
         rows = [
             {

@@ -79,6 +79,7 @@ static GLuint shader(GLenum type, const char *text)
 #include "animated_masks_fixture.hpp"
 #include "soft_overlays_fixture.hpp"
 #include "soft_base_fixture.hpp"
+#include "original_animation_fixture.hpp"
 
 int main(int argc, char **argv)
 {
@@ -95,6 +96,11 @@ int main(int argc, char **argv)
 	soft_base_pattern();
 #endif
 	const bool original = std::filesystem::is_regular_file("ceil002.tga");
+	const bool original_animation = std::filesystem::is_regular_file("force01#0.tga");
+	if (original_animation) {
+		std::filesystem::copy_file("force01#0.tga", "a/mods/pilot/textures/force01#0.tga");
+		require(std::filesystem::remove("force01#0.tga"), "retire original animation staging input");
+	}
 	// Exercise input staging in the public control too, without making it an original witness
 	if (!original) image("./ceil002.tga", 210);
 	std::filesystem::copy_file("ceil002.tga", "a/mods/pilot/textures/CEIL002.TGA", std::filesystem::copy_options::overwrite_existing);
@@ -151,6 +157,8 @@ int main(int argc, char **argv)
 		EGLContext context = eglCreateContext(display, config, EGL_NO_CONTEXT, version);
 		require(eglMakeCurrent(display, surface, surface, context), "render context");
 		gles3_shim_init();
+		// Direct EGL setup must publish the same context availability as native gr_init
+		gl_initialized = 1;
 		// This fixture creates EGL contexts directly; retire the native state caches too.
 		GL_TEXTURE_2D_enabled = GL_texclamp_enabled = -1;
 		ogl_init_texture_list_internal();
@@ -269,6 +277,12 @@ int main(int argc, char **argv)
 #endif
 			require(!android_ogl_read_replacement(path, sizeof(path), hog, names, slots, 4, 0, &bitmap, &png, &ktx, &metrics, &ktx_us, &png_us), "basename bound preserved");
 			results.push_back({ { "context", generation }, { "visit", results.size() % 4 }, { "owner", owner }, { "red", red }, { "path", selected_path }, { "original", use_original }, { "correct", true } });
+#ifdef DXX_BUILD_DESCENT_II
+			if (original_animation) {
+				results.back()["animation_samples"] = test_original_animation(owner, false);
+				results.back()["native_animation_samples"] = test_original_animation(owner, true);
+			}
+#endif
 		}
 		android_mission_assets_free_begin();
 		android_mission_assets_free_end();
@@ -281,6 +295,7 @@ int main(int argc, char **argv)
 		glDeleteShader(vertex);
 		glDeleteShader(fragment);
 		gles3_shim_shutdown();
+		gl_initialized = 0;
 		require(eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT), "release context");
 		eglDestroyContext(display, context);
 		eglDestroySurface(display, surface);
