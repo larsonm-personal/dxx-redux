@@ -1,0 +1,61 @@
+// Native automatic level-start capture with normal rotation input and no pose assists
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_water_runtime",
+            "vars": { "d2": { "PILOT": "player" } },
+        },
+    },
+    { "action": "enter_launcher" },
+    {
+        "action": "setup_command",
+        "command": "write_graphics_settings",
+        "args": { "settings": "{\"ResolutionX\":1920,\"ResolutionY\":1080,\"AspectX\":9,\"AspectY\":16}" },
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": { "key": "demo_record_each_level", "value": true },
+    },
+    { "action": "enter_game", "game": "d2" },
+    { "action": "skip_intro", "timeout_ms": 30000 },
+    { "action": "select", "text": "${PILOT}", "timeout_ms": 10000 },
+    { "action": "set_debug", "field": "xl_water_physics", "value": "enable" },
+    { "action": "select", "text": "New game", "timeout_ms": 15000 },
+    { "action": "select_mission", "text": "XL: Robotech Arena", "timeout_ms": 10000 },
+    { "action": "select", "text": "Hotshot", "timeout_ms": 10000 },
+    { "action": "skip_briefing", "timeout_ms": 20000 },
+    {
+        "action": "wait_for",
+        "expect": { "in_game": true, "game_window_is_front": true, "xl_pilot.runtime_active": true },
+        "timeout_ms": 20000,
+    },
+    { "action": "wait_for", "expect": { "graphics_safety.phase": "challenge" }, "timeout_ms": 10000 },
+    { "action": "controller_input", "controller_keys": ["DLEFT", "A"], "post_delay_ms": 50 },
+    {
+        "action": "wait_for",
+        "expect": {
+            "graphics_safety.phase": "idle",
+            "graphics_safety.accepted.ResolutionX": 1920,
+            "graphics_safety.accepted.ResolutionY": 1080,
+            "resolution.render_width": 1920,
+            "resolution.render_height": 1080,
+            "time_paused": false,
+        },
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "wait_for",
+        "expect": { "input_demo.recording": true, "input_demo.frame_count": { "gte": 1 } },
+        "timeout_ms": 5000,
+    },
+    { "action": "send_axis", "axis": 3, "axis_value": 0.25, "post_delay_ms": 0 },
+    { "action": "wait_for", "expect": { "input_demo.frame_count": { "gte": 120 } }, "timeout_ms": 10000 },
+    { "action": "send_axis", "axis": 3, "axis_value": 0, "post_delay_ms": 100 },
+    { "action": "meta_action", "id": 1034, "post_delay_ms": 100 },
+    { "action": "wait_for", "expect": { "input_demo.recording": false }, "timeout_ms": 5000 },
+    { "action": "assert", "expect": { "in_game": true, "current_level_num": 1, "xl_pilot.runtime_active": true } },
+]

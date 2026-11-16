@@ -816,5 +816,13 @@ int input_demo_start_quick_recording_common(void)
 			con_printf(CON_NORMAL, "Input demo recording did not start\n");
 		return 0;
 	}
+
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__) && defined(DXX_XL_DEVELOPER_PROBE)
+	/* Observe the actual completed quick-record startup, before its first input */
+	if (!xl_input_demo_probe_record_trace()) {
+		input_demo_stop_quick_recording_common();
+		return 0;
+	}
+#endif
 	return 1;
 }

@@ -6,7 +6,10 @@
 #include "named_audio.h"
 #include "resource_validation.h"
 #include "input_demo_recorder.h"
+#include "input_demo_level_start.h"
 #include "input_demo_replay.h"
+#include "input_demo_state_trace.h"
+#include "input_demo_world_trace.h"
 #include "../time_equipment.h"
 #include <SDL.h>
 #include <algorithm>
@@ -16,6 +19,7 @@ extern "C" {
 #include "inferno.h"
 #include "object.h"
 #include "game.h"
+#include "gameseq.h"
 #include "endlevel.h"
 #include "vecmat.h"
 #include "aistruct.h"
@@ -31,6 +35,8 @@ extern "C" {
 #include "args.h"
 #include "input_demo_hooks_shared.h"
 #include "input_demo_hooks.h"
+#include "physfsx.h"
+#include "mission.h"
 }
 namespace
 {
@@ -504,6 +510,27 @@ extern "C" int xl_slow_motion_omega_fired(void)
 }
 
 #if defined(__ANDROID__) && defined(DXX_XL_DEVELOPER_PROBE)
+extern "C" int xl_input_demo_probe_record_trace(void)
+{
+	if (!input_demo_recorder_uses_environment()) return 1;
+	char error[256]{};
+	if (!PHYSFS_mkdir("xl_capture_traces")) return 0;
+	uint64_t stamp = SDL_GetTicks();
+	std::string relative;
+	do {
+		relative = "xl_capture_traces/live-" + std::to_string(stamp++) + ".jsonl.gz";
+	} while (PHYSFS_exists(relative.c_str()));
+	const auto path = std::string(PHYSFS_getWriteDir()) + "/" + relative;
+	const auto *start_mode = input_demo_recording_level_start() ? "new_level" : "save_checkpoint";
+	if (!input_demo_state_trace_start(path.c_str(), "record", "d2", Current_mission_filename,
+	                                  Current_level_num, Difficulty_level, start_mode, 0, error, sizeof(error))) {
+		con_printf(CON_NORMAL, "XL live capture observation failed: %s\n", error);
+		return 0;
+	}
+	input_demo_trace_boundary("restored");
+	return 1;
+}
+
 extern "C" int xl_input_demo_probe_traces(const char *replay, const char **state, const char **rng)
 {
 	// Android does not read d2x.ini; explicit probe builds retain adjacent evidence

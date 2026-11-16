@@ -24,6 +24,7 @@ const char *xl_omega_input_demo_error(void);
 const char *xl_input_demo_backend_error(void);
 #if defined(__ANDROID__) && defined(DXX_XL_DEVELOPER_PROBE)
 int xl_input_demo_probe_traces(const char *replay, const char **state, const char **rng);
+int xl_input_demo_probe_record_trace(void);
 #endif
 const char *xl_input_demo_profile_error(void);
 void xl_input_demo_observe(const char *consumer, int subject, input_demo_environment_clock *clock);
