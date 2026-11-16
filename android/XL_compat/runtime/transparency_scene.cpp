@@ -17,6 +17,9 @@
 #include "particle_resources.h"
 #include "resource_validation.h"
 #include "pog_resources.h"
+#include "afterburner_animation.h"
+#include "../xl_vclip_frame.h"
+#include "../fireball_material.h"
 #include "geometry.h"
 #include "preview.h"
 #include "slow_motion_runtime.h"
@@ -99,6 +102,7 @@ struct Sprite {
 	int bitmap = -1;
 	Window window;
 	int clip = -1, frame = 0;
+	float soft_radius = 0;
 };
 struct Water {
 	int32_t points[4][3];
@@ -111,6 +115,14 @@ bool ends_lightning_batch(const Item &item)
 		return lightning->frame.glow.vertices.empty() && lightning->frame.glow.distance_scale > 0;
 	if (const auto *sprite = std::get_if<Sprite>(&item))
 		return sprite_batch_plan(sprite->bitmap < 0 ? -1 : 0, true).action == SpriteBatchAction::end;
+	return true;
+}
+bool ends_sprite_glow(const Item &item)
+{
+	if (const auto *sprite = std::get_if<Sprite>(&item))
+		return sprite->bitmap >= 0 && sprite->soft_radius == 0;
+	if (const auto *lightning = std::get_if<LightningSceneItem>(&item))
+		return lightning->frame.glow.distance_scale > 0;
 	return true;
 }
 struct Bounds {
@@ -361,6 +373,35 @@ extern "C" int xl_transparency_object(int index)
 		rendered_objects.insert(index);
 		if (!transparent_object(Objects[index])) return 0;
 		const auto &obj = Objects[index];
+		if (obj.type == OBJ_FIREBALL && obj.render_type == RT_FIREBALL) {
+			if (obj.lifeleft <= 0) return 1;
+			if (obj.id >= Num_vclips) throw std::runtime_error("XL fireball clip is out of range");
+			const auto &clip = Vclip[obj.id];
+			const int scoped_frames = xl_pog_vclip_frames(obj.id);
+			const int frames = scoped_frames ? scoped_frames : clip.num_frames;
+			int frame = dxx_xl_vclip_lifetime_frame(clip.play_time, clip.frame_time, frames, obj.lifeleft);
+			xl_afterburner_frame(index, obj.id, obj.lifeleft, frames, &frame);
+			const auto material = fireball_material(frame, frames);
+			if (!material.visible) return 1;
+			// Source rods retain their native lit-rod draw; material alpha is for billboards
+			if (!(clip.flags & VF_ROD)) {
+				const int bitmap = scoped_frames ? xl_pog_vclip_bitmap(obj.id, frame) : clip.frames[frame].index;
+				if (bitmap < 0 || bitmap >= Num_bitmap_files) throw std::runtime_error("XL fireball sprite bitmap is out of range");
+				PIGGY_PAGE_IN((::bitmap_index{ static_cast<ushort>(bitmap) }));
+				const auto &image = GameBitmaps[bitmap];
+				if (image.bm_w <= 0 || image.bm_h <= 0) throw std::runtime_error("XL fireball sprite dimensions are invalid");
+				const fix width = image.bm_w > image.bm_h ? obj.size : fixmuldiv(obj.size, image.bm_w, image.bm_h);
+				const fix height = image.bm_w > image.bm_h ? fixmuldiv(obj.size, image.bm_h, image.bm_w) : obj.size;
+				Sprite body{ powerup_billboard(obj.pos, width, height, material.color, ParticleBlend::additive), bitmap };
+				body.soft_radius = 10;
+				if (scoped_frames) {
+					body.clip = obj.id;
+					body.frame = frame;
+				}
+				add(body, point(obj.pos));
+				return 1;
+			}
+		}
 		if (obj.type == OBJ_POWERUP && obj.render_type == RT_POWERUP) {
 			// Source ordinary powerups draw immediately; energy bodies are sprites
 			if (!energy_powerup(obj.id)) return 0;
@@ -483,7 +524,8 @@ extern "C" void xl_transparency_flush(void)
 				               if (sprite->bitmap >= 0) {
 					               if (sprite->clip >= 0 && xl_pog_vclip_bitmap(sprite->clip, sprite->frame) != sprite->bitmap)
 						               throw std::runtime_error("Queued XL sprite lost its retained animation frame");
-					               draw_bitmap_sprite(GameBitmaps[sprite->bitmap], sprite->quad);
+					               if (sprite->soft_radius > 0) draw_fireball_sprite(GameBitmaps[sprite->bitmap], sprite->quad);
+					               else draw_bitmap_sprite(GameBitmaps[sprite->bitmap], sprite->quad);
 				               } else {
 					               const auto *glare = xl_prepared_powerup_glare_image();
 					               if (!glare || !glare->texture) throw std::runtime_error("XL powerup sprite lost its glare image");
@@ -508,10 +550,13 @@ extern "C" void xl_transparency_flush(void)
 			               // Native objects either end glow or begin an incompatible sprite batch
 			               // Flush at particle visitation, before its delayed buffer submission
 			               if (ends_lightning_batch(item)) finish_scene_lightning_batch();
+			               if (ends_sprite_glow(item)) finish_sprite_glow();
 		               });
 		finish_scene_lightning_batch();
+		finish_sprite_glow();
 	} catch (const std::exception &error) {
 		discard_lightning_context(false);
+		discard_sprite_glow(false);
 		xl_transparency_clear();
 		Error("XL transparency rendering: %s", error.what());
 	}
@@ -519,4 +564,7 @@ extern "C" void xl_transparency_flush(void)
 
 #ifdef DXX_XL_DESCRIPTOR_TEST
 #include "transparency_scene_test.h"
+#endif
+#ifdef DXX_XL_DEVELOPER_PROBE
+#include "fireball_queue_raster_probe.h"
 #endif

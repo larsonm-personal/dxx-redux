@@ -37,6 +37,10 @@ namespace xl_compat
 struct ParticleSceneItem;
 class ParticleTexture;
 void transparency_particle(const ParticleSceneItem &item, ParticleTexture *texture);
+#ifdef DXX_XL_DEVELOPER_PROBE
+struct PogBitmap;
+unsigned fireball_queue_raster_controls(const PogBitmap &strip);
+#endif
 } // namespace xl_compat
 #endif
 #endif

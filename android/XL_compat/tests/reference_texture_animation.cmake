@@ -2,6 +2,7 @@ foreach(
     pair IN
     ITEMS "main/effects.cpp|242db260ae911c375d7f6f4c2b59a87d4fc1c6e72996abc3da963548fbc6b9c3"
           "ogl/ogl_texture.cpp|97ceec7d0c05661f5945bd198eab8b482cd69ee2cd8899ab09ddd055619e58ec"
+          "include/vclip.h|995af8528e7838cdc5439c632beca3b4c2a5eef3996acb6147979a89644fb1ef"
           "main/vclip.cpp|88acb10deb5b4cec28496e07c5d5a563111b9ce1005fce4bfcc994d2ec0156f2")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
@@ -28,6 +29,23 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/vclip.cpp" "int32_t Se
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/vclip.cpp" "inline int32_t CurFrame (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_vclip_animation.h"
      CONTENT "${extracted}")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/main/vclip.cpp" vclip_draw_source)
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/include/vclip.h" vclip_header_source)
+set(extracted "// Actual pinned vclip draw policy; rendering is captured by adapters\n")
+foreach(constant IN ITEMS FIREBALL_ALPHA THRUSTER_ALPHA WEAPON_ALPHA)
+    string(REGEX MATCH "#define[ \t]+${constant}[^\r\n]+" definition "${vclip_draw_source}")
+    if(NOT definition)
+        message(FATAL_ERROR "Missing vclip material constant: ${constant}")
+    endif()
+    string(APPEND extracted "${definition}\n")
+endforeach()
+string(REGEX MATCH "#define[ \t]+MAX_ANIMATION_FRAMES[^\r\n]+" definition "${vclip_header_source}")
+if(NOT definition)
+    message(FATAL_ERROR "Missing vclip draw frame bound")
+endif()
+string(APPEND extracted "${definition}\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/vclip.cpp" "void DrawVClipObject (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_vclip_draw.h" CONTENT "${extracted}")
 file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/ogl/ogl_texture.cpp" bitmap_source)
 string(FIND "${bitmap_source}" "nFlags = BM_FLAG_TGA;" begin)
 if(begin LESS 0)

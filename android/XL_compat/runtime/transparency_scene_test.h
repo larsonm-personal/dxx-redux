@@ -226,6 +226,56 @@ extern "C" void xl_transparency_test_controls(int active)
 			break;
 		}
 	check(powerup_clip >= 0, "Powerup sprite controls require a native vclip");
+	{
+		int fireball_clip = -1;
+		for (int i = 0; i < Num_vclips; ++i)
+			if (i != VCLIP_AFTERBURNER_BLOB && !(Vclip[i].flags & VF_ROD) && Vclip[i].num_frames > 1 &&
+			    Vclip[i].play_time > 0 && Vclip[i].frame_time > 0) {
+				fireball_clip = i;
+				break;
+			}
+		check(fireball_clip >= 0, "Fireball queue control requires original clip timing");
+		const auto &clip = Vclip[fireball_clip];
+		obj.type = OBJ_FIREBALL;
+		obj.render_type = RT_FIREBALL;
+		obj.id = ubyte(fireball_clip);
+		obj.size = 65536;
+		const int scoped_frames = xl_pog_vclip_frames(fireball_clip);
+		const int frames = scoped_frames ? scoped_frames : clip.num_frames;
+		unsigned fireball_cases = 0;
+		for (int remaining : { clip.play_time, clip.play_time / 2, 1 }) {
+			obj.lifeleft = remaining;
+			const int frame = dxx_xl_vclip_lifetime_frame(clip.play_time, clip.frame_time, frames, remaining);
+			const auto material = fireball_material(frame, frames);
+			xl_transparency_begin(&segment, 1);
+			check(xl_transparency_object(1), "Native fireball did not enter sprite queue");
+			check(items.size() == unsigned(material.visible), "Fireball source frame visibility differs");
+			obj.lifeleft = 0;
+			drain([&](Item &item) {
+				const auto *sprite = std::get_if<Sprite>(&item);
+				check(sprite && sprite->soft_radius == 10 && sprite->quad.blend == ParticleBlend::additive && sprite->quad.vertices[0].color == material.color,
+				      "Queued fireball lost copied source color, opacity or additive blend");
+				const int bitmap = scoped_frames ? xl_pog_vclip_bitmap(fireball_clip, frame) : clip.frames[frame].index;
+				check(sprite->bitmap == bitmap && (!scoped_frames || (sprite->clip == fireball_clip && sprite->frame == frame)),
+				      "Queued fireball lost its retained frame binding");
+			});
+			++fireball_cases;
+		}
+		xl_transparency_begin(&segment, 1);
+		check(xl_transparency_object(1) && items.empty(), "Expired native fireball submitted a sprite");
+		Sprite fireball{};
+		fireball.bitmap = 0;
+		fireball.soft_radius = 10;
+		check(!ends_sprite_glow(fireball) && ends_lightning_batch(fireball), "Fireball did not retain sprite glow or end incompatible lightning");
+		check(!ends_sprite_glow(Sprite{}) && ends_sprite_glow(Sprite{ {}, 0 }), "Sprite glow lost negative-corona bypass or alpha-body boundary");
+		LightningSceneItem lightning{};
+		lightning.frame.glow.distance_scale = 0;
+		check(!ends_sprite_glow(lightning), "Zero-scale lightning ended pending sprite glow");
+		lightning.frame.glow.distance_scale = 1;
+		check(ends_sprite_glow(lightning), "Positive-scale lightning retained incompatible sprite glow");
+		xl_transparency_clear();
+		std::cout << "XL fireball sprite queue: " << fireball_cases << " original lifetime frames, copied material and expired-object rejection passed\n";
+	}
 	obj.type = OBJ_POWERUP;
 	obj.render_type = RT_POWERUP;
 	obj.id = 1;

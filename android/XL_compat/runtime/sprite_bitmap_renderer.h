@@ -29,6 +29,10 @@ void prepare_sprite_bitmap()
 	try {
 		fragment = particle_shader(GL_FRAGMENT_SHADER, prefix + R"GLSL(
 uniform sampler2D image;
+uniform sampler2D sceneDepth;
+uniform vec2 windowScale;
+uniform float softRadius;
+uniform int additive;
 uniform int minFilter, magFilter;
 in vec2 spriteUV;
 in vec4 spriteColor;
@@ -67,6 +71,14 @@ void main() {
         }
     }
     pixel=color*spriteColor;
+    if (softRadius>0.0) {
+        float scene=texture(sceneDepth,gl_FragCoord.xy*windowScale).r;
+        float behind=10000.0/(5001.0+(2.0*gl_FragCoord.z-1.0)*-4999.0)
+                    -10000.0/(5001.0+(2.0*scene-1.0)*-4999.0);
+        float fade=(softRadius-clamp(behind,0.0,softRadius))/softRadius;
+        if (additive!=0) pixel=vec4(pixel.rgb*fade,1.0);
+        else pixel.a*=fade;
+    }
 }
 )GLSL");
 		program = glCreateProgram();
@@ -92,10 +104,26 @@ void main() {
 	glDeleteShader(fragment);
 }
 
-void draw_sprite_bitmap_gpu(GLuint image, const xl_compat::ParticleQuad &quad)
+void draw_sprite_bitmap_gpu(GLuint image, const xl_compat::ParticleQuad &quad, float soft_radius)
 {
+	if (quad.blend != xl_compat::ParticleBlend::alpha && quad.blend != xl_compat::ParticleBlend::additive)
+		throw std::runtime_error("Unsupported XL bitmap sprite blend mode");
 	ParticleSoftRestore restore;
 	prepare_sprite_bitmap();
+	if (soft_radius > 0) {
+		// Source LoadShader failure leaves the ordinary depth-tested sprite path
+		try {
+			prepare_particle_soft();
+			verify_particle_soft_depth();
+			if (!particle_soft.captured) {
+				particle_soft.depth.capture();
+				particle_soft.captured = true;
+			}
+			soft_radius = (std::max) (1.f, soft_radius);
+		} catch (const std::runtime_error &) {
+			soft_radius = 0;
+		}
+	}
 	GLfloat matrix[16]{};
 #ifdef ANDROID
 	std::copy_n(gles3_shim_get_mvp(), 16, matrix);
@@ -110,6 +138,14 @@ void draw_sprite_bitmap_gpu(GLuint image, const xl_compat::ParticleQuad &quad)
 #endif
 	particle_program(sprite_bitmap_gpu.program);
 	glUniformMatrix4fv(glGetUniformLocation(sprite_bitmap_gpu.program, "mvp"), 1, GL_FALSE, matrix);
+	glUniform1f(glGetUniformLocation(sprite_bitmap_gpu.program, "softRadius"), soft_radius);
+	glUniform1i(glGetUniformLocation(sprite_bitmap_gpu.program, "additive"), quad.blend == xl_compat::ParticleBlend::additive);
+	glUniform1i(glGetUniformLocation(sprite_bitmap_gpu.program, "sceneDepth"), 1);
+	if (soft_radius > 0) {
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, particle_soft.depth.texture);
+		glUniform2f(glGetUniformLocation(sprite_bitmap_gpu.program, "windowScale"), 1.f / particle_soft.depth.width, 1.f / particle_soft.depth.height);
+	}
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, image);
 	GLint min_filter, mag_filter;
@@ -118,13 +154,15 @@ void draw_sprite_bitmap_gpu(GLuint image, const xl_compat::ParticleQuad &quad)
 	glUniform1i(glGetUniformLocation(sprite_bitmap_gpu.program, "image"), 0);
 	glUniform1i(glGetUniformLocation(sprite_bitmap_gpu.program, "minFilter"), min_filter);
 	glUniform1i(glGetUniformLocation(sprite_bitmap_gpu.program, "magFilter"), mag_filter);
-	glEnable(GL_DEPTH_TEST);
+	if (soft_radius > 0) glDisable(GL_DEPTH_TEST);
+	else glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	glDepthMask(GL_FALSE);
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
 	glBlendEquation(GL_FUNC_ADD);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	if (quad.blend == xl_compat::ParticleBlend::additive) glBlendFunc(GL_ONE, GL_ONE);
+	else glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glBindVertexArray(sprite_bitmap_gpu.vao);
 	glBindBuffer(GL_ARRAY_BUFFER, sprite_bitmap_gpu.buffer);
 	using Vertex = xl_compat::ParticleVertex;

@@ -145,7 +145,8 @@ static void sprite_bitmap_gpu_controls(bool source_quads = true)
 			}
 	}
 	if (failures) throw std::runtime_error("Sprite GL_CLAMP failed " + std::to_string(failures) + "/" + std::to_string(cases) + " cases; max error " + std::to_string(maximum));
-	check(sprite_bitmap_device_controls() == 108, "Analytical sprite body controls did not complete");
+	check(sprite_bitmap_device_controls() == 216, "Analytical sprite body controls did not complete");
+	check(sprite_bitmap_soft_controls() == 86, "Analytical sprite soft-depth controls did not complete");
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDeleteFramebuffers(1, &target);
 	glDeleteRenderbuffers(1, &depth);

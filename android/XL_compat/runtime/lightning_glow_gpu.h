@@ -2,6 +2,7 @@
 #define DXX_XL_RUNTIME_LIGHTNING_GLOW_GPU_H
 #include "lightning_gpu.h"
 #include "../lightning_blur_shader.h"
+#include <cmath>
 
 namespace xl_compat
 {
@@ -46,6 +47,9 @@ class LightningGlowGpu
 	int width = 0, height = 0;
 	std::array<int, 4> view{}, bounds{};
 	bool active = false, visible = false, has_extent = false;
+	int strength = 3;
+	float brightness = 1.05f;
+	bool replace = true;
 	static GLuint program(const std::string &fragment_body)
 	{
 #ifdef ANDROID
@@ -127,7 +131,7 @@ class LightningGlowGpu
 		if (direction >= 0) {
 			glUniform1f(glGetUniformLocation(shader, "direction"), float(direction));
 			glUniform1f(glGetUniformLocation(shader, "scale"), 1.0f / (direction ? height : width));
-			glUniform1f(glGetUniformLocation(shader, "brightness"), 1.05f);
+			glUniform1f(glGetUniformLocation(shader, "brightness"), brightness);
 		}
 		glBindTexture(GL_TEXTURE_2D, source);
 		glBindVertexArray(vao);
@@ -171,11 +175,15 @@ class LightningGlowGpu
 		width = height = 0;
 		active = visible = has_extent = false;
 	}
-	void begin(GLuint scene_target, GLuint depth_texture, GLenum attachment, int w, int h, const std::array<int, 4> &viewport)
+	void begin(GLuint scene_target, GLuint depth_texture, GLenum attachment, int w, int h, const std::array<int, 4> &viewport,
+	           int requested_strength = 3, bool requested_replace = true, float requested_brightness = 1.05f)
 	{
+		if (requested_strength < 1 || requested_strength > 3 || !std::isfinite(requested_brightness) || requested_brightness <= 0)
+			throw std::runtime_error("XL glow profile is out of range");
 		if (!depth_texture || (attachment != GL_DEPTH_ATTACHMENT && attachment != GL_DEPTH_STENCIL_ATTACHMENT) || w <= 0 || h <= 0 || w > 16384 || h > 16384 || viewport[0] < 0 || viewport[1] < 0 || viewport[2] <= 0 || viewport[3] <= 0 || viewport[0] > w - viewport[2] || viewport[1] > h - viewport[3])
 			throw std::runtime_error("XL lightning glow requires a bounded depth-backed viewport");
-		if (active && scene == scene_target && depth == depth_texture && depth_attachment == attachment && width == w && height == h && view == viewport) return;
+		if (active && scene == scene_target && depth == depth_texture && depth_attachment == attachment && width == w && height == h && view == viewport &&
+		    strength == requested_strength && replace == requested_replace && brightness == requested_brightness) return;
 		if (active) end();
 		LightningGlowState restore;
 		prepare(w, h);
@@ -183,6 +191,9 @@ class LightningGlowGpu
 		depth = depth_texture;
 		depth_attachment = attachment;
 		view = viewport;
+		strength = requested_strength;
+		replace = requested_replace;
+		brightness = requested_brightness;
 		select(targets[0]);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
@@ -234,6 +245,27 @@ class LightningGlowGpu
 		primitive.draw(core, glow, random_nodes, color, line_width, matrix, corona, true, corona_map, textured_glow);
 		return visible;
 	}
+	template <class Draw>
+	void draw_sprite(const std::array<int, 4> &extent, bool samples_depth, Draw draw)
+	{
+		if (!active) throw std::runtime_error("XL sprite glow draw requires an active batch");
+		include_extent(extent);
+		if (!visible) return;
+		LightningGlowState restore;
+		select(targets[0]);
+		// A soft sprite samples the retained depth texture; never attach it too
+		struct RestoreDepth {
+			GLuint depth;
+			GLenum attachment;
+			bool detached;
+			~RestoreDepth()
+			{
+				if (detached) glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, depth, 0);
+			}
+		} restore_depth{ depth, depth_attachment, samples_depth };
+		if (samples_depth) glFramebufferTexture2D(GL_FRAMEBUFFER, depth_attachment, GL_TEXTURE_2D, 0, 0);
+		draw();
+	}
 	bool end()
 	{
 		if (!active) return false;
@@ -253,7 +285,7 @@ class LightningGlowGpu
 #endif
 		glEnable(GL_BLEND);
 		glBlendEquation(GL_FUNC_ADD);
-		for (unsigned pass = 0; pass < 6; ++pass) {
+		for (unsigned pass = 0; pass < unsigned(2 * strength); ++pass) {
 			select(targets[1 + pass % 2]);
 			if (pass < 2) {
 				glClearColor(0, 0, 0, 1);
@@ -264,7 +296,8 @@ class LightningGlowGpu
 		}
 		select(scene);
 		glBlendFunc(GL_ONE, GL_ONE);
-		rectangle(colors[2], -1, 9);
+		rectangle(colors[2], -1, 3 * strength);
+		if (!replace) rectangle(colors[0], -1, 3 * strength);
 		if (glGetError() != GL_NO_ERROR) throw std::runtime_error("XL lightning glow composition failed");
 		visible = false;
 		return true;

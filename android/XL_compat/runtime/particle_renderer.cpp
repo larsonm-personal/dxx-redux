@@ -25,6 +25,14 @@ void ogl_bindbmtex(grs_bitmap *);
 #include "particle_border_texture.h"
 #include "sprite_bitmap_renderer.h"
 #include "camera_target_gpu.h"
+#include "sprite_glow_renderer.h"
+#else
+void xl_compat::finish_sprite_glow() {}
+void xl_compat::discard_sprite_glow(bool) {}
+void xl_compat::draw_fireball_sprite(grs_bitmap &, const ParticleQuad &)
+{
+	throw std::runtime_error("XL fireball glow requires OpenGL 3 or OpenGL ES 3");
+}
 #endif
 
 namespace
@@ -91,6 +99,7 @@ void ParticleTexture::discard_context(bool abandoned)
 	particle_soft.discard(abandoned);
 	particle_multi.discard(abandoned);
 	sprite_bitmap_gpu.discard(abandoned);
+	sprite_glow.discard(abandoned);
 #endif
 	for (auto *texture = State::head; texture; texture = texture->next) texture->release(abandoned);
 }
@@ -187,7 +196,7 @@ void ParticleTexture::draw_soft_sprite(const ParticleQuad &quad, bool soft)
 #endif
 }
 
-void draw_bitmap_sprite(grs_bitmap &image, ParticleQuad quad)
+void draw_bitmap_sprite(grs_bitmap &image, ParticleQuad quad, float soft_radius)
 {
 	GLint active, binding;
 	glGetIntegerv(GL_ACTIVE_TEXTURE, &active);
@@ -203,7 +212,7 @@ void draw_bitmap_sprite(grs_bitmap &image, ParticleQuad quad)
 #if defined(OGLES) && !defined(ANDROID)
 	throw std::runtime_error("XL sprite bitmaps require OpenGL 3 or OpenGL ES 3");
 #else
-	draw_sprite_bitmap_gpu(image.gltexture->handle, quad);
+	draw_sprite_bitmap_gpu(image.gltexture->handle, quad, soft_radius);
 #endif
 }
 
