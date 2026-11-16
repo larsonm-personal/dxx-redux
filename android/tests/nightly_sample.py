@@ -632,6 +632,15 @@ def validate_refill_receipt(plan, policy, receipt):
 def collect_refill_child(child, policy, lane, directory):
     if sweep.read(directory / "admission.json") != child["refill_parent"]:
         raise ValueError("Invalid refill admission journal")
+    if sweep.read(directory / "plan.json") != child:
+        raise ValueError("Invalid refill child plan provenance")
+    attempt = directory / "attempt.json"
+    if attempt.exists():
+        identity = sweep.read(attempt)
+        if not isinstance(identity, dict) or any(
+            identity.get(key) != value for key, value in sweep.attempt_identity(child, lane).items()
+        ):
+            raise ValueError("Invalid refill attempt provenance")
     return sweep.collect(child, policy, lane, directory)
 
 
@@ -717,11 +726,20 @@ def execute_refills(plan, policy, lane, output):
                 failed = 1
                 timed_out = True
             finally:
-                collected = collect_refill_child(child, policy, lane, directory)
-                sweep.reconcile(
-                    child, policy, sweep.fresh_state(child["target_sha"], child["catalog_hash"]), [collected]
-                )
-                expected_receipts[child["batch_id"]] = sweep.digest(collected)
+                try:
+                    collected = collect_refill_child(child, policy, lane, directory)
+                    sweep.reconcile(
+                        child, policy, sweep.fresh_state(child["target_sha"], child["catalog_hash"]), [collected]
+                    )
+                    expected_receipts[child["batch_id"]] = sweep.digest(collected)
+                except Exception:
+                    # Admission was durably written by this controller. Its observed
+                    # loss/corruption cannot be recovered as an unadmitted crash tail
+                    write_artifact(
+                        output / "refill-integrity-error.json",
+                        {"schema": 1, "reason": "live-child-evidence-invalid", "batch_id": child["batch_id"]},
+                    )
+                    raise
             if timed_out:
                 break
             current = collected["results"]
@@ -745,7 +763,13 @@ def execute_refills(plan, policy, lane, output):
     finally:
         # Child evidence is durable after each attempt. Re-read the full prefix once
         # at completion/cancellation; never trust cached rows for publication
-        collect_refills(plan, policy, lane, output, expected_receipts=expected_receipts)
+        try:
+            collect_refills(plan, policy, lane, output, expected_receipts=expected_receipts)
+        except Exception:
+            marker = output / "refill-integrity-error.json"
+            if not marker.exists():
+                write_artifact(marker, {"schema": 1, "reason": "final-evidence-invalid"})
+            raise
     return failed
 
 
