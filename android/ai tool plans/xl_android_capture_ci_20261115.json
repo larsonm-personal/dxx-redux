@@ -1,0 +1,966 @@
+{
+    "snapshot_scope": "Implementation checkpoints before final documentation push; pending is not pass",
+    "stack_url": "https://github.com/larsonm-personal/dxx-redux/stack/511",
+    "checkpoints": [
+        {
+            "pr": 513,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/513",
+            "head": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+            "base": "ac628f537a3a6c208da34fe3607f1346b9b28681",
+            "merge": "57a61918ff8a1a622a11db8f765527e0c0c24226",
+            "runs": [
+                {
+                    "id": 43750768561,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768561",
+                    "attempt": 1,
+                    "workflow_head": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "candidate": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "status": "in_progress",
+                    "conclusion": null,
+                    "jobs": [
+                        {
+                            "id": 132923986544,
+                            "name": "stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768561/job/132923986544",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924031490,
+                            "name": "Linux public build and save integrity",
+                            "status": "in_progress",
+                            "conclusion": null,
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768561/job/132924031490",
+                            "active_steps": ["Qualify native ordered input phases and causal failures"]
+                        },
+                        {
+                            "id": 132924031497,
+                            "name": "Public replay admission controls",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768561/job/132924031497",
+                            "active_steps": []
+                        }
+                    ]
+                },
+                {
+                    "id": 43750768601,
+                    "name": "Server Rust checks",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768601",
+                    "attempt": 1,
+                    "workflow_head": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "candidate": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "jobs": [
+                        {
+                            "id": 132923986769,
+                            "name": "stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768601/job/132923986769",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924035940,
+                            "name": "server",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768601/job/132924035940",
+                            "active_steps": []
+                        }
+                    ]
+                },
+                {
+                    "id": 43750768615,
+                    "name": "PR #513 test sample",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768615",
+                    "attempt": 1,
+                    "workflow_head": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "candidate": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "status": "in_progress",
+                    "conclusion": null,
+                    "jobs": [
+                        {
+                            "id": 132923987293,
+                            "name": "stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768615/job/132923987293",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132923988655,
+                            "name": "Inspect retained online receipt",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768615/job/132923988655",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924026343,
+                            "name": "Select tests",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768615/job/132924026343",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924191950,
+                            "name": "execution-stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768615/job/132924191950",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924193446,
+                            "name": "Verify pinned Pumo staging",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768615/job/132924193446",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924194021,
+                            "name": "Nightly XL developer Release compile",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768615/job/132924194021",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924261511,
+                            "name": "Linux tests",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768615/job/132924261511",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924261685,
+                            "name": "Android tests / Run selected tests",
+                            "status": "in_progress",
+                            "conclusion": null,
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768615/job/132924261685",
+                            "active_steps": ["Require standard FFmpeg for generated preview fixture"]
+                        },
+                        {
+                            "id": 132924261710,
+                            "name": "JVM tests / Run selected tests",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768615/job/132924261710",
+                            "active_steps": []
+                        }
+                    ]
+                },
+                {
+                    "id": 43750768622,
+                    "name": "XL compatibility contracts",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768622",
+                    "attempt": 1,
+                    "workflow_head": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "candidate": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "jobs": [
+                        {
+                            "id": 132923986962,
+                            "name": "stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768622/job/132923986962",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924059215,
+                            "name": "XL developer source compile (Windows x86)",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768622/job/132924059215",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924059235,
+                            "name": "XL developer source compile (no game assets)",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768622/job/132924059235",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924059261,
+                            "name": "Asset-free XL checks (windows-2022)",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768622/job/132924059261",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924059269,
+                            "name": "Asset-free XL checks (ubuntu-24.04)",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768622/job/132924059269",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924060952,
+                            "name": "XL developer Release source compile (no game assets)",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768622/job/132924060952",
+                            "active_steps": []
+                        }
+                    ]
+                },
+                {
+                    "id": 43750768650,
+                    "name": "XL asset smoke request",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768650",
+                    "attempt": 1,
+                    "workflow_head": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "candidate": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "jobs": [
+                        {
+                            "id": 132923986998,
+                            "name": "Signal exact PR head for trusted XL qualification",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768650/job/132923986998",
+                            "active_steps": []
+                        }
+                    ]
+                },
+                {
+                    "id": 43750768661,
+                    "name": "scripts and ci tests",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768661",
+                    "attempt": 1,
+                    "workflow_head": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "candidate": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "status": "in_progress",
+                    "conclusion": null,
+                    "jobs": [
+                        {
+                            "id": 132923987342,
+                            "name": "Automation catalogs",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768661/job/132923987342",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132923987738,
+                            "name": "stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768661/job/132923987738",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132923987999,
+                            "name": "Workflow syntax",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768661/job/132923987999",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924036697,
+                            "name": "scripts and ci tests (windows-2022)",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768661/job/132924036697",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924036711,
+                            "name": "scripts and ci tests (ubuntu-24.04)",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768661/job/132924036711",
+                            "active_steps": []
+                        }
+                    ]
+                },
+                {
+                    "id": 43750768671,
+                    "name": "Engine smoke",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768671",
+                    "attempt": 1,
+                    "workflow_head": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "candidate": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "status": "in_progress",
+                    "conclusion": null,
+                    "jobs": [
+                        {
+                            "id": 132923987264,
+                            "name": "CI policy and runner checks",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768671/job/132923987264",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132923987561,
+                            "name": "stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768671/job/132923987561",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924045158,
+                            "name": "Linux d2 build and tests",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768671/job/132924045158",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924045175,
+                            "name": "Linux public ASan runtime",
+                            "status": "in_progress",
+                            "conclusion": null,
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768671/job/132924045175",
+                            "active_steps": ["Run instrumented public workloads"]
+                        },
+                        {
+                            "id": 132924045207,
+                            "name": "Linux d1 build and tests",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768671/job/132924045207",
+                            "active_steps": []
+                        }
+                    ]
+                },
+                {
+                    "id": 43750768700,
+                    "name": "Public LAN smoke",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768700",
+                    "attempt": 1,
+                    "workflow_head": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "candidate": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "status": "in_progress",
+                    "conclusion": null,
+                    "jobs": [
+                        {
+                            "id": 132923987154,
+                            "name": "Select public LAN smoke",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768700/job/132923987154",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132923988780,
+                            "name": "Export public timing evidence",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768700/job/132923988780",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924160586,
+                            "name": "Two-player lobby to game / Run selected tests",
+                            "status": "in_progress",
+                            "conclusion": null,
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750768700/job/132924160586",
+                            "active_steps": ["Execute reviewed test selection"]
+                        }
+                    ]
+                },
+                {
+                    "id": 43750785355,
+                    "name": "XL asset smoke for PR head 51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750785355",
+                    "attempt": 1,
+                    "workflow_head": "5f8ab3535bec69b86a287f6516a5bddd6b81c383",
+                    "candidate": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+                    "status": "in_progress",
+                    "conclusion": null,
+                    "jobs": [
+                        {
+                            "id": 132924039108,
+                            "name": "Verify owned PR and pin exact head",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750785355/job/132924039108",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924119062,
+                            "name": "Measure D2X readiness on fixed uploaded sample",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750785355/job/132924119062",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924119572,
+                            "name": "Original XL asset load and navigation / stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750785355/job/132924119572",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924120694,
+                            "name": "Original XL asset load and navigation / Inspect retained online receipt",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750785355/job/132924120694",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924158843,
+                            "name": "Original XL asset load and navigation / Select tests",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750785355/job/132924158843",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924339872,
+                            "name": "Original XL asset load and navigation / execution-stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750785355/job/132924339872",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924340992,
+                            "name": "Original XL asset load and navigation / Verify pinned Pumo staging",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750785355/job/132924340992",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924341078,
+                            "name": "Original XL asset load and navigation / Nightly XL developer Release compile",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750785355/job/132924341078",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132924394468,
+                            "name": "Original XL asset load and navigation / Linux tests",
+                            "status": "in_progress",
+                            "conclusion": null,
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750785355/job/132924394468",
+                            "active_steps": ["Execute admitted host owners"]
+                        },
+                        {
+                            "id": 132924395906,
+                            "name": "Original XL asset load and navigation / matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests'",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750785355/job/132924395906",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132925424616,
+                            "name": "D2X readiness percentage (sampled load/tick)",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43750785355/job/132925424616",
+                            "active_steps": []
+                        }
+                    ]
+                }
+            ],
+            "all_nine_terminal": false,
+            "all_nine_success": false,
+            "observed_utc": "2026-11-15T19:24:31.874378+00:00"
+        },
+        {
+            "pr": 514,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/514",
+            "head": "67c8dcf083757d37c4ff53074864a33040021dda",
+            "base": "51edd57ede67a8e70fd8b06c344dd17b36431a5e",
+            "merge": "88edad187b6510d17e92371deb28b6acd81154a9",
+            "runs": [
+                {
+                    "id": 43751421095,
+                    "name": "PR #514 test sample",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421095",
+                    "attempt": 1,
+                    "workflow_head": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "candidate": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "status": "in_progress",
+                    "conclusion": null,
+                    "jobs": [
+                        {
+                            "id": 132925996148,
+                            "name": "stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421095/job/132925996148",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132925997610,
+                            "name": "Inspect retained online receipt",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421095/job/132925997610",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926032391,
+                            "name": "Select tests",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421095/job/132926032391",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926261775,
+                            "name": "execution-stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421095/job/132926261775",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926263160,
+                            "name": "Verify pinned Pumo staging",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421095/job/132926263160",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926263321,
+                            "name": "Nightly XL developer Release compile",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421095/job/132926263321",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132927025339,
+                            "name": "Linux tests",
+                            "status": "in_progress",
+                            "conclusion": null,
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421095/job/132927025339",
+                            "active_steps": ["Execute admitted host owners"]
+                        },
+                        {
+                            "id": 132927025474,
+                            "name": "JVM tests / Run selected tests",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421095/job/132927025474",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132927025514,
+                            "name": "Android tests / Run selected tests",
+                            "status": "in_progress",
+                            "conclusion": null,
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421095/job/132927025514",
+                            "active_steps": ["Build selected native replay executables before test budget"]
+                        }
+                    ]
+                },
+                {
+                    "id": 43751421106,
+                    "name": "scripts and ci tests",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421106",
+                    "attempt": 1,
+                    "workflow_head": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "candidate": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "status": "in_progress",
+                    "conclusion": null,
+                    "jobs": [
+                        {
+                            "id": 132925995421,
+                            "name": "Automation catalogs",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421106/job/132925995421",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132925995679,
+                            "name": "Workflow syntax",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421106/job/132925995679",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132925995752,
+                            "name": "stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421106/job/132925995752",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926037501,
+                            "name": "scripts and ci tests (ubuntu-24.04)",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421106/job/132926037501",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926037504,
+                            "name": "scripts and ci tests (windows-2022)",
+                            "status": "in_progress",
+                            "conclusion": null,
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421106/job/132926037504",
+                            "active_steps": ["Script and CI smoke tests"]
+                        }
+                    ]
+                },
+                {
+                    "id": 43751421119,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421119",
+                    "attempt": 1,
+                    "workflow_head": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "candidate": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "status": "in_progress",
+                    "conclusion": null,
+                    "jobs": [
+                        {
+                            "id": 132925995819,
+                            "name": "stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421119/job/132925995819",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926024494,
+                            "name": "Linux public build and save integrity",
+                            "status": "in_progress",
+                            "conclusion": null,
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421119/job/132926024494",
+                            "active_steps": ["Qualify native ordered input phases and causal failures"]
+                        },
+                        {
+                            "id": 132926024563,
+                            "name": "Public replay admission controls",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421119/job/132926024563",
+                            "active_steps": []
+                        }
+                    ]
+                },
+                {
+                    "id": 43751421159,
+                    "name": "Public LAN smoke",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421159",
+                    "attempt": 1,
+                    "workflow_head": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "candidate": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "status": "in_progress",
+                    "conclusion": null,
+                    "jobs": [
+                        {
+                            "id": 132925995891,
+                            "name": "Select public LAN smoke",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421159/job/132925995891",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132925997466,
+                            "name": "Export public timing evidence",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421159/job/132925997466",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926187081,
+                            "name": "Two-player lobby to game / Run selected tests",
+                            "status": "in_progress",
+                            "conclusion": null,
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421159/job/132926187081",
+                            "active_steps": ["Build emulator APKs before boot"]
+                        }
+                    ]
+                },
+                {
+                    "id": 43751421163,
+                    "name": "XL asset smoke request",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421163",
+                    "attempt": 1,
+                    "workflow_head": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "candidate": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "jobs": [
+                        {
+                            "id": 132925995454,
+                            "name": "Signal exact PR head for trusted XL qualification",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421163/job/132925995454",
+                            "active_steps": []
+                        }
+                    ]
+                },
+                {
+                    "id": 43751421189,
+                    "name": "XL compatibility contracts",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421189",
+                    "attempt": 1,
+                    "workflow_head": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "candidate": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "status": "in_progress",
+                    "conclusion": null,
+                    "jobs": [
+                        {
+                            "id": 132925995876,
+                            "name": "stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421189/job/132925995876",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926039862,
+                            "name": "XL developer source compile (no game assets)",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421189/job/132926039862",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926039864,
+                            "name": "Asset-free XL checks (windows-2022)",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421189/job/132926039864",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926039867,
+                            "name": "XL developer source compile (Windows x86)",
+                            "status": "in_progress",
+                            "conclusion": null,
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421189/job/132926039867",
+                            "active_steps": ["Compile and link the developer metadata and desktop targets"]
+                        },
+                        {
+                            "id": 132926039885,
+                            "name": "Asset-free XL checks (ubuntu-24.04)",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421189/job/132926039885",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926041901,
+                            "name": "XL developer Release source compile (no game assets)",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421189/job/132926041901",
+                            "active_steps": []
+                        }
+                    ]
+                },
+                {
+                    "id": 43751421212,
+                    "name": "Engine smoke",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421212",
+                    "attempt": 1,
+                    "workflow_head": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "candidate": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "status": "in_progress",
+                    "conclusion": null,
+                    "jobs": [
+                        {
+                            "id": 132925995821,
+                            "name": "CI policy and runner checks",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421212/job/132925995821",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132925996077,
+                            "name": "stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421212/job/132925996077",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926066296,
+                            "name": "Linux public ASan runtime",
+                            "status": "in_progress",
+                            "conclusion": null,
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421212/job/132926066296",
+                            "active_steps": ["Run instrumented public workloads"]
+                        },
+                        {
+                            "id": 132926066310,
+                            "name": "Linux d1 build and tests",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421212/job/132926066310",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926066330,
+                            "name": "Linux d2 build and tests",
+                            "status": "in_progress",
+                            "conclusion": null,
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421212/job/132926066330",
+                            "active_steps": ["Build all native targets and run asset-free tests"]
+                        }
+                    ]
+                },
+                {
+                    "id": 43751421218,
+                    "name": "Server Rust checks",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421218",
+                    "attempt": 1,
+                    "workflow_head": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "candidate": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "jobs": [
+                        {
+                            "id": 132925995882,
+                            "name": "stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421218/job/132925995882",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926062623,
+                            "name": "server",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751421218/job/132926062623",
+                            "active_steps": []
+                        }
+                    ]
+                },
+                {
+                    "id": 43751438142,
+                    "name": "XL asset smoke for PR head 67c8dcf083757d37c4ff53074864a33040021dda",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751438142",
+                    "attempt": 1,
+                    "workflow_head": "5f8ab3535bec69b86a287f6516a5bddd6b81c383",
+                    "candidate": "67c8dcf083757d37c4ff53074864a33040021dda",
+                    "status": "in_progress",
+                    "conclusion": null,
+                    "jobs": [
+                        {
+                            "id": 132926048773,
+                            "name": "Verify owned PR and pin exact head",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751438142/job/132926048773",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926341483,
+                            "name": "Measure D2X readiness on fixed uploaded sample",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751438142/job/132926341483",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926341896,
+                            "name": "Original XL asset load and navigation / stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751438142/job/132926341896",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132926343056,
+                            "name": "Original XL asset load and navigation / Inspect retained online receipt",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751438142/job/132926343056",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132927104341,
+                            "name": "Original XL asset load and navigation / Select tests",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751438142/job/132927104341",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132927801539,
+                            "name": "Original XL asset load and navigation / execution-stack / check",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751438142/job/132927801539",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132927802387,
+                            "name": "Original XL asset load and navigation / Nightly XL developer Release compile",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751438142/job/132927802387",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132927802527,
+                            "name": "Original XL asset load and navigation / Verify pinned Pumo staging",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751438142/job/132927802527",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132927853092,
+                            "name": "Original XL asset load and navigation / Linux tests",
+                            "status": "in_progress",
+                            "conclusion": null,
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751438142/job/132927853092",
+                            "active_steps": ["Execute admitted host owners"]
+                        },
+                        {
+                            "id": 132927854033,
+                            "name": "Original XL asset load and navigation / matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests'",
+                            "status": "completed",
+                            "conclusion": "skipped",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751438142/job/132927854033",
+                            "active_steps": []
+                        },
+                        {
+                            "id": 132928220783,
+                            "name": "D2X readiness percentage (sampled load/tick)",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43751438142/job/132928220783",
+                            "active_steps": []
+                        }
+                    ]
+                }
+            ],
+            "all_nine_terminal": false,
+            "all_nine_success": false,
+            "observed_utc": "2026-11-15T19:24:38.754222+00:00"
+        }
+    ]
+}

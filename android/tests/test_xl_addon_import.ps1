@@ -1,6 +1,7 @@
-﻿#!/usr/bin/env pwsh
-param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [string]$TimeEquipmentPilot)
+#!/usr/bin/env pwsh
+param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [string]$TimeEquipmentPilot, [switch]$CaptureLive, [string]$OutputDirectory)
 $ErrorActionPreference = 'Stop'
+if ($CaptureLive -and (!$TimeEquipment -or $Warp5 -or $Dinter)) { throw 'CaptureLive requires the original time-equipment mode' }
 if ($Warp5 -and !$TimeEquipment) { throw 'Warp5 uses the protected original gameplay import mode' }
 if ($Dinter -and (!$TimeEquipment -or $Warp5)) { throw 'Dinter uses the protected original gameplay import mode alone' }
 if ($TimeEquipment -and ($PumoUiImport -or !$DistributionName -or !(Test-Path -LiteralPath $TimeEquipmentPilot -PathType Leaf))) {
@@ -20,6 +21,11 @@ if ($PumoUiCold) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-cold
 if ($PumoUiIsolation) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-isolation-android' }
 if ($PumoUiDisabledOwner) { $output = Join-Path $PSScriptRoot '../../temp/xl-pumo-ui-disabled-android' }
 if ($TimeEquipment) { $output = Join-Path $PSScriptRoot $(if ($Dinter) { '../../temp/xl-dinter-android' } elseif ($Warp5) { '../../temp/xl-warp5-android' } else { '../../temp/xl-time-equipment-android' }) }
+if ($OutputDirectory) {
+    $output = [IO.Path]::GetFullPath($OutputDirectory)
+    if (Test-Path -LiteralPath $output) { throw 'Use a fresh addon evidence output directory' }
+}
+if ($CaptureLive -and !$OutputDirectory) { throw 'CaptureLive requires a fresh explicit OutputDirectory' }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 function Invoke-AddonAdb {
@@ -38,6 +44,16 @@ function Invoke-AddonPrivate {
     param([string]$Command)
     Invoke-AddonAdb -Arguments @('shell', 'run-as', $script:PACKAGE, 'sh', '-c', "'$Command'")
 }
+function Save-AddonCaptureEvidence {
+    param([string]$Destination)
+    New-Item -ItemType Directory -Force $Destination | Out-Null
+    $files = ([string](Invoke-AddonPrivate 'for p in files/d2x-redux/input_demo_recordings/new files/d2x-redux/xl_capture_traces; do if test -d $p; then find $p -type f; fi; done')) -split '\r?\n' | Where-Object { $_ }
+    foreach ($remote in $files) {
+        if ($remote -cnotmatch '^files/d2x-redux/(input_demo_recordings/new|xl_capture_traces)/[A-Za-z0-9_.-]+$') { throw 'Invalid time capture export path' }
+        $encoded = Invoke-AddonAdb -Arguments @('exec-out', 'run-as', $script:PACKAGE, 'base64', '-w', '0', $remote)
+        [IO.File]::WriteAllBytes((Join-Path $Destination ([IO.Path]::GetFileName($remote))), [Convert]::FromBase64String($encoded))
+    }
+}
 function Set-ImportedOwnerExpectations {
     param([object[]]$Steps)
     foreach ($step in $Steps) {
@@ -49,6 +65,7 @@ function Set-ImportedOwnerExpectations {
 }
 $backup = 'files/xl-addon-import-backup'
 $paths = @('shared_prefs', 'files/file_sets.json')
+if ($CaptureLive) { $paths += @('files/d2x-redux/input_demo_recordings', 'files/d2x-redux/xl_capture_traces') }
 if ($PumoUiImport -or $TimeEquipment) {
     $paths += @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d1x-redux/descent.cfg', 'files/d2x-redux/d2x.ini',
         'files/descent.cfg', 'files/graphics_safety.json', 'files/.graphics_safety.lock', 'files/d2x-redux/mod_usage.json',
@@ -254,6 +271,47 @@ try {
             $coldScript = Join-Path $output 'time-equipment-cold.jsonc'
         }
         $cold | ConvertTo-Json -Depth 30 | Set-Content $coldScript -Encoding utf8
+        if ($CaptureLive) {
+            # Each capture contains ordinary controls only; all pose assists stay outside it
+            $startCapture = @(
+                @{ action = 'meta_action'; id = 1034; post_delay_ms = 100 },
+                @{ action = 'wait_for'; timeout_ms = 5000; expect = @{ 'input_demo.recording' = $true; 'input_demo.frame_count' = @{ gte = 1 } } }
+            )
+            $stopCapture = @(
+                @{ action = 'meta_action'; id = 1034; post_delay_ms = 100 },
+                @{ action = 'wait_for'; timeout_ms = 5000; expect = @{ 'input_demo.recording' = $false } }
+            )
+            $warmCapture = @()
+            $capturing = $false
+            foreach ($step in $steps) {
+                if ($step.action -eq 'wait_for' -and $step.expect.'resolution.render_width' -eq 960) {
+                    $warmCapture += @(
+                        @{ action = 'wait_for'; timeout_ms = 10000; expect = @{ 'graphics_safety.phase' = 'challenge' } },
+                        @{ action = 'controller_input'; controller_keys = @('DLEFT', 'A'); post_delay_ms = 50 }
+                    )
+                }
+                if ($capturing -and ($step.action -eq 'pose_view' -or ($step.action -eq 'set_debug' -and $step.value -eq 'save'))) {
+                    $warmCapture += $stopCapture
+                    $capturing = $false
+                }
+                if ($step.action -eq 'meta_action' -and $step.id -in @(1046, 1047)) {
+                    $warmCapture += $startCapture
+                    $capturing = $true
+                }
+                $warmCapture += $step
+            }
+            if ($capturing) { throw 'Time capture must finish before the normal save' }
+            $coldCapture = @()
+            foreach ($step in $cold) {
+                if ($step.action -eq 'meta_action' -and $step.id -eq 1047) { $coldCapture += $startCapture }
+                $coldCapture += $step
+            }
+            $coldCapture += $stopCapture
+            $scenario = Join-Path $output 'time-live-warm.jsonc'
+            $warmCapture | ConvertTo-Json -Depth 30 | Set-Content $scenario -Encoding utf8NoBOM
+            $coldCapture | ConvertTo-Json -Depth 30 | Set-Content $coldScript -Encoding utf8NoBOM
+            Invoke-AddonPrivate 'rm -rf files/d2x-redux/input_demo_recordings files/d2x-redux/xl_capture_traces' | Out-Null
+        }
         $pids = @{}
         foreach ($run in @(@{ phase = 'warm'; script = $scenario }, @{ phase = 'cold'; script = $coldScript })) {
             $phase = $run.phase
@@ -288,6 +346,13 @@ try {
             Invoke-AddonAdb -Arguments @('pull', "/data/local/tmp/xl-time-$phase.png", "$output/$phase.png") | Out-Null
             Invoke-AddonAdb -Arguments @('shell', 'rm', '-f', "/data/local/tmp/xl-time-$phase.png") | Out-Null
             Invoke-AddonPrivate 'find files/d2x-redux/Players -type f -name *.sg* -exec sha256sum {} \;' | Set-Content "$output/$phase-saves.sha256" -Encoding utf8
+            if ($CaptureLive) {
+                $captureOutput = Join-Path $output "$phase-capture"
+                Save-AddonCaptureEvidence -Destination $captureOutput
+                $expectedCaptures = if ($phase -eq 'warm') { 2 } else { 3 }
+                if (@(Get-ChildItem $captureOutput -Filter '*.dximdemo').Count -ne $expectedCaptures -or
+                    @(Get-ChildItem $captureOutput -Filter 'live-*.jsonl.gz').Count -ne $expectedCaptures) { throw 'Missing complete time-capture evidence' }
+            }
             Invoke-AddonAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
         }
         Invoke-AddonPrivate 'cat files/d2x-redux/.mission_assets.json' | Set-Content "$output/runtime-owner.json" -Encoding utf8
@@ -308,6 +373,14 @@ try {
             ConvertTo-Json | Set-Content "$output/cold-proof.json" -Encoding utf8
         if (Compare-Object @(Get-Content "$output/warm-saves.sha256") @(Get-Content "$output/cold-saves.sha256")) {
             throw 'Cold continuation changed the saved checkpoint files'
+        }
+        if ($CaptureLive) {
+            . "$PSScriptRoot/../helpers/xl_android_timeline_replay.ps1"
+            foreach ($demo in @(Get-ChildItem (Join-Path $output 'cold-capture') -Filter '*.dximdemo' | Sort-Object Name)) {
+                $replayOutput = Join-Path $output ("replay-" + $demo.BaseName)
+                New-Item -ItemType Directory $replayOutput | Out-Null
+                Invoke-XlAndroidTimelineReplay -Replay $demo.FullName -DeviceDirectory $backup -OutputDirectory $replayOutput
+            }
         }
         if ($Dinter) { Write-Output 'PASS: Original Android Dinter controller movement, imported owner, save and cold continuation' }
         elseif ($Warp5) { Write-Output 'PASS: Original Android Warp 5 actor, controller movement, imported owner, save and cold continuation' }
@@ -459,6 +532,7 @@ try {
         } catch { $captureFailure = $_ }
         Invoke-AddonAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
         if ($ready) {
+            if ($CaptureLive -and !$completed) { Save-AddonCaptureEvidence -Destination (Join-Path $output 'partial-capture') }
             foreach ($path in $paths) { Invoke-AddonPrivate "rm -rf $path" | Out-Null }
             if ($offloaded) {
                 if ((Get-FileHash -LiteralPath $hostBackup -Algorithm SHA256).Hash -ine $backupHash) { throw 'Host profile backup changed; preserving recovery state' }

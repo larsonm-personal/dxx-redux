@@ -132,3 +132,32 @@ sound-disabled playback differing from the captured named-audio resources (04).
 Attempt 05 uses the captured viewport and genuine input hashes in the ordinary
 installation layout with audio enabled; its complete comparison is pending.
 No runtime safeguards or frozen readiness assets were changed for these setups.
+
+## Time-equipment checkpoint
+
+The existing import owner now reuses the shared native Android replay helper for
+all three captured controls before restoring its protected state. time-capture-03
+passes warm 39/39 and cold 14/14, all three embedded replay results, resource/save
+ownership checks and exact profile restoration. Independent complete comparisons
+also pass for all three 85-frame recordings: 89 world records each, SIM event
+counts 1172/15/75, zero FX events, all frame diagnostics and objects, and terminal
+results. These time-equipment views do not stress the FX stream.
+
+The separate time-capture-02 recordings also pass all three ordinary Windows
+comparisons (time-windows-slow-05, time-windows-bullet-01,
+time-windows-cold-01). Linux qualification is running; its slow-motion case has
+passed. Genuine original distribution, retail data, mission, Vertigo HAM and
+64-resource identities are preserved in the private input/import receipts.
+
+Ordinary Windows level-start playback reproduces the Linux-only-first-observed
+207 metadata differences, with every other comparator passing. The gap is
+cross-platform startup metadata ownership, not an excuse to weaken the complete
+world comparison. Android prepares canonical routing metadata with deferred
+expensive planning while host startup can populate a canonical plan; further
+admission work must establish the ordered initialization contract.
+
+PR 513 publishes the capture observer/owners at
+51edd57ede67a8e70fd8b06c344dd17b36431a5e, tree
+0f6bda0216cd22cc0c1324f3dcffcbcf3fc0c436, immediately above PR 512 in native stack 511. Its new candidate CI is still pending. Both automation catalogs pass with
+549 support scripts and unchanged standalone/master counts. Ordinary Android
+all-ABI developer-OFF compilation is running; final guard and handoff work remain.
