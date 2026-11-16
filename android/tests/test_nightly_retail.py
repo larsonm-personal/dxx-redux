@@ -53,12 +53,50 @@ class RetailBoundaryTests(unittest.TestCase):
                 self.assertFalse(rejected["source_verified"])
                 self.assertEqual(rejected["source_matches"], [])
 
+    def test_route_process_diagnostics_resanitize_and_drop_private_values(self):
+        details = {
+            "route_infrastructure": ["engine-start", "PRIVATE"],
+            "expected_runtime_outcome": "timeout",
+            "route_workers": [
+                {
+                    "worker": "route",
+                    "exit_code": -11,
+                    "timed_out": False,
+                    "start_error": True,
+                    "output_present": False,
+                    "categories": ["segmentation-fault", "SECRET"],
+                    "raw": "PRIVATE",
+                }
+            ],
+        }
+        clean = retail.public_diagnostics(details)
+        self.assertEqual(clean["route_infrastructure"], ["engine-start"])
+        self.assertEqual(clean["expected_runtime_outcome"], "timeout")
+        self.assertEqual(clean["route_workers"][0]["exit_code"], -11)
+        self.assertNotIn("PRIVATE", str(clean))
+        self.assertNotIn("SECRET", str(clean))
+        self.assertEqual(clean, retail.public_diagnostics(clean))
+        details["route_workers"][0].update(exit_code=True, start_error="PRIVATE", output_present=3)
+        details["expected_runtime_outcome"] = "PRIVATE"
+        clean = retail.public_diagnostics(details)
+        self.assertNotIn("exit_code", clean["route_workers"][0])
+        self.assertNotIn("start_error", clean["route_workers"][0])
+        self.assertNotIn("output_present", clean["route_workers"][0])
+        self.assertNotIn("expected_runtime_outcome", clean)
+
     def test_corpus_diagnostics_are_bounded_resanitized_and_private(self):
         details = {
-            "geometry_failures": [{"mission_index": 0, "level_index": 2, "category": "missing-level", "raw": "PRIVATE"}],
-            "mismatches": [{"kind": "value", "path": [0, "levels", 0, "data_warnings", 0],
-                "expected_warning": {"normalized_joint_offsets": 30, "ignored_trailer_bytes": 4, "raw": "PRIVATE"},
-                "actual_warning": {"normalized_joint_offsets": 5, "ignored_trailer_bytes": 4}}],
+            "geometry_failures": [
+                {"mission_index": 0, "level_index": 2, "category": "missing-level", "raw": "PRIVATE"}
+            ],
+            "mismatches": [
+                {
+                    "kind": "value",
+                    "path": [0, "levels", 0, "data_warnings", 0],
+                    "expected_warning": {"normalized_joint_offsets": 30, "ignored_trailer_bytes": 4, "raw": "PRIVATE"},
+                    "actual_warning": {"normalized_joint_offsets": 5, "ignored_trailer_bytes": 4},
+                }
+            ],
         }
         clean = retail.public_diagnostics(details)
         self.assertNotIn("PRIVATE", str(clean))
@@ -73,11 +111,22 @@ class RetailBoundaryTests(unittest.TestCase):
             self.assertNotIn("expected_warning", clean["mismatches"][0])
 
     def test_route_failure_reasons_survive_public_receipt(self):
-        for reason in ("Route owner reported infrastructure failures", "Owner executed a different route work item",
-                       "Canonical route header differs: seed", "Selected route state differs from committed baseline",
-                       "Committed unavailable geometry reproduced unchanged"):
+        for reason in (
+            "Route owner reported infrastructure failures",
+            "Owner executed a different route work item",
+            "Canonical route header differs: seed",
+            "Selected route state differs from committed baseline",
+            "Committed unavailable geometry reproduced unchanged",
+        ):
             row = {"id": "corpus:route:example", "status": "FAIL", "phase": "tests", "reason": reason}
-            receipt = {"schema": 1, "target_sha": SHA, "catalog_hash": SHA, "batch_id": SHA, "lane": "host", "results": [row]}
+            receipt = {
+                "schema": 1,
+                "target_sha": SHA,
+                "catalog_hash": SHA,
+                "batch_id": SHA,
+                "lane": "host",
+                "results": [row],
+            }
             self.assertEqual(retail.public_receipt(receipt)["results"][0]["reason"], reason)
             row["reason"] += " PRIVATE"
             self.assertEqual(retail.public_receipt(receipt)["results"][0]["reason"], "tests: FAIL")

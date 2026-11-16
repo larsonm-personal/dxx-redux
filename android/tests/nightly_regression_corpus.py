@@ -57,14 +57,41 @@ def _missions(value):
 
 
 # Field names are fixed schema vocabulary, never mission values or arbitrary keys.
-DIAGNOSTIC_FIELDS = frozenset(('levels', 'status', 'segment_count', 'level_num', 'level_file',
-    'matcen_regression', 'capture_status', 'admission', 'robots', 'models', 'objects',
-    'vertices', 'segments', 'walls', 'triggers', 'data_warnings', 'game', 'target_index', 'mission_path',
-    'mission_filename', 'robot_count', 'object_count', 'version', 'reactor', 'secret_exit'))
+DIAGNOSTIC_FIELDS = frozenset(
+    (
+        "levels",
+        "status",
+        "segment_count",
+        "level_num",
+        "level_file",
+        "matcen_regression",
+        "capture_status",
+        "admission",
+        "robots",
+        "models",
+        "objects",
+        "vertices",
+        "segments",
+        "walls",
+        "triggers",
+        "data_warnings",
+        "game",
+        "target_index",
+        "mission_path",
+        "mission_filename",
+        "robot_count",
+        "object_count",
+        "version",
+        "reactor",
+        "secret_exit",
+    )
+)
 
 
 # Public diagnostics describe schema positions and fixed failure classes only
-GEOMETRY_CATEGORIES = frozenset(("missing-level", "unsupported-level", "invalid-header", "load-failed", "empty-geometry", "invalid-structure"))
+GEOMETRY_CATEGORIES = frozenset(
+    ("missing-level", "unsupported-level", "invalid-header", "load-failed", "empty-geometry", "invalid-structure")
+)
 
 
 def geometry_diagnostics(missions):
@@ -76,15 +103,19 @@ def geometry_diagnostics(missions):
             continue
         for level_index, level in enumerate(levels):
             if not isinstance(level, dict):
-                rows.append({"mission_index": mission_index, "level_index": level_index, "category": "invalid-structure"})
+                rows.append(
+                    {"mission_index": mission_index, "level_index": level_index, "category": "invalid-structure"}
+                )
                 continue
             if type(level.get("segment_count")) is int and level["segment_count"] > 0:
                 continue
             problem = str(level.get("route_problem", ""))
             category = "empty-geometry"
-            for text, kind in (("level file is missing", "missing-level"),
-                               ("unsupported level version", "unsupported-level"),
-                               ("invalid level header", "invalid-header")):
+            for text, kind in (
+                ("level file is missing", "missing-level"),
+                ("unsupported level version", "unsupported-level"),
+                ("invalid level header", "invalid-header"),
+            ):
                 if text in problem.lower():
                     category = kind
                     break
@@ -98,7 +129,10 @@ def geometry_diagnostics(missions):
 def warning_counts(value):
     if not isinstance(value, str):
         return None
-    match = re.fullmatch(r"Level HXM legacy handling: ([0-9]{1,7}) unused joint offsets normalized; ([0-9]{1,7}) trailer bytes ignored", value)
+    match = re.fullmatch(
+        r"Level HXM legacy handling: ([0-9]{1,7}) unused joint offsets normalized; ([0-9]{1,7}) trailer bytes ignored",
+        value,
+    )
     if match:
         return {"normalized_joint_offsets": int(match[1]), "ignored_trailer_bytes": int(match[2])}
     return None
@@ -137,10 +171,95 @@ def metadata_differences(expected, actual, path=()):
     return differences
 
 
-WORKER_CATEGORIES = frozenset(('assertion', 'address-sanitizer', 'undefined-behavior',
-    'segmentation-fault', 'cpp-exception', 'worker-timeout', 'unexpected-eof',
-    'worker-shutdown', 'archive-extraction', 'descriptor-invalid', 'variant-selection',
-    'projection-worker', 'route-base-data', 'unclassified-owner-failure'))
+WORKER_CATEGORIES = frozenset(
+    (
+        "assertion",
+        "address-sanitizer",
+        "undefined-behavior",
+        "segmentation-fault",
+        "cpp-exception",
+        "worker-timeout",
+        "unexpected-eof",
+        "worker-shutdown",
+        "archive-extraction",
+        "descriptor-invalid",
+        "variant-selection",
+        "projection-worker",
+        "route-base-data",
+        "unclassified-owner-failure",
+    )
+)
+
+
+ROUTE_INFRASTRUCTURE_CATEGORIES = frozenset(
+    (
+        "engine-start",
+        "process-timeout",
+        "engine-exit-or-missing-output",
+        "result-unreadable",
+        "asset-staging",
+        "unclassified-infrastructure",
+    )
+)
+
+
+def route_infrastructure_diagnostics(summary):
+    failures = summary.get("infrastructure_failures", []) if isinstance(summary, dict) else []
+    if not isinstance(failures, list):
+        return []
+    categories = []
+    for failure in failures[:16]:
+        problem = failure.get("problem", "") if isinstance(failure, dict) else ""
+        if not isinstance(problem, str):
+            problem = ""
+        category = "unclassified-infrastructure"
+        for prefix, kind in (
+            ("Route engine could not start for ", "engine-start"),
+            ("Route engine process timeout after ", "process-timeout"),
+            ("Route engine infrastructure failure for ", "engine-exit-or-missing-output"),
+            ("Route engine result could not be read for ", "result-unreadable"),
+            ("Could not resolve mission assets for ", "asset-staging"),
+        ):
+            if problem.startswith(prefix):
+                category = kind
+                break
+        categories.append(category)
+    return categories
+
+
+def route_worker_diagnostics(root):
+    # Private owner files stay local; expose only bounded process facts and fixed log categories
+    root = Path(root)
+    rows = []
+    for path in sorted(root.glob("results/*.process.json"))[:16]:
+        if path.is_symlink() or not path.is_file() or not path.resolve().is_relative_to(root.resolve()):
+            continue
+        try:
+            if path.stat().st_size > 65536:
+                continue
+            value = json.loads(path.read_text(encoding="utf-8-sig"))
+            if not isinstance(value, dict):
+                continue
+            output = Path(str(path)[: -len(".process.json")])
+            row = {
+                "worker": "route",
+                "timed_out": value.get("timed_out") is True,
+                "start_error": bool(value.get("start_error")),
+                "output_present": output.is_file() and not output.is_symlink(),
+            }
+            if type(value.get("exit_code")) is int:
+                row["exit_code"] = value["exit_code"]
+            log = root / "logs" / (output.stem + ".log")
+            categories = []
+            if log.is_file() and not log.is_symlink() and log.resolve().is_relative_to(root.resolve()):
+                with log.open("rb") as stream:
+                    stream.seek(max(0, log.stat().st_size - 16384))
+                    categories = worker_failure_categories(stream.read(16384).decode("utf-8", errors="replace"))
+            row["categories"] = categories
+            rows.append(row)
+        except (OSError, ValueError):
+            continue
+    return rows
 
 
 def route_runner_failure(stderr_path, code):
@@ -271,19 +390,31 @@ def compare_metadata(baseline, generated, summary, archive_name):
     if any(
         not isinstance(m.get("levels"), list)
         or not m["levels"]
-        or any(not isinstance(level, dict) or type(level.get("segment_count")) is not int or level["segment_count"] <= 0 for level in m["levels"])
+        or any(
+            not isinstance(level, dict) or type(level.get("segment_count")) is not int or level["segment_count"] <= 0
+            for level in m["levels"]
+        )
         for m in actual
     ):
         diagnostics = geometry_diagnostics(actual)
         # A faithfully reproduced known unavailable leaf is not a new regression,
         # but must never count as tested geometry or complete archive coverage
-        if baseline == generated and diagnostics and all(m.get("levels") for m in actual) and all(
-            row["category"] in ("missing-level", "unsupported-level", "invalid-header") for row in diagnostics
+        if (
+            baseline == generated
+            and diagnostics
+            and all(m.get("levels") for m in actual)
+            and all(row["category"] in ("missing-level", "unsupported-level", "invalid-header") for row in diagnostics)
         ):
-            return _receipt("BLOCKED", "Committed unavailable geometry reproduced unchanged",
-                            geometry_failures=diagnostics[:16], retryable=False, blocker_kind="target-capability")
-        return _receipt("FAIL", "Generated mission contains absent or empty level geometry",
-                        geometry_failures=diagnostics[:16])
+            return _receipt(
+                "BLOCKED",
+                "Committed unavailable geometry reproduced unchanged",
+                geometry_failures=diagnostics[:16],
+                retryable=False,
+                blocker_kind="target-capability",
+            )
+        return _receipt(
+            "FAIL", "Generated mission contains absent or empty level geometry", geometry_failures=diagnostics[:16]
+        )
     if any(m.get("status") != "ok" for m in actual):
         return _receipt("FAIL", "Generated mission metadata contains a non-ok outcome")
     if any(m.get("status") != "ok" for m in expected):
@@ -295,8 +426,11 @@ def compare_metadata(baseline, generated, summary, archive_name):
     except (MatcenMismatch, KeyError, TypeError, ValueError) as error:
         return _receipt("FAIL", "Invalid matcen comparison evidence", private_error=str(error))
     if not matches:
-        return _receipt("FAIL", "Full projected metadata differs from committed baseline",
-                        mismatches=metadata_differences(expected_projection, actual_projection))
+        return _receipt(
+            "FAIL",
+            "Full projected metadata differs from committed baseline",
+            mismatches=metadata_differences(expected_projection, actual_projection),
+        )
     return _receipt("PASS", "Projected metadata semantics match committed baseline", missions=len(actual))
 
 
@@ -385,6 +519,7 @@ def compare_route(baseline, generated, summary, relative_metadata, expected_iden
                 "Runtime route outcome differs from committed baseline",
                 identity=identity,
                 runtime_outcome=outcome,
+                expected_runtime_outcome=expected_level.get("status"),
             )
         for field in ("schema", "mission_filename", "target_index", "generation", "fixed_hz", "seed"):
             if field not in expected_mission or field not in actual_mission:
