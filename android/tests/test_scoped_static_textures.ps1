@@ -12,6 +12,10 @@ param(
 $arguments = @{} + $PSBoundParameters
 $arguments.Remove('OriginalTexture') | Out-Null
 if ($OriginalTexture) {
+    . (Join-Path $PSScriptRoot '../helpers/test_host_platform.ps1')
+    $python = Resolve-RegressionPythonCommand
+    if (-not $python) { throw 'Python 3 is required to verify original texture GPU evidence' }
+    $pythonPrefix = @($python.PrefixArguments)
     if ((Get-FileHash -LiteralPath $OriginalTexture -Algorithm SHA256).Hash.ToLowerInvariant() -ne '150c3603749fc87d877c9a0c97218431605b845098a89338a632252402635c3b') { throw 'Original BoilingPoint texture hash differs' }
     if ((Split-Path -Leaf $OriginalTexture) -cne 'ceil002.tga') { throw 'Original texture must retain its authored filename' }
     $arguments.DataFiles = @($OriginalTexture)
@@ -23,7 +27,7 @@ if (-not $OutputDirectory) {
 try {
     & (Join-Path $PSScriptRoot '../helpers/run_native_engine_fixture.ps1') -Fixture scoped_textures -ExpectedCases 8 @arguments
     if ($OriginalTexture) {
-        & python3 (Join-Path $PSScriptRoot "xl_private_assets.py") --gpu-trace (Join-Path $OutputDirectory "d2.json")
+        & $python.Path @pythonPrefix (Join-Path $PSScriptRoot "xl_private_assets.py") --gpu-trace (Join-Path $OutputDirectory "d2.json")
         if ($LASTEXITCODE -ne 0) { throw "Required original texture GPU evidence is incomplete" }
     }
 } catch {
