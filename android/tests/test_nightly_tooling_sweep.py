@@ -449,7 +449,14 @@ class AutomaticCandidateTests(unittest.TestCase):
         self.assertNotIn("download-artifact", admit)
         self.assertNotIn("secrets.", admit)
         self.assertNotIn("secrets.", workflow.split("  report:", 1)[1].split("  readiness:", 1)[0])
-        self.assertEqual(workflow.count("secrets.RETAIL_ASSETS_READ_TOKEN"), 2)
+        self.assertEqual(workflow.count("secrets.RETAIL_ASSETS_READ_TOKEN"), 3)
+        resource_checkout = workflow.split("ref: dc6565f6b5400d7c700fa8378e766b2354b6ceb6", 1)[1].split(
+            "      - name:", 1
+        )[0]
+        self.assertIn("path: readiness-resources", resource_checkout)
+        self.assertIn("persist-credentials: false", resource_checkout)
+        self.assertIn("/descent_2_vertigo/d2x.hog", resource_checkout)
+        self.assertIn("/xl-resources/d2x-xl.hog", resource_checkout)
         self.assertNotIn("secrets.", workflow.split("  readiness-report:", 1)[1])
         self.assertNotIn("secrets: inherit", workflow)
         self.assertIn("candidate_sha: ${{ needs.admit.outputs.sha }}", workflow)

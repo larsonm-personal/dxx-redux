@@ -13,6 +13,21 @@ import time
 from nightly_corpus_stage import extract_archive, member_path
 
 ASSET_COMMIT = "9dad21bd65ba05665ac6fe315f37fe7461e85725"
+RESOURCE_COMMIT = "dc6565f6b5400d7c700fa8378e766b2354b6ceb6"
+RESOURCE_FILES = (
+    (
+        "descent_2_vertigo/d2x.hog",
+        "d2x.hog",
+        4371791,
+        "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+    ),
+    (
+        "xl-resources/d2x-xl.hog",
+        "d2x-xl.hog",
+        3815963,
+        "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+    ),
+)
 NEW_CAMPAIGNS = {"BoilingPoint-XL.zip", "dinter-1.5.7z", "sphere-1.6.zip", "wshock20.7z"}
 SEED = "d2x-readiness-cohort-v1"
 OUTCOMES = {
@@ -34,6 +49,33 @@ def write(path, value):
 
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def resource_identity():
+    return {
+        "profile": "authentic-vertigo-xl-v1",
+        "repository": "larsonm-personal/dxx-redux-test-assets",
+        "commit": RESOURCE_COMMIT,
+        "files": [dict(source=source, path=name, size=size, sha256=sha) for source, name, size, sha in RESOURCE_FILES],
+    }
+
+
+def verify_resources(root, source_paths=False):
+    for source, name, size, sha in RESOURCE_FILES:
+        path = Path(root) / (source if source_paths else name)
+        if path.is_symlink() or path.stat().st_size != size or digest(path) != sha:
+            raise ValueError("Readiness resource identity mismatch: " + name)
+    return resource_identity()
+
+
+def stage_resources(source, runtime):
+    verify_resources(source, source_paths=True)
+    for relative, name, _, _ in RESOURCE_FILES:
+        target = Path(runtime) / name
+        if target.exists():
+            raise ValueError("Readiness resource staging collision: " + name)
+        shutil.copyfile(Path(source) / relative, target)
+    return verify_resources(runtime)
 
 
 def rank(value):
@@ -206,7 +248,7 @@ def classify(returncode, proof, log, case):
     return "load_failed"
 
 
-def run(engine, assets, data, catalog, work, seven_zip, target_sha):
+def run(engine, assets, data, catalog, work, seven_zip, target_sha, require_resources=False):
     work = Path(work)
     work.mkdir(parents=True, exist_ok=False)
     if len(set(catalog["selected"])) != len(catalog["selected"]):
@@ -224,6 +266,8 @@ def run(engine, assets, data, catalog, work, seven_zip, target_sha):
         "rows": rows,
         "limitations": "Fixed stratified sample, not a statistical estimate or full playability; no rendering or player input; camera addon subchecks not covered",
     }
+    if require_resources:
+        report["resources"] = verify_resources(data)
 
     def checkpoint():
         report["summary"] = summary(rows)
@@ -325,6 +369,8 @@ def run(engine, assets, data, catalog, work, seven_zip, target_sha):
             row["outcome"] = "infrastructure_error"
         row["seconds"] = round(time.monotonic() - started, 3)
         checkpoint()
+    if require_resources:
+        verify_resources(data)
     return report
 
 
@@ -334,6 +380,12 @@ def main():
     for name in ("downloads", "tree", "work", "catalog", "engine", "assets", "data", "seven-zip"):
         parser.add_argument("--" + name, type=Path)
     parser.add_argument("--target-sha")
+    parser.add_argument(
+        "--resources", type=Path, help="Pinned private checkout containing authentic Vertigo and XL resources"
+    )
+    parser.add_argument(
+        "--require-resources", action="store_true", help="Verify and record the authentic runtime resource profile"
+    )
     args = parser.parse_args()
     if args.command == "inventory":
         write(args.catalog, inventory(args.downloads, json.loads(args.tree.read_text()), args.work, args.seven_zip))
@@ -351,6 +403,10 @@ def main():
                 for source in (args.data / game).iterdir():
                     if source.is_file():
                         shutil.copyfile(source, runtime / source.name)
+        if args.resources:
+            if not args.data:
+                raise ValueError("Readiness resources require staged retail data")
+            stage_resources(args.resources, runtime)
         for archive in catalog["archives"]:
             if archive["path"] not in paths:
                 continue
@@ -369,6 +425,7 @@ def main():
             args.work,
             args.seven_zip,
             args.target_sha,
+            args.require_resources,
         )
         print(json.dumps(report["summary"], sort_keys=True))
         # This command means measurement completed, not compatibility passed.
