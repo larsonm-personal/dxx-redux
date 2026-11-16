@@ -33,6 +33,7 @@ json angles(const vms_angvec &v)
 json local_state(const ai_local &a)
 {
 	json out = json::object();
+	out.get_ref<json::object_t &>().reserve(24);
 	FIELD(out, a, player_awareness_type);
 	FIELD(out, a, retry_count);
 	FIELD(out, a, consecutive_retries);
@@ -123,7 +124,7 @@ nlohmann::ordered_json input_demo_ai_trace_snapshot(bool include_paths)
 		// Unequal padding still takes the full field comparison below
 		if (std::memcmp(&Ai_local_info[i], &default_source, sizeof(default_source)) == 0) continue;
 		json row = local_state(Ai_local_info[i]);
-		if (row != local_default) out["locals"][std::to_string(i)] = std::move(row);
+		if (row != local_default) out["locals"].get_ref<json::object_t &>().emplace_back(std::to_string(i), std::move(row));
 	}
 	ai_path_runtime_state path = {};
 	ai_path_get_runtime_state(&path);

@@ -172,10 +172,19 @@ def digest(path):
     return sha.hexdigest()
 
 
-def _loose_path(row, data, children):
+def _loose_path(row, data, children, extra=None):
     candidates = children
-    if row["role"] == "mission_hog" and (data / "missions").is_dir():
-        candidates = children + [path for path in (data / "missions").rglob("*") if path.is_file()]
+    if row["role"] == "mission_hog":
+        candidates = list(children)
+        roots = [data]
+        if extra is not None and Path(extra).resolve() != data.resolve():
+            roots.append(Path(extra))
+            if Path(extra).is_dir():
+                candidates.extend(path for path in Path(extra).iterdir() if path.is_file())
+        for root in roots:
+            if (root / "missions").is_dir():
+                candidates.extend(path for path in (root / "missions").rglob("*") if path.is_file())
+        candidates = list(dict.fromkeys(path.resolve() for path in candidates))
     matches = []
     for name in ROLE_NAMES.get(row["role"], ()) + (row["name"].lower(),):
         matches = [path for path in candidates if path.name.lower() == name]
@@ -318,7 +327,7 @@ def verify_header(header, data, engine, imported=False, allow_unverified=False, 
         )
         # Verify every whole container before trusting any member payload
         hogs = {
-            row["role"]: _loose_path(row, data, supplemental if row["role"] in EXTRA_ROLES else children)
+            row["role"]: _loose_path(row, data, supplemental if row["role"] in EXTRA_ROLES else children, extra)
             for row in value["files"]
             if row["role"].endswith("_hog")
         }

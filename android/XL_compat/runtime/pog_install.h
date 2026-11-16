@@ -10,6 +10,7 @@ static struct {
 	int present, offset, flags;
 	grs_bitmap bitmap;
 	struct xl_pog_pixel_view physics;
+	unsigned char average_rgb[3];
 	unsigned frame_bytes, frames, current_frame;
 	unsigned transparent_frames[4], super_frames[4];
 } xl_pog_previous[MAX_BITMAP_FILES];
@@ -97,6 +98,7 @@ int xl_pog_install_prepared(struct xl_pog_resources *resources)
 		memcpy(xl_pog_previous[entry->index].transparent_frames, entry->transparent_frames, sizeof(entry->transparent_frames));
 		memcpy(xl_pog_previous[entry->index].super_frames, entry->super_frames, sizeof(entry->super_frames));
 		if (entry->rgba) {
+			memcpy(xl_pog_previous[entry->index].average_rgb, entry->average_rgb, 3);
 			xl_pog_previous[entry->index].physics.pixels = installed + entry->offset;
 			xl_pog_previous[entry->index].physics.width = entry->width;
 			xl_pog_previous[entry->index].physics.height = entry->physics_height;
@@ -155,6 +157,14 @@ int xl_pog_physics_view(int bitmap, struct xl_pog_pixel_view *view)
 	if (!view || !xl_pog_active_token || !Bitmap_replacement_data || bitmap < 0 || bitmap >= Num_bitmap_files ||
 	    !xl_pog_previous[bitmap].present || !xl_pog_previous[bitmap].physics.pixels) return 0;
 	*view = xl_pog_previous[bitmap].physics;
+	return 1;
+}
+
+int xl_pog_average_rgb(int bitmap, unsigned char rgb[3])
+{
+	struct xl_pog_pixel_view view;
+	if (!rgb || !xl_pog_physics_view(bitmap, &view)) return 0;
+	memcpy(rgb, xl_pog_previous[bitmap].average_rgb, 3);
 	return 1;
 }
 

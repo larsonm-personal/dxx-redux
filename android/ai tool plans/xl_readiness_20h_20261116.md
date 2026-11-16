@@ -856,3 +856,139 @@ keep the empty-model free guard with the native resource fix. Rename the unpubli
 fourth branch to xl_readiness_20261116_04_native_owners. Rebuild and validate this
 isolated candidate before publication; restore the preserved rendering work on
 its own subsequent child branch. Existing user stashes are unchanged.
+
+### Published native repair checkpoint and resumed rendering work
+
+Commit 883ea2a5175a4b4ed36fec2b6b4d52610bc907ff is isolated from the seven pending
+render/trace files. Fresh developer and ordinary developer-OFF targets build.
+Windows standard Debug contracts pass 51/51 (43.71 seconds), native HAM validation
+passes, and the six original native owners pass against this exact clean source
+(244.28 seconds total; audio 136.33 seconds within 150). HXM additionally includes
+the authentic camera addon; rendered Warp 5 actor coverage remains not run.
+All 37 recorded binary/input hashes are unchanged after testing. Full manifests,
+JUnit output, source/binary hashes and preservation check are under
+native-checkpoint-883ea2a51. This uses the original source CMake runners and pinned
+oracles; SDL dummy audio/video matches the private native suite controller.
+
+readiness-native-883ea2a51 passes all original eight cases at 120 unassisted frames.
+Results SHA256 6c0f4ffad83163224e2a8e6e78cf13d82aa1a5649702514297a46a934d12368a.
+Android x86_64 native D1/D2 compilation passes in 21 seconds without device mutation
+(build-android-native-checkpoint-01.log). Cleanup preview/apply finds no eligible
+files with retained evidence, inputs, emulator and build trees excluded; the 50 GiB
+target is not reached (26.92 GiB free), and nothing is deleted.
+
+Non-draft PR521 targets PR520 immediately. Its exact head is 883ea2a5175a4b4ed36fec2b6b4d52610bc907ff,
+base 21fe343725ce4800ad0a33e39e29cdc55db44eb5, merge candidate
+7c1f448598fd4c384d49bdae407a15f81cc9f4c3. Public workflows begin at 06:46:49 UTC;
+private workflow 43819147217 uses trusted controller 71e6efb90419b8e8a2f4ceed116e5ab3871c80d2.
+Candidate admission job 133137935309 succeeds; readiness job 133138029515 and asset
+stack check 133138030010 are in progress. Retained online receipt inspection is
+skipped by workflow selection. These pending results are not passes. PR518/520
+bodies now record their actual public success, private readiness 8/8 and failed
+native owners, with PR521 as the tested repair candidate. The earlier stack519
+reference does not resolve as a current GitHub issue/PR; the verified stack chain
+is PR517 -> PR518 -> PR520 -> PR521.
+
+Continue on xl_readiness_20261116_05_render_validation, immediate child of PR521.
+Restore render-pending-01.patch and verify all seven files against their original
+SHA256 receipts. Rebuild the rendered target to remove its stale temporary hook
+profiling object and include the current native fixes before another capture.
+Four protected preexisting stashes remain unchanged. Full replay, rendered/device
+validation, source color comparisons and afterburner lifetime fidelity remain open.
+
+### Rendered capture and replay resource discovery
+
+The clean rendered Debug rebuild removes the temporary shared-hook diagnostics.
+The existing RelWithDebInfo developer renderer then completes the unchanged
+Omega Warp Shock 6 capture in 17.516 seconds, within its original 45-second limit.
+omega-release-capture-01 contains 242 finalized frames after 66 warmup frames,
+two position assists and one inventory assist before recording, and no assists
+during recording. Original pickup 84/signature 85 is consumed; target robot
+150/signature 151 loses shields after Omega and subsequent fire. Charge drains
+and recharges. This is assisted setup evidence, not campaign qualification.
+The preserved Debug timeout receipts remain failures. Demo SHA256 is
+434a0d2ad9c3813e5917de0581c97badf0f5fa7599b9d2415af0982e0fcf7f00;
+capture renderer SHA256 is
+6b7660c5bd135f91e2505a336dafec7cfccc7c1f8fc0f5f97983a76a4dd3bf71.
+
+Replay 01 exposes preflight ignoring ExtraDir for mission HOGs. The preflight
+now searches that supplied root and its missions subtree while retaining hash
+and duplicate-name rejection. Its regression suite passes 23 tests with one
+Windows case-alias skip. omega-replay-extra-01 copies the original resource tree
+with verified identical bytes, omitting only the duplicate nested Warp HOG alias;
+the original tree remains untouched and a per-file receipt records staging.
+Replay 02 correctly rejects the XL timeline on true headless. Replay 03, using
+the rendered engine, times out at 300 seconds before any frame. Ordinary replay
+startup never mounts -extra-dir, although route capture does. Shared command-line
+replay now parses and mounts that explicit path before checkpoint restoration,
+failing closed on mount errors. Both games use the same setup; native asset
+fingerprint verification and XL backend guards remain intact. Scoped formatting
+and the rendered rebuild pass. Replay 04 runs with diagnostic logging enabled.
+Full live/replay state and RNG qualification remains pending.
+
+PR521 private workflow 43819147217 is now terminal success. Its downloaded exact
+883ea2a5175a4b4ed36fec2b6b4d52610bc907ff readiness result confirms 8/8 with SHA256
+02432a9867f424f6b14b9314520f48e8b68e74afd88c99ed02c65f89b5c1b9dc.
+The retail-xl-fast receipt reports 113 required checks passed, 16 format witnesses,
+three modern source levels and four navigation anchors. Camera subchecks are
+explicitly not_run_missing_addon in this hosted profile. coverage_complete=false
+and the overall catalog summary remains incomplete; this is not whole-catalog
+coverage. The selected owner has no failures. Retained online, nightly developer
+Release, Pumo staging and Android/JVM lanes are skipped by selection. Public
+scripts, Rust, contracts, asset request and LAN pass; Linux shareware, engine
+smoke and the PR test sample are still pending at this inspection.
+
+omega-release-replay-04 completes through the normal rendered backend and the
+wrapper returns PASS with StrictComparison and RequireCleanExit. The independent
+production parity comparator also passes all 242 frames/object snapshots, 246
+world records, 3552 SIM RNG events, 436 FX RNG events and the exact final trailer.
+comparison.json, comparison.log and source-receipt.json retain these results.
+This compares the original capture against the startup mount fix; no replay
+events or state were compensated. D1 builds with the shared startup change.
+
+The decoded texture lighting test now installs two distinct RGB/RGBA frames at
+noncontiguous bitmap indices and exercises actual fireball/static-explosion
+lighting, color normalization and lifetime scaling. The first compile exposes
+a missing PogBitmap definition include; add the existing owner header before
+native packed headers and explicitly mark synthetic inputs as true-color.
+build-rgba-light-02 passes; native-preview-rgba-01 runs the complete lifecycle
+owner. The preexisting changing_light_test_records int/bool warning remains.
+
+native-preview-rgba-01 finishes PASS with the new live true-color consumer checks
+inside the complete lifecycle owner, retaining the original 120-second timeout.
+Engine smoke and the PR521 public test sample now also pass; only Linux shareware
+remains in progress among that checkpoint's public workflows. The current render,
+trace and replay-startup changes remain unpublished pending the rest of their
+cross-platform and source-reference qualification. The four protected stashes
+still match their original hashes. No device installation or state mutation ran.
+
+### Render/replay checkpoint qualification
+
+The pinned POG reference now extracts CBitmap::GetAvgColor from 2d/bitmap.cpp
+(SHA256 542b40e7af08883e88884408da811bf346c7d46c26c18c25e909b9efa12e4c21),
+using the original retained color and byte-depth storage. Both POG and TGA
+comparisons verify float RGB and alpha in addition to decoded bytes. The standard
+Debug source test passes, as does the original 128x128 metl060 TGA comparison.
+color-source-01 preserves the logs/JUnit. Native-rgb-owner-01 passes original
+installation, three malformed rejections, RGB/RGBA key controls, eight strip
+physics queries and retirement/paging. Its original TGA SHA256 is
+9ad2eab3b3e1e1d00350e999f96266f839b44ea0a73b11b02750da8314aabeb9.
+
+Android x86_64 D1/D2 native compilation passes in 13 seconds without installing
+an APK (build-android-render-replay-01.log). Fresh ordinary developer-OFF route
+and metadata builds pass; readiness-render-replay-01 again confirms the original
+8/8 cases at 120 unassisted frames with pinned resources. The preflight suite
+passes 23 tests with the existing Windows case-alias skip. Full rendered replay
+comparison SHA256 is
+78b7533953608f1eb233d2aaa1a2340abcbac8ca6a099f1bd1b08759225ea7f9.
+Native lifecycle JUnit SHA256 is
+cfb1ab8fdaf928ee80d2db3d3a1d27f38c8e0c545ec097eb33bae957df6209ef;
+that owner finishes in 44.16 seconds. These are local candidate receipts, not a
+new hosted pass. Publication and exact-head CI inspection remain next.
+
+Both required automation catalog checks pass: 99 standalone JSON tests,
+549 support scripts, 315 standalone PowerShell tests, and 428 top-level integration
+entries. Readiness-render-replay-01 result SHA256 is
+ade77847235154ed43daad83cb80fcd604f217a0d8a666ec72f5132106dbe70d.
+The parent PR521 Linux shareware workflow has completed its build/save and
+admission jobs; its headed and headless replay jobs are still running.

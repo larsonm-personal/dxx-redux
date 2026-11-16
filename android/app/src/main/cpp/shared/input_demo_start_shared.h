@@ -8,6 +8,7 @@
 
 typedef struct input_demo_replay_cmdline_options {
 	const char *demo_path;
+	const char *extra_dir;
 	const char *actual_result_path;
 	const char *state_log_path;
 	const char *rng_trace_path;

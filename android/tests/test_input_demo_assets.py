@@ -191,6 +191,30 @@ class AssetPreflightTests(unittest.TestCase):
             with self.assertRaisesRegex(assets.AssetError, "mismatch"):
                 assets.verify_header(header, self.data, "d2", extra=extra, allow_unverified=allow)
 
+    def test_mission_archive_in_extra_root_or_missions_keeps_identity_and_ambiguity_checks(self):
+        header = self.header("native_d2")
+        archive = self.archive("custom.hog", [])
+        self.bind_archive(header, "mission_hog", archive)
+        extra = self.root / "extra"
+        extra.mkdir()
+        archive = archive.rename(extra / archive.name)
+        with self.assertRaisesRegex(assets.AssetError, "Missing"):
+            assets.verify_header(header, self.data, "d2")
+        self.assertEqual(assets.verify_header(header, self.data, "d2", extra=extra)["status"], "verified")
+        nested = extra / "missions" / "custom"
+        nested.mkdir(parents=True)
+        archive = archive.rename(nested / archive.name)
+        self.assertEqual(assets.verify_header(header, self.data, "d2", extra=extra)["status"], "verified")
+        duplicate = self.data / archive.name
+        duplicate.write_bytes(archive.read_bytes())
+        with self.assertRaisesRegex(assets.AssetError, "Ambiguous"):
+            assets.verify_header(header, self.data, "d2", extra=extra)
+        duplicate.unlink()
+        archive.write_bytes(b"DHFtampered")
+        for allow in (False, True):
+            with self.assertRaisesRegex(assets.AssetError, "mismatch"):
+                assets.verify_header(header, self.data, "d2", extra=extra, allow_unverified=allow)
+
     def test_supplemental_sequence_rejects_gaps_orphans_and_wrong_containers(self):
         header = self.header("native_d2")
         row = {"role": "d2_extra_0_ham", "name": "extra.ham", "size": 1, "sha256": "a" * 64}

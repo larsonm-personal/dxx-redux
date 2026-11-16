@@ -1,6 +1,7 @@
 // Exercise the real loader wrapper; no renderer or gameplay certification
 // The fixture codec has C++ linkage and types; include before packed C engine headers
 #include "input_demo_fixture.h"
+#include "../pog.h"
 #include "input_demo_world_trace.h"
 #include "native_crash_diagnostic.h"
 #include "slow_motion_runtime.h"
@@ -61,6 +62,7 @@ static void xl_test_filesystem_init(int argc, char **argv)
 #undef main
 #undef PHYSFSX_init
 #include "preview.h"
+#include "pog_resources.h"
 #include "asset_dependencies.h"
 #include "checkpoint_export.h"
 #include "../probe.h"
@@ -580,6 +582,35 @@ void dynamic_lighting(const xl_compat::Inventory &source, int vertex)
 		Objects[0].lifeleft = F1_0;
 		xl_preview_dynamic_frame();
 		check_color(vertex, F1_0 / 8, { 0.25f, 0.25f, 1 });
+	}
+	Objects[0].type = OBJ_FIREBALL;
+	// True-color animation frames use their retained averages, not indexed pixels
+	GameBitmaps[1] = bitmap_one;
+	GameBitmaps[3] = bitmap_three;
+	for (bool opaque : { false, true }) {
+		std::vector<xl_compat::PogBitmap> frames(2);
+		for (unsigned frame = 0; frame < frames.size(); ++frame) {
+			auto &image = frames[frame];
+			image.index = frame ? 3 : 1;
+			image.width = image.height = image.frames = 1;
+			image.truecolor = true;
+			image.pixels = frame ? std::vector<uint8_t>{ 0, 100, 50, 255 } : std::vector<uint8_t>{ 200, 0, 0, 255 };
+			xl_compat::prepare_pog_rgba(image);
+			image.rgb_opaque = opaque;
+		}
+		std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)> owner(
+		    xl_pog_prepare_rgba(frames, Num_bitmap_files), xl_pog_free);
+		require(xl_pog_install(owner.get()), "Cannot publish true-color explosion frames");
+		for (int type : { int(OBJ_FIREBALL), 19 }) {
+			Objects[0].type = type;
+			for (int life : { 4 * F1_0, F1_0 }) {
+				Objects[0].lifeleft = life;
+				xl_preview_dynamic_frame();
+				require(xl_preview_unresolved_emitters() == 0, "true-color explosion unresolved");
+				check_color(vertex, life == F1_0 ? F1_0 / 8 : F1_0 / 4, { 1, 0.5f, 0.25f });
+			}
+		}
+		require(xl_pog_install(nullptr), "Cannot retire true-color explosion frames");
 	}
 	Objects[0].type = OBJ_FIREBALL;
 	Vclip[0] = original_clip;

@@ -48,6 +48,8 @@ struct xl_pog_pixel_view {
 };
 /* Borrow the active native owner's physics view; cleared on retirement */
 int xl_pog_physics_view(int bitmap, struct xl_pog_pixel_view *view);
+/* Exact source whole-image average, independent of the selected display frame */
+int xl_pog_average_rgb(int bitmap, unsigned char rgb[3]);
 /* Bounded preparation owns normalized pixels without changing live bitmaps */
 struct xl_pog_resources *xl_pog_prepare(PHYSFS_file *file, unsigned max_bitmaps, char *error, size_t error_size);
 void xl_pog_free(struct xl_pog_resources *resources);

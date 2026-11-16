@@ -9,6 +9,7 @@
 
 #include <array>
 #include <string>
+#include <vector>
 #include <nlohmann/json.hpp>
 
 extern "C" {
@@ -38,6 +39,7 @@ json angles(const vms_angvec &v)
 json ai_state(const ai_static &a)
 {
 	json out = json::object();
+	out.get_ref<json::object_t &>().reserve(16);
 	FIELD(out, a, behavior);
 	out["flags"] = json::array();
 	for (int i = 0; i < MAX_AI_FLAGS; ++i) out["flags"].push_back(static_cast<int>(a.flags[i]));
@@ -62,6 +64,8 @@ json ai_state(const ai_static &a)
 json object_state(const object &o, int slot)
 {
 	json out = json::object();
+	// Growing ordered_json copies const-key pairs and all their nested storage
+	out.get_ref<json::object_t &>().reserve(40);
 	FIELD(out, o, signature);
 	FIELD(out, o, type);
 	FIELD(out, o, id);
@@ -220,17 +224,28 @@ static int write_object_state(uint32_t frame, const char *phase, char *error, si
 	static std::array<json, MAX_OBJECTS> previous;
 	if (frame == 0 && !phase) previous.fill(nullptr);
 	json record = { { "type", phase ? "object_boundary" : "object_state" }, { "version", 2 }, { "f", frame }, { "reset", phase || frame == 0 }, { "capacity", object_capacity() }, { "slots", json::object() } };
+	std::vector<int> updated;
+	updated.reserve(object_capacity());
 	// Avoid repeatedly copying earlier object snapshots as this ordered map grows
 	record["slots"].get_ref<json::object_t &>().reserve(object_capacity());
 	if (phase) record["phase"] = phase;
 	for (int i = 0; i < object_capacity(); ++i) {
 		json current = Objects[i].type == OBJ_NONE ? json(nullptr) : object_state(Objects[i], i);
-		if (phase ? !current.is_null() : current != previous[i]) record["slots"][std::to_string(i)] = current;
-		if (!phase) previous[i] = std::move(current);
+		if (phase ? !current.is_null() : current != previous[i]) {
+			// Slot IDs are unique and visited in order; no key search or subtree copy
+			record["slots"].get_ref<json::object_t &>().emplace_back(std::to_string(i), std::move(current));
+			updated.push_back(i);
+		}
 	}
 	auto pool = input_demo_object_pool_trace_snapshot();
 	for (auto it = pool.begin(); it != pool.end(); ++it) record[it.key()] = std::move(it.value());
-	return input_demo_state_trace_write_json(record.dump().c_str(), error, error_size);
+	const std::string encoded = record.dump();
+	if (!phase) {
+		auto &slots = record["slots"].get_ref<json::object_t &>();
+		auto entry = slots.begin();
+		for (int slot : updated) previous[slot] = std::move((entry++)->second);
+	}
+	return input_demo_state_trace_write_json(encoded.c_str(), error, error_size);
 }
 
 int input_demo_object_trace_write(uint32_t frame, char *error, size_t error_size)
