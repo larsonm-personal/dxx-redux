@@ -13,7 +13,9 @@ if(VERTIGO_HAM)
 endif()
 if(CAMERA_HOG)
     file(SHA256 "${CAMERA_HOG}" camera_hash)
-    if(NOT camera_hash STREQUAL "df69c62aad949f2d92bc1bbea4b597623cd29d0a0f594cdcc3d66568d6ce482a")
+    if(NOT camera_hash STREQUAL "df69c62aad949f2d92bc1bbea4b597623cd29d0a0f594cdcc3d66568d6ce482a"
+       AND NOT camera_hash STREQUAL
+           "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6")
         message(FATAL_ERROR "Camera controls require the original XL addon HOG")
     endif()
     file(MAKE_DIRECTORY "${OUTPUT}/data")

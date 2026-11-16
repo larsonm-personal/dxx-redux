@@ -401,6 +401,9 @@ jobs:
           [[ "$RETAIL_CHECKOUT_COMMIT" == "$RETAIL_ASSETS_COMMIT" ]]
           python3 control/android/tests/nightly_tooling_sweep.py retail-check \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json --lane host
+          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e['id'] in ('host-profile:retail-xl-originals', 'host-profile:retail-xl-fast') for e in p['tests']))"; then
+            echo 'xl_resources=true' >> "$GITHUB_OUTPUT"
+          fi
       - name: Check admitted retail credential availability
         if: matrix.retail
         env:
@@ -420,6 +423,19 @@ jobs:
           token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
           path: retail-input
           persist-credentials: false
+      - name: Check out pinned XL regression resources
+        if: matrix.retail && steps.retail_gate.outputs.xl_resources == 'true'
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          repository: larsonm-personal/dxx-redux-test-assets
+          ref: dc6565f6b5400d7c700fa8378e766b2354b6ceb6
+          token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
+          path: xl-regression-resources
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /descent_2_vertigo/d2x.hog
+            /xl-resources/d2x-xl.hog
       - name: Verify supplied edition and stage base retail files
         if: matrix.retail
         id: retail_stage
@@ -440,9 +456,10 @@ jobs:
             pwsh -NoProfile -Command "\$tool = & ./control/android/get_deps/helpers/get_7zip.ps1; Set-Content -LiteralPath results/xl-seven-zip.txt -Value \$tool -NoNewline"
             modern=()
             if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e['id'] == 'host-profile:retail-xl-fast' for e in p['tests']))"; then modern=(--modern); fi
-            python3 control/android/tests/xl_private_assets.py --root retail-input --stage target/game_data/retail-ci/xl --seven-zip "$(cat results/xl-seven-zip.txt)" "${modern[@]}"
+            [[ "$(git -C xl-regression-resources rev-parse HEAD)" == dc6565f6b5400d7c700fa8378e766b2354b6ceb6 ]]
+            python3 control/android/tests/xl_private_assets.py --root retail-input --resources xl-regression-resources --stage target/game_data/retail-ci/xl --seven-zip "$(cat results/xl-seven-zip.txt)" "${modern[@]}"
           fi
-          rm -rf retail-input
+          rm -rf retail-input xl-regression-resources
       - name: Install host prerequisites
         id: prerequisites
         timeout-minutes: 15

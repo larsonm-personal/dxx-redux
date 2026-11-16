@@ -238,6 +238,22 @@ class CandidateTests(unittest.TestCase):
         )
         self.assertIn("ref: ${{ needs.plan.outputs.target_sha }}", host[:gate])
         self.assertIn("persist-credentials: false", host[checkout:execute])
+        resources = host.index("      - name: Check out pinned XL regression resources")
+        staging = host.index("      - name: Verify supplied edition and stage base retail files")
+        self.assertLess(checkout, resources)
+        self.assertLess(resources, staging)
+        resource_checkout = host[resources:staging]
+        from xl_readiness import RESOURCE_COMMIT, RESOURCE_FILES
+
+        self.assertIn("if: matrix.retail && steps.retail_gate.outputs.xl_resources == 'true'", resource_checkout)
+        self.assertIn("ref: " + RESOURCE_COMMIT, resource_checkout)
+        self.assertIn("persist-credentials: false", resource_checkout)
+        for source, _, _, _ in RESOURCE_FILES:
+            self.assertIn("/" + source, resource_checkout)
+        self.assertIn("echo 'xl_resources=true' >>", host[gate:availability])
+        self.assertIn("--resources xl-regression-resources", host[staging:execute])
+        self.assertIn("git -C xl-regression-resources rev-parse HEAD", host[staging:execute])
+        self.assertIn("rm -rf retail-input xl-regression-resources", host[staging:execute])
 
 
 class AutomaticCandidateTests(unittest.TestCase):

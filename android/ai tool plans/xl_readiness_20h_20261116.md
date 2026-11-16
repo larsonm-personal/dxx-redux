@@ -1883,3 +1883,95 @@ admission and wholecampaign qualification remain open. The source changes are
 16files, with native edits limited to representation/codec/render-dispatch
 support and the light consumer. Final publication is an immediate-parent child
 of525, with no merge/automerge/enqueue. Its own CI remains to be inspected.
+
+### Explicit private-resource regression ownership
+
+Child10 starts at PR526/4c43284d6. The fixed readiness job already stages the
+user-authorized authentic resources, while the separate retail regression owner
+still pins inventory8c9988a and does not pass CAMERA_HOG/VERTIGO_HAM to its
+CMake tests. Those tests accept only addon archive df69c62a, not the authorized
+private e7351d66 package. Compare before admitting another known archive:
+both contain byte-identical cambot.hxm,3994bytes,SHA256
+bdf3055e5a994b842fcbae5780cd5be77f1706cd5f0946caff15cce1cd3e1a28.
+The prior archive is3819425bytes; authorized archive3815963bytes. Preserve both
+identities and require authentic package hashes, never arbitrary input acceptance.
+
+Plan: reproduce current guard rejection; qualify the authorized package through
+native camera/projectile and HXM owners, including disk continuation. Add explicit
+CMake resource inputs and trusted separately pinned staging for the regression
+owner, requiring execution when resources are requested. Preserve the frozen
+readiness cohort, original inventory pins, watchdogs and regression membership.
+Review controller/target separation: workflow changes cannot be claimed deployed
+on an unmerged trusted controller. Test staging/rejection and workflow wiring
+locally; disclose the controller activation boundary in PR/handoff. No repository
+variable, secret, merge or existing active-run input is changed for this work.
+
+Baseline camera-private-pin-baseline-01 reproduces rejection of the authorized
+archive before engine execution. After adding only that known archive hash,
+camera-private-projectiles-01 reaches a pre-existing fixture assertion and fails
+at the unchanged120-second child timeout (150-second owner): static_contact_test
+sets the native player's drag to zero but leaves PF_USES_THRUST enabled. The
+Debug assertion appears in controls.log before camera controls; this is a
+ballistic contact fixture issue, not evidence that the camera payload differs.
+The fixture now clears thrust-controller flags and linear/angular thrust for
+its intentional zero-drag constant-velocity contact. Native physics assertions
+and timers remain unchanged. Re-run the complete provisioned owner next.
+
+Camera-private-projectiles-02 PASS13.69s with the authorized private addon and
+original extracted Vertigo HAM, unchanged120/150-second limits. The full owner
+reports XL_CAMERA_SUBCHECKS:executed, original Vertigo controls, static contact
+full disk restore, camera native contacts/controller/motion/children/flash,
+newborn collision fresh-process continuation and cold camera next-frame restore.
+Its source oracle matches1920actual native projectile impacts and1650history
+controls. Camera-private-hxm-01 PASS43.67s under unchanged240/270-second limits,
+using original Apocalyptic Factor and the same private camera addon. Both input
+archives remain hash-verified by their existing owners. These are local Debug
+qualifications; hosted provisioning remains unchanged pending the planned wiring.
+
+The two CMake-registered owners PASS14.50s/37.27s in
+camera-resource-registration-01. Explicit XL_CAMERA_HOG and XL_VERTIGO_HAM cache
+inputs reach their existing test scripts; signed27 remains separate. The runner
+clears old optional cache inputs before supplying the verified resource paths.
+
+Trusted host staging now checks out resources at dc6565f6b5400d7c700fa8378e766b2354b6ceb6
+only after retail admission and only for the admitted XL owners. The sparse
+checkout includes the two original files and never persists credentials. Existing
+inventory8c9988a, the113-test fast cohort, modern witnesses and all timeouts stay
+unchanged. The new --resources input reuses readiness pins/staging and the existing
+bounded HOG member reader. Derived HAM bytes are compared with the verified HOG;
+link/junction paths, missing/tampered files and pre-existing stages are rejected.
+Failures roll back only the newly created stage. Receipt validation requires
+camera_subchecks=executed for a provisioned identity and rechecks resources after
+execution. Unprovisioned legacy results remain explicitly labeled.
+
+camera-resource-stage-01 reads both original bytes directly from the pinned local
+private-repo Git objects, stages them with the new helper, then runs both native
+owners plus all available source oracles. PASS26.80s projectile and49.22s HXM,
+total76.03s, unchanged150/270-second owner limits. Derived HAM SHA256
+faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f.
+Native binary SHA256dd9c9800e3aadb1f117b8f548bc0537a13c8b7eb3e1d7b65049f4da4134e8178.
+Camera source comparisons pass32448splash rotations,2160explosion motion samples,
+10800fullcontroller samples and original camera/player model hitbox comparisons.
+This is controlled Debug resource coverage, not rendered Warp5 or campaign play.
+
+Final staging suite PASS52tests, including derived-file tampering, missing files,
+fresh-stage rollback, explicit runner/CMake arguments and receipt rejection when
+provisioned camera checks are skipped. Targeted trusted-workflow boundary PASS.
+The full workflow suite ran131tests: one error in the unchanged graphics symlink
+test because Windows account lacks symlink privilege (WinError1314), four skips.
+Do not call that suite a local pass; Linux candidate CI remains required. Scoped
+formatting and both catalog owners pass99JSON/549support/315PowerShell/428entries.
+No native edits followed the passing resource run. No device changes occurred.
+
+PR526 private run43861368663 attempt1 is now terminalsuccess, controller71e6efb9,
+exactcandidate4c43284d674aefdf117503a4fc5d4c4e38ba0f17. Downloaded readiness
+artifact14223681378 SHA256dfd6ba0339f8075d73481fab2469ceb2c7cd600da62202db1dc07fb75e29f961
+confirms8/8 original cases,120unassistedframes; hostartifact14223789047 SHA256
+711ac041a3e00d0a27e83a8de5bf2f5d9fda5da3afa17ba988e60fc55df4b3c4 confirms113required
+checks PASS, coverage_complete=false, camera_subchecks=not_run_missing_addon.
+Fivepublicworkflows pass; engine/testsample/shareware still running at inspection.
+Online/Pumo/developerRelease/Android/JVM remain skipped in the private workflow.
+These existing controller results do not demonstrate activation of this child's
+new regression staging. Activation requires the trusted controller to contain
+the changes; no merge, repository variable or secret change is authorized here.
+The four protected stashes and pinned source checkout remain unchanged.
