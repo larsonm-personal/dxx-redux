@@ -50,6 +50,8 @@ namespace xl_compat
 struct Inventory;
 struct ParticleImageResource;
 struct AnimatedImageResource;
+struct ScopedTextureResources;
+struct ScopedTexturePlayback;
 class ModelHitboxTransform;
 class TargetSources;
 struct RenderModelSphere;
@@ -66,7 +68,12 @@ class XlPreparedResources
 	// NULL uses the already selected mission; non-NULL never consults its identity
 	static std::unique_ptr<XlPreparedResources> prepare_mission(mission_preparation *mission);
 	static std::unique_ptr<XlPreparedResources> prepare_level(mission_preparation *mission, int ordinal);
+	// Retain native level inputs for dependency inspection; does not admit gameplay
+	static std::unique_ptr<XlPreparedResources> prepare_level_inputs(mission_preparation *mission, int ordinal);
 	const xl_compat::Inventory &level_inventory() const;
+	const xl_compat::ScopedTextureResources *scoped_textures() const;
+	const xl_compat::ScopedTexturePlayback *scoped_texture_playback() const;
+	bool has_scoped_textures() const;
 	const std::map<std::string, std::string> &sources() const;
 	XlPreparedResources(XlPreparedResources &&) noexcept;
 	XlPreparedResources &operator=(XlPreparedResources &&) noexcept;
@@ -74,6 +81,7 @@ class XlPreparedResources
 	xl_assets::ObjectDependencies &dependencies();
 	std::string prepare_hxm(PHYSFS_file *file);
 	std::string prepare_vham(PHYSFS_file *file);
+	std::string prepare_vham(std::vector<unsigned char> bytes);
 	void prepare_banks(const std::string &palette);
 	void prepare_pog(PHYSFS_file *file);
 	void install_hxm();
@@ -101,6 +109,7 @@ class XlPreparedResources
 	bool time_equipment_required() const;
 
   private:
+	void prepare_scoped_textures(const xl_compat::Inventory &level, int ordinal, xl_compat::TargetSources &target);
 	void prepare_level_resources(const char *filename, const xl_compat::Inventory *level, int ordinal, mission_preparation *mission, xl_compat::TargetSources *target);
 	void validate_camera_query(const object &camera, const object &moving) const;
 	struct State;

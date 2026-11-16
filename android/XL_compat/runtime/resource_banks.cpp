@@ -84,6 +84,10 @@ int XlResourceBanks::bitmap_count() const
 {
 	return int(state->bitmaps.size());
 }
+const char *XlResourceBanks::bitmap_name(int id) const
+{
+	return id > 0 && id < int(state->bitmaps.size()) ? state->bitmaps[id].name : nullptr;
+}
 int XlResourceBanks::sound_count() const
 {
 	return int(state->sounds.size());

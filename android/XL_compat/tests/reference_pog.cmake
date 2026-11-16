@@ -101,6 +101,7 @@ string(SUBSTRING "${tail}" 0 ${length} dimensions)
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_pog_dimensions.h"
      CONTENT "${dimensions}\n")
 add_executable(xl_pog_reference tests/reference_pog.cpp)
+include(tests/reference_texture_animation.cmake)
 target_link_libraries(xl_pog_reference PRIVATE xl_inventory)
 target_include_directories(xl_pog_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 add_test(NAME xl_pog_reference COMMAND xl_pog_reference)

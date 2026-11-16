@@ -1615,6 +1615,7 @@ static void native_continuation_receipt(const std::filesystem::path &path, const
 #include "format17_test.h"
 #include "format23_test.h"
 #include "descriptor_test.h"
+#include "texture_dependency_audit.h"
 #include "package_audit.h"
 #include "konflict_test.h"
 #include "neptune_test.h"
@@ -1717,6 +1718,7 @@ int main(int argc, char **argv)
 	if (find_arg_value(argc, argv, "-format23-test")) return format23_layout_test(argc, argv);
 	if (find_arg_value(argc, argv, "-konflict-test")) return konflict_test(argc, argv);
 	if (find_arg_value(argc, argv, "-static-texture-test")) return static_texture_catalog_test(argc, argv);
+	if (find_arg_value(argc, argv, "-texture-dependency-audit")) return texture_dependency_audit(argc, argv);
 	if (find_arg_value(argc, argv, "-package-audit")) return package_audit(argc, argv);
 	if (find_arg_value(argc, argv, "-descriptor-test")) return descriptor_test(argc, argv);
 	if (find_arg_value(argc, argv, "-arena-test")) return arena_test(argc, argv);

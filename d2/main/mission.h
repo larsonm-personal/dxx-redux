@@ -153,6 +153,7 @@ int mission_owns_resource_archive(const char *source);
 #ifdef DXX_XL_RUNTIME
 /* Ownership identity only; each consumer must apply its resource capability policy */
 const char *mission_resource_archive(void);
+const char *mission_resource_directory(void);
 /* Root captured with the selected descriptor, for namespaced loose resources */
 int mission_owns_resource_directory(const char *source);
 #endif

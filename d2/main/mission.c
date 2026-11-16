@@ -680,6 +680,11 @@ const char *mission_resource_archive(void)
 	return Current_mission ? Current_mission_hog : "";
 }
 
+const char *mission_resource_directory(void)
+{
+	return Current_mission ? Current_mission_descriptor_root : "";
+}
+
 int mission_owns_resource_directory(const char *source)
 {
 	return source && Current_mission && Current_mission_descriptor_root[0] && !strcmp(source, Current_mission_descriptor_root);

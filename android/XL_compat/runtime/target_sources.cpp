@@ -7,7 +7,9 @@
 #include <map>
 #include <stdexcept>
 #include <utility>
+extern "C" {
 #include "mission_prepare.h"
+}
 
 namespace xl_compat
 {
@@ -45,7 +47,7 @@ std::vector<unsigned char> physical_bytes(const std::filesystem::path &path, std
 } // namespace
 
 struct TargetSources::State {
-	mission_preparation *mission;
+	std::map<int, std::string> levels;
 	std::string archive, directory, installation;
 	using Entries = std::map<std::string, std::vector<std::filesystem::path>>;
 	std::map<std::string, Entries> directories;
@@ -78,10 +80,23 @@ TargetSources::TargetSources(mission_preparation *mission, std::string installat
 {
 	if (!mission || !mission_prepared_descriptor(mission) || mission_prepared_descriptor(mission)->descent_version != 2)
 		throw std::runtime_error("Incoming level sources require a retained D2 descriptor");
-	state->mission = mission;
+	const auto *descriptor = mission_prepared_descriptor(mission);
+	for (int id = descriptor->last_secret_level; id <= descriptor->last_level; ++id)
+		if (id)
+			if (const char *level = mission_prepared_level(mission, id)) state->levels.emplace(id, level);
 	state->archive = mission_prepared_archive(mission);
 	state->directory = mission_prepared_directory(mission);
 	state->installation = std::move(installation);
+}
+TargetSources::TargetSources(std::string installation) : state(std::make_unique<State>())
+{
+	if (!Current_mission || Current_mission->descent_version != 2)
+		throw std::runtime_error("Selected level sources require a D2 mission identity");
+	state->archive = mission_resource_archive();
+	state->directory = mission_resource_directory();
+	state->installation = std::move(installation);
+	for (int id = Last_secret_level; id <= Last_level; ++id)
+		if (id) state->levels.emplace(id, id < 0 ? Secret_level_names[-id - 1] : Level_names[id - 1]);
 }
 TargetSources::~TargetSources() = default;
 const std::string &TargetSources::archive() const
@@ -92,18 +107,15 @@ int TargetSources::ordinal(const char *level, int requested) const
 {
 	if (!level || !*level) throw std::runtime_error("Incoming level sources require a level name");
 	if (requested) {
-		const char *name = mission_prepared_level(state->mission, requested);
-		if (!name || SDL_strcasecmp(name, level)) throw std::runtime_error("Incoming source ordinal does not match the target descriptor");
+		const auto found = state->levels.find(requested);
+		if (found == state->levels.end() || SDL_strcasecmp(found->second.c_str(), level)) throw std::runtime_error("Incoming source ordinal does not match the target descriptor");
 		return requested;
 	}
-	const auto *descriptor = mission_prepared_descriptor(state->mission);
 	int result = 0;
-	for (int id = descriptor->last_secret_level; id <= descriptor->last_level; ++id) {
-		if (!id) continue;
-		const char *name = mission_prepared_level(state->mission, id);
-		if (!name || SDL_strcasecmp(name, level)) continue;
+	for (const auto &entry : state->levels) {
+		if (SDL_strcasecmp(entry.second.c_str(), level)) continue;
 		if (result) throw std::runtime_error("Repeated incoming level name requires an explicit ordinal");
-		result = id;
+		result = entry.first;
 	}
 	if (!result) throw std::runtime_error("Incoming level is absent from its target descriptor");
 	return result;

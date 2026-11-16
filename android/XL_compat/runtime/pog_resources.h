@@ -14,7 +14,40 @@ struct xl_pog_bitmap {
 	unsigned rgba, offset, size; /* The bounded owned pixel arena is at most 128 MiB */
 	unsigned palette_flags;
 	unsigned frames, frame_height; /* Source strip retained; static native view begins at frame zero */
+	unsigned rgb_opaque;
+	unsigned physics_height; /* TGA selection may expose the whole strip to physics */
+	unsigned scoped_texture;
+	unsigned transparent_frames[4], super_frames[4];
 };
+struct xl_pog_effect {
+	int effect, frame_time, wall_texture;
+	unsigned source_frames, frames;
+};
+int xl_pog_effect_count(const struct xl_pog_resources *resources);
+const struct xl_pog_effect *xl_pog_effect_entry(const struct xl_pog_resources *resources, int row);
+int xl_pog_effect_bitmap(const struct xl_pog_resources *resources, int row, int frame);
+int xl_pog_scoped_owner(const struct xl_pog_resources *resources);
+int xl_pog_scope_matches_live(const struct xl_pog_resources *resources);
+struct eclip;
+int xl_pog_effect_frames(const struct eclip *effect);
+/* Return the active replacement bitmap, or -1 for the ordinary mapping */
+int xl_pog_apply_effect(int effect, int frame);
+struct xl_pog_clip {
+	int clip, bitmap, frames, frame_time, play_time;
+};
+int xl_pog_clip_count(const struct xl_pog_resources *resources);
+const struct xl_pog_clip *xl_pog_clip_entry(const struct xl_pog_resources *resources, int row);
+/* Zero means this clip retains ordinary native playback */
+int xl_pog_vclip_frames(int clip);
+/* Select a retained per-object strip frame; -1 means ordinary playback */
+int xl_pog_vclip_bitmap(int clip, int frame);
+int xl_pog_vclip_lifetime_frame(int clip, int timeleft);
+struct xl_pog_pixel_view {
+	const unsigned char *pixels;
+	unsigned width, height, row_size, rgb_opaque;
+};
+/* Borrow the active native owner's physics view; cleared on retirement */
+int xl_pog_physics_view(int bitmap, struct xl_pog_pixel_view *view);
 /* Bounded preparation owns normalized pixels without changing live bitmaps */
 struct xl_pog_resources *xl_pog_prepare(PHYSFS_file *file, unsigned max_bitmaps, char *error, size_t error_size);
 void xl_pog_free(struct xl_pog_resources *resources);
@@ -34,10 +67,20 @@ int xl_pog_strip_clock(unsigned bitmap);
 int xl_pog_bitmap_receipt(const struct xl_pog_resources *resources, int bitmap, unsigned *bytes, unsigned *fnv1a);
 #ifdef __cplusplus
 }
+#include <vector>
+namespace xl_compat
+{
+struct PogBitmap;
+struct ScopedTextureResources;
+} // namespace xl_compat
+// Decode once through the existing image codec; never synthesize a POG file
+xl_pog_resources *xl_pog_prepare_rgba(const std::vector<xl_compat::PogBitmap> &images, unsigned max_bitmaps, bool scoped_texture = false);
 namespace xl_assets
 {
 struct ObjectDependencies;
 }
 int xl_pog_target_strip_clock(unsigned bitmap, const xl_assets::ObjectDependencies &tables);
+xl_pog_resources *xl_pog_prepare_scoped(const xl_compat::ScopedTextureResources &textures,
+                                        const xl_assets::ObjectDependencies &tables, const xl_pog_resources *pog);
 #endif
 #endif

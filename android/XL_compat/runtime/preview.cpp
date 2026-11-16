@@ -263,13 +263,11 @@ bool mission_has_companion(const char *extension)
 	return false;
 }
 
-void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot, xl_assets::ObjectDependencies &graph,
-                           mission_preparation *incoming = nullptr, xl_compat::TargetSources *target = nullptr)
+void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot,
+                          xl_assets::ObjectDependencies &graph, bool incoming)
 {
 	graph.xl_boss_spawning = true;
 	graph.xl_time_equipment = true;
-	// Selected-mission admission also checks the currently installed native tables
-	const int texture_count = incoming ? graph.texture_count : NumTextures;
 	const int robot_count = incoming ? graph.robot_count : N_robot_types;
 	const int clip_count = incoming ? graph.clip_count : Num_vclips;
 	const auto *clips = incoming ? graph.clip_data : Vclip;
@@ -278,77 +276,6 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 	const int model_count = incoming ? graph.model_count : N_polygon_models;
 	const auto *model_names = incoming ? graph.model_names : Pof_names;
 	const auto *weapons = incoming ? graph.weapon_data : Weapon_info;
-	auto blockers = xl_compat::runtime_blockers(level, water_pilot);
-	if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
-	if (multiplayer) throw std::runtime_error("multiplayer: XL synchronization is not implemented; use singleplayer");
-	// Both callers checked mission context before reading or translating the level
-	const auto *mission = incoming ? mission_prepared_descriptor(incoming) : Current_mission;
-	if (!incoming && mission && (mission->alternate_ham_file || (mission->enhanced && mission->enhanced != MISSION_ENHANCED_XL)))
-		throw std::runtime_error("custom HAM definitions: XL gameplay-definition support is not verified");
-	if (mission && mission->path) {
-		const char *descriptor = incoming ? mission_prepared_descriptor_text(incoming) : mission_descriptor_snapshot();
-		if (!descriptor) throw std::runtime_error("mission descriptor snapshot unavailable for XL requirement checks");
-		std::istringstream input(descriptor);
-		bool custom_robots = false, custom_textures = false;
-		std::string text;
-		while (std::getline(input, text)) {
-			text = text.substr(0, text.find(';'));
-			const auto equals = text.find('=');
-			if (equals == std::string::npos) continue;
-			auto key = text.substr(0, equals);
-			key.erase(std::remove_if(key.begin(), key.end(), [](unsigned char c) { return std::isspace(c); }), key.end());
-			std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return char(std::tolower(c)); });
-			if (key == "custom_robots" || key == "custom_textures") {
-				auto value = text.substr(equals + 1);
-				value.erase(std::remove_if(value.begin(), value.end(), [](unsigned char c) { return std::isspace(c); }), value.end());
-				std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) { return char(std::tolower(c)); });
-				if (value == "yes" || value == "true" || value == "1") {
-					if (key == "custom_robots") custom_robots = true;
-					else custom_textures = true;
-				} else if (value != "no" && value != "false" && value != "0")
-					throw std::runtime_error("unrecognized mission resource declaration: " + key + " = " + value);
-				continue;
-			}
-			// Remaining DLE/Hoggle metadata does not select runtime options
-			// Multiplayer is gated independently; custom music is not gameplay admission
-			const char *metadata[] = { "author", "web_site", "email", "date", "custom_music",
-				                       "normal", "anarchy", "robo_anarchy", "coop", "capture_flag", "hoard", "editor", "build_time", "revision", "multi_author", "want_feedback" };
-			if (std::find(std::begin(metadata), std::end(metadata), key) != std::end(metadata)) continue;
-			if (key != "name" && key != "d2x-name" && key != "type" && key != "num_levels" && key != "num_secrets" && key != "briefing" && key != "ending")
-				throw std::runtime_error("unsupported mission descriptor option: " + key);
-		}
-		// Declarations apply to the mission, not necessarily every individual level
-		const auto has_companion = [&](const char *extension) {
-			if (!incoming) return mission_has_companion(extension);
-			for (int ordinal = mission->last_secret_level; ordinal <= mission->last_level; ++ordinal) {
-				if (!ordinal) continue;
-				const char *name = mission_prepared_level(incoming, ordinal);
-				if (!name) continue;
-				std::string member = name;
-				const auto dot = member.find_last_of('.');
-				if (dot != std::string::npos) member.resize(dot);
-				if (target->archive_contains(member + extension)) return true;
-			}
-			return false;
-		};
-		if (custom_robots && !has_companion(".HXM"))
-			throw std::runtime_error("mission declares custom robots, but no level HXM was found; install the complete mission package (other custom definition formats remain unqualified)");
-		if (custom_textures && !has_companion(".POG"))
-			throw std::runtime_error("mission declares custom textures, but no level POG was found; install the complete mission package (custom PIG replacements remain unqualified)");
-	}
-	if (!incoming) xl_validate_level_graphics(level.palette);
-	else xl_assets::asset_require(graph.require_owned_banks && graph.resource_banks, "Incoming requirement walk needs retained target banks");
-	// Explicit no-render execution retains skybox geometry/collision and authored
-	// fog state, but does not require a framebuffer for presentation qualification
-	if (!GameArg.SysInputDemoNoRender && std::any_of(level.segments.begin(), level.segments.end(), [](const xl_compat::Segment &segment) { return segment.function == 10; }) && !xl_skybox_renderer_ready())
-		throw std::runtime_error("XL skybox requires an active OpenGL renderer");
-	if (xl_compat::volumetric_fog_required(level)) {
-		(void) xl_compat::fog_colors(level);
-		if (!GameArg.SysInputDemoNoRender)
-			if (const char *reason = ogl_xl_fog_prepare()) throw std::runtime_error(reason);
-	}
-	if (texture_count <= 404 && std::any_of(level.segments.begin(), level.segments.end(), [&](const xl_compat::Segment &segment) { return (xl_compat::segment_property_bits(level.level_version, segment) & xl_compat::segment_lava) != 0; }))
-		throw std::runtime_error("lava volumes require the loaded D2 texture 404 damage definition");
 	// Weapons can be collected or restored even when not placed as weapon objects
 	for (const auto id : Primary_weapon_to_weapon_info) graph.weapon(id);
 	for (const auto id : Secondary_weapon_to_weapon_info) graph.weapon(id);
@@ -524,13 +451,102 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 	for (std::size_t i = 0; i < level.triggers.size(); ++i) texture_action(level.triggers[i], int(i), "texture action");
 	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) texture_action(level.object_trigger_records[i].action, int(i), "object texture action");
 }
+
+void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot, xl_assets::ObjectDependencies &graph,
+                           mission_preparation *incoming = nullptr, xl_compat::TargetSources *target = nullptr, bool owned_scoped_textures = false)
+{
+	graph.xl_boss_spawning = true;
+	graph.xl_time_equipment = true;
+	// Selected-mission admission also checks the currently installed native tables
+	const int texture_count = incoming ? graph.texture_count : NumTextures;
+
+	auto blockers = xl_compat::runtime_blockers(level, water_pilot);
+	if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
+	if (multiplayer) throw std::runtime_error("multiplayer: XL synchronization is not implemented; use singleplayer");
+	// Both callers checked mission context before reading or translating the level
+	const auto *mission = incoming ? mission_prepared_descriptor(incoming) : Current_mission;
+	if (!incoming && mission && (mission->alternate_ham_file || (mission->enhanced && mission->enhanced != MISSION_ENHANCED_XL)))
+		throw std::runtime_error("custom HAM definitions: XL gameplay-definition support is not verified");
+	if (mission && mission->path) {
+		const char *descriptor = incoming ? mission_prepared_descriptor_text(incoming) : mission_descriptor_snapshot();
+		if (!descriptor) throw std::runtime_error("mission descriptor snapshot unavailable for XL requirement checks");
+		std::istringstream input(descriptor);
+		bool custom_robots = false, custom_textures = false;
+		std::string text;
+		while (std::getline(input, text)) {
+			text = text.substr(0, text.find(';'));
+			const auto equals = text.find('=');
+			if (equals == std::string::npos) continue;
+			auto key = text.substr(0, equals);
+			key.erase(std::remove_if(key.begin(), key.end(), [](unsigned char c) { return std::isspace(c); }), key.end());
+			std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+			if (key == "custom_robots" || key == "custom_textures") {
+				auto value = text.substr(equals + 1);
+				value.erase(std::remove_if(value.begin(), value.end(), [](unsigned char c) { return std::isspace(c); }), value.end());
+				std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+				if (value == "yes" || value == "true" || value == "1") {
+					if (key == "custom_robots") custom_robots = true;
+					else custom_textures = true;
+				} else if (value != "no" && value != "false" && value != "0")
+					throw std::runtime_error("unrecognized mission resource declaration: " + key + " = " + value);
+				continue;
+			}
+			// Remaining DLE/Hoggle metadata does not select runtime options
+			// Multiplayer is gated independently; custom music is not gameplay admission
+			const char *metadata[] = { "author", "web_site", "email", "date", "custom_music",
+				                       "normal", "anarchy", "robo_anarchy", "coop", "capture_flag", "hoard", "editor", "build_time", "revision", "multi_author", "want_feedback" };
+			if (std::find(std::begin(metadata), std::end(metadata), key) != std::end(metadata)) continue;
+			if (key != "name" && key != "d2x-name" && key != "type" && key != "num_levels" && key != "num_secrets" && key != "briefing" && key != "ending")
+				throw std::runtime_error("unsupported mission descriptor option: " + key);
+		}
+		// Declarations apply to the mission, not necessarily every individual level
+		const auto has_companion = [&](const char *extension) {
+			if (!incoming) return mission_has_companion(extension);
+			for (int ordinal = mission->last_secret_level; ordinal <= mission->last_level; ++ordinal) {
+				if (!ordinal) continue;
+				const char *name = mission_prepared_level(incoming, ordinal);
+				if (!name) continue;
+				std::string member = name;
+				const auto dot = member.find_last_of('.');
+				if (dot != std::string::npos) member.resize(dot);
+				if (target->archive_contains(member + extension)) return true;
+			}
+			return false;
+		};
+		if (custom_robots && !has_companion(".HXM"))
+			throw std::runtime_error("mission declares custom robots, but no level HXM was found; install the complete mission package (other custom definition formats remain unqualified)");
+		if (custom_textures && !has_companion(".POG") && !owned_scoped_textures)
+			throw std::runtime_error("mission declares custom textures, but no level POG or qualified scoped TGA set was found; install the complete mission package (custom PIG replacements remain unqualified)");
+	}
+	if (!incoming) xl_validate_level_graphics(level.palette);
+	else xl_assets::asset_require(graph.require_owned_banks && graph.resource_banks, "Incoming requirement walk needs retained target banks");
+	// Explicit no-render execution retains skybox geometry/collision and authored
+	// fog state, but does not require a framebuffer for presentation qualification
+	if (!GameArg.SysInputDemoNoRender && std::any_of(level.segments.begin(), level.segments.end(), [](const xl_compat::Segment &segment) { return segment.function == 10; }) && !xl_skybox_renderer_ready())
+		throw std::runtime_error("XL skybox requires an active OpenGL renderer");
+	if (xl_compat::volumetric_fog_required(level)) {
+		(void) xl_compat::fog_colors(level);
+		if (!GameArg.SysInputDemoNoRender)
+			if (const char *reason = ogl_xl_fog_prepare()) throw std::runtime_error(reason);
+	}
+	if (texture_count <= 404 && std::any_of(level.segments.begin(), level.segments.end(), [&](const xl_compat::Segment &segment) { return (xl_compat::segment_property_bits(level.level_version, segment) & xl_compat::segment_lava) != 0; }))
+		throw std::runtime_error("lava volumes require the loaded D2 texture 404 damage definition");
+	collect_dependencies(level, multiplayer, water_pilot, graph, incoming != nullptr);
+}
 } // namespace
 
+void xl_collect_incoming_dependencies(const xl_compat::Inventory &level, bool water_pilot,
+                                      xl_assets::ObjectDependencies &graph)
+{
+	xl_assets::asset_require(graph.require_owned_banks && graph.resource_banks, "Incoming dependency walk needs retained target banks");
+	collect_dependencies(level, false, water_pilot, graph, true);
+}
+
 void xl_validate_incoming_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot,
-                                       xl_assets::ObjectDependencies &graph, mission_preparation *mission, xl_compat::TargetSources &sources)
+                                       xl_assets::ObjectDependencies &graph, mission_preparation *mission, xl_compat::TargetSources &sources, bool owned_scoped_textures)
 {
 	if (!mission) throw std::runtime_error("Incoming requirements need a retained mission descriptor");
-	validate_requirements(level, multiplayer, water_pilot, graph, mission, &sources);
+	validate_requirements(level, multiplayer, water_pilot, graph, mission, &sources, owned_scoped_textures);
 }
 
 #ifdef __ANDROID__
@@ -573,7 +589,7 @@ extern "C" int xl_level_supported_at(const char *filename, int multiplayer, int 
 		const bool arena = water_profile(bytes, multiplayer != 0);
 		const auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena);
 		XlPreparedResources resources(filename, &probe.source, ordinal);
-		validate_requirements(probe.source, multiplayer != 0, arena, resources.dependencies());
+		validate_requirements(probe.source, multiplayer != 0, arena, resources.dependencies(), nullptr, nullptr, resources.has_scoped_textures());
 		return 1;
 	} catch (const std::exception &error) {
 		rejection = std::string(filename) + "\n" + error.what();
@@ -820,7 +836,7 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		const bool arena = water_profile(bytes, (Game_mode & GM_MULTI) != 0);
 		auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena);
 		auto resources = std::make_unique<XlPreparedResources>(filename, &probe.source, ordinal);
-		validate_requirements(probe.source, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies());
+		validate_requirements(probe.source, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures());
 		if (original) {
 			if (!PHYSFS_mkdir("xl_preview_cache")) throw std::runtime_error("cannot create private pilot translation directory");
 			std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> output(PHYSFS_openWrite(translated_path), PHYSFS_close);

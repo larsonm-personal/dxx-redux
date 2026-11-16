@@ -1,4 +1,5 @@
 #include "texture_pixels.h"
+#include "pog_resources.h"
 #include "../xl_rgba_pixels.h"
 extern "C" {
 #include "inferno.h"
@@ -33,10 +34,15 @@ extern "C" int xl_texture_pixel_transparency(int texture, int orientation, int32
 			y = int32_t(65536u - uint32_t(u));
 			break;
 	}
+	if (bitmap->bm_type == BM_RGBA) {
+		xl_pog_pixel_view view{ bitmap->bm_data, unsigned(bitmap->bm_w), unsigned(bitmap->bm_h), unsigned(bitmap->bm_rowsize), unsigned(bitmap->bm_rgb_opaque != 0) };
+		xl_pog_physics_view(Textures[texture].index, &view);
+		const auto column = dxx_xl_texture_coordinate(x, view.width);
+		const auto row = dxx_xl_texture_coordinate(y, view.height);
+		return view.rgb_opaque ? 0 : dxx_xl_rgba_transparency(view.pixels + row * view.row_size + column * 4);
+	}
 	const auto column = dxx_xl_texture_coordinate(x, unsigned(bitmap->bm_w));
 	const auto row = dxx_xl_texture_coordinate(y, unsigned(bitmap->bm_h));
-	if (bitmap->bm_type == BM_RGBA)
-		return dxx_xl_rgba_transparency(bitmap->bm_data + row * bitmap->bm_rowsize + column * 4);
 	const auto color = bitmap->bm_data[row * bitmap->bm_rowsize + column];
 	return color == 254 ? -1 : color == TRANSPARENCY_COLOR ? 1
 	                                                       : 0;

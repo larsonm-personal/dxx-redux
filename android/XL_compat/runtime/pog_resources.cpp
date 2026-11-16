@@ -7,6 +7,7 @@
 #include <vector>
 #include <cstring>
 #include "asset_dependencies.h"
+#include "scoped_texture_playback.h"
 extern "C" {
 #include "bm.h"
 #include "u_mem.h"
@@ -17,6 +18,12 @@ struct xl_pog_resources {
 	std::vector<unsigned char> pixels;
 	unsigned char *native_pixels = nullptr;
 	uint64_t token = 0;
+	bool scoped = false;
+	std::vector<eclip> effect_definitions;
+	std::vector<xl_pog_effect> effects;
+	std::vector<std::vector<int>> effect_bitmaps;
+	std::vector<vclip> clip_definitions;
+	std::vector<xl_pog_clip> clips;
 	xl_pog_resources()
 	{
 		static uint64_t next_token;
@@ -52,6 +59,170 @@ extern "C" unsigned char *xl_pog_take_storage(xl_pog_resources *resources, size_
 	return pixels;
 }
 
+namespace
+{
+xl_pog_resources *pack_images(const std::vector<xl_compat::PogBitmap> &images, bool scoped_texture = false)
+{
+	auto result = std::make_unique<xl_pog_resources>();
+	size_t total = 0;
+	for (const auto &image : images) {
+		if (image.pixels.size() > 2 * xl_compat::pog_file_limit - total)
+			throw std::runtime_error("Decoded bitmap arena exceeds its resource bound");
+		total += image.pixels.size();
+	}
+	result->pixels.reserve(total);
+	result->entries.reserve(images.size());
+	for (const auto &image : images) {
+		xl_pog_bitmap entry{};
+		entry.index = image.index;
+		entry.width = image.width;
+		entry.height = image.height;
+		entry.flags = image.flags & (xl_compat::pog_transparent | xl_compat::pog_super | xl_compat::pog_no_lighting |
+		                             xl_compat::pog_rle | xl_compat::pog_rle_big | xl_compat::pog_see_through);
+		entry.average_index = image.average_index;
+		for (unsigned c = 0; c < 3; ++c) entry.average_rgb[c] = image.average_rgb[c];
+		entry.rgba = image.truecolor;
+		entry.palette_flags = image.palette_flags;
+		entry.offset = unsigned(result->pixels.size());
+		entry.size = unsigned(image.pixels.size());
+		entry.frames = image.frames;
+		entry.frame_height = image.frame_height();
+		entry.rgb_opaque = image.rgb_opaque;
+		entry.physics_height = scoped_texture ? image.height : image.frame_height();
+		entry.scoped_texture = scoped_texture;
+		for (unsigned word = 0; word < 4; ++word) {
+			entry.transparent_frames[word] = image.transparent_frames[word];
+			entry.super_frames[word] = image.super_frames[word];
+		}
+		result->entries.push_back(entry);
+		result->pixels.insert(result->pixels.end(), image.pixels.begin(), image.pixels.end());
+	}
+	return result.release();
+}
+} // namespace
+
+xl_pog_resources *xl_pog_prepare_rgba(const std::vector<xl_compat::PogBitmap> &images, unsigned max_bitmaps, bool scoped_texture)
+{
+	if (max_bitmaps < 2 || images.size() >= max_bitmaps)
+		throw std::runtime_error("Decoded RGBA bitmap count exceeds its target bank");
+	for (const auto &image : images) {
+		if (!image.truecolor || !image.index || image.index >= max_bitmaps ||
+		    (image.flags & (xl_compat::pog_rle | xl_compat::pog_rle_big)))
+			throw std::runtime_error("Decoded RGBA bitmap has an invalid target or encoding");
+		xl_compat::validate_pog_rgba(image);
+		if (image.rgb_opaque) {
+			if (image.flags & (xl_compat::pog_transparent | xl_compat::pog_super | xl_compat::pog_see_through))
+				throw std::runtime_error("Opaque RGB bitmap declares transparency");
+			for (std::size_t pixel = 3; pixel < image.pixels.size(); pixel += 4)
+				if (image.pixels[pixel] != 255) throw std::runtime_error("Opaque RGB bitmap has nonopaque normalized pixels");
+		}
+	}
+	return pack_images(images, scoped_texture);
+}
+
+xl_pog_resources *xl_pog_prepare_scoped(const xl_compat::ScopedTextureResources &textures,
+                                        const xl_assets::ObjectDependencies &tables, const xl_pog_resources *pog)
+{
+	const auto playback = xl_compat::ScopedTexturePlayback::prepare(textures, tables);
+	std::set<int> protected_indices;
+	if (pog)
+		for (const auto &entry : pog->entries) protected_indices.insert(int(entry.index));
+	if (protected_indices != textures.pog_indices) throw std::runtime_error("Scoped texture plan has stale POG ownership");
+	std::vector<xl_compat::PogBitmap> images;
+	std::map<std::size_t, std::size_t> image_rows;
+	for (const auto &binding : playback.bindings) {
+		if (protected_indices.count(binding.bitmap)) throw std::runtime_error("Scoped texture conflicts with POG ownership");
+		if (image_rows.emplace(binding.image, images.size()).second) {
+			images.push_back(textures.images.at(binding.image).bitmap);
+			images.back().index = binding.bitmap;
+		}
+	}
+	std::unique_ptr<xl_pog_resources> result(xl_pog_prepare_rgba(images, tables.resource_banks->bitmap_count(), true));
+	// Native aliases have independent display views but share one retained image
+	const auto unique_entries = result->entries;
+	result->entries.clear();
+	for (const auto &binding : playback.bindings) {
+		auto entry = unique_entries.at(image_rows.at(binding.image));
+		entry.index = unsigned(binding.bitmap);
+		result->entries.push_back(entry);
+	}
+	if (pog) {
+		if (pog->pixels.size() > 2 * xl_compat::pog_file_limit - result->pixels.size())
+			throw std::runtime_error("Combined scoped texture arena exceeds its resource bound");
+		const auto offset = unsigned(result->pixels.size());
+		for (auto entry : pog->entries) {
+			entry.offset += offset;
+			result->entries.push_back(entry);
+		}
+		result->pixels.insert(result->pixels.end(), pog->pixels.begin(), pog->pixels.end());
+	}
+	result->effect_definitions.assign(tables.effect_data, tables.effect_data + tables.effect_count);
+	result->clip_definitions.assign(tables.clip_data, tables.clip_data + tables.clip_count);
+	for (const auto &animation : playback.clips) {
+		const auto &clip = tables.clip_data[animation.clip];
+		result->clips.push_back({ animation.clip, animation.bitmaps.front(),
+		                          int(textures.images[animation.image].bitmap.frames), clip.frame_time, clip.play_time });
+	}
+	for (const auto &clock : playback.effects) {
+		result->effects.push_back({ clock.effect, clock.frame_time, tables.effect_data[clock.effect].changing_wall_texture,
+		                            unsigned(clock.bitmaps.size()), textures.images[clock.image].bitmap.frames });
+		result->effect_bitmaps.push_back(clock.bitmaps);
+	}
+	result->scoped = true;
+	return result.release();
+}
+
+extern "C" int xl_pog_scoped_owner(const xl_pog_resources *resources)
+{
+	return resources && resources->scoped;
+}
+extern "C" int xl_pog_clip_count(const xl_pog_resources *resources)
+{
+	return resources ? int(resources->clips.size()) : 0;
+}
+extern "C" const xl_pog_clip *xl_pog_clip_entry(const xl_pog_resources *resources, int row)
+{
+	return resources && row >= 0 && std::size_t(row) < resources->clips.size() ? &resources->clips[row] : nullptr;
+}
+extern "C" int xl_pog_effect_count(const xl_pog_resources *resources)
+{
+	return resources ? int(resources->effects.size()) : 0;
+}
+extern "C" const xl_pog_effect *xl_pog_effect_entry(const xl_pog_resources *resources, int row)
+{
+	return resources && row >= 0 && std::size_t(row) < resources->effects.size() ? &resources->effects[row] : nullptr;
+}
+extern "C" int xl_pog_effect_bitmap(const xl_pog_resources *resources, int row, int frame)
+{
+	return resources && row >= 0 && std::size_t(row) < resources->effect_bitmaps.size() && frame >= 0 &&
+	               std::size_t(frame) < resources->effect_bitmaps[row].size()
+	           ? resources->effect_bitmaps[row][frame]
+	           : -1;
+}
+extern "C" int xl_pog_scope_matches_live(const xl_pog_resources *resources)
+{
+	if (!resources || !resources->scoped) return 1;
+	if (Num_vclips != int(resources->clip_definitions.size())) return 0;
+	for (const auto &animation : resources->clips) {
+		const auto &a = resources->clip_definitions[animation.clip], &b = Vclip[animation.clip];
+		if (a.num_frames != b.num_frames || a.frame_time != b.frame_time || a.play_time != b.play_time || a.flags != b.flags) return 0;
+		for (int frame = 0; frame < a.num_frames; ++frame)
+			if (a.frames[frame].index != b.frames[frame].index) return 0;
+	}
+	if (Num_effects != int(resources->effect_definitions.size())) return 0;
+	for (int id = 0; id < Num_effects; ++id) {
+		const auto &a = resources->effect_definitions[id], &b = Effects[id];
+		if (a.vc.num_frames != b.vc.num_frames || a.vc.frame_time != b.vc.frame_time ||
+		    a.changing_wall_texture != b.changing_wall_texture || a.changing_object_texture != b.changing_object_texture || a.crit_clip != b.crit_clip) return 0;
+		// Native bmread marks unused effect slots with -1, not an empty clock
+		if (a.vc.num_frames == -1 && a.changing_wall_texture == -1 && a.changing_object_texture == -1) continue;
+		if (a.vc.num_frames < 0 || a.vc.num_frames > VCLIP_MAX_FRAMES) return 0;
+		for (int frame = 0; frame < a.vc.num_frames; ++frame)
+			if (a.vc.frames[frame].index != b.vc.frames[frame].index) return 0;
+	}
+	return 1;
+}
+
 extern "C" xl_pog_resources *xl_pog_prepare(PHYSFS_file *file, unsigned max_bitmaps, char *error, size_t error_size)
 {
 	try {
@@ -64,32 +235,7 @@ extern "C" xl_pog_resources *xl_pog_prepare(PHYSFS_file *file, unsigned max_bitm
 		if (PHYSFS_readBytes(file, bytes.data(), bytes.size()) != size)
 			throw std::runtime_error("POG file is truncated");
 		auto images = xl_compat::read_pog(bytes.data(), bytes.size(), max_bitmaps);
-		auto result = std::make_unique<xl_pog_resources>();
-		size_t total = 0;
-		for (const auto &image : images) {
-			total += image.pixels.size();
-		}
-		result->pixels.reserve(total);
-		result->entries.reserve(images.size());
-		for (const auto &image : images) {
-			xl_pog_bitmap entry{};
-			entry.index = image.index;
-			entry.width = image.width;
-			entry.height = image.height;
-			entry.flags = image.flags & (xl_compat::pog_transparent | xl_compat::pog_super | xl_compat::pog_no_lighting |
-			                             xl_compat::pog_rle | xl_compat::pog_rle_big | xl_compat::pog_see_through);
-			entry.average_index = image.average_index;
-			for (unsigned c = 0; c < 3; ++c) entry.average_rgb[c] = image.average_rgb[c];
-			entry.rgba = image.truecolor;
-			entry.palette_flags = image.palette_flags;
-			entry.offset = unsigned(result->pixels.size());
-			entry.size = unsigned(image.pixels.size());
-			entry.frames = image.frames;
-			entry.frame_height = image.frame_height();
-			result->entries.push_back(entry);
-			result->pixels.insert(result->pixels.end(), image.pixels.begin(), image.pixels.end());
-		}
-		return result.release();
+		return pack_images(images);
 	} catch (const std::exception &exception) {
 		if (error && error_size) std::snprintf(error, error_size, "%s", exception.what());
 		return nullptr;

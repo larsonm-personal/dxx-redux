@@ -40,6 +40,8 @@
 #include "retained_resource.h"
 #include "target_sources.h"
 #include "level_requirements.h"
+#include "scoped_texture_resources.h"
+#include "scoped_texture_playback.h"
 #include "mission_resource_scope.h"
 #ifdef __ANDROID__
 #include "../../app/src/main/cpp/shared/android_mission_assets.h"
@@ -75,6 +77,7 @@ using File = std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)>;
 std::string startup_ham_name, startup_ham_hash, startup_origin, base_rejection;
 char startup_model_names[MAX_POLYGON_MODELS][FILENAME_LEN]{};
 std::string vertigo_rejection, mod_rejection;
+constexpr const char original_vertigo_hash[] = "faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f";
 const std::array<const char *, 2> sound_banks{ "descent2.s11", "descent2.s22" };
 std::array<std::string, 2> startup_sound_hashes;
 std::map<std::string, std::string> startup_graphics_hashes;
@@ -593,7 +596,7 @@ extern "C" int xl_resource_load_vertigo(void)
 		if (path.empty()) return 0;
 		{
 			File file(PHYSFSX_openReadBuffered(path.c_str()), PHYSFS_close);
-			if (!file || resource_hash(file.get(), path) != "faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f")
+			if (!file || resource_hash(file.get(), path) != original_vertigo_hash)
 				throw std::runtime_error("XL requires the qualified original Vertigo d2x.ham");
 		}
 		bm_read_extra_robots(path.c_str(), 2);
@@ -1065,6 +1068,8 @@ struct XlPreparedResources::State {
 	Publication publication;
 	std::vector<unsigned char> level_bytes;
 	std::unique_ptr<xl_compat::Inventory> level_inventory;
+	std::unique_ptr<const xl_compat::ScopedTextureResources> scoped_textures;
+	std::unique_ptr<const xl_compat::ScopedTexturePlayback> texture_playback;
 	std::shared_ptr<const XlResourceBanks> banks;
 	std::vector<unsigned char> palette_bytes;
 	std::unique_ptr<XlPreparedHam> incoming_ham;
@@ -1208,6 +1213,40 @@ std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_mission(missio
 	auto result = std::make_unique<XlPreparedResources>(std::move(incoming));
 	result->state->complete_mission = true;
 	result->state->definition_sources[ham.empty() ? resource_key(startup_ham_name) : ham] = hash;
+	// Source stage zero loads Vertigo before a full custom HAM replaces the tables
+	if (ham.empty() && mission && mission_prepared_descriptor(mission)->enhanced == MISSION_ENHANCED_XL) {
+		xl_compat::TargetSources sources(mission, startup_origin);
+		const auto owned_bytes = [&](const char *path) {
+			auto bytes = sources.directory_bytes(path, 64 * 1024 * 1024);
+			if (!bytes) bytes = sources.directory_bytes(path, 64 * 1024 * 1024, true);
+			return bytes;
+		};
+		std::optional<std::vector<unsigned char>> vertigo;
+		std::string origin;
+		for (const char *path : { "d2x.ham", "data/d2x.ham" }) {
+			vertigo = owned_bytes(path);
+			if (vertigo) {
+				origin = path;
+				break;
+			}
+		}
+		if (!vertigo)
+			for (const char *path : { "d2x.hog", "missions/d2x.hog", "data/d2x.hog" }) {
+				const auto archive = owned_bytes(path);
+				if (!archive) continue;
+				vertigo = xl_find_archive_resource(*archive, ".hog", "d2x.ham", 64 * 1024 * 1024);
+				if (!vertigo) throw std::runtime_error("Incoming Vertigo archive lacks d2x.ham");
+				origin = std::string(path) + "/d2x.ham";
+				break;
+			}
+		if (vertigo) {
+			if (picosha2::hash256_hex_string(*vertigo) != original_vertigo_hash)
+				throw std::runtime_error("Incoming XL requires the qualified original Vertigo d2x.ham");
+			result->state->definition_sources[origin] = result->prepare_vham(std::move(*vertigo));
+			if (result->dependencies().robot_count != 78)
+				throw std::runtime_error("Incoming original Vertigo extension has unexpected robot count");
+		}
+	}
 	const auto hxm = owned_mod_file(".hxm", {}, mission);
 	if (!hxm.empty()) {
 		auto replacement = incoming_owned_file(mission, hxm);
@@ -1229,6 +1268,14 @@ const std::map<std::string, std::string> &XlPreparedResources::sources() const
 
 std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_level(mission_preparation *mission, int ordinal)
 {
+	auto result = prepare_level_inputs(mission, ordinal);
+	xl_compat::TargetSources target(mission, startup_origin);
+	xl_validate_incoming_requirements(result->level_inventory(), false, false, result->state->graph, mission, target, result->has_scoped_textures());
+	return result;
+}
+
+std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_level_inputs(mission_preparation *mission, int ordinal)
+{
 	xl_compat::TargetSources target(mission, startup_origin);
 	const char *filename = mission_prepared_level(mission, ordinal);
 	if (!filename) throw std::runtime_error("Incoming resource level is absent from its descriptor");
@@ -1237,16 +1284,55 @@ std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_level(mission_
 	auto inventory = std::make_unique<xl_compat::Inventory>(xl_compat::inspect_level(*bytes));
 	auto result = prepare_mission(mission);
 	result->prepare_level_resources(filename, inventory.get(), ordinal, mission, &target);
-	xl_validate_incoming_requirements(*inventory, false, false, result->state->graph, mission, target);
+	result->prepare_scoped_textures(*inventory, ordinal, target);
 	result->state->level_bytes = std::move(*bytes);
 	result->state->level_inventory = std::move(inventory);
 	return result;
+}
+
+void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &level, int ordinal, xl_compat::TargetSources &target)
+{
+	auto dependencies = state->graph;
+	if (!state->banks) throw std::runtime_error("Scoped textures require retained native banks");
+	dependencies.require_owned_banks = true;
+	xl_collect_incoming_dependencies(level, false, dependencies);
+	auto textures = std::make_unique<const xl_compat::ScopedTextureResources>(
+	    xl_compat::ScopedTextureResources::prepare(target, dependencies, ordinal, state->pog.get()));
+	for (const auto &image : textures->images) state->owned_models.sources.emplace(image.path, image.hash);
+	state->texture_playback = std::make_unique<const xl_compat::ScopedTexturePlayback>(
+	    xl_compat::ScopedTexturePlayback::prepare(*textures, dependencies));
+	if (!textures->images.empty()) {
+		for (const auto &image : textures->images)
+			if (const char *error = ogl_xl_rgba_prepare(int(image.bitmap.width), int(image.bitmap.frame_height())))
+				throw std::runtime_error(std::string("Scoped texture: ") + error);
+		std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)> pixels(
+		    xl_pog_prepare_scoped(*textures, dependencies, state->pog.get()), xl_pog_free);
+		if (!xl_pog_prepare_storage(pixels.get())) throw std::runtime_error("Cannot prepare native scoped texture storage");
+		state->pog = std::move(pixels);
+	}
+	state->scoped_textures = std::move(textures);
 }
 
 const xl_compat::Inventory &XlPreparedResources::level_inventory() const
 {
 	if (!state || !state->level_inventory) throw std::runtime_error("Resource owner has no retained incoming level");
 	return *state->level_inventory;
+}
+
+const xl_compat::ScopedTextureResources *XlPreparedResources::scoped_textures() const
+{
+	return state ? state->scoped_textures.get() : nullptr;
+}
+
+const xl_compat::ScopedTexturePlayback *XlPreparedResources::scoped_texture_playback() const
+{
+	return state ? state->texture_playback.get() : nullptr;
+}
+
+bool XlPreparedResources::has_scoped_textures() const
+{
+	return state && state->scoped_textures && !state->scoped_textures->images.empty() &&
+	       state->texture_playback && state->pog && xl_pog_scoped_owner(state->pog.get());
 }
 
 XlPreparedResources::XlPreparedResources(XlPreparedResources &&other) noexcept : state(std::move(other.state))
@@ -1264,6 +1350,7 @@ XlPreparedResources &XlPreparedResources::operator=(XlPreparedResources &&other)
 
 void XlPreparedResources::prepare_banks(const std::string &palette)
 {
+	if (state->scoped_textures) throw std::runtime_error("Banks must be prepared before scoped textures");
 	if (state->installed) throw std::runtime_error("Cannot prepare banks after resource publication");
 	if (state->pog) throw std::runtime_error("Banks must be prepared before POG admission");
 	const auto names = graphics_bank_names(palette);
@@ -1294,6 +1381,7 @@ void XlPreparedResources::prepare_banks(const std::string &palette)
 
 std::string XlPreparedResources::prepare_hxm(PHYSFS_file *file)
 {
+	if (state->scoped_textures) throw std::runtime_error("HXM must be prepared before scoped textures");
 	if (state->installed) throw std::runtime_error("Cannot prepare HXM after resource publication");
 	if (state->pog) throw std::runtime_error("HXM must be prepared before POG admission");
 	const auto &graph = state->graph;
@@ -1318,9 +1406,15 @@ std::string XlPreparedResources::prepare_hxm(PHYSFS_file *file)
 
 std::string XlPreparedResources::prepare_vham(PHYSFS_file *file)
 {
+	return prepare_vham(xl_retain_resource(file));
+}
+
+std::string XlPreparedResources::prepare_vham(std::vector<unsigned char> bytes)
+{
+	if (state->scoped_textures) throw std::runtime_error("VHAM must be prepared before scoped textures");
 	if (state->installed) throw std::runtime_error("Cannot prepare VHAM after resource publication");
 	if (state->pog) throw std::runtime_error("VHAM must be prepared before POG admission");
-	auto extra = std::make_unique<XlPreparedHam>(XlPreparedHam::extra(file));
+	auto extra = std::make_unique<XlPreparedHam>(XlPreparedHam::extra(std::move(bytes)));
 	const auto &target = extra->tables();
 	auto staged = std::make_unique<State>(state->definitions);
 	staged->changes = state->changes;
@@ -1385,6 +1479,10 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 		throw std::runtime_error("definition registry changed outside the owned mission resources");
 	state = std::make_unique<State>(*mission_base);
 	prepare_level_resources(level_filename, level, ordinal, nullptr, nullptr);
+	if (level && xl_resource_texture_scope_enabled() && *mission_resource_archive()) {
+		xl_compat::TargetSources target(startup_origin);
+		prepare_scoped_textures(*level, target.ordinal(level_filename, ordinal), target);
+	}
 }
 
 void XlPreparedResources::prepare_level_resources(const char *level_filename, const xl_compat::Inventory *level, int ordinal, mission_preparation *mission, xl_compat::TargetSources *target)
@@ -1481,6 +1579,7 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 
 void XlPreparedResources::prepare_pog(PHYSFS_file *file)
 {
+	if (state->scoped_textures) throw std::runtime_error("POG must be prepared before scoped textures");
 	if (state->installed) throw std::runtime_error("Cannot prepare POG after resource publication");
 	if (state->mission_definitions && !state->banks) throw std::runtime_error("Incoming POG requires prepared target banks");
 	char error[256]{};
@@ -1510,6 +1609,7 @@ void XlPreparedResources::prepare_pog(PHYSFS_file *file)
 
 void XlPreparedResources::prepare_camera_model(PHYSFS_file *file)
 {
+	if (state->scoped_textures) throw std::runtime_error("Camera definitions must be prepared before scoped textures");
 	xl_camera_validate_weapon_definitions(state->graph.weapon_data, state->graph.weapon_count);
 	if (state->camera_model >= 0) return;
 	if (state->pog) throw std::runtime_error("Camera definitions must be prepared before POG admission");

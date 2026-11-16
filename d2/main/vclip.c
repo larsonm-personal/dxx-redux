@@ -24,6 +24,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "vclip.h"
 #include "weapon.h"
 #include "laser.h"
+#ifdef DXX_XL_RUNTIME
+#include "pog_resources.h"
+#endif
 
 //----------------- Variables for video clips -------------------
 int 					Num_vclips = 0;
@@ -33,6 +36,19 @@ vclip 				Vclip[VCLIP_MAXNUM];		// General purpose vclips.
 void draw_vclip_object(object *obj,fix timeleft,int lighted, int vclip_num)
 {
 	int nf,bitmapnum;
+#ifdef DXX_XL_RUNTIME
+	if (xl_pog_vclip_frames(vclip_num)) {
+		bitmap_index bitmap;
+		int index = xl_pog_vclip_bitmap(vclip_num, xl_pog_vclip_lifetime_frame(vclip_num, timeleft));
+		if (index < 0) return;
+		bitmap.index = (ushort) index;
+		if (Vclip[vclip_num].flags & VF_ROD)
+			draw_object_tmap_rod(obj, bitmap, lighted);
+		else
+			draw_object_blob(obj, bitmap);
+		return;
+	}
+#endif
 
 	nf = Vclip[vclip_num].num_frames;
 

@@ -16,6 +16,7 @@
 #include "lightning_renderer.h"
 #include "particle_resources.h"
 #include "resource_validation.h"
+#include "pog_resources.h"
 #include "geometry.h"
 #include "preview.h"
 #include "slow_motion_runtime.h"
@@ -97,6 +98,7 @@ struct Sprite {
 	// A negative bitmap selects the prepared original glare texture
 	int bitmap = -1;
 	Window window;
+	int clip = -1, frame = 0;
 };
 struct Water {
 	int32_t points[4][3];
@@ -363,9 +365,12 @@ extern "C" int xl_transparency_object(int index)
 			// Source ordinary powerups draw immediately; energy bodies are sprites
 			if (!energy_powerup(obj.id)) return 0;
 			const auto &clip = obj.rtype.vclip_info;
-			if (clip.vclip_num < 0 || clip.vclip_num >= VCLIP_MAXNUM || clip.framenum < 0 || clip.framenum >= Vclip[clip.vclip_num].num_frames)
+			const int scoped_frames = xl_pog_vclip_frames(clip.vclip_num);
+			if (clip.vclip_num < 0 || clip.vclip_num >= VCLIP_MAXNUM || clip.framenum < 0 ||
+			    clip.framenum >= (scoped_frames ? scoped_frames : Vclip[clip.vclip_num].num_frames))
 				throw std::runtime_error("XL powerup sprite has an invalid animation frame");
-			const auto bitmap_index = Vclip[clip.vclip_num].frames[clip.framenum];
+			const int scoped_bitmap = xl_pog_vclip_bitmap(clip.vclip_num, clip.framenum);
+			const bitmap_index bitmap_index = scoped_bitmap >= 0 ? ::bitmap_index{ static_cast<ushort>(scoped_bitmap) } : Vclip[clip.vclip_num].frames[clip.framenum];
 			if (bitmap_index.index >= Num_bitmap_files) throw std::runtime_error("XL powerup sprite bitmap is out of range");
 			PIGGY_PAGE_IN(bitmap_index);
 			auto &bitmap = GameBitmaps[bitmap_index.index];
@@ -376,7 +381,12 @@ extern "C" int xl_transparency_object(int index)
 			if (bitmap.bm_w <= 0 || bitmap.bm_h <= 0) throw std::runtime_error("XL powerup sprite bitmap dimensions are invalid");
 			const fix width = bitmap.bm_w > bitmap.bm_h ? obj.size : fixmuldiv(obj.size, bitmap.bm_w, bitmap.bm_h);
 			const fix height = bitmap.bm_w > bitmap.bm_h ? fixmuldiv(obj.size, bitmap.bm_h, bitmap.bm_w) : obj.size;
-			add(Sprite{ powerup_billboard(obj.pos, width, height, { 1, 1, 1, 2.f / 3.f }, ParticleBlend::alpha), bitmap_index.index }, point(obj.pos));
+			Sprite body{ powerup_billboard(obj.pos, width, height, { 1, 1, 1, 2.f / 3.f }, ParticleBlend::alpha), bitmap_index.index };
+			if (scoped_frames) {
+				body.clip = clip.vclip_num;
+				body.frame = clip.framenum;
+			}
+			add(body, point(obj.pos));
 			return 1;
 		}
 		add(QueuedObject{ index, obj.signature }, point(obj.pos));
@@ -470,8 +480,11 @@ extern "C" void xl_transparency_flush(void)
 			               } else if (const auto *object = std::get_if<QueuedObject>(&item)) {
 				               render_object(&Objects[object->index]);
 			               } else if (const auto *sprite = std::get_if<Sprite>(&item)) {
-				               if (sprite->bitmap >= 0) draw_bitmap_sprite(GameBitmaps[sprite->bitmap], sprite->quad);
-				               else {
+				               if (sprite->bitmap >= 0) {
+					               if (sprite->clip >= 0 && xl_pog_vclip_bitmap(sprite->clip, sprite->frame) != sprite->bitmap)
+						               throw std::runtime_error("Queued XL sprite lost its retained animation frame");
+					               draw_bitmap_sprite(GameBitmaps[sprite->bitmap], sprite->quad);
+				               } else {
 					               const auto *glare = xl_prepared_powerup_glare_image();
 					               if (!glare || !glare->texture) throw std::runtime_error("XL powerup sprite lost its glare image");
 					               glare->texture->draw_soft_sprite(sprite->quad);

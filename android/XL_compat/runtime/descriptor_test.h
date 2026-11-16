@@ -93,7 +93,16 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 		} unmount{ physical };
 		require(std::string(PHYSFS_getRealDir("descent2.ham")) == physical, "Base HAM shadow did not control logical lookup");
 		const auto shadow_lookup = lookup_state();
-		auto base = XlPreparedResources::prepare_mission(mission);
+		// This control isolates startup HAM provenance; XL also loads Vertigo
+		{
+			std::ofstream descriptor(directory / "baseham.mn2");
+			descriptor << "name = Base HAM control\nnum_levels = 1\nd2leva-1.rl2\n";
+			require(bool(descriptor), "Cannot write base HAM descriptor control");
+		}
+		auto *base_mission = mission_prepare_from_current_dir("baseham.mn2");
+		require(base_mission, "Cannot prepare base HAM descriptor control");
+		Discard discard_base{ &base_mission };
+		auto base = XlPreparedResources::prepare_mission(base_mission);
 		require(base->dependencies().weapon_count == N_weapon_types &&
 		            base->dependencies().weapon_data[CONCUSSION_ID].energy_usage == energy &&
 		            base->dependencies().model_data[0].model_data != Polygon_models[0].model_data &&
