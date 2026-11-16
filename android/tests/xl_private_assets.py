@@ -317,6 +317,7 @@ def require_original_animation_trace(path):
                 if key == "native_animation_samples" and (
                     type(record.get("native_frames")) is not int
                     or record["native_frames"] != (6 if owner == "a" else 8)
+                    or record.get("context_recreated") is not (owner == "a" and frame == 3)
                 ):
                     raise ValueError("Original retained animation clock differs")
                 pixels = record.get("pixels")
@@ -347,7 +348,7 @@ def main():
     args = parser.parse_args()
     if args.animation_trace:
         require_original_animation_trace(args.animation_trace)
-        print("Verified all six original animation frames, cycle wrap and stock isolation across two GL contexts")
+        print("Verified all six original animation frames, cycle wrap, stock isolation and live EGL recreation")
         return
     if args.gpu_trace:
         require_original_gpu_trace(args.gpu_trace)

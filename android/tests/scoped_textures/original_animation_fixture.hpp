@@ -9,7 +9,8 @@ static std::vector<unsigned char> original_animation_bytes(const char *path)
 	return { std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
 }
 
-static nlohmann::json test_original_animation(const char *owner, bool retained)
+template <typename RecreateContext>
+static nlohmann::json test_original_animation(const char *owner, bool retained, RecreateContext recreate_context)
 {
 	// Independent samples of pinned BoilingPoint force01#0.tga, decoded with Pillow
 	// Keep the trace verifier ORIGINAL_FORCE_SAMPLES in xl_private_assets.py synchronized
@@ -94,6 +95,20 @@ static nlohmann::json test_original_animation(const char *owner, bool retained)
 		}
 		const eclip before = effect;
 		const auto sim = d_rand_get_stream_call_count(D_RNG_SIM), fx = d_rand_get_stream_call_count(D_RNG_FX);
+		const bool recreated = retained && original && step == 3;
+		if (recreated) {
+			xl_pog_pixel_view old_view{}, new_view{};
+			require(xl_pog_physics_view(first_bitmap, &old_view), "live original physics view before context recreation");
+			const auto hash = picosha2::hash256_hex_string(old_view.pixels, old_view.pixels + size_t(old_view.row_size) * old_view.height);
+			const auto *display_pixels = GameBitmaps[first_bitmap].bm_data;
+			recreate_context();
+			require(xl_pog_physics_view(first_bitmap, &new_view) && new_view.pixels == old_view.pixels &&
+			            new_view.height == old_view.height && new_view.row_size == old_view.row_size &&
+			            GameBitmaps[first_bitmap].bm_data == display_pixels &&
+			            picosha2::hash256_hex_string(new_view.pixels, new_view.pixels + size_t(new_view.row_size) * new_view.height) == hash,
+			        "EGL recreation preserves live retained display and physics pixels");
+			require(xl_pog_effect_frames(&effect) == 6 && !std::filesystem::exists(source), "EGL recreation retains original owner without fallback input");
+		}
 		g_android_draw_face_ctx = {};
 		g_android_draw_face_ctx.valid = 1;
 		g_android_draw_face_ctx.tmap1 = 0;
@@ -126,7 +141,10 @@ static nlohmann::json test_original_animation(const char *owner, bool retained)
 		require(!std::memcmp(&before, &effect, sizeof(effect)), "original animation rendering preserves native effect clock");
 		require(sim == d_rand_get_stream_call_count(D_RNG_SIM) && fx == d_rand_get_stream_call_count(D_RNG_FX), "original animation rendering preserves SIM and FX RNG");
 		frames.push_back({ { "frame", frame }, { "original", original }, { "pixels", std::move(pixels) } });
-		if (retained) frames.back()["native_frames"] = xl_pog_effect_frames(&effect);
+		if (retained) {
+			frames.back()["native_frames"] = xl_pog_effect_frames(&effect);
+			frames.back()["context_recreated"] = recreated;
+		}
 		g3_end_frame();
 		android_merged_wall_clear_draw_face_context();
 	}

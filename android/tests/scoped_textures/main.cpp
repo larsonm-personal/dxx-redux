@@ -153,30 +153,57 @@ int main(int argc, char **argv)
 	const EGLint dimensions[] = { EGL_WIDTH, 64, EGL_HEIGHT, 64, EGL_NONE }, version[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
 	nlohmann::json results = nlohmann::json::array();
 	for (int generation = 0; generation < 2; ++generation) {
-		EGLSurface surface = eglCreatePbufferSurface(display, config, dimensions);
-		EGLContext context = eglCreateContext(display, config, EGL_NO_CONTEXT, version);
-		require(eglMakeCurrent(display, surface, surface, context), "render context");
-		gles3_shim_init();
-		// Direct EGL setup must publish the same context availability as native gr_init
-		gl_initialized = 1;
-		// This fixture creates EGL contexts directly; retire the native state caches too.
-		GL_TEXTURE_2D_enabled = GL_texclamp_enabled = -1;
-		ogl_init_texture_list_internal();
-		ogl_init_pixel_buffers(64, 64);
+		EGLSurface surface;
+		EGLContext context;
+		GLuint vertex, fragment, program, vao;
+		const auto create_context = [&] {
+			surface = eglCreatePbufferSurface(display, config, dimensions);
+			context = eglCreateContext(display, config, EGL_NO_CONTEXT, version);
+			require(eglMakeCurrent(display, surface, surface, context), "render context");
+			gles3_shim_init();
+			// Direct EGL setup must publish the same context availability as native gr_init
+			gl_initialized = 1;
+			// This fixture creates EGL contexts directly; retire the native state caches too.
+			GL_TEXTURE_2D_enabled = GL_texclamp_enabled = -1;
+			ogl_init_texture_list_internal();
+			ogl_init_pixel_buffers(64, 64);
 #ifdef DXX_BUILD_DESCENT_II
-		ogl_init_prog();
+			ogl_init_prog();
 #endif
-		GLuint vertex = shader(GL_VERTEX_SHADER, "#version 300 es\nout vec2 uv;void main(){vec2 p=vec2((gl_VertexID<<1)&2,gl_VertexID&2);uv=p;gl_Position=vec4(p*2.0-1.0,0,1);}");
-		GLuint fragment = shader(GL_FRAGMENT_SHADER, "#version 300 es\nprecision highp float;in vec2 uv;uniform sampler2D source;out vec4 color;void main(){color=texture(source,uv);}");
-		GLuint program = glCreateProgram(), vao;
-		glGenVertexArrays(1, &vao);
-		glBindVertexArray(vao);
-		glAttachShader(program, vertex);
-		glAttachShader(program, fragment);
-		glLinkProgram(program);
-		GLint linked = 0;
-		glGetProgramiv(program, GL_LINK_STATUS, &linked);
-		require(linked, "link surface shader");
+			vertex = shader(GL_VERTEX_SHADER, "#version 300 es\nout vec2 uv;void main(){vec2 p=vec2((gl_VertexID<<1)&2,gl_VertexID&2);uv=p;gl_Position=vec4(p*2.0-1.0,0,1);}");
+			fragment = shader(GL_FRAGMENT_SHADER, "#version 300 es\nprecision highp float;in vec2 uv;uniform sampler2D source;out vec4 color;void main(){color=texture(source,uv);}");
+			program = glCreateProgram();
+			glGenVertexArrays(1, &vao);
+			glBindVertexArray(vao);
+			glAttachShader(program, vertex);
+			glAttachShader(program, fragment);
+			glLinkProgram(program);
+			GLint linked = 0;
+			glGetProgramiv(program, GL_LINK_STATUS, &linked);
+			require(linked, "link surface shader");
+		};
+		const auto release_context = [&] {
+			ogl_smash_texture_list_internal();
+			glDeleteVertexArrays(1, &vao);
+#ifdef DXX_BUILD_DESCENT_II
+			ogl_done_prog();
+#endif
+			ogl_close_pixel_buffers();
+			glDeleteProgram(program);
+			glDeleteShader(vertex);
+			glDeleteShader(fragment);
+			gles3_shim_shutdown();
+			gl_initialized = 0;
+			require(eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT), "release context");
+			require(eglDestroyContext(display, context) && eglDestroySurface(display, surface), "destroy fixture context and surface");
+		};
+		create_context();
+#ifdef DXX_BUILD_DESCENT_II
+		const auto recreate_context = [&] {
+			release_context();
+			create_context();
+		};
+#endif
 		GLuint previous = 0;
 		for (const char *owner : { "a", "b", "stock", "a" }) {
 			if (!std::strcmp(owner, "stock")) {
@@ -279,26 +306,14 @@ int main(int argc, char **argv)
 			results.push_back({ { "context", generation }, { "visit", results.size() % 4 }, { "owner", owner }, { "red", red }, { "path", selected_path }, { "original", use_original }, { "correct", true } });
 #ifdef DXX_BUILD_DESCENT_II
 			if (original_animation) {
-				results.back()["animation_samples"] = test_original_animation(owner, false);
-				results.back()["native_animation_samples"] = test_original_animation(owner, true);
+				results.back()["animation_samples"] = test_original_animation(owner, false, recreate_context);
+				results.back()["native_animation_samples"] = test_original_animation(owner, true, recreate_context);
 			}
 #endif
 		}
 		android_mission_assets_free_begin();
 		android_mission_assets_free_end();
-		glDeleteVertexArrays(1, &vao);
-#ifdef DXX_BUILD_DESCENT_II
-		ogl_done_prog();
-#endif
-		ogl_close_pixel_buffers();
-		glDeleteProgram(program);
-		glDeleteShader(vertex);
-		glDeleteShader(fragment);
-		gles3_shim_shutdown();
-		gl_initialized = 0;
-		require(eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT), "release context");
-		eglDestroyContext(display, context);
-		eglDestroySurface(display, surface);
+		release_context();
 	}
 	android_mission_assets_shutdown();
 	eglTerminate(display);

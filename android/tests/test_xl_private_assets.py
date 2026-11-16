@@ -1378,8 +1378,12 @@ class XlPrivateTests(unittest.TestCase):
                     )
                 )
                 rows[-1]["native_animation_samples"] = [
-                    {**copy.deepcopy(record), "native_frames": 6 if owner == "a" else 8}
-                    for record in rows[-1]["animation_samples"]
+                    {
+                        **copy.deepcopy(record),
+                        "native_frames": 6 if owner == "a" else 8,
+                        "context_recreated": owner == "a" and frame == 3,
+                    }
+                    for frame, record in enumerate(rows[-1]["animation_samples"])
                 ]
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "trace.json"
@@ -1413,6 +1417,10 @@ class XlPrivateTests(unittest.TestCase):
             for value in (8, True, None):
                 changed = copy.deepcopy(rows)
                 changed[0]["native_animation_samples"][0]["native_frames"] = value
+                invalid.append(changed)
+            for frame, value in ((3, False), (3, 1), (3, None), (0, True)):
+                changed = copy.deepcopy(rows)
+                changed[0]["native_animation_samples"][frame]["context_recreated"] = value
                 invalid.append(changed)
             for value in (True, -1, 256, 1.5):
                 changed = copy.deepcopy(rows)
