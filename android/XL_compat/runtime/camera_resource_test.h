@@ -82,6 +82,10 @@ static void camera_resource_controls(const std::filesystem::path &root)
 {
 	if (!std::filesystem::exists(root / "data/d2x-xl.hog")) return;
 	char error[256]{};
+	require(load_base_mission("d2", error, sizeof(error)), error);
+	const int stock_robots = N_robot_types, stock_models = N_polygon_models, stock_joints = N_robot_joints;
+	const auto stock_definitions = gameplay_definitions();
+	const auto stock_receipt = hxm_model_receipt(0, stock_models);
 	require(load_base_mission("hxmtest", error, sizeof(error)), error);
 	const int robots = N_robot_types, models = N_polygon_models, joints = N_robot_joints;
 	const auto before = gameplay_definitions();
@@ -240,7 +244,7 @@ static void camera_resource_controls(const std::filesystem::path &root)
 		require(initialized, "Native camera object initialization changed source size ordering, identity, pose or behavior");
 	}
 	require(load_base_mission("d2", error, sizeof(error)), error);
-	require(N_robot_types == robots && N_polygon_models == models && N_robot_joints == joints && gameplay_definitions() == before && hxm_model_receipt(0, models) == stock_model,
+	require(N_robot_types == stock_robots && N_polygon_models == stock_models && N_robot_joints == stock_joints && gameplay_definitions() == stock_definitions && hxm_model_receipt(0, stock_models) == stock_receipt,
 	        "Camera addon leaked definitions into stock mission");
 	std::cout << "Original camera HXM native append, staged dependencies, five malformed controls, unowned shadow, repeated installation/reset and stock isolation passed\n";
 	std::cout << "Native camera object initialization: normal resource-load hook, invalid-model transaction, original type, prior model radius, camera control/model, immortal lifetime, retained pose/signature/AI behavior passed\n";

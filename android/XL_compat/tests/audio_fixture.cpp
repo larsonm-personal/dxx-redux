@@ -331,7 +331,7 @@ void static_explosion_package(const Bytes &source, const std::vector<xl_compat::
 		xl_test::hog_member(archive, name + ".rl2", rejected, false);
 	}
 	write(directory / "xstatic.hog", archive);
-	write(directory / "xstatic.mn2", text("d2x-name = Derived XL explosions\nnum_levels = 3\nstatic23.rl2\nstatic27.rl2\nstatic17.rl2\nnum_secrets = 1\nstatic23.rl2,1\n"));
+	write(directory / "xstatic.mn2", text("d2x-name = Derived XL explosions\nnum_levels = 9\nstatic23.rl2\nstatic27.rl2\nstatic17.rl2\nstbadid.rl2\nstbadfr.rl2\nstbadct.rl2\nstbadmv.rl2\nstbadrn.rl2\nstbadtm.rl2\nnum_secrets = 1\nstatic23.rl2,1\n"));
 }
 
 void fixture(const char *original, const std::filesystem::path &directory)

@@ -95,6 +95,7 @@ extern int bm_validate_main_ham(PHYSFS_file *fp);
 #ifdef DXX_XL_RUNTIME
 int bm_read_xl_main_ham(PHYSFS_file *fp);
 int bm_read_xl_extra_robots(const char *filename);
+int bm_read_base_extra_robots(const char *filename, int type);
 #endif
 int bm_validate_level_hxm(PHYSFS_file *fp);
 int bm_validate_xl_level_hxm(PHYSFS_file *fp);

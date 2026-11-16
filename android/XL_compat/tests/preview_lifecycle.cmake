@@ -56,6 +56,13 @@ if(PILOT_DESCRIPTOR AND PILOT_HOG)
     file(MAKE_DIRECTORY "${fixture}/missions")
     configure_file("${PILOT_DESCRIPTOR}" "${fixture}/missions/d2-xl.mn2" COPYONLY)
     file(CREATE_LINK "${PILOT_HOG}" "${fixture}/missions/d2-xl.hog" COPY_ON_ERROR)
+    file(CREATE_LINK "${PILOT_HOG}" "${fixture}/missions/xlprobe.hog" COPY_ON_ERROR)
+    file(CREATE_LINK "${PILOT_HOG}" "${fixture}/missions/xlwide.hog" COPY_ON_ERROR)
+    file(WRITE "${fixture}/missions/xlwide.mn2"
+         "d2x-name = Derived XL split lights\nnum_levels = 2\nd2leva-1.rl2\nwidelite.rl2\n")
+    file(CREATE_LINK "${PILOT_HOG}" "${fixture}/missions/different.hog" COPY_ON_ERROR)
+    file(WRITE "${fixture}/missions/different.mn2"
+         "d2x-name = Derived XL identity\nnum_levels = 2\nd2leva-1.rl2\nrenamed.rl2\n")
     list(APPEND mission_test_args -xl-test-save)
 endif()
 execute_process(

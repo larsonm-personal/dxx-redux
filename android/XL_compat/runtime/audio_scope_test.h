@@ -1,5 +1,6 @@
 // Real scoped resources and SDL output on repeated normal/secret filenames
 #include "mission_prepare.h"
+#include <chrono>
 static void audio_incoming_source_controls(const std::filesystem::path &root)
 {
 #ifdef USE_SDLMIXER
@@ -115,6 +116,11 @@ static int audio_scope_test(int argc, char **argv)
 #ifdef USE_SDLMIXER
 	using namespace named_audio_control;
 	try {
+		const auto started = std::chrono::steady_clock::now();
+		const auto phase = [&](const char *name, int ordinal = 0) {
+			std::cerr << "Audio scope phase: " << name << " ordinal=" << ordinal << " elapsed_ms="
+			          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started).count() << '\n';
+		};
 		char error[256]{};
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
@@ -124,6 +130,7 @@ static int audio_scope_test(int argc, char **argv)
 		input_demo_set_skip_level_intro(1);
 		SDL_PauseAudio(1);
 		StartNewGame(1);
+		phase("initialized");
 		digi_set_digi_volume(32768);
 		Game_suspended = SUSP_ROBOTS;
 		if (!std::strcmp(find_arg_value(argc, argv, "-audio-scope-test"), "banks")) {
@@ -137,6 +144,7 @@ static int audio_scope_test(int argc, char **argv)
 		std::uint64_t checked = 0;
 		bool first = true;
 		for (int ordinal : { 1, 2, -1, 3, 1 }) {
+			phase("begin", ordinal);
 			if (!first) LoadLevel(ordinal, 0);
 			first = false;
 			SDL_PauseAudio(1);
@@ -232,6 +240,7 @@ static int audio_scope_test(int argc, char **argv)
 				require(state_save_all_sub(save, description), "Cannot save scoped audio to disk");
 				require(!game_is_time_paused(), "Scoped audio save unbalanced the simulation pause");
 			}
+			phase("complete", ordinal);
 		}
 		require(saved.size() == 4, "Scoped audio omitted a normal, secret or fallback context");
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active(), "Scoped audio stock transition failed");
@@ -244,8 +253,11 @@ static int audio_scope_test(int argc, char **argv)
 		for (std::size_t i = 0; i < captured_samples; ++i)
 			require(captured[i] == std::int16_t(float(i % 2 ? -1500 : 1500) * (127.0f / 255.0f)), "Scoped disk restore did not produce the saved PCM");
 		checked += captured_samples;
+		phase("classic begin");
 		classic_audio_controls(root);
+		phase("incoming begin");
 		audio_incoming_source_controls(root);
+		phase("incoming complete");
 		Mix_SetPostMix(nullptr, nullptr);
 		xl_named_audio_clear();
 		SDL_PauseAudio(0);

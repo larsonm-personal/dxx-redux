@@ -1763,18 +1763,19 @@ int main(int argc, char **argv)
 			});
 			require(section != source.sections.end() && index != source.light_indices.end(), "large-count lighting fixture unavailable");
 			const auto record = std::size_t(index - source.light_indices.begin());
-			const auto path = (std::filesystem::path(extra_dir) / "widelight.rl2").string();
+			require(load_base_mission("xlwide", error, sizeof(error)), error);
+			const auto path = (std::filesystem::path(extra_dir) / "widelite.rl2").string();
 			for (const int count : { 128, 255 }) {
 				auto wide = bytes;
 				wide.at(section->offset + record * 6 + 3) = static_cast<std::uint8_t>(count);
 				const auto inventory = xl_compat::inspect_level(wide);
 				write_bytes(path.c_str(), wide);
-				require(xl_level_supported("widelight.rl2", 0) && load_level("widelight.rl2") == 0, "large light count rejected by normal admission");
+				require(xl_level_supported("widelite.rl2", 0) && load_level("widelite.rl2") == 0, "large light count rejected by normal admission");
 				require_owned_light_records(inventory);
-				changing_lights(inventory, "widelight.rl2");
+				changing_lights(inventory, "widelite.rl2");
 				std::cout << "XL split light count " << count << ": normal admission, native records and all source light-off/on UVLs verified\n";
 			}
-			require(load_level("d2leva-1.rl2") == 0, "original pilot recovery after split lights failed");
+			require(load_base_mission("d2-xl", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0, "original pilot recovery after split lights failed");
 		}
 		{
 			const int saved_robot_count = N_robot_types;
@@ -1792,19 +1793,17 @@ int main(int argc, char **argv)
 			renamed.at(std::size_t(palette_end - renamed.begin()) + 1) ^= 1;
 			const auto renamed_path = (std::filesystem::path(extra_dir) / "renamed.rl2").string();
 			write_bytes(renamed_path.c_str(), renamed);
-			char other_mission[] = "different";
-			char *saved_name = Current_mission->filename;
 			const int saved_level = Current_level_num;
-			Current_mission->filename = other_mission;
+			require(load_base_mission("different", error, sizeof(error)), error);
 			Current_level_num = 2;
 			const bool eligible = xl_level_supported("renamed.rl2", 0) != 0;
 			const int loaded = load_level("renamed.rl2");
 			const bool active = xl_preview_pilot_active() != 0;
-			Current_mission->filename = saved_name;
-			Current_level_num = saved_level;
 			require(eligible && !loaded && active, "feature-compatible renamed/rehashed level rejected");
 			require(!std::strcmp(Gamesave_current_filename, "renamed.rl2"), "renamed source identity lost");
 			std::cout << "XL detection admission: different mission, level name, level number and source hash accepted\n";
+			require(load_base_mission("d2-xl", error, sizeof(error)), error);
+			Current_level_num = saved_level;
 			require(load_level("d2leva-1.rl2") == 0, "original level recovery failed");
 		}
 		require(!std::strcmp(Gamesave_current_filename, "d2leva-1.rl2"), "translation changed level identity");
@@ -1907,6 +1906,7 @@ int main(int argc, char **argv)
 			require(PHYSFS_removeFromSearchPath(hog) != 0, "original pilot archive remained mounted");
 			std::cout << "Original HOG pilot: resolved, admitted, colors/materials retained, unmounted\n";
 		}
+		require(load_base_mission(find_arg_value(argc, argv, "-mission"), error, sizeof(error)), error);
 		require(load_level("xlprobe.rl2") == 0, "valid preview load rejected");
 		colored(probe.source, vertex);
 		materials(probe.source);

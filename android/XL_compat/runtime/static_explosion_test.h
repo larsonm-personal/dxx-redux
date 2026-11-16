@@ -71,14 +71,15 @@ void run(const std::filesystem::path &root, int ordinal)
 	const auto initial = snapshot();
 	const auto before_object = Objects[49];
 	for (const auto &entry : std::array<std::pair<const char *, const char *>, 5>{ { { "stbadid.rl2", "missing vclip" }, { "stbadfr.rl2", "in-range initial frame" }, { "stbadct.rl2", "static_explosion" }, { "stbadmv.rl2", "unsupported movement layout" }, { "stbadrn.rl2", "static_explosion" } } }) {
-		require(!xl_level_supported_at(entry.first, 0, 1) && std::strstr(xl_level_rejection(), entry.second),
+		const bool rejected = !xl_level_supported_at(entry.first, 0, 0);
+		require(rejected && std::strstr(xl_level_rejection(), entry.second),
 		        (std::string("Static malformed admission lacks a specific rejection: ") + entry.first + ": " + xl_level_rejection()).c_str());
 		require(snapshot() == initial && Objects[49].signature == before_object.signature && Objects[49].type == 19 &&
 		            Objects[49].rtype.vclip_info.frametime == before_object.rtype.vclip_info.frametime && xl_level_extensions_active(),
 		        "Rejected static level changed the current object or sound state");
 	}
 	// Despite its historical fixture name, a negative initial timer is legal XL
-	require(xl_level_supported_at("stbadtm.rl2", 0, 1) && snapshot() == initial,
+	require(xl_level_supported_at("stbadtm.rl2", 0, 0) && snapshot() == initial,
 	        "Source-valid negative static animation timer was rejected or changed audio state");
 	for (bool duration : { false, true }) {
 		const auto clip = Vclip[0];

@@ -57,10 +57,10 @@ static void hxm_dependency_controls(const std::filesystem::path &root)
 		if (++count > XL_SINGLEPLAYER_START_LIMIT) break;
 	}
 	require(count == XL_SINGLEPLAYER_START_LIMIT + 1, "Player-start overflow fixture incomplete");
-	const auto start_path = shadow / "overstart.rl2";
+	const auto start_path = shadow / "ovrstart.rl2";
 	const auto start_definitions = gameplay_definitions();
 	write_bytes(start_path.string().c_str(), starts);
-	if (xl_level_supported("overstart.rl2", 0) || !std::strstr(xl_level_rejection(), "player starts exceed qualified runtime capacity"))
+	if (xl_level_supported("ovrstart.rl2", 0) || !std::strstr(xl_level_rejection(), "player starts exceed qualified runtime capacity"))
 		throw std::runtime_error(std::string("Excess player-start rejection mismatch: ") + xl_level_rejection());
 	require(gameplay_definitions() == start_definitions, "Player-start rejection mutated live definitions");
 	std::filesystem::remove(start_path);
@@ -89,8 +89,8 @@ static void hxm_dependency_controls(const std::filesystem::path &root)
 			reason = "missing weapon";
 		}
 		if (variant == 3) {
-			bytes[16 + 100] = MAX_SUBMODELS - 1;
-			reason = "gun references missing submodel";
+			bytes[16 + 100] = MAX_SUBMODELS;
+			reason = "HXM definitions are malformed";
 		}
 		if (variant == 4) {
 			bytes[628 + 452 + 1] = 1;
@@ -107,6 +107,12 @@ static void hxm_dependency_controls(const std::filesystem::path &root)
 			throw std::runtime_error("Malformed HXM variant " + std::to_string(variant) + ": expected " + reason + ", got " + (admitted ? "admitted" : xl_level_rejection()));
 		require(gameplay_definitions() == before && hxm_model_receipt(6) == model_before && arena_state() == world, "Rejected HXM mutated live definitions or combat state");
 	}
+	auto fixed_header = original;
+	fixed_header[16 + 100] = MAX_SUBMODELS - 1;
+	write_bytes(path.string().c_str(), fixed_header);
+	require(xl_level_supported("alarlof.rl2", 0) && gameplay_definitions() == before &&
+	            hxm_model_receipt(6) == model_before && arena_state() == world,
+	        "Valid fixed-header gun slot was rejected or changed live state");
 	auto unused = original;
 	put16(unused, 504, MAX_SUBMODELS - 1);
 	write_bytes(path.string().c_str(), unused);
@@ -234,8 +240,11 @@ static int hxm_test(int argc, char **argv)
 		const auto stock_definitions = gameplay_definitions();
 		const auto stock_model = hxm_model_receipt(6);
 		require(load_base_mission("hxmtest", error, sizeof(error)), error);
+		// Selecting an XL mission installs its authentic Vertigo base extension
+		const auto selected_definitions = gameplay_definitions();
+		const auto selected_model = hxm_model_receipt(6);
 		hxm_require_supported();
-		require(gameplay_definitions() == stock_definitions && hxm_model_receipt(6) == stock_model, "HXM preflight changed live definitions");
+		require(gameplay_definitions() == selected_definitions && hxm_model_receipt(6) == selected_model, "HXM preflight changed live definitions");
 		new_player_config();
 		std::strcpy(Players[Player_num].callsign, "XLTest");
 		input_demo_set_skip_level_intro(1);
@@ -293,6 +302,16 @@ static int hxm_test(int argc, char **argv)
 		require(state_save_all_sub(save, description), "Custom gameplay save failed");
 		require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active(),
 		        "Custom gameplay stock transition failed");
+		const auto recovered_model = hxm_model_receipt(6);
+		if (recovered_model != stock_model) {
+			const auto size = (std::min) (recovered_model.size(), stock_model.size());
+			const auto mismatch = std::mismatch(recovered_model.begin(), recovered_model.begin() + size, stock_model.begin());
+			const auto bitmap_start = sizeof(polymodel) + Polygon_models[6].model_data_size;
+			std::cerr << "HXM stock recovery: definitions_equal=" << (gameplay_definitions() == stock_definitions)
+			          << " first_model_byte=" << (mismatch.first - recovered_model.begin())
+			          << " bitmap_start=" << bitmap_start << " pointer_start=" << bitmap_start + sizeof(ObjBitmaps)
+			          << " dying_start=" << bitmap_start + sizeof(ObjBitmaps) + sizeof(ObjBitmapPtrs) << '\n';
+		}
 		require(Robot_info[3].strength == stock_robot.strength && Polygon_models[6].rad == stock_radius &&
 		            xl_custom_model_radius(6, stock_radius) == stock_radius && gameplay_definitions() == stock_definitions && hxm_model_receipt(6) == stock_model,
 		        "HXM definitions or custom radius leaked into stock gameplay");

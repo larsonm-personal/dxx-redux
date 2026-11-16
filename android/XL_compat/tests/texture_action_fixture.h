@@ -132,7 +132,7 @@ inline void write_texture_action_fixture(const std::filesystem::path &original, 
 	const auto level = texture_action_level(found->bytes);
 	const auto pog = texture_action_pog(indices);
 	xl_compat::Bytes output{ 'D', 'H', 'F' };
-	for (const std::string name : { "tex23", "tex27", "noaction", "badbase", "badovl", "badlink", "badobject" }) {
+	for (const std::string name : { "tex23", "tex27", "noaction", "badbase", "badovl", "badlink", "badobjct" }) {
 		auto current = name == "tex27" ? runtime_layout_fixture(level, 27).bytes : level;
 		const auto source = xl_compat::inspect_level(current);
 		if (name == "noaction") {
@@ -144,7 +144,7 @@ inline void write_texture_action_fixture(const std::filesystem::path &original, 
 		if (name == "badbase") layout_patch(current, source.sections[3].offset + 4, 65535);
 		if (name == "badovl") layout_patch(current, source.sections[3].offset + 4, (910u << 16) | 1);
 		if (name == "badlink") layout_patch(current, source.sections[3].offset + 32, 6, 2);
-		if (name == "badobject") layout_patch(current, source.sections[3].offset + 12 * 52 + 4 + 5, 65535);
+		if (name == "badobjct") layout_patch(current, source.sections[3].offset + 12 * 52 + 4 + 5, 65535);
 		hog_member(output, name + ".rl2", current, false);
 		hog_member(output, name + ".pog", pog, false);
 		for (const auto &member : members) {
@@ -158,7 +158,7 @@ inline void write_texture_action_fixture(const std::filesystem::path &original, 
 	std::ofstream hog(directory / "xtexture.hog", std::ios::binary);
 	hog.write(reinterpret_cast<const char *>(output.data()), std::streamsize(output.size()));
 	std::ofstream descriptor(directory / "xtexture.mn2", std::ios::binary);
-	descriptor << "d2x-name = Derived XL textures\nnum_levels = 2\ntex23.rl2\ntex27.rl2\n";
+	descriptor << "d2x-name = Derived XL textures\nnum_levels = 7\ntex23.rl2\ntex27.rl2\nnoaction.rl2\nbadbase.rl2\nbadovl.rl2\nbadlink.rl2\nbadobjct.rl2\n";
 	if (!hog || !descriptor) throw std::runtime_error("Cannot write isolated texture fixture");
 }
 } // namespace xl_test
