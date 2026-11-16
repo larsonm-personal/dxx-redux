@@ -27,6 +27,35 @@ ENV = {
 
 
 class RetailBoundaryTests(unittest.TestCase):
+    def test_corpus_diagnostics_are_bounded_resanitized_and_private(self):
+        details = {
+            "geometry_failures": [{"mission_index": 0, "level_index": 2, "category": "missing-level", "raw": "PRIVATE"}],
+            "mismatches": [{"kind": "value", "path": [0, "levels", 0, "data_warnings", 0],
+                "expected_warning": {"normalized_joint_offsets": 30, "ignored_trailer_bytes": 4, "raw": "PRIVATE"},
+                "actual_warning": {"normalized_joint_offsets": 5, "ignored_trailer_bytes": 4}}],
+        }
+        clean = retail.public_diagnostics(details)
+        self.assertNotIn("PRIVATE", str(clean))
+        self.assertEqual(clean["geometry_failures"][0]["level_index"], 2)
+        self.assertEqual(clean["mismatches"][0]["expected_warning"]["normalized_joint_offsets"], 30)
+        self.assertEqual(clean, retail.public_diagnostics(clean))
+        for invalid in (True, -1, "PRIVATE", float("nan")):
+            details["geometry_failures"][0]["level_index"] = invalid
+            details["mismatches"][0]["expected_warning"]["normalized_joint_offsets"] = invalid
+            clean = retail.public_diagnostics(details)
+            self.assertEqual(clean["geometry_failures"], [])
+            self.assertNotIn("expected_warning", clean["mismatches"][0])
+
+    def test_route_failure_reasons_survive_public_receipt(self):
+        for reason in ("Route owner reported infrastructure failures", "Owner executed a different route work item",
+                       "Canonical route header differs: seed", "Selected route state differs from committed baseline",
+                       "Committed unavailable geometry reproduced unchanged"):
+            row = {"id": "corpus:route:example", "status": "FAIL", "phase": "tests", "reason": reason}
+            receipt = {"schema": 1, "target_sha": SHA, "catalog_hash": SHA, "batch_id": SHA, "lane": "host", "results": [row]}
+            self.assertEqual(retail.public_receipt(receipt)["results"][0]["reason"], reason)
+            row["reason"] += " PRIVATE"
+            self.assertEqual(retail.public_receipt(receipt)["results"][0]["reason"], "tests: FAIL")
+
     def test_xl_native_progress_is_resanitized_and_never_qualifies_coverage(self):
         progress = {
             "last_started_test": "xl_preview_lifecycle",

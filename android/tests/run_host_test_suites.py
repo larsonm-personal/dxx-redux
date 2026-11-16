@@ -944,6 +944,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                 checked = {"status": "FAIL", "reason": "Corpus process failed despite matching output"}
             if "private_error" in checked:
                 result["private_error"] = checked["private_error"]
+            result["geometry_failures"] = checked.get("geometry_failures", [])
             result["mismatches"] = checked.get("mismatches", [])
             result["runtime_outcome"] = checked.get("runtime_outcome", "")
             result["comparison_only"] = checked.get("comparison_only", False)

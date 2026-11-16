@@ -267,6 +267,42 @@ def lane_requires_retail(plan, lane):
 # substring of arbitrary exception text or a raw command/output stream.
 PUBLIC_REASONS = frozenset(
     (
+        'Committed unavailable geometry reproduced unchanged',
+        'Committed route oracle is absent',
+        'Missing route baseline, generated output or summary',
+        'Missing or unsupported route summary schema',
+        'Route owner was not explicitly non-publishing',
+        'Route owner did not use canonical headless mode',
+        'Route owner reported infrastructure failures',
+        'Missing, duplicated or inconsistent selected route work items',
+        'Owner executed a different route work item',
+        'Selected route identity does not match requested metadata',
+        'Malformed selected route identity',
+        'Selected committed route oracle is absent or duplicated',
+        'Selected generated route leaf is absent or duplicated',
+        'Selected route outcome is not ok',
+        'Runtime route outcome differs from committed baseline',
+        'Canonical mission header differs',
+        'Selected route state differs from committed baseline',
+        'Selected route state matches committed baseline',
+        'Missing canonical route header: schema',
+        'Missing canonical route header: mission_filename',
+        'Missing canonical route header: target_index',
+        'Missing canonical route header: generation',
+        'Missing canonical route header: fixed_hz',
+        'Missing canonical route header: seed',
+        'Canonical route header differs: schema',
+        'Canonical route header differs: mission_filename',
+        'Canonical route header differs: target_index',
+        'Canonical route header differs: generation',
+        'Canonical route header differs: fixed_hz',
+        'Canonical route header differs: seed',
+        'Missing canonical route state: route_input_sha256',
+        'Missing canonical route state: rng_start',
+        'Missing canonical route state: rng_end',
+        'Missing canonical route state: objectives',
+        'Missing canonical route state: total_frames',
+
         "Unsafe alternate corpus HAM dependency",
         "Descriptor-associated corpus HOG or complete loose levels unavailable",
         "Ambiguous alternate corpus HAM dependency",
@@ -448,7 +484,7 @@ def public_diagnostics(value):
             row["duration_seconds"] = round(duration, 3)
         row["phase"] = "setup" if command.get("phase") == "setup" else "tests"
         clean["commands"].append(row)
-    from nightly_regression_corpus import DIAGNOSTIC_FIELDS, WORKER_CATEGORIES
+    from nightly_regression_corpus import DIAGNOSTIC_FIELDS, WORKER_CATEGORIES, GEOMETRY_CATEGORIES
 
     def worker_row(value):
         row = {
@@ -477,6 +513,13 @@ def public_diagnostics(value):
     if isinstance(value.get("owner_failure"), dict):
         clean["owner_failure"] = worker_row(value["owner_failure"])
 
+    clean["geometry_failures"] = [
+        {key: row[key] for key in ("mission_index", "level_index", "category")}
+        for row in value.get("geometry_failures", [])[:16]
+        if isinstance(row, dict) and row.get("category") in GEOMETRY_CATEGORIES
+        and all(type(row.get(key)) is int and 0 <= row[key] <= 1000000
+                for key in ("mission_index", "level_index"))
+    ]
     clean["mismatches"] = []
     for mismatch in value.get("mismatches", [])[:16]:
         if mismatch.get("kind") not in ("type", "missing-field", "length", "value"):
@@ -496,6 +539,12 @@ def public_diagnostics(value):
                 ],
             }
         )
+        for key in ("expected_warning", "actual_warning"):
+            counts = mismatch.get(key)
+            fields = ("normalized_joint_offsets", "ignored_trailer_bytes")
+            if ("data_warnings" in path and isinstance(counts, dict)
+                    and all(type(counts.get(field)) is int and 0 <= counts[field] <= 9999999 for field in fields)):
+                clean["mismatches"][-1][key] = {field: counts[field] for field in fields}
     details = value.get("master_diagnostics")
     if isinstance(details, dict):
         clean["master_diagnostics"] = {
