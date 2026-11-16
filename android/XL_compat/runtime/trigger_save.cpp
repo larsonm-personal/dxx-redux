@@ -22,6 +22,7 @@
 #include "repair.h"
 #include "projectile.h"
 #include "object_birth.h"
+#include "afterburner_animation.h"
 #include "changing_light.h"
 #include "flicker.h"
 #include "level_messages.h"
@@ -138,7 +139,9 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 41;
+		block["schema"] = 42;
+		block["afterburner_animation"] = xl_afterburner_animation_snapshot();
+		require(xl_afterburner_animation_restore(block["afterburner_animation"], false), "Cannot capture XL afterburner animation state");
 		block["births"] = xl_object_birth_snapshot();
 		require(xl_object_birth_restore(block["births"], false), "Cannot capture XL object birth identity, time or order");
 		require(FrameTime >= 0, "Cannot capture negative XL frame time");
@@ -270,10 +273,11 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 32u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 41 &&
+		require(saved.is_object() && saved.size() == 33u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 42 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
 		require(xl_object_birth_restore(saved.at("births"), false), "Invalid XL object birth identity, time or order");
+		require(xl_afterburner_animation_restore(saved.at("afterburner_animation"), false), "Invalid XL afterburner animation state");
 		const auto &frame_time = saved.at("frame_time"), &sim_rng_calls = saved.at("sim_rng_calls");
 		require(frame_time.is_number_integer() && (!frame_time.is_number_unsigned() || frame_time.get<uint64_t>() <= INT32_MAX) && frame_time.get<int64_t>() >= 0 && frame_time.get<int64_t>() <= INT32_MAX, "Invalid XL frame time");
 		require(sim_rng_calls.is_number_integer() && (!sim_rng_calls.is_number_unsigned() || sim_rng_calls.get<uint64_t>() <= UINT32_MAX) && sim_rng_calls.get<int64_t>() >= 0 && sim_rng_calls.get<int64_t>() <= UINT32_MAX, "Invalid XL SIM call count");
@@ -502,6 +506,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 				}
 		}
 		xl_object_birth_restore(saved.at("births"), true);
+		xl_afterburner_animation_restore(saved.at("afterburner_animation"), true);
 		xl_runtime::restore_weapon_clock(saved.at("weapon_clock"), true);
 		xl_input_demo_restore_cached_clock(cached_clock.get<uint32_t>());
 		Do_appearance_effect = saved.at("appearance_pending").get<bool>();

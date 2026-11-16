@@ -63,6 +63,7 @@ static void xl_test_filesystem_init(int argc, char **argv)
 #undef PHYSFSX_init
 #include "preview.h"
 #include "pog_resources.h"
+#include "afterburner_animation.h"
 #include "asset_dependencies.h"
 #include "checkpoint_export.h"
 #include "../probe.h"
@@ -843,6 +844,8 @@ void write_bytes(const char *path, const xl_compat::Bytes &bytes)
 	out.close();
 	require(bool(out), "cannot write private fixture");
 }
+#include "afterburner_animation_test.h"
+
 void original_mission_save(const xl_compat::Inventory &source, int vertex)
 {
 	char error[256] = {};
@@ -864,6 +867,7 @@ void original_mission_save(const xl_compat::Inventory &source, int vertex)
 	const auto expected_lights = face_lights();
 	const auto expected_energy = Players[Player_num].energy;
 	const auto expected_flags = Players[Player_num].flags;
+	const auto expected_afterburner = afterburner_animation_control();
 	char save[] = "xl-pilot-state.sav", description[] = "XL extension persistence";
 	// The native low-level save consumes its caller's pause
 	stop_time();
@@ -878,11 +882,15 @@ void original_mission_save(const xl_compat::Inventory &source, int vertex)
 	require(face_lights() == expected_lights, "restore lost switched-light UVLs");
 	require(Players[Player_num].energy == expected_energy && Players[Player_num].flags == expected_flags, "restore lost player state");
 	require(robot_count() == 38, "restore lost live robots");
+	require(xl_afterburner_animation_snapshot() == expected_afterburner, "Native save lost earned afterburner animation clocks");
 	xl_preview_begin_face(Walls[6].segnum, Walls[6].sidenum);
 	require(xl_preview_alpha(1) == 20.0f / 31.0f, "restored opacity did not reach material adapter");
 	xl_preview_end_face();
 	colored(source, vertex);
 	std::cout << "Original mission save: identity, 38 robots, opacity, changed lights, player state and XL activation restored; progression unverified\n";
+	std::ofstream afterburner_file(std::filesystem::path(PHYSFS_getWriteDir()) / "afterburner-continuation.json");
+	afterburner_file << afterburner_animation_continuation().dump(2) << '\n';
+	require(bool(afterburner_file), "Cannot write afterburner continuation evidence");
 }
 void normal_input_frames()
 {
@@ -1750,6 +1758,7 @@ int main(int argc, char **argv)
 	if (find_arg_value(argc, argv, "-konflict-test")) return konflict_test(argc, argv);
 	if (find_arg_value(argc, argv, "-static-texture-test")) return static_texture_catalog_test(argc, argv);
 	if (find_arg_value(argc, argv, "-texture-dependency-audit")) return texture_dependency_audit(argc, argv);
+	if (find_arg_value(argc, argv, "-afterburner-resume")) return afterburner_animation_resume(argc, argv);
 	if (find_arg_value(argc, argv, "-package-audit")) return package_audit(argc, argv);
 	if (find_arg_value(argc, argv, "-descriptor-test")) return descriptor_test(argc, argv);
 	if (find_arg_value(argc, argv, "-arena-test")) return arena_test(argc, argv);

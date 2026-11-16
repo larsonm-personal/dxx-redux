@@ -29,6 +29,7 @@ foreach(xl_target IN LISTS xl_targets)
                 "${xl_runtime_dir}/slow_motion_runtime.cpp"
                 "${xl_runtime_dir}/../slow_motion.cpp"
                 "${xl_runtime_dir}/object_birth.cpp"
+                "${xl_runtime_dir}/afterburner_animation.cpp"
                 "${xl_runtime_dir}/explosion_motion.cpp"
                 "${xl_runtime_dir}/camera_controller.cpp"
                 "${xl_runtime_dir}/projectile.cpp"

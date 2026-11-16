@@ -31,7 +31,7 @@ def main():
     parser.add_argument(
         "--work", type=Path, required=True, help="Fresh output directory beneath the repository temp/ directory"
     )
-    parser.add_argument("--mode", choices=("clock", "vclip", "recovery", "guns"), required=True)
+    parser.add_argument("--mode", choices=("clock", "vclip", "recovery", "guns", "afterburner"), required=True)
     parser.add_argument("--reference", type=Path, help="Pinned xl_hxm_reference executable, required for guns mode")
     parser.add_argument("--outgoing", choices=("d2", "wshock20"), default="d2")
     parser.add_argument("--timeout", type=int, default=120)
@@ -70,7 +70,7 @@ def main():
         shutil.copytree(source / name, extra / name)
     before = {name: inventory(extra / name) for name in ("missions", "mods")}
     runtime_before = inventory(runtime)
-    mission, level = ("wshock20", "6") if args.mode == "vclip" else ("boilpnt", "7")
+    mission, level = ("wshock20", "6") if args.mode in ("vclip", "afterburner") else ("boilpnt", "7")
     output = extra / "texture-dependency-audit.json"
     argv = [
         str(engine),
@@ -93,6 +93,8 @@ def main():
         argv += ["-audit-live-recovery", "1", "-audit-outgoing", args.outgoing]
     elif args.mode == "guns":
         argv += ["-audit-gun-points", "1"]
+    elif args.mode == "afterburner":
+        argv += ["-audit-afterburner-strip", "1"]
     else:
         argv += ["-audit-selected-mission", "1", "-audit-native-" + args.mode, "1"]
         if args.mode == "clock":
@@ -143,6 +145,16 @@ def main():
                     and report.get("gun_point_cases", 0) > 0
                     and report.get("fixed_header_cases", 0) > 0
                     and report.get("sim_rng_unchanged") == 1
+                )
+            elif args.mode == "afterburner":
+                record["requested_controls_present"] = (
+                    report.get("mission") == "wshock20"
+                    and report.get("level") == 6
+                    and report.get("blobs") == report.get("retired_blobs") == 6
+                    and report.get("ticks") == 120
+                    and report.get("selected_frames") == list(range(5))
+                    and report.get("pixel_comparisons", 0) > 0
+                    and report.get("image") == "mods/wshock20/textures/exp23#0.tga"
                 )
             else:
                 record["requested_controls_present"] = (

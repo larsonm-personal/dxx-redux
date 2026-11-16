@@ -1441,6 +1441,7 @@ class ParityTests(unittest.TestCase):
                     state["xl_triggers"] = [[0, -1, -1, 0, 0, 0, 0, 0, 0, 0] for _ in state["triggers"]]
                     state["xl_cameras"] = {"version": 1, "ticks": 0, "states": []}
                     state["xl_births"] = {"version": 1, "next": 0, "objects": [[3, 0, 0, 0]]}
+                    state["xl_afterburner_animation"] = {"version": 1, "objects": []}
                     state["xl_native"] = schema_example(parity.XL_NATIVE_SCHEMA)
                     state["xl_native"].update(
                         version=1, afterburner_charge=[0], afterburner_times=[0] * 1367, guided=[[-1, -1]] * 8
@@ -2181,6 +2182,30 @@ class ParityTests(unittest.TestCase):
 
             self.mutate(changed, change)
             self.assertEqual(parity.compare_world(path, changed, self.header, "d2", "d2")["status"], "fail")
+
+    def test_xl_afterburner_clock_is_complete_and_bound_to_native_timing(self):
+        path = self.native_d2_trace("xl-afterburner", True)
+        state = next(row["state"] for row in parity.records(path) if "ai" in row.get("state", {}))
+        state["xl_afterburner_animation"] = {"version": 1, "objects": [[3, 0, 400, 100]]}
+        objects = {"3": {"type": 1, "id": 95, "signature": 0, "lifeleft": 200, "vclip": {"frametime": 100}}}
+        parity.validate_world_state(state, "d2", True, objects)
+        mutations = (
+            lambda value: value.update(version=2),
+            lambda value: value.update(objects=[]),
+            lambda value: value["objects"].append([3, 0, 400, 100]),
+            lambda value: value["objects"][0].__setitem__(0, 1367),
+            lambda value: value["objects"][0].__setitem__(1, 1),
+            lambda value: value["objects"][0].__setitem__(2, -1),
+            lambda value: value["objects"][0].__setitem__(2, 199),
+            lambda value: value["objects"][0].__setitem__(3, 101),
+            lambda value: value["objects"][0].__setitem__(3, True),
+            lambda value: value.update(unknown=0),
+        )
+        for mutate in mutations:
+            invalid = json.loads(json.dumps(state))
+            mutate(invalid["xl_afterburner_animation"])
+            with self.assertRaises(parity.EvidenceError):
+                parity.validate_world_state(invalid, "d2", True, objects)
 
     def test_xl_player_settings_are_complete_and_compared(self):
         path = self.native_d2_trace("xl-settings", True)

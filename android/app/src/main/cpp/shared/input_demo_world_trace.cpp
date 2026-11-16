@@ -8,6 +8,7 @@
 #include "camera_save.h"
 #include "trigger_state.h"
 #include "object_birth.h"
+#include "afterburner_animation.h"
 #include "seismic_gameplay.h"
 #include "object_trigger.h"
 #include "boss_spawn.h"
@@ -678,6 +679,7 @@ json world_state(bool include_metadata = true)
 		out["xl_player_cfg"] = json::parse(encoded).at("value");
 		out["xl_time"] = xl_runtime::slow_motion_trace_snapshot();
 		out["xl_births"] = xl_object_birth_snapshot();
+		out["xl_afterburner_animation"] = xl_afterburner_animation_snapshot();
 		out["xl_native"] = native_xl_state(include_metadata);
 		out["xl_cameras"] = xl_camera_trace_snapshot();
 		out["xl_triggers"] = trigger_state_snapshot();

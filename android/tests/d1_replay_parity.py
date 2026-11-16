@@ -1713,12 +1713,14 @@ def validate_world_state(state, engine=None, xl=False, objects=None):
                 "xl_triggers": [(int,) * 10],
                 "xl_player_cfg": XL_PLAYER_CFG_SCHEMA,
                 "xl_births": {"version": int, "next": int, "objects": [(int,) * 4]},
+                "xl_afterburner_animation": {"version": int, "objects": [(int,) * 4]},
                 "xl_native": XL_NATIVE_SCHEMA,
             },
             "$.state",
         )
         cfg = state["xl_player_cfg"]
         births = state["xl_births"]
+        afterburner = state["xl_afterburner_animation"]
         capacity = state["ai"]["local_capacity"]
         native = state["xl_native"]
         metadata = native["metadata"]
@@ -1869,6 +1871,32 @@ def validate_world_state(state, engine=None, xl=False, objects=None):
             (int(slot), value["signature"]) for slot, value in sorted(objects.items(), key=lambda item: int(item[0]))
         ]:
             raise EvidenceError("XL births do not match live object identities")
+        if (
+            set(afterburner) != {"version", "objects"}
+            or afterburner["version"] != 1
+            or len(afterburner["objects"]) > capacity
+        ):
+            raise EvidenceError("Invalid XL afterburner animation header")
+        previous = -1
+        for slot, signature, duration, period in afterburner["objects"]:
+            if (
+                not previous < slot < capacity
+                or any(not 0 <= value <= 2147483647 for value in (signature, duration, period))
+                or (not duration and period)
+            ):
+                raise EvidenceError("Invalid XL afterburner animation identity or timing")
+            previous = slot
+        if objects is not None and [(slot, signature) for slot, signature, _, _ in afterburner["objects"]] != [
+            (int(slot), value["signature"])
+            for slot, value in sorted(objects.items(), key=lambda item: int(item[0]))
+            if value["type"] == 1 and value["id"] == 95
+        ]:
+            raise EvidenceError("XL afterburner animations do not match live object identities")
+        if objects is not None:
+            for slot, _, duration, period in afterburner["objects"]:
+                obj = objects[str(slot)]
+                if obj.get("vclip", {}).get("frametime") != period or (duration and obj["lifeleft"] > duration):
+                    raise EvidenceError("XL afterburner clock differs from native object timing")
         for key in XL_PLAYER_CFG_SCHEMA:
             if key.endswith("_order"):
                 if sorted(cfg[key]) != list(range(10)) + [255]:

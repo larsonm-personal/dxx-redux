@@ -11,9 +11,11 @@ set(shared ${repo_root}/android/app/src/main/cpp/shared)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${repo_root}/d2/main/ai.c")
 file(READ "${repo_root}/d2/main/ai.c" boss_configuration_source)
 set(boss_configuration "// Generated from production d2/main/ai.c\n")
-foreach(boss_table IN ITEMS Boss_spew_more Boss_spews_bots_energy Boss_spews_bots_matter
-                            Boss_invulnerable_energy Boss_invulnerable_matter Boss_invulnerable_spot)
-    string(REGEX MATCH "const ubyte ${boss_table}\\[NUM_D2_BOSSES\\][^\n]*;" definition "${boss_configuration_source}")
+foreach(boss_table IN
+        ITEMS Boss_spew_more Boss_spews_bots_energy Boss_spews_bots_matter Boss_invulnerable_energy
+              Boss_invulnerable_matter Boss_invulnerable_spot)
+    string(REGEX MATCH "const ubyte ${boss_table}\\[NUM_D2_BOSSES\\][^\n]*;" definition
+                 "${boss_configuration_source}")
     if(NOT definition)
         message(FATAL_ERROR "Missing production boss table: ${boss_table}")
     endif()
@@ -21,8 +23,8 @@ foreach(boss_table IN ITEMS Boss_spew_more Boss_spews_bots_energy Boss_spews_bot
 endforeach()
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/boss_collision_tables.h" "${boss_configuration}")
 
-# The intact geometry unit retains this production side table through teleport
-# link closure. Solid fluid fixtures do not execute classic lighting geometry.
+# The intact geometry unit retains this production side table through teleport link closure. Solid
+# fluid fixtures do not execute classic lighting geometry.
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${repo_root}/d2/main/mglobal.c")
 file(READ "${repo_root}/d2/main/mglobal.c" geometry_globals)
 string(REGEX MATCH "const int Side_to_verts_int[^;]*;" side_table "${geometry_globals}")
@@ -50,6 +52,7 @@ add_executable(
     ${repo_root}/d2/maths/rand.c
     ${xl}/runtime/object_trigger.cpp
     ${xl}/runtime/object_birth.cpp
+    ${xl}/runtime/afterburner_animation.cpp
     ${xl}/runtime/speed_boost.cpp
     ${xl}/runtime/spawn_points.cpp
     ${xl}/runtime/fluids.cpp
@@ -64,22 +67,29 @@ add_executable(
     ${xl}/runtime/robot_generator.cpp
     ${xl}/runtime/teleport.cpp
     ${shared}/boss_health_shared.c)
-# The non-NETWORK reactor unit still refers to CONNECT_PLAYING in an unused
-# function. Import its production declaration for this source only.
+# The non-NETWORK reactor unit still refers to CONNECT_PLAYING in an unused function. Import its
+# production declaration for this source only.
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    set_property(SOURCE ${repo_root}/d2/main/cntrlcen.c APPEND PROPERTY COMPILE_OPTIONS
-                 -include ${repo_root}/d2/main/multi.h)
+    set_property(SOURCE ${repo_root}/d2/main/cntrlcen.c APPEND
+                 PROPERTY COMPILE_OPTIONS -include ${repo_root}/d2/main/multi.h)
 elseif(MSVC)
-    set_property(SOURCE ${repo_root}/d2/main/cntrlcen.c APPEND PROPERTY COMPILE_OPTIONS
-                 /FI${repo_root}/d2/main/multi.h)
+    set_property(SOURCE ${repo_root}/d2/main/cntrlcen.c APPEND
+                 PROPERTY COMPILE_OPTIONS /FI${repo_root}/d2/main/multi.h)
 endif()
 # Resolve the native C API, not the same-named C++ source helper.
-set_property(SOURCE ${repo_root}/d2/main/fireball.c APPEND PROPERTY INCLUDE_DIRECTORIES "${xl}/runtime")
+set_property(SOURCE ${repo_root}/d2/main/fireball.c APPEND PROPERTY INCLUDE_DIRECTORIES
+                                                                    "${xl}/runtime")
 target_compile_features(xl_boss_gameplay_consumer PRIVATE cxx_std_17)
 target_compile_definitions(xl_boss_gameplay_consumer PRIVATE DXX_BUILD_DESCENT_II DXX_XL_RUNTIME)
 target_include_directories(
-    xl_boss_gameplay_consumer PRIVATE ${repo_root}/d2/include ${repo_root}/d2/main
-                                      ${repo_root}/d2/arch/include ${xl} ${xl}/runtime ${shared} "${CMAKE_CURRENT_BINARY_DIR}")
+    xl_boss_gameplay_consumer
+    PRIVATE ${repo_root}/d2/include
+            ${repo_root}/d2/main
+            ${repo_root}/d2/arch/include
+            ${xl}
+            ${xl}/runtime
+            ${shared}
+            "${CMAKE_CURRENT_BINARY_DIR}")
 find_path(PHYSFS_INCLUDE_DIR physfs.h REQUIRED)
 find_path(SDL_INCLUDE_DIR SDL.h PATH_SUFFIXES SDL REQUIRED)
 find_path(NLOHMANN_JSON_INCLUDE_DIR nlohmann/json_fwd.hpp REQUIRED)
@@ -88,8 +98,13 @@ target_include_directories(
                                       ${NLOHMANN_JSON_INCLUDE_DIR})
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(xl_boss_gameplay_consumer PRIVATE -ffunction-sections -fdata-sections)
-    target_link_options(xl_boss_gameplay_consumer PRIVATE -Wl,--gc-sections
-        -Wl,--wrap=object_create_explosion -Wl,--wrap=explode_object
-        -Wl,--wrap=object_create_badass_explosion -Wl,--wrap=explode_badass_weapon)
+    target_link_options(
+        xl_boss_gameplay_consumer
+        PRIVATE
+        -Wl,--gc-sections
+        -Wl,--wrap=object_create_explosion
+        -Wl,--wrap=explode_object
+        -Wl,--wrap=object_create_badass_explosion
+        -Wl,--wrap=explode_badass_weapon)
 endif()
 add_test(NAME xl_boss_gameplay_consumer COMMAND xl_boss_gameplay_consumer)

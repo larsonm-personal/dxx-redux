@@ -26,6 +26,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "laser.h"
 #ifdef DXX_XL_RUNTIME
 #include "pog_resources.h"
+#include "afterburner_animation.h"
 #endif
 
 //----------------- Variables for video clips -------------------
@@ -39,7 +40,10 @@ void draw_vclip_object(object *obj,fix timeleft,int lighted, int vclip_num)
 #ifdef DXX_XL_RUNTIME
 	if (xl_pog_vclip_frames(vclip_num)) {
 		bitmap_index bitmap;
-		int index = xl_pog_vclip_bitmap(vclip_num, xl_pog_vclip_lifetime_frame(vclip_num, timeleft));
+		int frame = xl_pog_vclip_lifetime_frame(vclip_num, timeleft);
+		int index;
+		xl_afterburner_frame(obj - Objects, vclip_num, timeleft, xl_pog_vclip_frames(vclip_num), &frame);
+		index = xl_pog_vclip_bitmap(vclip_num, frame);
 		if (index < 0) return;
 		bitmap.index = (ushort) index;
 		if (Vclip[vclip_num].flags & VF_ROD)
@@ -52,7 +56,10 @@ void draw_vclip_object(object *obj,fix timeleft,int lighted, int vclip_num)
 
 	nf = Vclip[vclip_num].num_frames;
 
-	bitmapnum =  (nf - f2i(fixdiv( (nf-1)*timeleft,Vclip[vclip_num].play_time))) - 1;
+#ifdef DXX_XL_RUNTIME
+	if (!xl_afterburner_frame(obj - Objects, vclip_num, timeleft, nf, &bitmapnum))
+#endif
+		bitmapnum =  (nf - f2i(fixdiv( (nf-1)*timeleft,Vclip[vclip_num].play_time))) - 1;
 
 	if (bitmapnum >= Vclip[vclip_num].num_frames)
 		bitmapnum=Vclip[vclip_num].num_frames-1;
