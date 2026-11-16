@@ -31,7 +31,8 @@ def main():
     parser.add_argument(
         "--work", type=Path, required=True, help="Fresh output directory beneath the repository temp/ directory"
     )
-    parser.add_argument("--mode", choices=("clock", "vclip", "recovery"), required=True)
+    parser.add_argument("--mode", choices=("clock", "vclip", "recovery", "guns"), required=True)
+    parser.add_argument("--reference", type=Path, help="Pinned xl_hxm_reference executable, required for guns mode")
     parser.add_argument("--outgoing", choices=("d2", "wshock20"), default="d2")
     parser.add_argument("--timeout", type=int, default=120)
     args = parser.parse_args()
@@ -39,6 +40,8 @@ def main():
     engine, runtime, source, work = (path.resolve() for path in (args.engine, args.runtime, args.extra, args.work))
     if not engine.is_file() or not runtime.is_dir():
         parser.error("Engine file and runtime directory must exist")
+    if args.mode == "guns" and (not args.reference or not args.reference.is_file()):
+        parser.error("Guns mode requires the pinned xl_hxm_reference executable")
     if not all((source / name).is_dir() for name in ("missions", "mods")):
         parser.error("Extra input must contain missions/ and mods/")
     if args.timeout <= 0 or work.exists() or not work.is_relative_to(repo / "temp"):
@@ -88,6 +91,8 @@ def main():
     ]
     if args.mode == "recovery":
         argv += ["-audit-live-recovery", "1", "-audit-outgoing", args.outgoing]
+    elif args.mode == "guns":
+        argv += ["-audit-gun-points", "1"]
     else:
         argv += ["-audit-selected-mission", "1", "-audit-native-" + args.mode, "1"]
         if args.mode == "clock":
@@ -131,6 +136,14 @@ def main():
                     == {"malformed_priority_override", "missing_set"}
                     and all(row.get("valid_recovery") == 1 for row in report["rejections"])
                 )
+            elif args.mode == "guns":
+                record["requested_controls_present"] = (
+                    report.get("mission") == "boilpnt"
+                    and report.get("level") == 7
+                    and report.get("gun_point_cases", 0) > 0
+                    and report.get("fixed_header_cases", 0) > 0
+                    and report.get("sim_rng_unchanged") == 1
+                )
             else:
                 record["requested_controls_present"] = (
                     report.get("dependency_walk") == "complete"
@@ -140,8 +153,25 @@ def main():
                 )
         except (ValueError, TypeError, KeyError) as error:
             record["report_error"] = str(error)
+    if args.mode == "guns":
+        record["reference_exit_code"] = "not_run"
+        if record["exit_code"] == 0 and record["requested_controls_present"]:
+            reference = args.reference.resolve()
+            samples = extra / "gun-points.txt"
+            record["reference_sha256"] = digest(reference)
+            record["samples_sha256"] = digest(samples)
+            record["reference_argv"] = [str(reference), "--guns", str(samples)]
+            with (work / "reference.log").open("wb") as log:
+                try:
+                    record["reference_exit_code"] = subprocess.run(
+                        record["reference_argv"], cwd=work, stdout=log, stderr=subprocess.STDOUT, timeout=args.timeout
+                    ).returncode
+                except subprocess.TimeoutExpired:
+                    record["reference_exit_code"] = "timeout"
     (work / "receipt.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     passed = record["exit_code"] == 0 and record["inputs_unchanged"] and record["requested_controls_present"]
+    if args.mode == "guns":
+        passed = passed and record["reference_exit_code"] == 0
     print(f"Texture {args.mode} audit: {'PASS' if passed else 'FAIL'}; receipt: {work / 'receipt.json'}")
     return 0 if passed else 1
 

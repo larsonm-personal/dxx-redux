@@ -7,6 +7,7 @@
 #include "scoped_texture_clock_test.h"
 #include "scoped_vclip_test.h"
 #include "scoped_texture_live_test.h"
+#include "gun_point_test.h"
 
 // Inspect original inputs through their native owners without admitting gameplay
 static int texture_dependency_audit(int argc, char **argv)
@@ -23,6 +24,7 @@ static int texture_dependency_audit(int argc, char **argv)
 		        "Texture audit output must use its isolated fixture directory");
 		require(mount_extra_dir(extra, error, sizeof(error)), error);
 		if (find_arg_value(argc, argv, "-audit-live-recovery")) return scoped_texture_live_test(argc, argv, extra);
+		if (find_arg_value(argc, argv, "-audit-gun-points")) return original_gun_point_test(extra);
 		const bool selected_mission = find_arg_value(argc, argv, "-audit-selected-mission") != nullptr;
 		if (selected_mission) require(load_base_mission(name, error, sizeof(error)), error);
 		char *end = nullptr;

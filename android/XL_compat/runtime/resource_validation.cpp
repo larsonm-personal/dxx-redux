@@ -3,6 +3,7 @@
 #include "camera_collision.h"
 #include "level_messages.h"
 #include "../model_geometry.h"
+#include "../robot_gun_point.h"
 #include "../model_hitbox.h"
 #include "../model_hitbox_query.h"
 #include "../model_sphere_query.h"
@@ -979,6 +980,34 @@ extern "C" int xl_model_gun_point(int model, int gun, vms_vector *point)
 		point->z = fix(found->second[2] * 65536);
 	}
 	return 1;
+}
+
+extern "C" int xl_robot_gun_point(const object *robot, int gun, vms_vector *point)
+{
+	if (!mission_requires_xl) return 0;
+	try {
+		if (!robot || !point || robot->id >= N_robot_types || gun < 0 || gun >= MAX_GUNS ||
+		    robot->rtype.pobj_info.model_num < 0 || robot->rtype.pobj_info.model_num >= N_polygon_models)
+			throw std::runtime_error("XL gun transform requires installed robot and model definitions");
+		static_assert(MAX_SUBMODELS == 10, "XL fixed gun header extent changed");
+		const auto &definition = Robot_info[robot->id];
+		const auto &model = Polygon_models[robot->rtype.pobj_info.model_num];
+		const auto vector = [](const vms_vector &v) { return xl_compat::GunVector{ v.x, v.y, v.z }; };
+		std::array<xl_compat::GunPart, MAX_SUBMODELS> parts{};
+		for (int i = 0; i < MAX_SUBMODELS; ++i) {
+			const auto &angle = robot->rtype.pobj_info.anim_angles[i];
+			parts[i] = { model.submodel_parents[i], vector(model.submodel_offsets[i]), { angle.p, angle.b, angle.h } };
+		}
+		vms_vector local = definition.gun_points[gun];
+		xl_model_gun_point(robot->rtype.pobj_info.model_num, gun, &local);
+		const xl_compat::GunMatrix orientation{ vector(robot->orient.rvec), vector(robot->orient.uvec), vector(robot->orient.fvec) };
+		const auto result = xl_compat::robot_gun_point(vector(local), definition.gun_submodels[gun], parts, orientation, vector(robot->pos));
+		*point = { result[0], result[1], result[2] };
+		return 1;
+	} catch (const std::exception &error) {
+		Error("Cannot transform XL robot gun point: %s", error.what());
+	}
+	return 0;
 }
 
 extern "C" void xl_resource_commit_mission(void)

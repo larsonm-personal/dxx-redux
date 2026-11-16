@@ -635,3 +635,67 @@ readiness-linux-include-windows-01 with no source mutation during measurement:
 
 All four protected stashes remain unchanged. No emulator installation or state
 mutation has occurred. Final tranche qualification and handoff remain pending.
+
+### Hosted 8/8 and original gun-transform fidelity
+
+The repaired PR518 candidate 2e74d767ae7e3ebfe95c4ae7b6233c356cae51c6 passes
+the hosted Linux readiness job in workflow 43806857739 attempt 1. Downloaded
+hosted-readiness-2e74d767a/results.json identifies the exact candidate, original
+cohort 9dad21bd65ba05665ac6fe315f37fe7461e85725 and resource revision
+dc6565f6b5400d7c700fa8378e766b2354b6ceb6 with matching Vertigo/XL hashes.
+All original eight cases are loaded_ticked with 120 frames. Receipt SHA256 is
+022c4979d961801e0c35833fb85ded29be767db1ff22b68f3510090f4f40ff95.
+The separate assisted navigation probe confirms four cases and leaves four
+unconfirmed; those probes are not the unassisted readiness criterion. Public XL
+compatibility workflow 43806840163 is terminal success. Other workflow owners
+are still pending at this checkpoint and are not claimed as passing.
+
+Follow-up branch xl_readiness_20261116_03_gameplay_fidelity starts at that exact
+PR518 head. A developer-only original gun audit loads Boiling Point level 7
+normally, samples unique robot definitions across all five authored animation
+states on object copies, and records actual native calc_gun_point results.
+No live-table swap, parser replacement or synthetic model input is used. It
+requires original HAM/HXM points rather than model-marker overrides and checks
+live world/definition and SIM state/call-count preservation.
+
+New --guns mode in the pinned HXM reference executes actual CalcGunPoint,
+FixSinCos, CFixMatrix::Create/Transpose, vector Dot and additions extracted from
+hash-checked source. The fixture adapters supply original gun arrays/model
+headers and the object's transposed orientation; the comparison uses default
+XL math format 2. The original audit-gun-points-01 finds 60/60 coordinate
+mismatches, including ten gun links beyond geometry n_models; maximum fixed
+axis error is 189. The failed receipt is preserved without tolerance changes.
+
+The cause is native table trig and fixed-point rounding differing from default
+XL math. Added bounded robot_gun_point policy in XL_compat and a narrow D2 hook
+used only for XL missions. Native stock handling remains selected otherwise.
+The XL path uses installed original definitions, existing model-marker ownership,
+fixed-header parent bounds/cycle guards, source trig/truncation and checked
+coordinate conversion. Audit-gun-points-02 now matches all 60 original cases
+exactly, including the ten fixed-header cases, with unchanged SIM RNG and world.
+Windows developer and ordinary builds succeed; all 51 Debug contracts pass.
+The unchanged readiness cohort and reusable --mode guns runner are next.
+
+Reusable --mode guns now requires --reference pointing to xl_hxm_reference,
+runs the native sampler and strict source comparison, and records both binary
+hashes plus the sample hash. Reusable-gun-points-01 and -02 pass all 60 original
+cases exactly. The native hook validates against MAX_GUNS storage rather than
+n_guns so the pre-existing clamped point-zero API behavior is retained; original
+Boiling Point samples still comprise 60 cases. No live definitions are modified
+to manufacture a zero-gun fixture. Build-gun-native-04 and build-gun-ordinary-02
+pass after that bounds adjustment.
+
+Readiness-gun-windows-01 passes the unchanged 8/8 cohort before the final bounds
+adjustment (engine f3fa0b8ba164c4a1f4b1aabe0de744dd7b4a58e91bd73830d8902f18b22ea9c7,
+result e25e6b7d27d8e7f4ecfe663191a564de5a9c7bc0742d534f10ac6caf09f736bf).
+Final-candidate readiness and Android compilation are being rerun. The hosted
+8/8 receipt above covers PR518 only, not this unpublished gameplay follow-up.
+
+Final local gun candidate passes readiness-gun-windows-02 at 8/8 with unchanged
+original inputs and source hashes throughout the run. Engine SHA256 is
+f04a14ee40f359f4eb180cc6cee15762911bed054fe4342686aa436f0d5f22bb; results SHA256 is
+86f3cb4f5873d843401e86cba3ea065e496f1fffe6721a43a0527d680e3ffec3.
+Android x86_64 externalNativeBuildDebug succeeds in 38 seconds. The native
+Ninja log confirms robot.c and resource_validation.cpp were recompiled, and
+native-gun-builds-01.json records the resulting D1/D2 shared libraries. This is
+native compilation only; no APK installation/device execution is claimed.
