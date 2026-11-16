@@ -3298,6 +3298,561 @@ New-TestExecutionObservation -Context $context -Test $test -Result $result -Star
         sweep.validate_plan(plan, policy)
 
 
+class RefillNightlyTests(unittest.TestCase):
+    def fixture(self, count=8, workers=1, core=False):
+        import nightly_sample as sample
+
+        policy = {
+            "schema": 1,
+            "exclusions": [],
+            "suites": [
+                {
+                    "id": f"master:refill_{i}",
+                    "owner": "master",
+                    "lane": "host",
+                    "args": {"suite": f"refill_{i}"},
+                    "estimated_seconds": 1800,
+                }
+                for i in range(count)
+            ],
+        }
+        catalog = {"schema": 1, "tests": [{"name": e["args"]["suite"]} for e in policy["suites"]]}
+        plan, state = sample.plan_sample(
+            SHA,
+            catalog,
+            policy,
+            now=100,
+            core_ids={"master:refill_0"} if core else set(),
+            host_workers=workers,
+            refill=True,
+        )
+        return policy, catalog, plan, state
+
+    def write_attempt(self, child, directory, status="PASS", attempted=True, **extra):
+        # Use the actual producer journal -> collector -> reconciler boundary
+        sweep.write(
+            directory / "attempt.json",
+            {
+                **sweep.attempt_identity(child, "host"),
+                "processes": {"master": {"completed": True, "exit_code": 0 if status == "PASS" else 1}},
+            },
+        )
+        with (directory / "journal.jsonl").open("w") as stream:
+            for entry in child["tests"]:
+                stream.write(
+                    json.dumps(
+                        {
+                            "schema": 1,
+                            "commit": SHA,
+                            "name": entry["args"]["suite"],
+                            "status": status,
+                            "coverage_complete": status == "PASS",
+                            "attempted_tests": attempted,
+                            "phase": "tests" if attempted else "setup",
+                            **extra,
+                        }
+                    )
+                    + "\n"
+                )
+
+    def run_fake(self, plan, policy, directory, durations, status="PASS", attempted=True, **extra):
+        import nightly_sample as sample
+
+        clock = [101.0]
+        launched = []
+
+        def run(command, cwd, log, timeout):
+            child = sweep.read(command[command.index("--plan") + 1])
+            destination = Path(command[command.index("--output") + 1])
+            launched.append(child)
+            self.assertEqual(command[command.index("--build-root") + 1], str(directory / "build"))
+            elapsed = durations[len(launched) - 1]
+            if elapsed > timeout:
+                clock[0] += timeout
+                raise subprocess.TimeoutExpired(command, timeout)
+            self.write_attempt(child, destination, status, attempted, **extra)
+            clock[0] += elapsed
+            return subprocess.CompletedProcess(command, 0 if status == "PASS" else 1)
+
+        with (
+            patch.object(sample.time, "time", side_effect=lambda: clock[0]),
+            patch.object(sample.time, "monotonic", side_effect=lambda: clock[0]),
+            patch.object(sweep, "run_command", side_effect=run),
+        ):
+            result = sample.execute_refills(plan, policy, "host", directory)
+        return result, launched, sweep.read(directory / "results.json")
+
+    def test_refills_use_actual_time_and_next_night_resumes_without_duplicate_attempts(self):
+        import nightly_sample as sample
+
+        policy, catalog, plan, state = self.fixture(core=True)
+        self.assertEqual(len(plan["tests"]), 8)  # Old estimate budget selected only two
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            result, launched, receipt = self.run_fake(plan, policy, output, [700, 700, 700, 779])
+            self.assertEqual(result, 0)
+            self.assertEqual(len(launched), 4)
+            self.assertEqual(launched[0]["tests"][0]["id"], "master:refill_0")
+            selected = [e["id"] for child in launched for e in child["tests"]]
+            self.assertEqual(len(selected), len(set(selected)))
+            updated, coverage = sample.reconcile_sample(plan, policy, state, [receipt])
+            self.assertEqual(len(updated["done"]), 3)
+            self.assertEqual(len(coverage["records"]), 4)
+            next_plan, _ = sample.plan_sample(
+                "b" * 40, catalog, policy, updated, now=4000, core_ids={"master:refill_0"}, refill=True
+            )
+            self.assertEqual(
+                next_plan["reservation"]["queues"]["host"],
+                ["master:refill_0"] + plan["reservation"]["queues"]["host"][4:],
+            )
+            with self.assertRaisesRegex(ValueError, "fresh output"):
+                sample.execute_refills(plan, policy, "host", output)
+            recovered = sample.collect_refills(plan, policy, "host", output)
+            self.assertEqual(receipt, recovered)
+
+    def test_deadline_timeout_and_setup_failures_stop_without_credit_or_hot_loop(self):
+        import nightly_sample as sample
+
+        policy, _, plan, state = self.fixture()
+        for status, attempted, duration in (("BLOCKED", False, 1), ("FAIL", False, 1), ("PASS", True, 5000)):
+            with self.subTest(status=status, duration=duration), tempfile.TemporaryDirectory() as temporary:
+                result, launched, receipt = self.run_fake(plan, policy, Path(temporary), [duration], status, attempted)
+                self.assertEqual(result, 1)
+                self.assertEqual(len(launched), 1)
+                updated, _ = sample.reconcile_sample(plan, policy, state, [receipt])
+                self.assertFalse(updated["done"])
+        with (
+            tempfile.TemporaryDirectory() as temporary,
+            patch.object(sample.time, "time", return_value=2980),
+            patch.object(sweep, "run_command") as run,
+        ):
+            self.assertEqual(sample.execute_refills(plan, policy, "host", Path(temporary)), 0)
+            run.assert_not_called()
+
+    def test_live_collection_and_validation_scale_linearly_to_full_shard(self):
+        import nightly_sample as sample
+
+        policy, _, plan, _ = self.fixture(count=243)
+        for count in (25, 100, 243):
+            with self.subTest(count=count), tempfile.TemporaryDirectory() as temporary:
+                output = Path(temporary)
+                with (
+                    patch.object(sweep, "collect", wraps=sweep.collect) as collect,
+                    patch.object(sweep, "reconcile", wraps=sweep.reconcile) as reconcile,
+                    patch.object(sample, "refill_plans", wraps=sample.refill_plans) as derive,
+                    patch.object(sample, "write_artifact", wraps=sample.write_artifact) as write,
+                ):
+                    _, launched, receipt = self.run_fake(plan, policy, output, [1] * (count - 1) + [2880 - count])
+                self.assertEqual(len(launched), count)
+                self.assertEqual(len(receipt["refill_batches"]), count)
+                # One live check and one independent end recovery for every child
+                self.assertEqual(collect.call_count, 2 * count)
+                self.assertEqual(reconcile.call_count, 2 * count)
+                self.assertEqual(derive.call_count, 3)
+                aggregate_writes = [call for call in write.call_args_list if call.args[0] == output / "results.json"]
+                self.assertEqual(len(aggregate_writes), 1)
+
+    def test_live_cache_cannot_mask_changes_to_an_earlier_completed_receipt(self):
+        import nightly_sample as sample
+
+        policy, _, plan, _ = self.fixture(count=2)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            calls = []
+
+            def run(command, cwd, log, timeout):
+                child = sweep.read(command[command.index("--plan") + 1])
+                directory = Path(command[command.index("--output") + 1])
+                self.write_attempt(child, directory)
+                calls.append(child)
+                if len(calls) == 2:
+                    prior = output / "refill/0000/journal.jsonl"
+                    row = json.loads(prior.read_text())
+                    row["status"] = "FAIL"
+                    prior.write_text(json.dumps(row) + "\n")
+                return subprocess.CompletedProcess(command, 0)
+
+            with (
+                patch.object(sample.time, "time", return_value=101),
+                patch.object(sweep, "run_command", side_effect=run),
+            ):
+                with self.assertRaisesRegex(ValueError, "changed after collection"):
+                    sample.execute_refills(plan, policy, "host", output)
+            self.assertFalse((output / "results.json").exists())
+            # The workflow's later recovery must not erase an observed integrity failure
+            with self.assertRaisesRegex(ValueError, "integrity failure"):
+                sample.collect_refills(plan, policy, "host", output)
+
+    def test_interruption_recovers_durable_children_without_live_aggregate_rewrites(self):
+        import nightly_sample as sample
+
+        policy, _, plan, state = self.fixture(count=3)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            calls = []
+
+            def run(command, cwd, log, timeout):
+                self.assertFalse((output / "results.json").exists())
+                child = sweep.read(command[command.index("--plan") + 1])
+                calls.append(child)
+                if len(calls) == 2:
+                    self.assertTrue((output / "refill/0000/results.json").exists())
+                    raise KeyboardInterrupt()
+                self.write_attempt(child, Path(command[command.index("--output") + 1]))
+                return subprocess.CompletedProcess(command, 0)
+
+            with (
+                patch.object(sample.time, "time", return_value=101),
+                patch.object(sweep, "run_command", side_effect=run),
+            ):
+                with self.assertRaises(KeyboardInterrupt):
+                    sample.execute_refills(plan, policy, "host", output)
+            receipt = sweep.read(output / "results.json")
+            self.assertEqual(len(receipt["refill_batches"]), 2)
+            self.assertEqual([row["status"] for row in receipt["results"]], ["PASS", "NOT_RUN"])
+            self.assertEqual(sample.collect_refills(plan, policy, "host", output), receipt)
+            updated, _ = sample.reconcile_sample(plan, policy, state, [receipt])
+            self.assertEqual(len(updated["done"]), 1)
+
+    def test_large_reservation_display_is_bounded_without_discarding_evidence(self):
+        import nightly_sample as sample
+
+        ids = [f"owner-{i}" for i in range(4096)]
+        summary = {
+            "target_sha": SHA,
+            "batch_id": "a" * 64,
+            "core_without_pass": [],
+            "current_sha_passed_owners": 0,
+            "current_sha_fully_covered_owners": 0,
+            "supplemental": {"selected": "", "result": "not-selected"},
+            "outcome": "failed",
+            "sample_status_ids": {"fail": ids, "pending": []},
+            "failures": ids,
+            "historical_failures_not_current_sha_coverage": {ident: {} for ident in ids},
+            "runtime_excluded_not_coverage": {},
+            "sample_admitted_ids": ids,
+            "sample_unadmitted_ids": [],
+        }
+        original = copy.deepcopy(summary)
+        display = sample.display_summary(summary)
+        self.assertEqual(display["sample_status_counts"], {"fail": 4096, "pending": 0})
+        self.assertEqual(display["sample_admitted_count"], 4096)
+        self.assertEqual(display["recorded_failures"], 4096)
+        self.assertEqual(display["outcome"], "failed")
+        self.assertLess(len(json.dumps(display)), 4096)
+        self.assertEqual(summary, original)
+        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        self.assertIn("cat summary-display.json", workflow)
+        self.assertIn("            summary.json\n            summary-display.json", workflow)
+
+    def test_host_child_resolves_shared_build_before_target_working_directory(self):
+        policy, catalog, _, _ = self.fixture(count=1)
+        policy["suites"][0]["owner"] = "host-adapter"
+        plan, _ = sweep.plan_batch(SHA, catalog, policy)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "output"
+            expected = str(Path("shared-build").resolve())
+
+            def run(command, cwd, log):
+                self.assertEqual(command[command.index("--build-root") + 1], expected)
+                sweep.write(
+                    command[command.index("--output") + 1],
+                    {
+                        "schema": 1,
+                        "suite": "refill_0",
+                        "status": "PASS",
+                        "attempted_tests": True,
+                        "phase": "tests",
+                        "elapsed_seconds": 1,
+                    },
+                )
+                return subprocess.CompletedProcess(command, 0)
+
+            with (
+                patch.object(sweep.subprocess, "check_output", return_value=SHA),
+                patch.object(sweep, "run_command", side_effect=run),
+            ):
+                receipt = sweep.execute(plan, policy, "host", temporary, output, "shared-build")
+            self.assertEqual(receipt["results"][0]["status"], "PASS")
+
+    def test_real_corpus_reservation_and_all_children_are_bounded_and_valid(self):
+        import nightly_sample as sample
+        import nightly_retail as retail
+        import nightly_regression_catalog as corpus
+
+        policy = sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))
+        catalog = {
+            "schema": 1,
+            "tests": [{"name": e["args"]["suite"]} for e in policy["suites"] if e["owner"] == "master"],
+        }
+        assets = {
+            "repository": retail.ASSET_REPOSITORY,
+            "commit": corpus.CORPUS_COMMIT,
+            "manifest_sha256": retail.baseline_identity(Path(__file__).resolve().parents[2], include_missions=True),
+        }
+        plan, _ = sample.plan_sample(SHA, catalog, policy, retail_assets=assets, now=100, host_workers=16, refill=True)
+        self.assertGreater(len(plan["tests"]), 1024)
+        self.assertLessEqual(len(plan["tests"]), 4096)
+        self.assertLess(len(json.dumps(plan)), 8 * 1024 * 1024)
+        policy = sample.materialized_policy(policy)
+        for shard in sample.shard_plans(plan).values():
+            sweep.validate_plan(shard, policy)
+            for child in sample.refill_plans(shard, "host"):
+                sweep.validate_plan(child, policy)
+        for lane in ("jvm", "android-single", "android-dual"):
+            for child in sample.refill_plans(plan, lane):
+                sweep.validate_plan(child, policy)
+
+    def test_reservation_inventory_cannot_execute_directly_or_relax_child_limits(self):
+        policy, _, plan, _ = self.fixture(count=1025, workers=16)
+        sweep.validate_plan(plan, policy)
+        with patch.object(sweep.subprocess, "check_output") as checkout:
+            with self.assertRaisesRegex(ValueError, "inventory"):
+                sweep.execute(plan, policy, "host", "target", "results")
+            checkout.assert_not_called()
+        ordinary = {key: value for key, value in plan.items() if key != "reservation"}
+        ordinary["batch_id"] = sweep.batch_identity(ordinary)
+        with self.assertRaisesRegex(ValueError, "selection"):
+            sweep.validate_plan(ordinary, policy)
+        oversized = dict(plan, tests=plan["tests"] * 4)
+        with self.assertRaisesRegex(ValueError, "selection"):
+            sweep.validate_plan(oversized, policy)
+
+    def test_clock_rollback_cannot_extend_remaining_allowance(self):
+        import nightly_sample as sample
+
+        policy, _, plan, _ = self.fixture(count=2)
+        wall, monotonic = [101.0], [0.0]
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+
+            def run(command, cwd, log, timeout):
+                self.assertEqual(timeout, 2879)
+                child = sweep.read(command[command.index("--plan") + 1])
+                self.write_attempt(child, Path(command[command.index("--output") + 1]))
+                wall[0] -= 100
+                monotonic[0] += 2879
+                return subprocess.CompletedProcess(command, 0)
+
+            with (
+                patch.object(sample.time, "time", side_effect=lambda: wall[0]),
+                patch.object(sample.time, "monotonic", side_effect=lambda: monotonic[0]),
+                patch.object(sweep, "run_command", side_effect=run) as calls,
+            ):
+                self.assertEqual(sample.execute_refills(plan, policy, "host", output), 0)
+                self.assertEqual(calls.call_count, 1)
+
+    def test_recovery_rejects_gaps_and_wrong_attempt_identity(self):
+        import nightly_sample as sample
+
+        policy, _, plan, _ = self.fixture(count=2)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            self.run_fake(plan, policy, output, [1, 1])
+            attempt = output / "refill/0001/attempt.json"
+            original = sweep.read(attempt)
+            sweep.write(attempt, dict(original, batch_id="b" * 64))
+            with self.assertRaisesRegex(ValueError, "provenance"):
+                sample.collect_refills(plan, policy, "host", output)
+            sweep.write(attempt, original)
+            (output / "refill/0000/admission.json").unlink()
+            with self.assertRaisesRegex(ValueError, "admission"):
+                sample.collect_refills(plan, policy, "host", output)
+
+    def test_test_failures_advance_but_capability_exclusions_remain_scoped(self):
+        import nightly_sample as sample
+
+        policy, _, plan, state = self.fixture(count=3)
+        for status, attempted, detail in (
+            ("FAIL", True, {}),
+            ("BLOCKED", False, {"retryable": False, "blocker_kind": "target-capability"}),
+        ):
+            with tempfile.TemporaryDirectory() as temporary:
+                _, launched, receipt = self.run_fake(
+                    plan, policy, Path(temporary), [1, 1, 1], status, attempted, **detail
+                )
+                self.assertEqual(len(launched), 3)
+                updated, _ = sample.reconcile_sample(plan, policy, state, [receipt])
+                self.assertEqual(len(updated["done"] if attempted else updated["runtime_excluded"]), 3)
+
+    def test_receipts_reject_changed_target_controller_queue_and_child_identity(self):
+        import nightly_sample as sample
+
+        policy, _, plan, state = self.fixture(count=3)
+        with tempfile.TemporaryDirectory() as temporary:
+            _, _, receipt = self.run_fake(plan, policy, Path(temporary), [1000, 1879])
+        for mutate in (
+            lambda r: r.update(target_sha="b" * 40),
+            lambda r: r.update(lane="jvm"),
+            lambda r: r["refill_batches"].reverse(),
+            lambda r: r["refill_batches"].append(r["refill_batches"][0]),
+            lambda r: r["results"][0].update(refill_batch_id="a" * 64),
+            lambda r: r["results"].append(r["results"][0]),
+            lambda r: r["results"][0].update(id=plan["tests"][-1]["id"]),
+        ):
+            forged = copy.deepcopy(receipt)
+            mutate(forged)
+            with self.assertRaises(ValueError):
+                sample.reconcile_sample(plan, policy, state, [forged])
+        altered = copy.deepcopy(plan)
+        altered["reservation"]["controller"] = "b" * 64
+        altered["batch_id"] = sweep.batch_identity(altered)
+        with self.assertRaisesRegex(ValueError, "controller"):
+            sweep.validate_plan(altered, policy)
+        altered = copy.deepcopy(plan)
+        altered["reservation"]["queues"]["host"].append(altered["tests"][0]["id"])
+        altered["batch_id"] = sweep.batch_identity(altered)
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            sweep.validate_plan(altered, policy)
+
+    def test_multishard_reservations_are_unique_and_keep_public_private_boundaries(self):
+        import nightly_sample as sample
+        import nightly_retail as retail
+
+        policy, catalog, _, _ = self.fixture(count=20, workers=3)
+        assets = {
+            "repository": retail.ASSET_REPOSITORY,
+            "commit": "8c9988a96a7e306f8aac04c85e2610492917b7ac",
+            "manifest_sha256": retail.baseline_identity(Path(__file__).resolve().parents[2], include_missions=True),
+        }
+        for entry in policy["suites"][::2]:
+            entry["fixture"] = "retail-base"
+        plan, state = sample.plan_sample(
+            SHA, catalog, policy, retail_assets=assets, now=100, core_ids=set(), host_workers=3, refill=True
+        )
+        again, _ = sample.plan_sample(
+            SHA, catalog, policy, retail_assets=assets, now=100, core_ids=set(), host_workers=3, refill=True
+        )
+        self.assertEqual(plan, again)
+        shards = sample.shard_plans(plan)
+        all_ids = [e["id"] for shard in shards.values() for e in shard["tests"]]
+        self.assertEqual(len(all_ids), 20)
+        self.assertEqual(len(set(all_ids)), 20)
+        receipts = []
+        for shard in shards.values():
+            self.assertEqual(len({retail.lane_requires_retail({"tests": [e]}, "host") for e in shard["tests"]}), 1)
+            with tempfile.TemporaryDirectory() as temporary:
+                _, _, receipt = self.run_fake(shard, policy, Path(temporary), [1] * 20)
+                receipts.append(receipt)
+        updated, coverage = sample.reconcile_sample(plan, policy, state, receipts)
+        self.assertEqual(len(updated["done"]), 20)
+        self.assertEqual(len(coverage["records"]), 20)
+        forged = copy.deepcopy(receipts[0])
+        forged["batch_id"] = receipts[1]["batch_id"]
+        with self.assertRaises(ValueError):
+            sample.reconcile_sample(plan, policy, state, [forged])
+
+    def test_configured_build_failure_survives_collection_without_traversal_credit(self):
+        import nightly_sample as sample
+
+        policy, _, plan, state = self.fixture(count=2)
+        with tempfile.TemporaryDirectory() as temporary:
+            _, launched, receipt = self.run_fake(
+                plan, policy, Path(temporary), [1], "FAIL", False, blocker_kind="build-failure", retryable=False
+            )
+        self.assertEqual(len(launched), 1)
+        self.assertEqual(receipt["results"][0]["status"], "FAIL")
+        updated, coverage = sample.reconcile_sample(plan, policy, state, [receipt])
+        self.assertFalse(updated["done"])
+        self.assertEqual(len(coverage["records"]), 1)
+        self.assertFalse(next(iter(coverage["records"].values()))["coverage_complete"])
+
+    def test_android_incompatible_queue_stops_at_next_owner(self):
+        import nightly_sample as sample
+        import nightly_retail as retail
+
+        policy, catalog, _, _ = self.fixture(count=3)
+        policy["suites"][0] = next(
+            e
+            for e in sweep.read(Path(__file__).with_name("nightly_tooling_policy.json"))["suites"]
+            if e["id"] == "master:test_lan_three_player_startup"
+        )
+        catalog["tests"][0]["name"] = "test_lan_three_player_startup"
+        policy["suites"][1].update(fixture="retail-base", lane="android-dual")
+        policy["suites"][2]["lane"] = "android-dual"
+        assets = {
+            "repository": retail.ASSET_REPOSITORY,
+            "commit": "8c9988a96a7e306f8aac04c85e2610492917b7ac",
+            "manifest_sha256": retail.baseline_identity(Path(__file__).resolve().parents[2], include_missions=True),
+        }
+        plan, _ = sample.plan_sample(SHA, catalog, policy, retail_assets=assets, now=100, core_ids=set(), refill=True)
+        queue = plan["reservation"]["queues"]["android-dual"]
+        order = plan["sampling"]["pending_order"]["android-dual"]
+        self.assertEqual(queue, order[: len(queue)])
+        self.assertFalse(set(queue) >= {policy["suites"][0]["id"], policy["suites"][1]["id"]})
+
+    def test_real_child_processes_refill_and_recover_exact_receipts(self):
+        import nightly_sample as sample
+        import shutil
+
+        if not shutil.which("pwsh"):
+            self.skipTest("PowerShell unavailable for refill subprocess integration")
+        policy, catalog, _, _ = self.fixture(count=2)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / "target"
+            (target / "android").mkdir(parents=True)
+            (
+                target / "android/run_all_tests.ps1"
+            ).write_text("""param([string]$SelectedTestsPath, [string]$EvidenceJournalPath)
+$commit = git rev-parse HEAD
+foreach ($name in (Get-Content $SelectedTestsPath -Raw | ConvertFrom-Json)) {
+    @{commit=$commit;name=$name;status='PASS';attempted_tests=$true;phase='tests';coverage_complete=$true} | ConvertTo-Json -Compress | Add-Content $EvidenceJournalPath
+}
+exit 0
+""")
+            subprocess.run(["git", "init", "-q", str(target)], check=True)
+            subprocess.run(["git", "-C", str(target), "add", "."], check=True)
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(target),
+                    "-c",
+                    "user.name=Test",
+                    "-c",
+                    "user.email=test@example.invalid",
+                    "commit",
+                    "-qm",
+                    "fixture",
+                ],
+                check=True,
+            )
+            sha = subprocess.check_output(["git", "-C", str(target), "rev-parse", "HEAD"], text=True).strip()
+            plan, state = sample.plan_sample(sha, catalog, policy, core_ids=set(), refill=True)
+            sweep.write(root / "policy.json", policy)
+            original = sweep.run_command
+
+            def run(command, cwd, log, timeout):
+                command[command.index("--policy") + 1] = str(root / "policy.json")
+                return original(command, root, log, timeout=timeout)
+
+            with patch.object(sweep, "run_command", side_effect=run):
+                self.assertEqual(sample.execute_refills(plan, policy, "host", root / "results"), 0)
+            receipt = sample.collect_refills(plan, policy, "host", root / "results")
+            self.assertEqual(len(receipt["refill_batches"]), 2)
+            updated, coverage = sample.reconcile_sample(plan, policy, state, [receipt])
+            self.assertEqual(len(updated["done"]), 2)
+            self.assertEqual(len(coverage["records"]), 2)
+
+    def test_setup_provisioning_receipt_never_claims_admission_or_coverage(self):
+        import nightly_sample as sample
+
+        policy, _, plan, state = self.fixture(count=2)
+        with tempfile.TemporaryDirectory() as temporary:
+            receipt = sample.collect_refills(
+                plan, policy, "host", Path(temporary), "host lane provisioning failed; inspect setup logs"
+            )
+        self.assertEqual(receipt["refill_batches"], [])
+        updated, coverage = sample.reconcile_sample(plan, policy, state, [receipt])
+        self.assertFalse(updated["done"])
+        self.assertFalse(coverage["records"])
+        self.assertEqual(len(coverage["retryable"]), 2)
+        receipt["results"][0]["status"] = "PASS"
+        with self.assertRaises(ValueError):
+            sample.reconcile_sample(plan, policy, state, [receipt])
+
+
 class NightlyRevisionTests(unittest.TestCase):
     def activity(self, sha=SHA, ref="refs/heads/cmake", ident=1, actor=265118235, timestamp="2026-11-14T00:00:00Z"):
         return dict(
