@@ -115,6 +115,10 @@ void calc_gun_point(vms_vector *gun_point,object *obj,int gun_num)
 		gun_num = 0;
 	}
 
+#ifdef DXX_XL_RUNTIME
+	if (xl_robot_gun_point(obj, gun_num, gun_point)) return;
+#endif
+
 	pnt = r->gun_points[gun_num];
 #ifdef DXX_XL_RUNTIME
 	xl_model_gun_point(obj->rtype.pobj_info.model_num, gun_num, &pnt);
