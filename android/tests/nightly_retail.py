@@ -484,7 +484,7 @@ def public_diagnostics(value):
             row["duration_seconds"] = round(duration, 3)
         row["phase"] = "setup" if command.get("phase") == "setup" else "tests"
         clean["commands"].append(row)
-    from nightly_regression_corpus import DIAGNOSTIC_FIELDS, WORKER_CATEGORIES, GEOMETRY_CATEGORIES
+    from nightly_regression_corpus import DIAGNOSTIC_FIELDS, WORKER_CATEGORIES, GEOMETRY_CATEGORIES, ROUTE_INFRASTRUCTURE_CATEGORIES
 
     def worker_row(value):
         row = {
@@ -495,7 +495,7 @@ def public_diagnostics(value):
         row.update(
             {
                 key: value[key]
-                for key in ("timed_out", "stdout_complete", "stderr_complete", "shutdown_missing")
+                for key in ("timed_out", "stdout_complete", "stderr_complete", "shutdown_missing", "start_error", "output_present")
                 if type(value.get(key)) is bool
             }
         )
@@ -505,10 +505,17 @@ def public_diagnostics(value):
                 for category in value.get(stream, [])[:16]
                 if isinstance(category, str) and category in WORKER_CATEGORIES
             ]
-        if value.get("worker") in ("d1-metadata", "d2-metadata", "other"):
+        if value.get("worker") in ("d1-metadata", "d2-metadata", "other", "route"):
             row["worker"] = value["worker"]
         return row
 
+    clean["route_workers"] = [worker_row(row) for row in value.get("route_workers", [])[:16] if isinstance(row, dict)]
+    clean["route_infrastructure"] = [
+        category for category in value.get("route_infrastructure", [])[:16]
+        if isinstance(category, str) and category in ROUTE_INFRASTRUCTURE_CATEGORIES
+    ]
+    if value.get("expected_runtime_outcome") in ("ok", "partial", "failed", "timeout", "unsupported", "route_mismatch"):
+        clean["expected_runtime_outcome"] = value["expected_runtime_outcome"]
     clean["workers"] = [worker_row(row) for row in value.get("workers", [])[:16] if isinstance(row, dict)]
     if isinstance(value.get("owner_failure"), dict):
         clean["owner_failure"] = worker_row(value["owner_failure"])

@@ -27,6 +27,26 @@ ENV = {
 
 
 class RetailBoundaryTests(unittest.TestCase):
+    def test_route_process_diagnostics_resanitize_and_drop_private_values(self):
+        details = {"route_infrastructure": ["engine-start", "PRIVATE"], "expected_runtime_outcome": "timeout",
+                   "route_workers": [{"worker": "route", "exit_code": -11, "timed_out": False,
+                                      "start_error": True, "output_present": False,
+                                      "categories": ["segmentation-fault", "SECRET"], "raw": "PRIVATE"}]}
+        clean = retail.public_diagnostics(details)
+        self.assertEqual(clean["route_infrastructure"], ["engine-start"])
+        self.assertEqual(clean["expected_runtime_outcome"], "timeout")
+        self.assertEqual(clean["route_workers"][0]["exit_code"], -11)
+        self.assertNotIn("PRIVATE", str(clean))
+        self.assertNotIn("SECRET", str(clean))
+        self.assertEqual(clean, retail.public_diagnostics(clean))
+        details["route_workers"][0].update(exit_code=True, start_error="PRIVATE", output_present=3)
+        details["expected_runtime_outcome"] = "PRIVATE"
+        clean = retail.public_diagnostics(details)
+        self.assertNotIn("exit_code", clean["route_workers"][0])
+        self.assertNotIn("start_error", clean["route_workers"][0])
+        self.assertNotIn("output_present", clean["route_workers"][0])
+        self.assertNotIn("expected_runtime_outcome", clean)
+
     def test_corpus_diagnostics_are_bounded_resanitized_and_private(self):
         details = {
             "geometry_failures": [{"mission_index": 0, "level_index": 2, "category": "missing-level", "raw": "PRIVATE"}],

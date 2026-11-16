@@ -926,6 +926,10 @@ def run_suite(suite, repo, build_root, output, timeout):
                     ]
                 )
                 summary = document(destination / "summary.json")
+                from nightly_regression_corpus import route_infrastructure_diagnostics, route_worker_diagnostics
+
+                result["route_infrastructure"] = route_infrastructure_diagnostics(summary)
+                result["route_workers"] = route_worker_diagnostics(destination)
                 result["assets"]["route_summary"] = summary is not None
                 if code:
                     from nightly_regression_corpus import route_runner_failure
@@ -947,6 +951,7 @@ def run_suite(suite, repo, build_root, output, timeout):
             result["geometry_failures"] = checked.get("geometry_failures", [])
             result["mismatches"] = checked.get("mismatches", [])
             result["runtime_outcome"] = checked.get("runtime_outcome", "")
+            result["expected_runtime_outcome"] = checked.get("expected_runtime_outcome", "")
             result["comparison_only"] = checked.get("comparison_only", False)
             # Aggregate metadata comparison has unknown individual assertion counts
             if suite["profile"] == "route" and checked.get("selected") and not result["comparison_only"]:

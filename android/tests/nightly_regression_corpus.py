@@ -143,6 +143,65 @@ WORKER_CATEGORIES = frozenset(('assertion', 'address-sanitizer', 'undefined-beha
     'projection-worker', 'route-base-data', 'unclassified-owner-failure'))
 
 
+ROUTE_INFRASTRUCTURE_CATEGORIES = frozenset((
+    "engine-start", "process-timeout", "engine-exit-or-missing-output", "result-unreadable",
+    "asset-staging", "unclassified-infrastructure",
+))
+
+
+def route_infrastructure_diagnostics(summary):
+    failures = summary.get("infrastructure_failures", []) if isinstance(summary, dict) else []
+    if not isinstance(failures, list):
+        return []
+    categories = []
+    for failure in failures[:16]:
+        problem = failure.get("problem", "") if isinstance(failure, dict) else ""
+        if not isinstance(problem, str):
+            problem = ""
+        category = "unclassified-infrastructure"
+        for prefix, kind in (("Route engine could not start for ", "engine-start"),
+                             ("Route engine process timeout after ", "process-timeout"),
+                             ("Route engine infrastructure failure for ", "engine-exit-or-missing-output"),
+                             ("Route engine result could not be read for ", "result-unreadable"),
+                             ("Could not resolve mission assets for ", "asset-staging")):
+            if problem.startswith(prefix):
+                category = kind
+                break
+        categories.append(category)
+    return categories
+
+
+def route_worker_diagnostics(root):
+    # Private owner files stay local; expose only bounded process facts and fixed log categories
+    root = Path(root)
+    rows = []
+    for path in sorted(root.glob("results/*.process.json"))[:16]:
+        if path.is_symlink() or not path.is_file() or not path.resolve().is_relative_to(root.resolve()):
+            continue
+        try:
+            if path.stat().st_size > 65536:
+                continue
+            value = json.loads(path.read_text(encoding="utf-8-sig"))
+            if not isinstance(value, dict):
+                continue
+            output = Path(str(path)[:-len(".process.json")])
+            row = {"worker": "route", "timed_out": value.get("timed_out") is True,
+                   "start_error": bool(value.get("start_error")), "output_present": output.is_file() and not output.is_symlink()}
+            if type(value.get("exit_code")) is int:
+                row["exit_code"] = value["exit_code"]
+            log = root / "logs" / (output.stem + ".log")
+            categories = []
+            if log.is_file() and not log.is_symlink() and log.resolve().is_relative_to(root.resolve()):
+                with log.open("rb") as stream:
+                    stream.seek(max(0, log.stat().st_size - 16384))
+                    categories = worker_failure_categories(stream.read(16384).decode("utf-8", errors="replace"))
+            row["categories"] = categories
+            rows.append(row)
+        except (OSError, ValueError):
+            continue
+    return rows
+
+
 def route_runner_failure(stderr_path, code):
     # Retain only fixed categories from bounded local stderr, never private text
     with Path(stderr_path).open("rb") as stream:
@@ -385,6 +444,7 @@ def compare_route(baseline, generated, summary, relative_metadata, expected_iden
                 "Runtime route outcome differs from committed baseline",
                 identity=identity,
                 runtime_outcome=outcome,
+                expected_runtime_outcome=expected_level.get("status"),
             )
         for field in ("schema", "mission_filename", "target_index", "generation", "fixed_hz", "seed"):
             if field not in expected_mission or field not in actual_mission:
