@@ -1975,3 +1975,44 @@ These existing controller results do not demonstrate activation of this child's
 new regression staging. Activation requires the trusted controller to contain
 the changes; no merge, repository variable or secret change is authorized here.
 The four protected stashes and pinned source checkout remain unchanged.
+
+### Android original-resource graphics qualification
+
+PR527 publishes resource staging as cd07fd6326ebd2082f1e71bc885fffb08d697e07,
+base526/4c43284d6, mergecandidate16ef5acec2e54fee0a82916511d3f0ce601efca2.
+Private run43865160875 uses trustedcontroller71e6efb9 and is running, as are six
+publicworkflows; Rust and asset-request pass. Parent526 has sevenpublicpasses,
+with shareware still executing. None of these pending jobs count as pass.
+
+The next cross-platform check uses the maintained native scoped-texture fixture,
+linked to freshly built Android engine libraries in an isolated /data/local/tmp
+UUID directory. It neither installs an APK nor launches/modifies the app's data.
+Emulator5554 is x86_64/Android14; the app is not running. Its installed APK SHA256
+504848a52babb1c5c286e1c013d52f436cf6d1ffeaddf725444d93a41172dbb5 and four preference
+hashes are recorded before execution. Source cd07fd6326, original BoilingPoint
+ceil002.tga SHA256150c3603749fc87d877c9a0c97218431605b845098a89338a632252402635c3b.
+No force-stop, app-data clear, launcher change or APK replacement is performed.
+
+android-original-texture-01 successfully executes eight native D1 and eight D2
+cases across two recreated EGL contexts, including original A/alternate B/stock/
+return-to-A texture ownership and pixels. The owner nevertheless fails its final
+host verifier: hardcoded python3 resolves to the Windows Store alias. Preserve
+this failed receipt. Reuse Resolve-RegressionPythonCommand, already maintained
+for both host platforms, and resolve it before touching the device. Then rerun
+the complete owner with a fresh output directory, verify original witnesses,
+hash the tested libraries and confirm the APK/preferences remain unchanged.
+
+android-original-texture-02 now completes the full maintained owner and final
+original-pixel verifier. Eight actual engine cases per game pass over two EGL
+contexts; the D2 receipt confirms four original texture witnesses (including
+return-to-A after stock/alternate resources). D1 library SHA256
+1df6eeb5a976a5795acb10952567e89d29ed464154d8c1c3eb86e99810893077;
+D2 library SHA256d6f5c99c453779565274247c645f338db85f2f9019859261a3ceec08792fd699.
+receipt.json SHA256e638f5b89d9cad6ff9fa9890db58c59af1243b371d7a432e8fc80f5979a21658
+records actual fixture/library/input/source hashes and current source differences.
+The installed APK, all four preferences and stopped-app state exactly match the
+before receipt. The known UUID device directory is verified absent after cleanup.
+Scoped formatting passes. This is Android14 x86_64 native EGL resource ownership
+and GPU-pixel evidence; no full mission load, physical device, Android timeline
+replay or startup-FX parity claim follows. The only code change is resolving the
+host verifier through the existing cross-platform Python helper before staging.
