@@ -3483,6 +3483,102 @@ class RefillNightlyTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "integrity failure"):
                 sample.collect_refills(plan, policy, "host", output)
 
+    def test_live_current_child_provenance_loss_latches_before_prefix_publication(self):
+        import nightly_sample as sample
+
+        policy, _, plan, _ = self.fixture(count=3)
+        for filename, corruption in (
+            ("admission.json", None),
+            ("admission.json", "{"),
+            ("admission.json", "{}"),
+            ("plan.json", None),
+            ("plan.json", "{"),
+            ("plan.json", "{}"),
+            ("attempt.json", "{"),
+            ("attempt.json", "[]"),
+            ("attempt.json", "{}"),
+        ):
+            with self.subTest(filename=filename, corruption=corruption), tempfile.TemporaryDirectory() as temporary:
+                output = Path(temporary)
+                calls = []
+
+                def run(command, cwd, log, timeout):
+                    child = sweep.read(command[command.index("--plan") + 1])
+                    directory = Path(command[command.index("--output") + 1])
+                    self.write_attempt(child, directory)
+                    calls.append(child)
+                    if len(calls) == 2:
+                        if corruption is None:
+                            (directory / filename).unlink()
+                        else:
+                            (directory / filename).write_text(corruption)
+                    return subprocess.CompletedProcess(command, 0)
+
+                with (
+                    patch.object(sample.time, "time", return_value=101),
+                    patch.object(sweep, "run_command", side_effect=run),
+                ):
+                    with self.assertRaisesRegex(ValueError, "integrity failure"):
+                        sample.execute_refills(plan, policy, "host", output)
+                self.assertEqual(len(calls), 2)
+                self.assertEqual(
+                    sweep.read(output / "refill-integrity-error.json"),
+                    {"schema": 1, "reason": "live-child-evidence-invalid", "batch_id": calls[1]["batch_id"]},
+                )
+                self.assertFalse((output / "results.json").exists())
+                with self.assertRaisesRegex(ValueError, "integrity failure"):
+                    sample.collect_refills(plan, policy, "host", output)
+
+    def test_recovery_accepts_truly_unadmitted_tail_and_missing_attempt_without_credit(self):
+        import nightly_sample as sample
+
+        policy, _, plan, state = self.fixture(count=3)
+        children = sample.refill_plans(plan, "host")
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            for index in range(3):
+                directory = output / "refill" / f"{index:04d}"
+                sweep.write(directory / "plan.json", children[index])
+                if index < 2:
+                    sweep.write(directory / "admission.json", children[index]["refill_parent"])
+                if index == 0:
+                    self.write_attempt(children[index], directory)
+            # Hard kill before the second executor writes attempt.json and before
+            # the third child is admitted is incomplete evidence, not observed loss
+            receipt = sample.collect_refills(plan, policy, "host", output)
+            self.assertEqual([row["status"] for row in receipt["results"]], ["PASS", "NOT_RUN"])
+            self.assertEqual(len(receipt["refill_batches"]), 2)
+            self.assertFalse((output / "refill-integrity-error.json").exists())
+            updated, _ = sample.reconcile_sample(plan, policy, state, [receipt])
+            self.assertEqual(len(updated["done"]), 1)
+
+    def test_final_collection_latches_malformed_prior_provenance(self):
+        import nightly_sample as sample
+
+        policy, _, plan, _ = self.fixture(count=2)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            calls = []
+
+            def run(command, cwd, log, timeout):
+                child = sweep.read(command[command.index("--plan") + 1])
+                self.write_attempt(child, Path(command[command.index("--output") + 1]))
+                calls.append(child)
+                if len(calls) == 2:
+                    (output / "refill/0000/attempt.json").write_text("{")
+                return subprocess.CompletedProcess(command, 0)
+
+            with (
+                patch.object(sample.time, "time", return_value=101),
+                patch.object(sweep, "run_command", side_effect=run),
+            ):
+                with self.assertRaises(ValueError):
+                    sample.execute_refills(plan, policy, "host", output)
+            self.assertEqual(sweep.read(output / "refill-integrity-error.json")["reason"], "final-evidence-invalid")
+            self.assertFalse((output / "results.json").exists())
+            with self.assertRaisesRegex(ValueError, "integrity failure"):
+                sample.collect_refills(plan, policy, "host", output)
+
     def test_interruption_recovers_durable_children_without_live_aggregate_rewrites(self):
         import nightly_sample as sample
 
