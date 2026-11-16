@@ -119,7 +119,13 @@ internal class XlAddonPickerChecks(
         retainForGameplay: Boolean = false,
         originalMission: String = "wshock20",
     ) {
-        require(originalMission in listOf("wshock20", "dinter", "boilpnt"))
+        require(originalMission in listOf("wshock20", "dinter", "boilpnt", "sphere"))
+        val originalZip =
+            when (originalMission) {
+                "boilpnt" -> "BoilingPoint-XL.zip" to "0994e8a70a91988a5ecf9a05f593b6960514a6579a9fa2fe762138808775f5f8"
+                "sphere" -> "sphere-1.6.zip" to "f462882ab7488c14648249675964db3c25c33a6a1b7207d8b62643bf6cdac234"
+                else -> null
+            }
         val context = instrumentation.targetContext
         val sets = FileSetManager(context.filesDir)
         val config = File(context.filesDir, "file_sets.json")
@@ -228,9 +234,7 @@ internal class XlAddonPickerChecks(
                         "water.pig",
                         "d2x.ham",
                     ) +
-                        if (originalMission ==
-                            "boilpnt"
-                        ) {
+                        if (originalZip != null) {
                             emptyList()
                         } else {
                             listOf("$originalMission.hog", "$originalMission.mn2")
@@ -238,7 +242,7 @@ internal class XlAddonPickerChecks(
                 val inputs = names.map { File(archive.parentFile, it) }
                 check(inputs.all { it.isFile }) { "Original gameplay inputs are missing" }
                 val missionHashes =
-                    if (originalMission == "boilpnt") {
+                    if (originalZip != null) {
                         emptyList()
                     } else if (originalMission == "dinter") {
                         listOf(
@@ -278,10 +282,10 @@ internal class XlAddonPickerChecks(
                     )
                     instrumentation.waitForIdleSync()
                 }
-                if (originalMission == "boilpnt") {
+                if (originalZip != null) {
                     // Keep the full authored archive and scoped resource layout intact
-                    val missionArchive = File(archive.parentFile, "BoilingPoint-XL.zip")
-                    val hash = "0994e8a70a91988a5ecf9a05f593b6960514a6579a9fa2fe762138808775f5f8"
+                    val (filename, hash) = originalZip
+                    val missionArchive = File(archive.parentFile, filename)
                     check(MissionContentIdentity.compute(missionArchive).sha256 == hash)
                     pickFiles(listOf(missionArchive)) {
                         val deadline = SystemClock.uptimeMillis() + 30000
@@ -292,7 +296,7 @@ internal class XlAddonPickerChecks(
                             }
                         while (imported() == null && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(100)
                         val mission =
-                            checkNotNull(imported()) { "Original Boiling Point archive import did not finish" }
+                            checkNotNull(imported()) { "Original mission archive import did not finish" }
                         check(mission.enabled && mission.archiveSha256 == hash)
                         instrumentation.waitForIdleSync()
                     }

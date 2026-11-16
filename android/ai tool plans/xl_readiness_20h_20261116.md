@@ -2203,3 +2203,79 @@ readiness result SHA256
 65a8e752fdb238aa1b8e898452166fcc9dd94fc715dd68469b067c1b4a493c4d.
 No production edits followed the passing Android/source-isolation/readiness runs;
 only the renewed headless skip-intro test flag and documentation followed Android.
+
+### Original Sphere Android continuation and ordinary packaging
+
+PR531 publishes3ef353765d797ccb4bce0eac802da4f9fe49b103 above530,
+merge310db93716f98508b07a00ba2721376d9e382bf0. Private43877406263
+uses trusted71e6ef; readiness job133334071598 passes, remaining host owner pending.
+Artifact14230857394 archiveSHA256
+ad2e943908b7c587bd66f919f3656e10bd55d3f8ead39b25a76982c94bf23fe1.
+Downloaded readiness receipt must be checked before final exact-head8/8 claim.
+
+Ordinary all-ABI build passes3m30s at531, all three configured ABIs developer-OFF.
+Frozen APK ordinary-allabi-save-sources-01/app-debug.apk SHA256
+72204c8640b8d907a379348ac8678e516384920399f68fae7074558a133ece14;
+receipt includes every packaged library and CMake cache hash. No ARM hardware
+execution claim. Build exposes a tranche-added unused soft-sprite probe helper;
+mark it intentionally unused where the shared probe header includes it without
+calling it. No runtime behavior or compiler warning suppression is changed.
+
+Android-warp-save-sources-01 fails warm18/20 waiting10s for Save Game; graphics
+trial expiry occurs concurrently and no cold attempt is made. Preserve failure.
+Retry02 uses the exact same frozen x86_64 APK with no concurrent build and passes
+warm20/20 plus cold8/8 (18.239s cold), original Warp5 controller/save/load.
+Both attempts restore exact original APKs, profiles and preferences. Native-written
+Warp6 pilot unlock permits level5; no pose/inventory assists. This is supplemental
+original-case save validation, not a source-guard bypass or timeout relaxation.
+
+Next extend the same full-original-archive import profile to The Sphere1.6,
+unchanged cohort level2. ZIP SHA256
+f462882ab7488c14648249675964db3c25c33a6a1b7207d8b62643bf6cdac234,
+3,955,475bytes; original descriptor names The Sphere and five authored levels.
+Use the native-written pilot from readiness-save-sources-01/6 and no pose/inventory
+assists. Require original archive owner, XL active, ordinary controller movement,
+normal save and fresh-process menu restore. Generalize the two fixed archive
+profiles inside the existing picker/runner; do not widen the readiness sample.
+
+Cleanup preview/apply05 preserves temp/ and android/temp/ evidence/authentic inputs,
+.codex/ and emulator workspaces. No eligible artifacts; zero deleted;50GiBtarget
+unmet with about9GiBfree. Reuse current builds and do not delete protected inputs.
+
+Android-sphere-runtime-01 PASS: warm20/20 in27.158s; normal save and fresh-process
+cold8/8 pass, original sphere-1.6.zip owner/level2/XL active. Exact protected APKs,
+profiles and four preferences restored. Actual rendered warm scene inspected;
+textured original level, cockpit and actors visible. Pilot unlock only, no pose
+or inventory assists. x86_64 developer-OFF APK SHA256
+6a7e41784a7c20ce7f1185207f6ea10e2970ee45a837196b214efb0dd3ee9481;
+test APKbcd3ed0259f56aee5bd11fbd9ce4ff5fbc0150bd080add9ec9baa17d4bae696b.
+Scoped formatting passes; build passes38s with no compiler warnings. Next rerun
+Boiling's existing full archive flow after sharing the fixed archive profiles,
+then catalogs and ordinary all-ABI packaging. No capture/replay or campaign claim.
+
+Boiling shared-profile regression01 PASS warm20/20 in30.237s and cold8/8 in23.402s;
+original archive owner/level7/XL active, exported genuine native checkpoint and
+exact protected package/profile/preference restoration all pass. No concurrent
+build was run. Sphere cold8/8 took21.664s; its native save is2,770,390bytes,
+SHA256f5868d54f8bda581e8f2b4ec35beb2f1848c10d77172b80f2f5478d492885706.
+
+The current Windows D1 and rendered D2 builds pass. Source review confirms the
+mod_save_prepare call in native state.c is Android-only; desktop replay does not
+exercise that changed guard. Its direct validation is the passing actual Android
+cold loads and Windows Debug independent-source isolation controls. Preserve the
+previous complete host capture/replay evidence for unchanged simulation behavior;
+do not count an unrelated repeated host replay as validation of this Android path.
+A temporary final replay wrapper was prepared but not executed after this audit.
+
+Final Sphere checkpoint checks: both catalog owners PASS99standaloneJSON,
+549supportscripts,315PowerShell and428top-level entries. Ordinary all-ABI build
+PASS1m11s with zero compiler warnings; frozen APK
+ordinary-allabi-sphere-01/app-debug.apk SHA256
+bf7b6f0d5361a657d04b29a0d62f699219f7fec085e4f1a77024b6928544238b.
+All three CMake caches are developer-OFF; packaged library hashes and exact dirty
+source hashes are retained. Windows D1 and rendered D2 current builds pass.
+Local WSL availability retry still times out after30s; only the client is stopped,
+no distribution shutdown/restart. Hosted Linux remains the available platform
+owner; do not claim a new local Linux execution. All four stashes and clean pinned
+reference2576a98 remain unchanged. Next publish the coherent tested child of531;
+its own CI and final tranche handoff remain outstanding.
