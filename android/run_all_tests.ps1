@@ -118,6 +118,7 @@ param(
     [string]$Filter,
     [string]$SelectedTestsPath,
     [string]$EvidenceJournalPath,
+    [string]$SetupEvidencePath,
     [ValidateRange(0, 86400)][int]$TestBudgetSeconds = 0,
     [switch]$HostOnly,
     [switch]$SingleDevice,
@@ -145,6 +146,18 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $PSCommandPath
 $helpersDir = Join-Path $scriptDir "helpers"
 $repoRoot = Split-Path $scriptDir
+# Fixed stage codes only: this sidecar may be retained from private retail runs
+function Write-SuiteSetupStage {
+    param([string]$Stage)
+    if (-not $SetupEvidencePath -or $ListTests -or $script:suiteSetupComplete) { return }
+    $path = [IO.Path]::GetFullPath($SetupEvidencePath)
+    [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($path)) | Out-Null
+    $temporary = "$path.tmp"
+    [IO.File]::WriteAllText($temporary, (@{ schema = 1; stage = $Stage } | ConvertTo-Json -Compress), [Text.UTF8Encoding]::new($false))
+    [IO.File]::Move($temporary, $path, $true)
+}
+Write-SuiteSetupStage 'runner-initialization'
+
 $routeSampleSeed = if ($SampleSeed -gt 0) { $SampleSeed } else { [int]([DateTime]::UtcNow.Date - [DateTime]'2026-01-01').TotalDays }
 
 . "$helpersDir\run_all_tests_profile_menu.ps1"
@@ -1234,6 +1247,8 @@ Initialize-RegressionProcessLifetime
 $evidenceTestsByName = @{}
 foreach ($test in $allTests) { $evidenceTestsByName[$test.Name] = $test }
 
+Write-SuiteSetupStage 'catalog-selection'
+
 # CI batches use exact catalog names, never wildcard command input.
 if ($SelectedTestsPath) {
     if ($Filter -or $Target45Minutes) { throw 'Exact selection cannot combine with Filter or Target45Minutes' }
@@ -1778,20 +1793,24 @@ function Invoke-SetupActivityPreflight {
     Write-Status "Preflight: verifying SetupActivity on $serialLabel..." "DarkGray"
 
     $ready = Invoke-WithAndroidSerial -Serial $Serial -ScriptBlock {
+        Write-SuiteSetupStage 'launcher-reset'
         Stop-AppAndWait
         Reset-GameState
         Adb -AdbArgs @("logcat", "-c") | Out-Null
         Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
+        Write-SuiteSetupStage 'launcher-ready'
         if (-not (Wait-SetupActivityReady -TimeoutSeconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 30 -Kind Launcher))) {
             return $false
         }
 
+        Write-SuiteSetupStage 'launcher-introspection'
         $setup = Get-SetupIntrospection
         if (-not $setup) {
             return $false
         }
 
         if ($RequireStandardGameData) {
+            Write-SuiteSetupStage 'game-data-ready'
             $d1Ready = $false
             $d2Ready = $false
             if ($setup.d1) { $d1Ready = [bool]$setup.d1.ready }
@@ -1843,6 +1862,7 @@ function Invoke-PrimaryEmulatorPreflight {
             return $null
         }
 
+        Write-SuiteSetupStage 'apk-and-game-data'
         $appDataOk = Install-SuiteTarget -Serial $serial
         if ($RequireStandardGameData -and -not $appDataOk) {
             Write-Status "Preflight: standard game data provisioning failed on $serial" "Red"
@@ -1912,17 +1932,20 @@ function Invoke-SuitePreflight {
     }
 
     if ($needsPrimaryEmulator) {
+        Write-SuiteSetupStage 'emulator-acceleration'
         if (-not (Test-PhysicalTestTarget) -and -not (Test-SoftwareAndroidTestTarget) -and -not (Test-EmulatorAccelerationAvailable)) {
             Write-Host "FAIL: Suite preflight cannot start an emulator without CPU acceleration" -ForegroundColor Red
             return $false
         }
         Invoke-AutomaticStaleEmulatorCleanup
+        Write-SuiteSetupStage 'emulator-health'
         $preflightEmu1 = Invoke-PrimaryEmulatorPreflight -RequireStandardGameData:$needsStandardGameData
         if (-not $preflightEmu1) {
             Write-Host "FAIL: Suite preflight could not prepare Android test target $script:singleTestSerial" -ForegroundColor Red
             return $false
         }
         if ($script:needsInstrumentation) {
+            Write-SuiteSetupStage 'instrumentation-install'
             $instrumentApk = Get-AndroidTestApkPath -Instrumentation
             $installed = Adb-Dev -Serial $preflightEmu1 -AdbArgs @('install', '-r', '-t', $instrumentApk) -Seconds 180
             if ($installed -notmatch 'Success') { throw "Instrumentation APK install failed: $installed" }
@@ -1930,6 +1953,7 @@ function Invoke-SuitePreflight {
     }
 
     if ($needsServer) {
+        Write-SuiteSetupStage 'matchmaking-server'
         if (-not (Test-MatchmakingServer)) {
             $script:autoServerProc = Start-MatchmakingServer
             if ($null -eq $script:autoServerProc) {
@@ -2083,10 +2107,12 @@ if ($runnableTests.Count -eq 0) {
     Write-Host "No runnable tests found" -ForegroundColor Yellow
 }
 
+Write-SuiteSetupStage 'host-prerequisites'
 if ($runnableTests.Count -gt 0 -and -not (Test-HostToolPrerequisites)) {
     exit 1
 }
 
+Write-SuiteSetupStage 'emulator-target-validation'
 # Validate the caller-owned third emulator before building or modifying any target
 if ($tierTripleEmu.Count -gt 0 -and -not (Test-ThirdEmulatorTarget)) { exit 1 }
 
@@ -2095,11 +2121,13 @@ if ($tierTripleEmu.Count -gt 0 -and -not (Test-ThirdEmulatorTarget)) { exit 1 }
 $needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierTripleEmu.Count + $tierExtract.Count) -gt 0
 $script:needsInstrumentation = @($runnableTests | Where-Object BaseName -in (Get-TestSuiteInstrumentationOwners)).Count -gt 0
 if ($runnableTests.Count -gt 0 -and $needsApk) {
+    Write-SuiteSetupStage 'emulator-acceleration'
     if (-not (Test-PhysicalTestTarget) -and -not (Test-SoftwareAndroidTestTarget) -and -not (Test-EmulatorAccelerationAvailable)) {
         Write-Host "FAIL: Selected tests require Android emulator CPU acceleration" -ForegroundColor Red
         exit 1
     }
 
+    Write-SuiteSetupStage 'apk-build'
     Write-Host "== Building debug APK ==" -ForegroundColor Cyan
     $gradleWrapper = Resolve-RegressionGradleWrapper -AndroidDir $scriptDir
     $buildLog = Join-Path $ReportDir "apk_build_$timestamp.log"
@@ -2118,6 +2146,7 @@ if ($runnableTests.Count -gt 0 -and $needsApk) {
         exit 1
     }
     Write-Host "  Build OK" -ForegroundColor Green
+    Write-SuiteSetupStage 'apk-retention'
     # Retain the exact APK used by this run even if another build changes outputs
     $suiteApk = Join-Path ([IO.Path]::GetFullPath($ReportDir)) "apk_$timestamp.apk"
     & (Join-Path $helpersDir 'retain-recent-artifacts.ps1') -Artifacts $suiteApk | Out-Host
@@ -2129,6 +2158,9 @@ if ($runnableTests.Count -gt 0 -and $needsApk) {
 if ($runnableTests.Count -gt 0 -and -not (Invoke-SuitePreflight)) {
     exit 1
 }
+
+Write-SuiteSetupStage 'tests-ready'
+$script:suiteSetupComplete = $true
 
 # -- Execution helpers --
 
@@ -2621,6 +2653,7 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
         Install-SuiteTarget -Serial $emu2Serial
 
         if ($script:needsInstrumentation) {
+            Write-SuiteSetupStage 'instrumentation-install'
             $instrumentApk = Get-AndroidTestApkPath -Instrumentation
             $installed = Adb-Dev -Serial $emu2Serial -AdbArgs @('install', '-r', '-t', $instrumentApk) -Seconds 180
             if ($installed -notmatch 'Success') { throw "Client instrumentation APK install failed: $installed" }

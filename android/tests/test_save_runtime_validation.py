@@ -193,18 +193,27 @@ class SaveRuntimeValidationTest(unittest.TestCase):
 
     def test_ai_restore_bounds_saved_variable_counts(self) -> None:
         d1_restore = function_body(D1_AI, "ai_restore_state")
-        d2_restore = function_body(D2_AI, "ai_restore_state")
-        for body in (d1_restore, d2_restore):
-            guard = body.index("saved_num_awareness_events > MAX_AWARENESS_EVENTS")
-            loop = body.index("i < saved_num_awareness_events")
-            self.assertLess(guard, loop)
-            self.assertIn("event.segnum > Highest_segment_index", body)
-            self.assertIn("event.type > PA_WEAPON_ROBOT_COLLISION", body)
-        boss_guard = d2_restore.index("Num_boss_teleport_segs > MAX_BOSS_TELEPORT_SEGS")
-        boss_loop = d2_restore.index("i < Num_boss_gate_segs")
-        self.assertLess(boss_guard, boss_loop)
-        self.assertIn("temp > MAX_POINT_SEGS", d2_restore)
-        self.assertIn("Believed_player_seg > Highest_segment_index", d2_restore)
+        d2_prepare = function_body(D2_AI, "ai_prepare_restore")
+        guard = d1_restore.index("saved_num_awareness_events > MAX_AWARENESS_EVENTS")
+        self.assertLess(guard, d1_restore.index("i < saved_num_awareness_events"))
+        self.assertIn("event.segnum > Highest_segment_index", d1_restore)
+        self.assertIn("event.type > PA_WEAPON_ROBOT_COLLISION", d1_restore)
+        for field, limit, loop in (
+            ("awareness_count", "MAX_AWARENESS_EVENTS", "i < state->awareness_count"),
+            ("teleport_count", "MAX_BOSS_TELEPORT_SEGS", "i < state->teleport_count"),
+            ("gate_count", "MAX_BOSS_TELEPORT_SEGS", "i < state->gate_count"),
+        ):
+            self.assertIn(f"state->{field} < 0", d2_prepare)
+            self.assertLess(d2_prepare.index(f"state->{field} > {limit}"), d2_prepare.index(loop))
+        for bound in (
+            "event->segnum > highest_segment",
+            "event->type > PA_WEAPON_ROBOT_COLLISION",
+            "state->free_point > MAX_POINT_SEGS",
+            "state->believed_segment > highest_segment",
+            "state->gates[i] > highest_segment",
+            "state->teleports[i] > highest_segment",
+        ):
+            self.assertIn(bound, d2_prepare)
         for source in (D1_STATE, D2_STATE):
             restore = source.index("if (!ai_restore_state")
             close = source.index("PHYSFS_close(fp)", restore)
@@ -213,15 +222,29 @@ class SaveRuntimeValidationTest(unittest.TestCase):
             self.assertLess(close, reject)
 
     def test_ai_restore_preflights_exact_bytes_before_publication(self) -> None:
-        for source in (D1_AI, D2_AI):
-            preflight = function_body(source, "ai_restore_preflight")
-            restore = function_body(source, "ai_restore_state")
-            self.assertIn("ai_restore_advanced_exactly", preflight)
-            self.assertIn("PHYSFS_seek(fp, start)", preflight)
-            self.assertIn("if (!ai_restore_preflight", restore)
-            validate = restore.index("if (!ai_restore_preflight")
-            publish = restore.index("Ai_initialized =")
-            self.assertLess(validate, publish)
+        preflight = function_body(D1_AI, "ai_restore_preflight")
+        restore = function_body(D1_AI, "ai_restore_state")
+        self.assertIn("ai_restore_advanced_exactly", preflight)
+        self.assertIn("PHYSFS_seek(fp, start)", preflight)
+        self.assertLess(restore.index("if (!ai_restore_preflight"), restore.index("Ai_initialized ="))
+        prepare = function_body(D2_AI, "ai_prepare_restore")
+        apply = function_body(D2_AI, "ai_apply_restore")
+        restore = function_body(D2_AI, "ai_restore_state")
+        self.assertIn("ai_restore_bytes_available", prepare)
+        self.assertEqual(prepare.count("ai_restore_advanced_exactly"), 3)
+        self.assertIn("PHYSFS_seek(fp, start)", prepare)
+        self.assertIn("ai_discard_restore(state)", prepare)
+        for publication in ("Ai_initialized =", "Num_awareness_events =", "Num_boss_gate_segs ="):
+            self.assertNotIn(publication, prepare)
+            self.assertIn(publication, apply)
+        for context in (
+            "state->capacity != object_capacity()",
+            "state->highest_segment != Highest_segment_index",
+            "state->epoch != GameTime64",
+        ):
+            self.assertLess(apply.index(context), apply.index("Ai_initialized ="))
+        self.assertLess(restore.index("ai_prepare_restore("), restore.index("ai_apply_restore("))
+        self.assertLess(restore.index("ai_apply_restore("), restore.index("ai_discard_restore("))
 
     def test_runtime_references_are_validated_before_publication(self) -> None:
         required_morph = (
