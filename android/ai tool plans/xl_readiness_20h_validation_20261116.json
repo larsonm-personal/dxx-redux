@@ -1,0 +1,1817 @@
+{
+    "schema": "xl-readiness-tranche-validation-v1",
+    "qualification": "Original eight-case load/120-frame readiness; narrower rendered, save/load and lifecycle controls",
+    "code_candidate": "6cea684bd8570f58e04ed6e7cf6c8d845b969d3a",
+    "native_app_unchanged_since": "7936cd671c6396464384468103484d79c8df16a0",
+    "cohort_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+    "resources": {
+        "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+        "files": [
+            {
+                "path": "d2x.hog",
+                "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                "size": 4371791,
+                "source": "descent_2_vertigo/d2x.hog"
+            },
+            {
+                "path": "d2x-xl.hog",
+                "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                "size": 3815963,
+                "source": "xl-resources/d2x-xl.hog"
+            }
+        ],
+        "profile": "authentic-vertigo-xl-v1",
+        "repository": "larsonm-personal/dxx-redux-test-assets"
+    },
+    "readiness": {
+        "sampled_cases": 8,
+        "passed": 8,
+        "frames_per_case": 120,
+        "hosted_source": {
+            "path": "temp/xl-readiness-20h-20261116/pr534-readiness-01/results.json",
+            "sha256": "e8f295b7bea2d84558d7b9ee1c8c9dc3a0632c4bcf0b655b1bd5bdafbf190f8f"
+        },
+        "local_source": {
+            "path": "temp/xl-readiness-20h-20261116/readiness-final-windows-01/results.json",
+            "sha256": "8bf7745cf224320a6729247bb168115493db2461791d1ed2344b1efc145b61b3"
+        },
+        "workflow_id": 43903630046,
+        "attempt": 1,
+        "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+        "artifact_id": 14246305024,
+        "artifact_archive": {
+            "path": "temp/xl-readiness-20h-20261116/pr534-readiness-01.zip",
+            "sha256": "897d9dac1b19a87add4d3c9e48e64e170c9742b7f6ffee49240ab0bbee30d0ac"
+        }
+    },
+    "device_runs": [
+        {
+            "name": "android-boiling-runtime-fix-01",
+            "owner": {
+                "attempt_id": "3813bea18b654ea7afd1b83a66d710f5",
+                "warm_run_id": "51067e1e576a4394a2ff510d99a7aa7a",
+                "disabled_recovery_run_id": null,
+                "phase": "complete",
+                "failure": null,
+                "disabled_negative_run_id": null,
+                "cold_run_id": "0729423e6c8547b3a9c5302f9e77abb7",
+                "status": "PASS",
+                "profile_hashes_restored": true
+            },
+            "protected_file_count": 2289,
+            "warm": {
+                "result": "PASS",
+                "run_id": "51067e1e576a4394a2ff510d99a7aa7a",
+                "steps_completed": 20,
+                "total_steps": 20,
+                "elapsed_ms": 27131
+            },
+            "cold": {
+                "result": "PASS",
+                "run_id": "0729423e6c8547b3a9c5302f9e77abb7",
+                "steps_completed": 8,
+                "total_steps": 8,
+                "elapsed_ms": 23502
+            },
+            "packages": {
+                "com.dxxredux.app": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-boiling-runtime-fix-01\\com.dxxredux.app.apk",
+                    "sha256": "5efb95d7f70eb2e8c13e72268b0e64933be937f7d3fb2eb05cd8f35d7ad2ba31"
+                },
+                "com.dxxredux.app.test": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-boiling-runtime-fix-01\\com.dxxredux.app.test.apk",
+                    "sha256": "e71f255461dd72ecdc5b04d7856df60c1e08cef8ffb1ea0bc0decc8ada42138d"
+                }
+            },
+            "assists": ["Native-written pilot unlock to original level7; no pose or inventory assists"],
+            "wrapper_receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-boiling-runtime-fix-01/receipt.json",
+                "sha256": "1c72244b2b0c97947ee25e4267603eef33665c6ced0793bd9d510866531d4342"
+            },
+            "owner_receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-boiling-runtime-fix-01/owner/owner-result.json",
+                "sha256": "5b3da73a7255803a1fb8a3079d77adf2c0c8b62334088a8ff757b35f5d075f89"
+            }
+        },
+        {
+            "name": "android-warp-save-sources-02",
+            "owner": {
+                "attempt_id": "172872c5b4cf4b50aba9820fc5177527",
+                "status": "PASS",
+                "disabled_recovery_run_id": null,
+                "warm_run_id": "e4330d8e79b6419881fa0b9d2ea4e486",
+                "profile_hashes_restored": true,
+                "phase": "complete",
+                "failure": null,
+                "cold_run_id": "cb6597c20bcd4e5bb7ecd5186fcb5cad",
+                "disabled_negative_run_id": null
+            },
+            "protected_file_count": 2289,
+            "warm": {
+                "result": "PASS",
+                "run_id": "e4330d8e79b6419881fa0b9d2ea4e486",
+                "steps_completed": 20,
+                "total_steps": 20,
+                "elapsed_ms": 26510
+            },
+            "cold": {
+                "result": "PASS",
+                "run_id": "cb6597c20bcd4e5bb7ecd5186fcb5cad",
+                "steps_completed": 8,
+                "total_steps": 8,
+                "elapsed_ms": 18239
+            },
+            "packages": {
+                "com.dxxredux.app": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-warp-save-sources-02\\com.dxxredux.app.apk",
+                    "sha256": "5efb95d7f70eb2e8c13e72268b0e64933be937f7d3fb2eb05cd8f35d7ad2ba31"
+                },
+                "com.dxxredux.app.test": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-warp-save-sources-02\\com.dxxredux.app.test.apk",
+                    "sha256": "e71f255461dd72ecdc5b04d7856df60c1e08cef8ffb1ea0bc0decc8ada42138d"
+                }
+            },
+            "assists": [
+                "Native-written Warp Shock level6 unlock permits original level5; no pose or inventory assists"
+            ],
+            "wrapper_receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-warp-save-sources-02/receipt.json",
+                "sha256": "5a835be495e3fc10e8d4dbc775ac3bbc07ed411cf4c73afff953c60f944fbefc"
+            },
+            "owner_receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-warp-save-sources-02/owner/owner-result.json",
+                "sha256": "9d7e48a546a750ee6f6a4fcf7707e5ea19e5c98254b3265c3e298a3aa3c321e3"
+            }
+        },
+        {
+            "name": "android-sphere-runtime-01",
+            "owner": {
+                "cold_run_id": "3a89e21fd676422594263adf42042547",
+                "disabled_negative_run_id": null,
+                "phase": "complete",
+                "failure": null,
+                "disabled_recovery_run_id": null,
+                "warm_run_id": "fccd0f41286a4a1a8c572543fb59a4a6",
+                "attempt_id": "761a10a4aa554ed7852b4a781d13335c",
+                "status": "PASS",
+                "profile_hashes_restored": true
+            },
+            "protected_file_count": 2289,
+            "warm": {
+                "result": "PASS",
+                "run_id": "fccd0f41286a4a1a8c572543fb59a4a6",
+                "steps_completed": 20,
+                "total_steps": 20,
+                "elapsed_ms": 27158
+            },
+            "cold": {
+                "result": "PASS",
+                "run_id": "3a89e21fd676422594263adf42042547",
+                "steps_completed": 8,
+                "total_steps": 8,
+                "elapsed_ms": 21664
+            },
+            "packages": {
+                "com.dxxredux.app": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-sphere-runtime-01\\com.dxxredux.app.apk",
+                    "sha256": "6a7e41784a7c20ce7f1185207f6ea10e2970ee45a837196b214efb0dd3ee9481"
+                },
+                "com.dxxredux.app.test": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-sphere-runtime-01\\com.dxxredux.app.test.apk",
+                    "sha256": "bcd3ed0259f56aee5bd11fbd9ce4ff5fbc0150bd080add9ec9baa17d4bae696b"
+                }
+            },
+            "assists": ["Native-written pilot unlock to original Sphere level2; no pose or inventory assists"],
+            "wrapper_receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-sphere-runtime-01/receipt.json",
+                "sha256": "9f7c68cdc12732244676153221fc3fcf85588466c48af7a04adcd626a3f7c7b2"
+            },
+            "owner_receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-sphere-runtime-01/owner/owner-result.json",
+                "sha256": "73f59a82db92cee6ff5c1ceb2731c61beae791742949a1265115f4dfb91c3783"
+            }
+        },
+        {
+            "name": "android-boiling-shared-profile-01",
+            "owner": {
+                "status": "PASS",
+                "phase": "complete",
+                "attempt_id": "950fab73d6f14748bde990e35d39b820",
+                "warm_run_id": "d5075dc2170a452b8d50d218251555ed",
+                "disabled_recovery_run_id": null,
+                "disabled_negative_run_id": null,
+                "cold_run_id": "8151afb054804df19ab341cc35de6c18",
+                "failure": null,
+                "profile_hashes_restored": true
+            },
+            "protected_file_count": 2289,
+            "warm": {
+                "result": "PASS",
+                "run_id": "d5075dc2170a452b8d50d218251555ed",
+                "steps_completed": 20,
+                "total_steps": 20,
+                "elapsed_ms": 30237
+            },
+            "cold": {
+                "result": "PASS",
+                "run_id": "8151afb054804df19ab341cc35de6c18",
+                "steps_completed": 8,
+                "total_steps": 8,
+                "elapsed_ms": 23402
+            },
+            "packages": {
+                "com.dxxredux.app": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-boiling-shared-profile-01\\com.dxxredux.app.apk",
+                    "sha256": "6a7e41784a7c20ce7f1185207f6ea10e2970ee45a837196b214efb0dd3ee9481"
+                },
+                "com.dxxredux.app.test": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-boiling-shared-profile-01\\com.dxxredux.app.test.apk",
+                    "sha256": "bcd3ed0259f56aee5bd11fbd9ce4ff5fbc0150bd080add9ec9baa17d4bae696b"
+                }
+            },
+            "assists": ["Native-written pilot unlock to original level7; no pose or inventory assists"],
+            "wrapper_receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-boiling-shared-profile-01/receipt.json",
+                "sha256": "df207c2e5a1d901bcb80fcb594c7a522e6d5b9268b7a09c7140ee96264ae5b6a"
+            },
+            "owner_receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-boiling-shared-profile-01/owner/owner-result.json",
+                "sha256": "8e90ae3ace0c14c9e810ee2fb4a6f7e7f3940ca6fdf1b232decfe0fb39d692d0"
+            }
+        },
+        {
+            "name": "android-original-lifecycle-04",
+            "owner": {
+                "disabled_negative_run_id": null,
+                "attempt_id": "a78163857e4f47fdb3f1288086c2f0c8",
+                "cold_run_id": "b5c6f4f387924186929c6f8fa9fdbb1c",
+                "warm_run_id": "47554a1d8b6e4e2b9b3b95017c05a2ee",
+                "failure": null,
+                "phase": "complete",
+                "profile_hashes_restored": true,
+                "disabled_recovery_run_id": null,
+                "status": "PASS"
+            },
+            "protected_file_count": 2289,
+            "warm": {
+                "result": "PASS",
+                "run_id": "47554a1d8b6e4e2b9b3b95017c05a2ee",
+                "steps_completed": 35,
+                "total_steps": 35,
+                "elapsed_ms": 49084
+            },
+            "cold": {
+                "result": "PASS",
+                "run_id": "b5c6f4f387924186929c6f8fa9fdbb1c",
+                "steps_completed": 8,
+                "total_steps": 8,
+                "elapsed_ms": 23111
+            },
+            "packages": {
+                "com.dxxredux.app": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-original-lifecycle-04\\com.dxxredux.app.apk",
+                    "sha256": "6a7e41784a7c20ce7f1185207f6ea10e2970ee45a837196b214efb0dd3ee9481"
+                },
+                "com.dxxredux.app.test": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-original-lifecycle-04\\com.dxxredux.app.test.apk",
+                    "sha256": "bcd3ed0259f56aee5bd11fbd9ce4ff5fbc0150bd080add9ec9baa17d4bae696b"
+                }
+            },
+            "assists": ["Native-written pilot unlock to original level7; no pose or inventory assists"],
+            "wrapper_receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-original-lifecycle-04/receipt.json",
+                "sha256": "6f0753bdb2ce59e9c9e265a904712ecaf46a050bc94615075f11039d4add1c21"
+            },
+            "owner_receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-original-lifecycle-04/owner/owner-result.json",
+                "sha256": "bd0c90f112457979567e815faa999bb4fbe37b907d163037f6f2646ff56be01d"
+            },
+            "lifecycle": {
+                "post_resume_controller": true,
+                "egl_window_generation": 8,
+                "lifecycle": {
+                    "acknowledgement_generation": 5,
+                    "checkpoint_generation": 4,
+                    "checkpoint_slot": 9,
+                    "checkpoint_state": "committed",
+                    "context_generation": 2,
+                    "last_transition_reason": "activity_resume",
+                    "last_wake_reason": "foreground",
+                    "observed_visibility": "foreground",
+                    "park_entry_count": 2,
+                    "parked_duration_ms": 9119,
+                    "request_generation": 5,
+                    "requested_visibility": "foreground",
+                    "suspend_state": "running",
+                    "wake_count": 2,
+                    "window_generation": 8,
+                    "work_counters": {
+                        "audio_callbacks": 7788,
+                        "central_overlay_polls": 396,
+                        "draw_dispatches": 282,
+                        "event_loop_iterations": 292,
+                        "independent_overlay_polls": 82,
+                        "music_producer_wakeups": 6931,
+                        "redbook_producer_wakeups": 0,
+                        "swap_attempts": 278,
+                        "swap_presented": 278
+                    },
+                    "workload": "single_player_active"
+                },
+                "pause": {
+                    "can_resume": false,
+                    "input_allowed": true,
+                    "legacy_depth": 0,
+                    "reasons": 0,
+                    "repairs": 0,
+                    "request": 3,
+                    "result": 1,
+                    "revision": 21,
+                    "session": 1,
+                    "simulation_paused": false,
+                    "ui_owner": 1,
+                    "ui_revision": 1
+                },
+                "egl_recreate_count": 2,
+                "mission_owner": "mod/BoilingPoint-XL.zip",
+                "level": 7
+            }
+        },
+        {
+            "name": "android-sphere-lifecycle-01",
+            "owner": {
+                "attempt_id": "d84f79179524441f8b3b75dd3c43bb8d",
+                "cold_run_id": "04c3625bdc55405dbba3057dd4f5e59b",
+                "disabled_recovery_run_id": null,
+                "disabled_negative_run_id": null,
+                "warm_run_id": "47732e997e914d758f8999897a82edba",
+                "phase": "complete",
+                "failure": null,
+                "profile_hashes_restored": true,
+                "status": "PASS"
+            },
+            "protected_file_count": 2289,
+            "warm": {
+                "result": "PASS",
+                "run_id": "47732e997e914d758f8999897a82edba",
+                "steps_completed": 35,
+                "total_steps": 35,
+                "elapsed_ms": 47015
+            },
+            "cold": {
+                "result": "PASS",
+                "run_id": "04c3625bdc55405dbba3057dd4f5e59b",
+                "steps_completed": 8,
+                "total_steps": 8,
+                "elapsed_ms": 19308
+            },
+            "packages": {
+                "com.dxxredux.app": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-sphere-lifecycle-01\\com.dxxredux.app.apk",
+                    "sha256": "6a7e41784a7c20ce7f1185207f6ea10e2970ee45a837196b214efb0dd3ee9481"
+                },
+                "com.dxxredux.app.test": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-sphere-lifecycle-01\\com.dxxredux.app.test.apk",
+                    "sha256": "bcd3ed0259f56aee5bd11fbd9ce4ff5fbc0150bd080add9ec9baa17d4bae696b"
+                }
+            },
+            "assists": ["Native-written pilot unlock to original Sphere level2; no pose or inventory assists"],
+            "wrapper_receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-sphere-lifecycle-01/receipt.json",
+                "sha256": "95e7db0ac5b0da302f5de8add42d92f6465a5b72754123705b777747126c6666"
+            },
+            "owner_receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-sphere-lifecycle-01/owner/owner-result.json",
+                "sha256": "6d3bbbb3e7126c67dff2b954b6943dbfe07f09bf45d0def8fe83c4e9d56548f8"
+            },
+            "lifecycle": {
+                "level": 2,
+                "egl_recreate_count": 2,
+                "egl_window_generation": 8,
+                "lifecycle": {
+                    "acknowledgement_generation": 5,
+                    "checkpoint_generation": 4,
+                    "checkpoint_slot": 9,
+                    "checkpoint_state": "committed",
+                    "context_generation": 2,
+                    "last_transition_reason": "activity_resume",
+                    "last_wake_reason": "foreground",
+                    "observed_visibility": "foreground",
+                    "park_entry_count": 2,
+                    "parked_duration_ms": 9369,
+                    "request_generation": 5,
+                    "requested_visibility": "foreground",
+                    "suspend_state": "running",
+                    "wake_count": 2,
+                    "window_generation": 8,
+                    "work_counters": {
+                        "audio_callbacks": 7601,
+                        "central_overlay_polls": 379,
+                        "draw_dispatches": 309,
+                        "event_loop_iterations": 319,
+                        "independent_overlay_polls": 79,
+                        "music_producer_wakeups": 6565,
+                        "redbook_producer_wakeups": 0,
+                        "swap_attempts": 306,
+                        "swap_presented": 306
+                    },
+                    "workload": "single_player_active"
+                },
+                "mission_owner": "mod/sphere-1.6.zip",
+                "pause": {
+                    "can_resume": false,
+                    "input_allowed": true,
+                    "legacy_depth": 0,
+                    "reasons": 0,
+                    "repairs": 0,
+                    "request": 3,
+                    "result": 1,
+                    "revision": 21,
+                    "session": 1,
+                    "simulation_paused": false,
+                    "ui_owner": 1,
+                    "ui_revision": 1
+                },
+                "post_resume_controller": true
+            }
+        }
+    ],
+    "ordinary_windows_replay": {
+        "head": "7936cd671c6396464384468103484d79c8df16a0",
+        "engine_sha256": "0962ab30f08854c1e7bacdd914b1ef824e137fc27990e820c64307f22b2fc1ef",
+        "capture_sha256": "8e1247ec928cc1219f5472118066c66461005efb00957c83cbdf482efe0c9a0d",
+        "purpose": "Validate packaged ordinary developer-OFF Windows replay; not Android cold-save guard or readiness",
+        "argv": [
+            "pwsh",
+            "-NoProfile",
+            "-File",
+            "android/tests/run_input_demo_replay.ps1",
+            "-DemoPath",
+            "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\omega-thruster-capture-01\\user\\input_demo_recordings\\new\\d2_wshock20_level6_20261116_034502.dximdemo",
+            "-Game",
+            "d2",
+            "-Mode",
+            "accelerated",
+            "-Runner",
+            "visual",
+            "-ExecutablePath",
+            "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\windows-ordinary-package-01\\d2\\d2x-redux.exe",
+            "-DataDir",
+            "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\ci-inputs\\runtime",
+            "-ExtraDir",
+            "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\omega-replay-extra-01",
+            "-TimeoutSeconds",
+            "300",
+            "-StrictComparison",
+            "-RequireCleanExit",
+            "-TraceState",
+            "-CompareStateTrace",
+            "-TraceRng",
+            "-CompareRngTrace",
+            "-ReplayDebugLog",
+            "-KeepSandbox",
+            "-SandboxSuffix",
+            "ordinary-package-20261116",
+            "-StateLogPath",
+            "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\ordinary-package-replay-01\\spawn-replay-state.jsonl.gz",
+            "-RngLogPath",
+            "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\ordinary-package-replay-01\\spawn-replay-rng.jsonl",
+            "-ResultCopyPath",
+            "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\ordinary-package-replay-01\\spawn-replay-actual.json"
+        ],
+        "replay_exit": 0,
+        "compare_exit": 0,
+        "engine_unchanged": true,
+        "inputs_unchanged": true
+    },
+    "evidence": [
+        {
+            "path": "temp/xl-readiness-20h-20261116/handoff-preservation-01.json",
+            "sha256": "fb50c76751321d9b1bf72cbf83ba729fe6fc08ca1c1c90205e3d88c7b5bd8ecd"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/readiness-final-windows-01/results.json",
+            "sha256": "8bf7745cf224320a6729247bb168115493db2461791d1ed2344b1efc145b61b3"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/readiness-final-windows-01/source-receipt.json",
+            "sha256": "1c5099dd777d671fa05fcc0847d7c4c355956e2e3befef0d32130313c4b375a9"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr534-readiness-01/results.json",
+            "sha256": "e8f295b7bea2d84558d7b9ee1c8c9dc3a0632c4bcf0b655b1bd5bdafbf190f8f"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr534-readiness-01.zip",
+            "sha256": "897d9dac1b19a87add4d3c9e48e64e170c9742b7f6ffee49240ab0bbee30d0ac"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/input-preservation-01.json",
+            "sha256": "5985272026252c4e52f54373d981ea06d1c335768165eb7d528a6212a3993390"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/android-package-preservation-01.json",
+            "sha256": "78164dc0efaff9a65a5b91194968e31409e8bcafd38655521f583aabe15138a8"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/windows-ordinary-package-01/manifest.json",
+            "sha256": "e800810b070a50da62768cdc50b0a52f9d1302c78881b81253db68928b8f21f6"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/ordinary-allabi-sphere-01/receipt.json",
+            "sha256": "efa601cbd7a7b9c7ee2262b028d41ab62f82406750d75463b63ef7ef670fbae8"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/ordinary-package-replay-01/receipt.json",
+            "sha256": "09965c9ecdc5b3e94eabccccea8a9e2a33e0b9f691a6f3bef366841b155f255d"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/ordinary-package-replay-01/comparison.json",
+            "sha256": "20cc9dffdbea78cc4cda769bcff3a1b11ade819e25f072ba6ceaf5b669405f83"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/readiness-save-sources-01/results.json",
+            "sha256": "65a8e752fdb238aa1b8e898452166fcc9dd94fc715dd68469b067c1b4a493c4d"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr532-readiness-01/results.json",
+            "sha256": "be799b8f49907c5f1410d95709743ce13592dd34d390028480ddad1303bd3040"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr532-private-host-01/results.json",
+            "sha256": "7e5f2ab6368ee94a8fdbba1d9ba51c7c7a7903ba7ec2a8157310c73c096c081d"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/save-source-recovery-02/receipt.json",
+            "sha256": "d6afd2f8461513451837d130df527f5cd79db774f41f12fffd951d2f58602a04"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/save-source-recovery-warp-01/receipt.json",
+            "sha256": "c99afbceece12e6308683820757b43aa8426ac824465eb1a3ff0904d6d1b8337"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/android-live-context-01/receipt.json",
+            "sha256": "d452d2e15cab6f711da03802b4b405f19ad99a05dbfe52c605531a29900ba8c9"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/emulator-restart-01/receipt.json",
+            "sha256": "9e6f3323cdf163b55d07b8c8a4450b8047d08ceda08f16263205e6d0d503d0f3"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/android-original-lifecycle-01/independent-profile-check-streamed.json",
+            "sha256": "ea3a20c73d4d23ddae6bc8ee2161a1c8c1153ed8b53e91b3e6ff8d48da8db762"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/android-original-lifecycle-01/independent-profile-inventory.json",
+            "sha256": "00508cba60767337b3dce3dee66b981f67502fd4c059ca1a65a507960f9a2737"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/android-original-lifecycle-01/retained-backup.json",
+            "sha256": "170b707e935ffd56b79a9740618f7b2ce17cb6a1482435b5f192eed86b43fd24"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/android-original-lifecycle-02/retained-partial-backup.json",
+            "sha256": "6be87c4f652d270fa5e0150d754d1aa69ea134f22211fe25c702082d3b4cbbf7"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/android-original-lifecycle-03/owner/owner-result.json",
+            "sha256": "65257a331945081c4e81ac6bbe83f9427a3b805cc775a58e4c45da1b959cc3a1"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/android-original-lifecycle-03/receipt.json",
+            "sha256": "db76f6f5af3842bc95829a7f29d6fda0d26ac71afd80353aa7f925b37e5c577b"
+        }
+    ],
+    "public_stack_snapshot": [
+        {
+            "number": 517,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/517",
+            "head": "xl_readiness_20261116_01_baseline",
+            "head_sha": "c28fa4d6008670d8b9c704ee5c1f0f83bf814ecb",
+            "base": "cmake",
+            "base_sha": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+            "merge_commit_sha": "bde0eba8902a84ab0cd1a4642b0a2857dc142613",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43791054406,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43791054406"
+                },
+                {
+                    "id": 43791054564,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43791054564"
+                },
+                {
+                    "id": 43791054522,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43791054522"
+                },
+                {
+                    "id": 43791054487,
+                    "name": "PR #517 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43791054487"
+                },
+                {
+                    "id": 43791054616,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43791054616"
+                },
+                {
+                    "id": 43791054454,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43791054454"
+                },
+                {
+                    "id": 43791054561,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43791054561"
+                },
+                {
+                    "id": 43791054665,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43791054665"
+                }
+            ],
+            "immediate_parent_matches": true
+        },
+        {
+            "number": 518,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/518",
+            "head": "xl_readiness_20261116_02_texture_ownership",
+            "head_sha": "2e74d767ae7e3ebfe95c4ae7b6233c356cae51c6",
+            "base": "xl_readiness_20261116_01_baseline",
+            "base_sha": "c28fa4d6008670d8b9c704ee5c1f0f83bf814ecb",
+            "merge_commit_sha": "d6f9028cc79703fb1f16bdcebece3fcc5154c601",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43806840303,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43806840303"
+                },
+                {
+                    "id": 43806840143,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43806840143"
+                },
+                {
+                    "id": 43806840163,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43806840163"
+                },
+                {
+                    "id": 43806840223,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43806840223"
+                },
+                {
+                    "id": 43806840246,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43806840246"
+                },
+                {
+                    "id": 43806840186,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43806840186"
+                },
+                {
+                    "id": 43806840309,
+                    "name": "PR #518 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43806840309"
+                },
+                {
+                    "id": 43806840248,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43806840248"
+                }
+            ],
+            "immediate_parent_matches": true
+        },
+        {
+            "number": 520,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/520",
+            "head": "xl_readiness_20261116_03_gameplay_fidelity",
+            "head_sha": "21fe343725ce4800ad0a33e39e29cdc55db44eb5",
+            "base": "xl_readiness_20261116_02_texture_ownership",
+            "base_sha": "2e74d767ae7e3ebfe95c4ae7b6233c356cae51c6",
+            "merge_commit_sha": "b1a2c540d452b9471d166e0de63b59f19e9ebb09",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43808811965,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43808811965"
+                },
+                {
+                    "id": 43808811933,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43808811933"
+                },
+                {
+                    "id": 43808812013,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43808812013"
+                },
+                {
+                    "id": 43808811929,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43808811929"
+                },
+                {
+                    "id": 43808812058,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43808812058"
+                },
+                {
+                    "id": 43808812017,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43808812017"
+                },
+                {
+                    "id": 43808811926,
+                    "name": "PR #520 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43808811926"
+                },
+                {
+                    "id": 43808811938,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43808811938"
+                }
+            ],
+            "immediate_parent_matches": true
+        },
+        {
+            "number": 521,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/521",
+            "head": "xl_readiness_20261116_04_native_owners",
+            "head_sha": "883ea2a5175a4b4ed36fec2b6b4d52610bc907ff",
+            "base": "xl_readiness_20261116_03_gameplay_fidelity",
+            "base_sha": "21fe343725ce4800ad0a33e39e29cdc55db44eb5",
+            "merge_commit_sha": "7c1f448598fd4c384d49bdae407a15f81cc9f4c3",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43819123260,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43819123260"
+                },
+                {
+                    "id": 43819123144,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43819123144"
+                },
+                {
+                    "id": 43819123125,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43819123125"
+                },
+                {
+                    "id": 43819123180,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43819123180"
+                },
+                {
+                    "id": 43819123162,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43819123162"
+                },
+                {
+                    "id": 43819123128,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43819123128"
+                },
+                {
+                    "id": 43819123130,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43819123130"
+                },
+                {
+                    "id": 43819123209,
+                    "name": "PR #521 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43819123209"
+                }
+            ],
+            "immediate_parent_matches": true
+        },
+        {
+            "number": 522,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/522",
+            "head": "xl_readiness_20261116_05_render_validation",
+            "head_sha": "b390131fd1e223469268b7d208e772235389316d",
+            "base": "xl_readiness_20261116_04_native_owners",
+            "base_sha": "883ea2a5175a4b4ed36fec2b6b4d52610bc907ff",
+            "merge_commit_sha": "6b8655d0c198addc195346459d9f9b9f075adfe5",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43823402069,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43823402069"
+                },
+                {
+                    "id": 43823401910,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43823401910"
+                },
+                {
+                    "id": 43823402004,
+                    "name": "PR #522 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43823402004"
+                },
+                {
+                    "id": 43823401815,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43823401815"
+                },
+                {
+                    "id": 43823401816,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43823401816"
+                },
+                {
+                    "id": 43823401814,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43823401814"
+                },
+                {
+                    "id": 43823401865,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43823401865"
+                },
+                {
+                    "id": 43823401787,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43823401787"
+                }
+            ],
+            "immediate_parent_matches": true
+        },
+        {
+            "number": 523,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/523",
+            "head": "xl_readiness_20261116_06_animation_lifetime",
+            "head_sha": "ced5b54f625368a12911de31cb4cb78ba1111774",
+            "base": "xl_readiness_20261116_05_render_validation",
+            "base_sha": "b390131fd1e223469268b7d208e772235389316d",
+            "merge_commit_sha": "83be7de4791c57e2402c7d9915aaa32b5fb94d7f",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43829428241,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43829428241"
+                },
+                {
+                    "id": 43829428153,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43829428153"
+                },
+                {
+                    "id": 43829428229,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43829428229"
+                },
+                {
+                    "id": 43829428311,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43829428311"
+                },
+                {
+                    "id": 43829428149,
+                    "name": "PR #523 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43829428149"
+                },
+                {
+                    "id": 43829428211,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43829428211"
+                },
+                {
+                    "id": 43829428285,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43829428285"
+                },
+                {
+                    "id": 43829428390,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43829428390"
+                }
+            ],
+            "immediate_parent_matches": true
+        },
+        {
+            "number": 524,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/524",
+            "head": "xl_readiness_20261116_07_sprite_material",
+            "head_sha": "717dab804ea76bf6572685b36180fd0bdd1b3769",
+            "base": "xl_readiness_20261116_06_animation_lifetime",
+            "base_sha": "ced5b54f625368a12911de31cb4cb78ba1111774",
+            "merge_commit_sha": "f9289600b2080fe11387e2e5144183682a549e97",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43840967362,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43840967362"
+                },
+                {
+                    "id": 43840967216,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43840967216"
+                },
+                {
+                    "id": 43840967349,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43840967349"
+                },
+                {
+                    "id": 43840967329,
+                    "name": "PR #524 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43840967329"
+                },
+                {
+                    "id": 43840967303,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43840967303"
+                },
+                {
+                    "id": 43840967257,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43840967257"
+                },
+                {
+                    "id": 43840967248,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43840967248"
+                },
+                {
+                    "id": 43840967321,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43840967321"
+                }
+            ],
+            "immediate_parent_matches": true
+        },
+        {
+            "number": 525,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/525",
+            "head": "xl_readiness_20261116_08_afterburner_geometry",
+            "head_sha": "fb75005753c3a9cb1d5041518a1ab20314a4be4e",
+            "base": "xl_readiness_20261116_07_sprite_material",
+            "base_sha": "717dab804ea76bf6572685b36180fd0bdd1b3769",
+            "merge_commit_sha": "09f57562d34672049b76f5cb6cf2044a5271c754",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43856354736,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43856354736"
+                },
+                {
+                    "id": 43856354625,
+                    "name": "PR #525 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43856354625"
+                },
+                {
+                    "id": 43856354623,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43856354623"
+                },
+                {
+                    "id": 43856354619,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43856354619"
+                },
+                {
+                    "id": 43856354663,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43856354663"
+                },
+                {
+                    "id": 43856354616,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43856354616"
+                },
+                {
+                    "id": 43856354754,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43856354754"
+                },
+                {
+                    "id": 43856354929,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43856354929"
+                }
+            ],
+            "immediate_parent_matches": true
+        },
+        {
+            "number": 526,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/526",
+            "head": "xl_readiness_20261116_09_afterburner_identity",
+            "head_sha": "4c43284d674aefdf117503a4fc5d4c4e38ba0f17",
+            "base": "xl_readiness_20261116_08_afterburner_geometry",
+            "base_sha": "fb75005753c3a9cb1d5041518a1ab20314a4be4e",
+            "merge_commit_sha": "796fbc84ad8a8ea771649642deec2625457061f4",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43861339203,
+                    "name": "PR #526 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43861339203"
+                },
+                {
+                    "id": 43861339094,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43861339094"
+                },
+                {
+                    "id": 43861339056,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43861339056"
+                },
+                {
+                    "id": 43861339176,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43861339176"
+                },
+                {
+                    "id": 43861338928,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43861338928"
+                },
+                {
+                    "id": 43861338991,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43861338991"
+                },
+                {
+                    "id": 43861339001,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43861339001"
+                },
+                {
+                    "id": 43861338926,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43861338926"
+                }
+            ],
+            "immediate_parent_matches": true
+        },
+        {
+            "number": 527,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/527",
+            "head": "xl_readiness_20261116_10_resource_regression",
+            "head_sha": "cd07fd6326ebd2082f1e71bc885fffb08d697e07",
+            "base": "xl_readiness_20261116_09_afterburner_identity",
+            "base_sha": "4c43284d674aefdf117503a4fc5d4c4e38ba0f17",
+            "merge_commit_sha": "16ef5acec2e54fee0a82916511d3f0ce601efca2",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43865135264,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865135264"
+                },
+                {
+                    "id": 43865135496,
+                    "name": "PR #527 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865135496"
+                },
+                {
+                    "id": 43865135158,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865135158"
+                },
+                {
+                    "id": 43865135221,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865135221"
+                },
+                {
+                    "id": 43865135464,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865135464"
+                },
+                {
+                    "id": 43865135188,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865135188"
+                },
+                {
+                    "id": 43865135218,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865135218"
+                },
+                {
+                    "id": 43865135119,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865135119"
+                }
+            ],
+            "immediate_parent_matches": true
+        },
+        {
+            "number": 528,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/528",
+            "head": "xl_readiness_20261116_11_android_resource",
+            "head_sha": "6eefbb53af47b55ffa3a00b2b976217369e3bf29",
+            "base": "xl_readiness_20261116_10_resource_regression",
+            "base_sha": "cd07fd6326ebd2082f1e71bc885fffb08d697e07",
+            "merge_commit_sha": "e108be55de398748820c728c8bf9c5a4b88d84cc",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43865975453,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865975453"
+                },
+                {
+                    "id": 43865975560,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865975560"
+                },
+                {
+                    "id": 43865975717,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865975717"
+                },
+                {
+                    "id": 43865975606,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865975606"
+                },
+                {
+                    "id": 43865975548,
+                    "name": "PR #528 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865975548"
+                },
+                {
+                    "id": 43865975477,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865975477"
+                },
+                {
+                    "id": 43865975502,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865975502"
+                },
+                {
+                    "id": 43865975424,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865975424"
+                }
+            ],
+            "immediate_parent_matches": true
+        },
+        {
+            "number": 529,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/529",
+            "head": "xl_readiness_20261116_12_android_animation",
+            "head_sha": "5905842d2a6e8cee79892c68532f1f11495a3438",
+            "base": "xl_readiness_20261116_11_android_resource",
+            "base_sha": "6eefbb53af47b55ffa3a00b2b976217369e3bf29",
+            "merge_commit_sha": "e6d541ec8bce6e4ff6371dcc6516eaeb6f03b192",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43870240274,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43870240274"
+                },
+                {
+                    "id": 43870240218,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43870240218"
+                },
+                {
+                    "id": 43870240262,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43870240262"
+                },
+                {
+                    "id": 43870240240,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43870240240"
+                },
+                {
+                    "id": 43870240318,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43870240318"
+                },
+                {
+                    "id": 43870240211,
+                    "name": "PR #529 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43870240211"
+                },
+                {
+                    "id": 43870240283,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43870240283"
+                },
+                {
+                    "id": 43870240257,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43870240257"
+                }
+            ],
+            "immediate_parent_matches": true
+        },
+        {
+            "number": 530,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/530",
+            "head": "xl_readiness_20261116_13_android_context",
+            "head_sha": "00338d77f8ae25958853395e28f0d66ebce1e19a",
+            "base": "xl_readiness_20261116_12_android_animation",
+            "base_sha": "5905842d2a6e8cee79892c68532f1f11495a3438",
+            "merge_commit_sha": "3057a0d73f4db3f55d7fc70023d07a03285bcac5",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43871165291,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43871165291"
+                },
+                {
+                    "id": 43871165324,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43871165324"
+                },
+                {
+                    "id": 43871165527,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43871165527"
+                },
+                {
+                    "id": 43871165471,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43871165471"
+                },
+                {
+                    "id": 43871165257,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43871165257"
+                },
+                {
+                    "id": 43871165266,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43871165266"
+                },
+                {
+                    "id": 43871165387,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43871165387"
+                },
+                {
+                    "id": 43871165332,
+                    "name": "PR #530 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43871165332"
+                }
+            ],
+            "immediate_parent_matches": true
+        },
+        {
+            "number": 531,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/531",
+            "head": "xl_readiness_20261116_14_android_boiling",
+            "head_sha": "3ef353765d797ccb4bce0eac802da4f9fe49b103",
+            "base": "xl_readiness_20261116_13_android_context",
+            "base_sha": "00338d77f8ae25958853395e28f0d66ebce1e19a",
+            "merge_commit_sha": "310db93716f98508b07a00ba2721376d9e382bf0",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43877367175,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43877367175"
+                },
+                {
+                    "id": 43877367063,
+                    "name": "PR #531 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43877367063"
+                },
+                {
+                    "id": 43877367391,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43877367391"
+                },
+                {
+                    "id": 43877367179,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43877367179"
+                },
+                {
+                    "id": 43877367407,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43877367407"
+                },
+                {
+                    "id": 43877367131,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43877367131"
+                },
+                {
+                    "id": 43877367148,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43877367148"
+                },
+                {
+                    "id": 43877367257,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43877367257"
+                }
+            ],
+            "immediate_parent_matches": true
+        },
+        {
+            "number": 532,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/532",
+            "head": "xl_readiness_20261116_15_android_sphere",
+            "head_sha": "7936cd671c6396464384468103484d79c8df16a0",
+            "base": "xl_readiness_20261116_14_android_boiling",
+            "base_sha": "3ef353765d797ccb4bce0eac802da4f9fe49b103",
+            "merge_commit_sha": "c63e3c3dd20519fb816923b3fa97b1e23230c7ab",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "public_workflows": [
+                {
+                    "id": 43881956729,
+                    "name": "XL compatibility contracts",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43881956729"
+                },
+                {
+                    "id": 43881956647,
+                    "name": "Server Rust checks",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43881956647"
+                },
+                {
+                    "id": 43881956881,
+                    "name": "XL asset smoke request",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43881956881"
+                },
+                {
+                    "id": 43881957079,
+                    "name": "Public LAN smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43881957079"
+                },
+                {
+                    "id": 43881956831,
+                    "name": "scripts and ci tests",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43881956831"
+                },
+                {
+                    "id": 43881956740,
+                    "name": "PR #532 test sample",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43881956740"
+                },
+                {
+                    "id": 43881956718,
+                    "name": "Engine smoke",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43881956718"
+                },
+                {
+                    "id": 43881956497,
+                    "name": "Linux shareware gameplay, saves & replays",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43881956497"
+                }
+            ],
+            "immediate_parent_matches": true
+        }
+    ],
+    "private_stack_snapshot": {
+        "observed_utc": "2026-11-16T15:17:51.770136+00:00",
+        "private_workflows": [
+            {
+                "pr": 517,
+                "candidate": "c28fa4d6008670d8b9c704ee5c1f0f83bf814ecb",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43791074466,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43791074466"
+            },
+            {
+                "pr": 518,
+                "candidate": "2e74d767ae7e3ebfe95c4ae7b6233c356cae51c6",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43806857739,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "failure",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43806857739"
+            },
+            {
+                "pr": 520,
+                "candidate": "21fe343725ce4800ad0a33e39e29cdc55db44eb5",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43808829854,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "failure",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43808829854"
+            },
+            {
+                "pr": 521,
+                "candidate": "883ea2a5175a4b4ed36fec2b6b4d52610bc907ff",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43819147217,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43819147217"
+            },
+            {
+                "pr": 522,
+                "candidate": "b390131fd1e223469268b7d208e772235389316d",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43823424233,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43823424233"
+            },
+            {
+                "pr": 523,
+                "candidate": "ced5b54f625368a12911de31cb4cb78ba1111774",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43829449552,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43829449552"
+            },
+            {
+                "pr": 524,
+                "candidate": "717dab804ea76bf6572685b36180fd0bdd1b3769",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43840991689,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43840991689"
+            },
+            {
+                "pr": 525,
+                "candidate": "fb75005753c3a9cb1d5041518a1ab20314a4be4e",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43856378105,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43856378105"
+            },
+            {
+                "pr": 526,
+                "candidate": "4c43284d674aefdf117503a4fc5d4c4e38ba0f17",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43861368663,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43861368663"
+            },
+            {
+                "pr": 527,
+                "candidate": "cd07fd6326ebd2082f1e71bc885fffb08d697e07",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43865160875,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43865160875"
+            },
+            {
+                "pr": 528,
+                "candidate": "6eefbb53af47b55ffa3a00b2b976217369e3bf29",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43866044450,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43866044450"
+            },
+            {
+                "pr": 529,
+                "candidate": "5905842d2a6e8cee79892c68532f1f11495a3438",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43870270594,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43870270594"
+            },
+            {
+                "pr": 530,
+                "candidate": "00338d77f8ae25958853395e28f0d66ebce1e19a",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43871196092,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43871196092"
+            },
+            {
+                "pr": 531,
+                "candidate": "3ef353765d797ccb4bce0eac802da4f9fe49b103",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43877406263,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43877406263"
+            },
+            {
+                "pr": 532,
+                "candidate": "7936cd671c6396464384468103484d79c8df16a0",
+                "controller": "71e6efb90419b8e8a2f4ceed116e5ab3871c80d2",
+                "id": 43881996802,
+                "attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43881996802"
+            }
+        ],
+        "note": "PR518 and520 historical native failures repaired by PR521; readiness jobs separately passed8/8; no relabeling of failed workflows"
+    },
+    "limitations": [
+        "Historical stock-only 4/8 is a separate provisioned-resource baseline",
+        "Earlier failed attempts and private runs remain failures",
+        "Latest lifecycle candidate CI and final documentation push require separate final receipts",
+        "Hosted required regression profile lacks camera addon subchecks and is not complete coverage",
+        "ARM build-only; emulator execution is x86_64; no physical-device qualification",
+        "Retained Omega capture has two position and one inventory assists before capture, none during",
+        "No whole-level, campaign, 90-percent playability or full G2-G7 qualification"
+    ]
+}
