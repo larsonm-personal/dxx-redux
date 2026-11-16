@@ -24,6 +24,19 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/ogl/ogl_texture.cpp"
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_texture_animation.h"
      CONTENT "${extracted}")
 target_sources(xl_pog_reference PRIVATE tests/reference_texture_animation.cpp)
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/render/thrusterflames.cpp" afterburner_source_hash)
+if(NOT afterburner_source_hash STREQUAL
+   "72c8b86eac57575808bd56133eb495149aadd5ee8502afcde19e495c478a155f")
+    message(FATAL_ERROR "Afterburner emission reference changed")
+endif()
+set(extracted "// Actual pinned ship and model afterburner emission selection\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/thrusterflames.cpp"
+                      "void CThrusterFlames::CalcPosOnShip (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/thrusterflames.cpp"
+                      "int32_t CThrusterFlames::CalcPos (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_afterburner_emission.h"
+     CONTENT "${extracted}")
+target_sources(xl_pog_reference PRIVATE tests/reference_afterburner.cpp)
 set(extracted "// Actual pinned object animation setup and lifetime frame selection\n")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/vclip.cpp" "int32_t SetupHiresVClip (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/vclip.cpp" "inline int32_t CurFrame (")

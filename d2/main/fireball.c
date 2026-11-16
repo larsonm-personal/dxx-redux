@@ -1844,6 +1844,10 @@ void drop_afterburner_blobs(object *obj, int count, fix size_scale, fix lifetime
 {
 	vms_vector pos_left,pos_right;
 	int segnum;
+#ifdef DXX_XL_RUNTIME
+	if (xl_drop_afterburner_blobs(obj, size_scale, lifetime))
+		return;
+#endif
 
 	vm_vec_scale_add(&pos_left, &obj->pos, &obj->orient.fvec, -obj->size);
 	vm_vec_scale_add2(&pos_left, &obj->orient.rvec, -obj->size/4);

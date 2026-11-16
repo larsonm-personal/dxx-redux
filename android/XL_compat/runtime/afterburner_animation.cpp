@@ -1,6 +1,8 @@
 #include "afterburner_animation.h"
 #include "preview.h"
 #include "../xl_vclip_frame.h"
+#include "../afterburner_emission.h"
+#include "resource_validation.h"
 #include <array>
 #include <algorithm>
 #include <vector>
@@ -9,6 +11,8 @@ extern "C" {
 #include "object.h"
 #include "vclip.h"
 #include "dxxerror.h"
+#include "fireball.h"
+#include "gameseg.h"
 }
 namespace
 {
@@ -30,6 +34,30 @@ int total(int owner)
 	return 0;
 }
 } // namespace
+extern "C" int xl_drop_afterburner_blobs(const object *emitter, int size, int lifetime)
+{
+	if (!xl_level_extensions_active()) return 0;
+	try {
+		if (!emitter) throw std::runtime_error("XL afterburner emitter is missing");
+		const auto model = xl_prepared_afterburner_model(emitter->rtype.pobj_info.model_num, emitter->type == OBJ_PLAYER);
+		const auto point = [](const vms_vector &v) { return xl_compat::EmissionPoint{ v.x, v.y, v.z }; };
+		// The supported XL model profile enables owned high-resolution replacements
+		const auto emission = xl_compat::afterburner_emission(point(emitter->pos), point(emitter->orient.fvec), point(emitter->orient.rvec),
+		                                                      emitter->size, emitter->type == OBJ_PLAYER, true, model.ase, model.low_z, model.high_z);
+		for (unsigned i = 0; i < emission.count; ++i) {
+			const auto &p = emission.positions[i];
+			vms_vector position{ p[0], p[1], p[2] };
+			const int segment = find_point_seg(&position, emitter->segnum);
+			if (segment < 0) continue;
+			if (auto *created = object_create_explosion(segment, &position, size, VCLIP_AFTERBURNER_BLOB))
+				xl_afterburner_lifetime(int(created - Objects), lifetime);
+		}
+		return 1;
+	} catch (const std::exception &error) {
+		Error("XL afterburner emission: %s", error.what());
+	}
+	return 1;
+}
 extern "C" void xl_afterburner_animation_clear(void)
 {
 	durations.fill({});

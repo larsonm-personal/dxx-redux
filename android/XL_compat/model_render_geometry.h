@@ -2,6 +2,10 @@
 #define DXX_XL_MODEL_RENDER_GEOMETRY_H
 #include "model_geometry.h"
 #include <optional>
+// Shared inline geometry must retain its C++ layout after packed engine headers
+#ifdef _MSC_VER
+#pragma pack(push, 8)
+#endif
 namespace xl_compat
 {
 struct RenderModelPart {
@@ -10,6 +14,7 @@ struct RenderModelPart {
 	std::vector<std::array<float, 3>> face_vertices;
 	std::array<float, 3> low{ 1e30f, 1e30f, 1e30f }, high{ -1e30f, -1e30f, -1e30f };
 	unsigned faces = 0, defined_vertices = 0;
+	bool excluded_from_hitboxes = false;
 };
 struct RenderModelSphere {
 	std::array<int32_t, 3> center{};
@@ -192,4 +197,7 @@ class ModelRenderGeometry
 	}
 };
 } // namespace xl_compat
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 #endif

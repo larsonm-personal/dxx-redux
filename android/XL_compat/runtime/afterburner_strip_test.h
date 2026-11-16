@@ -25,6 +25,12 @@ static int original_afterburner_strip_test(const std::filesystem::path &root)
 	require(xl_level_extensions_active() && !Player_is_dead && !Game_suspended && !cheats.enabled,
 	        "Afterburner strip requires original Warp Shock startup");
 	require(xl_pog_vclip_frames(VCLIP_AFTERBURNER_BLOB) == int(pixels.frames), "Original afterburner strip was not installed");
+	const auto owned_model = xl_owned_oof_model(132);
+	require(owned_model && !owned_model->ase && !owned_model->mesh.hitboxes.empty(), "Original afterburner model selection requires the Warp Shock OOF");
+	const auto selected_model = xl_prepared_afterburner_model(132, false);
+	const auto &body = owned_model->mesh.hitboxes.front();
+	require(!selected_model.ase && selected_model.low_z == body.low[2] && selected_model.high_z == body.high[2],
+	        "Original afterburner selection lost retained OOF body bounds");
 	object emitter = *ConsoleObject;
 	emitter.size = F1_0 / 16;
 	compute_segment_center(&emitter.pos, &Segments[emitter.segnum]);

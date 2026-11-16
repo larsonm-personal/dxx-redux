@@ -3,6 +3,7 @@
 #include "camera_collision.h"
 #include "level_messages.h"
 #include "../model_geometry.h"
+#include "../afterburner_emission.h"
 #include "../robot_gun_point.h"
 #include "../model_hitbox.h"
 #include "../model_hitbox_query.h"
@@ -809,6 +810,7 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *
 		}
 		auto resource = std::make_shared<xl_compat::OofResource>();
 		resource->path = path;
+		resource->ase = ase;
 		const auto model_bytes = read_model_resource(path, target);
 		if (ase) {
 			const std::string text(model_bytes.begin(), model_bytes.end());
@@ -1130,8 +1132,9 @@ struct XlPreparedResources::State {
 	std::vector<std::unique_ptr<NativeModel>> native_models;
 	struct CollisionModel {
 		xl_compat::RenderModelSphere sphere;
+		std::vector<xl_compat::ModelHitboxBounds> bounds;
 		xl_compat::ModelHitboxTransform transform;
-		explicit CollisionModel(const xl_compat::ModelRenderGeometry &geometry) : sphere(geometry.bounding_sphere()), transform(geometry.hitbox_bounds()) {}
+		explicit CollisionModel(const xl_compat::ModelRenderGeometry &geometry) : sphere(geometry.bounding_sphere()), bounds(geometry.hitbox_bounds()), transform(bounds) {}
 	};
 	std::vector<std::unique_ptr<CollisionModel>> hitboxes;
 	int hitbox_frame = 1;
@@ -1796,6 +1799,28 @@ int XlPreparedResources::model_collision_radius(int model)
 	const auto &sphere = model_sphere(model);
 	const int base = state->definitions.base_radii.at(model);
 	return base ? base : sphere.radius;
+}
+
+xl_compat::AfterburnerModel XlPreparedResources::afterburner_model(int model, bool player)
+{
+	if (!state->installed) throw std::runtime_error("Afterburner models require installed level resources");
+	const auto found = state->owned_models.models.find(model);
+	const auto owned = found == state->owned_models.models.end() ? nullptr : found->second;
+	// Source high-resolution non-ASE ships use size offsets without reading a hitbox
+	if (player && (!owned || !owned->ase)) return {};
+	if (owned) {
+		if (owned->mesh.hitboxes.empty()) throw std::runtime_error("Owned afterburner model has no retained body bounds");
+		const auto &body = owned->mesh.hitboxes.front();
+		return { owned->ase, body.low[2], body.high[2] };
+	}
+	model_hitboxes(model);
+	const auto &body = state->hitboxes[model]->bounds.front();
+	return { false, body.low[2], body.high[2] };
+}
+xl_compat::AfterburnerModel xl_prepared_afterburner_model(int model, bool player)
+{
+	if (!prepared_resources) throw std::runtime_error("Afterburner model resources are unavailable");
+	return prepared_resources->afterburner_model(model, player);
 }
 
 void XlPreparedResources::initialize_camera_objects()

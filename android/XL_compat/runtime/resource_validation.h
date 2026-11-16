@@ -56,6 +56,7 @@ struct ScopedTexturePlayback;
 class ModelHitboxTransform;
 class TargetSources;
 struct RenderModelSphere;
+struct AfterburnerModel;
 } // namespace xl_compat
 
 // Own the definitions used by both companion and level dependency checks
@@ -95,6 +96,7 @@ class XlPreparedResources
 	xl_compat::ModelHitboxTransform &model_hitboxes(int model);
 	const xl_compat::RenderModelSphere &model_sphere(int model);
 	int model_collision_radius(int model);
+	xl_compat::AfterburnerModel afterburner_model(int model, bool player);
 	int camera_hitbox_query(const object &camera, const object &moving, const vms_vector &start, const vms_vector &end, int frame, vms_vector &hit, vms_vector &normal);
 	int camera_hitbox_query(const object &camera, const object &moving, const vms_vector &start, const vms_vector &end, vms_vector &hit, vms_vector &normal);
 	void begin_hitbox_frame();
@@ -117,6 +119,7 @@ class XlPreparedResources
 	std::unique_ptr<State> state;
 };
 void xl_set_prepared_resources(const char *level_filename, std::unique_ptr<XlPreparedResources> resources);
+xl_compat::AfterburnerModel xl_prepared_afterburner_model(int model, bool player);
 const xl_compat::ParticleImageResource *xl_prepared_particle_image(int subtype = 3);
 xl_compat::ParticleImages xl_prepared_particle_images();
 const xl_compat::ParticleImageResource *xl_prepared_lightning_image();

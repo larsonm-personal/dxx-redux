@@ -36,11 +36,28 @@ inline AseMesh compile_ase_mesh(const AseModel &model)
 			result.textures.push_back(material.texture.substr(separator == std::string::npos ? 0 : separator + 1));
 		}
 	}
+	std::vector<RenderModelPart> bounds(model.submodels.size());
 	for (std::size_t index = 0; index < model.submodels.size(); ++index) {
 		const auto &part = model.submodels[index];
 		auto name = part.name;
 		for (char &c : name) c = char(std::toupper(static_cast<unsigned char>(c)));
 		const bool thruster = name.rfind("$THRUSTER", 0) == 0;
+		auto &body = bounds[index];
+		body.excluded_from_hitboxes = thruster || name.rfind("$GUNPNT-", 0) == 0;
+		// Admitted non-billboard ASE nodes have zero source TM_POS offsets
+		if (!part.parent.empty()) {
+			const auto parent = std::find_if(model.submodels.begin(), model.submodels.end(), [&](const AseSubmodel &p) { return p.name == part.parent; });
+			if (parent == model.submodels.end()) throw std::runtime_error("ASE body parent is missing");
+			body.parent = int(parent - model.submodels.begin());
+		}
+		body.faces = unsigned(part.faces.size());
+		for (const auto &face : part.faces)
+			for (int id : face.vertices)
+				for (unsigned axis = 0; axis < 3; ++axis) {
+					const float value = part.vertices.at(id)[axis];
+					body.low[axis] = (std::min) (body.low[axis], value);
+					body.high[axis] = (std::max) (body.high[axis], value);
+				}
 		if (thruster) {
 			int flags = 1;
 			if (name.rfind("$THRUSTER-", 0) == 0) {
@@ -127,6 +144,7 @@ inline AseMesh compile_ase_mesh(const AseModel &model)
 		}
 	}
 	if (mesh.faces.empty()) throw std::runtime_error("ASE mesh has no faces");
+	mesh.hitboxes = owned_model_hitboxes(bounds);
 	for (unsigned axis = 0; axis < 3; ++axis)
 		if (mesh.low[axis] > mesh.high[axis]) throw std::runtime_error("ASE mesh has no collision body");
 	return result;

@@ -238,7 +238,14 @@ struct CSubModel {
 	    m_nGunPoint = 0;
 	int m_bBullets = 0, m_bThruster = 0, m_bGlow = 0, m_bRender = 0,
 	    m_nVertexIndex[1]{}, m_nVertices = 0, m_nFaces = 0;
-	V3 m_vOffset, low, high;
+	struct {
+		struct {
+			struct {
+				int32_t x = 0, y = 0, z = 0;
+			} coord;
+		} v;
+	} m_vOffset;
+	V3 low, high;
 	CFace *m_faces = nullptr;
 	void InitMinMax()
 	{
@@ -428,6 +435,29 @@ Snapshot compare(const xl_compat::OofModel &decoded, int tick = 0)
 		for (auto v : entry.second.offset) snapshot.values.push_back(v);
 	}
 	const auto mesh = xl_compat::compile_oof_mesh(decoded, false);
+	std::vector<xl_compat::RenderModelPart> source_parts(converted.m_subModels.size());
+	for (std::size_t i = 0; i < source_parts.size(); ++i) {
+		const auto &part = converted.m_subModels[i];
+		auto &bounds = source_parts[i];
+		bounds.parent = part.m_nParent;
+		bounds.offset = { part.m_vOffset.v.coord.x, part.m_vOffset.v.coord.y, part.m_vOffset.v.coord.z };
+		bounds.low = { part.low.v.coord.x, part.low.v.coord.y, part.low.v.coord.z };
+		bounds.high = { part.high.v.coord.x, part.high.v.coord.y, part.high.v.coord.z };
+		bounds.faces = unsigned(part.m_nFaces);
+		bounds.excluded_from_hitboxes = part.m_bGlow || part.m_bThruster || part.m_nGunPoint >= 0;
+	}
+	const auto expected_bounds = xl_compat::owned_model_hitboxes(source_parts);
+	if (mesh.hitboxes.size() != expected_bounds.size()) throw std::runtime_error("OOF source conversion changed retained hitbox count");
+	for (std::size_t i = 0; i < expected_bounds.size(); ++i) {
+		const auto &actual = mesh.hitboxes[i], &expected = expected_bounds[i];
+		if (actual.low != expected.low || actual.high != expected.high || actual.offset != expected.offset || actual.half_size != expected.half_size)
+			throw std::runtime_error("OOF retained hitbox differs from source-converted body");
+		for (unsigned axis = 0; axis < 3; ++axis) {
+			snapshot.values.push_back(float(actual.low[axis]));
+			snapshot.values.push_back(float(actual.high[axis]));
+			snapshot.values.push_back(float(actual.offset[axis]));
+		}
+	}
 	if (!same(source.m_vMin, mesh.low) || !same(source.m_vMax, mesh.high)) throw std::runtime_error("Redux bounds differ from pinned hierarchy bounds");
 	std::size_t face_index = 0;
 	for (const auto &entry : decoded.submodels) {
@@ -470,6 +500,22 @@ int main(int argc, char **argv)
 		for (const auto &bytes : inputs) {
 			const auto decoded = xl_compat::read_oof(bytes);
 			const auto baseline = compare(decoded);
+			// Face-unused vertices change broad mesh extents, not source body hitboxes
+			auto with_unused = decoded;
+			auto &unused_part = with_unused.submodels.begin()->second;
+			unused_part.vertices.push_back({ 27.125f, -29.5f, 31.75f });
+			unused_part.normals.push_back({ 0, 0, 1 });
+			unused_part.alpha.push_back(1);
+			compare(with_unused);
+			const auto original_bounds = xl_compat::compile_oof_mesh(decoded, false).hitboxes;
+			const auto unused_bounds = xl_compat::compile_oof_mesh(with_unused, false).hitboxes;
+			for (std::size_t i = 0; i < original_bounds.size(); ++i)
+				if (original_bounds[i].low != unused_bounds[i].low || original_bounds[i].high != unused_bounds[i].high)
+					throw std::runtime_error("Unused OOF vertex changed retained hitbox body");
+			auto fractional_offsets = decoded;
+			for (auto &entry : fractional_offsets.submodels)
+				for (auto &coordinate : entry.second.offset) coordinate += .000019f;
+			compare(fractional_offsets);
 			if (require_normal_parity && baseline.normal_differences) throw std::runtime_error("Existing reference/Redux normal mismatch remains unaddressed");
 			for (int variant : { 0, 1 })
 				for (int tick : { 0, 1, 17, 1000 }) {

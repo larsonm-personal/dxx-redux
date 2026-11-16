@@ -1,6 +1,7 @@
 foreach(
     pair IN
     ITEMS
+        "3d/ase2model.cpp|ffd9f2c7d7a051aeb1f7d93ba6932144f381166212730dea1792fde37ebccf6e"
         "include/sphere.h|59b88a1d94c792508de1910a344c07d6ff2469c89f46821553c7b462f2013252"
         "render/sphere.cpp|14ea746fbecd4b98f7985fdb11a87443a882108773634202bf9271c7a19a8d63"
         "include/objeffects.h|1d0ae9e924d18bfc95faa99b759300db01224d95946a0a023d2ae4afac9d461b"
@@ -399,6 +400,11 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/3d/buildmodel.cpp"
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/3d/buildmodel.cpp" "fix CModel::Radius (")
 string(REPLACE "RenderModel::CModel::CmpVerts" "CModel::CmpVerts" extracted "${extracted}")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_pof_render.h" CONTENT "${extracted}")
+set(extracted "// Actual pinned ASE face conversion; decoded storage adapters only\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/3d/ase2model.cpp"
+                      "void CModel::GetASEModelItems (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_ase_conversion.h"
+     CONTENT "${extracted}")
 target_include_directories(xl_hxm_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(xl_hxm_reference PRIVATE xl_inventory)
 set(extracted "")

@@ -10,6 +10,8 @@
 #include "../addon_animation.h"
 #include <ctime>
 #include "../model_render_geometry.h"
+#include "../owned_model_bounds.h"
+#include "../ase_mesh.h"
 #include "../model_sphere_query.h"
 #include "../camera_sphere_unstick.h"
 #include "../inventory.h"
@@ -388,6 +390,7 @@ static void Swap(T &a, T &b)
 #include "xl_reference_shield_sphere.h"
 #undef VECPTR
 #include "reference_pof_render.h"
+#include "reference_ase_bounds.h"
 
 static void require(bool condition, const std::string &message)
 {
@@ -1148,6 +1151,13 @@ void compare_player_starts(const char *path);
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--ase-bounds") {
+			std::ifstream input(argv[2]);
+			if (!input) throw std::runtime_error("Original ASE model is unavailable");
+			const std::string text{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
+			pof_reference::ase_bounds(xl_compat::decode_ase_model(xl_compat::read_ase_records(text)));
+			return 0;
+		}
 		if (argc == 3 && std::string(argv[1]) == "--guns") {
 			compare_gun_points(argv[2]);
 			return 0;
@@ -1289,6 +1299,8 @@ int main(int argc, char **argv)
 			const std::vector<uint8_t> bytes{ std::istreambuf_iterator<char>(model), std::istreambuf_iterator<char>() };
 			std::cout << "Native model payload custom radius " << compare(bytes) << '\n';
 		} else if (argc > 1) original_models(argv[1], argc > 2 ? argv[2] : "alarlof.hxm");
+		pof_reference::owned_bounds_controls();
+		pof_reference::ase_bounds_controls();
 		std::cout << "HXM extracted-source geometry, nested offsets, sort branches and bounded malformed controls passed\n";
 		std::cout << "HXM world transform/cache comparisons: " << transform_cases << " passed\n";
 		require(quad_hits && quad_hits < quad_cases, "Line/quad controls must exercise hits and misses");

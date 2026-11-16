@@ -438,6 +438,7 @@ static void original(const char *path)
 #include "reference_particle_selection.h"
 
 void texture_animation_source_controls();
+void afterburner_emission_source_controls();
 
 int main(int argc, char **argv)
 try {
@@ -458,6 +459,7 @@ try {
 	}
 	particle_image_controls();
 	texture_animation_source_controls();
+	afterburner_emission_source_controls();
 	face_transparency_reference::controls();
 	particle_image_selection_controls();
 	for (const auto shape : { std::pair{ 4u, 4u }, { 4u, 12u }, { 32u, 32u }, { 257u, 1u }, { 512u, 2u } }) {

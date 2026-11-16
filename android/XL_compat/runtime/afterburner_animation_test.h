@@ -4,6 +4,60 @@ extern "C" {
 #include "fireball.h"
 }
 
+static void afterburner_segment_controls(const object &source)
+{
+	unsigned rejected_points = 0;
+	// Use original outer faces; move only a controlled emitter, never level geometry
+	for (int segment = 0; segment <= Highest_segment_index && rejected_points != 3; ++segment)
+		for (int side = 0; side < 6 && rejected_points != 3; ++side) {
+			if (Segments[segment].children[side] >= 0) continue;
+			vms_vector center;
+			compute_center_point_on_side(&center, &Segments[segment], side);
+			for (int axis = 0; axis < 3 && rejected_points != 3; ++axis)
+				for (int sign : { -1, 1 }) {
+					object emitter = source;
+					emitter.segnum = segment;
+					std::array<xl_compat::EmissionPoint, 3> basis{};
+					basis[0][axis] = sign * F1_0;
+					basis[1][(axis + 1) % 3] = sign * F1_0;
+					basis[2][(axis + 2) % 3] = F1_0;
+					emitter.orient.rvec = { basis[0][0], basis[0][1], basis[0][2] };
+					emitter.orient.uvec = { basis[1][0], basis[1][1], basis[1][2] };
+					emitter.orient.fvec = { basis[2][0], basis[2][1], basis[2][2] };
+					emitter.pos = center;
+					vm_vec_scale_add2(&emitter.pos, &emitter.orient.fvec, emitter.size);
+					const auto points = xl_compat::afterburner_emission({ emitter.pos.x, emitter.pos.y, emitter.pos.z }, basis[2], basis[0],
+					                                                    emitter.size, true, true, false, 0, 0);
+					std::array<int, 2> segments;
+					for (unsigned i = 0; i < 2; ++i) {
+						vms_vector point{ points.positions[i][0], points.positions[i][1], points.positions[i][2] };
+						segments[i] = find_point_seg(&point, segment);
+					}
+					if ((segments[0] < 0) == (segments[1] < 0)) continue;
+					const unsigned rejected = segments[0] < 0 ? 0 : 1;
+					if (rejected_points & (1u << rejected)) continue;
+					std::set<int> signatures;
+					for (int slot = 0; slot <= Highest_object_index; ++slot)
+						if (Objects[slot].type != OBJ_NONE) signatures.insert(Objects[slot].signature);
+					drop_afterburner_blobs(&emitter, 2, F1_0 / 16, 32769);
+					unsigned found = 0;
+					for (int slot = 0; slot <= Highest_object_index; ++slot) {
+						const auto &created = Objects[slot];
+						if (created.type == OBJ_NONE || signatures.count(created.signature)) continue;
+						++found;
+						require(created.type == OBJ_FIREBALL && created.id == VCLIP_AFTERBURNER_BLOB &&
+						            xl_compat::EmissionPoint{ created.pos.x, created.pos.y, created.pos.z } == points.positions[1 - rejected] &&
+						            created.segnum == segments[1 - rejected] && created.lifeleft == 32769,
+						        "Rejected afterburner point changed its independently valid sibling");
+						obj_delete(slot);
+					}
+					require(found == 1, "Per-point segment rejection did not preserve the valid afterburner point");
+					rejected_points |= 1u << rejected;
+				}
+		}
+	require(rejected_points == 3, "Original geometry did not exercise rejection of each afterburner point");
+}
+
 static nlohmann::json afterburner_animation_control()
 {
 	const auto &clip = Vclip[VCLIP_AFTERBURNER_BLOB];
@@ -12,6 +66,46 @@ static nlohmann::json afterburner_animation_control()
 	emitter.size = F1_0 / 16;
 	compute_segment_center(&emitter.pos, &Segments[emitter.segnum]);
 	emitter.orient = vmd_identity_matrix;
+	const auto emission_model = xl_prepared_afterburner_model(emitter.rtype.pobj_info.model_num, emitter.type == OBJ_PLAYER);
+	require(emitter.type == OBJ_PLAYER && !emission_model.ase, "Afterburner lifetime fixture requires the original non-ASE player profile");
+	const auto expected_emission = xl_compat::afterburner_emission({ emitter.pos.x, emitter.pos.y, emitter.pos.z }, { 0, 0, F1_0 }, { F1_0, 0, 0 },
+	                                                               emitter.size, true, true, false, emission_model.low_z, emission_model.high_z);
+	unsigned weapon_cases = 0;
+	std::set<int> weapon_offsets;
+	for (int id = 0; id < N_weapon_types; ++id) {
+		const auto &weapon = Weapon_info[id];
+		if (weapon.render_type != WEAPON_RENDER_POLYMODEL || weapon.afterburner_size <= 0) continue;
+		object missile = emitter;
+		missile.type = OBJ_WEAPON;
+		missile.id = id;
+		missile.render_type = RT_POLYOBJ;
+		missile.rtype.pobj_info.model_num = weapon.model_num;
+		const auto model = xl_prepared_afterburner_model(weapon.model_num, false);
+		const auto point = xl_compat::afterburner_emission({ missile.pos.x, missile.pos.y, missile.pos.z }, { 0, 0, F1_0 }, { F1_0, 0, 0 },
+		                                                   missile.size, false, true, model.ase, model.low_z, model.high_z);
+		require(point.count == 1, "Weapon afterburner must emit one model-derived point");
+		vms_vector position{ point.positions[0][0], point.positions[0][1], point.positions[0][2] };
+		if (find_point_seg(&position, missile.segnum) < 0) continue;
+		std::set<int> signatures;
+		for (int slot = 0; slot <= Highest_object_index; ++slot)
+			if (Objects[slot].type != OBJ_NONE) signatures.insert(Objects[slot].signature);
+		drop_afterburner_blobs(&missile, 7, weapon.afterburner_size * F1_0 / 16, 32769);
+		unsigned found = 0;
+		for (int slot = 0; slot <= Highest_object_index; ++slot) {
+			const auto &created = Objects[slot];
+			if (created.type == OBJ_NONE || signatures.count(created.signature)) continue;
+			++found;
+			require(created.type == OBJ_FIREBALL && created.id == VCLIP_AFTERBURNER_BLOB &&
+			            xl_compat::EmissionPoint{ created.pos.x, created.pos.y, created.pos.z } == point.positions[0] && created.lifeleft == 32769,
+			        "Native weapon afterburner differs from source-qualified model bounds");
+			obj_delete(slot);
+		}
+		require(found == 1, "Native weapon afterburner did not preserve source count");
+		weapon_offsets.insert(position.z - missile.pos.z);
+		++weapon_cases;
+	}
+	require(weapon_cases >= 2 && weapon_offsets.size() >= 2, "Equal-size weapon control requires differing original model extents");
+	afterburner_segment_controls(emitter);
 	// Fill through the real allocator with nonreclaimable lights, then reject both blobs
 	std::vector<int> occupied;
 	for (;;) {
@@ -25,19 +119,35 @@ static nlohmann::json afterburner_animation_control()
 	drop_afterburner_blobs(&emitter, 2, F1_0 / 16, 32769);
 	require(num_objects == object_capacity() && xl_afterburner_animation_snapshot() == full,
 	        "Failed afterburner allocation changed animation ownership");
+	// The native reclaimer may replace the first fireball when admitting the second
+	require(!occupied.empty(), "Afterburner allocation control has no releasable slot");
+	const int available = occupied.back();
+	occupied.pop_back();
+	obj_delete(available);
+	drop_afterburner_blobs(&emitter, 2, F1_0 / 16, 32769);
+	const auto &single = Objects[available];
+	require(num_objects == object_capacity() && single.type == OBJ_FIREBALL && single.id == VCLIP_AFTERBURNER_BLOB &&
+	            xl_compat::EmissionPoint{ single.pos.x, single.pos.y, single.pos.z } == expected_emission.positions[1] && single.lifeleft == 32769,
+	        "Afterburner allocation did not preserve native fireball reclamation");
+	int single_frame = -999;
+	require(xl_afterburner_frame(available, single.id, single.lifeleft, 30, &single_frame),
+	        "Partial afterburner allocation lost animation ownership");
+	obj_delete(available);
 	for (auto slot = occupied.rbegin(); slot != occupied.rend(); ++slot) obj_delete(*slot);
 	unsigned created = 0;
-	for (int count : { 1, 2 })
+	for (int count : { 0, 1, 2, 7 })
 		for (int lifetime : { -1, 1, 16385, 32769, 98307 }) {
 			std::set<int> signatures;
 			for (int slot = 0; slot <= Highest_object_index; ++slot)
 				if (Objects[slot].type != OBJ_NONE) signatures.insert(Objects[slot].signature);
 			drop_afterburner_blobs(&emitter, count, F1_0 / 16, lifetime);
 			unsigned found = 0;
+			std::set<xl_compat::EmissionPoint> emitted_positions;
 			for (int slot = 0; slot <= Highest_object_index; ++slot) {
 				const auto &object = Objects[slot];
 				if (object.type == OBJ_NONE || signatures.count(object.signature)) continue;
 				++found;
+				emitted_positions.insert({ object.pos.x, object.pos.y, object.pos.z });
 				require(object.type == OBJ_FIREBALL && object.id == VCLIP_AFTERBURNER_BLOB, "Afterburner created an unexpected object");
 				const int duration = lifetime == -1 ? clip.play_time : lifetime;
 				const int period = lifetime == -1 ? 0 : int(int64_t(clip.frame_time) * lifetime / clip.play_time);
@@ -49,7 +159,8 @@ static nlohmann::json afterburner_animation_control()
 					        "Native afterburner frame differs from source-tested selection");
 				}
 			}
-			require(found == unsigned(count), "Native afterburner did not create every requested blob");
+			require(found == expected_emission.count && emitted_positions == std::set<xl_compat::EmissionPoint>(expected_emission.positions.begin(), expected_emission.positions.end()),
+			        "Native afterburner emission differs from source model-derived points/count");
 			created += found;
 		}
 	const auto before_reuse = xl_afterburner_animation_snapshot();
@@ -75,7 +186,8 @@ static nlohmann::json afterburner_animation_control()
 		require(!xl_afterburner_animation_restore(invalid, true) && xl_afterburner_animation_snapshot() == saved,
 		        "Malformed afterburner clock changed its live owner");
 	}
-	std::cout << "Native afterburner lifetime controls: " << created << " blobs, allocation failure, slot reuse, five rejected state corruptions\n";
+	std::cout << "Native afterburner lifetime controls: " << created << " blobs, " << weapon_cases
+	          << " weapon models, " << weapon_offsets.size() << " distinct equal-size offsets, both segment rejections, allocation failure/reclamation, slot reuse, five rejected state corruptions\n";
 	return saved;
 }
 
