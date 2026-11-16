@@ -1,5 +1,5 @@
 // Original package admission controls before headed fire qualification
-// Headless execution must preserve the production visibility gate
+// Interactive admission must preserve the production visibility gate
 static void particle_original_native_case(const char *package, const char *image, const std::filesystem::path &installation)
 {
 	using namespace xl_compat;
@@ -17,14 +17,25 @@ static void particle_original_native_case(const char *package, const char *image
 	std::filesystem::create_directories(atlas.parent_path());
 	write_bytes(atlas.string().c_str(), pixels);
 	require(load_base_mission("pmines", error, sizeof(error)), error);
+	struct RestorePresentation {
+		int no_render = GameArg.SysInputDemoNoRender;
+		~RestorePresentation()
+		{
+			GameArg.SysInputDemoNoRender = no_render;
+		}
+	} restore_presentation;
+	GameArg.SysInputDemoNoRender = 0;
 	// This fire owner deliberately installs only smokingfire.tga
-	require(!xl_level_supported_at("pm-hub.rl2", 0, 1), "Headless Pumo hub bypassed renderer qualification");
-	require(std::strstr(xl_level_rejection(), "XL skybox requires an active OpenGL renderer"), "Original Pumo hub lost its headless visibility rejection");
-	std::cout << "Original Pumo hub reaches its skybox visibility rejection with smoke absent\n";
-	require(!xl_level_supported_at("mvlev1.rl2", 0, 2), "Headless Pumo fire scene unexpectedly bypassed renderer qualification");
-	require(std::strstr(xl_level_rejection(), "XL fog requires an active OpenGL renderer"), "Original Pumo fire scene lost its headless visibility rejection");
+	require(!xl_level_supported_at("pm-hub.rl2", 0, 1), "Interactive Pumo hub bypassed renderer qualification");
+	require(std::strstr(xl_level_rejection(), "XL skybox requires an active OpenGL renderer"), "Original Pumo hub lost its interactive visibility rejection");
+	std::cout << "Original Pumo hub reaches its interactive skybox visibility rejection with smoke absent\n";
+	require(!xl_level_supported_at("mvlev1.rl2", 0, 2), "Interactive Pumo fire scene unexpectedly bypassed renderer qualification");
+	require(std::strstr(xl_level_rejection(), "XL fog requires an active OpenGL renderer"), "Original Pumo fire scene lost its interactive visibility rejection");
+	GameArg.SysInputDemoNoRender = 1;
+	require(xl_level_supported_at("pm-hub.rl2", 0, 1), xl_level_rejection());
+	require(xl_level_supported_at("mvlev1.rl2", 0, 2), xl_level_rejection());
 	xl_preview_clear_mission();
 	std::filesystem::remove(atlas);
 	require(PHYSFS_removeFromSearchPath(package), "Cannot unmount original Pumo package");
-	std::cout << "Original Pumo native admission: hub skybox and level-2 fog visibility rejection preserved\n";
+	std::cout << "Original Pumo native admission: interactive visibility rejection preserved; no-render skybox/fog preflight passed\n";
 }

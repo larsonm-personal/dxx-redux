@@ -6053,3 +6053,32 @@ pending jobs honestly; the documentation push needs its own final-head audit,
 including private controller and skipped/incomplete owners. Final results belong
 in the local final-handoff receipt and PR 514 body. No full G2-G7, unconditional
 8/8 estimate or unassisted campaign claim is made. Another tranche is explicit.
+
+### November 15 readiness-focused tranche: authentic prerequisites and headless admission
+
+The user explicitly authorized authentic Vertigo/XL resources in CI through
+the private assets repository. PR 515, head eb075b3b1d0924f2c8163bf981a63e8886654b6f,
+adds pinned provisioning/receipt validation atop PR 514 in stack 511. Existing
+private revision dc6565f6b5400d7c700fa8378e766b2354b6ceb6 already contains both
+required HOGs. Mission cohort revision 9dad21bd and all eight original cases,
+120 unassisted frames and deadlines are unchanged. Stock-only baseline remains
+4/8; fully provisioned baseline also measures 4/8 but clears all HXM/camera errors.
+
+A separate native candidate retains fog state validation and skybox geometry/
+collision, while requiring framebuffer capability only for interactive output.
+Ordinary developer-OFF Windows and genuine no-display Linux now measure 7/8:
+Dinter, Sphere and Warp Shock complete 120 frames with XL active. Boiling Point
+level 7 still rejects its custom-texture declaration without a POG; that guard
+is unchanged. Original Pumo Windows Debug controls preserve interactive renderer
+rejection and pass explicit no-render hub/fire preflight. Existing particles,
+lightning, rejection/recovery and upstream Debug controls pass. Public reference
+61/61 and private/controller 51/19 tests pass. Ordinary Android all-ABI build
+passes; no APK installation or device-state mutation was performed.
+
+See xl_readiness_focus_report_20261115.md, next plan and replacement kickoff.
+Exact local measurements and private input hashes remain in
+temp/xl-readiness-focus-20261115. Linux original Pumo controls and final candidate
+CI are pending at this snapshot. The trusted controller runs from cmake, so its
+new private provisioning requires reviewed integration before hosted results can
+be claimed. No merge, queue, full-gameplay or 8/8 claim is made. Unrelated quality
+evidence changes, .codex/, all four stashes and authentic originals are retained.
