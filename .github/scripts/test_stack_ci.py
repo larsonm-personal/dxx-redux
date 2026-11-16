@@ -229,6 +229,9 @@ class StackPolicyTests(unittest.TestCase):
             "android/app/src/main/cpp/shared/route_confirmation_desktop.cpp",
             "android/tests/test_xl_addon_import.ps1",
             "android/helpers/run_test.ps1",
+            "android/helpers/test_launcher_media_controls.ps1",
+            "android/tests/test_launcher_media_controls.ps1",
+            "android/game_scripts/test_launcher_media_controls.jsonc",
         ):
             for file in ({"filename": path}, {"filename": "removed.txt", "previous_filename": path}):
                 with self.subTest(file=file):
