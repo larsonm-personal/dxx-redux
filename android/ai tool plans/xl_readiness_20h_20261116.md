@@ -588,3 +588,50 @@ frames at 60 Hz. Source hashes remain unchanged throughout the run.
 
 This remains local Windows readiness evidence. New-candidate hosted CI,
 rendered/Android execution, replay and the remaining fidelity work are pending.
+
+### Published checkpoint, Linux include repair and reusable audit
+
+PR518 is non-draft, based immediately on PR517, linked as stack519. Initial
+candidate 1bf29f0d8b73eb158600993f45793f5df022d67c has merge candidate
+3055878549d6a26a613d16482a057e587ce678df. Both automation catalog checks pass
+(99 standalone JSON tests, 549 support scripts; 428 top-level integration entries).
+
+Private asset workflow 43805991275 attempt 1 uses trusted controller
+71e6efb90419b8e8a2f4ceed116e5ab3871c80d2 and the exact PR head. Its readiness
+build job 133096868533 fails before measurement: native pstypes.h min/max macros
+collide with libstdc++ when pog_resources.cpp reaches picosha2 through the new
+scoped header. Preserve ci-readiness-build-1bf29f0d8.log and ci-pr518.json.
+Include picosha2 before native dependency headers, matching the existing resource
+validation translation unit. The Windows ordinary rebuild passes; hosted Linux
+repair is not yet proven. No skipped measurement is counted as a readiness pass.
+
+Added reusable android/tests/xl_texture_audit.py with clock, vclip and recovery
+modes. It copies extracted authentic missions/mods into a fresh repository temp
+directory, records engine/runner/input/runtime hashes, requires the requested
+native controls in the report, and verifies input restoration after execution.
+Use --engine with the developer metadata executable, --runtime with verified
+retail/Vertigo/XL resources, --extra with extracted missions/ and mods/, --work
+with a fresh output directory, and --mode clock|vclip|recovery. Recovery additionally
+accepts --outgoing d2|wshock20; the latter needs both original missions staged.
+No device provisioning or readiness substitution is performed.
+
+Final runner clock/vclip modes pass in reusable-texture-clock-02 and
+reusable-texture-vclip-02. Recovery passes in reusable-texture-recovery-03 with
+Warp Shock outgoing. Failed recovery-02 is a runner JSON flag type mismatch:
+the native successful report emits integer 1, not JSON true. Correcting the
+comparison to the actual native representation passes without engine changes;
+the failed receipt remains preserved. Scoped runner formatting passes.
+
+The same include-order error is confirmed in engine smoke job 133096786812,
+developer compile job 133096792236 and public save build job 133096786904.
+Local WSL /bin/true exits with HCS_E_CONNECTION_TIMEOUT again; no shutdown or
+unrelated process termination was used. Hosted GCC builds will verify the repair.
+The repaired Windows ordinary candidate passes the unchanged cohort 8/8 in
+readiness-linux-include-windows-01 with no source mutation during measurement:
+
+- Engine SHA256: 9d38b3faac626e211bd0779c8d61b2fe9685c3eac58407f5b0634dc7d19bf06a
+- results.json SHA256: 021766aee794db590b3aedceae490d1ff8a41662820929b04461cd03951218e5
+- Source parent: 1bf29f0d8b73eb158600993f45793f5df022d67c; changed-source hashes in the run receipt
+
+All four protected stashes remain unchanged. No emulator installation or state
+mutation has occurred. Final tranche qualification and handoff remain pending.

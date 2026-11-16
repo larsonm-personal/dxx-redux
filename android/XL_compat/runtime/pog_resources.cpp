@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <cstring>
+#include "picosha2.h"
 #include "asset_dependencies.h"
 #include "scoped_texture_playback.h"
 extern "C" {
