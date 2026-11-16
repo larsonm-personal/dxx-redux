@@ -5,6 +5,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -131,7 +132,9 @@ def exclusion_signature(entry, capability):
     return sweep.digest({"entry": entry, "capability": capability})
 
 
-def plan_sample(sha, catalog, policy, previous=None, retail_assets=None, now=None, core_ids=CORE_IDS, host_workers=1):
+def plan_sample(
+    sha, catalog, policy, previous=None, retail_assets=None, now=None, core_ids=CORE_IDS, host_workers=1, refill=False
+):
     if type(host_workers) is not int or not 1 <= host_workers <= 16:
         raise ValueError("Host concurrency must be between one and sixteen")
     inventory, _ = sweep.plan_batch(sha, catalog, policy, retail_assets=retail_assets, complete=True)
@@ -225,15 +228,24 @@ def plan_sample(sha, catalog, policy, previous=None, retail_assets=None, now=Non
         "runtime_excluded": state["runtime_excluded"],
         "selected_sample_ids": [e["id"] for e in selected if e["id"] not in core_ids],
     }
+    if refill:
+        reserve_refills(plan, entries)
     sweep.validate_plan(plan, policy)
     return plan, state
 
 
 def reconcile_sample(plan, policy, previous, receipts, supplemental_result="", run_id="local"):
     # Reconcile against a FRESH exact-SHA coverage state, never traversal from another revision
+    if plan.get("reservation"):
+        policy = materialized_policy(policy)
     expected = {shard["batch_id"]: shard for shard in shard_plans(plan).values()}
     normalized = []
     for receipt in receipts:
+        if plan.get("reservation"):
+            source = expected.get(receipt.get("batch_id")) if receipt.get("lane") == "host" and expected else plan
+            if source is None:
+                raise ValueError("Unknown host shard receipt provenance")
+            validate_refill_receipt(source, policy, receipt)
         if expected and receipt.get("lane") == "host":
             shard = expected.get(receipt.get("batch_id"))
             if shard is None:
@@ -362,6 +374,8 @@ def publish(plan, policy, receipts, supplemental_result):
 
 
 def shard_plans(plan):
+    if plan.get("reservation"):
+        return reservation_shards(plan)
     shards = {}
     for index, ids in enumerate(plan["sampling"].get("host_shards", [])):
         shard = dict(
@@ -387,6 +401,8 @@ def phase_plan(plan, phase):
 
 
 def collect_sample(plan, policy, lane, output, blocked_reason=""):
+    if plan.get("reservation"):
+        return collect_refills(plan, policy, lane, output, blocked_reason)
     receipt = {key: plan[key] for key in ("schema", "target_sha", "catalog_hash", "batch_id")}
     if plan.get("retail_assets"):
         receipt["retail_assets"] = plan["retail_assets"]
@@ -396,6 +412,311 @@ def collect_sample(plan, policy, lane, output, blocked_reason=""):
         receipt["results"].extend(rows["results"])
     write_artifact(output / "results.json", receipt)
     return receipt
+
+
+RESERVATION_SCHEMA = "dxx-nightly-reservation-v1"
+
+
+def materialized_policy(policy):
+    # Enumerate immutable controller baselines once, not once per recovered child
+    if policy.get("mission_corpus") is True:
+        return dict(policy, mission_corpus=False, suites=list(sweep.policy_entries(policy).values()))
+    return policy
+
+
+def controller_identity():
+    # Pin executable admission/collection policy, not candidate code or local paths
+    root = Path(__file__).parent
+    return sweep.digest(
+        {
+            "workflow_sha": os.environ.get("GITHUB_WORKFLOW_SHA", "local"),
+            "files": {
+                name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+                for name in (
+                    "nightly_sample.py",
+                    "nightly_tooling_sweep.py",
+                    "nightly_retail.py",
+                    "run_host_test_suites.py",
+                )
+            },
+        }
+    )
+
+
+def reserve_refills(plan, entries):
+    sampling = plan["sampling"]
+    groups = [list(ids) for ids in sampling["host_shards"]]
+    if not groups:
+        groups = [[e["id"] for e in plan["tests"] if e["lane"] == "host"]]
+    selected = {e["id"] for e in plan["tests"]}
+    for ident in sampling["pending_order"]["host"]:
+        if ident in selected:
+            continue
+        private = retail.lane_requires_retail({"tests": [entries[ident]]}, "host")
+        compatible = [
+            group
+            for group in groups
+            if not group
+            or all(retail.lane_requires_retail({"tests": [entries[item]]}, "host") == private for item in group)
+        ]
+        if not compatible:
+            if len(groups) >= sampling["host_workers"]:
+                break
+            groups.append([])
+            compatible = [groups[-1]]
+        group = min(compatible, key=lambda group: sum(entries[item]["estimated_seconds"] for item in group))
+        group.append(ident)
+        selected.add(ident)
+    queues = {
+        f"shard-{i:03d}" if sampling["host_workers"] > 1 else "host": group for i, group in enumerate(groups) if group
+    }
+    for lane in sweep.LANES:
+        if lane == "host":
+            continue
+        queue = [e["id"] for e in plan["tests"] if e["lane"] == lane]
+        for ident in sampling["pending_order"][lane]:
+            if ident in selected:
+                continue
+            # Preserve the next-undone cursor at an incompatible provisioning boundary
+            combined = [entries[item] for item in queue + [ident]]
+            if any(e["id"] in sweep.THREE_PLAYER_IDS for e in combined) and retail.lane_requires_retail(
+                {"tests": combined}, lane
+            ):
+                break
+            queue.append(ident)
+            selected.add(ident)
+        if queue:
+            queues[lane] = queue
+    plan["tests"] = [entries[ident] for queue in queues.values() for ident in queue]
+    plan["lanes"] = [lane for lane in sweep.LANES if any(e["lane"] == lane for e in plan["tests"])]
+    plan["estimated_seconds"] = sum(e["estimated_seconds"] for e in plan["tests"])
+    sampling["selection_scope"] = "immutable-refill-reservation"
+    sampling["host_shards"] = [queue for key, queue in queues.items() if key.startswith("shard-")]
+    sampling["selected_sample_ids"] = [e["id"] for e in plan["tests"] if e["id"] not in sampling["core_ids"]]
+    plan["reservation"] = {
+        "schema": RESERVATION_SCHEMA,
+        "controller": controller_identity(),
+        "queues": queues,
+        "core_ids": sampling["core_ids"],
+        "started_unix": sampling["started_unix"],
+        "deadline_unix": sampling["deadline_unix"],
+    }
+    plan["batch_id"] = sweep.batch_identity(plan)
+
+
+def validate_reservation(plan):
+    reservation = plan["reservation"]
+    if (
+        not isinstance(reservation, dict)
+        or reservation.get("schema") != RESERVATION_SCHEMA
+        or reservation.get("controller") != controller_identity()
+    ):
+        raise ValueError("Reservation controller identity mismatch")
+    start, deadline = reservation.get("started_unix"), reservation.get("deadline_unix")
+    if type(start) is not int or type(deadline) is not int or deadline - start != 3000:
+        raise ValueError("Invalid reservation wall deadline")
+    entries = {e["id"]: e for e in plan["tests"]}
+    queues = reservation.get("queues")
+    if not isinstance(queues, dict) or len(queues) > 19:
+        raise ValueError("Invalid reservation queues")
+    seen = []
+    host_queues = 0
+    for name, ids in queues.items():
+        if not isinstance(name, str) or (
+            name not in sweep.LANES and not re.fullmatch(r"shard-00[0-9]|shard-01[0-5]", name)
+        ):
+            raise ValueError("Invalid reservation shard name")
+        lane = "host" if name.startswith("shard-") else name
+        if lane not in sweep.LANES or not isinstance(ids, list) or not ids:
+            raise ValueError("Invalid reservation queue")
+        if lane == "host":
+            host_queues += 1
+        for ident in ids:
+            if ident not in entries or entries[ident]["lane"] != lane:
+                raise ValueError("Reservation owner/lane mismatch")
+        if lane == "host" and len({retail.lane_requires_retail({"tests": [entries[i]]}, lane) for i in ids}) > 1:
+            raise ValueError("Reservation mixes public and private host owners")
+        seen.extend(ids)
+    if "host" in queues and host_queues != 1:
+        raise ValueError("Global and isolated host queues cannot be mixed")
+    if host_queues > 16 or len(seen) != len(set(seen)) or set(seen) != set(entries):
+        raise ValueError("Reservation contains missing or duplicate shard owners")
+    core = reservation.get("core_ids")
+    if not isinstance(core, list) or len(core) != len(set(core)) or any(not isinstance(i, str) for i in core):
+        raise ValueError("Invalid reservation core")
+    for queue in queues.values():
+        if [i for i in queue if i in core] != queue[: sum(i in core for i in queue)]:
+            raise ValueError("Reservation must execute core before sampled owners")
+    sampling = plan.get("sampling", {})
+    if any(sampling.get(key) != reservation[key] for key in ("core_ids", "started_unix", "deadline_unix")):
+        raise ValueError("Reservation sampling metadata mismatch")
+
+
+def reservation_shards(plan):
+    shards = {}
+    for name, ids in plan["reservation"]["queues"].items():
+        if not name.startswith("shard-"):
+            continue
+        shard = dict(
+            plan, tests=[e for e in plan["tests"] if e["id"] in ids], lanes=["host"], exclusions=[], unavailable=[]
+        )
+        shard["sampling"] = dict(plan["sampling"], host_shards=[], host_workers=1, pending_order={})
+        shard["reservation"] = dict(plan["reservation"], queues={"host": ids}, parent_batch_id=plan["batch_id"])
+        shard["estimated_seconds"] = sum(e["estimated_seconds"] for e in shard["tests"])
+        shard["batch_id"] = sweep.batch_identity(shard)
+        shards[name] = shard
+    return shards
+
+
+def refill_plans(plan, lane):
+    queues = plan["reservation"]["queues"]
+    if lane not in queues:
+        if lane == "host" and any(key.startswith("shard-") for key in queues):
+            raise ValueError("Execute an isolated host shard, not the global reservation")
+        return []
+    ids = queues[lane]
+    core = set(plan["reservation"]["core_ids"])
+    batches = [[ident for ident in ids if ident in core]] + [[ident] for ident in ids if ident not in core]
+    result = []
+    entries = {e["id"]: e for e in plan["tests"]}
+    for selected in batches:
+        if not selected:
+            continue
+        child = {key: value for key, value in plan.items() if key != "reservation"}
+        child.update(
+            tests=[entries[ident] for ident in selected],
+            lanes=[lane],
+            sample_phase=selected[0] not in core,
+            refill_parent={"batch_id": plan["batch_id"], "index": len(result)},
+        )
+        child["sampling"] = {
+            key: plan["sampling"][key] for key in ("schema", "cycle", "core_ids", "started_unix", "deadline_unix")
+        }
+        child["estimated_seconds"] = sum(e["estimated_seconds"] for e in child["tests"])
+        child["budget_seconds"] = max(2700, child["estimated_seconds"])
+        child["batch_id"] = sweep.batch_identity(child)
+        result.append(child)
+    return result
+
+
+def validate_refill_receipt(plan, policy, receipt):
+    policy = materialized_policy(policy)
+    sweep.validate_plan(plan, policy)
+    if any(receipt.get(key) != plan[key] for key in ("target_sha", "catalog_hash", "batch_id")):
+        raise ValueError("Refill reservation provenance mismatch")
+    if receipt.get("lane") not in plan["lanes"]:
+        raise ValueError("Refill receipt lane was not reserved")
+    children = refill_plans(plan, receipt["lane"])
+    admitted = receipt.get("refill_batches")
+    if not isinstance(admitted, list) or admitted != [child["batch_id"] for child in children[: len(admitted)]]:
+        raise ValueError("Refill admissions are not a unique ordered prefix")
+    rows = receipt.get("results", [])
+    if receipt.get("provisioning_blocked") is True:
+        if admitted or any(row.get("status") != "BLOCKED" or row.get("attempted_tests") is not False for row in rows):
+            raise ValueError("Provisioning failure cannot supply test evidence")
+        return
+    expected_ids = [e["id"] for child in children[: len(admitted)] for e in child["tests"]]
+    if [row.get("id") for row in rows] != expected_ids:
+        raise ValueError("Refill receipt contains unadmitted or duplicate owners")
+    for child in children[: len(admitted)]:
+        ids = {e["id"] for e in child["tests"]}
+        selected = [row for row in rows if row["id"] in ids]
+        if any(row.get("refill_batch_id") != child["batch_id"] for row in selected):
+            raise ValueError("Refill child receipt provenance mismatch")
+        child_receipt = dict(receipt, batch_id=child["batch_id"], results=selected)
+        sweep.reconcile(child, policy, sweep.fresh_state(child["target_sha"], child["catalog_hash"]), [child_receipt])
+
+
+def collect_refills(plan, policy, lane, output, blocked_reason=""):
+    policy = materialized_policy(policy)
+    receipt = {key: plan[key] for key in ("schema", "target_sha", "catalog_hash", "batch_id")}
+    if plan.get("retail_assets"):
+        receipt["retail_assets"] = plan["retail_assets"]
+    receipt.update(lane=lane, results=[], refill_batches=[])
+    gap = False
+    for index, child in enumerate(refill_plans(plan, lane)):
+        directory = output / "refill" / f"{index:04d}"
+        admission = directory / "admission.json"
+        if not admission.exists():
+            gap = True
+            continue
+        if gap or sweep.read(admission) != child["refill_parent"]:
+            raise ValueError("Invalid refill admission journal")
+        collected = sweep.collect(child, policy, lane, directory)
+        receipt["refill_batches"].append(child["batch_id"])
+        receipt["results"].extend(dict(row, refill_batch_id=child["batch_id"]) for row in collected["results"])
+    if blocked_reason and not receipt["refill_batches"]:
+        receipt["results"] = sweep.collect(plan, policy, lane, output / "unstarted", blocked_reason)["results"]
+        receipt["provisioning_blocked"] = True
+    validate_refill_receipt(plan, policy, receipt)
+    write_artifact(output / "results.json", receipt)
+    return receipt
+
+
+def execute_refills(plan, policy, lane, output):
+    policy = materialized_policy(policy)
+    sweep.validate_plan(plan, policy)
+    started = time.monotonic()
+    allowance = plan["reservation"]["deadline_unix"] - time.time() - 120
+
+    def remaining():
+        return min(allowance - (time.monotonic() - started), plan["reservation"]["deadline_unix"] - time.time() - 120)
+
+    if (output / "refill").exists():
+        raise ValueError("Refill execution requires a fresh output directory; recover existing receipts instead")
+    failed = 0
+    for index, child in enumerate(refill_plans(plan, lane)):
+        if remaining() <= 0:
+            break
+        directory = output / "refill" / f"{index:04d}"
+        write_artifact(directory / "plan.json", child)
+        write_artifact(directory / "admission.json", child["refill_parent"])
+        command = [
+            sys.executable,
+            str(Path(sweep.__file__).resolve()),
+            "execute",
+            "--plan",
+            str(directory / "plan.json"),
+            "--policy",
+            str(Path(__file__).with_name("nightly_tooling_policy.json").resolve()),
+            "--lane",
+            lane,
+            "--repo",
+            "target",
+            "--output",
+            str(directory),
+            "--build-root",
+            str(output / "build"),
+        ]
+        timed_out = False
+        try:
+            budget = remaining()
+            if budget <= 0:
+                break
+            failed |= int(sweep.run_command(command, Path.cwd(), sys.stdout, timeout=budget).returncode != 0)
+        except subprocess.TimeoutExpired:
+            failed = 1
+            timed_out = True
+        finally:
+            receipt = collect_refills(plan, policy, lane, output)
+        if timed_out:
+            break
+        current = [row for row in receipt["results"] if row["refill_batch_id"] == child["batch_id"]]
+        # Stop on a setup/incomplete attempt instead of replaying a shared prerequisite
+        # A scoped capability exclusion may advance the queue, but grants no coverage
+        if any(
+            not (row["status"] in sweep.TERMINAL and row.get("attempted_tests") is True and row.get("phase") == "tests")
+            and not (
+                row["status"] == "BLOCKED"
+                and row.get("retryable") is False
+                and row.get("blocker_kind") == "target-capability"
+            )
+            for row in current
+        ):
+            failed = 1
+            break
+    collect_refills(plan, policy, lane, output)
+    return failed
 
 
 def sample_status_ids(plan, coverage):
@@ -417,6 +738,33 @@ def sample_status_ids(plan, coverage):
     return groups
 
 
+def display_summary(summary):
+    # The complete evidence remains in the artifact, outside GitHub's step-summary cap
+    display = {
+        key: summary[key]
+        for key in (
+            "target_sha",
+            "batch_id",
+            "core_without_pass",
+            "current_sha_passed_owners",
+            "current_sha_fully_covered_owners",
+            "supplemental",
+            "outcome",
+        )
+    }
+    display.update(
+        sample_status_counts={key: len(ids) for key, ids in summary["sample_status_ids"].items()},
+        recorded_failures=len(summary["failures"]),
+        historical_failures_not_current_sha_coverage=len(summary["historical_failures_not_current_sha_coverage"]),
+        persisted_capability_exclusions_not_coverage=len(summary["runtime_excluded_not_coverage"]),
+        details_artifact="nightly-sweep-summary / summary.json",
+    )
+    for field in ("sample_admitted_ids", "sample_unadmitted_ids"):
+        if field in summary:
+            display[field.removesuffix("_ids") + "_count"] = len(summary[field])
+    return display
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("plan", "report", "publish", "execute", "collect", "check-deadline"))
@@ -430,7 +778,13 @@ def main():
         candidate.verify(sha)
         _, previous = read_remote()
         plan, state = plan_sample(
-            sha, sweep.read("plan/catalog.json"), policy, previous, retail.configured_identity(), host_workers=16
+            sha,
+            sweep.read("plan/catalog.json"),
+            policy,
+            previous,
+            retail.configured_identity(),
+            host_workers=16,
+            refill=True,
         )
         shards = shard_plans(plan)
         for name, shard in shards.items():
@@ -471,6 +825,8 @@ def main():
         if args.command == "collect":
             collect_sample(plan, policy, args.lane, Path("results"), args.blocked_reason)
             return 0
+        if plan.get("reservation"):
+            return execute_refills(plan, policy, args.lane, Path("results"))
         failed = 0
         for phase in ("core", "sample"):
             subplan = phase_plan(plan, phase)
@@ -553,9 +909,21 @@ def main():
         "supplemental": {"selected": extra, "result": result if extra else "not-selected"},
         "outcome": "failed" if missing_core or failures or (extra and result != "success") else "sample_pass",
     }
+    if plan.get("reservation"):
+        admitted = {
+            row["id"] for receipt in receipts for row in receipt.get("results", []) if row.get("refill_batch_id")
+        }
+        summary["sample_admitted_ids"] = [
+            ident for ident in plan["sampling"]["selected_sample_ids"] if ident in admitted
+        ]
+        summary["sample_unadmitted_ids"] = [
+            ident for ident in plan["sampling"]["selected_sample_ids"] if ident not in admitted
+        ]
     write_artifact("summary.json", summary)
     write_artifact("summary-state.json", coverage)
-    print(json.dumps(summary, indent=2))
+    display = display_summary(summary)
+    write_artifact("summary-display.json", display)
+    print(json.dumps(display, indent=2))
     return int(summary["outcome"] == "failed")
 
 

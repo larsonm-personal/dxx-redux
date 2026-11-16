@@ -367,6 +367,14 @@ def omit_pr_public_lan(plan, policy):
     return plan
 
 
+def batch_identity(plan):
+    identity = {key: plan[key] for key in ("target_sha", "catalog_hash", "tests")}
+    for key in ("retail_assets", "reservation", "refill_parent"):
+        if plan.get(key):
+            identity[key] = plan[key]
+    return digest(identity)
+
+
 def validate_plan(plan, policy):
     entries = policy_entries(policy)
     if plan.get("schema") != SCHEMA or not SHA.fullmatch(plan.get("target_sha", "")):
@@ -375,7 +383,10 @@ def validate_plan(plan, policy):
         raise ValueError("Invalid plan catalog hash")
     retail.validate_identity(plan.get("retail_assets"))
     selected = plan.get("tests")
-    if not isinstance(selected, list) or len(selected) > 1024:
+    # Reservations are bounded inventory, not executable batches; child plans retain
+    # the original 1024-owner bound and ordinary per-lane estimated budget
+    limit = 4096 if plan.get("reservation") else 1024
+    if not isinstance(selected, list) or len(selected) > limit:
         raise ValueError("Invalid plan selection")
     seen = set()
     for entry in selected:
@@ -408,16 +419,17 @@ def validate_plan(plan, policy):
     workers = plan.get("sampling", {}).get("host_workers", 1)
     if type(workers) is not int or not 1 <= workers <= 16:
         raise ValueError("Invalid host worker count")
-    if any(
+    if plan.get("reservation"):
+        from nightly_sample import validate_reservation
+
+        validate_reservation(plan)
+    elif any(
         sum(e["estimated_seconds"] for e in selected if e["lane"] == lane)
         > plan["budget_seconds"] * (workers if lane == "host" else 1)
         for lane in LANES
     ):
         raise ValueError("Plan exceeds lane budget")
-    identity = {key: plan[key] for key in ("target_sha", "catalog_hash", "tests")}
-    if plan.get("retail_assets"):
-        identity["retail_assets"] = plan["retail_assets"]
-    if digest(identity) != plan.get("batch_id"):
+    if batch_identity(plan) != plan.get("batch_id"):
         raise ValueError("Plan batch identity mismatch")
 
 
@@ -721,7 +733,11 @@ def collect(plan, policy, lane, output, blocked_reason=""):
         status = row["status"]
         if row.get("blocker_kind") == "interrupted":
             status = "NOT_RUN"
-        if row.get("attempted_tests") is False and status in ("FAIL", "TIMEOUT"):
+        if (
+            row.get("attempted_tests") is False
+            and status in ("FAIL", "TIMEOUT")
+            and not (status == "FAIL" and row.get("blocker_kind") == "build-failure" and row.get("retryable") is False)
+        ):
             status = "BLOCKED"
         if status == "NOT_RUN" and blocked_reason:
             status = "BLOCKED"
@@ -863,9 +879,12 @@ def print_public_android_failure(plan, lane, output, receipt):
         print(json.dumps({"file": path.name, "tail": tail}, ensure_ascii=True).replace("#", "\\u0023"))
 
 
-def execute(plan, policy, lane, repo, output):
+def execute(plan, policy, lane, repo, output, build_root=None):
     validate_plan(plan, policy)
+    if plan.get("reservation"):
+        raise ValueError("A reservation is inventory; execute bounded children through nightly_sample")
     repo, output = Path(repo).resolve(), Path(output).resolve()
+    build_root = Path(build_root).resolve() if build_root else output / "build"
     actual = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
     if actual != plan["target_sha"]:
         raise ValueError("Checkout does not match pinned target")
@@ -1052,7 +1071,7 @@ def execute(plan, policy, lane, repo, output):
             "--repo",
             str(repo),
             "--build-root",
-            str(output / "build"),
+            str(build_root),
             "--output",
             str(destination),
         ]
@@ -1206,6 +1225,7 @@ def main():
     for option in ("plan", "policy", "repo", "output"):
         p.add_argument("--" + option, required=True)
     p.add_argument("--lane", choices=LANES, required=True)
+    p.add_argument("--build-root")
     p = sub.add_parser("collect")
     for option in ("plan", "policy", "output"):
         p.add_argument("--" + option, required=True)
@@ -1295,7 +1315,7 @@ def main():
         print(json.dumps({"lanes": plan["lanes"], "count": len(plan["tests"]), "batch_id": plan["batch_id"]}))
     elif args.command == "execute":
         signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
-        result = execute(read(args.plan), read(args.policy), args.lane, args.repo, args.output)
+        result = execute(read(args.plan), read(args.policy), args.lane, args.repo, args.output, args.build_root)
         return int(
             result.get("runner_failed", False) or any(r["status"] in ("FAIL", "TIMEOUT") for r in result["results"])
         )

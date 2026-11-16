@@ -736,7 +736,7 @@ jobs:
           if [[ "$NIGHTLY_SAMPLE" == true ]]; then
             status=0
             python3 control/android/tests/nightly_sample.py report || status=$?
-            { echo '## Nightly sample receipts'; echo '```json'; cat summary.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            { echo '## Nightly sample receipts'; echo '```json'; cat summary-display.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
             exit "$status"
           fi
           qualification=()
@@ -762,6 +762,7 @@ jobs:
           name: nightly-sweep-summary
           path: |
             summary.json
+            summary-display.json
             summary-state.json
             published-state.json
           retention-days: 30
