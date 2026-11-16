@@ -223,3 +223,17 @@ Source: [existing launcher integration](https://github.com/larsonm-personal/dxx-
 - Launch readiness, imports, file-set scoping, pilot write scope, controller capture and touch editor lifecycle retain their behavior.
 - No change to engine/save/content formats and no dependency on the separate gameplay stack.
 - The updated existing integration runs successfully; visual/device limits are reported honestly.
+
+## November 16 validation and CI selection repair
+
+At PR head 84132316, app Kotlin compilation and the full app JVM suite completed:
+1,251 tests, zero failures/errors, eight optional external-fixture skips. The three
+SettingsCatalogTest cases passed without skips. The D-pad owner parses, but device
+execution and visual inspection remain unexecuted: this workspace has no KVM and
+adb cannot create its default user directory. No device success is claimed.
+
+The old extended-test path filter omitted launcher/settings sources and the D-pad
+owner. Add app sources and that owner to selection, with a regression exercising
+refresh and retaining native non-tip skips. This requests the existing validation
+sample (including JVM tests); it does not add D-pad to the sample or claim device
+coverage from a green stack/check job. Hosted exact-head results remain separate.

@@ -219,6 +219,26 @@ class StackPolicyTests(unittest.TestCase):
         pr["stack"]["size"] = 3
         self.assertFalse(stack_ci.refresh(12, "owner/repo", fetch, "extended", pr))
 
+    def test_extended_launcher_changes_request_execution(self):
+        pr = {"number": 12, "state": "open", "head": {"sha": "b" * 40}, "base": {"sha": "a" * 40}}
+        comparison = {"files": [{"filename": "README.md"}]}
+
+        def fetch(url):
+            return comparison if "/compare/" in url else pr
+
+        self.assertFalse(stack_ci.refresh(12, "owner/repo", fetch, "extended", pr))
+        for path in (
+            "android/app/src/main/java/com/dxxredux/app/SettingsHomePage.kt",
+            "android/app/src/test/java/com/dxxredux/app/SettingsCatalogTest.kt",
+            "android/tests/test_launcher_dpad.ps1",
+        ):
+            with self.subTest(path=path):
+                comparison["files"] = [{"filename": path}]
+                self.assertTrue(stack_ci.refresh(12, "owner/repo", fetch, "extended", pr))
+                pr["stack"] = {"number": 7, "position": 1, "size": 2}
+                self.assertFalse(stack_ci.refresh(12, "owner/repo", fetch, "extended", pr))
+                pr.pop("stack")
+
     def test_scripts_and_xl_selection(self):
         for profile in ("scripts", "xl"):
             pr = {"number": 12, "state": "open", "head": {"sha": "b" * 40}, "base": {"sha": "a" * 40}}
