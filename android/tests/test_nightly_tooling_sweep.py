@@ -465,7 +465,7 @@ class AutomaticCandidateTests(unittest.TestCase):
         self.assertNotIn("download-artifact", admit)
         self.assertNotIn("secrets.", admit)
         self.assertNotIn("secrets.", workflow.split("  report:", 1)[1].split("  readiness:", 1)[0])
-        self.assertEqual(workflow.count("secrets.RETAIL_ASSETS_READ_TOKEN"), 3)
+        self.assertEqual(workflow.count("secrets.RETAIL_ASSETS_READ_TOKEN"), 5)
         resource_checkout = workflow.split("ref: dc6565f6b5400d7c700fa8378e766b2354b6ceb6", 1)[1].split(
             "      - name:", 1
         )[0]
@@ -473,7 +473,14 @@ class AutomaticCandidateTests(unittest.TestCase):
         self.assertIn("persist-credentials: false", resource_checkout)
         self.assertIn("/descent_2_vertigo/d2x.hog", resource_checkout)
         self.assertIn("/xl-resources/d2x-xl.hog", resource_checkout)
-        self.assertNotIn("secrets.", workflow.split("  readiness-report:", 1)[1])
+        self.assertNotIn("secrets.", workflow.split("  readiness-report:", 1)[1].split("  readiness-expanded:", 1)[0])
+        expanded = workflow.split("  readiness-expanded:", 1)[1].split("  readiness-expanded-report:", 1)[0]
+        self.assertIn("timeout-minutes: 10", expanded)
+        self.assertIn('--budget-seconds "$budget"', expanded)
+        self.assertIn("580 - $(date +%s) + READINESS_STARTED", expanded)
+        self.assertLess(expanded.index("Revalidate pinned candidate"), expanded.index("Check out pinned uploaded"))
+        self.assertLess(expanded.index("rm -rf retail-input"), expanded.index("Build candidate"))
+        self.assertNotIn("secrets.", workflow.split("  readiness-expanded-report:", 1)[1])
         self.assertNotIn("secrets: inherit", workflow)
         self.assertIn("candidate_sha: ${{ needs.admit.outputs.sha }}", workflow)
         self.assertIn("uses: ./.github/workflows/nightly-tooling-sweep.yml", workflow)

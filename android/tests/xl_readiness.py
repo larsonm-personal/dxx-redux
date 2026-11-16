@@ -229,7 +229,8 @@ def classify(returncode, proof, log, case):
     if returncode == 0 and (
         proof.get("schema") == "dxx-xl-load-tick-v1"
         and proof.get("phase") == "loaded_ticked"
-        and proof.get("mission") == case["mission"]
+        and isinstance(proof.get("mission"), str)
+        and proof["mission"].lower() == case["mission"].lower()
         and proof.get("level") == case["level"]
         and proof.get("level_file", "").lower() == case["level_file"]
         and proof.get("frames") == 120
@@ -248,7 +249,7 @@ def classify(returncode, proof, log, case):
     return "load_failed"
 
 
-def run(engine, assets, data, catalog, work, seven_zip, target_sha, require_resources=False):
+def run(engine, assets, data, catalog, work, seven_zip, target_sha, require_resources=False, assisted_routes=True):
     work = Path(work)
     work.mkdir(parents=True, exist_ok=False)
     if len(set(catalog["selected"])) != len(catalog["selected"]):
@@ -322,7 +323,7 @@ def run(engine, assets, data, catalog, work, seven_zip, target_sha, require_reso
                 proof.get("frames", 0) if type(proof.get("frames")) is int and 0 <= proof["frames"] <= 120 else 0
             )
             row["xl_active"] = proof.get("xl_active") if type(proof.get("xl_active")) is bool else None
-            if row["outcome"] == "loaded_ticked":
+            if row["outcome"] == "loaded_ticked" and assisted_routes:
                 target = min(20, proof["segments"] - 1)
                 route_path, load_path = area / "route.json", area / "route-load.json"
                 route_command = command[:-2] + [
@@ -380,6 +381,7 @@ def main():
     for name in ("downloads", "tree", "work", "catalog", "engine", "assets", "data", "seven-zip"):
         parser.add_argument("--" + name, type=Path)
     parser.add_argument("--target-sha")
+    parser.add_argument("--no-assisted-routes", action="store_true", help="Measure primary load/tick only")
     parser.add_argument(
         "--resources", type=Path, help="Pinned private checkout containing authentic Vertigo and XL resources"
     )
@@ -426,6 +428,7 @@ def main():
             args.seven_zip,
             args.target_sha,
             args.require_resources,
+            not args.no_assisted_routes,
         )
         print(json.dumps(report["summary"], sort_keys=True))
         # This command means measurement completed, not compatibility passed.
