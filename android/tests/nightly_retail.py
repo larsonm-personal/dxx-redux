@@ -267,6 +267,7 @@ def lane_requires_retail(plan, lane):
 # substring of arbitrary exception text or a raw command/output stream.
 PUBLIC_REASONS = frozenset(
     (
+        "Approved KVM access refresh failed before master owner launch",
         'Committed unavailable geometry reproduced unchanged',
         'Committed route oracle is absent',
         'Missing route baseline, generated output or summary',
@@ -371,6 +372,8 @@ COMMANDS = frozenset(
 
 
 MASTER_DIAGNOSTIC_SOURCES = {
+    "test_mp_public_shareware": "android/tests/test_mp.ps1",
+    "test_mp_public_shareware_d2": "android/tests/test_mp.ps1",
     "test_lan": "android/tests/test_lan.ps1",
     "test_lan_host_migration_public_shareware": "android/tests/test_lan.ps1",
     "test_lan_lobby_discovery": "android/tests/test_lan_lobby_discovery.ps1",

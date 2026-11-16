@@ -2212,6 +2212,72 @@ Write-SuiteSetupStage 'launcher-reset'
                 else:
                     self.assertTrue(all(r["status"] == "PASS" for r in receipt["results"]))
 
+    def test_each_android_master_refreshes_approved_kvm_before_launch(self):
+        for lane in ("android-single", "android-dual", "host", "jvm"):
+            for actions in ("true", "false"):
+                for failure in (False, True, "timeout"):
+                    with self.subTest(lane=lane, actions=actions, failure=failure), tempfile.TemporaryDirectory() as d:
+                        entry = {
+                            "id": "master:probe",
+                            "owner": "master",
+                            "lane": lane,
+                            "args": {"suite": "probe"},
+                            "estimated_seconds": 100,
+                        }
+                        policy = {"schema": 1, "suites": [entry], "exclusions": []}
+                        plan, state = sweep.plan_batch(SHA, {"schema": 1, "tests": [{"name": "probe"}]}, policy)
+                        calls = []
+                        guarded = actions == "true" and lane.startswith("android-")
+
+                        def run(command, *args, **kwargs):
+                            calls.append(command[0])
+                            if command[0] == "bash":
+                                self.assertTrue(command[1].endswith("refresh_nightly_kvm_access.sh"))
+                                self.assertEqual(kwargs["timeout"], 60)
+                                if failure == "timeout":
+                                    raise subprocess.TimeoutExpired(command, 60)
+                                return subprocess.CompletedProcess(command, int(bool(failure)))
+                            journal = Path(command[command.index("-EvidenceJournalPath") + 1])
+                            journal.write_text(
+                                json.dumps(
+                                    {
+                                        "name": "probe",
+                                        "commit": SHA,
+                                        "status": "PASS",
+                                        "exit_code": 0,
+                                        "coverage_complete": True,
+                                    }
+                                )
+                                + "\n"
+                            )
+                            return subprocess.CompletedProcess(command, 0)
+
+                        with (
+                            patch.dict(os.environ, {"GITHUB_ACTIONS": actions}),
+                            patch.object(sweep.subprocess, "check_output", return_value=SHA),
+                            patch.object(sweep, "run_command", side_effect=run),
+                        ):
+                            for index in range(2):
+                                output = Path(d, str(index))
+                                result = sweep.execute(plan, policy, lane, d, output)
+                                receipt = sweep.collect(plan, policy, lane, output)
+                                row = receipt["results"][0]
+                                if guarded and failure:
+                                    self.assertTrue(result["runner_failed"])
+                                    self.assertEqual(row["status"], "BLOCKED")
+                                    self.assertFalse(row["attempted_tests"])
+                                    self.assertTrue(row["retryable"])
+                                    self.assertEqual(row["blocker_kind"], "infrastructure")
+                                    self.assertEqual(sweep.reconcile(plan, policy, state, [receipt])["records"], {})
+                                    safe = sweep.retail.public_receipt(receipt)["results"][0]
+                                    self.assertEqual(
+                                        safe["reason"], "Approved KVM access refresh failed before master owner launch"
+                                    )
+                                else:
+                                    self.assertEqual(row["status"], "PASS")
+                        expected = ["bash"] if guarded and failure else (["bash", "pwsh"] if guarded else ["pwsh"])
+                        self.assertEqual(calls, expected * 2)
+
     def test_master_child_exit_is_not_replaced_by_failing_sibling_exit(self):
         with tempfile.TemporaryDirectory() as directory:
             self.attempt(directory, 1)

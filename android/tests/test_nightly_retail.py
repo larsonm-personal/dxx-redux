@@ -27,6 +27,32 @@ ENV = {
 
 
 class RetailBoundaryTests(unittest.TestCase):
+    def test_online_public_assertion_location_retains_no_log_contents(self):
+        source = "android/tests/test_mp.ps1"
+        data = (ROOT / source).read_bytes()
+        literal = "Public online roster, mission or level differs from pinned native fixture"
+        number = next(i for i, line in enumerate(data.decode().splitlines(), 1) if "throw '" + literal + "'" in line)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            log = root / "owner.log"
+            log.write_text("EXCEPTION: " + literal + " PRIVATE-CANARY\n")
+            for name in ("test_mp_public_shareware", "test_mp_public_shareware_d2"):
+                row = {
+                    "name": name,
+                    "status": "FAIL",
+                    "source": source,
+                    "source_sha256": hashlib.sha256(data).hexdigest(),
+                    "log": str(log),
+                }
+                details = retail.master_failure_diagnostics(row, root)
+                self.assertEqual(details["source_matches"], [{"path": source, "line": number}])
+                safe = retail.public_diagnostics({"id": "master:" + name, "master_diagnostics": details})
+                self.assertNotIn("PRIVATE-CANARY", json.dumps(safe))
+                self.assertNotIn(literal, json.dumps(safe))
+                rejected = retail.master_failure_diagnostics({**row, "source_sha256": "0" * 64}, root)
+                self.assertFalse(rejected["source_verified"])
+                self.assertEqual(rejected["source_matches"], [])
+
     def test_corpus_diagnostics_are_bounded_resanitized_and_private(self):
         details = {
             "geometry_failures": [{"mission_index": 0, "level_index": 2, "category": "missing-level", "raw": "PRIVATE"}],

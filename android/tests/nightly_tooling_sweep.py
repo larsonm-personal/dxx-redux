@@ -991,7 +991,38 @@ def execute(plan, policy, lane, repo, output, build_root=None):
         process_evidence("master")
         try:
             with (output / "master.log").open("w") as log:
-                process = run_command(command, repo, log)
+                # Each core/refill master is a new owner after AVD cleanup
+                # Revalidate only the same disposable CI grant as the shareware path
+                setup_failed = False
+                if lane in ("android-single", "android-dual") and os.environ.get("GITHUB_ACTIONS") == "true":
+                    refresh = Path(__file__).resolve().parents[1] / "helpers/refresh_nightly_kvm_access.sh"
+                    try:
+                        setup_failed = run_command(["bash", str(refresh)], repo, log, timeout=60).returncode != 0
+                    except subprocess.TimeoutExpired:
+                        setup_failed = True
+                if setup_failed:
+                    reason = "Approved KVM access refresh failed before master owner launch"
+                    with journal.open("w") as evidence:
+                        for entry in masters:
+                            evidence.write(
+                                json.dumps(
+                                    {
+                                        "name": entry["args"]["suite"],
+                                        "commit": actual,
+                                        "status": "BLOCKED",
+                                        "reason": reason,
+                                        "attempted_tests": False,
+                                        "phase": "setup",
+                                        "retryable": True,
+                                        "blocker_kind": "infrastructure",
+                                        "coverage_complete": False,
+                                    }
+                                )
+                                + "\n"
+                            )
+                    process = subprocess.CompletedProcess(command, 1)
+                else:
+                    process = run_command(command, repo, log)
         finally:
             if any(e["id"] in THREE_PLAYER_IDS for e in masters) and three_player_source.is_file():
                 three_player_destination.parent.mkdir(parents=True, exist_ok=True)
