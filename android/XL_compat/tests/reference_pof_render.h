@@ -14,6 +14,10 @@ struct CArray {
 	{
 		values.clear();
 	}
+	void Clear()
+	{
+		std::fill(values.begin(), values.end(), T{});
+	}
 	T *Buffer()
 	{
 		return values.data();
@@ -55,6 +59,11 @@ struct CFloatVector3 {
 	const float SqrMag() const;
 	const float Mag() const;
 	static const float Dist(const CFloatVector3 &, const CFloatVector3 &);
+	// The ASE bounds oracle does not inspect the independently computed face normal
+	static CFloatVector3 Normal(const CFloatVector3 &, const CFloatVector3 &, const CFloatVector3 &)
+	{
+		return Create(0, 0, 0);
+	}
 	const CFloatVector3 &operator+=(const CFloatVector3 &);
 	const CFloatVector3 operator+(const CFloatVector3 &) const;
 	const CFloatVector3 operator*(float) const;
@@ -94,6 +103,10 @@ struct PaletteAdapter {
 	}
 };
 struct CBitmap {
+	bool Flat() const
+	{
+		return false;
+	}
 	CBitmap *HasOverride()
 	{
 		return nullptr;
@@ -167,7 +180,7 @@ struct CVertex {
 	uint16_t m_nIndex = 0;
 };
 struct CFace {
-	int m_nBitmap = 0, m_nSubModel = 0, m_nIndex = 0, m_nVerts = 0;
+	int m_nBitmap = 0, m_nSubModel = 0, m_nIndex = 0, m_nVerts = 0, m_nId = 0;
 	bool m_bThruster = false, m_bGlow = false;
 	CFixVector m_vNormal{};
 };
@@ -181,13 +194,20 @@ struct CSubModel {
 	CFloatVector3 m_vMin{}, m_vMax{};
 	int m_nHitbox = 0, m_nSubModel = 0;
 	bool m_bWeapon = false;
+	bool m_bFlare = false, m_bBillboard = false, m_bHeadlight = false, m_bBombMount = false;
+	int m_nType = 0, m_nWeaponPos = 0, m_iFrame = 0, m_tFrame = 0, m_nFrames = 0;
 	CFixVector m_vCenter{};
 	fix m_nRad = 0;
 	void Size(CModel *, CObject *, CFixVector *);
 	void InitMinMax();
 	void SetMinMax(CFloatVector3 *);
 };
+namespace ASE
+{
+struct CModel;
+}
 struct CModel {
+	void GetASEModelItems(int32_t, ASE::CModel *, float);
 	int m_nModel = 0;
 	int m_nType = 0;
 	bool m_bBullets = false;
@@ -223,6 +243,55 @@ static constexpr bool IsMultiGame = false;
 #undef VECPTR
 #undef WORDPTR
 #undef PAL2RGBA
+inline void owned_bounds_controls()
+{
+	unsigned cases = 0;
+	for (int count : { 1, 3, 5 })
+		for (int filter : { 0, 1, 2, 3, 4 })
+			for (int hierarchy : { 0, 1, 2 }) {
+				CModel source;
+				source.m_nSubModels = count;
+				source.m_subModels.values.resize(count);
+				std::vector<xl_compat::RenderModelPart> parts(count);
+				for (int i = 0; i < count; ++i) {
+					auto &native = parts[i];
+					auto &reference = source.m_subModels[i];
+					native.parent = hierarchy == 0 || i == 0 ? -1 : hierarchy == 1 ? i - 1
+					                                                               : 0;
+					native.offset = { i * 2345 - 351, -i * 127 + 33, i * 3457 - 29 };
+					native.low = { -1.12345f - i, -2.34567f + i, -3.45678f - i };
+					native.high = { 4.23456f + i, 5.34567f + i, 6.45678f + i };
+					native.faces = 1;
+					native.excluded_from_hitboxes = filter && (i == count - 1);
+					reference.m_nSubModel = i;
+					reference.m_nParent = native.parent;
+					reference.m_vOffset = CFixVector::Create(native.offset[0], native.offset[1], native.offset[2]);
+					reference.m_vMin = CFloatVector3::Create(native.low[0], native.low[1], native.low[2]);
+					reference.m_vMax = CFloatVector3::Create(native.high[0], native.high[1], native.high[2]);
+					if (native.excluded_from_hitboxes) {
+						reference.m_bThruster = filter == 1;
+						reference.m_bGlow = filter == 2;
+						reference.m_bWeapon = filter == 3;
+						reference.m_nGunPoint = filter == 4 ? 0 : -1;
+					}
+				}
+				// Prime only the independent radius cache; Size still executes its full bounds path
+				gameData.modelData.spheres[0] = {};
+				gameData.modelData.spheres[0].nSubModels = count;
+				source.Size(nullptr, 1);
+				const auto actual = xl_compat::owned_model_hitboxes(parts);
+				const auto &expected = gameData.modelData.hitboxes[0];
+				if (actual.size() != std::size_t(expected.nHitboxes + 1)) throw std::runtime_error("Owned model hitbox count differs from source Size");
+				const auto point = [](const CFixVector &p) { return std::array<int32_t, 3>{ p.v.coord.x, p.v.coord.y, p.v.coord.z }; };
+				for (std::size_t i = 0; i < actual.size(); ++i) {
+					const auto &box = expected.hitboxes[i];
+					if (actual[i].low != point(box.vMin) || actual[i].high != point(box.vMax) || actual[i].offset != point(box.vOffset) || actual[i].half_size != point(box.vSize))
+						throw std::runtime_error("Owned model hitbox differs from pinned high-resolution Size");
+				}
+				++cases;
+			}
+	std::cout << "Owned model hitboxes: " << cases << " pinned high-resolution sizing controls passed\n";
+}
 inline void compare(const std::vector<uint8_t> &bytes, const xl_compat::ModelRenderGeometry &native)
 {
 	CModel source;

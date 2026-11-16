@@ -2,6 +2,9 @@
 // The fixture codec has C++ linkage and types; include before packed C engine headers
 #include "input_demo_fixture.h"
 #include "../pog.h"
+#include "../afterburner_emission.h"
+#include "resource_validation.h"
+#include "oof_resource.h"
 #include "input_demo_world_trace.h"
 #include "native_crash_diagnostic.h"
 #include "slow_motion_runtime.h"

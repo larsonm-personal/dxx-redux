@@ -12,6 +12,7 @@ namespace xl_compat
 {
 struct OofResource {
 	std::string path;
+	bool ase = false;
 	OofModel model;
 	OofMesh mesh;
 	std::vector<std::shared_ptr<const PogBitmap>> skins;

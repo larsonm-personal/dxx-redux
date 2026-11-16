@@ -1,6 +1,7 @@
 #ifndef DXX_XL_OOF_MESH_H
 #define DXX_XL_OOF_MESH_H
 #include "oof.h"
+#include "owned_model_bounds.h"
 #include <limits>
 
 #ifdef _MSC_VER
@@ -24,6 +25,7 @@ struct OofMesh {
 	OofVector low{}, high{};
 	std::map<int, OofVector> offsets;
 	std::map<int, OofVector> spinning_parts;
+	std::vector<ModelHitboxBounds> hitboxes;
 };
 
 // Keep face order and material boundaries; alpha faces must not be regrouped by texture
@@ -38,8 +40,16 @@ inline OofMesh compile_oof_mesh(const OofModel &model, bool flip_v)
 		    !(chunk.type == "RANI" && model.has_rotation_tracks && model.rotation_tracks.size() == model.submodels.size()))
 			throw std::runtime_error("OOF runtime does not support chunk " + chunk.type);
 	bool points = false;
+	std::vector<RenderModelPart> bounds(model.submodels.size());
 	for (const auto &entry : model.submodels) {
 		const auto &part = entry.second;
+		auto &body = bounds.at(part.index);
+		body.parent = part.parent == part.index ? -1 : part.parent;
+		for (unsigned axis = 0; axis < 3; ++axis) {
+			const float value = part.offset[axis] * 65536.0f;
+			if (!std::isfinite(value) || double(value) < INT32_MIN || double(value) > INT32_MAX) throw std::runtime_error("OOF fixed model offset overflows");
+			body.offset[axis] = int32_t(value);
+		}
 		// New metadata admission is limited to the opaque static reference profile
 		if ((model.has_special_points || model.has_rotation_tracks) &&
 		    std::any_of(part.alpha.begin(), part.alpha.end(), [](float value) { return value != 1.0f; }))
@@ -65,6 +75,13 @@ inline OofMesh compile_oof_mesh(const OofModel &model, bool flip_v)
 			}
 		}
 		for (const auto &face : part.faces) {
+			++body.faces;
+			for (const auto &corner : face.corners)
+				for (unsigned axis = 0; axis < 3; ++axis) {
+					const float value = part.vertices.at(corner.vertex)[axis];
+					body.low[axis] = (std::min) (body.low[axis], value);
+					body.high[axis] = (std::max) (body.high[axis], value);
+				}
 			if (face.corners.size() < 3 || (face.corners.size() - 2) * 3 > vertex_budget) throw std::runtime_error("OOF mesh exceeds triangle budget");
 			vertex_budget -= (face.corners.size() - 2) * 3;
 			OofRenderFace output;
@@ -91,6 +108,7 @@ inline OofMesh compile_oof_mesh(const OofModel &model, bool flip_v)
 		}
 	}
 	if (!points || mesh.faces.empty()) throw std::runtime_error("OOF mesh has no geometry");
+	mesh.hitboxes = owned_model_hitboxes(bounds);
 	return mesh;
 }
 } // namespace xl_compat

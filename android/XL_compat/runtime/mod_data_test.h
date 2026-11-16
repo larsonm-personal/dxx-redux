@@ -217,6 +217,23 @@ static int mod_data_test(int argc, char **argv)
 			require(owned_model && owned_model->model.submodels.size() == 5 && owned_model->skins.size() == 3 &&
 			            owned_model->skins[0]->width == 128,
 			        "Original Pumo OOF model and owned skins were not staged");
+			auto retained_afterburner = XlPreparedResources::prepare_mission(nullptr);
+			retained_afterburner->install_hxm();
+			const std::array<int, 3> afterburner_models{ 108, 171, 172 };
+			std::array<xl_compat::AfterburnerModel, 3> afterburner_bounds;
+			{
+				for (unsigned i = 0; i < afterburner_models.size(); ++i) {
+					const int id = afterburner_models[i];
+					const auto owned = xl_owned_oof_model(id);
+					require(owned && !owned->mesh.hitboxes.empty(), "Original afterburner model has no retained bounds");
+					const auto selected = retained_afterburner->afterburner_model(id, id == 108);
+					afterburner_bounds[i] = selected;
+					const auto &body = owned->mesh.hitboxes.front();
+					require(selected.ase == owned->ase && selected.low_z == body.low[2] && selected.high_z == body.high[2],
+					        "Afterburner selection lost the installed original ASE/OOF mission model");
+				}
+				std::cout << "Original mission-installed ASE/OOF afterburner bounds passed; level admission remains separate" << std::endl;
+			}
 			xl_assets::ObjectDependencies graph;
 			graph.xl_boss_spawning = true;
 			graph.robot_behavior(68, 135, true);
@@ -235,6 +252,14 @@ static int mod_data_test(int argc, char **argv)
 			require(mod_render_definitions() == stock_render, "XL models, textures or sound mappings leaked into stock mission");
 			require(!xl_owned_oof_model(171), "XL OOF model survived stock selection");
 			require(xl_resource_mod_sources().empty(), "XL source identity survived stock selection");
+			for (unsigned i = 0; i < afterburner_models.size(); ++i) {
+				const int id = afterburner_models[i];
+				const auto selected = retained_afterburner->afterburner_model(id, id == 108);
+				const auto &expected = afterburner_bounds[i];
+				require(selected.ase == expected.ase && selected.low_z == expected.low_z && selected.high_z == expected.high_z,
+				        "Retained afterburner bounds borrowed the newly selected stock mission");
+			}
+			std::cout << "Retained original ASE/OOF afterburner bounds survive stock selection" << std::endl;
 		}
 		std::cout << "Original Pumo HAM/HXM/V-HAM loading and stock round-trip passed\n";
 		{

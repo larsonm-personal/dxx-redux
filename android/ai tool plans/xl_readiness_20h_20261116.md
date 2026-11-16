@@ -1491,3 +1491,296 @@ Cleanup preview/apply -03, after all local jobs exited, found no eligible files
 outside the protected evidence, authentic-input and emulator workspaces. Apply
 correctly reports that the 50 GiB target was not reached; 22.54 GiB remains.
 No caches or receipts were hand-deleted. Reuse existing build directories.
+
+### Sprite publication and next emission ownership checkpoint
+
+Published non-draft PR524 at 717dab804ea76bf6572685b36180fd0bdd1b3769, immediate
+parent PR523/ced5b54f625368a12911de31cb4cb78ba1111774. Hosted merge candidate is
+f9289600b2080fe11387e2e5144183682a549e97. Public contracts workflow43840967321
+has terminal successful Linux job133209315183: all61 contracts, including
+xl_pog_gpu (19.93 seconds), and the linked boss gameplay consumer pass. The GPU
+owner calls the expanded extracted-source compositor profiles. Windows contract
+job133209315277 also passes. Developer builds and other public owners remain
+pending; developer Release is skipped. Private workflow43840991689 has admitted
+the exact head with controller71e6efb90419b8e8a2f4ceed116e5ab3871c80d2;
+readiness133209456976 and Linux host133209873049 are still running. Online,
+Pumo, nightly developer Release and Android/JVM jobs are skipped. These partial
+outcomes do not constitute final CI acceptance.
+
+Next branch: xl_readiness_20261116_08_afterburner_geometry, based on717dab804.
+Source audit establishes a concrete remaining afterburner emission mismatch:
+main/dropobject.cpp DropAfterburnerBlobs ignores its count argument and iterates
+CalcPos(..., bAfterburnerBlob=1). The native implementation still uses stock
+one-or-two size-based offsets. Source CalcPos gives high-resolution players
+without ASE two ship offsets; other afterburner emitters use one point displaced
+by twice the truncated half-span of model hitbox0 on local Z. Per-point segment
+admission and allocation failure are independent. Source sets RT_THRUSTER and
+optionally PF_WIGGLE after allocation; these identities and reverse animation
+must not be inferred from clip95 alone.
+
+Pinned source SHA256:
+
+- render/thrusterflames.cpp:72c8b86eac57575808bd56133eb495149aadd5ee8502afcde19e495c478a155f
+- main/dropobject.cpp:f1d186ac0fead42edb47d3f2b94daa449405cdc9aefa109862df0ca65b788907
+- models/polymodel.cpp:5e0b43cc1b12b5cc8531bf6f3fd81ecc10703b0ea5189ad4c7ce70dec3e24f17
+
+Do not substitute current mesh.low/high or a native polygon radius for source
+hitbox0. G3ModelMinMax/CModel::MinMax filters thruster/gunpoint submodels, and
+CPolyModel::Size combines submodel bounds and offsets. Current collision cache
+owns native ModelRenderGeometry, while OOF/ASE meshes are separate retained
+resources. Establish an explicit profile, qualify actual source emission and
+bounds using existing decoded owners, then integrate a thin native hook. Cover
+original player/weapon inputs, equal-size differing model extents, independent
+per-point admission failures, stock isolation, save/continuation and fresh
+state/SIM/FX replay. No runtime emission change has been made at this checkpoint.
+
+Emission source controls now pass720 profiles through extracted complete
+CalcPosOnShip and CalcPos methods (actual pinned source, storage adapters only).
+The new afterburner_emission.h helper preserves sequential fixed-point rounding,
+source two-player offsets, single-model span truncation and profile selection.
+It is not yet wired to gameplay. format-emission-source-01,
+build-emission-source-01 and test-emission-source-01 pass; both selected POG
+contracts pass in1.54 seconds. Tests include player/robot/weapon, hires/ASE
+selection, five model spans including odd lengths, four sizes and three bases.
+
+Further model-owner trace: rendering calls CModel::Size/CSubModel::Size, which
+filters glow/thruster/weapon/gunpoint parts, accumulates per-part fixed offsets
+and combines face-used bounds. Shift is disabled in the pinned source. OOF
+render offsets truncate each local offset before hierarchy accumulation; the
+existing mesh rendering bounds use floating-point accumulation and all vertices.
+ASE ReadNode forces TM_POS offsets to zero for the admitted non-billboard
+profile. Qualify retained render-body bounds against the actual sizing methods
+before selecting emission extent; do not silently substitute current mesh bounds.
+
+PR524 private readiness job133209456976 and percentage job133211495880 are now
+terminal success. Downloaded ci-pr524-readiness/results.json proves exact target
+717dab804ea76bf6572685b36180fd0bdd1b3769, original cohort9dad21bd and authorized
+resource revisiondc6565f6, all8/8 at120 unassisted frames. Artifact14212109767
+has digest f49a5aa31c2a13c911b7c8cf240a78fc8f287922f6168343bc1cc889c4ddd3b3.
+PR524's description records readiness and contract success while leaving all
+unfinished owners pending. No final CI acceptance or camera-addon subcheck
+coverage is inferred.
+
+Owned model bounds checkpoint: OOF/ASE compilation now retains a separate
+face-used, fixed-offset hitbox set, leaving existing render vertices and broad
+mesh bounds intact. The sizing helper reuses ModelHitboxBounds/RenderModelPart
+and follows source filtering, single-part exception, hierarchy accumulation and
+combined full-span storage. It is not yet a runtime emission consumer.
+
+format-owned-bounds-01, build-owned-bounds-01 and test-owned-bounds-01 pass all51
+standard Windows Debug contracts in45.88 seconds. New45 controls run the existing
+extracted CModel::Size/CSubModel::Size with high-resolution mode, independent
+thruster/glow/weapon/gunpoint exclusions and nested or multiple-root offsets.
+Only the unrelated radius cache is primed; the complete bounds path executes.
+
+The OOF oracle now uses integer source conversion offsets, compares retained
+bounds to actual converted face-used parts, and exercises face-unused vertices
+and fractional local offsets. format/build/test-owned-bounds-02 pass. Original
+Warp Shock model132 passes original-oof-bounds-01; all11 original OOF files pass
+original-oof-bounds-all-01 with per-file SHA256/exit receipts. Existing direct
+normal parity limitations are unchanged; these are bounds/conversion controls.
+Next qualify ASE conversion and actual retained model selection, then connect
+the emission hook and run ordinary cohort/native lifetime/continuation checks.
+
+ASE conversion qualification passes six decoded-storage fixtures through actual
+GetASEModelItems and CModel::Size, covering one/two/four parts, body/thruster/
+gunpoint selection and face-unused vertices. format/build/test-ase-bounds-01
+pass. Radius cache and face-normal output are separate owners; no ASE normal,
+material or original-file parser certification is inferred. Added reusable
+xl_hxm_reference --ase-bounds path for authentic models.
+
+The runtime emission hook now uses retained OOF/ASE hitbox0, with native POF
+bounds retained alongside the existing collision cache. OOF resources carry an
+explicit ASE identity. Native fireball.c has a four-line XL dispatch hook;
+stock execution stays on its existing branch. The current supported XL model
+profile enables high-resolution replacements. Native callers supply the ordinary
+non-wiggle afterburner profile; full RT_THRUSTER/PF_WIGGLE rendering identity and
+parent-child attachment are not newly qualified here.
+
+Lifetime integration now checks source-derived player positions/count for count
+arguments0/1/2/7, preserving all clock/allocation/reuse/corruption checks. The
+first runtime build fails because afterburner_emission.h was initially included
+inside the lifecycle test's anonymous namespace. Includes now live at file scope
+before packed engine headers, with explicit MSVC packing for the new shared
+emission structs. format-emission-runtime-02 and build-emission-runtime-02 pass.
+The C4805 warning in changing_light_test_records.h is pre-existing (also present
+in build-afterburner-strip-01/02), not introduced by this patch. Ordinary
+developer-OFF build-emission-ordinary-01 passes. Fresh native-emission-01 lifecycle
+and readiness-emission-windows-01 cohort runs are next; no pass is inferred yet.
+
+PR524's downloaded ci-pr524-host/results.json proves exact target717dab804,
+retail-xl-fast PASS and113 required Linux checks. coverage_complete remains false
+and camera_subchecks is not_run_missing_addon. Seven public workflows now pass;
+Linux shareware43840967362 is still running. Preserve those limits in acceptance.
+
+First native-emission-01 lifecycle run hits its unchanged60-second process
+watchdog after ordinary lifecycle/resource setup and before the afterburner
+control completes. The failure and logs remain preserved. In contrast,
+readiness-emission-windows-01 passes8/8 and source-hash verification.
+Source review identifies an unnecessary body/sphere cache query for the
+high-resolution non-ASE player path. Source CalcPos does not read hitbox data
+for that branch. The resource query now returns that profile before native
+geometry computation. This is a source-path correction; the timeout's cause
+is not yet proven, and the same native lifecycle owner must be rerun unchanged.
+
+After the source-path correction, build-emission-runtime-03 and native-emission-02
+PASS. The unchanged canonical lifecycle owner completes in50.02 seconds with its
+60-second process/120-second outer watchdogs unchanged. It verifies40 native
+blobs across count0/1/2/7 with source-derived player positions, preserved explicit
+lifetimes/frame periods, exhaustion, slot reuse and five corruption rejections.
+Fresh-process afterburner clocks, remaining lifetimes, selected frames and SIM RNG
+match after native save/restore. Lifecycle binary SHA256 is
+5cd080de393b85823809c9d0c87fe4dc85a3c9c4232a586af5ec7e4dbb11bc3e.
+The timeout receipt remains native-emission-01. Readiness8/8 was measured before
+the player-path correction and must be refreshed for the final candidate.
+
+Remaining before this child is publishable: actual weapon/native versus owned
+OOF/ASE model selection, equal-size differing extents, independent per-point
+segment/allocation failures, original strip consumption, final source contracts,
+ordinary cohort, Android compilation and fresh full rendered capture/replay.
+No device mutation is authorized by this checkpoint. PR524 private workflow is
+terminal success, attempt1; its description records113 Linux checks and missing
+camera/other skipped lanes. Public Linux shareware remains pending.
+
+Native-emission-03 and native-emission-04 fail at the unchanged60-second process
+watchdog. The latter's flushed marker reaches weapon39/model153, but not the
+allocation controls. Further markers now distinguish retained bounds, segment
+lookup and native emission; no timeout increase is proposed. The new native
+model cache retains decoded geometry and computes the sphere only when a sphere
+query needs it, avoiding unrelated sphere work for bounds-only emission queries.
+This change remains unaccepted until native and collision owners pass.
+
+Review of obj_allocate and xl_object_reclaim also corrects the one-free-slot test:
+the native allocator reclaims eligible fireballs near capacity, so the second
+point may replace the first. The control must preserve that reclamation behavior,
+not assert an impossible second-allocation failure. Full nonreclaimable-pool
+failure remains separately checked. Public PR524 shareware build/save integrity
+and replay admission pass; headed and native replay jobs remain running.
+
+Native-emission-05 isolates the stall to the first retained weapon-bound query.
+Native-emission-06 reaches model153 payload3866 decode entry but never returns.
+The new RenderModelPart boolean exposed a Windows packing mismatch: this inline
+header is included at normal packing in resource_validation.cpp and after the
+engine byte-packing headers through camera_weapon_test.h in lifecycle_test.cpp.
+Explicit pack(push,8)/pop in model_render_geometry.h makes the shared C++ layout
+consistent. No timeout or fixture changes accompany that fix.
+
+Build-emission-runtime-08 and native-emission-07 PASS; canonical lifecycle time
+51.76seconds with original60/120-second watchdogs. All six original weapon cases
+39/40/54/55/58/59 emit one source-qualified point, with three different extents
+for identical object sizes. Full nonreclaimable-pool rejection and one-free-slot
+native fireball reclamation pass. Forty player blobs and fresh-process clock,
+lifetime, frame and SIM RNG continuation pass. The failed03-06 receipts remain.
+Temporary decode/progress prints have now been removed; the final candidate must
+be rebuilt and rerun. The one-slot result is reclamation, not partial-allocation
+failure; the permanent receipt text now states that correctly.
+
+Outstanding child validation still includes independent per-point segment
+rejection, owned OOF/ASE selection, original strip consumption, final contracts,
+ordinary cohort, Android compilation, fresh rendered capture/replay and CI.
+PR524 public native save/replay is now green; headed replay remains pending.
+
+Native-emission-08 PASS52.49seconds after diagnostic removal and independent
+segment controls. Original outer faces exercise first-point reject/second-point
+success and vice versa with controlled emitters; geometry is unchanged. All51
+standard Windows Debug contracts PASS48.28seconds in test-emission-contracts-01.
+Original-ase-bounds-all-01 compares all77 original Pumo ASE models against
+extracted GetASEModelItems/CModel::Size. All77 pass; reference binary SHA256
+e2f228811d6836d045a73a6cf1c90c43cc3d2d2bb7a8c3dbadaaf85103ebad05.
+All77 input hashes match the fresh pinned Pumo archive extraction below.
+This qualifies decoded conversion/bounds, not parser/material/normal parity.
+
+Pumo-emission-owned-01 uses a fresh extraction of archive
+82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf,
+2672files/51directories/1677820774expandedbytes. The full native mod-data owner
+fails37.203seconds at Scoped texture decoded pixels exceed the resource bound,
+before installed-level afterburner checks. Inputs/runtime/archive stay unchanged.
+The128MiB guard and pog_file_limit files are byte-identical to parent717dab804;
+a parent-binary reproduction is not yet done, so this is not claimed as a verified
+parent-runtime failure. New checks now exercise actual mission publication/query
+before level admission; full-level failure remains visible and the cap unchanged.
+
+PR524 all eight public workflows are now terminal success, including public
+Linux shareware43840967362 headed and native replay integrity. Private43840991689
+attempt1 is terminal success with8/8readiness and113requiredLinuxchecks.
+Host artifact14214835642 digest
+45e99e9e10ffbda6651bae782e27eee0018cdd34d6c94f40fd8dba322dd6edcd.
+Its PR description is updated. Missing camera-addon subchecks and skipped Pumo,
+online/nightlydeveloperRelease/Android/JVM lanes remain explicit limits.
+
+Pumo-emission-owned-02 executes the new actual mission-publication ASE/OOF
+queries successfully in both original mission round trips, then fails38.079s
+at the same unchanged scoped-texture cap. It is recorded as FAIL, not a reduced
+full-level pass. All original inputs/runtime/archive remain unchanged.
+
+A clean isolated worktree at exact parent717dab804 was built with Debug,
+assertions, strict FP and developer tests using existing pinned dependencies.
+Build-parent524 passes. Parent binary SHA256
+7a8c494ce5e2367873dd6eb6ea9bfcdbb902cb03b41200cc56e023d7040e3e29.
+Pumo-parent524-01 reproduces the identical scoped-texture bound failure36.078s
+with the same input tree,120-second limit and unchanged input/runtime/archive
+hashes. The parent tree is clean. This establishes the Pumo full-level limitation
+predates this child; no safeguard, texture resolution or input set was relaxed.
+
+The speculative lazy-sphere cache change is removed following the proven packing
+diagnosis. Native collision-cache sphere timing remains unchanged; the existing
+cache only gains retained bounds for emission. Final runtime rebuild and owners
+must qualify this version. No new Pumo full-level claim is made.
+
+Pre-owner-correction final validation passed: native-emission-final-01 53.79s;
+afterburner-strip-emission-01 six blobs/allfiveframes/300pixelcomparisons/120ticks;
+readiness-emission-final-01 ordinarydeveloper-OFF8/8,47.156s, engine
+4e9eed30c5788f7c3c0196a8753d778a4e68b4f2e5f04a0cea8fab9b84f956a6;
+Android x86_64 D1/D2 compilation31s. Omega-emission-final-capture-01 and strict
+clean replay pass242frame/object,246world,3552SIM,436FX and exact trailer.
+Renderer ec0333c8d0e769bde287bff5b86b37edc13053b33e3c0a9387b991145bb21ae1,
+demo40af807a42a8da157e13b16335f72fb0debd0c98c063776dd933184c9072ab7b,
+comparison6b60ca8ba5a5e6c2a934209a465deb92a8023f2b6a6874677c5941ee08a9f251.
+Two positioning/oneinventoryassist precede recording; none during;66warmupframes.
+Both catalog checks pass99standaloneJSON/549support/315standalonePowerShell,
+428top-levelentries. These receipts precede the ownership correction below.
+
+Final review found afterburner_model consulted the global installed OOF registry
+instead of its retained State::owned_models. It now reads the retained owner,
+keeping previously installed resources independent of later mission selection.
+Pumo-emission-owner-01 proves original mission-installed bounds for models
+108/171/172, then repeats those queries after stock selection clears global OOF
+models. Both cycles pass. The full owner still FAILS38.891s at the separately
+parent-reproduced scoped-texture cap; allinputs/runtime/archive unchanged.
+No full Pumo level-admission pass is inferred from the partial controls.
+
+After the correction, build-emission-owner-01 passes;
+native-emission-final-02 PASS51.94s with unchangedwatchdogs and fresh-process
+continuation, and afterburner-strip-emission-02 PASS with the same original
+strip/allframes/pixelcounts. Ordinary readiness, Android and fresh rendered
+capture/replay are being refreshed for the corrected candidate. Source/reference
+algorithms did not change; all51sourcecontracts and77originalASE comparisons
+remain applicable. Preserve prior candidate receipts rather than relabeling them.
+
+Corrected-owner final receipts: readiness-emission-final-02 PASS8/8 ordinary
+developer-OFF original120frames,45.687s; binary
+28825f7f6f2cdfba45dd277a0f74daf1ac98cdf0e8ce74f4d04bbf59091c66e1,
+resultabb479636a23cf43a742091f8417d6e3ed2115742b716bcb7672546a630d14cb.
+Native lifecycle final02 binary
+6e32df5acf6d3078de06e878e4005b321c86dcef35ca7d50cf499db5eb1feb44.
+Android-emission-final-02 D1/D2 x86_64 native compilation PASS15s.
+
+Omega-emission-final-capture-02 and clean strict replay02 PASS, including full
+comparison242frame/object snapshots,246world records,3552SIM and436FX events,
+and exact trailer. Renderer
+52c57773aba870698ddbe4aaa2d7c38c1725c22370ff065f7bdfd036c5685a08;
+demo d2_wshock20_level6_20261116_031027.dximdemo SHA256
+5fbec813b3b457c921b37a13a7aad8b96246f4d7d43c772d5e321947145589b4;
+comparison498f203698ea2a8dd4e6bc52c914f703a7d8ffa3e68beaf43db83773294fd39d.
+Assists remain2position/1inventory before recording,0during,66warmupframes.
+All24 candidate-file hashes still matched readiness's source receipt before this
+documentation update. Original pinned XL checkout2576a98b is clean; allfour
+protected stashes are unchanged. ParentPR524 is open/unmerged at717dab804;
+origin matches the authorized fork. Source policy and bounds changes stay in
+XL_compat with exactlyfour added native hook lines. No device mutation occurred.
+
+This child qualifies afterburner emission positions/count for the supported
+ordinary high-resolution profile. Dedicated RT_THRUSTER identity, PF_WIGGLE,
+parent attachment, broader rod behavior, Pumo full-level admission, Android
+runtime qualification and wholecampaign playability remain open. Publication
+is a non-draft immediate-parent child of524; its own CI must still be inspected.
