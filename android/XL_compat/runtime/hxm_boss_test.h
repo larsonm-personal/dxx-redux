@@ -5,10 +5,16 @@ static void hxm_boss_binding_controls(const std::filesystem::path &root, bool ve
 {
 	std::ifstream file(root / "missions/hxmtest.hog", std::ios::binary);
 	const xl_compat::Bytes original{ std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
-	for (const int role : { 21, 1, 0, -1, -23, -27 }) {
+	for (const int role : { 21, 1, 2, 0, -1, -21, -22, -23, -24, -25, -27, -28 }) {
 		const bool introduce = role != 0;
-		const std::string mission = role == -27 ? "hxmneg27" : role == -23 ? "hxmneg23"
+		const std::string mission = role == -24 ? "hxmneg24" : role == -28 ? "hxmneg28"
+		                                                   : role == -25   ? "hxmneg25"
+		                                                   : role == -27   ? "hxmneg27"
+		                                                   : role == -23   ? "hxmneg23"
+		                                                   : role == -22   ? "hxmneg22"
+		                                                   : role == -21   ? "hxmneg21"
 		                                                   : role == -1    ? "hxmnend"
+		                                                   : role == 2     ? "hxmend2"
 		                                                   : role == 1     ? "hxmend1"
 		                                                   : introduce     ? "hxmboss"
 		                                                                   : "hxmplain";
@@ -54,22 +60,35 @@ static void hxm_boss_binding_controls(const std::filesystem::path &root, bool ve
 	char error[256]{};
 	char save[] = "hxm-boss.sav", description[] = "HXM boss death roll";
 	int objectives = 0;
-	for (const int ending_role : { 21, 1 }) {
-		require(load_base_mission(ending_role == 1 ? "hxmend1" : "hxmboss", error, sizeof(error)), error);
+	for (const int ending_role : { 21, 1, 2 }) {
+		require(load_base_mission(ending_role == 2 ? "hxmend2" : ending_role == 1 ? "hxmend1"
+		                                                                          : "hxmboss",
+		                          error, sizeof(error)),
+		        error);
 		require(!Robot_info[3].boss_flag, "Introduced HXM boss already has a base boss role");
 		StartNewGame(1);
 		require(Robot_info[3].boss_flag == ending_role && Objects[100].id == 3, "Introduced HXM boss definition was not installed");
 		roles_match();
+		require(xl_boss_spawn_default_type(ending_role, 0) ==
+		            xl_boss_spawn_default_type(ending_role < 21 ? ending_role + 21 : ending_role, 0),
+		        "Terminal boss chose a different source spawn profile");
+		GameTime64 += i2f(20);
+		Objects[100].ctype.ai_info.CLOAKED = 0;
+		xl_boss_ai_frame(100, 1);
+		require(Objects[100].ctype.ai_info.CLOAKED == 1, "Terminal boss did not enter the reference cloak lifecycle");
+		for (fix damage : { 0, 1, 3, 4, 1001, F1_0 })
+			require(d1_in_d2_ai_robot_blast_damage(&Objects[100], damage) == damage,
+			        "Terminal legacy/21 boss unexpectedly reduced radial damage");
 		// Newly loaded robots keep the source's one-second damage immunity
 		if (GameTime64 < F1_0) GameTime64 = F1_0;
-		if (ending_role == 1) {
+		if (ending_role < 21) {
 			for (const int kind : { LASER_ID, VULCAN_ID }) {
 				const auto health = Objects[100].shields;
 				const int shot = Laser_create_new(&ConsoleObject->orient.fvec, &Objects[100].pos, Objects[100].segnum, ConsoleObject - Objects, kind, 0);
-				require(shot >= 0, "Terminal profile-one weapon creation failed");
+				require(shot >= 0, "Terminal legacy-profile weapon creation failed");
 				auto hit = Objects[100].pos;
 				collide_robot_and_weapon(&Objects[100], &Objects[shot], &hit);
-				require(Objects[100].shields < health && !xl_boss_is_dying(100), "Terminal profile-one weapon vulnerability differs");
+				require(Objects[100].shields < health && !xl_boss_is_dying(100), "Terminal legacy-profile weapon vulnerability differs");
 				if (Objects[shot].type != OBJ_NONE) obj_delete(shot);
 			}
 		}
@@ -93,9 +112,14 @@ static void hxm_boss_binding_controls(const std::filesystem::path &root, bool ve
 	}
 
 	// Signed roles preserve the profile while clearing the reference bEndsLevel bit
-	for (int signed_role : (vertigo ? std::vector<int>{ -1, -23, -27 } : std::vector<int>{ -1, -23 })) {
-		require(load_base_mission(signed_role == -1 ? "hxmnend" : signed_role == -23 ? "hxmneg23"
-		                                                                             : "hxmneg27",
+	for (int signed_role : (vertigo ? std::vector<int>{ -1, -21, -22, -23, -24, -25, -27, -28 } : std::vector<int>{ -1, -21, -22, -23, -24, -25 })) {
+		require(load_base_mission(signed_role == -24 ? "hxmneg24" : signed_role == -28 ? "hxmneg28"
+		                                                        : signed_role == -25   ? "hxmneg25"
+		                                                        : signed_role == -1    ? "hxmnend"
+		                                                        : signed_role == -21   ? "hxmneg21"
+		                                                        : signed_role == -22   ? "hxmneg22"
+		                                                        : signed_role == -23   ? "hxmneg23"
+		                                                                               : "hxmneg27",
 		                          error, sizeof(error)),
 		        error);
 		StartNewGame(1);
@@ -126,12 +150,12 @@ static void hxm_boss_binding_controls(const std::filesystem::path &root, bool ve
 			require(shot >= 0, "Non-ending boss weapon control creation failed");
 			auto hit = Objects[100].pos;
 			collide_robot_and_weapon(&Objects[100], &Objects[shot], &hit);
-			require((((signed_role == -23 && kind == LASER_ID) || (signed_role == -27 && kind == VULCAN_ID)) ? Objects[100].shields == health : Objects[100].shields < health) && !xl_boss_is_dying(100),
+			require(((((signed_role == -23 || signed_role == -24) && kind == LASER_ID) || ((signed_role == -25 || signed_role == -27) && kind == VULCAN_ID)) ? Objects[100].shields == health : Objects[100].shields < health) && !xl_boss_is_dying(100),
 			        "Signed boss energy/kinetic vulnerability differs from reference profile");
 			if (Objects[shot].type != OBJ_NONE) obj_delete(shot);
 		}
 		for (fix damage : { 0, 1, 3, 4, 1001, F1_0 })
-			require(d1_in_d2_ai_robot_blast_damage(&Objects[100], damage) == (signed_role == -27 ? damage / 4 : damage),
+			require(d1_in_d2_ai_robot_blast_damage(&Objects[100], damage) == ((signed_role == -25 || signed_role == -27) ? damage / 4 : damage),
 			        "Signed boss radial resistance differs from pinned quarter-damage rule");
 		require(apply_damage_to_robot(&Objects[100], Objects[100].shields + F1_0, ConsoleObject - Objects) && xl_boss_is_dying(100),
 		        "Non-ending boss skipped lethal combat/death roll");

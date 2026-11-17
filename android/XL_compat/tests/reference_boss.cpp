@@ -311,9 +311,14 @@ int main(int argc, char **argv)
 			check(robot.nModel >= 0 && robot.nModel < 1000, "Invalid boss sample model");
 			gameData.modelData.polyModels[0][robot.nModel].radius = radius;
 		}
+		int raw_profile = 0;
 		int cases = 0, requested, attached, count, success, increment, expected_skip = 0, expected_type = 0;
 		std::int64_t elapsed, expected_elapsed;
-		while (file >> gameStates.app.nDifficultyLevel >> gameData.timeData.xFrame >> elapsed >> gameData.bossData.state.m_nGateInterval >> requested >> attached >> count >> available >> gameStates.app.bGameSuspended >> objects[0].info.nId >> objects[0].info.xSize) {
+		while (file >> raw_profile >> gameStates.app.nDifficultyLevel >> gameData.timeData.xFrame >> elapsed >> gameData.bossData.state.m_nGateInterval >> requested >> attached >> count >> available >> gameStates.app.bGameSuspended >> objects[0].info.nId >> objects[0].info.xSize) {
+			check(raw_profile == 21 || raw_profile == 2 || raw_profile == -21 || raw_profile == -22 || raw_profile == -24 || raw_profile == -25 || raw_profile == -28, "Unexpected sampled boss profile");
+			check(objects[0].info.nId >= 0 && objects[0].info.nId < types, "Invalid sampled boss robot ID");
+			// The source reader stores the absolute role separately from bEndsLevel
+			robots[objects[0].info.nId].bossFlag = raw_profile < 0 ? -raw_profile : raw_profile;
 			objects[0].info.nSegment = 0;
 			objects[0].info.nCreator = 0;
 			read_vector(file, objects[0].info.position.vPos);
@@ -379,7 +384,7 @@ int main(int argc, char **argv)
 			}
 			++cases;
 		}
-		check(file.eof() && cases == 50, "Boss reference cases omitted");
+		check(file.eof() && cases == 350, "Boss reference cases omitted");
 		check_reactor_objectives(std::filesystem::path(argv[1]).parent_path() / "boss-reactor-samples.txt");
 		std::cout << "Pinned XL boss spawning: " << cases << " selection/timing/caps/placement/failure/motion/RNG cases matched\n";
 		return 0;

@@ -136,7 +136,7 @@ static void hxm_dependency_controls(const std::filesystem::path &root)
 	write_bytes(path.string().c_str(), boss);
 	XlPreparedResources supported_boss("alarlof.rl2");
 	require(supported_boss.dependencies().robot_data[3].boss_flag == 21, "Supported custom boss profile was not staged");
-	boss[16 + 280] = uint8_t(-21);
+	boss[16 + 280] = uint8_t(-2);
 	write_bytes(path.string().c_str(), boss);
 	require(!xl_level_supported("alarlof.rl2", 0) && std::strstr(xl_level_rejection(), "boss profile"), "Unimplemented signed boss lifecycle admitted");
 	require(gameplay_definitions() == before && arena_state() == world, "HXM capability checks mutated live state");
