@@ -1261,6 +1261,7 @@ class XlPrivateTests(unittest.TestCase):
             "canyon.rl2": (27, 2139),
             "canyon2.rl2": (27, 2125),
             "watrwrks.rl2": (27, 3188),
+            "subzero.rl2": (27, 3566),
         }
         rows = [
             {
@@ -1276,11 +1277,28 @@ class XlPrivateTests(unittest.TestCase):
         ]
         reactor = next(row["inventory"] for row in rows if row["name"] == "control2.rl2")
         reactor.update(playable=False, reactor_authored_count=26, reactor_targets=[[0, 0] for _ in range(10)])
+        sentinel = next(row["inventory"] for row in rows if row["name"] == "subzero.rl2")
+        sentinel.update(
+            playable=False,
+            objects=[{} for _ in range(134)],
+            unsupported=[{"feature": "powerup_sentinel_controller", "record": index} for index in (4, 6)],
+        )
+        for index, segment in ((4, 2541), (6, 2530)):
+            sentinel["objects"][index] = {
+                "type": 7,
+                "id": 16,
+                "control": 255,
+                "movement": 255,
+                "render": 5,
+                "segment": segment,
+                "control_data": [],
+                "movement_data": [],
+                "render_data": [40, 0, 0],
+            }
         rows += [
             {"name": name, "inventory": {"status": "rejected", "reason": reason}}
             for name, reason in {
                 "control.rl2": "invalid packed light index 0",
-                "subzero.rl2": "offset 923615: unsupported movement layout 255 at object 4",
             }.items()
         ]
         for mode in (
@@ -1299,6 +1317,12 @@ class XlPrivateTests(unittest.TestCase):
             "reactor-playable",
             "reactor-empty-source",
             "reactor-source-failure",
+            "sentinel-playable",
+            "sentinel-short",
+            "sentinel-normalized",
+            "sentinel-payload",
+            "sentinel-unblocked",
+            "sentinel-empty-source",
         ):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
                 work = Path(temporary)
@@ -1312,6 +1336,17 @@ class XlPrivateTests(unittest.TestCase):
                 elif mode == "wrong-rejection":
                     current[-1]["inventory"]["reason"] = "unsupported level version 27"
                 reactor = next(row["inventory"] for row in current if row["name"] == "control2.rl2")
+                sentinel = next(row["inventory"] for row in current if row["name"] == "subzero.rl2")
+                if mode == "sentinel-playable":
+                    sentinel["playable"] = True
+                elif mode == "sentinel-short":
+                    sentinel["objects"].pop()
+                elif mode == "sentinel-normalized":
+                    sentinel["objects"][4]["movement"] = 0
+                elif mode == "sentinel-payload":
+                    sentinel["objects"][6]["control_data"] = [0]
+                elif mode == "sentinel-unblocked":
+                    sentinel["unsupported"].pop()
                 if mode == "reactor-old-rejection":
                     reactor.update(status="rejected", reason="invalid reactor trigger count")
                 elif mode == "reactor-raw":
@@ -1338,7 +1373,9 @@ class XlPrivateTests(unittest.TestCase):
                     segments = decoded[command[3]][1]
                     output = (
                         ""
-                        if mode == "empty-source" or (mode == "reactor-empty-source" and command[3] == "control2.rl2")
+                        if mode == "empty-source"
+                        or (mode == "reactor-empty-source" and command[3] == "control2.rl2")
+                        or (mode == "sentinel-empty-source" and command[3] == "subzero.rl2")
                         else f"1 levels, {segments} segments, {segments * 6} sides, 10000 comparisons; 5000 vertex brightness maxima"
                     )
                     return subprocess.CompletedProcess(command, 0, stdout=output)
@@ -1346,10 +1383,10 @@ class XlPrivateTests(unittest.TestCase):
                 with patch.object(runner.subprocess, "run", side_effect=execute):
                     if mode == "valid":
                         self.assertEqual(runner.modern_results(Path("inspect"), Path("reference"), work, work), (7, 3))
-                        self.assertEqual(len(calls), 5)
+                        self.assertEqual(len(calls), 6)
                         self.assertEqual(
                             {command[3] for command in calls[1:]},
-                            {"canyon.rl2", "canyon2.rl2", "watrwrks.rl2", "control2.rl2"},
+                            {"canyon.rl2", "canyon2.rl2", "watrwrks.rl2", "control2.rl2", "subzero.rl2"},
                         )
                     else:
                         with self.assertRaises((ValueError, subprocess.CalledProcessError)):

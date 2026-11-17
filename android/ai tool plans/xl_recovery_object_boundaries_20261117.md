@@ -48,3 +48,32 @@ boilpnt-inventory.json and boilpnt-source-reference.log. The modern-layout owner
 checks adjacent sentinel and ordinary records in versions 21/23/25/27, unchanged
 raw bytes, admission blocking and four malformed-shape controls per version.
 The execution ledger will bind publication and applicable CI to the exact head.
+# Modern CI witness follow-up
+
+The PR 562 trusted run 44024601658 preserved 8/8 original readiness and completed
+58/64 expanded readiness in 252.765 seconds. Its separate Linux asset owner failed
+at `modern-probes`: the owner still required the historical Subzero decoder rejection.
+This is an acceptance-contract omission in the inventory change, not a passing CI run.
+
+The separately pinned modern HOG has SHA-256
+`5cde12e3188fca12b655de3be424871f61bd464e9318b0da6bcdbc65b79551f3`.
+Its v27 Subzero member has SHA-256
+`77d0f94d30c903371cb0ba4e03015bc1692fcff09186c5e12afeba4784603041`.
+The actual pinned object reader consumes all 134 records from 922671 through 944379.
+Records 4 and 6 occupy [923535,923624) and [923717,923806), respectively; both
+retain type 7, ID 16, control/movement 255, render 5 and no control/movement payload.
+The inventory retains both explicit runtime blockers and remains unplayable.
+
+The modern CI assertion now requires the complete object count, both exact raw
+sentinel shapes and payloads, both blockers, and an additional pinned layout-reader
+comparison of all 3566 segments. Historical witness counts remain seven format
+witnesses and three v27 source witnesses; the added comparison is supplemental.
+Six negative cases cover accidental admission, truncation, normalization, invented
+payload, dropped blockers and omitted supplemental source comparison.
+
+Validation: 53 Python asset/receipt tests pass with CMake on PATH; the real modern
+HOG probe returns `(7, 3)` with the newly built reference executable. Initial runs
+without CMake on PATH and with an older statically linked reference executable
+failed and remain retained. Private evidence is under
+`E:/dxx-redux-builds/xl-recovery-20261117`, including `modern-object-audit/`,
+`modern-ci-tests-02.log`, `modern-ci-original-02.log` and the failed CI artifact.

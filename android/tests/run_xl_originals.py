@@ -367,10 +367,10 @@ def modern_results(inspect, reference, stage, work):
         "canyon.rl2": (27, 2139),
         "canyon2.rl2": (27, 2125),
         "watrwrks.rl2": (27, 3188),
+        "subzero.rl2": (27, 3566),
     }
     rejected = {
         "control.rl2": "invalid packed light index ",
-        "subzero.rl2": "offset 923615: unsupported movement layout 255 at object 4",
     }
     rows = result["levels"]
     if (
@@ -408,6 +408,40 @@ def modern_results(inspect, reference, stage, work):
                 )
             ):
                 raise ValueError("Original reactor authored/effective targets differ")
+        if name == "subzero.rl2":
+            objects = inventory.get("objects", [])
+            sentinels = [
+                index for index, obj in enumerate(objects) if obj.get("control") == 255 or obj.get("movement") == 255
+            ]
+            blockers = [
+                item.get("record")
+                for item in inventory.get("unsupported", [])
+                if item.get("feature") == "powerup_sentinel_controller"
+            ]
+            if (
+                inventory.get("playable") is not False
+                or len(objects) != 134
+                or sentinels != [4, 6]
+                or blockers != [4, 6]
+                or any(
+                    any(
+                        objects[index].get(key) != value
+                        for key, value in {
+                            "type": 7,
+                            "id": 16,
+                            "control": 255,
+                            "movement": 255,
+                            "render": 5,
+                            "segment": segment,
+                            "control_data": [],
+                            "movement_data": [],
+                            "render_data": [40, 0, 0],
+                        }.items()
+                    )
+                    for index, segment in ((4, 2541), (6, 2530))
+                )
+            ):
+                raise ValueError("Original sentinel inventory or runtime rejection differs")
         if version == 27:
             check = subprocess.run(
                 [str(reference), "--member", str(original), name],
