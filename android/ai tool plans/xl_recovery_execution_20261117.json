@@ -1,0 +1,3139 @@
+{
+    "schema": "xl-recovery-execution-v1",
+    "observed_utc": "2026-11-17T08:52:56.256386+00:00",
+    "initial_cmake": "b90b11d118837dcaa75b48b12f0af99cf1fee8ca",
+    "runtime_head": "879386551dc71d104662e06594f2bb1a17c2bda7",
+    "historical_stack": 471,
+    "target_deadline_utc": "2026-11-17T18:00:00Z",
+    "checks_are_not_compatibility": "A passing measurement workflow can report failing original cases. Pending and skipped checks are not passes. Retained historical failures are not erased by successor fixes.",
+    "inputs": {
+        "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+        "cohort_sha256": "3cae87cc870ba5594c7da1f55db2619e565645c91e8de5c1b86a8d2e4dfb1e05",
+        "selection_seed": "d2x-readiness-expanded-v1",
+        "resources": {
+            "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+            "files": [
+                {
+                    "path": "d2x.hog",
+                    "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                    "size": 4371791,
+                    "source": "descent_2_vertigo/d2x.hog"
+                },
+                {
+                    "path": "d2x-xl.hog",
+                    "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                    "size": 3815963,
+                    "source": "xl-resources/d2x-xl.hog"
+                }
+            ],
+            "profile": "authentic-vertigo-xl-v1",
+            "repository": "larsonm-personal/dxx-redux-test-assets"
+        }
+    },
+    "latest_candidate_measurement": {
+        "target_sha": "879386551dc71d104662e06594f2bb1a17c2bda7",
+        "summary": {
+            "complete": true,
+            "counts": {
+                "load_failed": 3,
+                "loaded_ticked": 61
+            },
+            "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+            "denominator": 64,
+            "passed": 61,
+            "readiness_percent": 95.3
+        },
+        "original_eight_summary": {
+            "complete": true,
+            "counts": {
+                "loaded_ticked": 8
+            },
+            "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+            "denominator": 8,
+            "passed": 8,
+            "readiness_percent": 100.0
+        },
+        "elapsed_seconds": 243.4,
+        "budget_seconds": 311.0,
+        "budget_exhausted": false
+    },
+    "case_failures": [
+        {
+            "archive": "missions/d2xxl_downloads/BoilingPoint-XL.zip",
+            "assisted_navigation": "not_run",
+            "frames": 0,
+            "id": "BoilingPoint-XL.zip/missions/boilpnt.mn2:2",
+            "level": 2,
+            "level_file": "control.rl2",
+            "mission": "boilpnt",
+            "outcome": "load_failed",
+            "seconds": 0.97,
+            "xl_active": null
+        },
+        {
+            "archive": "missions/d2xxl_downloads/BoilingPoint-XL.zip",
+            "assisted_navigation": "not_run",
+            "frames": 0,
+            "id": "BoilingPoint-XL.zip/missions/boilpnt.mn2:3",
+            "level": 3,
+            "level_file": "canyon.rl2",
+            "mission": "boilpnt",
+            "outcome": "load_failed",
+            "seconds": 1.272,
+            "xl_active": null
+        },
+        {
+            "archive": "missions/d2xxl_downloads/BoilingPoint-XL.zip",
+            "assisted_navigation": "not_run",
+            "frames": 0,
+            "id": "BoilingPoint-XL.zip/missions/boilpnt.mn2:5",
+            "level": 5,
+            "level_file": "boilpnt.rl2",
+            "mission": "boilpnt",
+            "outcome": "load_failed",
+            "seconds": 0.971,
+            "xl_active": null
+        }
+    ],
+    "publications": [
+        {
+            "number": 562,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/562",
+            "head": "fa04ad8568381cd5ac0427c93c4868767e175234",
+            "branch": "xl_recovery_20261117_01",
+            "parent_branch": "cmake",
+            "parent": "b90b11d118837dcaa75b48b12f0af99cf1fee8ca",
+            "merge_candidate": "6c48cd8b7272390d8c5e39d75be28f61f5bd8f23",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "checks": [
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580028/job/133850894500",
+                    "name": "Linux public headed replay parity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580028/job/133850894486",
+                    "name": "Linux public native save and replay integrity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580028/job/133850846956",
+                    "name": "replay-stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580054/job/133850415196",
+                    "name": "Save nightly progress (scheduled/manual only)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580054/job/133850313578",
+                    "name": "Check results",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580150/job/133848657561",
+                    "name": "Require public LAN pass",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580054/job/133842176370",
+                    "name": "Android tests / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580054/job/133842175923",
+                    "name": "Linux tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580054/job/133842176099",
+                    "name": "JVM tests / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580054/job/133842126386",
+                    "name": "execution-stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580054/job/133842129029",
+                    "name": "Nightly XL developer Release compile",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580054/job/133842127727",
+                    "name": "Verify pinned Pumo staging",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580150/job/133842002181",
+                    "name": "Two-player lobby to game / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580137/job/133841849120",
+                    "name": "Asset-free XL checks (ubuntu-24.04)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580137/job/133841849004",
+                    "name": "Asset-free XL checks (windows-2022)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580014/job/133841850632",
+                    "name": "Linux d2 build and tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580014/job/133841850624",
+                    "name": "Linux d1 build and tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580137/job/133841849131",
+                    "name": "XL developer source compile (no game assets)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580014/job/133841850584",
+                    "name": "Linux public ASan runtime",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580137/job/133841848999",
+                    "name": "XL developer source compile (Windows x86)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580389/job/133841839088",
+                    "name": "scripts and ci tests (ubuntu-24.04)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580389/job/133841839045",
+                    "name": "scripts and ci tests (windows-2022)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580137/job/133841850449",
+                    "name": "XL developer Release source compile (no game assets)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580054/job/133841819828",
+                    "name": "Select tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580028/job/133841795722",
+                    "name": "Public replay admission controls",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580028/job/133841795712",
+                    "name": "Linux public build and save integrity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580008/job/133841801757",
+                    "name": "server",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580389/job/133841752294",
+                    "name": "Workflow syntax",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580150/job/133841751808",
+                    "name": "Select public LAN smoke",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580389/job/133841752360",
+                    "name": "Automation catalogs",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580014/job/133841751046",
+                    "name": "CI policy and runner checks",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580054/job/133841751995",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580014/job/133841751450",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580389/job/133841752590",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580137/job/133841751623",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024579976/job/133841750652",
+                    "name": "Signal exact PR head for trusted XL qualification",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580008/job/133841750477",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580028/job/133841751281",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580054/job/133841753790",
+                    "name": "Inspect retained online receipt",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024580150/job/133841753883",
+                    "name": "Export public timing evidence",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "fail",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024601658",
+                    "name": "D2X readiness (expanded 64 load/tick)",
+                    "state": "FAILURE"
+                },
+                {
+                    "bucket": "fail",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024601658",
+                    "name": "XL asset smoke (private assets)",
+                    "state": "FAILURE"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024601658",
+                    "name": "D2X readiness (sampled load/tick)",
+                    "state": "SUCCESS"
+                }
+            ]
+        },
+        {
+            "number": 563,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/563",
+            "head": "1e5e3b7ca000b19247269af637e0d8085063ea0b",
+            "branch": "xl_recovery_20261117_02",
+            "parent_branch": "xl_recovery_20261117_01",
+            "parent": "fa04ad8568381cd5ac0427c93c4868767e175234",
+            "merge_candidate": "5168dc9b8ff142609a543995dab48b97091a4725",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "checks": [
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878907/job/133862205156",
+                    "name": "Linux public headed replay parity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878907/job/133862205114",
+                    "name": "Linux public native save and replay integrity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878907/job/133862098851",
+                    "name": "replay-stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879083/job/133861078427",
+                    "name": "Save nightly progress (scheduled/manual only)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879083/job/133860932744",
+                    "name": "Check results",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878946/job/133859021754",
+                    "name": "Require public LAN pass",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879083/job/133852848113",
+                    "name": "Android tests / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879083/job/133852848244",
+                    "name": "JVM tests / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879083/job/133852847722",
+                    "name": "Linux tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879083/job/133852781785",
+                    "name": "execution-stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879083/job/133852783361",
+                    "name": "Verify pinned Pumo staging",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879083/job/133852783683",
+                    "name": "Nightly XL developer Release compile",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878946/job/133852677713",
+                    "name": "Two-player lobby to game / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879042/job/133852593163",
+                    "name": "Linux public ASan runtime",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879042/job/133852593174",
+                    "name": "Linux d2 build and tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879042/job/133852593200",
+                    "name": "Linux d1 build and tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878892/job/133852581546",
+                    "name": "scripts and ci tests (ubuntu-24.04)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878892/job/133852581516",
+                    "name": "scripts and ci tests (windows-2022)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879083/job/133852568914",
+                    "name": "Select tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878907/job/133852554224",
+                    "name": "Linux public build and save integrity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878907/job/133852554165",
+                    "name": "Public replay admission controls",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878982/job/133852565033",
+                    "name": "XL developer source compile (Windows x86)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878982/job/133852564723",
+                    "name": "Asset-free XL checks (${{ matrix.os }})",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878982/job/133852564710",
+                    "name": "XL developer source compile (no game assets)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878982/job/133852565245",
+                    "name": "XL developer Release source compile (no game assets)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879005/job/133852551059",
+                    "name": "server",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878892/job/133852500320",
+                    "name": "Workflow syntax",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878892/job/133852500627",
+                    "name": "Automation catalogs",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879042/job/133852501274",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879042/job/133852501200",
+                    "name": "CI policy and runner checks",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878892/job/133852500511",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879083/job/133852502868",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878982/job/133852500703",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878944/job/133852500003",
+                    "name": "Signal exact PR head for trusted XL qualification",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879005/job/133852500512",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878946/job/133852500658",
+                    "name": "Select public LAN smoke",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878907/job/133852501076",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027879083/job/133852504597",
+                    "name": "Inspect retained online receipt",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027878946/job/133852502725",
+                    "name": "Export public timing evidence",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "fail",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027896737",
+                    "name": "D2X readiness (expanded 64 load/tick)",
+                    "state": "FAILURE"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027896737",
+                    "name": "D2X readiness (sampled load/tick)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027896737",
+                    "name": "XL asset smoke (private assets)",
+                    "state": "SUCCESS"
+                }
+            ]
+        },
+        {
+            "number": 564,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/564",
+            "head": "41a73ed11d55eeccbdc223cf5fea9546458c5eee",
+            "branch": "xl_recovery_20261117_03",
+            "parent_branch": "xl_recovery_20261117_02",
+            "parent": "1e5e3b7ca000b19247269af637e0d8085063ea0b",
+            "merge_candidate": "a15981b70096c50d0c38c15bc4e45d643611c75f",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "checks": [
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993153/job/133866070664",
+                    "name": "Save nightly progress (scheduled/manual only)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993130/job/133866047601",
+                    "name": "Linux public headed replay parity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993130/job/133866047727",
+                    "name": "Linux public native save and replay integrity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993130/job/133865924589",
+                    "name": "replay-stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993153/job/133865928170",
+                    "name": "Check results",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993156/job/133863600570",
+                    "name": "Require public LAN pass",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993153/job/133857390188",
+                    "name": "Android tests / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993153/job/133857390301",
+                    "name": "JVM tests / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993153/job/133857389975",
+                    "name": "Linux tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993153/job/133856482830",
+                    "name": "execution-stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993393/job/133856183654",
+                    "name": "XL developer source compile (Windows x86)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993393/job/133856183648",
+                    "name": "Asset-free XL checks (ubuntu-24.04)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993153/job/133856484260",
+                    "name": "Nightly XL developer Release compile",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993153/job/133856484758",
+                    "name": "Verify pinned Pumo staging",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993156/job/133856317837",
+                    "name": "Two-player lobby to game / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993393/job/133856183825",
+                    "name": "Asset-free XL checks (windows-2022)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993393/job/133856183550",
+                    "name": "XL developer source compile (no game assets)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993153/job/133856182629",
+                    "name": "Select tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993160/job/133856182257",
+                    "name": "Linux d1 build and tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993160/job/133856182340",
+                    "name": "Linux d2 build and tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993160/job/133856182223",
+                    "name": "Linux public ASan runtime",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993393/job/133856185795",
+                    "name": "XL developer Release source compile (no game assets)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993111/job/133856143027",
+                    "name": "scripts and ci tests (ubuntu-24.04)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993111/job/133856143035",
+                    "name": "scripts and ci tests (windows-2022)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993130/job/133856125181",
+                    "name": "Linux public build and save integrity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993130/job/133856125132",
+                    "name": "Public replay admission controls",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993111/job/133856081828",
+                    "name": "Automation catalogs",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993150/job/133856140186",
+                    "name": "server",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993150/job/133856081668",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993153/job/133856082519",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993160/job/133856081584",
+                    "name": "CI policy and runner checks",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993156/job/133856081449",
+                    "name": "Select public LAN smoke",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993111/job/133856081389",
+                    "name": "Workflow syntax",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993393/job/133856082067",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993112/job/133856080976",
+                    "name": "Signal exact PR head for trusted XL qualification",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993111/job/133856081353",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993160/job/133856082035",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993130/job/133856081233",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993153/job/133856085175",
+                    "name": "Inspect retained online receipt",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44028993156/job/133856084830",
+                    "name": "Export public timing evidence",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "fail",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44029016747",
+                    "name": "D2X readiness (expanded 64 load/tick)",
+                    "state": "FAILURE"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44029016747",
+                    "name": "D2X readiness (sampled load/tick)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44029016747",
+                    "name": "XL asset smoke (private assets)",
+                    "state": "SUCCESS"
+                }
+            ]
+        },
+        {
+            "number": 566,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/566",
+            "head": "bd57437b3d9ef6dc62f32c959bcd8101f01b314c",
+            "branch": "xl_recovery_20261117_04",
+            "parent_branch": "xl_recovery_20261117_03",
+            "parent": "41a73ed11d55eeccbdc223cf5fea9546458c5eee",
+            "merge_candidate": "af64259331a04f42eb242a6d17a259dad86781fd",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "checks": [
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201680/job/133896243459",
+                    "name": "Linux public headed replay parity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201680/job/133896243588",
+                    "name": "Linux public native save and replay integrity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201680/job/133896157188",
+                    "name": "replay-stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201814/job/133895825299",
+                    "name": "Save nightly progress (scheduled/manual only)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201814/job/133895636719",
+                    "name": "Check results",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201919/job/133893438176",
+                    "name": "Require public LAN pass",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201814/job/133886497445",
+                    "name": "Linux tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201814/job/133886497819",
+                    "name": "JVM tests / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201814/job/133886497813",
+                    "name": "Android tests / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201814/job/133886427311",
+                    "name": "execution-stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201814/job/133886429834",
+                    "name": "Verify pinned Pumo staging",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201814/job/133886430191",
+                    "name": "Nightly XL developer Release compile",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201919/job/133886367021",
+                    "name": "Two-player lobby to game / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201578/job/133886225628",
+                    "name": "scripts and ci tests (ubuntu-24.04)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201578/job/133886225569",
+                    "name": "scripts and ci tests (windows-2022)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201814/job/133886187049",
+                    "name": "Select tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201450/job/133886185580",
+                    "name": "Asset-free XL checks (windows-2022)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201450/job/133886185594",
+                    "name": "Asset-free XL checks (ubuntu-24.04)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201450/job/133886185585",
+                    "name": "XL developer source compile (Windows x86)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "fail",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201450/job/133886185592",
+                    "name": "XL developer source compile (no game assets)",
+                    "state": "FAILURE"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201774/job/133886178415",
+                    "name": "Linux d1 build and tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201774/job/133886178286",
+                    "name": "Linux public ASan runtime",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201680/job/133886168950",
+                    "name": "Public replay admission controls",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201774/job/133886178297",
+                    "name": "Linux d2 build and tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201450/job/133886188081",
+                    "name": "XL developer Release source compile (no game assets)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201680/job/133886168754",
+                    "name": "Linux public build and save integrity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201401/job/133886166087",
+                    "name": "server",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201578/job/133886115741",
+                    "name": "Workflow syntax",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201578/job/133886115840",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201578/job/133886115738",
+                    "name": "Automation catalogs",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201919/job/133886116346",
+                    "name": "Select public LAN smoke",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201774/job/133886116143",
+                    "name": "CI policy and runner checks",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201450/job/133886115026",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201275/job/133886114878",
+                    "name": "Signal exact PR head for trusted XL qualification",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201774/job/133886116497",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201680/job/133886115612",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201814/job/133886117399",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201401/job/133886115000",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201814/job/133886119339",
+                    "name": "Inspect retained online receipt",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038201919/job/133886118338",
+                    "name": "Export public timing evidence",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "fail",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038224191",
+                    "name": "D2X readiness (expanded 64 load/tick)",
+                    "state": "ERROR"
+                },
+                {
+                    "bucket": "fail",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038224191",
+                    "name": "XL asset smoke (private assets)",
+                    "state": "FAILURE"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038224191",
+                    "name": "D2X readiness (sampled load/tick)",
+                    "state": "SUCCESS"
+                }
+            ]
+        },
+        {
+            "number": 567,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/567",
+            "head": "bf5806e578adbe1b2a9a40abdcf5428cf9e96f57",
+            "branch": "xl_recovery_20261117_05",
+            "parent_branch": "xl_recovery_20261117_04",
+            "parent": "bd57437b3d9ef6dc62f32c959bcd8101f01b314c",
+            "merge_candidate": "69f02f710038eff872976899cef3cc9c4ae9286c",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "checks": [
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252407/job/133904384016",
+                    "name": "Linux public native save and replay integrity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252407/job/133904384070",
+                    "name": "Linux public headed replay parity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252407/job/133904318348",
+                    "name": "replay-stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252376/job/133902553959",
+                    "name": "Save nightly progress (scheduled/manual only)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252376/job/133902376648",
+                    "name": "Check results",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252361/job/133900306764",
+                    "name": "Require public LAN pass",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252376/job/133893331551",
+                    "name": "JVM tests / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252376/job/133893331144",
+                    "name": "Linux tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252376/job/133893331576",
+                    "name": "Android tests / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252376/job/133893219476",
+                    "name": "execution-stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252376/job/133893221459",
+                    "name": "Nightly XL developer Release compile",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252376/job/133893220864",
+                    "name": "Verify pinned Pumo staging",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252361/job/133893131442",
+                    "name": "Two-player lobby to game / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252376/job/133892925769",
+                    "name": "Select tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252449/job/133892911614",
+                    "name": "Linux d1 build and tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252449/job/133892911587",
+                    "name": "Linux d2 build and tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252449/job/133892911605",
+                    "name": "Linux public ASan runtime",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252316/job/133892910700",
+                    "name": "scripts and ci tests (${{ matrix.os }})",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252452/job/133892876310",
+                    "name": "Asset-free XL checks (ubuntu-24.04)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252452/job/133892876091",
+                    "name": "XL developer source compile (Windows x86)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252452/job/133892876146",
+                    "name": "Asset-free XL checks (windows-2022)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252452/job/133892876139",
+                    "name": "XL developer source compile (no game assets)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252452/job/133892878009",
+                    "name": "XL developer Release source compile (no game assets)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252432/job/133892873381",
+                    "name": "server",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252407/job/133892850012",
+                    "name": "Linux public build and save integrity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252407/job/133892850053",
+                    "name": "Public replay admission controls",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252432/job/133892808190",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252361/job/133892808297",
+                    "name": "Select public LAN smoke",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252316/job/133892808037",
+                    "name": "Automation catalogs",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252316/job/133892808131",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252376/job/133892809366",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252449/job/133892808653",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252449/job/133892808348",
+                    "name": "CI policy and runner checks",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252452/job/133892808572",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252402/job/133892807569",
+                    "name": "Signal exact PR head for trusted XL qualification",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252316/job/133892807769",
+                    "name": "Workflow syntax",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252407/job/133892808326",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252376/job/133892810977",
+                    "name": "Inspect retained online receipt",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040252361/job/133892810227",
+                    "name": "Export public timing evidence",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "fail",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040272340",
+                    "name": "D2X readiness (expanded 64 load/tick)",
+                    "state": "ERROR"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040272340",
+                    "name": "D2X readiness (sampled load/tick)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040272340",
+                    "name": "XL asset smoke (private assets)",
+                    "state": "SUCCESS"
+                }
+            ]
+        },
+        {
+            "number": 568,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/568",
+            "head": "126c84606eb5895c9e50deb4376905df4cf8d441",
+            "branch": "xl_recovery_20261117_06",
+            "parent_branch": "xl_recovery_20261117_05",
+            "parent": "bf5806e578adbe1b2a9a40abdcf5428cf9e96f57",
+            "merge_candidate": "b39d9943b47655765a15a1a111b542f766a5efe5",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "checks": [
+                {
+                    "bucket": "pending",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883458/job/133916354014",
+                    "name": "Linux public headed replay parity",
+                    "state": "IN_PROGRESS"
+                },
+                {
+                    "bucket": "pending",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883458/job/133916353943",
+                    "name": "Linux public native save and replay integrity",
+                    "state": "IN_PROGRESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883458/job/133916239617",
+                    "name": "replay-stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883477/job/133914940255",
+                    "name": "Save nightly progress (scheduled/manual only)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883477/job/133914810125",
+                    "name": "Check results",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883483/job/133911787558",
+                    "name": "Require public LAN pass",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883477/job/133905161922",
+                    "name": "JVM tests / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883477/job/133905161804",
+                    "name": "Android tests / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883477/job/133905161138",
+                    "name": "Linux tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883483/job/133905114664",
+                    "name": "Two-player lobby to game / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883477/job/133905040809",
+                    "name": "execution-stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883477/job/133905042297",
+                    "name": "Nightly XL developer Release compile",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883477/job/133905043428",
+                    "name": "Verify pinned Pumo staging",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883648/job/133904846688",
+                    "name": "Asset-free XL checks (ubuntu-24.04)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883403/job/133904874025",
+                    "name": "scripts and ci tests (${{ matrix.os }})",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883648/job/133904847125",
+                    "name": "XL developer source compile (Windows x86)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883648/job/133904846657",
+                    "name": "XL developer source compile (no game assets)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883648/job/133904846709",
+                    "name": "Asset-free XL checks (windows-2022)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883477/job/133904838775",
+                    "name": "Select tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883648/job/133904848524",
+                    "name": "XL developer Release source compile (no game assets)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883458/job/133904797955",
+                    "name": "Public replay admission controls",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883458/job/133904798003",
+                    "name": "Linux public build and save integrity",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883450/job/133904795890",
+                    "name": "Linux d2 build and tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883450/job/133904795935",
+                    "name": "Linux d1 build and tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883450/job/133904795809",
+                    "name": "Linux public ASan runtime",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883719/job/133904788792",
+                    "name": "server",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883403/job/133904717416",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883648/job/133904719145",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883477/job/133904718774",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883458/job/133904717258",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883483/job/133904717385",
+                    "name": "Select public LAN smoke",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883533/job/133904716724",
+                    "name": "Signal exact PR head for trusted XL qualification",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883450/job/133904716722",
+                    "name": "CI policy and runner checks",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883403/job/133904717457",
+                    "name": "Workflow syntax",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883719/job/133904717850",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883450/job/133904716989",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883403/job/133904717225",
+                    "name": "Automation catalogs",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883477/job/133904720464",
+                    "name": "Inspect retained online receipt",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043883483/job/133904719091",
+                    "name": "Export public timing evidence",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "fail",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043915482",
+                    "name": "D2X readiness (expanded 64 load/tick)",
+                    "state": "FAILURE"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043915482",
+                    "name": "D2X readiness (sampled load/tick)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043915482",
+                    "name": "XL asset smoke (private assets)",
+                    "state": "SUCCESS"
+                }
+            ]
+        },
+        {
+            "number": 569,
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/569",
+            "head": "879386551dc71d104662e06594f2bb1a17c2bda7",
+            "branch": "xl_recovery_20261117_07",
+            "parent_branch": "xl_recovery_20261117_06",
+            "parent": "126c84606eb5895c9e50deb4376905df4cf8d441",
+            "merge_candidate": "1613e2f4d07ffbda81a41184ea5e452b360f2160",
+            "state": "open",
+            "draft": false,
+            "merged": false,
+            "checks": [
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162944/job/133923265107",
+                    "name": "Require public LAN pass",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pending",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162973/job/133916199055",
+                    "name": "Android tests / Run selected tests",
+                    "state": "IN_PROGRESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162973/job/133916199010",
+                    "name": "JVM tests / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162973/job/133916198658",
+                    "name": "Linux tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162973/job/133916120247",
+                    "name": "execution-stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162973/job/133916121998",
+                    "name": "Nightly XL developer Release compile",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162973/job/133916123297",
+                    "name": "Verify pinned Pumo staging",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162944/job/133915919563",
+                    "name": "Two-player lobby to game / Run selected tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162862/job/133915734819",
+                    "name": "scripts and ci tests (windows-2022)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162862/job/133915734808",
+                    "name": "scripts and ci tests (ubuntu-24.04)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162973/job/133915715988",
+                    "name": "Select tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162788/job/133915705677",
+                    "name": "XL developer source compile (Windows x86)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162788/job/133915705755",
+                    "name": "Asset-free XL checks (windows-2022)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162788/job/133915705693",
+                    "name": "XL developer source compile (no game assets)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162788/job/133915705688",
+                    "name": "Asset-free XL checks (ubuntu-24.04)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pending",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162970/job/133915679946",
+                    "name": "Linux public ASan runtime",
+                    "state": "IN_PROGRESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162970/job/133915680048",
+                    "name": "Linux d1 build and tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162788/job/133915708583",
+                    "name": "XL developer Release source compile (no game assets)",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047163278/job/133915704998",
+                    "name": "server",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162970/job/133915679922",
+                    "name": "Linux d2 build and tests",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162762/job/133915673034",
+                    "name": "Public replay admission controls",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pending",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162762/job/133915673019",
+                    "name": "Linux public build and save integrity",
+                    "state": "IN_PROGRESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162862/job/133915615325",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162970/job/133915615546",
+                    "name": "CI policy and runner checks",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047163278/job/133915616039",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162862/job/133915614840",
+                    "name": "Automation catalogs",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162862/job/133915615236",
+                    "name": "Workflow syntax",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162788/job/133915615254",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162970/job/133915616223",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162821/job/133915614609",
+                    "name": "Signal exact PR head for trusted XL qualification",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162944/job/133915615136",
+                    "name": "Select public LAN smoke",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162762/job/133915615311",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162973/job/133915617105",
+                    "name": "stack / check",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162973/job/133915619256",
+                    "name": "Inspect retained online receipt",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "skipping",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047162944/job/133915616996",
+                    "name": "Export public timing evidence",
+                    "state": "SKIPPED"
+                },
+                {
+                    "bucket": "fail",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047189499",
+                    "name": "D2X readiness (expanded 64 load/tick)",
+                    "state": "FAILURE"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047189499",
+                    "name": "D2X readiness (sampled load/tick)",
+                    "state": "SUCCESS"
+                },
+                {
+                    "bucket": "pass",
+                    "link": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047189499",
+                    "name": "XL asset smoke (private assets)",
+                    "state": "SUCCESS"
+                }
+            ]
+        }
+    ],
+    "trusted_runs": [
+        {
+            "controller_run": {
+                "id": 44024601658,
+                "html_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024601658",
+                "name": "XL asset smoke for PR head fa04ad8568381cd5ac0427c93c4868767e175234",
+                "event": "workflow_run",
+                "head_sha": "b90b11d118837dcaa75b48b12f0af99cf1fee8ca",
+                "run_attempt": 1,
+                "status": "completed",
+                "conclusion": "failure",
+                "created_at": "2026-11-17T05:30:37Z",
+                "run_started_at": "2026-11-17T05:30:37Z",
+                "updated_at": "2026-11-17T05:51:18Z"
+            },
+            "run_id": 44024601658,
+            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44024601658",
+            "artifacts": [
+                {
+                    "id": 14303626403,
+                    "name": "nightly-results-host",
+                    "sha256": "sha256:6b7c0812a9b8c048248e7f4d4363ac3fd7985b1da98bc7c0a0931d275c5b831a",
+                    "target_sha": "fa04ad8568381cd5ac0427c93c4868767e175234",
+                    "owners": [
+                        {
+                            "id": "host-profile:retail-xl-fast",
+                            "status": "FAIL",
+                            "reason": "tests: FAIL",
+                            "elapsed_seconds": 941.247,
+                            "xl_checks": null
+                        }
+                    ]
+                },
+                {
+                    "id": 14302517995,
+                    "name": "xl-readiness",
+                    "sha256": "sha256:c6663fabc47dd6bc0aba4797c924e051a318c7217264c8a4ad26e40e3526c181",
+                    "target_sha": "fa04ad8568381cd5ac0427c93c4868767e175234",
+                    "summary": {
+                        "complete": true,
+                        "counts": {
+                            "loaded_ticked": 8
+                        },
+                        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                        "denominator": 8,
+                        "passed": 8,
+                        "readiness_percent": 100.0
+                    },
+                    "probe_seconds": null,
+                    "probe_budget_seconds": null,
+                    "budget_exhausted": null
+                },
+                {
+                    "id": 14302608340,
+                    "name": "xl-readiness-expanded",
+                    "sha256": "sha256:f2ba92e63340edde8d61774f6e6b697f7bb8f12bc2ffd6b22153a3ac0131dcdc",
+                    "target_sha": "fa04ad8568381cd5ac0427c93c4868767e175234",
+                    "summary": {
+                        "complete": true,
+                        "counts": {
+                            "load_failed": 6,
+                            "loaded_ticked": 58
+                        },
+                        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                        "denominator": 64,
+                        "passed": 58,
+                        "readiness_percent": 90.6
+                    },
+                    "probe_seconds": 252.765,
+                    "probe_budget_seconds": 329.0,
+                    "budget_exhausted": false
+                }
+            ]
+        },
+        {
+            "controller_run": {
+                "id": 44027896737,
+                "html_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027896737",
+                "name": "XL asset smoke for PR head 1e5e3b7ca000b19247269af637e0d8085063ea0b",
+                "event": "workflow_run",
+                "head_sha": "b90b11d118837dcaa75b48b12f0af99cf1fee8ca",
+                "run_attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "created_at": "2026-11-17T05:59:20Z",
+                "run_started_at": "2026-11-17T05:59:20Z",
+                "updated_at": "2026-11-17T06:17:47Z"
+            },
+            "run_id": 44027896737,
+            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44027896737",
+            "artifacts": [
+                {
+                    "id": 14304249298,
+                    "name": "nightly-results-host",
+                    "sha256": "sha256:c43b6007491d6e43f62b8c29f408e86f65dd1264c8a2d599123785642cc100c8",
+                    "target_sha": "1e5e3b7ca000b19247269af637e0d8085063ea0b",
+                    "owners": [
+                        {
+                            "id": "host-profile:retail-xl-fast",
+                            "status": "PASS",
+                            "reason": "tests: PASS",
+                            "elapsed_seconds": 825.174,
+                            "xl_checks": {
+                                "required_passed": 113,
+                                "format_witnesses": 16,
+                                "modern_source_levels": 3,
+                                "required_tests": [
+                                    "xl_animation_phase_contract",
+                                    "xl_ase_contract",
+                                    "xl_audio_mixer_reference",
+                                    "xl_audio_voice_contract",
+                                    "xl_blocked_segments",
+                                    "xl_boss_groups",
+                                    "xl_boss_spawning",
+                                    "xl_boss_transport",
+                                    "xl_changing_lights",
+                                    "xl_changing_lights_invalid_rows",
+                                    "xl_cloaks",
+                                    "xl_close_doors",
+                                    "xl_companion_lighting_contract",
+                                    "xl_countdown_runtime",
+                                    "xl_disarm_runtime",
+                                    "xl_doorways",
+                                    "xl_dragon_companion_ownership",
+                                    "xl_dragon_lighting_decode",
+                                    "xl_dragon_wave_decode",
+                                    "xl_dynamic_color_reference",
+                                    "xl_effect_decode_reference",
+                                    "xl_effect_inspection_gate",
+                                    "xl_effect_payloads",
+                                    "xl_equipment_generators",
+                                    "xl_extended_hog",
+                                    "xl_face_point_reference",
+                                    "xl_fixed_cross_reference",
+                                    "xl_flickers",
+                                    "xl_flickers_invalid_rows",
+                                    "xl_fog_gpu",
+                                    "xl_fog_gpu_copy16_fallback",
+                                    "xl_fog_gpu_direct",
+                                    "xl_fog_reference",
+                                    "xl_format34_native",
+                                    "xl_generator_assignment_reference",
+                                    "xl_generator_assignment_runtime",
+                                    "xl_geometry_attenuation_reference",
+                                    "xl_hog_contract",
+                                    "xl_hog_reference",
+                                    "xl_hxm_geometry_reference",
+                                    "xl_hxm_native",
+                                    "xl_inspect_stream_contract",
+                                    "xl_inventory_contract",
+                                    "xl_keyed_closed_walls",
+                                    "xl_konflict_features",
+                                    "xl_lava_volumes",
+                                    "xl_legacy_repair",
+                                    "xl_level_messages",
+                                    "xl_level_text_contract",
+                                    "xl_level_text_reference",
+                                    "xl_light_index_reference",
+                                    "xl_lighting_calculation",
+                                    "xl_lighting_reference_arithmetic",
+                                    "xl_lightning_source",
+                                    "xl_magnitude_reference",
+                                    "xl_mission_labels",
+                                    "xl_modern_equipment_25",
+                                    "xl_modern_equipment_27",
+                                    "xl_modern_generators_25",
+                                    "xl_modern_generators_27",
+                                    "xl_modern_layout_contract",
+                                    "xl_modern_layout_reference",
+                                    "xl_modern_properties",
+                                    "xl_modern_runtime_layouts",
+                                    "xl_modern_water",
+                                    "xl_named_audio_runtime",
+                                    "xl_named_audio_source",
+                                    "xl_nearest_lights_reference",
+                                    "xl_neptune_color_precedence",
+                                    "xl_neptune_inventory",
+                                    "xl_neptune_native_features",
+                                    "xl_neptune_native_layout",
+                                    "xl_object_capacity",
+                                    "xl_object_chain_delays",
+                                    "xl_object_events",
+                                    "xl_object_trigger_decode_reference",
+                                    "xl_observatory_descriptor",
+                                    "xl_observatory_inventory",
+                                    "xl_oof_contract",
+                                    "xl_pilot_archive",
+                                    "xl_player_resource_reference",
+                                    "xl_player_resources",
+                                    "xl_pog_contract",
+                                    "xl_pog_gpu",
+                                    "xl_pog_native",
+                                    "xl_pog_reference",
+                                    "xl_preview_lifecycle",
+                                    "xl_projectile_history_contract",
+                                    "xl_projectile_reference",
+                                    "xl_projectiles",
+                                    "xl_projection_reference",
+                                    "xl_repair_centers",
+                                    "xl_scoped_texture_contract",
+                                    "xl_segment_flags_reference",
+                                    "xl_side_center_reference",
+                                    "xl_spawn_points",
+                                    "xl_speed_boosts",
+                                    "xl_static_pixels_contract",
+                                    "xl_stock_loader_probe",
+                                    "xl_texture_actions",
+                                    "xl_trigger_capacity",
+                                    "xl_trigger_capacity_reference",
+                                    "xl_trigger_flag_reference",
+                                    "xl_trigger_flags",
+                                    "xl_wall_capacity_reference",
+                                    "xl_wall_teleports",
+                                    "xl_wall_trigger_chains",
+                                    "xl_wall_trigger_scheduler",
+                                    "xl_water_actors",
+                                    "xl_water_arena",
+                                    "xl_wave_channels_reference",
+                                    "xl_wave_contract",
+                                    "xl_wide_walls"
+                                ],
+                                "camera_subchecks": "executed",
+                                "navigation_smoke_passed": 1,
+                                "navigation_anchors_passed": 4,
+                                "navigation_smoke_milliseconds": 4207
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 14303938091,
+                    "name": "xl-readiness",
+                    "sha256": "sha256:64c4a079b2fd627c7e202a3a24de8db55044c1eff3a227ff1ad94cc1be5ad5c5",
+                    "target_sha": "1e5e3b7ca000b19247269af637e0d8085063ea0b",
+                    "summary": {
+                        "complete": true,
+                        "counts": {
+                            "loaded_ticked": 8
+                        },
+                        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                        "denominator": 8,
+                        "passed": 8,
+                        "readiness_percent": 100.0
+                    },
+                    "probe_seconds": null,
+                    "probe_budget_seconds": null,
+                    "budget_exhausted": null
+                },
+                {
+                    "id": 14304227719,
+                    "name": "xl-readiness-expanded",
+                    "sha256": "sha256:b4a6163bb124ae76432d6f4a12e185fec96da71058d213dba96ee1451146adba",
+                    "target_sha": "1e5e3b7ca000b19247269af637e0d8085063ea0b",
+                    "summary": {
+                        "complete": true,
+                        "counts": {
+                            "load_failed": 6,
+                            "loaded_ticked": 58
+                        },
+                        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                        "denominator": 64,
+                        "passed": 58,
+                        "readiness_percent": 90.6
+                    },
+                    "probe_seconds": 230.658,
+                    "probe_budget_seconds": 360.0,
+                    "budget_exhausted": false
+                }
+            ]
+        },
+        {
+            "controller_run": {
+                "id": 44029016747,
+                "html_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44029016747",
+                "name": "XL asset smoke for PR head 41a73ed11d55eeccbdc223cf5fea9546458c5eee",
+                "event": "workflow_run",
+                "head_sha": "b90b11d118837dcaa75b48b12f0af99cf1fee8ca",
+                "run_attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "created_at": "2026-11-17T06:08:33Z",
+                "run_started_at": "2026-11-17T06:08:33Z",
+                "updated_at": "2026-11-17T06:27:46Z"
+            },
+            "run_id": 44029016747,
+            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44029016747",
+            "artifacts": [
+                {
+                    "id": 14305286849,
+                    "name": "nightly-results-host",
+                    "sha256": "sha256:41543f2c8fb2daa7463cfa2156a4759ccef378679ecebafc626c6c1df18cf9af",
+                    "target_sha": "41a73ed11d55eeccbdc223cf5fea9546458c5eee",
+                    "owners": [
+                        {
+                            "id": "host-profile:retail-xl-fast",
+                            "status": "PASS",
+                            "reason": "tests: PASS",
+                            "elapsed_seconds": 730.571,
+                            "xl_checks": {
+                                "required_passed": 113,
+                                "format_witnesses": 16,
+                                "modern_source_levels": 3,
+                                "required_tests": [
+                                    "xl_animation_phase_contract",
+                                    "xl_ase_contract",
+                                    "xl_audio_mixer_reference",
+                                    "xl_audio_voice_contract",
+                                    "xl_blocked_segments",
+                                    "xl_boss_groups",
+                                    "xl_boss_spawning",
+                                    "xl_boss_transport",
+                                    "xl_changing_lights",
+                                    "xl_changing_lights_invalid_rows",
+                                    "xl_cloaks",
+                                    "xl_close_doors",
+                                    "xl_companion_lighting_contract",
+                                    "xl_countdown_runtime",
+                                    "xl_disarm_runtime",
+                                    "xl_doorways",
+                                    "xl_dragon_companion_ownership",
+                                    "xl_dragon_lighting_decode",
+                                    "xl_dragon_wave_decode",
+                                    "xl_dynamic_color_reference",
+                                    "xl_effect_decode_reference",
+                                    "xl_effect_inspection_gate",
+                                    "xl_effect_payloads",
+                                    "xl_equipment_generators",
+                                    "xl_extended_hog",
+                                    "xl_face_point_reference",
+                                    "xl_fixed_cross_reference",
+                                    "xl_flickers",
+                                    "xl_flickers_invalid_rows",
+                                    "xl_fog_gpu",
+                                    "xl_fog_gpu_copy16_fallback",
+                                    "xl_fog_gpu_direct",
+                                    "xl_fog_reference",
+                                    "xl_format34_native",
+                                    "xl_generator_assignment_reference",
+                                    "xl_generator_assignment_runtime",
+                                    "xl_geometry_attenuation_reference",
+                                    "xl_hog_contract",
+                                    "xl_hog_reference",
+                                    "xl_hxm_geometry_reference",
+                                    "xl_hxm_native",
+                                    "xl_inspect_stream_contract",
+                                    "xl_inventory_contract",
+                                    "xl_keyed_closed_walls",
+                                    "xl_konflict_features",
+                                    "xl_lava_volumes",
+                                    "xl_legacy_repair",
+                                    "xl_level_messages",
+                                    "xl_level_text_contract",
+                                    "xl_level_text_reference",
+                                    "xl_light_index_reference",
+                                    "xl_lighting_calculation",
+                                    "xl_lighting_reference_arithmetic",
+                                    "xl_lightning_source",
+                                    "xl_magnitude_reference",
+                                    "xl_mission_labels",
+                                    "xl_modern_equipment_25",
+                                    "xl_modern_equipment_27",
+                                    "xl_modern_generators_25",
+                                    "xl_modern_generators_27",
+                                    "xl_modern_layout_contract",
+                                    "xl_modern_layout_reference",
+                                    "xl_modern_properties",
+                                    "xl_modern_runtime_layouts",
+                                    "xl_modern_water",
+                                    "xl_named_audio_runtime",
+                                    "xl_named_audio_source",
+                                    "xl_nearest_lights_reference",
+                                    "xl_neptune_color_precedence",
+                                    "xl_neptune_inventory",
+                                    "xl_neptune_native_features",
+                                    "xl_neptune_native_layout",
+                                    "xl_object_capacity",
+                                    "xl_object_chain_delays",
+                                    "xl_object_events",
+                                    "xl_object_trigger_decode_reference",
+                                    "xl_observatory_descriptor",
+                                    "xl_observatory_inventory",
+                                    "xl_oof_contract",
+                                    "xl_pilot_archive",
+                                    "xl_player_resource_reference",
+                                    "xl_player_resources",
+                                    "xl_pog_contract",
+                                    "xl_pog_gpu",
+                                    "xl_pog_native",
+                                    "xl_pog_reference",
+                                    "xl_preview_lifecycle",
+                                    "xl_projectile_history_contract",
+                                    "xl_projectile_reference",
+                                    "xl_projectiles",
+                                    "xl_projection_reference",
+                                    "xl_repair_centers",
+                                    "xl_scoped_texture_contract",
+                                    "xl_segment_flags_reference",
+                                    "xl_side_center_reference",
+                                    "xl_spawn_points",
+                                    "xl_speed_boosts",
+                                    "xl_static_pixels_contract",
+                                    "xl_stock_loader_probe",
+                                    "xl_texture_actions",
+                                    "xl_trigger_capacity",
+                                    "xl_trigger_capacity_reference",
+                                    "xl_trigger_flag_reference",
+                                    "xl_trigger_flags",
+                                    "xl_wall_capacity_reference",
+                                    "xl_wall_teleports",
+                                    "xl_wall_trigger_chains",
+                                    "xl_wall_trigger_scheduler",
+                                    "xl_water_actors",
+                                    "xl_water_arena",
+                                    "xl_wave_channels_reference",
+                                    "xl_wave_contract",
+                                    "xl_wide_walls"
+                                ],
+                                "camera_subchecks": "executed",
+                                "navigation_smoke_passed": 1,
+                                "navigation_anchors_passed": 4,
+                                "navigation_smoke_milliseconds": 3547
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 14304885939,
+                    "name": "xl-readiness",
+                    "sha256": "sha256:0ff5ef3a2999036ad0a3cc4c92e5988a33a2a6332adf77d6bdf3dee0f384605d",
+                    "target_sha": "41a73ed11d55eeccbdc223cf5fea9546458c5eee",
+                    "summary": {
+                        "complete": true,
+                        "counts": {
+                            "loaded_ticked": 8
+                        },
+                        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                        "denominator": 8,
+                        "passed": 8,
+                        "readiness_percent": 100.0
+                    },
+                    "probe_seconds": null,
+                    "probe_budget_seconds": null,
+                    "budget_exhausted": null
+                },
+                {
+                    "id": 14304462936,
+                    "name": "xl-readiness-expanded",
+                    "sha256": "sha256:c0c9db240af5b362d85aac4aeeb70249ee63b53a9370596e0f00f2f7558ad6e2",
+                    "target_sha": "41a73ed11d55eeccbdc223cf5fea9546458c5eee",
+                    "summary": {
+                        "complete": true,
+                        "counts": {
+                            "load_failed": 5,
+                            "loaded_ticked": 59
+                        },
+                        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                        "denominator": 64,
+                        "passed": 59,
+                        "readiness_percent": 92.2
+                    },
+                    "probe_seconds": 239.069,
+                    "probe_budget_seconds": 292.0,
+                    "budget_exhausted": false
+                }
+            ]
+        },
+        {
+            "controller_run": {
+                "id": 44038224191,
+                "html_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038224191",
+                "name": "XL asset smoke for PR head bd57437b3d9ef6dc62f32c959bcd8101f01b314c",
+                "event": "workflow_run",
+                "head_sha": "b90b11d118837dcaa75b48b12f0af99cf1fee8ca",
+                "run_attempt": 1,
+                "status": "completed",
+                "conclusion": "failure",
+                "created_at": "2026-11-17T07:22:41Z",
+                "run_started_at": "2026-11-17T07:22:41Z",
+                "updated_at": "2026-11-17T07:32:29Z"
+            },
+            "run_id": 44038224191,
+            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44038224191",
+            "artifacts": [
+                {
+                    "id": 14308626728,
+                    "name": "nightly-results-host",
+                    "sha256": "sha256:5236534c83a4a08fc725e591d59c73440a4bebeb4f3d41e1a56b23e729f081eb",
+                    "target_sha": "bd57437b3d9ef6dc62f32c959bcd8101f01b314c",
+                    "owners": [
+                        {
+                            "id": "host-profile:retail-xl-fast",
+                            "status": "FAIL",
+                            "reason": "tests: FAIL",
+                            "elapsed_seconds": 100.207,
+                            "xl_checks": null
+                        }
+                    ]
+                },
+                {
+                    "id": 14308057458,
+                    "name": "xl-readiness",
+                    "sha256": "sha256:62dba285686b6f0668c5b05e0ed126257daa20407f1d2789854e72781a5b1572",
+                    "target_sha": "bd57437b3d9ef6dc62f32c959bcd8101f01b314c",
+                    "summary": {
+                        "complete": true,
+                        "counts": {
+                            "loaded_ticked": 8
+                        },
+                        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                        "denominator": 8,
+                        "passed": 8,
+                        "readiness_percent": 100.0
+                    },
+                    "probe_seconds": null,
+                    "probe_budget_seconds": null,
+                    "budget_exhausted": null
+                },
+                {
+                    "id": 14307939592,
+                    "name": "xl-readiness-expanded",
+                    "sha256": "sha256:c130d583417d554bd078ef163b644372b0dceb95c18a765179e0a5995c32265a",
+                    "target_sha": "bd57437b3d9ef6dc62f32c959bcd8101f01b314c",
+                    "summary": {
+                        "complete": false,
+                        "counts": {
+                            "load_failed": 4,
+                            "loaded_ticked": 58,
+                            "untested": 2
+                        },
+                        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                        "denominator": 64,
+                        "passed": 58,
+                        "readiness_percent": null
+                    },
+                    "probe_seconds": 274.036,
+                    "probe_budget_seconds": 312.0,
+                    "budget_exhausted": true
+                }
+            ]
+        },
+        {
+            "controller_run": {
+                "id": 44040272340,
+                "html_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040272340",
+                "name": "XL asset smoke for PR head bf5806e578adbe1b2a9a40abdcf5428cf9e96f57",
+                "event": "workflow_run",
+                "head_sha": "b90b11d118837dcaa75b48b12f0af99cf1fee8ca",
+                "run_attempt": 1,
+                "status": "completed",
+                "conclusion": "failure",
+                "created_at": "2026-11-17T07:38:29Z",
+                "run_started_at": "2026-11-17T07:38:29Z",
+                "updated_at": "2026-11-17T07:59:14Z"
+            },
+            "run_id": 44040272340,
+            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44040272340",
+            "artifacts": [
+                {
+                    "id": 14310157529,
+                    "name": "nightly-results-host",
+                    "sha256": "sha256:9ec0f7b9190f8be70b73b84abb75351cfb85416b406f408cedb82c39ffae9b5f",
+                    "target_sha": "bf5806e578adbe1b2a9a40abdcf5428cf9e96f57",
+                    "owners": [
+                        {
+                            "id": "host-profile:retail-xl-fast",
+                            "status": "PASS",
+                            "reason": "tests: PASS",
+                            "elapsed_seconds": 943.818,
+                            "xl_checks": {
+                                "required_passed": 113,
+                                "format_witnesses": 16,
+                                "modern_source_levels": 3,
+                                "required_tests": [
+                                    "xl_animation_phase_contract",
+                                    "xl_ase_contract",
+                                    "xl_audio_mixer_reference",
+                                    "xl_audio_voice_contract",
+                                    "xl_blocked_segments",
+                                    "xl_boss_groups",
+                                    "xl_boss_spawning",
+                                    "xl_boss_transport",
+                                    "xl_changing_lights",
+                                    "xl_changing_lights_invalid_rows",
+                                    "xl_cloaks",
+                                    "xl_close_doors",
+                                    "xl_companion_lighting_contract",
+                                    "xl_countdown_runtime",
+                                    "xl_disarm_runtime",
+                                    "xl_doorways",
+                                    "xl_dragon_companion_ownership",
+                                    "xl_dragon_lighting_decode",
+                                    "xl_dragon_wave_decode",
+                                    "xl_dynamic_color_reference",
+                                    "xl_effect_decode_reference",
+                                    "xl_effect_inspection_gate",
+                                    "xl_effect_payloads",
+                                    "xl_equipment_generators",
+                                    "xl_extended_hog",
+                                    "xl_face_point_reference",
+                                    "xl_fixed_cross_reference",
+                                    "xl_flickers",
+                                    "xl_flickers_invalid_rows",
+                                    "xl_fog_gpu",
+                                    "xl_fog_gpu_copy16_fallback",
+                                    "xl_fog_gpu_direct",
+                                    "xl_fog_reference",
+                                    "xl_format34_native",
+                                    "xl_generator_assignment_reference",
+                                    "xl_generator_assignment_runtime",
+                                    "xl_geometry_attenuation_reference",
+                                    "xl_hog_contract",
+                                    "xl_hog_reference",
+                                    "xl_hxm_geometry_reference",
+                                    "xl_hxm_native",
+                                    "xl_inspect_stream_contract",
+                                    "xl_inventory_contract",
+                                    "xl_keyed_closed_walls",
+                                    "xl_konflict_features",
+                                    "xl_lava_volumes",
+                                    "xl_legacy_repair",
+                                    "xl_level_messages",
+                                    "xl_level_text_contract",
+                                    "xl_level_text_reference",
+                                    "xl_light_index_reference",
+                                    "xl_lighting_calculation",
+                                    "xl_lighting_reference_arithmetic",
+                                    "xl_lightning_source",
+                                    "xl_magnitude_reference",
+                                    "xl_mission_labels",
+                                    "xl_modern_equipment_25",
+                                    "xl_modern_equipment_27",
+                                    "xl_modern_generators_25",
+                                    "xl_modern_generators_27",
+                                    "xl_modern_layout_contract",
+                                    "xl_modern_layout_reference",
+                                    "xl_modern_properties",
+                                    "xl_modern_runtime_layouts",
+                                    "xl_modern_water",
+                                    "xl_named_audio_runtime",
+                                    "xl_named_audio_source",
+                                    "xl_nearest_lights_reference",
+                                    "xl_neptune_color_precedence",
+                                    "xl_neptune_inventory",
+                                    "xl_neptune_native_features",
+                                    "xl_neptune_native_layout",
+                                    "xl_object_capacity",
+                                    "xl_object_chain_delays",
+                                    "xl_object_events",
+                                    "xl_object_trigger_decode_reference",
+                                    "xl_observatory_descriptor",
+                                    "xl_observatory_inventory",
+                                    "xl_oof_contract",
+                                    "xl_pilot_archive",
+                                    "xl_player_resource_reference",
+                                    "xl_player_resources",
+                                    "xl_pog_contract",
+                                    "xl_pog_gpu",
+                                    "xl_pog_native",
+                                    "xl_pog_reference",
+                                    "xl_preview_lifecycle",
+                                    "xl_projectile_history_contract",
+                                    "xl_projectile_reference",
+                                    "xl_projectiles",
+                                    "xl_projection_reference",
+                                    "xl_repair_centers",
+                                    "xl_scoped_texture_contract",
+                                    "xl_segment_flags_reference",
+                                    "xl_side_center_reference",
+                                    "xl_spawn_points",
+                                    "xl_speed_boosts",
+                                    "xl_static_pixels_contract",
+                                    "xl_stock_loader_probe",
+                                    "xl_texture_actions",
+                                    "xl_trigger_capacity",
+                                    "xl_trigger_capacity_reference",
+                                    "xl_trigger_flag_reference",
+                                    "xl_trigger_flags",
+                                    "xl_wall_capacity_reference",
+                                    "xl_wall_teleports",
+                                    "xl_wall_trigger_chains",
+                                    "xl_wall_trigger_scheduler",
+                                    "xl_water_actors",
+                                    "xl_water_arena",
+                                    "xl_wave_channels_reference",
+                                    "xl_wave_contract",
+                                    "xl_wide_walls"
+                                ],
+                                "camera_subchecks": "executed",
+                                "navigation_smoke_passed": 1,
+                                "navigation_anchors_passed": 4,
+                                "navigation_smoke_milliseconds": 4308
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 14308838618,
+                    "name": "xl-readiness",
+                    "sha256": "sha256:a1a7b986bc7d747d2cb0e48303568a0922830740ff4b071c534b121bece79be4",
+                    "target_sha": "bf5806e578adbe1b2a9a40abdcf5428cf9e96f57",
+                    "summary": {
+                        "complete": true,
+                        "counts": {
+                            "loaded_ticked": 8
+                        },
+                        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                        "denominator": 8,
+                        "passed": 8,
+                        "readiness_percent": 100.0
+                    },
+                    "probe_seconds": null,
+                    "probe_budget_seconds": null,
+                    "budget_exhausted": null
+                },
+                {
+                    "id": 14309278113,
+                    "name": "xl-readiness-expanded",
+                    "sha256": "sha256:0092cd392782f2ac50ce4251a436e749f2de71b808fc2d2366b058c933e7ebde",
+                    "target_sha": "bf5806e578adbe1b2a9a40abdcf5428cf9e96f57",
+                    "summary": {
+                        "complete": false,
+                        "counts": {
+                            "load_failed": 4,
+                            "loaded_ticked": 54,
+                            "untested": 6
+                        },
+                        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                        "denominator": 64,
+                        "passed": 54,
+                        "readiness_percent": null
+                    },
+                    "probe_seconds": 266.825,
+                    "probe_budget_seconds": 309.0,
+                    "budget_exhausted": true
+                }
+            ]
+        },
+        {
+            "controller_run": {
+                "id": 44043915482,
+                "html_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043915482",
+                "name": "XL asset smoke for PR head 126c84606eb5895c9e50deb4376905df4cf8d441",
+                "event": "workflow_run",
+                "head_sha": "b90b11d118837dcaa75b48b12f0af99cf1fee8ca",
+                "run_attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "created_at": "2026-11-17T08:06:29Z",
+                "run_started_at": "2026-11-17T08:06:29Z",
+                "updated_at": "2026-11-17T08:29:23Z"
+            },
+            "run_id": 44043915482,
+            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44043915482",
+            "artifacts": [
+                {
+                    "id": 14311573149,
+                    "name": "nightly-results-host",
+                    "sha256": "sha256:8550bfccc8e92cfa2f9693bff67352e23dac809846a13ccf2fad34ede8954b9b",
+                    "target_sha": "126c84606eb5895c9e50deb4376905df4cf8d441",
+                    "owners": [
+                        {
+                            "id": "host-profile:retail-xl-fast",
+                            "status": "PASS",
+                            "reason": "tests: PASS",
+                            "elapsed_seconds": 1021.656,
+                            "xl_checks": {
+                                "required_passed": 113,
+                                "format_witnesses": 16,
+                                "modern_source_levels": 3,
+                                "required_tests": [
+                                    "xl_animation_phase_contract",
+                                    "xl_ase_contract",
+                                    "xl_audio_mixer_reference",
+                                    "xl_audio_voice_contract",
+                                    "xl_blocked_segments",
+                                    "xl_boss_groups",
+                                    "xl_boss_spawning",
+                                    "xl_boss_transport",
+                                    "xl_changing_lights",
+                                    "xl_changing_lights_invalid_rows",
+                                    "xl_cloaks",
+                                    "xl_close_doors",
+                                    "xl_companion_lighting_contract",
+                                    "xl_countdown_runtime",
+                                    "xl_disarm_runtime",
+                                    "xl_doorways",
+                                    "xl_dragon_companion_ownership",
+                                    "xl_dragon_lighting_decode",
+                                    "xl_dragon_wave_decode",
+                                    "xl_dynamic_color_reference",
+                                    "xl_effect_decode_reference",
+                                    "xl_effect_inspection_gate",
+                                    "xl_effect_payloads",
+                                    "xl_equipment_generators",
+                                    "xl_extended_hog",
+                                    "xl_face_point_reference",
+                                    "xl_fixed_cross_reference",
+                                    "xl_flickers",
+                                    "xl_flickers_invalid_rows",
+                                    "xl_fog_gpu",
+                                    "xl_fog_gpu_copy16_fallback",
+                                    "xl_fog_gpu_direct",
+                                    "xl_fog_reference",
+                                    "xl_format34_native",
+                                    "xl_generator_assignment_reference",
+                                    "xl_generator_assignment_runtime",
+                                    "xl_geometry_attenuation_reference",
+                                    "xl_hog_contract",
+                                    "xl_hog_reference",
+                                    "xl_hxm_geometry_reference",
+                                    "xl_hxm_native",
+                                    "xl_inspect_stream_contract",
+                                    "xl_inventory_contract",
+                                    "xl_keyed_closed_walls",
+                                    "xl_konflict_features",
+                                    "xl_lava_volumes",
+                                    "xl_legacy_repair",
+                                    "xl_level_messages",
+                                    "xl_level_text_contract",
+                                    "xl_level_text_reference",
+                                    "xl_light_index_reference",
+                                    "xl_lighting_calculation",
+                                    "xl_lighting_reference_arithmetic",
+                                    "xl_lightning_source",
+                                    "xl_magnitude_reference",
+                                    "xl_mission_labels",
+                                    "xl_modern_equipment_25",
+                                    "xl_modern_equipment_27",
+                                    "xl_modern_generators_25",
+                                    "xl_modern_generators_27",
+                                    "xl_modern_layout_contract",
+                                    "xl_modern_layout_reference",
+                                    "xl_modern_properties",
+                                    "xl_modern_runtime_layouts",
+                                    "xl_modern_water",
+                                    "xl_named_audio_runtime",
+                                    "xl_named_audio_source",
+                                    "xl_nearest_lights_reference",
+                                    "xl_neptune_color_precedence",
+                                    "xl_neptune_inventory",
+                                    "xl_neptune_native_features",
+                                    "xl_neptune_native_layout",
+                                    "xl_object_capacity",
+                                    "xl_object_chain_delays",
+                                    "xl_object_events",
+                                    "xl_object_trigger_decode_reference",
+                                    "xl_observatory_descriptor",
+                                    "xl_observatory_inventory",
+                                    "xl_oof_contract",
+                                    "xl_pilot_archive",
+                                    "xl_player_resource_reference",
+                                    "xl_player_resources",
+                                    "xl_pog_contract",
+                                    "xl_pog_gpu",
+                                    "xl_pog_native",
+                                    "xl_pog_reference",
+                                    "xl_preview_lifecycle",
+                                    "xl_projectile_history_contract",
+                                    "xl_projectile_reference",
+                                    "xl_projectiles",
+                                    "xl_projection_reference",
+                                    "xl_repair_centers",
+                                    "xl_scoped_texture_contract",
+                                    "xl_segment_flags_reference",
+                                    "xl_side_center_reference",
+                                    "xl_spawn_points",
+                                    "xl_speed_boosts",
+                                    "xl_static_pixels_contract",
+                                    "xl_stock_loader_probe",
+                                    "xl_texture_actions",
+                                    "xl_trigger_capacity",
+                                    "xl_trigger_capacity_reference",
+                                    "xl_trigger_flag_reference",
+                                    "xl_trigger_flags",
+                                    "xl_wall_capacity_reference",
+                                    "xl_wall_teleports",
+                                    "xl_wall_trigger_chains",
+                                    "xl_wall_trigger_scheduler",
+                                    "xl_water_actors",
+                                    "xl_water_arena",
+                                    "xl_wave_channels_reference",
+                                    "xl_wave_contract",
+                                    "xl_wide_walls"
+                                ],
+                                "camera_subchecks": "executed",
+                                "navigation_smoke_passed": 1,
+                                "navigation_anchors_passed": 4,
+                                "navigation_smoke_milliseconds": 4821
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 14311430248,
+                    "name": "xl-readiness",
+                    "sha256": "sha256:e9f67cf8aca97d5b76d88095d5cc6f041a2617863d0a0b7e0bda2c2af71d6f74",
+                    "target_sha": "126c84606eb5895c9e50deb4376905df4cf8d441",
+                    "summary": {
+                        "complete": true,
+                        "counts": {
+                            "loaded_ticked": 8
+                        },
+                        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                        "denominator": 8,
+                        "passed": 8,
+                        "readiness_percent": 100.0
+                    },
+                    "probe_seconds": null,
+                    "probe_budget_seconds": null,
+                    "budget_exhausted": null
+                },
+                {
+                    "id": 14310808274,
+                    "name": "xl-readiness-expanded",
+                    "sha256": "sha256:4ea71260b0a610b60b6b748034e30cd00884a8311750fe882c2040e60c2d39d7",
+                    "target_sha": "126c84606eb5895c9e50deb4376905df4cf8d441",
+                    "summary": {
+                        "complete": true,
+                        "counts": {
+                            "load_failed": 3,
+                            "loaded_ticked": 61
+                        },
+                        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                        "denominator": 64,
+                        "passed": 61,
+                        "readiness_percent": 95.3
+                    },
+                    "probe_seconds": 246.65,
+                    "probe_budget_seconds": 354.0,
+                    "budget_exhausted": false
+                }
+            ]
+        },
+        {
+            "controller_run": {
+                "id": 44047189499,
+                "html_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047189499",
+                "name": "XL asset smoke for PR head 879386551dc71d104662e06594f2bb1a17c2bda7",
+                "event": "workflow_run",
+                "head_sha": "b90b11d118837dcaa75b48b12f0af99cf1fee8ca",
+                "run_attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "created_at": "2026-11-17T08:29:39Z",
+                "run_started_at": "2026-11-17T08:29:39Z",
+                "updated_at": "2026-11-17T08:48:27Z"
+            },
+            "run_id": 44047189499,
+            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44047189499",
+            "artifacts": [
+                {
+                    "id": 14312544327,
+                    "name": "nightly-results-host",
+                    "sha256": "sha256:3f402afab97b117512774c512afa0dd1a6cae0f25b9c059da7512f38f449c67d",
+                    "target_sha": "879386551dc71d104662e06594f2bb1a17c2bda7",
+                    "owners": [
+                        {
+                            "id": "host-profile:retail-xl-fast",
+                            "status": "PASS",
+                            "reason": "tests: PASS",
+                            "elapsed_seconds": 811.809,
+                            "xl_checks": {
+                                "required_passed": 113,
+                                "format_witnesses": 16,
+                                "modern_source_levels": 3,
+                                "required_tests": [
+                                    "xl_animation_phase_contract",
+                                    "xl_ase_contract",
+                                    "xl_audio_mixer_reference",
+                                    "xl_audio_voice_contract",
+                                    "xl_blocked_segments",
+                                    "xl_boss_groups",
+                                    "xl_boss_spawning",
+                                    "xl_boss_transport",
+                                    "xl_changing_lights",
+                                    "xl_changing_lights_invalid_rows",
+                                    "xl_cloaks",
+                                    "xl_close_doors",
+                                    "xl_companion_lighting_contract",
+                                    "xl_countdown_runtime",
+                                    "xl_disarm_runtime",
+                                    "xl_doorways",
+                                    "xl_dragon_companion_ownership",
+                                    "xl_dragon_lighting_decode",
+                                    "xl_dragon_wave_decode",
+                                    "xl_dynamic_color_reference",
+                                    "xl_effect_decode_reference",
+                                    "xl_effect_inspection_gate",
+                                    "xl_effect_payloads",
+                                    "xl_equipment_generators",
+                                    "xl_extended_hog",
+                                    "xl_face_point_reference",
+                                    "xl_fixed_cross_reference",
+                                    "xl_flickers",
+                                    "xl_flickers_invalid_rows",
+                                    "xl_fog_gpu",
+                                    "xl_fog_gpu_copy16_fallback",
+                                    "xl_fog_gpu_direct",
+                                    "xl_fog_reference",
+                                    "xl_format34_native",
+                                    "xl_generator_assignment_reference",
+                                    "xl_generator_assignment_runtime",
+                                    "xl_geometry_attenuation_reference",
+                                    "xl_hog_contract",
+                                    "xl_hog_reference",
+                                    "xl_hxm_geometry_reference",
+                                    "xl_hxm_native",
+                                    "xl_inspect_stream_contract",
+                                    "xl_inventory_contract",
+                                    "xl_keyed_closed_walls",
+                                    "xl_konflict_features",
+                                    "xl_lava_volumes",
+                                    "xl_legacy_repair",
+                                    "xl_level_messages",
+                                    "xl_level_text_contract",
+                                    "xl_level_text_reference",
+                                    "xl_light_index_reference",
+                                    "xl_lighting_calculation",
+                                    "xl_lighting_reference_arithmetic",
+                                    "xl_lightning_source",
+                                    "xl_magnitude_reference",
+                                    "xl_mission_labels",
+                                    "xl_modern_equipment_25",
+                                    "xl_modern_equipment_27",
+                                    "xl_modern_generators_25",
+                                    "xl_modern_generators_27",
+                                    "xl_modern_layout_contract",
+                                    "xl_modern_layout_reference",
+                                    "xl_modern_properties",
+                                    "xl_modern_runtime_layouts",
+                                    "xl_modern_water",
+                                    "xl_named_audio_runtime",
+                                    "xl_named_audio_source",
+                                    "xl_nearest_lights_reference",
+                                    "xl_neptune_color_precedence",
+                                    "xl_neptune_inventory",
+                                    "xl_neptune_native_features",
+                                    "xl_neptune_native_layout",
+                                    "xl_object_capacity",
+                                    "xl_object_chain_delays",
+                                    "xl_object_events",
+                                    "xl_object_trigger_decode_reference",
+                                    "xl_observatory_descriptor",
+                                    "xl_observatory_inventory",
+                                    "xl_oof_contract",
+                                    "xl_pilot_archive",
+                                    "xl_player_resource_reference",
+                                    "xl_player_resources",
+                                    "xl_pog_contract",
+                                    "xl_pog_gpu",
+                                    "xl_pog_native",
+                                    "xl_pog_reference",
+                                    "xl_preview_lifecycle",
+                                    "xl_projectile_history_contract",
+                                    "xl_projectile_reference",
+                                    "xl_projectiles",
+                                    "xl_projection_reference",
+                                    "xl_repair_centers",
+                                    "xl_scoped_texture_contract",
+                                    "xl_segment_flags_reference",
+                                    "xl_side_center_reference",
+                                    "xl_spawn_points",
+                                    "xl_speed_boosts",
+                                    "xl_static_pixels_contract",
+                                    "xl_stock_loader_probe",
+                                    "xl_texture_actions",
+                                    "xl_trigger_capacity",
+                                    "xl_trigger_capacity_reference",
+                                    "xl_trigger_flag_reference",
+                                    "xl_trigger_flags",
+                                    "xl_wall_capacity_reference",
+                                    "xl_wall_teleports",
+                                    "xl_wall_trigger_chains",
+                                    "xl_wall_trigger_scheduler",
+                                    "xl_water_actors",
+                                    "xl_water_arena",
+                                    "xl_wave_channels_reference",
+                                    "xl_wave_contract",
+                                    "xl_wide_walls"
+                                ],
+                                "camera_subchecks": "executed",
+                                "navigation_smoke_passed": 1,
+                                "navigation_anchors_passed": 4,
+                                "navigation_smoke_milliseconds": 4009
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 14312720820,
+                    "name": "xl-readiness",
+                    "sha256": "sha256:eea1ec181527259591dd4271ba73e78e42880d04c603e4cb0fc99086d4c89ff6",
+                    "target_sha": "879386551dc71d104662e06594f2bb1a17c2bda7",
+                    "summary": {
+                        "complete": true,
+                        "counts": {
+                            "loaded_ticked": 8
+                        },
+                        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                        "denominator": 8,
+                        "passed": 8,
+                        "readiness_percent": 100.0
+                    },
+                    "probe_seconds": null,
+                    "probe_budget_seconds": null,
+                    "budget_exhausted": null
+                },
+                {
+                    "id": 14311494827,
+                    "name": "xl-readiness-expanded",
+                    "sha256": "sha256:b0dad331eb8ef009e9e88fc1b13c20a889d7e4730e797f81dbd067083a017d88",
+                    "target_sha": "879386551dc71d104662e06594f2bb1a17c2bda7",
+                    "summary": {
+                        "complete": true,
+                        "counts": {
+                            "load_failed": 3,
+                            "loaded_ticked": 61
+                        },
+                        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                        "denominator": 64,
+                        "passed": 61,
+                        "readiness_percent": 95.3
+                    },
+                    "probe_seconds": 243.4,
+                    "probe_budget_seconds": 311.0,
+                    "budget_exhausted": false
+                }
+            ]
+        }
+    ],
+    "final_local": {
+        "head": "879386551dc71d104662e06594f2bb1a17c2bda7",
+        "engine": "E:\\dxx-redux-builds\\xl-recovery-20261116\\windows-ordinary\\main\\dxx-redux-d2-headless-route.exe",
+        "engine_sha256": "5fe2eb24e1b8bc9c93b9c10699c99357d09d3dcbbcb7aa8764d327551eb539d8",
+        "summary": {
+            "complete": false,
+            "counts": {
+                "load_failed": 3,
+                "loaded_ticked": 57,
+                "untested": 4
+            },
+            "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+            "denominator": 64,
+            "passed": 57,
+            "readiness_percent": null
+        },
+        "original_eight": {
+            "complete": true,
+            "counts": {
+                "loaded_ticked": 8
+            },
+            "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+            "denominator": 8,
+            "passed": 8,
+            "readiness_percent": 100.0
+        },
+        "budget_seconds": 360,
+        "elapsed_seconds": 318.719,
+        "unmeasured": [
+            "levelpack.7z/missions/cp5670/lsrbase3.mn2:1",
+            "levelpack.7z/missions/single/ewithin.mn2:4",
+            "levelpack.7z/missions/single/ewithin.mn2:-2",
+            "ironblade.7z/missions/geld/ironblad.msn:2"
+        ]
+    },
+    "protected_stashes": [
+        "9783012e2a77dfdd4680812ae72b852cfaca5e17",
+        "fb2507be376de70dc9eaeb867e0969738b3b6dcd",
+        "6e6bbf4e8b8a3b5ec03d674a26de99599249dab4",
+        "527eba407caed64d3a8b905fb55855bdab102d62"
+    ],
+    "local_receipts_root": "E:\\dxx-redux-builds\\xl-recovery-20261117",
+    "limits": [
+        "Short load/tick does not establish campaign playability",
+        "Trusted controller has not adopted the supplemental original Subzero lifecycle runner",
+        "Original Warp wall lifecycle optional/provisioned; ordinary original case is in frozen64",
+        "No new APK installed; Android native save cases are not original-level Android gameplay",
+        "Subzero Debug diagnostic timeout retained",
+        "G2 rejected-save energy 91-to-100 remains open",
+        "Android extra 1500 FX starfield draws and general XL replay guard remain",
+        "Prior-APK Android equipment step-43 failure remains separate"
+    ],
+    "handoff_publication": "Documentation-only immediate child of runtime head; final handoff PR records its own immutable head and inspected final-push checks without a self-referential commit SHA"
+}
