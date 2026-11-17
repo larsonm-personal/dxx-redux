@@ -93,7 +93,9 @@ void operate(ObjectAction &entry)
 	if (action.type == 34 && !xl_disarm_action_valid(&action)) return;
 	if (action.type == 36 && !xl_seismic_action_valid(&action)) return;
 	entry.operated = true;
-	if (action.type == 29) xl_message_action(&action);
+	if (xl_compat::legacy_smoke_action(action.type)) {
+		// Retain object-event bookkeeping and post-action flags around the empty body
+	} else if (action.type == 29) xl_message_action(&action);
 	else if (action.type == 30) xl_named_audio_action(&action, entry.audio_key);
 	else if (action.type == 19) xl_trigger_texture_action(&action);
 	else if (action.type == 25) xl_countdown_action(&action);
@@ -174,7 +176,7 @@ void xl_object_trigger_load(const xl_compat::Inventory &level)
 		const auto &source = record.action;
 		const bool camera_binding = source.type == 16 && record.object >= 0 && record.object <= Highest_object_index &&
 		                            (Objects[record.object].type == 16 || Objects[record.object].type == OBJ_ROBOT || Objects[record.object].type == 20);
-		if ((source.type > 14 && source.type != 15 && !camera_binding && source.type != 19 && source.type != 25 && source.type != 26 && source.type != 28 && source.type != 29 && source.type != 30 && source.type != 34 && source.type != 36 && (source.type < 31 || source.type > 33)) || (source.flags & ~flags_mask) || source.targets.size() > MAX_WALLS_PER_LINK || (source.type == 28 && source.targets.empty()))
+		if ((source.type > 14 && source.type != 15 && !camera_binding && !xl_compat::legacy_smoke_action(source.type) && source.type != 19 && source.type != 25 && source.type != 26 && source.type != 28 && source.type != 29 && source.type != 30 && source.type != 34 && source.type != 36 && (source.type < 31 || source.type > 33)) || (source.flags & ~flags_mask) || source.targets.size() > MAX_WALLS_PER_LINK || (source.type == 28 && source.targets.empty()))
 			throw std::runtime_error("object trigger action or flags are not implemented");
 		ObjectAction entry;
 		entry.audio_key = DXX_XL_MAX_TRIGGERS + int(actions.size());

@@ -1811,8 +1811,12 @@ int main(int argc, char **argv)
 			boost.triggers[0].type = 15;
 			boost.segments[0].function = version == 23 ? 9 : 11;
 			check(xl_compat::runtime_blockers(boost).empty(), "audited boost/action encoding rejected");
-			boost.unsupported.push_back({ "trigger_type", 1, "20" });
-			check(!xl_compat::runtime_blockers(boost).empty(), "unsupported smoke trigger confused with speed boost");
+			for (int type = 20; type <= 24; ++type)
+				for (const char *kind : { "trigger_type", "object_trigger_type" })
+					boost.unsupported.push_back({ kind, 1, std::to_string(type) });
+			check(xl_compat::runtime_blockers(boost).empty(), "source-inert legacy smoke actions rejected");
+			boost.unsupported.push_back({ "trigger_type", 1, "27" });
+			check(!xl_compat::runtime_blockers(boost).empty(), "unqualified smoke brightness admitted");
 		}
 		auto unsupported = probe.source;
 		unsupported.unsupported.push_back({ "trigger_type", 2, "teleport action is not implemented" });

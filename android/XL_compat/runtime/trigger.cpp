@@ -261,7 +261,7 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 	auto &action = Triggers[index];
 	const bool chain = action.type >= 31 && action.type <= 33;
 	const bool resource = xl_compat::player_resource_action(action.type);
-	if (!chain && action.type > 14 && action.type != 15 && action.type != 16 && action.type != 19 && action.type != 25 && action.type != 28 && action.type != 29 && action.type != 30 && action.type != 34 && action.type != 36 && !resource) return 1;
+	if (!chain && action.type > 14 && action.type != 15 && action.type != 16 && !xl_compat::legacy_smoke_action(action.type) && action.type != 19 && action.type != 25 && action.type != 28 && action.type != 29 && action.type != 30 && action.type != 34 && action.type != 36 && !resource) return 1;
 	if ((Game_mode & GM_MULTI) || (action.flags & TF_DISABLED) || index >= MAX_TRIGGERS || object_index < 0 || object_index >= MAX_OBJECTS) return 1;
 	if (action.type == 19 && !xl_trigger_texture_valid(&action)) return 1;
 	if (action.type == 25 && !xl_countdown_valid(&action)) return 1;
@@ -315,8 +315,8 @@ static int operate_wall(int index, int object_index, int shot, bool attached, in
 	if (action.type == TT_EXIT) {
 		MissionExitWorld world{ action, action.flags, index, shot };
 		if (xl_compat::operate_mission_exit(world, player ? Player_num : -1, world.flags, action.value)) return 1;
-	} else if (action.type == 16) {
-		// Pinned CAMERA dispatch has no action; retain scheduling and post-action flags
+	} else if (action.type == 16 || xl_compat::legacy_smoke_action(action.type)) {
+		// Pinned CAMERA and legacy smoke dispatch have no action; retain scheduling and post-action flags
 	} else if (action.type == 25) {
 		xl_countdown_action(&action);
 	} else if (action.type == 36) {
@@ -504,7 +504,7 @@ extern "C" int xl_wall_trigger_restore_mode(const xl_trigger_state *states, int 
 		if (action.type == 25 && !xl_countdown_valid(&action)) return 0;
 		if (action.type == 34 && !xl_disarm_action_valid(&action)) return 0;
 		if (action.type == 36 && !xl_seismic_action_valid(&action)) return 0;
-		if ((action.type > 14 && action.type != 15 && action.type != 16 && action.type != 19 && action.type != 25 && action.type != 28 && action.type != 29 && action.type != 30 && action.type != 34 && action.type != 36 && !resource && (action.type < 31 || action.type > 33)) || (action.flags & ~supported_flags) || action.num_links < 0 || action.num_links > MAX_WALLS_PER_LINK || (action.type == 28 && !action.num_links)) return 0;
+		if ((action.type > 14 && action.type != 15 && action.type != 16 && !xl_compat::legacy_smoke_action(action.type) && action.type != 19 && action.type != 25 && action.type != 28 && action.type != 29 && action.type != 30 && action.type != 34 && action.type != 36 && !resource && (action.type < 31 || action.type > 33)) || (action.flags & ~supported_flags) || action.num_links < 0 || action.num_links > MAX_WALLS_PER_LINK || (action.type == 28 && !action.num_links)) return 0;
 		for (int target = 0; !resource && action.type != 25 && action.type != 29 && action.type != 30 && action.type != 34 && action.type != 36 && target < action.num_links; ++target)
 			if ((action.type == 32 || action.type == 33) && action.side[target] < 0) continue;
 			else if (action.seg[target] < 0 || action.seg[target] > Highest_segment_index || action.side[target] < 0 || action.side[target] >= 6) return 0;
