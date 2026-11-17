@@ -1,6 +1,7 @@
 #!/usr/bin/env pwsh
-param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [switch]$BoilingPoint, [switch]$Sphere, [string]$TimeEquipmentPilot, [switch]$CaptureLive, [string]$OutputDirectory)
+param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [switch]$BoilingPoint, [switch]$Sphere, [switch]$OriginalLifecycle, [string]$TimeEquipmentPilot, [switch]$CaptureLive, [string]$OutputDirectory)
 $ErrorActionPreference = 'Stop'
+if ($OriginalLifecycle -and (!$TimeEquipment -or !($BoilingPoint -or $Sphere))) { throw 'OriginalLifecycle requires a protected original archive gameplay mode' }
 if ($CaptureLive -and (!$TimeEquipment -or $Warp5 -or $Dinter -or $BoilingPoint -or $Sphere)) { throw 'CaptureLive requires the original time-equipment mode' }
 if ($BoilingPoint -and (!$TimeEquipment -or $Warp5 -or $Dinter -or $Sphere)) { throw 'BoilingPoint uses the protected original gameplay import mode alone' }
 if ($Sphere -and (!$TimeEquipment -or $Warp5 -or $Dinter -or $BoilingPoint)) { throw 'Sphere uses the protected original gameplay import mode alone' }
@@ -33,11 +34,12 @@ if ($CaptureLive -and !$OutputDirectory) { throw 'CaptureLive requires a fresh e
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 function Invoke-AddonAdb {
-    param([string[]]$Arguments)
+    param([string[]]$Arguments, [ValidateRange(0, 3600)][int]$TimeoutSeconds = 0)
     $diagnostic = $null
     # The original XL distribution follows the baseline selective-import suite
     # and then extracts a 1.6 GiB solid archive through the real picker.
     $seconds = if ($PumoUiImport -or $DistributionName) { 420 } else { 180 }
+    if ($TimeoutSeconds) { $seconds = $TimeoutSeconds }
     $result = Adb-Timeout -AdbArgs $Arguments -Seconds $seconds -IncludeStandardError -DiagnosticResult ([ref]$diagnostic)
     if ($diagnostic.timed_out -or $diagnostic.exit_code -ne 0) {
         throw "Addon import adb failed (timeout=$($diagnostic.timed_out), exit=$($diagnostic.exit_code)): $result"
@@ -45,8 +47,8 @@ function Invoke-AddonAdb {
     return $result
 }
 function Invoke-AddonPrivate {
-    param([string]$Command)
-    Invoke-AddonAdb -Arguments @('shell', 'run-as', $script:PACKAGE, 'sh', '-c', "'$Command'")
+    param([string]$Command, [int]$TimeoutSeconds = 0)
+    Invoke-AddonAdb -Arguments @('shell', 'run-as', $script:PACKAGE, 'sh', '-c', "'$Command'") -TimeoutSeconds $TimeoutSeconds
 }
 function Save-AddonCaptureEvidence {
     param([string]$Destination)
@@ -92,6 +94,7 @@ if ($TimeEquipment) {
     if ($BoilingPoint -or $Sphere) { $paths += "files/d2x-redux/mods/$missionName" }
 }
 $ready = $false
+$protectionSeconds = if ($PumoUiImport -or $DistributionName) { 420 } else { 180 }
 $hostBackup = $null
 $backupHash = $null
 $offloaded = $false
@@ -109,13 +112,25 @@ try {
     Invoke-AddonAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     Invoke-AddonPrivate "mkdir $backup" | Out-Null
     $existing = @($paths | Where-Object { ([string](Invoke-AddonPrivate "if test -e $_; then echo yes; fi")).Trim() -eq 'yes' })
-    if ($existing.Count) { Invoke-AddonPrivate "tar -cf $backup/state.tar $($existing -join ' ')" | Out-Null }
-    $before = if ($existing.Count) { @(Invoke-AddonPrivate "find $($existing -join ' ') -type f -exec sha256sum {} \;") | Sort-Object } else { @() }
+    if ($existing.Count) {
+        $profileKiB = 0L
+        foreach ($line in (([string](Invoke-AddonPrivate "du -sk $($existing -join ' ')")) -split '\r?\n')) {
+            if ($line -notmatch '^(\d+)\s') { throw 'Invalid protected profile size' }
+            $profileKiB += [long]$Matches[1]
+        }
+        # Protection I/O scales with existing user data, not gameplay duration
+        # Keep import and gameplay bounds unchanged; allow 512 KiB/s plus setup
+        $protectionSeconds = [Math]::Max($protectionSeconds, [Math]::Min(3600, 60 + [int][Math]::Ceiling($profileKiB / 512.0)))
+        @{ profile_kib = $profileKiB; io_timeout_seconds = $protectionSeconds; minimum_kib_per_second = 512 } |
+            ConvertTo-Json | Set-Content "$output/profile-protection.json" -Encoding utf8
+        Invoke-AddonPrivate "tar -cf $backup/state.tar $($existing -join ' ')" -TimeoutSeconds $protectionSeconds | Out-Null
+    }
+    $before = if ($existing.Count) { (([string](Invoke-AddonPrivate "find $($existing -join ' ') -type f -exec sha256sum {} +" -TimeoutSeconds $protectionSeconds)) -split '\r?\n') | Sort-Object } else { @() }
     $before | Set-Content "$output/before.sha256" -Encoding utf8
     $ready = $true
     if ($PumoUiImport) {
         # Keep the verified protection copy off the small disposable app-data volume
-        $backupHash = (([string](Invoke-AddonPrivate "sha256sum $backup/state.tar")) -split '\s+')[0]
+        $backupHash = (([string](Invoke-AddonPrivate "sha256sum $backup/state.tar" -TimeoutSeconds $protectionSeconds)) -split '\s+')[0]
         if ($backupHash -notmatch '^[0-9a-f]{64}$') { throw 'Invalid profile backup digest' }
         $hostBackup = Join-Path $output "profile-$backupHash.tar"
         # Reuse an identical private safety archive instead of duplicating retail data
@@ -140,7 +155,7 @@ try {
                 $transfer.Start() | Out-Null
                 $errors = $transfer.StandardError.ReadToEndAsync()
                 $copy = $transfer.StandardOutput.BaseStream.CopyToAsync($destination)
-                if (!$copy.Wait(420000)) { $transfer.Kill(); throw 'Profile backup transfer timed out; device backup retained' }
+                if (!$copy.Wait($protectionSeconds * 1000)) { $transfer.Kill(); throw 'Profile backup transfer timed out; device backup retained' }
                 $copy.GetAwaiter().GetResult() | Out-Null
                 $transfer.WaitForExit()
                 if ($transfer.ExitCode -ne 0) { throw "Profile backup transfer failed: $($errors.GetAwaiter().GetResult())" }
@@ -249,6 +264,21 @@ try {
                     }
                 )
             }
+            if ($OriginalLifecycle) {
+                # Reuse actual HOME/launcher resume and screen-lock controls
+                $lifecycle = @(Get-Content (Join-Path $PSScriptRoot '../game_scripts/test_android_sdk_lifecycle.jsonc') -Raw | ConvertFrom-Json)
+                $start = 0
+                while ($start -lt $lifecycle.Count -and !($lifecycle[$start].PSObject.Properties['message'] -and
+                        $lifecycle[$start].message -eq 'SCRIPT_BACKGROUND: sdk-cycle-1 duration_s=5')) { $start++ }
+                if ($start -eq $lifecycle.Count) { throw 'Missing shared SDK lifecycle controls' }
+                $warm += @{ action = 'assert'; expect = @{ egl_recreate_count = 0; 'android_lifecycle.suspend_state' = 'running' } }
+                $warm += @($lifecycle[$start..($lifecycle.Count - 1)])
+                $warm += @(
+                    @{ action = 'controller_input'; axes = @{ LS_Y = -0.7 }; post_delay_ms = 1500 },
+                    @{ action = 'wait_for'; timeout_ms = 10000; expect = @{ 'position.speed' = @{ gt = 0.05 }; 'pause.input_allowed' = $true } },
+                    @{ action = 'controller_input'; axes = @{ LS_Y = 0.0 } }
+                )
+            }
             $scenario = Join-Path $output 'original-warm.jsonc'
             $warm | ConvertTo-Json -Depth 30 | Set-Content $scenario -Encoding utf8
             $cold = @($steps[0..5]) + @(
@@ -353,6 +383,18 @@ try {
             }
             if ($Sphere -and ($gameState.mission_asset_owner -ne 'mod/sphere-1.6.zip' -or $gameState.current_level_num -ne 2 -or !$gameState.xl_pilot.runtime_active)) {
                 throw "Original Sphere archive owner or XL runtime is absent in $phase Android scene"
+            }
+            if ($OriginalLifecycle -and $phase -eq 'warm') {
+                if ($gameState.egl_recreate_count -ne 2 -or $gameState.egl_window_generation -lt 6 -or
+                    $gameState.android_lifecycle.park_entry_count -lt 2 -or $gameState.android_lifecycle.wake_count -lt 2 -or
+                    !$gameState.pause.input_allowed -or $gameState.pause.simulation_paused) {
+                    throw 'Original mission did not complete two actual Android context retirements and gameplay resumes'
+                }
+                @{ egl_recreate_count = $gameState.egl_recreate_count; egl_window_generation = $gameState.egl_window_generation;
+                    lifecycle = $gameState.android_lifecycle; pause = $gameState.pause; mission_owner = $gameState.mission_asset_owner;
+                    level = $gameState.current_level_num; post_resume_controller = $true
+                } |
+                    ConvertTo-Json -Depth 12 | Set-Content "$output/lifecycle-proof.json" -Encoding utf8
             }
             if ($phase -eq 'warm') { $warmRun = $receipt.run_id } else { $coldRun = $receipt.run_id }
             $pids[$phase] = ([string](Invoke-AddonAdb -Arguments @('shell', 'pidof', "$($script:PACKAGE):game"))).Trim()
@@ -563,10 +605,10 @@ try {
             if ($offloaded) {
                 if ((Get-FileHash -LiteralPath $hostBackup -Algorithm SHA256).Hash -ine $backupHash) { throw 'Host profile backup changed; preserving recovery state' }
                 $restoreTemporary = "/data/local/tmp/xl-addon-restore-$([guid]::NewGuid().ToString('N')).tar"
-                Invoke-AddonAdb -Arguments @('push', $hostBackup, $restoreTemporary) | Out-Null
-                Invoke-AddonPrivate "tar -xf $restoreTemporary" | Out-Null
-            } elseif ($existing.Count) { Invoke-AddonPrivate "tar -xf $backup/state.tar" | Out-Null }
-            $after = if ($existing.Count) { @(Invoke-AddonPrivate "find $($existing -join ' ') -type f -exec sha256sum {} \;") | Sort-Object } else { @() }
+                Invoke-AddonAdb -Arguments @('push', $hostBackup, $restoreTemporary) -TimeoutSeconds $protectionSeconds | Out-Null
+                Invoke-AddonPrivate "tar -xf $restoreTemporary" -TimeoutSeconds $protectionSeconds | Out-Null
+            } elseif ($existing.Count) { Invoke-AddonPrivate "tar -xf $backup/state.tar" -TimeoutSeconds $protectionSeconds | Out-Null }
+            $after = if ($existing.Count) { (([string](Invoke-AddonPrivate "find $($existing -join ' ') -type f -exec sha256sum {} +" -TimeoutSeconds $protectionSeconds)) -split '\r?\n') | Sort-Object } else { @() }
             $after | Set-Content "$output/after.sha256" -Encoding utf8
             if (Compare-Object @($before) @($after)) { throw "Addon import profile restoration differs; backup retained at $backup" }
             Invoke-AddonPrivate "rm -rf $backup" | Out-Null

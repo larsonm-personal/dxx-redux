@@ -2279,3 +2279,152 @@ no distribution shutdown/restart. Hosted Linux remains the available platform
 owner; do not claim a new local Linux execution. All four stashes and clean pinned
 reference2576a98 remain unchanged. Next publish the coherent tested child of531;
 its own CI and final tranche handoff remain outstanding.
+
+### Actual Android original-owner lifecycle
+
+PR532 publishes7936cd671c6396464384468103484d79c8df16a0 above531;
+mergec63e3c3dd20519fb816923b3fa97b1e23230c7ab, candidate CI pending.
+The remaining directly affected platform gap is real app background/resume while
+an original XL resource owner stays installed. The prior four EGL recreations
+are deliberate isolated fixture operations, not Activity/system lifecycle proof.
+Extend the existing protected addon runner with OriginalLifecycle for Boiling or
+Sphere only. Reuse the maintained SDK lifecycle script's actual HOME/launcher
+resume and screen-lock cycles; retain its context-generation, native checkpoint,
+park/wake and pause assertions. Require two actual context recreations followed
+by ordinary controller movement, original archive owner/XL state and normal cold
+load, with exact device-profile/APK restoration. No native changes, new lifecycle
+framework, timeout relaxation or readiness-score substitution are planned.
+
+Lifecycle attempt android-original-lifecycle-01 failed before gameplay: original
+instrumentation import passed, then adb reported it could not connect to its
+server during artifact retrieval. The protected archive restore completed, but
+its per-file find/sha256sum verification exceeded the existing420s bound across
+2289files. No readiness/lifecycle pass is claimed. The wrapper subsequently
+restored both exact original APK hashes and all four preference hashes. The
+profile backup remains retained; an independent single-process sha256sum -c
+verification is running against the original full inventory. Do not retry until
+all profile bytes and the file inventory are independently verified. The suspected
+output-array check defect was disproved: Adb-Timeout returns a joined string and
+previous passing imports contain the same incidental GL diagnostics.
+
+PR532 private run43881996802 attempt1 is terminal SUCCESS at candidate7936cd6,
+trusted controller71e6efb. Retained readiness artifact14233606251 confirms8/8;
+archiveSHA1c9833d408ef8f216dee78010342784cc9c43c6e614cd53a1cfa005e7d044844.
+Host artifact14234840516 archiveSHA
+41fac1e1e64407debf4bb4da4b7e509b94d644627afd107571a7d6bcfe910114
+confirms exact candidate,113required checks PASS, coverage_complete=false and
+camera subchecks not_run_missing_addon. Public CI remains partly running. PR532
+body updated with this distinction and retained artifact identities.
+
+Independent recovery inventory PASS2289/2289 with no missing or extra files.
+The initial single-process content verifier also exceeded420s while advancing
+through restored assets; no byte-integrity pass is claimed from that attempt.
+A recovery-only streamed verifier now writes each hash result immediately and
+uses1200s to finish checking the protected original inventory. This is not a
+change to the maintained test timeout or a lifecycle qualification. Its receipt
+will be independent-profile-check-streamed.json, raw output retained alongside
+it in android-original-lifecycle-01. Keep the backup until a complete pass.
+Both original APK hashes and preferences are already restored by the terminal
+wrapper. No further Android test or build is running. Four protected stashes,
+clean reference and clean private-assets checkout reconfirmed unchanged.
+
+Recovery is now independently verified: streamed content check PASS2289/2289,
+no failures,825.406s; exact filename inventory PASS2289 with no missing or extra
+files. Both original APKs and four preferences also match. The maintained owner
+receipt remains FAIL, preserving the adb/import failure and420s verification
+failure. Recovery does not turn that attempt into a gameplay pass. The verified
+1,070,526,464-byte backup was renamed within the app's files directory to
+xl-addon-import-backup-03569e2ff43448188cc8112bc9032285; retained-backup.json
+records the checked absolute path and reason. No protected profile was removed.
+
+Both lifecycle catalog owners pass99standaloneJSON/549support/315PowerShell and
+428top-level entries; scoped format-original-lifecycle-03 passes and is terminal.
+PR531 now has all eight public workflows PASS as well as private CI; PR530's
+stale pending wording was also corrected after rechecking its eight green runs.
+
+Ordinary rendered Windows D2 rebuilt248steps with developer-OFF, single worker.
+Two C4715 warnings name POrderList/SOrderList in weapon.c, which is byte-unchanged
+from the tranche baseline; do not describe this Windows build as warning-free.
+The native all-ABI Android build's zero-warning result remains separate.
+windows-ordinary-package-01 contains13D1 files and19D2 files, every copy hashed:
+D1exe148de62079477bcd8362abe2e7ea5cbbb6a075458ded988cf4a0dd2b5edac3b1;
+D2exe0962ab30f08854c1e7bacdd914b1ef824e137fc27990e820c64307f22b2fc1ef.
+The packaged ordinary D2 replays the retained original Omega capture in a clean
+sandbox. ordinary-package-replay-01 PASS: clean exit,242frame/object snapshots,
+246world records,3552SIM events,436FX events and exact trailer; binary and inputs
+unchanged. This validates the ordinary package, not Android's mod_save guard.
+Retain the original capture's two position/one inventory assists before recording,
+zero during,66warmupframes. No new recording or campaign qualification is claimed.
+
+After all builds/replay ended, Gradle --status identified two idle9.8.0 daemons;
+Gradle --stop stopped those two to release memory before the device retry. No
+editor/language-server processes or WSL distributions were stopped. Next retry
+OriginalLifecycle with the same frozen developer-OFF APK pair and unchanged
+assertions/timeouts, preserving the verified original profile.
+
+Lifecycle attempt02 failed in protection before import or gameplay: copying the
+existing approximately1GiB profile exceeded the generic420s adb cap. The wrapper
+restored both exact original APKs and all four preferences. No profile path had
+been removed or replaced: ready was false and import never ran. The abandoned
+remote tar writer was identified by exact PID/command and terminated after its
+host owner failed. Its1,030,321,152-byte partial copy is retained under
+xl-addon-import-backup-2b8ae44467fd42089423e24aaa9c2daa-partial and explicitly
+marked invalid for restoration. The independently verified full backup from01
+remains separate and intact.
+
+Evidence-based plan adjustment: protection I/O must scale with pre-existing user
+state. Original profile content verification took825.406s and protection copying
+also exceeded420s. Add a measured-size budget only to archive copy/hash/restore:
+512KiB/s plus60s setup, floor at the existing generic cap, hard maximum3600s.
+Record profile_kib and io_timeout_seconds before the operation. Import's420s and
+warm/cold gameplay's240s remain unchanged, as do all readiness120-frame/seed/
+difficulty/watchdog/assertion requirements. This changes preservation I/O bounds,
+not a gameplay passing threshold. All protected paths and full content comparison
+remain mandatory. Batch native find/sha256sum arguments and sort individual hash
+records to remove per-file process overhead without omitting any file. Actual
+Android batched SHA syntax passes on all four unchanged preference files.
+Pumo offloaded protection transfers use the same measured preservation budget;
+its admission/resource limits and gameplay checks remain unchanged. This is an
+explicit adjustment to the earlier no-timeout-change implementation plan, not
+an undisclosed waived failure. Both failed attempts and recovery receipts remain.
+
+Protection-budget change validation: format-original-lifecycle-04 PASS and both
+catalog-original-lifecycle-02/catalog-original-lifecycle-suite-02 PASS with the
+unchanged99standaloneJSON/549support/315PowerShell/428top-level catalog.
+All formatter/catalog processes are terminal. Start android-original-lifecycle-03
+with the same frozen6a7/bcd APK pair; only preservation I/O budgeting and batched
+hash collection differ from the previous attempted owner. Actual gameplay and
+full restoration remain required before publication.
+
+Lifecycle attempt03 is terminal FAIL during import, before gameplay. The
+instrumentation's unchanged240s wait ended with an empty mod list at
+XlAddonPickerChecks.kt:178. The full protected archive and2289-file baseline
+hashes completed; that baseline exactly matches attempt01 and the previously
+passing Boiling shared-profile run. Restoration passed the complete before/after
+hash comparison, both original APK hashes and all four preferences. No lifecycle
+pass is inferred. Logcat shows unusually slow framework verification and long GC
+pauses, without an identified archive corruption or no-space error.
+
+After restoration, perform a controlled graceful restart of the same existing
+Nexus5X_Light_1 AVD, preserving host GPU, headless mode and data. Do not wipe,
+reprovision, install packages as part of restart or change import/gameplay limits.
+Record authentic archive read timings before/after and recheck the fingerprint,
+original APK hashes and preferences before any subsequent test.
+
+Controlled emulator-restart-01 PASS: same fingerprint, AVD and host GPU, no wipe
+or package installation, original APKs/preferences unchanged. Two reads of the
+unchanged20,721,428-byte Boiling archive improved from11.514/1.101s to0.284/0.153s.
+The restart is environmental recovery, not a change to gameplay admission.
+
+android-original-lifecycle-04 PASS on the same frozen developer-OFF6a7/bcd APKs:
+warm35/35 in49.084s, cold8/8 in23.111s. Attempta78163857e4f47fdb3f1288086c2f0c8;
+warm47554a1d8b6e4e2b9b3b95017c05a2ee, coldb5c6f4f387924186929c6f8fa9fdbb1c.
+Original Boiling Point7 owner remains mod/BoilingPoint-XL.zip. Actual HOME/resume
+and screen-lock cycles produce2EGL recreations, windowgeneration8,2parks/2wakes,
+committed checkpoints, running foreground state, unpaused simulation and allowed
+input. Normal controller movement passes after resume; fresh-process native load
+passes afterward. The native-written pilot unlock is the only gameplay setup
+assist; no position/inventory injection. Full2289-file protection comparison,
+both original APK hashes and preferences restore exactly; wrapper exits0.
+All three earlier failed attempts remain failed and retained. No original level
+completion, physical-device or ARM runtime qualification follows from this test.
