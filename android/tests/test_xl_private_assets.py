@@ -80,6 +80,46 @@ class RenderedReadinessTests(unittest.TestCase):
 
 
 class XlPrivateTests(unittest.TestCase):
+    def test_original_lifecycle_identity_requires_complete_unchanged_tree(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            extra = Path(temporary)
+            (extra / "missions").mkdir()
+            (extra / "mods").mkdir()
+            mission = extra / "missions/wshock20.hog"
+            texture = extra / "mods/door.tga"
+            mission.write_bytes(b"synthetic mission")
+            texture.write_bytes(b"synthetic texture")
+            identity = "".join(
+                path.relative_to(extra).as_posix() + "=" + hashlib.sha256(path.read_bytes()).hexdigest() + "\n"
+                for path in (mission, texture)
+            )
+            expected = hashlib.sha256(identity.encode()).hexdigest()
+            with patch.object(assets, "WARP_LIFECYCLE_INPUT_SHA256", expected):
+                self.assertEqual(assets.lifecycle_input_identity(extra), expected)
+                texture.write_bytes(b"different texture")
+                with self.assertRaisesRegex(ValueError, "identity differs"):
+                    assets.lifecycle_input_identity(extra)
+                texture.write_bytes(b"synthetic texture")
+                added = extra / "mods/extra.tga"
+                added.write_bytes(b"unreviewed sibling")
+                with self.assertRaisesRegex(ValueError, "identity differs"):
+                    assets.lifecycle_input_identity(extra)
+                added.unlink()
+                texture.unlink()
+                with self.assertRaisesRegex(ValueError, "identity differs"):
+                    assets.lifecycle_input_identity(extra)
+                (extra / "mods").rmdir()
+                with self.assertRaisesRegex(ValueError, "tree is missing"):
+                    assets.lifecycle_input_identity(extra)
+
+    def test_original_lifecycle_staging_requires_both_resource_profiles(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for modern, resources in ((False, None), (True, None), (False, root)):
+                with self.assertRaisesRegex(ValueError, "requires modern originals"):
+                    assets.stage_inputs(root, root / "stage", None, modern=modern, resources=resources, lifecycles=True)
+                self.assertFalse((root / "stage").exists())
+
     def test_native_resource_stage_preserves_archive_identity_and_derived_definitions(self):
         import xl_readiness as readiness
 
