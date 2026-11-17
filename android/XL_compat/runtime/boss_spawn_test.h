@@ -162,81 +162,86 @@ static void boss_reference_samples(const std::filesystem::path &output, char *ba
 		require(state_restore_all_sub(baseline, 0), "reference difficulty reset failed");
 		const int baseline_level_robots = Players[Player_num].num_robots_level;
 		const int baseline_total_robots = Players[Player_num].num_robots_total;
-		for (int scenario = 0; scenario < 10; ++scenario) {
-			for (int i = 0; i <= Highest_object_index; ++i) {
-				if (Objects[i].type == OBJ_ROBOT && !Robot_info[Objects[i].id].boss_flag) obj_delete(i);
-				else if (Objects[i].type == OBJ_ROBOT) Objects[i].matcen_creator = 0;
+		// Every case below resets births, counters, clocks, bindings and RNG
+		// Reuse the same restored geometry across profiles at this difficulty
+		for (int raw_profile : { 21, 2, -21, -22, -24, -25, -28 }) {
+			Robot_info[Objects[owner].id].boss_flag = raw_profile;
+			for (int scenario = 0; scenario < 10; ++scenario) {
+				for (int i = 0; i <= Highest_object_index; ++i) {
+					if (Objects[i].type == OBJ_ROBOT && !Robot_info[Objects[i].id].boss_flag) obj_delete(i);
+					else if (Objects[i].type == OBJ_ROBOT) Objects[i].matcen_creator = 0;
+				}
+				Players[Player_num].num_robots_level = baseline_level_robots;
+				Players[Player_num].num_robots_total = baseline_total_robots;
+				Difficulty_level = difficulty;
+				xl_boss_spawn_load();
+				GameTime64 = i2f(20);
+				FrameTime = scenario == 8 ? 0 : F1_0 / 60;
+				Game_suspended = scenario == 7 ? SUSP_ROBOTS : 0;
+				const int segment = Objects[owner].segnum;
+				const auto add = [&](fix size, int where, int creator) {
+					vms_vector position;
+					compute_segment_center(&position, &Segments[where]);
+					const int index = obj_create(OBJ_ROBOT, 0, where, &position, &vmd_identity_matrix, size, CT_NONE, MT_NONE, RT_NONE);
+					if (index >= 0) Objects[index].matcen_creator = static_cast<sbyte>(creator);
+					return index;
+				};
+				if (scenario == 3 || scenario == 4)
+					for (int count = 0; count < 2 * difficulty + 6 + (scenario == 4); ++count) require(add(F1_0, 24, BOSS_GATE_MATCEN_NUM) >= 0, "cannot prepare population boundary");
+				if (scenario == 5) require(add(i2f(2000), segment, 0) >= 0, "cannot prepare blocked placement");
+				if (scenario == 6)
+					while (add(F1_0, 24, 0) >= 0) {}
+				const int requested = scenario == 2 ? 255 : scenario == 9 ? -1
+				                                                          : 0;
+				const int attached = scenario == 9 ? 0 : 1;
+				if (!attached) xl_object_trigger_clear();
+				xl_boss_spawn_state states[2];
+				require(xl_boss_spawn_state_get(0, &states[0]) && xl_boss_spawn_state_get(1, &states[1]), "cannot sample boss state");
+				states[0].elapsed = scenario == 0 ? states[0].interval - 1 : states[0].interval;
+				require(xl_boss_spawn_restore(states, 2, 1), "cannot set reference cooldown boundary");
+				int population = 0;
+				std::vector<int> obstacles;
+				for (int i = 0; i <= Highest_object_index; ++i) {
+					const auto &object = Objects[i];
+					if (object.type == OBJ_ROBOT && object.matcen_creator == BOSS_GATE_MATCEN_NUM) ++population;
+					if (i != owner && object.segnum == segment && (object.type == OBJ_ROBOT || object.type == OBJ_PLAYER || object.type == OBJ_CNTRLCEN)) obstacles.push_back(i);
+				}
+				file << raw_profile << ' ' << difficulty << ' ' << FrameTime << ' ' << states[0].elapsed << ' ' << states[0].interval << ' ' << requested << ' ' << attached << ' ' << population << ' ' << (num_objects < object_capacity()) << ' ' << Game_suspended << ' ' << int(Objects[owner].id) << ' ' << Objects[owner].size;
+				vector(Objects[owner].pos);
+				vms_vector center;
+				compute_segment_center(&center, &Segments[segment]);
+				vector(center);
+				for (int vertex : Segments[segment].verts) vector(Vertices[vertex]);
+				file << ' ' << obstacles.size();
+				for (int i : obstacles) {
+					file << ' ' << Objects[i].size;
+					vector(Objects[i].pos);
+				}
+				const unsigned seed = 17u + difficulty * 107u + scenario * 31u;
+				d_rand_reset_call_count();
+				d_srand(seed);
+				const int before = Players[Player_num].num_robots_level;
+				const int created = xl_boss_spawn_robot(owner, requested, nullptr, attached);
+				xl_boss_spawn_state after;
+				require(xl_boss_spawn_state_get(0, &after), "missing sampled cooldown");
+				const auto draws = d_rand_get_call_count();
+				file << ' ' << (created >= 0) << ' ' << after.elapsed << ' ' << Players[Player_num].num_robots_level - before;
+				if (created >= 0) {
+					const auto &object = Objects[created];
+					file << ' ' << int(object.id) << ' ' << object.lifeleft << ' ' << object.shields << ' ' << object.mtype.phys_info.mass << ' ' << object.mtype.phys_info.drag << ' ' << int(object.ctype.ai_info.SKIP_AI_COUNT);
+					vector(object.pos);
+					vector(object.mtype.phys_info.velocity);
+					vector(object.mtype.phys_info.rotthrust);
+				}
+				file << ' ' << draws;
+				unsigned final_state, replayed;
+				d_rand_get_state(&final_state);
+				d_srand(seed);
+				for (std::uint64_t i = 0; i < draws; ++i) file << ' ' << d_rand();
+				d_rand_get_state(&replayed);
+				require(final_state == replayed, "boss sample RNG transcript differs");
+				file << '\n';
 			}
-			Players[Player_num].num_robots_level = baseline_level_robots;
-			Players[Player_num].num_robots_total = baseline_total_robots;
-			Difficulty_level = difficulty;
-			xl_boss_spawn_load();
-			GameTime64 = i2f(20);
-			FrameTime = scenario == 8 ? 0 : F1_0 / 60;
-			Game_suspended = scenario == 7 ? SUSP_ROBOTS : 0;
-			const int segment = Objects[owner].segnum;
-			const auto add = [&](fix size, int where, int creator) {
-				vms_vector position;
-				compute_segment_center(&position, &Segments[where]);
-				const int index = obj_create(OBJ_ROBOT, 0, where, &position, &vmd_identity_matrix, size, CT_NONE, MT_NONE, RT_NONE);
-				if (index >= 0) Objects[index].matcen_creator = static_cast<sbyte>(creator);
-				return index;
-			};
-			if (scenario == 3 || scenario == 4)
-				for (int count = 0; count < 2 * difficulty + 6 + (scenario == 4); ++count) require(add(F1_0, 24, BOSS_GATE_MATCEN_NUM) >= 0, "cannot prepare population boundary");
-			if (scenario == 5) require(add(i2f(2000), segment, 0) >= 0, "cannot prepare blocked placement");
-			if (scenario == 6)
-				while (add(F1_0, 24, 0) >= 0) {}
-			const int requested = scenario == 2 ? 255 : scenario == 9 ? -1
-			                                                          : 0;
-			const int attached = scenario == 9 ? 0 : 1;
-			if (!attached) xl_object_trigger_clear();
-			xl_boss_spawn_state states[2];
-			require(xl_boss_spawn_state_get(0, &states[0]) && xl_boss_spawn_state_get(1, &states[1]), "cannot sample boss state");
-			states[0].elapsed = scenario == 0 ? states[0].interval - 1 : states[0].interval;
-			require(xl_boss_spawn_restore(states, 2, 1), "cannot set reference cooldown boundary");
-			int population = 0;
-			std::vector<int> obstacles;
-			for (int i = 0; i <= Highest_object_index; ++i) {
-				const auto &object = Objects[i];
-				if (object.type == OBJ_ROBOT && object.matcen_creator == BOSS_GATE_MATCEN_NUM) ++population;
-				if (i != owner && object.segnum == segment && (object.type == OBJ_ROBOT || object.type == OBJ_PLAYER || object.type == OBJ_CNTRLCEN)) obstacles.push_back(i);
-			}
-			file << difficulty << ' ' << FrameTime << ' ' << states[0].elapsed << ' ' << states[0].interval << ' ' << requested << ' ' << attached << ' ' << population << ' ' << (num_objects < object_capacity()) << ' ' << Game_suspended << ' ' << int(Objects[owner].id) << ' ' << Objects[owner].size;
-			vector(Objects[owner].pos);
-			vms_vector center;
-			compute_segment_center(&center, &Segments[segment]);
-			vector(center);
-			for (int vertex : Segments[segment].verts) vector(Vertices[vertex]);
-			file << ' ' << obstacles.size();
-			for (int i : obstacles) {
-				file << ' ' << Objects[i].size;
-				vector(Objects[i].pos);
-			}
-			const unsigned seed = 17u + difficulty * 107u + scenario * 31u;
-			d_rand_reset_call_count();
-			d_srand(seed);
-			const int before = Players[Player_num].num_robots_level;
-			const int created = xl_boss_spawn_robot(owner, requested, nullptr, attached);
-			xl_boss_spawn_state after;
-			require(xl_boss_spawn_state_get(0, &after), "missing sampled cooldown");
-			const auto draws = d_rand_get_call_count();
-			file << ' ' << (created >= 0) << ' ' << after.elapsed << ' ' << Players[Player_num].num_robots_level - before;
-			if (created >= 0) {
-				const auto &object = Objects[created];
-				file << ' ' << int(object.id) << ' ' << object.lifeleft << ' ' << object.shields << ' ' << object.mtype.phys_info.mass << ' ' << object.mtype.phys_info.drag << ' ' << int(object.ctype.ai_info.SKIP_AI_COUNT);
-				vector(object.pos);
-				vector(object.mtype.phys_info.velocity);
-				vector(object.mtype.phys_info.rotthrust);
-			}
-			file << ' ' << draws;
-			unsigned final_state, replayed;
-			d_rand_get_state(&final_state);
-			d_srand(seed);
-			for (std::uint64_t i = 0; i < draws; ++i) file << ' ' << d_rand();
-			d_rand_get_state(&replayed);
-			require(final_state == replayed, "boss sample RNG transcript differs");
-			file << '\n';
 		}
 	}
 	file.close();

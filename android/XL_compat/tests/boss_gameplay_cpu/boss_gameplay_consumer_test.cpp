@@ -717,9 +717,10 @@ void boss_weak_spot_controls(bool range_only = false)
 		{ { 1300000000, 1300000000, 1300000000 }, { 0, 0, F1_0 }, 0, 37837, 41943 },
 	};
 	int cases = 0;
-	for (const int role : { 26, 28 })
+	for (const int role : { 26, 28, -28 })
 		for (int mode = 0; mode < 4; ++mode)
 			for (const auto &sample : samples) {
+				if (role < 0 && mode != 0) continue;
 				if (range_only && sample.hit.x != 1300000000) continue;
 				Difficulty_level = sample.difficulty;
 				reset();
@@ -791,10 +792,11 @@ void boss_reflected_weapon_controls()
 		{ { 1300000000, -1300000000, 1300000000 }, { -411175742, 968423233, -251953583 }, { 0, 0, 0 }, true },
 	};
 	int cases = 0;
-	for (const int role : { 26, 28 })
+	for (const int role : { 26, 28, -28 })
 		for (int mode = 0; mode < 4; ++mode)
 			for (const auto &sample : samples)
 				for (int disposition = 0; disposition < 4; ++disposition) {
+					if (role < 0 && mode != 0) continue;
 					if (sample.xl_only && mode != 0) continue;
 					Difficulty_level = 0;
 					reset();
@@ -884,7 +886,7 @@ void boss_reflected_weapon_controls()
 void boss_death_controls()
 {
 	int cases = 0;
-	for (int profile : { 25, 23, -23 })
+	for (int profile : { 25, 23, -23, 21, -21, -22, -24, -25, -28, 2 })
 		for (int remaining : { 0, 1, 2 }) {
 			const int sign = profile > 0 ? 1 : -1;
 			Difficulty_level = 2;
@@ -2148,7 +2150,7 @@ void reactor_parent_controls(int selector = 0)
 	std::cout << "Actual reactor weapon parent: " << cases << " bounds,isolation,impact,damage,retirement and removal-chain cases passed\n";
 }
 
-void boss_cycle_controls(bool axes_only = false)
+void boss_cycle_controls(bool axes_only = false, int profile = 25)
 {
 	auto streams = [] { unsigned sim=0,fx=0;d_rand_get_stream_state(D_RNG_SIM,&sim);d_rand_get_stream_state(D_RNG_FX,&fx);return std::array<unsigned,4>{sim,fx,d_rand_get_stream_call_count(D_RNG_SIM),d_rand_get_stream_call_count(D_RNG_FX)}; };
 	auto start = [&] {
@@ -2157,7 +2159,7 @@ void boss_cycle_controls(bool axes_only = false)
 		reset();
 		GameTime64 = 20 * F1_0;
 		fixture_mission.last_level = 9;
-		Robot_info[boss_type].boss_flag = 25;
+		Robot_info[boss_type].boss_flag = profile;
 		Robot_info[boss_type].see_sound = 61;
 		Vclip[VCLIP_MORPHING_ROBOT].sound_num = 57;
 		Objects[owner_b].type = OBJ_NONE;
@@ -2381,7 +2383,7 @@ void boss_cycle_controls(bool axes_only = false)
 		teleport_trace = false;
 		++cases;
 	}
-	std::cout << "Actual boss cloak/teleport: " << cases << " cycle,source-matrix,clock,health,visibility,RNG and failed-destination cases passed\n";
+	std::cout << "Actual boss cloak/teleport profile " << profile << ": " << cases << " cycle,source-matrix,clock,health,visibility,RNG and failed-destination cases passed\n";
 }
 
 void gauss_combat_controls()
@@ -4670,7 +4672,9 @@ int main(int argc, char **argv)
 			{ "matcen-contact", [] { matcen_contact_controls(); } },
 			{ "forcefield", [] { forcefield_controls(); } },
 			{ "gauss", [] { gauss_combat_controls(); } },
-			{ "boss-cycle", [] { boss_cycle_controls(); } },
+			{ "boss-cycle", [] {
+			     for (int profile : { 25, 2, -21, -22, -24, -25, -28 }) boss_cycle_controls(false, profile);
+			 } },
 			{ "reactor-parent", [] { reactor_parent_controls(); } },
 			{ "boss-projectile", [] { boss_projectile_controls(); } },
 			{ "autoplay-disarm", [] { autoplay_disarm_controls(); } },

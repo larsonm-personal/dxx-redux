@@ -78,6 +78,7 @@ struct tRobotInfo {
 	int behavior = 0, bossFlag = 0, companion = 0, scoreValue = 0;
 };
 std::array<tRobotInfo, 200> robots;
+int loaded_robot_types = 0;
 struct CObject {
 	struct {
 		int nId = 0, nType = OBJ_ROBOT, nSegment = 0, nCreator = 0, nNextInSeg = -1;
@@ -151,7 +152,7 @@ CObject *OBJECT(int index)
 }
 tRobotInfo *ROBOTINFO(int index)
 {
-	return index >= 0 && index < int(robots.size()) ? &robots[index] : nullptr;
+	return index >= 0 && index < loaded_robot_types ? &robots[index] : nullptr;
 }
 tRobotInfo *ROBOTINFO(CObject *object)
 {
@@ -303,6 +304,7 @@ int main(int argc, char **argv)
 		int types = 0;
 		file >> types;
 		check(types > 0 && types <= int(robots.size()), "Invalid boss sample definitions");
+		loaded_robot_types = types;
 		gameData.botData.nTypes[0] = types;
 		for (int i = 0; i < types; ++i) {
 			auto &robot = robots[i];
@@ -311,9 +313,14 @@ int main(int argc, char **argv)
 			check(robot.nModel >= 0 && robot.nModel < 1000, "Invalid boss sample model");
 			gameData.modelData.polyModels[0][robot.nModel].radius = radius;
 		}
-		int cases = 0, requested, attached, count, success, increment, expected_skip = 0, expected_type = 0;
+		int raw_profile = 0;
+		int cases = 0, missing_definitions = 0, requested, attached, count, success, increment, expected_skip = 0, expected_type = 0;
 		std::int64_t elapsed, expected_elapsed;
-		while (file >> gameStates.app.nDifficultyLevel >> gameData.timeData.xFrame >> elapsed >> gameData.bossData.state.m_nGateInterval >> requested >> attached >> count >> available >> gameStates.app.bGameSuspended >> objects[0].info.nId >> objects[0].info.xSize) {
+		while (file >> raw_profile >> gameStates.app.nDifficultyLevel >> gameData.timeData.xFrame >> elapsed >> gameData.bossData.state.m_nGateInterval >> requested >> attached >> count >> available >> gameStates.app.bGameSuspended >> objects[0].info.nId >> objects[0].info.xSize) {
+			check(raw_profile == 21 || raw_profile == 2 || raw_profile == -21 || raw_profile == -22 || raw_profile == -24 || raw_profile == -25 || raw_profile == -28, "Unexpected sampled boss profile");
+			check(objects[0].info.nId >= 0 && objects[0].info.nId < types, "Invalid sampled boss robot ID");
+			// The source reader stores the absolute role separately from bEndsLevel
+			robots[objects[0].info.nId].bossFlag = raw_profile < 0 ? -raw_profile : raw_profile;
 			objects[0].info.nSegment = 0;
 			objects[0].info.nCreator = 0;
 			read_vector(file, objects[0].info.position.vPos);
@@ -345,6 +352,21 @@ int main(int argc, char **argv)
 			tokens.resize(draws);
 			for (int &token : tokens) file >> token;
 			check(bool(file), "Truncated boss sample");
+			if (requested < 0) {
+				const int profile = robots[objects[0].info.nId].bossFlag;
+				const int slot = profile >= BOSS_D2 ? profile - BOSS_D2 : profile;
+				check(!tokens.empty(), "Default boss selection omitted RNG");
+				const int selected = spewBots[0][slot][maxSpewBots[slot] * tokens[0] >> 15];
+				if (selected >= types) {
+					// The fixture mutates roles after admission to probe missing banks
+					// Do not compare an unloaded slot with the unchecked source lookup
+					check(!success && expected_elapsed == elapsed && !increment && tokens.size() == 1,
+					      "Missing boss definition changed cooldown/counters or consumed extra RNG");
+					++missing_definitions;
+					++cases;
+					continue;
+				}
+			}
 			cursor = 0;
 			allocated = false;
 			object_triggers.clear();
@@ -379,9 +401,9 @@ int main(int argc, char **argv)
 			}
 			++cases;
 		}
-		check(file.eof() && cases == 50, "Boss reference cases omitted");
+		check(file.eof() && cases == 350, "Boss reference cases omitted");
 		check_reactor_objectives(std::filesystem::path(argv[1]).parent_path() / "boss-reactor-samples.txt");
-		std::cout << "Pinned XL boss spawning: " << cases << " selection/timing/caps/placement/failure/motion/RNG cases matched\n";
+		std::cout << "Pinned XL boss spawning: " << cases - missing_definitions << " selection/timing/caps/placement/failure/motion/RNG cases matched; " << missing_definitions << " missing-definition rejection controls passed; " << cases << " total scenarios\n";
 		return 0;
 	} catch (const std::exception &error) {
 		std::cerr << error.what() << '\n';
