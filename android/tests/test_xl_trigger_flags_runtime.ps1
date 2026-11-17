@@ -3,11 +3,16 @@
 param(
     [Parameter(Mandatory)][string]$Serial,
     [Parameter(Mandatory)][string]$Hog,
-    [Parameter(Mandatory)][string]$Descriptor
+    [Parameter(Mandatory)][string]$Descriptor,
+    [switch]$WallCamera,
+    [string]$OutputDirectory = ''
 )
 $ErrorActionPreference = 'Stop'
-if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne '6f2adcc1834786068db52703c6ef9d842b5f7cc60797d706937b2b470daa489b' -or
-    (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne 'f11d50656e8181b8bf104d306cebc0ab13546cf1ba2ff9bae988aabeb4711bc5') {
+$mission = if ($WallCamera) { 'camwall' } else { 'trigflag' }
+$hogHash = if ($WallCamera) { '60809f660ad1cda0427b7235d2beb1f229b72c7f0e2d37f2a4b1ee80eb771f09' } else { '6f2adcc1834786068db52703c6ef9d842b5f7cc60797d706937b2b470daa489b' }
+$descriptorHash = if ($WallCamera) { 'b545bcf6cbd53be91c5ea750f6d6187f08cad253da9274efd40b084d3cd1d2e7' } else { 'f11d50656e8181b8bf104d306cebc0ab13546cf1ba2ff9bae988aabeb4711bc5' }
+if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $hogHash -or
+    (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne $descriptorHash) {
     throw 'Requires the pinned derived trigger flag fixture'
 }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
@@ -15,6 +20,7 @@ $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
 $output = Join-Path $PSScriptRoot '../../temp/xl-trigger-flags-android'
+if ($OutputDirectory) { $output = [IO.Path]::GetFullPath($OutputDirectory) }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 function Invoke-FlagAdb {
@@ -31,7 +37,7 @@ function Invoke-FlagPrivate {
 $backup = 'files/xl-trigger-flags-runtime-backup'
 $paths = @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d2x-redux/d2x.ini',
     'files/d2x-redux/mod_usage.json', 'files/descent.cfg', 'files/file_sets.json', 'shared_prefs',
-    'files/d2x-redux/missions/trigflag.hog', 'files/d2x-redux/missions/trigflag.mn2')
+    "files/d2x-redux/missions/$mission.hog", "files/d2x-redux/missions/$mission.mn2")
 $ready = $false
 try {
     Invoke-FlagAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
@@ -44,9 +50,10 @@ try {
     $ready = $true
     Invoke-FlagAdb -Arguments @('push', (Resolve-Path -LiteralPath $Hog).Path, '/data/local/tmp/xl-trigger-flags.hog') | Out-Null
     Invoke-FlagAdb -Arguments @('push', (Resolve-Path -LiteralPath $Descriptor).Path, '/data/local/tmp/xl-trigger-flags.mn2') | Out-Null
-    Invoke-FlagPrivate 'mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-trigger-flags.hog files/d2x-redux/missions/trigflag.hog && cp /data/local/tmp/xl-trigger-flags.mn2 files/d2x-redux/missions/trigflag.mn2' | Out-Null
+    Invoke-FlagPrivate "mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-trigger-flags.hog files/d2x-redux/missions/$mission.hog && cp /data/local/tmp/xl-trigger-flags.mn2 files/d2x-redux/missions/$mission.mn2" | Out-Null
     Invoke-FlagAdb -Arguments @('logcat', '-c') | Out-Null
-    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName 'test_xl_trigger_flags_runtime.jsonc' -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 360
+    $scriptName = if ($WallCamera) { 'test_xl_wall_camera_runtime.jsonc' } else { 'test_xl_trigger_flags_runtime.jsonc' }
+    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scriptName -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 360
     $testExit = $LASTEXITCODE
     Invoke-FlagAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/logcat.txt" -Encoding utf8
     Invoke-FlagPrivate 'cat files/automation_result.json' | Set-Content "$output/result.json" -Encoding utf8
@@ -55,7 +62,8 @@ try {
     if ($testExit -ne 0) { throw "Trigger flag runtime failed ($testExit); see $output" }
     $result = Get-Content "$output/result.json" -Raw | ConvertFrom-Json
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete trigger flag runtime result' }
-    Write-Host "PASS: XL trigger flag mixer, authored actions, disk/rewind and stock isolation ($($result.total_steps) steps)"
+    if ($WallCamera) { Write-Host "PASS: XL wall camera monitor capture and saved trigger flags ($($result.total_steps) steps)" }
+    else { Write-Host "PASS: XL trigger flag mixer, authored actions, disk/rewind and stock isolation ($($result.total_steps) steps)" }
 } finally {
     try {
         Invoke-FlagAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null

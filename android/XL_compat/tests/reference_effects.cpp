@@ -393,6 +393,7 @@ void camera_binding_source_controls();
 void camera_object_source_controls();
 void camera_matrix_source_controls();
 void camera_controller_runtime_controls(const char *);
+void camera_wall_runtime_controls(const char *);
 void camera_matrix_original_controls(const xl_compat::Inventory &);
 void camera_binding_original_controls(const xl_compat::Inventory &);
 void particle_visibility_source_controls();
@@ -409,6 +410,10 @@ void ambient_activation_runtime_controls(const char *);
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && std::string(argv[1]) == "--camera-wall") {
+			camera_wall_runtime_controls(argv[2]);
+			return 0;
+		}
 		if (argc == 3 && std::string(argv[1]) == "--particle-missing") {
 			particle_missing_runtime_controls(argv[2]);
 			return 0;

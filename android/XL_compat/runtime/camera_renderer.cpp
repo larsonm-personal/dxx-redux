@@ -30,6 +30,7 @@ extern "C" {
 }
 #undef min
 #undef max
+#include "camera_wall_viewer.h"
 #if !defined(OGLES) || defined(ANDROID)
 #include "camera_target_gpu.h"
 namespace
@@ -37,6 +38,7 @@ namespace
 using namespace xl_compat;
 struct Monitor {
 	CameraBinding binding;
+	object wall_viewer{};
 	CameraTargetGpu target;
 	CameraAlignment alignment;
 	ogl_texture texture{};
@@ -68,12 +70,15 @@ void xl_camera_renderer_load(const xl_compat::Inventory &level)
 	const auto bindings = xl_compat::camera_bindings(level);
 	std::vector<std::unique_ptr<Monitor>> prepared;
 	for (const auto &binding : bindings.cameras) {
-		if (binding.object < 0) throw std::runtime_error("Wall camera viewer placement remains unqualified");
-		XlCameraControllerState state;
-		if (!xl_camera_controller_get(binding.object, state))
-			throw std::runtime_error("Camera monitor owner is not an installed attachment");
 		auto monitor = std::make_unique<Monitor>();
 		monitor->binding = binding;
+		if (binding.object < 0)
+			monitor->wall_viewer = camera_wall_viewer(binding.source_segment, binding.source_side);
+		else {
+			XlCameraControllerState state;
+			if (!xl_camera_controller_get(binding.object, state))
+				throw std::runtime_error("Camera monitor owner is not an installed attachment");
+		}
 		prepared.push_back(std::move(monitor));
 	}
 	xl_camera_renderer_clear();
@@ -113,16 +118,16 @@ extern "C" void xl_camera_renderer_frame(void)
 			const auto &monitor = *monitors[i];
 			XlCameraControllerState state;
 			// Source Ready freezes the last captured view when its owner dies
-			schedules[i].owner_flags = xl_camera_controller_get(monitor.binding.object, state)
-			                               ? Objects[monitor.binding.object].flags
-			                               : OF_SHOULD_BE_DEAD;
+			schedules[i].owner_flags = monitor.binding.object < 0 ? monitor.wall_viewer.flags : xl_camera_controller_get(monitor.binding.object, state) ? Objects[monitor.binding.object].flags
+			                                                                                                                                            : OF_SHOULD_BE_DEAD;
 		}
 		const auto ticks = SDL_GetTicks();
 		const int chosen = select_camera(schedules, ticks, ticks, 0, true, false);
 		if (chosen < 0) return;
 		auto &monitor = *monitors[chosen];
 		const auto spec = camera_target_spec(width, height, high_resolution);
-		capture_camera_scene(monitor.target, spec, Objects[monitor.binding.object], Render_zoom, true, true);
+		auto &viewer = monitor.binding.object < 0 ? monitor.wall_viewer : Objects[monitor.binding.object];
+		capture_camera_scene(monitor.target, spec, viewer, Render_zoom, true, true);
 		monitor.texture = {};
 		monitor.texture.handle = monitor.target.texture();
 		monitor.texture.w = monitor.texture.tw = spec.width;

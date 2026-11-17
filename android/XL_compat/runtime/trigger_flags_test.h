@@ -92,6 +92,7 @@ static void write_trigger_flags_fixture(const std::filesystem::path &root)
 	descriptor << "d2x-name = Derived XL trigger flags\nnum_levels = 1\nneptunxl.rl2\n";
 }
 
+#include "camera_trigger_test.h"
 static int trigger_flags_test(int argc, char **argv)
 {
 	try {
@@ -244,6 +245,7 @@ static int trigger_flags_test(int argc, char **argv)
 			        "absent XL wall target lost a later valid link");
 		}
 		front.sides[side].wall_num = front_wall;
+		camera_wall_trigger_controls(root);
 		std::cout << "XL trigger flag controls passed\n";
 		return 0;
 	} catch (const std::exception &error) {

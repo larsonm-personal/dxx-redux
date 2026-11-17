@@ -1,5 +1,6 @@
 #!/usr/bin/env pwsh
 # Exercise real catalog discovery without provisioning or running the discovered tests
+param([string]$OutputDirectory = '')
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/headless_process_pool.ps1')
@@ -137,6 +138,7 @@ if (-not (Test-SuiteNeedsStandardGameData -Tests ($mediaFree + @($deniedMediaFre
 Write-Host 'Media-free fixture policy checks passed'
 $unusedReportDir = Join-Path $repoRoot ('android/temp/catalog_must_not_exist_' + [guid]::NewGuid().ToString('N'))
 $fixtureRoot = Join-Path $repoRoot ('android/temp/test_catalog/run_' + [guid]::NewGuid().ToString('N'))
+if ($OutputDirectory) { $fixtureRoot = Join-Path ([IO.Path]::GetFullPath($OutputDirectory)) ('run_' + [guid]::NewGuid().ToString('N')) }
 & (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $fixtureRoot -DirectoryPrefix run_
 New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
 $producerLock = [IO.File]::Open((Join-Path $fixtureRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)

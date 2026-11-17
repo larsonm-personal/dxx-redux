@@ -782,7 +782,7 @@ void feature_contract()
 	auto json = xl_compat::compatibility_json("features.rl2", bytes);
 	auto row = feature_row(json, "wall_teleports");
 	check(row.find("\"count\": 3") != std::string::npos && row.find("\"status\": \"supported\"") != std::string::npos, "immediate wall teleport feature count or support differs");
-	check(json.find("\"status\": \"blocked\"") == json.find("\"status\":"), "movement support hid unsupported camera requirements");
+	check(feature_row(json, "cameras").find("\"status\": \"supported\"") != std::string::npos, "wall-camera support was not reported");
 	check(json.find("Wall speed boosts") != std::string::npos && json.find("Wall camera triggers") != std::string::npos && json.find("Wall master triggers") != std::string::npos, "action counts lost wall-only scope");
 	check(feature_row(json, "speed_boosts").find("\"count\": 1") != std::string::npos, "boost count");
 	check(feature_row(json, "master_triggers").find("\"status\": \"not_required\"") != std::string::npos, "absent feature not distinct");
@@ -1811,8 +1811,8 @@ int main(int argc, char **argv)
 			boost.triggers[0].type = 15;
 			boost.segments[0].function = version == 23 ? 9 : 11;
 			check(xl_compat::runtime_blockers(boost).empty(), "audited boost/action encoding rejected");
-			boost.unsupported.push_back({ "trigger_type", 1, "16" });
-			check(!xl_compat::runtime_blockers(boost).empty(), "camera trigger confused with speed boost");
+			boost.unsupported.push_back({ "trigger_type", 1, "20" });
+			check(!xl_compat::runtime_blockers(boost).empty(), "unsupported smoke trigger confused with speed boost");
 		}
 		auto unsupported = probe.source;
 		unsupported.unsupported.push_back({ "trigger_type", 2, "teleport action is not implemented" });
