@@ -249,7 +249,9 @@ static int named_audio_test(int argc, char **argv)
 		const char *selected = find_arg_value(argc, argv, "-audio-level");
 		const bool static_objects = !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "static");
 		const bool legacy = !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient-legacy");
-		const bool missing_output = !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient-missing");
+		const bool empty_name = !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient-empty");
+		const bool missing_output = empty_name || !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient-missing");
+		const std::string absent_name = empty_name ? ".wav" : "absent.wav";
 		require(selected && (!std::strcmp(selected, "1") || !std::strcmp(selected, "2") || ((legacy || static_objects) && !std::strcmp(selected, "3")) || (static_objects && !std::strcmp(selected, "-1"))), "Named audio controls require a valid fixture ordinal");
 		const int ordinal = std::atoi(selected);
 		if (!std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "action-missing")) {
@@ -265,8 +267,9 @@ static int named_audio_test(int argc, char **argv)
 			Mix_SetPostMix(nullptr, nullptr);
 			return 0;
 		} else if (legacy || missing_output || !std::strcmp(find_arg_value(argc, argv, "-named-audio-test"), "ambient")) {
-			require(load_base_mission(legacy ? "xambold" : missing_output ? "xambmiss"
-			                                                              : "xsound",
+			require(load_base_mission(legacy ? "xambold" : empty_name   ? "xambempt"
+			                                           : missing_output ? "xambmiss"
+			                                                            : "xsound",
 			                          error, sizeof(error)),
 			        error);
 			std::strcpy(Players[Player_num].callsign, "XLTest");
@@ -276,11 +279,11 @@ static int named_audio_test(int argc, char **argv)
 			require(xl_source_game_version() == (legacy ? (ordinal == 3 ? 36 : 32 + ordinal) : 40), "Ambient fixture loaded the wrong game-data version");
 			SDL_PauseAudio(1);
 			const auto unavailable = xl_compat::named_audio_diagnostics().at("unavailable_ambient_output");
-			require(unavailable == (missing_output ? nlohmann::json::array({ "absent.wav" }) : nlohmann::json::array()), "Ambient fixture output availability differs from the authored control");
+			require(unavailable == (missing_output ? nlohmann::json::array({ absent_name }) : nlohmann::json::array()), "Ambient fixture output availability differs from the authored control");
 			if (missing_output) {
 				const auto before = snapshot();
 				const auto ambient_before = xl_compat::ambient_objects_snapshot();
-				const auto malformed = root / "mods/xambmiss/sounds/absent.wav";
+				const auto malformed = root / "mods" / (empty_name ? "xambempt" : "xambmiss") / "sounds" / absent_name;
 				require(!std::filesystem::exists(malformed), "Missing ambient control would overwrite an existing file");
 				std::filesystem::create_directories(malformed.parent_path());
 				write_bytes(malformed.string().c_str(), { 0, 1, 2 });
@@ -296,7 +299,7 @@ static int named_audio_test(int argc, char **argv)
 				if (missing_output) {
 					auto voice = before;
 					require(!voice.at("voices").empty(), "Unavailable voice rejection needs a real live output control");
-					voice["voices"][0][2] = xl_compat::named_audio_diagnostics().at("external_resources").at("absent.wav").at("sample");
+					voice["voices"][0][2] = xl_compat::named_audio_diagnostics().at("external_resources").at(absent_name).at("sample");
 					require(!xl_compat::restore_named_audio(voice, false) && std::strstr(xl_named_audio_error(), "no available PCM") && snapshot() == before,
 					        "Saved voice fabricated PCM for absent ambient output");
 				}

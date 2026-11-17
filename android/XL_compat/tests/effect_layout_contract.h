@@ -134,7 +134,7 @@ void effect_layout_contract(const char *directory = nullptr)
 					if (profile == 3) check(json.find("sound_filename_ascii") == std::string::npos && out.render_data[0] == 255, "non-ASCII sound bytes were interpreted as a valid display name");
 					if (profile == 4) check(json.find("\"sound_filename_ascii\": \"\"") != std::string::npos, "empty sound filename changed");
 				}
-				const bool sound_supported = render == 13 && profile == 0;
+				const bool sound_supported = render == 13 && (profile == 0 || profile == 4);
 				check(xl_compat::runtime_blockers(decoded).empty() == sound_supported, "effect capability admission differs from implemented sound profile");
 				rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
 				if (render == 11 && version >= 21) {

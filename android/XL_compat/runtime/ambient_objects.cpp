@@ -37,7 +37,7 @@ void xl_compat::bind_ambient_objects(const Inventory &level)
 		if (object.render != 13) continue;
 		if (!native_sound(int(index))) throw std::runtime_error("XL ambient object identity changed during native loading");
 		auto sound = decode_ambient_sound(object);
-		if (sound.volume < 0 || sound.filename.empty()) throw std::runtime_error("XL ambient sound has an invalid playback definition");
+		if (sound.volume < 0) throw std::runtime_error("XL ambient sound has an invalid playback volume");
 		prepared.emplace(int(index), Entry{ std::move(sound), Objects[index].signature });
 	}
 	entries = std::move(prepared);
