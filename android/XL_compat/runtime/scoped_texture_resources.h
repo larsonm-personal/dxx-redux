@@ -62,7 +62,12 @@ struct ScopedTextureResources {
 					if (entry == retained.end()) {
 						const auto bytes = sources.directory_bytes(path, pog_file_limit + 65536);
 						if (!bytes) continue;
-						auto image = read_particle_image(bytes->data(), bytes->size());
+						PogBitmap image;
+						try {
+							image = read_particle_image(bytes->data(), bytes->size());
+						} catch (const std::exception &error) {
+							throw std::runtime_error("XL scoped texture decode failed for " + path + ": " + error.what());
+						}
 						if (image.pixels.size() > 2 * pog_file_limit - total)
 							throw std::runtime_error("Scoped texture decoded pixels exceed the resource bound");
 						total += image.pixels.size();
