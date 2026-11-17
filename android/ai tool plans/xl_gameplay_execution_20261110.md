@@ -6180,3 +6180,24 @@ state. Both failed534artifacts remain retained. The final report and validation
 JSON now include media restoration receipts, current private/Android evidence and
 preservation audit02. This documentation child of536 does not declare acceptance;
 remaining replay/diagnostic/final-push CI must be reconciled in the final receipt.
+
+### November16 final media routing precondition
+
+Remote restack onto cmake a42f508db preserves this tranche's gameplay and XL
+implementation. PR540head19f06a057 verifies the unchanged8/8 sample again in
+private43928532228; host artifact14262052277 passes113required checks with
+incomplete camera coverage. Android43927543361attempt1 fails first MIDI pause
+again; artifact14262376410 and assessment remain retained. Setup flags are1;
+the captured platform log selects the preview shortly after native playback
+begins, with no routed key event recorded. Exact historical dispatch timing is
+unavailable, so the missing-routing-precondition explanation remains an inference.
+
+The child above540 qualifies an explicit API33+ routing precondition through the
+existing instrumentation runner, before unchanged global AudioManager dispatch.
+Read-only session observation drops its temporary permission identity before
+key injection. No production session/transport behavior, key retries, assertion
+bounds or timeouts change. Older Android retains the original script path.
+Local android-media-routing-01 passes MIDI/CD/MP3 and full profile/APK/preference
+restoration. Every initial local token was already ready; no timing reproduction
+is claimed. Frozen APKs/source hashes are in media-routing-build-01/receipt.json.
+Both automation catalogs pass. Hosted child CI and final handoff remain required.
