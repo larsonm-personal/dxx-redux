@@ -445,10 +445,7 @@ void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, b
 			if (side.texture >= 0) graph.texture(side.texture);
 			if (side.overlay > 0) graph.texture(side.overlay & 0x3fff);
 		}
-	for (const auto &wall : level.walls) {
-		xl_assets::asset_require(wall.type != WALL_DOOR || wall.clip >= 0, "door has no wall animation");
-		graph.wall_clip(wall.clip);
-	}
+	for (const auto &wall : level.walls) graph.wall(wall.type, wall.clip);
 	const auto texture_action = [&](const xl_compat::Trigger &action, int index, const char *kind) {
 		if (action.type != 19 || action.targets.empty()) return;
 		try {

@@ -625,7 +625,7 @@ static int arena_test(int argc, char **argv)
 		graph.weapon(FLARE_ID);
 		for (int wall = 0; wall < Num_walls; ++wall) {
 			require(Walls[wall].clip_num == -1, "arena wall animation inventory changed");
-			graph.wall_clip(Walls[wall].clip_num);
+			graph.wall(Walls[wall].type, Walls[wall].clip_num);
 		}
 		for (int seg = 0; seg < Num_segments; ++seg)
 			for (const auto &side : Segments[seg].sides) {

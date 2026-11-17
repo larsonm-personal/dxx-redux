@@ -175,7 +175,7 @@ void object_dependencies()
 			graph.texture(side.tmap_num);
 			if (side.tmap_num2) graph.texture(side.tmap_num2 & 0x3fff);
 		}
-	for (int wall = 0; wall < Num_walls; ++wall) graph.wall_clip(Walls[wall].clip_num);
+	for (int wall = 0; wall < Num_walls; ++wall) graph.wall(Walls[wall].type, Walls[wall].clip_num);
 	std::cout << "Loaded object dependency graph: " << graph.robots.size() << " robots, " << graph.weapons.size() << " weapons, "
 	          << graph.powerups.size() << " powerups, " << graph.models.size() << " models, " << graph.clips.size() << " vclips, "
 	          << graph.bitmaps.size() << " bitmaps paged, " << graph.sounds.size() << " sound samples resolved; audible playback/override closure unverified\n";
@@ -1660,6 +1660,7 @@ static void native_continuation_receipt(const std::filesystem::path &path, const
 #include "descriptor_test.h"
 #include "texture_dependency_audit.h"
 #include "sentinel_powerup_test.h"
+#include "unused_wall_test.h"
 #include "package_audit.h"
 #include "konflict_test.h"
 #include "neptune_test.h"
@@ -1764,6 +1765,7 @@ int main(int argc, char **argv)
 	if (find_arg_value(argc, argv, "-static-texture-test")) return static_texture_catalog_test(argc, argv);
 	if (find_arg_value(argc, argv, "-texture-dependency-audit")) return texture_dependency_audit(argc, argv);
 	if (find_arg_value(argc, argv, "-sentinel-powerup-test")) return sentinel_powerup_test(argc, argv);
+	if (find_arg_value(argc, argv, "-unused-wall-test")) return unused_wall_test(argc, argv);
 	if (find_arg_value(argc, argv, "-afterburner-resume")) return afterburner_animation_resume(argc, argv);
 	if (find_arg_value(argc, argv, "-package-audit")) return package_audit(argc, argv);
 	if (find_arg_value(argc, argv, "-descriptor-test")) return descriptor_test(argc, argv);

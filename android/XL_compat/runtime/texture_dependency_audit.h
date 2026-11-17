@@ -113,7 +113,7 @@ static int texture_dependency_audit(int argc, char **argv)
 		}
 		auto surface_dependencies = graph;
 		for (int id : texture_ids) surface_dependencies.texture(id);
-		for (const auto &wall : level.walls) surface_dependencies.wall_clip(wall.clip);
+		for (const auto &wall : level.walls) surface_dependencies.wall(wall.type, wall.clip);
 		report["surface_dependency_bitmaps"] = nlohmann::json::array();
 		for (int bitmap : surface_dependencies.bitmaps)
 			report["surface_dependency_bitmaps"].push_back({ { "bitmap", bitmap }, { "name", bank->bitmap_name(bitmap) } });

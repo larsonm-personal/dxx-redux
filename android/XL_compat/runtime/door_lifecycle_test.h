@@ -186,6 +186,33 @@ static void door_pair_variants()
 		rejected = std::string(error.what()).find("duration") != std::string::npos;
 	}
 	require(rejected, "Zero frame duration escaped asset validation");
+	for (int type : { WALL_NORMAL, WALL_ILLUSION, WALL_OPEN, WALL_CLOSED, WALL_OVERLAY, WALL_CLOAKED }) {
+		xl_assets::ObjectDependencies graph;
+		graph.wall(type, -33);
+		require(graph.wall_clips.empty() && graph.bitmaps.empty() && graph.sounds.empty(),
+		        "Unused negative wall clip entered the asset closure");
+	}
+	for (int type : { WALL_DOOR, WALL_BLASTABLE }) {
+		for (int clip : { -33, -1, Num_wall_anims }) {
+			bool missing_rejected = false;
+			try {
+				xl_assets::ObjectDependencies graph;
+				graph.wall(type, clip);
+			} catch (const std::runtime_error &) {
+				missing_rejected = true;
+			}
+			require(missing_rejected, "Animated wall bypassed missing clip rejection");
+		}
+	}
+	// Retain the existing conservative closure for positive auxiliary references
+	bool invalid_positive_rejected = false;
+	try {
+		xl_assets::ObjectDependencies graph;
+		graph.wall(WALL_CLOSED, a);
+	} catch (const std::runtime_error &error) {
+		invalid_positive_rejected = std::string(error.what()).find("duration") != std::string::npos;
+	}
+	require(invalid_positive_rejected, "Positive auxiliary wall clip escaped transitive validation");
 	Walls[0] = front;
 	Walls[1] = back;
 	WallAnims[a] = clip_a;
