@@ -2428,3 +2428,37 @@ assist; no position/inventory injection. Full2289-file protection comparison,
 both original APK hashes and preferences restore exactly; wrapper exits0.
 All three earlier failed attempts remain failed and retained. No original level
 completion, physical-device or ARM runtime qualification follows from this test.
+
+Published lifecycle checkpoint PR534 at6cea684bd8570f58e04ed6e7cf6c8d845b969d3a,
+immediate parent5327936cd6, mergea400caf0f8392d336bf8462f4abfcf29ffbed93e.
+Private workflow43903630046 attempt1 runs under controller71e6efb9; public and
+private outcomes are pending. Local post-commit hook rewrites weekday timestamps;
+the actual published SHA above, not the outer commit command's transient SHA,
+is the candidate identity. No hook/configuration changes were made.
+
+Second original archive lifecycle qualification also passes unchanged at that
+candidate: android-sphere-lifecycle-01, attemptd84f79179524441f8b3b75dd3c43bb8d,
+warm47732e997e914d758f8999897a82edba35/35 in47.015s,
+cold04c3625bdc55405dbba3057dd4f5e59b8/8 in19.308s. OriginalSphere2 owner is
+mod/sphere-1.6.zip; two EGL recreations, windowgeneration8, two parks/wakes and
+normal resumed input. Full protected profile, original APKs and preferences
+restore exactly; terminal wrapper exits0. Native-written pilot unlock only.
+Begin handoff branch xl_readiness_20261116_17_handoff on534 while its CI runs.
+
+Final code-candidate Windows readiness passes8/8 in48.187s at6cea684b with the
+unchanged developer-OFF engineb4221f20d070a5fd555571bc2390285978bafcc5676bf48c972b1cfeac5ee792.
+ResultSHA8bf7745cf224320a6729247bb168115493db2461791d1ed2344b1efc145b61b3;
+only handoff documents are uncommitted. Hosted534readiness artifact14246305024
+archiveSHA897d9dac1b19a87add4d3c9e48e64e170c9742b7f6ffee49240ab0bbee30d0ac
+matches exact candidate, ordered cohort, selection seed and resources,8/8.
+Its other private/public jobs remain pending. handoff-preservation-01 passes
+all13runtime files, original catalog, four stashes, clean reference/private-assets
+checkouts,32Windows package files and54Android native libraries. No native/app
+source change exists since532.
+
+Cleanup preview06 incorrectly received comma-separated exclusions as one native
+argument; it was preview-only and deleted nothing. Corrected preview07 passed
+the three explicit array exclusions temp,android/temp,.codex and found zero
+eligible files. Apply07 likewise deleted nothing and reported the50GiB target
+unreachable, with5.99GiB free. All retained evidence/assets and the running AVD
+remain protected; no manual cache deletion was used.

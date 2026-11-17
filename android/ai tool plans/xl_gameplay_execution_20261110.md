@@ -6088,13 +6088,14 @@ evidence changes, .codex/, all four stashes and authentic originals are retained
 The new approximately20-hour invocation starts from merged cmake
 71e6efb90419b8e8a2f4ceed116e5ab3871c80d2. Detailed execution and failed receipts
 are indexed in xl_readiness_20h_20261116.md. The fresh immediate-parent stack is
-517,518,520-532 (stack517, historical471); nothing is merged or queued.
+517,518,520-532,534 (stack517, historical471); nothing is merged or queued.
 This entry records qualified progress, not completion of G2-G7 or the tranche.
 
 The unchanged eight selected levels now pass the original120unassisted-frame
 criterion on ordinary developer-OFF Windows and exact-candidate hosted Linux.
-PR532 candidate7936cd671c6396464384468103484d79c8df16a0 has a downloaded8/8
-receipt in private run43881996802 attempt1, under controller71e6efb9. Inputs remain
+PR534 candidate6cea684bd8570f58e04ed6e7cf6c8d845b969d3a has a downloaded8/8
+receipt in private run43903630046 attempt1, under controller71e6efb9. The final
+ordinary Windows run at that code candidate also passes8/8 in48.187s. Inputs remain
 cohort9dad21bd65ba05665ac6fe315f37fe7461e85725 and authorized private authentic
 resourcesdc6565f6b5400d7c700fa8378e766b2354b6ceb6. Historical stock-only4/8
 remains separate. Zero additional tranches are needed for this narrow8/8 measure;
@@ -6133,6 +6134,8 @@ import, controller/save and cold-load coverage also passes20/20 and8/8, with
 exact protected state restoration. Boiling Point7 actual HOME/resume and screen-
 lock cycles now pass35/35 warm checks and8/8 cold checks: two EGL recreations,
 two parks/wakes, restored controller movement and exact protected-state recovery.
+Sphere2 also passes the same lifecycle sequence35/35 warm and8/8 cold, followed
+by full protected-state recovery. Both tests use the same frozen ordinary APKs.
 Three earlier infrastructure/import failures remain retained as failures; the
 passing retry followed a verified same-AVD graceful restart, without changing
 gameplay deadlines or assertions. None proves connected combat, earned key/exit progression,
@@ -6156,5 +6159,10 @@ missing-camera subchecks; candidate workflow text is not controller deployment.
 No merge, credential change or guard relaxation was used. Full original Pumo
 still exceeds the decoded texture bound on both candidate and clean parent;
 keep that failure separate from passing original model geometry controls.
-Final report, complete CI/package/source audit, next plan and replacement kickoff
-remain outstanding. Another tranche still requires explicit invocation.
+The handoff includes xl_readiness_20h_report_20261116.md, the dated validation
+JSON with pinned evidence, the next plan and replacement kickoff. Current
+source/package/input integrity checks pass. PR534 readiness is8/8 but its other
+CI remains pending at this publication snapshot. Final-push CI and the exact
+post-publication receipt in temp/xl-readiness-20h-20261116/final-handoff-01.json
+are required before tranche acceptance; final status is also recorded in the
+handoff PR body. Another tranche still requires explicit invocation.
