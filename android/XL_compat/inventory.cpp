@@ -473,6 +473,9 @@ Inventory inspect_level(const Bytes &bytes)
 			} else if (o.movement == 2) {
 				// MT_STATIC is defined, but CObject::Read warns and consumes no payload
 				++static_objects;
+			} else if (o.movement == 255 && o.control == 255 && o.type == 7 && o.render == 5) {
+				// Audited original powerup records: source warns and consumes no payload
+				issue(out.unsupported, "powerup_sentinel_controller", i, "movement/control 255 require runtime lifecycle qualification");
 			} else if (o.movement != 0) r.fail("unsupported movement layout " + std::to_string(o.movement) + " at object " + std::to_string(i));
 			switch (o.control) {
 				case 1:
@@ -503,6 +506,9 @@ Inventory inspect_level(const Bytes &bytes)
 				case 5:
 				case 12:
 				case 16: break;
+				case 255:
+					if (o.movement == 255 && o.type == 7 && o.render == 5) break;
+					[[fallthrough]];
 				default: r.fail("unsupported control layout " + std::to_string(o.control) + " at object " + std::to_string(i));
 			}
 			switch (o.render) {

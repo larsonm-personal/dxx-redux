@@ -410,6 +410,30 @@ void ambient_activation_runtime_controls(const char *);
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 8 && std::string(argv[1]) == "--object-stream") {
+			// Explicit section bounds come from the original file header, not Redux objects
+			std::ifstream input(argv[2], std::ios::binary);
+			if (!input) throw std::runtime_error("Cannot open original object stream");
+			const xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
+			const auto start = std::stoull(argv[3]), end = std::stoull(argv[4]);
+			const int count = std::stoi(argv[5]);
+			gameData.segData.nLevelVersion = std::stoi(argv[6]);
+			gameTopFileInfo.fileinfoVersion = std::stoi(argv[7]);
+			if (count < 0 || count > 100000) throw std::runtime_error("Invalid object stream count");
+			CFile file(bytes, start, end);
+			std::cout << "index,start,end,type,id,control,movement,render,segment,warnings\n";
+			for (int i = 0; i < count; ++i) {
+				const auto begin = file.Tell();
+				const int previous_warnings = warnings;
+				CObject object;
+				object.Read(file);
+				std::cout << i << ',' << begin << ',' << file.Tell() << ',' << int(object.info.nType) << ',' << int(object.info.nId)
+				          << ',' << int(object.info.controlType) << ',' << int(object.info.movementType) << ',' << int(object.info.renderType)
+				          << ',' << object.info.nSegment << ',' << warnings - previous_warnings << '\n';
+			}
+			if (file.Tell() != end) throw std::runtime_error("Reference object stream did not consume the exact section");
+			return 0;
+		}
 		if (argc == 3 && std::string(argv[1]) == "--camera-wall") {
 			camera_wall_runtime_controls(argv[2]);
 			return 0;

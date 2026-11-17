@@ -32,6 +32,36 @@ bool issue(const std::vector<xl_compat::Issue> &issues, const char *feature)
 }
 void contract()
 {
+	for (int version : { 21, 23, 25, 27 }) {
+		auto fixture = xl_test::layout_fixture(version);
+		auto &bytes = fixture.bytes;
+		xl_compat::Bytes records(89 * 2 + 93, 0);
+		for (unsigned index = 0; index < 3; ++index) {
+			const auto at = index * 89;
+			records[at] = 7;
+			records[at + 1] = 16;
+			records[at + 2] = index < 2 ? 255 : 13;
+			records[at + 3] = index < 2 ? 255 : 0;
+			records[at + 4] = 5;
+		}
+		bytes.insert(bytes.begin() + fixture.walls, records.begin(), records.end());
+		xl_test::layout_patch(bytes, fixture.game + 35, static_cast<unsigned>(fixture.walls));
+		xl_test::layout_patch(bytes, fixture.game + 39, 3);
+		xl_test::layout_patch(bytes, fixture.game + 47, static_cast<unsigned>(fixture.walls + records.size()));
+		xl_test::layout_patch(bytes, fixture.game + 71, static_cast<unsigned>(bytes.size() - 4));
+		const auto parsed = xl_compat::inspect_level(bytes);
+		check(parsed.objects.size() == 3 && parsed.objects[0].source_end == fixture.walls + 89 &&
+		          parsed.objects[1].source_end == fixture.walls + 178 && parsed.objects[2].source_end == fixture.walls + records.size(),
+		      "Sentinel powerups displaced following object or wall boundaries");
+		check(parsed.objects[0].control == 255 && parsed.objects[0].movement == 255 && parsed.objects[0].control_data.empty() && parsed.objects[0].movement_data.empty(),
+		      "Sentinel source bytes were normalized or given a fabricated payload");
+		check(issue(xl_compat::runtime_blockers(parsed), "powerup_sentinel_controller"), "Decoded sentinel bypassed runtime admission");
+		for (const auto &change : std::array<std::pair<unsigned, unsigned>, 4>{ { { 0, 2 }, { 2, 254 }, { 3, 254 }, { 4, 1 } } }) {
+			auto invalid = bytes;
+			invalid[fixture.walls + change.first] = static_cast<unsigned char>(change.second);
+			rejects(invalid, "unsupported movement layout");
+		}
+	}
 	int cases = 0;
 	for (int version : { 21, 23, 25, 27 }) {
 		for (int producer : { -32768, -129, -128, -1, 0, 127, 128, 32767 }) {
