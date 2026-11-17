@@ -38,7 +38,7 @@ int xl_camera_hitbox_query(const struct object *camera, const struct object *mov
 #include <string>
 #include "particle_resources.h"
 const std::map<std::string, std::string> &xl_resource_mod_sources();
-std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal);
+std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal, std::map<int, int> *effect_frames = nullptr);
 struct object;
 struct vms_vector;
 void xl_validate_level_graphics(const std::string &palette);

@@ -1,8 +1,10 @@
 // Storage and engine adapters for the unchanged pinned CObject::Read body
 #include "inventory.h"
 #include "ambient_sound.h"
+#include "sentinel_powerup.h"
 #include "hog.h"
 #include <array>
+#include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
@@ -12,9 +14,19 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#define DBG                       0
-#define OBJ_IDX(object)           0
-#define OBJ_REACTOR               9
+#define DBG                  0
+#define OBJ_IDX(object)      0
+#define OBJ_REACTOR          9
+#define OBJ_POWERUP          7
+#define OBJ_PLAYER           4
+#define OBJ_MARKER           15
+#define POWERUP_ADDON_COUNT  0
+#define MAX_POWERUP_TYPES_D2 50
+#define IsMultiGame          0
+#define Assert               assert
+#define ENTER(a, b)
+#define RETURN                    return;
+#define MOVE_LIGHTNING            1
 #define OBJ_EFFECT                20
 #define PARTICLE_ID               0
 #define LIGHTNING_ID              1
@@ -165,6 +177,7 @@ struct {
 	} segData;
 	struct {
 		struct {
+			int nTypes = 50;
 			struct {
 				int nClipIndex = 0;
 			} info[256];
@@ -221,7 +234,7 @@ struct CObject {
 			int intensity = 0;
 		} lightInfo;
 		struct {
-			int nCount = 0;
+			int nCount = 0, xCreationTime = 0;
 		} powerupInfo;
 		struct {
 			int nId[2]{}, nSuccessor[2]{}, nSpeed = 0;
@@ -269,12 +282,93 @@ struct CObject {
 	}
 	void ResetDamage() {}
 	void SetTarget(void *) {}
+	int Type() const
+	{
+		return info.nType;
+	}
+	int Id() const
+	{
+		return info.nId;
+	}
+	void SetId(int value)
+	{
+		info.nId = std::uint8_t(value);
+	}
+	int definition_size = 123456, movement_calls = 0;
+	void SetSizeFromPowerup()
+	{
+		size = definition_size;
+	}
+	void RotateMarker()
+	{
+		++movement_calls;
+	}
+	void DoPhysicsSim()
+	{
+		++movement_calls;
+	}
+	void RequestEffects(int) {}
+	void UpdateShipSound() {}
+	void Spin()
+	{
+		++movement_calls;
+	}
+	void VerifyPowerup();
+	void UpdatePosition();
 	void Read(CFile &file);
 	void FixEffectRenderType();
 };
+void InitAddonPowerup(CObject *)
+{
+	throw std::runtime_error("Unexpected addon powerup verification");
+}
+void AddPowerupInMine(int, int, bool)
+{
+	throw std::runtime_error("Unexpected multiplayer powerup verification");
+}
+struct {
+	void SetPos(int) {}
+} lightManager;
 #define strlwr reference_strlwr
 #include "xl_reference_effects.h"
 #undef strlwr
+
+static void powerup_animation_source_controls()
+{
+	gameData.segData.nLevelVersion = 23;
+	gameTopFileInfo.fileinfoVersion = 40;
+	gameData.objData.pwrUp.info[16].nClipIndex = 40;
+	gameData.effectData.vClipP[40].xFrameTime = 1234;
+	gameData.objData.pwrUp.info[22].nClipIndex = 40;
+	for (int id : { 16, 22 })
+		for (int clip : { INT32_MIN, -1, 0, 40, 109, 110, 255, INT32_MAX }) {
+			xl_compat::Bytes bytes(93, 0);
+			bytes[0] = 7;
+			bytes[1] = std::uint8_t(id);
+			bytes[2] = 13;
+			bytes[4] = 5;
+			for (unsigned byte = 0; byte < 4; ++byte) {
+				bytes[84 + byte] = std::uint8_t(std::uint32_t(clip) >> (8 * byte));
+				bytes[88 + byte] = std::uint8_t(std::uint32_t(123456) >> (8 * byte));
+			}
+			bytes[92] = 7;
+			CFile file(bytes, 0, bytes.size());
+			CObject object;
+			object.Read(file);
+			const bool fallback = xl_compat::stationary_powerup_animation_fallback(7, id, 13, 0, 5, 0, clip);
+			if (file.Tell() != bytes.size() || object.rType.animationInfo.nClipIndex != (fallback ? 40 : clip) ||
+			    object.rType.animationInfo.xFrameTime != (fallback ? 1234 : 123456) || object.rType.animationInfo.nCurFrame != (fallback ? 0 : 7) ||
+			    object.cType.powerupInfo.nCount != (id == 22 ? VULCAN_CLIP_CAPACITY : 0))
+				throw std::runtime_error("Powerup animation fallback or loaded count differs from actual source reader");
+		}
+	for (unsigned field = 0; field < 6; ++field) {
+		std::array<int, 6> header{ 7, 16, 13, 0, 5, 0 };
+		++header[field];
+		if (xl_compat::stationary_powerup_animation_fallback(header[0], header[1], header[2], header[3], header[4], header[5], 255))
+			throw std::runtime_error("Unqualified Fusion animation header admitted");
+	}
+	std::cout << "PASS: sixteen actual source powerup animation/count bounds and six header rejections\n";
+}
 
 static void volume_controls(const xl_compat::Bytes &bytes, const xl_compat::Object &object, int version)
 {
@@ -410,7 +504,8 @@ void ambient_activation_runtime_controls(const char *);
 int main(int argc, char **argv)
 {
 	try {
-		if (argc == 8 && std::string(argv[1]) == "--object-stream") {
+		if (argc == 8 && (std::string(argv[1]) == "--object-stream" || std::string(argv[1]) == "--sentinel-stream")) {
+			const bool lifecycle = std::string(argv[1]) == "--sentinel-stream";
 			// Explicit section bounds come from the original file header, not Redux objects
 			std::ifstream input(argv[2], std::ios::binary);
 			if (!input) throw std::runtime_error("Cannot open original object stream");
@@ -421,17 +516,35 @@ int main(int argc, char **argv)
 			gameTopFileInfo.fileinfoVersion = std::stoi(argv[7]);
 			if (count < 0 || count > 100000) throw std::runtime_error("Invalid object stream count");
 			CFile file(bytes, start, end);
-			std::cout << "index,start,end,type,id,control,movement,render,segment,warnings\n";
+			std::cout << "index,start,end,type,id,control,movement,render,segment,warnings";
+			if (lifecycle) std::cout << ",verified_control,verified_movement,count,creation_time,definition_size,stationary";
+			std::cout << '\n';
+			unsigned sentinel_count = 0;
 			for (int i = 0; i < count; ++i) {
 				const auto begin = file.Tell();
 				const int previous_warnings = warnings;
 				CObject object;
 				object.Read(file);
+				if (lifecycle && (object.info.nType != 7 || object.info.controlType != 255 || object.info.movementType != 255)) continue;
 				std::cout << i << ',' << begin << ',' << file.Tell() << ',' << int(object.info.nType) << ',' << int(object.info.nId)
 				          << ',' << int(object.info.controlType) << ',' << int(object.info.movementType) << ',' << int(object.info.renderType)
-				          << ',' << object.info.nSegment << ',' << warnings - previous_warnings << '\n';
+				          << ',' << object.info.nSegment << ',' << warnings - previous_warnings;
+				if (lifecycle) {
+					const auto position = object.info.position.vPos;
+					object.VerifyPowerup();
+					for (int frame = 0; frame < 120; ++frame) object.UpdatePosition();
+					if (object.info.nId != 16 || object.info.controlType != CT_POWERUP || object.info.movementType != 255 ||
+					    object.cType.powerupInfo.nCount || object.cType.powerupInfo.xCreationTime || object.size != object.definition_size ||
+					    object.movement_calls || object.info.position.vPos != position)
+						throw std::runtime_error("Original sentinel post-load lifecycle differs");
+					std::cout << ',' << int(object.info.controlType) << ',' << int(object.info.movementType) << ','
+					          << object.cType.powerupInfo.nCount << ',' << object.cType.powerupInfo.xCreationTime << ',' << object.size << ",1";
+					++sentinel_count;
+				}
+				std::cout << '\n';
 			}
 			if (file.Tell() != end) throw std::runtime_error("Reference object stream did not consume the exact section");
+			if (lifecycle && sentinel_count != 2) throw std::runtime_error("Original sentinel stream does not contain two qualified records");
 			return 0;
 		}
 		if (argc == 3 && std::string(argv[1]) == "--camera-wall") {
@@ -471,6 +584,7 @@ int main(int argc, char **argv)
 			return 0;
 		}
 		if (argc != 2) throw std::runtime_error("Expected effect fixture directory or original HOG");
+		powerup_animation_source_controls();
 		effect_target_source_controls();
 		particle_source_controls();
 		particle_geometry_source_controls();

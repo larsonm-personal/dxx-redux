@@ -8,12 +8,14 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <map>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <vector>
 #if defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
 #include "../../../../../XL_compat/runtime/resource_validation.h"
+#include "../../../../../XL_compat/runtime/pog_resources.h"
 #endif
 extern "C" {
 #include "bm.h"
@@ -56,6 +58,8 @@ int adapted;
 bool exact_only, legacy, legacy_uud, changed, world_adapted;
 bool error_pending;
 std::set<std::pair<int, int>> monitor_surfaces;
+// Reconstructed from the target's retained assets, never trusted save metadata
+std::map<int, int> scoped_effect_frames;
 
 void check(bool value, const char *message)
 {
@@ -268,9 +272,24 @@ std::vector<record> read_effects(rewind_file *file, int swap, fix64 &loop_time, 
 				legacy_uud = true;
 			}
 			check(source.is_array() && source.size() == 45, "Missing source effect definition");
-			const int frames = source.at(0), frame_time = source.at(1);
+			int frames = source.at(0);
+			const int frame_time = source.at(1);
+			bool scoped = false;
+#if defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
+			if (legacy && r.effect < Num_effects) {
+				const int installed_frames = xl_pog_effect_frames(&Effects[r.effect]);
+				if (installed_frames != Effects[r.effect].vc.num_frames) {
+					scoped = true;
+					frames = installed_frames;
+				}
+			} else if (const auto found = scoped_effect_frames.find(r.effect); found != scoped_effect_frames.end()) {
+				check(r.effect < Num_effects && source == current_effect(r.effect), "Scoped effect definitions changed");
+				frames = found->second;
+				scoped = true;
+			}
+#endif
 			const bool inactive = frames <= 0 && r.frame == 0 && r.time == 0 && !r.flags && r.segment == -1;
-			check(inactive || (frames > 0 && frames <= VCLIP_MAX_FRAMES && r.frame < frames && frame_time > 0), "Saved effect frame is outside its source clip");
+			check(inactive || (frames > 0 && (scoped || frames <= VCLIP_MAX_FRAMES) && r.frame < frames && frame_time > 0), "Saved effect frame is outside its source clip");
 			check(r.segment == -1 || (r.segment >= 0 && r.segment <= highest_segment && r.side >= 0 && r.side < 6 && r.texture > 0), "Invalid effect segment or side");
 			check(!(r.flags & EF_ONE_SHOT) || r.segment != -1, "One-shot effect has no world target");
 			if (source_only) {
@@ -439,6 +458,7 @@ int mod_save_prepare(rewind_file *file, int level, int version, int swap)
 	status = "exact";
 	reason.clear();
 	monitor_surfaces.clear();
+	scoped_effect_frames.clear();
 	exact_only = (Game_mode & GM_MULTI) || rewind_file_is_memory(file) || input_demo_replay_is_loaded();
 	try {
 		saved = read_block(file);
@@ -453,7 +473,7 @@ int mod_save_prepare(rewind_file *file, int level, int version, int swap)
 		if (legacy) return 1;
 #if defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
 		const auto saved_xl_sources = saved.value("xl_mod_sources", json::object());
-		const json current_xl_sources = xl_resource_sources_for_level(level);
+		const json current_xl_sources = xl_resource_sources_for_level(level, &scoped_effect_frames);
 		if (saved_xl_sources != current_xl_sources) {
 			debug_log_force(DLOG_GAME, "XL mod save source mismatch: saved=%zu current=%zu", saved_xl_sources.size(), current_xl_sources.size());
 			if (saved_xl_sources.is_object()) {
@@ -528,6 +548,7 @@ int mod_save_check_companion(const char *filename)
 	const auto primary = saved;
 	const auto primary_end = trailer_end;
 	const auto primary_monitors = monitor_surfaces;
+	const auto primary_scoped_frames = scoped_effect_frames;
 	const bool primary_legacy = legacy, primary_legacy_uud = legacy_uud, primary_changed = changed, primary_exact = exact_only;
 	const int primary_adapted = adapted;
 	bool ok = false;
@@ -552,6 +573,7 @@ int mod_save_check_companion(const char *filename)
 	saved = primary;
 	trailer_end = primary_end;
 	monitor_surfaces = primary_monitors;
+	scoped_effect_frames = primary_scoped_frames;
 	legacy = primary_legacy;
 	legacy_uud = primary_legacy_uud;
 	changed = primary_changed;

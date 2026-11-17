@@ -6,6 +6,8 @@
 extern "C" {
 #include "gameseq.h"
 #include "wall.h"
+#include "effects.h"
+#include "pog_resources.h"
 }
 static void require(bool value, const char *message)
 {
@@ -57,4 +59,35 @@ bool mod_identity_restore()
 	const bool accepted = mod_save_prepare(&file, 11, 43, 0) != 0;
 	rewind_file_close(&file);
 	return accepted;
+}
+
+// Exercise the shared Android preflight and effect reader with authentic retained
+// definitions. These sparse records are malformed-input controls, not game saves
+void mod_identity_scoped_effect_validation(int effect)
+{
+	const int frames = xl_pog_effect_frames(&Effects[effect]);
+	require(frames > Effects[effect].vc.num_frames, "No extended scoped effect for save validation");
+	for (bool invalid : { false, true }) {
+		const char *name = invalid ? "xl-scoped-effect-invalid.sg0" : "xl-scoped-effect-valid.sg0";
+		rewind_file file;
+		rewind_file_init_physfs(&file, PHYSFS_openWrite(name));
+		require(file.physfs != nullptr, "Cannot create scoped effect save control");
+		const int version = 43;
+		rewind_file_write(&file, "DGSS", 1, 4);
+		rewind_file_write(&file, &version, 4, 1);
+		mod_save_effect_offset(&file);
+		const int header[] = { 0, 0, 1 };
+		const int row[] = { effect, Effects[effect].vc.frame_time, invalid ? frames : frames - 1, 0, -1, 0, Effects[effect].dest_bm_num };
+		rewind_file_write(&file, header, 4, 3);
+		rewind_file_write(&file, row, 4, 7);
+		const bool written = mod_save_write(&file) != 0;
+		rewind_file_close(&file);
+		require(written, mod_save_reason());
+		rewind_file_init_physfs(&file, PHYSFS_openRead(name));
+		require(file.physfs != nullptr && rewind_file_seek(&file, 8), "Cannot read scoped effect save control");
+		const bool prepared = mod_save_prepare(&file, Current_level_num, version, 0) != 0;
+		const bool accepted = prepared && mod_save_validate_effects(&file, 0);
+		rewind_file_close(&file);
+		require(accepted == !invalid, invalid ? "Android preflight accepted an out-of-range scoped effect frame" : mod_save_reason());
+	}
 }

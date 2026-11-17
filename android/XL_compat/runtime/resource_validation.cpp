@@ -959,8 +959,9 @@ const std::map<std::string, std::string> &xl_resource_mod_sources()
 	return mission_mod_sources;
 }
 
-std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal)
+std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal, std::map<int, int> *effect_frames)
 {
+	if (effect_frames) effect_frames->clear();
 	if (!mission_requires_xl || !Current_mission || Current_mission->descent_version != 2) return {};
 	if (!ordinal || ordinal > Last_level || ordinal < Last_secret_level)
 		throw std::runtime_error("Invalid XL save source level ordinal");
@@ -972,6 +973,10 @@ std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal)
 	// Reconstruct the same retained source set as level entry, including scoped
 	// texture precedence and native HXM/bank dependencies, without installing it
 	XlPreparedResources resources(filename, &level, ordinal);
+	if (effect_frames && resources.scoped_texture_playback()) {
+		for (const auto &clock : resources.scoped_texture_playback()->effects)
+			effect_frames->emplace(clock.effect, int(resources.scoped_textures()->images.at(clock.image).bitmap.frames));
+	}
 	return resources.sources();
 }
 
