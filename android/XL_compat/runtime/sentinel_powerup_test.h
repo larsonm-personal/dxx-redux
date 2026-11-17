@@ -35,7 +35,7 @@ static int sentinel_powerup_test(int argc, char **argv)
 		        "Original invalid ammo clip did not use its retained definition and source count");
 		const auto snapshot = [] {
 			nlohmann::json objects = nlohmann::json::array();
-			for (int index : { 4, 5, 6, 7 }) objects.push_back(input_demo_object_trace_snapshot(Objects[index], index));
+			for (int index : { 4, 5, 6, 7 }) objects.push_back(nlohmann::json(input_demo_object_trace_snapshot(Objects[index], index)));
 			uint32_t sim = 0;
 			require(d_rand_get_state(&sim), "Cannot observe sentinel SIM state");
 			return nlohmann::json{ { "objects", objects }, { "world_before", input_demo_world_trace_snapshot() }, { "native_before", input_demo_native_xl_trace_snapshot() }, { "sim", sim }, { "sim_calls", d_rand_get_call_count() } };
