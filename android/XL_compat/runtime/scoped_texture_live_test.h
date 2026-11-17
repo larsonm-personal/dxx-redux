@@ -1,6 +1,13 @@
 static int scoped_texture_live_test(int argc, char **argv, const std::filesystem::path &root)
 {
 	char error[256]{};
+	const char *incoming_text = find_arg_value(argc, argv, "-audit-level");
+	require(incoming_text && (!std::strcmp(incoming_text, "1") || !std::strcmp(incoming_text, "7")), "Live texture control needs original Boiling Point level 1 or 7");
+	const int incoming_level = !std::strcmp(incoming_text, "1") ? 1 : 7;
+	const char *image_name = incoming_level == 1 ? "rock194.tga" : "metl060.tga";
+	const char *level_directory = incoming_level == 1 ? "level01" : "level07";
+	const std::string original_path = std::string("mods/boilpnt/textures/") + image_name;
+	const std::string priority_path = std::string("mods/boilpnt/textures/") + level_directory + "/" + image_name;
 	const char *outgoing = find_arg_value(argc, argv, "-audit-outgoing");
 	if (!outgoing) outgoing = "d2";
 	const int outgoing_level = !std::strcmp(outgoing, "wshock20") ? 6 : 1;
@@ -9,8 +16,18 @@ static int scoped_texture_live_test(int argc, char **argv, const std::filesystem
 	        "Live texture mutations require an isolated extra directory under the run directory");
 	const auto textures = root / "mods/boilpnt/textures";
 	const auto held = root / "mods/boilpnt/textures-held-control";
-	const auto override_directory = textures / "level07";
-	const auto override_file = override_directory / "metl060.tga";
+	const auto override_directory = textures / level_directory;
+	const auto override_file = override_directory / image_name;
+	std::vector<unsigned char> malformed{ 'B', 'A', 'D' };
+	const char *malformed_reason = "invalid TGA file size";
+	if (incoming_level == 1) {
+		malformed.assign(22, 0);
+		malformed[2] = 10;
+		malformed[12] = malformed[14] = 1;
+		malformed[16] = 24;
+		malformed[18] = 129; // Two pixels in a one-pixel image
+		malformed_reason = "packet exceeds its pixel or input bounds";
+	}
 	require(std::filesystem::is_directory(textures) && !std::filesystem::is_symlink(textures) &&
 	            !std::filesystem::exists(held) && !std::filesystem::exists(override_directory),
 	        "Live texture control would overwrite fixture content");
@@ -76,8 +93,19 @@ static int scoped_texture_live_test(int argc, char **argv, const std::filesystem
 		require(Current_mission == live && gameplay_definitions() == definitions && snapshot() == before,
 		        "Incoming texture operation changed outgoing world, objects, XL state, pixels or SIM RNG");
 	};
-	auto candidate = XlPreparedResources::prepare_level(target, 7);
+	auto candidate = XlPreparedResources::prepare_level(target, incoming_level);
 	require(candidate->has_scoped_textures(), "Original incoming level lacks qualified scoped textures");
+	if (incoming_level == 1) {
+		bool found = false;
+		for (const auto &image : candidate->scoped_textures()->images)
+			if (image.path == original_path) {
+				require(image.hash == "ffbc219965339e0f079838b1919836adc2e1037ef67ab679d717d97adf01f064" &&
+				            picosha2::hash256_hex_string(image.bitmap.pixels) == "370bf54a6cda458661dd8439c1ff749d38931b6dd005dcd0d69e6512b1a7b3e5",
+				        "Original RLE candidate differs from independent decoded pixels");
+				found = true;
+			}
+		require(found, "Original incoming RLE image was not selected");
+	}
 	XlPreparedResources moved(std::move(*candidate));
 	candidate.reset();
 	unchanged();
@@ -86,15 +114,15 @@ static int scoped_texture_live_test(int argc, char **argv, const std::filesystem
 		if (missing) std::filesystem::rename(textures, held);
 		else {
 			std::filesystem::create_directory(override_directory);
-			write_bytes(override_file.string().c_str(), { 'B', 'A', 'D' });
+			write_bytes(override_file.string().c_str(), malformed);
 		}
 		std::string rejection;
 		try {
-			(void) XlPreparedResources::prepare_level(target, 7);
+			(void) XlPreparedResources::prepare_level(target, incoming_level);
 		} catch (const std::runtime_error &failure) {
 			rejection = failure.what();
 		}
-		require(rejection.find(missing ? "no level POG or qualified scoped TGA set" : "invalid TGA file size") != std::string::npos,
+		require(rejection.find(missing ? "no level POG or qualified scoped TGA set" : malformed_reason) != std::string::npos,
 		        "Invalid original texture fixture was accepted or rejected for an unrelated reason");
 		unchanged();
 		if (missing) std::filesystem::rename(held, textures);
@@ -102,7 +130,7 @@ static int scoped_texture_live_test(int argc, char **argv, const std::filesystem
 			std::filesystem::remove(override_file);
 			std::filesystem::remove(override_directory);
 		}
-		auto recovered = XlPreparedResources::prepare_level(target, 7);
+		auto recovered = XlPreparedResources::prepare_level(target, incoming_level);
 		require(recovered->has_scoped_textures() && recovered->scoped_textures()->images.size() == moved.scoped_textures()->images.size(),
 		        "Valid incoming preparation did not recover after rejection");
 		unchanged();
@@ -112,7 +140,7 @@ static int scoped_texture_live_test(int argc, char **argv, const std::filesystem
 	std::filesystem::create_directory(override_directory);
 	std::filesystem::copy_file(textures / "ceil002.tga", override_file);
 	{
-		auto different = XlPreparedResources::prepare_level(target, 7);
+		auto different = XlPreparedResources::prepare_level(target, incoming_level);
 		const auto &original_images = moved.scoped_textures()->images;
 		const auto &different_images = different->scoped_textures()->images;
 		require(original_images.size() == different_images.size(), "Different texture candidate changed the image count");
@@ -121,15 +149,15 @@ static int scoped_texture_live_test(int argc, char **argv, const std::filesystem
 				if (image.path == path) return image;
 			throw std::runtime_error("Texture independence control lost its selected image");
 		};
-		const auto &original_image = find_image(original_images, "mods/boilpnt/textures/metl060.tga");
-		const auto &different_image = find_image(different_images, "mods/boilpnt/textures/level07/metl060.tga");
+		const auto &original_image = find_image(original_images, original_path.c_str());
+		const auto &different_image = find_image(different_images, priority_path.c_str());
 		require(original_image.bitmap.pixels != different_image.bitmap.pixels && original_image.hash != different_image.hash,
 		        "Equal-count texture candidates reused the same input or pixels");
 		unchanged();
 		std::filesystem::remove(override_file);
 		std::filesystem::remove(override_directory);
-		auto recovered = XlPreparedResources::prepare_level(target, 7);
-		const auto &recovered_image = find_image(recovered->scoped_textures()->images, "mods/boilpnt/textures/metl060.tga");
+		auto recovered = XlPreparedResources::prepare_level(target, incoming_level);
+		const auto &recovered_image = find_image(recovered->scoped_textures()->images, original_path.c_str());
 		require(recovered_image.bitmap.pixels == original_image.bitmap.pixels && recovered_image.hash == original_image.hash &&
 		            different_image.bitmap.pixels != recovered_image.bitmap.pixels &&
 		            recovered_image.bitmap.pixels.data() != original_image.bitmap.pixels.data(),
@@ -146,33 +174,33 @@ static int scoped_texture_live_test(int argc, char **argv, const std::filesystem
 	const auto after_continuation = snapshot();
 	require(load_base_mission("boilpnt", error, sizeof(error)), error);
 	input_demo_set_skip_level_intro(1);
-	StartNewGame(7);
+	StartNewGame(incoming_level);
 	const auto saved_sources = xl_resource_mod_sources();
 	const auto saved_world = snapshot();
 	const auto saved_definitions = gameplay_definitions();
-	require(saved_sources.count("mods/boilpnt/textures/force01#0.tga") &&
-	            xl_resource_sources_for_level(7) == saved_sources,
+	require(saved_sources.count(original_path) &&
+	            xl_resource_sources_for_level(incoming_level) == saved_sources,
 	        "Original save preflight omitted retained scoped texture identity");
 	std::filesystem::create_directory(override_directory);
 	std::filesystem::copy_file(textures / "ceil002.tga", override_file);
-	const auto different_sources = xl_resource_sources_for_level(7);
-	require(different_sources != saved_sources && different_sources.count("mods/boilpnt/textures/level07/metl060.tga") &&
-	            !different_sources.count("mods/boilpnt/textures/metl060.tga"),
+	const auto different_sources = xl_resource_sources_for_level(incoming_level);
+	require(different_sources != saved_sources && different_sources.count(priority_path.c_str()) &&
+	            !different_sources.count(original_path.c_str()),
 	        "Original save preflight admitted changed priority texture identity");
 	require(snapshot() == saved_world && gameplay_definitions() == saved_definitions && xl_resource_mod_sources() == saved_sources,
 	        "Save source preflight changed the live world or installed resource owner");
-	write_bytes(override_file.string().c_str(), { 'B', 'A', 'D' });
+	write_bytes(override_file.string().c_str(), malformed);
 	bool malformed_rejected = false;
 	try {
-		(void) xl_resource_sources_for_level(7);
+		(void) xl_resource_sources_for_level(incoming_level);
 	} catch (const std::runtime_error &failure) {
-		malformed_rejected = std::string(failure.what()).find("invalid TGA file size") != std::string::npos;
+		malformed_rejected = std::string(failure.what()).find(malformed_reason) != std::string::npos;
 	}
 	require(malformed_rejected && snapshot() == saved_world && gameplay_definitions() == saved_definitions && xl_resource_mod_sources() == saved_sources,
 	        "Malformed save source preflight failed rejection or live-state isolation");
 	std::filesystem::remove(override_file);
 	std::filesystem::remove(override_directory);
-	require(xl_resource_sources_for_level(7) == saved_sources, "Restored original texture did not recover save source identity");
-	native_continuation_receipt(root / "texture-dependency-audit.json", { { "outgoing", outgoing }, { "outgoing_level", outgoing_level }, { "incoming", "boilpnt:7" }, { "rejections", rejections }, { "equal_count_independence", true }, { "before", before }, { "after_continuation", after_continuation }, { "ordinary_frames", 120 }, { "save_source_controls", { { "original", true }, { "changed_priority", true }, { "malformed_rejected", true }, { "live_state_unchanged", true }, { "recovered", true }, { "source_count", saved_sources.size() } } }, { "limitation", "Controlled incoming preparation and save source preflight; separate from sampled readiness or a full cold restore" } });
+	require(xl_resource_sources_for_level(incoming_level) == saved_sources, "Restored original texture did not recover save source identity");
+	native_continuation_receipt(root / "texture-dependency-audit.json", { { "outgoing", outgoing }, { "outgoing_level", outgoing_level }, { "incoming", std::string("boilpnt:") + incoming_text }, { "rejections", rejections }, { "equal_count_independence", true }, { "before", before }, { "after_continuation", after_continuation }, { "ordinary_frames", 120 }, { "save_source_controls", { { "original", true }, { "changed_priority", true }, { "malformed_rejected", true }, { "live_state_unchanged", true }, { "recovered", true }, { "source_count", saved_sources.size() } } }, { "limitation", "Controlled incoming preparation and save source preflight; separate from sampled readiness or a full cold restore" } });
 	return 0;
 }

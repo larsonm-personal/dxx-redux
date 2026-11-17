@@ -1,6 +1,6 @@
 #ifndef DXX_XL_SCOPED_TEXTURE_RESOURCES_H
 #define DXX_XL_SCOPED_TEXTURE_RESOURCES_H
-#include "../particle_image.h"
+#include "../scoped_texture_image.h"
 #include "../scoped_texture.h"
 #include "asset_dependencies.h"
 #include "pog_resources.h"
@@ -64,7 +64,7 @@ struct ScopedTextureResources {
 						if (!bytes) continue;
 						PogBitmap image;
 						try {
-							image = read_particle_image(bytes->data(), bytes->size());
+							image = read_scoped_texture_image(bytes->data(), bytes->size());
 						} catch (const std::exception &error) {
 							throw std::runtime_error("XL scoped texture decode failed for " + path + ": " + error.what());
 						}

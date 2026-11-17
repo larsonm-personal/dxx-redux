@@ -8,12 +8,14 @@ param(
     [string]$OutputDirectory,
     [string]$OriginalTexture,
     [string]$OriginalAnimation,
+    [string]$OriginalRleTexture,
     [string]$OriginalRuntime,
     [switch]$NoEngineBuild
 )
 $arguments = @{} + $PSBoundParameters
 $arguments.Remove('OriginalTexture') | Out-Null
 $arguments.Remove('OriginalAnimation') | Out-Null
+$arguments.Remove('OriginalRleTexture') | Out-Null
 $arguments.Remove('OriginalRuntime') | Out-Null
 if ($OriginalTexture -or $OriginalAnimation) {
     . (Join-Path $PSScriptRoot '../helpers/test_host_platform.ps1')
@@ -40,12 +42,21 @@ if ($OriginalAnimation) {
 } elseif ($OriginalRuntime) {
     throw 'OriginalRuntime requires OriginalAnimation'
 }
+if ($OriginalRleTexture) {
+    if ((Get-FileHash -LiteralPath $OriginalRleTexture -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'ffbc219965339e0f079838b1919836adc2e1037ef67ab679d717d97adf01f064') { throw 'Original RLE texture hash differs' }
+    if ((Split-Path -Leaf $OriginalRleTexture) -cne 'rock194.tga') { throw 'Original RLE texture must retain its authored filename' }
+    $arguments.DataFiles = @($arguments.DataFiles) + @($OriginalRleTexture) | Where-Object { $_ }
+}
 if (-not $OutputDirectory) {
     $OutputDirectory = Join-Path $PSScriptRoot ('../temp/scoped-textures/run_' + [guid]::NewGuid().ToString('N'))
     $arguments.OutputDirectory = $OutputDirectory
 }
 try {
     & (Join-Path $PSScriptRoot '../helpers/run_native_engine_fixture.ps1') -Fixture scoped_textures -ExpectedCases 8 @arguments
+    if ($OriginalRleTexture) {
+        $rows = @(Get-Content -LiteralPath (Join-Path $OutputDirectory 'd2.json') -Raw | ConvertFrom-Json)
+        if ($rows.Count -ne 8 -or @($rows | Where-Object { -not $_.rle_image.correct -or $_.rle_image.sampled_pixels -ne 4096 -or $_.rle_image.rgba_sha256 -ne '370bf54a6cda458661dd8439c1ff749d38931b6dd005dcd0d69e6512b1a7b3e5' }).Count) { throw 'Original RLE GPU evidence is incomplete' }
+    }
     if ($OriginalTexture) {
         & $python.Path @pythonPrefix (Join-Path $PSScriptRoot "xl_private_assets.py") --gpu-trace (Join-Path $OutputDirectory "d2.json")
         if ($LASTEXITCODE -ne 0) { throw "Required original texture GPU evidence is incomplete" }
