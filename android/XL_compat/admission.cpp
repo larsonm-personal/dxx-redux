@@ -108,7 +108,8 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 			try {
 				if (!ambient_sound_shape(object)) throw std::runtime_error("requires a stationary, uncontrolled sound effect object");
 				const auto sound = decode_ambient_sound(object);
-				if (sound.volume < 0 || sound.filename.empty()) throw std::runtime_error("requires a nonnegative playback volume and a nonempty filename");
+				if (sound.volume < 0) throw std::runtime_error("requires a nonnegative playback volume");
+				// SetSoundSources appends .wav even to an empty authored stem
 				(void) named_sound_filename(sound.filename + ".wav");
 			} catch (const std::exception &error) {
 				result.push_back({ "effect_sounds", int(index), error.what() });

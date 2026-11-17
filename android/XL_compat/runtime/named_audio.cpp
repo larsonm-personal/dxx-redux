@@ -285,7 +285,7 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 		if (object.render == 13) {
 			const auto sound = decode_ambient_sound(object);
 			if (sound.volume < 0) throw std::runtime_error("XL ambient sound object has a negative playback volume");
-			if (sound.filename.empty()) throw std::runtime_error("XL ambient sound object has an empty filename");
+			// An empty authored stem still requests .wav in SetSoundSources
 			name = sound.filename + ".wav";
 		} else if (object.render == 12 && authored_lightning_emits(object) && prepare_authored_lightning(inventory, object).sound)
 			name = lightning_sound_name;

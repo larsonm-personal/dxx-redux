@@ -5,6 +5,7 @@
 #include "trigger_state.h"
 #include "object_trigger.h"
 #include "../effect_targets.h"
+#include "../ambient_sound.h"
 #include "../tests/ambient_activation_receipt.h"
 #include <memory>
 extern "C" {
@@ -123,7 +124,7 @@ void run(Output output, Record record, Activation activation, bool missing_outpu
 	SDL_PauseAudio(1);
 	const auto initial = ambient_objects_snapshot();
 	const auto source = source_level();
-	const bool default_enabled = source.level_version < 19;
+	const bool default_enabled = xl_compat::decode_ambient_sound(source.objects.at(50)).enabled;
 	std::string native_state;
 	for (int i = 49; i <= 51 && i <= Highest_object_index; ++i)
 		native_state += "; " + std::to_string(i) + ":" + std::to_string(Objects[i].type) + "/" + std::to_string(Objects[i].id) + "/" + std::to_string(Objects[i].signature);
@@ -173,7 +174,7 @@ void run(Output output, Record record, Activation activation, bool missing_outpu
 	if (default_enabled) {
 		check(xl_ambient_object_set_enabled(50, 0), "Cannot disable the legacy default-enabled source");
 		xl_audio_sync_objects();
-		check(owner(50).channel < 0, "Legacy default-enabled source did not stop");
+		check(owner(50).channel < 0, "Initially enabled source did not stop");
 	}
 	const auto serial = owner(50).serial;
 	const auto operate = [&](int index) {
