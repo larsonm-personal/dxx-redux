@@ -2504,3 +2504,13 @@ Downloaded host artifact14246038259 archiveSHA
 pins534; artifact14245999489 archiveSHA
 b752926e845d8f462e8c39241c8a318d91789fcbd10ecb03645da6dcd979a225 pins535.
 This does not resolve the separate public selected Android media failure.
+
+Diagnostic PR536 initially publishes fa3f6ed46adae8c8c571e5afd92697a5d4beb646
+on535. Its sample workflow43910926865 skips Android because the extended path
+selector omits this owned media helper. That skip is not media-test evidence.
+Add the exact media helper, owner and JSON script paths to extended selection;
+exercise edits and renamed previous filenames through the real refresh policy.
+Before the policy change, all six new path/rename cases fail as expected. Keep
+native non-tip behavior and unrelated-document skips unchanged. This closes a
+demonstrated coverage-selection gap and schedules the diagnostic owner without
+changing any media assertion, deadline, credential or trusted-controller branch.
