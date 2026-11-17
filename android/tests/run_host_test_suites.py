@@ -935,7 +935,9 @@ def run_suite(suite, repo, build_root, output, timeout):
                     from nightly_regression_corpus import route_runner_failure
 
                     result["owner_failure"] = route_runner_failure(
-                        work / ("command-%d.stderr.log" % len(result["commands"])), code
+                        work / ("command-%d.stderr.log" % len(result["commands"])),
+                        code,
+                        work / ("command-%d.stdout.log" % len(result["commands"])),
                     )
                 checked = compare_route(
                     expected_route,

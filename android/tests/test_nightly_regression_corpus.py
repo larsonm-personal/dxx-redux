@@ -206,6 +206,22 @@ class CorpusComparisons(unittest.TestCase):
                 path.write_text(text)
                 self.assertEqual(route_runner_failure(path, 1), {"exit_code": 1, "categories": [category]})
 
+    def test_route_failure_classifies_both_bounded_streams(self):
+        from nightly_regression_corpus import route_runner_failure
+
+        with tempfile.TemporaryDirectory() as directory:
+            stderr = Path(directory) / "stderr.log"
+            stdout = Path(directory) / "stdout.log"
+            stderr.write_text("SECRET_PRIVATE_PATH")
+            stdout.write_text("D2 HOG directory not found SECRET")
+            self.assertEqual(
+                route_runner_failure(stderr, 1, stdout), {"exit_code": 1, "categories": ["route-base-data"]}
+            )
+            stdout.write_text("Assertion SECRET failed" + "X" * 20000)
+            self.assertEqual(
+                route_runner_failure(stderr, 1, stdout), {"exit_code": 1, "categories": ["unclassified-owner-failure"]}
+            )
+
     def test_inner_worker_failure_diagnostics_are_typed_and_private(self):
         from nightly_regression_corpus import metadata_worker_diagnostics, metadata_owner_failure
         import nightly_retail
