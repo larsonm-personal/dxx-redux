@@ -598,6 +598,8 @@ def reconcile(plan, policy, state, receipts):
                 **core_diagnostics(row, ident),
             )
             diagnostics = retail.public_diagnostics(row)
+            if diagnostics.get("master_diagnostics"):
+                compact["master_diagnostics"] = diagnostics["master_diagnostics"]
             if "experimental_acceptance" in diagnostics:
                 compact["experimental_acceptance"] = diagnostics["experimental_acceptance"]
             cases = row.get("cases", [])
@@ -658,7 +660,7 @@ def online_failure_summary(output):
             elif "FAIL:" in line and category != "owner-exception":
                 category = "owner-assertion"
         break
-    return f"Online qualification failed: {phase}, {category}; see retained owner log"
+    return f"Online qualification failed: {phase}, {category}; see sanitized receipt diagnostics"
 
 
 def master_setup_stage(output):
@@ -1102,6 +1104,22 @@ def execute(plan, policy, lane, repo, output, build_root=None):
                     process_evidence(entry["id"], True, 124)
                     status = "TIMEOUT"
             elapsed += time.monotonic() - start
+            diagnostics = {}
+            source = retail.MASTER_DIAGNOSTIC_SOURCES.get(entry["args"]["suite"])
+            if source and status in ("FAIL", "TIMEOUT"):
+                try:
+                    diagnostics = retail.master_failure_diagnostics(
+                        {
+                            "name": entry["args"]["suite"],
+                            "status": status,
+                            "source": source,
+                            "source_sha256": hashlib.sha256((repo / source).read_bytes()).hexdigest(),
+                            "log": str(destination.with_suffix(".log")),
+                        },
+                        output,
+                    )
+                except (OSError, ValueError):
+                    diagnostics = {"log_available": False}
             write(
                 destination,
                 {
@@ -1109,6 +1127,7 @@ def execute(plan, policy, lane, repo, output, build_root=None):
                     "suite": entry["args"]["suite"],
                     "status": status,
                     "reason": "",
+                    "master_diagnostics": diagnostics,
                     "elapsed_seconds": time.monotonic() - start,
                     "coverage_complete": False,
                 },
