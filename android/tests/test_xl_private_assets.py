@@ -2055,6 +2055,8 @@ class ReadinessTests(unittest.TestCase):
             "assisted": False,
         }
         self.assertEqual(readiness.classify(0, proof, "", case), "loaded_ticked")
+        self.assertEqual(readiness.classify(0, {**proof, "mission": "SAMPLE"}, "", case), "loaded_ticked")
+        self.assertNotEqual(readiness.classify(0, {**proof, "mission": None}, "", case), "loaded_ticked")
         for key, value in (("frames", 0), ("mission", "wrong"), ("level", 1), ("assisted", True)):
             self.assertNotEqual(readiness.classify(0, {**proof, key: value}, "", case), "loaded_ticked")
         self.assertEqual(readiness.classify(-11, proof, "", case), "crash")
@@ -2247,7 +2249,7 @@ class ReadinessTests(unittest.TestCase):
                     reporter.main()
                 self.assertEqual(status.call_args.args[1], "error")
         workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/xl-pr-assets.yml").read_text()
-        reporting = workflow.split("  readiness-report:", 1)[1]
+        reporting = workflow.split("  readiness-report:", 1)[1].split("\n  readiness-expanded:", 1)[0]
         self.assertIn("READINESS_RESULT: ${{ needs.readiness.result }}", reporting)
         self.assertIn("--expected-failures control/android/tests/xl_readiness_expected.json", reporting)
         self.assertNotIn("continue-on-error", reporting.split("Publish honest readiness", 1)[1])
