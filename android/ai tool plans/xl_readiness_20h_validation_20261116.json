@@ -436,6 +436,265 @@
             }
         }
     ],
+    "media_diagnostic_runs": [
+        {
+            "name": "android-media-ci-repro-01",
+            "status": "PASS",
+            "test_exit_code": 0,
+            "controlled_negative": null,
+            "packages": {
+                "com.dxxredux.app": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-sphere-runtime-01\\com.dxxredux.app.apk",
+                    "sha256": "6a7e41784a7c20ce7f1185207f6ea10e2970ee45a837196b214efb0dd3ee9481"
+                },
+                "com.dxxredux.app.test": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-sphere-runtime-01\\com.dxxredux.app.test.apk",
+                    "sha256": "bcd3ed0259f56aee5bd11fbd9ce4ff5fbc0150bd080add9ec9baa17d4bae696b"
+                }
+            },
+            "restoration": {
+                "profile_hashes_match": true,
+                "com.dxxredux.app": "504848a52babb1c5c286e1c013d52f436cf6d1ffeaddf725444d93a41172dbb5",
+                "com.dxxredux.app.test": "ea0ee9086dc27a806430e0d693701f2e682c4fd55622ac5d48d5124178a0592a",
+                "preferences_match": true
+            },
+            "protected_file_count": 2295,
+            "receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-media-ci-repro-01/receipt.json",
+                "sha256": "165edca756b2c89837043891d41d24e25c6839e011a18ec5f53893e1cbd237b4"
+            },
+            "before_hashes": {
+                "path": "temp/xl-readiness-20h-20261116/android-media-ci-repro-01/before.sha256",
+                "sha256": "256ceab3227d9af4cb575c263aae9d6ee61f64c0470b21adf82d5392d531920f"
+            },
+            "after_hashes": {
+                "path": "temp/xl-readiness-20h-20261116/android-media-ci-repro-01/after.sha256",
+                "sha256": "256ceab3227d9af4cb575c263aae9d6ee61f64c0470b21adf82d5392d531920f"
+            }
+        },
+        {
+            "name": "android-media-ci-repro-02",
+            "status": "PASS",
+            "test_exit_code": 0,
+            "controlled_negative": null,
+            "packages": {
+                "com.dxxredux.app": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-sphere-runtime-01\\com.dxxredux.app.apk",
+                    "sha256": "6a7e41784a7c20ce7f1185207f6ea10e2970ee45a837196b214efb0dd3ee9481"
+                },
+                "com.dxxredux.app.test": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-sphere-runtime-01\\com.dxxredux.app.test.apk",
+                    "sha256": "bcd3ed0259f56aee5bd11fbd9ce4ff5fbc0150bd080add9ec9baa17d4bae696b"
+                }
+            },
+            "restoration": {
+                "profile_hashes_match": true,
+                "com.dxxredux.app": "504848a52babb1c5c286e1c013d52f436cf6d1ffeaddf725444d93a41172dbb5",
+                "com.dxxredux.app.test": "ea0ee9086dc27a806430e0d693701f2e682c4fd55622ac5d48d5124178a0592a",
+                "preferences_match": true
+            },
+            "protected_file_count": 2295,
+            "receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-media-ci-repro-02/receipt.json",
+                "sha256": "fc95030ef0c01523db031cf2935b3a694fdaa7c2eb0f0439c47ca0068ef17a6e"
+            },
+            "before_hashes": {
+                "path": "temp/xl-readiness-20h-20261116/android-media-ci-repro-02/before.sha256",
+                "sha256": "256ceab3227d9af4cb575c263aae9d6ee61f64c0470b21adf82d5392d531920f"
+            },
+            "after_hashes": {
+                "path": "temp/xl-readiness-20h-20261116/android-media-ci-repro-02/after.sha256",
+                "sha256": "256ceab3227d9af4cb575c263aae9d6ee61f64c0470b21adf82d5392d531920f"
+            }
+        },
+        {
+            "name": "android-media-ci-negative-01",
+            "status": "FAIL",
+            "test_exit_code": 1,
+            "controlled_negative": "Temporarily clear user_setup_complete to verify failure diagnostics, not a reproduction of unknown CI state",
+            "packages": {
+                "com.dxxredux.app": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-sphere-runtime-01\\com.dxxredux.app.apk",
+                    "sha256": "6a7e41784a7c20ce7f1185207f6ea10e2970ee45a837196b214efb0dd3ee9481"
+                },
+                "com.dxxredux.app.test": {
+                    "file": "C:\\local\\dxx-redux\\temp\\xl-readiness-20h-20261116\\android-sphere-runtime-01\\com.dxxredux.app.test.apk",
+                    "sha256": "bcd3ed0259f56aee5bd11fbd9ce4ff5fbc0150bd080add9ec9baa17d4bae696b"
+                }
+            },
+            "restoration": {
+                "user_setup_complete": "1",
+                "profile_hashes_match": true,
+                "com.dxxredux.app": "504848a52babb1c5c286e1c013d52f436cf6d1ffeaddf725444d93a41172dbb5",
+                "com.dxxredux.app.test": "ea0ee9086dc27a806430e0d693701f2e682c4fd55622ac5d48d5124178a0592a",
+                "preferences_match": true
+            },
+            "protected_file_count": 2295,
+            "receipt": {
+                "path": "temp/xl-readiness-20h-20261116/android-media-ci-negative-01/receipt.json",
+                "sha256": "1fe00390d59490c37b831857b4e60c09550eb14d39e85312d73dbd2a238c3e44"
+            },
+            "before_hashes": {
+                "path": "temp/xl-readiness-20h-20261116/android-media-ci-negative-01/before.sha256",
+                "sha256": "256ceab3227d9af4cb575c263aae9d6ee61f64c0470b21adf82d5392d531920f"
+            },
+            "after_hashes": {
+                "path": "temp/xl-readiness-20h-20261116/android-media-ci-negative-01/after.sha256",
+                "sha256": "256ceab3227d9af4cb575c263aae9d6ee61f64c0470b21adf82d5392d531920f"
+            }
+        }
+    ],
+    "ci_repair_candidate": {
+        "head": "4caf3b48bcaaac6b6a273d0e15796f36b9a9949c",
+        "selected_workflow": {
+            "id": 43911638595,
+            "attempt": 1,
+            "conclusion": "success"
+        },
+        "android_artifact_id": 14249228435,
+        "android_results": [
+            {
+                "id": "master:test_controller_overlay",
+                "status": "PASS",
+                "reason": "",
+                "exit_code": 0,
+                "commands": [],
+                "workers": [],
+                "mismatches": [],
+                "master_diagnostics": {
+                    "source_matches": []
+                },
+                "assets": {},
+                "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43911638595",
+                "exclusions": [],
+                "cases": [
+                    {
+                        "id": "controller-overlay-instrumentation",
+                        "status": "PASS"
+                    }
+                ],
+                "coverage_complete": true,
+                "comparison_only": false,
+                "runtime_outcome": "",
+                "attempted_tests": true,
+                "phase": "tests",
+                "retryable": false,
+                "blocker_kind": ""
+            },
+            {
+                "id": "shareware:test_auto_level_cheats#d2",
+                "status": "PASS",
+                "reason": "",
+                "exit_code": 0,
+                "elapsed_seconds": 200.353,
+                "commands": [],
+                "workers": [],
+                "mismatches": [],
+                "assets": {},
+                "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43911638595",
+                "exclusions": [],
+                "cases": [],
+                "coverage_complete": false,
+                "comparison_only": false,
+                "runtime_outcome": "",
+                "attempted_tests": true,
+                "phase": "tests",
+                "retryable": false,
+                "blocker_kind": ""
+            },
+            {
+                "id": "shareware:test_death#d1",
+                "status": "PASS",
+                "reason": "",
+                "exit_code": 0,
+                "elapsed_seconds": 22.81,
+                "commands": [],
+                "workers": [],
+                "mismatches": [],
+                "assets": {},
+                "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43911638595",
+                "exclusions": [],
+                "cases": [],
+                "coverage_complete": false,
+                "comparison_only": false,
+                "runtime_outcome": "",
+                "attempted_tests": true,
+                "phase": "tests",
+                "retryable": false,
+                "blocker_kind": ""
+            },
+            {
+                "id": "master:test_launcher_media_controls_generated",
+                "status": "PASS",
+                "reason": "",
+                "exit_code": 0,
+                "commands": [],
+                "workers": [],
+                "mismatches": [],
+                "master_diagnostics": {
+                    "source_matches": []
+                },
+                "assets": {},
+                "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43911638595",
+                "exclusions": [],
+                "cases": [],
+                "coverage_complete": false,
+                "comparison_only": false,
+                "runtime_outcome": "",
+                "attempted_tests": true,
+                "phase": "tests",
+                "retryable": false,
+                "blocker_kind": ""
+            },
+            {
+                "id": "master:test_android_music_completion",
+                "status": "PASS",
+                "reason": "",
+                "exit_code": 0,
+                "commands": [],
+                "workers": [],
+                "mismatches": [],
+                "master_diagnostics": {
+                    "source_matches": []
+                },
+                "assets": {},
+                "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/43911638595",
+                "exclusions": [],
+                "cases": [],
+                "coverage_complete": false,
+                "comparison_only": false,
+                "runtime_outcome": "",
+                "attempted_tests": true,
+                "phase": "tests",
+                "retryable": false,
+                "blocker_kind": ""
+            }
+        ],
+        "readiness_workflow": {
+            "id": 43911667597,
+            "attempt": 1,
+            "measurement": "success",
+            "publication": "success",
+            "whole_workflow_acceptance": "success"
+        },
+        "private_host_artifact_id": 14251176405,
+        "private_host_required_passed": 113,
+        "private_host_coverage_complete": false,
+        "private_host_camera_subchecks": "not_run_missing_addon",
+        "readiness_artifact_id": 14248444528,
+        "readiness_summary": {
+            "complete": true,
+            "counts": {
+                "loaded_ticked": 8
+            },
+            "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+            "denominator": 8,
+            "passed": 8,
+            "readiness_percent": 100.0
+        },
+        "scope": "Diagnostics and CI admission repair; original media failure cause remains unproven",
+        "repeat_status": "One diagnostic Android job repetition requested after original534 attempt2 reproduced the failure; terminal inspection required"
+    },
     "ordinary_windows_replay": {
         "head": "7936cd671c6396464384468103484d79c8df16a0",
         "engine_sha256": "0962ab30f08854c1e7bacdd914b1ef824e137fc27990e820c64307f22b2fc1ef",
@@ -580,6 +839,58 @@
         {
             "path": "temp/xl-readiness-20h-20261116/android-original-lifecycle-03/receipt.json",
             "sha256": "db76f6f5af3842bc95829a7f29d6fda0d26ac71afd80353aa7f925b37e5c577b"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/handoff-preservation-02.json",
+            "sha256": "21fe244dcb9bb887952b30c0a1ef49e58dbb0029295857a85af12763579c97f6"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr534-android-failure-01.zip",
+            "sha256": "e7cab4821ab3711c7f95c511218429fa92de7c6bfd7de86368ec15f21cdace7b"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr534-android-failure-attempt2-01.zip",
+            "sha256": "aa26f8811782114653c429ca24f62b91dd31d51a1aa82d633fe30378d1455f39"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr534-android-failure-attempt2-01/results.json",
+            "sha256": "f49ae2e233b585ce98efb68956c707d8e187d79e089cbc25292e40cf20f40bb1"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr536-superseded-readiness-01.zip",
+            "sha256": "c4b0afb66060c134fc5012a53b13609d6cb2599f441c467fdc0e5801818b46cb"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr536-superseded-readiness-01/results.json",
+            "sha256": "0fc42017b3dc19ca5ffa1d0a236cb2d922457a0c6b2671dfff7c9e3bf22e404e"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr536-readiness-01.zip",
+            "sha256": "663f1b35599aab844df71569e25f46794b8a90b78551c4a644f77c06d7e10b8a"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr536-readiness-01/results.json",
+            "sha256": "bf029debf18fab16e4bff08da66fb48439076c0f69d4bc9e3135ea05d9500a24"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr536-android-01.zip",
+            "sha256": "56557b9ff535635ee6145375b8caf878cf3d0176cc49a50e547faae56c1589f6"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr536-android-01/results.json",
+            "sha256": "d5181727af27aa774e35f1240037a37c1f06e207815b5ed81096d13e5a3f5b79"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr536-android-01/journal.jsonl",
+            "sha256": "a8789c2c92836ca948cb15f93d28b697450d8d994bd44014c101c65085443486"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr536-private-host-01.zip",
+            "sha256": "079449ccd4def6a4349254c36105ce2b716186ef7d1c0e32da3978af70974b9f"
+        },
+        {
+            "path": "temp/xl-readiness-20h-20261116/pr536-private-host-01/results.json",
+            "sha256": "09fa8b4413831d6cb03d6d67bf3614c72b3903290020c29afaa739c9d48c3387"
         }
     ],
     "public_stack_snapshot": [
@@ -1808,6 +2119,8 @@
     "limitations": [
         "Historical stock-only 4/8 is a separate provisioned-resource baseline",
         "Earlier failed attempts and private runs remain failures",
+        "Media diagnostic negative deliberately fails; local passes do not establish the hosted failure cause",
+        "Superseded fa3f6ed readiness is 8/8, but publication fails current-head provenance; it is not final-head CI acceptance",
         "Latest lifecycle candidate CI and final documentation push require separate final receipts",
         "Hosted required regression profile lacks camera addon subchecks and is not complete coverage",
         "ARM build-only; emulator execution is x86_64; no physical-device qualification",

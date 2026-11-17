@@ -2514,3 +2514,69 @@ Before the policy change, all six new path/rename cases fail as expected. Keep
 native non-tip behavior and unrelated-document skips unchanged. This closes a
 demonstrated coverage-selection gap and schedules the diagnostic owner without
 changing any media assertion, deadline, credential or trusted-controller branch.
+
+Final validation continuation: all24 committed evidence-file references rehash
+correctly. handoff-preservation-02 passes at current4caf3b48:13runtime inputs,
+original catalog, four stashes, clean reference/private-assets checkouts,
+32Windows package files and54Android libraries. Correct the report's public-CI
+claim to the actual retained snapshot scope, PRs517,518 and520-532.
+
+Private superseded536 workflow43911030662 reports a failed publication job,
+133456238784, at16:51UTC. Its retained readiness artifact14246809811 archiveSHA
+c4b0afb66060c134fc5012a53b13609d6cb2599f441c467fdc0e5801818b46cb contains8/8
+at fa3f6ed46adae8c8c571e5afd92697a5d4beb646 with unchanged original cohort and
+authorized resources. Publication fails in nightly_pr_candidate.verify at the
+current-open-PR head association guard after536 advanced to4caf3b48. Preserve
+that workflow failure; do not weaken provenance or present it as current-head
+acceptance. Current private workflow43911667597 remains pending behind it.
+
+Original534 selected workflow43903595453 is reproduced once at the same6cea684b
+head, failed jobs only, attempt2. This follows two unchanged protected local
+passes and the controlled failure-diagnostic check; attempt1 remains failed.
+Receipt pr534-media-reproduction-attempt2.json records the reason and original
+artifact identity. No media assertion, production timing or deadline changed.
+Current536 selected workflow43911638595 has actually admitted the media owner;
+JVM passes, Android and Linux remain live. Final acceptance stays pending.
+
+Current536 private workflow43911667597 attempt1 now passes readiness measurement
+and publication at4caf3b48bcaaac6b6a273d0e15796f36b9a9949c. Downloaded artifact
+14248444528 archiveSHA663f1b35599aab844df71569e25f46794b8a90b78551c4a644f77c06d7e10b8a
+is retained as pr536-readiness-01.zip and results.json. Exact candidate, all eight
+ordered original cases,120frames, cohort, selection seed and authentic resource
+hashes match the previously verified534receipt. Private host and public Android
+execution remain live; readiness publication alone is not final acceptance.
+
+Current536 selected workflow43911638595 attempt1 is terminal SUCCESS. Android
+artifact14249228435 archiveSHA56557b9ff535635ee6145375b8caf878cf3d0176cc49a50e547faae56c1589f6
+is retained in pr536-android-01. Exact candidate4caf3b48, five selected owners
+actually executed and all PASS. Generated media controls run29a62d9d978e49929972780080b987a0
+passes2/2steps in7073ms. Journal37ed30d023fa4ea2a31f47b47daa2761 records clean
+candidate, unchanged wrapper sourceSHA66344dab9613c8a6d39ef5548c97f26f609628d93c81909e69a9060ff19553d2,
+-GeneratedAudio, PASS/exit0. Coverage_complete=false remains explicit for the
+sampled media owner. Original534failure cause is unproven; no production playback
+repair is claimed. Its one same-head hosted reproduction is now executing tests.
+Private host and remaining public workflows still require terminal inspection.
+
+Original534 workflow43903595453 attempt2 fails the same generated media owner:
+runbcc6d3a0b2cf4108b71f4f655ad6617d, first MIDI pause remainsPLAYING at7082ms.
+Artifact14250796021 archiveSHAaa26f8811782114653c429ca24f62b91dd31d51a1aa82d633fe30378d1455f39
+is retained in pr534-android-failure-attempt2-01; this second failure is not waived.
+Current536passes but has no production playback change. Compare hosted APKs:
+534attempt2d89d4e950fdee6e719c81a2b72908c793b4548d0be12c430e4a1850e8c641513,
+53668f28c0d64663c1ca4bb6874354d375f9c2a46ff498cecddfb0038aa96c84e54.
+All699ZIP entries match except manifest,classes6.dex and D1/D2native libraries.
+Apkanalyzer shows manifest differs only versionCode30830to30860. Disassembly of
+LauncherPreviewMediaSession,PreviewMediaIntegrationTestKt andMidiPreviewBridge
+is identical across the two APKs. This is scoped comparison, not proof of whole
+APK equivalence. Source playback code remains unchanged. A single repeat of the
+current diagnostic Android job is warranted to capture missing platform-state
+evidence; no timing change, assertion relaxation or new readiness trial follows.
+
+Current536 private workflow43911667597 attempt1 is terminal SUCCESS under
+controller71e6efb9. Host artifact14251176405 archiveSHA
+079449ccd4def6a4349254c36105ce2b716186ef7d1c0e32da3978af70974b9f is retained
+in pr536-private-host-01 and pins4caf3b48. All113required checks PASS in836.046s;
+coverage_complete=false and missing-camera subchecks remain explicit. Readiness
+measurement/publication also pass8/8 as already recorded. Diagnostic Android
+repeat43911638595 attempt2 job133475683004 is live at this same head, requested
+for platform-state evidence after original534attempt2repeated the failure.

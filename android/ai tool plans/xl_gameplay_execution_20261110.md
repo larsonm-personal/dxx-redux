@@ -6166,3 +6166,17 @@ CI remains pending at this publication snapshot. Final-push CI and the exact
 post-publication receipt in temp/xl-readiness-20h-20261116/final-handoff-01.json
 are required before tranche acceptance; final status is also recorded in the
 handoff PR body. Another tranche still requires explicit invocation.
+
+November16 final-validation continuation: current5364caf3b48 retains8/8 original
+readiness in private43911667597 attempt1, terminalSUCCESS. Artifact14248444528
+pins the unchanged cohort/resources/criterion; host artifact14251176405 confirms
+113requiredPASS with incomplete/missing-camera coverage explicit. Windows534
+readiness remains separately identified; native/app source is unchanged since532.
+Current536selected43911638595 attempt1 passes all five actual Android owners,
+including generated media controls, as pinned by artifact14249228435. Original534
+attempts1and2both fail first MIDI pause; no production fix or root cause is claimed.
+One repeat of536's diagnostic Android job is live as attempt2 to capture platform
+state. Both failed534artifacts remain retained. The final report and validation
+JSON now include media restoration receipts, current private/Android evidence and
+preservation audit02. This documentation child of536 does not declare acceptance;
+remaining replay/diagnostic/final-push CI must be reconciled in the final receipt.
