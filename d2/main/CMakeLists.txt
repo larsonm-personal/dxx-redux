@@ -381,6 +381,8 @@ if(NOT ANDROID)
         PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II DXX_GUIDEBOT_ROUTE_PLANNER
         PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve
         INCLUDE_GAME_DIR)
+    target_precompile_headers(dxx-redux-d2-headless-route PRIVATE
+        "$<$<COMPILE_LANGUAGE:CXX>:<nlohmann/json.hpp$<ANGLE-R>>")
     if(BUILD_TESTING)
         dxx_add_headless_target(
             test_guidebot_original_navigation

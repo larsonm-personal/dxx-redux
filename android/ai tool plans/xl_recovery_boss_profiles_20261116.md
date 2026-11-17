@@ -88,9 +88,27 @@ shields_after 23696201. The warm control is assisted; the cold control restores
 that assisted setup and does not establish unassisted mission progression.
 The native and each Warp child kept their existing individual timeouts.
 
-The complete budgeted 64-case local run is active in boss-64-01. Relevant Android
-validation and exact boss-candidate CI remain pending. No full 56/64 measurement
-is claimed from the two targeted Sphere passes.
+The complete budgeted local run in boss-64-01 finished at 56/64 in 313.703
+seconds: eight load failures, no simulation failures, original 8/8, no budget
+exhaustion. Its source is the qualified worktree patch identified below, not the
+unmodified parent printed in target_sha.
+
+Trusted run 43992568832 on exact boss candidate
+8f3a1241fd35d26642c924d7ee267eca728b0aed, controller
+eba98b69662658ee0e98cf4ddc30425b11054e42, independently measured 56/64 in 235.261
+seconds within a 313-second probe budget with all cases tested and no budget
+exhaustion (job 133736726271). Downloaded artifact 14288622828 was verified
+against ZIP SHA256
+5b487776a41cbfdb143c2cecd9a136e6828922b48e5359c55c102bf561483c92.
+The separate original-eight measurement also passed. Public run 43992541349
+passed Windows/Linux asset-free contracts, the Linux linked boss gameplay
+consumer, and Linux/Windows developer compilation. The private Linux behavioral
+owner subsequently failed xl_boss_groups; final publication failed accordingly.
+The sanitized host receipt identifies that test but does not disclose its raw
+diagnostic. Investigate before acceptance; do not infer a timeout solely from
+the expanded case count. Host artifact 14288779083 ZIP SHA256 is
+41c830f4abd10d924f2e23666ad0ecc32d8a1c8ef38a114574cfba16e9f8311c.
+Relevant Android validation remains pending.
 
 ## Parent repair and hosted evidence
 
@@ -99,7 +117,11 @@ validation, public Windows/Linux and private contract builds exposed one stale
 RuntimeLayoutFixture aggregate initializer from that parent. A separate repair
 commit 73d63a1caf3055071b3ba937b7904a5426ab0245 was tested and pushed to PR 554;
 this branch now builds on that immediate parent. Boss changes were not included
-in the repair. The repaired-head CI is pending.
+in the repair. Its trusted private Linux owners and final exact-head publication
+passed in run 43991081941. However, that run's expanded measurement exhausted
+its budget at 51 passes, ten load failures and three untested cases. Preserve
+this infrastructure failure separately from the earlier complete 54/64 result;
+the subsequent boss candidate's complete result does not erase it.
 
 Trusted audio run 43985217907, controller eba98b69662658ee0e98cf4ddc30425b11054e42,
 exact candidate 082f4bb31745f085e406cadc9963fb8cd555f550: 53/64, eleven load failures,
