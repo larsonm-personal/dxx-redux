@@ -94,6 +94,9 @@ void set_robot_state(object *, int);
 void ai_fire_laser_at_player(object *, vms_vector *, int, vms_vector *);
 }
 #include "render_clock_probe.h"
+#include "camera_renderer.h"
+#include "internal.h"
+#include "camera_wall_probe.h"
 #include "omega_damage_probe.h"
 #include "sprite_material_probe.h"
 #endif
@@ -513,6 +516,13 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	const char *equipment_probe = argument_value("-xl-time-equipment-proof");
 	const char *message_probe = argument_value("-xl-message-clock-proof");
 	const char *hxm_actor_probe = argument_value("-xl-hxm-actor-proof");
+	const char *wall_camera_probe = argument_value("-xl-wall-camera-proof");
+	if (startup_find_cmd_arg("-xl-wall-camera-proof")) {
+		if (!wall_camera_probe || !output || !argument_value("-route-confirm-user-dir") || readiness ||
+		    clock_probe || omega_probe || sprite_probe || equipment_probe || message_probe || hxm_actor_probe) return 1;
+		error_init(nullptr);
+		set_warn_func(warn_printf);
+	}
 	const char *scene_object = argument_value("-xl-readiness-scene-object");
 	if (startup_find_cmd_arg("-xl-readiness-scene-object") &&
 	    (!readiness || !scene_object || !parse_scene_object(scene_object, &State.scene_object))) {
@@ -620,6 +630,27 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	if (readiness) return rendered_readiness(readiness, proof);
 #if defined(DXX_XL_RUNTIME) && defined(OGL) && defined(DXX_XL_DEVELOPER_PROBE)
 	if (hxm_actor_probe) return original_hxm_actor_proof(hxm_actor_probe, output);
+	if (wall_camera_probe) {
+		game_render_frame();
+		stop_time();
+		std::ofstream receipt(wall_camera_probe);
+		try {
+			const auto proof = camera_wall_monitor_probe([](unsigned texture, int width, int height) {
+				GLint previous = 0;
+				glGetIntegerv(GL_TEXTURE_BINDING_2D, &previous);
+				std::vector<unsigned char> pixels(std::size_t(width) * height * 4);
+				glBindTexture(GL_TEXTURE_2D, texture);
+				glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+				glBindTexture(GL_TEXTURE_2D, previous);
+				return pixels;
+			});
+			receipt << proof.dump(2) << '\n';
+			return receipt.good() ? 0 : 1;
+		} catch (const std::exception &error) {
+			receipt << nlohmann::json{ { "passed", false }, { "error", error.what() } }.dump(2) << '\n';
+			return 1;
+		}
+	}
 	if (clock_probe) return xl_render_clock_probe(clock_probe);
 	if (sprite_probe) return xl_sprite_material_probe(sprite_probe);
 	if (message_probe) return xl_message_clock_probe(message_probe);

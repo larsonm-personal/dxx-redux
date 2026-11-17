@@ -8,6 +8,8 @@ namespace camera_matrix_reference
 {
 using fix = std::int32_t;
 using fixang = std::int16_t;
+#define I2X(x) ((x) * 65536)
+fixang FixASin(fix), FixACos(fix), FixAtan2(fix, fix);
 using time_t = std::int64_t;
 constexpr double PI = 3.141592653589793240;
 constexpr int AIB_NORMAL = 129;
@@ -57,6 +59,14 @@ struct CFixVector {
 	static const fix Dot(const CFixVector &, const CFixVector &);
 	static const fix Normalize(CFixVector &);
 	fix Mag() const;
+	const CAngleVector ToAnglesVecNorm() const;
+	const CAngleVector ToAnglesVec() const;
+	void Neg()
+	{
+		v.coord.x = -v.coord.x;
+		v.coord.y = -v.coord.y;
+		v.coord.z = -v.coord.z;
+	}
 };
 struct CFixMatrix {
 	struct {
@@ -72,6 +82,10 @@ struct CFixMatrix {
 	void CheckAndFix();
 };
 struct CObject {
+	int Index() const
+	{
+		return 0;
+	}
 	struct {
 		struct {
 			int behavior = 129;
@@ -85,17 +99,40 @@ struct CObject {
 	struct {
 		struct {
 			CFixMatrix mOrient;
+			CFixVector vPos;
 		} position;
+		int nSegment = 0;
 	} info;
 };
+struct WallSegment {
+	struct {
+		CFixVector m_normals[2];
+	} m_sides[6];
+	CFixVector center;
+	CFixVector Center() const
+	{
+		return center;
+	}
+	CFixVector SideCenter(int) const
+	{
+		return center;
+	}
+} wall_segment;
+#define SEGMENT(i) (&wall_segment)
+struct {
+	void SetObjectCamera(int, int) {}
+} cameraManager;
 struct CCamera {
 	struct {
 		CObject *pObj = nullptr;
 		fixang curAngle = 0, curDelta = 0;
 		time_t t0 = 0;
 		CFixMatrix orient;
+		CObject obj;
+		int bMirror = 0, nSegment = 0, nSide = 0, bTeleport = 0;
 	} m_data;
 	void Rotate();
+	void Setup(int32_t, int16_t, int16_t, int16_t, int16_t, CObject *, int32_t);
 };
 #include "xl_reference_camera_matrix.h"
 CFixVector vector(const xl_compat::FixedLightPoint &p)
@@ -186,6 +223,34 @@ void camera_matrix_original_controls(const xl_compat::Inventory &level)
 		}
 	}
 	if (count) std::cout << "Original camera orientation: " << count << " source comparisons passed\n";
+}
+
+void camera_wall_runtime_controls(const char *path)
+{
+	using namespace camera_matrix_reference;
+	std::ifstream input(path);
+	if (!input) throw std::runtime_error("Missing native wall camera receipt");
+	std::array<int, 22> row{};
+	unsigned count = 0;
+	while (input >> row[0]) {
+		for (unsigned i = 1; i < row.size(); ++i)
+			if (!(input >> row[i])) throw std::runtime_error("Truncated wall camera receipt");
+		if (row[7] < 0 || row[7] >= 6) throw std::runtime_error("Invalid source side in wall camera receipt");
+		wall_segment.m_sides[row[7]].m_normals[0] = vector({ row[0], row[1], row[2] });
+		wall_segment.center = vector({ row[3], row[4], row[5] });
+		CCamera camera{};
+		camera.Setup(0, int16_t(row[6]), int16_t(row[7]), int16_t(row[6]), int16_t(row[7]), nullptr, 0);
+		const auto &viewer = camera.m_data.obj;
+		if (point(viewer.info.position.vPos) != xl_compat::FixedLightPoint{ row[8], row[9], row[10] } || viewer.info.nSegment != row[20] || row[21] != 0 || !camera.m_data.bMirror)
+			throw std::runtime_error("Native wall camera position, segment or ownership differs");
+		const auto actual = rows(viewer.info.position.mOrient);
+		for (unsigned column = 0; column < 3; ++column)
+			for (unsigned axis = 0; axis < 3; ++axis)
+				if (actual[column][axis] != row[11 + column * 3 + axis]) throw std::runtime_error("Native wall camera orientation differs at row " + std::to_string(count));
+		++count;
+	}
+	if (!input.eof() || count < 6 || count % 6) throw std::runtime_error("Incomplete wall camera receipt");
+	std::cout << "Native wall cameras: " << count << " pinned Setup placement and orientation comparisons passed\n";
 }
 
 void camera_controller_runtime_controls(const char *path)

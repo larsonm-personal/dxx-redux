@@ -16,6 +16,19 @@ string(FIND "${log}" "XL trigger flag controls passed" witness)
 if(NOT result EQUAL 0 OR witness LESS 0)
     message(FATAL_ERROR "Trigger flag controls failed (${result}): ${log}${error}")
 endif()
+if(EFFECT_REFERENCE)
+    execute_process(
+        COMMAND "${EFFECT_REFERENCE}" --camera-wall "${OUTPUT}/camera-wall.txt"
+        RESULT_VARIABLE reference_result
+        OUTPUT_VARIABLE reference_log
+        ERROR_VARIABLE reference_error
+        TIMEOUT 60)
+    file(WRITE "${OUTPUT}/camera-wall-reference.log" "${reference_log}${reference_error}")
+    if(NOT reference_result EQUAL 0)
+        message(
+            FATAL_ERROR "Wall camera source comparison failed: ${reference_log}${reference_error}")
+    endif()
+endif()
 file(SHA256 "${HOG}" final_hash)
 if(NOT final_hash STREQUAL original_hash)
     message(FATAL_ERROR "Original Neptune changed during trigger flag controls")

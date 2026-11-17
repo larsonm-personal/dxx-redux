@@ -302,6 +302,18 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/maths/vecmat.cpp"
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/maths/vecmat.cpp"
                       "const CFixMatrix CFixMatrix::CreateFU (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/cameras.cpp" "void CCamera::Rotate (")
+foreach(table IN ITEMS asin_table acos_table)
+    string(REGEX MATCH "[a-z0-9_]+ ${table} \\[\\] = \\{[^}]*\\};" fragment "${splash_tables}")
+    string(APPEND extracted "${fragment}\n")
+endforeach()
+foreach(signature IN ITEMS "fixang FixASin (" "fixang FixACos(" "fixang FixAtan2 (")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/maths/fixc.cpp" "${signature}")
+endforeach()
+foreach(signature IN ITEMS "inline const CAngleVector CFixVector::ToAnglesVecNorm (void) const"
+                           "inline const CAngleVector CFixVector::ToAnglesVec (void) const")
+    extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/include/vecmat.h" "${signature}")
+endforeach()
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/render/cameras.cpp" "void CCamera::Setup (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_camera_matrix.h"
      CONTENT "${extracted}")
 target_sources(xl_effect_reference PRIVATE tests/reference_camera_matrix.cpp)

@@ -172,6 +172,7 @@ struct Readback {
 #include "mission_revisit_probe.h"
 #include "mission_flyout_probe.h"
 #include "pmc_playtest_probe.h"
+#include "camera_wall_probe.h"
 
 void gpu()
 {
@@ -203,6 +204,13 @@ void gpu()
 const char *xl_pog_probe(const char *operation)
 {
 	try {
+		if (!std::strcmp(operation, "wall_camera_monitor")) {
+			xl_compat::LightningGlowState restore_gl;
+			Readback readback;
+			CameraTargetPattern sampler;
+			report = camera_wall_monitor_probe([&](unsigned texture, int width, int height) { return sampler.sample(texture, width, height, 0); }).dump();
+			return nullptr;
+		}
 		if (!std::strncmp(operation, "pmc_", 4)) {
 			pmc_playtest_probe(operation + 4);
 			return nullptr;

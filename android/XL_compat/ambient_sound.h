@@ -24,7 +24,7 @@ inline int ambient_sound_volume(int serialized)
 	// CObject::Read performs float arithmetic, then FRound, then integer conversion
 	const float scaled = float(serialized) * 65536.0f / 10.0f;
 	const float rounded = scaled < 0.0f ? scaled - 0.5f : scaled + 0.5f;
-	if (double(rounded) < std::numeric_limits<int>::min() || double(rounded) > std::numeric_limits<int>::max())
+	if (double(rounded) < (std::numeric_limits<int>::min)() || double(rounded) > (std::numeric_limits<int>::max)())
 		throw std::runtime_error("XL ambient sound volume exceeds the fixed-point runtime range");
 	return int(rounded);
 }
