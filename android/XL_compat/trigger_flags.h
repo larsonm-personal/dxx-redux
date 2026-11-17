@@ -3,6 +3,11 @@
 namespace xl_compat
 {
 constexpr int trigger_flags_mask = 255;
+constexpr bool legacy_smoke_action(int type)
+{
+	// Pinned CTrigger::Operate has empty action bodies for these legacy controls
+	return type >= 20 && type <= 24;
+}
 enum class TriggerCue { ForcefieldOff,
 	                    IllusionOff };
 constexpr bool trigger_cue_enabled(int flags, TriggerCue cue)
