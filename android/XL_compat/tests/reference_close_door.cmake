@@ -72,3 +72,23 @@ set(extracted "// Actual pinned XL side mask implementation\n")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/side.cpp" "CSegMasks CSide::Masks (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_door_masks.h" CONTENT "${extracted}")
 target_sources(xl_close_door_reference PRIVATE tests/reference_door_masks.cpp)
+file(SHA256 "${XL_REFERENCE_GEOMETRY_ROOT}/ogl/ogl_texture.cpp" texture_hash)
+if(NOT texture_hash STREQUAL "97ceec7d0c05661f5945bd198eab8b482cd69ee2cd8899ab09ddd055619e58ec")
+    message(FATAL_ERROR "Door strip texture source changed")
+endif()
+set(extracted "// Actual pinned XL door strip selection and side phase\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/wall.cpp"
+                      "int32_t WallEffectFrameCount (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/segment.cpp"
+                      "void CSegment::SetTexture (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/ogl/ogl_texture.cpp"
+                      "CBitmap *LoadFaceBitmap (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/wall.cpp" "void InitDoorAnims (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/side.cpp" "void CSide::SetTextures (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_door_strip.h" CONTENT "${extracted}")
+target_sources(xl_close_door_reference PRIVATE tests/reference_door_strip.cpp)
+file(STRINGS "${XL_REFERENCE_GEOMETRY_ROOT}/include/wall.h" strip_flags
+     REGEX "^#define[ \t]+WCF_(ALTFMT|TMAP1|INITIALIZED)[ \t]+")
+list(JOIN strip_flags "\n" strip_flags_text)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_door_strip_flags.h"
+     CONTENT "${strip_flags_text}\n")
