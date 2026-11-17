@@ -861,6 +861,17 @@ if(BUILD_TESTING)
     set(XL_WARP_DATA "" CACHE PATH "Genuine complete XL resources for Warp 5 gameplay")
     set(XL_WARP_ENGINE "" CACHE FILEPATH
                                 "Rendered D2 developer executable for original HXM actor controls")
+    set(XL_WARP_EXTRA "" CACHE PATH
+                               "Original Warp Shock missions and mods for unused-wall lifecycle")
+    if(XL_WARP_EXTRA AND XL_WARP_DATA AND XL_PREVIEW_LIFECYCLE)
+        add_test(
+            NAME xl_warp_unused_walls
+            COMMAND
+                ${CMAKE_COMMAND} -DEXTRA=${XL_WARP_EXTRA} -DDATA=${XL_WARP_DATA}
+                -DENGINE=${XL_PREVIEW_LIFECYCLE} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/unused-walls
+                -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/unused_wall.cmake)
+        set_tests_properties(xl_warp_unused_walls PROPERTIES TIMEOUT 150)
+    endif()
     if(XL_APOCALYPTIC_HOG AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
         set(format34_reference_args)
         if(TARGET xl_light_index_reference)

@@ -145,6 +145,14 @@ struct ObjectDependencies {
 		sound(w.open_sound);
 		sound(w.close_sound);
 	}
+	void wall(int type, int id)
+	{
+		const bool animated = type == WALL_DOOR || type == WALL_BLASTABLE;
+		asset_require(!animated || id >= 0, "animated wall has no wall animation");
+		// Nonanimated wall records can retain unused editor clip bytes
+		if (!animated && id < 0) return;
+		wall_clip(id);
+	}
 	void model(int id)
 	{
 		if (id == -1) return;
