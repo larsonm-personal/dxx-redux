@@ -122,3 +122,19 @@ That is not a Debug lifecycle pass. Debug compilation and the source contracts
 passed; optimized full lifecycle and rendered results are separate evidence.
 The existing G2 rejected-save energy change and Android XL replay/startup-FX
 limitations remain open. No campaign or general Android XL readiness is claimed.
+
+## First published CI and compiler repair
+
+#566 head bd57437b3d9ef6dc62f32c959bcd8101f01b314c, trusted run 44038224191,
+preserved original 8/8 and passed Subzero's ordinary 120 frames in 8.063 seconds.
+The expanded run was incomplete: 58 passed, four failed and two untested in
+274.036 seconds of its 312-second probe budget. The unchanged 45-second start
+guard left Evil Within secret 2 and Ironblade level 2 untested. This is not 60/64.
+
+The private owner stopped at preview-build. Public Linux job 133886185592 exposed
+an ambiguous ordered_json-to-json push_back in the new diagnostic, accepted by
+MSVC but rejected by GCC. The next checkpoint explicitly constructs the
+destination JSON type, matching existing observers. It changes no game behavior,
+assertion or receipt field. The corrected diagnostic rebuilt successfully with
+MSVC; Linux and private-owner validation require the new candidate's CI. Original
+failed logs and SHA-verified artifacts remain under ci-44038224191.
