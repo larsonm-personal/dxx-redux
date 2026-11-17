@@ -10,6 +10,26 @@ temp/xl-readiness-20h-20261116/final-handoff-01.json. Neither this document nor
 its publication alone declares the active goal complete. The full execution
 record is xl_readiness_20h_20261116.md; the dated validation JSON pins receipts.
 
+### Post-publication CI repair
+
+The remote stack was rebased onto cmake a42f508db without changing gameplay or
+XL implementation. PR540 candidate19f06a057 independently confirms8/8 readiness
+with the same original cases/resources in private workflow43928532228. Its host
+artifact14262052277 confirms113required checks with the same missing-camera
+coverage. The selected Android run43927543361 attempt1 again fails first MIDI
+pause; four other owners pass. Artifact14262376410 remains a failed receipt.
+
+The subsequent tested child adds an API33+ instrumentation precondition: Android
+must select the exact preview session before the existing global media key is
+sent. All transport assertions, poll bounds and owner deadline remain unchanged;
+production playback is unchanged. The debug integration source and instrumentation
+are intentionally changed, so the earlier broad app-source equality statement
+below applies only to its identified publication snapshot. See
+xl_readiness_media_routing_20261116.md for the failure evidence, source/binary
+identities and limitations. Local MIDI/CD/MP3 controls and full device restoration
+pass, but local routing was immediately ready; historical timing causation is
+not claimed proven. Final hosted qualification of this child remains required.
+
 ## Result and scope
 
 The unchanged original eight-case readiness sample is 8/8 on ordinary

@@ -63,6 +63,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var xlSphere = false
     private var pumoUiImportOnly = false
     private var controllerOverlayOnly = false
+    private var previewMediaAudioPath: String? = null
     private var installationWorkOnly = false
     private var xlCompatibilityOnly = false
     private var xlDragonPackageArchive: String? = null
@@ -96,6 +97,9 @@ class RecoveryInstrumentation : Instrumentation() {
         xlSphere = arguments?.getString("xl_sphere") == "true"
         pumoUiImportOnly = arguments?.getString("suite") == "pumo_ui_import"
         controllerOverlayOnly = arguments?.getString("suite") == "controller_overlay"
+        if (arguments?.getString("suite") == "preview_media_controls") {
+            previewMediaAudioPath = arguments.getString("audio_path") ?: "preview-media-test.mp3"
+        }
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
         coopSessionOnly = arguments?.getString("suite") == "coop_session"
         super.onCreate(arguments)
@@ -105,6 +109,12 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            previewMediaAudioPath?.let { audioPath ->
+                PreviewMediaControlsChecks(this).run(audioPath)
+                result.putString("stream", "PASS: platform-routed MIDI, CD and MP3 preview controls\n")
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             if (pumoUiImportOnly) {
                 PumoUiImportChecks(this).run()
                 result.putString(

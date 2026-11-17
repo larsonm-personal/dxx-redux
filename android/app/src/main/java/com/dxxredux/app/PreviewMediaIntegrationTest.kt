@@ -16,6 +16,7 @@ import kotlin.math.abs
 internal suspend fun testPreviewMediaControls(
     context: Context,
     audioPath: String,
+    mediaKeySessionReady: (LauncherPreviewMediaSession) -> Boolean = { true },
 ) = withContext(Dispatchers.Main) {
     check(BuildConfig.DEBUG)
     val audioFile = File(context.filesDir, audioPath)
@@ -146,6 +147,7 @@ internal suspend fun testPreviewMediaControls(
     val audio = context.getSystemService(AudioManager::class.java)
 
     suspend fun press(key: Int) {
+        LauncherDebugLog.log("preview-media-test dispatch ${KeyEvent.keyCodeToString(key)}")
         audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, key))
         audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, key))
         delay(250)
@@ -178,7 +180,9 @@ internal suspend fun testPreviewMediaControls(
         }
         try {
             media.play()
-            expect("start") { it.status == PreviewStatus.PLAYING && it.durationMs > 20_000 }
+            expect("start") {
+                it.status == PreviewStatus.PLAYING && it.durationMs > 20_000 && mediaKeySessionReady(media)
+            }
             press(KeyEvent.KEYCODE_MEDIA_PAUSE)
             expect("pause") { it.status == PreviewStatus.PAUSED }
             val initial = player.snapshot().positionMs
