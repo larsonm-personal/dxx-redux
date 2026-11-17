@@ -85,8 +85,9 @@ class CorpusComparisons(unittest.TestCase):
         result = compare_metadata(self.metadata, copy.deepcopy(self.metadata), self.metadata_summary, "mission.zip")
         self.assertEqual(result["status"], "BLOCKED")
         self.assertFalse(result["retryable"])
-        self.assertEqual(result["geometry_failures"], [
-            {"mission_index": 0, "level_index": 0, "category": "missing-level"}])
+        self.assertEqual(
+            result["geometry_failures"], [{"mission_index": 0, "level_index": 0, "category": "missing-level"}]
+        )
         output = copy.deepcopy(self.metadata)
         output[0]["levels"][0]["travel_time_seconds"] += 1
         self.assertEqual(self.metadata_result(output), "FAIL")
@@ -112,8 +113,13 @@ class CorpusComparisons(unittest.TestCase):
 
     def test_hxm_warning_counts_are_structured_not_raw_text(self):
         from nightly_regression_corpus import metadata_differences
-        before = {"data_warnings": ["Level HXM legacy handling: 30 unused joint offsets normalized; 4 trailer bytes ignored"]}
-        after = {"data_warnings": ["Level HXM legacy handling: 5 unused joint offsets normalized; 4 trailer bytes ignored"]}
+
+        before = {
+            "data_warnings": ["Level HXM legacy handling: 30 unused joint offsets normalized; 4 trailer bytes ignored"]
+        }
+        after = {
+            "data_warnings": ["Level HXM legacy handling: 5 unused joint offsets normalized; 4 trailer bytes ignored"]
+        }
         result = metadata_differences(before, after)
         self.assertEqual(result[0]["expected_warning"]["normalized_joint_offsets"], 30)
         self.assertEqual(result[0]["actual_warning"]["normalized_joint_offsets"], 5)
@@ -131,6 +137,59 @@ class CorpusComparisons(unittest.TestCase):
         self.assertEqual(len(metadata_differences(list(range(100)), [-1] * 100)), 16)
         warnings = metadata_differences({"data_warnings": ["PRIVATE"]}, {"data_warnings": ["SECRET"]})
         self.assertEqual(warnings, [{"path": ["data_warnings", 0], "kind": "value"}])
+
+    def test_route_infrastructure_and_process_receipts_keep_safe_causes(self):
+        from nightly_regression_corpus import route_infrastructure_diagnostics, route_worker_diagnostics
+
+        summary = {
+            "infrastructure_failures": [
+                {"problem": "Route engine infrastructure failure for PRIVATE, exit 1, log=SECRET"},
+                {"problem": "Route engine process timeout after 360 seconds for PRIVATE"},
+                {"problem": "Route engine could not start for PRIVATE"},
+                {"problem": "Route engine result could not be read for PRIVATE"},
+                {"problem": "Could not resolve mission assets for PRIVATE"},
+                {"problem": "PRIVATE"},
+            ]
+        }
+        self.assertEqual(
+            route_infrastructure_diagnostics(summary),
+            [
+                "engine-exit-or-missing-output",
+                "process-timeout",
+                "engine-start",
+                "result-unreadable",
+                "asset-staging",
+                "unclassified-infrastructure",
+            ],
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "results").mkdir()
+            output = root / "results/PRIVATE_run_1.json"
+            output.write_text('{"PRIVATE": "SECRET"}')
+            Path(str(output) + ".process.json").write_text(
+                json.dumps({"exit_code": -11, "timed_out": False, "start_error": "PRIVATE", "raw": "SECRET"})
+            )
+            (root / "logs").mkdir()
+            (root / "logs" / (output.stem + ".log")).write_text("Segmentation fault PRIVATE")
+            rows = route_worker_diagnostics(root)
+            self.assertEqual(rows[0]["exit_code"], -11)
+            self.assertTrue(rows[0]["start_error"])
+            self.assertTrue(rows[0]["output_present"])
+            self.assertIn("segmentation-fault", rows[0]["categories"])
+            self.assertNotIn("PRIVATE", str(rows))
+            self.assertNotIn("SECRET", str(rows))
+            Path(str(output) + ".process.json").write_text("[]")
+            self.assertEqual(route_worker_diagnostics(root), [])
+
+    def test_route_outcome_difference_keeps_expected_status(self):
+        output = copy.deepcopy(self.route)
+        self.route["levels"][0]["status"] = "timeout"
+        output["levels"][0]["status"] = "route_mismatch"
+        result = compare_route(self.route, output, self.summary, "mission.json")
+        self.assertEqual(result["expected_runtime_outcome"], "timeout")
+        self.assertEqual(result["runtime_outcome"], "route_mismatch")
+        self.assertEqual(result["status"], "FAIL")
 
     def test_route_early_failure_categories_are_bounded_and_private(self):
         from nightly_regression_corpus import route_runner_failure

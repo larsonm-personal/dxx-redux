@@ -268,42 +268,41 @@ def lane_requires_retail(plan, lane):
 PUBLIC_REASONS = frozenset(
     (
         "Approved KVM access refresh failed before master owner launch",
-        'Committed unavailable geometry reproduced unchanged',
-        'Committed route oracle is absent',
-        'Missing route baseline, generated output or summary',
-        'Missing or unsupported route summary schema',
-        'Route owner was not explicitly non-publishing',
-        'Route owner did not use canonical headless mode',
-        'Route owner reported infrastructure failures',
-        'Missing, duplicated or inconsistent selected route work items',
-        'Owner executed a different route work item',
-        'Selected route identity does not match requested metadata',
-        'Malformed selected route identity',
-        'Selected committed route oracle is absent or duplicated',
-        'Selected generated route leaf is absent or duplicated',
-        'Selected route outcome is not ok',
-        'Runtime route outcome differs from committed baseline',
-        'Canonical mission header differs',
-        'Selected route state differs from committed baseline',
-        'Selected route state matches committed baseline',
-        'Missing canonical route header: schema',
-        'Missing canonical route header: mission_filename',
-        'Missing canonical route header: target_index',
-        'Missing canonical route header: generation',
-        'Missing canonical route header: fixed_hz',
-        'Missing canonical route header: seed',
-        'Canonical route header differs: schema',
-        'Canonical route header differs: mission_filename',
-        'Canonical route header differs: target_index',
-        'Canonical route header differs: generation',
-        'Canonical route header differs: fixed_hz',
-        'Canonical route header differs: seed',
-        'Missing canonical route state: route_input_sha256',
-        'Missing canonical route state: rng_start',
-        'Missing canonical route state: rng_end',
-        'Missing canonical route state: objectives',
-        'Missing canonical route state: total_frames',
-
+        "Committed unavailable geometry reproduced unchanged",
+        "Committed route oracle is absent",
+        "Missing route baseline, generated output or summary",
+        "Missing or unsupported route summary schema",
+        "Route owner was not explicitly non-publishing",
+        "Route owner did not use canonical headless mode",
+        "Route owner reported infrastructure failures",
+        "Missing, duplicated or inconsistent selected route work items",
+        "Owner executed a different route work item",
+        "Selected route identity does not match requested metadata",
+        "Malformed selected route identity",
+        "Selected committed route oracle is absent or duplicated",
+        "Selected generated route leaf is absent or duplicated",
+        "Selected route outcome is not ok",
+        "Runtime route outcome differs from committed baseline",
+        "Canonical mission header differs",
+        "Selected route state differs from committed baseline",
+        "Selected route state matches committed baseline",
+        "Missing canonical route header: schema",
+        "Missing canonical route header: mission_filename",
+        "Missing canonical route header: target_index",
+        "Missing canonical route header: generation",
+        "Missing canonical route header: fixed_hz",
+        "Missing canonical route header: seed",
+        "Canonical route header differs: schema",
+        "Canonical route header differs: mission_filename",
+        "Canonical route header differs: target_index",
+        "Canonical route header differs: generation",
+        "Canonical route header differs: fixed_hz",
+        "Canonical route header differs: seed",
+        "Missing canonical route state: route_input_sha256",
+        "Missing canonical route state: rng_start",
+        "Missing canonical route state: rng_end",
+        "Missing canonical route state: objectives",
+        "Missing canonical route state: total_frames",
         "Unsafe alternate corpus HAM dependency",
         "Descriptor-associated corpus HOG or complete loose levels unavailable",
         "Ambiguous alternate corpus HAM dependency",
@@ -487,7 +486,12 @@ def public_diagnostics(value):
             row["duration_seconds"] = round(duration, 3)
         row["phase"] = "setup" if command.get("phase") == "setup" else "tests"
         clean["commands"].append(row)
-    from nightly_regression_corpus import DIAGNOSTIC_FIELDS, WORKER_CATEGORIES, GEOMETRY_CATEGORIES
+    from nightly_regression_corpus import (
+        DIAGNOSTIC_FIELDS,
+        WORKER_CATEGORIES,
+        GEOMETRY_CATEGORIES,
+        ROUTE_INFRASTRUCTURE_CATEGORIES,
+    )
 
     def worker_row(value):
         row = {
@@ -498,7 +502,14 @@ def public_diagnostics(value):
         row.update(
             {
                 key: value[key]
-                for key in ("timed_out", "stdout_complete", "stderr_complete", "shutdown_missing")
+                for key in (
+                    "timed_out",
+                    "stdout_complete",
+                    "stderr_complete",
+                    "shutdown_missing",
+                    "start_error",
+                    "output_present",
+                )
                 if type(value.get(key)) is bool
             }
         )
@@ -508,10 +519,18 @@ def public_diagnostics(value):
                 for category in value.get(stream, [])[:16]
                 if isinstance(category, str) and category in WORKER_CATEGORIES
             ]
-        if value.get("worker") in ("d1-metadata", "d2-metadata", "other"):
+        if value.get("worker") in ("d1-metadata", "d2-metadata", "other", "route"):
             row["worker"] = value["worker"]
         return row
 
+    clean["route_workers"] = [worker_row(row) for row in value.get("route_workers", [])[:16] if isinstance(row, dict)]
+    clean["route_infrastructure"] = [
+        category
+        for category in value.get("route_infrastructure", [])[:16]
+        if isinstance(category, str) and category in ROUTE_INFRASTRUCTURE_CATEGORIES
+    ]
+    if value.get("expected_runtime_outcome") in ("ok", "partial", "failed", "timeout", "unsupported", "route_mismatch"):
+        clean["expected_runtime_outcome"] = value["expected_runtime_outcome"]
     clean["workers"] = [worker_row(row) for row in value.get("workers", [])[:16] if isinstance(row, dict)]
     if isinstance(value.get("owner_failure"), dict):
         clean["owner_failure"] = worker_row(value["owner_failure"])
@@ -519,9 +538,9 @@ def public_diagnostics(value):
     clean["geometry_failures"] = [
         {key: row[key] for key in ("mission_index", "level_index", "category")}
         for row in value.get("geometry_failures", [])[:16]
-        if isinstance(row, dict) and row.get("category") in GEOMETRY_CATEGORIES
-        and all(type(row.get(key)) is int and 0 <= row[key] <= 1000000
-                for key in ("mission_index", "level_index"))
+        if isinstance(row, dict)
+        and row.get("category") in GEOMETRY_CATEGORIES
+        and all(type(row.get(key)) is int and 0 <= row[key] <= 1000000 for key in ("mission_index", "level_index"))
     ]
     clean["mismatches"] = []
     for mismatch in value.get("mismatches", [])[:16]:
@@ -545,8 +564,11 @@ def public_diagnostics(value):
         for key in ("expected_warning", "actual_warning"):
             counts = mismatch.get(key)
             fields = ("normalized_joint_offsets", "ignored_trailer_bytes")
-            if ("data_warnings" in path and isinstance(counts, dict)
-                    and all(type(counts.get(field)) is int and 0 <= counts[field] <= 9999999 for field in fields)):
+            if (
+                "data_warnings" in path
+                and isinstance(counts, dict)
+                and all(type(counts.get(field)) is int and 0 <= counts[field] <= 9999999 for field in fields)
+            ):
                 clean["mismatches"][-1][key] = {field: counts[field] for field in fields}
     details = value.get("master_diagnostics")
     if isinstance(details, dict):
