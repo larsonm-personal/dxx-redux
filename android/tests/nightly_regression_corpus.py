@@ -10,6 +10,7 @@ previously loaded levels.
 
 import copy
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -262,11 +263,17 @@ def route_worker_diagnostics(root):
     return rows
 
 
-def route_runner_failure(stderr_path, code):
-    # Retain only fixed categories from bounded local stderr, never private text
-    with Path(stderr_path).open("rb") as stream:
-        stream.seek(max(0, Path(stderr_path).stat().st_size - 16384))
-        text = stream.read(16384).decode("utf-8", errors="replace")
+def route_runner_failure(stderr_path, code, stdout_path=None):
+    # Retain only fixed categories from bounded local streams, never private text
+    tails = []
+    for path in (stderr_path, stdout_path):
+        if path is None:
+            continue
+        with Path(path).open("rb") as stream:
+            stream.seek(0, os.SEEK_END)
+            stream.seek(max(0, stream.tell() - 16384))
+            tails.append(stream.read(16384).decode("utf-8", errors="replace"))
+    text = "\n".join(tails)
     text = re.sub(r"\x1b\[[0-9;]*m", "", text)
     categories = worker_failure_categories(text)
     if re.search(

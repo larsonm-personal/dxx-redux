@@ -623,7 +623,11 @@ def reconcile(plan, policy, state, receipts):
                     }
             if row["status"] in ("FAIL", "TIMEOUT"):
                 details = retail.public_diagnostics(row)
-                workers = details.get("workers", []) + [details.get("owner_failure", {})]
+                workers = (
+                    details.get("workers", []) + details.get("route_workers", []) + [details.get("owner_failure", {})]
+                )
+                if details.get("route_infrastructure"):
+                    compact["route_infrastructure"] = details["route_infrastructure"]
                 categories = sorted({category for worker in workers for category in worker.get("categories", [])})
                 if categories:
                     compact["failure_categories"] = categories

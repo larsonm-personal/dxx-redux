@@ -2164,6 +2164,23 @@ Write-SuiteSetupStage 'launcher-reset'
         self.assertEqual(state["records"][row["id"]]["failure_categories"], ["assertion"])
         self.assertEqual(state["records"][row["id"]]["worker_exit_codes"], [-6])
 
+    def test_failure_summary_preserves_sanitized_route_diagnostics(self):
+        receipt = self.receipt()
+        row = receipt["results"][0]
+        row.update(
+            status="FAIL",
+            route_workers=[{"categories": ["assertion", "SECRET"], "exit_code": -6}],
+            route_infrastructure=["engine-start", "SECRET"],
+            owner_failure={"categories": ["unclassified-owner-failure"], "exit_code": 1},
+        )
+        state = sweep.reconcile(self.plan, self.policy, self.state, [receipt])
+        saved = state["records"][row["id"]]
+        self.assertEqual(saved["failure_categories"], ["assertion", "unclassified-owner-failure"])
+        self.assertEqual(saved["worker_exit_codes"], [-6, 1])
+        self.assertEqual(saved["route_infrastructure"], ["engine-start"])
+        self.assertFalse(saved["coverage_complete"])
+        self.assertNotIn("SECRET", json.dumps(saved))
+
     def test_interrupted_inner_worker_records_are_collected_without_coverage(self):
         entry = {
             "id": "corpus:metadata:fixture",
