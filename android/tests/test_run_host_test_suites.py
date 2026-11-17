@@ -252,7 +252,9 @@ class HostAdapterTests(unittest.TestCase):
                     if "-HeadlessExecutable" in argv:
                         self.assertNotIn("-D1InD2HogDir", argv)
                         self.assertEqual(argv[argv.index("-HogDir") + 1], str(root / "game_data/retail-ci/d2"))
-                        kwargs["stderr"].write("D1-in-D2 data directory is missing PRIVATE_PATH SECRET")
+                        kwargs["stdout"].write("D1-in-D2 data directory is missing PRIVATE_PATH SECRET")
+                    else:
+                        kwargs["stdout"].write("Assertion earlier-command failed\n")
                     return launch.return_value
 
                 launch.side_effect = process

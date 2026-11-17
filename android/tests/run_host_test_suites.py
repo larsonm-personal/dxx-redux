@@ -623,6 +623,11 @@ def run_suite(suite, repo, build_root, output, timeout):
                     stdout_bytes=max(0, log.stat().st_size - stream_start),
                     stderr_bytes=stderr_path.stat().st_size,
                 )
+                # Keep only this command's bounded stdout tail for diagnostic classification
+                with log.open("rb") as captured:
+                    captured.seek(max(stream_start, log.stat().st_size - 16384))
+                    stdout_tail = captured.read(16384)
+                (work / ("command-%d.stdout.log" % len(result["commands"]))).write_bytes(stdout_tail)
                 # Keep the existing local combined log for diagnostic consumers.
                 # Only typed stream sizes cross the public retail boundary.
                 stream.write(stderr_path.read_text(encoding="utf-8", errors="replace"))
