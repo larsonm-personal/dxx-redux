@@ -603,6 +603,7 @@ class SweepTests(unittest.TestCase):
             result = sweep.online_failure_summary(root)
             self.assertIn("last-numbered-phase-3, owner-exception", result)
             self.assertNotIn("canary", result)
+            self.assertNotIn("retained owner log", result)
             owner.unlink()
             (root / "master/unrelated.log").write_text(canary)
             self.assertIn("unknown, owner-failure", sweep.online_failure_summary(root))
@@ -2140,6 +2141,21 @@ Write-SuiteSetupStage 'launcher-reset'
                 if not completed:
                     self.assertEqual(sweep.reconcile(plan, policy, state, [receipt])["records"], {})
 
+    def test_failure_summary_preserves_sanitized_android_observations(self):
+        receipt = self.receipt("FAIL")
+        row = receipt["results"][0]
+        row["master_diagnostics"] = {
+            "source_verified": True,
+            "failure_categories": ["automation-step-failed", "SECRET"],
+            "failed_step": {"completed": 7, "total": 19, "private": "SECRET"},
+        }
+        state = sweep.reconcile(self.plan, self.policy, self.state, [receipt])
+        saved = state["records"][row["id"]]
+        self.assertEqual(saved["master_diagnostics"]["failure_categories"], ["automation-step-failed"])
+        self.assertEqual(saved["master_diagnostics"]["failed_step"], {"completed": 7, "total": 19})
+        self.assertFalse(saved["coverage_complete"])
+        self.assertNotIn("SECRET", json.dumps(saved))
+
     def test_failure_summary_preserves_inner_worker_categories(self):
         receipt = self.receipt()
         row = receipt["results"][0]
@@ -2189,6 +2205,43 @@ Write-SuiteSetupStage 'launcher-reset'
             self.assertTrue(all("Master runner exited 1" in row["reason"] for row in result["results"]))
             self.assertTrue(all(not row["attempted_tests"] for row in result["results"]))
             self.assertEqual(sweep.reconcile(self.plan, self.policy, self.state, [result])["records"], {})
+
+    def test_shareware_failed_automation_retains_sanitized_diagnostics(self):
+        name = "test_idle_screen_saver"
+        entry = {
+            "id": "shareware:" + name + "#d2",
+            "owner": "shareware",
+            "lane": "android-single",
+            "args": {"suite": name, "game": "d2"},
+            "estimated_seconds": 100,
+        }
+        policy = {"schema": 1, "suites": [entry]}
+        plan, state = sweep.plan_batch(SHA, {"schema": 1, "tests": []}, policy)
+        source = sweep.retail.MASTER_DIAGNOSTIC_SOURCES[name]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            script = root / source
+            script.parent.mkdir(parents=True)
+            script.write_bytes((Path(__file__).resolve().parents[2] / source).read_bytes())
+
+            def run(command, repo, log, **kwargs):
+                log.write("FAIL at step 3/9: SECRET_PRIVATE_PATH\n")
+                return subprocess.CompletedProcess(command, 1)
+
+            with (
+                patch.dict(os.environ, {"GITHUB_ACTIONS": "false"}),
+                patch.object(sweep.subprocess, "check_output", return_value=SHA),
+                patch.object(sweep, "run_command", side_effect=run),
+            ):
+                sweep.execute(plan, policy, "android-single", root, root / "out")
+            receipt = sweep.collect(plan, policy, "android-single", root / "out")
+            row = sweep.retail.public_receipt(receipt)["results"][0]
+            self.assertEqual(row["status"], "FAIL")
+            self.assertEqual(row["master_diagnostics"]["failed_step"], {"completed": 3, "total": 9})
+            self.assertFalse(row["coverage_complete"])
+            self.assertNotIn("SECRET", json.dumps(row))
+            saved = sweep.reconcile(plan, policy, state, [receipt])["records"][entry["id"]]
+            self.assertEqual(saved["master_diagnostics"]["failure_categories"], ["automation-step-failed"])
 
     def test_shareware_refresh_precedes_each_owner_and_failure_stays_pending(self):
         policy = {

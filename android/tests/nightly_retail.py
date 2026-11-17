@@ -371,12 +371,29 @@ COMMANDS = frozenset(
 
 
 MASTER_DIAGNOSTIC_SOURCES = {
+    "test_vertigo_level_metadata": "android/game_scripts/test_vertigo_level_metadata.jsonc",
+    "test_obsidian_level1_objective_markers": "android/game_scripts/test_obsidian_level1_objective_markers.jsonc",
+    "test_obsidian_level4_post_reactor_keys": "android/game_scripts/test_obsidian_level4_post_reactor_keys.jsonc",
+    "test_idle_screen_saver": "android/game_scripts/test_idle_screen_saver.jsonc",
+    "test_mp_coop_d2_initial_fallback": "android/tests/test_mp.ps1",
     "test_mp_public_shareware": "android/tests/test_mp.ps1",
     "test_mp_public_shareware_d2": "android/tests/test_mp.ps1",
     "test_lan": "android/tests/test_lan.ps1",
     "test_lan_host_migration_public_shareware": "android/tests/test_lan.ps1",
     "test_lan_lobby_discovery": "android/tests/test_lan_lobby_discovery.ps1",
     "test_xl_original_assets": "android/tests/test_xl_original_assets.ps1",
+}
+
+# Source-defined runner messages; these describe observations, never coverage proof
+ANDROID_FAILURE_PATTERNS = {
+    "automation-step-failed": r"FAIL at step [0-9]+/[0-9]+:",
+    "automation-result-invalid": r"FAIL: Incomplete or invalid PASS result",
+    "automation-timeout": r"FAIL: Test timed out after [0-9]+s",
+    "executor-exited": r"FAIL: Launcher and game processes exited before automation produced a result",
+    "launcher-stuck": r"FAIL: Game stuck at launcher",
+    "launcher-handoff": r"FAIL: Launcher handoff did not complete",
+    "launcher-recovery": r"FAIL: SetupActivity (?:recovery could not restore launcher prerequisites|not responding)",
+    "script-staging": r"FAIL: Could not stage test script on device:",
 }
 
 # Fixed literals in test_xl_original_assets.ps1, never evidence of completion
@@ -434,6 +451,14 @@ def master_failure_diagnostics(row, output):
     if row.get("source") != source or row.get("source_sha256") != hashlib.sha256(data).hexdigest():
         return result
     result["source_verified"] = True
+    result["failure_categories"] = [
+        key for key, pattern in ANDROID_FAILURE_PATTERNS.items() if re.search(pattern, text)
+    ]
+    steps = re.findall(r"FAIL at step ([0-9]{1,6})/([0-9]{1,6}):", text)
+    if steps:
+        completed, total = map(int, steps[-1])
+        if 0 <= completed <= total <= 100000:
+            result["failed_step"] = {"completed": completed, "total": total}
     source_text = data.decode("utf-8-sig")
     if row.get("name") == "test_xl_original_assets":
         for line in text.splitlines():
@@ -590,6 +615,20 @@ def public_diagnostics(value):
             and type(match.get("line")) is int
             and 1 <= match["line"] <= 100000
         ]
+        if details.get("source_verified") is True:
+            clean["master_diagnostics"]["failure_categories"] = [
+                category
+                for category in details.get("failure_categories", [])[:16]
+                if isinstance(category, str) and category in ANDROID_FAILURE_PATTERNS
+            ]
+            step = details.get("failed_step")
+            if (
+                isinstance(step, dict)
+                and type(step.get("completed")) is int
+                and type(step.get("total")) is int
+                and 0 <= step["completed"] <= step["total"] <= 100000
+            ):
+                clean["master_diagnostics"]["failed_step"] = {key: step[key] for key in ("completed", "total")}
         stage = details.get("last_observed_stage")
         if (
             value.get("id") == "master:test_xl_original_assets"

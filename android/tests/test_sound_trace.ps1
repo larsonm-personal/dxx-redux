@@ -4,6 +4,7 @@ param([switch]$Install)
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '../helpers/test_helpers.ps1')
+. (Join-Path $PSScriptRoot '../helpers/test_execution_evidence.ps1')
 Initialize-AndroidTestTarget | Out-Null
 Assert-IsolatedPhysicalTestApp
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
@@ -53,3 +54,10 @@ try {
 } finally {
     Stop-AndroidTestDebugLogSession -Session $logSession
 }
+
+# Every required trace signature and both calibrated gain classes were checked above
+Write-TestCompletionEvidence -Name 'test_sound_trace' -Cases @(
+    @{ id = 'playback-trace-signatures'; status = 'PASS' }
+    @{ id = 'full-level-effects-gain'; status = 'PASS' }
+    @{ id = 'quiet-effects-gain'; status = 'PASS' }
+)

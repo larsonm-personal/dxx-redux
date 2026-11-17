@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -27,6 +28,125 @@ ENV = {
 
 
 class RetailBoundaryTests(unittest.TestCase):
+    def test_json_owner_failure_diagnostics_are_bounded_and_source_verified(self):
+        owners = (
+            "test_vertigo_level_metadata",
+            "test_obsidian_level1_objective_markers",
+            "test_obsidian_level4_post_reactor_keys",
+            "test_idle_screen_saver",
+            "test_mp_coop_d2_initial_fallback",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            log = root / "owner.log"
+            log.write_text("FAIL at step 7/19: SECRET_ASSET_PATH\nFAIL: Test timed out after 120s\n")
+            for name in owners:
+                source = retail.MASTER_DIAGNOSTIC_SOURCES[name]
+                row = dict(
+                    name=name,
+                    status="FAIL",
+                    log=str(log),
+                    source=source,
+                    source_sha256=hashlib.sha256((ROOT / source).read_bytes()).hexdigest(),
+                )
+                details = retail.master_failure_diagnostics(row, root)
+                clean = retail.public_diagnostics({"master_diagnostics": details})["master_diagnostics"]
+                self.assertEqual(clean["failure_categories"], ["automation-step-failed", "automation-timeout"])
+                self.assertEqual(clean["failed_step"], {"completed": 7, "total": 19})
+                self.assertNotIn("SECRET", str(clean))
+                self.assertNotIn(str(root), str(clean))
+                rejected = retail.master_failure_diagnostics({**row, "source_sha256": "0" * 64}, root)
+                self.assertFalse(rejected["source_verified"])
+                self.assertNotIn("failure_categories", rejected)
+            log.write_text("X" * 40000 + "\nFAIL at step 7/19: SECRET\n" + "X" * 40000)
+            self.assertEqual(retail.master_failure_diagnostics(row, root)["failure_categories"], [])
+            log.write_text("FAIL at step 20/19: SECRET")
+            self.assertNotIn("failed_step", retail.master_failure_diagnostics(row, root))
+            log.unlink()
+            self.assertFalse(retail.master_failure_diagnostics(row, root)["log_available"])
+            outside = root.parent / (root.name + "-outside.log")
+            try:
+                outside.write_text("FAIL at step 7/19: SECRET")
+                log.symlink_to(outside)
+                self.assertFalse(retail.master_failure_diagnostics(row, root)["log_available"])
+            finally:
+                outside.unlink()
+        clean = retail.public_diagnostics(
+            {
+                "master_diagnostics": {
+                    "source_verified": True,
+                    "failure_categories": ["SECRET", "automation-timeout"],
+                    "failed_step": {"completed": True, "total": 19, "secret": "SECRET"},
+                }
+            }
+        )
+        self.assertNotIn("SECRET", str(clean))
+        self.assertNotIn("failed_step", clean["master_diagnostics"])
+
+    @unittest.skipUnless(shutil.which("pwsh"), "PowerShell unavailable")
+    def test_sound_trace_completion_requires_assertions_and_cleanup(self):
+        # Run the unchanged owner with synthetic Android transport and trace fixtures
+        trace = "\n".join(
+            (
+                "[SFX] bank=1 file='descent2.s22' loaded_from=SECRET",
+                "[SFX] trace_v=1 context=1 mission='d2' level=1",
+                "[SFX] context=1 robot=37 see=1:1",
+                "[SFX] context=1 sample=SECRET bank_match=1 cache_input_match=1 cache_output_match=1",
+                "channel_volume=20 sound_volume=65536 distance=0",
+                "channel_volume=20 sound_volume=32768 distance=127",
+            )
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            tests, helpers = root / "android/tests", root / "android/helpers"
+            tests.mkdir(parents=True)
+            helpers.mkdir()
+            shutil.copyfile(ROOT / "android/tests/test_sound_trace.ps1", tests / "test_sound_trace.ps1")
+            for name in ("test_execution_evidence.ps1", "atomic_text_file.ps1", "powershell_compat.ps1"):
+                shutil.copyfile(ROOT / "android/helpers" / name, helpers / name)
+            (helpers / "run_test.ps1").write_text("$global:LASTEXITCODE = [int]$env:OWNER_EXIT\n")
+            (helpers / "test_helpers.ps1").write_text("""
+function Initialize-AndroidTestTarget {}
+function Assert-IsolatedPhysicalTestApp {}
+function Start-AndroidTestDebugLogSession { return 'fixture' }
+function Stop-AndroidTestDebugLogSession { param($Session); if ($env:CLEANUP_FAIL -eq '1') { throw 'cleanup failed' } }
+function Fixture-Adb {
+    $global:LASTEXITCODE = 0
+    if ($args -contains '-d') { Get-Content -LiteralPath $env:TRACE_FIXTURE }
+}
+$ADB = 'Fixture-Adb'
+""")
+            fixture = root / "trace.txt"
+            scenarios = [(trace, "0", "0", True), (trace, "1", "0", False), (trace, "0", "1", False)]
+            scenarios += [
+                ("\n".join(line for i, line in enumerate(trace.splitlines()) if i != missing), "0", "0", False)
+                for missing in range(6)
+            ]
+            scenarios.append((trace.replace("distance=127", "distance=126"), "0", "0", False))
+            for payload, owner_exit, cleanup, success in scenarios:
+                fixture.write_text(payload)
+                result = subprocess.run(
+                    [shutil.which("pwsh"), "-NoProfile", "-File", str(tests / "test_sound_trace.ps1")],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                    env={
+                        **os.environ,
+                        "TRACE_FIXTURE": str(fixture),
+                        "OWNER_EXIT": owner_exit,
+                        "CLEANUP_FAIL": cleanup,
+                    },
+                )
+                markers = [line for line in result.stdout.splitlines() if line.startswith("DXX_TEST_COMPLETION: ")]
+                self.assertEqual(result.returncode == 0, success, result.stderr)
+                self.assertEqual(len(markers), int(success))
+                if success:
+                    proof = json.loads(markers[0].split(": ", 1)[1])
+                    self.assertEqual(proof["name"], "test_sound_trace")
+                    self.assertEqual(len(proof["cases"]), 3)
+                    self.assertTrue(all(case["status"] == "PASS" for case in proof["cases"]))
+                    self.assertNotIn("SECRET", markers[0])
+
     def test_online_public_assertion_location_retains_no_log_contents(self):
         source = "android/tests/test_mp.ps1"
         data = (ROOT / source).read_bytes()
