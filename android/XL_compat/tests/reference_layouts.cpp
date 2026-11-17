@@ -334,6 +334,15 @@ int main(int argc, char **argv)
 		} else if (argc > 1)
 			for (int i = 1; i < argc; ++i) original(argv[i]);
 		else {
+			for (int version : { 21, 23, 25, 27 })
+				for (int owner : { -1, 0 })
+					for (int group : { -128, -1, 0, 1, 127 }) {
+						auto fixture = xl_test::layout_fixture(version);
+						const auto start = fixture.mine + 5 + 8 * 12;
+						xl_test::layout_patch(fixture.bytes, start, owner, 1);
+						xl_test::layout_patch(fixture.bytes, start + 1, group, 1);
+						compare(fixture.bytes);
+					}
 			for (const int version : { 21, 23, 25, 27 })
 				for (int shape = 0; shape < (version < 25 ? 1 : 3); ++shape)
 					for (const int value : { -32768, -129, -128, -1, 0, 127, 128, 32767 }) {

@@ -1207,6 +1207,11 @@ extern "C" int xl_level_segment_group(int segment)
 	return source && segment >= 0 && static_cast<std::size_t>(segment) < source->segments.size() ? source->segments[segment].group : 0;
 }
 
+extern "C" int xl_level_segment_owner(int segment)
+{
+	return source && segment >= 0 && static_cast<std::size_t>(segment) < source->segments.size() ? source->segments[segment].owner : -1;
+}
+
 extern "C" int xl_level_trigger_state_required(void)
 {
 	// Surface scraping carries a simulation clock even in otherwise ordinary XL geometry

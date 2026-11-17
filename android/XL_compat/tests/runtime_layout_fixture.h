@@ -8,6 +8,7 @@ struct RuntimeLayoutFixture {
 	xl_compat::Bytes bytes;
 	std::vector<std::array<std::size_t, 6>> corners;
 	std::vector<std::size_t> extras;
+	std::vector<std::size_t> owners;
 	std::size_t fog = 0;
 };
 
@@ -29,6 +30,7 @@ inline RuntimeLayoutFixture runtime_layout_fixture(const xl_compat::Bytes &origi
 	for (const auto &vertex : source.vertices)
 		for (int value : vertex) put(value, 4);
 	for (const auto &segment : source.segments) {
+		fixture.owners.push_back(out.size());
 		put(segment.owner, 1);
 		put(segment.group, 1);
 		int children = 0, walls = 0;

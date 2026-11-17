@@ -104,7 +104,11 @@ static xl_compat::Inventory write_equipment_fixture(const std::filesystem::path 
 				append(-1, 2);
 				append(32767, 2);
 			}
-			if (version != 23) member.bytes = xl_test::runtime_layout_fixture(member.bytes, version).bytes;
+			if (version != 23) {
+				auto modern = xl_test::runtime_layout_fixture(member.bytes, version);
+				if (version == 27) modern.bytes.at(modern.owners.at(23)) = 0;
+				member.bytes = std::move(modern.bytes);
+			}
 			result = xl_compat::inspect_level(member.bytes);
 			const auto blockers = xl_compat::runtime_blockers(result);
 			require(blockers.empty(), xl_compat::blocker_message(blockers).c_str());
@@ -139,6 +143,8 @@ static void equipment_reference_samples(const std::filesystem::path &output, con
 			for (unsigned seed : { 1u, 17u, 65535u }) {
 				cleanup();
 				auto sample = authored;
+				const int segment_owner = seed == 17 ? 0 : -1;
+				sample.segments.at(20).owner = segment_owner;
 				std::uint32_t first = 1u << POW_ENERGY, second = 0;
 				if (scenario == 7 || scenario == 11) first = 1u << POW_VULCAN_AMMO;
 				if (scenario == 8) {
@@ -177,7 +183,7 @@ static void equipment_reference_samples(const std::filesystem::path &output, con
 				}
 				std::vector<std::array<int, 2>> occupants;
 				for (int i = Segments[20].objects; i >= 0; i = Objects[i].next) occupants.push_back({ Objects[i].type, Objects[i].id });
-				file << difficulty << ' ' << scenario << ' ' << first << ' ' << second << ' ' << states[0].timer << ' ' << states[0].enabled << ' ' << states[0].pending << ' ' << FrameTime << ' ' << Game_suspended << ' ' << (scenario != 10) << ' ' << (scenario != 11) << ' ' << occupants.size();
+				file << difficulty << ' ' << scenario << ' ' << segment_owner << ' ' << first << ' ' << second << ' ' << states[0].timer << ' ' << states[0].enabled << ' ' << states[0].pending << ' ' << FrameTime << ' ' << Game_suspended << ' ' << (scenario != 10) << ' ' << (scenario != 11) << ' ' << occupants.size();
 				for (const auto &object : occupants) file << ' ' << object[0] << ' ' << object[1];
 				d_srand(seed);
 				d_rand_set_call_count(0);
@@ -199,9 +205,9 @@ static void equipment_reference_samples(const std::filesystem::path &output, con
 				}
 				if (item >= 0) {
 					const auto &object = Objects[item];
-					require(object.lifeleft == IMMORTAL_TIME && object.matcen_creator == -1 && object.movement_type == MT_PHYSICS && object.render_type == RT_POWERUP && object.rtype.vclip_info.vclip_num == Powerup_info[object.id].vclip_num && object.rtype.vclip_info.frametime == Vclip[object.rtype.vclip_info.vclip_num].frame_time && object.rtype.vclip_info.framenum == 0 && object.size == Powerup_info[object.id].size && !object.mtype.phys_info.mass && !object.mtype.phys_info.drag && !object.mtype.phys_info.flags, "generated equipment properties differ");
+					require(object.lifeleft == IMMORTAL_TIME && object.matcen_creator == segment_owner && object.movement_type == MT_PHYSICS && object.render_type == RT_POWERUP && object.rtype.vclip_info.vclip_num == Powerup_info[object.id].vclip_num && object.rtype.vclip_info.frametime == Vclip[object.rtype.vclip_info.vclip_num].frame_time && object.rtype.vclip_info.framenum == 0 && object.size == Powerup_info[object.id].size && !object.mtype.phys_info.mass && !object.mtype.phys_info.drag && !object.mtype.phys_info.flags, "generated equipment properties differ");
 				}
-				file << ' ' << after.timer << ' ' << after.enabled << ' ' << after.pending << ' ' << effects << ' ' << (item >= 0 ? Objects[item].id : -1) << ' ' << (item >= 0 ? Objects[item].ctype.powerup_info.count : 0) << '\n';
+				file << ' ' << after.timer << ' ' << after.enabled << ' ' << after.pending << ' ' << effects << ' ' << (item >= 0 ? Objects[item].id : -1) << ' ' << (item >= 0 ? Objects[item].ctype.powerup_info.count : 0) << ' ' << (item >= 0 ? Objects[item].matcen_creator : -1) << '\n';
 			}
 	cleanup();
 	file.close();
@@ -438,7 +444,10 @@ static nlohmann::json equipment_pending_future()
 		if (object.type == OBJ_NONE) continue;
 		objects[std::to_string(slot)] = nlohmann::json(input_demo_object_trace_snapshot(object, slot));
 		if (object.type == OBJ_POWERUP && object.segnum == 20 && object.id == POW_ENERGY) ++energy;
-		if (object.type == OBJ_POWERUP && object.segnum == 23 && object.id == POW_VULCAN_AMMO) ++ammo;
+		if (object.type == OBJ_POWERUP && object.segnum == 23 && object.id == POW_VULCAN_AMMO) {
+			require(object.matcen_creator == xl_level_segment_owner(23), "Pending equipment continuation changed authored creator identity");
+			++ammo;
+		}
 		if (object.type == OBJ_ROBOT && static_cast<unsigned char>(object.matcen_creator) == (station | 0x80)) ++robots;
 	}
 	require(energy == 1 && ammo == 1 && robots == 1, "Pending mixed producers did not create two ordinary items and one robot");
@@ -487,6 +496,8 @@ static int equipment_test(int argc, char **argv)
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
 		require(xl_source_level_version() == version, "Equipment test loaded the wrong source layout");
+		require(authored.segments.at(23).owner == (version == 27 ? 0 : -1) && xl_level_segment_owner(23) == authored.segments.at(23).owner,
+		        "Equipment fixture did not retain its authored neutral owner");
 		require(xl_level_extensions_active() && xl_equipment_count() == 2 && Num_robot_centers == 1, "equipment fixture did not load");
 		const auto state = [](int i) { xl_equipment_state state; require(xl_equipment_state_get(i, &state), "missing equipment state"); return state; };
 		const auto items = [](int segment) {
@@ -546,7 +557,7 @@ static int equipment_test(int argc, char **argv)
 		FrameTime = Vclip[VCLIP_MORPHING_ROBOT].play_time / 2 - captured.timer;
 		fuelcen_update_all();
 		require(items(20).size() == 1 && Objects[items(20)[0]].id == POW_ENERGY && items(23).size() == 1 && Objects[items(23)[0]].id == POW_VULCAN_AMMO, "source equipment contents swapped or missing");
-		require(Objects[items(23)[0]].ctype.powerup_info.count == VULCAN_AMMO_AMOUNT && Objects[items(23)[0]].lifeleft == IMMORTAL_TIME && Objects[items(23)[0]].matcen_creator == -1, "generated item count, lifetime or provenance differs");
+		require(Objects[items(23)[0]].ctype.powerup_info.count == VULCAN_AMMO_AMOUNT && Objects[items(23)[0]].lifeleft == IMMORTAL_TIME && Objects[items(23)[0]].matcen_creator == authored.segments.at(23).owner, "generated item count, lifetime or provenance differs");
 		FrameTime = i2f(20);
 		fuelcen_update_all();
 		require(state(0).timer == 0 && !state(0).pending && items(20).size() == 1, "occupied equipment did not restart its delay");

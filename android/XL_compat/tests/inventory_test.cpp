@@ -1859,7 +1859,14 @@ int main(int argc, char **argv)
 				const auto row = feature_row(xl_compat::compatibility_json("groups.rl2", grouped), "segment_groups");
 				check(row.find(group == 255 ? "\"status\": \"not_required\"" : "\"status\": \"supported\"") != std::string::npos, "browser does not expose supported groups");
 				patch(grouped, start, 0, 1);
-				rejects([&] { xl_compat::prepare_gameplay_probe(grouped); });
+				const auto neutral = xl_compat::prepare_gameplay_probe(grouped);
+				check(neutral.source.segments[0].owner == 0 && neutral.source.segments[0].group == expected, "neutral ownership changed source identity");
+				const auto owned_neutral = xl_compat::prepare_source_runtime_probe(grouped);
+				check(owned_neutral.source.segments[0].owner == 0 && owned_neutral.source.segments[0].group == expected, "source runtime lost neutral ownership");
+				for (int owner : { -128, -2, 1, 2, 127 }) {
+					patch(grouped, start, owner, 1);
+					rejects([&] { xl_compat::prepare_gameplay_probe(grouped); });
+				}
 			}
 		Bytes hog{ 'D', 'H', 'F' };
 		const std::string name = "level.rl2";
