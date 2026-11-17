@@ -80,6 +80,7 @@ static GLuint shader(GLenum type, const char *text)
 #include "soft_overlays_fixture.hpp"
 #include "soft_base_fixture.hpp"
 #include "original_animation_fixture.hpp"
+#include "original_rle_fixture.hpp"
 
 int main(int argc, char **argv)
 {
@@ -97,6 +98,7 @@ int main(int argc, char **argv)
 #endif
 	const bool original = std::filesystem::is_regular_file("ceil002.tga");
 	const bool original_animation = std::filesystem::is_regular_file("force01#0.tga");
+	const bool original_rle = std::filesystem::is_regular_file("rock194.tga");
 	if (original_animation) {
 		std::filesystem::copy_file("force01#0.tga", "a/mods/pilot/textures/force01#0.tga");
 		require(std::filesystem::remove("force01#0.tga"), "retire original animation staging input");
@@ -199,6 +201,7 @@ int main(int argc, char **argv)
 		};
 		create_context();
 #ifdef DXX_BUILD_DESCENT_II
+		const auto rle_proof = original_rle ? test_original_rle(program, vao) : nlohmann::json();
 		const auto recreate_context = [&] {
 			release_context();
 			create_context();
@@ -305,6 +308,7 @@ int main(int argc, char **argv)
 			require(!android_ogl_read_replacement(path, sizeof(path), hog, names, slots, 4, 0, &bitmap, &png, &ktx, &metrics, &ktx_us, &png_us), "basename bound preserved");
 			results.push_back({ { "context", generation }, { "visit", results.size() % 4 }, { "owner", owner }, { "red", red }, { "path", selected_path }, { "original", use_original }, { "correct", true } });
 #ifdef DXX_BUILD_DESCENT_II
+			if (original_rle) results.back()["rle_image"] = rle_proof;
 			if (original_animation) {
 				results.back()["animation_samples"] = test_original_animation(owner, false, recreate_context);
 				results.back()["native_animation_samples"] = test_original_animation(owner, true, recreate_context);

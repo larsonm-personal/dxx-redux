@@ -34,6 +34,9 @@ def main():
     parser.add_argument("--mode", choices=("clock", "vclip", "recovery", "guns", "afterburner"), required=True)
     parser.add_argument("--reference", type=Path, help="Pinned xl_hxm_reference executable, required for guns mode")
     parser.add_argument("--outgoing", choices=("d2", "wshock20"), default="d2")
+    parser.add_argument(
+        "--incoming-level", type=int, choices=(1, 7), default=7, help="Incoming Boiling Point level for recovery mode"
+    )
     parser.add_argument("--timeout", type=int, default=120)
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
@@ -71,6 +74,8 @@ def main():
     before = {name: inventory(extra / name) for name in ("missions", "mods")}
     runtime_before = inventory(runtime)
     mission, level = ("wshock20", "6") if args.mode in ("vclip", "afterburner") else ("boilpnt", "7")
+    if args.mode == "recovery":
+        level = str(args.incoming_level)
     output = extra / "texture-dependency-audit.json"
     argv = [
         str(engine),
@@ -131,7 +136,7 @@ def main():
             if args.mode == "recovery":
                 record["requested_controls_present"] = (
                     report.get("outgoing") == args.outgoing
-                    and report.get("incoming") == "boilpnt:7"
+                    and report.get("incoming") == "boilpnt:" + level
                     and report.get("ordinary_frames") == 120
                     and report.get("equal_count_independence") == 1
                     and {row["case"] for row in report.get("rejections", [])}
