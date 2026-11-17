@@ -2462,3 +2462,45 @@ the three explicit array exclusions temp,android/temp,.codex and found zero
 eligible files. Apply07 likewise deleted nothing and reported the50GiB target
 unreachable, with5.99GiB free. All retained evidence/assets and the running AVD
 remain protected; no manual cache deletion was used.
+
+Final CI repair investigation: PR534 selected workflow43903595453 failed in
+master:test_launcher_media_controls_generated after provisioning succeeded.
+Run5d9f9229fd74483b8343ef8fccefd0f0 fails the first MIDI pause assertion with
+PLAYING at7082ms. Android artifact14245318540 archiveSHA
+e7cab4821ab3711c7f95c511218429fa92de7c6bfd7de86368ec15f21cdace7b and failed
+workflow log are retained. Media session, integration test and native MIDI
+pause implementation are byte-unchanged from baseline71e6. Do not call this
+an infrastructure failure or rerun blindly. Inspect platform media-key routing
+and reproduce on the frozen ordinary APK under full profile/package protection.
+If a defect is demonstrated, repair its owner and preserve all media assertions
+and timeouts. Branch xl_readiness_20261116_18_media_ci starts on5359932d40.
+The published handoff remains a snapshot awaiting final acceptance; this newly
+observed terminal failure must be resolved before completing the active goal.
+
+Media reproduction01 and02 both pass unchanged MIDI/CD/MP3 assertions on the
+frozen6a7/bcd APK pair, with complete profile/APK/preference restoration.
+Reproduction02 follows verified emulator-restart-02 with no wipe or renderer
+change; this does not establish a CI root cause. Platform logs show actual key
+delivery to the launcher session. Android's MediaSessionStack selects a media-
+button target from audio playback UID history; source reference:
+https://android.googlesource.com/platform/frameworks/base/+/31b731c2de27/services/core/java/com/android/server/media/MediaSessionStack.java
+Fresh local playback still succeeds, so the initial routing hypothesis remains
+unproven and no production timing change is justified.
+
+Add bounded diagnostics only when the existing media test fails: setup/provisioning
+settings, the first40media-session state lines and last40platform routing lines.
+The original exit code, assertions and180s owner timeout remain unchanged.
+Controlled android-media-ci-negative-01 temporarily sets user_setup_complete=0
+and retains FAIL/exit1 at MIDI pause, PLAYING7381ms. Diagnostics identify setup0,
+device_provisioned1 and two explicit platform refusals while setup is in progress.
+This is a diagnostic negative, not evidence of the unknown CI setting. The
+wrapper restores setup1, full protected profile hashes, both original APKs and
+preferences exactly. No Android/native/app code is changed by these diagnostics.
+
+Private runs43903630046(534) and43905979723(535) are terminal SUCCESS,113required
+checks each; coverage_complete=false and camera subchecks missing remain explicit.
+Downloaded host artifact14246038259 archiveSHA
+547f0f264550a29bcc07f95cf1aa81ebf65e4fe8e017e1e9dc6b8affb7a9de45
+pins534; artifact14245999489 archiveSHA
+b752926e845d8f462e8c39241c8a318d91789fcbd10ecb03645da6dcd979a225 pins535.
+This does not resolve the separate public selected Android media failure.
