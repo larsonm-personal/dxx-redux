@@ -80,6 +80,51 @@ class RenderedReadinessTests(unittest.TestCase):
 
 
 class XlPrivateTests(unittest.TestCase):
+    @staticmethod
+    def lifecycle_receipt():
+        common = dict(
+            passed=True,
+            controls_complete=True,
+            inputs_unchanged=True,
+            elapsed_seconds=4.0,
+            engine_sha256="a" * 64,
+            report_sha256="b" * 64,
+        )
+        return {
+            "subzero": dict(common, input_profile="private-owner"),
+            "warp": dict(common, input_profile="original-warp", input_tree_sha256=assets.WARP_LIFECYCLE_INPUT_SHA256),
+        }
+
+    def test_lifecycle_public_receipt_is_complete_same_engine_and_allowlisted(self):
+        original = self.lifecycle_receipt()
+        with_private = copy.deepcopy(original)
+        with_private["warp"]["private_path"] = "do not publish"
+        self.assertEqual(runner.validate_lifecycle_summary(with_private), original)
+        mutations = [None, {}, {"subzero": original["subzero"]}, dict(original, extra={})]
+        for owner in original:
+            for key, value in (
+                ("passed", False),
+                ("controls_complete", 1),
+                ("inputs_unchanged", False),
+                ("elapsed_seconds", float("nan")),
+                ("elapsed_seconds", float("inf")),
+                ("elapsed_seconds", -1),
+                ("elapsed_seconds", 151),
+                ("elapsed_seconds", True),
+                ("input_profile", "derived"),
+                ("engine_sha256", "c" * 64),
+                ("report_sha256", "private path"),
+            ):
+                changed = copy.deepcopy(original)
+                changed[owner][key] = value
+                mutations.append(changed)
+        changed = copy.deepcopy(original)
+        changed["warp"]["input_tree_sha256"] = "c" * 64
+        mutations.append(changed)
+        for changed in mutations:
+            with self.subTest(value=changed), self.assertRaises(ValueError):
+                runner.validate_lifecycle_summary(changed)
+
     def test_original_lifecycle_identity_requires_complete_unchanged_tree(self):
         with tempfile.TemporaryDirectory() as temporary:
             extra = Path(temporary)
@@ -614,11 +659,28 @@ class XlPrivateTests(unittest.TestCase):
                 from nightly_pr_candidate import positive_receipt
 
                 checks = runner.validate_controller_summary(receipt, path, fast=True)
+                with self.assertRaisesRegex(ValueError, "omitted a required owner"):
+                    runner.validate_controller_summary(receipt, path, fast=True, require_lifecycles=True)
+                current = {**provisioned, "original_lifecycles": self.lifecycle_receipt()}
+                current_checks = runner.validate_controller_summary(current, path, fast=True, require_lifecycles=True)
+                current_row = {"id": "host-profile:retail-xl-fast", "status": "PASS", "xl_checks": current_checks}
+                sanitized = retail.public_diagnostics(current_row)
+                self.assertEqual(sanitized["xl_checks"]["original_lifecycles"], self.lifecycle_receipt())
+                self.assertEqual(
+                    positive_receipt(
+                        {"target_sha": "a" * 40, "results": [{**current_row, **sanitized}]},
+                        "a" * 40,
+                        require_lifecycles=True,
+                    ),
+                    800,
+                )
                 row = {"id": "host-profile:retail-xl-fast", "status": "PASS", "xl_checks": checks}
                 clean = retail.public_diagnostics(row)
                 published = {"target_sha": "a" * 40, "results": [{**row, **clean}]}
                 self.assertEqual(clean["xl_checks"]["required_tests"], sorted(required))
                 self.assertEqual(positive_receipt(published, "a" * 40), 800)
+                with self.assertRaisesRegex(ValueError, "omitted a required owner"):
+                    positive_receipt(published, "a" * 40, require_lifecycles=True)
                 for status in ("FAIL", "SKIP", "BLOCKED", "TIMEOUT"):
                     with patch.dict(published["results"][0], {"status": status}), self.assertRaises(ValueError):
                         positive_receipt(published, "a" * 40)

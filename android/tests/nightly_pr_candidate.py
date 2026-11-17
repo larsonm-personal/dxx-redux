@@ -101,7 +101,7 @@ def verify(target_sha=None, env=None, fetch=api, event=None):
     return {"number": number, "sha": sha}
 
 
-def positive_receipt(receipt, sha):
+def positive_receipt(receipt, sha, require_lifecycles=False):
     from run_xl_originals import reviewed_fast_cohort
 
     if not isinstance(receipt, dict):
@@ -113,6 +113,13 @@ def positive_receipt(receipt, sha):
     if not isinstance(row, dict) or not isinstance(row.get("xl_checks"), dict):
         raise ValueError("Invalid XL receipt checks")
     checks = row["xl_checks"]
+    if require_lifecycles:
+        from run_xl_originals import validate_lifecycle_summary
+        from xl_readiness import resource_identity
+
+        validate_lifecycle_summary(checks.get("original_lifecycles"))
+        if checks.get("resources") != resource_identity():
+            raise ValueError("Original lifecycle owners lack authentic resource identity")
     reviewed_fast_cohort(checks)
     if not (
         row.get("id") == "host-profile:retail-xl-fast"
@@ -178,11 +185,11 @@ def main():
             raise ValueError("XL owner did not finish successfully")
         if args.receipt.is_symlink() or args.receipt.stat().st_size > 1024 * 1024:
             raise ValueError("XL receipt exceeds the public receipt bound")
-        elapsed = positive_receipt(json.loads(args.receipt.read_text()), sha)
+        elapsed = positive_receipt(json.loads(args.receipt.read_text()), sha, require_lifecycles=True)
     except (OSError, ValueError, TypeError) as error:
         status(sha, "failure", "XL load/navigation was not qualified; inspect the trusted run")
         raise ValueError("XL asset smoke was not qualified") from error
-    status(sha, "success", f"Four assisted XL route anchors passed ({elapsed} ms)")
+    status(sha, "success", f"Four assisted XL anchors ({elapsed} ms) and two original lifecycles passed")
     return 0
 
 

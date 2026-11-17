@@ -75,3 +75,28 @@ New local evidence under the receipts root:
   retained final-runtime ordinary binary. Total 21.344s, engine waits 18.745s,
   staging 2.494s including extraction 1.694s and copies 0.683s. Hashing is not a
   leading cost here. This two-case diagnostic does not replace frozen64 evidence.
+
+## Lifecycle receipt checkpoint
+
+The current fast owner now requires both original lifecycle helpers after the
+historical 113 controls and navigation anchors. Both use the same candidate
+engine and authentic resources; native engine watchdogs remain 120 seconds.
+The controller adapter and current-run publisher require the supplemental
+receipts. Historical validation remains separately available, without rewriting
+old receipts into new coverage. Public sanitization preserves only fixed fields,
+hashes and bounded timing, never private paths or arbitrary native output.
+
+Local lifecycle-owner-01 passed: Subzero 58.907s, Warp 8.750s. Shared retained
+engine SHA256:
+99352015e5d5d5e0b28896de428a53893c5afc0f1d4e7b299d7567de63dabfeb.
+There is no native source difference between the prior runtime commit and this
+checkpoint. The helpers and strict receipt controls are the changes under test.
+Private receipt suite: 56 tests passed. The adapter's prior success fixture
+correctly failed without new lifecycle evidence; its updated current-run fixture
+and explicit missing-receipt rejection passed. Remaining local planner/retail
+fixture errors require Windows symlink privilege; do not count them as passes.
+WSL enumeration timed out after 15s, so no local Linux claim is made.
+
+PR #573 is the staged-input bootstrap against cmake. The immediate child adds
+execution/receipt enrollment. Both require reviewed controller adoption before
+the trusted private CI can claim these supplemental lifecycle outcomes.
