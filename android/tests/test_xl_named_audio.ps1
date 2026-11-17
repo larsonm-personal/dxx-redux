@@ -5,7 +5,8 @@ param(
     [Parameter(Mandatory)][string]$Hog,
     [Parameter(Mandatory)][string]$Descriptor,
     [switch]$Seismic,
-    [switch]$NamedOnly
+    [switch]$NamedOnly,
+    [string]$OutputDirectory = ''
 )
 $ErrorActionPreference = 'Stop'
 if ($Seismic -and $NamedOnly) { throw 'Choose only one focused audio script' }
@@ -16,8 +17,8 @@ if (-not $Seismic -and -not $NamedOnly) {
     if (-not (Test-Path -LiteralPath $seismicHog) -or -not (Test-Path -LiteralPath $seismicDescriptor)) {
         throw 'Full named-audio acceptance requires sibling xseismic.hog/mn2 from xl_named_audio; use -NamedOnly for a focused regression'
     }
-    & $PSCommandPath -Serial $Serial -Hog $Hog -Descriptor $Descriptor -NamedOnly
-    & $PSCommandPath -Serial $Serial -Hog $seismicHog -Descriptor $seismicDescriptor -Seismic
+    & $PSCommandPath -Serial $Serial -Hog $Hog -Descriptor $Descriptor -NamedOnly -OutputDirectory $OutputDirectory
+    & $PSCommandPath -Serial $Serial -Hog $seismicHog -Descriptor $seismicDescriptor -Seismic -OutputDirectory $OutputDirectory
     return
 }
 $expectedHog = if ($Seismic) { 'a5a1dce94983b482c9d3423b0f70f2084ca42f10bc131d8ac19f7805141bb2b8' } else { '87faf44175cf565e857baee2edfafd10c7feed8b57cb4cda0258b85e3e9d44f9' }
@@ -33,6 +34,7 @@ $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
 $output = Join-Path $PSScriptRoot "../../temp/xl-named-audio-android/$mission"
+if ($OutputDirectory) { $output = Join-Path ([IO.Path]::GetFullPath($OutputDirectory)) $mission }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 function Invoke-NamedAudioAdb {

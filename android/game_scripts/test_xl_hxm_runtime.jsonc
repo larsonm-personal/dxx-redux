@@ -85,6 +85,16 @@
         "post_delay_ms": 300,
     },
     {
+        // XL rejects robot damage during the first simulation second after birth
+        "action": "wait_for",
+        "expect": {
+            "idle_saver.game_time": {
+                "gte": 1,
+            },
+        },
+        "timeout_ms": 20000,
+    },
+    {
         "action": "set_debug",
         "field": "object_damage",
         "value": "100 37 local",

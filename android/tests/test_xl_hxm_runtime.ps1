@@ -3,7 +3,8 @@
 param(
     [Parameter(Mandatory)][string]$Serial,
     [Parameter(Mandatory)][string]$Hog,
-    [Parameter(Mandatory)][string]$Descriptor
+    [Parameter(Mandatory)][string]$Descriptor,
+    [string]$OutputDirectory = ''
 )
 $ErrorActionPreference = 'Stop'
 $expectedHog = 'f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db'
@@ -16,6 +17,7 @@ $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
 $output = Join-Path $PSScriptRoot '../../temp/xl-hxm-android'
+if ($OutputDirectory) { $output = [IO.Path]::GetFullPath($OutputDirectory) }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 function Invoke-HxmAdb {

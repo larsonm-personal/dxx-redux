@@ -3,7 +3,8 @@
 param(
     [Parameter(Mandatory)][string]$Serial,
     [Parameter(Mandatory)][string]$Hog,
-    [Parameter(Mandatory)][string]$Descriptor
+    [Parameter(Mandatory)][string]$Descriptor,
+    [string]$OutputDirectory = ''
 )
 $ErrorActionPreference = 'Stop'
 $expectedHog = '124aba8bfcf9dda63fbc5d18e08d6aa8316c50cc05ac2f4527ec1c99d3e220d9'
@@ -16,6 +17,7 @@ $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
 $output = Join-Path $PSScriptRoot '../../temp/xl-equipment-android'
+if ($OutputDirectory) { $output = [IO.Path]::GetFullPath($OutputDirectory) }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 function Invoke-EquipmentAdb {
