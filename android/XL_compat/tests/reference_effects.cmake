@@ -1,9 +1,12 @@
 foreach(
     pair IN
-    ITEMS "objects/objectio.cpp|528f64e09469b5a452e9c6cf0ae8e9d5dd3eaffeaf5478378669f0783deaf68f"
-          "include/object.h|ed546edd2bbda56a84e9fef8543706707d47a08b48e36616852346b5a2f96127"
-          "include/cfile.h|34d3db395260649003a848015d3ac4dbac516779012f34c4315b530626016191"
-          "include/maths.h|43adf417dd1c282a39c8fed02bdad9d05a7f3ad5850a39a87897fd533eb857cd")
+    ITEMS
+        "objects/objectio.cpp|528f64e09469b5a452e9c6cf0ae8e9d5dd3eaffeaf5478378669f0783deaf68f"
+        "objects/updateobject.cpp|c4f3b9f1cd225f4dda99bb2a4e42af8546bc37ae36cc0bd19091dad6f48b01ac"
+        "gameio/loadobjects.cpp|01fe3cbc1cf781d1180921c9e235593f1b79d68924c0d49a42502ef8c3ffcd3c"
+        "include/object.h|ed546edd2bbda56a84e9fef8543706707d47a08b48e36616852346b5a2f96127"
+        "include/cfile.h|34d3db395260649003a848015d3ac4dbac516779012f34c4315b530626016191"
+        "include/maths.h|43adf417dd1c282a39c8fed02bdad9d05a7f3ad5850a39a87897fd533eb857cd")
     string(REPLACE "|" ";" parts "${pair}")
     list(GET parts 0 path)
     list(GET parts 1 expected)
@@ -23,6 +26,17 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/objects/objectio.cpp"
                       "void CObject::FixEffectRenderType (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/objects/objectio.cpp"
                       "void CObject::Read (CFile& cf)")
+file(READ "${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadobjects.cpp" load_objects)
+string(FIND "${load_objects}" "if (Type () == OBJ_POWERUP) {" powerup_start)
+string(FIND "${load_objects}" "else if (Type () == OBJ_WEAPON) {" powerup_end)
+if(powerup_start LESS 0 OR powerup_end LESS powerup_start)
+    message(FATAL_ERROR "Missing pinned powerup verification branch")
+endif()
+math(EXPR powerup_length "${powerup_end} - ${powerup_start}")
+string(SUBSTRING "${load_objects}" ${powerup_start} ${powerup_length} powerup_verify)
+string(APPEND extracted "\nvoid CObject::VerifyPowerup() {\n${powerup_verify}\n}\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/objects/updateobject.cpp"
+                      "void CObject::UpdatePosition (void)")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_effects.h" CONTENT "${extracted}")
 add_executable(xl_effect_reference tests/reference_effects.cpp)
 foreach(

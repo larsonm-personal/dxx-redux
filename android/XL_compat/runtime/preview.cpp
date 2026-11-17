@@ -6,6 +6,7 @@
 #include "particle_world.h"
 #include "geometry.h"
 #include "../producer_layout.h"
+#include "../sentinel_powerup.h"
 #include "projectile.h"
 #include "object_birth.h"
 #include "explosion_motion.h"
@@ -80,6 +81,7 @@ extern "C" {
 #include "weapon.h"
 #include "laser.h"
 #include "vclip.h"
+#include "powerup.h"
 #include "rle.h"
 #include "rng_shared.h"
 #include "args.h"
@@ -416,7 +418,9 @@ void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, b
 				if (texture != -1) graph.texture(texture);
 			}
 			if ((obj.render == RT_POWERUP && !(obj.type == OBJ_POWERUP && xl_compat::time_equipment_powerup(obj.id))) || obj.render == RT_HOSTAGE || obj.render == RT_FIREBALL || obj.render == RT_WEAPON_VCLIP)
-				graph.clip(obj.render_data.at(0));
+				graph.clip(xl_compat::stationary_powerup_animation_fallback(obj.type, obj.id, obj.control, obj.movement, obj.render, obj.flags, obj.render_data.at(0))
+				               ? graph.powerup_data[obj.id].vclip_num
+				               : obj.render_data.at(0));
 		} catch (const std::exception &error) {
 			throw std::runtime_error("object " + std::to_string(i) + ": " + error.what());
 		}
@@ -1094,9 +1098,25 @@ extern "C" int xl_loading_extended_triggers(void)
 {
 	return loading_extended_triggers;
 }
+extern "C" int xl_loading_sentinel_powerup(int type, int id, int control, int movement, int render, int flags)
+{
+	return loading_object_capacity && !(Game_mode & GM_MULTI) &&
+	       xl_compat::sentinel_fusion_header(type, id, control, movement, render, flags);
+}
 extern "C" int xl_loading_level_extensions(void)
 {
 	return loading_object_capacity != 0;
+}
+extern "C" void xl_initialize_loaded_powerup_animation(object *obj)
+{
+	if (!loading_object_capacity || (Game_mode & GM_MULTI) || !obj ||
+	    !xl_compat::stationary_powerup_animation_fallback(obj->type, obj->id, obj->control_type, obj->movement_type,
+	                                                      obj->render_type, obj->flags, obj->rtype.vclip_info.vclip_num)) return;
+	// Incoming dependency validation has already checked both retained definitions
+	obj->rtype.vclip_info.vclip_num = Powerup_info[obj->id].vclip_num;
+	obj->rtype.vclip_info.frametime = Vclip[obj->rtype.vclip_info.vclip_num].frame_time;
+	obj->rtype.vclip_info.framenum = 0;
+	if (obj->id == POW_VULCAN_AMMO) obj->ctype.powerup_info.count = VULCAN_AMMO_AMOUNT;
 }
 
 extern "C" int xl_preserve_effect_position(int object_type)

@@ -36,6 +36,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef DXX_XL_RUNTIME
 #include "trigger_state.h"
 #include "preview.h"
+#include "pog_resources.h"
 #include "slow_motion_runtime.h"
 #include "camera_collision.h"
 #include "doors.h"
@@ -1110,8 +1111,14 @@ static int state_validate_effect_runtime_state(PHYSFS_file *fp, int swap, int ve
 		    !state_runtime_read_s32(fp, swap, &sidenum) ||
 		    !state_runtime_read_s32(fp, swap, &dest_bm_num) ||
 		    effect_num < 0 || effect_num >= Num_effects || seen[effect_num] ||
-		    time_left < 0 || Effects[effect_num].vc.num_frames < 1 ||
+		    time_left < 0 ||
+#ifdef DXX_XL_RUNTIME
+		    xl_pog_effect_frames(&Effects[effect_num]) < 1 ||
+		    frame_count < 0 || frame_count >= xl_pog_effect_frames(&Effects[effect_num]) ||
+#else
+		    Effects[effect_num].vc.num_frames < 1 ||
 		    frame_count < 0 || frame_count >= Effects[effect_num].vc.num_frames ||
+#endif
 		    (dynamic_flags & ~(EF_ONE_SHOT | EF_STOPPED)))
 			return 0;
 		seen[effect_num] = 1;

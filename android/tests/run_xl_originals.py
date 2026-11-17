@@ -475,6 +475,52 @@ def mark_stage(work, stage, owner_started=None):
     temporary.replace(work / "xl-progress.json")
 
 
+def powerup_results(engine, stage, data, work):
+    """Supplement the fixed native cohort with the private original Subzero lifecycle."""
+    if not native_resources(stage):
+        raise ValueError("Subzero lifecycle requires the pinned authentic Vertigo and XL resources")
+    runtime = work / "subzero-runtime"
+    shutil.copytree(data, runtime)
+    for name in ("d2x.hog", "d2x-xl.hog"):
+        if (runtime / name).exists():
+            raise ValueError("Subzero resource staging would replace an existing runtime input")
+        shutil.copy2(stage / "resources" / name, runtime / name)
+    extra = work / "subzero-input"
+    (extra / "missions").mkdir(parents=True, exist_ok=False)
+    for suffix in ("hog", "mn2"):
+        shutil.copy2(stage / f"missions/single/boilpnt.{suffix}", extra / f"missions/boilpnt.{suffix}")
+    shutil.copytree(stage / "mods/boilpnt", extra / "mods/boilpnt")
+    output = work / "subzero-lifecycle"
+    with (work / "subzero-lifecycle.log").open("wb") as log:
+        subprocess.run(
+            [
+                sys.executable,
+                str(Path(__file__).with_name("xl_powerup_audit.py")),
+                "--engine",
+                str(engine),
+                "--runtime",
+                str(runtime),
+                "--extra",
+                str(extra),
+                "--work",
+                str(output),
+            ],
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            check=True,
+            timeout=180,
+        )
+    result = json.loads((output / "result.json").read_text())
+    if (
+        result.get("passed") is not True
+        or result.get("controls_complete") is not True
+        or result.get("inputs_unchanged") is not True
+        or result.get("input_profile") != "private-owner"
+    ):
+        raise ValueError("Original Subzero lifecycle receipt is incomplete")
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, required=True)
@@ -692,6 +738,12 @@ def main():
         receipt["navigation_anchors_passed"] = navigation["anchors_passed"]
         receipt["navigation_smoke_passed"] = navigation["passed"]
         receipt["navigation_smoke_milliseconds"] = round(navigation["seconds"] * 1000)
+        # Keep the reviewed 113-test controller cohort intact. This additional
+        # candidate-owned probe must also succeed before this owner can complete
+        powerups = powerup_results(engine, stage, retail_data, work)
+        receipt["subzero_lifecycle"] = {
+            key: powerups[key] for key in ("passed", "elapsed_seconds", "engine_sha256", "input_profile")
+        }
     mark_stage(work, "verify-receipt", owner_started)
     verify(stage, modern=args.fast)
     if native_resources(stage) != resource_parameters:

@@ -412,6 +412,7 @@ extern int multi_powerup_is_4pack(int);
 //reads one object of the given version from the given file
 void read_object(object *obj,PHYSFS_file *f,int version)
 {
+	int xl_sentinel_powerup = 0;
 
 	obj->type           = PHYSFSX_readByte(f);
 	obj->id             = PHYSFSX_readByte(f);
@@ -435,6 +436,16 @@ void read_object(object *obj,PHYSFS_file *f,int version)
 	obj->contains_type  = PHYSFSX_readByte(f);
 	obj->contains_id    = PHYSFSX_readByte(f);
 	obj->contains_count = PHYSFSX_readByte(f);
+
+#ifdef DXX_XL_RUNTIME
+	xl_sentinel_powerup = xl_loading_sentinel_powerup(obj->type, obj->id, obj->control_type,
+	                                                obj->movement_type, obj->render_type, obj->flags);
+	if (xl_sentinel_powerup) {
+		/* XL clears these payload-free records before Read and Verify */
+		memset(&obj->mtype, 0, sizeof(obj->mtype));
+		memset(&obj->ctype, 0, sizeof(obj->ctype));
+	}
+#endif
 
 	switch (obj->movement_type) {
 
@@ -464,7 +475,7 @@ void read_object(object *obj,PHYSFS_file *f,int version)
 			break;
 
 		default:
-			Int3();
+			if (!xl_sentinel_powerup) Int3();
 	}
 
 	switch (obj->control_type) {
@@ -548,7 +559,7 @@ void read_object(object *obj,PHYSFS_file *f,int version)
 		case CT_FLYTHROUGH:
 		case CT_REPAIRCEN:
 		default:
-			Int3();
+			if (!xl_sentinel_powerup) Int3();
 	
 	}
 
@@ -598,6 +609,10 @@ void read_object(object *obj,PHYSFS_file *f,int version)
 			obj->rtype.vclip_info.vclip_num	= PHYSFSX_readInt(f);
 			obj->rtype.vclip_info.frametime	= PHYSFSX_readFix(f);
 			obj->rtype.vclip_info.framenum	= PHYSFSX_readByte(f);
+
+#ifdef DXX_XL_RUNTIME
+			xl_initialize_loaded_powerup_animation(obj);
+#endif
 
 			break;
 

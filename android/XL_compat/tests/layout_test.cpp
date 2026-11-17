@@ -43,6 +43,7 @@ void contract()
 			records[at + 2] = index < 2 ? 255 : 13;
 			records[at + 3] = index < 2 ? 255 : 0;
 			records[at + 4] = 5;
+			records[at + (index < 2 ? 80 : 84)] = 40;
 		}
 		bytes.insert(bytes.begin() + fixture.walls, records.begin(), records.end());
 		xl_test::layout_patch(bytes, fixture.game + 35, static_cast<unsigned>(fixture.walls));
@@ -55,7 +56,19 @@ void contract()
 		      "Sentinel powerups displaced following object or wall boundaries");
 		check(parsed.objects[0].control == 255 && parsed.objects[0].movement == 255 && parsed.objects[0].control_data.empty() && parsed.objects[0].movement_data.empty(),
 		      "Sentinel source bytes were normalized or given a fabricated payload");
-		check(issue(xl_compat::runtime_blockers(parsed), "powerup_sentinel_controller"), "Decoded sentinel bypassed runtime admission");
+		check(!issue(xl_compat::runtime_blockers(parsed), "powerup_sentinel_controller"), "Qualified Fusion sentinel retained its runtime blocker");
+		for (int mutation = 0; mutation < 7; ++mutation) {
+			auto invalid = parsed;
+			auto &object = invalid.objects[0];
+			if (mutation == 0) object.id = 17;
+			if (mutation == 1) object.flags = 1;
+			if (mutation == 2) object.multiplayer = 1;
+			if (mutation == 3) object.contains_count = 1;
+			if (mutation == 4) object.control_data = { 0 };
+			if (mutation == 5) object.movement_data = { 0 };
+			if (mutation == 6) object.render_data[0] = 41;
+			check(issue(xl_compat::runtime_blockers(invalid), "powerup_sentinel_controller"), "Unqualified sentinel shape bypassed admission");
+		}
 		for (const auto &change : std::array<std::pair<unsigned, unsigned>, 4>{ { { 0, 2 }, { 2, 254 }, { 3, 254 }, { 4, 1 } } }) {
 			auto invalid = bytes;
 			invalid[fixture.walls + change.first] = static_cast<unsigned char>(change.second);
