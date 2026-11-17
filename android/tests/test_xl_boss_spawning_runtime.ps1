@@ -5,7 +5,8 @@ param(
     [Parameter(Mandatory)][string]$Hog,
     [Parameter(Mandatory)][string]$Descriptor,
     [switch]$Transport,
-    [switch]$Groups
+    [switch]$Groups,
+    [string]$OutputDirectory = ''
 )
 $ErrorActionPreference = 'Stop'
 $expectedHog = if ($Transport) { '09e5deac6470879bd501ab60f982eec79c610f5b65d0dd4afc0e4142f887c1a2' } else { '718b507ed3866a73f36fed6472810c2310d99dc1861aece09002101575c60d9c' }
@@ -25,6 +26,7 @@ $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
 $missionBase = if ($Groups) { 'bossgrp' } elseif ($Transport) { 'bosstran' } else { 'bosses' }
 $output = Join-Path $PSScriptRoot $(if ($Groups) { '../../temp/xl-boss-groups-android' } elseif ($Transport) { '../../temp/xl-boss-transport-android' } else { '../../temp/xl-boss-spawning-android' })
+if ($OutputDirectory) { $output = [IO.Path]::GetFullPath($OutputDirectory) }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 function Invoke-BossSpawningAdb {
