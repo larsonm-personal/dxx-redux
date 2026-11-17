@@ -38,6 +38,8 @@ void xl_preview_clear_mission(void);
 int xl_level_supported(const char *filename, int multiplayer);
 int xl_level_supported_at(const char *filename, int multiplayer, int ordinal);
 int xl_level_segment_group(int segment);
+/* Authored owner identity; -1 when no XL source segment is retained */
+int xl_level_segment_owner(int segment);
 int xl_source_level_version(void);
 int xl_segment_damage_rates(int segment, int16_t *shield, int16_t *energy);
 int xl_source_game_version(void);

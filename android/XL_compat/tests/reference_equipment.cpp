@@ -325,13 +325,14 @@ int main(int argc, char **argv)
 		while (input >> difficulty >> scenario) {
 			std::uint32_t first, second;
 			tProducerInfo producer;
-			int object_count, suspended;
-			input >> first >> second >> producer.xTimer >> producer.bEnabled >> producer.bFlag >> gameData.timeData.xFrame >> suspended >> effect_available >> item_available >> object_count;
+			int object_count, suspended, segment_owner;
+			input >> segment_owner >> first >> second >> producer.xTimer >> producer.bEnabled >> producer.bFlag >> gameData.timeData.xFrame >> suspended >> effect_available >> item_available >> object_count;
 			gameStates.app = { difficulty, suspended };
 			gameData.producerData.equipmentMakers[0].objFlags[0] = static_cast<std::int32_t>(first);
 			gameData.producerData.equipmentMakers[0].objFlags[1] = static_cast<std::int32_t>(second);
 			objects.clear();
 			segments[0] = {};
+			segments[0].m_owner = segment_owner;
 			for (int i = 0; i < object_count; ++i) {
 				CObject object;
 				input >> object.info.nType >> object.info.nId;
@@ -344,15 +345,16 @@ int main(int argc, char **argv)
 			tokens.resize(token_count);
 			for (auto &token : tokens) input >> token;
 			fix expected_timer;
-			int expected_enabled, expected_pending, expected_effects, expected_id, expected_count;
-			input >> expected_timer >> expected_enabled >> expected_pending >> expected_effects >> expected_id >> expected_count;
+			int expected_enabled, expected_pending, expected_effects, expected_id, expected_count, expected_creator;
+			input >> expected_timer >> expected_enabled >> expected_pending >> expected_effects >> expected_id >> expected_count >> expected_creator;
 			item_index = -1;
 			effect_count = 0;
 			cursor = 0;
 			if (!(suspended & SUSP_POWERUPS)) EquipmentMakerHandler(&producer);
 			const int id = item_index < 0 ? -1 : objects[item_index].info.nId;
 			const int count = item_index < 0 ? 0 : objects[item_index].cType.powerupInfo.nCount;
-			if (!input || producer.xTimer != expected_timer || producer.bEnabled != expected_enabled || producer.bFlag != expected_pending || effect_count != expected_effects || id != expected_id || count != expected_count || cursor != tokens.size())
+			const int creator = item_index < 0 ? -1 : objects[item_index].info.nCreator;
+			if (!input || producer.xTimer != expected_timer || producer.bEnabled != expected_enabled || producer.bFlag != expected_pending || effect_count != expected_effects || id != expected_id || count != expected_count || creator != expected_creator || cursor != tokens.size())
 				throw std::runtime_error("Equipment reference mismatch at difficulty " + std::to_string(difficulty) + ", scenario " + std::to_string(scenario));
 			++cases;
 		}

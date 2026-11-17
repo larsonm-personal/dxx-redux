@@ -207,56 +207,59 @@ int main(int argc, char **argv)
 {
 	try {
 		unsigned cases = 0;
-		for (int sr : { -32768, -5, -1, 0, 1, 3, 32767 })
-			for (int er : { -32768, -5, -1, 0, 1, 5, 32767 })
-				for (fix frame : { 0, 1, 65536 / 60, 65536 / 30, 65536 / 4, 65536 / 5 })
-					for (fix health : { -1, 0, 1, 32769, 6553600, 13107200, 32768000 })
-						for (fix power : { -1, 0, 1, 32769, 6553600, 13107200, 32768000 })
-							for (int kind : { 0, 1, 2, 3 })
-								for (bool center : { false, true }) {
-									segment.m_xDamage[0] = I2X(sr);
-									segment.m_xDamage[1] = I2X(er);
-									gameData.timeData.xFrame = frame;
-									player.info.nType = kind < 2 ? OBJ_PLAYER : kind == 2 ? 2
-									                                                      : 6;
-									player.info.nId = kind == 1 ? 1 : 0;
-									auto &p = gameData.multiplayer.players[0];
-									p = { health, power };
-									events.clear();
-									deaths = 0;
-									centers = center;
-									game_frame_fuel = frame * 25;
-									game_frame_repair = frame * 11;
-									fuel_max = repair_max = INT32_MIN;
-									player.HandleSegmentFunction();
-									fix h = health, e = power;
-									std::vector<int> order;
-									if (!kind) {
-										h = xl_compat::segment_resource_after(h, xl_compat::segment_damage_amount(frame, sr, h, true));
-										e = xl_compat::segment_resource_after(e, xl_compat::segment_damage_amount(frame, er, e, false));
-										order = { 1, 2 };
-										if (h < 0) {
-											order.push_back(3);
-											require(deaths == 1, "Missing death boundary");
-										} else {
-											require(fuel_max == I2X(100) - e && repair_max == I2X(100) - h, "Center maximum/order differs");
-											order.push_back(4);
-											const fix fuel = center ? std::max(0, std::min(I2X(100) - e, frame * 25)) : 0;
-											if (fuel) {
-												e += fuel;
-												order.push_back(2);
-											}
-											order.push_back(5);
-											const fix repair = center ? std::max(0, std::min(I2X(100) - h, frame * 11)) : 0;
-											if (repair) {
-												h += repair;
-												order.push_back(1);
+		for (int owner : { -1, 0 }) {
+			segment.m_owner = owner;
+			for (int sr : { -32768, -5, -1, 0, 1, 3, 32767 })
+				for (int er : { -32768, -5, -1, 0, 1, 5, 32767 })
+					for (fix frame : { 0, 1, 65536 / 60, 65536 / 30, 65536 / 4, 65536 / 5 })
+						for (fix health : { -1, 0, 1, 32769, 6553600, 13107200, 32768000 })
+							for (fix power : { -1, 0, 1, 32769, 6553600, 13107200, 32768000 })
+								for (int kind : { 0, 1, 2, 3 })
+									for (bool center : { false, true }) {
+										segment.m_xDamage[0] = I2X(sr);
+										segment.m_xDamage[1] = I2X(er);
+										gameData.timeData.xFrame = frame;
+										player.info.nType = kind < 2 ? OBJ_PLAYER : kind == 2 ? 2
+										                                                      : 6;
+										player.info.nId = kind == 1 ? 1 : 0;
+										auto &p = gameData.multiplayer.players[0];
+										p = { health, power };
+										events.clear();
+										deaths = 0;
+										centers = center;
+										game_frame_fuel = frame * 25;
+										game_frame_repair = frame * 11;
+										fuel_max = repair_max = INT32_MIN;
+										player.HandleSegmentFunction();
+										fix h = health, e = power;
+										std::vector<int> order;
+										if (!kind) {
+											h = xl_compat::segment_resource_after(h, xl_compat::segment_damage_amount(frame, sr, h, true));
+											e = xl_compat::segment_resource_after(e, xl_compat::segment_damage_amount(frame, er, e, false));
+											order = { 1, 2 };
+											if (h < 0) {
+												order.push_back(3);
+												require(deaths == 1, "Missing death boundary");
+											} else {
+												require(fuel_max == I2X(100) - e && repair_max == I2X(100) - h, "Center maximum/order differs");
+												order.push_back(4);
+												const fix fuel = center ? std::max(0, std::min(I2X(100) - e, frame * 25)) : 0;
+												if (fuel) {
+													e += fuel;
+													order.push_back(2);
+												}
+												order.push_back(5);
+												const fix repair = center ? std::max(0, std::min(I2X(100) - h, frame * 11)) : 0;
+												if (repair) {
+													h += repair;
+													order.push_back(1);
+												}
 											}
 										}
+										require(p.shield == h && p.energy == e && events == order, "Pinned caller/leaf/Set/Update differs");
+										++cases;
 									}
-									require(p.shield == h && p.energy == e && events == order, "Pinned caller/leaf/Set/Update differs");
-									++cases;
-								}
+		}
 		if (argc == 2) {
 			std::ifstream samples(argv[1]);
 			int sr, er, function, frame, h, e, after_h, after_e, count = 0;

@@ -7,10 +7,11 @@ static void write_boss_groups_fixture(const std::filesystem::path &root)
 	for (auto member : xl_compat::read_hog(bytes)) {
 		if (member.name == "neptunxl.rl2") {
 			const auto source = xl_compat::inspect_level(member.bytes);
-			// Known 23/40 geometry walk; only group bytes and wall types change
+			// Known 23/40 geometry walk; only neutral owners, groups and wall types change
 			std::size_t offset = source.mine_offset + 5 + source.vertices.size() * 12;
 			const auto bits = [](unsigned value) { int count = 0; for (; value; value >>= 1) count += value & 1; return count; };
 			for (std::size_t i = 0; i < source.segments.size(); ++i) {
+				member.bytes.at(offset) = i == 70 ? 0 : 255;
 				member.bytes.at(offset + 1) = i == 70 ? 1 : i == 84 ? 2
 				                                                    : 255;
 				offset += 2;
@@ -52,6 +53,8 @@ static int boss_groups_test(int argc, char **argv)
 		std::strcpy(Players[Player_num].callsign, "XLTest");
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
+		require(xl_level_segment_owner(70) == 0 && xl_level_segment_owner(84) == -1, "neutral segment owner identity changed on load");
+		require(!xl_level_supported("neptunxl.rl2", 1), "neutral ownership admitted unqualified multiplayer");
 		require(xl_boss_spawn_count() == 2 && xl_level_segment_group(70) == 1 && xl_level_segment_group(84) == 2, "authored boss group source not retained");
 		// Physical passability alone would reach other-group rooms from both homes
 		for (int home : { 70, 84 }) {
@@ -125,7 +128,9 @@ static int boss_groups_test(int argc, char **argv)
 			require(xl_level_segment_group(Objects[49].segnum) == -1, "default group AI crossed a label");
 		}
 		require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0 && xl_compat::boss_routes().empty(), "group source contaminated stock");
+		require(xl_level_segment_owner(70) == -1, "neutral segment ownership leaked into stock");
 		require(state_restore_all_sub(save, 0) && same_boss_routes(routes, xl_compat::boss_routes()) && xl_level_segment_group(70) == 1, "disk restore lost source group or earned destinations");
+		require(xl_level_segment_owner(70) == 0 && xl_level_segment_owner(84) == -1, "disk restore lost distinct neutral owner identities");
 		for (int seed = 1; seed < 30; ++seed) {
 			d_srand(seed);
 			xl_boss_teleport(49);

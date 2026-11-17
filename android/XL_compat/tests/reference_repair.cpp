@@ -159,13 +159,16 @@ int main(int argc, char **argv)
 		std::ifstream in(argv[1]);
 		int function, frame, maximum, now, last, expected_amount, expected_clock, expected_cues, count = 0;
 		while (in >> function >> frame >> maximum >> now >> last >> expected_amount >> expected_clock >> expected_cues) {
-			setup(function);
-			gameData.timeData = { frame, now };
-			repair_clock = last;
-			cues = 0;
-			const auto amount = segment.Repair(maximum);
-			if (amount != expected_amount || repair_clock != expected_clock || cues != unsigned(expected_cues))
-				throw std::runtime_error("Repair differs at sample " + std::to_string(count));
+			for (int owner : { -1, 0 }) {
+				segment.m_owner = owner;
+				setup(function);
+				gameData.timeData = { frame, now };
+				repair_clock = last;
+				cues = 0;
+				const auto amount = segment.Repair(maximum);
+				if (amount != expected_amount || repair_clock != expected_clock || cues != unsigned(expected_cues))
+					throw std::runtime_error("Repair differs at sample " + std::to_string(count));
+			}
 			++count;
 		}
 		if (count != (legacy ? 1440 : 5760)) throw std::runtime_error("Incomplete repair source matrix");
@@ -174,14 +177,17 @@ int main(int argc, char **argv)
 		int health, before_energy, after_health, after_energy;
 		count = 0;
 		while (frames >> function >> frame >> health >> before_energy >> after_health >> after_energy) {
-			setup(function);
-			gameData.timeData = { frame, 0 };
-			repair_clock = 0;
-			gameData.multiplayer.players[0] = { health, before_energy };
-			player.HandleSegmentFunction();
-			const auto &result = gameData.multiplayer.players[0];
-			if (result.shield != after_health || result.energy != after_energy)
-				throw std::runtime_error("Actual repair frame differs from source caller at " + std::to_string(count));
+			for (int owner : { -1, 0 }) {
+				segment.m_owner = owner;
+				setup(function);
+				gameData.timeData = { frame, 0 };
+				repair_clock = 0;
+				gameData.multiplayer.players[0] = { health, before_energy };
+				player.HandleSegmentFunction();
+				const auto &result = gameData.multiplayer.players[0];
+				if (result.shield != after_health || result.energy != after_energy)
+					throw std::runtime_error("Actual repair frame differs from source caller at " + std::to_string(count));
+			}
 			++count;
 		}
 		if (count != (legacy ? 12 : 42)) throw std::runtime_error("Incomplete actual-frame repair matrix");
