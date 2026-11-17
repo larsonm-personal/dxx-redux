@@ -93,3 +93,30 @@ Finish complete budgeted measurement and candidate CI before acceptance.
 This is a single-player neutral-owner qualification, not
 Entropy support, campaign completion, or closure of the unrelated G2 save issue.
 Continue the other failure families in the tranche's ordered recovery plan.
+
+## CI receipt and fixture-initializer repair
+
+Trusted run 43987438430 measured this candidate fd21f5d05cc7bdaf0fcec5fa535b6fce34588ec7
+at 54/64, ten load failures, zero simulation failures, original 8/8, and 234.577
+seconds within its 288-second probe budget. The separate original-eight job
+also passed. Expanded artifact 14287670164 SHA256:
+06b07a3e6ead48781b0ad6cd6fdb46539843aca83417d2191b96319c9bfdf31e.
+Sample artifact 14286417548 SHA256:
+40a43b50abe34b6e3f5e8da303dd63e4d7bcbd1478e22168cf40d857a04ae21f.
+Both ZIP digests were verified before extraction.
+
+The same candidate failed the public Windows/Linux contract builds and the
+private contracts-build stage. The public diagnostics identify layout_test.cpp's
+remaining aggregate initializer: adding RuntimeLayoutFixture::owners shifted its
+last zero into a vector member. Add the missing empty owners vector explicitly;
+no engine behavior, assertions or test selection changes. The original targeted
+local builds did not include xl_layout_test, which is why they missed this error.
+
+The repaired Windows Debug xl_layout_test build, all 56 modern layout/malformed
+boundary profiles, and original-Neptune-derived 21/23/25/27 damage fixture
+construction passed. Scoped formatting and diff checks passed. Exact repaired-head
+CI remains pending; the failed old candidate is not relabeled green.
+
+New scratch evidence is under E:/dxx-redux-builds/xl-recovery-20261116/boss-profiles-01
+because C: is below the 4 GiB producer reserve. Prescribed cleanup found no eligible
+files outside protected evidence, assets, builds and emulator workspaces.

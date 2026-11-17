@@ -235,7 +235,7 @@ void write_runtime_fixture(const std::filesystem::path &path, const std::filesys
 		}
 	for (int version : { 21, 23, 25, 27 }) {
 		if (version == 21 && !include_v21) continue;
-		auto fixture = version <= 23 ? xl_test::RuntimeLayoutFixture{ base, {}, {}, 0 } : xl_test::runtime_layout_fixture(base, version);
+		auto fixture = version <= 23 ? xl_test::RuntimeLayoutFixture{ base, {}, {}, {}, 0 } : xl_test::runtime_layout_fixture(base, version);
 		if (version >= 25) {
 			for (std::size_t i = 0; i < fixture.extras.size(); ++i) {
 				// Inert serialized fields must not alias a native station or robot maker
