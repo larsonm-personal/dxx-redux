@@ -59,3 +59,14 @@ The developer-OFF Windows candidate passed all 15 original levels with binary
 097fe2a9f0e449b1c0d660544956430cb1b4acd50bfa835d05c03e922ba5a646.
 The separate native controls deliberately set up robot state and deaths.
 The older levelpack distribution has independent light-index failures.
+
+## Absent trigger sections
+
+ReadTriggerInfo in pinned gameio/loadobjects.cpp resets the object-trigger
+count and references before testing the section offset. A directory entry
+with offset -1 and count zero therefore describes an empty trigger set.
+The inventory used to report an unknown capability for that case. Positive
+counts still require data, and present sections still require a complete
+object count and bounded targets. Layout controls distinguish all three
+cases across four modern formats. The native 120-frame reruns use original
+levels from the pinned level pack and additional local distributions.
