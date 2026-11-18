@@ -71,6 +71,8 @@ int xl_level_extensions_active(void)
 }
 // This asset-free owner has no level-bound camera monitors
 void xl_camera_monitor_uv(int, int, float *) {}
+// Native side-frame storage is exercised by the level-bound engine owner
+void xl_pog_side_views_discard_context(void) {}
 void ogl_prepare_framebuffer_readback(void);
 extern int r_texcount, GL_TEXTURE_2D_enabled;
 ubyte gr_palette[768]{}, gr_current_pal[768]{};

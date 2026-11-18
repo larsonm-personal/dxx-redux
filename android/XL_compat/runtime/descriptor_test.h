@@ -7,6 +7,7 @@
 #include "retained_resource.h"
 #include "level_requirements.h"
 #include "target_sources.h"
+#include "door_views_test.h"
 extern "C" {
 #include "gauges.h"
 #include "endlevel.h"
@@ -638,6 +639,7 @@ static int descriptor_test(int argc, char **argv)
 		require(load_level("d2leva-1.rl2") == 0, "stock baseline level failed");
 		require(!xl_resource_texture_scope_enabled() && !*mission_resource_archive(), "stock mission enabled XL resource lookup");
 		descriptor_retained_dependency_controls();
+		descriptor_door_view_controls();
 		descriptor_prepared_ham_controls(std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")));
 		// Supplemental assertions-enabled selection; canonical Observatory always continues
 		if (!std::strcmp(find_arg_value(argc, argv, "-descriptor-test"), "ham-prepare")) return 0;
@@ -658,7 +660,8 @@ static int descriptor_test(int argc, char **argv)
 			require(xl_resource_texture_scope_enabled() && *mission_resource_archive(), "parsed XL descriptor did not seal resource identity");
 			require(Last_level == 1 && Last_secret_level == 0 && !std::strcmp(Level_names[0], "obsrv-xl.rl2"), "original level list differs");
 			require(!Current_mission->alternate_ham_file && bm_compatibility_warning_count() == 0, "XL descriptor was treated as stock extra-HAM");
-			require(gameplay_definitions() == stock_definitions && arena_model() == stock_model, "descriptor changed gameplay definitions or model payload");
+			require(gameplay_definitions() == stock_definitions, "descriptor changed gameplay definitions");
+			require(arena_model() == stock_model, "descriptor changed model payload");
 			XlPreparedResources clean_base("d2leva-1.rl2");
 			clean_base.dependencies().robot(0);
 			for (const auto &entry : { std::pair<const char *, int>{ "obsrv-xl.rl2", 52176 }, { "obsrv-xl.pog", 26144 } }) {

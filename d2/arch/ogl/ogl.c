@@ -7,6 +7,7 @@
 #include "preview.h"
 #include "fog.h"
 #include "pog_renderer.h"
+#include "pog_resources.h"
 #include "camera_renderer.h"
 #include "particle_renderer.h"
 #include "particle_objects.h"
@@ -457,6 +458,7 @@ void ogl_reset_texture_stats_internal(void){
 
 void ogl_init_texture_list_internal(void){
 #ifdef DXX_XL_RUNTIME
+	xl_pog_side_views_discard_context();
 	xl_particle_images_discard_context(1);
 #endif
 #if defined(ANDROID) && defined(DXX_XL_RUNTIME) && defined(OGL_MERGE)
@@ -480,6 +482,7 @@ void ogl_init_texture_list_internal(void){
 
 void ogl_smash_texture_list_internal(void){
 #ifdef DXX_XL_RUNTIME
+	xl_pog_side_views_discard_context();
 #ifdef ANDROID
 	ogl_xl_fog_destroy(android_egl_discarding_lost_context_resources());
 	xl_particle_images_discard_context(android_egl_discarding_lost_context_resources());
