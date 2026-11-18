@@ -3676,7 +3676,7 @@ class RefillNightlyTests(unittest.TestCase):
         for status, attempted, duration in (("BLOCKED", False, 1), ("FAIL", False, 1), ("PASS", True, 5000)):
             with self.subTest(status=status, duration=duration), tempfile.TemporaryDirectory() as temporary:
                 result, launched, receipt = self.run_fake(plan, policy, Path(temporary), [duration], status, attempted)
-                self.assertEqual(result, 1)
+                self.assertEqual(result, 0 if duration == 5000 else 1)
                 self.assertEqual(len(launched), 1)
                 updated, _ = sample.reconcile_sample(plan, policy, state, [receipt])
                 self.assertFalse(updated["done"])
@@ -3687,6 +3687,57 @@ class RefillNightlyTests(unittest.TestCase):
         ):
             self.assertEqual(sample.execute_refills(plan, policy, "host", Path(temporary)), 0)
             run.assert_not_called()
+
+    def test_deadline_does_not_erase_an_earlier_test_failure(self):
+        import nightly_sample as sample
+
+        policy, _, plan, state = self.fixture(count=2)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            calls = []
+
+            def run(command, cwd, log, timeout):
+                child = sweep.read(command[command.index("--plan") + 1])
+                directory = Path(command[command.index("--output") + 1])
+                calls.append(child)
+                if len(calls) == 1:
+                    self.write_attempt(child, directory, status="FAIL")
+                    return subprocess.CompletedProcess(command, 1)
+                raise subprocess.TimeoutExpired(command, timeout)
+
+            with (
+                patch.object(sample.time, "time", return_value=101),
+                patch.object(sweep, "run_command", side_effect=run),
+            ):
+                self.assertEqual(sample.execute_refills(plan, policy, "host", output), 1)
+            receipt = sweep.read(output / "results.json")
+            self.assertEqual([row["status"] for row in receipt["results"]], ["FAIL", "NOT_RUN"])
+            updated, coverage = sample.reconcile_sample(plan, policy, state, [receipt])
+            self.assertNotIn(calls[1]["tests"][0]["id"], updated["done"])
+            self.assertEqual(coverage["records"][calls[0]["tests"][0]["id"]]["status"], "FAIL")
+
+    def test_deadline_preserves_running_journal_as_pending(self):
+        import nightly_sample as sample
+
+        policy, _, plan, state = self.fixture(count=1)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+
+            def run(command, cwd, log, timeout):
+                child = sweep.read(command[command.index("--plan") + 1])
+                directory = Path(command[command.index("--output") + 1])
+                self.write_attempt(child, directory, status="RUNNING")
+                attempt = sweep.read(directory / "attempt.json")
+                attempt["processes"]["master"] = {"completed": False, "exit_code": None}
+                sweep.write(directory / "attempt.json", attempt)
+                raise subprocess.TimeoutExpired(command, timeout)
+
+            with patch.object(sample.time, "time", return_value=101), patch.object(sweep, "run_command", side_effect=run):
+                self.assertEqual(sample.execute_refills(plan, policy, "host", output), 0)
+            receipt = sweep.read(output / "results.json")
+            self.assertEqual(receipt["results"][0]["status"], "RUNNING")
+            updated, _ = sample.reconcile_sample(plan, policy, state, [receipt])
+            self.assertFalse(updated["done"])
 
     def test_live_collection_and_validation_scale_linearly_to_full_shard(self):
         import nightly_sample as sample
