@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../../../../../XL_compat/hog_format.h"
+#include "../../../../../XL_compat/hog_selection.h"
 
 #ifdef _WIN32
 #define hog_catalog_strcasecmp _stricmp
@@ -70,19 +70,15 @@ static inline size_t hog_catalog_read_header_bytes(void *context, unsigned char 
 	return fread(out, 1, count, (FILE *) context);
 }
 
-static inline int hog_catalog_compare_names(const void *left, const void *right)
-{
-	return dxx_hog_name_compare((const char *) left, (const char *) right);
-}
-
 // Shared native headers; validate all names before publishing a filtered catalog
 static inline int hog_catalog_load_filtered(const char *path, struct hog_midi_catalog *catalog,
                                             int (*accept_entry)(const char *name))
 {
 	FILE *file = NULL;
 	struct hog_midi_entry *entries = NULL;
-	char (*names)[DXX_HOG_LONG_NAME_BYTES] = NULL;
-	size_t count = 0, capacity = 0, name_count = 0, name_capacity = 0, i;
+	struct dxx_hog_lookup *order = NULL;
+	unsigned char *selected = NULL;
+	size_t count = 0, capacity = 0, kept = 0, i;
 	long file_size, position;
 	unsigned char magic[DXX_HOG_SIGNATURE_BYTES];
 	int status = HOG_MIDI_CATALOG_MALFORMED;
@@ -101,43 +97,24 @@ static inline int hog_catalog_load_filtered(const char *path, struct hog_midi_ca
 		if (dxx_hog_read_header(hog_catalog_read_header_bytes, file, &header, &error) != 1) goto done;
 		data_offset = ftell(file);
 		if (data_offset < position || data_offset > file_size || (uint64_t) header.size > (uint64_t) (file_size - data_offset)) goto done;
-		if (name_count == 65536u) {
+		if (count == 65536u) {
 			status = HOG_MIDI_CATALOG_LIMIT;
 			goto done;
 		}
-		if (name_count == name_capacity) {
-			void *grown;
-			name_capacity = name_capacity ? name_capacity * 2u : 16u;
-			grown = realloc(names, name_capacity * sizeof(*names));
+		if (count == capacity) {
+			struct hog_midi_entry *grown;
+			capacity = capacity ? capacity * 2u : 16u;
+			grown = (struct hog_midi_entry *) realloc(entries, capacity * sizeof(*entries));
 			if (!grown) {
 				status = HOG_MIDI_CATALOG_ALLOCATION;
 				goto done;
 			}
-			names = (char (*)[DXX_HOG_LONG_NAME_BYTES]) grown;
+			entries = grown;
 		}
-		memcpy(names[name_count++], header.name, sizeof(header.name));
-		if (accept_entry(header.name)) {
-			if (header.size > HOG_MIDI_ENTRY_MAX_BYTES) goto done;
-			if (count == HOG_MIDI_MAX_TRACKS) {
-				status = HOG_MIDI_CATALOG_LIMIT;
-				goto done;
-			}
-			if (count == capacity) {
-				struct hog_midi_entry *grown;
-				capacity = capacity ? capacity * 2u : 16u;
-				if (capacity > HOG_MIDI_MAX_TRACKS) capacity = HOG_MIDI_MAX_TRACKS;
-				grown = (struct hog_midi_entry *) realloc(entries, capacity * sizeof(*entries));
-				if (!grown) {
-					status = HOG_MIDI_CATALOG_ALLOCATION;
-					goto done;
-				}
-				entries = grown;
-			}
-			memcpy(entries[count].name, header.name, sizeof(header.name));
-			entries[count].size = header.size;
-			entries[count].data_offset = data_offset;
-			++count;
-		}
+		memcpy(entries[count].name, header.name, sizeof(header.name));
+		entries[count].size = header.size;
+		entries[count].data_offset = data_offset;
+		++count;
 		if (header.size && fseek(file, (long) header.size, SEEK_CUR)) {
 			status = HOG_MIDI_CATALOG_IO_ERROR;
 			goto done;
@@ -146,19 +123,44 @@ static inline int hog_catalog_load_filtered(const char *path, struct hog_midi_ca
 		if (ftell(file) != position) goto done;
 	}
 	if (position != file_size || ferror(file)) goto done;
-	if (name_count > 1) {
-		qsort(names, name_count, sizeof(*names), hog_catalog_compare_names);
-		for (i = 1; i < name_count; ++i)
-			if (!dxx_hog_name_compare(names[i - 1], names[i])) goto done;
+	if (count) {
+		order = (struct dxx_hog_lookup *) malloc(count * sizeof(*order));
+		selected = (unsigned char *) malloc(count);
+		if (!order || !selected) {
+			status = HOG_MIDI_CATALOG_ALLOCATION;
+			goto done;
+		}
+		for (i = 0; i < count; ++i) {
+			order[i].name = entries[i].name;
+			order[i].ordinal = i;
+		}
+		dxx_hog_select(order, count, selected);
 	}
-	catalog->entries = entries;
-	catalog->count = count;
+	for (i = 0; i < count; ++i) {
+		if (!selected[i] || !accept_entry(entries[i].name)) continue;
+		if (entries[i].size > HOG_MIDI_ENTRY_MAX_BYTES) goto done;
+		if (kept == HOG_MIDI_MAX_TRACKS) {
+			status = HOG_MIDI_CATALOG_LIMIT;
+			goto done;
+		}
+		if (kept != i) entries[kept] = entries[i];
+		++kept;
+	}
+	if (kept) {
+		catalog->entries = (struct hog_midi_entry *) malloc(kept * sizeof(*entries));
+		if (!catalog->entries) {
+			status = HOG_MIDI_CATALOG_ALLOCATION;
+			goto done;
+		}
+		memcpy(catalog->entries, entries, kept * sizeof(*entries));
+	}
+	catalog->count = kept;
 	catalog->file_size = file_size;
-	entries = NULL;
 	status = HOG_MIDI_CATALOG_OK;
 
 done:
-	free(names);
+	free(selected);
+	free(order);
 	free(entries);
 	if (fclose(file) && status == HOG_MIDI_CATALOG_OK) {
 		hog_midi_catalog_free(catalog);

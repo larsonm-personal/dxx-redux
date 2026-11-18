@@ -50,7 +50,7 @@ static inline size_t dxx_hog_read_exact(dxx_hog_read_fn read, void *context, uns
 }
 
 // Returns 1 for a complete header, 0 at a clean record boundary, -1 on invalid data
-// The caller owns payload bounds, archive-wide name uniqueness and resource budgets
+// The caller owns payload bounds, archive-wide name selection and resource budgets
 static inline int dxx_hog_read_header(dxx_hog_read_fn read, void *context, struct dxx_hog_header *entry, const char **error)
 {
 	unsigned char bytes[DXX_HOG_SHORT_HEADER_BYTES];

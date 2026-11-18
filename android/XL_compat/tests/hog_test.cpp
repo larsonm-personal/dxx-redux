@@ -60,7 +60,11 @@ int main()
 		bad[19] = 128;
 		rejects(bad);
 		xl_test::hog_member(bytes, "long-name.TXT", { 2 }, true);
-		rejects(bytes);
+		const auto selected = index(bytes);
+		require(selected.size() == 1 && selected.front().name == "long-name.TXT" && bytes.at(selected.front().offset) == 2, "Source midpoint selected the wrong duplicate");
+		auto truncated = bytes;
+		truncated.pop_back();
+		rejects(truncated);
 		bytes[0] = 'X';
 		rejects(bytes);
 		std::cout << cases << " mixed HOG index layouts, all truncations and malformed names/sizes passed\n";

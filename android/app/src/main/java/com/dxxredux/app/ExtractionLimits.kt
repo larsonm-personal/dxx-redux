@@ -120,7 +120,7 @@ internal class ExtractionBudget(
         }
     }
 
-    private fun checkCancellation() {
+    fun checkCancellation() {
         if (Thread.currentThread().isInterrupted) throw IOException("Archive extraction was cancelled")
     }
 

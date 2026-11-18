@@ -209,13 +209,17 @@ static int extended_catalog_tests(void)
 		}
 		free(data);
 		hog_midi_catalog_free(&catalog);
-		// A later duplicate must invalidate even an earlier playable entry
+		// The original midpoint lookup selects the later ORDINARY.HMP in this directory
 		file = fopen(path, "ab");
-		if (!file || !write_entry(file, "ORDINARY.HMP", payload, sizeof(payload)) || fclose(file)) return 1;
-		if (hog_midi_catalog_load(path, &catalog) != HOG_MIDI_CATALOG_MALFORMED || catalog.entries || catalog.count) return 1;
+		if (!file || !write_entry(file, "ORDINARY.HMP", payload + 2, 1) || fclose(file)) return 1;
+		if (hog_midi_catalog_load(path, &catalog) != HOG_MIDI_CATALOG_OK || catalog.count != 2 ||
+		    strcmp(catalog.entries[1].name, "ORDINARY.HMP") || !hog_midi_catalog_read(path, &catalog, 1, &data, &length) ||
+		    length != 1 || data[0] != 9) return 1;
+		free(data);
+		hog_midi_catalog_free(&catalog);
 	}
 	remove(path);
-	puts("Extended HOG catalog passed: both signatures, mixed records, 255-byte selected names, exact payloads, duplicate rollback");
+	puts("Extended HOG catalog passed: both signatures, mixed records, 255-byte selected names, exact payloads, duplicate selection");
 	return 0;
 }
 

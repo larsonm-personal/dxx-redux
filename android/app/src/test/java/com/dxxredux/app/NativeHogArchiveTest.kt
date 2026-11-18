@@ -85,9 +85,17 @@ class NativeHogArchiveTest {
         }
         val duplicate =
             hog("D2X", listOf(Triple("track.mid", false, byteArrayOf(1)), Triple("TRACK.MID", true, byteArrayOf(2))))
-        assertThrows(
-            IOException::class.java,
-        ) { NativeHogArchive.visit(duplicate.inputStream(), "duplicate") { _, _ -> } }
+        val selected = mutableListOf<Pair<String, Int>>()
+        NativeHogArchive.visit(duplicate.inputStream(), "duplicate") { entry, payload ->
+            selected += entry.name to payload.read()
+            assertEquals(-1, payload.read())
+        }
+        assertEquals(listOf("TRACK.MID" to 2), selected)
+        assertThrows(IOException::class.java) {
+            NativeHogArchive.visit((duplicate + 1.toByte()).inputStream(), "bad tail") { _, _ ->
+                throw AssertionError("Published a member before validating the physical directory")
+            }
+        }
         val invalid = hog("D2X", listOf(Triple("valid", true, byteArrayOf(1))))
         invalid[16] = 0
         invalid[17] = 0

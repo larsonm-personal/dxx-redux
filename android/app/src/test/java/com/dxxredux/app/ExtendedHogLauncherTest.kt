@@ -22,7 +22,8 @@ class ExtendedHogLauncherTest {
         for (signature in listOf("DHF", "D2X")) {
             val root = Files.createTempDirectory("extended-hog-launcher-").toFile()
             try {
-                val hogBytes = NativeHogArchiveTest.hog(signature, members())
+                val physical = listOf(Triple(song.uppercase(), true, byteArrayOf(9))) + members()
+                val hogBytes = NativeHogArchiveTest.hog(signature, physical)
                 val archive = packageFile(root, hogBytes)
                 val before = archive.readBytes()
                 val scan = requireNotNull(MissionZip.inspect(archive))
@@ -80,10 +81,12 @@ class ExtendedHogLauncherTest {
             val prior = manager.listMods()
             for (bad in listOf(
                 valid + byteArrayOf(1),
-                NativeHogArchiveTest.hog(
-                    "D2X",
-                    members() + Triple(song.uppercase(), true, byteArrayOf(9)),
-                ),
+                NativeHogArchiveTest
+                    .hog(
+                        "D2X",
+                        members() + Triple(song.uppercase(), true, byteArrayOf(9)),
+                    ).dropLast(1)
+                    .toByteArray(),
             )) {
                 packageFile(root, bad)
                 assertNull(MissionZip.inspect(archive))

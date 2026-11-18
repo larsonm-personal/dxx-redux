@@ -40,7 +40,14 @@ def main():
     audio = audio_out.getvalue()
     midi_name, audio_name = "Long mission preview.mid", "Long mission preview.wav"
     hog = bytearray(original)
-    for name, alias, payload in ((midi_name, "alias.mid", midi), (audio_name, "alias.wav", audio)):
+    # The pinned XL lookup selects the two playable spans in this four-entry tail.
+    # Distinct shadow payloads make choosing the wrong duplicate observable on device.
+    for name, alias, payload in (
+        (audio_name, "alias.wav", audio),
+        (midi_name, "alias.mid", midi),
+        (audio_name.upper(), "shadow.wav", b"invalid audio"),
+        (midi_name.upper(), "shadow.mid", b"invalid midi"),
+    ):
         hog += (
             alias.encode().ljust(13, b"\0")
             + struct.pack("<i", -len(payload))
