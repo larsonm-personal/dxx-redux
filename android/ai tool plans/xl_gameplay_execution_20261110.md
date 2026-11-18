@@ -6205,3 +6205,7 @@ Both automation catalogs pass. Hosted child CI and final handoff remain required
 ## November 17-18 full-inventory readiness tranche
 
 The 120-frame ordinary probe improved from 1,358 to 1,418 of 1,654 original cases. All previous passes held. The fixed eight and 64 passed locally. The exact runtime head passed eight in CI and completed 61 of 64 within the old hosted job budget. The [dated outcome](xl_full_outcome_20261117.md), [per-case ledger](../XL_compat/evidence/full-readiness-20261117.json), [execution receipts](xl_full_execution_20261117.json) and [next window](xl_full_next_window_20261117.md) record the remaining 236 failures, platform evidence and implementation order.
+
+## November 17-18 original HOG distributions
+
+The ordinary census reached 1,475 of 1,654. All five distributions now resolve their source-selected members. Of their 58 previously blocked ordinals, 57 completed 120 frames and one reached the classic-in-XL admission check. The [outcome](xl_hog_outcome_20261117.md), [case changes](../XL_compat/evidence/hog-readiness-20261117.json), [execution ledger](xl_hog_execution_20261117.json) and [next plan](xl_hog_next_window_20261117.md) distinguish the Android transitions, cold replays, same-process differences and hosted results.

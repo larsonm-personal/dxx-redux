@@ -1,0 +1,2236 @@
+{
+    "criterion": "Original descriptor ordinal, 120 unassisted simulation frames at 60 Hz with seed 1 and no death or transition. Wall-clock watchdog 45 seconds.",
+    "unit": "Advertised cases in distinct archive distributions. A repeated level may occur in multiple releases.",
+    "baseline": {
+        "source": "48e7ee0dc870c9019d1be5f2e0147b4295b5b0e9",
+        "engine_sha256": "650202d80a597bff47d5258dcfc0d20201e44492cb630365c185bfdbad011558"
+    },
+    "candidate": {
+        "source": "411e411de11a16390bd5a8ea7282ebf503cd014b",
+        "engine_sha256": "3790a270b6d5b48d6c3c4ec527a6664d23e2293e21022df96f00b08332c1621c"
+    },
+    "mission_assets_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+    "runtime_resources": {
+        "profile": "authentic-vertigo-xl-v1",
+        "repository": "larsonm-personal/dxx-redux-test-assets",
+        "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+        "files": [
+            {
+                "source": "descent_2_vertigo/d2x.hog",
+                "path": "d2x.hog",
+                "size": 4371791,
+                "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6"
+            },
+            {
+                "source": "xl-resources/d2x-xl.hog",
+                "path": "d2x-xl.hog",
+                "size": 3815963,
+                "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6"
+            }
+        ]
+    },
+    "scopes": {
+        "pinned": {
+            "total": 1111,
+            "before": 985,
+            "after": 1016,
+            "recoveries": 31
+        },
+        "additional": {
+            "total": 543,
+            "before": 433,
+            "after": 459,
+            "recoveries": 26
+        }
+    },
+    "first_blockers": {
+        "Advertised level file missing": 34,
+        "Animated replacement textures": 23,
+        "Light index bounds": 16,
+        "Unsupported level format": 14,
+        "Segment functions": 12,
+        "Texture memory budget": 12,
+        "Classic level in XL mission": 11,
+        "Companion lighting": 9,
+        "Reactor triggers": 5,
+        "Simulation stopped": 4,
+        "Replacement bitmap directory": 4,
+        "Mission selection": 4,
+        "OOF model decoding": 4,
+        "Non-hexahedral geometry": 4,
+        "Robot definitions": 3,
+        "ASE model rendering": 3,
+        "Custom base definitions": 2,
+        "Wall types": 2,
+        "Object placement": 2,
+        "Lightning effects": 2,
+        "Fluid behavior": 2,
+        "Resolved level filename differs": 1,
+        "Object trigger actions": 1,
+        "Trigger targets": 1,
+        "Multiplayer-only objects": 1,
+        "Robot contents": 1,
+        "Particle effects": 1,
+        "timeout": 1
+    },
+    "shards": [
+        {
+            "scope": "pinned",
+            "shard": 1,
+            "results": "fce2576b033f531aceec81388ca40fab18d2ef996d00dd1304cb932a0de12e7e",
+            "inventory": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+            "seconds": 1514.6,
+            "summary": {
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 370,
+                "passed": 328,
+                "counts": {
+                    "load_failed": 37,
+                    "loaded_ticked": 328,
+                    "simulation_failed": 3,
+                    "unsupported_format": 2
+                },
+                "complete": true,
+                "readiness_percent": 88.6
+            }
+        },
+        {
+            "scope": "pinned",
+            "shard": 2,
+            "results": "393b0a24205a3fec7e89ac7db437d1304846796449eedeee0a236b3cb735c483",
+            "inventory": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+            "seconds": 1867.7,
+            "summary": {
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 370,
+                "passed": 327,
+                "counts": {
+                    "load_failed": 43,
+                    "loaded_ticked": 327
+                },
+                "complete": true,
+                "readiness_percent": 88.4
+            }
+        },
+        {
+            "scope": "pinned",
+            "shard": 3,
+            "results": "18d83cbea2db71d5352618c119137ca0bf1a482e372568df62599094a5e899ae",
+            "inventory": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+            "seconds": 1507.0,
+            "summary": {
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 371,
+                "passed": 361,
+                "counts": {
+                    "load_failed": 8,
+                    "loaded_ticked": 361,
+                    "unsupported_format": 2
+                },
+                "complete": true,
+                "readiness_percent": 97.3
+            }
+        },
+        {
+            "scope": "additional",
+            "shard": 1,
+            "results": "59fb026f285fae4f76d38146ac74ad9de910cebca6e5b6d486219ce7767464f4",
+            "inventory": "e7d480aa401522d37f6ec75da01f6cec7c314c901728f1b291131e52a62818df",
+            "seconds": 1393.7,
+            "summary": {
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 543,
+                "passed": 459,
+                "counts": {
+                    "load_failed": 71,
+                    "loaded_ticked": 459,
+                    "simulation_failed": 2,
+                    "timeout": 1,
+                    "unsupported_format": 10
+                },
+                "complete": true,
+                "readiness_percent": 84.5
+            }
+        }
+    ],
+    "transitions": [
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/kruel/klassics.mn2:1",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "9ba2a8637150d8ee4198a2268ff86ae46566a87ab91f715da421e8b892a93e4d",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "f194685bd8630097df10ea4100b4cda9a5942e14731d1c60344858f1c78faa54",
+            "member": "kaffeine.rl2",
+            "offset": 74290,
+            "length": 49400,
+            "member_sha256": "15d6198eca14c689b50967b977e78136a3052bc4a06aa135c0b1ec17579f9347",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/kruel/klassics.mn2:2",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "9ba2a8637150d8ee4198a2268ff86ae46566a87ab91f715da421e8b892a93e4d",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "f194685bd8630097df10ea4100b4cda9a5942e14731d1c60344858f1c78faa54",
+            "member": "kolumns.rl2",
+            "offset": 205959,
+            "length": 89344,
+            "member_sha256": "f4c5e204c2bdec9ba3208d41f9a85976907e7c678b5ab03283451d01982d2b80",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/kruel/klassics.mn2:3",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "9ba2a8637150d8ee4198a2268ff86ae46566a87ab91f715da421e8b892a93e4d",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "f194685bd8630097df10ea4100b4cda9a5942e14731d1c60344858f1c78faa54",
+            "member": "koruptd2.rl2",
+            "offset": 20,
+            "length": 73187,
+            "member_sha256": "633f245e1a02069e7f32703754d4dc075fa8d8064edab653653390485df4879c",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/kruel/klassics.mn2:4",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "9ba2a8637150d8ee4198a2268ff86ae46566a87ab91f715da421e8b892a93e4d",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "f194685bd8630097df10ea4100b4cda9a5942e14731d1c60344858f1c78faa54",
+            "member": "konfuzed.rl2",
+            "offset": 124240,
+            "length": 81169,
+            "member_sha256": "c1e4b46dfca20f20416765e6abb14a93b974585d141c2c1e485e6be044c086cc",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:1",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "01mirror.rl2",
+            "offset": 732103,
+            "length": 180172,
+            "member_sha256": "18488719da89ab133a821b80a561a28d94af5a0c79ee43b6632eed6b2b18a8fe",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:2",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "02volta.rl2",
+            "offset": 915729,
+            "length": 182990,
+            "member_sha256": "f62954fae3454eca4cfe779a9d549fc6aebcc045343b1f08fb9853cec26cc731",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:3",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "03castor.rl2",
+            "offset": 1102657,
+            "length": 175835,
+            "member_sha256": "6cc395670f478e4af95ad70d21934b88d53b2ff47ae6ffa9a423c30f08016d8e",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:4",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "04leccie.rl2",
+            "offset": 1284366,
+            "length": 139259,
+            "member_sha256": "decf32acbcd6da2fadce1ba88c74f14e5d26effb378bf56d17b0de7fce2e614b",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:5",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "05cabee.rl2",
+            "offset": 579543,
+            "length": 145336,
+            "member_sha256": "e7bd8549fa80924daac66f2d2478827a52e5a6d441b3410e3f31dacaf9a779e6",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:6",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "06trial.rl2",
+            "offset": 1429015,
+            "length": 197830,
+            "member_sha256": "6132ca27634c7318c940e4e06e3934f683beab9c8d2ef095008758b2d2248d45",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:7",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "07meth.rl2",
+            "offset": 167702,
+            "length": 168549,
+            "member_sha256": "ebe1d939e1aa8a756e0d0aa5960e37e028b8231db8c5ebd7f838282e5fa78a98",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:8",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "08fmeth.rl2",
+            "offset": 1626862,
+            "length": 180658,
+            "member_sha256": "4a1949d9557cb83a8ec5f2ec2e96cbeef355cf6ca58fa9843abe984cc23bf10f",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:9",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "09core.rl2",
+            "offset": 1807537,
+            "length": 169325,
+            "member_sha256": "0df379b2a902a4f0779841382e5ce81df0ef52d665f87d34e6bf2d5ac97cb53e",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:10",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "10dome.rl2",
+            "offset": 1976879,
+            "length": 187641,
+            "member_sha256": "8bbb9c1661c178bc3a92a26107c7892d02d9cf728d92e681b1af641abf1964da",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:11",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "11roboa.rl2",
+            "offset": 2164537,
+            "length": 198560,
+            "member_sha256": "318866090336b0f4a72175146c4644f4290fcc43085b97b472f1d206e150400f",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:12",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "13final.rl2",
+            "offset": 2363114,
+            "length": 211975,
+            "member_sha256": "b94de88c838f2dc7bba6d182cf537bbec4b9fa9c52d58918933e4a22c672b3d7",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:13",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "15doom.rl2",
+            "offset": 2577575,
+            "length": 185320,
+            "member_sha256": "15a058fdb7f3a274cfab074ed97be9b283d9c3c21fae091dfbb2a25641d78e17",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:-1",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "marti.rl2",
+            "offset": 84484,
+            "length": 76327,
+            "member_sha256": "2208531ebce5719c1120bb9040fc1a75101038d3d85e8c553c6e6576457fe9aa",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:-2",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "cargoca.rl2",
+            "offset": 336268,
+            "length": 68302,
+            "member_sha256": "d5c91867b8d8ca540fb26e6e2d5f786d0e4fe0a39b9a12c495eb383fcae3701f",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:-3",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "narrow.rl2",
+            "offset": 20,
+            "length": 78590,
+            "member_sha256": "3bdcce4c0c01c8300793acb6bc43c659e49fbc848dd24ccb0961c22fdb65c294",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/belials.mn2:-4",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb",
+            "member": "luna.rl2",
+            "offset": 453342,
+            "length": 118977,
+            "member_sha256": "677f9af08622503775304608b74fd6a55ca96271f189ab13480e34a8a8e01bc1",
+            "level_version": 7
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/pluton.msn:1",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p1.rdl",
+            "offset": 1530015,
+            "length": 66881,
+            "member_sha256": "c81fbd2e322edf9d2cc56f421172be0228ea70a9557a53439694829135fcd320",
+            "level_version": 1
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/pluton.msn:2",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p2.rdl",
+            "offset": 20,
+            "length": 90400,
+            "member_sha256": "c80a5f6b3002f95755c2ffd2f03e8b5b189063d6f525a7defca36961cc9876e5",
+            "level_version": 1
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/pluton.msn:3",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p3.rdl",
+            "offset": 90437,
+            "length": 122370,
+            "member_sha256": "06fb1a435387264f7dc2e3b588cea1757953c0a830c276bea6101699cb5fe03d",
+            "level_version": 1
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/pluton.msn:4",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p4.rdl",
+            "offset": 212824,
+            "length": 80155,
+            "member_sha256": "8f360b85fb26bad0a3fcfa77f2f386c34647af3d6015f8de01afb6330c39516e",
+            "level_version": 1
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/pluton.msn:5",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p5.rdl",
+            "offset": 292996,
+            "length": 96572,
+            "member_sha256": "a6f040697334576f39f81e8c24f4f3df22389004d4d479667529a9921a6317f0",
+            "level_version": 1
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/pluton.msn:6",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p6.rdl",
+            "offset": 1658992,
+            "length": 112865,
+            "member_sha256": "8c13a560467e60d532c44f6cf671c8d9d41095ff170de8e6292cb5ace3460f04",
+            "level_version": 1
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/pluton.msn:7",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p7.rdl",
+            "offset": 389585,
+            "length": 106632,
+            "member_sha256": "ca0776cf485227fe12ed5617fb499bafc0390dc6b4814cb779cd8285602684a8",
+            "level_version": 1
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/pluton.msn:8",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p8.rdl",
+            "offset": 496234,
+            "length": 103813,
+            "member_sha256": "814ed53c3fa7e44945df30e3f749397387218f9cd23918a4f36215c1b8ddd519",
+            "level_version": 1
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/pluton.msn:9",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p9.rdl",
+            "offset": 600064,
+            "length": 95798,
+            "member_sha256": "237c670d1ce8d53c5f9f2f9e5f125e03fc6a3ec612101c3b56c6bb3692dca32f",
+            "level_version": 1
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/pluton.msn:-1",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "s1.rdl",
+            "offset": 1771874,
+            "length": 95326,
+            "member_sha256": "a81ebfae40f56ff81face6a5462ce9cd1e4a2c133e0bce4ba2034d5ddc637726",
+            "level_version": 1
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:1",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "01mirror.rl2",
+            "offset": 460761,
+            "length": 326328,
+            "member_sha256": "921ed4dd78818f5972a096616706c264d82c8e193650fd37f119f9b4da5ca4e4",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:2",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "02volta.rl2",
+            "offset": 811870,
+            "length": 346225,
+            "member_sha256": "82d14afd3ce411c708d8aded694cb1d64bf3f3ba62783aca1161f20c41fd87fe",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:3",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "03castor.rl2",
+            "offset": 111485,
+            "length": 339502,
+            "member_sha256": "efbeb9b80f567f8e269fae948df4d32ee2279a082e30fc705208b3ac8927a853",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:4",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "04leccie.rl2",
+            "offset": 1183844,
+            "length": 287553,
+            "member_sha256": "0eb3f88508f63527f5e2f31501ad97e855faa516a48139a1a452f82af7b3956e",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:5",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "05cabee.rl2",
+            "offset": 1487947,
+            "length": 271978,
+            "member_sha256": "85b2df77acdcb0ccbf87cd1453f99100852f31acbf1ae91226c3b192669f3dcc",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:6",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "06trial.rl2",
+            "offset": 1778411,
+            "length": 362092,
+            "member_sha256": "cd56af30453846c01b2cd9efe67c1c29b3416acad2fc0778f694639f372b67e9",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:7",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "07meth.rl2",
+            "offset": 2169156,
+            "length": 303093,
+            "member_sha256": "7abb8a44a1abc4d01046e7eed93b637daef86437ed2b5343eca6ee667a665941",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:8",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "08fmeth.rl2",
+            "offset": 2487831,
+            "length": 329098,
+            "member_sha256": "4d67c0f061983ff7f97ab10bacd55ff5c0f10996cc673bc17af407a090a3dbe2",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:9",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "09core.rl2",
+            "offset": 2847518,
+            "length": 310221,
+            "member_sha256": "820f1d0275c600eb89f95c283d7f395b1b53e2b57ec3ed96e2f69efb7b81b426",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:10",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "10dome.rl2",
+            "offset": 3175257,
+            "length": 343627,
+            "member_sha256": "cf0aa819f745a98f67ea890b27d900273071835802d5e40349f1469e78c94546",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:11",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "11roboa.rl2",
+            "offset": 3548989,
+            "length": 400909,
+            "member_sha256": "aee8d06b4731d03d90a7c9aa2ddca3e657349c2249d9807db97ec8b7cf5c2223",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:12",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "13final.rl2",
+            "offset": 3966448,
+            "length": 367533,
+            "member_sha256": "2b71bc1656dd2b636b5844347386b17ef729528cdb54db71990b9389fec9916c",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:13",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "15doom.rl2",
+            "offset": 4362634,
+            "length": 346331,
+            "member_sha256": "e48e4ed3ce562fe956a4da3011f59737d0dd7e33054d7b72b62d5a23d6a6d089",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:-1",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "marti.rl2",
+            "offset": 4724063,
+            "length": 145140,
+            "member_sha256": "545f9f5896afe7f830047e02bb54b71476f80696616154db31805baf3665d95f",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:-2",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "load_failed",
+            "frames": 0,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": "Classic level in XL mission",
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "cargoca.rl2",
+            "offset": 6894,
+            "length": 68302,
+            "member_sha256": "d5c91867b8d8ca540fb26e6e2d5f786d0e4fe0a39b9a12c495eb383fcae3701f",
+            "level_version": 7
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:-3",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "narrow.rl2",
+            "offset": 4876557,
+            "length": 150283,
+            "member_sha256": "fc60b79373d61a5fbf7fea70ffa735427fde7111a36b5c8028609731528c8688",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:-4",
+            "archive_sha256": "ae5d71a30a9431eb2aed9ad3065c83dc85704308f9997a63d89a432be703ec74",
+            "descriptor_sha256": "c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83",
+            "member": "luna.rl2",
+            "offset": 5032742,
+            "length": 204519,
+            "member_sha256": "6b6824cb185a8dec5464a4553a98eb5db25da918cbaf680d66a6489f763442dc",
+            "level_version": 27,
+            "static_features": []
+        },
+        {
+            "scope": "additional",
+            "case": "po.7z/missions/single/pluton.msn:1",
+            "archive_sha256": "355dafc40de0626a9b6b264a3ba716700ca4217a00d7a0f7334e1fbbc226b13f",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p1.rdl",
+            "offset": 1530015,
+            "length": 66881,
+            "member_sha256": "c81fbd2e322edf9d2cc56f421172be0228ea70a9557a53439694829135fcd320",
+            "level_version": 1
+        },
+        {
+            "scope": "additional",
+            "case": "po.7z/missions/single/pluton.msn:2",
+            "archive_sha256": "355dafc40de0626a9b6b264a3ba716700ca4217a00d7a0f7334e1fbbc226b13f",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p2.rdl",
+            "offset": 20,
+            "length": 90400,
+            "member_sha256": "c80a5f6b3002f95755c2ffd2f03e8b5b189063d6f525a7defca36961cc9876e5",
+            "level_version": 1
+        },
+        {
+            "scope": "additional",
+            "case": "po.7z/missions/single/pluton.msn:3",
+            "archive_sha256": "355dafc40de0626a9b6b264a3ba716700ca4217a00d7a0f7334e1fbbc226b13f",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p3.rdl",
+            "offset": 90437,
+            "length": 122370,
+            "member_sha256": "06fb1a435387264f7dc2e3b588cea1757953c0a830c276bea6101699cb5fe03d",
+            "level_version": 1
+        },
+        {
+            "scope": "additional",
+            "case": "po.7z/missions/single/pluton.msn:4",
+            "archive_sha256": "355dafc40de0626a9b6b264a3ba716700ca4217a00d7a0f7334e1fbbc226b13f",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p4.rdl",
+            "offset": 212824,
+            "length": 80155,
+            "member_sha256": "8f360b85fb26bad0a3fcfa77f2f386c34647af3d6015f8de01afb6330c39516e",
+            "level_version": 1
+        },
+        {
+            "scope": "additional",
+            "case": "po.7z/missions/single/pluton.msn:5",
+            "archive_sha256": "355dafc40de0626a9b6b264a3ba716700ca4217a00d7a0f7334e1fbbc226b13f",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p5.rdl",
+            "offset": 292996,
+            "length": 96572,
+            "member_sha256": "a6f040697334576f39f81e8c24f4f3df22389004d4d479667529a9921a6317f0",
+            "level_version": 1
+        },
+        {
+            "scope": "additional",
+            "case": "po.7z/missions/single/pluton.msn:6",
+            "archive_sha256": "355dafc40de0626a9b6b264a3ba716700ca4217a00d7a0f7334e1fbbc226b13f",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p6.rdl",
+            "offset": 1658992,
+            "length": 112865,
+            "member_sha256": "8c13a560467e60d532c44f6cf671c8d9d41095ff170de8e6292cb5ace3460f04",
+            "level_version": 1
+        },
+        {
+            "scope": "additional",
+            "case": "po.7z/missions/single/pluton.msn:7",
+            "archive_sha256": "355dafc40de0626a9b6b264a3ba716700ca4217a00d7a0f7334e1fbbc226b13f",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p7.rdl",
+            "offset": 389585,
+            "length": 106632,
+            "member_sha256": "ca0776cf485227fe12ed5617fb499bafc0390dc6b4814cb779cd8285602684a8",
+            "level_version": 1
+        },
+        {
+            "scope": "additional",
+            "case": "po.7z/missions/single/pluton.msn:8",
+            "archive_sha256": "355dafc40de0626a9b6b264a3ba716700ca4217a00d7a0f7334e1fbbc226b13f",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p8.rdl",
+            "offset": 496234,
+            "length": 103813,
+            "member_sha256": "814ed53c3fa7e44945df30e3f749397387218f9cd23918a4f36215c1b8ddd519",
+            "level_version": 1
+        },
+        {
+            "scope": "additional",
+            "case": "po.7z/missions/single/pluton.msn:9",
+            "archive_sha256": "355dafc40de0626a9b6b264a3ba716700ca4217a00d7a0f7334e1fbbc226b13f",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "p9.rdl",
+            "offset": 600064,
+            "length": 95798,
+            "member_sha256": "237c670d1ce8d53c5f9f2f9e5f125e03fc6a3ec612101c3b56c6bb3692dca32f",
+            "level_version": 1
+        },
+        {
+            "scope": "additional",
+            "case": "po.7z/missions/single/pluton.msn:-1",
+            "archive_sha256": "355dafc40de0626a9b6b264a3ba716700ca4217a00d7a0f7334e1fbbc226b13f",
+            "descriptor_sha256": "0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "frames": 120,
+            "before_blocker": "Mission archive lookup",
+            "after_blocker": null,
+            "hog_sha256": "c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595",
+            "member": "s1.rdl",
+            "offset": 1771874,
+            "length": 95326,
+            "member_sha256": "a81ebfae40f56ff81face6a5462ce9cd1e4a2c133e0bce4ba2034d5ddc637726",
+            "level_version": 1
+        }
+    ],
+    "remaining_cases": [
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/aus-red/mb-arena.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/d1fsxl/d1fs-xl.mn2:1",
+            "outcome": "unsupported_format",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/danwentz/dffusion.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/acat-xl.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Custom base definitions"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/chaothry.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Classic level in XL mission"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/chaothry.mn2:2",
+            "outcome": "load_failed",
+            "first_blocker": "Classic level in XL mission"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/chaothry.mn2:3",
+            "outcome": "load_failed",
+            "first_blocker": "Classic level in XL mission"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/chaothry.mn2:4",
+            "outcome": "load_failed",
+            "first_blocker": "Classic level in XL mission"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/chaothry.mn2:5",
+            "outcome": "load_failed",
+            "first_blocker": "Classic level in XL mission"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/chaothry.mn2:6",
+            "outcome": "load_failed",
+            "first_blocker": "Classic level in XL mission"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:1",
+            "outcome": "unsupported_format",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:2",
+            "outcome": "load_failed",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:3",
+            "outcome": "load_failed",
+            "first_blocker": "Companion lighting"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "outcome": "load_failed",
+            "first_blocker": "Classic level in XL mission"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:5",
+            "outcome": "load_failed",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+            "outcome": "load_failed",
+            "first_blocker": "Classic level in XL mission"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Classic level in XL mission"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:2",
+            "outcome": "load_failed",
+            "first_blocker": "Companion lighting"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:3",
+            "outcome": "load_failed",
+            "first_blocker": "Companion lighting"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:4",
+            "outcome": "load_failed",
+            "first_blocker": "Companion lighting"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:5",
+            "outcome": "load_failed",
+            "first_blocker": "Companion lighting"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:6",
+            "outcome": "load_failed",
+            "first_blocker": "Classic level in XL mission"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/wolfpak3.mn2:6",
+            "outcome": "simulation_failed",
+            "first_blocker": "Simulation stopped"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/biohzrd.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/dogfight.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Replacement bitmap directory"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/emtombz.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/etombz.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Mission selection"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/forest.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Robot definitions"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/g-house.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Wall types"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/playgdxl.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Object placement"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/ptech-d3.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/pyrotech.mn2:1",
+            "outcome": "simulation_failed",
+            "first_blocker": "Simulation stopped"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/qtoxic.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Replacement bitmap directory"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/speed.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Reactor triggers"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/steel-xl.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Lightning effects"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/styx-d3.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/tankboy.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/toxic-d3.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Replacement bitmap directory"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/wfc.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/diedel/wfc20.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/kruel/kmtl-xl.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Mission selection"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/lotw/bay32.msn:1",
+            "outcome": "simulation_failed",
+            "first_blocker": "Resolved level filename differs"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/sidewinder/picasso.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/af-xl.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/af-xl.mn2:2",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/af-xl.mn2:3",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/af-xl.mn2:4",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/af-xl.mn2:5",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/af-xl.mn2:7",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/af-xl.mn2:8",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/af-xl.mn2:9",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/af-xl.mn2:10",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/af-xl.mn2:11",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/af-xl.mn2:12",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/af-xl.mn2:13",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/af-xl.mn2:14",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/af-xl.mn2:15",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/boilpnt.mn2:2",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:2",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:3",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:4",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:5",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:6",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:7",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:8",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:9",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:10",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:11",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:12",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:13",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:14",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:15",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:16",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:17",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:18",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:19",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:20",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:21",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:22",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:23",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:24",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:25",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:26",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:27",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/pmlev1.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Mission selection"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/reflux.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/single/sphere.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Robot definitions"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/sirius/antho1-3.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Object trigger actions"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/sirius/antho1-3.mn2:3",
+            "outcome": "load_failed",
+            "first_blocker": "Trigger targets"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/sirius/antholgy.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/sirius/fv24b.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/sirius/sclairxl.mn2:1",
+            "outcome": "unsupported_format",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/spotlight/crownx.mn2:1",
+            "outcome": "unsupported_format",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "scope": "pinned",
+            "case": "levelpack.7z/missions/spotlight/rtarena.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Fluid behavior"
+        },
+        {
+            "scope": "additional",
+            "case": "anthology(split).7z/missions/single/antho1-3.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "OOF model decoding"
+        },
+        {
+            "scope": "additional",
+            "case": "anthology(split).7z/missions/single/antho1-3.mn2:2",
+            "outcome": "load_failed",
+            "first_blocker": "OOF model decoding"
+        },
+        {
+            "scope": "additional",
+            "case": "anthology(split).7z/missions/single/antho1-3.mn2:3",
+            "outcome": "load_failed",
+            "first_blocker": "OOF model decoding"
+        },
+        {
+            "scope": "additional",
+            "case": "anthology.7z/missions/sirius/antholgy.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "OOF model decoding"
+        },
+        {
+            "scope": "additional",
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:-2",
+            "outcome": "load_failed",
+            "first_blocker": "Classic level in XL mission"
+        },
+        {
+            "scope": "additional",
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:2",
+            "outcome": "load_failed",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "scope": "additional",
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:3",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:4",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:6",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:7",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "levels/amalthea.zip/amalthea/Amalthea.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Multiplayer-only objects"
+        },
+        {
+            "scope": "additional",
+            "case": "levels/elitehunt.zip/elitehnt.mn2:1",
+            "outcome": "unsupported_format",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "scope": "additional",
+            "case": "levels/kalisto.zip/kalisto/kalisto.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Non-hexahedral geometry"
+        },
+        {
+            "scope": "additional",
+            "case": "levels/kore.zip/kore/kore.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Robot contents"
+        },
+        {
+            "scope": "additional",
+            "case": "levels/lor-xl.7z/missions/single/lor-xl.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/acat-xl.7z/missions/acat-xl.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Custom base definitions"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/biohzrd.zip/biohzrd.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/bttlheat.zip/Bttlheat.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Companion lighting"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/bttlhtur.zip/bttlhtur.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Companion lighting"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:2",
+            "outcome": "load_failed",
+            "first_blocker": "Reactor triggers"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:3",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:5",
+            "outcome": "load_failed",
+            "first_blocker": "Reactor triggers"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+            "outcome": "load_failed",
+            "first_blocker": "Reactor triggers"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/code-yena-xl.7z/cdeyena2.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Non-hexahedral geometry"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/coordination-xl.7z/crdntion.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Non-hexahedral geometry"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/cs-dust.7z/dust.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/dmentia2.zip/DMENTIA2.MN2:2",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/dogfight.zip/dogfight.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Companion lighting"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/emtombz.zip/emtombz.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/etombz.zip/etombz.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Mission selection"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/firsteel.7z/steel-xl.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Lightning effects"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/fv24b.zip/fv24b.mn2:1",
+            "outcome": "unsupported_format",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/g-house.7z/missions/diedel/d3/g-house.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Wall types"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/mb-arena.7z/missions/spotlight/mb-arena.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/megazone.zip/megazone.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Companion lighting"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/nocturnl.zip/d1nctrlnl.msn:1",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/picasso.zip/Picasso.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/playgrnd.7z/missions/diedel/XL/playgdxl.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Particle effects"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/playgrnd.7z/playgdxl.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Object placement"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/pmanicd2.zip/pmanicd2.mn2:1",
+            "outcome": "unsupported_format",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/pyrotech.7z/missions/diedel/d3/ptech-d3.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/pyrotech.7z/missions/diedel/pyrotech.mn2:1",
+            "outcome": "simulation_failed",
+            "first_blocker": "Simulation stopped"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/pyrotech.7z/ptech-d3.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/pyrotech.7z/pyrotech.mn2:1",
+            "outcome": "simulation_failed",
+            "first_blocker": "Simulation stopped"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/rtarena.zip/RTARENA.MN2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Fluid behavior"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/speed.7z/missions/diedel/d3/speed.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Reactor triggers"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/styx.7z/missions/diedel/d3/styx-d3.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/subspace.7z/missions/diedel/d3/subspace.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Robot definitions"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/tankboy.7z/missions/diedel/d3/tnkboyd3.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/Temple Of Helix.zip/missions/tohelix.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Non-hexahedral geometry"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/toxic.7z/missions/diedel/d3/toxic-d3.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/toxic.7z/missions/diedel/XL/qtoxic.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Replacement bitmap directory"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/wfc.7z/missions/diedel/d3/wfc-d3.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/wfc.7z/missions/diedel/wfc20.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "scope": "additional",
+            "case": "levels_multiplayer/zugzwang.7z/zugzwang.mn2:1",
+            "outcome": "timeout",
+            "first_blocker": "timeout"
+        },
+        {
+            "scope": "additional",
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:2",
+            "outcome": "load_failed",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "scope": "additional",
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:3",
+            "outcome": "load_failed",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "scope": "additional",
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:4",
+            "outcome": "load_failed",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "scope": "additional",
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:5",
+            "outcome": "load_failed",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "scope": "additional",
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:6",
+            "outcome": "load_failed",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "scope": "additional",
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:7",
+            "outcome": "load_failed",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "scope": "additional",
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:8",
+            "outcome": "load_failed",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "scope": "additional",
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:9",
+            "outcome": "load_failed",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "scope": "additional",
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:10",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:11",
+            "outcome": "load_failed",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "scope": "additional",
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:12",
+            "outcome": "load_failed",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "scope": "additional",
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:13",
+            "outcome": "load_failed",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "scope": "additional",
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:14",
+            "outcome": "load_failed",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "scope": "additional",
+            "case": "PMKartsal-3L-Demo-v1.0.rar/missions/kartsal.mn2:1",
+            "outcome": "load_failed",
+            "first_blocker": "ASE model rendering"
+        },
+        {
+            "scope": "additional",
+            "case": "PMKartsal-3L-Demo-v1.0.rar/missions/kartsal.mn2:2",
+            "outcome": "load_failed",
+            "first_blocker": "ASE model rendering"
+        },
+        {
+            "scope": "additional",
+            "case": "PMKartsal-3L-Demo-v1.0.rar/missions/kartsal.mn2:3",
+            "outcome": "load_failed",
+            "first_blocker": "ASE model rendering"
+        },
+        {
+            "scope": "additional",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:1",
+            "outcome": "unsupported_format",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "scope": "additional",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:2",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:3",
+            "outcome": "unsupported_format",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "scope": "additional",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:4",
+            "outcome": "unsupported_format",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "scope": "additional",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:5",
+            "outcome": "unsupported_format",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "scope": "additional",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-1",
+            "outcome": "load_failed",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "scope": "additional",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-2",
+            "outcome": "unsupported_format",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "scope": "additional",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-3",
+            "outcome": "unsupported_format",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "scope": "additional",
+            "case": "sphere-1.51.7z/missions/single/sphere.mn2:3",
+            "outcome": "unsupported_format",
+            "first_blocker": "Unsupported level format"
+        }
+    ]
+}
