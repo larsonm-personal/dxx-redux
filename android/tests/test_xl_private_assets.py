@@ -2243,9 +2243,24 @@ class ReadinessTests(unittest.TestCase):
         self.assertTrue(readiness.NEW_CAMPAIGNS <= {Path(cases[key]["archive"]).name for key in catalog["selected"]})
         self.assertEqual(len(catalog["archives"]), 23)
         workflow = Path(__file__).resolve().parents[2] / ".github/workflows/xl-pr-assets.yml"
-        lane = workflow.read_text().split("  readiness:", 1)[1]
-        self.assertLess(lane.index("Revalidate pinned candidate"), lane.index("Check out pinned uploaded"))
-        self.assertLess(lane.index("rm -rf retail-input"), lane.index("Build candidate"))
+        jobs = workflow.read_text()
+        builder = jobs.split("\n  readiness-engine:", 1)[1].split("\n  readiness:", 1)[0]
+        self.assertIn("git -C target rev-parse HEAD", builder)
+        self.assertIn("-DDXX_XL_DEVELOPER_TESTS=OFF", builder)
+        self.assertIn("path: build/main/dxx-redux-d2-headless-route", builder)
+        for private in ("retail-ci", "secrets.", "statuses: write", "retail-input"):
+            self.assertNotIn(private, builder)
+        for name in ("readiness", "readiness-expanded"):
+            lane = jobs.split(f"\n  {name}:\n", 1)[1].split(f"\n  {name}-report:\n", 1)[0]
+            self.assertIn("needs: [admit, readiness-engine]", lane)
+            self.assertIn("if: needs.admit.outputs.eligible == 'true'", lane)
+            self.assertLess(lane.index("Revalidate pinned candidate"), lane.index("Check out pinned uploaded"))
+            self.assertLess(lane.index("rm -rf readiness-resources"), lane.index("sha256sum --check --strict"))
+            self.assertLess(lane.index("sha256sum --check --strict"), lane.index("--engine engine/"))
+            self.assertIn("needs.readiness-engine.outputs.sha256", lane)
+            self.assertNotIn("cmake --build", lane)
+            if name == "readiness-expanded":
+                self.assertIn("timeout-minutes: 10", lane)
 
     def expected_fixture(self):
         catalog_path = Path(__file__).with_name("xl_readiness_inventory.json")
