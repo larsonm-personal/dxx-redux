@@ -98,7 +98,7 @@ static int texture_dependency_audit(int argc, char **argv)
 		std::set<int> texture_ids;
 		for (const auto &segment : level.segments)
 			for (const auto &side : segment.sides) {
-				if (side.texture >= 0) texture_ids.insert(side.texture);
+				if (side.texture >= 0) texture_ids.insert(side.base_texture());
 				if (side.overlay > 0) texture_ids.insert(side.overlay & 0x3fff);
 			}
 		nlohmann::json report{

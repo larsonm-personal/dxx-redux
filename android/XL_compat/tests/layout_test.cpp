@@ -32,6 +32,17 @@ bool issue(const std::vector<xl_compat::Issue> &issues, const char *feature)
 }
 void contract()
 {
+	for (const int base : { 0, 909, 910, 911, 1820, 0x7fff }) {
+		auto fixture = xl_test::layout_fixture(26);
+		const auto index = fixture.corners[2] + 4;
+		xl_test::layout_patch(fixture.bytes, index, 0x8000 | base, 2);
+		const auto parsed = xl_compat::inspect_level(fixture.bytes);
+		const auto &surface = parsed.segments.front().sides[2];
+		check(surface.texture == base && surface.base_texture() == base % 910 && surface.overlay == 0xc005, "Base texture or oriented overlay differs");
+		check(!issue(parsed.unknown, "texture_id"), "Wrapped base texture was rejected");
+		xl_test::layout_patch(fixture.bytes, index + 2, 0xc000 | 910, 2);
+		check(issue(xl_compat::inspect_level(fixture.bytes).unknown, "texture_id"), "Unqualified overlay bypassed admission");
+	}
 	for (int version : { 21, 23, 25, 26, 27 }) {
 		auto fixture = xl_test::layout_fixture(version);
 		auto &bytes = fixture.bytes;

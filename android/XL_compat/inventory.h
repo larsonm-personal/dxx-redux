@@ -29,6 +29,12 @@ struct Side {
 	int wall = -1;
 	int texture = -1;
 	int overlay = -1;
+	// CSide::Read wraps the authored base index after decoding the overlay flag.
+	// Keep the authored value for inspection and the -1 sentinel for open portals.
+	int base_texture() const
+	{
+		return texture % 910;
+	}
 	std::array<int, 12> uvl{};
 	// Serialized local vertex slots for v25+, with trailing 255 for absent corners
 	std::array<int, 4> corners{};

@@ -46,7 +46,7 @@ static std::vector<int> runtime_layout_geometry(const xl_compat::Inventory &sour
 			for (const auto &normal : actual.normals) geometry.insert(geometry.end(), { normal.x, normal.y, normal.z });
 #endif
 			if (wanted.texture < 0) continue;
-			require(actual.tmap_num == wanted.texture && actual.tmap_num2 == wanted.overlay, "Modern texture/orientation changed");
+			require(actual.tmap_num == wanted.base_texture() && static_cast<uint16_t>(actual.tmap_num2) == wanted.overlay, "Modern texture/orientation changed");
 			geometry.insert(geometry.end(), { actual.tmap_num, actual.tmap_num2 });
 			for (int corner = 0; corner < 4; ++corner) {
 				const auto &uvl = actual.uvls[corner];
@@ -83,6 +83,27 @@ static int runtime_layout_test(int argc, char **argv)
 		char error[256]{};
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
+		if (!std::strcmp(find_arg_value(argc, argv, "-runtime-layouts-test"), "original-side-textures")) {
+			require(load_base_mission("d2-xl", error, sizeof(error)), error);
+			new_player_config();
+			input_demo_set_skip_level_intro(1);
+			Difficulty_level = 2;
+			d_srand_stream(D_RNG_SIM, 1);
+			d_rand_reset_stream_call_count(D_RNG_SIM);
+			StartNewGame(10);
+			require(Current_level_num == 10 && xl_level_extensions_active() && !std::strcmp(Gamesave_current_filename, "d2levc-2.rl2") && !Game_suspended && !cheats.enabled, "Expected original Counterstrike XL level 10");
+			const auto verify = [] {
+				require(Num_segments > 344, "Counterstrike XL original geometry missing");
+				for (const auto &entry : std::array<std::array<int, 3>, 3>{ { { 182, 1, 0 }, { 182, 4, 0 }, { 344, 0, 33094 } } }) {
+					const auto &side = Segments[entry[0]].sides[entry[1]];
+					require(side.tmap_num == 0 && static_cast<uint16_t>(side.tmap_num2) == entry[2], "Original wrapped surface or oriented overlay differs");
+				}
+			};
+			verify();
+			xl_recorded_future(find_arg_value(argc, argv, "-extra-dir"), "original-side-textures", true);
+			verify();
+			return 0;
+		}
 		if (!std::strcmp(find_arg_value(argc, argv, "-runtime-layouts-test"), "original-v26-replay")) {
 			const char *mission = find_arg_value(argc, argv, "-mission");
 			require(mission && load_base_mission(mission, error, sizeof(error)), "Cannot load original layout replay mission");

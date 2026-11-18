@@ -443,7 +443,7 @@ void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, b
 	if (!level.equipment.empty()) graph.clip(VCLIP_MORPHING_ROBOT);
 	for (const auto &segment : level.segments)
 		for (const auto &side : segment.sides) {
-			if (side.texture >= 0) graph.texture(side.texture);
+			if (side.texture >= 0) graph.texture(side.base_texture());
 			if (side.overlay > 0) graph.texture(side.overlay & 0x3fff);
 		}
 	for (const auto &wall : level.walls) graph.wall(wall.type, wall.clip);
