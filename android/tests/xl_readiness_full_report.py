@@ -39,6 +39,7 @@ FAMILIES = {
     "Multiplayer-only objects": ("multiplayer_only_object",),
     "Fluid behavior": ("water physics",),
     "Lightning effects": ("effect_lightning",),
+    "Particle effects": ("effect_particles",),
 }
 
 
@@ -64,7 +65,7 @@ def read(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def summarize(work, catalog_path):
+def summarize(work, catalog_path, *, require_full_inventory=False, expected_target=None, expected_engine=None):
     catalog = read(catalog_path)
     identity = read(work / "survey.json")
     result = read(work / "results.json")
@@ -78,6 +79,12 @@ def summarize(work, catalog_path):
     ):
         raise ValueError("Survey identity mismatch")
     cases = {case["id"]: case for case in catalog["cases"]}
+    if require_full_inventory and identity["selected"] != list(cases):
+        raise ValueError("Full survey did not measure the complete inventory in order")
+    if expected_target is not None and identity["target_sha"] != expected_target:
+        raise ValueError("Survey target differs from the requested candidate")
+    if expected_engine is not None and identity["engine_sha256"] != expected_engine:
+        raise ValueError("Survey executable differs from the verified build")
     rows = result["rows"]
     summary = validate_rows(rows, {**catalog, "selected": identity["selected"]})
     failures = [row for row in rows if row["outcome"] != "loaded_ticked"]
@@ -120,7 +127,19 @@ if __name__ == "__main__":
     parser.add_argument("--work", type=Path, required=True)
     parser.add_argument("--catalog", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--require-full-inventory", action="store_true")
+    parser.add_argument("--expected-target")
+    parser.add_argument("--expected-engine")
     args = parser.parse_args()
     if args.output.exists():
         parser.error("Output already exists")
-    readiness.write(args.output, summarize(args.work, args.catalog))
+    readiness.write(
+        args.output,
+        summarize(
+            args.work,
+            args.catalog,
+            require_full_inventory=args.require_full_inventory,
+            expected_target=args.expected_target,
+            expected_engine=args.expected_engine,
+        ),
+    )

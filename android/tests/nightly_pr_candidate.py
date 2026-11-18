@@ -98,7 +98,11 @@ def verify(target_sha=None, env=None, fetch=api, event=None):
             raise ValueError
     except (KeyError, TypeError, ValueError, OSError, subprocess.SubprocessError) as error:
         raise ValueError("Automatic XL candidate provenance was not established") from error
-    return {"number": number, "sha": sha}
+    return {
+        "number": number,
+        "sha": sha,
+        "full_survey": any(label["name"] == "xl-full-survey" for label in pr.get("labels", [])),
+    }
 
 
 def positive_receipt(receipt, sha, require_lifecycles=False):
@@ -177,6 +181,7 @@ def main():
         status(candidate["sha"], "pending", "Running original XL load and assisted navigation")
         with open(os.environ["GITHUB_OUTPUT"], "a") as output:
             output.write(f"sha={candidate['sha']}\nnumber={candidate['number']}\n")
+            output.write(f"full_survey={str(candidate['full_survey']).lower()}\n")
         return 0
     sha = os.environ["CANDIDATE_SHA"]
     try:

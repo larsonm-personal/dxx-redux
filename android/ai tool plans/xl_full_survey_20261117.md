@@ -14,6 +14,15 @@ the case IDs, outcomes, completed frames and first blocker. Full engine logs
 stay in the run directory. A later blocker can surface when an earlier one is
 repaired.
 
+The proposed hosted full survey uses the `xl-full-survey` PR label. Add it
+before the next XL asset request on the owned stack tip. The controller reads
+the label from the same open PR whose head it verifies. On adoption in
+`cmake`, a labeled request will measure every case in the pinned inventory
+and upload `xl-full-readiness-groups`. Additional local distributions need
+their own inventory and local inputs. The ten-minute 64-case job reports
+independently. A manual dispatch on a feature branch exercises the ordinary
+engine build only.
+
 First qualify the runner against the existing binary and authentic staged
 inputs. Count completed, failed and untested cases against the inventory. Group
 failures by their first actionable engine diagnostic, inspect representative
