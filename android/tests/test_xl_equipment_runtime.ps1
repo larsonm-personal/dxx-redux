@@ -4,9 +4,13 @@ param(
     [Parameter(Mandatory)][string]$Serial,
     [Parameter(Mandatory)][string]$Hog,
     [Parameter(Mandatory)][string]$Descriptor,
+    [switch]$PickupOnly,
     [string]$OutputDirectory = ''
 )
 $ErrorActionPreference = 'Stop'
+if ($PickupOnly -and (!$OutputDirectory -or (Test-Path -LiteralPath $OutputDirectory))) {
+    throw 'PickupOnly requires a fresh explicit output directory'
+}
 $expectedHog = '124aba8bfcf9dda63fbc5d18e08d6aa8316c50cc05ac2f4527ec1c99d3e220d9'
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
     (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne '6a4ca565352f3fe1bdce3b3249672c5ad2a2844816ac87173f21d8110960f6d0') {
@@ -49,7 +53,18 @@ try {
     Invoke-EquipmentAdb -Arguments @('push', (Resolve-Path -LiteralPath $Descriptor).Path, '/data/local/tmp/xl-equipment.mn2') | Out-Null
     Invoke-EquipmentPrivate 'mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-equipment.hog files/d2x-redux/missions/equip.hog && cp /data/local/tmp/xl-equipment.mn2 files/d2x-redux/missions/equip.mn2' | Out-Null
     Invoke-EquipmentAdb -Arguments @('logcat', '-c') | Out-Null
-    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName 'test_xl_equipment_runtime.jsonc' -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 360
+    $scenario = 'test_xl_equipment_runtime.jsonc'
+    if ($PickupOnly) {
+        # Separate contact-only owner; the full persistence regression remains unchanged
+        $steps = @(Get-Content "$PSScriptRoot/../game_scripts/test_xl_equipment_runtime.jsonc" -Raw | ConvertFrom-Json)
+        $end = 0
+        while ($end -lt $steps.Count -and $steps[$end].field -ne 'robots_suspended') { $end++ }
+        if ($end -eq $steps.Count) { throw 'Missing shared equipment startup control' }
+        $scenario = Join-Path $output 'pickup-only.jsonc'
+        $focused = @($steps[0..$end]) + @([pscustomobject][ordered]@{ action = 'set_debug'; field = 'xl_equipment_pickup_probe'; value = 'inert' })
+        $focused | ConvertTo-Json -Depth 30 | Set-Content $scenario -Encoding utf8
+    }
+    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scenario -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 360
     $testExit = $LASTEXITCODE
     Invoke-EquipmentAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/logcat.txt" -Encoding utf8
     Invoke-EquipmentPrivate 'cat files/automation_result.json' | Set-Content "$output/result.json" -Encoding utf8
@@ -60,7 +75,8 @@ try {
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete Equipment runtime result' }
     Invoke-EquipmentAdb -Arguments @('shell', 'screencap', '-p', '/data/local/tmp/xl-equipment.png') | Out-Null
     Invoke-EquipmentAdb -Arguments @('pull', '/data/local/tmp/xl-equipment.png', "$output/render.png") | Out-Null
-    Write-Host "PASS: Equipment Android activation/production/pickup, disk/rewind and stock transition ($($result.total_steps) steps)"
+    $scope = if ($PickupOnly) { 'eight inert pickup contacts only' } else { 'activation/production/pickup, disk/rewind and stock transition' }
+    Write-Host "PASS: Equipment Android $scope ($($result.total_steps) steps)"
 } finally {
     try {
         Invoke-EquipmentAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null

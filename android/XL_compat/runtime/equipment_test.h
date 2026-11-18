@@ -139,7 +139,7 @@ static void equipment_reference_samples(const std::filesystem::path &output, con
 	for (int i = 0; i < Num_vclips; ++i) file << Vclip[i].play_time << ' ' << Vclip[i].frame_time << ' ' << Vclip[i].sound_num << '\n';
 	for (int i = 0; i < 50; ++i) file << Powerup_info[i].size << ' ' << Powerup_info[i].vclip_num << '\n';
 	for (int difficulty = 0; difficulty < NDL; ++difficulty)
-		for (int scenario = 0; scenario < 14; ++scenario)
+		for (int scenario = 0; scenario < 25; ++scenario)
 			for (unsigned seed : { 1u, 17u, 65535u }) {
 				cleanup();
 				auto sample = authored;
@@ -152,6 +152,17 @@ static void equipment_reference_samples(const std::filesystem::path &output, con
 					second = 1u << (POW_EARTHSHAKER_MISSILE - 32);
 				}
 				if (scenario == 9) first = 0;
+				if (scenario >= 14 && scenario < 22) {
+					const int id = std::array<int, 8>{ 7, 8, 9, 24, 26, 27, 46, 47 }[scenario - 14];
+					first = id < 32 ? std::uint32_t(1) << id : 0;
+					second = id >= 32 ? std::uint32_t(1) << (id - 32) : 0;
+				}
+				if (scenario >= 22) {
+					// Unmodified Control and Boiling Point masks, including inert high bits
+					const auto mask = std::array<std::array<std::uint32_t, 2>, 3>{ { { 266211291u, 1828720610u }, { 0xffffffffu, 67108863u }, { 0xffffffffu, 369098751u } } }[scenario - 22];
+					first = mask[0];
+					second = mask[1];
+				}
 				sample.equipment[0][0] = static_cast<std::int32_t>(first);
 				sample.equipment[0][1] = static_cast<std::int32_t>(second);
 				xl_equipment_load(sample);
@@ -466,6 +477,64 @@ static void equipment_pending_compare(const nlohmann::json &expected, const nloh
 	require(wanted == observed, "Pending equipment continuation changed native state, objects, births or RNG");
 }
 
+static void equipment_inert_pickup_controls(const xl_compat::Inventory &authored, char *baseline)
+{
+	for (int id : { 7, 8, 9, 24, 26, 27, 46, 47 }) {
+		require(state_restore_all_sub(baseline, 0), "Inert equipment baseline restore failed");
+		auto sample = authored;
+		sample.equipment[0][0] = id < 32 ? std::uint32_t(1) << id : 0;
+		sample.equipment[0][1] = id >= 32 ? std::uint32_t(1) << (id - 32) : 0;
+		xl_equipment_load(sample);
+		xl_equipment_state states[2];
+		require(xl_equipment_state_get(0, &states[0]) && xl_equipment_state_get(1, &states[1]), "Inert equipment makers absent");
+		states[0].enabled = states[0].pending = 1;
+		states[0].timer = Vclip[VCLIP_MORPHING_ROBOT].play_time / 2 - 1;
+		states[1].enabled = 0;
+		require(xl_equipment_restore(states, 2, 1), "Inert equipment boundary state rejected");
+		FrameTime = 1;
+		const auto sim_calls = d_rand_get_call_count();
+		xl_equipment_frame(0, Num_segments);
+		require(d_rand_get_call_count() == sim_calls, "Single inert equipment selection consumed SIM RNG");
+		int item_index = -1;
+		for (int i = Segments[20].objects; i >= 0; i = Objects[i].next)
+			if (Objects[i].type == OBJ_POWERUP) {
+				require(item_index < 0, "Inert equipment created multiple pickups");
+				item_index = i;
+			}
+		require(item_index >= 0, "Inert equipment item was filtered out");
+		auto &item = Objects[item_index];
+		require(item.id == id && item.control_type == CT_POWERUP && item.movement_type == MT_PHYSICS && item.render_type == RT_POWERUP &&
+		            item.lifeleft == IMMORTAL_TIME && item.size == Powerup_info[id].size && item.rtype.vclip_info.vclip_num == Powerup_info[id].vclip_num,
+		        "Inert equipment lost its native object definition");
+		const auto player_before = Players[Player_num];
+		for (int contact = 0; contact < 2; ++contact)
+			collide_player_and_powerup(ConsoleObject, &item, &item.pos);
+		require(!(item.flags & OF_SHOULD_BE_DEAD) && !std::memcmp(&player_before, &Players[Player_num], sizeof(player_before)),
+		        "Inert equipment contact consumed an item or rewarded the player");
+		FrameTime = i2f(3 * (Difficulty_level + 1));
+		xl_equipment_frame(0, Num_segments);
+		require(xl_equipment_state_get(0, &states[0]) && !states[0].pending && states[0].timer == 0 && Objects[item_index].id == id,
+		        "Unconsumed equipment did not block its producer");
+	}
+#ifndef RELEASE
+	char error[256]{};
+	require(load_base_mission("d2", error, sizeof(error)), error);
+	input_demo_set_skip_level_intro(1);
+	StartNewGame(1);
+	require(!xl_level_extensions_active(), "Stock debug pickup retained XL policy");
+	const int debug_item = obj_create(OBJ_POWERUP, POW_MEGAWOW, ConsoleObject->segnum, &ConsoleObject->pos, &vmd_identity_matrix,
+	                                  Powerup_info[POW_MEGAWOW].size, CT_POWERUP, MT_PHYSICS, RT_POWERUP);
+	require(debug_item >= 0, "Cannot create stock debug pickup");
+	collide_player_and_powerup(ConsoleObject, &Objects[debug_item], &Objects[debug_item].pos);
+	require((Objects[debug_item].flags & OF_SHOULD_BE_DEAD) && Players[Player_num].energy == i2f(200) &&
+	            Players[Player_num].secondary_ammo[0] == 50,
+	        "XL policy changed stock debug MegaWow rewards");
+	std::cout << "Stock Debug MegaWow still consumes its pickup and grants native rewards\n";
+#endif
+	require(state_restore_all_sub(baseline, 0), "Inert equipment cleanup failed");
+	std::cout << "Eight inert equipment items preserve native creation, repeated contact, player state, occupancy and single-selection SIM\n";
+}
+
 static int equipment_test(int argc, char **argv)
 {
 	try {
@@ -583,6 +652,7 @@ static int equipment_test(int argc, char **argv)
 		equipment_reference_samples(root.parent_path(), authored, initial);
 		equipment_initialization_controls(root.parent_path(), authored, initial);
 		equipment_mixed_order_controls(authored, initial);
+		equipment_inert_pickup_controls(authored, initial);
 		equipment_restore_guards(root.parent_path());
 		// One addon lifecycle uses the same makers, collision and real egg/drop paths
 		require(state_restore_all_sub(initial, 0), "Time-equipment producer baseline failed");

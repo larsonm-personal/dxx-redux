@@ -7750,6 +7750,13 @@ extern "C" void game_automate_tick(void)
 #else
 				stop_script_fail("Changing-light probe requires Android D2");
 #endif
+			} else if (s.field == "xl_equipment_pickup_probe") {
+#if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
+				if (const char *failure = xl_equipment_pickup_probe()) stop_script_fail(failure);
+				else LOGI("Eight XL single-player inert equipment pickup controls passed");
+#else
+				stop_script_fail("Equipment pickup probe requires Android D2");
+#endif
 			} else if (s.field == "xl_door_probe") {
 #if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
 				if (const char *failure = xl_door_probe(s.value.c_str())) stop_script_fail(failure);

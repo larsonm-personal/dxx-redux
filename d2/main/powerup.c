@@ -63,6 +63,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "slow_motion_runtime.h"
 #include "preview.h"
 #include "pog_resources.h"
+#include "powerup_policy.h"
 #endif
 #ifdef ANDROID
 #include "android_visual_policy.h"
@@ -666,6 +667,9 @@ int do_powerup(object *obj)
 			}
 	#ifndef RELEASE
 		case	POW_MEGAWOW:
+#ifdef DXX_XL_RUNTIME
+			if (!xl_debug_powerup_allowed(id)) break;
+#endif
 			do_megawow_powerup(50);
 			used = 1;
 			break;

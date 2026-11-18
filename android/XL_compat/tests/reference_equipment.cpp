@@ -310,6 +310,8 @@ static void initialization_controls(const char *path)
 	std::cout << "Pinned XL equipment: 13 producer-order, destructible-wall and object-owner initialization cases matched\n";
 }
 
+void equipment_pickup_reference();
+
 int main(int argc, char **argv)
 {
 	try {
@@ -358,9 +360,10 @@ int main(int argc, char **argv)
 				throw std::runtime_error("Equipment reference mismatch at difficulty " + std::to_string(difficulty) + ", scenario " + std::to_string(scenario));
 			++cases;
 		}
-		if (cases != 210) throw std::runtime_error("Missing equipment production cases");
+		if (cases != 375) throw std::runtime_error("Missing equipment production cases");
 		std::cout << "Pinned XL equipment: " << cases << " timing/blocking/selection/allocation/suspension/RNG cases matched\n";
 		initialization_controls(argv[2]);
+		equipment_pickup_reference();
 		return 0;
 	} catch (const std::exception &error) {
 		std::cerr << error.what() << '\n';

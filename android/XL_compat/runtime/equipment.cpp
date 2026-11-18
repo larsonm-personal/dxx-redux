@@ -5,6 +5,7 @@
 #include "slow_motion_runtime.h"
 #include <array>
 #include <cstdint>
+#include <cstring>
 #include <vector>
 #include <nlohmann/json.hpp>
 extern "C" {
@@ -24,6 +25,41 @@ extern "C" {
 #include "rng_shared.h"
 #include "save_epoch_format.h"
 }
+
+#ifdef __ANDROID__
+// Automation-only contact control; its temporary objects are real native allocations
+extern "C" const char *xl_equipment_pickup_probe(void)
+{
+	static std::string failure;
+	try {
+		if (!xl_level_extensions_active() || !ConsoleObject || Game_mode != 0 || Player_is_dead)
+			throw std::runtime_error("Equipment pickup probe requires a live single-player XL world");
+		for (int id : { 7, 8, 9, 24, 26, 27, 46, 47 }) {
+			const int index = obj_create(OBJ_POWERUP, id, ConsoleObject->segnum, &ConsoleObject->pos, &vmd_identity_matrix,
+			                             Powerup_info[id].size, CT_POWERUP, MT_PHYSICS, RT_POWERUP);
+			if (index < 0) throw std::runtime_error("Equipment pickup probe allocation failed");
+			struct Retire {
+				int index;
+				~Retire()
+				{
+					obj_delete(index);
+				}
+			} retire{ index };
+			auto &item = Objects[index];
+			item.rtype.vclip_info.vclip_num = Powerup_info[id].vclip_num;
+			item.lifeleft = IMMORTAL_TIME;
+			const auto before = Players[Player_num];
+			const int first = do_powerup(&item), repeated = do_powerup(&item);
+			if (first || repeated || (item.flags & OF_SHOULD_BE_DEAD) || std::memcmp(&before, &Players[Player_num], sizeof(before)))
+				throw std::runtime_error("Inert Android equipment pickup rewarded the player: " + std::to_string(id));
+		}
+		return nullptr;
+	} catch (const std::exception &error) {
+		failure = error.what();
+		return failure.c_str();
+	}
+}
+#endif
 
 namespace
 {
