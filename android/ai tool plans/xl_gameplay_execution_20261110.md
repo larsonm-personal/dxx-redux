@@ -6201,3 +6201,7 @@ Local android-media-routing-01 passes MIDI/CD/MP3 and full profile/APK/preferenc
 restoration. Every initial local token was already ready; no timing reproduction
 is claimed. Frozen APKs/source hashes are in media-routing-build-01/receipt.json.
 Both automation catalogs pass. Hosted child CI and final handoff remain required.
+
+## November 17-18 full-inventory readiness tranche
+
+The 120-frame ordinary probe improved from 1,358 to 1,418 of 1,654 original cases. All previous passes held. The fixed eight and 64 passed locally. The exact runtime head passed eight in CI and completed 61 of 64 within the old hosted job budget. The [dated outcome](xl_full_outcome_20261117.md), [per-case ledger](../XL_compat/evidence/full-readiness-20261117.json), [execution receipts](xl_full_execution_20261117.json) and [next window](xl_full_next_window_20261117.md) record the remaining 236 failures, platform evidence and implementation order.
