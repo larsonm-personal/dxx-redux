@@ -54,6 +54,27 @@ class ExpandedReadinessTests(unittest.TestCase):
             self.assertEqual(json.loads((args.work / "failures.json").read_text()), receipt["rows"])
             self.assertEqual(receipt["rows"][0]["level_file"], "hidden.rl2")
             self.assertTrue((args.work / "0/engine.log").exists())
+            import xl_readiness_full_report as full_report
+
+            grouped = full_report.summarize(args.work, args.catalog)
+            self.assertEqual(grouped["groups"], {"infrastructure_error": 1})
+            self.assertEqual(grouped["failures"][0]["id"], selected)
+            args.case = []
+            with self.assertRaisesRegex(ValueError, "Empty or duplicate"):
+                full.measure(args)
+            readiness.write(args.work / "0/result.json", {**receipt["rows"][0], "frames": 120})
+            with self.assertRaisesRegex(ValueError, "Case receipt differs"):
+                full_report.summarize(args.work, args.catalog)
+
+    def test_full_survey_distinguishes_a_loose_filename_proof_from_early_simulation_stop(self):
+        import xl_readiness_full_report as full_report
+
+        row = {"outcome": "simulation_failed", "level_file": "bay32.rdl"}
+        proof = {"phase": "loaded_ticked", "frames": 120, "level_file": "missions/BAY32.rdl"}
+        self.assertEqual(full_report.first_blocker(row, proof, ""), "Resolved level filename differs")
+        self.assertEqual(
+            full_report.first_blocker(row, {"phase": "simulation_failed", "frames": 82}, ""), "Simulation stopped"
+        )
 
     def staged_fixture(self, root):
         archive = root / "fixture.zip"

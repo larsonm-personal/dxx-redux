@@ -6,6 +6,14 @@ archive/descriptor/ordinal identity and preserve a private engine log and load
 receipt for each failure. The existing 64-case CI gate continues on PRs. The
 full survey is an on-demand command that can run one archive or the whole set.
 
+To group a completed run, use
+`python android/tests/xl_readiness_full_report.py --work RUN --catalog INVENTORY --output GROUPS.json`.
+Use the exact inventory supplied to that run. The report checks the inventory
+hash, each case receipt, and the simulation proof for every pass. It publishes
+the case IDs, outcomes, completed frames and first blocker. Full engine logs
+stay in the run directory. A later blocker can surface when an earlier one is
+repaired.
+
 First qualify the runner against the existing binary and authentic staged
 inputs. Count completed, failed and untested cases against the inventory. Group
 failures by their first actionable engine diagnostic, inspect representative

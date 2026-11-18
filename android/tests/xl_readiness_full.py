@@ -21,7 +21,7 @@ def measure(args):
     cases = catalog["cases"]
     if args.archive:
         cases = [row for row in cases if Path(row["archive"]).name == args.archive]
-    if args.case:
+    if args.case is not None:
         requested = set(args.case)
         cases = [row for row in cases if row["id"] in requested]
         if len(cases) != len(requested):
