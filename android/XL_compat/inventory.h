@@ -143,9 +143,13 @@ struct Inventory {
 };
 
 // Audited modern record layouts; individual geometry, feature and asset gates remain
+inline bool modern_level_version(int version)
+{
+	return version == 21 || version == 23 || (version >= 25 && version <= 27);
+}
 inline bool modern_runtime_layout(const Inventory &level)
 {
-	return level.game_version == 40 && (level.level_version == 21 || level.level_version == 23 || level.level_version == 25 || level.level_version == 27);
+	return level.game_version == 40 && modern_level_version(level.level_version);
 }
 
 // Pinned CLightDelta::Read validity; raw serialized fields remain unchanged

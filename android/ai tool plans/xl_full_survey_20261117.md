@@ -70,3 +70,24 @@ counts still require data, and present sections still require a complete
 object count and bounded targets. Layout controls distinguish all three
 cases across four modern formats. The native 120-frame reruns use original
 levels from the pinned level pack and additional local distributions.
+
+## Format 26 with game data 40
+
+The additional inventory exposed 24 originals with this version pair. The
+pinned reader uses the same wide producer/segment fields and explicit side
+corners as version 25. Fog records begin at version 27. The ordinary engine
+now admits 26/40 through the same geometry, resource and behavior checks.
+Fourteen originals completed 120 frames. Ten reached downstream blockers.
+The extracted source agreed on 23 original layouts. Speed stopped earlier on
+its invalid reactor trigger count.
+
+Windows native controls exercised geometry, lighting, transitions, rejection
+and restoring earned state through stock. Six derived levels supplied 48,406
+independent layout comparisons. The damage controls covered 8,400 native
+frames. Android ran 87 steps on emulator-5554 in 149.602 seconds, run
+9b67af2c019748a19c410b6d3352d4ed. The first device attempt stopped at the
+first transition while graphics was still paused. The scenario now waits for
+resumed simulation before requesting that transition. The second run passed
+using APK f077ae866068cf0b3f5e941352147d3cc3c510068e3af2076ea8e0cd7df91de6.
+The before and after protected player/config manifests matched. These device
+controls use a labeled derived mission and explicit test actions.

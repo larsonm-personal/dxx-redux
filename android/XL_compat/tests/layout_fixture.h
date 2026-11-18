@@ -23,7 +23,7 @@ inline void layout_patch(xl_compat::Bytes &bytes, std::size_t at, std::uint32_t 
 // portal, one wall, an oriented overlay, signed UVs, and nondefault fog values
 inline LayoutFixture layout_fixture(int version, int shape = 0, int producer = -1, int value = -1)
 {
-	if ((version != 21 && version != 23 && version != 25 && version != 27) || (version < 25 && shape))
+	if (!xl_compat::modern_level_version(version) || (version < 25 && shape))
 		throw std::runtime_error("Invalid modern layout fixture profile");
 	LayoutFixture result;
 	auto &b = result.bytes;
