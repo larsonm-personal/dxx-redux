@@ -17,6 +17,7 @@ struct xl_pog_bitmap {
 	unsigned rgb_opaque;
 	unsigned physics_height; /* TGA selection may expose the whole strip to physics */
 	unsigned scoped_texture;
+	unsigned side_frames; /* Immutable frame views selected by an XL side owner */
 	unsigned transparent_frames[4], super_frames[4];
 };
 struct xl_pog_effect {
@@ -60,6 +61,16 @@ int xl_pog_install(struct xl_pog_resources *resources);
 /* Native storage is allocated before publication and transfers only once */
 int xl_pog_prepare_storage(struct xl_pog_resources *resources);
 unsigned char *xl_pog_take_storage(struct xl_pog_resources *resources, size_t *size);
+/* Native bitmap layout and GPU handles remain owned by the native registry */
+void *xl_pog_prepare_side_views(const struct xl_pog_resources *resources);
+void xl_pog_free_side_views(void *views);
+void *xl_pog_take_side_views(struct xl_pog_resources *resources);
+struct _grs_bitmap;
+struct _grs_bitmap *xl_pog_side_frame(int bitmap, int frame);
+void xl_pog_side_views_discard_context(void);
+/* Zero retains the authored native wall clip clock */
+int xl_pog_door_frames(int clip);
+int xl_pog_prepared_door_frames(const struct xl_pog_resources *resources, int clip);
 uint64_t xl_pog_owner_token(const struct xl_pog_resources *resources);
 /* Repeating publication is allocation-free while this owner remains installed */
 int xl_pog_install_prepared(struct xl_pog_resources *resources);

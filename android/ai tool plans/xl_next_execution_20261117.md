@@ -131,3 +131,44 @@ staging. The retained exact-head artifact is 14344716271, SHA256
 9df112aa9c995a179b6e857605bdf6dfeae6ae5201cd4a0ed1c7a60c121cda8a.
 Its public receipt does not include private stderr; the missing staging must be
 resolved through reviewed controller adoption and then directly verified.
+
+## Immutable native door-view checkpoint
+
+Retained playback now distinguishes door use from other wall animation use,
+prepares independent frame views shared only by image aliases, and rejects
+effect/vclip/POG ownership conflicts, missing first-frame bindings, conflicting
+images and unrepresentable periods. Native publication checks retained wall
+definitions and texture mappings before retiring the previous owner. Native
+pixel and frame-view storage transfer together; wrapper discard cannot retire
+live storage. The three native renderer lines include the owner API and clear
+its GPU references at registry/context retirement. Format policy stays in XL.
+The existing gameplay admission rejection remains in XlPreparedResources until
+side phase, collision, save and rendered qualification are complete.
+
+The existing descriptor owner passed in optimized and assertions-enabled x86:
+side-views-native-04 and side-views-debug-01. Derived controls cover 16 distinct
+frame views, alias sharing, independent preparation/discard, transferred lifetime,
+equal-count different pixels, repeated publication, stale-definition rejection,
+nine malformed/conflicting candidates and retirement. The full existing owner
+also completed both stock and XL outgoing 120-frame continuation controls.
+
+Initial attempt lacked prepared banks in the new derived fixture; that fixture
+was corrected. A later descriptor failure reproduced on the retained earlier
+binary: the stock-definition contract had been run against resource-enriched
+readiness inputs. Both earlier and current binaries pass with that owner's
+normal stock CI inputs. These are separate from the authentic resource-enriched
+original readiness and lifecycle runs; no original input was removed or edited.
+
+side-views-lifecycles-01 completed original Subzero and Warp with the rebuilt
+optimized engine SHA256
+9258a8ab0297cdb43a5eff71250aafbcfa30c45e1e48eb42a6ba88e5bdaf7170.
+Both automation catalogs, scoped formatting and diff checks passed. Existing
+POrderList/SOrderList and changing_light_test_records warnings remain unchanged.
+
+The later #574 expanded receipt is incomplete: 48 passed, three load failures,
+13 untested, 252.221s against a 294s probe budget including the unchanged start
+guard. Artifact 14344063591 SHA256
+26ad9cdc1d5dfeaa1b388a5e86dfcbbe29b00f0cc149f3b276216f2d5d1f030b.
+The prior complete #573 run had 331s available and took 246.326s. Across 48
+common passing cases, the later run's median duration ratio was 1.274. Preserve
+both receipts; this variability does not justify changing cases or time guards.

@@ -1,6 +1,7 @@
 #include "pog_resources.h"
 #include "../pog.h"
 #include <cstdio>
+#include <algorithm>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -18,6 +19,7 @@ struct xl_pog_resources {
 	std::vector<xl_pog_bitmap> entries;
 	std::vector<unsigned char> pixels;
 	unsigned char *native_pixels = nullptr;
+	void *native_side_views = nullptr;
 	uint64_t token = 0;
 	bool scoped = false;
 	std::vector<eclip> effect_definitions;
@@ -25,6 +27,9 @@ struct xl_pog_resources {
 	std::vector<std::vector<int>> effect_bitmaps;
 	std::vector<vclip> clip_definitions;
 	std::vector<xl_pog_clip> clips;
+	std::vector<wclip> door_definitions;
+	std::vector<bitmap_index> door_textures;
+	std::vector<std::pair<int, int>> doors;
 	xl_pog_resources()
 	{
 		static uint64_t next_token;
@@ -33,6 +38,7 @@ struct xl_pog_resources {
 	}
 	~xl_pog_resources()
 	{
+		xl_pog_free_side_views(native_side_views);
 		if (native_pixels) d_free(native_pixels);
 	}
 };
@@ -48,7 +54,25 @@ extern "C" int xl_pog_prepare_storage(xl_pog_resources *resources)
 	resources->native_pixels = static_cast<unsigned char *>(d_malloc(resources->pixels.empty() ? 1 : resources->pixels.size()));
 	if (!resources->native_pixels) return 0;
 	if (!resources->pixels.empty()) std::memcpy(resources->native_pixels, resources->pixels.data(), resources->pixels.size());
+	for (const auto &entry : resources->entries)
+		if (entry.side_frames) {
+			resources->native_side_views = xl_pog_prepare_side_views(resources);
+			if (!resources->native_side_views) {
+				d_free(resources->native_pixels);
+				resources->native_pixels = nullptr;
+				return 0;
+			}
+			break;
+		}
 	return 1;
+}
+
+extern "C" void *xl_pog_take_side_views(xl_pog_resources *resources)
+{
+	if (!resources) return nullptr;
+	auto *views = resources->native_side_views;
+	resources->native_side_views = nullptr;
+	return views;
 }
 
 extern "C" unsigned char *xl_pog_take_storage(xl_pog_resources *resources, size_t *size)
@@ -145,6 +169,8 @@ xl_pog_resources *xl_pog_prepare_scoped(const xl_compat::ScopedTextureResources 
 	for (const auto &binding : playback.bindings) {
 		auto entry = unique_entries.at(image_rows.at(binding.image));
 		entry.index = unsigned(binding.bitmap);
+		for (const auto &door : playback.doors)
+			if (std::find(door.bitmaps.begin(), door.bitmaps.end(), binding.bitmap) != door.bitmaps.end()) entry.side_frames = 1;
 		result->entries.push_back(entry);
 	}
 	if (pog) {
@@ -159,6 +185,10 @@ xl_pog_resources *xl_pog_prepare_scoped(const xl_compat::ScopedTextureResources 
 	}
 	result->effect_definitions.assign(tables.effect_data, tables.effect_data + tables.effect_count);
 	result->clip_definitions.assign(tables.clip_data, tables.clip_data + tables.clip_count);
+	result->door_definitions.assign(tables.wall_clip_data, tables.wall_clip_data + tables.wall_clip_count);
+	result->door_textures.assign(tables.texture_data, tables.texture_data + tables.texture_count);
+	for (const auto &door : playback.doors)
+		result->doors.emplace_back(door.clip, int(textures.images[door.image].bitmap.frames));
 	for (const auto &animation : playback.clips) {
 		const auto &clip = tables.clip_data[animation.clip];
 		result->clips.push_back({ animation.clip, animation.bitmaps.front(),
@@ -176,6 +206,13 @@ xl_pog_resources *xl_pog_prepare_scoped(const xl_compat::ScopedTextureResources 
 extern "C" int xl_pog_scoped_owner(const xl_pog_resources *resources)
 {
 	return resources && resources->scoped;
+}
+extern "C" int xl_pog_prepared_door_frames(const xl_pog_resources *resources, int clip)
+{
+	if (resources)
+		for (const auto &door : resources->doors)
+			if (door.first == clip) return door.second;
+	return 0;
 }
 extern "C" int xl_pog_clip_count(const xl_pog_resources *resources)
 {
@@ -203,6 +240,18 @@ extern "C" int xl_pog_effect_bitmap(const xl_pog_resources *resources, int row, 
 extern "C" int xl_pog_scope_matches_live(const xl_pog_resources *resources)
 {
 	if (!resources || !resources->scoped) return 1;
+	if (!resources->doors.empty() && (Num_wall_anims != int(resources->door_definitions.size()) ||
+	                                  NumTextures != int(resources->door_textures.size()))) return 0;
+	for (const auto &door : resources->doors) {
+		const auto &a = resources->door_definitions[door.first], &b = WallAnims[door.first];
+		if (a.num_frames != b.num_frames || a.play_time != b.play_time || a.flags != b.flags ||
+		    a.open_sound != b.open_sound || a.close_sound != b.close_sound) return 0;
+		for (int frame = 0; frame < a.num_frames; ++frame) {
+			if (a.frames[frame] != b.frames[frame]) return 0;
+			const int texture = a.frames[frame];
+			if (resources->door_textures[texture].index != Textures[texture].index) return 0;
+		}
+	}
 	if (Num_vclips != int(resources->clip_definitions.size())) return 0;
 	for (const auto &animation : resources->clips) {
 		const auto &a = resources->clip_definitions[animation.clip], &b = Vclip[animation.clip];

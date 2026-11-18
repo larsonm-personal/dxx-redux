@@ -5,6 +5,7 @@
 #include "effects.h"
 #include "../xl_texture_frame.h"
 #include "../xl_vclip_frame.h"
+#include "pog_side_views.h"
 
 static struct {
 	int present, offset, flags;
@@ -20,6 +21,7 @@ static struct {
 	int bitmaps[VCLIP_MAX_FRAMES];
 } xl_pog_live_effects[MAX_EFFECTS];
 static struct xl_pog_clip xl_pog_live_clips[VCLIP_MAXNUM];
+static int xl_pog_live_doors[MAX_WALL_ANIMS];
 
 static void xl_pog_bank_will_change(void)
 {
@@ -35,9 +37,12 @@ static void xl_pog_bank_will_change(void)
 static void xl_pog_clear_installed(void)
 {
 	int i;
+	xl_pog_free_side_views(xl_pog_live_side_views);
+	xl_pog_live_side_views = NULL;
 	xl_pog_active_token = 0;
 	memset(xl_pog_live_effects, 0, sizeof(xl_pog_live_effects));
 	memset(xl_pog_live_clips, 0, sizeof(xl_pog_live_clips));
+	memset(xl_pog_live_doors, 0, sizeof(xl_pog_live_doors));
 	for (i = 0; i < MAX_BITMAP_FILES; ++i) {
 		if (!xl_pog_previous[i].present) continue;
 		ogl_freebmtexture(&GameBitmaps[i]);
@@ -59,6 +64,7 @@ int xl_pog_install_prepared(struct xl_pog_resources *resources)
 	int i;
 	size_t size = 0;
 	unsigned char *installed = NULL;
+	void *side_views = NULL;
 	if (resources) {
 		if (!xl_pog_scope_matches_live(resources)) return 0;
 		for (i = 0; i < xl_pog_count(resources); ++i) {
@@ -68,6 +74,7 @@ int xl_pog_install_prepared(struct xl_pog_resources *resources)
 		}
 		installed = xl_pog_take_storage(resources, &size);
 		if (!installed) return xl_pog_active_token == xl_pog_owner_token(resources);
+		side_views = xl_pog_take_side_views(resources);
 	}
 	/* Preparation and allocation finish before any old resource is retired */
 	free_bitmap_replacements();
@@ -142,6 +149,8 @@ int xl_pog_install_prepared(struct xl_pog_resources *resources)
 		const struct xl_pog_clip *clip = xl_pog_clip_entry(resources, i);
 		xl_pog_live_clips[clip->clip] = *clip;
 	}
+	xl_pog_install_side_views(side_views, resources);
+	for (i = 0; i < Num_wall_anims; ++i) xl_pog_live_doors[i] = xl_pog_prepared_door_frames(resources, i);
 	last_palette_loaded_pig[0] = 0;
 	texmerge_flush();
 	return 1;
@@ -150,6 +159,11 @@ int xl_pog_install_prepared(struct xl_pog_resources *resources)
 int xl_pog_install(struct xl_pog_resources *resources)
 {
 	return xl_pog_prepare_storage(resources) && xl_pog_install_prepared(resources);
+}
+
+int xl_pog_door_frames(int clip)
+{
+	return xl_pog_active_token && clip >= 0 && clip < Num_wall_anims ? xl_pog_live_doors[clip] : 0;
 }
 
 int xl_pog_physics_view(int bitmap, struct xl_pog_pixel_view *view)

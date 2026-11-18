@@ -1345,6 +1345,8 @@ void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &le
 	for (const auto &image : textures->images) state->owned_models.sources.emplace(image.path, image.hash);
 	state->texture_playback = std::make_unique<const xl_compat::ScopedTexturePlayback>(
 	    xl_compat::ScopedTexturePlayback::prepare(*textures, dependencies));
+	if (!state->texture_playback->doors.empty())
+		throw std::runtime_error("Scoped door strip playback is not qualified");
 	if (!textures->images.empty()) {
 		for (const auto &image : textures->images)
 			if (const char *error = ogl_xl_rgba_prepare(int(image.bitmap.width), int(image.bitmap.frame_height())))
