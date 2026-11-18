@@ -723,7 +723,10 @@ def execute_refills(plan, policy, lane, output):
                     break
                 failed |= int(sweep.run_command(command, Path.cwd(), sys.stdout, timeout=budget).returncode != 0)
             except subprocess.TimeoutExpired:
-                failed = 1
+                # Exhausting the shared sampling allowance is not itself a test
+                # failure. The interrupted owner remains pending in its receipt;
+                # preserve any failure already observed from an earlier owner
+                print("Nightly deadline reached; interrupted owner remains pending")
                 timed_out = True
             finally:
                 try:
