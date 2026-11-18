@@ -104,3 +104,42 @@ Result SHA-256: `05820e1302047770f4986add60033955fd4db2784c284dc581b7e896156c7a2
 
 This demonstrates that 64 entries fit locally within the probe allowance.
 Hosted checkout/build overhead and runner performance still need measurement.
+
+## On-demand full inventory survey
+
+The full inventory includes 1,111 archive/descriptor/level combinations across
+356 descriptors. Run it locally or on a provisioned runner with the same
+ordinary engine, verified runtime directory and pinned archives used above.
+
+```powershell
+python android/tests/xl_readiness_full.py `
+  --engine PATH_TO_ORDINARY_ENGINE --target-sha EXACT_ENGINE_SOURCE_SHA `
+  --assets PATH_TO_PINNED_PRIVATE_ASSETS --data PATH_TO_VERIFIED_RUNTIME `
+  --work PATH_TO_FRESH_OUTPUT
+```
+
+Use `--archive levelpack.7z` to run a single archive or repeat `--case` with
+exact inventory IDs for targeted verification. The command writes the engine
+hash, source revision and selection to `survey.json`, and writes each case's
+result and diagnostics into its numbered directory. On completion, `results.json`
+contains the full measured denominator and `failures.json` lists every case
+requiring investigation. Exit code zero requires every selected case to pass.
+The temporary package copies and verified extraction cache use the output
+directory's parent volume.
+
+The local downloads root contains additional packages. To build a second
+inventory, use a 7-Zip executable with a RAR decoder for both commands. The indexer
+checks archive content hashes against the pinned inventory and records matches
+in `duplicates.json`. Review `issues.json` for packages that need further
+inspection during the census.
+
+```powershell
+python android/tests/xl_readiness_local_inventory.py `
+  --downloads game_data/mission_files/d2xxl_downloads --work PATH_TO_FRESH_INDEX `
+  --seven-zip PATH_TO_FULL_7Z
+python android/tests/xl_readiness_full.py `
+  --catalog PATH_TO_FRESH_INDEX/inventory.json `
+  --assets game_data/mission_files/d2xxl_downloads `
+  --engine PATH_TO_ORDINARY_ENGINE --target-sha EXACT_ENGINE_SOURCE_SHA `
+  --data PATH_TO_VERIFIED_RUNTIME --work PATH_TO_FRESH_OUTPUT --seven-zip PATH_TO_FULL_7Z
+```
