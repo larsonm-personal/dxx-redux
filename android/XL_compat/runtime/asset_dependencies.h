@@ -59,7 +59,7 @@ struct ObjectDependencies {
 	const char (*model_names)[FILENAME_LEN] = Pof_names;
 	std::set<std::pair<int, bool>> robot_profiles;
 	std::set<int> robots, weapons, powerups, models, clips, bitmaps, sounds, textures, effects, wall_clips;
-	std::set<int> door_clips, other_wall_clips;
+	std::set<int> door_clips, blastable_clips, other_wall_clips;
 	void sound(int id)
 	{
 		if (id == -1 || id == 255) return;
@@ -148,7 +148,9 @@ struct ObjectDependencies {
 	}
 	void wall(int type, int id)
 	{
-		if (id >= 0) (type == WALL_DOOR ? door_clips : other_wall_clips).insert(id);
+		if (id >= 0) (type == WALL_DOOR ? door_clips : type == WALL_BLASTABLE ? blastable_clips
+			                                                                  : other_wall_clips)
+			             .insert(id);
 		const bool animated = type == WALL_DOOR || type == WALL_BLASTABLE;
 		asset_require(!animated || id >= 0, "animated wall has no wall animation");
 		// Nonanimated wall records can retain unused editor clip bytes

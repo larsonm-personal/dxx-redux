@@ -36,6 +36,56 @@ to larsonm-personal/dxx-redux; never merge, auto-merge or publish upstream.
    applicable CI failures. Finish with outcome, exact execution ledger, next plan
    and kickoff; inspect final-push checks and disclose incomplete measurements.
 
+### Canyon scope correction, November 17 morning
+
+The ordinary developer-OFF diagnostic identifies clip 46 as a four-frame
+replacement used by four WALL_BLASTABLE records in original canyon.rl2. The
+earlier moving-door classification was incomplete. Keep the door work, but
+require destructible-wall damage thresholds, final destruction, collision,
+independent side phases, authored mappings and cold restoration before Canyon
+admission. Compare actual extracted DamageWall and BlastWall source with native
+samples. Exploding and nonreciprocal walls require separate qualification or an
+explicit admission guard; do not infer their safety from moving doors.
+
+The unpublished branch removes the strip guard only for local qualification.
+No readiness improvement is published yet. Moving-door controls passed all six
+cold phases, nine malformed/source-identity extensions, 48 obstruction cases and
+unequal-count/period pair completion. The first destructible fixture failure was
+an RGB assertion on a fully transparent pixel; retained decoder output correctly
+clears that RGB, while phase and collision diagnostics matched expectations.
+
+Current published #577 head ff059ad2e2b342d0b6ae03329911c78a83e3366c repairs Linux
+fstream/native-macro include order. Android, Linux D1/D2, asset-free and source
+compile checks pass. Trusted run 44131615483 completes original8 8/8 and expanded
+61/64 in 238.541 seconds. Expanded artifact 14350916675 SHA256
+19449f1e15cb474762c4cf926904b07576423083a9239499402da9c0e9e18def.
+Private lifecycle staging still fails verify-assets pending user adoption of
+#573 into the trusted controller. Public save/replay and ASan checks remain in
+progress at this checkpoint. No agent merges and no APK installation occurred.
+
+The later local candidate qualifies both nonexploding and exploding native
+strips: 32 actual-source damage comparisons and four actual-source explosion
+timer/frame/flag/fireball-count comparisons pass, alongside all existing door
+matrices. Twelve composed cold restores cover moving-door, damaged wall and
+in-progress/completed explosion states. Keep reciprocal same-clip blastable
+pair admission; the ordinary native paths still assume connected wall geometry.
+No live HAM definitions or simulation RNG were rewritten.
+
+Original Canyon passes its ordinary developer-OFF one-case diagnostic in
+canyon-ordinary-04: 120 unassisted frames, engine SHA256
+576e501e7a767c13c8015d1cc4aa2478aceca76cda6f8a61e6de2caf1fc7661e.
+This is not a new frozen64 result. Supplemental canyon-rendered-01 also passes
+120 unassisted rendered frames on Intel Arc 140T. The same rendered engine,
+SHA256 91cfa27e24c38d383f0e659bb53b49c0fb36cef7927481e8443de265451f5553,
+passes 24 derived side-selection/transparency/reupload GPU cases in
+strip-gpu-host-01. Reupload is not a claim of full context-loss qualification.
+
+Android runner test_xl_wall_strip_runtime now owns three explicitly assisted
+derived modes and protects/restores app state. Its device and Debug builds are
+pending. The actual installed com.dxxredux.app APK was backed up before any
+installation to android-strip-apk-01/installed-before.apk, SHA256
+3bc8db6a4ee1d86ee182a2d029c0a06c88c48385a94401d140f4778250d304eb.
+
 Each requirement remains open until direct evidence proves its stated scope.
 Maintain G2 rejected-save energy, Android FX/replay and prior equipment baseline
 failures as separate limits; no compensation, normalization or relaxed criteria.
@@ -210,3 +260,93 @@ adoption, as this run explicitly forbids agent merges. The #576 asset-free GPU
 link failure was corrected with the absent native-owner adapter; current
 555fd4662 Linux and Windows asset-free checks passed. Private lifecycle staging
 still awaits controller adoption; pending checks are not qualified.
+
+## Strip admission qualification in progress
+
+Canyon's dependency is an exploding blastable wall (clip 46, four replacement
+frames), not a moving door. The candidate therefore adds blastable ownership
+alongside moving strips, with same-clip reciprocal incoming walls required
+before publication. Native wall damage, explosion timers, fireballs and save
+ownership remain native; thin hooks supply the retained frame count and side
+phase. Original mappings and immutable frame views are preserved.
+
+The actual-source oracle now includes 32 strict damage threshold samples and
+four exploding-wall timer/phase/passability/fireball-count samples, alongside
+the existing geometry, strip selection, door clock and obstruction matrices.
+strip-replay-native-01 passed the complete optimized owner within its unchanged
+75-second process guard. Moving and exploding strips each captured and cleanly
+replayed 120 frames with detailed objects/world/XL state and SIM state/call
+counts compared using the existing native observer equivalences. Raw receipts
+are retained; this does not establish Android XL replay compatibility.
+
+Assertion-enabled doors passed in strip-debug-groups-02. The blastable group
+exposed a test call to native wall_destroy on segment zero, forbidden by its
+existing assertion. The test now uses the pair's reciprocal nonzero segment;
+the failed assertion/timeout receipt remains retained pending rerun. Separately,
+the earlier combined Debug owner exceeded 75 seconds; explicit diagnostic
+groups retain that same guard, and default CI still runs the full optimized
+owner without changing its membership or timeout.
+
+The installed candidate APK SHA256 is
+d5fd45b2cbdc46c13922a28abe81efd84503a7a81f6e0f6a8644e2fb923cd62c.
+The actual previous APK was backed up before installation with SHA256
+3bc8db6a4ee1d86ee182a2d029c0a06c88c48385a94401d140f4778250d304eb.
+Protected Android controls passed 36/36 steps for moving, blastable and exploding
+strips (android-strip-door-02, android-strip-blastable-02 and
+android-strip-exploding-01), including 24 GPU pixel/reupload cases before and
+after disk restore through stock. Each run restored protected app state by hash.
+Earlier failures exposed a graphics-trial pause reason and overlong derived
+mission titles; waits and fixture titles were corrected without changing native
+guards. Those receipts remain failed. Reupload is not full EGL context loss.
+
+Original Canyon passed 120 unassisted simulation frames in canyon-ordinary-04
+and 120 rendered frames in canyon-rendered-01. These are supplemental one-case
+results, not a new frozen 64-case score. Its Android original import/save/cold
+load run is pending, with only a native-written pilot unlock for level selection.
+
+Published #577 at ff059ad2e2b342d0b6ae03329911c78a83e3366c has green applicable
+public regression checks. Trusted run 44131615483 reports original 8/8 and a
+complete expanded 61/64 in 238.541 seconds; its private supplemental owner still
+fails verify-assets before tests under the unupdated trusted controller.
+Expanded artifact 14350916675 SHA256 is
+19449f1e15cb474762c4cf926904b07576423083a9239499402da9c0e9e18def.
+The Linux fstream/native macro include failure was repaired in that candidate;
+one hosted LAN image-cleanup timeout passed its failed-job retry. Neither
+changes the preserved expanded result or qualifies missing private-owner tests.
+
+The reciprocal-face correction passes assertion-enabled blastable controls in
+strip-debug-groups-03. Its exploding native controls also pass, including the
+120-frame clean replay. The standalone exploding oracle initially failed
+because its reciprocal geometry initialization lived in the preceding blastable
+test; each entry point now initializes its own geometry. Replaying the unchanged
+Debug sample file with the corrected oracle passes all four samples. The full
+optimized strip-final-native-01 passes every matrix and both captures afterward.
+
+android-canyon-01 failed before level load: the old installed instrumentation
+ignored the Boiling Point selector and imported Warp Shock. Protected profile
+hashes restored successfully. Backed-up instrumentation APK SHA256 is
+ea0ee9086dc27a806430e0d693701f2e682c4fd55622ac5d48d5124178a0592a.
+Current-source instrumentation built and installed successfully, SHA256
+6564ea413f6a46be9a7e2977bca3ed88b27475ff6dc97a946537c11265b15ad7;
+android-canyon-02 is the new protected attempt. Production APK is unchanged.
+
+Canyon attempt02 completed its warm 20/20 steps, including native save, but the
+host runner still asserted the historical level 7 instead of the newly selected
+level 3. It remains a failed owner receipt with successful profile restoration;
+the assertion now compares the explicit BoilingPointLevel parameter. Attempt03
+is pending. No original gameplay or import criterion was removed.
+
+Final host GPU strip-gpu-host-03 passed 24 cases with engine SHA256
+52cbb8dfd2f4874b584855d432e14f9b0dd90f66a6e2cb9d95de417986e95de3.
+Attempt02 timed out before startup because its disposable user directory had
+not been created; the existing native entry point requires an existing path.
+Both final automation catalogs passed: 99 standalone JSON, 551 support scripts,
+316 standalone PowerShell tests and 429 master-runner entries. Scoped mixed
+formatting and diff checks passed before the last level-parameter assertion fix,
+which separately passed its scoped formatter.
+
+The explosion source comparison tests quarter-second/half-second steps and the
+strict passability boundary. It does not claim parity for a single timestep
+overshooting the full explosion lifetime: the pinned source's clamp/else-if
+ordering differs from the existing native clamp behavior. Native timer ownership
+was not replaced to emulate that source corner case.

@@ -1345,8 +1345,21 @@ void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &le
 	for (const auto &image : textures->images) state->owned_models.sources.emplace(image.path, image.hash);
 	state->texture_playback = std::make_unique<const xl_compat::ScopedTexturePlayback>(
 	    xl_compat::ScopedTexturePlayback::prepare(*textures, dependencies));
-	if (!state->texture_playback->doors.empty())
-		throw std::runtime_error("Scoped door strip playback is not qualified");
+	for (const auto &strip : state->texture_playback->doors)
+		for (const auto &wall : level.walls) {
+			if (wall.type != WALL_BLASTABLE || wall.clip != strip.clip) continue;
+			if (wall.segment < 0 || std::size_t(wall.segment) >= level.segments.size() || wall.side < 0 || wall.side >= 6)
+				throw std::runtime_error("Blastable strip has invalid incoming geometry");
+			const int child = level.segments[wall.segment].children[wall.side];
+			if (child < 0 || std::size_t(child) >= level.segments.size())
+				throw std::runtime_error("Blastable strip requires a reciprocal wall pair");
+			bool reciprocal = false;
+			for (const auto &back : level.walls)
+				if (back.segment == child && back.side >= 0 && back.side < 6 &&
+				    level.segments[child].children[back.side] == wall.segment && back.type == WALL_BLASTABLE && back.clip == wall.clip)
+					reciprocal = true;
+			if (!reciprocal) throw std::runtime_error("Blastable strip requires the same clip on both reciprocal walls");
+		}
 	if (!textures->images.empty()) {
 		for (const auto &image : textures->images)
 			if (const char *error = ogl_xl_rgba_prepare(int(image.bitmap.width), int(image.bitmap.frame_height())))

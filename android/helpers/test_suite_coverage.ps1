@@ -253,6 +253,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_xl_projectiles_runtime'
             'test_xl_object_capacity_runtime'
             'test_xl_door_lifecycle_runtime'
+            'test_xl_wall_strip_runtime'
             'test_xl_changing_light_runtime'
             'test_xl_flicker_runtime'
             'test_xl_hog_runtime'

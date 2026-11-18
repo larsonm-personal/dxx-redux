@@ -2,6 +2,8 @@
 #include "doors.h"
 #include "named_audio.h"
 #include "preview.h"
+#include "pog_resources.h"
+#include <nlohmann/json.hpp>
 #include <cstring>
 #include <stdexcept>
 #include <string>
@@ -13,6 +15,7 @@ extern "C" {
 #include "gameseg.h"
 #include "wall.h"
 #include "game.h"
+#include "fireball.h"
 #include "state_android_shared.h"
 #include "android_meta_actions.h"
 #include "android_log.h"
@@ -29,6 +32,7 @@ void require(bool result, const char *message)
 {
 	if (!result) throw std::runtime_error(message);
 }
+#include "wall_strip_device_control.h"
 void verify()
 {
 	require(xl_level_extensions_active() && first >= 0 && Num_walls == first + 182 && Num_open_doors == 90 && xl_door_state_valid(ActiveDoors, Num_open_doors), "Full Android door state invalid");
@@ -60,6 +64,10 @@ const char *xl_door_probe(const char *operation)
 {
 	try {
 		require(Game_wind && ConsoleObject && !(Game_mode & GM_MULTI), "Door controls require running singleplayer");
+		if (!std::strncmp(operation, "strip_", 6)) {
+			strip_control(operation + 6);
+			return nullptr;
+		}
 		if (!std::strcmp(operation, "obstruction") || !std::strcmp(operation, "marker_obstruction")) {
 			xl_door_obstruction_control::run(require, !std::strcmp(operation, "marker_obstruction"));
 			debug_log_force(DLOG_GAME, "XL door obstruction passed 48 actor/effect, side and lifecycle cases");

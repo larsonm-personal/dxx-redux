@@ -2,13 +2,15 @@
 #include "../particle_render.h"
 #include "original_fireball_raster_probe.h"
 #include "sprite_glow_probe.h"
+#include "wall_strip_gpu_control.h"
 namespace sprite_material_control
 {
 #include "sprite_bitmap_gpu_probe.h"
 }
-static int xl_sprite_material_probe(const char *path)
+static int xl_sprite_material_probe(const char *path, bool wall_strip = false)
 {
 	nlohmann::ordered_json proof = { { "schema", "xl-sprite-material-v1" }, { "complete", bool{ false } } };
+	if (wall_strip) proof["schema"] = "xl-wall-strip-gpu-v1";
 	try {
 		if (!gl_initialized || !Game_wind) throw std::runtime_error("Sprite material controls require a rendered game");
 		proof["renderer"] = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
@@ -56,15 +58,20 @@ static int xl_sprite_material_probe(const char *path)
 			Target target;
 			if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) throw std::runtime_error("Sprite material target is incomplete");
 			glDisable(GL_DITHER);
-			proof["cases"] = sprite_material_control::sprite_bitmap_device_controls();
-			if (proof["cases"] != 216) throw std::runtime_error("Sprite material controls are incomplete");
-			proof["soft_depth_cases"] = sprite_material_control::sprite_bitmap_soft_controls();
-			if (proof["soft_depth_cases"] != 86) throw std::runtime_error("Sprite soft-depth controls are incomplete");
-			proof["original_fireball"] = original_fireball_raster_controls();
-			proof["glow_profile_cases"] = sprite_glow_control::controls();
-			if (proof["glow_profile_cases"] != 12) throw std::runtime_error("Sprite glow profile controls are incomplete");
-			proof["glowing_fireballs"] = sprite_glow_control::runtime_controls();
-			proof["glow_bounds_cases"] = sprite_glow_control::bounds_controls();
+			if (wall_strip) {
+				proof["cases"] = xl_wall_strip_gpu_controls();
+				if (proof["cases"] != 24) throw std::runtime_error("Wall strip GPU controls are incomplete");
+			} else {
+				proof["cases"] = sprite_material_control::sprite_bitmap_device_controls();
+				if (proof["cases"] != 216) throw std::runtime_error("Sprite material controls are incomplete");
+				proof["soft_depth_cases"] = sprite_material_control::sprite_bitmap_soft_controls();
+				if (proof["soft_depth_cases"] != 86) throw std::runtime_error("Sprite soft-depth controls are incomplete");
+				proof["original_fireball"] = original_fireball_raster_controls();
+				proof["glow_profile_cases"] = sprite_glow_control::controls();
+				if (proof["glow_profile_cases"] != 12) throw std::runtime_error("Sprite glow profile controls are incomplete");
+				proof["glowing_fireballs"] = sprite_glow_control::runtime_controls();
+				proof["glow_bounds_cases"] = sprite_glow_control::bounds_controls();
+			}
 		}
 		if (glGetError() != GL_NO_ERROR) throw std::runtime_error("Sprite material controls left a GPU error");
 		proof["complete"] = bool{ true };

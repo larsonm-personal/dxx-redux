@@ -271,16 +271,18 @@ void wall_reset(segment *seg, int side)
 void wall_set_tmap_num(segment *seg,int side,segment *csegp,int cside,int anim_num,int frame_num)
 {
 	wclip *anim = &WallAnims[anim_num];
-	int tmap = anim->frames[frame_num];
+	int tmap;
 
 	if ( Newdemo_state==ND_STATE_PLAYBACK ) return;
 
 #ifdef DXX_XL_RUNTIME
+	if (xl_wall_strip_set_texture(seg - Segments, side, csegp ? csegp - Segments : -1, cside, anim_num, frame_num)) return;
 	if (xl_level_extensions_active()) {
 		xl_door_record_frame(seg - Segments, side, anim_num, frame_num);
 		if (csegp && cside >= 0) xl_door_record_frame(csegp - Segments, cside, anim_num, frame_num);
 	}
 #endif
+	tmap = anim->frames[frame_num];
 	if (anim->flags & WCF_TMAP1)	{
 		if (tmap != seg->sides[side].tmap_num || tmap != csegp->sides[cside].tmap_num)
 		{
@@ -321,12 +323,19 @@ void blast_blastable_wall(segment *seg, int side)
 		kill_stuck_objects(cwall_num);
 
 	//if this is an exploding wall, explode it
+#ifdef DXX_XL_RUNTIME
+	if (xl_wall_explosion_required(Walls[seg->sides[side].wall_num].clip_num, Walls[seg->sides[side].wall_num].flags))
+#else
 	if (WallAnims[Walls[seg->sides[side].wall_num].clip_num].flags & WCF_EXPLODES)
+#endif
 		explode_wall(seg-Segments,side);
 	else {
 		//if not exploding, set final frame, and make door passable
 		a = Walls[seg->sides[side].wall_num].clip_num;
 		n = WallAnims[a].num_frames;
+#ifdef DXX_XL_RUNTIME
+		n = xl_wall_effect_frame_count(a, n);
+#endif
 		wall_set_tmap_num(seg,side,csegp,Connectside,a,n-1);
 		Walls[seg->sides[side].wall_num].flags |= WALL_BLASTED;
 		if (cwall_num > -1)
@@ -393,6 +402,9 @@ void wall_damage_from_player(segment *seg, int side, fix damage, int playernum)
 			
 		a = Walls[seg->sides[side].wall_num].clip_num;
 		n = WallAnims[a].num_frames;
+#ifdef DXX_XL_RUNTIME
+		n = xl_wall_effect_frame_count(a, n);
+#endif
 		
 		if (Walls[seg->sides[side].wall_num].hps < WALL_HPS*1/n) {
 #ifdef NETWORK

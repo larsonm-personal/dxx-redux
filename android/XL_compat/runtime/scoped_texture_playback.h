@@ -101,9 +101,11 @@ struct ScopedTexturePlayback {
 			}
 			if (!strip) continue;
 			const auto first = selected.find(graph.texture_data[clip.frames[0]].index);
-			if (!graph.door_clips.count(id) || graph.other_wall_clips.count(id) || first == selected.end() ||
+			if ((!graph.door_clips.count(id) && !graph.blastable_clips.count(id)) || graph.other_wall_clips.count(id) || first == selected.end() ||
 			    resources.images[first->second].bitmap.frames < 2)
-				throw std::runtime_error("Scoped wall strip lacks a qualified first-frame door binding");
+				throw std::runtime_error("Scoped wall strip lacks a qualified first-frame door binding: clip " + std::to_string(id) +
+				                         ", door use " + std::to_string(graph.door_clips.count(id)) + ", other wall use " + std::to_string(graph.other_wall_clips.count(id)) +
+				                         ", first image frames " + std::to_string(first == selected.end() ? 0 : resources.images[first->second].bitmap.frames));
 			const auto frames = resources.images[first->second].bitmap.frames;
 			if (frames > 128 || clip.play_time < int(frames))
 				throw std::runtime_error("Scoped door period cannot represent every replacement frame");

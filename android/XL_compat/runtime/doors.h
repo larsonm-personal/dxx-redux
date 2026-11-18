@@ -10,6 +10,9 @@ int xl_door_frame_process(void);
 int xl_door_state_valid(const struct active_door *doors, int count);
 void xl_door_phases_clear(void);
 int xl_door_record_frame(int segment, int side, int clip, int frame);
+int xl_wall_effect_frame_count(int clip, int ordinary);
+int xl_wall_explosion_required(int clip, int flags);
+int xl_wall_strip_set_texture(int segment, int side, int connected_segment, int connected_side, int clip, int frame);
 struct _grs_bitmap;
 struct _grs_bitmap *xl_door_side_bitmap(int segment, int side, int texture, struct _grs_bitmap *ordinary);
 #ifdef __cplusplus

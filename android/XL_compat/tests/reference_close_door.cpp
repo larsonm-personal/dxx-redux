@@ -172,12 +172,30 @@ void NDRecordDoorOpening(int, int) {}
 #endif
 void door_masks_reference();
 void door_strip_reference();
+void blastable_strip_reference(const char *);
+void exploding_strip_reference(const char *);
 int main(int argc, char **argv)
 {
 	try {
+		if (argc == 3 && !std::strcmp(argv[1], "--blastable")) {
+			blastable_strip_reference(argv[2]);
+			return 0;
+		}
+		if (argc == 3 && !std::strcmp(argv[1], "--exploding")) {
+			exploding_strip_reference(argv[2]);
+			return 0;
+		}
+		if (argc == 2 && !std::strcmp(argv[1], "--strip-phases")) {
+			door_strip_reference();
+			return 0;
+		}
 		door_masks_reference();
 		door_strip_reference();
-		if (argc != 3) throw std::runtime_error("Expected close-door transition and animation samples");
+		if (argc != 3 && argc != 5) throw std::runtime_error("Expected close-door transition and animation samples, optionally both strip sample groups");
+		if (argc == 5) {
+			blastable_strip_reference(argv[3]);
+			exploding_strip_reference(argv[4]);
+		}
 		segments[1].index = 1;
 		std::ifstream in(argv[1]);
 		int state, mode, elapsed, play, blocked, full, front, back, count, time, samples = 0;

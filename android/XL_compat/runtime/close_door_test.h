@@ -1,6 +1,7 @@
 #include "close_door_fixture.h"
 #include "door_lifecycle_test.h"
 #include "door_obstruction_control.h"
+#include "door_strip_lifecycle_test.h"
 extern "C" int is_door_free(segment *, int);
 static void close_door_matrix(std::ostream &out)
 {
@@ -154,6 +155,7 @@ static void door_marker_lifecycle(const std::filesystem::path &output)
 }
 static int close_door_test(int argc, char **argv)
 {
+	std::setvbuf(stdout, nullptr, _IONBF, 0);
 	try {
 		char error[256]{};
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
@@ -165,6 +167,16 @@ static int close_door_test(int argc, char **argv)
 		std::strcpy(Players[Player_num].callsign, "XLTest");
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
+		const char *group = find_arg_value(argc, argv, "-wall-strip-group");
+		if (group && std::strcmp(group, "baseline")) {
+			if (!std::strcmp(group, "doors")) door_strip_lifecycle(output);
+			else if (!std::strcmp(group, "pair")) door_strip_unequal_pair(output);
+			else if (!std::strcmp(group, "blastable")) blastable_strip_lifecycle(output);
+			else if (!std::strcmp(group, "exploding")) exploding_strip_lifecycle(output);
+			else throw std::runtime_error("Unknown strip assertion group");
+			std::cout << "XL close-door controls passed\n";
+			return 0;
+		}
 		std::ofstream samples(output / "close-door-samples.txt");
 		close_door_matrix(samples);
 		std::ofstream animation_samples(output / "door-animation-samples.txt");
@@ -173,6 +185,12 @@ static int close_door_test(int argc, char **argv)
 		door_pair_variants();
 		door_concurrency(output);
 		door_marker_lifecycle(output);
+		if (!group) {
+			door_strip_lifecycle(output);
+			door_strip_unequal_pair(output);
+			blastable_strip_lifecycle(output);
+			exploding_strip_lifecycle(output);
+		}
 		std::cout << "XL close-door controls passed\n";
 		return 0;
 	} catch (const std::exception &e) {

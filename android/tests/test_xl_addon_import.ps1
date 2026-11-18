@@ -1,6 +1,7 @@
 #!/usr/bin/env pwsh
-param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [switch]$BoilingPoint, [switch]$Sphere, [switch]$OriginalLifecycle, [string]$TimeEquipmentPilot, [switch]$CaptureLive, [string]$OutputDirectory)
+param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [switch]$BoilingPoint, [ValidateSet(3, 7)][int]$BoilingPointLevel = 7, [switch]$Sphere, [switch]$OriginalLifecycle, [string]$TimeEquipmentPilot, [switch]$CaptureLive, [string]$OutputDirectory)
 $ErrorActionPreference = 'Stop'
+if ($PSBoundParameters.ContainsKey('BoilingPointLevel') -and !$BoilingPoint) { throw 'BoilingPointLevel requires the protected BoilingPoint mode' }
 if ($OriginalLifecycle -and (!$TimeEquipment -or !($BoilingPoint -or $Sphere))) { throw 'OriginalLifecycle requires a protected original archive gameplay mode' }
 if ($CaptureLive -and (!$TimeEquipment -or $Warp5 -or $Dinter -or $BoilingPoint -or $Sphere)) { throw 'CaptureLive requires the original time-equipment mode' }
 if ($BoilingPoint -and (!$TimeEquipment -or $Warp5 -or $Dinter -or $Sphere)) { throw 'BoilingPoint uses the protected original gameplay import mode alone' }
@@ -218,7 +219,7 @@ try {
         $steps = @(Get-Content $scenario -Raw | ConvertFrom-Json)
         if ($Warp5 -or $Dinter -or $BoilingPoint -or $Sphere) {
             # Reuse original picker, launcher, pilot and normal save ownership
-            $level = if ($BoilingPoint) { 7 } elseif ($Sphere) { 2 } elseif ($Dinter) { 1 } else { 5 }
+            $level = if ($BoilingPoint) { $BoilingPointLevel } elseif ($Sphere) { 2 } elseif ($Dinter) { 1 } else { 5 }
             # Dinter's single level enters its briefing directly after Ok.
             $warm = if ($Dinter) { @($steps[0..10]) + @($steps[12], $steps[13]) } else { @($steps[0..13]) }
             if ($Dinter) { $warm[7].text = 'D.I: Monolevel' }
@@ -378,7 +379,7 @@ try {
             if ($Dinter -and ($gameState.mission_asset_owner -notmatch '^content/[0-9a-f]+$' -or $gameState.current_level_num -ne 1 -or !$gameState.xl_pilot.runtime_active)) {
                 throw "Original Dinter mission or XL runtime is absent in $phase Android scene"
             }
-            if ($BoilingPoint -and ($gameState.mission_asset_owner -ne 'mod/BoilingPoint-XL.zip' -or $gameState.current_level_num -ne 7 -or !$gameState.xl_pilot.runtime_active)) {
+            if ($BoilingPoint -and ($gameState.mission_asset_owner -ne 'mod/BoilingPoint-XL.zip' -or $gameState.current_level_num -ne $BoilingPointLevel -or !$gameState.xl_pilot.runtime_active)) {
                 throw "Original Boiling Point archive owner or XL runtime is absent in $phase Android scene"
             }
             if ($Sphere -and ($gameState.mission_asset_owner -ne 'mod/sphere-1.6.zip' -or $gameState.current_level_num -ne 2 -or !$gameState.xl_pilot.runtime_active)) {
