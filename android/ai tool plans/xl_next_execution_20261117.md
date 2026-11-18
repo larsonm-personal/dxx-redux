@@ -1,8 +1,10 @@
 # Execute the next XL recovery plan
 
-Explicit user goal: run through xl_recovery_next_20261117.md. This invocation
-supersedes the previous tranche's elapsed deadline; complete the referenced
-implementation and qualification gates rather than stopping after one checkpoint.
+Explicit user goal: run through xl_recovery_next_20261117.md. The latest explicit
+invocation targets completion at 10:00 AM PST November 18, 2026 (18:00 UTC).
+Reserve 6:00-10:00 AM PST for validation, applicable CI repair and committed
+handoff. Continue the current stack and qualify coherent checkpoints within that
+window; preserve unmet gates explicitly rather than relaxing admission to fit.
 
 Starting point: origin/cmake d85d6afc5 (merged stack through #570), clean worktree,
 four preserved stashes. Fresh branch xl_next_20261117_01. Work directly without
@@ -100,3 +102,32 @@ WSL enumeration timed out after 15s, so no local Linux claim is made.
 PR #573 is the staged-input bootstrap against cmake. The immediate child adds
 execution/receipt enrollment. Both require reviewed controller adoption before
 the trusted private CI can claim these supplemental lifecycle outcomes.
+
+## Door source checkpoint
+
+The existing close-door reference executable now extracts actual
+WallEffectFrameCount, CSegment::SetTexture, LoadFaceBitmap, InitDoorAnims and
+CSide::SetTextures from the pinned source. Wall flag constants are extracted
+from its already pinned header; the renderer source additionally pins SHA256
+97ceec7d0c05661f5945bd198eab8b482cd69ee2cd8899ab09ddd055619e58ec.
+GPU uploads and resource lookup remain adapters, so this is source behavior
+evidence, not rendered qualification or admission of Canyon.
+
+Windows x86 Debug and Release both passed 1,133 strip selection/phase controls,
+plus the retained 1,620 geometry, 3,072 transition/allocation, 336 obstruction
+and 660 ordinary animation controls. Logs: door-reference-run-02.log and
+door-reference-release-run-01.log. Both catalogs passed (99 JSON, 315 PowerShell,
+550 support scripts, 428 top-level entries). The first runner-catalog attempt
+correctly stopped at the C: reserve; the successful run used explicit E: output.
+Scoped formatting and diff checks passed. Runtime integration remains open.
+
+PR #573 trusted CI run 44115652316 completed: original 8/8, expanded complete
+61/64, historical original asset/navigation owner passed. Its separate Android
+run 44115610676 failed before tests while downloading pinned KTX after three
+timeouts; a failed-job retry was requested, with no result claimed yet.
+PR #574 trusted run 44118110267 stopped at verify-assets before native tests,
+consistent with its new required lifecycle inputs preceding adoption of #573
+staging. The retained exact-head artifact is 14344716271, SHA256
+9df112aa9c995a179b6e857605bdf6dfeae6ae5201cd4a0ed1c7a60c121cda8a.
+Its public receipt does not include private stderr; the missing staging must be
+resolved through reviewed controller adoption and then directly verified.

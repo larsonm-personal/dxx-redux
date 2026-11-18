@@ -150,10 +150,12 @@ void NDRecordDoorOpening(int, int) {}
 #pragma GCC diagnostic pop
 #endif
 void door_masks_reference();
+void door_strip_reference();
 int main(int argc, char **argv)
 {
 	try {
 		door_masks_reference();
+		door_strip_reference();
 		if (argc != 3) throw std::runtime_error("Expected close-door transition and animation samples");
 		segments[1].index = 1;
 		std::ifstream in(argv[1]);
