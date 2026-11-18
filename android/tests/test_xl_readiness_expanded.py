@@ -12,9 +12,49 @@ from unittest.mock import patch
 
 import xl_readiness as readiness
 import xl_readiness_expanded as expanded
+import xl_readiness_full as full
+import xl_readiness_local_inventory as local
 
 
 class ExpandedReadinessTests(unittest.TestCase):
+    def test_full_survey_preserves_variant_and_secret_case_identities(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            downloads = root / "downloads"
+            downloads.mkdir()
+            archive, record, _, _ = self.staged_fixture(downloads)
+            readiness.write(root / "pinned.json", {"archives": [record]})
+            with zipfile.ZipFile(downloads / "variant.zip", "w") as package:
+                package.writestr("single/control.mn2", "num_levels=1\nfirst.rl2\nnum_secrets=1\nhidden.rl2,1\n")
+                package.writestr("broken.msn", "num_levels=0\n")
+            index = root / "index"
+            local.inventory(downloads, root / "pinned.json", index, None)
+            catalog = json.loads((index / "inventory.json").read_text())
+            self.assertEqual([case["level"] for case in catalog["cases"]], [1, -1])
+            self.assertEqual(json.loads((index / "issues.json").read_text())[0]["descriptor"], "broken.msn")
+            self.assertEqual(json.loads((index / "duplicates.json").read_text())[0]["path"], archive.name)
+            selected = catalog["selected"][1]
+            args = argparse.Namespace(
+                catalog=index / "inventory.json",
+                archive=None,
+                case=[selected],
+                engine=Path(sys.executable),
+                assets=downloads,
+                data=root,
+                target_sha="a" * 40,
+                work=root / "survey",
+                seven_zip=None,
+            )
+            # A real process without engine output must produce an unsuccessful receipt
+            with patch.object(readiness, "verify_resources", return_value=readiness.resource_identity()):
+                self.assertEqual(full.measure(args), 1)
+            receipt = json.loads((args.work / "results.json").read_text())
+            self.assertEqual(receipt["selected"], [selected])
+            self.assertEqual(receipt["summary"]["counts"], {"infrastructure_error": 1})
+            self.assertEqual(json.loads((args.work / "failures.json").read_text()), receipt["rows"])
+            self.assertEqual(receipt["rows"][0]["level_file"], "hidden.rl2")
+            self.assertTrue((args.work / "0/engine.log").exists())
+
     def staged_fixture(self, root):
         archive = root / "fixture.zip"
         descriptor = b"d2x-name = Cache control\nnum_levels = 2\nfirst.rl2\nsecond.rl2\n"

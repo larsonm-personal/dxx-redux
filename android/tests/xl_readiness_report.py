@@ -28,7 +28,10 @@ def validate(receipt, catalog, sha, require_resources=False):
         or receipt.get("inventory_archives") != len(catalog["archives"])
     ):
         raise ValueError("Readiness identity mismatch")
-    rows = receipt.get("rows")
+    return validate_rows(receipt.get("rows"), catalog)
+
+
+def validate_rows(rows, catalog):
     if (
         not isinstance(rows, list)
         or not all(isinstance(row, dict) for row in rows)
