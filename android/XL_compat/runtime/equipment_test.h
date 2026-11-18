@@ -516,7 +516,7 @@ static void equipment_inert_pickup_controls(const xl_compat::Inventory &authored
 		require(xl_equipment_state_get(0, &states[0]) && !states[0].pending && states[0].timer == 0 && Objects[item_index].id == id,
 		        "Unconsumed equipment did not block its producer");
 	}
-#ifndef RELEASE
+#ifndef NDEBUG
 	char error[256]{};
 	require(load_base_mission("d2", error, sizeof(error)), error);
 	input_demo_set_skip_level_intro(1);
