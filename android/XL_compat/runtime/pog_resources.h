@@ -67,6 +67,7 @@ void xl_pog_free_side_views(void *views);
 void *xl_pog_take_side_views(struct xl_pog_resources *resources);
 struct _grs_bitmap;
 struct _grs_bitmap *xl_pog_side_frame(int bitmap, int frame);
+int xl_pog_side_frame_count(int bitmap);
 void xl_pog_side_views_discard_context(void);
 /* Zero retains the authored native wall clip clock */
 int xl_pog_door_frames(int clip);

@@ -1308,7 +1308,7 @@ int check_trans_wall(vms_vector *pnt,segment *seg,int sidenum,int facenum)
 	find_hitpoint_uv(&u,&v,NULL,pnt,seg,sidenum,facenum);	//	Don't compute light value.
 
 #ifdef DXX_XL_RUNTIME
-	if (xl_level_extensions_active()) return xl_side_pixel_transparency(side->tmap_num, side->tmap_num2, u, v);
+	if (xl_level_extensions_active()) return xl_face_pixel_transparency(seg - Segments, sidenum, u, v);
 #endif
 
 	if (side->tmap_num2 != 0)	{

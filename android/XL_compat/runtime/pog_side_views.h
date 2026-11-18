@@ -86,6 +86,11 @@ struct _grs_bitmap *xl_pog_side_frame(int bitmap, int frame)
 	return &views->frames[views->offsets[bitmap] + frame];
 }
 
+int xl_pog_side_frame_count(int bitmap)
+{
+	return xl_pog_live_side_views && bitmap >= 0 && bitmap < MAX_BITMAP_FILES ? (int) xl_pog_live_side_views->counts[bitmap] : 0;
+}
+
 void xl_pog_side_views_discard_context(void)
 {
 	unsigned i;

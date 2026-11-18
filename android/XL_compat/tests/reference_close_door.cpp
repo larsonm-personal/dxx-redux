@@ -46,24 +46,45 @@ struct DoorArray {
 		return m_tos;
 	}
 };
+constexpr int BM_TYPE_ALT = 1;
+struct CBitmap {
+	int frames = 0;
+	CBitmap *override_bitmap = nullptr;
+	CBitmap *Override()
+	{
+		return override_bitmap;
+	}
+	int Type()
+	{
+		return BM_TYPE_ALT;
+	}
+	int FrameCount()
+	{
+		return frames;
+	}
+} native_bitmap, strip_bitmap;
+struct tWallEffect {
+	fix xTotalTime = 0;
+	int openSound = -1, nFrameCount = 0;
+	int16_t frames[1]{};
+};
 struct {
 	struct {
-		DoorArray activeDoors;
 		struct {
-			fix xTotalTime = 0;
-			int openSound = -1;
-			int nFrameCount = 0;
-		} pAnim[1];
+			CBitmap *pBitmap = &native_bitmap;
+			struct {
+				int index = 0;
+			} pBmIndex[1];
+		} tex;
+	} pigData;
+	struct {
+		DoorArray activeDoors;
+		tWallEffect pAnim[1];
 	} wallData;
 	struct {
 		int nState = 0;
 	} demoData;
 } gameData;
-template <class T>
-int WallEffectFrameCount(T *clip)
-{
-	return clip->nFrameCount;
-}
 struct {
 	struct {
 		bool bD2XLevel = true;
@@ -220,25 +241,30 @@ int main(int argc, char **argv)
 		int automatic, opening, frames, duration, elapsed_ticks, expected_state, expected_flags, expected_frame, expected_count, expected_time;
 		int animation_count = 0;
 		while (animations >> automatic >> opening >> frames >> duration >> elapsed_ticks >> expected_state >> expected_flags >> expected_frame >> expected_count >> expected_time) {
-			walls[0] = {};
-			walls[0].state = opening ? WALL_DOOR_OPENING : WALL_DOOR_CLOSING;
-			walls[0].flags = (automatic ? WALL_DOOR_AUTO : 0) | (opening ? 0 : WALL_DOOR_OPENED);
-			segments[0].frame = -1;
-			gameData.wallData.pAnim[0].nFrameCount = frames;
-			gameData.wallData.pAnim[0].xTotalTime = duration;
-			const int result = opening ? walls[0].AnimateOpeningDoor(elapsed_ticks) : walls[0].AnimateClosingDoor(elapsed_ticks);
-			if (!opening && (result & 1)) {
-				walls[0].state = WALL_DOOR_CLOSED;
-				segments[0].frame = 0;
+			for (bool replacement : { false, true }) {
+				native_bitmap.override_bitmap = replacement ? &strip_bitmap : nullptr;
+				strip_bitmap.frames = frames;
+				walls[0] = {};
+				walls[0].state = opening ? WALL_DOOR_OPENING : WALL_DOOR_CLOSING;
+				walls[0].flags = (automatic ? WALL_DOOR_AUTO : 0) | (opening ? 0 : WALL_DOOR_OPENED);
+				segments[0].frame = -1;
+				gameData.wallData.pAnim[0].nFrameCount = replacement && frames > 1 ? frames + 7 : frames;
+				gameData.wallData.pAnim[0].xTotalTime = duration;
+				const int result = opening ? walls[0].AnimateOpeningDoor(elapsed_ticks) : walls[0].AnimateClosingDoor(elapsed_ticks);
+				if (!opening && (result & 1)) {
+					walls[0].state = WALL_DOOR_CLOSED;
+					segments[0].frame = 0;
+				}
+				const int retained = !(result & 1);
+				const int timer = retained && !(opening && (result & 2)) ? elapsed_ticks : 0;
+				if (walls[0].state != expected_state || walls[0].flags != expected_flags || segments[0].frame != expected_frame || retained != expected_count || timer != expected_time)
+					throw std::runtime_error("Door animation mismatch at " + std::to_string(animation_count));
 			}
-			const int retained = !(result & 1);
-			const int timer = retained && !(opening && (result & 2)) ? elapsed_ticks : 0;
-			if (walls[0].state != expected_state || walls[0].flags != expected_flags || segments[0].frame != expected_frame || retained != expected_count || timer != expected_time)
-				throw std::runtime_error("Door animation mismatch at " + std::to_string(animation_count));
 			++animation_count;
 		}
 		if (!animations.eof() || animation_count != 660) throw std::runtime_error("Incomplete door animation samples");
 		std::cout << animation_count << " extracted-reference door frame/flag/state/timer samples passed\n";
+		std::cout << animation_count << " extracted-reference alternate frame-count clock/flag/state/timer samples passed\n";
 	} catch (const std::exception &e) {
 		std::cerr << e.what() << '\n';
 		return 1;

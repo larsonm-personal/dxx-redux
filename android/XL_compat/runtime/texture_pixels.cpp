@@ -1,5 +1,6 @@
 #include "texture_pixels.h"
 #include "pog_resources.h"
+#include "doors.h"
 #include "../xl_rgba_pixels.h"
 extern "C" {
 #include "inferno.h"
@@ -11,11 +12,14 @@ extern "C" {
 #include "wall.h"
 }
 
-extern "C" int xl_texture_pixel_transparency(int texture, int orientation, int32_t u, int32_t v)
+static int texture_pixel_transparency(int texture, int orientation, int32_t u, int32_t v, int segment, int side)
 {
 	if (texture < 0 || texture >= NumTextures || Textures[texture].index >= Num_bitmap_files) return 0;
 	PIGGY_PAGE_IN(Textures[texture]);
 	auto *bitmap = &GameBitmaps[Textures[texture].index];
+	auto *selected = xl_door_side_bitmap(segment, side, texture, bitmap);
+	const bool side_frame = selected != bitmap;
+	bitmap = selected;
 	if (!bitmap->bm_data || bitmap->bm_w <= 0 || bitmap->bm_h <= 0) return 0;
 	if (bitmap->bm_flags & BM_FLAG_RLE) bitmap = rle_expand_texture(bitmap);
 	int32_t x = u, y = v;
@@ -36,7 +40,7 @@ extern "C" int xl_texture_pixel_transparency(int texture, int orientation, int32
 	}
 	if (bitmap->bm_type == BM_RGBA) {
 		xl_pog_pixel_view view{ bitmap->bm_data, unsigned(bitmap->bm_w), unsigned(bitmap->bm_h), unsigned(bitmap->bm_rowsize), unsigned(bitmap->bm_rgb_opaque != 0) };
-		xl_pog_physics_view(Textures[texture].index, &view);
+		if (!side_frame) xl_pog_physics_view(Textures[texture].index, &view);
 		const auto column = dxx_xl_texture_coordinate(x, view.width);
 		const auto row = dxx_xl_texture_coordinate(y, view.height);
 		return view.rgb_opaque ? 0 : dxx_xl_rgba_transparency(view.pixels + row * view.row_size + column * 4);
@@ -48,14 +52,31 @@ extern "C" int xl_texture_pixel_transparency(int texture, int orientation, int32
 	                                                       : 0;
 }
 
-extern "C" int xl_side_pixel_transparency(int base, int overlay, int32_t u, int32_t v)
+extern "C" int xl_texture_pixel_transparency(int texture, int orientation, int32_t u, int32_t v)
+{
+	return texture_pixel_transparency(texture, orientation, u, v, -1, -1);
+}
+
+static int side_pixel_transparency(int base, int overlay, int32_t u, int32_t v, int segment, int side)
 {
 	if (overlay & 0x3fff) {
-		const auto transparency = xl_texture_pixel_transparency(overlay & 0x3fff, (overlay >> 14) & 3, u, v);
+		const auto transparency = texture_pixel_transparency(overlay & 0x3fff, (overlay >> 14) & 3, u, v, segment, side);
 		if (transparency < 0) return 1;
 		if (!transparency) return 0;
 	}
-	return xl_texture_pixel_transparency(base, 0, u, v) != 0;
+	return texture_pixel_transparency(base, 0, u, v, segment, side) != 0;
+}
+
+extern "C" int xl_side_pixel_transparency(int base, int overlay, int32_t u, int32_t v)
+{
+	return side_pixel_transparency(base, overlay, u, v, -1, -1);
+}
+
+extern "C" int xl_face_pixel_transparency(int segment, int side, int32_t u, int32_t v)
+{
+	if (segment < 0 || segment >= Num_segments || side < 0 || side >= 6) return 0;
+	const auto &surface = Segments[segment].sides[side];
+	return side_pixel_transparency(surface.tmap_num, surface.tmap_num2, u, v, segment, side);
 }
 
 extern "C" int xl_side_texture_transparency(int segment, int side)
@@ -63,11 +84,11 @@ extern "C" int xl_side_texture_transparency(int segment, int side)
 	if (segment < 0 || segment >= Num_segments || side < 0 || side >= 6) return 0;
 	const auto &surface = Segments[segment].sides[side];
 	if (surface.tmap_num2 & 0x3fff) {
-		const auto flags = piggy_bitmap_get_flags(&GameBitmaps[Textures[surface.tmap_num2 & 0x3fff].index]);
+		const auto flags = piggy_bitmap_get_flags(xl_door_side_bitmap(segment, side, surface.tmap_num2 & 0x3fff, &GameBitmaps[Textures[surface.tmap_num2 & 0x3fff].index]));
 		if (flags & BM_FLAG_SUPER_TRANSPARENT) return 1;
 		if (!(flags & BM_FLAG_TRANSPARENT)) return 0;
 	}
-	const auto flags = piggy_bitmap_get_flags(&GameBitmaps[Textures[surface.tmap_num].index]);
+	const auto flags = piggy_bitmap_get_flags(xl_door_side_bitmap(segment, side, surface.tmap_num, &GameBitmaps[Textures[surface.tmap_num].index]));
 	if (flags & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT)) return 1;
 	if (surface.wall_num >= 0 && surface.wall_num < Num_walls) {
 		const auto cloak = Walls[surface.wall_num].cloak_value;

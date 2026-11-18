@@ -15,6 +15,7 @@
 #include "boss_spawn.h"
 #include "boss_routes.h"
 #include "equipment.h"
+#include "doors.h"
 #include "preview.h"
 #include "speed_boost.h"
 #include "spawn_points.h"
@@ -67,7 +68,7 @@ constexpr char tag[8] = { 'D', 'X', 'X', 'L', 'T', 'R', '0', '1' };
 // Existing events/lifecycle bound plus 48 signed UV coordinates per segment
 // Each int32 needs at most 11 characters and a comma, plus row/field delimiters
 // Birth rows bound slot/signature, int64 time and uint64 order with delimiters
-constexpr std::uint32_t maximum = 8 * 1024 * 1024 + MAX_SEGMENTS * (48 * 12 + 3) + MAX_OBJECTS * 72 + 64;
+constexpr std::uint32_t maximum = 8 * 1024 * 1024 + MAX_SEGMENTS * (48 * 12 + 6 * 6 + 6) + MAX_OBJECTS * 72 + 64;
 void require(bool result, const char *message)
 {
 	if (!result) throw std::runtime_error(message);
@@ -139,7 +140,9 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			block["boss_routes"] = json::array();
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
-		block["schema"] = 42;
+		block["schema"] = 43;
+		block["door_phases"] = xl_door_phases_snapshot();
+		require(xl_door_phases_restore(block["door_phases"], false), "Cannot capture XL side animation phases");
 		block["afterburner_animation"] = xl_afterburner_animation_snapshot();
 		require(xl_afterburner_animation_restore(block["afterburner_animation"], false), "Cannot capture XL afterburner animation state");
 		block["births"] = xl_object_birth_snapshot();
@@ -273,9 +276,10 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 33u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 42 &&
+		require(saved.is_object() && saved.size() == 34u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 43 &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
+		require(xl_door_phases_restore(saved.at("door_phases"), false), "Invalid XL side animation phases");
 		require(xl_object_birth_restore(saved.at("births"), false), "Invalid XL object birth identity, time or order");
 		require(xl_afterburner_animation_restore(saved.at("afterburner_animation"), false), "Invalid XL afterburner animation state");
 		const auto &frame_time = saved.at("frame_time"), &sim_rng_calls = saved.at("sim_rng_calls");
@@ -505,6 +509,7 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 					uvl.v = texture_uv[segment][field++];
 				}
 		}
+		xl_door_phases_restore(saved.at("door_phases"), true);
 		xl_object_birth_restore(saved.at("births"), true);
 		xl_afterburner_animation_restore(saved.at("afterburner_animation"), true);
 		xl_runtime::restore_weapon_clock(saved.at("weapon_clock"), true);

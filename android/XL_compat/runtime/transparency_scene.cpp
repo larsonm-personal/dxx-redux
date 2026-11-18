@@ -17,6 +17,7 @@
 #include "particle_resources.h"
 #include "resource_validation.h"
 #include "pog_resources.h"
+#include "doors.h"
 #include "afterburner_animation.h"
 #include "../xl_vclip_frame.h"
 #include "../fireball_material.h"
@@ -326,9 +327,9 @@ extern "C" int xl_transparency_face(int segment, int side, int count, const int 
 		std::optional<unsigned> top;
 		if (overlay & 0x3fff) {
 			PIGGY_PAGE_IN(Textures[overlay & 0x3fff]);
-			top = GameBitmaps[Textures[overlay & 0x3fff].index].bm_flags;
+			top = xl_door_side_bitmap(segment, side, overlay & 0x3fff, &GameBitmaps[Textures[overlay & 0x3fff].index])->bm_flags;
 		}
-		if (!transparent_face(flat ? std::nullopt : std::optional<unsigned>(GameBitmaps[Textures[base].index].bm_flags), top, flat || faded, additive, alpha)) return 0;
+		if (!transparent_face(flat ? std::nullopt : std::optional<unsigned>(xl_door_side_bitmap(segment, side, base, &GameBitmaps[Textures[base].index])->bm_flags), top, flat || faded, additive, alpha)) return 0;
 #ifdef ANDROID
 		android_merged_wall_clear_draw_face_context();
 #endif

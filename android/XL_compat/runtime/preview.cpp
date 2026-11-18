@@ -41,6 +41,7 @@
 #include "robot_generator.h"
 #include "boss_spawn.h"
 #include "equipment.h"
+#include "doors.h"
 #include "no_damage_test_binding.h"
 #include "resource_validation.h"
 #include "pog_resources.h"
@@ -714,6 +715,7 @@ extern "C" void xl_preview_clear_mission(void)
 	xl_robot_generator_clear();
 	xl_boss_spawn_clear();
 	xl_equipment_clear();
+	xl_door_phases_clear();
 	xl_classic_lighting_release();
 	xl_discard_prepared_resources();
 	xl_changing_light_clear();
@@ -891,6 +893,7 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 					throw std::runtime_error("XL source does not match loaded segment vertices");
 		brightness = xl_compat::vertex_brightness(*level);
 		dynamic_vertices.resize(level->vertices.size());
+		xl_door_phases_bind(*level, resources->dependencies(), resources->scoped_texture_playback());
 		xl_set_prepared_resources(filename, std::move(resources));
 		source = std::move(level);
 		xl_mission_progress_bind(ordinal);
