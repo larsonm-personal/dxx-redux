@@ -1,5 +1,6 @@
 #include <jni.h>
-#include "../../../../../XL_compat/hog_format.h"
+#include <stdlib.h>
+#include "../../../../../XL_compat/hog_selection.h"
 
 struct java_stream {
 	JNIEnv *env;
@@ -101,5 +102,48 @@ JNIEXPORT jobject JNICALL Java_com_dxxredux_app_NativeHogArchive_nativeReadEntry
 		(*env)->DeleteLocalRef(env, name);
 	}
 	(*env)->DeleteLocalRef(env, entry_class);
+	return result;
+}
+
+JNIEXPORT jbooleanArray JNICALL Java_com_dxxredux_app_NativeHogArchive_nativeSelect(JNIEnv *env, jclass type, jbyteArray names, jint count)
+{
+	struct dxx_hog_lookup *order = NULL;
+	jbyte *bytes = NULL;
+	jboolean *selected = NULL;
+	jbooleanArray result = NULL;
+	jsize size, offset = 0;
+	jint i;
+	(void) type;
+	if (!names || count < 0) goto invalid;
+	size = (*env)->GetArrayLength(env, names);
+	if (count > size / 2 || (size_t) count > SIZE_MAX / sizeof(*order)) goto invalid;
+	if (!count && !size) return (*env)->NewBooleanArray(env, 0);
+	order = (struct dxx_hog_lookup *) calloc((size_t) count, sizeof(*order));
+	selected = (jboolean *) calloc((size_t) count, sizeof(*selected));
+	if (!order || !selected) {
+		io_error(env, "Cannot allocate HOG lookup index");
+		goto done;
+	}
+	bytes = (*env)->GetByteArrayElements(env, names, NULL);
+	if (!bytes) goto done;
+	for (i = 0; i < count; ++i) {
+		const char *start = (const char *) bytes + offset;
+		const char *end = (const char *) memchr(start, 0, (size_t) (size - offset));
+		if (!end || end == start) goto invalid;
+		order[i].name = start;
+		order[i].ordinal = (size_t) i;
+		offset += (jsize) (end - start) + 1;
+	}
+	if (offset != size) goto invalid;
+	dxx_hog_select(order, (size_t) count, selected);
+	result = (*env)->NewBooleanArray(env, count);
+	if (result) (*env)->SetBooleanArrayRegion(env, result, 0, count, selected);
+	goto done;
+invalid:
+	io_error(env, "Invalid HOG lookup directory");
+done:
+	if (bytes) (*env)->ReleaseByteArrayElements(env, names, bytes, JNI_ABORT);
+	free(selected);
+	free(order);
 	return result;
 }

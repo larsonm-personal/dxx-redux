@@ -1,12 +1,12 @@
 #ifndef DXX_XL_HOG_H
 #define DXX_XL_HOG_H
-#include "hog_format.h"
+#include "hog_selection.h"
 #include <algorithm>
 #include <cstdint>
 #include <functional>
-#include <set>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace xl_compat
@@ -42,7 +42,6 @@ inline std::vector<HogEntry> index_hog(std::uint64_t length, const std::function
 	take(signature, sizeof(signature));
 	require(hog_signature(signature), "Invalid HOG signature (expected DHF or D2X)");
 	std::vector<HogEntry> entries;
-	std::set<std::string> names;
 	struct Reader {
 		std::uint64_t &offset;
 		std::uint64_t length;
@@ -61,11 +60,22 @@ inline std::vector<HogEntry> index_hog(std::uint64_t length, const std::function
 		const auto status = dxx_hog_read_header(next, &reader, &entry, &error);
 		require(status == 1, error ? error : "Truncated HOG header");
 		const std::string selected(entry.name);
-		require(names.insert(hog_key(selected)).second, "Ambiguous duplicate HOG member " + selected);
 		require(entry.size <= length - offset, "Truncated HOG member " + selected);
 		entries.push_back({ selected, offset, entry.size, entry.extended != 0 });
 		offset += entry.size;
 	}
+	std::vector<dxx_hog_lookup> order;
+	order.reserve(entries.size());
+	for (const auto &entry : entries) order.push_back({ entry.name.c_str(), order.size() });
+	std::vector<unsigned char> selected(entries.size());
+	dxx_hog_select(order.data(), order.size(), selected.data());
+	std::size_t kept = 0;
+	for (std::size_t i = 0; i < entries.size(); ++i) {
+		if (!selected[i]) continue;
+		if (kept != i) entries[kept] = std::move(entries[i]);
+		++kept;
+	}
+	entries.resize(kept);
 	return entries;
 }
 } // namespace xl_compat

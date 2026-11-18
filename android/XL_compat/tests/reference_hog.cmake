@@ -4,6 +4,9 @@ if(NOT hog_hash STREQUAL "87919a369a1e9501ae3520a85c382f8114dfd54939639026a3ea3b
 endif()
 set(extracted "// Actual pinned XL signed-size and extended-name reader\n")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/io/hogfile.cpp" "int32_t CLevelHeader::Read (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/io/hogfile.cpp" "void CHogFile::QuickSort (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/io/hogfile.cpp"
+                      "tHogFile *CHogFile::BinSearch (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_hog.h" CONTENT "${extracted}")
 add_executable(xl_hog_reference tests/reference_hog.cpp)
 target_include_directories(xl_hog_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
