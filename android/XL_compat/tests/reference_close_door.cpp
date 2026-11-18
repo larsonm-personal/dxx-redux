@@ -173,7 +173,7 @@ void NDRecordDoorOpening(int, int) {}
 void door_masks_reference();
 void door_strip_reference();
 void blastable_strip_reference(const char *);
-void exploding_strip_reference(const char *);
+void exploding_strip_reference(const char *, bool one_sided = false);
 int main(int argc, char **argv)
 {
 	try {
@@ -181,8 +181,8 @@ int main(int argc, char **argv)
 			blastable_strip_reference(argv[2]);
 			return 0;
 		}
-		if (argc == 3 && !std::strcmp(argv[1], "--exploding")) {
-			exploding_strip_reference(argv[2]);
+		if (argc == 3 && (!std::strcmp(argv[1], "--exploding") || !std::strcmp(argv[1], "--single"))) {
+			exploding_strip_reference(argv[2], !std::strcmp(argv[1], "--single"));
 			return 0;
 		}
 		if (argc == 2 && !std::strcmp(argv[1], "--strip-phases")) {
@@ -191,10 +191,11 @@ int main(int argc, char **argv)
 		}
 		door_masks_reference();
 		door_strip_reference();
-		if (argc != 3 && argc != 5) throw std::runtime_error("Expected close-door transition and animation samples, optionally both strip sample groups");
-		if (argc == 5) {
+		if (argc != 3 && argc != 6) throw std::runtime_error("Expected close-door transition and animation samples, optionally all strip sample groups");
+		if (argc == 6) {
 			blastable_strip_reference(argv[3]);
 			exploding_strip_reference(argv[4]);
+			exploding_strip_reference(argv[5], true);
 		}
 		segments[1].index = 1;
 		std::ifstream in(argv[1]);

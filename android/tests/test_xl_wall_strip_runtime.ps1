@@ -4,10 +4,11 @@ param(
     [Parameter(Mandatory)][string]$Serial,
     [Parameter(Mandatory)][string]$FixtureRoot,
     [Parameter(Mandatory)][string]$OutputDirectory,
-    [ValidateSet('door', 'blastable', 'exploding')][string]$Kind = 'door'
+    [ValidateSet('door', 'blastable', 'exploding', 'single')][string]$Kind = 'door'
 )
 $ErrorActionPreference = 'Stop'
 $fixtures = @{
+    single = @('stripsi', 'wall01#0.tga', '9e8509fd843793936563f7e9a0fbcf9eec14b295a406920d927fbb056d820c7d', 'single strip')
     door = @('stripdr', 'door14#0.tga', '77dcb6ea5922aa33c3689d2810910845263725a4bc20490f0264eb9c0edccd0c', 'strip doors')
     blastable = @('stripbl', 'door14#0.tga', '52410a065cb8f1f7751cb50cce4dabcc258770af86534fa6ed7b721601cb458d', 'blast strips')
     exploding = @('stripex', 'wall01#0.tga', 'b1da676085adc36a61bf27eee8e18467f5c8e933af4b46d6392fddb997028211', 'explode strips')

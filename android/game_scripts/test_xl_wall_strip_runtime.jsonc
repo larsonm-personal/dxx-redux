@@ -4,11 +4,15 @@
             "_standalone": false,
             "_owner": "test_xl_wall_strip_runtime",
             "games": ["d2"],
-            "vars": { "d2": { "STRIP_MISSION": "XL: Derived XL strip doors" } },
+            "vars": { "d2": { "STRIP_MISSION": "XL: Derived XL strip doors", "STRIP_PREPARE": "strip_prepare" } },
             "params": {
                 "STRIP_KIND": {
                     "label": "Derived wall lifecycle",
                     "options": {
+                        "single": {
+                            "STRIP_MISSION": "XL: Derived XL single strip",
+                            "STRIP_PREPARE": "strip_prepare_single",
+                        },
                         "door": { "STRIP_MISSION": "XL: Derived XL strip doors" },
                         "blastable": { "STRIP_MISSION": "XL: Derived XL blast strips" },
                         "exploding": { "STRIP_MISSION": "XL: Derived XL explode strips" },
@@ -38,7 +42,7 @@
         "timeout_ms": 20000,
         "post_delay_ms": 0,
     },
-    { "action": "set_debug", "field": "xl_door_probe", "value": "strip_prepare", "post_delay_ms": 0 },
+    { "action": "set_debug", "field": "xl_door_probe", "value": "${STRIP_PREPARE}", "post_delay_ms": 0 },
     { "action": "set_debug", "field": "xl_pog_probe", "value": "wall_strip", "post_delay_ms": 0 },
     { "action": "set_debug", "field": "xl_door_probe", "value": "strip_disk_save", "post_delay_ms": 0 },
     { "action": "wait_ms", "ms": 300 },

@@ -2,13 +2,20 @@
 #define DXX_XL_WALL_STRIP_GPU_CONTROL_H
 #include "doors.h"
 #include "pog_resources.h"
+extern "C" {
+#include "gameseg.h"
+}
 
 // Caller owns an isolated framebuffer and preserves GL state and matrices
 inline unsigned xl_wall_strip_gpu_controls()
 {
 	const auto check = [](bool value, const char *message) { if (!value) throw std::runtime_error(message); };
 	check(xl_level_extensions_active() && Num_walls > 3, "Wall strip GPU controls require the derived loaded fixture");
-	const int independent = Num_walls - 2, clip = Walls[0].clip_num;
+	const auto &last = Walls[Num_walls - 1];
+	const int child = Segments[last.segnum].children[last.sidenum];
+	const int back = child >= 0 ? find_connect_side(&Segments[last.segnum], &Segments[child]) : -1;
+	const bool single = last.type == WALL_BLASTABLE && back >= 0 && Segments[child].sides[back].wall_num < 0;
+	const int active = single ? Num_walls - 1 : 0, independent = single ? 0 : Num_walls - 2, clip = Walls[active].clip_num;
 	check(Walls[independent].clip_num == clip && xl_pog_door_frames(clip) == 16, "Wall strip GPU fixture has different ownership");
 	const int texture = WallAnims[clip].frames[0], bitmap = Textures[texture].index;
 	struct Restore {
@@ -53,12 +60,12 @@ inline unsigned xl_wall_strip_gpu_controls()
 	ogl_set_blending();
 	unsigned cases = 0;
 	for (int frame : { 0, 2, 4, 1, 15, 14 }) {
-		const auto &a = Walls[0], &b = Walls[independent];
+		const auto &a = Walls[active], &b = Walls[independent];
 		check(xl_door_record_frame(a.segnum, a.sidenum, clip, frame) && xl_door_record_frame(b.segnum, b.sidenum, clip, 6), "GPU fixture phase assignment failed");
-		for (int index : { 0, independent }) {
+		for (int index : { active, independent }) {
 			const auto &wall = Walls[index];
 			auto *view = xl_door_side_bitmap(wall.segnum, wall.sidenum, texture, &GameBitmaps[bitmap]);
-			const int selected = index ? 6 : frame;
+			const int selected = index == active ? frame : 6;
 			check(view == xl_pog_side_frame(bitmap, selected) && view->bm_w == 8 && view->bm_h == 8, "GPU wall selected a whole strip or another side's frame");
 			for (bool reupload : { false, true }) {
 				if (reupload) ogl_freebmtexture(view);

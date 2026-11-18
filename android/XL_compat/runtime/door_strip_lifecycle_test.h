@@ -5,21 +5,24 @@ extern "C" {
 #include "fireball.h"
 }
 
-static void write_door_strip_fixture(const std::filesystem::path &root, bool asymmetric = false, int blastable = 0, bool mismatched_pair = false)
+static void write_door_strip_fixture(const std::filesystem::path &root, bool asymmetric = false, int blastable = 0, bool mismatched_pair = false, bool one_sided = false)
 {
-	const std::string mission = mismatched_pair ? "stripbad" : blastable == 2 ? "stripex"
-	                                                       : blastable        ? "stripbl"
-	                                                       : asymmetric       ? "stripp"
-	                                                                          : "stripdr";
+	const std::string mission = one_sided ? "stripsi" : mismatched_pair ? "stripbad"
+	                                                : blastable == 2    ? "stripex"
+	                                                : blastable         ? "stripbl"
+	                                                : asymmetric        ? "stripp"
+	                                                                    : "stripdr";
 	std::ifstream input(root / "missions/close.hog", std::ios::binary);
 	const xl_compat::Bytes original{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
 	xl_compat::Bytes output{ 'D', 'H', 'F' };
 	for (auto member : xl_compat::read_hog(original)) {
 		if (member.name == "neptunxl.rl2") {
-			member.bytes = xl_test::add_door_pairs(member.bytes, 1);
+			member.bytes = xl_test::add_door_pairs(member.bytes, 1, one_sided);
 			auto level = xl_compat::inspect_level(member.bytes);
+			std::set<std::size_t> controlled{ 0, 1, level.walls.size() - 1 };
+			if (!one_sided) controlled.insert(level.walls.size() - 2);
 			if (blastable) {
-				for (std::size_t i : { std::size_t(0), std::size_t(1), level.walls.size() - 2, level.walls.size() - 1 }) {
+				for (std::size_t i : controlled) {
 					member.bytes.at(level.sections[1].offset + i * 25 + 16) = WALL_BLASTABLE;
 					member.bytes.at(level.sections[1].offset + i * 25 + 17) = 0;
 				}
@@ -45,7 +48,7 @@ static void write_door_strip_fixture(const std::filesystem::path &root, bool asy
 						break;
 					}
 				require(first >= 0, "No retained exploding clip for derived strip");
-				for (std::size_t i : { std::size_t(0), std::size_t(1), level.walls.size() - 2, level.walls.size() - 1 })
+				for (std::size_t i : controlled)
 					member.bytes.at(level.sections[1].offset + i * 25 + 21) = static_cast<unsigned char>(first);
 			}
 			std::vector<std::array<int, 2>> strips{ { first, 16 } };
@@ -98,8 +101,9 @@ static void write_door_strip_fixture(const std::filesystem::path &root, bool asy
 	}
 	write_bytes((root / "missions" / (mission + ".hog")).string().c_str(), output);
 	std::ofstream descriptor(root / "missions" / (mission + ".mn2"));
-	descriptor << "d2x-name = Derived XL " << (blastable == 2 ? "explode strips" : blastable ? "blast strips"
-	                                                                                         : "strip doors")
+	descriptor << "d2x-name = Derived XL " << (one_sided ? "single strip" : blastable == 2 ? "explode strips"
+	                                                                    : blastable        ? "blast strips"
+	                                                                                       : "strip doors")
 	           << "\nnum_levels = 1\nneptunxl.rl2\n";
 }
 
@@ -178,14 +182,18 @@ static void blastable_strip_lifecycle(const std::filesystem::path &root)
 	std::cout << "Derived blast strips: strict damage thresholds, independent faces, collision, direct destruction and three cold restores passed\n";
 }
 
-static void exploding_strip_lifecycle(const std::filesystem::path &root)
+static void exploding_strip_lifecycle(const std::filesystem::path &root, bool one_sided = false)
 {
-	write_door_strip_fixture(root, false, 2);
+	write_door_strip_fixture(root, false, 2, false, one_sided);
 	char error[256]{};
-	require(load_base_mission("stripex", error, sizeof(error)), error);
+	require(load_base_mission(one_sided ? "stripsi" : "stripex", error, sizeof(error)), error);
 	input_demo_set_skip_level_intro(1);
 	StartNewGame(1);
-	const int clip = Walls[0].clip_num, independent = Num_walls - 2;
+	const int active = one_sided ? Num_walls - 1 : 0, back = one_sided ? -1 : 1;
+	const int clip = Walls[active].clip_num, independent = one_sided ? 0 : Num_walls - 2;
+	const int connected = Segments[Walls[active].segnum].children[Walls[active].sidenum];
+	const int connected_side = find_connect_side(&Segments[Walls[active].segnum], &Segments[connected]);
+	require(connected_side >= 0 && Segments[connected].sides[connected_side].wall_num == back, "Exploding strip reciprocal ownership differs");
 	require((WallAnims[clip].flags & WCF_EXPLODES) && xl_pog_door_frames(clip) == 16, "Exploding strip was not loaded");
 	for (int object = Highest_object_index; object >= 0; --object)
 		if (Objects[object].type != OBJ_NONE && object != ConsoleObject - Objects) obj_delete(object);
@@ -193,7 +201,9 @@ static void exploding_strip_lifecycle(const std::filesystem::path &root)
 	compute_segment_center(&ConsoleObject->pos, &Segments[10]);
 	ConsoleObject->size = F1_0 / 16;
 	ConsoleObject->mtype.phys_info.velocity = {};
-	for (int index : { 0, 1, independent, independent + 1 }) {
+	std::set<int> controlled{ 0, 1, Num_walls - 1 };
+	if (!one_sided) controlled.insert(Num_walls - 2);
+	for (int index : controlled) {
 		auto &wall = Walls[index];
 		wall.hps = WALL_HPS;
 		auto &side = Segments[wall.segnum].sides[wall.sidenum];
@@ -201,7 +211,10 @@ static void exploding_strip_lifecycle(const std::filesystem::path &root)
 		side.tmap_num2 = 0;
 	}
 	const auto phase = [&](int index) { return xl_door_phases_snapshot()[Walls[index].segnum][Walls[index].sidenum].get<int>(); };
-	std::ofstream samples(root / "exploding-strip-samples.txt");
+	const auto connected_phase = [&] { return xl_door_phases_snapshot()[connected][connected_side].get<int>(); };
+	const std::vector<wall> unrelated(Walls, Walls + Num_walls);
+	char earned[] = "single-earned.sav", earned_description[] = "Single strip pending";
+	std::ofstream samples(root / (one_sided ? "single-strip-samples.txt" : "exploding-strip-samples.txt"));
 	const auto advance = [&] {
 		const auto count = [] {
 			int result = 0;
@@ -209,10 +222,10 @@ static void exploding_strip_lifecycle(const std::filesystem::path &root)
 			return result;
 		};
 		const int before = count();
-		samples << FrameTime << ' ' << expl_wall_list[0].time << ' ' << phase(0) << ' ' << int(Walls[0].flags) << ' ';
+		samples << FrameTime << ' ' << expl_wall_list[0].time << ' ' << phase(active) << ' ' << int(Walls[active].flags) << ' ';
 		do_exploding_wall_frame();
-		samples << expl_wall_list[0].time << ' ' << (expl_wall_list[0].segnum >= 0 ? 1 : 0) << ' ' << phase(0) << ' '
-		        << int(Walls[0].flags) << ' ' << count() - before << '\n';
+		samples << expl_wall_list[0].time << ' ' << (expl_wall_list[0].segnum >= 0 ? 1 : 0) << ' ' << phase(active) << ' '
+		        << int(Walls[active].flags) << ' ' << count() - before << '\n';
 	};
 	const auto cold_restore = [&] {
 		const auto phases = xl_door_phases_snapshot();
@@ -229,31 +242,56 @@ static void exploding_strip_lifecycle(const std::filesystem::path &root)
 		            !std::memcmp(expl_wall_list, explosions.data(), explosions.size() * sizeof(expl_wall)),
 		        "Exploding strip cold restore lost native timers, walls or phase");
 	};
-	wall_damage(&Segments[Walls[0].segnum], Walls[0].sidenum, WALL_HPS);
-	require(Walls[0].hps == -1 && !(Walls[0].flags & WALL_BLASTED) && phase(0) == 0 &&
-	            expl_wall_list[0].segnum == Walls[0].segnum && expl_wall_list[0].time == 0,
+	wall_damage(&Segments[Walls[active].segnum], Walls[active].sidenum, WALL_HPS);
+	require(Walls[active].hps == -1 && !(Walls[active].flags & WALL_BLASTED) && phase(active) == 0 &&
+	            expl_wall_list[0].segnum == Walls[active].segnum && expl_wall_list[0].time == 0,
 	        "Strip damage did not register the native delayed explosion");
 	FrameTime = F1_0 / 4;
 	advance();
-	require(expl_wall_list[0].time == F1_0 / 4 && phase(0) == 0 && phase(independent) == 0,
+	require(expl_wall_list[0].time == F1_0 / 4 && phase(active) == 0 && phase(independent) == 0,
 	        "Exploding strip changed its side phase too early");
 	cold_restore();
+	if (one_sided) {
+		stop_time();
+		require(state_save_all_sub(earned, earned_description), "Cannot save earned one-sided explosion");
+		const auto outgoing = input_demo_world_trace_snapshot();
+		const auto phases = xl_door_phases_snapshot();
+		const std::vector<expl_wall> timers(expl_wall_list, expl_wall_list + MAX_EXPLODING_WALLS);
+		Mission *live = Current_mission;
+		auto *incoming = mission_prepare_by_name("stripsi");
+		require(incoming != nullptr, "Cannot prepare incoming one-sided strip");
+		{
+			auto candidate = XlPreparedResources::prepare_level_inputs(incoming, 1);
+			require(candidate->has_scoped_textures(), "Incoming one-sided strip lost its texture owner");
+			XlPreparedResources moved(std::move(*candidate));
+			candidate.reset();
+			require(moved.has_scoped_textures(), "Moved one-sided strip lost its texture owner");
+		}
+		require(mission_discard_prepared(&incoming) && Current_mission == live && input_demo_world_trace_snapshot() == outgoing &&
+		            xl_door_phases_snapshot() == phases && !std::memcmp(expl_wall_list, timers.data(), sizeof(expl_wall_list)),
+		        "Incoming one-sided strip move/discard changed the pending outgoing world");
+	}
 	FrameTime = F1_0 / 2;
 	advance();
-	require(expl_wall_list[0].time == 3 * F1_0 / 4 && !(Walls[0].flags & WALL_BLASTED) && phase(0) == 0,
+	require(expl_wall_list[0].time == 3 * F1_0 / 4 && !(Walls[active].flags & WALL_BLASTED) && phase(active) == 0,
 	        "Exploding strip passability boundary became inclusive");
 	FrameTime = 1;
 	advance();
-	require((Walls[0].flags & WALL_BLASTED) && (Walls[1].flags & WALL_BLASTED) && phase(0) == -16 && phase(1) == -16 &&
-	            (wall_is_doorway(&Segments[Walls[0].segnum], Walls[0].sidenum) & WID_FLY_FLAG) && phase(independent) == 0,
+	require((Walls[active].flags & WALL_BLASTED) && (back < 0 || (Walls[back].flags & WALL_BLASTED)) && phase(active) == -16 && connected_phase() == -16 &&
+	            (wall_is_doorway(&Segments[Walls[active].segnum], Walls[active].sidenum) & WID_FLY_FLAG) && phase(independent) == 0,
 	        "Exploding strip lost final frame, reciprocal flags or independent wall");
 	cold_restore();
+	if (one_sided) {
+		auto invalid = xl_door_phases_snapshot();
+		invalid[connected][connected_side] = -17;
+		require(!xl_door_phases_restore(invalid, false) && connected_phase() == -16, "One-sided phase accepted an unowned frame");
+	}
 	FrameTime = F1_0 / 4;
 	advance();
-	require(expl_wall_list[0].segnum == -1 && phase(0) == -16, "Exploding strip did not retire its native timer");
+	require(expl_wall_list[0].segnum == -1 && phase(active) == -16, "Exploding strip did not retire its native timer");
 	cold_restore();
-	wall_destroy(&Segments[Walls[0].segnum], Walls[0].sidenum);
-	require(expl_wall_list[0].segnum == -1 && phase(0) == -16, "Destroyed strip restarted its explosion");
+	wall_destroy(&Segments[Walls[active].segnum], Walls[active].sidenum);
+	require(expl_wall_list[0].segnum == -1 && phase(active) == -16, "Destroyed strip restarted its explosion");
 	write_door_strip_fixture(root, false, 1, true);
 	const auto before = input_demo_world_trace_snapshot();
 	Mission *live = Current_mission;
@@ -265,13 +303,21 @@ static void exploding_strip_lifecycle(const std::filesystem::path &root)
 	} catch (const std::exception &error) {
 		rejected = std::string(error.what()).find("same clip on both reciprocal walls") != std::string::npos;
 	}
-	require(mission_discard_prepared(&incoming) && rejected && Current_mission == live && input_demo_world_trace_snapshot() == before && phase(0) == -16,
+	require(mission_discard_prepared(&incoming) && rejected && Current_mission == live && input_demo_world_trace_snapshot() == before && phase(active) == -16,
 	        "Mismatched incoming strip wall was admitted or changed outgoing world");
-	wall_damage(&Segments[Walls[independent].segnum], Walls[independent].sidenum, WALL_HPS);
-	FrameTime = F1_0 / 4;
-	do_exploding_wall_frame();
-	xl_recorded_future(root, "strip-exploding");
-	std::cout << "Derived explode strips: native damage and fireballs, strict passability boundary, retirement and three cold restores passed\n";
+	if (one_sided) {
+		for (int i = 0; i < Num_walls; ++i)
+			if (i != active) require(Walls[i].flags == unrelated[i].flags && Walls[i].hps == unrelated[i].hps,
+				                     "One-sided explosion modified an unrelated wall");
+		require(state_restore_all_sub(earned, 0) && expl_wall_list[0].time == F1_0 / 4,
+		        "Cannot restore earned one-sided explosion for capture");
+	} else {
+		wall_damage(&Segments[Walls[independent].segnum], Walls[independent].sidenum, WALL_HPS);
+		FrameTime = F1_0 / 4;
+		do_exploding_wall_frame();
+	}
+	xl_recorded_future(root, one_sided ? "strip-single" : "strip-exploding");
+	std::cout << (one_sided ? "Derived one-sided explode strips:" : "Derived paired explode strips:") << " native damage and fireballs, strict passability boundary, retirement and three cold restores passed\n";
 }
 
 static void door_strip_restore_guards(const std::filesystem::path &root)

@@ -1,4 +1,5 @@
 // Android automation only: native lifecycle composed with ordinary disk restore
+int strip_active = 0;
 nlohmann::json strip_phases;
 std::vector<wall> strip_walls;
 std::vector<active_door> strip_doors;
@@ -16,8 +17,10 @@ void strip_verify()
 
 void strip_control(const char *operation)
 {
-	if (!std::strcmp(operation, "prepare")) {
-		require(game_is_time_paused() && xl_level_extensions_active() && Num_walls > 3 && xl_pog_door_frames(Walls[0].clip_num) == 16,
+	if (!std::strcmp(operation, "prepare") || !std::strcmp(operation, "prepare_single")) {
+		const bool single = !std::strcmp(operation, "prepare_single");
+		strip_active = single ? Num_walls - 1 : 0;
+		require(game_is_time_paused() && xl_level_extensions_active() && Num_walls > 3 && xl_pog_door_frames(Walls[strip_active].clip_num) == 16,
 		        "Android strip control requires a paused derived fixture");
 		for (int i = Highest_object_index; i >= 0; --i)
 			if (Objects[i].type != OBJ_NONE && i != ConsoleObject - Objects) obj_delete(i);
@@ -25,8 +28,16 @@ void strip_control(const char *operation)
 		compute_segment_center(&ConsoleObject->pos, &Segments[10]);
 		ConsoleObject->size = F1_0 / 16;
 		ConsoleObject->mtype.phys_info.velocity = {};
-		const int clip = Walls[0].clip_num, independent = Num_walls - 2;
-		for (int index : { 0, 1, independent, independent + 1 }) {
+		const int clip = Walls[strip_active].clip_num, independent = single ? 0 : Num_walls - 2;
+		if (single) {
+			const auto &front = Walls[strip_active];
+			const int child = Segments[front.segnum].children[front.sidenum];
+			require(child >= 0, "Single strip lost its reciprocal segment");
+			const int side = find_connect_side(&Segments[front.segnum], &Segments[child]);
+			require(side >= 0 && Segments[child].sides[side].wall_num < 0, "Single strip gained a reciprocal wall");
+		}
+		for (int index : { strip_active, single ? -1 : 1, independent, independent + 1 }) {
+			if (index < 0) continue;
 			auto &wall = Walls[index];
 			wall.hps = WALL_HPS;
 			auto &side = Segments[wall.segnum].sides[wall.sidenum];
@@ -34,8 +45,8 @@ void strip_control(const char *operation)
 			side.tmap_num2 = 0;
 		}
 		const fix before = FrameTime;
-		if (Walls[0].type == WALL_DOOR) {
-			wall_open_door(&Segments[Walls[0].segnum], Walls[0].sidenum);
+		if (Walls[strip_active].type == WALL_DOOR) {
+			wall_open_door(&Segments[Walls[strip_active].segnum], Walls[strip_active].sidenum);
 			FrameTime = 3 * (WallAnims[clip].play_time / 16);
 			wall_frame_process();
 			wall_open_door(&Segments[Walls[independent].segnum], Walls[independent].sidenum);
@@ -43,13 +54,13 @@ void strip_control(const char *operation)
 			wall_frame_process();
 			require(Num_open_doors == 2, "Android strip controls lost independent doors");
 		} else if (WallAnims[clip].flags & WCF_EXPLODES) {
-			wall_damage(&Segments[Walls[0].segnum], Walls[0].sidenum, WALL_HPS);
+			wall_damage(&Segments[Walls[strip_active].segnum], Walls[strip_active].sidenum, WALL_HPS);
 			FrameTime = F1_0 / 4;
 			do_exploding_wall_frame();
-			require(expl_wall_list[0].segnum == Walls[0].segnum && expl_wall_list[0].time == F1_0 / 4, "Android strip explosion timer differs");
+			require(expl_wall_list[0].segnum == Walls[strip_active].segnum && expl_wall_list[0].time == F1_0 / 4, "Android strip explosion timer differs");
 		} else {
-			wall_damage(&Segments[Walls[0].segnum], Walls[0].sidenum, WALL_HPS / 2 + 1);
-			require(!(Walls[0].flags & WALL_BLASTED), "Android damaged strip destroyed prematurely");
+			wall_damage(&Segments[Walls[strip_active].segnum], Walls[strip_active].sidenum, WALL_HPS / 2 + 1);
+			require(!(Walls[strip_active].flags & WALL_BLASTED), "Android damaged strip destroyed prematurely");
 		}
 		FrameTime = before;
 	} else if (!std::strcmp(operation, "disk_save")) {
@@ -61,10 +72,10 @@ void strip_control(const char *operation)
 	} else if (!std::strcmp(operation, "disturb")) {
 		strip_verify();
 		const fix before = FrameTime;
-		FrameTime = WallAnims[Walls[0].clip_num].play_time;
-		if (Walls[0].type == WALL_DOOR) wall_frame_process();
-		else if (WallAnims[Walls[0].clip_num].flags & WCF_EXPLODES) do_exploding_wall_frame();
-		else wall_destroy(&Segments[Walls[0].segnum], Walls[0].sidenum);
+		FrameTime = WallAnims[Walls[strip_active].clip_num].play_time;
+		if (Walls[strip_active].type == WALL_DOOR) wall_frame_process();
+		else if (WallAnims[Walls[strip_active].clip_num].flags & WCF_EXPLODES) do_exploding_wall_frame();
+		else wall_destroy(&Segments[Walls[strip_active].segnum], Walls[strip_active].sidenum);
 		FrameTime = before;
 		require(xl_door_phases_snapshot() != strip_phases, "Android strip disturbance did not change native phase");
 	} else if (!std::strcmp(operation, "disk_load")) {
