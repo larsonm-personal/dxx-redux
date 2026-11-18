@@ -2,6 +2,7 @@
 #include "resource_validation.h"
 #include "repair.h"
 #include "segment_damage_test.h"
+#include "recorded_future_test.h"
 
 static xl_compat::Bytes runtime_layout_read(const char *name)
 {
@@ -82,6 +83,19 @@ static int runtime_layout_test(int argc, char **argv)
 		char error[256]{};
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
+		if (!std::strcmp(find_arg_value(argc, argv, "-runtime-layouts-test"), "original-v26-replay")) {
+			const char *mission = find_arg_value(argc, argv, "-mission");
+			require(mission && load_base_mission(mission, error, sizeof(error)), "Cannot load original layout replay mission");
+			new_player_config();
+			input_demo_set_skip_level_intro(1);
+			Difficulty_level = 2;
+			d_srand_stream(D_RNG_SIM, 1);
+			d_rand_reset_stream_call_count(D_RNG_SIM);
+			StartNewGame(1);
+			require(Current_level_num == 1 && xl_level_extensions_active() && xl_source_level_version() == 26 && xl_source_game_version() == 40 && !Game_suspended && !cheats.enabled, "Original replay requires an active unmodified 26/40 start");
+			xl_recorded_future(find_arg_value(argc, argv, "-extra-dir"), "original-layout26", true);
+			return 0;
+		}
 		if (!std::strcmp(find_arg_value(argc, argv, "-runtime-layouts-test"), "segment-damage")) return segment_damage_test(argc, argv);
 		std::vector<int> baseline;
 		std::uint64_t previous_identity = 0;

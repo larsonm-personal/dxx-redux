@@ -99,3 +99,41 @@ resumed simulation before requesting that transition. The second run passed
 using APK f077ae866068cf0b3f5e941352147d3cc3c510068e3af2076ea8e0cd7df91de6.
 The before and after protected player/config manifests matched. These device
 controls use a labeled derived mission and explicit test actions.
+
+## Original capture and replay
+
+The Debug lifecycle owner accepts `-runtime-layouts-test original-v26-replay`
+with `-mission`, the original staged package in `-extra-dir`, a private
+`preview-user` inside it and the verified retail runtime in `-hogdir`.
+It starts level 1 at Hotshot with SIM seed 1 and records 120 fixed frames
+with neutral controls. It reloads the recorded checkpoint and compares the
+object, world, native XL and simulation RNG states using the existing
+continuation comparison. The initial-state diagnostic records the placed
+robot definitions and the first simulated frame when playback stops early.
+
+KKR-XL level 1 matched all 120 frames, the embedded result and the
+continuation comparison. Capture and replay ended at SIM state 4015624929
+after 32 draws. KAK-XL level 1 completed the capture and stopped on the
+next input boundary during same-process checkpoint replay. Both starts had
+SIM state 1, zero draws, player belief in segment 338 and the same robot
+definition flags. In the first frame, two thieves entered attack and consumed
+116 SIM draws on capture. Both stayed in wait and consumed zero on replay.
+
+A separate instrumented run traced the gameplay distance cache. The original
+queries from segments 419 and 79 to 338 missed, returned -1 and stored
+65536000. The replay queries hit those retained entries and returned 65536000.
+The thief checks distance against 500 units before building a path. The
+reference `ai/thief.cpp` also uses that comparison, and
+`main/findpath.cpp` distinguishes a first failed search from a cached
+distance. The production follow-up is to retain and restore the gameplay
+cache at the checkpoint boundary. Acceptance includes nonempty rings,
+expired entries, cross-level identity, old recordings, and warm and fresh
+process replay. The diagnostic added no random draws or replay reseeds.
+
+Both saved recordings also ran from a fresh process with the ordinary Windows
+OpenGL executable, SHA-256
+7c80ed41fe671b6748f525e36ca9279b4c0ce2d3256a24018860be52efaf8921. Each
+completed 120 frames, matched its embedded result exactly and reproduced its
+entire captured RNG trace byte-for-byte. The ordinary true-headless timeline
+guard rejected both recordings before replay. The separate headless
+load/tick test passed both levels.
