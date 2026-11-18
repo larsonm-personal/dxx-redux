@@ -385,6 +385,8 @@ Inventory inspect_level(const Bytes &bytes)
 		}
 	}
 	const auto &triggers = section(out, "triggers");
+	// XL ReadTriggerInfo clears object-trigger ownership before the offset test.
+	// An absent section therefore has no wall or object triggers
 	if (triggers.offset >= 0) {
 		auto r = section_reader(bytes, out, triggers, 52);
 		for (int i = 0; i < triggers.count; ++i) out.triggers.push_back(read_trigger(r, out, i, segment_count, false));
@@ -428,8 +430,6 @@ Inventory inspect_level(const Bytes &bytes)
 				if (head != -1) issue(out.unknown, "object_trigger_head", i, "nonempty head without object triggers");
 			}
 		} else if (remaining) issue(out.unknown, "object_trigger_tail", -1, std::to_string(remaining) + " bytes require reference interpretation");
-	} else {
-		issue(out.unknown, "object_triggers", -1, "no trigger section to inspect");
 	}
 	const auto &objects = section(out, "objects");
 	if (objects.count) {

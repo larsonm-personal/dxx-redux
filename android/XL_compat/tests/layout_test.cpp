@@ -35,6 +35,21 @@ void contract()
 	for (int version : { 21, 23, 25, 27 }) {
 		auto fixture = xl_test::layout_fixture(version);
 		auto &bytes = fixture.bytes;
+		bytes.resize(bytes.size() - 4);
+		xl_test::layout_patch(bytes, fixture.game + 71, UINT32_MAX);
+		const auto empty = xl_compat::inspect_level(bytes);
+		check(empty.triggers.empty() && !empty.object_triggers && empty.object_trigger_records.empty() &&
+		          empty.object_trigger_heads.empty() && !issue(empty.unknown, "object_triggers"),
+		      "Absent trigger section must have no object-trigger ownership");
+		xl_test::layout_patch(bytes, fixture.game + 75, 1);
+		rejects(bytes, "triggers: missing data");
+		xl_test::layout_patch(bytes, fixture.game + 75, 0);
+		xl_test::layout_patch(bytes, fixture.game + 71, static_cast<unsigned>(bytes.size()));
+		rejects(bytes);
+	}
+	for (int version : { 21, 23, 25, 27 }) {
+		auto fixture = xl_test::layout_fixture(version);
+		auto &bytes = fixture.bytes;
 		xl_compat::Bytes records(89 * 2 + 93, 0);
 		for (unsigned index = 0; index < 3; ++index) {
 			const auto at = index * 89;
