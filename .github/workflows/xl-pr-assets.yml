@@ -144,7 +144,7 @@ jobs:
 
   runtime-smoke:
     name: Start the ordinary engine with survey runtime packages
-    if: github.event_name == 'workflow_dispatch'
+    if: always() && github.event_name == 'workflow_dispatch' && needs.readiness-engine.result == 'success'
     needs: readiness-engine
     runs-on: ubuntu-24.04
     timeout-minutes: 10
