@@ -27,6 +27,9 @@ int xl_equipment_state_get(int index, xl_equipment_state *state);
 int xl_equipment_restore(const xl_equipment_state *states, int count, int apply);
 int xl_equipment_trigger(int segment);
 void xl_equipment_frame(int first_segment, int end_segment);
+#ifdef __ANDROID__
+const char *xl_equipment_pickup_probe(void);
+#endif
 #ifdef __cplusplus
 }
 #endif

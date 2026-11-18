@@ -350,3 +350,51 @@ strict passability boundary. It does not claim parity for a single timestep
 overshooting the full explosion lifetime: the pinned source's clamp/else-if
 ordering differs from the existing native clamp behavior. Native timer ownership
 was not replaced to emulate that source corner case.
+
+## Published strip result and equipment continuation
+
+PR #578 publishes 476071a00a1208d7e310a900236327b3b30941b0 over immediate parent
+ff059ad2e2b342d0b6ae03329911c78a83e3366c. Synthetic merge is
+cb9c66e2cef1da9707627f4912fb6e148871aef0. Trusted workflow
+https://github.com/larsonm-personal/dxx-redux/actions/runs/44147947108 attempt 1
+uses controller d85d6afc5209a0c772fe18f814c4533839a9eea2. Its complete frozen
+measurement is **62/64 in 250.065 seconds**, with original **8/8** unchanged.
+Canyon now passes; the two remaining failures are Boiling Point levels 2 and 5
+with the previously identified complete equipment masks. These are short
+load/tick results, not a campaign playability percentage.
+
+Verified artifact SHA256 receipts under xl-next-20261117/ci-44147947108:
+
+- Expanded 14359125145:
+  90841691f3a59ef6d2962eb87a44312fd48a6f8bb06ab66b0e37ffa30b5c60fa
+- Original eight 14356249865:
+  5ddeb275b2be794ee8e2051a4519d3afa6e95be6cd5bf722c679afaa87a4c898
+- Supplemental host 14358236108:
+  5fc8bb7364f3e2f153904c110a9f5379b16a47fa2a90c0c9e0d4d099d8ce59c4
+
+The supplemental host still stops at verify-assets in 0.368 seconds under the
+unupdated controller; no native owner pass follows. Public regression checks
+are still running and must be inspected at this head.
+
+android-canyon-03 passes protected original import, warm play/save 20/20
+(57.596s, run 1b1cf6e87f74476da9e65d548fefc209), fresh-process cold load 8/8
+(37.140s, run cde61b956f3748f6bb668e00a03a464d), and exact profile restoration.
+Owner attempt is 149a4e27322b45289fb02161d0470a5f. Native-written pilot unlock
+only; controller movement is ordinary input, with no pose/inventory injection.
+
+Local strip-expanded-01 used the old eight-case archive staging directory and
+is invalid as a full-cohort measurement: 24 passed, two load failures and 38
+infrastructure errors in 216.485s. All 23 selected archives were then verified
+against frozen sizes/hashes in temp/xl-readiness-expanded-20261116/prepare-64-01/staged.
+Corrected strip-expanded-02 retained the same 360s probe budget and 45s start
+guard; it stopped incomplete at 49 passes, two load failures and 13 untested in
+317.234s. Preserve both local receipts separately from the complete CI 62/64;
+neither is a complete local readiness score and no guard was relaxed.
+
+Continuation branch xl_next_20261117_07 targets the equipment plan in
+xl_equipment_masks_20261117.md. The actual-source pickup dispatch and mode-gated
+handlers now establish all eight items as inert in admitted single-player mode.
+Fresh equipment-baseline-01 passes the existing 210 producer and 13 initialization
+comparisons plus eight source pickup cases. An attempted reuse of old November
+10 samples failed at scenario zero; current native sample generation resolved
+the stale protocol mismatch without changing the reference criterion.
