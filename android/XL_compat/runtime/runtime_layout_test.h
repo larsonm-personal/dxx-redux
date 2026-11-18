@@ -100,6 +100,20 @@ static int runtime_layout_test(int argc, char **argv)
 				}
 			};
 			verify();
+			const auto level = xl_compat::inspect_level(runtime_layout_read(Gamesave_current_filename));
+			int mines = 0;
+			for (std::size_t i = 0; i < level.objects.size(); ++i) {
+				const auto &authored = level.objects[i];
+				if (authored.type != OBJ_WEAPON || authored.control != CT_WEAPON) continue;
+				const auto &mine = Objects[i];
+				const auto &laser = mine.ctype.laser_info;
+				require(mine.type == OBJ_WEAPON && mine.id == authored.id && mine.control_type == CT_WEAPON && authored.control_data.size() == 3, "Placed weapon differs from the original record");
+				require(laser.parent_type == authored.control_data[0] && laser.parent_num == authored.control_data[1] && laser.parent_signature == authored.control_data[2], "Placed weapon lost its authored parent");
+				xl_projectile_state history{};
+				require(laser.last_hitobj == -1 && !xl_projectile_state_get(static_cast<int>(i), &history), "Freshly loaded weapon acquired a hit");
+				++mines;
+			}
+			require(mines == 30, "Original level 10 placed weapon population differs");
 			xl_recorded_future(find_arg_value(argc, argv, "-extra-dir"), "original-side-textures", true);
 			verify();
 			return 0;
