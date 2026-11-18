@@ -1910,13 +1910,13 @@ int main(int argc, char **argv)
 			bad_equipment = equipment;
 			patch(bad_equipment, properties + 1, 0, 1);
 			check(xl_compat::prepare_gameplay_probe(bad_equipment).source.equipment == admitted.source.equipment, "Duplicate stale producer field changed equipment rows");
-			for (unsigned id : { 7u, 8u, 24u, 46u, 48u, 49u }) {
+			for (unsigned id : { 7u, 8u, 9u, 24u, 26u, 27u, 46u, 47u, 48u, 49u }) {
 				bad_equipment = equipment;
 				patch(bad_equipment, table, id < 32 ? 1u << id : 0u);
 				patch(bad_equipment, table + 4, id >= 32 ? 1u << (id - 32) : 0u);
-				if (id < 48) rejects([&] { xl_compat::prepare_gameplay_probe(bad_equipment); });
-				else check(xl_compat::prepare_gameplay_probe(bad_equipment).source.equipment[0][1] == std::int32_t(1u << (id - 32)),
-					       "Time equipment producer was rejected or lost its authored item bit");
+				const auto selected = xl_compat::prepare_gameplay_probe(bad_equipment).source.equipment[0];
+				check(selected[0] == std::int32_t(id < 32 ? 1u << id : 0u) && selected[1] == std::int32_t(id >= 32 ? 1u << (id - 32) : 0u),
+				      "Qualified equipment selection was rejected, filtered or substituted");
 			}
 			bad_equipment = equipment;
 			patch(bad_equipment, table + 4, 0x80000000u);

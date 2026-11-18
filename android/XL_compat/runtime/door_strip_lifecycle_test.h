@@ -1,6 +1,6 @@
 #include "pog_resources.h"
 #include "texture_pixels.h"
-#include "wall_strip_replay_test.h"
+#include "recorded_future_test.h"
 extern "C" {
 #include "fireball.h"
 }
@@ -270,7 +270,7 @@ static void exploding_strip_lifecycle(const std::filesystem::path &root)
 	wall_damage(&Segments[Walls[independent].segnum], Walls[independent].sidenum, WALL_HPS);
 	FrameTime = F1_0 / 4;
 	do_exploding_wall_frame();
-	wall_strip_recorded_future(root, "exploding");
+	xl_recorded_future(root, "strip-exploding");
 	std::cout << "Derived explode strips: native damage and fireballs, strict passability boundary, retirement and three cold restores passed\n";
 }
 
@@ -460,5 +460,5 @@ static void door_strip_lifecycle(const std::filesystem::path &root)
 	wall_open_door(&Segments[Walls[0].segnum], Walls[0].sidenum);
 	FrameTime = 3 * step;
 	wall_frame_process();
-	wall_strip_recorded_future(root, "door");
+	xl_recorded_future(root, "strip-door");
 }

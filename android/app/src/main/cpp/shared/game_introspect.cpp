@@ -2379,6 +2379,8 @@ extern "C" char *game_introspect_get_state(void)
 				row["object_destination"] = state.destination;
 				row["attached_context"] = state.attached != 0;
 				row["actor_signature"] = state.signature;
+				row["cooldown_active"] = state.cooldown_active != 0;
+				row["cooldown_age_ms"] = state.cooldown_age_ms;
 			}
 		}
 		j["xl_pilot"]["wall_triggers"] = std::move(triggers);

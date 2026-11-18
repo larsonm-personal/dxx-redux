@@ -28,26 +28,41 @@ extern "C" {
 
 #ifdef __ANDROID__
 // Automation-only contact control; its temporary objects are real native allocations
-extern "C" const char *xl_equipment_pickup_probe(void)
+extern "C" const char *xl_equipment_pickup_probe(int generated_id)
 {
 	static std::string failure;
 	try {
 		if (!xl_level_extensions_active() || !ConsoleObject || Game_mode != 0 || Player_is_dead)
 			throw std::runtime_error("Equipment pickup probe requires a live single-player XL world");
 		for (int id : { 7, 8, 9, 24, 26, 27, 46, 47 }) {
-			const int index = obj_create(OBJ_POWERUP, id, ConsoleObject->segnum, &ConsoleObject->pos, &vmd_identity_matrix,
-			                             Powerup_info[id].size, CT_POWERUP, MT_PHYSICS, RT_POWERUP);
+			if (generated_id >= 0 && id != generated_id) continue;
+			int index = -1;
+			if (generated_id >= 0) {
+				xl_equipment_state state;
+				if (!xl_equipment_state_get(0, &state)) throw std::runtime_error("Generated equipment owner missing");
+				for (int i = Segments[state.segment].objects; i >= 0; i = Objects[i].next)
+					if (Objects[i].type == OBJ_POWERUP && Objects[i].id == id && !(Objects[i].flags & OF_SHOULD_BE_DEAD)) {
+						if (index >= 0) throw std::runtime_error("Duplicate generated inert item");
+						index = i;
+					}
+			} else index = obj_create(OBJ_POWERUP, id, ConsoleObject->segnum, &ConsoleObject->pos, &vmd_identity_matrix,
+				                      Powerup_info[id].size, CT_POWERUP, MT_PHYSICS, RT_POWERUP);
 			if (index < 0) throw std::runtime_error("Equipment pickup probe allocation failed");
 			struct Retire {
 				int index;
 				~Retire()
 				{
-					obj_delete(index);
+					if (index >= 0) obj_delete(index);
 				}
-			} retire{ index };
+			} retire{ generated_id < 0 ? index : -1 };
 			auto &item = Objects[index];
-			item.rtype.vclip_info.vclip_num = Powerup_info[id].vclip_num;
-			item.lifeleft = IMMORTAL_TIME;
+			if (generated_id < 0) {
+				item.rtype.vclip_info.vclip_num = Powerup_info[id].vclip_num;
+				item.lifeleft = IMMORTAL_TIME;
+			}
+			if (item.size != Powerup_info[id].size || item.rtype.vclip_info.vclip_num != Powerup_info[id].vclip_num ||
+			    item.lifeleft != IMMORTAL_TIME || item.control_type != CT_POWERUP || item.render_type != RT_POWERUP || item.movement_type != MT_PHYSICS)
+				throw std::runtime_error("Generated inert item changed its native definition");
 			const auto before = Players[Player_num];
 			const int first = do_powerup(&item), repeated = do_powerup(&item);
 			if (first || repeated || (item.flags & OF_SHOULD_BE_DEAD) || std::memcmp(&before, &Players[Player_num], sizeof(before)))
