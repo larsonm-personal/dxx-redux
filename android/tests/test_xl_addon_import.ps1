@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [switch]$BoilingPoint, [ValidateSet(3, 7)][int]$BoilingPointLevel = 7, [switch]$Sphere, [switch]$OriginalLifecycle, [string]$TimeEquipmentPilot, [switch]$CaptureLive, [string]$OutputDirectory)
+param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [switch]$BoilingPoint, [ValidateSet(2, 3, 7)][int]$BoilingPointLevel = 7, [switch]$Sphere, [switch]$OriginalLifecycle, [string]$TimeEquipmentPilot, [switch]$CaptureLive, [string]$OutputDirectory)
 $ErrorActionPreference = 'Stop'
 if ($PSBoundParameters.ContainsKey('BoilingPointLevel') -and !$BoilingPoint) { throw 'BoilingPointLevel requires the protected BoilingPoint mode' }
 if ($OriginalLifecycle -and (!$TimeEquipment -or !($BoilingPoint -or $Sphere))) { throw 'OriginalLifecycle requires a protected original archive gameplay mode' }

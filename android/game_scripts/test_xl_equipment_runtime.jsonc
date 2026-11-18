@@ -117,6 +117,11 @@
         "timeout_ms": 20000,
     },
     {
+        "action": "wait_for",
+        "expect": { "xl_pilot.wall_triggers.0.cooldown_age_ms": 750 },
+        "timeout_ms": 5000,
+    },
+    {
         "action": "set_debug",
         "field": "fire_trigger",
         "value": "0",
@@ -257,6 +262,11 @@
         "timeout_ms": 20000,
     },
     {
+        "action": "wait_for",
+        "expect": { "xl_pilot.wall_triggers.0.cooldown_age_ms": 750 },
+        "timeout_ms": 5000,
+    },
+    {
         "action": "set_debug",
         "field": "fire_trigger",
         "value": "0",
@@ -318,6 +328,11 @@
         "timeout_ms": 20000,
     },
     {
+        "action": "wait_for",
+        "expect": { "xl_pilot.wall_triggers.0.cooldown_age_ms": 750 },
+        "timeout_ms": 5000,
+    },
+    {
         "action": "set_debug",
         "field": "fire_trigger",
         "value": "0",
@@ -366,6 +381,11 @@
             "xl_pilot.equipment_generators.0.item_count": 0,
             "xl_pilot.equipment_generators.1.item_count": 1,
         },
+    },
+    {
+        "action": "wait_for",
+        "expect": { "xl_pilot.wall_triggers.0.cooldown_age_ms": 750 },
+        "timeout_ms": 5000,
     },
     {
         "action": "set_debug",

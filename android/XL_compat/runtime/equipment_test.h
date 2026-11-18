@@ -14,7 +14,7 @@ void drop_player_eggs(object *playerobj);
 void collide_player_and_powerup(object *, object *, vms_vector *);
 }
 
-static xl_compat::Inventory write_equipment_fixture(const std::filesystem::path &root, int version = 23)
+static xl_compat::Inventory write_equipment_fixture(const std::filesystem::path &root, int version = 23, int item_id = -1)
 {
 	std::ifstream original(root / "neptunxl.hog", std::ios::binary);
 	xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(original), std::istreambuf_iterator<char>() }, output{ 'D', 'H', 'F' };
@@ -97,8 +97,10 @@ static xl_compat::Inventory write_equipment_fixture(const std::filesystem::path 
 			patch(level.game_offset + 39 + 9 * 12, 2);
 			patch(level.game_offset + 43 + 9 * 12, 20);
 			for (int row = 0; row < 2; ++row) {
-				append(1u << (row ? POW_VULCAN_AMMO : POW_ENERGY), 4);
-				append(0, 4);
+				const int item = row ? POW_VULCAN_AMMO : item_id >= 0 ? item_id
+				                                                      : POW_ENERGY;
+				append(item < 32 ? 1u << item : 0, 4);
+				append(item >= 32 ? 1u << (item - 32) : 0, 4);
 				append(F1_0 * (row + 1), 4);
 				append(i2f(30), 4);
 				append(-1, 2);
@@ -119,11 +121,15 @@ static xl_compat::Inventory write_equipment_fixture(const std::filesystem::path 
 		for (int shift = 0; shift < 32; shift += 8) output.push_back(static_cast<unsigned char>(member.bytes.size() >> shift));
 		output.insert(output.end(), member.bytes.begin(), member.bytes.end());
 	}
-	write_bytes((root / "equip.hog").string().c_str(), output);
-	std::ofstream descriptor(root / "equip.mn2");
-	descriptor << "d2x-name = Derived XL equipment\nnum_levels = 1\nneptunxl.rl2\n";
+	const std::string mission = item_id < 0 ? "equip" : "eq" + std::to_string(item_id);
+	write_bytes((root / (mission + ".hog")).string().c_str(), output);
+	std::ofstream descriptor(root / (mission + ".mn2"));
+	descriptor << "d2x-name = " << (item_id < 0 ? "Derived XL equipment" : "Derived XL item " + std::to_string(item_id))
+	           << "\nnum_levels = 1\nneptunxl.rl2\n";
 	return result;
 }
+
+#include "equipment_mask_lifecycle_test.h"
 
 static void equipment_reference_samples(const std::filesystem::path &output, const xl_compat::Inventory &authored, char *baseline)
 {
@@ -542,6 +548,13 @@ static int equipment_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / "missions";
+		if (!std::strcmp(find_arg_value(argc, argv, "-equipment-test"), "inert")) {
+			const char *id = find_arg_value(argc, argv, "-equipment-id");
+			require(id != nullptr, "Inert equipment mode requires an item ID");
+			equipment_mask_lifecycle(root, std::atoi(id));
+			std::cout << "XL inert equipment lifecycle passed\n";
+			return 0;
+		}
 		if (!std::strcmp(find_arg_value(argc, argv, "-equipment-test"), "resume")) {
 			std::strcpy(Players[Player_num].callsign, "XLTest");
 			input_demo_set_skip_level_intro(1);
@@ -694,6 +707,7 @@ static int equipment_test(int argc, char **argv)
 		require((Players[Player_num].flags & equipment_bits) == equipment_bits, "Native new-ship initialization lost source time equipment");
 		require(state_restore_all_sub(initial, 0), "Time-equipment producer cleanup failed");
 		std::cout << "XL time-equipment producers: both makers, ordinary contacts, death eggs and new-ship retention passed\n";
+		for (int id : { 7, 8, 9, 24, 26, 27, 46, 47 }) equipment_mask_lifecycle(root, id);
 		std::cout << "XL equipment controls passed: assignment, authored activation, timing, toggles, production/pickup, pending restore and stock isolation\n";
 		return 0;
 	} catch (const std::exception &error) {

@@ -7752,8 +7752,13 @@ extern "C" void game_automate_tick(void)
 #endif
 			} else if (s.field == "xl_equipment_pickup_probe") {
 #if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
-				if (const char *failure = xl_equipment_pickup_probe()) stop_script_fail(failure);
-				else LOGI("Eight XL single-player inert equipment pickup controls passed");
+				int id = -1;
+				char extra;
+				if (s.value != "inert" && (sscanf(s.value.c_str(), "%d %c", &id, &extra) != 1 ||
+				                           (id != 7 && id != 8 && id != 9 && id != 24 && id != 26 && id != 27 && id != 46 && id != 47)))
+					stop_script_fail("Equipment pickup probe requires inert or an authored inert item ID");
+				else if (const char *failure = xl_equipment_pickup_probe(id)) stop_script_fail(failure);
+				else LOGI("XL single-player inert equipment pickup control passed: %d", id);
 #else
 				stop_script_fail("Equipment pickup probe requires Android D2");
 #endif

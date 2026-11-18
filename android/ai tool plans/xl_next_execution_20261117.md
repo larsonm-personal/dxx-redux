@@ -398,3 +398,47 @@ Fresh equipment-baseline-01 passes the existing 210 producer and 13 initializati
 comparisons plus eight source pickup cases. An attempted reuse of old November
 10 samples failed at scenario zero; current native sample generation resolved
 the stale protocol mismatch without changing the reference criterion.
+
+## Equipment lifecycle checkpoint and parent CI repair
+
+PR #579 was repaired to e8726f1cc6a1b06387c1752a38638e78b30d5687 over
+476071a00a1208d7e310a900236327b3b30941b0; synthetic merge
+01c809b98b5fd9cdcdd3f2ce34e43c67c87f2d69. Its optimized C++ test now uses
+NDEBUG for the stock Debug-only MegaWow assertion. The failure and strict Debug
+control are retained in the equipment plan; the production policy is unchanged.
+
+Trusted run 44158058934 attempt 1 used controller
+d85d6afc5209a0c772fe18f814c4533839a9eea2 and exact target e8726f1. Original eight
+remain 8/8; expanded is complete 62/64 in 247.344s. Artifact SHA256 values:
+expanded e6b09af7815c707f8e2daecf2926adec97bd48c2de7810bb662c8d9f38f13993,
+original d6ddf5ae5a3ca22263c4b3efc9fb297dd9143af0336a15a54ed73bf05f63e67c,
+host 57fe71dffc52549996e5afb93839869a6eb0ca9b89318b6b738840780ba28e49.
+Supplemental private qualification still fails asset verification before native
+owners because PR #573 has not been adopted by the trusted controller.
+
+The parent's Linux host lane failed before tests resolving the pinned Kotlin
+2.4.20 plugin. After workflow completion, only job 134304586897 was retried;
+run 44158009503 attempt 2/job 134321623335 passed. The failed
+setup log is ci-579-repair-linux-01.log. PR #578's public checks are complete and
+passing; its two readiness/private-staging failure statuses remain visible.
+
+The unpublished equipment admission candidate passes all eight authored item
+lifecycles in optimized native and Windows assertions, all 375 producer/13
+initialization/eight pickup source comparisons, real 120-frame capture/clean
+replay futures, and all eight Android 74-step incoming/save/contact owners with
+exact protected-profile restoration. The previous full Android equipment test
+also passes 65/65 after waiting for the correctly persisted trigger cooldown.
+Both visible flag items have separate passed view-02 controls and inspected
+post-restore screenshots. The original Control level passes 120 ordinary
+unassisted frames and 120 rendered frames. Its Android original-archive owner
+also passes, including two actual EGL context recreations, controller movement,
+normal save and cold continuation with exact profile restoration. Detailed receipts, assists and raw replay differences
+are in xl_equipment_masks_20261117.md.
+
+Boiling Point level 5 remains rejected by the one-sided exploding strip guard.
+The exact readiness HOG was independently inspected after distinguishing it
+from the different distribution HOG. xl_one_sided_strip_20261117.md records the
+source-backed dependency and ordered qualification work. No one-sided admission
+change is included in the equipment checkpoint. Local Linux runtime remains
+unavailable because direct WSL execution times out; public source compilation
+is not credited as private-asset runtime testing.
