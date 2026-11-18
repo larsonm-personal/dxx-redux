@@ -11,13 +11,14 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "helpers"))
 from retail_ci_assets import file_identity, reject_links
 from nightly_corpus_stage import extract_archive, member_path
-from xl_readiness import RESOURCE_FILES, stage_resources, verify_resources
+from xl_readiness import RESOURCE_FILES, stage_case, stage_resources, verify_resources
 
 ASSETS_COMMIT = "8c9988a96a7e306f8aac04c85e2610492917b7ac"
 MANIFEST_SHA256 = "cfa5a81f003958798cb37ee177f07b74c77812c4ab43d1986ccff37244347647"
 ORIGINAL_OWNER_IDS = {"host-profile:retail-xl-originals", "master:test_xl_original_assets"}
 FAST_OWNER_ID = "host-profile:retail-xl-fast"
 OWNER_IDS = ORIGINAL_OWNER_IDS | {FAST_OWNER_ID}
+WARP_LIFECYCLE_INPUT_SHA256 = "5e3b524a6fbd839834d054c52fe417bab87e02288ca9b056a60282bce6daf59c"
 MODERN_FILES = {
     "modern/boilpnt.hog": (
         68710431,
@@ -146,7 +147,42 @@ def stage_native_resources(source, stage):
     native_resources(stage)
 
 
-def verify(stage, modern=False):
+def lifecycle_input_identity(extra):
+    """Bind the complete original Warp mission/mod tree, including sibling resources."""
+    extra = Path(extra)
+    reject_links(extra)
+    files = []
+    for name in ("missions", "mods"):
+        directory = extra / name
+        reject_links(directory)
+        if not directory.is_dir():
+            raise ValueError("Original Warp lifecycle input tree is missing")
+        for path in directory.rglob("*"):
+            reject_links(path)
+            if path.is_file():
+                files.append(path)
+    identity = "".join(
+        path.relative_to(extra).as_posix() + "=" + file_identity(path)[1] + "\n"
+        for path in sorted(files, key=lambda path: path.relative_to(extra).as_posix())
+    )
+    digest = hashlib.sha256(identity.encode()).hexdigest()
+    if digest != WARP_LIFECYCLE_INPUT_SHA256:
+        raise ValueError("Original Warp lifecycle input identity differs")
+    return digest
+
+
+def stage_lifecycle_inputs(source, stage, seven_zip):
+    catalog = json.loads(Path(__file__).with_name("xl_readiness_inventory.json").read_text())
+    case = next(row for row in catalog["cases"] if row["id"] == "wshock20.7z/missions/single/wshock20.mn2:4")
+    archive = next(row for row in catalog["archives"] if row["path"] == case["archive"])
+    work = Path(stage) / "original-warp"
+    work.mkdir()
+    extra = stage_case(source, archive, case, work, seven_zip)
+    lifecycle_input_identity(extra)
+    shutil.rmtree(work / "unpack")
+
+
+def verify(stage, modern=False, lifecycles=False):
     stage = Path(stage)
     reject_links(stage)
     data = manifest(stage / "manifest.json")
@@ -176,13 +212,19 @@ def verify(stage, modern=False):
             if file_identity(stage / name) != identity:
                 raise ValueError("XL modern original identity mismatch")
     native_resources(stage)
+    if lifecycles:
+        if not native_resources(stage):
+            raise ValueError("Original lifecycle controls require authentic runtime resources")
+        lifecycle_input_identity(stage / "original-warp/extra")
     return data
 
 
-def stage_inputs(root, destination, seven_zip, modern=False, resources=None):
+def stage_inputs(root, destination, seven_zip, modern=False, resources=None, lifecycles=False):
     root, destination = Path(root), Path(destination)
     reject_links(root)
     reject_links(destination)
+    if lifecycles and (not modern or resources is None):
+        raise ValueError("Original lifecycle staging requires modern originals and authentic resources")
     data = manifest(root / "missions/d2xxl/manifest.json")
     if destination.exists():
         raise ValueError("XL fixture destination already exists")
@@ -244,7 +286,9 @@ def stage_inputs(root, destination, seven_zip, modern=False, resources=None):
             shutil.rmtree(temporary)
         if resources is not None:
             stage_native_resources(resources, destination)
-        verify(destination, modern=modern)
+        if lifecycles:
+            stage_lifecycle_inputs(resources, destination, seven_zip)
+        verify(destination, modern=modern, lifecycles=lifecycles)
     except BaseException:
         shutil.rmtree(destination)
         raise
@@ -345,6 +389,7 @@ def main():
     parser.add_argument("--seven-zip")
     parser.add_argument("--resources", type=Path, help="Separately pinned authentic Vertigo and XL resource checkout")
     parser.add_argument("--modern", action="store_true", help="Require the pinned original Boiling Point HOG")
+    parser.add_argument("--lifecycles", action="store_true", help="Stage and verify complete original lifecycle inputs")
     args = parser.parse_args()
     if args.animation_trace:
         require_original_animation_trace(args.animation_trace)
@@ -355,11 +400,18 @@ def main():
         print("Verified four original GPU witnesses across two GL contexts")
         return
     if args.root:
-        stage_inputs(args.root, args.stage, args.seven_zip, modern=args.modern, resources=args.resources)
+        stage_inputs(
+            args.root,
+            args.stage,
+            args.seven_zip,
+            modern=args.modern,
+            resources=args.resources,
+            lifecycles=args.lifecycles,
+        )
     else:
         if args.resources:
             parser.error("--resources requires --root staging")
-        verify(args.stage, modern=args.modern)
+        verify(args.stage, modern=args.modern, lifecycles=args.lifecycles)
     print(
         "Verified pinned XL original fixtures and nine format witnesses"
         + (" plus the modern original HOG" if args.modern else "")
