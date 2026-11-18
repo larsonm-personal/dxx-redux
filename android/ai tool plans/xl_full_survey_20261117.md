@@ -129,8 +129,7 @@ definition flags. In the first frame, two thieves entered attack and consumed
 116 SIM draws on capture. Both stayed in wait and consumed zero on replay.
 
 A separate instrumented run traced the gameplay distance cache. The original
-queries from segments 419 and 79 to 338 missed, returned -1 and stored
-65536000. The replay queries hit those retained entries and returned 65536000.
+queries from segments 419 and 79 to 338 missed, returned -1 and stored 65536000. The replay queries hit those retained entries and returned 65536000.
 The thief checks distance against 500 units before building a path. The
 reference `ai/thief.cpp` also uses that comparison, and
 `main/findpath.cpp` distinguishes a first failed search from a cached
@@ -146,3 +145,33 @@ completed 120 frames, matched its embedded result exactly and reproduced its
 entire captured RNG trace byte-for-byte. The ordinary true-headless timeline
 guard rejected both recordings before replay. The separate headless
 load/tick test passed both levels.
+
+## Counterstrike XL base textures and placed mines
+
+The 15 previously rejected ordinals in each of two distributions contain the
+same original Counterstrike XL HOG. There are 54 sides with authored base
+texture 910. The pinned XL side reader uses base texture 0 for these sides.
+The inventory retains 910, and the native geometry and incoming texture
+dependencies use the source-effective index. Overlay orientation is independent.
+The compiled source agreed on 75,780 sides in all 30 original levels. Both
+sets of 15 affected ordinals passed the ordinary probe.
+
+On level 10, segment 344 side 0 uses texture 0 and oriented overlay 33094.
+The incoming resource owner and Android renderer selected rock021 and misc043
+from the fire bitmap bank. The original object data also includes 30 placed
+weapons. Recording initially stopped because the level reader exposed a last
+victim for an otherwise empty history. The source clears its hit count before
+reading the three weapon parent fields. The native fresh-level path now sets
+its empty-history sentinel on all admitted XL layouts.
+
+All 30 parents and initial histories matched on the new Windows Debug build.
+It recorded 120 frames. A fresh OpenGL process matched the embedded result
+and the 568 gameplay RNG events, excluding the global sequence numbers.
+Rendering added 42 FX draws. Same-process checkpoint replay stopped at its
+first carried SIM divergence. The captured first frame consumed 397 SIM
+draws and the restored first frame consumed 31. Android completed 60 steps,
+including a quick save and restoration through a stock mission. The original
+APK and protected files were restored.
+
+The dated outcome, execution ledger and next-window plan contain the full
+case comparison, source-selected archive evidence and CI results.
