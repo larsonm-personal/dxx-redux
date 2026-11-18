@@ -3,7 +3,7 @@
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 
-static void xl_recorded_future(const std::filesystem::path &root, const char *kind, bool diagnose_start = false)
+static void xl_recorded_future(const std::filesystem::path &root, const char *kind, bool diagnose_start = false, bool expect_environment = true)
 {
 	const auto snapshot = [] {
 		nlohmann::json objects = nlohmann::json::array();
@@ -17,7 +17,7 @@ static void xl_recorded_future(const std::filesystem::path &root, const char *ki
 	std::set<std::filesystem::path> prior;
 	if (std::filesystem::exists(directory))
 		for (const auto &entry : std::filesystem::directory_iterator(directory)) prior.insert(entry.path());
-	require(input_demo_start_quick_recording_common() && input_demo_recorder_uses_environment(), "Cannot capture controlled XL future");
+	require(input_demo_start_quick_recording_common() && (input_demo_recorder_uses_environment() != 0) == expect_environment, "Capture environment differs from the active level format");
 	nlohmann::json captured_start, captured_first, restored_start, restored_first;
 	const auto start_snapshot = [&] {
 		auto state = snapshot();

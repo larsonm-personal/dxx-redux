@@ -1626,7 +1626,7 @@ static nlohmann::json native_continuation_semantic(nlohmann::json state)
 	for (const char *phase : { "world_before", "world_after" }) {
 		if (!state.contains(phase)) continue;
 		auto &world = state.at(phase);
-		route(world.at("xl_native"));
+		if (world.contains("xl_native")) route(world.at("xl_native"));
 		for (auto &effect : world.at("effects"))
 			if (effect.at("segnum") == -1 && !(effect.at("flags").get<int>() & 2) &&
 			    (effect.at("sidenum") == -1 || effect.at("sidenum") == 0)) effect["sidenum"] = -1;

@@ -1,7 +1,9 @@
 #include "hog_probe.h"
 #include "preview.h"
 #include "trigger_state.h"
+#include "../hog_format.h"
 #include <array>
+#include <charconv>
 #include <cstring>
 #include <memory>
 #include <stdexcept>
@@ -9,6 +11,8 @@
 extern "C" {
 #include "inferno.h"
 #include "game.h"
+#include "gameseq.h"
+#include "gamesave.h"
 #include "object.h"
 #include "player.h"
 #include "mission.h"
@@ -26,6 +30,26 @@ void require(bool valid, const char *message)
 {
 	if (!valid) throw std::runtime_error(message);
 }
+// Exercise an advertised ordinal through the existing mission admission and level loader.
+void original_level(const char *request, bool expect_rejection)
+{
+	const char *separator = std::strchr(request, ':');
+	require(separator && separator[1], "Expected a signed ordinal and level filename");
+	int ordinal = 0;
+	const auto parsed = std::from_chars(request, separator, ordinal);
+	require(parsed.ec == std::errc() && parsed.ptr == separator && ordinal && Current_mission && ordinal >= Last_secret_level && ordinal <= Last_level,
+	        "HOG probe ordinal outside the current mission");
+	const char *filename = ordinal < 0 ? Secret_level_names[-ordinal - 1] : Level_names[ordinal - 1];
+	require(!dxx_hog_name_compare(filename, separator + 1) && mission_owns_resource_archive(PHYSFS_getRealDir(filename)), "Advertised level or owning HOG differs");
+	if (expect_rejection) {
+		require(!xl_level_supported_at(filename, 0, ordinal) && std::strstr(xl_level_rejection(), "stock-format levels in XL descriptors"), "Expected stock-format rejection in an XL mission");
+		return;
+	}
+	require(!game_is_time_paused(), "Original HOG transition requires resumed gameplay");
+	require(xl_level_supported_at(filename, 0, ordinal), "Original HOG level failed admission");
+	if (Current_level_num != ordinal) StartNewLevelSub(ordinal, 1, 0);
+	require(Current_level_num == ordinal && !dxx_hog_name_compare(Gamesave_current_filename, filename) && Num_segments > 0 && ConsoleObject, "Original HOG level failed to start");
+}
 void verify()
 {
 	require(xl_level_extensions_active() && identity && xl_level_trigger_identity() == identity && Players[Player_num].energy == energy, "Android extended archive restore lost source identity or saved state");
@@ -41,7 +65,9 @@ const char *xl_hog_probe(const char *operation)
 {
 	try {
 		require(Game_wind && ConsoleObject && !(Game_mode & GM_MULTI), "HOG probe requires running singleplayer");
-		if (!std::strcmp(operation, "prepare")) {
+		if (!std::strncmp(operation, "visit:", 6)) original_level(operation + 6, false);
+		else if (!std::strncmp(operation, "reject:", 7)) original_level(operation + 7, true);
+		else if (!std::strcmp(operation, "prepare")) {
 			identity = xl_level_trigger_identity();
 			energy = Players[Player_num].energy;
 			verify();

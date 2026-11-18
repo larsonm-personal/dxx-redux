@@ -2613,7 +2613,10 @@ int state_save_all_sub(char *filename, char *desc)
 	int i,j;
 	PHYSFS_file *fp;
 	grs_canvas * cnv;
-	char mission_filename[9];
+	char mission_filename[9] = {0};
+	char long_mission[128] = {0};
+	const char *mission_name = Current_mission ? Current_mission_filename : NULL;
+	const size_t mission_length = mission_name ? strlen(mission_name) : 0;
 #ifdef __ANDROID__
 	int wrote_launcher_thumbnail = 0;
 #endif
@@ -2622,7 +2625,7 @@ int state_save_all_sub(char *filename, char *desc)
 #endif
 	fix tmptime32 = 0;
 
-	if (!save_epoch_valid(GameTime64)) {
+	if (!save_epoch_valid(GameTime64) || !mission_length || mission_length >= sizeof(long_mission)) {
 		start_time();
 		return 0;
 	}
@@ -2769,9 +2772,19 @@ int state_save_all_sub(char *filename, char *desc)
 	PHYSFS_write(fp, &i, sizeof(int), 1);
 
 // Save the mission info...
-	memset(&mission_filename, '\0', 9);
-	snprintf(mission_filename, 9, "%s", Current_mission_filename); // Current_mission_filename is not necessarily 9 bytes long so for saving we use a proper string - preventing corruptions
-	PHYSFS_write(fp, &mission_filename, 9 * sizeof(char), 1);
+	/* The native reader accepts the Rebirth pathname field after marker 1. */
+	if (mission_length < sizeof(mission_filename))
+		memcpy(mission_filename, mission_name, mission_length);
+	else {
+		mission_filename[8] = 1;
+		memcpy(long_mission, mission_name, mission_length);
+	}
+	if (PHYSFS_write(fp, mission_filename, sizeof(mission_filename), 1) != 1 ||
+	    (mission_filename[8] == 1 && PHYSFS_write(fp, long_mission, sizeof(long_mission), 1) != 1)) {
+		PHYSFS_close(fp);
+		start_time();
+		return 0;
+	}
 
 //Save level info
 	PHYSFS_write(fp, &Current_level_num, sizeof(int), 1);
@@ -2973,7 +2986,7 @@ int state_save_all_sub(char *filename, char *desc)
 
 #ifdef __ANDROID__
 	android_save_probe_mark("runtime");
-	if (!state_android_write_save_metadata(fp, desc, mission_filename)) {
+	if (!state_android_write_save_metadata(fp, desc, mission_name)) {
 		con_printf(CON_URGENT,
 			"coop_save: failed to write complete metadata\n");
 		PHYSFS_close(fp);
