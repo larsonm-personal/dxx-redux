@@ -468,3 +468,32 @@ Windows assertions, real capture/clean replay, host GPU, protected Android
 save/restore/GPU, and original Boiling Point level 5 developer-OFF and rendered
 120-frame checks. See xl_one_sided_strip_20261117.md for exact evidence and
 remaining original Android/CI work. This does not yet establish complete 64/64.
+
+## Complete runtime readiness at #581
+
+The exact runtime head 51034a07a8e485ab57a40b87f6161299e0f837a2 passes **64/64**
+in trusted run 44169313245 attempt 1, with original **8/8** unchanged. Expanded
+probes took 250.297 seconds; the complete expanded job ran from 20:26:57 to
+20:36:03 UTC, **9 minutes 6 seconds**, inside the original ten-minute cap.
+Controller remains d85d6afc5209a0c772fe18f814c4533839a9eea2; the runtime synthetic
+merge is 696b68e6b536c3e907868ef56cbe71e36ee89a40. Neither input pins, cohort,
+seed, 120-frame criterion nor 45-second startup guard changed.
+
+Verified artifacts under ci-44169313245:
+expanded 14366274136 / 1accfc2e252e8a309a5c813f39c9c546fad959e3ba09980550871286ddd3207c;
+original 14365939598 / ae7985019206f09cd7254ba5bcf8713e2e4a48921044f6ce2e071716b1d717a2;
+host 14367192115 / 58a2fdffef809e02dda4e94b36dd3ad1a213add8eae2a28976b7eb58438926e5.
+Supplemental private qualification still fails at verify-assets in 0.317 seconds,
+before any native owner cases. Do not infer new-owner coverage from 64/64.
+
+Local single-strip-expanded-01 independently completes 64/64 in 382.579 seconds,
+using pre-provisioned inputs and a 600-second probe budget. This timing excludes
+CI setup/build and must not be presented as the CI job duration. The original
+Android Boiling Point lifecycle and paired-strip regression also pass; their
+exact run IDs, assists and protected-state receipts are in the one-sided plan.
+
+The following staging-cache work is a separately qualified reliability change;
+it is not part of the uncached 64/64 result. staging-profile-01 identifies repeated
+levelpack extraction/copy as 7.56-8.09 seconds per selected case. The plan is
+xl_readiness_staging_20261117.md. It preserves per-case package copies/processes
+and all measurement rules; trusted-controller adoption is still required.

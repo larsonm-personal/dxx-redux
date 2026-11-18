@@ -1,0 +1,344 @@
+{
+    "base_sha": "d85d6afc5209a0c772fe18f814c4533839a9eea2",
+    "ci": {
+        "artifacts": [
+            {
+                "digest": "sha256:ae7985019206f09cd7254ba5bcf8713e2e4a48921044f6ce2e071716b1d717a2",
+                "elapsed_seconds": null,
+                "id": 14365939598,
+                "name": "xl-readiness",
+                "summary": {
+                    "complete": true,
+                    "counts": {
+                        "loaded_ticked": 8
+                    },
+                    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                    "denominator": 8,
+                    "passed": 8,
+                    "readiness_percent": 100.0
+                },
+                "target_sha": "51034a07a8e485ab57a40b87f6161299e0f837a2"
+            },
+            {
+                "digest": "sha256:1accfc2e252e8a309a5c813f39c9c546fad959e3ba09980550871286ddd3207c",
+                "elapsed_seconds": 250.297,
+                "id": 14366274136,
+                "name": "xl-readiness-expanded",
+                "summary": {
+                    "complete": true,
+                    "counts": {
+                        "loaded_ticked": 64
+                    },
+                    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                    "denominator": 64,
+                    "passed": 64,
+                    "readiness_percent": 100.0
+                },
+                "target_sha": "51034a07a8e485ab57a40b87f6161299e0f837a2"
+            },
+            {
+                "digest": "sha256:58a2fdffef809e02dda4e94b36dd3ad1a213add8eae2a28976b7eb58438926e5",
+                "id": 14367192115,
+                "name": "nightly-results-host",
+                "owners": [
+                    {
+                        "cases": [],
+                        "coverage_complete": false,
+                        "elapsed_seconds": 0.317,
+                        "id": "host-profile:retail-xl-fast",
+                        "status": "FAIL",
+                        "xl_stage": "verify-assets"
+                    }
+                ],
+                "target_sha": "51034a07a8e485ab57a40b87f6161299e0f837a2"
+            }
+        ],
+        "attempt": 1,
+        "controller_sha": "d85d6afc5209a0c772fe18f814c4533839a9eea2",
+        "expanded_job_seconds": 546,
+        "run_id": 44169313245,
+        "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44169313245"
+    },
+    "deadline": "2026-11-18T18:00:00Z",
+    "local": {
+        "android-boiling-original-01": {
+            "cold": {
+                "elapsed_ms": 22193,
+                "result": "PASS",
+                "run_id": "7a41b965c8a34289bebc95a9f24f4c62",
+                "steps_completed": 8,
+                "total_steps": 8
+            },
+            "owner": {
+                "attempt_id": "e8e79ec71dc64eb1980ab4526b12286c",
+                "cold_run_id": "7a41b965c8a34289bebc95a9f24f4c62",
+                "disabled_negative_run_id": null,
+                "disabled_recovery_run_id": null,
+                "failure": null,
+                "phase": "complete",
+                "profile_hashes_restored": true,
+                "status": "PASS",
+                "warm_run_id": "22722f13633f456d8cfa326a048fa3cb"
+            },
+            "warm": {
+                "elapsed_ms": 61163,
+                "result": "PASS",
+                "run_id": "22722f13633f456d8cfa326a048fa3cb",
+                "steps_completed": 35,
+                "total_steps": 35
+            }
+        },
+        "android-paired-strip-regression-01": {
+            "elapsed_ms": 33803,
+            "protected_hashes_equal": true,
+            "result": "PASS",
+            "run_id": "32bc34c28e034c5b9b1c02406ec8bc66",
+            "steps_completed": 36,
+            "total_steps": 36
+        },
+        "android-single-strip-01": {
+            "elapsed_ms": 35545,
+            "protected_hashes_equal": true,
+            "result": "PASS",
+            "run_id": "8b42d4aed81c4af9b42944aa575c3130",
+            "steps_completed": 36,
+            "total_steps": 36
+        },
+        "cached_expanded": {
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "budget_seconds": 600.0,
+            "cache_removed": true,
+            "case_outcomes_equal_uncached": true,
+            "cohort_sha256": "3cae87cc870ba5594c7da1f55db2619e565645c91e8de5c1b86a8d2e4dfb1e05",
+            "elapsed_seconds": 229.797,
+            "receipt_sha256": "f2c6e13f6b81855a8519adb02b0f9fff1f0a4b29d1fbfd11dc94cb0935435fc2",
+            "resources": {
+                "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+                "files": [
+                    {
+                        "path": "d2x.hog",
+                        "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                        "size": 4371791,
+                        "source": "descent_2_vertigo/d2x.hog"
+                    },
+                    {
+                        "path": "d2x-xl.hog",
+                        "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                        "size": 3815963,
+                        "source": "xl-resources/d2x-xl.hog"
+                    }
+                ],
+                "profile": "authentic-vertigo-xl-v1",
+                "repository": "larsonm-personal/dxx-redux-test-assets"
+            },
+            "retained_private_assets": false,
+            "scope": "separate unpublished harness candidate against runtime #581; pre-provisioned local probe timing",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 64
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 64,
+                "passed": 64,
+                "readiness_percent": 100.0
+            },
+            "target_sha": "51034a07a8e485ab57a40b87f6161299e0f837a2"
+        },
+        "native_one_sided": {
+            "single-strip-debug-02": {
+                "passed": true,
+                "raw_equal": false,
+                "receipt_sha256": "84f80e6488d4e9ac9fec1f3ada922bda77b2b10678f452fd8fc6b49adce40ced",
+                "reference_controls": [
+                    "4 one-sided extracted-reference exploding strip timer, frame, flag and fireball-count comparisons passed"
+                ],
+                "sim_calls_equal": true,
+                "sim_state_equal": true
+            },
+            "single-strip-full-02": {
+                "passed": true,
+                "raw_equal": false,
+                "receipt_sha256": "302438f0ae4e43c1245c293bb21ff074a90831a53af136adabd9bfe15568e3d8",
+                "reference_controls": [
+                    "1620 extracted-reference sphere/plane boundary comparisons passed",
+                    "1133 extracted-reference door strip selection and phase comparisons passed",
+                    "32 extracted-reference blastable strip damage, phase and collision-flag comparisons passed",
+                    "4 paired extracted-reference exploding strip timer, frame, flag and fireball-count comparisons passed",
+                    "4 one-sided extracted-reference exploding strip timer, frame, flag and fireball-count comparisons passed",
+                    "3072 extracted-reference close-door state/allocation samples passed",
+                    "336 extracted-reference door obstruction policy comparisons passed",
+                    "660 extracted-reference door frame/flag/state/timer samples passed",
+                    "660 extracted-reference alternate frame-count clock/flag/state/timer samples passed"
+                ],
+                "sim_calls_equal": true,
+                "sim_state_equal": true
+            }
+        },
+        "single_strip_apk": {
+            "base_sha": "4a92b9e8515972aa372a965669c570b148ce8f9c",
+            "files": {
+                "candidate.apk": "fa034dc962c44d32f89b647a6d7e22467f2d3a8649e635175575519127ccac6a",
+                "installed-before.apk": "5c5df75e2fd54c7c12090d118c81eed4494462bc81dac4c7e1fa950ff84257b2"
+            },
+            "runtime_sources": {
+                "android\\XL_compat\\runtime\\doors.cpp": "3065ddc601d249f5124975b371372f3ed1530b24b099504f3c6480538634b904",
+                "android\\XL_compat\\runtime\\resource_validation.cpp": "2e3c60081333ec739d71980e988df72688610f1d3f049385b42754ee2a867e0e",
+                "android\\XL_compat\\runtime\\wall_strip_device_control.h": "d5ab95f659c55e16ef740927653193282ef4c9730c336e969e07925b5a14b530",
+                "android\\XL_compat\\runtime\\wall_strip_gpu_control.h": "9387578a1a6ec4ea54864448b2f2ec20ce593bfe2dd70b401a7ef528e9647aa2",
+                "d2\\main\\fireball.c": "19958ba8228077a46e060306ced8edd63a914fafe9b7b26b7e9f8bf3ed60f4be"
+            }
+        },
+        "uncached_expanded": {
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "budget_seconds": 600.0,
+            "cohort_sha256": "3cae87cc870ba5594c7da1f55db2619e565645c91e8de5c1b86a8d2e4dfb1e05",
+            "elapsed_seconds": 382.579,
+            "receipt_sha256": "b9158d1857916623542be24c029f4bbe059ddd56b0b180b47ffb249217b3240b",
+            "resources": {
+                "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+                "files": [
+                    {
+                        "path": "d2x.hog",
+                        "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                        "size": 4371791,
+                        "source": "descent_2_vertigo/d2x.hog"
+                    },
+                    {
+                        "path": "d2x-xl.hog",
+                        "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                        "size": 3815963,
+                        "source": "xl-resources/d2x-xl.hog"
+                    }
+                ],
+                "profile": "authentic-vertigo-xl-v1",
+                "repository": "larsonm-personal/dxx-redux-test-assets"
+            },
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 64
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 64,
+                "passed": 64,
+                "readiness_percent": 100.0
+            },
+            "target_sha": "51034a07a8e485ab57a40b87f6161299e0f837a2"
+        }
+    },
+    "remaining_limits": [
+        "Trusted supplemental private owner fails verify-assets before native cases; #573 controller adoption pending",
+        "Local WSL execution times out; no local private Linux runtime credit",
+        "General Android XL replay remains guarded",
+        "Android startup FX has 1500 extra native starfield draws",
+        "G2 corrupt-trailer energy 91-to-100 remains open",
+        "Short frozen load/tick is not campaign playability"
+    ],
+    "runtime": {
+        "head_sha": "51034a07a8e485ab57a40b87f6161299e0f837a2",
+        "parent_head_sha": "4a92b9e8515972aa372a965669c570b148ce8f9c",
+        "parent_pr": 580,
+        "pr": 581,
+        "synthetic_merge_sha": "696b68e6b536c3e907868ef56cbe71e36ee89a40"
+    },
+    "scope": "November 17-18 bounded XL tranche; runtime receipt and supplemental owners kept separate",
+    "stack": [
+        {
+            "baseRefName": "cmake",
+            "headRefOid": "d18ac91e6bcf2afda56949492fbf7868518e4156",
+            "number": 573,
+            "potentialMergeCommit": {
+                "oid": "eb0fbeb39ac25e53270b2da50b1c6fcb8d1e9263"
+            },
+            "state": "OPEN",
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/573"
+        },
+        {
+            "baseRefName": "xl_next_20261117_01",
+            "headRefOid": "01791a770822e0d2d66b6df998f54802f8886826",
+            "number": 574,
+            "potentialMergeCommit": {
+                "oid": "a031e6a701ba2bcc4ad19e66f301df077ac8d860"
+            },
+            "state": "OPEN",
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/574"
+        },
+        {
+            "baseRefName": "xl_next_20261117_02",
+            "headRefOid": "8c18f4b49e7db1815ea2a1dbc94887b538c68548",
+            "number": 575,
+            "potentialMergeCommit": {
+                "oid": "a837e65780d25cd5287816a933b7589c6d56b1a8"
+            },
+            "state": "OPEN",
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/575"
+        },
+        {
+            "baseRefName": "xl_next_20261117_03",
+            "headRefOid": "555fd466255bc073f195ab0507b091115aa8dd0f",
+            "number": 576,
+            "potentialMergeCommit": {
+                "oid": "ebcea1961cc902ec745583ce7c208b93f8346f8e"
+            },
+            "state": "OPEN",
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/576"
+        },
+        {
+            "baseRefName": "xl_next_20261117_04",
+            "headRefOid": "ff059ad2e2b342d0b6ae03329911c78a83e3366c",
+            "number": 577,
+            "potentialMergeCommit": {
+                "oid": "8450690f0bada13293159619f57dad644f3bfaba"
+            },
+            "state": "OPEN",
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/577"
+        },
+        {
+            "baseRefName": "xl_next_20261117_05",
+            "headRefOid": "476071a00a1208d7e310a900236327b3b30941b0",
+            "number": 578,
+            "potentialMergeCommit": {
+                "oid": "cb9c66e2cef1da9707627f4912fb6e148871aef0"
+            },
+            "state": "OPEN",
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/578"
+        },
+        {
+            "baseRefName": "xl_next_20261117_06",
+            "headRefOid": "e8726f1cc6a1b06387c1752a38638e78b30d5687",
+            "number": 579,
+            "potentialMergeCommit": {
+                "oid": "01c809b98b5fd9cdcdd3f2ce34e43c67c87f2d69"
+            },
+            "state": "OPEN",
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/579"
+        },
+        {
+            "baseRefName": "xl_next_20261117_07",
+            "headRefOid": "4a92b9e8515972aa372a965669c570b148ce8f9c",
+            "number": 580,
+            "potentialMergeCommit": {
+                "oid": "ef7a41bb7acc25009f4bab7e2bebf36a3ad874f0"
+            },
+            "state": "OPEN",
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/580"
+        },
+        {
+            "baseRefName": "xl_next_20261117_08",
+            "headRefOid": "51034a07a8e485ab57a40b87f6161299e0f837a2",
+            "number": 581,
+            "potentialMergeCommit": {
+                "oid": "696b68e6b536c3e907868ef56cbe71e36ee89a40"
+            },
+            "state": "OPEN",
+            "url": "https://github.com/larsonm-personal/dxx-redux/pull/581"
+        }
+    ],
+    "stashes_preserved": [
+        "9783012e2a77dfdd4680812ae72b852cfaca5e17",
+        "fb2507be376de70dc9eaeb867e0969738b3b6dcd",
+        "6e6bbf4e8b8a3b5ec03d674a26de99599249dab4",
+        "527eba407caed64d3a8b905fb55855bdab102d62"
+    ]
+}

@@ -197,66 +197,69 @@ def measure(args):
         readiness.write(args.work / "results.json", report)
 
     checkpoint()
-    for index, row in enumerate(rows):
-        remaining = args.budget_seconds - (time.monotonic() - started)
-        # Do not knowingly start a primary probe without its full watchdog window.
-        if remaining < 45:
-            report["budget_exhausted"] = True
-            break
-        with tempfile.TemporaryDirectory(prefix="case-", dir=args.work) as temporary:
-            root = Path(temporary)
-            one = {**catalog, "selected": [row["id"]]}
-            readiness.write(root / "catalog.json", one)
-            command = [
-                sys.executable,
-                str(HERE / "xl_readiness.py"),
-                "run",
-                "--catalog",
-                str(root / "catalog.json"),
-                "--engine",
-                str(args.engine),
-                "--assets",
-                str(args.assets),
-                "--data",
-                str(args.data),
-                "--work",
-                str(root / "run"),
-                "--target-sha",
-                args.target_sha,
-                "--require-resources",
-                "--no-assisted-routes",
-            ]
-            if args.seven_zip:
-                command += ["--seven-zip", str(args.seven_zip)]
-            with (root / "worker.log").open("wb") as log:
-                process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-                try:
-                    code = process.wait(timeout=max(0.001, args.budget_seconds - (time.monotonic() - started)))
-                except subprocess.TimeoutExpired:
-                    stop(process)
-                    report["budget_exhausted"] = True
-                    code = None
-                finally:
-                    stop(process)
-            evidence = args.work / str(index)
-            evidence.mkdir()
-            for source in [root / "worker.log", root / "run/0/engine.log", root / "run/0/load.json"]:
-                if source.is_file():
-                    with source.open("rb") as stream:
-                        stream.seek(max(0, source.stat().st_size - 65536))
-                        (evidence / source.name).write_bytes(stream.read(65536))
-            if code is None:
-                # Budget cancellation is not an engine watchdog failure or a pass.
+    with tempfile.TemporaryDirectory(prefix="xl-readiness-cache-", dir=args.work.parent) as cache:
+        for index, row in enumerate(rows):
+            remaining = args.budget_seconds - (time.monotonic() - started)
+            # Do not knowingly start a primary probe without its full watchdog window.
+            if remaining < 45:
+                report["budget_exhausted"] = True
                 break
-            result = root / "run/results.json"
-            if code not in (0, 2) or not result.exists():
-                row.update(next(c for c in catalog["cases"] if c["id"] == row["id"]))
-                row["outcome"] = "infrastructure_error"
-            else:
-                receipt = json.loads(result.read_text())
-                reporter.validate(receipt, one, args.target_sha, require_resources=True)
-                row.update(receipt["rows"][0])
-        checkpoint()
+            with tempfile.TemporaryDirectory(prefix="case-", dir=args.work) as temporary:
+                root = Path(temporary)
+                one = {**catalog, "selected": [row["id"]]}
+                readiness.write(root / "catalog.json", one)
+                command = [
+                    sys.executable,
+                    str(HERE / "xl_readiness.py"),
+                    "run",
+                    "--catalog",
+                    str(root / "catalog.json"),
+                    "--engine",
+                    str(args.engine),
+                    "--assets",
+                    str(args.assets),
+                    "--data",
+                    str(args.data),
+                    "--work",
+                    str(root / "run"),
+                    "--target-sha",
+                    args.target_sha,
+                    "--require-resources",
+                    "--no-assisted-routes",
+                    "--unpack-cache",
+                    cache,
+                ]
+                if args.seven_zip:
+                    command += ["--seven-zip", str(args.seven_zip)]
+                with (root / "worker.log").open("wb") as log:
+                    process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                    try:
+                        code = process.wait(timeout=max(0.001, args.budget_seconds - (time.monotonic() - started)))
+                    except subprocess.TimeoutExpired:
+                        stop(process)
+                        report["budget_exhausted"] = True
+                        code = None
+                    finally:
+                        stop(process)
+                evidence = args.work / str(index)
+                evidence.mkdir()
+                for source in [root / "worker.log", root / "run/0/engine.log", root / "run/0/load.json"]:
+                    if source.is_file():
+                        with source.open("rb") as stream:
+                            stream.seek(max(0, source.stat().st_size - 65536))
+                            (evidence / source.name).write_bytes(stream.read(65536))
+                if code is None:
+                    # Budget cancellation is not an engine watchdog failure or a pass.
+                    break
+                result = root / "run/results.json"
+                if code not in (0, 2) or not result.exists():
+                    row.update(next(c for c in catalog["cases"] if c["id"] == row["id"]))
+                    row["outcome"] = "infrastructure_error"
+                else:
+                    receipt = json.loads(result.read_text())
+                    reporter.validate(receipt, one, args.target_sha, require_resources=True)
+                    row.update(receipt["rows"][0])
+            checkpoint()
     readiness.verify_resources(args.data)
     checkpoint()
     print(

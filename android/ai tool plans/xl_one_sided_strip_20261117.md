@@ -101,8 +101,7 @@ Receipts are under E:/dxx-redux-builds/xl-next-20261117:
   unassisted ordinary developer-OFF frames in 3.641s. This is a diagnostic
   subset, with null target_sha and a separate candidate/source/binary receipt.
 - single-strip-original-rendered-01 passes 120 unassisted rendered frames on
-  the same original level. Original Android lifecycle validation is underway;
-  do not credit it until its terminal receipt and protected hashes are checked.
+  the same original level. Original Android validation is recorded below.
 
 Derived fixture HOG SHA256 is
 9e8509fd843793936563f7e9a0fbcf9eec14b295a406920d927fbb056d820c7d;
@@ -114,3 +113,29 @@ readiness. Original input assets are unchanged. General Android XL replay,
 startup FX discrepancy and the G2 corrupt-trailer energy defect remain open.
 Local Linux runtime is unavailable because WSL execution times out; compile
 checks must not be credited as private runtime tests.
+
+## Original Android and paired regression completion
+
+android-boiling-original-01 owner e8e79ec71dc64eb1980ab4526b12286c passes with
+profile_hashes_restored=true. Warm run 22722f13633f456d8cfa326a048fa3cb passes
+35/35 in 61.163s; cold run 7a41b965c8a34289bebc95a9f24f4c62 passes 8/8 in
+22.193s. The warm receipt includes two actual EGL context recreations, two
+park/wake cycles and window generation eight. Original archive ownership,
+normal controller movement, native disk save and fresh-process cold continuation
+are checked. A native-written pilot unlocks the level; there is no pose or
+inventory injection in this original mode.
+
+android-paired-strip-regression-01 separately passes the existing exploding-pair
+36-step GPU/save/restore owner in 33.803s on the same frozen APK, with protected
+hashes restored. Both automation catalogs pass (99 standalone JSON, 551 support,
+316 standalone PowerShell; 429 top-level runner entries), as do scoped formatting
+and git diff --check. Existing C4805 in changing_light_test_records.h is unchanged;
+no warning was introduced by this patch.
+
+Published runtime PR #581 is head 51034a07a8e485ab57a40b87f6161299e0f837a2,
+synthetic merge 696b68e6b536c3e907868ef56cbe71e36ee89a40, immediate parent #580.
+Trusted exact-head run 44169313245 passes original 8/8 and complete frozen
+64/64 in 250.297 seconds of probes and 9m06s total job time. Local uncached
+frozen-64 also passes in 382.579 seconds with a 600-second pre-provisioned probe
+budget, explicitly separate from CI's 600-second total-job cap. Exact artifact
+digests and the separate cached-harness diagnostic are in the execution ledger.

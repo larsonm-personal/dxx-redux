@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 from unittest.mock import patch
 
 import xl_readiness as readiness
@@ -14,6 +15,86 @@ import xl_readiness_expanded as expanded
 
 
 class ExpandedReadinessTests(unittest.TestCase):
+    def staged_fixture(self, root):
+        archive = root / "fixture.zip"
+        descriptor = b"d2x-name = Cache control\nnum_levels = 2\nfirst.rl2\nsecond.rl2\n"
+        with zipfile.ZipFile(archive, "w") as output:
+            output.writestr("missions/single/control.mn2", descriptor)
+            output.writestr("missions/single/control.hog", b"original mission bytes")
+            output.writestr("mods/control/textures/wall.tga", b"original package texture")
+            output.writestr("missions/single/unrelated.mn2", b"num_levels = 1\nother.rl2\n")
+        record = {"path": archive.name, "size": archive.stat().st_size, "sha256": readiness.digest(archive)}
+        case = {
+            "descriptor": "missions/single/control.mn2",
+            "descriptor_sha256": readiness.hashlib.sha256(descriptor).hexdigest(),
+            "level": 1,
+            "level_file": "first.rl2",
+        }
+        cache = root / "cache"
+        cache.mkdir()
+        return archive, record, case, cache
+
+    def test_cached_extraction_keeps_full_package_and_fresh_writable_cases(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive, record, case, cache = self.staged_fixture(root)
+            ordinary = readiness.stage_case(root, record, case, root / "ordinary", None)
+            expected = readiness.extraction_identity(ordinary)
+            with patch.object(readiness, "extract_archive", wraps=readiness.extract_archive) as extract:
+                first = readiness.stage_case(root, record, case, root / "first", None, cache)
+                self.assertEqual(readiness.extraction_identity(first), expected)
+                (first / "missions/control.hog").write_bytes(b"engine writes belong only to this case")
+                (first / "mods/control/textures/wall.tga").unlink()
+                second = readiness.stage_case(
+                    root, record, {**case, "level": 2, "level_file": "second.rl2"}, root / "second", None, cache
+                )
+                self.assertEqual(readiness.extraction_identity(second), expected)
+                self.assertEqual(extract.call_count, 1)
+            self.assertEqual(readiness.digest(archive), record["sha256"])
+            self.assertFalse((root / "first/unpack").exists())
+            self.assertFalse((root / "second/unpack").exists())
+
+    def test_linked_cached_payload_is_not_reused(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive, record, case, cache = self.staged_fixture(root)
+            readiness.stage_case(root, record, case, root / "first", None, cache)
+            payload = cache / record["sha256"] / "unpack/missions/single/control.hog"
+            target = root / "linked-input"
+            target.write_bytes(payload.read_bytes())
+            payload.unlink()
+            try:
+                payload.symlink_to(target)
+            except OSError as error:
+                self.skipTest(f"Symbolic link creation unavailable: {error}")
+            with self.assertRaises(ValueError):
+                readiness.stage_case(root, record, case, root / "second", None, cache)
+
+    def test_changed_source_or_cached_bytes_fail_closed(self):
+        for change in ("source", "changed", "added", "missing", "identity", "partial"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                archive, record, case, cache = self.staged_fixture(root)
+                readiness.stage_case(root, record, case, root / "first", None, cache)
+                entry = cache / record["sha256"]
+                payload = entry / "unpack/missions/single/control.hog"
+                if change == "source":
+                    archive.write_bytes(b"changed pinned archive")
+                elif change == "changed":
+                    payload.write_bytes(b"changed cached bytes")
+                elif change == "added":
+                    (entry / "unpack/extra.ham").write_bytes(b"unexpected resource")
+                elif change == "missing":
+                    payload.unlink()
+                elif change == "identity":
+                    (entry / "identity.json").write_text("{}")
+                else:
+                    entry.rename(entry.with_name(entry.name + ".building"))
+                with patch.object(readiness, "extract_archive") as extract:
+                    with self.assertRaises((ValueError, OSError)):
+                        readiness.stage_case(root, record, case, root / "second", None, cache)
+                    extract.assert_not_called()
+
     def test_failed_measurement_cannot_publish_a_checkpoint_as_success(self):
         args = argparse.Namespace(publish_status=True, target_sha="a" * 40)
         with (
@@ -105,6 +186,7 @@ p=Path(arg('--work'));p.mkdir();(p/'results.json').write_text(json.dumps(report)
             self.assertEqual(receipt["original_eight_summary"]["denominator"], 8)
             self.assertFalse(receipt["budget_exhausted"])
             self.assertFalse(list(args.work.glob("case-*")))
+            self.assertFalse(list(args.work.parent.glob("xl-readiness-cache-*")))
             self.assertEqual(expanded.validate(receipt, args.catalog, args.cohort, args.target_sha)["passed"], 0)
             receipt["rows"].pop()
             with self.assertRaises(ValueError):
@@ -149,6 +231,7 @@ p=Path(arg('--work'));p.mkdir();(p/'results.json').write_text(json.dumps(report)
             self.assertTrue(receipt["budget_exhausted"])
             self.assertEqual(receipt["summary"]["counts"], {"untested": 64})
             self.assertFalse(list(args.work.glob("case-*")))
+            self.assertFalse(list(args.work.parent.glob("xl-readiness-cache-*")))
 
 
 if __name__ == "__main__":
