@@ -7,6 +7,7 @@
 #include "../tests/hog_fixture.h"
 extern "C" {
 #include "guidebot_route_internal.h"
+#include "fireball.h"
 void maybe_kill_weapon(object *, object *);
 void collide_weapon_and_controlcen(object *, object *, vms_vector *);
 void drop_stolen_items(object *, int);
@@ -87,6 +88,47 @@ static int projectile_robot(int id = 0)
 }
 
 #include "camera_weapon_test.h"
+
+static void inert_robot_death_controls()
+{
+	// Isolate the two source loot decisions from splash damage and model debris
+	const robot_info saved = Robot_info[0];
+	auto &definition = Robot_info[0];
+	definition.badass = 0;
+	definition.contains_type = OBJ_POWERUP;
+	definition.contains_id = POW_KEY_BLUE;
+	definition.contains_count = 3;
+	for (int probability : { 0, 8, 16 }) {
+		definition.contains_prob = probability;
+		const int carrier = projectile_robot();
+		auto &robot = Objects[carrier];
+		robot.render_type = RT_NONE;
+		robot.contains_type = OBJ_WEAPON;
+		robot.contains_id = 4;
+		robot.contains_count = 4;
+		explode_object(&robot, F1_0 / 8);
+		object *timer = nullptr;
+		for (int i = 0; i <= Highest_object_index; ++i)
+			if (Objects[i].control_type == CT_EXPLOSION && Objects[i].ctype.expl_info.delete_objnum == carrier && Objects[i].ctype.expl_info.spawn_time == 0)
+				timer = &Objects[i];
+		require(timer, "Missing delayed robot death owner");
+		auto keys = []() {
+			return std::count_if(Objects, Objects + Highest_object_index + 1, [](const object &o) { return o.type == OBJ_POWERUP && o.id == POW_KEY_BLUE; });
+		};
+		const auto before = keys();
+		d_srand(1234);
+		const bool drop = d_rand() % 16 < probability;
+		const int count = drop ? 1 + d_rand() % definition.contains_count : 0;
+		d_srand(1234);
+		const auto calls = d_rand_get_call_count();
+		timer->lifeleft = 0;
+		do_explosion_sequence(timer);
+		require(keys() == before + count && d_rand_get_call_count() == calls + 1 + int(drop) + 3 * count,
+		        "Secondary robot loot count or SIM draw sequence differs");
+	}
+	Robot_info[0] = saved;
+	std::cout << "XL inert authored contents and secondary robot loot passed\n";
+}
 #include "static_contact_test.h"
 
 static void projectile_sound_dependency_controls()
@@ -354,6 +396,17 @@ static void projectile_robot_attacker_blast()
 
 static nlohmann::json projectile_birth_future(int victim, int shot, int thief)
 {
+	const auto &carrier = Objects[victim];
+	require(carrier.type == OBJ_ROBOT && carrier.contains_type == OBJ_WEAPON && carrier.contains_id == 4 && carrier.contains_count == 4,
+	        "Authored inert contents changed across native save/restore");
+	const auto count_live = []() {
+		return std::count_if(Objects, Objects + Highest_object_index + 1, [](const object &o) { return o.type != OBJ_NONE; });
+	};
+	const auto live_before_drop = count_live();
+	const auto sim_calls = d_rand_get_call_count(), fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
+	require(object_create_egg(&Objects[victim]) == -1 && count_live() == live_before_drop &&
+	            sim_calls == d_rand_get_call_count() && fx_calls == d_rand_get_stream_call_count(D_RNG_FX),
+	        "Inert robot contents created an object or consumed randomness");
 	const auto native_before = input_demo_native_xl_trace_snapshot();
 	const auto before_calls = d_rand_get_call_count();
 	require(native_before == input_demo_native_xl_trace_snapshot() && before_calls == d_rand_get_call_count(),
@@ -465,6 +518,9 @@ static void projectile_birth_continuation(const std::filesystem::path &root, boo
 		// Derived setup isolates the real newborn collision gate; no gameplay assist claim
 		GameTime64 += 2 * F1_0;
 		const int victim = projectile_robot();
+		Objects[victim].contains_type = OBJ_WEAPON;
+		Objects[victim].contains_id = 4;
+		Objects[victim].contains_count = 4;
 		const int shot = projectile_test_shot(ConsoleObject - Objects);
 		const int guided = projectile_test_shot(ConsoleObject - Objects, GUIDEDMISS_ID);
 		require(Guided_missile[Player_num] == &Objects[guided], "Derived guided shot did not acquire its normal native owner");
@@ -1047,6 +1103,7 @@ static int projectile_test(int argc, char **argv)
 		projectile_robot_damage_grace();
 		projectile_combat(true);
 		projectile_physics();
+		inert_robot_death_controls();
 		StartNewGame(1);
 		Game_suspended = SUSP_ROBOTS;
 		GameTime64 = 7 * F1_0;

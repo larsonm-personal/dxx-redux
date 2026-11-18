@@ -390,7 +390,7 @@ void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, b
 				if (obj.id < 0 || obj.id >= reactor_count || obj.id >= MAX_REACTORS) throw std::runtime_error("required reactor definition is missing");
 				graph.weapon(CONTROLCEN_WEAPON_NUM);
 			}
-			if (obj.contains_count > 0) graph.contents(obj.contains_type, obj.contains_id);
+			if (obj.contains_count > 0) graph.placed_contents(obj.type, obj.id, obj.contains_type, obj.contains_id);
 			if (obj.render == RT_POLYOBJ || obj.render == RT_MORPH) {
 				const int saved = obj.render_data.at(0);
 				// Both source Verify and Redux verify_robot_object replace polygon robot

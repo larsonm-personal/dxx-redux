@@ -228,6 +228,19 @@ struct ObjectDependencies {
 		} else if (type == OBJ_POWERUP) powerup(id);
 		else asset_require(false, "unknown contained object dependency");
 	}
+	void placed_contents(int owner_type, int owner_id, int type, int id)
+	{
+		if (owner_type != OBJ_ROBOT || type == OBJ_ROBOT || type == OBJ_POWERUP) {
+			contents(type, id);
+			return;
+		}
+		// XL CreateEgg returns on the first unspawnable type without reading the ID
+		asset_require(owner_id >= 0 && owner_id < robot_count, "placed contents require a robot definition");
+		const auto &definition = robot_data[owner_id];
+		asset_require(!definition.thief && !definition.companion &&
+		                  (!definition.contains_count || (definition.contains_count > 0 && definition.contains_type == OBJ_POWERUP)),
+		              "inert authored contents with robot, thief or companion drops require secondary lifecycle support");
+	}
 	void robot_behavior(int id, int behavior, bool static_control = false)
 	{
 		asset_require(id >= 0 && id < robot_count, "object dependency references missing robot");

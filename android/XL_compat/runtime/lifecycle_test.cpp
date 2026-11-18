@@ -155,7 +155,7 @@ void object_dependencies()
 		if (o.type == OBJ_POWERUP) graph.powerup(o.id);
 		if (o.type == OBJ_WEAPON) graph.weapon(o.id);
 		if (o.type == OBJ_CNTRLCEN) graph.weapon(CONTROLCEN_WEAPON_NUM);
-		if (o.contains_count > 0) graph.contents(o.contains_type, o.contains_id);
+		if (o.contains_count > 0) graph.placed_contents(o.type, o.id, o.contains_type, o.contains_id);
 		if (o.render_type == RT_POLYOBJ) graph.model(o.rtype.pobj_info.model_num);
 		if (o.render_type == RT_POWERUP || o.render_type == RT_HOSTAGE || o.render_type == RT_FIREBALL || o.render_type == RT_THRUSTER)
 			graph.clip(o.rtype.vclip_info.vclip_num);
