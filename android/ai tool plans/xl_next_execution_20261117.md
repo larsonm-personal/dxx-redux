@@ -172,3 +172,41 @@ guard. Artifact 14344063591 SHA256
 The prior complete #573 run had 331s available and took 246.326s. Across 48
 common passing cases, the later run's median duration ratio was 1.274. Preserve
 both receipts; this variability does not justify changing cases or time guards.
+
+## Side phase checkpoint
+
+Independent side phases now select immutable views for drawing and pixel
+transparency. Source-selected replacement counts drive the existing door clock;
+authored texture changes preserve phase. The XL save owner validates geometry,
+integer types and source-bounded phases before applying them, and world traces
+include the state. Disposable XL save schema is now 43. Gameplay admission is
+still guarded pending complete strip lifecycle and host/Android rendering.
+
+The descriptor owner passed optimized (door-phases-native-04) and Debug
+(door-phases-debug-01), including independent views, alias changes, validate-only
+and applied restoration, eight malformed inputs and rebind. Initial failures are
+retained: JSON include order violated native MSVC packing, then a fixture used
+the native GL false macro (integer zero) instead of a JSON boolean. Both were
+corrected; the malformed-state validator was not relaxed.
+
+door-phases-close-01 passed the existing native door lifecycle, including the
+90-door boundary, reversal, compaction, wait and disk-through-stock controls.
+The actual-source comparison passed its original matrices and 660 additional
+replacement-frame-count clock comparisons. This does not yet compose the full
+native strip lifecycle with save/reload or rendered output.
+
+Original Subzero and Warp lifecycles passed in door-phases-lifecycles-01 with
+optimized engine SHA256
+6309db9f64d45528c6d9799da9b99bc55b2785f1ea7d030511211eac1adb48c0.
+Debug engine SHA256 is
+40876deadb30b8e427d06b24543b15e6790332728ef3470e59592725e8580716.
+Both automation catalogs and scoped mixed formatting passed. No APK was installed
+for this checkpoint. The four original stashes remain unchanged.
+
+PR #573 Android retry and headed replay checks finished successfully; all its
+applicable regression checks are green, with the separate known expanded 61/64
+compatibility status red. Requested user review/merge for trusted staging
+adoption, as this run explicitly forbids agent merges. The #576 asset-free GPU
+link failure was corrected with the absent native-owner adapter; current
+555fd4662 Linux and Windows asset-free checks passed. Private lifecycle staging
+still awaits controller adoption; pending checks are not qualified.

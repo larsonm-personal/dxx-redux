@@ -1,4 +1,5 @@
 #include "scoped_texture_playback.h"
+#include "door_phases_test.h"
 
 static void descriptor_door_view_controls()
 {
@@ -40,12 +41,14 @@ static void descriptor_door_view_controls()
 	struct Restore {
 		~Restore()
 		{
+			xl_door_phases_clear();
 			xl_pog_install(nullptr);
 		}
 	} restore;
 	auto first = prepare(images, graph);
 	require(!xl_pog_side_frame(*aliases.begin(), 0), "Preparation published side frames");
 	require(xl_pog_install_prepared(first.get()) && xl_pog_door_frames(0) == 16, "Door replacement clock was not installed");
+	descriptor_door_phase_controls(graph, plan);
 	const auto *first_view = xl_pog_side_frame(*aliases.begin(), 0);
 	require(first_view && first_view->bm_data[0] == 10, "Door frame zero pixels differ");
 	const auto *native_pixels = GameBitmaps[*aliases.begin()].bm_data;

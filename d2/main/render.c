@@ -5,6 +5,7 @@
 #include "preview.h"
 #include "camera_scene.h"
 #include "camera_renderer.h"
+#include "doors.h"
 #include "transparency_scene.h"
 #include "skybox_render.h"
 #include "fog.h"
@@ -387,9 +388,15 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 	if (use_alt_texmerge){
 		PIGGY_PAGE_IN(Textures[tmap1]);
 		bm = &GameBitmaps[Textures[tmap1].index];
+#ifdef DXX_XL_RUNTIME
+		bm = xl_door_side_bitmap(segnum, sidenum, tmap1, bm);
+#endif
 		if (tmap2){
 			PIGGY_PAGE_IN(Textures[tmap2&0x3FFF]);
 			bm2 = &GameBitmaps[Textures[tmap2&0x3FFF].index];
+#ifdef DXX_XL_RUNTIME
+			bm2 = xl_door_side_bitmap(segnum, sidenum, tmap2 & 0x3fff, bm2);
+#endif
 			PIGGY_PAGE_IN(Textures[tmap1]); // in case textures just got flushed
 		}
 	}else

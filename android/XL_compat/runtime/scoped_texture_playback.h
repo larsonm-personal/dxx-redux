@@ -16,6 +16,7 @@ struct ScopedTextureClip {
 };
 struct ScopedTextureDoor {
 	int clip = -1;
+	int frames = 0;
 	std::size_t image = 0;
 	std::vector<int> bitmaps;
 };
@@ -108,6 +109,7 @@ struct ScopedTexturePlayback {
 				throw std::runtime_error("Scoped door period cannot represent every replacement frame");
 			ScopedTextureDoor door;
 			door.clip = id;
+			door.frames = int(frames);
 			door.image = first->second;
 			for (int frame = 0; frame < clip.num_frames; ++frame) {
 				const int bitmap = graph.texture_data[clip.frames[frame]].index;

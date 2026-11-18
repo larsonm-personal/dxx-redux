@@ -1,6 +1,12 @@
+// C++ value layouts precede the packed native engine headers
+#include <nlohmann/json.hpp>
+#include "../inventory.h"
 #include "doors.h"
 #include "linked_audio.h"
 #include "preview.h"
+#include "pog_resources.h"
+#include "scoped_texture_playback.h"
+#include "../door_strip_phase.h"
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -20,6 +26,11 @@ int check_poke(int, int, int);
 
 namespace
 {
+std::vector<std::array<int16_t, 6>> side_phases, phase_limits, initial_phases;
+int door_frames(int clip)
+{
+	return xl_compat::door_effect_frame_count(WallAnims[clip].num_frames, xl_pog_door_frames(clip));
+}
 bool valid_wall(int index)
 {
 	if (index < 0 || index >= Num_walls) return false;
@@ -28,7 +39,7 @@ bool valid_wall(int index)
 	       w.sidenum >= 0 && w.sidenum < 6 && Segments[w.segnum].sides[w.sidenum].wall_num == index &&
 	       w.clip_num >= 0 && w.clip_num < Num_wall_anims && WallAnims[w.clip_num].num_frames > 0 &&
 	       WallAnims[w.clip_num].num_frames <= MAX_CLIP_FRAMES &&
-	       WallAnims[w.clip_num].play_time >= WallAnims[w.clip_num].num_frames;
+	       WallAnims[w.clip_num].play_time >= door_frames(w.clip_num);
 }
 int opposite(int index)
 {
@@ -86,6 +97,9 @@ void texture(int index, int frame)
 	// XL animates each face with its own clip, including asymmetric pairs
 	const auto &clip = WallAnims[w.clip_num];
 	auto &side = Segments[w.segnum].sides[w.sidenum];
+	xl_door_record_frame(w.segnum, w.sidenum, w.clip_num, frame);
+	// Source high-resolution SetTexture preserves both authored texture mappings
+	if (xl_pog_door_frames(w.clip_num)) return;
 	const int value = clip.frames[frame];
 	if ((clip.flags & WCF_TMAP1) || !(side.tmap_num2 & 0x3fff)) {
 		side.tmap_num = value;
@@ -117,7 +131,7 @@ int animate(int index, fix elapsed, bool opening)
 {
 	auto &w = Walls[index];
 	const auto &clip = WallAnims[w.clip_num];
-	const int n = clip.num_frames;
+	const int n = door_frames(w.clip_num);
 	const int phase = elapsed / (clip.play_time / n);
 	const int frame = opening ? phase : n - phase - 1;
 	if (opening) {
@@ -316,4 +330,90 @@ extern "C" int xl_door_frame_process(void)
 		}
 	}
 	return 1;
+}
+
+extern "C" void xl_door_phases_clear(void)
+{
+	side_phases.clear();
+	phase_limits.clear();
+	initial_phases.clear();
+}
+
+void xl_door_phases_bind(const xl_compat::Inventory &level, const xl_assets::ObjectDependencies &tables,
+                         const xl_compat::ScopedTexturePlayback *playback)
+{
+	xl_door_phases_clear();
+	if (!playback || playback->doors.empty()) return;
+	if (level.segments.size() != std::size_t(Num_segments) || Num_segments < 1 || Num_segments > MAX_SEGMENTS)
+		throw std::runtime_error("Door phase owner has invalid incoming geometry");
+	std::vector<std::array<int16_t, 6>> phases(level.segments.size()), limits(level.segments.size());
+	for (const auto &wall : level.walls) {
+		if (wall.type != WALL_DOOR && wall.type != WALL_BLASTABLE) continue;
+		if (wall.segment < 0 || wall.segment >= Num_segments || wall.side < 0 || wall.side >= 6 ||
+		    wall.clip < 0 || wall.clip >= tables.wall_clip_count)
+			throw std::runtime_error("Door phase owner has an invalid incoming wall");
+		const auto &clip = tables.wall_clip_data[wall.clip];
+		if (clip.num_frames < 1 || clip.num_frames > MAX_CLIP_FRAMES)
+			throw std::runtime_error("Door phase owner has an invalid native frame count");
+		limits[wall.segment][wall.side] = int16_t(clip.num_frames - 1);
+		for (const auto &door : playback->doors)
+			if (door.clip == wall.clip) {
+				if (wall.type != WALL_DOOR || door.bitmaps.empty())
+					throw std::runtime_error("Door strip phase is bound to a different wall type");
+				// The live count is published later; retain the admitted replacement count
+				const int frames = door.frames;
+				if (frames < 2 || frames > 128 || clip.play_time < frames)
+					throw std::runtime_error("Door strip phase has an invalid replacement count");
+				limits[wall.segment][wall.side] = int16_t(frames);
+				phases[wall.segment][wall.side] = int16_t(xl_compat::door_strip_initial_phase((clip.flags & WCF_TMAP1) != 0));
+			}
+	}
+	initial_phases = phases;
+	phase_limits = std::move(limits);
+	side_phases = std::move(phases);
+}
+
+extern "C" int xl_door_record_frame(int segment, int side, int clip, int frame)
+{
+	if (segment < 0 || std::size_t(segment) >= side_phases.size() || side < 0 || side >= 6 ||
+	    clip < 0 || clip >= Num_wall_anims || frame < 0 || frame >= door_frames(clip)) return 0;
+	const int phase = xl_compat::door_texture_phase(frame, xl_pog_door_frames(clip));
+	if (phase < -phase_limits[segment][side]) return 0;
+	side_phases[segment][side] = int16_t(phase);
+	return 1;
+}
+
+extern "C" grs_bitmap *xl_door_side_bitmap(int segment, int side, int texture, grs_bitmap *ordinary)
+{
+	if (segment < 0 || std::size_t(segment) >= side_phases.size() || side < 0 || side >= 6 || texture < 0 || texture >= NumTextures)
+		return ordinary;
+	const int bitmap = Textures[texture].index;
+	const int count = xl_pog_side_frame_count(bitmap);
+	if (!count) return ordinary;
+	auto *frame = xl_pog_side_frame(bitmap, xl_compat::door_strip_frame(side_phases[segment][side], count));
+	return frame ? frame : ordinary;
+}
+
+nlohmann::json xl_door_phases_snapshot()
+{
+	return side_phases;
+}
+
+bool xl_door_phases_restore(const nlohmann::json &state, bool apply)
+{
+	if (!state.is_array() || state.size() != side_phases.size()) return false;
+	auto phases = side_phases;
+	for (std::size_t segment = 0; segment < phases.size(); ++segment) {
+		const auto &row = state[segment];
+		if (!row.is_array() || row.size() != 6) return false;
+		for (int side = 0; side < 6; ++side) {
+			const auto &field = row[side];
+			if (!field.is_number_integer() || (field.is_number_unsigned() && field.get<uint64_t>() > 1)) return false;
+			const auto phase = field.get<int64_t>();
+			if (phase < -phase_limits[segment][side] || phase > (initial_phases[segment][side] > 0 ? 1 : 0)) return false;
+			phases[segment][side] = int16_t(phase);
+		}
+	}
+	if (apply) side_phases = std::move(phases);
+	return true;
 }

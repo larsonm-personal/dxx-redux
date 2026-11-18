@@ -275,6 +275,12 @@ void wall_set_tmap_num(segment *seg,int side,segment *csegp,int cside,int anim_n
 
 	if ( Newdemo_state==ND_STATE_PLAYBACK ) return;
 
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_extensions_active()) {
+		xl_door_record_frame(seg - Segments, side, anim_num, frame_num);
+		if (csegp && cside >= 0) xl_door_record_frame(csegp - Segments, cside, anim_num, frame_num);
+	}
+#endif
 	if (anim->flags & WCF_TMAP1)	{
 		if (tmap != seg->sides[side].tmap_num || tmap != csegp->sides[cside].tmap_num)
 		{

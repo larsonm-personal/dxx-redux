@@ -57,6 +57,8 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/wall.cpp"
                       "CActiveDoor* CWall::CloseDoor (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/segment.cpp" "void CSegment::CloseDoor (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/wall.cpp"
+                      "int32_t WallEffectFrameCount (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/wall.cpp"
                       "int32_t CWall::AnimateOpeningDoor (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/wall.cpp"
                       "int32_t CWall::AnimateClosingDoor (")
