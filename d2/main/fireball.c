@@ -1304,6 +1304,14 @@ static void mark_player_spew_objects(int start_net_create_loc, int rval)
 }
 #endif
 
+#ifdef DXX_XL_RUNTIME
+static int xl_inert_robot_contents(const object *objp)
+{
+	return objp->type == OBJ_ROBOT && objp->contains_type != OBJ_ROBOT && objp->contains_type != OBJ_POWERUP &&
+		xl_level_extensions_active();
+}
+#endif
+
 // ----------------------------------------------------------------------------
 // Returns created object number.
 // If object dropped by player, set flag.
@@ -1312,6 +1320,12 @@ int object_create_egg(object *objp)
 	int	rval;
 #ifdef NETWORK
 	int start_net_create_loc = (Game_mode & GM_MULTI) ? Net_create_loc : -1;
+#endif
+
+#ifdef DXX_XL_RUNTIME
+	// XL DropPowerup returns -1 before allocating or consuming randomness for these authored contents
+	if (xl_inert_robot_contents(objp))
+		return -1;
 #endif
 
 	if (d1_in_d2_use_d2_resource_drop_suppression(objp, Game_mode))
@@ -1599,19 +1613,25 @@ void do_explosion_sequence(object *obj)
 			obj, del_obj, expl_obj, vclip_num);
 
 		int loot_chance_roll = -1, loot_count_roll = -1, loot_created = -1;
-		if ((del_obj->contains_count > 0) && !(Game_mode & GM_MULTI)) { // Multiplayer handled outside of this code!!
+		const int authored_loot = del_obj->contains_count > 0;
+		int xl_secondary_loot = 0;
+#ifdef DXX_XL_RUNTIME
+		xl_secondary_loot = authored_loot && xl_inert_robot_contents(del_obj) && xl_source_level_version() >= 10;
+#endif
+		if (authored_loot && !(Game_mode & GM_MULTI)) { // Multiplayer handled outside of this code!!
 			//	If dropping a weapon that the player has, drop energy instead, unless it's vulcan, in which case drop vulcan ammo.
 			if (del_obj->contains_type == OBJ_POWERUP)
 				maybe_replace_powerup_with_energy(del_obj);
 			loot_created = object_create_egg(del_obj);
-		} else if ((del_obj->type == OBJ_ROBOT) && !(Game_mode & GM_MULTI)) { // Multiplayer handled outside this code!!
+		}
+		if ((!authored_loot || xl_secondary_loot) && del_obj->type == OBJ_ROBOT && !(Game_mode & GM_MULTI)) {
 			robot_info	*robptr = &Robot_info[del_obj->id];
 			if (robptr->contains_count) {
 				// SIM RNG: this decides whether robot loot spawns and how much drops
 				loot_chance_roll = d_rand();
-				if (((loot_chance_roll * 16) >> 15) < robptr->contains_prob) {
+				if ((xl_secondary_loot ? loot_chance_roll % 16 : (loot_chance_roll * 16) >> 15) < robptr->contains_prob) {
 					loot_count_roll = d_rand();
-					del_obj->contains_count = ((loot_count_roll * robptr->contains_count) >> 15) + 1;
+					del_obj->contains_count = (xl_secondary_loot ? loot_count_roll % robptr->contains_count : (loot_count_roll * robptr->contains_count) >> 15) + 1;
 					del_obj->contains_type = robptr->contains_type;
 					del_obj->contains_id = robptr->contains_id;
 					maybe_replace_powerup_with_energy(del_obj);

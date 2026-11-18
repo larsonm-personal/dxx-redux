@@ -36,3 +36,26 @@ d85d6afc5209a0c772fe18f814c4533839a9eea2. The immediate parent is #582.
    Investigate other shared families in descending impact once the census finishes.
 5. Publish tested checkpoints to the fork. Record exact candidate CI, frozen
    8 and 64 results, original failing-case reruns, and remaining work.
+
+## AF-XL robot loot
+
+The additional af-xl.7z distribution passed 12/15 on the baseline.
+Alarlof, Cefispar and Lakshmid stopped on five robots. Their contained-object
+types were 8, 9, 51 and 19. The pinned XL source at 2576a98b resolves these
+records in main/dropobject.cpp (DropPowerup and CObject::CreateEgg).
+Only robots and powerups have a spawning branch. The default returns -1
+on the first attempt, without allocating an object or drawing randomness.
+In effects/fireball.cpp the level-version-10-and-later death path then
+checks the robot definition independently. Chance and quantity use Rand(n)
+in include/maths.h. An initial candidate that only owned the empty-drop
+path passed 13/15 and identified the second requirement in levels 6 and 9.
+
+The native death owner reuses its powerup spawning, replacement and tracing.
+XL admission checks the original object and the actual staged robot definition.
+Secondary robot, thief and companion profiles remain gated for inert placed
+contents. Native controls exercise delayed deaths at three probabilities,
+spawn counts and SIM draws, plus uninterrupted, warm and cold save futures.
+The developer-OFF Windows candidate passed all 15 original levels with binary
+097fe2a9f0e449b1c0d660544956430cb1b4acd50bfa835d05c03e922ba5a646.
+The separate native controls deliberately set up robot state and deaths.
+The older levelpack distribution has independent light-index failures.
