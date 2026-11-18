@@ -71,7 +71,7 @@ void prepare()
 			const auto &actual = Segments[i].sides[side];
 			require(expected.corners == xl_compat::classic_side_corners[side] && Segments[i].children[side] == source.segments[i].children[side] && actual.wall_num == expected.wall, "Android explicit side topology changed");
 			if (expected.texture < 0) continue;
-			require(actual.tmap_num == expected.texture && actual.tmap_num2 == expected.overlay, "Android modern texture/orientation changed");
+			require(actual.tmap_num == expected.base_texture() && static_cast<uint16_t>(actual.tmap_num2) == expected.overlay, "Android modern texture/orientation changed");
 			for (int corner = 0; corner < 4; ++corner)
 				require(actual.uvls[corner].u == expected.uvl[corner * 3] * 32 && actual.uvls[corner].v == expected.uvl[corner * 3 + 1] * 32, "Android modern UV coordinate changed");
 		}

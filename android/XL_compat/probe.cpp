@@ -121,8 +121,8 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 		for (int i = 0; i < 6; ++i) {
 			const auto &side = seg.sides[i];
 			if (seg.children[i] != -1 && side.wall == -1) continue;
-			require(side.texture >= 0 && side.texture < 910, "unrepresentable texture");
-			put(out, side.texture | (side.overlay ? 0x8000 : 0), 2);
+			require(side.texture >= 0 && side.texture <= 0x7fff, "unrepresentable texture");
+			put(out, side.base_texture() | (side.overlay ? 0x8000 : 0), 2);
 			if (side.overlay) put(out, side.overlay, 2);
 			for (const auto component : side.uvl) put(out, component, 2);
 		}

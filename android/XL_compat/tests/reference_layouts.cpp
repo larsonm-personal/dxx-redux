@@ -197,7 +197,7 @@ void equal(bool ok, const char *message)
 	check(ok, message);
 	++comparisons;
 }
-void compare(const xl_compat::Bytes &bytes)
+void compare(const xl_compat::Bytes &bytes, bool surfaces_only = false)
 {
 	const auto decoded = xl_compat::inspect_level(bytes);
 	CFile header{ bytes, 4 };
@@ -233,7 +233,7 @@ void compare(const xl_compat::Bytes &bytes)
 			equal(rs.m_nCorners == corners, "Side shape differs");
 			for (int n = 0; n < corners; ++n) equal(reference.m_vertices[rs.m_corners[n]] == redux.vertices[ds.corners[n]], "Global side vertex differs after compaction");
 			const bool textured = redux.children[side] == -1 || ds.wall >= 0;
-			equal(rs.m_nBaseTex == (textured ? ds.texture % 910 : 0), "Base texture normalization differs");
+			equal(rs.m_nBaseTex == (textured ? ds.base_texture() : 0), "Base texture normalization differs");
 			equal(rs.m_nOvlTex == (textured ? (ds.overlay & 0x3fff) % 910 : 0), "Overlay texture normalization differs");
 			if (textured) {
 				equal(rs.m_nOvlOrient == ((ds.overlay >> 14) & 3), "Overlay orientation differs");
@@ -243,17 +243,21 @@ void compare(const xl_compat::Bytes &bytes)
 		}
 		++segment_count;
 	}
+	const auto brightness = xl_compat::vertex_brightness(decoded);
+	for (std::size_t i = 0; i < brightness.size(); ++i) {
+		check(brightness[i] == gameData.renderData.color.vertBright[i], "Per-vertex maximum light differs");
+		++brightness_count;
+	}
+	if (surfaces_only) {
+		++level_count;
+		return;
+	}
 	for (int i = 0; i < count; ++i) {
 		auto &reference = segments[i];
 		reference.ReadExtras(geometry);
 		const auto &redux = decoded.segments[i];
 		equal(reference.m_function == redux.function && reference.m_nObjProducer == redux.producer && reference.m_value == redux.value && reference.m_flags == redux.flags && reference.m_props == redux.properties, "Extras field width or signedness differs");
 		equal(reference.m_xDamage[0] == redux.damage[0] * 65536 && reference.m_xDamage[1] == redux.damage[1] * 65536 && reference.m_xAvgSegLight == redux.light, "Extras damage or light differs");
-	}
-	const auto brightness = xl_compat::vertex_brightness(decoded);
-	for (std::size_t i = 0; i < brightness.size(); ++i) {
-		check(brightness[i] == gameData.renderData.color.vertBright[i], "Per-vertex maximum light differs");
-		++brightness_count;
 	}
 	// Colors follow the readers under test; their widths independently establish
 	// that no added corner or wide extras field was skipped or consumed twice
@@ -293,7 +297,7 @@ void compare(const xl_compat::Bytes &bytes)
 	equal(name == decoded.level_name, "Fog boundary consumed level name");
 	++level_count;
 }
-void original(const char *path, const char *requested = nullptr)
+void original(const char *path, const char *requested = nullptr, bool surfaces_only = false)
 {
 	std::ifstream input(path, std::ios::binary | std::ios::ate);
 	check(bool(input), "Cannot open original HOG");
@@ -317,7 +321,7 @@ void original(const char *path, const char *requested = nullptr)
 		xl_compat::Bytes bytes(static_cast<std::size_t>(member.size));
 		read(member.offset, bytes.data(), bytes.size());
 		try {
-			compare(bytes);
+			compare(bytes, surfaces_only);
 		} catch (const std::exception &e) {
 			throw std::runtime_error(member.name + ": " + e.what());
 		}
@@ -331,9 +335,17 @@ int main(int argc, char **argv)
 		if (argc > 1 && std::string(argv[1]) == "--member") {
 			check(argc == 4, "Expected --member HOG level-name");
 			original(argv[2], argv[3]);
+		} else if (argc > 1 && std::string(argv[1]) == "--surfaces") {
+			check(argc == 3, "Expected --surfaces HOG");
+			original(argv[2], nullptr, true);
 		} else if (argc > 1)
 			for (int i = 1; i < argc; ++i) original(argv[i]);
 		else {
+			for (const int base : { 0, 909, 910, 911, 1820, 0x7fff }) {
+				auto fixture = xl_test::layout_fixture(26);
+				xl_test::layout_patch(fixture.bytes, fixture.corners[2] + 4, 0x8000 | base, 2);
+				compare(fixture.bytes);
+			}
 			for (int version : { 21, 23, 25, 26, 27 })
 				for (int owner : { -1, 0 })
 					for (int group : { -128, -1, 0, 1, 127 }) {

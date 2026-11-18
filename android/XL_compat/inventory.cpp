@@ -329,7 +329,7 @@ Inventory inspect_level(const Bytes &bytes)
 			const int texture = mine.u16();
 			s.texture = texture & 0x7fff;
 			s.overlay = texture & 0x8000 ? mine.u16() : 0;
-			if (s.texture >= 910 || (s.overlay & 0x3fff) >= 910) issue(out.unknown, "texture_id", i, std::to_string(s.texture) + "/" + std::to_string(s.overlay));
+			if ((s.overlay & 0x3fff) >= 910) issue(out.unknown, "texture_id", i, std::to_string(s.texture) + "/" + std::to_string(s.overlay));
 			for (int v = 0; v < 4; ++v) {
 				s.uvl[v * 3] = mine.s16();
 				s.uvl[v * 3 + 1] = mine.s16();
