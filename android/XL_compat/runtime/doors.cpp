@@ -1,5 +1,6 @@
 // C++ value layouts precede the packed native engine headers
 #include <nlohmann/json.hpp>
+#include <fstream>
 #include "../inventory.h"
 #include "doors.h"
 #include "linked_audio.h"
