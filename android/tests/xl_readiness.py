@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import time
 
-from nightly_corpus_stage import extract_archive, member_path
+from nightly_corpus_stage import extract_archive, member_path, reject_links
 
 ASSET_COMMIT = "9dad21bd65ba05665ac6fe315f37fe7461e85725"
 RESOURCE_COMMIT = "dc6565f6b5400d7c700fa8378e766b2354b6ceb6"
@@ -181,12 +181,57 @@ def summary(rows):
     }
 
 
-def stage_case(assets, archive, case, work, seven_zip):
+def extraction_identity(root):
+    identity = {}
+    for path in sorted(root.rglob("*")):
+        if path.is_symlink():
+            raise ValueError("Readiness extraction cache contains a symbolic link")
+        name = path.relative_to(root).as_posix()
+        if path.is_dir():
+            identity[name] = {"directory": True}
+        elif path.is_file():
+            identity[name] = {"size": path.stat().st_size, "sha256": digest(path)}
+        else:
+            raise ValueError("Readiness extraction cache contains a nonregular entry")
+    return identity
+
+
+def cached_extraction(source, archive, cache, seven_zip):
+    # The supervisor owns a fresh cache outside uploaded evidence for this run only
+    entry = Path(cache) / archive["sha256"]
+    reject_links(entry)
+    if not entry.exists():
+        building = entry.with_name(entry.name + ".building")
+        building.mkdir()
+        extract_archive(source, building / "unpack", seven_zip)
+        write(
+            building / "identity.json",
+            {"archive_sha256": archive["sha256"], "entries": extraction_identity(building / "unpack")},
+        )
+        if source.stat().st_size != archive["size"] or digest(source) != archive["sha256"]:
+            raise ValueError("Pinned archive changed during extraction")
+        building.rename(entry)
+        return entry / "unpack"
+    unpack = entry / "unpack"
+    identity = entry / "identity.json"
+    if unpack.is_symlink() or identity.is_symlink() or not unpack.is_dir() or not identity.is_file():
+        raise ValueError("Incomplete readiness extraction cache")
+    expected = json.loads(identity.read_text())
+    if expected != {"archive_sha256": archive["sha256"], "entries": extraction_identity(unpack)}:
+        raise ValueError("Readiness extraction cache identity changed")
+    return unpack
+
+
+def stage_case(assets, archive, case, work, seven_zip, unpack_cache=None):
     source = Path(assets) / member_path(archive["path"])
+    reject_links(source)
     if source.stat().st_size != archive["size"] or digest(source) != archive["sha256"]:
         raise ValueError("Pinned archive identity mismatch")
-    unpack = work / "unpack"
-    extract_archive(source, unpack, seven_zip)
+    if unpack_cache is None:
+        unpack = work / "unpack"
+        extract_archive(source, unpack, seven_zip)
+    else:
+        unpack = cached_extraction(source, archive, unpack_cache, seven_zip)
     descriptor = unpack / member_path(case["descriptor"])
     if digest(descriptor) != case["descriptor_sha256"] or {
         "level": case["level"],
@@ -249,7 +294,18 @@ def classify(returncode, proof, log, case):
     return "load_failed"
 
 
-def run(engine, assets, data, catalog, work, seven_zip, target_sha, require_resources=False, assisted_routes=True):
+def run(
+    engine,
+    assets,
+    data,
+    catalog,
+    work,
+    seven_zip,
+    target_sha,
+    require_resources=False,
+    assisted_routes=True,
+    unpack_cache=None,
+):
     work = Path(work)
     work.mkdir(parents=True, exist_ok=False)
     if len(set(catalog["selected"])) != len(catalog["selected"]):
@@ -287,7 +343,7 @@ def run(engine, assets, data, catalog, work, seven_zip, target_sha, require_reso
                 not (Path(data) / name).is_file() for name in ("descent.hog", "descent.pig")
             ):
                 raise ValueError("Registered D1 test inputs missing")
-            extra = stage_case(assets, archives[case["archive"]], case, area, seven_zip)
+            extra = stage_case(assets, archives[case["archive"]], case, area, seven_zip, unpack_cache)
             command = [
                 str(Path(engine).resolve()),
                 "-mission",
@@ -381,6 +437,7 @@ def main():
     for name in ("downloads", "tree", "work", "catalog", "engine", "assets", "data", "seven-zip"):
         parser.add_argument("--" + name, type=Path)
     parser.add_argument("--target-sha")
+    parser.add_argument("--unpack-cache", type=Path, help="Supervisor-owned per-run verified extraction cache")
     parser.add_argument("--no-assisted-routes", action="store_true", help="Measure primary load/tick only")
     parser.add_argument(
         "--resources", type=Path, help="Pinned private checkout containing authentic Vertigo and XL resources"
@@ -429,6 +486,7 @@ def main():
             args.target_sha,
             args.require_resources,
             not args.no_assisted_routes,
+            args.unpack_cache,
         )
         print(json.dumps(report["summary"], sort_keys=True))
         # This command means measurement completed, not compatibility passed.
