@@ -48,7 +48,7 @@ def prefer_archive(mirrors, sources, environ, release, machine):
     if not uris or any(uri != b"mirror+file:/etc/apt/apt-mirrors.txt" for uri in uris):
         raise UnmanagedSources("Ubuntu source layout is not managed by the mirror priority helper")
     if mirrors not in (ORIGINAL, PREFERRED):
-        raise ValueError("Unexpected apt mirror list; refusing to change mirror priorities")
+        raise UnmanagedSources("Unexpected apt mirror list; leaving mirror priorities unchanged")
     return PREFERRED
 
 
@@ -62,7 +62,7 @@ def main():
         # This is a download optimization, not a prerequisite for valid apt
         # sources. Unknown layouts must never be rewritten; apt still validates
         # and installs dependencies using the runner's original configuration
-        print("Unmanaged Ubuntu source layout: leaving apt configuration unchanged")
+        print("Unmanaged Ubuntu source or mirror layout: leaving apt configuration unchanged")
         return
     if before != after:
         subprocess.run(["sudo", "tee", str(MIRRORS)], input=after, stdout=subprocess.DEVNULL, check=True)

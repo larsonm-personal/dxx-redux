@@ -51,7 +51,7 @@ class MirrorTests(unittest.TestCase):
         )
         self.assertEqual(self.transform(result), result)
 
-    def test_unknown_custom_and_malformed_lists_fail(self):
+    def test_unknown_custom_and_malformed_lists_are_unmanaged(self):
         for data in (
             b"",
             helper.ORIGINAL + b"\n",
@@ -64,7 +64,7 @@ class MirrorTests(unittest.TestCase):
             helper.ORIGINAL.splitlines(keepends=True)[0],
             helper.ORIGINAL + b"# unexpected additions\n",
         ):
-            with self.subTest(data=data), self.assertRaises(ValueError):
+            with self.subTest(data=data), self.assertRaises(helper.UnmanagedSources):
                 self.transform(data)
 
     def test_unknown_sources_fail(self):
@@ -172,8 +172,7 @@ class MirrorTests(unittest.TestCase):
                 self.assertEqual(run.call_count, 1)
                 self.assertEqual(sources.read_bytes(), SOURCES)
                 mirrors.write_bytes(b"custom")
-                with self.assertRaises(ValueError):
-                    helper.main()
+                helper.main()
                 self.assertEqual(mirrors.read_bytes(), b"custom")
                 self.assertEqual(run.call_count, 1)
                 mirrors.write_bytes(helper.ORIGINAL)
