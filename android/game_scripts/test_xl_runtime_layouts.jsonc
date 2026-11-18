@@ -50,6 +50,7 @@
             "in_game": true,
             "xl_pilot.runtime_active": true,
             "xl_pilot.source_level_version": 23,
+            "time_paused": false,
         },
         "timeout_ms": 20000,
         "post_delay_ms": 0,

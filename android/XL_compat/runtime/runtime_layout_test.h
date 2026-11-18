@@ -86,7 +86,8 @@ static int runtime_layout_test(int argc, char **argv)
 		std::vector<int> baseline;
 		std::uint64_t previous_identity = 0;
 		int ordinal = 0;
-		for (int version : { 21, 23, 25, 27 }) {
+		for (int version : { 21, 23, 25, 26, 27 }) {
+			if (version == 26 && std::strcmp(find_arg_value(argc, argv, "-runtime-layouts-test"), "production-v26")) continue;
 			++ordinal;
 			require(load_base_mission("rtlayout", error, sizeof(error)), error);
 			const auto filename = "rt" + std::to_string(version) + ".rl2";

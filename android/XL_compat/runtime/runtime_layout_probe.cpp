@@ -54,7 +54,7 @@ void verify()
 void prepare()
 {
 	version = xl_source_level_version();
-	require((version == 25 || version == 27) && xl_source_game_version() == 40 && game_is_time_paused(), "Modern controls require a paused 25/40 or 27/40 level");
+	require(version >= 25 && version <= 27 && xl_source_game_version() == 40 && game_is_time_paused(), "Modern controls require a paused level in layouts 25/40 through 27/40");
 	require(mission_owns_resource_archive(PHYSFS_getRealDir(Gamesave_current_filename)), "Modern level is outside the selected archive");
 	std::unique_ptr<PHYSFS_File, decltype(&PHYSFS_close)> file(PHYSFS_openRead(Gamesave_current_filename), PHYSFS_close);
 	require(file && PHYSFS_fileLength(file.get()) > 0 && PHYSFS_fileLength(file.get()) < 1024 * 1024, "Modern layout source missing or outside fixture bound");
@@ -109,7 +109,8 @@ const char *xl_runtime_layout_probe(const char *operation)
 			verify();
 			require(android_open_overlay_pause_if_safe(), "Cannot pause restored modern layout");
 		} else if (!std::strcmp(operation, "next")) {
-			require(!game_is_time_paused() && Current_level_num >= 1 && Current_level_num < Last_level, "Modern transition requires an active next level");
+			require(!game_is_time_paused(), "Modern transition requires resumed simulation");
+			require(Current_level_num >= 1 && Current_level_num < Last_level, "Modern transition requires a subsequent mission level");
 			const int destination = Current_level_num + 1;
 			StartNewLevelSub(destination, 1, 0);
 			require(Current_level_num == destination && xl_level_extensions_active(), "Modern normal level transition failed");

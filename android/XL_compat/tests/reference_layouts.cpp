@@ -334,7 +334,7 @@ int main(int argc, char **argv)
 		} else if (argc > 1)
 			for (int i = 1; i < argc; ++i) original(argv[i]);
 		else {
-			for (int version : { 21, 23, 25, 27 })
+			for (int version : { 21, 23, 25, 26, 27 })
 				for (int owner : { -1, 0 })
 					for (int group : { -128, -1, 0, 1, 127 }) {
 						auto fixture = xl_test::layout_fixture(version);
@@ -343,13 +343,13 @@ int main(int argc, char **argv)
 						xl_test::layout_patch(fixture.bytes, start + 1, group, 1);
 						compare(fixture.bytes);
 					}
-			for (const int version : { 21, 23, 25, 27 })
+			for (const int version : { 21, 23, 25, 26, 27 })
 				for (int shape = 0; shape < (version < 25 ? 1 : 3); ++shape)
 					for (const int value : { -32768, -129, -128, -1, 0, 127, 128, 32767 }) {
 						if (version < 25 && (value < -128 || value > 127)) continue;
 						compare(xl_test::layout_fixture(version, shape, value, value).bytes);
 					}
-			for (int version : { 21, 23, 25, 27 })
+			for (int version : { 21, 23, 25, 26, 27 })
 				for (int count : { 0, 1, 9, 10, 11, 26, 32767 }) {
 					auto fixture = xl_test::layout_fixture(version);
 					auto &b = fixture.bytes;
@@ -363,7 +363,7 @@ int main(int argc, char **argv)
 				}
 			// Explicit degenerate faces still carry four serialized UVLs. Only
 			// active corners contribute to the source's vertex-brightness maxima
-			for (const int version : { 25, 27 })
+			for (const int version : { 25, 26, 27 })
 				for (int active = 0; active < 4; ++active) {
 					auto fixture = xl_test::layout_fixture(version);
 					for (int corner = active; corner < 4; ++corner) fixture.bytes.at(fixture.corners[0] + corner) = 255;

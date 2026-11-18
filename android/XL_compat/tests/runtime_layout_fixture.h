@@ -17,8 +17,8 @@ struct RuntimeLayoutFixture {
 inline RuntimeLayoutFixture runtime_layout_fixture(const xl_compat::Bytes &original, int version)
 {
 	const auto source = xl_compat::inspect_level(original);
-	if (source.level_version != 23 || source.game_version != 40 || (version != 25 && version != 27))
-		throw std::runtime_error("Runtime layout fixture requires 23/40 input and 25/27 output");
+	if (source.level_version != 23 || source.game_version != 40 || version < 25 || version > 27)
+		throw std::runtime_error("Runtime layout fixture requires 23/40 input and version 25 through 27 output");
 	RuntimeLayoutFixture fixture;
 	auto &out = fixture.bytes;
 	out.assign(original.begin(), original.begin() + source.mine_offset);

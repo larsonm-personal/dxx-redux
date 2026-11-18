@@ -3,12 +3,19 @@
 param(
     [Parameter(Mandatory)][string]$Serial,
     [Parameter(Mandatory)][string]$Hog,
-    [Parameter(Mandatory)][string]$Descriptor
+    [Parameter(Mandatory)][string]$Descriptor,
+    [ValidateSet(25, 26)][int]$LayoutVersion = 25,
+    [string]$OutputDirectory
 )
 $ErrorActionPreference = 'Stop'
 $expectedHog = '38caedf8321ad8de4eb3fd452dd9efc6210cf19620b75884a90de4ff283afed8'
+$expectedDescriptor = 'b75b29439f4380affafecebcB9e7800837623750811c992d95f79014ca8fb49e'
+if ($LayoutVersion -eq 26) {
+    $expectedHog = '278fb67b573f5438e4ed35be5803c07cb4b83837dce58d399503ebf0bbad705b'
+    $expectedDescriptor = '3179a9a43ea99b78efc3f3cbbc0e2405518f9e60db2028aecf62aea276b281a6'
+}
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
-    (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne 'b75b29439f4380affafecebcB9e7800837623750811c992d95f79014ca8fb49e') {
+    (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne $expectedDescriptor) {
     throw 'Requires the pinned derived fixture from xl_modern_runtime_layouts'
 }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
@@ -16,6 +23,8 @@ $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
 $output = Join-Path $PSScriptRoot '../../temp/xl-runtime-layouts-android'
+if ($OutputDirectory) { $output = [IO.Path]::GetFullPath($OutputDirectory) }
+elseif ($LayoutVersion -eq 26) { $output += '-v26' }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 function Invoke-RuntimeLayoutAdb {
@@ -47,7 +56,17 @@ try {
     Invoke-RuntimeLayoutAdb -Arguments @('push', (Resolve-Path -LiteralPath $Descriptor).Path, '/data/local/tmp/xl-runtime-layouts.mn2') | Out-Null
     Invoke-RuntimeLayoutPrivate 'mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-runtime-layouts.hog files/d2x-redux/missions/rtlayout.hog && cp /data/local/tmp/xl-runtime-layouts.mn2 files/d2x-redux/missions/rtlayout.mn2' | Out-Null
     Invoke-RuntimeLayoutAdb -Arguments @('logcat', '-c') | Out-Null
-    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName 'test_xl_runtime_layouts.jsonc' -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
+    $scenario = 'test_xl_runtime_layouts.jsonc'
+    if ($LayoutVersion -eq 26) {
+        $template = Join-Path "$PSScriptRoot/../game_scripts" $scenario
+        $steps = ConvertFrom-JsoncText -Text (Get-Content -LiteralPath $template -Raw) -SourceName $template | ConvertFrom-Json
+        foreach ($step in $steps) {
+            if ($step.expect -and $step.expect.'xl_pilot.source_level_version' -eq 25) { $step.expect.'xl_pilot.source_level_version' = 26 }
+        }
+        $scenario = Join-Path $output 'runtime-v26.jsonc'
+        $steps | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $scenario -Encoding utf8
+    }
+    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scenario -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
     $testExit = $LASTEXITCODE
     Invoke-RuntimeLayoutAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/logcat.txt" -Encoding utf8
     Invoke-RuntimeLayoutPrivate 'cat files/automation_result.json' | Set-Content "$output/result.json" -Encoding utf8

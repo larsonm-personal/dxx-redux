@@ -32,7 +32,7 @@ bool issue(const std::vector<xl_compat::Issue> &issues, const char *feature)
 }
 void contract()
 {
-	for (int version : { 21, 23, 25, 27 }) {
+	for (int version : { 21, 23, 25, 26, 27 }) {
 		auto fixture = xl_test::layout_fixture(version);
 		auto &bytes = fixture.bytes;
 		bytes.resize(bytes.size() - 4);
@@ -47,7 +47,7 @@ void contract()
 		xl_test::layout_patch(bytes, fixture.game + 71, static_cast<unsigned>(bytes.size()));
 		rejects(bytes);
 	}
-	for (int version : { 21, 23, 25, 27 }) {
+	for (int version : { 21, 23, 25, 26, 27 }) {
 		auto fixture = xl_test::layout_fixture(version);
 		auto &bytes = fixture.bytes;
 		xl_compat::Bytes records(89 * 2 + 93, 0);
@@ -91,7 +91,7 @@ void contract()
 		}
 	}
 	int cases = 0;
-	for (int version : { 21, 23, 25, 27 }) {
+	for (int version : { 21, 23, 25, 26, 27 }) {
 		for (int producer : { -32768, -129, -128, -1, 0, 127, 128, 32767 }) {
 			if (version < 25 && (producer < -128 || producer > 127)) continue;
 			for (int shape = 0; shape < (version < 25 ? 1 : 3); ++shape) {
@@ -169,7 +169,7 @@ void contract()
 			xl_test::layout_patch(truncated, cut + 71, static_cast<std::uint32_t>(fixture.walls + 25 - fixture.game + cut));
 			rejects(truncated, "truncated section");
 		}
-		for (int invalid : { 20, 22, 24, 26, 28 }) {
+		for (int invalid : { 20, 22, 24, 28 }) {
 			auto bytes = fixture.bytes;
 			xl_test::layout_patch(bytes, 4, invalid);
 			rejects(bytes, "unsupported level version");
@@ -241,7 +241,7 @@ void write_fixture(const std::filesystem::path &directory)
 	std::filesystem::resize_file(directory / "oversized.rl2", padding);
 }
 
-void write_runtime_fixture(const std::filesystem::path &path, const std::filesystem::path &directory, bool include_v21 = false, bool damage = false)
+void write_runtime_fixture(const std::filesystem::path &path, const std::filesystem::path &directory, const std::vector<int> &versions = { 23, 25, 27 }, bool damage = false)
 {
 	std::ifstream input(path, std::ios::binary);
 	check(bool(input), "Cannot open runtime layout source");
@@ -282,17 +282,15 @@ void write_runtime_fixture(const std::filesystem::path &path, const std::filesys
 	xl_compat::Bytes output{ 'D', 'H', 'F' }, reader{ 'D', 'H', 'F' };
 	std::filesystem::create_directories(directory);
 	std::ofstream descriptor(directory / "rtlayout.mn2", std::ios::binary);
-	const int level_count = (include_v21 ? 5 : 4) + 3 + (damage ? 4 * (include_v21 ? 4 : 3) : 0);
+	const auto level_count = versions.size() * (damage ? 5 : 1) + 4;
 	descriptor << "d2x-name = Derived XL layouts\nnum_levels = " << level_count << '\n';
-	if (include_v21) descriptor << "rt21.rl2\n";
-	descriptor << "rt23.rl2\nrt25.rl2\nrt27.rl2\nfg27.rl2\nbadprop.rl2\nbadside.rl2\nbadcorn.rl2\n";
+	for (int version : versions) descriptor << "rt" << version << ".rl2\n";
+	descriptor << "fg27.rl2\nbadprop.rl2\nbadside.rl2\nbadcorn.rl2\n";
 	if (damage)
-		for (int version : { 21, 23, 25, 27 }) {
-			if (version == 21 && !include_v21) continue;
+		for (int version : versions) {
 			for (const char *variant : { "dr", "ds", "dm", "dz" }) descriptor << variant << version << ".rl2\n";
 		}
-	for (int version : { 21, 23, 25, 27 }) {
-		if (version == 21 && !include_v21) continue;
+	for (int version : versions) {
 		auto fixture = version <= 23 ? xl_test::RuntimeLayoutFixture{ base, {}, {}, {}, 0 } : xl_test::runtime_layout_fixture(base, version);
 		if (version >= 25) {
 			for (std::size_t i = 0; i < fixture.extras.size(); ++i) {
@@ -367,15 +365,17 @@ void write_runtime_fixture(const std::filesystem::path &path, const std::filesys
 	std::ofstream oracle(directory / "runtime-reader.hog", std::ios::binary);
 	oracle.write(reinterpret_cast<const char *>(reader.data()), static_cast<std::streamsize>(reader.size()));
 	check(bool(hog) && bool(descriptor) && bool(oracle), "Cannot write derived runtime layout package");
-	std::cout << "Derived " << (include_v21 ? "21/23/25/27" : "23/25/27") << " canonical runtime package written; geometry unchanged, repair/property/light controls labeled\n";
+	std::cout << "Derived " << versions.size() << " versions in" << " canonical runtime package written; geometry unchanged, repair/property/light controls labeled\n";
 }
 } // namespace
 int main(int argc, char **argv)
 {
 	try {
 		if (argc == 4 && std::string(argv[1]) == "--runtime") write_runtime_fixture(argv[2], argv[3]);
-		else if (argc == 4 && std::string(argv[1]) == "--runtime-damage") write_runtime_fixture(argv[2], argv[3], true, true);
-		else if (argc == 4 && std::string(argv[1]) == "--runtime-v21") write_runtime_fixture(argv[2], argv[3], true);
+		else if (argc == 4 && std::string(argv[1]) == "--runtime-damage") write_runtime_fixture(argv[2], argv[3], { 21, 23, 25, 27 }, true);
+		else if (argc == 4 && std::string(argv[1]) == "--runtime-v21") write_runtime_fixture(argv[2], argv[3], { 21, 23, 25, 27 });
+		else if (argc == 4 && std::string(argv[1]) == "--runtime-modern") write_runtime_fixture(argv[2], argv[3], { 21, 23, 25, 26, 27 });
+		else if (argc == 4 && std::string(argv[1]) == "--runtime-android-v26") write_runtime_fixture(argv[2], argv[3], { 23, 26, 27 });
 		else if (argc == 3 && std::string(argv[1]) == "--write") write_fixture(argv[2]);
 		else if (argc == 3 && std::string(argv[1]) == "--age") std::filesystem::last_write_time(argv[2], std::filesystem::file_time_type::clock::now() - std::chrono::hours(24));
 		else {
