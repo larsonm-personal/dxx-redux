@@ -876,10 +876,9 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		auto level = std::make_unique<xl_compat::Inventory>(std::move(probe.source));
 		// XL level objects start with a zero hit count; Redux stores the last victim
 		// Level files contain only weapon parent fields, never an earned hit history
-		if (xl_compat::modern_runtime_layout(*level))
-			for (int i = 0; i <= Highest_object_index; ++i)
-				if (Objects[i].type == OBJ_WEAPON && Objects[i].control_type == CT_WEAPON)
-					Objects[i].ctype.laser_info.last_hitobj = -1;
+		for (int i = 0; i <= Highest_object_index; ++i)
+			if (Objects[i].type == OBJ_WEAPON && Objects[i].control_type == CT_WEAPON)
+				Objects[i].ctype.laser_info.last_hitobj = -1;
 		if (level->vertices.size() != std::size_t(Num_vertices) || level->segments.size() != std::size_t(Num_segments))
 			throw std::runtime_error("XL source does not match loaded geometry counts");
 		for (int i = 0; i < Num_vertices; ++i) {
