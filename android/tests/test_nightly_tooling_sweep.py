@@ -291,6 +291,14 @@ class AutomaticCandidateTests(unittest.TestCase):
     def verify(self, sha=SHA):
         return self.automatic.verify(sha, self.env, self.responses.__getitem__, self.event)
 
+    def test_full_survey_uses_the_verified_open_pull_request_label(self):
+        self.assertFalse(self.verify()["full_survey"])
+        self.responses["pulls/319"]["labels"] = [{"name": "xl-full-survey"}]
+        self.assertTrue(self.verify()["full_survey"])
+        self.responses["pulls/319"]["head"]["sha"] = "f" * 40
+        with self.assertRaises(ValueError):
+            self.verify()
+
     def test_association_timeout_recovery_preserves_all_provenance_checks(self):
         import nightly_candidate as candidate
 
@@ -324,7 +332,8 @@ class AutomaticCandidateTests(unittest.TestCase):
             ):
                 if scenario == "valid":
                     self.assertEqual(
-                        self.automatic.verify(SHA, self.env, candidate.api, self.event), {"number": 319, "sha": SHA}
+                        self.automatic.verify(SHA, self.env, candidate.api, self.event),
+                        {"number": 319, "sha": SHA, "full_survey": False},
                     )
                 else:
                     with self.assertRaisesRegex(ValueError, "provenance was not established"):
@@ -356,7 +365,7 @@ class AutomaticCandidateTests(unittest.TestCase):
 
     def test_owned_source_exact_head_and_same_actor_rerun(self):
         self.responses["pulls/319"]["head"]["repo"]["fork"] = True
-        self.assertEqual(self.verify(), {"number": 319, "sha": SHA})
+        self.assertEqual(self.verify(), {"number": 319, "sha": SHA, "full_survey": False})
         self.responses["actions/runs/123"]["run_attempt"] = 2
         self.env["GITHUB_RUN_ATTEMPT"] = "2"
         self.assertEqual(self.verify()["sha"], SHA)
@@ -478,9 +487,22 @@ class AutomaticCandidateTests(unittest.TestCase):
         self.assertIn("timeout-minutes: 10", expanded)
         self.assertIn('--budget-seconds "$budget"', expanded)
         self.assertIn("580 - $(date +%s) + READINESS_STARTED", expanded)
-        self.assertLess(expanded.index("Revalidate pinned candidate"), expanded.index("Check out pinned uploaded"))
-        self.assertLess(expanded.index("rm -rf retail-input"), expanded.index("Build candidate"))
-        self.assertNotIn("secrets.", workflow.split("  readiness-expanded-report:", 1)[1])
+        full = workflow.split("  readiness-full:", 1)[1]
+        for lane in (expanded, full):
+            self.assertLess(
+                lane.index("Revalidate pinned candidate"),
+                lane.index("uses: ./control/.github/actions/xl-survey-inputs"),
+            )
+            self.assertLess(
+                lane.index("uses: ./control/.github/actions/xl-survey-inputs"), lane.index("--engine engine/")
+            )
+        shared = (root.parent / "actions/xl-survey-inputs/action.yml").read_text()
+        self.assertLess(shared.index("Check out pinned uploaded"), shared.index("rm -rf retail-input"))
+        self.assertLess(shared.index("rm -rf readiness-resources"), shared.index("sha256sum --check --strict"))
+        self.assertNotIn("cmake --build", shared)
+        self.assertNotIn(
+            "secrets.", workflow.split("  readiness-expanded-report:", 1)[1].split("  readiness-full:", 1)[0]
+        )
         self.assertNotIn("secrets: inherit", workflow)
         self.assertIn("candidate_sha: ${{ needs.admit.outputs.sha }}", workflow)
         self.assertIn("uses: ./.github/workflows/nightly-tooling-sweep.yml", workflow)

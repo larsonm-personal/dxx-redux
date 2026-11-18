@@ -59,6 +59,12 @@ class ExpandedReadinessTests(unittest.TestCase):
             grouped = full_report.summarize(args.work, args.catalog)
             self.assertEqual(grouped["groups"], {"infrastructure_error": 1})
             self.assertEqual(grouped["failures"][0]["id"], selected)
+            with self.assertRaisesRegex(ValueError, "complete inventory"):
+                full_report.summarize(args.work, args.catalog, require_full_inventory=True)
+            with self.assertRaisesRegex(ValueError, "requested candidate"):
+                full_report.summarize(args.work, args.catalog, expected_target="b" * 40)
+            with self.assertRaisesRegex(ValueError, "verified build"):
+                full_report.summarize(args.work, args.catalog, expected_engine="b" * 64)
             args.case = []
             with self.assertRaisesRegex(ValueError, "Empty or duplicate"):
                 full.measure(args)

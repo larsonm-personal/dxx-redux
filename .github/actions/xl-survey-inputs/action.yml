@@ -1,0 +1,73 @@
+name: Stage pinned XL survey inputs
+description: Stage the full pinned mission inventory, authentic runtime data and the admitted ordinary engine
+inputs:
+  retail-token:
+    description: Read token for the pinned private inputs
+    required: true
+  engine-artifact:
+    description: Name of the immutable engine artifact built in this workflow run
+    required: true
+  engine-sha256:
+    description: Expected SHA-256 of the ordinary executable
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Check out pinned uploaded inventory and retail inputs
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      with:
+        repository: larsonm-personal/dxx-redux-test-assets
+        ref: 9dad21bd65ba05665ac6fe315f37fe7461e85725
+        path: retail-input
+        sparse-checkout-cone-mode: false
+        sparse-checkout: |
+          /descent_1.4a_retail/DESCENT.HOG
+          /descent_1.4a_retail/DESCENT.PIG
+          /descent_2_1.1_retail/ALIEN1.PIG
+          /descent_2_1.1_retail/ALIEN2.PIG
+          /descent_2_1.1_retail/DESCENT2.HAM
+          /descent_2_1.1_retail/DESCENT2.HOG
+          /descent_2_1.1_retail/DESCENT2.S22
+          /descent_2_1.1_retail/FIRE.PIG
+          /descent_2_1.1_retail/GROUPA.PIG
+          /descent_2_1.1_retail/ICE.PIG
+          /descent_2_1.1_retail/WATER.PIG
+          /missions/d2xxl_downloads
+        token: ${{ inputs.retail-token }}
+        persist-credentials: false
+    - name: Check out pinned authentic Vertigo and XL runtime resources
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      with:
+        repository: larsonm-personal/dxx-redux-test-assets
+        ref: dc6565f6b5400d7c700fa8378e766b2354b6ceb6
+        path: readiness-resources
+        sparse-checkout-cone-mode: false
+        sparse-checkout: |
+          /descent_2_vertigo/d2x.hog
+          /xl-resources/d2x-xl.hog
+        token: ${{ inputs.retail-token }}
+        persist-credentials: false
+    - name: Stage hash-verified inputs with trusted tooling
+      shell: bash
+      run: |
+        python3 control/android/helpers/retail_ci_assets.py --root retail-input --repo control --source-map control/android/tests/retail_asset_sources.json --output retail-verification.json --stage retail-data
+        python3 control/android/tests/xl_readiness_expanded.py prepare --assets retail-input --catalog control/android/tests/xl_readiness_inventory.json --work survey-input --data retail-data --resources readiness-resources
+        rm -rf retail-input
+        rm -rf readiness-resources
+    - name: Install native runtime dependencies
+      shell: bash
+      run: |
+        sudo apt-get -o Acquire::Retries=3 update
+        sudo apt-get -o Acquire::Retries=3 install -y --no-install-recommends libphysfs-dev libsdl1.2-dev libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev p7zip-full
+    - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+      with:
+        name: ${{ inputs.engine-artifact }}
+        path: engine
+    - name: Verify the admitted engine before measurement
+      env:
+        EXPECTED_SHA256: ${{ inputs.engine-sha256 }}
+      shell: bash
+      run: |
+        test -n "$EXPECTED_SHA256"
+        printf '%s  %s\n' "$EXPECTED_SHA256" engine/dxx-redux-d2-headless-route | sha256sum --check --strict
+        chmod u+x engine/dxx-redux-d2-headless-route

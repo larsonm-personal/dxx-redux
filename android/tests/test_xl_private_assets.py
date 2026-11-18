@@ -2250,17 +2250,30 @@ class ReadinessTests(unittest.TestCase):
         self.assertIn("path: build/main/dxx-redux-d2-headless-route", builder)
         for private in ("retail-ci", "secrets.", "statuses: write", "retail-input"):
             self.assertNotIn(private, builder)
-        for name in ("readiness", "readiness-expanded"):
+        shared = (workflow.parents[1] / "actions/xl-survey-inputs/action.yml").read_text()
+        self.assertIn("/missions/d2xxl_downloads", shared)
+        self.assertLess(shared.index("rm -rf readiness-resources"), shared.index("sha256sum --check --strict"))
+        for name in ("readiness", "readiness-expanded", "readiness-full"):
             lane = jobs.split(f"\n  {name}:\n", 1)[1].split(f"\n  {name}-report:\n", 1)[0]
             self.assertIn("needs: [admit, readiness-engine]", lane)
             self.assertIn("if: needs.admit.outputs.eligible == 'true'", lane)
-            self.assertLess(lane.index("Revalidate pinned candidate"), lane.index("Check out pinned uploaded"))
-            self.assertLess(lane.index("rm -rf readiness-resources"), lane.index("sha256sum --check --strict"))
-            self.assertLess(lane.index("sha256sum --check --strict"), lane.index("--engine engine/"))
+            if name == "readiness":
+                self.assertLess(lane.index("Revalidate pinned candidate"), lane.index("Check out pinned uploaded"))
+                self.assertLess(lane.index("rm -rf readiness-resources"), lane.index("sha256sum --check --strict"))
+                self.assertLess(lane.index("sha256sum --check --strict"), lane.index("--engine engine/"))
+            else:
+                stage = lane.index("uses: ./control/.github/actions/xl-survey-inputs")
+                self.assertLess(lane.index("Revalidate pinned candidate"), stage)
+                self.assertLess(stage, lane.index("--engine engine/"))
             self.assertIn("needs.readiness-engine.outputs.sha256", lane)
             self.assertNotIn("cmake --build", lane)
             if name == "readiness-expanded":
                 self.assertIn("timeout-minutes: 10", lane)
+            if name == "readiness-full":
+                self.assertIn("needs.admit.outputs.full_survey == 'true'", lane)
+                self.assertIn("--require-full-inventory", lane)
+                self.assertIn("path: survey-groups.json", lane)
+                self.assertNotIn("path: readiness-full", lane)
 
     def expected_fixture(self):
         catalog_path = Path(__file__).with_name("xl_readiness_inventory.json")
