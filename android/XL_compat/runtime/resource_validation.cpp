@@ -1353,12 +1353,20 @@ void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &le
 			const int child = level.segments[wall.segment].children[wall.side];
 			if (child < 0 || std::size_t(child) >= level.segments.size())
 				throw std::runtime_error("Blastable strip requires a reciprocal wall pair");
-			bool reciprocal = false;
-			for (const auto &back : level.walls)
-				if (back.segment == child && back.side >= 0 && back.side < 6 &&
-				    level.segments[child].children[back.side] == wall.segment && back.type == WALL_BLASTABLE && back.clip == wall.clip)
-					reciprocal = true;
-			if (!reciprocal) throw std::runtime_error("Blastable strip requires the same clip on both reciprocal walls");
+			int back_side = -1;
+			for (int side = 0; side < 6; ++side)
+				if (level.segments[child].children[side] == wall.segment) {
+					if (back_side >= 0) throw std::runtime_error("Blastable strip has ambiguous reciprocal geometry");
+					back_side = side;
+				}
+			if (back_side < 0) throw std::runtime_error("Blastable strip requires reciprocal geometry");
+			const int back_index = level.segments[child].sides[back_side].wall;
+			// Source permits an open reciprocal side, but an authored back wall must own the same clip
+			if (back_index < 0) continue;
+			if (std::size_t(back_index) >= level.walls.size()) throw std::runtime_error("Blastable strip has an invalid reciprocal wall");
+			const auto &back = level.walls[back_index];
+			if (back.segment != child || back.side != back_side || back.type != WALL_BLASTABLE || back.clip != wall.clip)
+				throw std::runtime_error("Blastable strip requires the same clip on both reciprocal walls");
 		}
 	if (!textures->images.empty()) {
 		for (const auto &image : textures->images)

@@ -62,3 +62,55 @@ so admitting the input alone would leave a second ownership gap.
 
 PR #573 still requires user adoption before the trusted supplemental private
 asset owner can run. Do not bypass that controller or merge the stack.
+
+## Implemented checkpoint and local evidence
+
+The candidate follows #580 (4a92b9e8515972aa372a965669c570b148ce8f9c).
+Admission now requires exactly one reciprocal geometric side. An absent back
+wall is allowed; an authored back wall still must be blastable with the same
+clip. Missing/ambiguous geometry and conflicting walls remain rejected. The
+side-phase owner grants the absent-wall geometric side its replacement frame
+bound. The native delayed explosion checks the back-wall index before updating
+flags or notifying the route owner; native clocks and save codecs are unchanged.
+D1's analogous native path was inspected. This change is limited to D2, whose
+XL admission demonstrates the dependency; no D1 XL support is introduced.
+
+Receipts are under E:/dxx-redux-builds/xl-next-20261117:
+
+- single-strip-full-02 passes the complete optimized native strip owner after
+  explicit incoming prepare/move/discard with a pending outgoing explosion.
+  All existing geometry, phase, damage, obstruction and clock controls pass,
+  including four paired and four one-sided extracted-source explosion cases.
+- single-strip-debug-02 passes the one-sided owner with assertions. Both owners
+  verify three cold restores through stock, strict passability boundary,
+  retirement, unrelated walls, invalid saved-phase rejection and a real
+  120-frame capture/clean replay with detailed world/object/XL and exact SIM
+  state/call counts. Raw observer equality remains false under the existing
+  documented semantic equivalences; no RNG rewind or time compensation is used.
+- single-strip-gpu-host-01 passes 24 actual native g3 texture draws and reuploads
+  on Intel Arc 140T. Rendered binary SHA256:
+  f2e038f2da4b56dcf2c722ab2a9c3d9f5853584c3d5b42e678cfb76065211ab5.
+- android-single-strip-01 passes 36/36 in 35.545s, run
+  8b42d4aed81c4af9b42944aa575c3130, including GPU controls before/after disk
+  restore through stock. Protected before/after file hashes match.
+  Frozen single-strip-apk-01/candidate.apk SHA256:
+  fa034dc962c44d32f89b647a6d7e22467f2d3a8649e635175575519127ccac6a.
+  The installed prior APK was backed up and verified as
+  5c5df75e2fd54c7c12090d118c81eed4494462bc81dac4c7e1fa950ff84257b2.
+- single-strip-original-01 passes exact original Boiling Point level 5 for 120
+  unassisted ordinary developer-OFF frames in 3.641s. This is a diagnostic
+  subset, with null target_sha and a separate candidate/source/binary receipt.
+- single-strip-original-rendered-01 passes 120 unassisted rendered frames on
+  the same original level. Original Android lifecycle validation is underway;
+  do not credit it until its terminal receipt and protected hashes are checked.
+
+Derived fixture HOG SHA256 is
+9e8509fd843793936563f7e9a0fbcf9eec14b295a406920d927fbb056d820c7d;
+its authored portal uses retained original geometry with only a front wall.
+The texture hash remains 61acd14d16bcc724bd15e4bea627bfb150f92f90f66bcbe60b3bc25e62b493c1.
+Derived controls deliberately isolate objects, relocate/shrink the player,
+assign test textures and drive native clocks. They are not unassisted original
+readiness. Original input assets are unchanged. General Android XL replay,
+startup FX discrepancy and the G2 corrupt-trailer energy defect remain open.
+Local Linux runtime is unavailable because WSL execution times out; compile
+checks must not be credited as private runtime tests.

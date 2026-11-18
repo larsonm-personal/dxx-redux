@@ -6,14 +6,15 @@
 namespace xl_test
 {
 // Derived 23/40 fixture: add closed wall pairs to existing open portals
-inline xl_compat::Bytes add_cloak_pairs(const xl_compat::Bytes &original, unsigned additional)
+inline xl_compat::Bytes add_cloak_pairs(const xl_compat::Bytes &original, unsigned additional, bool one_sided = false)
 {
 	const auto source = xl_compat::inspect_level(original);
 	if (source.level_version != 23 || source.game_version != 40) throw std::runtime_error("Cloak fixture requires 23/40 geometry");
 	auto rooms = source.segments;
 	std::vector<xl_compat::Wall> added;
-	for (std::size_t segment = 0; segment < rooms.size() && added.size() < additional * 2; ++segment)
-		for (int side = 0; side < 6 && added.size() < additional * 2; ++side) {
+	const unsigned wall_count = additional * (one_sided ? 1 : 2);
+	for (std::size_t segment = one_sided ? 1 : 0; segment < rooms.size() && added.size() < wall_count; ++segment)
+		for (int side = 0; side < 6 && added.size() < wall_count; ++side) {
 			auto &room = rooms[segment];
 			const int child = room.children[side];
 			if (child <= int(segment) || child >= int(rooms.size()) || room.sides[side].wall != -1) continue;
@@ -22,6 +23,7 @@ inline xl_compat::Bytes add_cloak_pairs(const xl_compat::Bytes &original, unsign
 				if (rooms[child].children[face] == int(segment)) connected = face;
 			if (connected < 0 || rooms[child].sides[connected].wall != -1) continue;
 			for (const auto location : { std::array<int, 2>{ int(segment), side }, std::array<int, 2>{ child, connected } }) {
+				if (one_sided && location[0] == child) continue;
 				auto &face = rooms[location[0]].sides[location[1]];
 				face.wall = int(source.walls.size() + added.size());
 				face.texture = 1;
@@ -30,7 +32,7 @@ inline xl_compat::Bytes add_cloak_pairs(const xl_compat::Bytes &original, unsign
 				added.push_back({ location[0], location[1], 0, -1, 5, 0, 0, 255, -1, 1, 255, 0 });
 			}
 		}
-	if (added.size() != additional * 2) throw std::runtime_error("Not enough original portals for cloak capacity fixture");
+	if (added.size() != wall_count) throw std::runtime_error("Not enough original portals for cloak capacity fixture");
 	const std::size_t geometry_start = source.mine_offset + 5 + source.vertices.size() * 12;
 	auto old_end = geometry_start;
 	for (const auto &room : source.segments) {

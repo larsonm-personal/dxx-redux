@@ -5,11 +5,11 @@
 namespace xl_test
 {
 // Reuse the audited portal/table writer, then make the added pairs animated doors
-inline xl_compat::Bytes add_door_pairs(const xl_compat::Bytes &original, unsigned pairs)
+inline xl_compat::Bytes add_door_pairs(const xl_compat::Bytes &original, unsigned pairs, bool one_sided = false)
 {
 	const auto source = xl_compat::inspect_level(original);
 	if (source.walls.empty() || source.walls[0].clip < 0) throw std::runtime_error("Door fixture needs an authored wall clip");
-	auto bytes = add_cloak_pairs(original, pairs);
+	auto bytes = add_cloak_pairs(original, pairs, one_sided);
 	const auto expanded = xl_compat::inspect_level(bytes);
 	for (std::size_t i = source.walls.size(); i < expanded.walls.size(); ++i) {
 		const auto row = expanded.sections[1].offset + i * 25;

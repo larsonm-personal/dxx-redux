@@ -366,6 +366,14 @@ void xl_door_phases_bind(const xl_compat::Inventory &level, const xl_assets::Obj
 				if (frames < 2 || frames > 128 || clip.play_time < frames)
 					throw std::runtime_error("Door strip phase has an invalid replacement count");
 				limits[wall.segment][wall.side] = int16_t(frames);
+				if (wall.type == WALL_BLASTABLE) {
+					const int child = level.segments[wall.segment].children[wall.side];
+					if (child >= 0 && child < Num_segments)
+						for (int back = 0; back < 6; ++back)
+							if (level.segments[child].children[back] == wall.segment && level.segments[child].sides[back].wall < 0)
+								// SetTexture publishes phase to this geometric side even without a back wall
+								limits[child][back] = int16_t(frames);
+				}
 				// InitDoorAnims initializes moving doors only; blastable sides retain zero
 				if (wall.type == WALL_DOOR)
 					phases[wall.segment][wall.side] = int16_t(xl_compat::door_strip_initial_phase((clip.flags & WCF_TMAP1) != 0));

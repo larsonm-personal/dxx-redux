@@ -172,6 +172,7 @@ static int close_door_test(int argc, char **argv)
 			if (!std::strcmp(group, "doors")) door_strip_lifecycle(output);
 			else if (!std::strcmp(group, "pair")) door_strip_unequal_pair(output);
 			else if (!std::strcmp(group, "blastable")) blastable_strip_lifecycle(output);
+			else if (!std::strcmp(group, "single")) exploding_strip_lifecycle(output, true);
 			else if (!std::strcmp(group, "exploding")) exploding_strip_lifecycle(output);
 			else throw std::runtime_error("Unknown strip assertion group");
 			std::cout << "XL close-door controls passed\n";
@@ -190,6 +191,7 @@ static int close_door_test(int argc, char **argv)
 			door_strip_unequal_pair(output);
 			blastable_strip_lifecycle(output);
 			exploding_strip_lifecycle(output);
+			exploding_strip_lifecycle(output, true);
 		}
 		std::cout << "XL close-door controls passed\n";
 		return 0;

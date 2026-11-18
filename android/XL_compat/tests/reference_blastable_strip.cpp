@@ -121,6 +121,7 @@ CWall *WALL(int n)
 }
 struct CSegment {
 	int index = 0, m_children[6]{}, phase = 0;
+	bool has_wall = true;
 	struct {
 		CFixVector m_normals[2];
 	} m_sides[6];
@@ -131,11 +132,11 @@ struct CSegment {
 	}
 	CWall *Wall(int)
 	{
-		return &walls[index];
+		return has_wall ? &walls[index] : nullptr;
 	}
 	int WallNum(int)
 	{
-		return index;
+		return has_wall ? index : NO_WALL;
 	}
 	int ConnectedSide(CSegment *)
 	{
@@ -221,13 +222,14 @@ void blastable_strip_reference(const char *path)
 	std::cout << samples << " extracted-reference blastable strip damage, phase and collision-flag comparisons passed\n";
 }
 
-void exploding_strip_reference(const char *path)
+void exploding_strip_reference(const char *path, bool one_sided)
 {
 	std::ifstream input(path);
 	segments[1].index = 1;
 	segments[0].m_children[0] = 1;
 	int elapsed, before, phase, flags, expected_time, active, expected_phase, expected_flags, expected_objects;
 	int samples = 0;
+	segments[1].has_wall = !one_sided;
 	animation.flags = WCF_EXPLODES;
 	walls[0] = walls[1] = {};
 	segments[0].phase = segments[1].phase = 0;
@@ -244,10 +246,11 @@ void exploding_strip_reference(const char *path)
 		DoExplodingWallFrame();
 		if (gameData.wallData.exploding.entry.time != expected_time || int(gameData.wallData.exploding.count) != active ||
 		    segments[0].phase != expected_phase || segments[1].phase != expected_phase || walls[0].flags != expected_flags ||
-		    walls[1].flags != expected_flags || normal_fireballs + damaging_fireballs != expected_objects || random_calls != expected_objects * 2)
+		    walls[1].flags != (one_sided ? flags : expected_flags) || normal_fireballs + damaging_fireballs != expected_objects || random_calls != expected_objects * 2)
 			throw std::runtime_error("Exploding strip source clock/frame/fireball-count mismatch at " + std::to_string(samples));
 		++samples;
 	}
 	if (!input.eof() || samples != 4) throw std::runtime_error("Incomplete exploding strip samples");
-	std::cout << samples << " extracted-reference exploding strip timer, frame, flag and fireball-count comparisons passed\n";
+	segments[1].has_wall = true;
+	std::cout << samples << (one_sided ? " one-sided" : " paired") << " extracted-reference exploding strip timer, frame, flag and fireball-count comparisons passed\n";
 }

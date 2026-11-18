@@ -442,3 +442,29 @@ source-backed dependency and ordered qualification work. No one-sided admission
 change is included in the equipment checkpoint. Local Linux runtime remains
 unavailable because direct WSL execution times out; public source compilation
 is not credited as private-asset runtime testing.
+
+## Equipment published CI and one-sided checkpoint
+
+Equipment admission is PR #580, head 4a92b9e8515972aa372a965669c570b148ce8f9c,
+synthetic merge ef7a41bb7acc25009f4bab7e2bebf36a3ad874f0, parent e8726f1.
+Trusted run 44165297788 attempt 1 used controller d85d6afc5209a0c772fe18f814c4533839a9eea2.
+Original eight pass 8/8. Expanded is **incomplete**, with 60 passed, one load
+failure (Boiling Point level 5), and three untested in 272.785s. Control passes.
+Setup used 271 seconds, leaving a 309-second probe budget; the existing runner
+stopped before starting another case with less than its full 45-second watchdog.
+Do not report 63/64 or a readiness percentage from this result. Both the
+600-second overall cap and startup guard remain unchanged.
+
+Verified artifact digests under ci-44165297788:
+expanded 14365672667 / 5033768463c943f30a35d4e621c79760d02c65b2de667589faef0a72ea5aa2ad;
+original 14364403934 / af4eedc833dbfcd3e633fe5cf99383dac22b47f5156bff56dd1629f3e8308d35;
+host 14366250329 / 0c9ceaaa24615e94d562c191d7ffdf4c953e21d7e45fab52b0b55c86acbc978f.
+Supplemental private CI still fails trusted asset verification before tests.
+The setup timing log is ci-580-expanded-job-01.log. Public checks remain pending
+and must be inspected on the final candidate.
+
+The one-sided follow-up now passes complete optimized source/native controls,
+Windows assertions, real capture/clean replay, host GPU, protected Android
+save/restore/GPU, and original Boiling Point level 5 developer-OFF and rendered
+120-frame checks. See xl_one_sided_strip_20261117.md for exact evidence and
+remaining original Android/CI work. This does not yet establish complete 64/64.
