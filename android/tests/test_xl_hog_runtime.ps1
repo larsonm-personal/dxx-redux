@@ -3,21 +3,68 @@
 param(
     [Parameter(Mandatory)][string]$Serial,
     [Parameter(Mandatory)][string]$Hog,
-    [Parameter(Mandatory)][string]$Descriptor
+    [Parameter(Mandatory)][string]$Descriptor,
+    [string]$OriginalSurvey,
+    [string]$OutputDirectory
 )
 $ErrorActionPreference = 'Stop'
 $expectedHog = '1b8b75b829a865191b3dd6686d3eababfd9de692464a1a5dcc5b1410e13bc6c0'
+$expectedDescriptor = 'a4a1be94729745d47fb34b5b83beeff85ed4379f3126c30556a2351ea611f589'
+$mission = 'xhogs'
+$extension = '.mn2'
+$scenario = 'test_xl_hog_runtime.jsonc'
+if ($OriginalSurvey) {
+    # The original distributions include a classic, an XL and a D1 descriptor
+    $originals = @{
+        'klassics' = @('Klassics', 4, 'f194685bd8630097df10ea4100b4cda9a5942e14731d1c60344858f1c78faa54', '9ba2a8637150d8ee4198a2268ff86ae46566a87ab91f715da421e8b892a93e4d')
+        'belials' = @('belial system', 17, '83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb', '87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16')
+        'belialsxl' = @('XL: Belial System (XL)', 17, 'b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83', 'c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341')
+        'pluton' = @('D1: Plutonion Outbreak', 10, 'c92d7d14b79f9ce2a9ad8e9fb60eab4edb4dd10340486f836a4194883ff1c595', '0a7e3de17d60dc4e93a4a131a7d9b96c852f25204bfc5778d6db9f69927c454e')
+    }
+    $mission = [IO.Path]::GetFileNameWithoutExtension($Descriptor)
+    if (!$originals.ContainsKey($mission)) { throw 'Unknown original HOG mission' }
+    $title, $count, $expectedHog, $expectedDescriptor = $originals[$mission]
+    if ($mission -eq 'pluton') { $extension = '.msn' }
+    $rows = @((Get-Content -Raw -LiteralPath $OriginalSurvey | ConvertFrom-Json).rows | Where-Object mission -eq $mission)
+    if ($rows.Count -ne $count -or @($rows.level | Sort-Object -Unique).Count -ne $count) { throw 'Expected every original ordinal exactly once' }
+}
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
-    (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne 'a4a1be94729745d47fb34b5b83beeff85ed4379f3126c30556a2351ea611f589') {
-    throw 'Requires the pinned derived hog fixture from xl_extended_hog'
+    (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne $expectedDescriptor) {
+    throw 'HOG or descriptor differs from the expected distribution'
 }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
 $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
 $output = Join-Path $PSScriptRoot '../../temp/xl-extended-hog-android'
+if ($OutputDirectory) { $output = [IO.Path]::GetFullPath($OutputDirectory) }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
+if ($OriginalSurvey) {
+    $steps = @(
+        @{ _info = @{ _standalone = $false; _owner = 'test_xl_hog_runtime'; games = @('d2') } }
+        @{ action = 'enter_game'; game = 'd2' }
+        @{ action = 'skip_intro'; timeout_ms = 30000 }
+        @{ action = 'select'; text = 'player'; timeout_ms = 20000 }
+        @{ action = 'select'; text = 'New game'; timeout_ms = 20000 }
+        @{ action = 'select_mission'; text = $title; timeout_ms = 20000 }
+        @{ action = 'select'; text = 'Ok'; timeout_ms = 20000 }
+        @{ action = 'select'; text = 'Hotshot'; timeout_ms = 20000 }
+        @{ action = 'skip_briefing'; timeout_ms = 30000 }
+        @{ action = 'wait_for'; expect = @{ in_game = $true; current_level_num = 1; time_paused = $false }; timeout_ms = 30000 }
+        foreach ($row in $rows) {
+            $reject = $mission -eq 'belialsxl' -and $row.level -eq -2
+            $op = if ($reject) { 'reject' } else { 'visit' }
+            @{ action = 'set_debug'; field = 'xl_hog_probe'; value = "${op}:$($row.level):$($row.level_file)"; post_delay_ms = 0 }
+            if (!$reject) {
+                @{ action = 'skip_briefing'; timeout_ms = 30000 }
+                @{ action = 'wait_for'; expect = @{ in_game = $true; current_level_num = $row.level; time_paused = $false }; timeout_ms = 30000 }
+            }
+        }
+    )
+    $scenario = Join-Path $output 'original.jsonc'
+    $steps | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $scenario -Encoding utf8
+}
 function Invoke-HogAdb {
     param([string[]]$Arguments)
     $diagnostic = $null
@@ -32,7 +79,7 @@ function Invoke-HogPrivate {
 $backup = 'files/xl-extended-hog-runtime-backup'
 $paths = @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d2x-redux/d2x.ini',
     'files/d2x-redux/mod_usage.json', 'files/descent.cfg', 'files/file_sets.json', 'shared_prefs',
-    'files/d2x-redux/missions/xhogs.hog', 'files/d2x-redux/missions/xhogs.mn2')
+    "files/d2x-redux/missions/$mission.hog", "files/d2x-redux/missions/$mission$extension")
 $ready = $false
 try {
     Invoke-HogAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
@@ -45,9 +92,9 @@ try {
     $ready = $true
     Invoke-HogAdb -Arguments @('push', (Resolve-Path -LiteralPath $Hog).Path, '/data/local/tmp/xl-hog.hog') | Out-Null
     Invoke-HogAdb -Arguments @('push', (Resolve-Path -LiteralPath $Descriptor).Path, '/data/local/tmp/xl-hog.mn2') | Out-Null
-    Invoke-HogPrivate 'mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-hog.hog files/d2x-redux/missions/xhogs.hog && cp /data/local/tmp/xl-hog.mn2 files/d2x-redux/missions/xhogs.mn2' | Out-Null
+    Invoke-HogPrivate "mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-hog.hog files/d2x-redux/missions/$mission.hog && cp /data/local/tmp/xl-hog.mn2 files/d2x-redux/missions/$mission$extension" | Out-Null
     Invoke-HogAdb -Arguments @('logcat', '-c') | Out-Null
-    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName 'test_xl_hog_runtime.jsonc' -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
+    & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $scenario -Game d2 -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 480
     $testExit = $LASTEXITCODE
     Invoke-HogAdb -Arguments @('logcat', '-d', '-v', 'threadtime') | Set-Content "$output/logcat.txt" -Encoding utf8
     Invoke-HogPrivate 'cat files/automation_result.json' | Set-Content "$output/result.json" -Encoding utf8
@@ -56,7 +103,7 @@ try {
     if ($testExit -ne 0) { throw "Hog runtime failed ($testExit); see $output" }
     $result = Get-Content "$output/result.json" -Raw | ConvertFrom-Json
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw 'Incomplete Hog runtime result' }
-    Write-Host "PASS: XL extended archive ownership, exact disk/rewind and stock transition ($($result.total_steps) steps)"
+    Write-Host "PASS: HOG runtime for $mission ($($result.total_steps) steps)"
 } finally {
     try {
         Invoke-HogAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null

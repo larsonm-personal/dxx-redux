@@ -1,5 +1,6 @@
 #include "../tests/hog_fixture.h"
 #include "../hog.h"
+#include "recorded_future_test.h"
 static xl_compat::Bytes hog_test_read(const char *name)
 {
 	std::unique_ptr<PHYSFS_File, decltype(&PHYSFS_close)> file(PHYSFS_openRead(name), PHYSFS_close);
@@ -15,6 +16,19 @@ static int hog_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir"));
+		if (!std::strcmp(find_arg_value(argc, argv, "-hog-test"), "original-replay")) {
+			const char *mission = find_arg_value(argc, argv, "-mission");
+			require(mission && load_base_mission(mission, error, sizeof(error)), "Cannot select original HOG mission");
+			new_player_config();
+			input_demo_set_skip_level_intro(1);
+			Difficulty_level = 2;
+			d_srand_stream(D_RNG_SIM, 1);
+			d_rand_reset_stream_call_count(D_RNG_SIM);
+			StartNewGame(1);
+			require(Current_level_num == 1 && !Game_suspended && !cheats.enabled && mission_owns_resource_archive(PHYSFS_getRealDir(Gamesave_current_filename)), "Original HOG replay requires an unassisted mission-owned start");
+			xl_recorded_future(root, "original-hog", true, xl_level_extensions_active() != 0);
+			return 0;
+		}
 		std::ifstream original(root / "missions" / "neptunxl.hog", std::ios::binary);
 		const xl_compat::Bytes source{ std::istreambuf_iterator<char>(original), std::istreambuf_iterator<char>() };
 		const auto members = xl_compat::read_hog(source);
@@ -24,7 +38,7 @@ static int hog_test(int argc, char **argv)
 		const xl_compat::Bytes payload{ 17, 31, 42, 93, 0, 255 };
 		xl_test::hog_member(bytes, long_name, payload, true);
 		xl_test::hog_member(bytes, "empty", {}, false);
-		for (const auto stem : { "xhogs", "hlegacy" }) {
+		for (const auto stem : { "xhogs", "hlegacy", "hlegacy-long" }) {
 			if (!std::strcmp(stem, "hlegacy")) {
 				bytes[1] = 'H';
 				bytes[2] = 'F';
