@@ -1097,7 +1097,10 @@ def run_suite(suite, repo, build_root, output, timeout):
 
                 receipt = json.loads((work / "xl-originals/original-status.json").read_text())
                 result["xl_checks"] = validate_controller_summary(
-                    receipt, work / "xl-originals/original-ctest.xml", fast=suite["profile"] == "retail-xl-fast"
+                    receipt,
+                    work / "xl-originals/original-ctest.xml",
+                    fast=suite["profile"] == "retail-xl-fast",
+                    require_lifecycles=suite["profile"] == "retail-xl-fast",
                 )
                 if receipt["experimental"]:
                     result["experimental_acceptance"] = {

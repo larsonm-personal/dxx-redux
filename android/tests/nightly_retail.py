@@ -32,6 +32,7 @@ XL_STAGES = frozenset(
         "format-probes",
         "modern-probes",
         "navigation-smoke",
+        "original-lifecycles",
         "verify-receipt",
         "complete",
     )
@@ -680,12 +681,22 @@ def public_diagnostics(value):
                 key: counts[key] for key in ("required_passed", "format_witnesses", "modern_source_levels")
             }
             if value.get("id") == "host-profile:retail-xl-fast":
-                from run_xl_originals import reviewed_fast_cohort
+                from run_xl_originals import reviewed_fast_cohort, validate_lifecycle_summary
+                from xl_readiness import resource_identity
 
                 try:
                     clean["xl_checks"]["required_tests"] = sorted(reviewed_fast_cohort(counts))
                 except ValueError:
                     pass  # Missing or unreviewed membership cannot qualify for publication
+                if counts.get("resources") == resource_identity():
+                    clean["xl_checks"]["resources"] = resource_identity()
+                if "original_lifecycles" in counts:
+                    try:
+                        clean["xl_checks"]["original_lifecycles"] = validate_lifecycle_summary(
+                            counts["original_lifecycles"]
+                        )
+                    except ValueError:
+                        pass  # Invalid supplemental controls cannot qualify for publication
             if counts.get("camera_subchecks") in ("executed", "not_run_missing_addon"):
                 clean["xl_checks"]["camera_subchecks"] = counts["camera_subchecks"]
             if (

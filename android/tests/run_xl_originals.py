@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import math
 import os
 import re
 import shutil
@@ -12,8 +13,8 @@ import time
 import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from xl_private_assets import native_resources, verify
-from xl_readiness import resource_identity
+from xl_private_assets import WARP_LIFECYCLE_INPUT_SHA256, lifecycle_input_identity, native_resources, verify
+from xl_readiness import digest, resource_identity, verify_resources
 from nightly_retail import XL_STAGES
 from run_xl_navigation_smoke import run_anchors
 
@@ -249,10 +250,14 @@ def reviewed_fast_cohort(receipt):
     raise ValueError("XL receipt does not identify a complete reviewed cohort")
 
 
-def validate_controller_summary(receipt, junit, fast=False):
+def validate_controller_summary(receipt, junit, fast=False, require_lifecycles=False):
     """Accept only reviewed complete cohorts, with native execution evidence."""
     required = reviewed_fast_cohort(receipt) if fast else CORE_TESTS
     result = _validate_summary(receipt, required, fast)
+    if require_lifecycles:
+        result["original_lifecycles"] = validate_lifecycle_summary(receipt.get("original_lifecycles"))
+        if receipt.get("resources") != resource_identity():
+            raise ValueError("Original lifecycle owners lack authentic resource identity")
     if fast:
         require_junit(junit, required)
         result["required_tests"] = sorted(required)
@@ -262,8 +267,53 @@ def validate_controller_summary(receipt, junit, fast=False):
     return result
 
 
+def validate_lifecycle_summary(value):
+    """Supplement historical cohort evidence without accepting arbitrary public fields."""
+    if not isinstance(value, dict) or set(value) != {"subzero", "warp"}:
+        raise ValueError("Original lifecycle receipt omitted a required owner")
+    result = {}
+    for name, profile in (("subzero", "private-owner"), ("warp", "original-warp")):
+        row = value[name]
+        if not isinstance(row, dict) or any(
+            row.get(key) is not True for key in ("passed", "controls_complete", "inputs_unchanged")
+        ):
+            raise ValueError("Original lifecycle controls did not complete")
+        elapsed = row.get("elapsed_seconds")
+        if (
+            type(elapsed) not in (int, float)
+            or not math.isfinite(elapsed)
+            or not 0 <= elapsed <= 150
+            or row.get("input_profile") != profile
+            or any(
+                not isinstance(row.get(key), str) or not re.fullmatch("[0-9a-f]{64}", row[key])
+                for key in ("engine_sha256", "report_sha256")
+            )
+        ):
+            raise ValueError("Original lifecycle identity or timing is invalid")
+        result[name] = {
+            key: row[key]
+            for key in (
+                "passed",
+                "controls_complete",
+                "inputs_unchanged",
+                "elapsed_seconds",
+                "input_profile",
+                "engine_sha256",
+                "report_sha256",
+            )
+        }
+    if result["subzero"]["engine_sha256"] != result["warp"]["engine_sha256"]:
+        raise ValueError("Original lifecycle owners used different engines")
+    if value["warp"].get("input_tree_sha256") != WARP_LIFECYCLE_INPUT_SHA256:
+        raise ValueError("Original Warp lifecycle input identity differs")
+    result["warp"]["input_tree_sha256"] = WARP_LIFECYCLE_INPUT_SHA256
+    return result
+
+
 def _validate_summary(receipt, required, fast):
     resources = {}
+    if "original_lifecycles" in receipt:
+        resources["original_lifecycles"] = validate_lifecycle_summary(receipt["original_lifecycles"])
     if "resources" in receipt:
         if receipt["resources"] != resource_identity() or receipt.get("camera_subchecks") != "executed":
             raise ValueError("Provisioned XL resource controls did not execute with the pinned inputs")
@@ -521,6 +571,71 @@ def powerup_results(engine, stage, data, work):
     return result
 
 
+def warp_results(engine, stage, runtime, work):
+    extra = stage / "original-warp/extra"
+    before = lifecycle_input_identity(extra)
+    verify_resources(runtime)
+    output = work / "warp-lifecycle"
+    output.mkdir(exist_ok=False)
+    started = time.monotonic()
+    with (work / "warp-lifecycle.log").open("wb") as log:
+        subprocess.run(
+            [
+                "cmake",
+                "-DENGINE=" + str(engine),
+                "-DDATA=" + str(runtime),
+                "-DEXTRA=" + str(extra),
+                "-DOUTPUT=" + str(output),
+                "-P",
+                str(Path(__file__).resolve().parents[1] / "XL_compat/tests/unused_wall.cmake"),
+            ],
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            check=True,
+            timeout=150,
+        )
+    reports = list(output.glob("*/unused-wall.json"))
+    if len(reports) != 1:
+        raise ValueError("Original Warp lifecycle omitted or duplicated its result")
+    report = reports[0]
+    controls = json.loads(report.read_text())
+    identity = json.loads(report.with_name("identity.json").read_text())
+    if (
+        controls.get("mission") != "wshock20"
+        or controls.get("level") != 4
+        or controls.get("ordinary_frames") != 120
+        or controls.get("closed_unused_clips") != 24
+        or controls.get("illusion_unused_clips") != 4
+        or any(
+            controls.get(key) != 1
+            for key in (
+                "future_equal",
+                "cold_cloak_restore",
+                "illusion_transitions",
+                "cloak_transitions",
+                "raw_clips_preserved",
+            )
+        )
+        or identity.get("exit_code") != "0"
+        or identity.get("engine_sha256") != digest(engine)
+        or identity.get("input_tree_before") != before
+        or identity.get("input_tree_after") != before
+        or lifecycle_input_identity(extra) != before
+    ):
+        raise ValueError("Original Warp lifecycle receipt is incomplete")
+    verify_resources(runtime)
+    return {
+        "passed": True,
+        "controls_complete": True,
+        "inputs_unchanged": True,
+        "elapsed_seconds": round(time.monotonic() - started, 3),
+        "engine_sha256": digest(engine),
+        "report_sha256": digest(report),
+        "input_profile": "original-warp",
+        "input_tree_sha256": before,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, required=True)
@@ -542,7 +657,7 @@ def main():
     stage = repo / "game_data/retail-ci/xl"
     work.mkdir(parents=True, exist_ok=True)
     mark_stage(work, "verify-assets", owner_started)
-    data = verify(stage, modern=args.fast)
+    data = verify(stage, modern=args.fast, lifecycles=args.fast)
     (work / "original-status.json").unlink(missing_ok=True)
 
     def run(command, timeout=1200, check=True, *, log_path=None):
@@ -738,14 +853,14 @@ def main():
         receipt["navigation_anchors_passed"] = navigation["anchors_passed"]
         receipt["navigation_smoke_passed"] = navigation["passed"]
         receipt["navigation_smoke_milliseconds"] = round(navigation["seconds"] * 1000)
-        # Keep the reviewed 113-test controller cohort intact. This additional
-        # candidate-owned probe must also succeed before this owner can complete
+        # Keep the reviewed 113-test cohort intact; both supplemental original
+        # lifecycle owners must also complete with the same candidate executable
+        mark_stage(work, "original-lifecycles", owner_started)
         powerups = powerup_results(engine, stage, retail_data, work)
-        receipt["subzero_lifecycle"] = {
-            key: powerups[key] for key in ("passed", "elapsed_seconds", "engine_sha256", "input_profile")
-        }
+        walls = warp_results(engine, stage, work / "subzero-runtime", work)
+        receipt["original_lifecycles"] = validate_lifecycle_summary({"subzero": powerups, "warp": walls})
     mark_stage(work, "verify-receipt", owner_started)
-    verify(stage, modern=args.fast)
+    verify(stage, modern=args.fast, lifecycles=args.fast)
     if native_resources(stage) != resource_parameters:
         raise ValueError("XL native resource provisioning changed during execution")
     receipt.update(

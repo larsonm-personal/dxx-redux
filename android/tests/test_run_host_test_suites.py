@@ -1115,6 +1115,24 @@ class RetailProfileTests(unittest.TestCase):
                 "navigation_smoke_passed": 1 if fast else 0,
                 "navigation_smoke_milliseconds": 800,
             }
+            if fast:
+                from xl_private_assets import WARP_LIFECYCLE_INPUT_SHA256
+                from xl_readiness import resource_identity
+
+                summary["resources"] = resource_identity()
+                summary["camera_subchecks"] = "executed"
+                common = dict(
+                    passed=True,
+                    controls_complete=True,
+                    inputs_unchanged=True,
+                    elapsed_seconds=4.0,
+                    engine_sha256="a" * 64,
+                    report_sha256="b" * 64,
+                )
+                summary["original_lifecycles"] = {
+                    "subzero": dict(common, input_profile="private-owner"),
+                    "warp": dict(common, input_profile="original-warp", input_tree_sha256=WARP_LIFECYCLE_INPUT_SHA256),
+                }
             code, receipt, calls, _ = self.run_profile(profile, xl_receipt=summary)
             self.assertEqual(code, 0)
             self.assertEqual(len(calls), 1)
@@ -1137,7 +1155,11 @@ class RetailProfileTests(unittest.TestCase):
                     }
                 )
                 self.assertEqual(published["results"][0]["xl_checks"]["required_tests"], sorted(required))
-                self.assertEqual(positive_receipt(published, "a" * 40), 800)
+                self.assertEqual(positive_receipt(published, "a" * 40, require_lifecycles=True), 800)
+                incomplete = {key: value for key, value in summary.items() if key != "original_lifecycles"}
+                code, failed, _, _ = self.run_profile(profile, xl_receipt=incomplete)
+                self.assertNotEqual(code, 0)
+                self.assertEqual(failed["status"], "FAIL")
             for invalid in (
                 None,
                 {**summary, "required_passed": 40},
