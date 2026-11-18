@@ -359,14 +359,16 @@ void xl_door_phases_bind(const xl_compat::Inventory &level, const xl_assets::Obj
 		limits[wall.segment][wall.side] = int16_t(clip.num_frames - 1);
 		for (const auto &door : playback->doors)
 			if (door.clip == wall.clip) {
-				if (wall.type != WALL_DOOR || door.bitmaps.empty())
+				if (door.bitmaps.empty())
 					throw std::runtime_error("Door strip phase is bound to a different wall type");
 				// The live count is published later; retain the admitted replacement count
 				const int frames = door.frames;
 				if (frames < 2 || frames > 128 || clip.play_time < frames)
 					throw std::runtime_error("Door strip phase has an invalid replacement count");
 				limits[wall.segment][wall.side] = int16_t(frames);
-				phases[wall.segment][wall.side] = int16_t(xl_compat::door_strip_initial_phase((clip.flags & WCF_TMAP1) != 0));
+				// InitDoorAnims initializes moving doors only; blastable sides retain zero
+				if (wall.type == WALL_DOOR)
+					phases[wall.segment][wall.side] = int16_t(xl_compat::door_strip_initial_phase((clip.flags & WCF_TMAP1) != 0));
 			}
 	}
 	initial_phases = phases;
@@ -381,6 +383,27 @@ extern "C" int xl_door_record_frame(int segment, int side, int clip, int frame)
 	const int phase = xl_compat::door_texture_phase(frame, xl_pog_door_frames(clip));
 	if (phase < -phase_limits[segment][side]) return 0;
 	side_phases[segment][side] = int16_t(phase);
+	return 1;
+}
+
+extern "C" int xl_wall_effect_frame_count(int clip, int ordinary)
+{
+	return xl_level_extensions_active() ? xl_compat::door_effect_frame_count(ordinary, xl_pog_door_frames(clip)) : ordinary;
+}
+
+extern "C" int xl_wall_explosion_required(int clip, int flags)
+{
+	return (WallAnims[clip].flags & WCF_EXPLODES) &&
+	       !(xl_level_extensions_active() && xl_pog_door_frames(clip) && (flags & WALL_BLASTED));
+}
+
+extern "C" int xl_wall_strip_set_texture(int segment, int side, int connected_segment, int connected_side, int clip, int frame)
+{
+	if (!xl_level_extensions_active() || !xl_pog_door_frames(clip)) return 0;
+	// Source SetTexture retains authored mappings and publishes the initiating clip's phase to both faces
+	xl_door_record_frame(segment, side, clip, frame);
+	if (connected_segment >= 0 && connected_side >= 0)
+		xl_door_record_frame(connected_segment, connected_side, clip, frame);
 	return 1;
 }
 

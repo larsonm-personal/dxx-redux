@@ -89,6 +89,16 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/wall.cpp" "void InitDo
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/side.cpp" "void CSide::SetTextures (")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_door_strip.h" CONTENT "${extracted}")
 target_sources(xl_close_door_reference PRIVATE tests/reference_door_strip.cpp)
+set(extracted "// Actual pinned XL destructible wall frame selection and damage\n")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/wall.cpp"
+                      "int32_t WallEffectFrameCount (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/segment.cpp" "void CSegment::BlastWall (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/segment.cpp"
+                      "void CSegment::DamageWall (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/wall.cpp" "void DoExplodingWallFrame (")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_blastable_strip.h"
+     CONTENT "${extracted}")
+target_sources(xl_close_door_reference PRIVATE tests/reference_blastable_strip.cpp)
 file(STRINGS "${XL_REFERENCE_GEOMETRY_ROOT}/include/wall.h" strip_flags
      REGEX "^#define[ \t]+WCF_(ALTFMT|TMAP1|INITIALIZED)[ \t]+")
 list(JOIN strip_flags "\n" strip_flags_text)

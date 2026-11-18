@@ -5,9 +5,13 @@ endif()
 file(MAKE_DIRECTORY "${OUTPUT}/missions" "${OUTPUT}/preview-user")
 configure_file("${HOG}" "${OUTPUT}/missions/neptunxl.hog" COPYONLY)
 configure_file("${DESCRIPTOR}" "${OUTPUT}/missions/neptunxl.mn2" COPYONLY)
+set(group_args)
+if(GROUP)
+    list(APPEND group_args -wall-strip-group "${GROUP}")
+endif()
 execute_process(
     COMMAND "${ENGINE}" -close_door-test dispatch -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir
-            "${OUTPUT}/preview-user" -nosound -nomusic
+            "${OUTPUT}/preview-user" -nosound -nomusic ${group_args}
     RESULT_VARIABLE result
     OUTPUT_VARIABLE stdout
     ERROR_VARIABLE stderr
@@ -18,10 +22,21 @@ if(NOT result EQUAL 0 OR witness LESS 0)
     message(FATAL_ERROR "Close-door controls failed (${result}): ${stdout}${stderr}")
 endif()
 if(REFERENCE)
-    execute_process(
-        COMMAND "${REFERENCE}" "${OUTPUT}/close-door-samples.txt"
-                "${OUTPUT}/door-animation-samples.txt" RESULT_VARIABLE reference_result
-        OUTPUT_VARIABLE reference_stdout ERROR_VARIABLE reference_stderr)
+    set(reference_args "${OUTPUT}/close-door-samples.txt" "${OUTPUT}/door-animation-samples.txt")
+    if(NOT GROUP)
+        list(APPEND reference_args "${OUTPUT}/blastable-strip-samples.txt"
+             "${OUTPUT}/exploding-strip-samples.txt")
+    elseif(GROUP STREQUAL "blastable")
+        set(reference_args --blastable "${OUTPUT}/blastable-strip-samples.txt")
+    elseif(GROUP STREQUAL "exploding")
+        set(reference_args --exploding "${OUTPUT}/exploding-strip-samples.txt")
+    elseif(GROUP STREQUAL "doors" OR GROUP STREQUAL "pair")
+        set(reference_args --strip-phases)
+    elseif(NOT GROUP STREQUAL "baseline")
+        message(FATAL_ERROR "Unknown strip assertion group")
+    endif()
+    execute_process(COMMAND "${REFERENCE}" ${reference_args} RESULT_VARIABLE reference_result
+                    OUTPUT_VARIABLE reference_stdout ERROR_VARIABLE reference_stderr)
     file(WRITE "${OUTPUT}/reference.log" "${reference_stdout}${reference_stderr}")
     if(NOT reference_result EQUAL 0)
         message(FATAL_ERROR "Close-door reference mismatch: ${reference_stdout}${reference_stderr}")

@@ -509,6 +509,7 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	const char *clock_probe = argument_value("-xl-render-clock-proof");
 	const char *omega_probe = argument_value("-xl-omega-damage-proof");
 	const char *sprite_probe = argument_value("-xl-sprite-material-proof");
+	if (startup_find_cmd_arg("-xl-wall-strip-control") && !sprite_probe) return 1;
 	if (startup_find_cmd_arg("-xl-omega-recording") && !omega_probe) {
 		std::fprintf(stderr, "Omega recording requires the existing isolated damage-probe owner\n");
 		return 1;
@@ -652,7 +653,7 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 		}
 	}
 	if (clock_probe) return xl_render_clock_probe(clock_probe);
-	if (sprite_probe) return xl_sprite_material_probe(sprite_probe);
+	if (sprite_probe) return xl_sprite_material_probe(sprite_probe, startup_find_cmd_arg("-xl-wall-strip-control") != 0);
 	if (message_probe) return xl_message_clock_probe(message_probe);
 	if (omega_probe) return startup_find_cmd_arg("-xl-omega-recording") ? xl_omega_recording_probe(omega_probe) : xl_omega_damage_probe(omega_probe);
 	if (equipment_probe) {

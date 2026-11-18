@@ -84,6 +84,7 @@ extern ubyte object_rendered[MAX_OBJECTS];
 #include "camera_renderer.h"
 #include "camera_controller.h"
 #include "../camera_alignment.h"
+#include "wall_strip_gpu_control.h"
 
 namespace
 {
@@ -204,6 +205,16 @@ void gpu()
 const char *xl_pog_probe(const char *operation)
 {
 	try {
+		if (!std::strcmp(operation, "wall_strip")) {
+			xl_compat::LightningGlowState restore_gl;
+			Readback readback;
+			ParticleProbeTarget target;
+			require(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Wall strip GPU target is incomplete");
+			const auto count = xl_wall_strip_gpu_controls();
+			require(count == 24, "Wall strip GPU controls are incomplete");
+			report = nlohmann::json{ { "passed", true }, { "wall_strip_cases", count } }.dump();
+			return nullptr;
+		}
 		if (!std::strcmp(operation, "wall_camera_monitor")) {
 			xl_compat::LightningGlowState restore_gl;
 			Readback readback;

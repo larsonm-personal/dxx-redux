@@ -1,6 +1,7 @@
 #ifdef DXX_XL_RUNTIME
 #include "explosion_motion.h"
 #include "preview.h"
+#include "doors.h"
 #include "slow_motion_runtime.h"
 #include "d1_in_d2/d1_in_d2.h"
 #include <math.h>
@@ -1744,6 +1745,9 @@ void do_exploding_wall_frame()
 
 				a = Walls[seg->sides[sidenum].wall_num].clip_num;
 				n = WallAnims[a].num_frames;
+#ifdef DXX_XL_RUNTIME
+				n = xl_wall_effect_frame_count(a, n);
+#endif
 
 				csegp = &Segments[seg->children[sidenum]];
 				cside = find_connect_side(seg, csegp);
