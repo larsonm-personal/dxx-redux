@@ -63,6 +63,7 @@ extern "C" {
 #include "strutil.h"
 #include "dxxerror.h"
 #include "mission.h"
+#include "switch.h"
 #include "palette.h"
 #include "gauges.h"
 #include "ai.h"
@@ -77,6 +78,8 @@ namespace
 static_assert(MAX_SUBMODELS == 10, "Update the bounded XL model geometry capacity with native submodels");
 using File = std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)>;
 std::string startup_ham_name, startup_ham_hash, startup_origin, base_rejection;
+std::optional<xl_compat::StartupTextureColors> startup_colors;
+std::string startup_color_rejection;
 char startup_model_names[MAX_POLYGON_MODELS][FILENAME_LEN]{};
 std::string vertigo_rejection, mod_rejection;
 constexpr const char original_vertigo_hash[] = "faa67189ccf5c7d6cdc8e37fa009fb21a1d57ee2c6c212ce091642e4366e3c0f";
@@ -521,6 +524,14 @@ extern "C" void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file
 		auto corrected = startup_ham_name;
 		const char *origin = PHYSFSEXT_locateCorrectCase(corrected.data()) == 0 ? PHYSFS_getRealDir(corrected.c_str()) : nullptr;
 		startup_origin = origin ? origin : "";
+		startup_colors.reset();
+		startup_color_rejection.clear();
+		try {
+			startup_colors = xl_compat::read_startup_texture_colors();
+		} catch (const std::exception &error) {
+			// Other levels can supply their own colors or use ordinary D2 lighting
+			startup_color_rejection = error.what();
+		}
 		if (origin) startup_ham_name = corrected;
 		startup_bank_sources.clear();
 		// Both banks matter: playback may fall back and authored durations use the canonical bank
@@ -544,6 +555,7 @@ extern "C" void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file
 		startup_ham_hash.clear();
 		startup_ham_name.clear();
 		startup_origin.clear();
+		startup_colors.reset();
 		startup_sound_hashes = {};
 		startup_graphics_hashes.clear();
 		startup_bank_sources.clear();
@@ -1130,6 +1142,7 @@ struct XlPreparedResources::State {
 	int camera_robot = -1, camera_model = -1;
 	HxmChanges changes;
 	xl_compat::MissionLightingCompanions lighting;
+	bool classic_lighting = false;
 	std::shared_ptr<const xl_compat::MessageResources> messages;
 	std::shared_ptr<const xl_compat::AudioResources> audio;
 	std::unique_ptr<xl_compat::PreparedAudioInstall> audio_install;
@@ -1592,13 +1605,25 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 		if (target ? target->archive().empty() : !*mission_resource_archive())
 			throw std::runtime_error("D2 XL lighting companions require an owned mission HOG: " + base);
 		state->lighting = xl_compat::load_mission_lighting_companions(level_filename, target);
-		if (state->lighting.colors) {
+		if (level && level->level_version == 7 && level->game_version == 31 && state->lighting.brightness) {
+			if (!level->flicker_lights.empty() || std::any_of(level->triggers.begin(), level->triggers.end(), [](const xl_compat::Trigger &trigger) {
+				    return trigger.type == TT_LIGHT_OFF || trigger.type == TT_LIGHT_ON;
+			    }))
+				throw std::runtime_error("Classic mine LGT requires native variable-light integration: " + std::string(level_filename));
+			if (!state->lighting.colors) {
+				if (!startup_colors)
+					throw std::runtime_error(startup_color_rejection.empty() ? "Classic mine LGT requires the startup D2 default descent2.clr" : startup_color_rejection);
+				state->lighting.colors = startup_colors->colors;
+				state->lighting.sources.emplace(startup_colors->source, startup_colors->hash);
+			}
+			state->classic_lighting = true;
+		} else if (state->lighting.colors) {
 			// These layouts read and validate the companion before replacing all 910 colors from geometry
 			const bool embedded = level && (xl_compat::modern_runtime_layout(*level) || (level->level_version == 17 && level->game_version == 36));
 			if (!embedded || level->texture_colors.size() != xl_compat::companion_texture_count)
 				throw std::runtime_error("D2 XL CLR companion overrides are not supported: " + std::string(level_filename));
 		}
-		if (level && level->level_version <= 8 && state->lighting.brightness)
+		if (level && level->level_version <= 8 && state->lighting.brightness && !state->classic_lighting)
 			throw std::runtime_error("Classic mine LGT brightness requires native lighting integration: " + std::string(level_filename));
 	}
 	const auto hxm_name = base + ".HXM";
@@ -1617,6 +1642,8 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 		if (const auto bytes = target->archive_bytes(hxm_name, 64 * 1024 * 1024)) xl_read_retained_resource(*bytes, prepare_level_hxm);
 	} else if (auto file = companion(hxm_name)) prepare_level_hxm(file.get());
 	state->prepare_models(ordinal, mission);
+	if (state->classic_lighting)
+		state->owned_models.sources.insert(state->lighting.sources.begin(), state->lighting.sources.end());
 	if (level && std::any_of(level->objects.begin(), level->objects.end(), [](const xl_compat::Object &object) { return object.type == 16; })) {
 		if (!target) prepare_camera_model();
 		else {
@@ -1984,6 +2011,16 @@ bool XlPreparedResources::texture_brightness(int texture, int &brightness) const
 	if (!state->lighting.brightness || texture < 0 || std::size_t(texture) >= state->lighting.brightness->size()) return false;
 	brightness = (*state->lighting.brightness)[texture];
 	return true;
+}
+
+const xl_compat::MissionLightingCompanions *XlPreparedResources::classic_lighting() const
+{
+	return state->classic_lighting ? &state->lighting : nullptr;
+}
+
+const xl_compat::MissionLightingCompanions *xl_prepared_classic_lighting()
+{
+	return prepared_resources ? prepared_resources->classic_lighting() : nullptr;
 }
 
 extern "C" int xl_prepared_texture_brightness(int texture, int *brightness)

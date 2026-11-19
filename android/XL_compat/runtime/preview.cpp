@@ -659,15 +659,20 @@ extern "C" int xl_classic_lighting_requested(void)
 extern "C" int xl_classic_lighting_prepare(const char *filename)
 {
 	xl_classic_lighting_release();
-	if (!xl_classic_lighting_requested()) return 1;
-	if (!Current_mission || Current_mission->descent_version != 1 || (Game_mode & GM_MULTI)) return 1;
+	if (!Current_mission || (Game_mode & GM_MULTI)) return 1;
+	const auto *companions = xl_prepared_classic_lighting();
+	if (!companions && (Current_mission->descent_version != 1 || !xl_classic_lighting_requested())) return 1;
 	rejection.clear();
 	try {
-		const auto companions = xl_compat::load_mission_lighting_companions(filename);
-		if (!companions.brightness && !companions.colors) return 1;
-		if (!companions.brightness || !companions.colors) throw std::runtime_error("classic lighting preview requires both LGT and CLR companions");
+		std::optional<xl_compat::MissionLightingCompanions> d1_companions;
+		if (!companions) {
+			d1_companions.emplace(xl_compat::load_mission_lighting_companions(filename));
+			companions = &*d1_companions;
+			if (!companions->brightness && !companions->colors) return 1;
+		}
+		if (!companions->brightness || !companions->colors) throw std::runtime_error("classic lighting requires effective brightness and color tables");
 		const auto optics = xl_compat::classic_default_lighting_camera();
-		const auto sources = xl_compat::compile_classic_geometry_lights(*companions.brightness, *companions.colors);
+		const auto sources = xl_compat::compile_classic_geometry_lights(*companions->brightness, *companions->colors);
 		auto pending = std::make_unique<xl_compat::ClassicAmbientLighting>(sources, optics);
 		auto colors = pending->gather(xl_compat::ClassicAmbientProfile{});
 		std::vector<float> level_brightness(colors.size(), 0);
@@ -685,7 +690,7 @@ extern "C" int xl_classic_lighting_prepare(const char *filename)
 		return 1;
 	} catch (const std::exception &error) {
 		xl_classic_lighting_release();
-		rejection = std::string("Experimental classic lighting: ") + error.what();
+		rejection = std::string("Classic lighting: ") + error.what();
 		return 0;
 	}
 }
@@ -697,13 +702,12 @@ extern "C" unsigned xl_classic_lighting_vertex_count(void)
 
 extern "C" int xl_classic_legacy_fans_active(void)
 {
-	return classic_ambient && Game_wind && Current_mission &&
-	       Current_mission->descent_version == 1 && !(Game_mode & GM_MULTI);
+	return classic_ambient && Game_wind && Current_mission && !(Game_mode & GM_MULTI);
 }
 
 extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 {
-	if (!classic_ambient || !Current_mission || Current_mission->descent_version != 1 || (Game_mode & GM_MULTI) ||
+	if (!classic_ambient || !Current_mission || (Game_mode & GM_MULTI) ||
 	    !rgb || vertex < 0 || static_cast<std::size_t>(vertex) >= classic_colors.size()) return 0;
 	std::copy(classic_colors[vertex].begin(), classic_colors[vertex].end(), rgb);
 	return 1;
@@ -1483,9 +1487,12 @@ extern "C" int xl_preview_texture_emitter(int segment_number, int side_number, x
 {
 	if (emitter) *emitter = {};
 	// The water pilot retains its previously qualified presentation profile
-	if (!emitter || !source || admitted_water_arena || Game_mode & GM_MULTI || segment_number < 0 || segment_number >= Num_segments || side_number < 0 || side_number >= 6) return 0;
-	const auto &authored_segment = source->segments.at(segment_number);
-	if (!xl_compat::skybox_corona_segment_enabled(authored_segment.function, xl_compat::segment_property_bits(source->level_version, authored_segment))) return 0;
+	const auto *classic = xl_prepared_classic_lighting();
+	if (!emitter || (!source && !classic) || admitted_water_arena || Game_mode & GM_MULTI || segment_number < 0 || segment_number >= Num_segments || side_number < 0 || side_number >= 6) return 0;
+	if (source) {
+		const auto &authored_segment = source->segments.at(segment_number);
+		if (!xl_compat::skybox_corona_segment_enabled(authored_segment.function, xl_compat::segment_property_bits(source->level_version, authored_segment))) return 0;
+	}
 	const auto &side = Segments[segment_number].sides[side_number];
 	if (side.wall_num >= 0) {
 		if (side.wall_num >= Num_walls) return 0;
@@ -1532,14 +1539,15 @@ extern "C" int xl_preview_texture_emitter(int segment_number, int side_number, x
 		case 409: intensity *= 2; break;
 		default: break;
 	}
-	if (texture < 0 || texture >= NumTextures || std::size_t(texture) >= source->texture_colors.size()) return 0;
+	if (texture < 0 || texture >= NumTextures || std::size_t(texture) >= (classic ? classic->colors->size() : source->texture_colors.size())) return 0;
 	const auto bitmap = Textures[texture].index;
 	if (bitmap >= Num_bitmap_files) return 0;
 	const char *name = piggy_game_bitmap_name(&GameBitmaps[bitmap]);
 	if (!name || std::strstr(name, "metl") || std::strstr(name, "rock") || std::strstr(name, "water")) return 0;
 	emitter->texture = texture;
 	emitter->intensity = intensity;
-	for (unsigned c = 0; c < 3; ++c) emitter->rgb[c] = float(source->texture_colors[texture].rgb[c]);
+	for (unsigned c = 0; c < 3; ++c)
+		emitter->rgb[c] = classic ? float((*classic->colors)[texture].channels[c]) / float(0x7fffffff) : float(source->texture_colors[texture].rgb[c]);
 	return 1;
 }
 
@@ -1650,7 +1658,7 @@ void xl_compat::skybox_corona_native_controls()
 extern "C" int xl_preview_corona_geometry(int segment_number, int side_number, const int32_t eye[3], int eye_segment,
                                           int32_t center[3], int32_t *radius, float *facing)
 {
-	if (!source || segment_number < 0 || segment_number >= Num_segments || side_number < 0 || side_number >= 6 || eye_segment < 0 || eye_segment >= Num_segments) return 0;
+	if ((!source && !xl_prepared_classic_lighting()) || segment_number < 0 || segment_number >= Num_segments || side_number < 0 || side_number >= 6 || eye_segment < 0 || eye_segment >= Num_segments) return 0;
 	auto &seg = Segments[segment_number];
 	if (!(WALL_IS_DOORWAY(&seg, side_number) & WID_RENDER_FLAG)) return 0;
 	vms_vector point{}, inside{}, observer{ eye[0], eye[1], eye[2] }, direction{}, normals[2];
@@ -1693,7 +1701,7 @@ extern "C" int xl_preview_corona_geometry(int segment_number, int side_number, c
 
 extern "C" void xl_preview_render_emitters(const short *segments, int count, const int32_t eye[3], int eye_segment)
 {
-	if (!source || Game_mode & GM_MULTI) return;
+	if ((!source && !xl_prepared_classic_lighting()) || Game_mode & GM_MULTI) return;
 	for (int i = 0; i < count; ++i) {
 		for (int side = 0; side < 6; ++side) {
 			xl_texture_emitter emitter{};
