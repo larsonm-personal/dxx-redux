@@ -38,6 +38,7 @@ int xl_camera_hitbox_query(const struct object *camera, const struct object *mov
 #include <string>
 #include "particle_resources.h"
 const std::map<std::string, std::string> &xl_resource_mod_sources();
+bool xl_resource_same_mod_sources(const std::map<std::string, std::string> &saved, const std::map<std::string, std::string> &incoming);
 std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal, std::map<int, int> *effect_frames = nullptr);
 struct object;
 struct vms_vector;
@@ -83,7 +84,8 @@ class XlPreparedResources
 	XlPreparedResources &operator=(XlPreparedResources &&) noexcept;
 	~XlPreparedResources();
 	xl_assets::ObjectDependencies &dependencies();
-	std::string prepare_hxm(PHYSFS_file *file);
+	std::string prepare_hxm(PHYSFS_file *file, bool *replaced_robots = nullptr);
+	bool mission_replaces_robots() const;
 	std::string prepare_vham(PHYSFS_file *file);
 	std::string prepare_vham(std::vector<unsigned char> bytes);
 	void prepare_banks(const std::string &palette);

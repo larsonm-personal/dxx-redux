@@ -14,7 +14,7 @@ struct ClassicAudioSample {
 	WaveChannels pcm;
 };
 struct ClassicAudioResources {
-	std::string identity;
+	std::string identity, legacy_identity;
 	std::vector<ClassicAudioSample> samples;
 };
 ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int bank_rate, const XlResourceBanks *banks = nullptr, TargetSources *target = nullptr);
