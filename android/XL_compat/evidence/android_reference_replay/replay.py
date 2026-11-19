@@ -15,6 +15,15 @@ def digest(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
+def executable_abi(path):
+    with path.open("rb") as stream:
+        header = stream.read(20)
+    if len(header) != 20 or header[:6] != b"\x7fELF\x02\x01":
+        raise ValueError(f"Expected a 64-bit little-endian Android ELF in {path}")
+    machine = int.from_bytes(header[18:20], "little")
+    return {62: "x86_64", 183: "arm64-v8a"}[machine]
+
+
 def compare(actual, expected):
     if actual.size != expected.size:
         raise ValueError(f"Frame sizes differ: {actual.size} and {expected.size}")
@@ -83,6 +92,8 @@ def replay(args):
         "binaries": binaries,
         "android_api": shell("getprop ro.build.version.sdk"),
         "android_abi": shell("getprop ro.product.cpu.abi"),
+        "executable_abi": executable_abi(args.build / "xl_trace_replay"),
+        "native_bridge": shell("getprop ro.dalvik.vm.native.bridge"),
         "known_draw_passed": True,
         "comparison": metrics,
     }
