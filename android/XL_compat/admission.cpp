@@ -61,7 +61,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (level.level_version == 17 && level.game_version == 36 && issue.feature == "segment_function" && issue.detail == "2") continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "2") continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "11") continue;
-		if (issue.feature == "segment_function" && issue.detail == "11") continue;
+		if (issue.feature == "segment_function" && (issue.detail == "11" || issue.detail == "12")) continue;
 		if (issue.feature == "segment_function_v21" && issue.detail == "9") continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "10") continue;
 		if ((issue.feature == "trigger_type" || issue.feature == "object_trigger_type") && issue.detail == "15") continue;
@@ -136,7 +136,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	auto limit = [&](bool exceeded, const char *feature, const char *detail) {
 		if (exceeded) result.push_back({ feature, -1, detail });
 	};
-	limit(!((level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) || (level.level_version == 17 && level.game_version == 36) || modern_runtime_layout(level)), "serialization", "requires audited level/game-data version 15/33, 15/34, 17/36, 21/40, 23/40, 25/40, 26/40 or 27/40");
+	limit(!supported_xl_layout(level), "serialization", "requires an audited XL level/game-data version pair");
 	limit(level.level_version >= 27 && volumetric_fog_required(level) && level.fog_settings.size() != 4, "authored fog", "requires four complete authored color/distance records and a capable OpenGL renderer");
 	limit(level.walls.size() > DXX_XL_MAX_WALLS, "wall capacity", "more than 2047 walls");
 	for (std::size_t i = 0; i < level.walls.size(); ++i) {
@@ -183,7 +183,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	limit(level.equipment.size() > 128, "equipment capacity", "more than 128 equipment makers");
 	limit(!level.equipment.empty() && !modern_runtime_layout(level), "equipment layout", "equipment makers require an audited modern 21/40, 23/40, 25/40, 26/40 or 27/40 profile");
 	const auto producers = producer_layout(level);
-	limit(producers.robots.size() != level.matcens.size(), "generator assignment", "robotmaker segments and disk rows differ after source initialization");
+	limit(producers.robots.size() > level.matcens.size(), "generator assignment", "robotmaker segment has no disk row after source initialization");
 	limit(producers.equipment.size() != level.equipment.size(), "equipment assignment", "equipment segments and disk rows differ after source initialization");
 	int stations = 0;
 	for (std::size_t i = 0; i < level.segments.size(); ++i) {

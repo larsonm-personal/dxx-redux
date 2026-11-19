@@ -289,3 +289,25 @@ function(run_pumo_player_phase name initial destination step_count transition_co
     configure_file("${OUTPUT}/player-trace.jsonl" "${OUTPUT}/${name}-trace.jsonl" COPYONLY)
     set(${name}_receipt "${${name}_receipt}" PARENT_SCOPE)
 endfunction()
+
+function(write_resume_plan phase template checkpoint)
+    set(cold "${template}")
+    foreach(pair "file;resume_checkpoint" "sha256;resume_sha256")
+        list(GET pair 0 source)
+        list(GET pair 1 plan_field)
+        string(JSON value GET "${checkpoint}" ${source})
+        string(JSON cold SET "${cold}" ${plan_field} "\"${value}\"")
+    endforeach()
+    foreach(field position player)
+        string(JSON saved GET "${checkpoint}" state ${field})
+        string(
+            JSON
+            cold
+            SET
+            "${cold}"
+            checkpoint_expect
+            ${field}
+            "${saved}")
+    endforeach()
+    file(WRITE "${OUTPUT}/${phase}-plan.json" "${cold}\n")
+endfunction()
