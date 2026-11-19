@@ -145,3 +145,22 @@ The playable control installed two generated ordinary missions on both peers. Th
 Two Vignette mines, `standoff.rl2` and `clminate.rl2`, use the classic 7/31 layout. Standoff has its own HXM, POG, LGT and CLR. The latter has an LGT alongside its mine. Four other mines use 17/36. Start network qualification with the classic runtime and identify which effective assets influence simulation. Compare the effective mine and gameplay definitions on both peers before world sync, verify the stock network representations cover the active objects, walls and triggers, and exercise a kill, shared score, respawn and a match ending. Next cover CTF flag ownership and return, Hoard orb pickup and delivery, and joining an ongoing session. The 17/36 levels also need their authored effects and state changes exercised. A per-mission exemption would leave these questions unanswered.
 
 The [PR 617 private Linux survey](https://github.com/larsonm-personal/dxx-redux/actions/runs/44467916399) measured 1,032 of 1,111 pinned entries at 120 frames. It recorded 72 load failures, four unsupported formats and three simulation failures. The expanded 64 passed on that revision. The separate Windows census above includes 1,654 entries. Track the inventory hash alongside every count.
+
+## How much work can be shared
+
+The 1,654 advertised entries come from 625 distributed mission descriptors. Of those, 513 advertise one ordinal and 112 advertise multiple ordinals. The entries include 121 secret ordinals. A campaign check needs to reach each secret by its authored entrance and verify what happens when the player returns or dies there.
+
+The 1,620 entries with identified bytes contain 1,236 distinct mine files. Grouping by mine bytes, sibling HOG or loose-file bytes, descriptor bytes and signed ordinal gives 1,342 distinct combinations. Identical mine bytes are a useful unit for testing geometry and shared engine behavior. Before reusing a completion result across packages, compare effective addons, mode, persistent state and outgoing destinations. Keep the result of opening each original distribution in the ledger.
+
+| Explicit author declaration | Distributed descriptors |
+| --------------------------- | ----------------------: |
+| Normal play enabled         |                     122 |
+| Co-op enabled               |                      75 |
+| Anarchy enabled             |                     165 |
+| Robot Anarchy enabled       |                      44 |
+| Capture the Flag enabled    |                     129 |
+| Hoard enabled               |                     117 |
+
+A descriptor can enable several modes. There are 74 distributions covering 116 advertised entries that explicitly disable both normal play and co-op and enable a competitive mode. Also, 229 descriptors omit the normal-play field. For ambiguous cases use the original game's behavior and mission evidence before assigning an acceptance route. The generic descriptor type provides little guidance because 622 of 625 say `type = normal`. [Counts, method and input report identities](../XL_compat/evidence/campaign-scope-20261118.json)
+
+For the next forecast, record the time spent implementing a previously missing engine behavior, authoring a route that exercises it, and running that route on each supported platform as separate costs. Finish a campaign branch with a secret return and a scored arena session first. Then try the same mechanisms on independently authored missions. That gives an observed engineering and qualification rate for the backlog and shows where a reusable subsystem or test route pays off.
