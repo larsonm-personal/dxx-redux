@@ -1592,10 +1592,12 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 		if (target ? target->archive().empty() : !*mission_resource_archive())
 			throw std::runtime_error("D2 XL lighting companions require an owned mission HOG: " + base);
 		state->lighting = xl_compat::load_mission_lighting_companions(level_filename, target);
-		// The pinned modern loader reads CLR first, then replaces every texture color
-		// from the embedded table. Ownership and decoding still apply to the companion
-		if (state->lighting.colors && !(level && xl_compat::modern_runtime_layout(*level) && level->texture_colors.size() == xl_compat::companion_texture_count))
-			throw std::runtime_error("D2 XL CLR companion overrides are not supported: " + std::string(level_filename));
+		if (state->lighting.colors) {
+			// These layouts read and validate the companion before replacing all 910 colors from geometry
+			const bool embedded = level && (xl_compat::modern_runtime_layout(*level) || (level->level_version == 17 && level->game_version == 36));
+			if (!embedded || level->texture_colors.size() != xl_compat::companion_texture_count)
+				throw std::runtime_error("D2 XL CLR companion overrides are not supported: " + std::string(level_filename));
+		}
 		if (level && level->level_version <= 8 && state->lighting.brightness)
 			throw std::runtime_error("Classic mine LGT brightness requires native lighting integration: " + std::string(level_filename));
 	}

@@ -458,8 +458,8 @@ differs visibly from XL's bitmap glare. Detailed checkpoints remain in the
 For 23/40, owned CLR is decoded and validated but the complete embedded texture
 color table takes precedence, matching the pinned XL readers. Original,
 conflicting and absent CLR controls preserve those colors. Foreign LGT/CLR and
-malformed owned companions remain rejected before commit. Other D2 CLR profiles
-remain blocked.
+malformed owned companions remain rejected before commit. The same precedence
+applies to 17/36 mines with a complete 910-entry embedded table.
 
 The 15/34 reader now decodes packed light indices and retains audited reserved
 segment bits. [Format evidence](evidence/format-15-34.md) separates the derived
@@ -494,7 +494,8 @@ and linked-door checks, and return to stock. Its LGT contains 82 differences fro
 the default brightness table. The runtime owns the entire validated table before
 commit and uses it for texture-emitter selection; a foreign shadow fails without
 replacing active geometry or lighting. Missing LGT retains the defaults; malformed
-present companions fail, and D2 CLR overrides remain explicitly rejected.
+present companions fail. A valid CLR is decoded before the complete 17/36
+embedded table supplies the emitter colors.
 There is no mission-name allowlist. This is bounded feature evidence, not an
 uninterrupted playthrough or multiplayer qualification. See the
 [tranche plan](../ai%20tool%20plans/mission%20metadata/xl_konflict_tranche_20261025.md)

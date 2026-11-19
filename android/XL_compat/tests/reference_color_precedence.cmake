@@ -3,7 +3,8 @@ foreach(
     entry IN
     ITEMS "gameio/loadgeometry.cpp|dd9335a95f69cb91a244ba6352ea381d4531fcddb1a12cf06c619d9ab6cf857f"
           "gameio/loadtextures.cpp|bf1ae25e058d6ca745e5833ea0e2c0e425c5716571f6dc5f109a49d67c5452b6"
-)
+          "gameio/loadgamedata.cpp|64ed9a54e91a744500106c8691c5dea7a4b496a4b122e0f51e766ee2c8b50bd0"
+          "lighting/light.cpp|ca95b9183729c7f3665ef0706206afce093b53b0d97aa6ba11379dd5fdf5f36f")
     string(REPLACE "|" ";" pair "${entry}")
     list(GET pair 0 source)
     list(GET pair 1 expected)
@@ -13,9 +14,13 @@ foreach(
     endif()
     file(READ "${XL_REFERENCE_COLOR_ROOT}/${source}" source_text)
     if(source MATCHES "loadgeometry")
-        set(signatures "void ReadColor (" "void LoadTexColorsCompiled (")
-    else()
+        set(signatures "void ReadColor (" "void LoadTexColorsCompiled (" "void InitTexColors (")
+    elseif(source MATCHES "loadtextures")
         set(signatures "void LoadTextureColors (")
+    elseif(source MATCHES "loadgamedata")
+        set(signatures "void LoadTextureBrightness (")
+    else()
+        set(signatures "int32_t IsLight (")
     endif()
     foreach(signature IN LISTS signatures)
         string(FIND "${source_text}" "${signature}" start)
@@ -35,10 +40,12 @@ if(NOT actual STREQUAL "5d7ff36d6121411e0250be94353bbe3268bdd02b9bd35c6161951d87
 endif()
 # These are ordered calls in the pinned loader, not an inferred file precedence
 file(READ "${XL_REFERENCE_COLOR_ROOT}/gameio/loadgame.cpp" loader)
+string(FIND "${loader}" "LoadTextureBrightness (pszLevelName, NULL);" brightness)
 string(FIND "${loader}" "LoadTextureColors (pszLevelName, NULL);" companion)
 string(FIND "${loader}" "InitTexColors ();" initialize)
 string(FIND "${loader}" "LoadLevelData (pszLevelName, nLevel)" level)
-if(companion LESS 0 OR NOT initialize GREATER companion OR NOT level GREATER initialize)
+if(brightness LESS 0 OR NOT companion GREATER brightness OR NOT initialize GREATER companion
+   OR NOT level GREATER initialize)
     message(FATAL_ERROR "Reference CLR/embedded load ordering differs")
 endif()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_color_readers.h"
