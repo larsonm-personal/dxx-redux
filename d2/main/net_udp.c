@@ -269,7 +269,7 @@ static unsigned android_test_fence_inventory_rejected;
 static uint32_t android_test_fence_epoch, android_test_fence_life[MAX_PLAYERS];
 static int android_test_fence_score, android_test_fence_peer;
 static ubyte android_test_game_info[2][UPID_MAX_SIZE];
-static int android_test_game_info_size[2];
+static int android_test_game_info_size[2], android_test_game_info_fixed_size[2];
 static int net_udp_test_game_info_fence(void);
 
 /* Android paired automation: stale same-level and frozen-origin bodies are first
@@ -4447,6 +4447,10 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 #endif
 		d1_in_d2_write_network_identity(buf + len);
 		len += D1_IN_D2_NET_ASSET_SIZE;
+		if (!Current_mission) return;
+		const int name_bytes = net_udp_write_mission_filename(buf + len, sizeof(buf) - len, Current_mission_filename);
+		if (name_bytes < 0) return;
+		len += name_bytes;
 
 		Assert(len <= sizeof(buf));
 
@@ -4549,14 +4553,16 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 #ifdef __ANDROID__
 	unsigned briefing_flags = 0;
 #endif
-	int len = 0, i = 0, j = 0;
+	int len = 0, i = 0, j = 0, fixed_size = data_len;
+	const char *mission_filename = NULL;
 	/* Android: reject stale or malformed metadata before any parser side effects */
 #ifdef __ANDROID__
 	if (!lite_info) {
 		const char *reason = !is_master_ip(game_addr) ? "full game info sender is not host" :
 		    android_net_udp_game_info_preflight(data, data_len, is_sync,
 		        is_sync || Netgame.protocol.udp.valid == 1, netgame_token, my_player_token,
-		        multi_who_is_master(), is_observer(), coop_world_visit_current());
+		        multi_who_is_master(), is_observer(), coop_world_visit_current(),
+		        &fixed_size, &mission_filename);
 		if (reason) {
 			drop_rx_packet(data, reason);
 			return 0;
@@ -4588,12 +4594,16 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		    4 + 9 + 4 + 10 + 2 * (CALLSIGN_LEN + 1) +
 		    MAX_PLAYERS * (4 + MAX_PLAYERS * 2 + 2 + 2 + 4 + 1) +
 		    6 + 20 + 2 + 34 + (is_sync ? 8 : 4) + D1_IN_D2_NET_ASSET_SIZE;
-		if (data_len != expected) return 0;
+		fixed_size = expected;
+		const int name_offset = 7 + (MAX_PLAYERS + 4) * player_bytes + NETGAME_NAME_LEN + 1 + MISSION_NAME_LEN + 1;
+		if (!net_udp_read_mission_filename(data, data_len, fixed_size, name_offset, &mission_filename)) return 0;
 	}
 #endif
-	if (!lite_info && is_sync &&
-	    !net_udp_admit_assets(data_len >= D1_IN_D2_NET_ASSET_SIZE ? data + data_len - D1_IN_D2_NET_ASSET_SIZE : NULL,
-	                         data_len >= D1_IN_D2_NET_ASSET_SIZE ? D1_IN_D2_NET_ASSET_SIZE : 0)) return 0;
+	if (!lite_info && is_sync) {
+		if ((strlen(mission_filename) > 8 || (Current_mission && strlen(Current_mission_filename) > 8)) &&
+		    (!Current_mission || d_stricmp(mission_filename, Current_mission_filename))) return 0;
+		if (!net_udp_admit_assets(data + fixed_size - D1_IN_D2_NET_ASSET_SIZE, D1_IN_D2_NET_ASSET_SIZE)) return 0;
+	}
 
 	if (lite_info)
 	{
@@ -4841,12 +4851,12 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 #ifdef __ANDROID__
 		{
 			int generation_size = android_net_udp_auth_read_generation(
-			    data + len, data_len - len);
+			    data + len, fixed_size - len);
 			if (!generation_size)
 				return 0;
 			len += generation_size;
 		}
-		if (data_len - len < 8) return 0;
+		if (fixed_size - len < 8) return 0;
 		{
 			uint64_t visit = coop_world_visit_read(data + len);
 			coop_world_visit_session(netgame_token);
@@ -4864,7 +4874,7 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 #endif
 
 		len += D1_IN_D2_NET_ASSET_SIZE;
-		if (len > data_len) {
+		if (len > fixed_size) {
 			char err_mess[200];
 			snprintf(err_mess, sizeof(err_mess), "game info size incorrect; received %d, expected %d",  data_len, len);
 			drop_rx_packet(data, err_mess);
@@ -4874,10 +4884,12 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 #ifdef __ANDROID__
 		if (is_sync) coop_briefing_apply_sync_flags(briefing_flags, Netgame.levelnum);
 #endif
+		strcpy(Netgame.received_mission_filename, mission_filename);
 		Netgame.protocol.udp.valid = 1; // This game is valid! YAY!
 #if defined(__ANDROID__) && defined(INTROSPECT_ON)
 		memcpy(android_test_game_info[!!is_sync], data, data_len);
 		android_test_game_info_size[!!is_sync] = data_len;
+		android_test_game_info_fixed_size[!!is_sync] = fixed_size;
 #endif
 	}
 
@@ -4903,7 +4915,7 @@ static int net_udp_test_game_info_fence(void)
 		if (size < 64 || size > UPID_MAX_SIZE) return 0;
 		for (int mutation = 0; mutation < 6; ++mutation) {
 			ubyte packet[UPID_MAX_SIZE], identity[ANDROID_NET_UDP_RECONNECT_PLAYER_AUTH_SIZE];
-			const int visit_offset = size - D1_IN_D2_NET_ASSET_SIZE - 8;
+			const int visit_offset = android_test_game_info_fixed_size[sync] - D1_IN_D2_NET_ASSET_SIZE - 8;
 			const int token_offset = visit_offset - ANDROID_NET_UDP_RECONNECT_GENERATION_SIZE - 4;
 			memcpy(packet, android_test_game_info[sync], size);
 			/* Bring authority fields current so each probe isolates its rejection */
@@ -7903,7 +7915,7 @@ int net_udp_do_join_game(ubyte join_as_obs)
 
 	// Check for valid mission name
 	STARTUP_SYNC_TRACE("join_mission_begin");
-	if (!load_mission_by_name(Netgame.mission_name))
+	if (!load_mission_by_name(Netgame.received_mission_filename))
 	{
 		nm_messagebox(NULL, 1, TXT_OK, TXT_MISSION_NOT_FOUND);
 		return 0;

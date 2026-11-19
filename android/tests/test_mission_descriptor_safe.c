@@ -34,8 +34,10 @@ int main(void)
 		           !strcmp(title, "Observatory XL"),
 		       "title whitespace and comment handled");
 		expect(mission_descriptor_copy_title("1234567890123456789012345", title, sizeof(title)), "maximum native title accepted");
-		expect(!mission_descriptor_copy_title("12345678901234567890123456", title, sizeof(title)), "overlong title rejected");
-		expect(!mission_descriptor_copy_title("A                                                                                B", title, sizeof(title)), "late nonspace title byte is not truncated away");
+		expect(mission_descriptor_copy_title("Kritical Mass Test Labs (XL)", title, sizeof(title)) &&
+		           !strcmp(title, "Kritical Mass Test Labs ("),
+		       "long authored title fits the native display field");
+		expect(!mission_descriptor_copy_title("A", title, 1), "nonempty title requires one display byte and a terminator");
 		expect(!mission_descriptor_copy_title(" ; comment", title, sizeof(title)), "comment-only title rejected");
 		expect(!mission_descriptor_copy_title(NULL, title, sizeof(title)), "null title rejected");
 	}

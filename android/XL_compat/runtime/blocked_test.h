@@ -45,7 +45,7 @@ static void blocked_crossings(const std::filesystem::path &output)
 	compute_center_point_on_side(&face, &Segments[blocked], side);
 	const auto normal = Segments[blocked].sides[side].normals[0];
 	for (const auto type : { OBJ_PLAYER, OBJ_ROBOT, OBJ_POWERUP, OBJ_WEAPON, OBJ_DEBRIS }) {
-		const int index = type == OBJ_PLAYER ? ConsoleObject - Objects : obj_create(type, 0, dry, &face, &vmd_identity_matrix, F1_0 / 8, CT_NONE, MT_PHYSICS, RT_NONE);
+		const int index = type == OBJ_PLAYER ? ConsoleObject - Objects : obj_create(type, 0, dry, &face, &vmd_identity_matrix, F1_0 / 8, type == OBJ_WEAPON ? CT_WEAPON : CT_NONE, MT_PHYSICS, RT_NONE);
 		require(index >= 0, "Blocked crossing allocation failed");
 		auto &actor = Objects[index];
 		const auto saved = actor;
@@ -190,7 +190,7 @@ static void blocked_lifecycle(const std::filesystem::path &output)
 	vms_vector start, end;
 	vm_vec_scale_add(&start, &face, &normal, -F1_0 / 2);
 	vm_vec_scale_add(&end, &face, &normal, F1_0 / 2);
-	const int shot = obj_create(OBJ_WEAPON, 0, dry, &start, &vmd_identity_matrix, F1_0 / 8, CT_NONE, MT_PHYSICS, RT_NONE);
+	const int shot = obj_create(OBJ_WEAPON, 0, dry, &start, &vmd_identity_matrix, F1_0 / 8, CT_WEAPON, MT_PHYSICS, RT_NONE);
 	require(shot >= 0, "Closed-wall projectile allocation failed");
 	fvi_query query{};
 	query.p0 = &start;
@@ -212,6 +212,47 @@ static int blocked_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto output = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir"));
+		if (const char *room = find_arg_value(argc, argv, "-blocked-room")) {
+			const auto *mission = find_arg_value(argc, argv, "-mission");
+			const auto *ordinal = find_arg_value(argc, argv, "-level");
+			require(mission && ordinal, "Blocked room check requires a mission and level");
+			require(load_base_mission(mission, error, sizeof(error)), error);
+			std::strcpy(Players[Player_num].callsign, "XLTest");
+			input_demo_set_skip_level_intro(1);
+			const int level = std::stoi(ordinal), segment = std::stoi(room);
+			StartNewGame(level);
+			require(Current_level_num == level && xl_level_extensions_active() && segment >= 0 && segment < Num_segments &&
+			            xl_blocked_map_segment(segment),
+			        "Selected room lacks the expected authored blocked volume");
+			unsigned boundaries = 0;
+			for (int side = 0; side < 6; ++side) {
+				const int child = Segments[segment].children[side];
+				if (child < 0 || xl_blocked_segment(child)) continue;
+				const int back = find_connect_side(&Segments[segment], &Segments[child]);
+				require(back >= 0 && xl_blocked_entry(ConsoleObject - Objects, child, back) &&
+				            !xl_blocked_entry(ConsoleObject - Objects, segment, side),
+				        "Authored blocked room lost directional player admission");
+				const int wall = Segments[child].sides[back].wall_num;
+				if (wall >= 0 && Walls[wall].type == WALL_CLOSED) {
+					vms_vector face, start, end;
+					compute_center_point_on_side(&face, &Segments[child], back);
+					const auto &normal = Segments[child].sides[back].normals[0];
+					vm_vec_scale_add(&start, &face, &normal, F1_0 / 4);
+					vm_vec_scale_add(&end, &face, &normal, -F1_0 / 4);
+					fvi_query query{};
+					query.p0 = &start;
+					query.p1 = &end;
+					query.startseg = child;
+					query.thisobjnum = -1;
+					fvi_info hit{};
+					require(find_vector_intersection(&query, &hit) == HIT_WALL, "Authored closed wall lost its independent collision");
+				}
+				std::cout << "Authored blocked room " << segment << " neighbor " << child << " wall " << wall << " passed\n";
+				++boundaries;
+			}
+			require(boundaries > 0, "Selected blocked room has no ordinary neighbor");
+			return 0;
+		}
 		write_blocked_fixture(output / "missions");
 		require(load_base_mission("blocked", error, sizeof(error)), error);
 		require(xl_level_supported("neptunxl.rl2", 0), xl_level_rejection());

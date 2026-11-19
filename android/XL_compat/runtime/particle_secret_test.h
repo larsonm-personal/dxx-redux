@@ -188,6 +188,9 @@ static void particle_secret_native_case(const xl_compat::Bytes &original_archive
 	require(xl_particle_object_set_enabled(first, 0) && xl_particle_object_set_enabled(second, 1), "Cannot establish distinct base activation");
 	const auto base = particle_objects_snapshot();
 	emit(1);
+	// Independent saved worlds can be far apart on the fixed64 timeline
+	const fix64 base_epoch = (fix64(1) << 34) + 71, secret_epoch = base_epoch + 17 * F1_0;
+	GameTime64 = base_epoch;
 	EnterSecretLevel();
 	require(Current_level_num == -1 && PHYSFSX_exists(SECRETB_FILENAME, 0), "Real secret entry did not create its automatic base save");
 	const auto fresh = particle_objects_snapshot();
@@ -196,15 +199,19 @@ static void particle_secret_native_case(const xl_compat::Bytes &original_archive
 	require(xl_particle_object_set_enabled(first, 1) && xl_particle_object_set_enabled(second, 1), "Cannot establish distinct secret activation");
 	const auto secret = particle_objects_snapshot();
 	emit(2);
+	GameTime64 = secret_epoch;
 	ExitSecretLevel();
 	verify(1, base);
+	require(GameTime64 == base_epoch, "Secret return lost the saved base world clock");
 	require(PHYSFSX_exists(SECRETC_FILENAME, 0), "Real secret exit did not create its automatic secret save");
 	emit(1);
 	EnterSecretLevel();
 	verify(-1, secret);
+	require(GameTime64 == secret_epoch, "Secret revisit lost the saved secret world clock");
 	emit(2);
 	ExitSecretLevel();
 	verify(1, base);
+	require(GameTime64 == base_epoch, "Second secret return inherited the outgoing clock");
 	particle_revisit_native_case(archive, root, first, second);
 	xl_preview_clear_mission();
 	std::filesystem::remove(image_path);

@@ -1,4 +1,5 @@
 // Test-only mutation at the native preflight/commit boundary
+#include "blocked.h"
 #include "no_damage_persistence_test.h"
 #include "mission_prepare.h"
 #include "input_demo_world_trace.h"
@@ -738,11 +739,13 @@ static int descriptor_test(int argc, char **argv)
 				hog.insert(hog.end(), bytes.begin(), bytes.end());
 			};
 			member("clspol.rl2", level);
-			auto unsupported = original_17;
-			const auto inventory = xl_compat::inspect_level(unsupported);
+			auto secret = original_17;
+			const auto inventory = xl_compat::inspect_level(secret);
 			const auto function_offset = inventory.game_offset - (inventory.vertices.size() + inventory.segments.size() * 6 + 910) * 13 - inventory.segments.size() * 8;
-			unsupported.at(function_offset) = 12; // Unsupported blocked-segment semantics
-			member("xltail.rl2", unsupported);
+			secret.at(function_offset) = 12; // Legacy blocked room
+			member("xlblock.rl2", secret);
+			secret.at(function_offset) = 14; // Legacy skybox
+			member("xltail.rl2", secret);
 			write_bytes((root / "clspol.hog").string().c_str(), hog);
 			const auto replacement = root / "mods/clspol/textures/pattern.tga";
 			std::filesystem::create_directories(replacement.parent_path());
@@ -758,20 +761,48 @@ static int descriptor_test(int argc, char **argv)
 				tga[i + 3] = 255;
 			}
 			write_bytes(replacement.string().c_str(), tga);
-			auto select = [&](bool secret_xl) {
+			auto select = [&](const char *secret_name) {
 				std::ofstream descriptor(root / "clspol.mn2");
 				descriptor << "name = Classic policy control\nnum_levels = 1\nclspol.rl2\n";
-				if (secret_xl) descriptor << "num_secrets = 1\nxltail.rl2,1\n";
+				if (secret_name) descriptor << "num_secrets = 1\n"
+					                        << secret_name << ",1\n";
 				descriptor.close();
 				require(load_base_mission("clspol", error, sizeof(error)), error);
-				require(bool(xl_resource_texture_scope_enabled()) == secret_xl && *mission_resource_archive(),
+				require(bool(xl_resource_texture_scope_enabled()) == (secret_name != nullptr) && *mission_resource_archive(),
 				        "owned textures or unlisted XL member changed the selected mission policy");
 				require(load_level("clspol.rl2") == 0 && !xl_preview_pilot_active(), "classic level activated XL runtime semantics");
 			};
-			select(false);
-			select(true);
+			select(nullptr);
+			select("xlblock.rl2");
+			const std::map<std::string, std::string> upper{ { "mods/Owner/OWNER.hxm", "first" }, { "mods/Owner/skin.tga", "second" } };
+			const std::map<std::string, std::string> lower{ { "mods/owner/OWNER.HXM", "first" }, { "mods/owner/SKIN.TGA", "second" } };
+			require(xl_resource_same_mod_sources(upper, lower) && xl_resource_same_mod_sources(lower, upper),
+			        "Host filesystem spelling changed an owned source identity");
+			auto changed = lower;
+			changed.begin()->second = "other";
+			require(!xl_resource_same_mod_sources(upper, changed), "Changed digest passed case-insensitive source comparison");
+			changed = lower;
+			changed.erase(changed.begin());
+			require(!xl_resource_same_mod_sources(upper, changed), "Missing source passed case-insensitive source comparison");
+			changed.emplace("mods/other/OWNER.HXM", "first");
+			require(!xl_resource_same_mod_sources(upper, changed), "Different owner passed case-insensitive source comparison");
+			const std::map<std::string, std::string> aliases{ { "mods/Owner/skin.tga", "second" }, { "mods/Owner/Skin.tga", "second" } };
+			const std::map<std::string, std::string> other_aliases{ { "mods/owner/SKIN.tga", "second" }, { "mods/owner/skin.TGA", "second" } };
+			require(!xl_resource_same_mod_sources(aliases, other_aliases) && !xl_resource_same_mod_sources(other_aliases, aliases),
+			        "Ambiguous source spelling passed case-insensitive source comparison");
+			const int64_t saved_epoch = (int64_t(1) << 34) + 91;
+			int64_t clock = 0;
+			require(xl_secret_restore_clock(-1, saved_epoch, &clock) && clock == saved_epoch,
+			        "Classic base selected the wrong clock for its incoming XL secret");
+			require(load_level("xlblock.rl2") == 0 && xl_blocked_segment(0), "listed legacy secret lost its blocked room");
+			clock = 0;
+			require(xl_secret_restore_clock(1, saved_epoch, &clock) && clock == 0,
+			        "XL secret selected its own clock for the incoming classic base");
+			require(!xl_secret_restore_clock(-2, saved_epoch, &clock) && clock == 0,
+			        "Unlisted secret selected a world clock");
+			select("xltail.rl2");
 			require(load_level("xltail.rl2") != 0, "mixed mission admitted unsupported secret-level semantics");
-			select(false);
+			select(nullptr);
 			require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0, "classic policy recovery failed");
 			std::cout << "Resource policy: classic custom decoy textures stay inactive; only listed owned XL secret enables mission scope; classic recovery passes\n";
 		}
@@ -987,10 +1018,15 @@ static int descriptor_test(int argc, char **argv)
 		fixture("xlvtcrit", "d2x-name = XL title\nnum_levels = 1\nd2leva-1.rl2\n\v!ham = other.ham\n", false);
 		fixture("xldup", "d2x-name = First\n  d2x-name = Second\nnum_levels = 1\nd2leva-1.rl2\n", false);
 		const auto hidden_title = std::string("d2x-name = A") + std::string(80, ' ') + "B\nnum_levels = 1\nd2leva-1.rl2\n";
-		fixture("xlhidden", hidden_title.c_str(), false);
+		fixture("xlhidden", hidden_title, true);
+		require(Current_mission_longname == std::string("A") + std::string(MISSION_NAME_LEN - 1, ' ') &&
+		            !std::strcmp(Current_mission_filename, "xlhidden"),
+		        "XL title was trimmed a second time after truncation or replaced its filename");
 		const auto truncated_title = std::string("d2x-name = A;") + std::string(PATH_MAX, 'x') + "\nnum_levels = 1\nd2leva-1.rl2\n";
 		fixture("xltrunc", truncated_title.c_str(), false);
-		fixture("xllong", "d2x-name = Title exceeding the twenty five character native limit\nnum_levels = 1\nd2leva-1.rl2\n", false);
+		fixture("xllong", "d2x-name = Title exceeding the twenty five character native limit\nnum_levels = 1\nd2leva-1.rl2\n", true);
+		require(!std::strcmp(Current_mission_longname, "Title exceeding the twent") && !std::strcmp(Current_mission_filename, "xllong"),
+		        "Long XL title lost the original display prefix or full mission filename");
 		fixture("xlfile", "d2x-name = Long filename\nnum_levels = 1\ntoolongfilename.rl2\n", false);
 		fixture("xlsecrt", "d2x-name = Secret mapping\nnum_levels = 2\nd2leva-1.rl2\nd2leva-2.rl2\nnum_secrets = 1\nd2leva-s.rl2,2\n", true);
 		require(Last_level == 2 && Last_secret_level == -1 && Secret_level_table[0] == 2 &&

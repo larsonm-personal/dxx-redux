@@ -272,7 +272,8 @@ int android_net_udp_auth_read_generation(const unsigned char *source,
 const char *android_net_udp_game_info_preflight(
     const unsigned char *data, int size, int is_sync, int known_session,
     unsigned int session_token, unsigned int player_token,
-    int master_slot, int observer, uint64_t active_visit)
+    int master_slot, int observer, uint64_t active_visit,
+    int *fixed_size, const char **mission_filename)
 {
 	/* Mirrors net_udp_send_game_info in both engines. These are serialized
 	 * field widths, not sizeof(netgame_info), which includes local state */
@@ -312,7 +313,14 @@ const char *android_net_udp_game_info_preflight(
 	uint64_t received_visit;
 	int i;
 
+#ifdef DXX_BUILD_DESCENT_II
+	*fixed_size = visit_offset + 8 + asset_bytes;
+	if (!net_udp_read_mission_filename(data, size, *fixed_size, mission_name_offset, mission_filename))
+#else
+	(void) fixed_size;
+	(void) mission_filename;
 	if (!data || size != visit_offset + 8 + asset_bytes)
+#endif
 		return "full game info size incorrect";
 	if (level_offset != expected_level_offset)
 		return "full game info internal layout incorrect";
