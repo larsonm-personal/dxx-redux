@@ -13,7 +13,7 @@ extern "C" {
 #include "textures.h"
 #include "hudmsg.h"
 #include "game.h"
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 #include "guidebot_extensions.h"
 #endif
 }
@@ -36,7 +36,7 @@ extern "C" int xl_trigger_texture_action(const trigger *action)
 		auto &side = Segments[action->seg[link]].sides[action->side[link]];
 		side.tmap_num = static_cast<short>(change.base);
 		side.tmap_num2 = static_cast<short>(xl_compat::changed_overlay(side.tmap_num2, change.overlay));
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 		if (side.wall_num >= 0 && side.wall_num < Num_walls) escort_route_notify_wall_changed(side.wall_num);
 #endif
 	}
@@ -58,7 +58,7 @@ extern "C" int xl_trigger_illusion_action(const trigger *action)
 			Walls[wall].flags |= WALL_ILLUSION_OFF;
 			kill_stuck_objects(wall);
 		} else Walls[wall].flags &= ~WALL_ILLUSION_OFF;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 		escort_route_notify_wall_changed(wall);
 #endif
 	};

@@ -3510,8 +3510,16 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		GameTime64 = (fix64)tmptime32;
 		if (input_demo_replay_has_checkpoint())
 			GameTime64 += input_demo_replay_checkpoint_start_gt();
-		else if (version >= SAVE_EPOCH_D2_VERSION && !secret_restore)
-			GameTime64 = saved_epoch;
+		else if (version >= SAVE_EPOCH_D2_VERSION) {
+			if (!secret_restore)
+				GameTime64 = saved_epoch;
+#ifdef DXX_XL_RUNTIME
+			else if (!xl_secret_restore_clock(current_level, saved_epoch, &GameTime64)) {
+				PHYSFS_close(fp);
+				return 0;
+			}
+#endif
+		}
 	#ifdef __ANDROID__
 	}
 	#endif
