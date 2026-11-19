@@ -1,0 +1,21 @@
+name: Install verified XL survey runtime
+description: Install the runtime prepared by the trusted asset-free job on an Ubuntu 24.04 runner
+inputs:
+  artifact:
+    description: Runtime artifact from this workflow run
+    required: true
+  sha256:
+    description: SHA-256 of the tar file produced by the runtime job
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+      with:
+        name: ${{ inputs.artifact }}
+        path: ${{ runner.temp }}/xl-survey-runtime
+    - name: Verify and install the runtime offline
+      shell: bash
+      env:
+        BUNDLE_SHA256: ${{ inputs.sha256 }}
+      run: bash "$GITHUB_ACTION_PATH/../../scripts/install_xl_survey_runtime.sh" install "$RUNNER_TEMP/xl-survey-runtime/runtime.tar" "$BUNDLE_SHA256"
