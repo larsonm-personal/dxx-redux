@@ -1,5 +1,6 @@
 // Developer-only ordinary-player simulation; initial level and local poses are setup
 #include "texture_pixels.h"
+#include "powerup.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #include "route_confirmation.h"
@@ -552,7 +553,7 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 		                                 std::any_of(plan.at("steps").begin(), plan.at("steps").end(), [](const Json &step) -> bool {
 			                                 if (!step.is_object() || !step.contains("action") || !step.at("action").is_string()) return false;
 			                                 const std::string action = step.at("action");
-			                                 if (action == "select_secondary" || action == "fly_through_side" || action == "approach_side") return true;
+			                                 if (action == "select_secondary" || action == "fly_through_side" || action == "approach_side" || action == "collect_pickup") return true;
 			                                 return (action == "send_axis" && step.contains("axis") && pumo_ordinary_input_validation::integer_in_range(step.at("axis"), 2, 4)) ||
 			                                        (action == "send_button" && step.contains("button") && pumo_ordinary_input_validation::integer_in_range(step.at("button"), 101, 101));
 		                                 });
@@ -825,6 +826,31 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 			}
 			observed_state = state_now;
 		};
+		auto steer = [&](const vms_vector &target, const vms_vector *sight_target, bool primary) {
+			vms_vector direction;
+			vm_vec_sub(&direction, &target, &ConsoleObject->pos);
+			const double distance = f2fl(vm_vec_normalize(&direction));
+			const auto &orient = ConsoleObject->orient;
+			const auto &physics = ConsoleObject->mtype.phys_info;
+			auto dot = [](const vms_vector &a, const vms_vector &b) { return double(vm_vec_dot(&a, &b)) / F1_0; };
+			const double x = dot(direction, orient.rvec), y = dot(direction, orient.uvec), z = dot(direction, orient.fvec);
+			auto axis = [](double value) { return std::clamp(value, -1.0, 1.0); };
+			const double speed = (std::min) (25.0, 2 * distance);
+			thrust = axis((z * speed - dot(physics.velocity, orient.fvec)) / 12);
+			sideways = axis((x * speed - dot(physics.velocity, orient.rvec)) / 12);
+			vertical = axis((y * speed - dot(physics.velocity, orient.uvec)) / 12);
+			vms_vector sight = direction;
+			if (sight_target) {
+				vm_vec_sub(&sight, sight_target, &ConsoleObject->pos);
+				vm_vec_normalize(&sight);
+			}
+			const double aim_x = dot(sight, orient.rvec), aim_y = dot(sight, orient.uvec), aim_z = dot(sight, orient.fvec);
+			if (sight_target && distance < 1 && aim_z > 0.998 && vm_vec_mag(&physics.velocity) < i2f(3)) return true;
+			heading = axis(8 * std::atan2(aim_x, aim_z) - 1.5 * f2fl(physics.rotvel.y));
+			pitch = axis(-16 * std::atan2(aim_y, std::hypot(aim_x, aim_z)) - 3 * f2fl(physics.rotvel.x));
+			firing = primary && aim_z > 0.95;
+			return false;
+		};
 		for (const auto &step : plan.at("steps")) {
 			require_ordinary_secondary_input("before_step");
 			const std::string action = step.at("action");
@@ -838,6 +864,41 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 				pose(step);
 				++position_assist_events;
 				trace << Json{ { "event", "position_assist" }, { "action", action }, { "step", completed }, { "position", snapshot().at("position") } }.dump() << '\n';
+			} else if (action == "collect_pickup") {
+				const bool hostage = step.at("kind") == "hostage";
+				require(hostage || step.at("kind") == "shields", "Unknown ordinary pickup objective");
+				require(pumo_ordinary_input_validation::integer_in_range(step.at("max_frames"), 1, 3600), "Invalid pickup flight duration");
+				const int segment = ConsoleObject->segnum, level = Current_level_num;
+				int target = -1;
+				fix nearest = 0;
+				for (int i = 0; i <= Highest_object_index; ++i) {
+					const auto &item = Objects[i];
+					if (item.segnum != segment || (item.flags & OF_SHOULD_BE_DEAD)) continue;
+					if (hostage ? item.type != OBJ_HOSTAGE : (item.type != OBJ_POWERUP || item.id != POW_SHIELD_BOOST)) continue;
+					const fix distance = vm_vec_dist(&item.pos, &ConsoleObject->pos);
+					if (target < 0 || distance < nearest) {
+						nearest = distance;
+						target = i;
+					}
+				}
+				require(target >= 0, "No matching live pickup in the player's segment");
+				const auto &item = Objects[target];
+				const TrackedCombatObject bound{ target, item.signature, item.type, item.id, level, combat_load_generation, int(item.shields) };
+				const auto &player = Players[Player_num];
+				const int before = player.hostages_on_board;
+				fix shields = player.shields;
+				const int maximum = step.at("max_frames");
+				auto present = [&] { return combat_object_matches(bound) && !(Objects[target].flags & OF_SHOULD_BE_DEAD); };
+				for (int i = 0; i < maximum && Current_level_num == level && ConsoleObject->segnum == segment && present(); ++i) {
+					shields = player.shields;
+					steer(Objects[target].pos, nullptr, false);
+					trace << Json{ { "flight_frame", frame_count }, { "segment", segment }, { "pickup_object", target }, { "signature", bound.signature }, { "controls", { thrust, sideways, vertical, heading, pitch, firing } } }.dump() << '\n';
+					tick();
+				}
+				thrust = sideways = vertical = heading = pitch = 0;
+				firing = false;
+				require(Current_level_num == level && !present() && (hostage ? player.hostages_on_board == before + 1 : player.shields > shields),
+				        "The selected pickup did not produce its native player effect");
 			} else if (action == "fly_through_side" || action == "approach_side") {
 				const bool approach = action == "approach_side";
 				const int level = Current_level_num, segment = step.at("segment"), side = step.at("side");
@@ -870,31 +931,10 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 				require(maximum > 0 && maximum <= 3600, "Invalid ordinary flight duration");
 				const bool primary = step.value("fire_primary", false);
 				for (int i = 0; i < maximum && Current_level_num == level && ConsoleObject->segnum == segment; ++i) {
-					vms_vector direction;
-					vm_vec_sub(&direction, &target, &ConsoleObject->pos);
-					const double distance = f2fl(vm_vec_normalize(&direction));
-					const auto &orient = ConsoleObject->orient;
-					const auto &physics = ConsoleObject->mtype.phys_info;
-					auto dot = [](const vms_vector &a, const vms_vector &b) { return double(vm_vec_dot(&a, &b)) / F1_0; };
-					const double x = dot(direction, orient.rvec), y = dot(direction, orient.uvec), z = dot(direction, orient.fvec);
-					auto axis = [](double value) { return std::clamp(value, -1.0, 1.0); };
-					const double speed = (std::min) (25.0, 2 * distance);
-					thrust = axis((z * speed - dot(physics.velocity, orient.fvec)) / 12);
-					sideways = axis((x * speed - dot(physics.velocity, orient.rvec)) / 12);
-					vertical = axis((y * speed - dot(physics.velocity, orient.uvec)) / 12);
-					vms_vector sight = direction;
-					if (approach) {
-						vm_vec_sub(&sight, &sight_target, &ConsoleObject->pos);
-						vm_vec_normalize(&sight);
-					}
-					const double aim_x = dot(sight, orient.rvec), aim_y = dot(sight, orient.uvec), aim_z = dot(sight, orient.fvec);
-					if (approach && distance < 1 && aim_z > 0.998 && vm_vec_mag(&physics.velocity) < i2f(3)) {
+					if (steer(target, approach ? &sight_target : nullptr, primary)) {
 						aligned = true;
 						break;
 					}
-					heading = axis(8 * std::atan2(aim_x, aim_z) - 1.5 * f2fl(physics.rotvel.y));
-					pitch = axis(-16 * std::atan2(aim_y, std::hypot(aim_x, aim_z)) - 3 * f2fl(physics.rotvel.x));
-					firing = primary && aim_z > 0.95;
 					trace << Json{ { "flight_frame", frame_count }, { "segment", segment }, { "side", side }, { "controls", { thrust, sideways, vertical, heading, pitch, firing } } }.dump() << '\n';
 					tick();
 				}
