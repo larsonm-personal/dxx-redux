@@ -1,0 +1,11 @@
+# Kickoff for the next XL lighting tranche
+
+The user authorized the lighting follow-on if the first November 18 tranche finishes before 6 PM Pacific. Use the existing November 19 10 AM Pacific handoff deadline for that run. A later invocation supplies its own bounds. Work sequentially and reserve the final third of the available window for validation, CI repair and publication.
+
+Read AGENTS.md, .github/copilot-instructions.md, the [classic-level outcome](xl_classic_outcome_20261118.md), [execution ledger](xl_classic_execution_20261118.json), [case ledger](../XL_compat/evidence/classic-readiness-20261118.json) and [lighting plan](xl_classic_next_window_20261118.md). Refresh origin/cmake, current branches, stashes and [fork stack 605](https://github.com/larsonm-personal/dxx-redux/stack/605). Build on the merged cmake if the maintainer merged the work, or use the tested immediate parent.
+
+Reproduce the 13 companion-lighting blockers using their original HOGs, descriptors and ordinals. Use the authentic private Vertigo and XL runtime and the pinned distributions. Follow the source order from the D2 default tables through the authored LGT/CLR and embedded geometry colors. Preserve diagnostic ordering, source identity, equal-count independence, discard and retirement. Check the nine 17/36 mines first. Qualify native D2 lighting and its lifetime before admitting the four 7/31 mines.
+
+Run the affected assertion-enabled owners, the ordinary developer-OFF engine, the compiled pinned source readers, real desktop capture and clean rendered replay, and protected Android checks. Reconcile each full census row against the dated case ledger. Preserve first attempts, assisted settings, private raw files, RNG differences and partial runs. Keep the fixed eight and 64, 1,111 pinned cases and 543 additional cases. Account for existing warm replay, G2, Android startup FX and Sphere defects in the handoff.
+
+Publish locally tested non-draft immediate-parent PRs to the owned fork. Record exact candidate, synthetic merge, controller, input, executable and workflow identities with terminal results and skip reasons. Publish an outcome, ledger, next-window plan and replacement kickoff, and inspect the final push. Merge and controller adoption belong to the maintainer.
