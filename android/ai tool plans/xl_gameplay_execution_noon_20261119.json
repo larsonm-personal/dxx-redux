@@ -1,6 +1,6 @@
 {
     "schema": "xl-noon-stack-execution-v1",
-    "captured_utc": "2026-11-19T18:56:12.900816+00:00",
+    "captured_utc": "2026-11-19T19:23:10.703326+00:00",
     "repository": "larsonm-personal/dxx-redux",
     "cmake": "b33969696c385f00332a47dc15d8cd9b863a9d62",
     "stack": 471,
@@ -599,7 +599,7 @@
             1,
             "pull_request",
             "Linux shareware gameplay, saves & replays",
-            "in_progress"
+            "success"
         ],
         "44585552260": [
             "3d9b155d414b4ef8d3c6fd8424c923488c5126f3",
@@ -644,9 +644,9 @@
             1,
             "pull_request",
             "Linux shareware gameplay, saves & replays",
-            "queued"
+            "in_progress"
         ],
-        "44588303030": ["7ab71d220c8c07185a8afbf4df83795993d7442f", 1, "pull_request", "Engine smoke", "in_progress"],
+        "44588303030": ["7ab71d220c8c07185a8afbf4df83795993d7442f", 1, "pull_request", "Engine smoke", "success"],
         "44588303036": [
             "7ab71d220c8c07185a8afbf4df83795993d7442f",
             1,
@@ -672,24 +672,24 @@
         ],
         "44588303581": [
             "7ab71d220c8c07185a8afbf4df83795993d7442f",
-            1,
+            2,
             "pull_request",
             "PR #649 test sample",
-            "in_progress"
+            "success"
         ],
         "44588340565": [
             "b33969696c385f00332a47dc15d8cd9b863a9d62",
             1,
             "workflow_run",
             "XL qualification for 7ab71d220c8c07185a8afbf4df83795993d7442f",
-            "in_progress"
+            "success"
         ],
         "44590648331": [
             "569a07017aa6c1ea0ef7db32e82af06dfa4f18a5",
             1,
             "pull_request",
             "XL compatibility contracts",
-            "in_progress"
+            "success"
         ],
         "44590648453": [
             "569a07017aa6c1ea0ef7db32e82af06dfa4f18a5",
@@ -698,14 +698,8 @@
             "Linux shareware gameplay, saves & replays",
             "in_progress"
         ],
-        "44590648500": [
-            "569a07017aa6c1ea0ef7db32e82af06dfa4f18a5",
-            1,
-            "pull_request",
-            "Public LAN smoke",
-            "in_progress"
-        ],
-        "44590648535": ["569a07017aa6c1ea0ef7db32e82af06dfa4f18a5", 1, "pull_request", "Engine smoke", "in_progress"],
+        "44590648500": ["569a07017aa6c1ea0ef7db32e82af06dfa4f18a5", 1, "pull_request", "Public LAN smoke", "success"],
+        "44590648535": ["569a07017aa6c1ea0ef7db32e82af06dfa4f18a5", 1, "pull_request", "Engine smoke", "success"],
         "44590648571": ["569a07017aa6c1ea0ef7db32e82af06dfa4f18a5", 1, "pull_request", "Server Rust checks", "success"],
         "44590648618": [
             "569a07017aa6c1ea0ef7db32e82af06dfa4f18a5",
@@ -733,7 +727,7 @@
             1,
             "workflow_run",
             "XL qualification for 569a07017aa6c1ea0ef7db32e82af06dfa4f18a5",
-            "in_progress"
+            "success"
         ],
         "44591753305": [
             "377fac2c6a031342a0f9e9b9857fc0431624cd78",
@@ -742,23 +736,23 @@
             "XL asset smoke request",
             "success"
         ],
-        "44591753341": ["377fac2c6a031342a0f9e9b9857fc0431624cd78", 1, "pull_request", "PR #651 test sample", "queued"],
+        "44591753341": [
+            "377fac2c6a031342a0f9e9b9857fc0431624cd78",
+            2,
+            "pull_request",
+            "PR #651 test sample",
+            "in_progress"
+        ],
         "44591753426": [
             "377fac2c6a031342a0f9e9b9857fc0431624cd78",
             1,
             "pull_request",
             "XL compatibility contracts",
-            "in_progress"
+            "success"
         ],
         "44591753458": ["377fac2c6a031342a0f9e9b9857fc0431624cd78", 1, "pull_request", "Engine smoke", "in_progress"],
         "44591753559": ["377fac2c6a031342a0f9e9b9857fc0431624cd78", 1, "pull_request", "Server Rust checks", "success"],
-        "44591753579": [
-            "377fac2c6a031342a0f9e9b9857fc0431624cd78",
-            1,
-            "pull_request",
-            "Public LAN smoke",
-            "in_progress"
-        ],
+        "44591753579": ["377fac2c6a031342a0f9e9b9857fc0431624cd78", 1, "pull_request", "Public LAN smoke", "success"],
         "44591753580": [
             "377fac2c6a031342a0f9e9b9857fc0431624cd78",
             1,
@@ -778,7 +772,97 @@
             1,
             "workflow_run",
             "XL qualification for 377fac2c6a031342a0f9e9b9857fc0431624cd78",
+            "success"
+        ],
+        "44593929701": [
+            "4b57d511b723433cc6d5ccbe7969cc377fab67f4",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "success"
+        ],
+        "44593930066": ["4b57d511b723433cc6d5ccbe7969cc377fab67f4", 1, "pull_request", "Server Rust checks", "success"],
+        "44593930192": ["4b57d511b723433cc6d5ccbe7969cc377fab67f4", 1, "pull_request", "Engine smoke", "in_progress"],
+        "44593930193": [
+            "4b57d511b723433cc6d5ccbe7969cc377fab67f4",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "success"
+        ],
+        "44593930296": ["4b57d511b723433cc6d5ccbe7969cc377fab67f4", 1, "pull_request", "Public LAN smoke", "queued"],
+        "44593930434": [
+            "4b57d511b723433cc6d5ccbe7969cc377fab67f4",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "success"
+        ],
+        "44593930532": [
+            "4b57d511b723433cc6d5ccbe7969cc377fab67f4",
+            1,
+            "pull_request",
+            "PR #652 test sample",
             "in_progress"
+        ],
+        "44593930572": [
+            "4b57d511b723433cc6d5ccbe7969cc377fab67f4",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "in_progress"
+        ],
+        "44593960581": [
+            "b33969696c385f00332a47dc15d8cd9b863a9d62",
+            1,
+            "workflow_run",
+            "XL qualification for 4b57d511b723433cc6d5ccbe7969cc377fab67f4",
+            "in_progress"
+        ],
+        "44596807199": [
+            "17d25b039a5255b7bc046baae76354bcb882dbc6",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "in_progress"
+        ],
+        "44596807220": ["17d25b039a5255b7bc046baae76354bcb882dbc6", 1, "pull_request", "Engine smoke", "in_progress"],
+        "44596807285": ["17d25b039a5255b7bc046baae76354bcb882dbc6", 1, "pull_request", "PR #653 test sample", "queued"],
+        "44596807312": [
+            "17d25b039a5255b7bc046baae76354bcb882dbc6",
+            1,
+            "pull_request",
+            "Public LAN smoke",
+            "in_progress"
+        ],
+        "44596807331": ["17d25b039a5255b7bc046baae76354bcb882dbc6", 1, "pull_request", "Server Rust checks", "success"],
+        "44596807399": [
+            "17d25b039a5255b7bc046baae76354bcb882dbc6",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "success"
+        ],
+        "44596808024": [
+            "17d25b039a5255b7bc046baae76354bcb882dbc6",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "in_progress"
+        ],
+        "44596810098": [
+            "17d25b039a5255b7bc046baae76354bcb882dbc6",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "in_progress"
+        ],
+        "44596866622": [
+            "b33969696c385f00332a47dc15d8cd9b863a9d62",
+            1,
+            "workflow_run",
+            "XL qualification for 17d25b039a5255b7bc046baae76354bcb882dbc6",
+            "queued"
         ]
     },
     "candidates": [
@@ -3747,13 +3831,13 @@
                 [
                     "Linux shareware gameplay, saves & replays",
                     "Linux public headed replay parity",
-                    "IN_PROGRESS",
+                    "SUCCESS",
                     "44585552252/job/135794062887"
                 ],
                 [
                     "Linux shareware gameplay, saves & replays",
                     "Linux public native save and replay integrity",
-                    "IN_PROGRESS",
+                    "SUCCESS",
                     "44585552252/job/135794062685"
                 ],
                 [
@@ -3905,42 +3989,67 @@
             "public": [
                 ["", "D2X readiness (expanded 64 load/tick)", "SUCCESS", "44588340565"],
                 ["", "D2X readiness (sampled load/tick)", "SUCCESS", "44588340565"],
-                ["", "XL asset smoke (private assets)", "PENDING", "44588340565"],
+                ["", "XL asset smoke (private assets)", "SUCCESS", "44588340565"],
                 ["Engine smoke", "CI policy and runner checks", "SUCCESS", "44588303030/job/135787143256"],
                 ["Engine smoke", "Linux d1 build and tests", "SUCCESS", "44588303030/job/135787227245"],
                 ["Engine smoke", "Linux d2 build and tests", "SUCCESS", "44588303030/job/135787227029"],
-                ["Engine smoke", "Linux public ASan runtime", "IN_PROGRESS", "44588303030/job/135787226985"],
+                ["Engine smoke", "Linux public ASan runtime", "SUCCESS", "44588303030/job/135787226985"],
                 ["Engine smoke", "stack / check", "SUCCESS", "44588303030/job/135787143827"],
                 [
                     "Extended test suite",
                     "Android tests / Run selected tests",
-                    "IN_PROGRESS",
-                    "44588303581/job/135789128902"
+                    "SUCCESS",
+                    "44588303581/job/135806501758"
                 ],
-                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44588303581/job/135787147423"],
-                ["Extended test suite", "JVM tests / Run selected tests", "SUCCESS", "44588303581/job/135789128890"],
-                ["Extended test suite", "Linux tests", "FAILURE", "44588303581/job/135789128546"],
+                ["Extended test suite", "Check results", "SUCCESS", "44588303581/job/135811038060"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44588303581/job/135806496216"],
+                ["Extended test suite", "JVM tests / Run selected tests", "SUCCESS", "44588303581/job/135806501807"],
+                ["Extended test suite", "Linux tests", "SUCCESS", "44588303581/job/135806497442"],
                 [
                     "Extended test suite",
                     "Nightly XL developer Release compile",
                     "SKIPPED",
-                    "44588303581/job/135787712309"
+                    "44588303581/job/135806500210"
                 ],
-                ["Extended test suite", "Select tests", "SUCCESS", "44588303581/job/135787295779"],
-                ["Extended test suite", "Verify pinned Pumo staging", "SKIPPED", "44588303581/job/135787710548"],
-                ["Extended test suite", "execution-stack / check", "SUCCESS", "44588303581/job/135787708476"],
-                ["Extended test suite", "stack / check", "SUCCESS", "44588303581/job/135787144954"],
+                [
+                    "Extended test suite",
+                    "Save nightly progress (scheduled/manual only)",
+                    "SKIPPED",
+                    "44588303581/job/135812258137"
+                ],
+                ["Extended test suite", "Select tests", "SUCCESS", "44588303581/job/135806497857"],
+                ["Extended test suite", "Verify pinned Pumo staging", "SKIPPED", "44588303581/job/135806499041"],
+                ["Extended test suite", "execution-stack / check", "SUCCESS", "44588303581/job/135806499933"],
+                ["Extended test suite", "stack / check", "SUCCESS", "44588303581/job/135806603979"],
                 [
                     "Linux shareware gameplay, saves & replays",
                     "Linux public build and save integrity",
-                    "IN_PROGRESS",
+                    "SUCCESS",
                     "44588302949/job/135787234292"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public headed replay parity",
+                    "IN_PROGRESS",
+                    "44588302949/job/135803622313"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public native save and replay integrity",
+                    "SUCCESS",
+                    "44588302949/job/135803622248"
                 ],
                 [
                     "Linux shareware gameplay, saves & replays",
                     "Public replay admission controls",
                     "SUCCESS",
                     "44588302949/job/135787234138"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "replay-stack / check",
+                    "SUCCESS",
+                    "44588302949/job/135803478211"
                 ],
                 [
                     "Linux shareware gameplay, saves & replays",
@@ -4010,7 +4119,7 @@
                 {
                     "run": 44588340565,
                     "controller": "b33969696c385f00332a47dc15d8cd9b863a9d62",
-                    "state": "in_progress",
+                    "state": "success",
                     "attempts": [
                         {
                             "attempt": 1,
@@ -4039,7 +4148,7 @@
                                     "skipped",
                                     135789044844
                                 ],
-                                ["Original XL asset load and navigation / Linux tests", "in_progress", 135789200952],
+                                ["Original XL asset load and navigation / Linux tests", "success", 135789200952],
                                 [
                                     "Original XL asset load and navigation / matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests'",
                                     "skipped",
@@ -4050,7 +4159,14 @@
                                 ["Start the ordinary engine with survey runtime packages", "skipped", 135789590653],
                                 ["Measure all pinned D2X levels on request", "skipped", 135789590678],
                                 ["D2X readiness percentage (sampled load/tick)", "success", 135791445749],
-                                ["Expanded D2X measurement and distinct compatibility status", "success", 135792380052]
+                                ["Expanded D2X measurement and distinct compatibility status", "success", 135792380052],
+                                ["Original XL asset load and navigation / Check results", "success", 135804806888],
+                                ["Publish exact-head XL asset result", "success", 135805590877],
+                                [
+                                    "Original XL asset load and navigation / Save nightly progress (scheduled/manual only)",
+                                    "skipped",
+                                    135805591993
+                                ]
                             ]
                         }
                     ]
@@ -4072,11 +4188,11 @@
             "public": [
                 ["", "D2X readiness (expanded 64 load/tick)", "SUCCESS", "44590682344"],
                 ["", "D2X readiness (sampled load/tick)", "SUCCESS", "44590682344"],
-                ["", "XL asset smoke (private assets)", "PENDING", "44590682344"],
+                ["", "XL asset smoke (private assets)", "SUCCESS", "44590682344"],
                 ["Engine smoke", "CI policy and runner checks", "SUCCESS", "44590648535/job/135795428641"],
                 ["Engine smoke", "Linux d1 build and tests", "SUCCESS", "44590648535/job/135795588334"],
                 ["Engine smoke", "Linux d2 build and tests", "SUCCESS", "44590648535/job/135795588293"],
-                ["Engine smoke", "Linux public ASan runtime", "IN_PROGRESS", "44590648535/job/135795588175"],
+                ["Engine smoke", "Linux public ASan runtime", "SUCCESS", "44590648535/job/135795588175"],
                 ["Engine smoke", "stack / check", "SUCCESS", "44590648535/job/135795432970"],
                 ["Extended test suite", "Check results", "SKIPPED", "44590648660/job/135795569962"],
                 ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44590648660/job/135795422377"],
@@ -4111,8 +4227,20 @@
                 [
                     "Linux shareware gameplay, saves & replays",
                     "Linux public build and save integrity",
-                    "IN_PROGRESS",
+                    "SUCCESS",
                     "44590648453/job/135795593107"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public headed replay parity",
+                    "IN_PROGRESS",
+                    "44590648453/job/135811134050"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public native save and replay integrity",
+                    "IN_PROGRESS",
+                    "44590648453/job/135811133643"
                 ],
                 [
                     "Linux shareware gameplay, saves & replays",
@@ -4122,16 +4250,23 @@
                 ],
                 [
                     "Linux shareware gameplay, saves & replays",
+                    "replay-stack / check",
+                    "SUCCESS",
+                    "44590648453/job/135810849717"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
                     "stack / check",
                     "SUCCESS",
                     "44590648453/job/135795418616"
                 ],
                 ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44590648500/job/135795420855"],
+                ["Public LAN smoke", "Require public LAN pass", "SUCCESS", "44590648500/job/135806003403"],
                 ["Public LAN smoke", "Select public LAN smoke", "SUCCESS", "44590648500/job/135795417444"],
                 [
                     "Public LAN smoke",
                     "Two-player lobby to game / Run selected tests",
-                    "IN_PROGRESS",
+                    "SUCCESS",
                     "44590648500/job/135795753670"
                 ],
                 ["Server Rust checks", "server", "SKIPPED", "44590648571/job/135795510258"],
@@ -4163,7 +4298,7 @@
                 [
                     "XL compatibility contracts",
                     "XL developer source compile (Windows x86)",
-                    "IN_PROGRESS",
+                    "SUCCESS",
                     "44590648331/job/135795509343"
                 ],
                 [
@@ -4187,7 +4322,7 @@
                 {
                     "run": 44590682344,
                     "controller": "b33969696c385f00332a47dc15d8cd9b863a9d62",
-                    "state": "in_progress",
+                    "state": "success",
                     "attempts": [
                         {
                             "attempt": 1,
@@ -4216,7 +4351,7 @@
                                     "skipped",
                                     135797459127
                                 ],
-                                ["Original XL asset load and navigation / Linux tests", "in_progress", 135797615281],
+                                ["Original XL asset load and navigation / Linux tests", "success", 135797615281],
                                 [
                                     "Original XL asset load and navigation / matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests'",
                                     "skipped",
@@ -4227,7 +4362,14 @@
                                 ["Measure all pinned D2X levels on request", "skipped", 135797910183],
                                 ["Start the ordinary engine with survey runtime packages", "skipped", 135797910595],
                                 ["D2X readiness percentage (sampled load/tick)", "success", 135800422413],
-                                ["Expanded D2X measurement and distinct compatibility status", "success", 135800517387]
+                                ["Expanded D2X measurement and distinct compatibility status", "success", 135800517387],
+                                ["Original XL asset load and navigation / Check results", "success", 135814246428],
+                                ["Publish exact-head XL asset result", "success", 135814801962],
+                                [
+                                    "Original XL asset load and navigation / Save nightly progress (scheduled/manual only)",
+                                    "skipped",
+                                    135814803499
+                                ]
                             ]
                         }
                     ]
@@ -4247,34 +4389,62 @@
             "immediate_base": "xl_model_override_capacity_20261119",
             "state": "OPEN",
             "public": [
-                ["", "XL asset smoke (private assets)", "PENDING", "44591788149"],
+                ["", "D2X readiness (expanded 64 load/tick)", "SUCCESS", "44591788149"],
+                ["", "D2X readiness (sampled load/tick)", "SUCCESS", "44591788149"],
+                ["", "XL asset smoke (private assets)", "SUCCESS", "44591788149"],
                 ["Engine smoke", "CI policy and runner checks", "SUCCESS", "44591753458/job/135799296630"],
-                ["Engine smoke", "Linux d1 build and tests", "IN_PROGRESS", "44591753458/job/135799678996"],
-                ["Engine smoke", "Linux d2 build and tests", "IN_PROGRESS", "44591753458/job/135799678306"],
+                ["Engine smoke", "Linux d1 build and tests", "SUCCESS", "44591753458/job/135799678996"],
+                ["Engine smoke", "Linux d2 build and tests", "SUCCESS", "44591753458/job/135799678306"],
                 ["Engine smoke", "Linux public ASan runtime", "IN_PROGRESS", "44591753458/job/135799678287"],
                 ["Engine smoke", "stack / check", "SUCCESS", "44591753458/job/135799297309"],
-                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44591753341/job/135799300416"],
+                [
+                    "Extended test suite",
+                    "Android tests / Run selected tests",
+                    "SUCCESS",
+                    "44591753341/job/135818024252"
+                ],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44591753341/job/135818019807"],
+                ["Extended test suite", "JVM tests / Run selected tests", "SUCCESS", "44591753341/job/135818024173"],
+                ["Extended test suite", "Linux tests", "IN_PROGRESS", "44591753341/job/135818020328"],
                 [
                     "Extended test suite",
                     "Nightly XL developer Release compile",
                     "SKIPPED",
-                    "44591753341/job/135802254704"
+                    "44591753341/job/135818125523"
                 ],
-                ["Extended test suite", "Select tests", "SUCCESS", "44591753341/job/135800578644"],
-                ["Extended test suite", "Verify pinned Pumo staging", "SKIPPED", "44591753341/job/135802255075"],
-                ["Extended test suite", "execution-stack / check", "QUEUED", "44591753341/job/135802252526"],
-                ["Extended test suite", "stack / check", "SUCCESS", "44591753341/job/135799298148"],
+                ["Extended test suite", "Select tests", "SUCCESS", "44591753341/job/135818021068"],
+                ["Extended test suite", "Verify pinned Pumo staging", "SKIPPED", "44591753341/job/135818022072"],
+                ["Extended test suite", "execution-stack / check", "SUCCESS", "44591753341/job/135818023314"],
+                ["Extended test suite", "stack / check", "SUCCESS", "44591753341/job/135818107583"],
                 [
                     "Linux shareware gameplay, saves & replays",
                     "Linux public build and save integrity",
-                    "IN_PROGRESS",
+                    "SUCCESS",
                     "44591753830/job/135800028895"
                 ],
                 [
                     "Linux shareware gameplay, saves & replays",
-                    "Public replay admission controls",
+                    "Linux public headed replay parity",
                     "IN_PROGRESS",
+                    "44591753830/job/135817248999"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public native save and replay integrity",
+                    "IN_PROGRESS",
+                    "44591753830/job/135817249589"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Public replay admission controls",
+                    "SUCCESS",
                     "44591753830/job/135800029071"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "replay-stack / check",
+                    "SUCCESS",
+                    "44591753830/job/135817093960"
                 ],
                 [
                     "Linux shareware gameplay, saves & replays",
@@ -4283,11 +4453,12 @@
                     "44591753830/job/135799298059"
                 ],
                 ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44591753579/job/135799299281"],
+                ["Public LAN smoke", "Require public LAN pass", "SUCCESS", "44591753579/job/135812860698"],
                 ["Public LAN smoke", "Select public LAN smoke", "SUCCESS", "44591753579/job/135799296975"],
                 [
                     "Public LAN smoke",
                     "Two-player lobby to game / Run selected tests",
-                    "IN_PROGRESS",
+                    "SUCCESS",
                     "44591753579/job/135800076033"
                 ],
                 ["Server Rust checks", "server", "SKIPPED", "44591753559/job/135799457587"],
@@ -4319,7 +4490,7 @@
                 [
                     "XL compatibility contracts",
                     "XL developer source compile (Windows x86)",
-                    "IN_PROGRESS",
+                    "SUCCESS",
                     "44591753426/job/135799803800"
                 ],
                 [
@@ -4343,7 +4514,7 @@
                 {
                     "run": 44591788149,
                     "controller": "b33969696c385f00332a47dc15d8cd9b863a9d62",
-                    "state": "queued",
+                    "state": "success",
                     "attempts": [
                         {
                             "attempt": 1,
@@ -4357,8 +4528,8 @@
                                     135799628392
                                 ],
                                 ["Original XL asset load and navigation / Select tests", "success", 135799979915],
-                                ["Measure expanded 64-case D2X readiness", "in_progress", 135802231225],
-                                ["Measure D2X readiness on fixed uploaded sample", "in_progress", 135802231317],
+                                ["Measure expanded 64-case D2X readiness", "success", 135802231225],
+                                ["Measure D2X readiness on fixed uploaded sample", "success", 135802231317],
                                 ["Start the ordinary engine with survey runtime packages", "skipped", 135802233166],
                                 ["Measure all pinned D2X levels on request", "skipped", 135802234018],
                                 [
@@ -4376,11 +4547,20 @@
                                     "skipped",
                                     135802845142
                                 ],
-                                ["Original XL asset load and navigation / Linux tests", "in_progress", 135803387435],
+                                ["Original XL asset load and navigation / Linux tests", "success", 135803387435],
                                 [
                                     "Original XL asset load and navigation / matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests'",
                                     "skipped",
                                     135803390338
+                                ],
+                                ["D2X readiness percentage (sampled load/tick)", "success", 135805314495],
+                                ["Expanded D2X measurement and distinct compatibility status", "success", 135805740285],
+                                ["Original XL asset load and navigation / Check results", "success", 135815916978],
+                                ["Publish exact-head XL asset result", "success", 135816145563],
+                                [
+                                    "Original XL asset load and navigation / Save nightly progress (scheduled/manual only)",
+                                    "skipped",
+                                    135816146914
                                 ]
                             ]
                         }
@@ -4390,6 +4570,307 @@
             "public_runs": [
                 44591753305, 44591753341, 44591753426, 44591753458, 44591753559, 44591753579, 44591753580, 44591753830,
                 44591788149
+            ]
+        },
+        {
+            "pr": 652,
+            "head": "4b57d511b723433cc6d5ccbe7969cc377fab67f4",
+            "merge": "09d1a167cbb763f9024d15bf81c06744dd83805b",
+            "base_sha": "377fac2c6a031342a0f9e9b9857fc0431624cd78",
+            "branch": "xl_gameplay_noon_results_20261119",
+            "immediate_base": "xl_gles_probe_depth_clear_20261119",
+            "state": "OPEN",
+            "public": [
+                ["", "D2X readiness (expanded 64 load/tick)", "SUCCESS", "44593960581"],
+                ["", "D2X readiness (sampled load/tick)", "SUCCESS", "44593960581"],
+                ["", "XL asset smoke (private assets)", "PENDING", "44593960581"],
+                ["Engine smoke", "CI policy and runner checks", "SUCCESS", "44593930192/job/135807027438"],
+                ["Engine smoke", "Linux d1 build and tests", "SUCCESS", "44593930192/job/135807223540"],
+                ["Engine smoke", "Linux d2 build and tests", "SUCCESS", "44593930192/job/135807223859"],
+                ["Engine smoke", "Linux public ASan runtime", "IN_PROGRESS", "44593930192/job/135807223460"],
+                ["Engine smoke", "stack / check", "SUCCESS", "44593930192/job/135807027982"],
+                [
+                    "Extended test suite",
+                    "Android tests / Run selected tests",
+                    "IN_PROGRESS",
+                    "44593930532/job/135810931545"
+                ],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44593930532/job/135807033274"],
+                ["Extended test suite", "JVM tests / Run selected tests", "SUCCESS", "44593930532/job/135810931455"],
+                ["Extended test suite", "Linux tests", "SUCCESS", "44593930532/job/135810931027"],
+                [
+                    "Extended test suite",
+                    "Nightly XL developer Release compile",
+                    "SKIPPED",
+                    "44593930532/job/135809801154"
+                ],
+                ["Extended test suite", "Select tests", "SUCCESS", "44593930532/job/135807565110"],
+                ["Extended test suite", "Verify pinned Pumo staging", "SKIPPED", "44593930532/job/135809802066"],
+                ["Extended test suite", "execution-stack / check", "SUCCESS", "44593930532/job/135809798223"],
+                ["Extended test suite", "stack / check", "SUCCESS", "44593930532/job/135807029981"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public build and save integrity",
+                    "IN_PROGRESS",
+                    "44593930572/job/135807641694"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Public replay admission controls",
+                    "SUCCESS",
+                    "44593930572/job/135807641576"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "SUCCESS",
+                    "44593930572/job/135807029531"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44593930296/job/135807031218"],
+                ["Public LAN smoke", "Require public LAN pass", "QUEUED", "44593930296/job/135819839379"],
+                ["Public LAN smoke", "Select public LAN smoke", "SUCCESS", "44593930296/job/135807027246"],
+                [
+                    "Public LAN smoke",
+                    "Two-player lobby to game / Run selected tests",
+                    "SUCCESS",
+                    "44593930296/job/135807477684"
+                ],
+                ["Server Rust checks", "server", "SKIPPED", "44593930066/job/135807195761"],
+                ["Server Rust checks", "stack / check", "SUCCESS", "44593930066/job/135807026402"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "SUCCESS",
+                    "44593929701/job/135807023605"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (ubuntu-24.04)",
+                    "SUCCESS",
+                    "44593930434/job/135807133069"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (windows-2022)",
+                    "SUCCESS",
+                    "44593930434/job/135807133161"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer Release source compile (no game assets)",
+                    "SKIPPED",
+                    "44593930434/job/135807135972"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (Windows x86)",
+                    "SUCCESS",
+                    "44593930434/job/135807133130"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (no game assets)",
+                    "SUCCESS",
+                    "44593930434/job/135807133165"
+                ],
+                ["XL compatibility contracts", "stack / check", "SUCCESS", "44593930434/job/135807027947"],
+                ["scripts and ci tests", "Automation catalogs", "SUCCESS", "44593930193/job/135807027086"],
+                ["scripts and ci tests", "Workflow syntax", "SUCCESS", "44593930193/job/135807027251"],
+                [
+                    "scripts and ci tests",
+                    "scripts and ci tests (${{ matrix.os }})",
+                    "SKIPPED",
+                    "44593930193/job/135807108019"
+                ],
+                ["scripts and ci tests", "stack / check", "SUCCESS", "44593930193/job/135807027393"]
+            ],
+            "private": [
+                {
+                    "run": 44593960581,
+                    "controller": "b33969696c385f00332a47dc15d8cd9b863a9d62",
+                    "state": "in_progress",
+                    "attempts": [
+                        {
+                            "attempt": 1,
+                            "jobs": [
+                                ["Verify owned PR and pin exact head", "success", 135807138174],
+                                ["Build ordinary D2 readiness engine without private inputs", "success", 135807424720],
+                                ["Original XL asset load and navigation / stack / check", "success", 135807426511],
+                                [
+                                    "Original XL asset load and navigation / Inspect retained online receipt",
+                                    "skipped",
+                                    135807429957
+                                ],
+                                ["Original XL asset load and navigation / Select tests", "success", 135809270032],
+                                [
+                                    "Original XL asset load and navigation / execution-stack / check",
+                                    "success",
+                                    135810785668
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Verify pinned Pumo staging",
+                                    "skipped",
+                                    135810789119
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Nightly XL developer Release compile",
+                                    "skipped",
+                                    135810789192
+                                ],
+                                ["Original XL asset load and navigation / Linux tests", "in_progress", 135810941516],
+                                [
+                                    "Original XL asset load and navigation / matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests'",
+                                    "skipped",
+                                    135810944529
+                                ],
+                                ["Measure expanded 64-case D2X readiness", "success", 135811302789],
+                                ["Measure D2X readiness on fixed uploaded sample", "success", 135811302870],
+                                ["Start the ordinary engine with survey runtime packages", "skipped", 135811305811],
+                                ["Measure all pinned D2X levels on request", "skipped", 135811306528],
+                                ["Expanded D2X measurement and distinct compatibility status", "success", 135815758256],
+                                ["D2X readiness percentage (sampled load/tick)", "success", 135816107232]
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "public_runs": [
+                44593929701, 44593930066, 44593930192, 44593930193, 44593930296, 44593930434, 44593930532, 44593930572,
+                44593960581
+            ]
+        },
+        {
+            "pr": 653,
+            "head": "17d25b039a5255b7bc046baae76354bcb882dbc6",
+            "merge": "3e2475c78d4f073cf3f38e3067ddf071c56fb651",
+            "base_sha": "4b57d511b723433cc6d5ccbe7969cc377fab67f4",
+            "branch": "xl_guidebot_wall_events_20261119",
+            "immediate_base": "xl_gameplay_noon_results_20261119",
+            "state": "OPEN",
+            "public": [
+                ["", "XL asset smoke (private assets)", "PENDING", "44596866622"],
+                ["Engine smoke", "CI policy and runner checks", "SUCCESS", "44596807220/job/135817170501"],
+                ["Engine smoke", "Linux d1 build and tests", "IN_PROGRESS", "44596807220/job/135817344874"],
+                ["Engine smoke", "Linux d2 build and tests", "IN_PROGRESS", "44596807220/job/135817345087"],
+                ["Engine smoke", "Linux public ASan runtime", "IN_PROGRESS", "44596807220/job/135817344940"],
+                ["Engine smoke", "stack / check", "SUCCESS", "44596807220/job/135817169798"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44596807285/job/135817174635"],
+                [
+                    "Extended test suite",
+                    "Nightly XL developer Release compile",
+                    "SKIPPED",
+                    "44596807285/job/135817895112"
+                ],
+                ["Extended test suite", "Select tests", "SUCCESS", "44596807285/job/135817346935"],
+                ["Extended test suite", "Verify pinned Pumo staging", "SKIPPED", "44596807285/job/135817895507"],
+                ["Extended test suite", "execution-stack / check", "QUEUED", "44596807285/job/135817892843"],
+                ["Extended test suite", "stack / check", "SUCCESS", "44596807285/job/135817171632"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public build and save integrity",
+                    "IN_PROGRESS",
+                    "44596810098/job/135817382862"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Public replay admission controls",
+                    "QUEUED",
+                    "44596810098/job/135817382801"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "SUCCESS",
+                    "44596810098/job/135817180775"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44596807312/job/135817173061"],
+                ["Public LAN smoke", "Select public LAN smoke", "SUCCESS", "44596807312/job/135817170213"],
+                [
+                    "Public LAN smoke",
+                    "Two-player lobby to game / Run selected tests",
+                    "QUEUED",
+                    "44596807312/job/135817576387"
+                ],
+                ["Server Rust checks", "server", "SKIPPED", "44596807331/job/135817276546"],
+                ["Server Rust checks", "stack / check", "SUCCESS", "44596807331/job/135817169449"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "SUCCESS",
+                    "44596807399/job/135817171061"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (ubuntu-24.04)",
+                    "SUCCESS",
+                    "44596807199/job/135817243601"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (windows-2022)",
+                    "SUCCESS",
+                    "44596807199/job/135817243680"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer Release source compile (no game assets)",
+                    "SKIPPED",
+                    "44596807199/job/135817246374"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (Windows x86)",
+                    "IN_PROGRESS",
+                    "44596807199/job/135817243590"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (no game assets)",
+                    "IN_PROGRESS",
+                    "44596807199/job/135817243588"
+                ],
+                ["XL compatibility contracts", "stack / check", "SUCCESS", "44596807199/job/135817169293"],
+                ["scripts and ci tests", "Automation catalogs", "SUCCESS", "44596808024/job/135817172375"],
+                ["scripts and ci tests", "Workflow syntax", "SUCCESS", "44596808024/job/135817172223"],
+                [
+                    "scripts and ci tests",
+                    "scripts and ci tests (ubuntu-24.04)",
+                    "IN_PROGRESS",
+                    "44596808024/job/135817298331"
+                ],
+                [
+                    "scripts and ci tests",
+                    "scripts and ci tests (windows-2022)",
+                    "IN_PROGRESS",
+                    "44596808024/job/135817298191"
+                ],
+                ["scripts and ci tests", "stack / check", "SUCCESS", "44596808024/job/135817172620"]
+            ],
+            "private": [
+                {
+                    "run": 44596866622,
+                    "controller": "b33969696c385f00332a47dc15d8cd9b863a9d62",
+                    "state": "in_progress",
+                    "attempts": [
+                        {
+                            "attempt": 1,
+                            "jobs": [
+                                ["Verify owned PR and pin exact head", "success", 135817388441],
+                                ["Build ordinary D2 readiness engine without private inputs", "queued", 135820099778],
+                                ["Original XL asset load and navigation / stack / check", "queued", 135820100851],
+                                [
+                                    "Original XL asset load and navigation / Inspect retained online receipt",
+                                    "skipped",
+                                    135820104201
+                                ]
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "public_runs": [
+                44596807199, 44596807220, 44596807285, 44596807312, 44596807331, 44596807399, 44596808024, 44596810098,
+                44596866622
             ]
         }
     ],
@@ -5137,6 +5618,82 @@
                     ["Save nightly progress (scheduled/manual only)", "skipped", 135765385904, []]
                 ]
             ]
+        ],
+        "44588303581": [
+            [
+                1,
+                [
+                    ["stack / check", "success", 135787144954, []],
+                    ["Inspect retained online receipt", "skipped", 135787147423, []],
+                    ["Select tests", "success", 135787295779, []],
+                    ["execution-stack / check", "success", 135787708476, []],
+                    ["Verify pinned Pumo staging", "skipped", 135787710548, []],
+                    ["Nightly XL developer Release compile", "skipped", 135787712309, []],
+                    ["Linux tests", "failure", 135789128546, ["Prepare asset-free metadata CLI"]],
+                    ["JVM tests / Run selected tests", "success", 135789128890, []],
+                    ["Android tests / Run selected tests", "success", 135789128902, []],
+                    [
+                        "Check results",
+                        "failure",
+                        135804077005,
+                        ["Reconcile terminal results and retain unresolved failures"]
+                    ],
+                    ["Save nightly progress (scheduled/manual only)", "skipped", 135805126731, []]
+                ]
+            ],
+            [
+                2,
+                [
+                    ["Inspect retained online receipt", "skipped", 135806496216, []],
+                    ["Linux tests", "success", 135806497442, []],
+                    ["Select tests", "success", 135806497857, []],
+                    ["Verify pinned Pumo staging", "skipped", 135806499041, []],
+                    ["execution-stack / check", "success", 135806499933, []],
+                    ["Nightly XL developer Release compile", "skipped", 135806500210, []],
+                    ["Android tests / Run selected tests", "success", 135806501758, []],
+                    ["JVM tests / Run selected tests", "success", 135806501807, []],
+                    ["stack / check", "success", 135806603979, []],
+                    ["Check results", "success", 135811038060, []],
+                    ["Save nightly progress (scheduled/manual only)", "skipped", 135812258137, []]
+                ]
+            ]
+        ],
+        "44591753341": [
+            [
+                1,
+                [
+                    ["stack / check", "success", 135799298148, []],
+                    ["Inspect retained online receipt", "skipped", 135799300416, []],
+                    ["Select tests", "success", 135800578644, []],
+                    ["execution-stack / check", "success", 135802252526, []],
+                    ["Nightly XL developer Release compile", "skipped", 135802254704, []],
+                    ["Verify pinned Pumo staging", "skipped", 135802255075, []],
+                    ["Linux tests", "failure", 135803548096, ["Prepare asset-free metadata CLI"]],
+                    ["JVM tests / Run selected tests", "success", 135803549021, []],
+                    ["Android tests / Run selected tests", "success", 135803549216, []],
+                    [
+                        "Check results",
+                        "failure",
+                        135816319463,
+                        ["Reconcile terminal results and retain unresolved failures"]
+                    ],
+                    ["Save nightly progress (scheduled/manual only)", "skipped", 135816618310, []]
+                ]
+            ],
+            [
+                2,
+                [
+                    ["Inspect retained online receipt", "skipped", 135818019807, []],
+                    ["Linux tests", "in_progress", 135818020328, []],
+                    ["Select tests", "success", 135818021068, []],
+                    ["Verify pinned Pumo staging", "skipped", 135818022072, []],
+                    ["execution-stack / check", "success", 135818023314, []],
+                    ["JVM tests / Run selected tests", "success", 135818024173, []],
+                    ["Android tests / Run selected tests", "success", 135818024252, []],
+                    ["stack / check", "success", 135818107583, []],
+                    ["Nightly XL developer Release compile", "skipped", 135818125523, []]
+                ]
+            ]
         ]
     },
     "skip_conditions": {
@@ -5154,7 +5711,9 @@
         "639-641": "Private native acceptance still expected the older Black Prophecy HXM or object layout refusal. PR 642 updates those expectations.",
         "642-643": "A separate mixed Observatory descriptor still expected the old all-or-nothing decision. PR 644 tests both the admitted and rejected ordinals.",
         "646 superseded": "Initial change required the native stock clock control to satisfy an Android policy owner. Initial public metadata download and private host package prerequisites also failed. The corrected candidate and its own runs appear separately.",
-        "649": "Public Linux metadata CLI stopped resolving the Kotlin BOM 2.4.20 at its repositories on attempt 1. Both Maven paths subsequently served the same 4,606-byte POM locally."
+        "649": "Public Linux metadata CLI stopped resolving the Kotlin BOM 2.4.20 at its repositories on attempt 1. Both Maven paths subsequently served the same 4,606-byte POM locally. The failed jobs on the same source passed on attempt 2.",
+        "651": "Public Linux metadata CLI could not resolve the Kotlin 2.4.20 fus-statistics-gradle-plugin and kotlin-build-statistics POMs from Maven Central or the Gradle plugin repository on attempt 1. The source was retried after the public workflow reached terminal status.",
+        "653": "The manual Windows close-door comparison initially used an older reference executable that expected a shorter sample argument list. The rebuilt source oracle passed. The enhanced texture regression explicitly selects the enhanced session mode. The genuine Android capture independently demonstrates the parent divergence and the corrected full-world match."
     },
     "qualification_limits": [
         "Original Android interactive input, audio and lifecycle and physical ARM gameplay remain open.",
