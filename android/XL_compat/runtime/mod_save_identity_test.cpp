@@ -26,8 +26,9 @@ void mod_identity_save()
 	require(PHYSFS_read(input.get(), bytes.data(), 1, static_cast<PHYSFS_uint32>(bytes.size())) == size,
 	        "Cannot read save identity level bytes");
 	const auto level = xl_compat::inspect_level(bytes);
-	XlPreparedResources resources("pmlev1.rl2", &level, 11);
-	resources.install_hxm();
+	// Save preflight resolves the active definition counts through the published level owner.
+	xl_set_prepared_resources("pmlev1.rl2", std::make_unique<XlPreparedResources>("pmlev1.rl2", &level, 11));
+	require(xl_install_prepared_hxm("pmlev1.rl2"), "Cannot publish level definitions for save identity");
 	Current_level_num = 11;
 	Highest_segment_index = 0;
 	std::memset(&Segments[0], 0, sizeof(Segments[0]));

@@ -3411,18 +3411,7 @@ extern "C" void game_automate_observe_axis_controls(
 }
 
 #if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
-static bool center_ray_open(const object &candidate)
-{
-	fvi_query query = {};
-	fvi_info hit = {};
-	vms_vector target_point = candidate.pos;
-	query.p0 = &ConsoleObject->pos;
-	query.p1 = &target_point;
-	query.startseg = ConsoleObject->segnum;
-	query.thisobjnum = (int) (ConsoleObject - Objects);
-	/* Conservative selection: no transparent-wall bypass, no claim about gun offsets */
-	return find_vector_intersection(&query, &hit) == HIT_NONE;
-}
+#include "pilot_target.h"
 
 /* Estimate an ordinary laser's first intersection with a moving target sphere
  * This drives input only; engine collision, damage and cooldown remain authoritative */
@@ -3473,26 +3462,6 @@ static int combat_laser_muzzle_mask(const object &target)
 		if (find_vector_intersection(&query, &hit) == HIT_NONE) mask |= 1 << gun;
 	}
 	return mask;
-}
-
-static int nearest_combat_target(double range)
-{
-	int target_slot = -1;
-	double nearest = range;
-	for (int i = 0; i <= Highest_object_index; ++i) {
-		const object &candidate = Objects[i];
-		if (candidate.type != OBJ_ROBOT || candidate.shields < 0 ||
-		    (candidate.flags & OF_SHOULD_BE_DEAD) || Robot_info[candidate.id].companion) continue;
-		const double dx = f2fl(candidate.pos.x) - f2fl(ConsoleObject->pos.x);
-		const double dy = f2fl(candidate.pos.y) - f2fl(ConsoleObject->pos.y);
-		const double dz = f2fl(candidate.pos.z) - f2fl(ConsoleObject->pos.z);
-		const double distance = std::sqrt(dx * dx + dy * dy + dz * dz);
-		if (distance < nearest && center_ray_open(candidate)) {
-			target_slot = i;
-			nearest = distance;
-		}
-	}
-	return target_slot;
 }
 
 static const char *drive_combat_input(const object *target_ptr, unsigned translation_mask, Uint32 now, const char *action, bool use_secondary = false)
@@ -3639,7 +3608,7 @@ static const char *drive_combat_input(const object *target_ptr, unsigned transla
 	if (!valid) {
 		return "Combat requires usable aim-axis deadzones";
 	}
-	const bool ray_open = center_ray_open(target);
+	const bool ray_open = pilot_target::center_ray_open(target);
 	const int laser_muzzle_mask = combat_laser_muzzle_mask(target);
 	const bool fire = ray_open && (laser_muzzle_mask >= 0 ? laser_muzzle_mask != 0 : cosine > 0.99);
 	if (fire != g_flight_fire_active) {
@@ -4329,7 +4298,7 @@ extern "C" void game_automate_tick(void)
 
 			if (!g_key_phase) {
 				target_slot = s.target_object;
-				if (target_slot == -1) target_slot = nearest_combat_target(s.distance);
+				if (target_slot == -1) target_slot = pilot_target::nearest_robot(s.distance);
 				if (target_slot < 0 || target_slot > Highest_object_index) {
 					if (bounded && s.target_object == -1) {
 						finish_engagement("no_visible_target");
@@ -4368,7 +4337,7 @@ extern "C" void game_automate_tick(void)
 				stop_script_fail("attack_object timed out with the robot still alive");
 				break;
 			}
-			if (bounded && !center_ray_open(target)) {
+			if (bounded && !pilot_target::center_ray_open(target)) {
 				finish_engagement("lost_visibility; target still alive");
 				break;
 			}
@@ -4498,8 +4467,8 @@ extern "C" void game_automate_tick(void)
 				if (combat_target < 0 || combat_target > Highest_object_index ||
 				    Objects[combat_target].type != OBJ_ROBOT || Objects[combat_target].signature != combat_signature ||
 				    Objects[combat_target].shields < 0 || (Objects[combat_target].flags & OF_SHOULD_BE_DEAD) ||
-				    !center_ray_open(Objects[combat_target])) {
-					combat_target = nearest_combat_target(80.0);
+				    !pilot_target::center_ray_open(Objects[combat_target])) {
+					combat_target = pilot_target::nearest_robot(80.0);
 					if (combat_target >= 0) combat_signature = Objects[combat_target].signature;
 				}
 				if (const char *failure = drive_combat_input(combat_target >= 0 ? &Objects[combat_target] : NULL, mask, now, "fly_combat", s.combat_secondary))

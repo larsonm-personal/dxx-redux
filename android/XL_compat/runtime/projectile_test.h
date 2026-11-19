@@ -98,34 +98,38 @@ static void inert_robot_death_controls()
 	definition.contains_type = OBJ_POWERUP;
 	definition.contains_id = POW_KEY_BLUE;
 	definition.contains_count = 3;
-	for (int probability : { 0, 8, 16 }) {
-		definition.contains_prob = probability;
-		const int carrier = projectile_robot();
-		auto &robot = Objects[carrier];
-		robot.render_type = RT_NONE;
-		robot.contains_type = OBJ_WEAPON;
-		robot.contains_id = 4;
-		robot.contains_count = 4;
-		explode_object(&robot, F1_0 / 8);
-		object *timer = nullptr;
-		for (int i = 0; i <= Highest_object_index; ++i)
-			if (Objects[i].control_type == CT_EXPLOSION && Objects[i].ctype.expl_info.delete_objnum == carrier && Objects[i].ctype.expl_info.spawn_time == 0)
-				timer = &Objects[i];
-		require(timer, "Missing delayed robot death owner");
-		auto keys = []() {
-			return std::count_if(Objects, Objects + Highest_object_index + 1, [](const object &o) { return o.type == OBJ_POWERUP && o.id == POW_KEY_BLUE; });
-		};
-		const auto before = keys();
-		d_srand(1234);
-		const bool drop = d_rand() % 16 < probability;
-		const int count = drop ? 1 + d_rand() % definition.contains_count : 0;
-		d_srand(1234);
-		const auto calls = d_rand_get_call_count();
-		timer->lifeleft = 0;
-		do_explosion_sequence(timer);
-		require(keys() == before + count && d_rand_get_call_count() == calls + 1 + int(drop) + 3 * count,
-		        "Secondary robot loot count or SIM draw sequence differs");
-	}
+	require(!xl_unspawnable_robot_payload(OBJ_POWERUP, 69) && xl_unspawnable_robot_payload(OBJ_POWERUP, 70) &&
+	            !xl_unspawnable_robot_payload(OBJ_ROBOT, -1),
+	        "Unsigned powerup rejection boundary differs");
+	for (int payload : { 4, 70, -1 })
+		for (int probability : { 0, 8, 16 }) {
+			definition.contains_prob = probability;
+			const int carrier = projectile_robot();
+			auto &robot = Objects[carrier];
+			robot.render_type = RT_NONE;
+			robot.contains_type = payload == 4 ? OBJ_WEAPON : OBJ_POWERUP;
+			robot.contains_id = payload;
+			robot.contains_count = 4;
+			explode_object(&robot, F1_0 / 8);
+			object *timer = nullptr;
+			for (int i = 0; i <= Highest_object_index; ++i)
+				if (Objects[i].control_type == CT_EXPLOSION && Objects[i].ctype.expl_info.delete_objnum == carrier && Objects[i].ctype.expl_info.spawn_time == 0)
+					timer = &Objects[i];
+			require(timer, "Missing delayed robot death owner");
+			auto keys = []() {
+				return std::count_if(Objects, Objects + Highest_object_index + 1, [](const object &o) { return o.type == OBJ_POWERUP && o.id == POW_KEY_BLUE; });
+			};
+			const auto before = keys();
+			d_srand(1234);
+			const bool drop = d_rand() % 16 < probability;
+			const int count = drop ? 1 + d_rand() % definition.contains_count : 0;
+			d_srand(1234);
+			const auto calls = d_rand_get_call_count();
+			timer->lifeleft = 0;
+			do_explosion_sequence(timer);
+			require(keys() == before + count && d_rand_get_call_count() == calls + 1 + int(drop) + 3 * count,
+			        "Secondary robot loot count or SIM draw sequence differs");
+		}
 	Robot_info[0] = saved;
 	std::cout << "XL inert authored contents and secondary robot loot passed\n";
 }

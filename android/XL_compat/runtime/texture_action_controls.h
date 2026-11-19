@@ -18,6 +18,10 @@ extern "C" {
 #include "player.h"
 #include "segment.h"
 #include "gameseg.h"
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+#include "guidebot_extensions.h"
+#include "guidebot_routing.h"
+#endif
 #include "switch.h"
 #include "wall.h"
 #include "textures.h"
@@ -284,7 +288,17 @@ inline void events()
 	check_trigger(&Segments[front.segnum], short(front.sidenum), short(Players[Player_num].objnum), 0);
 	expect(1, 0xc002);
 	require(face(1).tmap_num == untouched[0] && face(1).tmap_num2 == untouched[1], "Single-sided texture action changed the connected side");
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	const int previous_routing = guidebot_routing_mode();
+	guidebot_routing_set_mode(GUIDEBOT_ROUTING_ENHANCED);
+	const auto wall_generation = escort_get_route_wall_generation();
+#endif
 	require(fire(1) == 0, "Overlay clear action did not dispatch");
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	const auto notified_generation = escort_get_route_wall_generation();
+	guidebot_routing_set_mode(previous_routing);
+	require(notified_generation == wall_generation + 1, "Single-sided texture action did not notify the enhanced guidebot of one changed wall");
+#endif
 	expect(1, 0xc000);
 	ray(false);
 	require(fire(2) == 0, "Base-only texture action did not dispatch");

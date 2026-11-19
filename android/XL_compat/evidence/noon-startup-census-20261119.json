@@ -1,0 +1,524 @@
+{
+    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+    "candidate": "c18584141a9cd4a53821287a30143420f8317d84",
+    "ordinary_windows_sha256": "802fbdb14289caa6d41098f44e068f7389341f12d647bf7415b5172d83ebd74b",
+    "runtime": {
+        "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+        "files": [
+            {
+                "path": "d2x.hog",
+                "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                "size": 4371791,
+                "source": "descent_2_vertigo/d2x.hog"
+            },
+            {
+                "path": "d2x-xl.hog",
+                "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                "size": 3815963,
+                "source": "xl-resources/d2x-xl.hog"
+            }
+        ],
+        "profile": "authentic-vertigo-xl-v1",
+        "repository": "larsonm-personal/dxx-redux-test-assets"
+    },
+    "first_source": "c6b1cdbf66e466dd7f7e9b0fa9d838b2b1db43ea",
+    "intermediate_source": "8a5c8e2c7320443a8f058b0aaa090221ba694972",
+    "cohorts": [
+        {
+            "cohort": "pinned",
+            "rows": 1111,
+            "archives": 23,
+            "mission_descriptors": 356,
+            "ordinary_case_seconds": 3461.521,
+            "outcomes": {
+                "load_failed": 69,
+                "loaded_ticked": 1037,
+                "simulation_failed": 3,
+                "unsupported_format": 2
+            },
+            "inventory_sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+            "results_sha256": "fd753d89669c882367434005ff27247565032b3075d2d6be03884359f32ea5a3",
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725"
+        },
+        {
+            "cohort": "additional",
+            "rows": 543,
+            "archives": 223,
+            "mission_descriptors": 269,
+            "ordinary_case_seconds": 1240.501,
+            "outcomes": {
+                "load_failed": 53,
+                "loaded_ticked": 486,
+                "simulation_failed": 2,
+                "timeout": 1,
+                "unsupported_format": 1
+            },
+            "inventory_sha256": "e7d480aa401522d37f6ec75da01f6cec7c314c901728f1b291131e52a62818df",
+            "results_sha256": "fc9ff888f9af3cc4e1a2b9a7b8d45513c74e00d7a00c76f2bbd0efb39369c1ca",
+            "asset_commit": null
+        }
+    ],
+    "total": {
+        "loaded_ticked": 1523,
+        "load_failed": 122,
+        "simulation_failed": 5,
+        "unsupported_format": 3,
+        "timeout": 1
+    },
+    "change_columns": ["cohort", "case", "initial_outcome", "intermediate_outcome", "final_outcome"],
+    "changes": [
+        ["pinned", "levelpack.7z/missions/d1fsxl/d1fs-xl.mn2:1", "unsupported_format", "load_failed", "load_failed"],
+        [
+            "pinned",
+            "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:1",
+            "unsupported_format",
+            "loaded_ticked",
+            "loaded_ticked"
+        ],
+        ["pinned", "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:2", "load_failed", "load_failed", "loaded_ticked"],
+        ["pinned", "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:5", "load_failed", "load_failed", "loaded_ticked"],
+        [
+            "pinned",
+            "levelpack.7z/missions/sirius/sclairxl.mn2:1",
+            "unsupported_format",
+            "loaded_ticked",
+            "loaded_ticked"
+        ],
+        ["additional", "levels/elitehunt.zip/elitehnt.mn2:1", "unsupported_format", "load_failed", "load_failed"],
+        [
+            "additional",
+            "levels_multiplayer/pmanicd2.zip/pmanicd2.mn2:1",
+            "unsupported_format",
+            "load_failed",
+            "load_failed"
+        ],
+        [
+            "additional",
+            "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:1",
+            "unsupported_format",
+            "load_failed",
+            "load_failed"
+        ],
+        [
+            "additional",
+            "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:2",
+            "load_failed",
+            "loaded_ticked",
+            "loaded_ticked"
+        ],
+        [
+            "additional",
+            "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:3",
+            "unsupported_format",
+            "load_failed",
+            "load_failed"
+        ],
+        [
+            "additional",
+            "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:4",
+            "unsupported_format",
+            "load_failed",
+            "loaded_ticked"
+        ],
+        [
+            "additional",
+            "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:5",
+            "unsupported_format",
+            "load_failed",
+            "loaded_ticked"
+        ],
+        [
+            "additional",
+            "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-1",
+            "load_failed",
+            "loaded_ticked",
+            "loaded_ticked"
+        ],
+        [
+            "additional",
+            "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-2",
+            "unsupported_format",
+            "loaded_ticked",
+            "loaded_ticked"
+        ],
+        [
+            "additional",
+            "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-3",
+            "unsupported_format",
+            "loaded_ticked",
+            "loaded_ticked"
+        ],
+        [
+            "additional",
+            "sphere-1.51.7z/missions/single/sphere.mn2:3",
+            "unsupported_format",
+            "load_failed",
+            "load_failed"
+        ]
+    ],
+    "original_comparison_sha256": "b12f55650a6c8a5a4224db5c30ebb0f3a7d65a7a32a0231d2dcb0b838c817ffd",
+    "original_outcome_for_remaining_cases": {
+        "started_and_ran": 93,
+        "simulation_unverified": 4,
+        "mission_rejected": 31,
+        "advertised_member_lookup_empty": 3
+    },
+    "original_first_blocker_for_remaining_cases": {
+        "Segment functions": {
+            "started_and_ran": 12
+        },
+        "Unsupported level format": {
+            "simulation_unverified": 2,
+            "started_and_ran": 7
+        },
+        "Advertised level file missing": {
+            "mission_rejected": 31,
+            "advertised_member_lookup_empty": 3
+        },
+        "Custom base definitions": {
+            "started_and_ran": 2
+        },
+        "Animated replacement textures": {
+            "started_and_ran": 15,
+            "simulation_unverified": 1
+        },
+        "Simulation stopped": {
+            "started_and_ran": 4
+        },
+        "Replacement bitmap directory": {
+            "started_and_ran": 4
+        },
+        "Robot definitions": {
+            "started_and_ran": 3
+        },
+        "Wall types": {
+            "started_and_ran": 2
+        },
+        "Object placement": {
+            "started_and_ran": 2
+        },
+        "Reactor triggers": {
+            "started_and_ran": 5
+        },
+        "Lightning effects": {
+            "started_and_ran": 2
+        },
+        "Resolved level filename differs": {
+            "started_and_ran": 1
+        },
+        "Light index bounds": {
+            "started_and_ran": 16
+        },
+        "Object trigger actions": {
+            "started_and_ran": 1
+        },
+        "Trigger targets": {
+            "started_and_ran": 1
+        },
+        "Fluid behavior": {
+            "started_and_ran": 2
+        },
+        "OOF model decoding": {
+            "started_and_ran": 4
+        },
+        "Multiplayer-only objects": {
+            "started_and_ran": 1
+        },
+        "Non-hexahedral geometry": {
+            "started_and_ran": 4
+        },
+        "Robot contents": {
+            "started_and_ran": 1
+        },
+        "Particle effects": {
+            "started_and_ran": 1
+        },
+        "timeout": {
+            "simulation_unverified": 1
+        },
+        "ASE model rendering": {
+            "started_and_ran": 3
+        }
+    },
+    "sample_measurements": [
+        {
+            "target": "cc8ea93f78fe4cf94a5d7a51a1654670d13d41f1",
+            "cohort_sha256": null,
+            "count": 8,
+            "case_seconds": 66.281,
+            "elapsed_seconds": null,
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "sha256": "c09ca92a18e86df9213fb2797d58cacb89869fd30ded05e6d9c551c88a08c58c"
+        },
+        {
+            "target": "cc8ea93f78fe4cf94a5d7a51a1654670d13d41f1",
+            "cohort_sha256": "3cae87cc870ba5594c7da1f55db2619e565645c91e8de5c1b86a8d2e4dfb1e05",
+            "count": 64,
+            "case_seconds": 241.701,
+            "elapsed_seconds": 258.219,
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "sha256": "c5f96a9af7a34991b8f36f7abe0160e9add0d2957e18b592b8407cb4342b011f"
+        },
+        {
+            "target": "569a07017aa6c1ea0ef7db32e82af06dfa4f18a5",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 8
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 8,
+                "readiness_percent": 100.0
+            },
+            "counts": {
+                "loaded_ticked": 8
+            },
+            "elapsed_seconds": null,
+            "case_seconds": 35.36,
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "sha256": "0ab8fa0903c402d15e85bcdbc39fcb626c056d7eef7174ef79d9659ec467f2a2"
+        },
+        {
+            "target": "569a07017aa6c1ea0ef7db32e82af06dfa4f18a5",
+            "summary": {
+                "complete": false,
+                "counts": {
+                    "loaded_ticked": 63,
+                    "untested": 1
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 64,
+                "passed": 63,
+                "readiness_percent": null
+            },
+            "counts": {
+                "loaded_ticked": 63,
+                "untested": 1
+            },
+            "elapsed_seconds": 318.578,
+            "case_seconds": 296.795,
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "sha256": "29a875a8b4d912faad111633497db01016445c862f35f10d5bc30e0a878c06ab"
+        },
+        {
+            "target": "569a07017aa6c1ea0ef7db32e82af06dfa4f18a5",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 64
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 64,
+                "passed": 64,
+                "readiness_percent": 100.0
+            },
+            "counts": {
+                "loaded_ticked": 64
+            },
+            "elapsed_seconds": 264.0,
+            "case_seconds": 247.672,
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "sha256": "c12656b477e4c2695030837c90e6915876a02703ff32b2bc0eb60a46eea3f51c"
+        },
+        {
+            "target": "17d25b039a5255b7bc046baae76354bcb882dbc6",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 8
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 8,
+                "readiness_percent": 100.0
+            },
+            "counts": {
+                "loaded_ticked": 8
+            },
+            "elapsed_seconds": null,
+            "case_seconds": 35.125,
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "sha256": "bc5024cdfe300de72050f256c890142598998abd62c15872c487685e72bc7d08"
+        },
+        {
+            "target": "17d25b039a5255b7bc046baae76354bcb882dbc6",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 64
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 64,
+                "passed": 64,
+                "readiness_percent": 100.0
+            },
+            "counts": {
+                "loaded_ticked": 64
+            },
+            "elapsed_seconds": 214.703,
+            "case_seconds": 201.937,
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "sha256": "51e324a923cfab29dc900bac0a5719c5b9313986a80f5601e22cf6c197a774e5"
+        }
+    ],
+    "hosted_timing": [
+        {
+            "cohort": "fixed",
+            "source": "7ab71d220c8c07185a8afbf4df83795993d7442f",
+            "result": {
+                "loaded_ticked": 8
+            },
+            "case_seconds": 31.58,
+            "probe_wall_seconds": null,
+            "job_wall_seconds": 174.0,
+            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44588340565/job/135789587830",
+            "started": "2026-11-19T18:33:11Z",
+            "ended": "2026-11-19T18:36:05Z",
+            "steps": [
+                {
+                    "name": "Set up job",
+                    "seconds": 3.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+                    "seconds": 10.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Revalidate pinned candidate before asset access",
+                    "seconds": 5.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Check out pinned uploaded inventory and retail inputs",
+                    "seconds": 17.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Check out pinned authentic Vertigo and XL runtime resources",
+                    "seconds": 1.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Stage hash-verified inputs with trusted tooling",
+                    "seconds": 1.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Install native runtime dependencies",
+                    "seconds": 94.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Run actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131",
+                    "seconds": 5.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Verify the admitted engine before measurement",
+                    "seconds": 0.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Measure every frozen case without rerolling failures",
+                    "seconds": 32.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Publish bounded measurement only",
+                    "seconds": 2.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Post Check out pinned authentic Vertigo and XL runtime resources",
+                    "seconds": 0.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Post Check out pinned uploaded inventory and retail inputs",
+                    "seconds": 0.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Post Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+                    "seconds": 0.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Complete job",
+                    "seconds": 0.0,
+                    "result": "success"
+                }
+            ],
+            "result_sha256": "7e115f73374db1b91bbf5b533da3d40ec57ca05e22044fe487151c6eb3592f89"
+        },
+        {
+            "cohort": "expanded",
+            "source": "7ab71d220c8c07185a8afbf4df83795993d7442f",
+            "result": {
+                "loaded_ticked": 64
+            },
+            "case_seconds": 142.258,
+            "probe_wall_seconds": 150.014,
+            "job_wall_seconds": 221.0,
+            "url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/44588340565/job/135789587957",
+            "started": "2026-11-19T18:33:55Z",
+            "ended": "2026-11-19T18:37:36Z",
+            "steps": [
+                {
+                    "name": "Set up job",
+                    "seconds": 1.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Start ten-minute job clock",
+                    "seconds": 0.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+                    "seconds": 7.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Revalidate pinned candidate before asset access",
+                    "seconds": 3.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Stage verified survey inputs and the admitted engine",
+                    "seconds": 56.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Measure all 64 frozen cases within the probe budget",
+                    "seconds": 151.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Publish bounded measurement only",
+                    "seconds": 1.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Post Stage verified survey inputs and the admitted engine",
+                    "seconds": 0.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Post Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+                    "seconds": 0.0,
+                    "result": "success"
+                },
+                {
+                    "name": "Complete job",
+                    "seconds": 0.0,
+                    "result": "success"
+                }
+            ],
+            "result_sha256": "e07516c63f98ea8367d88a8f4f7951c35d8d513da9286519f854ba67792d3e29"
+        }
+    ]
+}
