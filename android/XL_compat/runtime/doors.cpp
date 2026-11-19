@@ -20,7 +20,7 @@ extern "C" {
 #include "digi.h"
 #include "newdemo.h"
 int check_poke(int, int, int);
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 #include "guidebot_extensions.h"
 #endif
 }
@@ -78,7 +78,7 @@ bool blocked(int index)
 }
 void notify(int index)
 {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	escort_route_notify_wall_changed(index);
 #else
 	(void) index;

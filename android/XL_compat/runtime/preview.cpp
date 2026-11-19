@@ -216,7 +216,7 @@ const char *option(const char *name)
 	return nullptr;
 }
 
-xl_compat::Bytes read_extended_level(const char *filename)
+std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> open_extended_level(const char *filename)
 {
 	std::string path = filename;
 	if (!PHYSFSX_exists(path.c_str(), 1)) path = std::string(MISSION_DIR) + filename;
@@ -225,7 +225,14 @@ xl_compat::Bytes read_extended_level(const char *filename)
 	unsigned char header[8];
 	if (PHYSFS_read(input.get(), header, 1, 8) != 8) throw std::runtime_error("level header is truncated");
 	const uint32_t version = uint32_t(header[4]) | uint32_t(header[5]) << 8 | uint32_t(header[6]) << 16 | uint32_t(header[7]) << 24;
-	if (std::memcmp(header, "LVLP", 4) || version <= 8) return {};
+	if (std::memcmp(header, "LVLP", 4) || version <= 8) input.reset();
+	return input;
+}
+
+xl_compat::Bytes read_extended_level(const char *filename)
+{
+	auto input = open_extended_level(filename);
+	if (!input) return {};
 	const auto size = PHYSFS_fileLength(input.get());
 	if (size < 8 || size > 64 * 1024 * 1024) throw std::runtime_error("XL level exceeds the supported 64 MiB limit");
 	xl_compat::Bytes bytes(static_cast<std::size_t>(size));
@@ -1213,6 +1220,20 @@ extern "C" void xl_camera_controller_bind_level(void)
 extern "C" int xl_level_extensions_active(void)
 {
 	return source && !(Game_mode & GM_MULTI);
+}
+
+extern "C" int xl_secret_restore_clock(int ordinal, int64_t saved_epoch, int64_t *clock)
+{
+	if (!Current_mission || !ordinal || ordinal > Last_level || ordinal < Last_secret_level) return 0;
+	try {
+		const char *filename = ordinal > 0 ? Level_names[ordinal - 1] : Secret_level_names[-ordinal - 1];
+		// The incoming member owns the clock, including in mixed classic/XL campaigns
+		if (!(Game_mode & GM_MULTI) && open_extended_level(filename)) *clock = saved_epoch;
+		return 1;
+	} catch (const std::exception &error) {
+		con_printf(CON_URGENT, "XL secret restore: %s\n", error.what());
+		return 0;
+	}
 }
 
 extern "C" void xl_initialize_static_robot(int object_number, int behavior)

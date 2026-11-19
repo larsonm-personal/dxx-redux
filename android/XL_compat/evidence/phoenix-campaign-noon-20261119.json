@@ -1,0 +1,2342 @@
+{
+    "mission": "Black Prophecy 1.31 beta / PROPHXL",
+    "original_archive_sha256": "b9c5f139ea6ab585636fda37fd4093f98f174433ed562a5bf182189a9b03673a",
+    "descriptor_sha256": "8a47df99aaa72d34366d8ae357f1303e2c82c631163b062636b19d20c878b62b",
+    "hog_sha256": "aead9b792e3dc6ff13cd53b68e727d8cd814e1b6480ea83f5e5c9843caf23880",
+    "host_profile": "Trainee, headless, fixed 60 Hz, developer navigation, native weapons and collisions. Starts at level 2.",
+    "host_flight": {
+        "result": "PASS",
+        "executable_sha256": "e7e09d0e37709e8a787e84bd4a0a867bf8c9dc1372b0d5bce01ea64ce58038ef",
+        "result_sha256": "e85acba1dd0f24a0bf6632f404c4866a5410194df3dc2b3f73335e17e1642514",
+        "state_sha256": "31f913ab496237aebd61d6251f28bbc5b6ccb507903caca0ef8eb464bd84b3dd",
+        "plan_sha256": "9808429deecfda3bb593a4fb0c3a781a426f77fd8f978b9615946db20d7f0927",
+        "continued_from": "901038ad4f02b3400fecf379c79c9ebb8a527ddc0f3011e17d442cf66eaf3664",
+        "steps": 39,
+        "position_assists": 0,
+        "fixed_view_aim": 0,
+        "rendered": false,
+        "transitions": [
+            [2, -1],
+            [-1, 2]
+        ],
+        "checkpoints": [
+            {
+                "sha256": "8c4c06b673b18235a01bbd767fae53797585a20c688a2f7b2357ff7b62f8ba5b",
+                "android_export": "4be9a4ca9161d6a92ec372cbe5907703eb47ec0767881126d6bdcd0130bab593"
+            }
+        ],
+        "outcome": {
+            "level": 2,
+            "segment": 386,
+            "cheats": false,
+            "dead": false,
+            "player": {
+                "has_blue_key": true,
+                "has_gold_key": true,
+                "has_red_key": true,
+                "hostages_on_board": 3,
+                "energy": 136.04989624023438,
+                "lives": 4,
+                "score": 59900,
+                "shields": 151.3959197998047
+            },
+            "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+        }
+    },
+    "host_cold": {
+        "result": "PASS",
+        "executable_sha256": "e7e09d0e37709e8a787e84bd4a0a867bf8c9dc1372b0d5bce01ea64ce58038ef",
+        "result_sha256": "668fbcef673fb8a72141a84f62c94508fe74a5bfc968df1b85a38c6c3ed6cc07",
+        "state_sha256": "a525b1590431cd0eb1772c4e42080113a4c983ef7274141945d0d34c69317de7",
+        "plan_sha256": "8a0757f2d44fa97dff5e77d14a6f00ec894604f996d9eee7931ff1c7f0f1ba1d",
+        "continued_from": "8c4c06b673b18235a01bbd767fae53797585a20c688a2f7b2357ff7b62f8ba5b",
+        "steps": 3,
+        "position_assists": 0,
+        "fixed_view_aim": 0,
+        "rendered": false,
+        "transitions": [],
+        "checkpoints": [],
+        "outcome": {
+            "level": 2,
+            "segment": 386,
+            "cheats": false,
+            "dead": false,
+            "player": {
+                "has_blue_key": true,
+                "has_gold_key": true,
+                "has_red_key": true,
+                "hostages_on_board": 3,
+                "energy": 136.04989624023438,
+                "lives": 4,
+                "score": 59900,
+                "shields": 151.3959197998047
+            },
+            "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+        }
+    },
+    "original_negative": {
+        "result": "failed",
+        "previous_return_preserved_segment": 386,
+        "lost_switch": 1,
+        "log_sha256": "7ed890d33f23582aed2da2cacd7b0b32aff88b34db84bebedb63d88bea9d12b5"
+    },
+    "android_profile": "Isolated API 34 x86_64 emulator, SwiftShader, normal controller bindings, test pilot xlnoon",
+    "android_cold_return": {
+        "automation": {
+            "result": "PASS",
+            "run_id": "8284c76d679445d796758ec24db923bf",
+            "steps_completed": 7,
+            "total_steps": 7,
+            "elapsed_ms": 10250
+        },
+        "result_sha256": "7537a743fc24afa0696726e6669ace96a5b0cbd894f737f024ceff1e8eff5699",
+        "state_sha256": "b97c91ed9eb9b0c83c30a9cb25ae4235492c296c3a12dccee739ed9054515f2a",
+        "script_sha256": "2f5dd840783d59b902da518baf61cfa3007eef8b5f2823162361a0159a57f75f",
+        "apk_sha256": "2035a118c44a395896cee200e47630976545096d8aeab12bde2e755034e09417",
+        "mission_owner": "mod/prophxl131beta.zip",
+        "viewport": {
+            "display_height": 1080,
+            "display_width": 1920,
+            "front_canvas": {
+                "height": 1080,
+                "width": 1920,
+                "x": 0,
+                "y": 0
+            },
+            "pixel_aspect": 65536,
+            "render_height": 1080,
+            "render_width": 1920
+        },
+        "audio": {
+            "rate": 48000,
+            "resources": 185,
+            "backend_ready": true,
+            "error": ""
+        },
+        "outcome": {
+            "level": 2,
+            "segment": 386,
+            "cheats": false,
+            "dead": false,
+            "player": {
+                "has_blue_key": true,
+                "has_gold_key": true,
+                "has_red_key": true,
+                "hostages_on_board": 3,
+                "energy": 136.04989624023438,
+                "lives": 4,
+                "score": 59900,
+                "shields": 151.3959197998047
+            },
+            "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+        }
+    },
+    "android_exports": {
+        "returned": {
+            "continued_from": "05402ad59da47a5585e38573b0be2746d1d35e35e0c9ac5679cfae82dc63c9f7",
+            "host_executable": "210e508f9fd4f3a176f5095084b8ef6bc77d01a1ba39a503e9097c0e163e0c3a",
+            "result_sha256": "5f23036ad0b50aba0e62ff3e2e5aa59847f313abcd1ab72c22c8f02eab8d6aa4",
+            "export_sha256": "a042778600d24aab5c7863c75529d534e2bb42780abcae11ed5883fa26d03921"
+        },
+        "prebranch": {
+            "continued_from": "901038ad4f02b3400fecf379c79c9ebb8a527ddc0f3011e17d442cf66eaf3664",
+            "host_executable": "210e508f9fd4f3a176f5095084b8ef6bc77d01a1ba39a503e9097c0e163e0c3a",
+            "result_sha256": "6d4d819f87f561f8700bf2f140c7a214bb971f2039a98e36bbfa9abecb922f5a",
+            "export_sha256": "a3a3d17dbfc239729080a9a52b110a8c0cdf1ff5ec7b53d65c2b8df8d74638ff"
+        }
+    },
+    "android_progress": [
+        {
+            "result": "NATIVE_ABORT",
+            "durable_automation_pass": false,
+            "last_event": {
+                "seq": 144,
+                "step": 19,
+                "total": 81,
+                "action": "fly_to",
+                "status": "collision",
+                "elapsed_ms": 80183,
+                "detail": "kind=1 wall_segment=12 wall_side=4 object=-1 type=-1 id=-1 radius=0.00000"
+            },
+            "render_assertion": "draw_polygon_object, pm->n_textures<=12",
+            "signal": "SIGABRT",
+            "retained_logcat_sha256": "f591140a3bd82c968e3151d53a38d03255ceebd11ae6f6f0f8b71aad0d172b4c"
+        },
+        {
+            "automation": {
+                "result": "FAIL",
+                "run_id": "5d03972c9bdc4ef88d04836856aae087",
+                "steps_completed": 44,
+                "total_steps": 81,
+                "reason": "fly_to timed out without crossing the waypoint",
+                "elapsed_ms": 111459
+            },
+            "result_sha256": "6cff90dedf826b0a1b30fe764db73a561042f1ffd6c159d3261ffcf6f8da0dc2",
+            "state_sha256": "43e00500247e22d09b9b844935bb972b57ddad2d3c6414127aed81cbf0ac4c7b",
+            "script_sha256": "4194ee8b4de181005efa7d3230b96b39c68ba582182d7ceca41bee3313149458",
+            "apk_sha256": "6d6a05f1c58275b90d10af6242a68ac0c7ecf358860f997566b9a826dc8a83a9",
+            "mission_owner": "mod/prophxl131beta.zip",
+            "viewport": {
+                "display_height": 1080,
+                "display_width": 1920,
+                "front_canvas": {
+                    "height": 1080,
+                    "width": 1920,
+                    "x": 0,
+                    "y": 0
+                },
+                "pixel_aspect": 65536,
+                "render_height": 1080,
+                "render_width": 1920
+            },
+            "audio": {
+                "rate": 48000,
+                "resources": 183,
+                "backend_ready": true,
+                "error": ""
+            },
+            "outcome": {
+                "level": -1,
+                "segment": 261,
+                "cheats": false,
+                "dead": false,
+                "player": {
+                    "has_blue_key": true,
+                    "has_gold_key": true,
+                    "has_red_key": true,
+                    "hostages_on_board": 0,
+                    "energy": 109.04989624023438,
+                    "lives": 4,
+                    "score": 59900,
+                    "shields": 92.1412353515625
+                },
+                "operated": [4]
+            }
+        },
+        {
+            "automation": {
+                "result": "FAIL",
+                "run_id": "3669a300f7764c848b059d08759e4dad",
+                "steps_completed": 34,
+                "total_steps": 77,
+                "reason": "fly_to timed out without crossing the waypoint",
+                "elapsed_ms": 83939
+            },
+            "result_sha256": "136b31bb4d96ace9795c8a8532f024406352504d680c7d85697b18ebc58a9956",
+            "state_sha256": "9c9d06c68520b1e09c5b75ceb25facd971b10566466005a135869afd2f22459b",
+            "script_sha256": "65fa9f29f1c07de1d7fafbcee957ec82e2349f1d4da880d4d168e51047bcf7a4",
+            "apk_sha256": "6d6a05f1c58275b90d10af6242a68ac0c7ecf358860f997566b9a826dc8a83a9",
+            "mission_owner": "mod/prophxl131beta.zip",
+            "viewport": {
+                "display_height": 1080,
+                "display_width": 1920,
+                "front_canvas": {
+                    "height": 1080,
+                    "width": 1920,
+                    "x": 0,
+                    "y": 0
+                },
+                "pixel_aspect": 65536,
+                "render_height": 1080,
+                "render_width": 1920
+            },
+            "audio": {
+                "rate": 48000,
+                "resources": 183,
+                "backend_ready": true,
+                "error": ""
+            },
+            "outcome": {
+                "level": -1,
+                "segment": 259,
+                "cheats": false,
+                "dead": false,
+                "player": {
+                    "has_blue_key": true,
+                    "has_gold_key": true,
+                    "has_red_key": true,
+                    "hostages_on_board": 0,
+                    "energy": 109.04989624023438,
+                    "lives": 4,
+                    "score": 59900,
+                    "shields": 138.83705139160156
+                },
+                "operated": [4]
+            }
+        },
+        {
+            "automation": {
+                "result": "FAIL",
+                "run_id": "da2ba7e387244546bfd74685501aa134",
+                "steps_completed": 77,
+                "total_steps": 79,
+                "reason": "TIMEOUT waiting for expectations: \"current_level_num\" == \"2\" (got \"-1\") (after 25000 ms)",
+                "elapsed_ms": 156292
+            },
+            "result_sha256": "3577845270125c7bb4356fae3136ddd2bedcb13eb7001fda7a2ea8cdf50a7855",
+            "state_sha256": "8bc5d368a8551dc141a1489f11b1ff3283dae405609f14ec9b52a507db9b44f0",
+            "script_sha256": "493e5c150869c796887668dd3503d25f4cd116c7e7cc9c490b9dc25c287806fd",
+            "apk_sha256": "6d6a05f1c58275b90d10af6242a68ac0c7ecf358860f997566b9a826dc8a83a9",
+            "mission_owner": "mod/prophxl131beta.zip",
+            "viewport": {
+                "display_height": 1080,
+                "display_width": 1920,
+                "front_canvas": {
+                    "height": 120,
+                    "width": 400,
+                    "x": 120,
+                    "y": 180
+                },
+                "pixel_aspect": 65536,
+                "render_height": 480,
+                "render_width": 640
+            },
+            "audio": {
+                "rate": 48000,
+                "resources": 183,
+                "backend_ready": true,
+                "error": ""
+            },
+            "outcome": {
+                "level": -1,
+                "segment": 545,
+                "cheats": false,
+                "dead": false,
+                "player": {
+                    "has_blue_key": true,
+                    "has_gold_key": true,
+                    "has_red_key": true,
+                    "hostages_on_board": 0,
+                    "energy": 136.04989624023438,
+                    "lives": 4,
+                    "score": 59900,
+                    "shields": 140.89627075195312
+                },
+                "operated": [4, 10]
+            }
+        },
+        {
+            "automation": {
+                "result": "FAIL",
+                "run_id": "698b4eda710d496196d1403dde0fd62b",
+                "steps_completed": 77,
+                "total_steps": 83,
+                "reason": "TIMEOUT waiting for expectations: key \"menu_subtitle\" not found (after 20000 ms)",
+                "elapsed_ms": 145814
+            },
+            "result_sha256": "5171a84c3c061468ad853d486c16f1794675653091e923f4f1a5ce553580eece",
+            "state_sha256": "28c387f87f1608a13ccfc487f4109f2c4022f78952cc0fb0577b1ed8bc85c176",
+            "script_sha256": "60609d21b101c202fc47063fbffe50986c3c16b3c77036d330caf00ceb7c5ec4",
+            "apk_sha256": "6d6a05f1c58275b90d10af6242a68ac0c7ecf358860f997566b9a826dc8a83a9",
+            "mission_owner": "mod/prophxl131beta.zip",
+            "viewport": {
+                "display_height": 1080,
+                "display_width": 1920,
+                "front_canvas": {
+                    "height": 480,
+                    "width": 640,
+                    "x": 0,
+                    "y": 0
+                },
+                "pixel_aspect": 65536,
+                "render_height": 480,
+                "render_width": 640
+            },
+            "audio": {
+                "rate": 48000,
+                "resources": 183,
+                "backend_ready": true,
+                "error": ""
+            },
+            "outcome": {
+                "level": -1,
+                "segment": 308,
+                "cheats": false,
+                "dead": false,
+                "player": {
+                    "has_blue_key": true,
+                    "has_gold_key": true,
+                    "has_red_key": true,
+                    "hostages_on_board": 0,
+                    "energy": 136.04989624023438,
+                    "lives": 4,
+                    "score": 59900,
+                    "shields": 120.96466064453125
+                },
+                "operated": [4]
+            }
+        },
+        {
+            "automation": {
+                "result": "FAIL",
+                "run_id": "a5a2284fdacc4115820ae2bd7ad767a5",
+                "steps_completed": 77,
+                "total_steps": 83,
+                "reason": "TIMEOUT waiting for expectations: key \"menu_subtitle\" not found (after 20000 ms)",
+                "elapsed_ms": 146036
+            },
+            "result_sha256": "6a45c958edde7af9dfc33f245ef85cdec1f8ea774b379e2df6526e76b90b88be",
+            "state_sha256": "b37cc7fdbf0248c4d3d6678b7244f6b90167bfa0fa7dbd9ce1f04e48a1fac30e",
+            "script_sha256": "60609d21b101c202fc47063fbffe50986c3c16b3c77036d330caf00ceb7c5ec4",
+            "apk_sha256": "6d6a05f1c58275b90d10af6242a68ac0c7ecf358860f997566b9a826dc8a83a9",
+            "mission_owner": "mod/prophxl131beta.zip",
+            "viewport": {
+                "display_height": 1080,
+                "display_width": 1920,
+                "front_canvas": {
+                    "height": 480,
+                    "width": 640,
+                    "x": 0,
+                    "y": 0
+                },
+                "pixel_aspect": 65536,
+                "render_height": 480,
+                "render_width": 640
+            },
+            "audio": {
+                "rate": 48000,
+                "resources": 183,
+                "backend_ready": true,
+                "error": ""
+            },
+            "outcome": {
+                "level": -1,
+                "segment": 308,
+                "cheats": false,
+                "dead": false,
+                "player": {
+                    "has_blue_key": true,
+                    "has_gold_key": true,
+                    "has_red_key": true,
+                    "hostages_on_board": 0,
+                    "energy": 136.04989624023438,
+                    "lives": 4,
+                    "score": 59900,
+                    "shields": 111.32499694824219
+                },
+                "operated": [4]
+            }
+        },
+        {
+            "automation": {
+                "result": "FAIL",
+                "run_id": "03adbe76c663479193b1bd69550352fd",
+                "steps_completed": 76,
+                "total_steps": 82,
+                "reason": "fly_to requires live foreground single-player gameplay",
+                "elapsed_ms": 129064
+            },
+            "result_sha256": "bd7b0ff36160a279829ed82c39bc9c7c0a912c430574aaf65aba12f1913195d7",
+            "state_sha256": "1584fa1f07c6116aba7bbf0734132ec0261382d8e890eda523939b9596a63c14",
+            "script_sha256": "76fc97c8db885206b827f203b8ec6f159aca20cd3b298b09be11c841426abea1",
+            "apk_sha256": "6d6a05f1c58275b90d10af6242a68ac0c7ecf358860f997566b9a826dc8a83a9",
+            "mission_owner": "mod/prophxl131beta.zip",
+            "viewport": {
+                "display_height": 1080,
+                "display_width": 1920,
+                "front_canvas": {
+                    "height": 120,
+                    "width": 400,
+                    "x": 120,
+                    "y": 180
+                },
+                "pixel_aspect": 65536,
+                "render_height": 480,
+                "render_width": 640
+            },
+            "audio": {
+                "rate": 48000,
+                "resources": 183,
+                "backend_ready": true,
+                "error": ""
+            },
+            "outcome": {
+                "level": -1,
+                "segment": 545,
+                "cheats": false,
+                "dead": false,
+                "player": {
+                    "has_blue_key": true,
+                    "has_gold_key": true,
+                    "has_red_key": true,
+                    "hostages_on_board": 0,
+                    "energy": 136.04989624023438,
+                    "lives": 4,
+                    "score": 59900,
+                    "shields": 130.5719451904297
+                },
+                "operated": [4, 10]
+            }
+        }
+    ],
+    "native_campaign_runs": {
+        "exploratory_clock": {
+            "cases": 81,
+            "approach_steps": 613,
+            "executable_sha256": "cc3564b704c064bc9bd473d58bf3ce79560eccbc66657d92bb8bf1da50f5fbc2",
+            "assisted_positions": 0,
+            "fixed_view_aim": 0,
+            "first_plan": "9c9cbe320905fbde9d8905de38ede16930159d6de61b5cbe16c022713a8411dc",
+            "earned_entry": "871949773c367dd025bca2f03b95b84106b6774f1c14931ce03b1e215e40ded8",
+            "registered_tests": [
+                ["xl_phoenix_secret_approach", "4245.18"],
+                ["xl_phoenix_secret_return", "132.55"]
+            ],
+            "return_flight": {
+                "result": "PASS",
+                "executable_sha256": "cc3564b704c064bc9bd473d58bf3ce79560eccbc66657d92bb8bf1da50f5fbc2",
+                "result_sha256": "29cb8b205afbbbf922b89ee91cf5f1cd505860103163ce70ca972de276d8dcdd",
+                "state_sha256": "31f913ab496237aebd61d6251f28bbc5b6ccb507903caca0ef8eb464bd84b3dd",
+                "plan_sha256": "0b9127887b5f8c1982791f0142582336b739437259f11e26708f32ba915d3035",
+                "continued_from": "871949773c367dd025bca2f03b95b84106b6774f1c14931ce03b1e215e40ded8",
+                "steps": 39,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "rendered": false,
+                "transitions": [
+                    [2, -1],
+                    [-1, 2]
+                ],
+                "checkpoints": [
+                    {
+                        "sha256": "90b77af928d8d307983f85b6561e3c9b8dabd0a7b0b55d1fa3d84907c68aa469",
+                        "android_export": null
+                    }
+                ],
+                "outcome": {
+                    "level": 2,
+                    "segment": 386,
+                    "cheats": false,
+                    "dead": false,
+                    "player": {
+                        "has_blue_key": true,
+                        "has_gold_key": true,
+                        "has_red_key": true,
+                        "hostages_on_board": 3,
+                        "energy": 136.04989624023438,
+                        "lives": 4,
+                        "score": 59900,
+                        "shields": 151.3959197998047
+                    },
+                    "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+                }
+            },
+            "cold_return": {
+                "result": "PASS",
+                "executable_sha256": "cc3564b704c064bc9bd473d58bf3ce79560eccbc66657d92bb8bf1da50f5fbc2",
+                "result_sha256": "741be9a1d1d4a7ea61457f3d79c6163a45b7445ca53b9a8e9b080cb9e9238c37",
+                "state_sha256": "a525b1590431cd0eb1772c4e42080113a4c983ef7274141945d0d34c69317de7",
+                "plan_sha256": "460f3385a36a1ee2156d552d526f792af6b3ef6d480fa5b5bd25be95991bcf5c",
+                "continued_from": "90b77af928d8d307983f85b6561e3c9b8dabd0a7b0b55d1fa3d84907c68aa469",
+                "steps": 3,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "rendered": false,
+                "transitions": [],
+                "checkpoints": [],
+                "outcome": {
+                    "level": 2,
+                    "segment": 386,
+                    "cheats": false,
+                    "dead": false,
+                    "player": {
+                        "has_blue_key": true,
+                        "has_gold_key": true,
+                        "has_red_key": true,
+                        "hostages_on_board": 3,
+                        "energy": 136.04989624023438,
+                        "lives": 4,
+                        "score": 59900,
+                        "shields": 151.3959197998047
+                    },
+                    "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+                }
+            },
+            "log_sha256": "da04935345a86156f249029a3ca312b0f1610613ee94a47b567f6892bcbc8a74"
+        },
+        "incoming_level_clock": {
+            "cases": 81,
+            "approach_steps": 613,
+            "executable_sha256": "ffe4eb8353326f9340ed868168f3de48f783a067939c192150f184775b44af3b",
+            "assisted_positions": 0,
+            "fixed_view_aim": 0,
+            "first_plan": "ef836c75f567f85d2bf73c57652fe37feb4123913b6dc3250e63cfe4b86af6e6",
+            "earned_entry": "c5b85b60f176fa7688f9048b7cb29e3fd310ee503b0fe0fbf7d842286753c6a6",
+            "registered_tests": [
+                ["xl_phoenix_secret_approach", "4885.44"],
+                ["xl_phoenix_secret_return", "141.96"]
+            ],
+            "return_flight": {
+                "result": "PASS",
+                "executable_sha256": "ffe4eb8353326f9340ed868168f3de48f783a067939c192150f184775b44af3b",
+                "result_sha256": "eb0eba45473ccd5d1a3715ddc9d5eaddab4987ffc9a8f63678c30d7073151608",
+                "state_sha256": "31f913ab496237aebd61d6251f28bbc5b6ccb507903caca0ef8eb464bd84b3dd",
+                "plan_sha256": "973d1c321c6ee1339d3439ba9fb94fc49d8f63e0db7738bc61b1a5ede1c3c79e",
+                "continued_from": "c5b85b60f176fa7688f9048b7cb29e3fd310ee503b0fe0fbf7d842286753c6a6",
+                "steps": 39,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "rendered": false,
+                "transitions": [
+                    [2, -1],
+                    [-1, 2]
+                ],
+                "checkpoints": [
+                    {
+                        "sha256": "0a3a1ae590e0b6f1f2770db2afb4a0fea56748eb1318a2237de832d5d2240f56",
+                        "android_export": null
+                    }
+                ],
+                "outcome": {
+                    "level": 2,
+                    "segment": 386,
+                    "cheats": false,
+                    "dead": false,
+                    "player": {
+                        "has_blue_key": true,
+                        "has_gold_key": true,
+                        "has_red_key": true,
+                        "hostages_on_board": 3,
+                        "energy": 136.04989624023438,
+                        "lives": 4,
+                        "score": 59900,
+                        "shields": 151.3959197998047
+                    },
+                    "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+                }
+            },
+            "cold_return": {
+                "result": "PASS",
+                "executable_sha256": "ffe4eb8353326f9340ed868168f3de48f783a067939c192150f184775b44af3b",
+                "result_sha256": "f0d02cc816b93ac80d9b65fa1e2e3753cf5e28d6ece7a6aa341a1134523781d5",
+                "state_sha256": "a525b1590431cd0eb1772c4e42080113a4c983ef7274141945d0d34c69317de7",
+                "plan_sha256": "4682af34c51348a22378e987167736c63baf247d7ec307d4387ed2fff9d68772",
+                "continued_from": "0a3a1ae590e0b6f1f2770db2afb4a0fea56748eb1318a2237de832d5d2240f56",
+                "steps": 3,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "rendered": false,
+                "transitions": [],
+                "checkpoints": [],
+                "outcome": {
+                    "level": 2,
+                    "segment": 386,
+                    "cheats": false,
+                    "dead": false,
+                    "player": {
+                        "has_blue_key": true,
+                        "has_gold_key": true,
+                        "has_red_key": true,
+                        "hostages_on_board": 3,
+                        "energy": 136.04989624023438,
+                        "lives": 4,
+                        "score": 59900,
+                        "shields": 151.3959197998047
+                    },
+                    "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+                }
+            },
+            "log_sha256": "08b3cc872c67d63d46163b2e7095667363b5e76a6eb8c682df3490ad0446e0e3"
+        }
+    },
+    "android_return": {
+        "route": "The earned host save enters room 632. The ordinary Android game performs both signed transitions, plays the authored switch, picks up the orb and writes the quick save plus its secret companion.",
+        "inputs": "Controller axes and buttons driven by fly_to, menu selections and a quick-save request. No direct position, orientation or world writes. Original author package, trainee, 640x480 with audio. Two automation scripts continue the same process across the return dialog.",
+        "approach_receipt": "roundtrip16",
+        "approach": {
+            "automation": {
+                "result": "FAIL",
+                "run_id": "03adbe76c663479193b1bd69550352fd",
+                "steps_completed": 76,
+                "total_steps": 82,
+                "reason": "fly_to requires live foreground single-player gameplay",
+                "elapsed_ms": 129064
+            },
+            "result_sha256": "bd7b0ff36160a279829ed82c39bc9c7c0a912c430574aaf65aba12f1913195d7",
+            "state_sha256": "1584fa1f07c6116aba7bbf0734132ec0261382d8e890eda523939b9596a63c14",
+            "script_sha256": "76fc97c8db885206b827f203b8ec6f159aca20cd3b298b09be11c841426abea1",
+            "apk_sha256": "6d6a05f1c58275b90d10af6242a68ac0c7ecf358860f997566b9a826dc8a83a9",
+            "mission_owner": "mod/prophxl131beta.zip",
+            "viewport": {
+                "display_height": 1080,
+                "display_width": 1920,
+                "front_canvas": {
+                    "height": 120,
+                    "width": 400,
+                    "x": 120,
+                    "y": 180
+                },
+                "pixel_aspect": 65536,
+                "render_height": 480,
+                "render_width": 640
+            },
+            "audio": {
+                "rate": 48000,
+                "resources": 183,
+                "backend_ready": true,
+                "error": ""
+            },
+            "outcome": {
+                "level": -1,
+                "segment": 545,
+                "cheats": false,
+                "dead": false,
+                "player": {
+                    "has_blue_key": true,
+                    "has_gold_key": true,
+                    "has_red_key": true,
+                    "hostages_on_board": 0,
+                    "energy": 136.04989624023438,
+                    "lives": 4,
+                    "score": 59900,
+                    "shields": 130.5719451904297
+                },
+                "operated": [4, 10]
+            }
+        },
+        "return_dialog": "Returning to level 2",
+        "returned": {
+            "automation": {
+                "result": "PASS",
+                "run_id": "4d40ac1adbd54c85a26a127d2bb2e320",
+                "steps_completed": 6,
+                "total_steps": 6,
+                "elapsed_ms": 9211
+            },
+            "result_sha256": "5fc0820d22e998a6932b90a970dc321721fea1e62a7b4f1b664276f3639632fd",
+            "state_sha256": "75fb3bc9cc76b885b94e915ee4362eef7187867fdd2e8a962f5ff2c14d0a9cc6",
+            "script_sha256": "962187ebcc26a29d9fdcd44ca1bf6a025d8ebeb5e3b030eac4c84f822b1796cc",
+            "apk_sha256": "6d6a05f1c58275b90d10af6242a68ac0c7ecf358860f997566b9a826dc8a83a9",
+            "mission_owner": "mod/prophxl131beta.zip",
+            "viewport": {
+                "display_height": 1080,
+                "display_width": 1920,
+                "front_canvas": {
+                    "height": 480,
+                    "width": 640,
+                    "x": 0,
+                    "y": 0
+                },
+                "pixel_aspect": 65536,
+                "render_height": 480,
+                "render_width": 640
+            },
+            "audio": {
+                "rate": 48000,
+                "resources": 185,
+                "backend_ready": true,
+                "error": ""
+            },
+            "outcome": {
+                "level": 2,
+                "segment": 387,
+                "cheats": false,
+                "dead": false,
+                "player": {
+                    "has_blue_key": true,
+                    "has_gold_key": true,
+                    "has_red_key": true,
+                    "hostages_on_board": 3,
+                    "energy": 136.04989624023438,
+                    "lives": 4,
+                    "score": 59900,
+                    "shields": 119.87539672851562
+                },
+                "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+            }
+        },
+        "returned_state_timing": "Script assertion recorded segment 386. A later introspection in the same live world recorded segment 387. The saved native checkpoint cold-loaded in segment 386.",
+        "saved_pair": [
+            {
+                "file": "xlnoon.sg3",
+                "sha256": "ba525742892539c501708c434b769be72fae460e440e99a3f0e7315b62f76873",
+                "bytes": 1515186
+            },
+            {
+                "file": "3secret.sgc",
+                "sha256": "9da4c938d057f00a3cb72b73bd3ae4e4e804e0f06a4329eef1fe55fb4814e27e",
+                "bytes": 1439039
+            }
+        ],
+        "cold_native_android": {
+            "automation": {
+                "result": "PASS",
+                "run_id": "5838ddcaafcb44a1a8018e5f241571de",
+                "steps_completed": 7,
+                "total_steps": 7,
+                "elapsed_ms": 13585
+            },
+            "result_sha256": "0a98e7e35a4935fca74783ec099562a3a4ba04dc8881e0bf189aaa0c9453ba53",
+            "state_sha256": "572bc957bd5c2c6a16617086b79580fe087cf34aa5c551bc07f10c6771ae731a",
+            "script_sha256": "6164a6005ebb8c244ff44c1540cea40d4b486342d695c0bc0ea91a5f7448d63e",
+            "apk_sha256": "6d6a05f1c58275b90d10af6242a68ac0c7ecf358860f997566b9a826dc8a83a9",
+            "mission_owner": "mod/prophxl131beta.zip",
+            "viewport": {
+                "display_height": 1080,
+                "display_width": 1920,
+                "front_canvas": {
+                    "height": 480,
+                    "width": 640,
+                    "x": 0,
+                    "y": 0
+                },
+                "pixel_aspect": 65536,
+                "render_height": 480,
+                "render_width": 640
+            },
+            "audio": {
+                "rate": 48000,
+                "resources": 185,
+                "backend_ready": true,
+                "error": ""
+            },
+            "outcome": {
+                "level": 2,
+                "segment": 386,
+                "cheats": false,
+                "dead": false,
+                "player": {
+                    "has_blue_key": true,
+                    "has_gold_key": true,
+                    "has_red_key": true,
+                    "hostages_on_board": 3,
+                    "energy": 136.04989624023438,
+                    "lives": 4,
+                    "score": 59900,
+                    "shields": 130.5719451904297
+                },
+                "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+            }
+        },
+        "scripts": {
+            "approach": [
+                {
+                    "_info": {
+                        "games": ["d2"]
+                    }
+                },
+                {
+                    "action": "enter_launcher"
+                },
+                {
+                    "action": "setup_command",
+                    "command": "write_graphics_settings",
+                    "args": {
+                        "settings": "{\"ResolutionX\": 640, \"ResolutionY\": 480, \"AspectX\": 3, \"AspectY\": 4}"
+                    },
+                    "post_delay_ms": 1000
+                },
+                {
+                    "action": "enter_game",
+                    "game": "d2"
+                },
+                {
+                    "action": "skip_intro",
+                    "timeout_ms": 30000
+                },
+                {
+                    "timeout_ms": 15000,
+                    "text": "xlnoon",
+                    "action": "select"
+                },
+                {
+                    "timeout_ms": 15000,
+                    "text": "Load Game",
+                    "action": "select"
+                },
+                {
+                    "timeout_ms": 15000,
+                    "text": "Ordinary XL",
+                    "action": "select"
+                },
+                {
+                    "action": "wait_for",
+                    "expect": {
+                        "current_level_num": 2,
+                        "position.segment": 632,
+                        "player_dead": false,
+                        "player.lives": 4,
+                        "cheats_enabled": false,
+                        "player.has_red_key": true,
+                        "player.hostages_on_board": 3
+                    },
+                    "timeout_ms": 35000
+                },
+                {
+                    "action": "send_button",
+                    "button": 102,
+                    "held": 1,
+                    "post_delay_ms": 0
+                },
+                {
+                    "action": "wait_for",
+                    "expect": {
+                        "menu_subtitle": {
+                            "contains": "Secret Teleporter"
+                        }
+                    },
+                    "timeout_ms": 13000
+                },
+                {
+                    "action": "send_button",
+                    "button": 102,
+                    "held": 0,
+                    "post_delay_ms": 0
+                },
+                {
+                    "action": "select",
+                    "text": "Ok",
+                    "timeout_ms": 10000
+                },
+                {
+                    "action": "wait_for",
+                    "expect": {
+                        "current_level_num": -1,
+                        "in_game": true,
+                        "player_dead": false,
+                        "cheats_enabled": false
+                    },
+                    "timeout_ms": 45000
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 0,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 5.8
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 1,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 19.45
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 1,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 0.0,
+                    "y": -5.8,
+                    "z": 33.95
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 6,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 0.0,
+                    "y": -14.2,
+                    "z": 37.1
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 6,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 0.0,
+                    "y": -20.0,
+                    "z": 51.6
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 10,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 0.0,
+                    "y": -20.0,
+                    "z": 64.2
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 10,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 0.0,
+                    "y": -20.0,
+                    "z": 75.8
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 12,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 0.0,
+                    "y": -20.0,
+                    "z": 81.05
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 12,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 0.0,
+                    "y": -20.0,
+                    "z": 83.95
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 13,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 1.6021728515625e-6,
+                    "y": -20.00000160217285,
+                    "z": 86.0499967956543
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 13,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 6.0272216796875e-6,
+                    "y": -20.00000602722168,
+                    "z": 88.94998794555664
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 11,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 6.0272216796875e-6,
+                    "y": -20.00000602722168,
+                    "z": 98.39998794555665
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 11,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 5.800001602172852,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 15,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 14.2,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 15,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 25.8,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 36,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 34.2,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 36,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 45.8,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 37,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 54.2,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 37,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 65.8,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 40,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 86.8,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 40,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 133.2,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 41,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 154.2,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 41,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 165.8,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 138,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 174.2,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 138,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 185.8,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 139,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 194.2,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 139,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 205.8,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 253,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 214.2,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 253,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 225.8,
+                    "y": -20.000003814697266,
+                    "z": 109.99999237060547
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 260,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 232.1,
+                    "y": -18.96994846343994,
+                    "z": 109.9999931716919
+                },
+                {
+                    "action": "assert",
+                    "expect": {
+                        "xl_pilot.wall_triggers.4.operated": true,
+                        "current_level_num": -1
+                    }
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 260,
+                    "x": 233.5,
+                    "y": -15.095,
+                    "z": 110.0,
+                    "settle": true,
+                    "timeout_ms": 18000
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 266,
+                    "x": 254.5,
+                    "y": -15.095,
+                    "z": 110.0,
+                    "settle": false,
+                    "timeout_ms": 22000
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 266,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 257.9000762939453,
+                    "y": -18.969987831115724,
+                    "z": 110.00388595581055
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 267,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 264.2000730895996,
+                    "y": -20.00005199432373,
+                    "z": 110.0049161529541
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 267,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 270.0000686645508,
+                    "y": -20.00005641937256,
+                    "z": 121.60491172790528
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 275,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 270.00006225585935,
+                    "y": -24.22113941192627,
+                    "z": 134.1838271331787
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 275,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 264.2000578308105,
+                    "y": -30.050247383117675,
+                    "z": 139.95471473693848
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 282,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 257.9000225830078,
+                    "y": -30.050247383117675,
+                    "z": 139.95471473693848
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 282,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 254.99996948242188,
+                    "y": -30.050247192382812,
+                    "z": 139.95469665527344
+                },
+                {
+                    "action": "assert",
+                    "expect": {
+                        "current_level_num": -1,
+                        "player.energy": {
+                            "gt": 135,
+                            "lt": 137
+                        },
+                        "cheats_enabled": false
+                    }
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 282,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 257.9000225830078,
+                    "y": -30.050247383117675,
+                    "z": 139.95471473693848
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 275,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 264.2000578308105,
+                    "y": -30.050247383117675,
+                    "z": 139.95471473693848
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 275,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 275.8000489807129,
+                    "y": -30.050258445739747,
+                    "z": 139.95470146179198
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 301,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 292.6000457763672,
+                    "y": -30.050262451171875,
+                    "z": 139.95469665527344
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 301,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 327.40004577636716,
+                    "y": -30.050262451171875,
+                    "z": 139.95469665527344
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 302,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 344.2000457763672,
+                    "y": -30.050262451171875,
+                    "z": 139.95469665527344
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 302,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 350.0000457763672,
+                    "y": -24.279379272460936,
+                    "z": 145.72557983398437
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 286,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 350.0000489807129,
+                    "y": -15.911028594970702,
+                    "z": 154.09374465942383
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 286,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 350.0000666809082,
+                    "y": -4.1945790100097655,
+                    "z": 154.09374465942383
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 288,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 350.0000762939453,
+                    "y": 4.279223480224609,
+                    "z": 145.7255782318115
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 288,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 355.8000762939453,
+                    "y": 10.050102233886719,
+                    "z": 139.95469284057617
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 303,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 361.0500762939453,
+                    "y": 10.050102233886719,
+                    "z": 139.95469284057617
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 303,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 363.9500762939453,
+                    "y": 10.050102233886719,
+                    "z": 139.95469284057617
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 306,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 377.60007629394534,
+                    "y": 10.050102233886719,
+                    "z": 139.95469284057617
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 306,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 395.0000762939453,
+                    "y": 15.820980987548829,
+                    "z": 134.18380744934083
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 309,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 395.0000762939453,
+                    "y": 19.999893188476562,
+                    "z": 121.60489044189453
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 309,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 395.00008514404294,
+                    "y": 25.799884338378906,
+                    "z": 110.00489486694336
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 543,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 395.00008514404294,
+                    "y": 34.1998779296875,
+                    "z": 110.00489486694336
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 543,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 395.0000674438477,
+                    "y": 45.7998779296875,
+                    "z": 110.0048860168457
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 544,
+                    "timeout_ms": 18000,
+                    "settle": false,
+                    "x": 395.00006103515625,
+                    "y": 51.0498779296875,
+                    "z": 110.0048828125
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 544,
+                    "timeout_ms": 18000,
+                    "settle": true,
+                    "x": 395.00006103515625,
+                    "y": 54.1248779296875,
+                    "z": 110.0048828125
+                },
+                {
+                    "action": "fly_to",
+                    "segment": 545,
+                    "x": 395.0,
+                    "y": 56.0,
+                    "z": 110.0,
+                    "settle": false,
+                    "timeout_ms": 10000
+                },
+                {
+                    "action": "wait_for",
+                    "expect": {
+                        "menu_subtitle": {
+                            "contains": "Returning to level 2"
+                        }
+                    },
+                    "timeout_ms": 20000
+                },
+                {
+                    "action": "select",
+                    "text": "Ok",
+                    "timeout_ms": 10000
+                },
+                {
+                    "action": "wait_for",
+                    "expect": {
+                        "current_level_num": 2,
+                        "in_game": true,
+                        "player_dead": false
+                    },
+                    "timeout_ms": 45000
+                },
+                {
+                    "action": "assert",
+                    "expect": {
+                        "current_level_num": 2,
+                        "position.segment": 386,
+                        "cheats_enabled": false,
+                        "player_dead": false,
+                        "in_game": true,
+                        "player.lives": 4,
+                        "player.has_red_key": true,
+                        "player.has_blue_key": true,
+                        "player.has_gold_key": true,
+                        "player.hostages_on_board": 3,
+                        "player.energy": {
+                            "gt": 135,
+                            "lt": 137
+                        },
+                        "xl_pilot.wall_triggers.1.operated": true,
+                        "xl_pilot.wall_triggers.3.operated": true,
+                        "xl_pilot.wall_triggers.4.operated": true,
+                        "xl_pilot.wall_triggers.7.operated": true,
+                        "xl_pilot.wall_triggers.10.operated": true,
+                        "xl_pilot.wall_triggers.13.operated": true,
+                        "xl_pilot.wall_triggers.14.operated": true,
+                        "xl_pilot.wall_triggers.15.operated": true,
+                        "xl_pilot.wall_triggers.16.operated": true,
+                        "player.score": 59900
+                    }
+                },
+                {
+                    "action": "set_debug",
+                    "field": "android_game_request",
+                    "value": "quick_save"
+                },
+                {
+                    "action": "wait_ms",
+                    "ms": 950
+                }
+            ],
+            "continue_live_at_modal": [
+                {
+                    "_info": {
+                        "games": ["d2"]
+                    }
+                },
+                {
+                    "action": "wait_for",
+                    "expect": {
+                        "menu_subtitle": {
+                            "contains": "Returning to level 2"
+                        }
+                    },
+                    "timeout_ms": 20000
+                },
+                {
+                    "action": "select",
+                    "text": "Ok",
+                    "timeout_ms": 10000
+                },
+                {
+                    "action": "wait_for",
+                    "expect": {
+                        "current_level_num": 2,
+                        "in_game": true,
+                        "player_dead": false
+                    },
+                    "timeout_ms": 45000
+                },
+                {
+                    "action": "assert",
+                    "expect": {
+                        "current_level_num": 2,
+                        "position.segment": 386,
+                        "cheats_enabled": false,
+                        "player_dead": false,
+                        "in_game": true,
+                        "player.lives": 4,
+                        "player.has_red_key": true,
+                        "player.has_blue_key": true,
+                        "player.has_gold_key": true,
+                        "player.hostages_on_board": 3,
+                        "player.energy": {
+                            "gt": 135,
+                            "lt": 137
+                        },
+                        "xl_pilot.wall_triggers.1.operated": true,
+                        "xl_pilot.wall_triggers.3.operated": true,
+                        "xl_pilot.wall_triggers.4.operated": true,
+                        "xl_pilot.wall_triggers.7.operated": true,
+                        "xl_pilot.wall_triggers.10.operated": true,
+                        "xl_pilot.wall_triggers.13.operated": true,
+                        "xl_pilot.wall_triggers.14.operated": true,
+                        "xl_pilot.wall_triggers.15.operated": true,
+                        "xl_pilot.wall_triggers.16.operated": true,
+                        "player.score": 59900
+                    }
+                },
+                {
+                    "action": "set_debug",
+                    "field": "android_game_request",
+                    "value": "quick_save"
+                },
+                {
+                    "action": "wait_ms",
+                    "ms": 950
+                }
+            ],
+            "fresh_process_load": [
+                {
+                    "_info": {
+                        "games": ["d2"]
+                    }
+                },
+                {
+                    "action": "enter_game",
+                    "game": "d2"
+                },
+                {
+                    "action": "skip_intro",
+                    "timeout_ms": 30000
+                },
+                {
+                    "timeout_ms": 15000,
+                    "text": "xlnoon",
+                    "action": "select"
+                },
+                {
+                    "timeout_ms": 15000,
+                    "text": "Load Game",
+                    "action": "select"
+                },
+                {
+                    "timeout_ms": 15000,
+                    "text": "[quick] level 2",
+                    "action": "select"
+                },
+                {
+                    "action": "wait_for",
+                    "expect": {
+                        "current_level_num": 2,
+                        "position.segment": 386,
+                        "cheats_enabled": false,
+                        "player_dead": false,
+                        "in_game": true,
+                        "player.lives": 4,
+                        "player.has_red_key": true,
+                        "player.has_blue_key": true,
+                        "player.has_gold_key": true,
+                        "player.hostages_on_board": 3,
+                        "player.energy": {
+                            "gt": 135,
+                            "lt": 137
+                        },
+                        "xl_pilot.wall_triggers.1.operated": true,
+                        "xl_pilot.wall_triggers.3.operated": true,
+                        "xl_pilot.wall_triggers.4.operated": true,
+                        "xl_pilot.wall_triggers.7.operated": true,
+                        "xl_pilot.wall_triggers.10.operated": true,
+                        "xl_pilot.wall_triggers.13.operated": true,
+                        "xl_pilot.wall_triggers.14.operated": true,
+                        "xl_pilot.wall_triggers.15.operated": true,
+                        "xl_pilot.wall_triggers.16.operated": true
+                    },
+                    "timeout_ms": 35000
+                },
+                {
+                    "action": "assert",
+                    "expect": {
+                        "current_level_num": 2,
+                        "position.segment": 386,
+                        "cheats_enabled": false,
+                        "player_dead": false,
+                        "in_game": true,
+                        "player.lives": 4,
+                        "player.has_red_key": true,
+                        "player.has_blue_key": true,
+                        "player.has_gold_key": true,
+                        "player.hostages_on_board": 3,
+                        "player.energy": {
+                            "gt": 135,
+                            "lt": 137
+                        },
+                        "xl_pilot.wall_triggers.1.operated": true,
+                        "xl_pilot.wall_triggers.3.operated": true,
+                        "xl_pilot.wall_triggers.4.operated": true,
+                        "xl_pilot.wall_triggers.7.operated": true,
+                        "xl_pilot.wall_triggers.10.operated": true,
+                        "xl_pilot.wall_triggers.13.operated": true,
+                        "xl_pilot.wall_triggers.14.operated": true,
+                        "xl_pilot.wall_triggers.15.operated": true,
+                        "xl_pilot.wall_triggers.16.operated": true,
+                        "player.score": 59900
+                    }
+                }
+            ]
+        }
+    },
+    "android_capture": {
+        "device": {
+            "automation": {
+                "result": "PASS",
+                "run_id": "a218b37a8aac4c41aad1b7b18d4d0a8e",
+                "steps_completed": 14,
+                "total_steps": 14,
+                "elapsed_ms": 14769
+            },
+            "result_sha256": "b8353c63ac30827bed1d801017f5834876ec92dded84f2d7a941d04ebbbd82f8",
+            "state_sha256": "3f8390c5cb9827ed590db563a60e99b9040cc6797b7512f74cfe353719a94b80",
+            "script_sha256": "0c39b5af38637e3a6be3c72379f6649e2551b171dfe8208e55d38857ecad8ea5",
+            "apk_sha256": "26383c7f1847af5f49dc3927fec07cee278713a80cfcec5ff259764216e8b4e6",
+            "mission_owner": "mod/prophxl131beta.zip",
+            "viewport": {
+                "display_height": 1080,
+                "display_width": 1920,
+                "front_canvas": {
+                    "height": 480,
+                    "width": 640,
+                    "x": 0,
+                    "y": 0
+                },
+                "pixel_aspect": 65536,
+                "render_height": 480,
+                "render_width": 640
+            },
+            "audio": {
+                "rate": 48000,
+                "resources": 185,
+                "backend_ready": true,
+                "error": ""
+            },
+            "outcome": {
+                "level": 2,
+                "segment": 386,
+                "cheats": false,
+                "dead": false,
+                "player": {
+                    "has_blue_key": true,
+                    "has_gold_key": true,
+                    "has_red_key": true,
+                    "hostages_on_board": 3,
+                    "energy": 135.04989624023438,
+                    "lives": 4,
+                    "score": 59900,
+                    "shields": 130.5719451904297
+                },
+                "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+            }
+        },
+        "source": "377fac2c6a031342a0f9e9b9857fc0431624cd78",
+        "recorded_git_version": "569a07017aa6c1ea0ef7db32e82af06dfa4f18a5",
+        "profile": {
+            "version": 6,
+            "mission": "PROPHXL",
+            "difficulty": 0,
+            "frame_count": 25,
+            "start_mode": "save_checkpoint",
+            "view_projection": {
+                "screen_width": 640,
+                "screen_height": 480,
+                "aspect": 65536,
+                "zoom": 36864,
+                "depth": 9000,
+                "classic_depth": 0,
+                "missile_view_enabled": 1
+            }
+        },
+        "files": [
+            {
+                "file": "d2_PROPHXL_level2_20261119_110538.dximdemo",
+                "remote": "files/d2x-redux/input_demo_recordings/new/d2_PROPHXL_level2_20261119_110538.dximdemo",
+                "bytes": 992394,
+                "sha256": "a7a9952e6d6f3ea1c15c333cccd41a906baaa7952dfa55b20e5c1efbd897d5ac"
+            },
+            {
+                "file": "d2_PROPHXL_level2_20261119_110538.dximdemo.rngtrace.jsonl",
+                "remote": "files/d2x-redux/input_demo_recordings/new/d2_PROPHXL_level2_20261119_110538.dximdemo.rngtrace.jsonl",
+                "bytes": 136027,
+                "sha256": "bb115eb7fd692fa3688ec2ee09310011eb7e83c072ec849e14da5476b0835baa"
+            },
+            {
+                "file": "live-14045.jsonl.gz",
+                "remote": "files/d2x-redux/xl_capture_traces/live-14045.jsonl.gz",
+                "bytes": 1113455,
+                "sha256": "8660f293988cd28a74ac47e0bc2e89975d73deb49d25fbedac3a0fe6711783f5"
+            }
+        ],
+        "input": [
+            {
+                "_info": {
+                    "games": ["d2"]
+                }
+            },
+            {
+                "action": "enter_game",
+                "game": "d2"
+            },
+            {
+                "action": "skip_intro",
+                "timeout_ms": 30000
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "xlnoon",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "Load Game",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "[quick] level 2",
+                "action": "select"
+            },
+            {
+                "action": "wait_for",
+                "expect": {
+                    "current_level_num": 2,
+                    "position.segment": 386,
+                    "cheats_enabled": false,
+                    "player_dead": false,
+                    "in_game": true,
+                    "player.lives": 4,
+                    "player.has_red_key": true,
+                    "player.has_blue_key": true,
+                    "player.has_gold_key": true,
+                    "player.hostages_on_board": 3,
+                    "player.energy": {
+                        "gt": 135,
+                        "lt": 137
+                    },
+                    "xl_pilot.wall_triggers.1.operated": true,
+                    "xl_pilot.wall_triggers.3.operated": true,
+                    "xl_pilot.wall_triggers.4.operated": true,
+                    "xl_pilot.wall_triggers.7.operated": true,
+                    "xl_pilot.wall_triggers.10.operated": true,
+                    "xl_pilot.wall_triggers.13.operated": true,
+                    "xl_pilot.wall_triggers.14.operated": true,
+                    "xl_pilot.wall_triggers.15.operated": true,
+                    "xl_pilot.wall_triggers.16.operated": true
+                },
+                "timeout_ms": 35000
+            },
+            {
+                "action": "assert",
+                "expect": {
+                    "current_level_num": 2,
+                    "position.segment": 386,
+                    "cheats_enabled": false,
+                    "player_dead": false,
+                    "in_game": true,
+                    "player.lives": 4,
+                    "player.has_red_key": true,
+                    "player.has_blue_key": true,
+                    "player.has_gold_key": true,
+                    "player.hostages_on_board": 3,
+                    "player.energy": {
+                        "gt": 135,
+                        "lt": 137
+                    },
+                    "xl_pilot.wall_triggers.1.operated": true,
+                    "xl_pilot.wall_triggers.3.operated": true,
+                    "xl_pilot.wall_triggers.4.operated": true,
+                    "xl_pilot.wall_triggers.7.operated": true,
+                    "xl_pilot.wall_triggers.10.operated": true,
+                    "xl_pilot.wall_triggers.13.operated": true,
+                    "xl_pilot.wall_triggers.14.operated": true,
+                    "xl_pilot.wall_triggers.15.operated": true,
+                    "xl_pilot.wall_triggers.16.operated": true
+                }
+            },
+            {
+                "action": "meta_action",
+                "id": 1034,
+                "post_delay_ms": 100
+            },
+            {
+                "action": "wait_for",
+                "expect": {
+                    "input_demo.recording": true,
+                    "input_demo.frame_count": {
+                        "gte": 1
+                    }
+                },
+                "timeout_ms": 12000
+            },
+            {
+                "action": "send_button",
+                "button": 104,
+                "held": 1,
+                "post_delay_ms": 100
+            },
+            {
+                "action": "send_button",
+                "button": 104,
+                "held": 0,
+                "post_delay_ms": 100
+            },
+            {
+                "action": "wait_for",
+                "expect": {
+                    "input_demo.recording": true,
+                    "input_demo.frame_count": {
+                        "gte": 24
+                    }
+                },
+                "timeout_ms": 14000
+            },
+            {
+                "action": "meta_action",
+                "id": 1034,
+                "post_delay_ms": 100
+            },
+            {
+                "action": "wait_for",
+                "expect": {
+                    "input_demo.recording": false,
+                    "current_level_num": 2,
+                    "player_dead": false,
+                    "cheats_enabled": false
+                },
+                "timeout_ms": 10000
+            }
+        ],
+        "clean_replays": [
+            {
+                "attempt": 1,
+                "source_at_build": "377fac2c6a031342a0f9e9b9857fc0431624cd78",
+                "binary": "013830b134dfa04bac4b3d9553ae7706180f2bea84e1e572177676d11445baf0",
+                "working_changes": "clean parent",
+                "seconds": 32.297,
+                "exit": 0,
+                "input_hashes": {
+                    "alien1.pig": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+                    "alien2.pig": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+                    "d2x-xl.hog": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                    "d2x.hog": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                    "descent.hog": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052",
+                    "descent.pig": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe",
+                    "descent2.ham": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+                    "descent2.hog": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+                    "descent2.s22": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+                    "fire.pig": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+                    "groupa.pig": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+                    "ice.pig": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+                    "water.pig": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1",
+                    "mods/prophxl/playlist.txt": "21e7ecf31e2c91e18db536ba92b1d33b6bc7aab126c61ef5f19d01fed8a8d277",
+                    "mods/prophxl/PROPHXL.HXM": "b2931a99d7a1c6cbe9c861947e3c44647f316d7c8df6ce649e2a4fe8287df04d",
+                    "mods/prophxl/music/briefing.ogg": "359df1b403d47c8e5ca9376b65e00452216510a89ed53b2cae44029a1cfdebfa",
+                    "mods/prophxl/music/credits.ogg": "08b7fb79ac5d83ad7b85d5fa34fbaad0783288085b9201d14a8d2d2a75c50315",
+                    "mods/prophxl/music/level01.ogg": "06a738b1ca4cb8e6d26b66d83c49f76ecbc21e0ee8519ebdcdefe548e0af7dfc",
+                    "mods/prophxl/music/level02.ogg": "144157523682b0601f31b5afdd18087938ebe27c5fceb623bc394d0d591c8653",
+                    "mods/prophxl/music/level03.ogg": "aba08f1bbab61eb16ef7702d43a4b5a2e8dd15a66e7cbe3d3e5a5a76cc8f69ce",
+                    "mods/prophxl/music/level04.ogg": "95caab23b4c813a22a2a55cbafdb92269eff285465ea639db7d226d9b8b7a8b6",
+                    "mods/prophxl/music/level05.ogg": "91b6e8d8dc99a6f9d919ed114dc0168697dee88cc655941eace716f770d586f6",
+                    "mods/prophxl/music/slevel01.ogg": "75b8eb80f90e9fedc1f5e35b3525992c83cfc16c62e62968b32282cd4bcc9839",
+                    "mods/prophxl/music/slevel02.ogg": "56ad528065c1b235bf6313e18c5d46e4c5e41b25b2b630719e114e72f3f86b2d",
+                    "mods/prophxl/music/slevel03.ogg": "b227329d3eb71c95525f5dc948227a5d75de5125953e50c3dc33fdf97c3130f6",
+                    "mods/prophxl/music/title.ogg": "349c11b4013ba17f321caec20b504315b61013fbe48a3fe3044d23bac098d758",
+                    "mods/prophxl/sounds/afbr_1.wav": "ea3c153bfc30154329319c587a90c9690db8436569537d387c6d3248e0bba861",
+                    "mods/prophxl/sounds/afbr_2.wav": "a4d41a9167178a4f0096b9b7a1ba3adcd5b6483e61031313c1f625c4368a66f2",
+                    "mods/prophxl/sounds/AmbDroneV.wav": "53ea31eb16b83f7fa0b3294834e5308d1cc14113f0181ce837993adbd169cb76",
+                    "mods/prophxl/sounds/beep02.wav": "35766131186563bc8fcef0a649c2d2be3b7f8cd6c3c19b0206dc6109deabbea0",
+                    "mods/prophxl/sounds/change1.wav": "0341c4a495313066d4ec8a2e3e436820fb666384751421c2c4ec3fa1967eb4d7",
+                    "mods/prophxl/sounds/change2.wav": "69cc244a8816ddffa4e9e9a89c500f4c7e9bd79c27732705e2554c3a7f4a2676",
+                    "mods/prophxl/sounds/convert.wav": "8cd51724d87da294dcf068cb9485c991d83779c27ad060729831a32ed0aba2f3",
+                    "mods/prophxl/sounds/ramfast.wav": "81d8ad08a38e349af1a259bc056d9e04bdc8a66d4f19bee03542caea6504ff9e",
+                    "mods/prophxl/sounds/secsiren.wav": "917f332862b6c6dfa54041dbbd0cd8fdb71a808d418f6e393303d2d3d62e9a03",
+                    "mods/prophxl/sounds/shit01.wav": "79e8cc6b23dd88bb4d64643018b534d89fb11946b44df418fd86a893215a7bd4",
+                    "mods/prophxl/sounds/tear01.wav": "c315d8c4cfac74682a4b847f594a47bf7d803c49794f8965754ddfca36ee6415",
+                    "missions/PROPHXL.HOG": "aead9b792e3dc6ff13cd53b68e727d8cd814e1b6480ea83f5e5c9843caf23880",
+                    "missions/PROPHXL.MN2": "8a47df99aaa72d34366d8ae357f1303e2c82c631163b062636b19d20c878b62b"
+                },
+                "demo_sha256": "a7a9952e6d6f3ea1c15c333cccd41a906baaa7952dfa55b20e5c1efbd897d5ac",
+                "live_state_sha256": "8660f293988cd28a74ac47e0bc2e89975d73deb49d25fbedac3a0fe6711783f5",
+                "comparison": {
+                    "frames": {
+                        "frames_compared": 25,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 25,
+                        "first_field_differences": {}
+                    },
+                    "world": {
+                        "status": "fail",
+                        "records_compared": 29,
+                        "first_field_differences": {
+                            "world_state:frame:$.state.xl_native.route.Escort_route_event_notification_count": {
+                                "frame": 10,
+                                "path": "$.state.xl_native.route.Escort_route_event_notification_count",
+                                "expected": 34,
+                                "actual": 32
+                            },
+                            "world_state:frame:$.state.xl_native.route.Escort_route_wall_generation": {
+                                "frame": 10,
+                                "path": "$.state.xl_native.route.Escort_route_wall_generation",
+                                "expected": 2,
+                                "actual": 0
+                            },
+                            "world_boundary:terminal:$.state.xl_native.route.Escort_route_event_notification_count": {
+                                "frame": 25,
+                                "path": "$.state.xl_native.route.Escort_route_event_notification_count",
+                                "expected": 40,
+                                "actual": 34
+                            },
+                            "world_boundary:terminal:$.state.xl_native.route.Escort_route_wall_generation": {
+                                "frame": 25,
+                                "path": "$.state.xl_native.route.Escort_route_wall_generation",
+                                "expected": 6,
+                                "actual": 0
+                            }
+                        }
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 549,
+                        "first_difference": null
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 0,
+                        "first_difference": null
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "actual_state_sha256": "2e31b94c08a99cb4751eec6710c47b9c0dcab093efc9ab3f7a191be27e8448ae",
+                "actual_rng_sha256": "bb115eb7fd692fa3688ec2ee09310011eb7e83c072ec849e14da5476b0835baa",
+                "actual_result_sha256": "5345ebd460bfe3f3096b2fc287641ec19bdd36b9a550609005952f87d72668ba",
+                "comparison_sha256": "dcb907bd5344ff040ca6b56ba8a73b32292b4e445bc50a2fb4bf360ae922365f"
+            },
+            {
+                "attempt": 2,
+                "source_at_build": "4b57d511b723433cc6d5ccbe7969cc377fab67f4",
+                "binary": "5e949db2f9113f3c304505084107244cbabb3286c40cf561987d9f4dd0c9f0cd",
+                "working_changes": "XL doors and wall actions use enabled planner",
+                "seconds": 26.25,
+                "exit": 0,
+                "input_hashes": {
+                    "alien1.pig": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+                    "alien2.pig": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+                    "d2x-xl.hog": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                    "d2x.hog": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                    "descent.hog": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052",
+                    "descent.pig": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe",
+                    "descent2.ham": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+                    "descent2.hog": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+                    "descent2.s22": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+                    "fire.pig": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+                    "groupa.pig": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+                    "ice.pig": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+                    "water.pig": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1",
+                    "mods/prophxl/playlist.txt": "21e7ecf31e2c91e18db536ba92b1d33b6bc7aab126c61ef5f19d01fed8a8d277",
+                    "mods/prophxl/PROPHXL.HXM": "b2931a99d7a1c6cbe9c861947e3c44647f316d7c8df6ce649e2a4fe8287df04d",
+                    "mods/prophxl/music/briefing.ogg": "359df1b403d47c8e5ca9376b65e00452216510a89ed53b2cae44029a1cfdebfa",
+                    "mods/prophxl/music/credits.ogg": "08b7fb79ac5d83ad7b85d5fa34fbaad0783288085b9201d14a8d2d2a75c50315",
+                    "mods/prophxl/music/level01.ogg": "06a738b1ca4cb8e6d26b66d83c49f76ecbc21e0ee8519ebdcdefe548e0af7dfc",
+                    "mods/prophxl/music/level02.ogg": "144157523682b0601f31b5afdd18087938ebe27c5fceb623bc394d0d591c8653",
+                    "mods/prophxl/music/level03.ogg": "aba08f1bbab61eb16ef7702d43a4b5a2e8dd15a66e7cbe3d3e5a5a76cc8f69ce",
+                    "mods/prophxl/music/level04.ogg": "95caab23b4c813a22a2a55cbafdb92269eff285465ea639db7d226d9b8b7a8b6",
+                    "mods/prophxl/music/level05.ogg": "91b6e8d8dc99a6f9d919ed114dc0168697dee88cc655941eace716f770d586f6",
+                    "mods/prophxl/music/slevel01.ogg": "75b8eb80f90e9fedc1f5e35b3525992c83cfc16c62e62968b32282cd4bcc9839",
+                    "mods/prophxl/music/slevel02.ogg": "56ad528065c1b235bf6313e18c5d46e4c5e41b25b2b630719e114e72f3f86b2d",
+                    "mods/prophxl/music/slevel03.ogg": "b227329d3eb71c95525f5dc948227a5d75de5125953e50c3dc33fdf97c3130f6",
+                    "mods/prophxl/music/title.ogg": "349c11b4013ba17f321caec20b504315b61013fbe48a3fe3044d23bac098d758",
+                    "mods/prophxl/sounds/afbr_1.wav": "ea3c153bfc30154329319c587a90c9690db8436569537d387c6d3248e0bba861",
+                    "mods/prophxl/sounds/afbr_2.wav": "a4d41a9167178a4f0096b9b7a1ba3adcd5b6483e61031313c1f625c4368a66f2",
+                    "mods/prophxl/sounds/AmbDroneV.wav": "53ea31eb16b83f7fa0b3294834e5308d1cc14113f0181ce837993adbd169cb76",
+                    "mods/prophxl/sounds/beep02.wav": "35766131186563bc8fcef0a649c2d2be3b7f8cd6c3c19b0206dc6109deabbea0",
+                    "mods/prophxl/sounds/change1.wav": "0341c4a495313066d4ec8a2e3e436820fb666384751421c2c4ec3fa1967eb4d7",
+                    "mods/prophxl/sounds/change2.wav": "69cc244a8816ddffa4e9e9a89c500f4c7e9bd79c27732705e2554c3a7f4a2676",
+                    "mods/prophxl/sounds/convert.wav": "8cd51724d87da294dcf068cb9485c991d83779c27ad060729831a32ed0aba2f3",
+                    "mods/prophxl/sounds/ramfast.wav": "81d8ad08a38e349af1a259bc056d9e04bdc8a66d4f19bee03542caea6504ff9e",
+                    "mods/prophxl/sounds/secsiren.wav": "917f332862b6c6dfa54041dbbd0cd8fdb71a808d418f6e393303d2d3d62e9a03",
+                    "mods/prophxl/sounds/shit01.wav": "79e8cc6b23dd88bb4d64643018b534d89fb11946b44df418fd86a893215a7bd4",
+                    "mods/prophxl/sounds/tear01.wav": "c315d8c4cfac74682a4b847f594a47bf7d803c49794f8965754ddfca36ee6415",
+                    "missions/PROPHXL.HOG": "aead9b792e3dc6ff13cd53b68e727d8cd814e1b6480ea83f5e5c9843caf23880",
+                    "missions/PROPHXL.MN2": "8a47df99aaa72d34366d8ae357f1303e2c82c631163b062636b19d20c878b62b"
+                },
+                "demo_sha256": "a7a9952e6d6f3ea1c15c333cccd41a906baaa7952dfa55b20e5c1efbd897d5ac",
+                "live_state_sha256": "8660f293988cd28a74ac47e0bc2e89975d73deb49d25fbedac3a0fe6711783f5",
+                "comparison": {
+                    "frames": {
+                        "frames_compared": 25,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 25,
+                        "first_field_differences": {}
+                    },
+                    "world": {
+                        "status": "pass",
+                        "records_compared": 29,
+                        "first_field_differences": {}
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 549,
+                        "first_difference": null
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 0,
+                        "first_difference": null
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "actual_state_sha256": "cbe83813cfe23997478830893c54fed4e218cc3640890e6e1c29613f18179835",
+                "actual_rng_sha256": "bb115eb7fd692fa3688ec2ee09310011eb7e83c072ec849e14da5476b0835baa",
+                "actual_result_sha256": "5345ebd460bfe3f3096b2fc287641ec19bdd36b9a550609005952f87d72668ba",
+                "comparison_sha256": "e889d7f6c0b0bd45e3810e18f2bcb24cef877a7998f203cecfecd8b824d51ecf"
+            },
+            {
+                "attempt": 3,
+                "source_at_build": "4b57d511b723433cc6d5ccbe7969cc377fab67f4",
+                "binary": "849cbd598422ebdf12cfe202cea5ba551b04ae23f4a7db335112e36e31418fbc",
+                "working_changes": "XL doors, wall actions and cloaks use enabled planner",
+                "seconds": 24.234,
+                "exit": 0,
+                "input_hashes": {
+                    "alien1.pig": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+                    "alien2.pig": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+                    "d2x-xl.hog": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                    "d2x.hog": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                    "descent.hog": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052",
+                    "descent.pig": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe",
+                    "descent2.ham": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+                    "descent2.hog": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+                    "descent2.s22": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+                    "fire.pig": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+                    "groupa.pig": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+                    "ice.pig": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+                    "water.pig": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1",
+                    "mods/prophxl/playlist.txt": "21e7ecf31e2c91e18db536ba92b1d33b6bc7aab126c61ef5f19d01fed8a8d277",
+                    "mods/prophxl/PROPHXL.HXM": "b2931a99d7a1c6cbe9c861947e3c44647f316d7c8df6ce649e2a4fe8287df04d",
+                    "mods/prophxl/music/briefing.ogg": "359df1b403d47c8e5ca9376b65e00452216510a89ed53b2cae44029a1cfdebfa",
+                    "mods/prophxl/music/credits.ogg": "08b7fb79ac5d83ad7b85d5fa34fbaad0783288085b9201d14a8d2d2a75c50315",
+                    "mods/prophxl/music/level01.ogg": "06a738b1ca4cb8e6d26b66d83c49f76ecbc21e0ee8519ebdcdefe548e0af7dfc",
+                    "mods/prophxl/music/level02.ogg": "144157523682b0601f31b5afdd18087938ebe27c5fceb623bc394d0d591c8653",
+                    "mods/prophxl/music/level03.ogg": "aba08f1bbab61eb16ef7702d43a4b5a2e8dd15a66e7cbe3d3e5a5a76cc8f69ce",
+                    "mods/prophxl/music/level04.ogg": "95caab23b4c813a22a2a55cbafdb92269eff285465ea639db7d226d9b8b7a8b6",
+                    "mods/prophxl/music/level05.ogg": "91b6e8d8dc99a6f9d919ed114dc0168697dee88cc655941eace716f770d586f6",
+                    "mods/prophxl/music/slevel01.ogg": "75b8eb80f90e9fedc1f5e35b3525992c83cfc16c62e62968b32282cd4bcc9839",
+                    "mods/prophxl/music/slevel02.ogg": "56ad528065c1b235bf6313e18c5d46e4c5e41b25b2b630719e114e72f3f86b2d",
+                    "mods/prophxl/music/slevel03.ogg": "b227329d3eb71c95525f5dc948227a5d75de5125953e50c3dc33fdf97c3130f6",
+                    "mods/prophxl/music/title.ogg": "349c11b4013ba17f321caec20b504315b61013fbe48a3fe3044d23bac098d758",
+                    "mods/prophxl/sounds/afbr_1.wav": "ea3c153bfc30154329319c587a90c9690db8436569537d387c6d3248e0bba861",
+                    "mods/prophxl/sounds/afbr_2.wav": "a4d41a9167178a4f0096b9b7a1ba3adcd5b6483e61031313c1f625c4368a66f2",
+                    "mods/prophxl/sounds/AmbDroneV.wav": "53ea31eb16b83f7fa0b3294834e5308d1cc14113f0181ce837993adbd169cb76",
+                    "mods/prophxl/sounds/beep02.wav": "35766131186563bc8fcef0a649c2d2be3b7f8cd6c3c19b0206dc6109deabbea0",
+                    "mods/prophxl/sounds/change1.wav": "0341c4a495313066d4ec8a2e3e436820fb666384751421c2c4ec3fa1967eb4d7",
+                    "mods/prophxl/sounds/change2.wav": "69cc244a8816ddffa4e9e9a89c500f4c7e9bd79c27732705e2554c3a7f4a2676",
+                    "mods/prophxl/sounds/convert.wav": "8cd51724d87da294dcf068cb9485c991d83779c27ad060729831a32ed0aba2f3",
+                    "mods/prophxl/sounds/ramfast.wav": "81d8ad08a38e349af1a259bc056d9e04bdc8a66d4f19bee03542caea6504ff9e",
+                    "mods/prophxl/sounds/secsiren.wav": "917f332862b6c6dfa54041dbbd0cd8fdb71a808d418f6e393303d2d3d62e9a03",
+                    "mods/prophxl/sounds/shit01.wav": "79e8cc6b23dd88bb4d64643018b534d89fb11946b44df418fd86a893215a7bd4",
+                    "mods/prophxl/sounds/tear01.wav": "c315d8c4cfac74682a4b847f594a47bf7d803c49794f8965754ddfca36ee6415",
+                    "missions/PROPHXL.HOG": "aead9b792e3dc6ff13cd53b68e727d8cd814e1b6480ea83f5e5c9843caf23880",
+                    "missions/PROPHXL.MN2": "8a47df99aaa72d34366d8ae357f1303e2c82c631163b062636b19d20c878b62b"
+                },
+                "demo_sha256": "a7a9952e6d6f3ea1c15c333cccd41a906baaa7952dfa55b20e5c1efbd897d5ac",
+                "live_state_sha256": "8660f293988cd28a74ac47e0bc2e89975d73deb49d25fbedac3a0fe6711783f5",
+                "comparison": {
+                    "frames": {
+                        "frames_compared": 25,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 25,
+                        "first_field_differences": {}
+                    },
+                    "world": {
+                        "status": "pass",
+                        "records_compared": 29,
+                        "first_field_differences": {}
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 549,
+                        "first_difference": null
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 0,
+                        "first_difference": null
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "actual_state_sha256": "fdc25a224bd13b92d7c4777fdb5ea2d5ab1050634c24c5d1e9607d4629cb4eee",
+                "actual_rng_sha256": "bb115eb7fd692fa3688ec2ee09310011eb7e83c072ec849e14da5476b0835baa",
+                "actual_result_sha256": "5345ebd460bfe3f3096b2fc287641ec19bdd36b9a550609005952f87d72668ba",
+                "comparison_sha256": "e889d7f6c0b0bd45e3810e18f2bcb24cef877a7998f203cecfecd8b824d51ecf"
+            },
+            {
+                "attempt": 4,
+                "source_at_build": "17d25b039a5255b7bc046baae76354bcb882dbc6",
+                "binary": "849cbd598422ebdf12cfe202cea5ba551b04ae23f4a7db335112e36e31418fbc",
+                "working_changes": "published source, clean worktree",
+                "seconds": 30.297,
+                "exit": 0,
+                "input_hashes": {
+                    "alien1.pig": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+                    "alien2.pig": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+                    "d2x-xl.hog": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                    "d2x.hog": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                    "descent.hog": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052",
+                    "descent.pig": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe",
+                    "descent2.ham": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+                    "descent2.hog": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+                    "descent2.s22": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+                    "fire.pig": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+                    "groupa.pig": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+                    "ice.pig": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+                    "water.pig": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1",
+                    "mods/prophxl/playlist.txt": "21e7ecf31e2c91e18db536ba92b1d33b6bc7aab126c61ef5f19d01fed8a8d277",
+                    "mods/prophxl/PROPHXL.HXM": "b2931a99d7a1c6cbe9c861947e3c44647f316d7c8df6ce649e2a4fe8287df04d",
+                    "mods/prophxl/music/briefing.ogg": "359df1b403d47c8e5ca9376b65e00452216510a89ed53b2cae44029a1cfdebfa",
+                    "mods/prophxl/music/credits.ogg": "08b7fb79ac5d83ad7b85d5fa34fbaad0783288085b9201d14a8d2d2a75c50315",
+                    "mods/prophxl/music/level01.ogg": "06a738b1ca4cb8e6d26b66d83c49f76ecbc21e0ee8519ebdcdefe548e0af7dfc",
+                    "mods/prophxl/music/level02.ogg": "144157523682b0601f31b5afdd18087938ebe27c5fceb623bc394d0d591c8653",
+                    "mods/prophxl/music/level03.ogg": "aba08f1bbab61eb16ef7702d43a4b5a2e8dd15a66e7cbe3d3e5a5a76cc8f69ce",
+                    "mods/prophxl/music/level04.ogg": "95caab23b4c813a22a2a55cbafdb92269eff285465ea639db7d226d9b8b7a8b6",
+                    "mods/prophxl/music/level05.ogg": "91b6e8d8dc99a6f9d919ed114dc0168697dee88cc655941eace716f770d586f6",
+                    "mods/prophxl/music/slevel01.ogg": "75b8eb80f90e9fedc1f5e35b3525992c83cfc16c62e62968b32282cd4bcc9839",
+                    "mods/prophxl/music/slevel02.ogg": "56ad528065c1b235bf6313e18c5d46e4c5e41b25b2b630719e114e72f3f86b2d",
+                    "mods/prophxl/music/slevel03.ogg": "b227329d3eb71c95525f5dc948227a5d75de5125953e50c3dc33fdf97c3130f6",
+                    "mods/prophxl/music/title.ogg": "349c11b4013ba17f321caec20b504315b61013fbe48a3fe3044d23bac098d758",
+                    "mods/prophxl/sounds/afbr_1.wav": "ea3c153bfc30154329319c587a90c9690db8436569537d387c6d3248e0bba861",
+                    "mods/prophxl/sounds/afbr_2.wav": "a4d41a9167178a4f0096b9b7a1ba3adcd5b6483e61031313c1f625c4368a66f2",
+                    "mods/prophxl/sounds/AmbDroneV.wav": "53ea31eb16b83f7fa0b3294834e5308d1cc14113f0181ce837993adbd169cb76",
+                    "mods/prophxl/sounds/beep02.wav": "35766131186563bc8fcef0a649c2d2be3b7f8cd6c3c19b0206dc6109deabbea0",
+                    "mods/prophxl/sounds/change1.wav": "0341c4a495313066d4ec8a2e3e436820fb666384751421c2c4ec3fa1967eb4d7",
+                    "mods/prophxl/sounds/change2.wav": "69cc244a8816ddffa4e9e9a89c500f4c7e9bd79c27732705e2554c3a7f4a2676",
+                    "mods/prophxl/sounds/convert.wav": "8cd51724d87da294dcf068cb9485c991d83779c27ad060729831a32ed0aba2f3",
+                    "mods/prophxl/sounds/ramfast.wav": "81d8ad08a38e349af1a259bc056d9e04bdc8a66d4f19bee03542caea6504ff9e",
+                    "mods/prophxl/sounds/secsiren.wav": "917f332862b6c6dfa54041dbbd0cd8fdb71a808d418f6e393303d2d3d62e9a03",
+                    "mods/prophxl/sounds/shit01.wav": "79e8cc6b23dd88bb4d64643018b534d89fb11946b44df418fd86a893215a7bd4",
+                    "mods/prophxl/sounds/tear01.wav": "c315d8c4cfac74682a4b847f594a47bf7d803c49794f8965754ddfca36ee6415",
+                    "missions/PROPHXL.HOG": "aead9b792e3dc6ff13cd53b68e727d8cd814e1b6480ea83f5e5c9843caf23880",
+                    "missions/PROPHXL.MN2": "8a47df99aaa72d34366d8ae357f1303e2c82c631163b062636b19d20c878b62b"
+                },
+                "demo_sha256": "a7a9952e6d6f3ea1c15c333cccd41a906baaa7952dfa55b20e5c1efbd897d5ac",
+                "live_state_sha256": "8660f293988cd28a74ac47e0bc2e89975d73deb49d25fbedac3a0fe6711783f5",
+                "comparison": {
+                    "frames": {
+                        "frames_compared": 25,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 25,
+                        "first_field_differences": {}
+                    },
+                    "world": {
+                        "status": "pass",
+                        "records_compared": 29,
+                        "first_field_differences": {}
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 549,
+                        "first_difference": null
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 0,
+                        "first_difference": null
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "actual_state_sha256": "ef048a13b07cef1d3656378513ed70f2d9618158cb3befc092241beb430e8482",
+                "actual_rng_sha256": "bb115eb7fd692fa3688ec2ee09310011eb7e83c072ec849e14da5476b0835baa",
+                "actual_result_sha256": "5345ebd460bfe3f3096b2fc287641ec19bdd36b9a550609005952f87d72668ba",
+                "comparison_sha256": "e889d7f6c0b0bd45e3810e18f2bcb24cef877a7998f203cecfecd8b824d51ecf"
+            }
+        ]
+    },
+    "restored_emulator": {
+        "avd": "VignetteHost",
+        "serial": "emulator-5584",
+        "apk": "aef764422b18ee3b37a1e7f360b79214c5620113047183751448b4444cf4eae3",
+        "restored": {
+            "files/graphics_safety.json": "69e39f5f9e0cc60ca34061d97b4cf76f440eada7776136564fd0e7113fdeb0d8",
+            "files/descent.cfg": "ed56e98945e6f6b955caf44a2fca949c876d54c552b8043d793331edf9d390a7",
+            "files/d2x-redux/descent.cfg": "1322b4ab976903e1b02c87d9d598bf39f99014c3d6fe213a1d575b7010fe2a18",
+            "files/d2x-redux/Players/save_sets/last_single.txt": "552088d6ecff370504b681b080eb57ac61421e304b2248c946e3858d2709f2a6"
+        }
+    },
+    "local_audio_owner": {
+        "original_wrapper_seconds": 45,
+        "attempts": [
+            {
+                "build": "unoptimized Desktop Debug",
+                "result": "timeout",
+                "log_sha256": "da4585b498a3d88a376fa3d48dc38108734aa38b70fed8a4cda7d84ef019edc3"
+            },
+            {
+                "build": "optimized Desktop Debug",
+                "result": "timeout",
+                "log_sha256": "f28384ff089f185ee722e7c712eb92e244707fb6d6221190330ac0de3ec19da4"
+            },
+            {
+                "build": "RelWithDebInfo with assertions, concurrent work",
+                "result": "timeout",
+                "log_sha256": "1036c22c669d5c9ca74612526ac1cc7f99ff75f1aedb7bb4db20de6e6083c867"
+            },
+            {
+                "build": "RelWithDebInfo with assertions, after campaign and 64-case run",
+                "result": "pass",
+                "exit": 0,
+                "runtime_sha256": "dd9261af4ea19c40bfe0c68321687ddc8b9efe13683d44038a06ad3e54b555f0"
+            }
+        ]
+    },
+    "guidebot_regression": {
+        "source": "17d25b039a5255b7bc046baae76354bcb882dbc6",
+        "controls": {
+            "single_sided_texture_enhanced_planner": {
+                "exit": 0,
+                "log_sha256": "db202315bc1e27b94abf2532de7c2b996eb97ff51c7598e8ea114cc600bf45ee"
+            },
+            "door": {
+                "exit": 0,
+                "log_sha256": "ee587f7d9099ac9d887df687d0e223ce6085fe7e38b2f368ce8db6723743429f"
+            },
+            "cloak": {
+                "exit": 0,
+                "log_sha256": "fa808e5dd2ba5094dcdc770d09958a1af9399973aced07e4315c8fb1d65f2010"
+            },
+            "planner_free_compile": {
+                "exit": 0,
+                "log_sha256": "520211e3a7830e21b8cce4ab635d4cdef47cab519d716824ee0308c51bff13b8"
+            }
+        },
+        "fixture_attempt": "Initial fixture used the session default and assumed enhanced route notifications. The final fixture explicitly selects enhanced mode, fires one linked wall action, checks exactly one notification and restores the previous mode.",
+        "reference_attempt": "A November 14 comparison executable rejected the newer close-door sample arguments. The original-source oracle rebuilt from the November 19 recipe accepted the complete sample set.",
+        "original_source": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+        "windows_assertion_binary": "385537e5eec1c41906ff0826cd539ddeb89f80fd74437a3ac4ebb1c1cb44d2ca"
+    }
+}
