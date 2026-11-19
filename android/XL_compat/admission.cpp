@@ -136,7 +136,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	auto limit = [&](bool exceeded, const char *feature, const char *detail) {
 		if (exceeded) result.push_back({ feature, -1, detail });
 	};
-	limit(!((level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) || (level.level_version == 17 && level.game_version == 36) || modern_runtime_layout(level)), "serialization", "requires audited level/game-data version 15/33, 15/34, 17/36, 21/40, 23/40, 25/40, 26/40 or 27/40");
+	limit(!supported_xl_layout(level), "serialization", "requires an audited XL level/game-data version pair");
 	limit(level.level_version >= 27 && volumetric_fog_required(level) && level.fog_settings.size() != 4, "authored fog", "requires four complete authored color/distance records and a capable OpenGL renderer");
 	limit(level.walls.size() > DXX_XL_MAX_WALLS, "wall capacity", "more than 2047 walls");
 	for (std::size_t i = 0; i < level.walls.size(); ++i) {

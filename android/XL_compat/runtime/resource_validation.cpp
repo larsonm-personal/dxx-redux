@@ -97,6 +97,7 @@ std::map<int, std::shared_ptr<xl_compat::OofResource>> mission_oof_models;
 std::map<std::string, std::string> mission_mod_sources;
 std::map<std::string, std::string> mission_definition_sources;
 std::set<int> mission_generated_models;
+bool mission_hxm_robot_replacements = false;
 
 bool mounted_mission_requires_xl(bool owned_only = false)
 {
@@ -326,7 +327,11 @@ struct HxmChanges {
 	std::set<int> robots, joints, models, bitmaps, pointers, weapons;
 };
 
-std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefinitions &definitions, xl_assets::ObjectDependencies &graph, HxmChanges &changes, bool camera = false, bool defer_dependencies = false, bool defer_robots = false)
+struct DecodedHxm {
+	int camera_robot = -1, camera_model = -1;
+	bool replaces_robots = false;
+};
+DecodedHxm validate_hxm_dependencies(PHYSFS_file *file, MissionDefinitions &definitions, xl_assets::ObjectDependencies &graph, HxmChanges &changes, bool camera = false, bool defer_dependencies = false, bool defer_robots = false)
 {
 	// Native readers decode into the same owned tables used by the level walk
 	auto &robots = definitions.robots;
@@ -342,16 +347,17 @@ std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefiniti
 	auto &changed_models = changes.models;
 	auto &changed_bitmaps = changes.bitmaps;
 	auto &changed_pointers = changes.pointers;
-	std::pair<int, int> camera_ids{ -1, -1 };
+	DecodedHxm decoded;
 	PHYSFS_seek(file, 8);
 	int count = PHYSFSX_readInt(file);
+	decoded.replaces_robots = count > 0;
 	if (camera && (count != 1 || robots.size() >= MAX_ROBOT_TYPES)) throw std::runtime_error("Camera addon requires one appended robot within native capacity");
 	for (; count > 0; --count) {
 		int id = PHYSFSX_readInt(file);
 		if (camera) {
 			id = int(robots.size());
 			robots.emplace_back();
-			camera_ids.first = id;
+			decoded.camera_robot = id;
 		}
 		robot_info_read_n(&robots.at(id), 1, file);
 		static_assert(sizeof(jointlist) == 4, "XL HXM joint-list storage must match the serialized pair");
@@ -373,7 +379,7 @@ std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefiniti
 		int id = PHYSFSX_readInt(file);
 		if (camera) {
 			id = int(models.size());
-			camera_ids.second = id;
+			decoded.camera_model = id;
 			models.emplace_back();
 			payloads.emplace_back();
 			definitions.custom_radii.push_back(0);
@@ -409,8 +415,8 @@ std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefiniti
 	definitions.bind_dependencies(graph);
 	if (camera) {
 		// Pinned InitCamBots normalizes the appended definition, not serialized slot 38
-		auto &robot = robots.at(camera_ids.first);
-		robot.model_num = camera_ids.second;
+		auto &robot = robots.at(decoded.camera_robot);
+		robot.model_num = decoded.camera_model;
 		robot.attack_type = 0;
 		robot.contains_id = robot.contains_count = robot.contains_prob = robot.contains_type = 0;
 		robot.score_value = 0;
@@ -427,13 +433,13 @@ std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefiniti
 			robot.circle_distance[difficulty] = 0;
 			robot.rapidfire_count[difficulty] = 0;
 		}
-		if (models[camera_ids.second].n_models != 1 || models[camera_ids.second].simpler_model ||
-		    dying[camera_ids.second] != -1 || dead[camera_ids.second] != -1)
-			throw std::runtime_error("Camera addon profile: guns=" + std::to_string(robot.n_guns) + ", submodels=" + std::to_string(models[camera_ids.second].n_models) +
-			                         ", simpler=" + std::to_string(models[camera_ids.second].simpler_model) + ", dying=" + std::to_string(dying[camera_ids.second]) + ", dead=" + std::to_string(dead[camera_ids.second]));
+		if (models[decoded.camera_model].n_models != 1 || models[decoded.camera_model].simpler_model ||
+		    dying[decoded.camera_model] != -1 || dead[decoded.camera_model] != -1)
+			throw std::runtime_error("Camera addon profile: guns=" + std::to_string(robot.n_guns) + ", submodels=" + std::to_string(models[decoded.camera_model].n_models) +
+			                         ", simpler=" + std::to_string(models[decoded.camera_model].simpler_model) + ", dying=" + std::to_string(dying[decoded.camera_model]) + ", dead=" + std::to_string(dead[decoded.camera_model]));
 	}
 	// Mission HXM is followed by V-HAM; validate reachable closure after all layers
-	if (defer_dependencies) return camera_ids;
+	if (defer_dependencies) return decoded;
 	for (const int id : changed_models) graph.model(id);
 	for (const int id : changed_bitmaps) graph.bitmap(bitmaps[id].index);
 	for (const int id : changed_pointers) {
@@ -441,11 +447,11 @@ std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefiniti
 		graph.bitmap(bitmaps[pointers[id]].index);
 	}
 	// XL level admission walks reachable robot profiles after HXM and model layers
-	if (defer_robots) return camera_ids;
+	if (defer_robots) return decoded;
 	// A changed joint/model can invalidate an otherwise unchanged robot
 	for (int id = 0; id < int(robots.size()); ++id) {
 		// Camera control never dispatches ordinary robot guns, combat or animation
-		if (id == camera_ids.first) continue;
+		if (id == decoded.camera_robot) continue;
 		bool affected = changed_robots.count(id) || changed_models.count(robots[id].model_num);
 		for (int gun = 0; gun <= MAX_GUNS; ++gun)
 			for (int animation = 0; animation < N_ANIM_STATES; ++animation) {
@@ -455,7 +461,7 @@ std::pair<int, int> validate_hxm_dependencies(PHYSFS_file *file, MissionDefiniti
 			}
 		if (affected) graph.robot(id);
 	}
-	return camera_ids;
+	return decoded;
 }
 
 struct CameraAddonFile {
@@ -568,6 +574,7 @@ extern "C" void xl_resource_select_mission(int requires_xl)
 	mission_oof_models.clear();
 	mission_mod_sources.clear();
 	mission_definition_sources.clear();
+	mission_hxm_robot_replacements = false;
 	mission_generated_models.clear();
 	mission_requires_xl = requires_xl != 0;
 	base_rejection.clear();
@@ -731,7 +738,7 @@ std::string owned_mod_file(const char *extension, const std::string &relative = 
 	return path;
 }
 
-void install_mission_hxm(PHYSFS_file *file)
+bool install_mission_hxm(PHYSFS_file *file)
 {
 	if (!bm_validate_level_hxm(file)) throw std::runtime_error("Malformed XL mission HXM");
 	MissionDefinitions definitions;
@@ -753,6 +760,7 @@ void install_mission_hxm(PHYSFS_file *file)
 		Dying_modelnums[id] = definitions.dying[id];
 		Dead_modelnums[id] = definitions.dead[id];
 	}
+	return !changes.robots.empty();
 }
 
 std::vector<uint8_t> read_model_resource(const std::string &path, mission_preparation *target)
@@ -939,7 +947,7 @@ extern "C" int xl_resource_load_mod_data(void)
 		if (ham.empty() && !hxm.empty()) {
 			File file(PHYSFSX_openReadBuffered(hxm.c_str()), PHYSFS_close);
 			sources[hxm] = resource_hash(file.get(), hxm);
-			install_mission_hxm(file.get());
+			mission_hxm_robot_replacements = install_mission_hxm(file.get());
 		}
 		if (ham.empty() && !vham.empty() && !bm_read_xl_extra_robots(vham.c_str()))
 			throw std::runtime_error("Malformed XL mission V-HAM: " + vham);
@@ -959,6 +967,7 @@ extern "C" int xl_resource_load_mod_data(void)
 		mission_oof_models.clear();
 		mission_mod_sources.clear();
 		mission_definition_sources.clear();
+		mission_hxm_robot_replacements = false;
 		mission_generated_models.clear();
 		piggy_load_mission_data();
 		con_printf(CON_URGENT, "XL mission definitions rejected: %s\n", mod_rejection.c_str());
@@ -1129,6 +1138,7 @@ struct XlPreparedResources::State {
 	std::map<std::string, std::string> definition_sources;
 	std::set<int> generated_models;
 	bool complete_mission = false;
+	bool mission_hxm_robots = false;
 	std::vector<std::vector<unsigned char>> definition_layers;
 	xl_compat::OwnedModelSet owned_models;
 	MissionDefinitions definitions;
@@ -1304,7 +1314,7 @@ std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_mission(missio
 	const auto hxm = owned_mod_file(".hxm", {}, mission);
 	if (!hxm.empty()) {
 		auto replacement = incoming_owned_file(mission, hxm);
-		result->state->definition_sources[hxm] = result->prepare_hxm(replacement.get());
+		result->state->definition_sources[hxm] = result->prepare_hxm(replacement.get(), &result->state->mission_hxm_robots);
 	}
 	const auto vham = owned_mod_file(".vham", {}, mission);
 	if (!vham.empty()) {
@@ -1324,7 +1334,7 @@ std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_level(mission_
 {
 	auto result = prepare_level_inputs(mission, ordinal);
 	xl_compat::TargetSources target(mission, startup_origin);
-	xl_validate_incoming_requirements(result->level_inventory(), false, false, result->state->graph, mission, target, result->has_scoped_textures());
+	xl_validate_incoming_requirements(result->level_inventory(), false, false, result->state->graph, mission, target, result->has_scoped_textures(), result->mission_replaces_robots());
 	return result;
 }
 
@@ -1472,7 +1482,12 @@ void XlPreparedResources::prepare_banks(const std::string &palette)
 	state->bind_graph();
 }
 
-std::string XlPreparedResources::prepare_hxm(PHYSFS_file *file)
+bool XlPreparedResources::mission_replaces_robots() const
+{
+	return state->mission_hxm_robots;
+}
+
+std::string XlPreparedResources::prepare_hxm(PHYSFS_file *file, bool *replaced_robots)
 {
 	if (state->scoped_textures) throw std::runtime_error("HXM must be prepared before scoped textures");
 	if (state->installed) throw std::runtime_error("Cannot prepare HXM after resource publication");
@@ -1481,10 +1496,11 @@ std::string XlPreparedResources::prepare_hxm(PHYSFS_file *file)
 	auto retained = xl_retain_resource(file);
 	auto staged = std::make_unique<State>(state->definitions);
 	staged->changes = state->changes;
+	bool replaces_robots = false;
 	xl_read_retained_resource(retained, [&](PHYSFS_file *input) {
 		if (!bm_validate_hxm_for_tables(input, graph.robot_count, graph.joint_count, graph.model_count, 0))
 			throw std::runtime_error("HXM definitions do not match the target tables");
-		validate_hxm_dependencies(input, staged->definitions, staged->graph, staged->changes, false, true);
+		replaces_robots = validate_hxm_dependencies(input, staged->definitions, staged->graph, staged->changes, false, true).replaces_robots;
 	});
 	staged->prepare_native_models();
 	auto hash = picosha2::hash256_hex_string(retained);
@@ -1494,6 +1510,7 @@ std::string XlPreparedResources::prepare_hxm(PHYSFS_file *file)
 	state->native_models = std::move(staged->native_models);
 	state->bind_graph();
 	state->has_hxm = true;
+	if (replaced_robots) *replaced_robots = replaces_robots;
 	return hash;
 }
 
@@ -1571,6 +1588,7 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 	if (!counts_match(*mission_base) && !(prepared_resources && prepared_resources->state->installed && counts_match(prepared_resources->state->definitions)))
 		throw std::runtime_error("definition registry changed outside the owned mission resources");
 	state = std::make_unique<State>(*mission_base);
+	state->mission_hxm_robots = mission_hxm_robot_replacements;
 	prepare_level_resources(level_filename, level, ordinal, nullptr, nullptr);
 	if (level && xl_resource_texture_scope_enabled() && *mission_resource_archive()) {
 		xl_compat::TargetSources target(startup_origin);
@@ -1629,7 +1647,7 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 			state->classic_lighting = true;
 		} else if (state->lighting.colors) {
 			// These layouts read and validate the companion before replacing all 910 colors from geometry
-			const bool embedded = level && (xl_compat::modern_runtime_layout(*level) || (level->level_version == 17 && level->game_version == 36));
+			const bool embedded = level && (xl_compat::supported_xl_layout(*level) && level->level_version >= 17);
 			if (!embedded || level->texture_colors.size() != xl_compat::companion_texture_count)
 				throw std::runtime_error("D2 XL CLR companion overrides are not supported: " + std::string(level_filename));
 		}
@@ -1746,8 +1764,8 @@ void XlPreparedResources::prepare_camera_model(PHYSFS_file *file)
 	// Inline definition arrays move by value; bind views to the surviving owner
 	state->definitions.bind_dependencies(state->graph);
 	state->native_models = std::move(staged->native_models);
-	state->camera_robot = ids.first;
-	state->camera_model = ids.second;
+	state->camera_robot = ids.camera_robot;
+	state->camera_model = ids.camera_model;
 	state->has_hxm = true;
 }
 
@@ -2072,6 +2090,7 @@ void XlPreparedResources::install_hxm()
 	}
 	if (state->complete_mission) {
 		mission_definition_sources.swap(publication->definition_sources);
+		mission_hxm_robot_replacements = state->mission_hxm_robots;
 		mission_generated_models.swap(publication->generated_models);
 	}
 	if (!state->has_hxm) {

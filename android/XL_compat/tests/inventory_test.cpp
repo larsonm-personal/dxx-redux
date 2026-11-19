@@ -105,7 +105,7 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 	const auto game = b.size();
 	patch(b, 12, static_cast<std::uint32_t>(game));
 	put(b, 0x6705, 2);
-	put(b, version == 15 ? 33 : version >= 21 ? 40
+	put(b, version == 15 ? 33 : version >= 19 ? 40
 	                                          : 36,
 	    2);
 	b.resize(b.size() + 31);
@@ -119,7 +119,7 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 	put(b, 0, 2);
 	patch(b, game + 71, static_cast<std::uint32_t>(b.size()));
 	put(b, 0, 4);
-	if (version == 17) put(b, 0, 2);
+	if (version == 17 || version == 18) put(b, 0, 2);
 	return b;
 }
 

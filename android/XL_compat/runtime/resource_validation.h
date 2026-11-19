@@ -83,7 +83,8 @@ class XlPreparedResources
 	XlPreparedResources &operator=(XlPreparedResources &&) noexcept;
 	~XlPreparedResources();
 	xl_assets::ObjectDependencies &dependencies();
-	std::string prepare_hxm(PHYSFS_file *file);
+	std::string prepare_hxm(PHYSFS_file *file, bool *replaced_robots = nullptr);
+	bool mission_replaces_robots() const;
 	std::string prepare_vham(PHYSFS_file *file);
 	std::string prepare_vham(std::vector<unsigned char> bytes);
 	void prepare_banks(const std::string &palette);

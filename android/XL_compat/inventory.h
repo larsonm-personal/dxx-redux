@@ -158,6 +158,13 @@ inline bool modern_runtime_layout(const Inventory &level)
 	return level.game_version == 40 && modern_level_version(level.level_version);
 }
 
+inline bool supported_xl_layout(const Inventory &level)
+{
+	return (level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) ||
+	       ((level.level_version == 17 || level.level_version == 18) && level.game_version == 36) ||
+	       (level.level_version == 19 && level.game_version == 40) || modern_runtime_layout(level);
+}
+
 // Pinned CLightDelta::Read validity; raw serialized fields remain unchanged
 inline bool valid_light_delta(const Inventory &level, const std::array<int, 7> &row)
 {

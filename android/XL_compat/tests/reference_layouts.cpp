@@ -258,9 +258,17 @@ void compare(const xl_compat::Bytes &bytes, bool surfaces_only = false)
 	}
 	for (int i = 0; i < count; ++i) {
 		auto &reference = segments[i];
-		reference.ReadExtras(geometry);
 		const auto &redux = decoded.segments[i];
-		equal(reference.m_function == redux.function && reference.m_nObjProducer == redux.producer && reference.m_value == redux.value && reference.m_flags == redux.flags && reference.m_props == redux.properties, "Extras field width or signedness differs");
+		const int serialized_function = bytes.at(geometry.position);
+		equal(serialized_function == redux.function, "Serialized segment function differs");
+		if (decoded.level_version <= 20)
+			check(serialized_function < int(sizeof(segFuncFromType)), "Legacy segment type exceeds original upgrade table");
+		reference.ReadExtras(geometry);
+		const int expected_function = decoded.level_version <= 20 ? segFuncFromType[serialized_function] : serialized_function;
+		equal(reference.m_function == (gameStates.app.bD2XLevel || expected_function != 2 ? expected_function : 0) &&
+		          reference.m_nObjProducer == redux.producer && reference.m_value == redux.value && reference.m_flags == redux.flags &&
+		          reference.m_props == xl_compat::segment_property_bits(decoded.level_version, redux),
+		      "Extras function, properties, width or signedness differs");
 		equal(reference.m_xDamage[0] == redux.damage[0] * 65536 && reference.m_xDamage[1] == redux.damage[1] * 65536 && reference.m_xAvgSegLight == redux.light, "Extras damage or light differs");
 	}
 	// Colors follow the readers under test; their widths independently establish

@@ -462,7 +462,7 @@ void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, b
 }
 
 void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot, xl_assets::ObjectDependencies &graph,
-                           mission_preparation *incoming = nullptr, xl_compat::TargetSources *target = nullptr, bool owned_scoped_textures = false)
+                           mission_preparation *incoming = nullptr, xl_compat::TargetSources *target = nullptr, bool owned_scoped_textures = false, bool mission_robot_replacements = false)
 {
 	const bool classic = level.level_version <= 8;
 	// Selected-mission admission also checks the currently installed native tables
@@ -532,8 +532,8 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 			}
 			return false;
 		};
-		if (custom_robots && !has_companion(".HXM"))
-			throw std::runtime_error("mission declares custom robots, but no level HXM was found; install the complete mission package (other custom definition formats remain unqualified)");
+		if (custom_robots && !mission_robot_replacements && !has_companion(".HXM"))
+			throw std::runtime_error("mission declares custom robots, but no level HXM or validated mission robot replacements were found");
 		if (custom_textures && !has_companion(".POG") && !owned_scoped_textures)
 			throw std::runtime_error("mission declares custom textures, but no level POG or qualified scoped TGA set was found; install the complete mission package (custom PIG replacements remain unqualified)");
 	}
@@ -565,7 +565,7 @@ std::unique_ptr<XlPreparedResources> prepare_classic_member(const char *filename
 	const auto level = xl_compat::inspect_mission_level(*bytes);
 	if (level.level_version > 8) throw std::runtime_error("Selected level and mission archive disagree on level format");
 	auto resources = std::make_unique<XlPreparedResources>(filename, &level, ordinal);
-	validate_requirements(level, multiplayer, false, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures());
+	validate_requirements(level, multiplayer, false, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures(), resources->mission_replaces_robots());
 	return resources;
 }
 } // namespace
@@ -578,10 +578,10 @@ void xl_collect_incoming_dependencies(const xl_compat::Inventory &level, bool wa
 }
 
 void xl_validate_incoming_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot,
-                                       xl_assets::ObjectDependencies &graph, mission_preparation *mission, xl_compat::TargetSources &sources, bool owned_scoped_textures)
+                                       xl_assets::ObjectDependencies &graph, mission_preparation *mission, xl_compat::TargetSources &sources, bool owned_scoped_textures, bool mission_robot_replacements)
 {
 	if (!mission) throw std::runtime_error("Incoming requirements need a retained mission descriptor");
-	validate_requirements(level, multiplayer, water_pilot, graph, mission, &sources, owned_scoped_textures);
+	validate_requirements(level, multiplayer, water_pilot, graph, mission, &sources, owned_scoped_textures, mission_robot_replacements);
 }
 
 #ifdef __ANDROID__
@@ -623,7 +623,7 @@ extern "C" int xl_level_supported_at(const char *filename, int multiplayer, int 
 		const bool arena = water_profile(bytes, multiplayer != 0);
 		const auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena);
 		XlPreparedResources resources(filename, &probe.source, ordinal);
-		validate_requirements(probe.source, multiplayer != 0, arena, resources.dependencies(), nullptr, nullptr, resources.has_scoped_textures());
+		validate_requirements(probe.source, multiplayer != 0, arena, resources.dependencies(), nullptr, nullptr, resources.has_scoped_textures(), resources.mission_replaces_robots());
 		return 1;
 	} catch (const std::exception &error) {
 		rejection = std::string(filename) + "\n" + error.what();
@@ -877,7 +877,7 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		const bool arena = water_profile(bytes, (Game_mode & GM_MULTI) != 0);
 		auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena);
 		auto resources = std::make_unique<XlPreparedResources>(filename, &probe.source, ordinal);
-		validate_requirements(probe.source, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures());
+		validate_requirements(probe.source, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures(), resources->mission_replaces_robots());
 		if (original) {
 			if (!PHYSFS_mkdir("xl_preview_cache")) throw std::runtime_error("cannot create private pilot translation directory");
 			std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> output(PHYSFS_openWrite(translated_path), PHYSFS_close);
