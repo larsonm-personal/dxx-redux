@@ -161,7 +161,7 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 		return 1;
 	int remainder = 0;
 #if defined(DXX_XL_RUNTIME) && defined(OGL) && !defined(OGLES)
-	if (effect >= 0) proof["wall_effect_clock"].push_back({ 0, Effects[effect].frame_count, Effects[effect].time_left });
+	if (effect >= 0) proof["wall_effect_clock"].push_back({ 0, int(Effects[effect].frame_count), int(Effects[effect].time_left) });
 #endif
 	for (int frame = 0; frame < 120; ++frame) {
 		remainder += F1_0;
@@ -177,7 +177,7 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 		game_render_frame_mono(0);
 #if defined(DXX_XL_RUNTIME) && defined(OGL) && !defined(OGLES)
 		if (effect >= 0) {
-			proof["wall_effect_clock"].push_back({ frame + 1, Effects[effect].frame_count, Effects[effect].time_left });
+			proof["wall_effect_clock"].push_back({ frame + 1, int(Effects[effect].frame_count), int(Effects[effect].time_left) });
 			if (!observe_wall_effect(effect, proof["wall_effect_frames"])) {
 				write_readiness(path, proof, "wall_effect_observation_failed");
 				return 1;
