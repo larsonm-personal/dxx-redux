@@ -22,7 +22,7 @@ FAMILIES = {
     "Light index bounds": ("invalid packed light index", "invalid light index"),
     "Texture IDs": ("texture_id at",),
     "Classic level in XL mission": ("stock-format levels",),
-    "Companion lighting": ("clr companion",),
+    "Companion lighting": ("clr companion", "classic mine lgt brightness"),
     "Animated replacement textures": ("clocked animation frames", "qualified wall effect clock"),
     "Replacement bitmap directory": ("pog bitmap directory",),
     "Texture memory budget": ("scoped texture decoded pixels",),

@@ -220,13 +220,14 @@ Trigger read_trigger(Reader &r, Inventory &out, int index, int segment_count, bo
 }
 } // namespace
 
-Inventory inspect_level(const Bytes &bytes)
+static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 {
 	Inventory out;
 	Reader header(bytes, 0, bytes.size());
 	require(header.s32() == 0x504c564c, "not a PLVL level");
 	out.level_version = header.s32();
-	require(out.level_version == 15 || out.level_version == 17 || modern_level_version(out.level_version), "unsupported level version " + std::to_string(out.level_version));
+	const bool classic = allow_classic && out.level_version == 7;
+	require(classic || out.level_version == 15 || out.level_version == 17 || modern_level_version(out.level_version), "unsupported level version " + std::to_string(out.level_version));
 	out.mine_offset = header.s32();
 	out.game_offset = header.s32();
 	require(out.mine_offset >= 16 && out.game_offset > out.mine_offset && static_cast<std::size_t>(out.game_offset) < bytes.size(), "invalid mine/game offsets");
@@ -234,7 +235,7 @@ Inventory inspect_level(const Bytes &bytes)
 	Reader game(bytes, out.game_offset, bytes.size());
 	require(game.u16() == 0x6705, "invalid game data signature");
 	out.game_version = game.u16();
-	require((out.level_version == 15 && (out.game_version == 33 || out.game_version == 34)) || (out.level_version == 17 && out.game_version == 36) || modern_runtime_layout(out),
+	require((classic && out.game_version == 31) || (out.level_version == 15 && (out.game_version == 33 || out.game_version == 34)) || (out.level_version == 17 && out.game_version == 36) || modern_runtime_layout(out),
 	        "unsupported level/game version pair " + std::to_string(out.level_version) + "/" + std::to_string(out.game_version));
 	game.skip(31);
 	const char *section_names[] = { "objects", "walls", "doors", "triggers", "links", "reactor", "matcens", "light_indices", "delta_lights", "equipment" };
@@ -262,7 +263,7 @@ Inventory inspect_level(const Bytes &bytes)
 	}
 
 	Reader extra(bytes, 16, out.mine_offset);
-	extra.skip(7);
+	if (out.level_version >= 8) extra.skip(7);
 	out.palette = extra.line(256);
 	out.countdown = extra.s32();
 	out.reactor_strength = extra.s32();
@@ -284,8 +285,8 @@ Inventory inspect_level(const Bytes &bytes)
 	for (int i = 0; i < vertex_count; ++i) out.vertices.push_back({ mine.s32(), mine.s32(), mine.s32() });
 	for (int i = 0; i < segment_count; ++i) {
 		Segment seg{};
-		seg.owner = mine.s8();
-		seg.group = mine.s8();
+		seg.owner = classic ? -1 : mine.s8();
+		seg.group = classic ? -1 : mine.s8();
 		const int flags = mine.u8();
 		// Bit 6 is the legacy special-data marker, ignored for level versions > 5
 		require((flags & 0x80) == 0, "unknown segment child flags at " + std::to_string(i));
@@ -304,8 +305,8 @@ Inventory inspect_level(const Bytes &bytes)
 		for (int side = 0; side < 6; ++side) {
 			auto &s = seg.sides[side];
 			if (wall_flags & (1 << side)) {
-				s.wall = mine.u16();
-				if (s.wall == 65535) s.wall = -1;
+				s.wall = classic ? mine.u8() : mine.u16();
+				if (s.wall == (classic ? 255 : 65535)) s.wall = -1;
 				require(s.wall < section(out, "walls").count, "invalid wall reference at segment " + std::to_string(i));
 			}
 		}
@@ -362,9 +363,11 @@ Inventory inspect_level(const Bytes &bytes)
 			else issue(out.unknown, "segment_flags", i, std::to_string(seg.flags));
 		}
 	}
-	read_colors(mine, out.vertex_colors, vertex_count, false);
-	read_colors(mine, out.side_colors, static_cast<std::size_t>(segment_count) * 6, false);
-	read_colors(mine, out.texture_colors, 910, out.level_version == 15);
+	if (!classic) {
+		read_colors(mine, out.vertex_colors, vertex_count, false);
+		read_colors(mine, out.side_colors, static_cast<std::size_t>(segment_count) * 6, false);
+		read_colors(mine, out.texture_colors, 910, out.level_version == 15);
+	}
 	if (mine.position() != static_cast<std::size_t>(out.game_offset)) issue(out.unknown, "mine_trailing_bytes", -1, std::to_string(out.game_offset - mine.position()));
 
 	const auto &walls = section(out, "walls");
@@ -390,7 +393,7 @@ Inventory inspect_level(const Bytes &bytes)
 	if (triggers.offset >= 0) {
 		auto r = section_reader(bytes, out, triggers, 52);
 		for (int i = 0; i < triggers.count; ++i) out.triggers.push_back(read_trigger(r, out, i, segment_count, false));
-		out.object_triggers = r.s32();
+		out.object_triggers = out.game_version >= 33 ? r.s32() : 0;
 		require(out.object_triggers >= 0, "negative object trigger count");
 		const auto end = section_end(out, triggers, bytes.size());
 		const auto remaining = end - r.position();
@@ -422,7 +425,7 @@ Inventory inspect_level(const Bytes &bytes)
 			require(r.position() == end, "unexpected game-36 object reference tail");
 		} else if (out.game_version == 40) {
 			require(remaining == 0, "unexpected game-40 object reference tail");
-		} else if (remaining == 1400) {
+		} else if (out.game_version >= 33 && remaining == 1400) {
 			// Neutral legacy padding is accepted independently of the reference read path
 			for (int i = 0; i < 700; ++i) {
 				const auto head = r.s16();
@@ -624,11 +627,23 @@ Inventory inspect_level(const Bytes &bytes)
 	for (const auto *name : { "doors", "links" })
 		if (section(out, name).count) issue(out.unknown, name, -1, "nonempty legacy section");
 	// Do not let successful structural decoding masquerade as a complete audit
-	issue(out.unknown, "object_dependencies", -1, "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison");
-	issue(out.unknown, "runtime_semantics", -1, "decoded records require reference comparison and runtime validation");
-	issue(out.unknown, "assets", -1, "mission asset resolution and reference runtime not verified");
-	issue(out.unsupported, "embedded_lighting", -1, "XL color tables decoded but no faithful rendering integration exists");
+	if (!classic) {
+		issue(out.unknown, "object_dependencies", -1, "robot, weapon, powerup and model IDs require asset-aware validation and behavior comparison");
+		issue(out.unknown, "runtime_semantics", -1, "decoded records require reference comparison and runtime validation");
+		issue(out.unknown, "assets", -1, "mission asset resolution and reference runtime not verified");
+		issue(out.unsupported, "embedded_lighting", -1, "XL color tables decoded but no faithful rendering integration exists");
+	}
 	return out;
+}
+
+Inventory inspect_level(const Bytes &bytes)
+{
+	return read_level_inventory(bytes, false);
+}
+
+Inventory inspect_mission_level(const Bytes &bytes)
+{
+	return read_level_inventory(bytes, true);
 }
 
 std::string json_string(const std::string &value)

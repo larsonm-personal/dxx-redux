@@ -969,7 +969,7 @@ std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal, st
 	xl_compat::TargetSources target(startup_origin);
 	const auto bytes = target.archive_bytes(filename, 64 * 1024 * 1024);
 	if (!bytes) throw std::runtime_error("XL save source level is missing from its original archive");
-	const auto level = xl_compat::inspect_level(*bytes);
+	const auto level = xl_compat::inspect_mission_level(*bytes);
 	// Reconstruct the same retained source set as level entry, including scoped
 	// texture precedence and native HXM/bank dependencies, without installing it
 	XlPreparedResources resources(filename, &level, ordinal);
@@ -1325,7 +1325,8 @@ std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_level_inputs(m
 	if (!filename) throw std::runtime_error("Incoming resource level is absent from its descriptor");
 	auto bytes = target.archive_bytes(filename, 64 * 1024 * 1024);
 	if (!bytes) throw std::runtime_error("Incoming level is missing from its target HOG");
-	auto inventory = std::make_unique<xl_compat::Inventory>(xl_compat::inspect_level(*bytes));
+	const auto *descriptor = mission_prepared_descriptor(mission);
+	auto inventory = std::make_unique<xl_compat::Inventory>(descriptor->enhanced == MISSION_ENHANCED_XL ? xl_compat::inspect_mission_level(*bytes) : xl_compat::inspect_level(*bytes));
 	auto result = prepare_mission(mission);
 	result->prepare_level_resources(filename, inventory.get(), ordinal, mission, &target);
 	result->prepare_scoped_textures(*inventory, ordinal, target);
@@ -1345,6 +1346,8 @@ void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &le
 	for (const auto &image : textures->images) state->owned_models.sources.emplace(image.path, image.hash);
 	state->texture_playback = std::make_unique<const xl_compat::ScopedTexturePlayback>(
 	    xl_compat::ScopedTexturePlayback::prepare(*textures, dependencies));
+	if (level.level_version == 7 && (!state->texture_playback->effects.empty() || !state->texture_playback->clips.empty() || !state->texture_playback->doors.empty()))
+		throw std::runtime_error("Clocked animation frames on a classic mine require XL texture playback");
 	for (const auto &strip : state->texture_playback->doors)
 		for (const auto &wall : level.walls) {
 			if (wall.type != WALL_BLASTABLE || wall.clip != strip.clip) continue;
@@ -1593,6 +1596,8 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 		// from the embedded table. Ownership and decoding still apply to the companion
 		if (state->lighting.colors && !(level && xl_compat::modern_runtime_layout(*level) && level->texture_colors.size() == xl_compat::companion_texture_count))
 			throw std::runtime_error("D2 XL CLR companion overrides are not supported: " + std::string(level_filename));
+		if (level && level->level_version <= 8 && state->lighting.brightness)
+			throw std::runtime_error("Classic mine LGT brightness requires native lighting integration: " + std::string(level_filename));
 	}
 	const auto hxm_name = base + ".HXM";
 	const auto prepare_level_hxm = [&](PHYSFS_file *file) {
