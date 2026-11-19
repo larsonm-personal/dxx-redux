@@ -1,6 +1,7 @@
 // Developer-only ordinary-player simulation; initial level and local poses are setup
 #include "texture_pixels.h"
 #include "powerup.h"
+#include "pilot_target.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #include "route_confirmation.h"
@@ -553,7 +554,7 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 		                                 std::any_of(plan.at("steps").begin(), plan.at("steps").end(), [](const Json &step) -> bool {
 			                                 if (!step.is_object() || !step.contains("action") || !step.at("action").is_string()) return false;
 			                                 const std::string action = step.at("action");
-			                                 if (action == "select_secondary" || action == "fly_through_side" || action == "approach_side" || action == "collect_pickup") return true;
+			                                 if (action == "select_secondary" || action == "fly_through_side" || action == "approach_side" || action == "shoot_wall_trigger" || action == "collect_pickup") return true;
 			                                 return (action == "send_axis" && step.contains("axis") && pumo_ordinary_input_validation::integer_in_range(step.at("axis"), 2, 4)) ||
 			                                        (action == "send_button" && step.contains("button") && pumo_ordinary_input_validation::integer_in_range(step.at("button"), 101, 101));
 		                                 });
@@ -845,11 +846,10 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 				vm_vec_normalize(&sight);
 			}
 			const double aim_x = dot(sight, orient.rvec), aim_y = dot(sight, orient.uvec), aim_z = dot(sight, orient.fvec);
-			if (sight_target && distance < 1 && aim_z > 0.998 && vm_vec_mag(&physics.velocity) < i2f(3)) return true;
 			heading = axis(8 * std::atan2(aim_x, aim_z) - 1.5 * f2fl(physics.rotvel.y));
 			pitch = axis(-16 * std::atan2(aim_y, std::hypot(aim_x, aim_z)) - 3 * f2fl(physics.rotvel.x));
 			firing = primary && aim_z > 0.95;
-			return false;
+			return sight_target && distance < 1 && aim_z > 0.998 && vm_vec_mag(&physics.velocity) < i2f(3);
 		};
 		for (const auto &step : plan.at("steps")) {
 			require_ordinary_secondary_input("before_step");
@@ -865,8 +865,11 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 				++position_assist_events;
 				trace << Json{ { "event", "position_assist" }, { "action", action }, { "step", completed }, { "position", snapshot().at("position") } }.dump() << '\n';
 			} else if (action == "collect_pickup") {
-				const bool hostage = step.at("kind") == "hostage";
-				require(hostage || step.at("kind") == "shields", "Unknown ordinary pickup objective");
+				const std::string kind = step.at("kind");
+				const bool hostage = kind == "hostage";
+				const std::map<std::string, int> powerups{ { "shields", POW_SHIELD_BOOST }, { "energy", POW_ENERGY }, { "blue_key", POW_KEY_BLUE }, { "red_key", POW_KEY_RED }, { "gold_key", POW_KEY_GOLD } };
+				const auto powerup = powerups.find(kind);
+				require(hostage || powerup != powerups.end(), "Unknown ordinary pickup objective");
 				require(pumo_ordinary_input_validation::integer_in_range(step.at("max_frames"), 1, 3600), "Invalid pickup flight duration");
 				const int segment = ConsoleObject->segnum, level = Current_level_num;
 				int target = -1;
@@ -874,7 +877,7 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 				for (int i = 0; i <= Highest_object_index; ++i) {
 					const auto &item = Objects[i];
 					if (item.segnum != segment || (item.flags & OF_SHOULD_BE_DEAD)) continue;
-					if (hostage ? item.type != OBJ_HOSTAGE : (item.type != OBJ_POWERUP || item.id != POW_SHIELD_BOOST)) continue;
+					if (hostage ? item.type != OBJ_HOSTAGE : (item.type != OBJ_POWERUP || item.id != powerup->second)) continue;
 					const fix distance = vm_vec_dist(&item.pos, &ConsoleObject->pos);
 					if (target < 0 || distance < nearest) {
 						nearest = distance;
@@ -885,20 +888,54 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 				const auto &item = Objects[target];
 				const TrackedCombatObject bound{ target, item.signature, item.type, item.id, level, combat_load_generation, int(item.shields) };
 				const auto &player = Players[Player_num];
-				const int before = player.hostages_on_board;
-				fix shields = player.shields;
+				auto pickup_state = [&]() -> int {
+					if (hostage) return player.hostages_on_board;
+					switch (powerup->second) {
+						case POW_SHIELD_BOOST: return player.shields;
+						case POW_ENERGY: return player.energy;
+						case POW_KEY_BLUE: return player.flags & PLAYER_FLAGS_BLUE_KEY;
+						case POW_KEY_RED: return player.flags & PLAYER_FLAGS_RED_KEY;
+						default: return player.flags & PLAYER_FLAGS_GOLD_KEY;
+					}
+				};
+				int before = pickup_state();
 				const int maximum = step.at("max_frames");
 				auto present = [&] { return combat_object_matches(bound) && !(Objects[target].flags & OF_SHOULD_BE_DEAD); };
 				for (int i = 0; i < maximum && Current_level_num == level && ConsoleObject->segnum == segment && present(); ++i) {
-					shields = player.shields;
+					before = pickup_state();
 					steer(Objects[target].pos, nullptr, false);
 					trace << Json{ { "flight_frame", frame_count }, { "segment", segment }, { "pickup_object", target }, { "signature", bound.signature }, { "controls", { thrust, sideways, vertical, heading, pitch, firing } } }.dump() << '\n';
 					tick();
 				}
 				thrust = sideways = vertical = heading = pitch = 0;
 				firing = false;
-				require(Current_level_num == level && !present() && (hostage ? player.hostages_on_board == before + 1 : player.shields > shields),
+				require(Current_level_num == level && !present() && (hostage ? pickup_state() == before + 1 : pickup_state() > before),
 				        "The selected pickup did not produce its native player effect");
+			} else if (action == "shoot_wall_trigger") {
+				const int segment = step.at("segment"), side = step.at("side"), trigger = step.at("trigger");
+				require(segment == ConsoleObject->segnum && segment >= 0 && segment < Num_segments && side >= 0 && side < 6,
+				        "Wall trigger shot requires a side in the current segment");
+				const int wall = Segments[segment].sides[side].wall_num;
+				require(wall >= 0 && wall < Num_walls && trigger >= 0 && trigger < Num_triggers && Walls[wall].trigger == trigger,
+				        "Wall does not own the requested trigger");
+				const int maximum = step.at("max_frames");
+				require(maximum > 0 && maximum <= 3600, "Invalid wall trigger shot duration");
+				xl_trigger_state state{};
+				require(xl_wall_trigger_state(trigger, &state) && !state.operated, "Wall trigger must start unoperated");
+				const auto position = ConsoleObject->pos;
+				vms_vector target;
+				compute_center_point_on_side(&target, &Segments[segment], side);
+				const int level = Current_level_num;
+				for (int i = 0; i < maximum && Current_level_num == level && !state.operated; ++i) {
+					steer(position, &target, true);
+					tick();
+					if (Current_level_num == level)
+						require(xl_wall_trigger_state(trigger, &state), "Lost wall trigger during ordinary fire");
+				}
+				thrust = sideways = vertical = heading = pitch = 0;
+				firing = false;
+				require(Current_level_num == level && state.operated && state.shot && state.object == ConsoleObject - Objects,
+				        "Player fire did not operate the requested wall trigger");
 			} else if (action == "fly_through_side" || action == "approach_side") {
 				const bool approach = action == "approach_side";
 				const int level = Current_level_num, segment = step.at("segment"), side = step.at("side");
@@ -930,12 +967,20 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 				const int maximum = step.at("max_frames");
 				require(maximum > 0 && maximum <= 3600, "Invalid ordinary flight duration");
 				const bool primary = step.value("fire_primary", false);
+				const bool engage = step.value("engage_robots", false);
+				require(!engage || (!approach && primary), "Combat flight requires portal transit and primary fire");
 				for (int i = 0; i < maximum && Current_level_num == level && ConsoleObject->segnum == segment; ++i) {
-					if (steer(target, approach ? &sight_target : nullptr, primary)) {
+					const int robot = engage ? pilot_target::nearest_robot(80.0) : -1;
+					const auto *aim = robot >= 0 ? &Objects[robot].pos : approach ? &sight_target
+					                                                              : nullptr;
+					const bool shoot = primary && (!engage || robot >= 0 || Segments[segment].sides[side].wall_num >= 0);
+					if (steer(target, aim, shoot) && approach) {
 						aligned = true;
 						break;
 					}
-					trace << Json{ { "flight_frame", frame_count }, { "segment", segment }, { "side", side }, { "controls", { thrust, sideways, vertical, heading, pitch, firing } } }.dump() << '\n';
+					Json sample{ { "flight_frame", frame_count }, { "segment", segment }, { "side", side }, { "controls", { thrust, sideways, vertical, heading, pitch, firing } } };
+					if (engage) sample["aim_robot"] = robot;
+					trace << sample.dump() << '\n';
 					tick();
 				}
 				thrust = sideways = vertical = heading = pitch = 0;
@@ -1024,6 +1069,14 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 					const auto state = snapshot();
 					const auto hash = file_hash(root / "preview-user" / unique);
 					checkpoint_history.push_back({ { "step", completed }, { "file", unique }, { "sha256", hash }, { "state", state } });
+					if (step.value("export_android", false)) {
+						require(Current_level_num > 0, "Android player slots require a positive level");
+						const auto android_save = unique + ".android.sav";
+						const auto path = root / "preview-user" / android_save;
+						std::filesystem::copy_file(root / "preview-user" / unique, path);
+						require(xl_checkpoint_finish_export(android_save.c_str()), "Cannot export Android checkpoint source definitions");
+						checkpoint_history.back()["android_export"] = { { "file", android_save }, { "sha256", file_hash(path) } };
+					}
 					checkpoints[std::to_string(Current_level_num)] = { { "file", retained }, { "sha256", hash }, { "state", state } };
 				} else {
 					require(step.at("value") == "quick_load", "unsupported native player save action");

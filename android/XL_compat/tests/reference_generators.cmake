@@ -18,6 +18,8 @@ extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadobjects.cpp"
                       "static int32_t AssignProducer (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/producers.cpp"
                       "void ReadObjectProducerInfo (")
+extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/gameio/loadobjects.cpp"
+                      "static int32_t ReadBotGenInfo (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/producers.cpp"
                       "int32_t GetObjProducerObjType (")
 extract_face_function("${XL_REFERENCE_GEOMETRY_ROOT}/main/producers.cpp"
