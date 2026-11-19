@@ -1,0 +1,81 @@
+diff --git a/gameio/playerprofile.cpp b/gameio/playerprofile.cpp
+index 19daca0..6e57b3f 100644
+--- a/gameio/playerprofile.cpp
++++ b/gameio/playerprofile.cpp
+@@ -1868,0 +1869 @@ int32_t FindHLIEntry (void)
++if (strlen (missionManager [missionManager.nCurrentMission].filename) >= sizeof (highestLevels [0].shortname)) return -1;
+@@ -1890,0 +1892 @@ if ((ret == EZERO) || (ret == ENOENT))	{	//if file doesn't exist, that's ok
++	if (i < 0) return;
+@@ -1912 +1914,3 @@ if (strlen (missionManager [missionManager.nCurrentMission].filename) == 0) {
+-i = highestLevels [FindHLIEntry()].nLevel;
++const int32_t entry = FindHLIEntry ();
++if (entry < 0) return 1;
++i = highestLevels [entry].nLevel;
+@@ -1914 +1918 @@ if (i > missionManager.nLastLevel)
+-	i = highestLevels [FindHLIEntry()].nLevel = missionManager.nLastLevel;
++	i = highestLevels [entry].nLevel = missionManager.nLastLevel;
+diff --git a/include/ogl_defs.h b/include/ogl_defs.h
+index 5e691b2..21fdfcd 100644
+--- a/include/ogl_defs.h
++++ b/include/ogl_defs.h
+@@ -37 +37,3 @@
+-#	ifdef __unix__
++#	if defined(__ANDROID__)
++#		include <GL/glew.h>
++#	elif defined(__unix__)
+diff --git a/network/linux/include/ukali.h b/network/linux/include/ukali.h
+index 6ea2116..5b0d04c 100644
+--- a/network/linux/include/ukali.h
++++ b/network/linux/include/ukali.h
+@@ -10,0 +11,2 @@
++#include <stdint.h>
++
+@@ -50 +52 @@ typedef struct kaliaddr_ipx_tag {
+-    ushort sa_socket;
++    uint16_t sa_socket;
+@@ -72 +74 @@ int KaliGetNodeNum(kaliaddr_ipx *myaddr);
+-int KaliOpenSocket(ushort port);
++int KaliOpenSocket(uint16_t port);
+diff --git a/ogl/fbuffer.cpp b/ogl/fbuffer.cpp
+index a2ccba3..f8fc223 100644
+--- a/ogl/fbuffer.cpp
++++ b/ogl/fbuffer.cpp
+@@ -253 +253,9 @@ if (m_info.hFBO) {
+-	glDeleteFramebuffersEXT (1, &m_info.hFBO);
++	#ifdef __ANDROID__
++    GLint current = 0;
++    glGetIntegerv (GL_FRAMEBUFFER_BINDING_EXT, &current);
++    if (GLuint (current) == m_info.hFBO) {
++        glBindFramebufferEXT (GL_FRAMEBUFFER_EXT, 0);
++        PrintLog (0, "Restored default framebuffer before deleting bound render target\n");
++    }
++#endif
++glDeleteFramebuffersEXT (1, &m_info.hFBO);
+diff --git a/ogl/ogl_lib.cpp b/ogl/ogl_lib.cpp
+index 5eaeab4..f1134fb 100644
+--- a/ogl/ogl_lib.cpp
++++ b/ogl/ogl_lib.cpp
+@@ -1062,0 +1063,4 @@ return nError;
++#ifdef __ANDROID__
++#include <EGL/egl.h>
++#endif
++
+@@ -1066,0 +1071,2 @@ void COGL::SwapInterval (int32_t nInterval)
++#elif defined(__ANDROID__)
++	eglSwapInterval (eglGetCurrentDisplay (), nInterval);
+diff --git a/render/renderthreads.cpp b/render/renderthreads.cpp
+index 19b7261..054dafa 100644
+--- a/render/renderthreads.cpp
++++ b/render/renderthreads.cpp
+@@ -331,0 +332,8 @@ return true;
++#if defined(__ANDROID__) && !defined(__i386__) && !defined(__x86_64__)
++#include <unistd.h>
++uint32_t GetCPUCores (void)
++{
++    const long online = sysconf (_SC_NPROCESSORS_ONLN);
++    return online > 0 ? static_cast<uint32_t> (online) : 1;
++}
++#else
+@@ -400,0 +409,2 @@ return nCores / (bHyperThreads + 1);
++#endif
++

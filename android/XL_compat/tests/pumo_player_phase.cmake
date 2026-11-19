@@ -248,11 +248,17 @@ function(run_pumo_player_phase name initial destination step_count transition_co
     # A successful old phase must never satisfy a missing new producer result
     file(REMOVE "${OUTPUT}/player-result.json" "${OUTPUT}/player-state.json"
          "${OUTPUT}/player-trace.jsonl")
+    set(plan_option -pumo-player-test)
+    set(resource_option -pumo-resource-root)
+    if(DEFINED XL_PLAYER_MISSION)
+        set(plan_option -xl-player-test)
+        set(resource_option -xl-player-resources)
+    endif()
     execute_process(
         COMMAND
             "${CMAKE_COMMAND}" -E env --unset=SDL_VIDEODRIVER SDL_AUDIODRIVER=dummy "${ENGINE}"
-            -pumo-player-test "${executed_plan}" -pumo-resource-root "${RESOURCES}" -hogdir
-            "${DATA}" -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nosound -nomusic
+            ${plan_option} "${executed_plan}" ${resource_option} "${RESOURCES}" -hogdir "${DATA}"
+            -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nosound -nomusic
         RESULT_VARIABLE exit_code
         OUTPUT_VARIABLE stdout
         ERROR_VARIABLE stderr
@@ -263,10 +269,45 @@ function(run_pumo_player_phase name initial destination step_count transition_co
     endif()
     validate_pumo_player_receipt(${name} ${initial} ${destination} ${step_count}
                                  ${transition_count})
+    if(DEFINED XL_PLAYER_MISSION)
+        string(JSON mission GET "${${name}_receipt}" mission)
+        if(NOT mission STREQUAL XL_PLAYER_MISSION)
+            message(FATAL_ERROR "${name} loaded an unexpected campaign")
+        endif()
+        foreach(field position_assist_events fixed_view_aim_events)
+            pumo_receipt_type("${${name}_receipt}" NUMBER ${field})
+            string(JSON count GET "${${name}_receipt}" ${field})
+            if(NOT count EQUAL 0)
+                message(FATAL_ERROR "${name} used ${field}")
+            endif()
+        endforeach()
+    endif()
     foreach(member result state)
         configure_file("${OUTPUT}/player-${member}.json" "${OUTPUT}/${name}-${member}.json"
                        COPYONLY)
     endforeach()
     configure_file("${OUTPUT}/player-trace.jsonl" "${OUTPUT}/${name}-trace.jsonl" COPYONLY)
     set(${name}_receipt "${${name}_receipt}" PARENT_SCOPE)
+endfunction()
+
+function(write_resume_plan phase template checkpoint)
+    set(cold "${template}")
+    foreach(pair "file;resume_checkpoint" "sha256;resume_sha256")
+        list(GET pair 0 source)
+        list(GET pair 1 plan_field)
+        string(JSON value GET "${checkpoint}" ${source})
+        string(JSON cold SET "${cold}" ${plan_field} "\"${value}\"")
+    endforeach()
+    foreach(field position player)
+        string(JSON saved GET "${checkpoint}" state ${field})
+        string(
+            JSON
+            cold
+            SET
+            "${cold}"
+            checkpoint_expect
+            ${field}
+            "${saved}")
+    endforeach()
+    file(WRITE "${OUTPUT}/${phase}-plan.json" "${cold}\n")
 endfunction()

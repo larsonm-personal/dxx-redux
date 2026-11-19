@@ -1,0 +1,371 @@
+{
+    "scope": "Directly attached wall and object exit declarations. Presence, reachability, trigger chains, authored endings and device operation require independent gameplay evidence.",
+    "source_reports": {
+        "pinned-02": "b634483378e21bbe774d03eec4e80ad343fa7459d3173b6da51fadabf28b33aa",
+        "additional": "8d33cf84a3a54b4c306baa54589c25893fbd3d1686821d9f3a4717fae98b28e2"
+    },
+    "inspector_sha256": "86bf0277f32df592958177ddee874a1ed690750ecbefb9950467a75032ccfb8e",
+    "entries": 1654,
+    "inventory_status": {
+        "decoded": 1071,
+        "layout_not_inspected": 311,
+        "rejected": 238,
+        "unresolved": 34
+    },
+    "counts": {
+        "entries_with_multiple_in_descriptor_destinations": 3,
+        "entries_with_nonsequential_in_descriptor_destination": 5,
+        "entries_with_out_of_descriptor_destination": 36,
+        "entries_with_secret_exit_action": 113,
+        "entries_with_wall_exit": 909,
+        "entries_with_implicit_next_beyond_descriptor": 28,
+        "entries_with_explicit_destination_beyond_descriptor": 8,
+        "entries_with_object_exit": 0
+    },
+    "branch_candidates": [
+        {
+            "id": "sphere-1.6.zip/missions/single/sphere.mn2:3",
+            "destinations": [4, 5]
+        },
+        {
+            "id": "pmines_v11.7z/missions/single/pmines.mn2:1",
+            "destinations": [2, 11, 29]
+        },
+        {
+            "id": "pmines_v11.7z/missions/single/pmines.mn2:4",
+            "destinations": [5, 14]
+        }
+    ],
+    "pumo_v11": {
+        "descriptor_sha256": "45b4138e0a0d49ab8ee09334b7cfa97c0ec75ac6c6b6406b21eba28ddaa19cfd",
+        "hog_sha256": "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043",
+        "rows": [
+            {
+                "ordinal": 1,
+                "level": "pm-hub.rl2",
+                "mine_sha256": "3fd2d68b7104560764ea0cfeb122d5be9004fb039768e5b4eefca4efd531c621",
+                "destinations": [2, 11, 29],
+                "wall_exits": [
+                    {
+                        "segment": 55,
+                        "side": 2,
+                        "trigger": 0,
+                        "type": 3,
+                        "flags": 0,
+                        "value": 131072
+                    },
+                    {
+                        "segment": 76,
+                        "side": 2,
+                        "trigger": 3,
+                        "type": 3,
+                        "flags": 0,
+                        "value": 720896
+                    },
+                    {
+                        "segment": 97,
+                        "side": 2,
+                        "trigger": 5,
+                        "type": 3,
+                        "flags": 0,
+                        "value": 1900544
+                    }
+                ],
+                "object_exits": []
+            },
+            {
+                "ordinal": 2,
+                "level": "mvlev1.rl2",
+                "mine_sha256": "247a6a81c9883d08c4ddc3b48cfb5ffeb5ca7b08239c8ee1e9832cd92cca0384",
+                "destinations": [3],
+                "wall_exits": [
+                    {
+                        "segment": 417,
+                        "side": 5,
+                        "trigger": 18,
+                        "type": 3,
+                        "flags": 32,
+                        "value": 196608
+                    }
+                ],
+                "object_exits": []
+            },
+            {
+                "ordinal": 3,
+                "level": "mvlev2.rl2",
+                "mine_sha256": "6221a5602da2a6b3544bb3cfe548cf9d38d9567d6f0feb8f476d484af4721c2f",
+                "destinations": [4],
+                "wall_exits": [
+                    {
+                        "segment": 832,
+                        "side": 4,
+                        "trigger": 6,
+                        "type": 3,
+                        "flags": 0,
+                        "value": 262144
+                    }
+                ],
+                "object_exits": []
+            },
+            {
+                "ordinal": 4,
+                "level": "mvlev3.rl2",
+                "mine_sha256": "cfa351a333d2cdf68f4b0869f3704b149e1676594b201f6e49bb5470801b7021",
+                "destinations": [5, 14],
+                "wall_exits": [
+                    {
+                        "segment": 1256,
+                        "side": 1,
+                        "trigger": 29,
+                        "type": 3,
+                        "flags": 32,
+                        "value": 327680
+                    },
+                    {
+                        "segment": 1189,
+                        "side": 4,
+                        "trigger": 32,
+                        "type": 3,
+                        "flags": 0,
+                        "value": 917504
+                    }
+                ],
+                "object_exits": []
+            },
+            {
+                "ordinal": 5,
+                "level": "mvlev4.rl2",
+                "mine_sha256": "4795bce01eb5edb68d88d6a81b71c08a6788935f99065ae7439acfa999cb8ff4",
+                "destinations": [6],
+                "wall_exits": [
+                    {
+                        "segment": 895,
+                        "side": 5,
+                        "trigger": 41,
+                        "type": 3,
+                        "flags": 0,
+                        "value": 393216
+                    }
+                ],
+                "object_exits": []
+            },
+            {
+                "ordinal": 6,
+                "level": "mvlev6.rl2",
+                "mine_sha256": "fc704ef31958dfff33691c96e772af71f97c621a50e1ddc65feda6a66f00db44",
+                "destinations": [7],
+                "wall_exits": [
+                    {
+                        "segment": 1037,
+                        "side": 1,
+                        "trigger": 27,
+                        "type": 3,
+                        "flags": 0,
+                        "value": 458752
+                    }
+                ],
+                "object_exits": []
+            },
+            {
+                "ordinal": 7,
+                "level": "tulev1.rl2",
+                "mine_sha256": "f122df70673811306d763704f81b8fb1f38372db165c5ecbc8760e5eff8a6fe7",
+                "destinations": [8],
+                "wall_exits": [
+                    {
+                        "segment": 1577,
+                        "side": 4,
+                        "trigger": 44,
+                        "type": 3,
+                        "flags": 0,
+                        "value": 524288
+                    }
+                ],
+                "object_exits": []
+            },
+            {
+                "ordinal": 8,
+                "level": "tulev2.rl2",
+                "mine_sha256": "46365bd53a8370aeebe5b34b7d4a48d536a0846b81b5d4751ecb809ae9fbe4ee",
+                "destinations": [9],
+                "wall_exits": [
+                    {
+                        "segment": 1665,
+                        "side": 2,
+                        "trigger": 28,
+                        "type": 3,
+                        "flags": 0,
+                        "value": 589824
+                    }
+                ],
+                "object_exits": []
+            },
+            {
+                "ordinal": 9,
+                "level": "tulev4.rl2",
+                "mine_sha256": "1de9795078fdf036276fbc43e9ecb889eadc095d10e05591fceffae12b4fbca8",
+                "destinations": [10],
+                "wall_exits": [
+                    {
+                        "segment": 1728,
+                        "side": 4,
+                        "trigger": 27,
+                        "type": 3,
+                        "flags": 0,
+                        "value": 655360
+                    }
+                ],
+                "object_exits": []
+            },
+            {
+                "ordinal": 10,
+                "level": "mvend.rl2",
+                "mine_sha256": "bf264e39ca754b524dd5bc090ee01223b6e3d2baa0bf7fcaa61e7d1dc5568dc2",
+                "destinations": [],
+                "wall_exits": [],
+                "object_exits": []
+            },
+            {
+                "ordinal": 11,
+                "level": "pmlev1.rl2",
+                "mine_sha256": "8ddfb183c63e012d85b9010fd3d2f7f7998e19040e9ed7790c88ea7152883cdb",
+                "destinations": [12],
+                "wall_exits": [
+                    {
+                        "segment": 1702,
+                        "side": 0,
+                        "trigger": 46,
+                        "type": 3,
+                        "flags": 32,
+                        "value": 786432
+                    }
+                ],
+                "object_exits": []
+            },
+            {
+                "ordinal": 12,
+                "level": "pmlev2.rl2",
+                "mine_sha256": "ca500497745ebf21b0e424c5d2fc6a66acd13cb5c1ad8a0cfdbc8a06a4a712af",
+                "destinations": [13],
+                "wall_exits": [
+                    {
+                        "segment": 2234,
+                        "side": 2,
+                        "trigger": 71,
+                        "type": 3,
+                        "flags": 0,
+                        "value": 851968
+                    }
+                ],
+                "object_exits": []
+            },
+            {
+                "ordinal": 13,
+                "level": "pmlev3.rl2",
+                "mine_sha256": "9b1854979641d8ef4196d104f830990d893d027a7afcf2b5eb7588c6f350eeb7",
+                "destinations": [15],
+                "wall_exits": [
+                    {
+                        "segment": 4238,
+                        "side": 4,
+                        "trigger": 38,
+                        "type": 3,
+                        "flags": 0,
+                        "value": 983040
+                    }
+                ],
+                "object_exits": []
+            },
+            {
+                "ordinal": 14,
+                "level": "mvlev5.rl2",
+                "mine_sha256": "0c1e39a8025aaa5a6e1c8caf4847f66934826bf5dcefa2d4ec6afe85aa84f904",
+                "destinations": [5],
+                "wall_exits": [
+                    {
+                        "segment": 760,
+                        "side": 4,
+                        "trigger": 19,
+                        "type": 3,
+                        "flags": 0,
+                        "value": 327680
+                    }
+                ],
+                "object_exits": []
+            }
+        ]
+    },
+    "explicit_destination_beyond_descriptor_cases": [
+        "levelpack.7z/missions/single/sphere.mn2:3",
+        "levels/amalthea.zip/amalthea/Amalthea.mn2:1",
+        "levels/dxldem02.zip/scrtbse.mn2:1",
+        "levels/kalisto.zip/kalisto/kalisto.mn2:1",
+        "levels_multiplayer/code-yena-xl.7z/cdeyena2.mn2:1",
+        "levels_multiplayer/coordination-xl.7z/crdntion.mn2:1",
+        "pmines_v11.7z/missions/single/pmines.mn2:1",
+        "pmines_v11.7z/missions/single/pmines.mn2:13"
+    ],
+    "sphere_level_three_by_distribution": [
+        {
+            "id": "levelpack.7z/missions/single/sphere.mn2:3",
+            "level_file": "sp-03.rl2",
+            "level_sha256": "7fe16c90ed868825af2e8ee2841b7bc0594598b85a44164257bbcf26af44ed22",
+            "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+            "status": "decoded",
+            "wall_exits": [
+                {
+                    "segment": 2706,
+                    "side": 0,
+                    "trigger": 22,
+                    "type": 3,
+                    "flags": 0,
+                    "value": 327680
+                },
+                {
+                    "segment": 464,
+                    "side": 0,
+                    "trigger": 82,
+                    "type": 4,
+                    "flags": 0,
+                    "value": 262144
+                }
+            ],
+            "advertised_ordinals": [-1, 1, 2, 3, 4]
+        },
+        {
+            "id": "sphere-1.6.zip/missions/single/sphere.mn2:3",
+            "level_file": "sp-03.rl2",
+            "level_sha256": "c92bb9e1f0d45b0b2857c9852247f600709f056950dceac9355684b5c48dbd38",
+            "descriptor_sha256": "2b2739aacce1cef3c539c46ef2c87a4456f9c68016df8dd024a1b326a94a66fa",
+            "status": "decoded",
+            "wall_exits": [
+                {
+                    "segment": 2706,
+                    "side": 0,
+                    "trigger": 22,
+                    "type": 3,
+                    "flags": 0,
+                    "value": 327680
+                },
+                {
+                    "segment": 464,
+                    "side": 0,
+                    "trigger": 82,
+                    "type": 3,
+                    "flags": 0,
+                    "value": 262144
+                }
+            ],
+            "advertised_ordinals": [1, 2, 3, 4, 5]
+        },
+        {
+            "id": "sphere-1.51.7z/missions/single/sphere.mn2:3",
+            "level_file": "sp-03.rl2",
+            "level_sha256": "edea8a6c7c006459739d272665b19a377fd8a091ab8d3c8f456595f5d75c29a2",
+            "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+            "status": "rejected",
+            "wall_exits": null,
+            "advertised_ordinals": [-1, 1, 2, 3, 4]
+        }
+    ]
+}
