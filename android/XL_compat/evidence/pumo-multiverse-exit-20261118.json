@@ -1,0 +1,279 @@
+{
+    "runtime_parent": "907c45b1133d6e372d81fd7ce3a22638aec7f6a1",
+    "platform": "Windows Debug native player, Trainee, unrendered, fixed 60 Hz, scripted ordinary controls with geometry-guided steering, menus and briefings skipped",
+    "pmines_hog_sha256": "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043",
+    "ctest": "xl_pumo_multiverse_exit_player",
+    "seconds": 293.83,
+    "flight": {
+        "result": "PASS",
+        "initial_level_setup": 1,
+        "final_level": 3,
+        "steps": 135,
+        "position_assist_events": 0,
+        "fixed_view_aim_events": 0,
+        "rendered": false,
+        "process_id": 161388,
+        "run_id": "4ef3241ac9c48df1526ea44bbfc28be6",
+        "plan_sha256": "dacd35a701f6590da5762030e306cfb306c62adfe793ae65fd4d74b33c8c30e3",
+        "executable_sha256": "2ad9f07e18c051b0862e2cac7442d6f245f3ba91c6a8d307eea0ab6a0ace9c9f",
+        "resume_sha256": "",
+        "receipt_sha256": "61683568572e1af1cf84589f9361c22dae2c769e5082f36c86d9f50ff8edce4f",
+        "transitions": [
+            [1, 2],
+            [2, 3]
+        ]
+    },
+    "cold": {
+        "result": "PASS",
+        "initial_level_setup": 3,
+        "final_level": 3,
+        "steps": 6,
+        "position_assist_events": 0,
+        "fixed_view_aim_events": 0,
+        "rendered": false,
+        "process_id": 65876,
+        "run_id": "2877841a6b480ea4e12d6959c2f12a2b",
+        "plan_sha256": "0d736b71699cca6122c4f1529a6eef21d17355001d79922a7b83ee8f670dfeb2",
+        "executable_sha256": "2ad9f07e18c051b0862e2cac7442d6f245f3ba91c6a8d307eea0ab6a0ace9c9f",
+        "resume_sha256": "ec62cf98fedd2e21b4a0226510cf15fd27814cdcfeb396d7433fd8434f0d3c61",
+        "receipt_sha256": "2ce9c910cfa98f9712307b6e8aa026f554e123b911f85e2553c85370b02957e9",
+        "transitions": []
+    },
+    "checkpoints": [
+        {
+            "step_index": 14,
+            "sha256": "0dafaec3bd729ea793754b2a32addf3839e695e07388ef2b043585d43b76dec1",
+            "level": 2,
+            "segment": 105,
+            "red_key": false,
+            "score": 650,
+            "lives": 3,
+            "shields": 100.0
+        },
+        {
+            "step_index": 58,
+            "sha256": "ba008017ab73b408c3947afd07c2db584a2584386247a1b0e81fd1c2b7295f9c",
+            "level": 2,
+            "segment": 25,
+            "red_key": true,
+            "score": 650,
+            "lives": 3,
+            "shields": 90.58897399902344
+        },
+        {
+            "step_index": 113,
+            "sha256": "797602a1b69d4111936b23408b12e92e80ad45210f5fbbaec3b5e8f7d09308cf",
+            "level": 2,
+            "segment": 379,
+            "red_key": true,
+            "score": 650,
+            "lives": 3,
+            "shields": 71.83903503417969
+        },
+        {
+            "step_index": 119,
+            "sha256": "8cbfd96826d9e228cb3fe8e348ec104affed250192248085c4395f60eaf1e6e4",
+            "level": 2,
+            "segment": 379,
+            "red_key": true,
+            "score": 5650,
+            "lives": 3,
+            "shields": 59.83903503417969
+        },
+        {
+            "step_index": 133,
+            "sha256": "ec62cf98fedd2e21b4a0226510cf15fd27814cdcfeb396d7433fd8434f0d3c61",
+            "level": 3,
+            "segment": 72,
+            "red_key": false,
+            "score": 6550,
+            "lives": 3,
+            "shields": 100.0
+        }
+    ],
+    "wall_operations": [
+        {
+            "0": 1,
+            "1": 1,
+            "6": 1
+        },
+        {
+            "0": 1,
+            "1": 1,
+            "10": 1,
+            "11": 1,
+            "12": 1,
+            "13": 1,
+            "14": 1,
+            "15": 1,
+            "16": 1,
+            "17": 1,
+            "18": 1,
+            "19": 1,
+            "2": 1,
+            "20": 1,
+            "21": 1,
+            "3": 1,
+            "4": 1,
+            "5": 1,
+            "6": 1,
+            "7": 1,
+            "8": 1,
+            "9": 1
+        }
+    ],
+    "additional_earned_phases": {
+        "multiverse-red-02": {
+            "result": "PASS",
+            "initial_level_setup": 2,
+            "final_level": 2,
+            "steps": 45,
+            "position_assist_events": 0,
+            "fixed_view_aim_events": 0,
+            "rendered": false,
+            "process_id": 86256,
+            "run_id": "",
+            "plan_sha256": "875fef0214a0132c0e2cba3ed4b43251365a4e662bdf865bf1489722bc7da9b3",
+            "executable_sha256": "af9ef7ea65d97f67d81889327086d3407a2e81d365f2a115da07f8f89b466c64",
+            "resume_sha256": "35262f36a611f4028ece2896cf25e508cd8c8ad9a55716a9e51fd01eb5e3d243",
+            "receipt_sha256": "99a4007a6f8d1b5a02f1d79f589440adc6d0eb7623cbf7ae5021e79c19b5d0b4",
+            "transitions": []
+        },
+        "multiverse-reactor-01": {
+            "result": "PASS",
+            "initial_level_setup": 2,
+            "final_level": 2,
+            "steps": 56,
+            "position_assist_events": 0,
+            "fixed_view_aim_events": 0,
+            "rendered": false,
+            "process_id": 92356,
+            "run_id": "",
+            "plan_sha256": "4542b0373cc45def70f87a761240e6b9ea2b1da14b3fc55ed93f2a3a1f117bec",
+            "executable_sha256": "af9ef7ea65d97f67d81889327086d3407a2e81d365f2a115da07f8f89b466c64",
+            "resume_sha256": "8d3f65d7f35239deba63ea1fc30e28cf012a9c992b3b9245a2f7e668cbc18802",
+            "receipt_sha256": "9006e3a47e6a8b84124f9a40f3a6dab665235e29551cc3e8c1feac23a339ae5a",
+            "transitions": []
+        },
+        "multiverse-reactor-combat-01": {
+            "result": "PASS",
+            "initial_level_setup": 2,
+            "final_level": 2,
+            "steps": 7,
+            "position_assist_events": 0,
+            "fixed_view_aim_events": 0,
+            "rendered": false,
+            "process_id": 28660,
+            "run_id": "",
+            "plan_sha256": "c7137359987cf7016cf229789ea4f00ae780ce7a55a06f3f37c47bc98603c51d",
+            "executable_sha256": "af9ef7ea65d97f67d81889327086d3407a2e81d365f2a115da07f8f89b466c64",
+            "resume_sha256": "64bf3b3cd676ef032b761beed1f5296d2f533d7e99272903403aa6d1e21b51cb",
+            "receipt_sha256": "bc6228be4a0ca9396e45b2012c38ae5925b7a39d1d81108eeb78de7f1c634ec4",
+            "transitions": []
+        },
+        "multiverse-escape-01": {
+            "result": "PASS",
+            "initial_level_setup": 2,
+            "final_level": 3,
+            "steps": 15,
+            "position_assist_events": 0,
+            "fixed_view_aim_events": 0,
+            "rendered": false,
+            "process_id": 154944,
+            "run_id": "",
+            "plan_sha256": "0e5d082888b31523ebffcc91dc9903ddcbedc4b6cdd0b3cb31ec4371f5332c60",
+            "executable_sha256": "af9ef7ea65d97f67d81889327086d3407a2e81d365f2a115da07f8f89b466c64",
+            "resume_sha256": "7429253be0f1975cbb6ec42b5af7a2d38547c5d262aae439d73c79ffb2cb15bd",
+            "receipt_sha256": "72abcf744b3c5d20a5df5f4b6a3f5f4e1ba3c107c659e7d32455b201d917517a",
+            "transitions": [[2, 3]]
+        },
+        "majha-earned-blue-01": {
+            "result": "PASS",
+            "initial_level_setup": 3,
+            "final_level": 3,
+            "steps": 92,
+            "position_assist_events": 0,
+            "fixed_view_aim_events": 0,
+            "rendered": false,
+            "process_id": 67560,
+            "run_id": "",
+            "plan_sha256": "d5e3c25b954c81ca0f3f580b7c8f25b890db46d1d1cf4f186f47202c05a80016",
+            "executable_sha256": "2ad9f07e18c051b0862e2cac7442d6f245f3ba91c6a8d307eea0ab6a0ace9c9f",
+            "resume_sha256": "b33e8cd810eaef2a04916d5422a277bbe2d597fb0b6210897693af9a0eb36807",
+            "receipt_sha256": "66b98d83b51b9f8c2b60dcfe44117f7a36a30ffe33b7cc1137d42a1b036b4961",
+            "transitions": []
+        }
+    },
+    "shared_wall_replay": {
+        "replay-pmines-14-shared03": {
+            "capture_executable": "af9ef7ea65d97f67d81889327086d3407a2e81d365f2a115da07f8f89b466c64",
+            "cold": 0,
+            "recording": "ef2354de953aab1c112229a1c914d37a2d49a6375bf524a6877eff6286e328f9",
+            "rendered_executable": "a7af08501728dd92670b1c9e7396f5ceb45c0658f3d2f232f379dc04e0fe47d5",
+            "warm": 0,
+            "source": "replay-pmines-14-shared03",
+            "frames": 120,
+            "trailer_equal": true,
+            "cold_result_sha256": "d48f7cd010995a8f6025bc0b3a4d84f4804d02fd0a24e299c06174dddfe9870a",
+            "rng_sha256": [
+                "a957230fefcae1dbef21b043fa6ebde3a2e19773fb9d7794daa64d3adda91cff",
+                "a957230fefcae1dbef21b043fa6ebde3a2e19773fb9d7794daa64d3adda91cff"
+            ],
+            "rng_bytes_equal": true,
+            "nonfx_equal": true,
+            "nonfx_events": [1869, 1869],
+            "fx_events": [0, 0],
+            "native_saved_mission": "pmines",
+            "native_mission_field_size": 9,
+            "warm_completed": 120,
+            "warm_raw_equal": false,
+            "warm_tick": [
+                {
+                    "count": 40,
+                    "step": 1,
+                    "timer": 32
+                },
+                {
+                    "count": 40,
+                    "step": 1,
+                    "timer": 32
+                }
+            ]
+        },
+        "replay-pmines-8-shared03": {
+            "capture_executable": "af9ef7ea65d97f67d81889327086d3407a2e81d365f2a115da07f8f89b466c64",
+            "cold": 0,
+            "recording": "8964539af4c9b2dbb2f2badbc924268aec592e9fcd005e297a8df9e61209c4fc",
+            "rendered_executable": "a7af08501728dd92670b1c9e7396f5ceb45c0658f3d2f232f379dc04e0fe47d5",
+            "warm": 0,
+            "source": "replay-pmines-8-shared03",
+            "frames": 120,
+            "trailer_equal": true,
+            "cold_result_sha256": "dee1e4ce711574d69d7f67307b1c388bddd43e90da1aadce7a864cf3dd68312a",
+            "rng_sha256": [
+                "2e274f446b25e20c31a76e13858a2bfc298eb2a248a3cb950b16e89f07c8416b",
+                "66924a491a911fc5fd7ec95ddc82a842792d0a77ffa94aa07d9ba5caf8210d90"
+            ],
+            "rng_bytes_equal": false,
+            "nonfx_equal": true,
+            "nonfx_events": [120, 120],
+            "fx_events": [378321, 283188],
+            "native_saved_mission": "pmines",
+            "native_mission_field_size": 9,
+            "warm_completed": 120,
+            "warm_raw_equal": false,
+            "warm_tick": [
+                {
+                    "count": 40,
+                    "step": 1,
+                    "timer": 32
+                },
+                {
+                    "count": 40,
+                    "step": 1,
+                    "timer": 32
+                }
+            ]
+        }
+    }
+}

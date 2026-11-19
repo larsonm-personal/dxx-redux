@@ -923,6 +923,14 @@ if(BUILD_TESTING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_hub_multiverse.cmake)
         set_tests_properties(xl_pumo_hub_multiverse_player PROPERTIES TIMEOUT 750 RUN_SERIAL TRUE)
         add_test(
+            NAME xl_pumo_multiverse_exit_player
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_PUMO_PLAYER_ROOT} -DMULTIVERSE_EXIT=ON
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-multiverse-exit -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_hub_multiverse.cmake)
+        set_tests_properties(xl_pumo_multiverse_exit_player PROPERTIES TIMEOUT 750 RUN_SERIAL TRUE)
+        add_test(
             NAME xl_pumo_majha_player
             COMMAND
                 ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}

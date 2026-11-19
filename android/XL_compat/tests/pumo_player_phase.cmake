@@ -93,27 +93,35 @@ function(validate_pumo_player_receipt name initial destination step_count transi
         message(FATAL_ERROR "Pumo ${name} input changed during execution")
     endif()
     if(transition_count)
-        pumo_receipt_type("${receipt}" OBJECT transitions 0)
-        pumo_receipt_type("${receipt}" NUMBER transitions 0 from)
-        pumo_receipt_type("${receipt}" NUMBER transitions 0 to)
-        string(
-            JSON
-            source
-            GET
-            "${receipt}"
-            transitions
-            0
-            from)
-        string(
-            JSON
-            target
-            GET
-            "${receipt}"
-            transitions
-            0
-            to)
-        if(NOT source EQUAL initial OR NOT target EQUAL destination)
-            message(FATAL_ERROR "Pumo ${name} transition mismatch")
+        set(expected_source ${initial})
+        math(EXPR last_transition "${transition_count} - 1")
+        foreach(index RANGE 0 ${last_transition} 1)
+            pumo_receipt_type("${receipt}" OBJECT transitions ${index})
+            pumo_receipt_type("${receipt}" NUMBER transitions ${index} from)
+            pumo_receipt_type("${receipt}" NUMBER transitions ${index} to)
+            string(
+                JSON
+                source
+                GET
+                "${receipt}"
+                transitions
+                ${index}
+                from)
+            string(
+                JSON
+                target
+                GET
+                "${receipt}"
+                transitions
+                ${index}
+                to)
+            if(NOT source EQUAL expected_source)
+                message(FATAL_ERROR "Pumo ${name} disconnected transition at ${index}")
+            endif()
+            set(expected_source ${target})
+        endforeach()
+        if(NOT target EQUAL destination)
+            message(FATAL_ERROR "Pumo ${name} transition destination mismatch")
         endif()
     endif()
     file(READ "${OUTPUT}/player-state.json" state)
