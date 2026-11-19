@@ -205,7 +205,8 @@ class MirrorTests(unittest.TestCase):
             self.assert_controller_before_apt(android, job_name)
         self.assertIn("expected='7:6.1.1-3ubuntu5'", android)
         smoke = (ROOT / ".github/workflows/engine-smoke.yml").read_text()
-        self.assertEqual(smoke.count("python3 .github/scripts/prefer_ubuntu_archive.py"), 2)
+        self.assertEqual(smoke.count("bash .github/scripts/install_noble_packages.sh"), 2)
+        self.assertNotIn("sudo apt-get", smoke)
         self.assertIn("python3 .github/scripts/test_prefer_ubuntu_archive.py", smoke)
 
     def test_pumo_stage_controller_contract_rejects_missing_or_late_call(self):
