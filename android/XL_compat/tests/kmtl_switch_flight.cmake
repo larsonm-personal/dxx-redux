@@ -211,9 +211,9 @@ if(KMTL_RESCUE)
     list(
         APPEND
         steps
-        [=[{"action":"approach_side","segment":458,"side":0,"distance":11,"max_frames":700}]=]
+        [=[{"action":"collect_pickup","kind":"hostage","max_frames":700}]=]
         [=[{"action":"assert","expect":{"player.hostages_on_board":1,"player_dead":false}}]=]
-        [=[{"action":"approach_side","segment":458,"side":2,"distance":9,"max_frames":700}]=]
+        [=[{"action":"collect_pickup","kind":"hostage","max_frames":700}]=]
         [=[{"action":"assert","expect":{"player.hostages_on_board":2,"player_dead":false}}]=])
     checkpoint(rescue)
     list(

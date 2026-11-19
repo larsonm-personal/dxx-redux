@@ -1,4 +1,5 @@
 #include "layout_fixture.h"
+#include "trigger_capacity_fixture.h"
 #include "runtime_layout_fixture.h"
 #include "../admission.h"
 #include "../compatibility.h"
@@ -51,7 +52,7 @@ void contract()
 		xl_test::layout_patch(fixture.bytes, index + 2, 0xc000 | 910, 2);
 		check(issue(xl_compat::inspect_level(fixture.bytes).unknown, "texture_id"), "Unqualified overlay bypassed admission");
 	}
-	for (int version : { 21, 23, 25, 26, 27 }) {
+	for (int version : { 21, 22, 23, 25, 26, 27 }) {
 		auto fixture = xl_test::layout_fixture(version);
 		auto &bytes = fixture.bytes;
 		bytes.resize(bytes.size() - 4);
@@ -66,7 +67,7 @@ void contract()
 		xl_test::layout_patch(bytes, fixture.game + 71, static_cast<unsigned>(bytes.size()));
 		rejects(bytes);
 	}
-	for (int version : { 21, 23, 25, 26, 27 }) {
+	for (int version : { 21, 22, 23, 25, 26, 27 }) {
 		auto fixture = xl_test::layout_fixture(version);
 		auto &bytes = fixture.bytes;
 		xl_compat::Bytes records(89 * 2 + 93, 0);
@@ -110,7 +111,7 @@ void contract()
 		}
 	}
 	int cases = 0;
-	for (int version : { 21, 23, 25, 26, 27 }) {
+	for (int version : { 21, 22, 23, 25, 26, 27 }) {
 		for (int producer : { -32768, -129, -128, -1, 0, 127, 128, 32767 }) {
 			if (version < 25 && (producer < -128 || producer > 127)) continue;
 			for (int shape = 0; shape < (version < 25 ? 1 : 3); ++shape) {
@@ -188,7 +189,7 @@ void contract()
 			xl_test::layout_patch(truncated, cut + 71, static_cast<std::uint32_t>(fixture.walls + 25 - fixture.game + cut));
 			rejects(truncated, "truncated section");
 		}
-		for (int invalid : { 20, 22, 24, 28 }) {
+		for (int invalid : { 20, 24, 28 }) {
 			auto bytes = fixture.bytes;
 			xl_test::layout_patch(bytes, 4, invalid);
 			rejects(bytes, "unsupported level version");
@@ -232,6 +233,13 @@ void write_fixture(const std::filesystem::path &directory)
 		check(bool(out), "Cannot write layout CLI fixture");
 	};
 	write(directory / "layout.rl2", fixture.bytes);
+	// A positive ordinal can be a secret detour encoded as an ordinary exit
+	auto branch = xl_test::expand_triggers(fixture.bytes, 1);
+	const auto table = xl_compat::inspect_level(branch).sections[3].offset;
+	branch.at(fixture.walls + 20) = 0;
+	branch.at(table) = 3;
+	xl_test::layout_patch(branch, table + 4, 14 * 65536);
+	write(directory / "branch.rl2", branch);
 	constexpr std::uint32_t padding = 65 * 1024 * 1024;
 	for (const bool oversized_level : { false, true }) {
 		xl_compat::Bytes header{ 'D', '2', 'X' };

@@ -1,0 +1,97 @@
+{
+    "mission": {
+        "descriptor_sha256": "4c37b4ddf86f7ba788aaebdabb370d104ca54f6f63dd4ce05ce24b63eff9138b",
+        "filename": "kmtl-xl",
+        "hog_sha256": "e39edcd6340c56f50d584d31c7ca799005461a362eebba19d1da50d216b34022"
+    },
+    "engine_sha256": "3c845ca5eeb795eaa5b5afedc03c8ab0183f249868ed13ece5674346c5fda65c",
+    "platform": "Windows Debug, unrendered, Trainee, fixed 60 Hz, authored geometry for guidance",
+    "tests_seconds": {
+        "xl_kmtl_switch_flight": 31.48,
+        "xl_kmtl_hostage_rescue": 191.05,
+        "xl_pumo_hub_multiverse_player": 160.84
+    },
+    "hostage_room": {
+        "result": "PASS",
+        "error": null,
+        "steps": 5,
+        "segment": 458,
+        "targets": [
+            {
+                "index": 16,
+                "signature": 17
+            },
+            {
+                "index": 18,
+                "signature": 19
+            }
+        ],
+        "hostages_on_board": 2,
+        "score": 2300,
+        "shields": 58.02479553222656,
+        "lives": 3,
+        "plan_sha256": "4fdde05460c72e51f4d3a367bf5b96382e37286ad86980aad2e2082206275cd4",
+        "trace_sha256": "9652b9550f50f3208d8dcee8d91e84e1f7a26393c3de01a5fe8541af0e8989dc",
+        "resume_sha256": "7ae4f6f0a900757a9d6211cd2d445dbf0307b5f615665409fed63b2d81bfbd4d",
+        "saved_sha256": ["d3616f4faf98d50c9d8b76bb5b1fb7577bf4a4a5a239264587e658369a36d83c"],
+        "position_assists": 0,
+        "fixed_view_assists": 0
+    },
+    "cold_continuation": {
+        "result": "PASS",
+        "error": null,
+        "steps": 8,
+        "segment": 461,
+        "targets": [],
+        "hostages_on_board": 2,
+        "score": 2300,
+        "shields": 57.53947448730469,
+        "lives": 3,
+        "plan_sha256": "90b4ab6f09b6b0cd2609f2df68d2de5b3030bbd2fed79bd525d7325a6545d89f",
+        "trace_sha256": "467eaf5d7466e133af91ab1194540b5c0311129842124722eb4d3c3fccd4b9b5",
+        "resume_sha256": "d3616f4faf98d50c9d8b76bb5b1fb7577bf4a4a5a239264587e658369a36d83c",
+        "saved_sha256": ["7be9a50ddeeaed40ad7ed3becaead42e2e7dd58542c48950eee4afadeb15b78c"],
+        "position_assists": 0,
+        "fixed_view_assists": 0
+    },
+    "shields": {
+        "result": "PASS",
+        "error": null,
+        "steps": 7,
+        "segment": 232,
+        "targets": [
+            {
+                "index": 111,
+                "signature": 1597
+            }
+        ],
+        "hostages_on_board": 2,
+        "score": 2350,
+        "shields": 60.67839050292969,
+        "lives": 3,
+        "plan_sha256": "b1998ae99b553305303477477bd59a038c903d6df5c05427455efffd14d5a937",
+        "trace_sha256": "0582342270fbab3ca86f19c58bedaea5f020fc3a00a7df9c2cc727112e549dd9",
+        "resume_sha256": "b2020c3e0c6ec2473f17dbbe782bc0504b2b33d4c1a5eeecd01446428ed0ab7d",
+        "saved_sha256": ["781634d264ba6d820e3fb0a9fbca828bed1d3531ead2b58e6f6914e4e05d151b"],
+        "position_assists": 0,
+        "fixed_view_assists": 0,
+        "before_collection": 33.67839050292969
+    },
+    "no_hostage_at_spawn": {
+        "result": "FAIL",
+        "error": "No matching live pickup in the player's segment",
+        "steps": 0,
+        "segment": 286,
+        "targets": [],
+        "hostages_on_board": 0,
+        "score": 0,
+        "shields": 100.0,
+        "lives": 3,
+        "plan_sha256": "fd7597b345d1fd40c6d2df33c5ac854325cbd3bf31df18c4b2b6ad4533037e55",
+        "trace_sha256": "fc3ff9dbc4d0f03cab4ed64c6307e0ab6c5d0486d5930d8cdc70774ab44e908f",
+        "resume_sha256": null,
+        "saved_sha256": [],
+        "position_assists": 0,
+        "fixed_view_assists": 0
+    }
+}
