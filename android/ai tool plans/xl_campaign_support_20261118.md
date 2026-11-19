@@ -33,3 +33,17 @@ python android/tests/xl_campaign_features.py --catalog CATALOG --assets CATALOG_
 ```
 
 The output contains a row for each advertised entry. Static resolution follows sibling HOG and loose-file candidates. Mission addons, external fallback searches, D1 record decoding, native engine play and actual rendered events are separate work. The full per-case reports remain local and their digests are in the checked-in summary.
+
+## Packed wall animations and gameplay modes
+
+The original Vignette descriptor calls its list normal but explicitly declares normal play disabled and Anarchy, CTF and Hoard enabled. All six levels contain multiplayer starts and a reactor. Treat Vignette as an arena series. A solo exit can still verify a level transition. For a connected campaign with authored single-player and co-op support use Pumo Mines, whose original descriptor contains 14 regular levels. Preserve authored mode flags when extending the inventory. A two-peer session on Vignette and an earned Pumo run remain outstanding.
+
+Standoff now loads and runs 120 unassisted frames on Windows in ordinary headless and rendered builds. The original and Redux supplied identical RGBA readbacks for every pixel hash of the six 128 by 128 frames on effect 84. Eight native bitmap aliases share the strip. At every fixed step Redux matched the expected remaining time and phase starting at frame zero with 3,276 units left. The physics view retained the first frame. A separate Android device run selected the mission from New Game, sampled all six images on live game frames, saved to disk, visited level 2 as an assist, restored level 1 and sampled all six again. All 66 steps passed, and the test restored the original APK and protected files. The stock Arena native control also passed its mixed resources, collision, discard, moved ownership and save/retirement checks. The full game Debug process still reports outstanding allocations on exit.
+
+Standoff has no authored face directly using texture 423. The clock runs globally. The desktop probe explicitly uploaded the selected texture for readback and records its prior residency. Styx D3 has actual authored faces using texture 432 driven by effect 93, including segment 255, side 1. It provides a separate target for observing the effect in the mine.
+
+Six of the 26 previous animation failures now run the requested 120 frames. Four are in the private pinned catalog and two are additional distributions. The 20 remaining starts include independent door, object-animation and custom-definition dependencies. The two Pumo cases reach an unqualified animation owner. The historical 1,492/1,654 result belongs to the frozen engine. Only a complete new run establishes a new corpus-wide result. Vignette's initial warm replay diverged in the detailed comparison despite its matching embedded trailer. Full campaign continuity remains open.
+
+[Packed wall-effect measurements and 26 case results](../XL_compat/evidence/packed-wall-effect-20261118.json)
+
+Three independent 120-frame recordings on the candidate were replayed in fresh rendered processes. The embedded result and every nonvisual RNG event matched on Vignette 1, Styx D3 and Tankboy. The entire RNG trace also matched on Vignette. Styx and Tankboy differed in visual draws, at 48 versus 20,784 events and 944 versus 53,864 respectively. Detailed warm comparisons failed on Vignette and Styx, and passed on Tankboy. No recording contained an earned level exit.

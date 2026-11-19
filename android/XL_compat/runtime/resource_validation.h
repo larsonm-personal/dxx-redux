@@ -76,6 +76,7 @@ class XlPreparedResources
 	const xl_compat::Inventory &level_inventory() const;
 	const xl_compat::ScopedTextureResources *scoped_textures() const;
 	const xl_compat::ScopedTexturePlayback *scoped_texture_playback() const;
+	std::map<int, int> effect_frame_counts() const;
 	bool has_scoped_textures() const;
 	const std::map<std::string, std::string> &sources() const;
 	XlPreparedResources(XlPreparedResources &&) noexcept;

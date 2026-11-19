@@ -174,6 +174,8 @@ xl_pog_resources *xl_pog_prepare_scoped(const xl_compat::ScopedTextureResources 
 		result->entries.push_back(entry);
 	}
 	if (pog) {
+		result->effects = pog->effects;
+		result->effect_bitmaps = pog->effect_bitmaps;
 		if (pog->pixels.size() > 2 * xl_compat::pog_file_limit - result->pixels.size())
 			throw std::runtime_error("Combined scoped texture arena exceeds its resource bound");
 		const auto offset = unsigned(result->pixels.size());
@@ -196,7 +198,7 @@ xl_pog_resources *xl_pog_prepare_scoped(const xl_compat::ScopedTextureResources 
 	}
 	for (const auto &clock : playback.effects) {
 		result->effects.push_back({ clock.effect, clock.frame_time, tables.effect_data[clock.effect].changing_wall_texture,
-		                            unsigned(clock.bitmaps.size()), textures.images[clock.image].bitmap.frames });
+		                            unsigned(clock.bitmaps.size()), textures.images[clock.image].bitmap.frames, 0 });
 		result->effect_bitmaps.push_back(clock.bitmaps);
 	}
 	result->scoped = true;
@@ -239,7 +241,7 @@ extern "C" int xl_pog_effect_bitmap(const xl_pog_resources *resources, int row, 
 }
 extern "C" int xl_pog_scope_matches_live(const xl_pog_resources *resources)
 {
-	if (!resources || !resources->scoped) return 1;
+	if (!resources || (!resources->scoped && resources->effects.empty())) return 1;
 	if (!resources->doors.empty() && (Num_wall_anims != int(resources->door_definitions.size()) ||
 	                                  NumTextures != int(resources->door_textures.size()))) return 0;
 	for (const auto &door : resources->doors) {
@@ -376,4 +378,49 @@ int xl_pog_target_strip_clock(unsigned bitmap, const xl_assets::ObjectDependenci
 extern "C" int xl_pog_strip_clock(unsigned bitmap)
 {
 	return strip_clock(bitmap, PogClockTables{});
+}
+
+extern "C" int xl_pog_non_effect_clock(unsigned bitmap)
+{
+	PogClockTables live;
+	live.effect_count = 0;
+	return strip_clock(bitmap, live);
+}
+
+void xl_pog_bind_wall_effects(xl_pog_resources &resources, const xl_assets::ObjectDependencies &tables, int bitmap_count)
+{
+	std::map<int, std::size_t> selected;
+	std::set<int> clocked;
+	for (std::size_t i = 0; i < resources.entries.size(); ++i) {
+		const auto &entry = resources.entries[i];
+		selected[entry.index] = i;
+		if (!entry.rgba || entry.frames < 2) continue;
+		const int clock = xl_pog_target_strip_clock(entry.index, tables);
+		if (clock < 0) throw std::runtime_error("POG: native bitmap animation tables exceed supported bounds");
+		if (clock) clocked.insert(entry.index);
+	}
+	if (clocked.empty()) return;
+	std::map<int, int> owners;
+	const auto effects = xl_compat::ScopedTexturePlayback::wall_effects(tables, bitmap_count, selected, {}, [&](std::size_t row) { return resources.entries[row].frames; }, owners);
+	for (int bitmap : clocked)
+		if (!owners.count(bitmap)) throw std::runtime_error("POG: RGBA bitmap " + std::to_string(bitmap) + " has clocked animation frames without a wall effect");
+	PogClockTables other(tables);
+	other.effect_count = 0;
+	for (const auto &clock : effects) {
+		const auto source = resources.entries.at(clock.image);
+		resources.effects.push_back({ clock.effect, clock.frame_time, tables.effect_data[clock.effect].changing_wall_texture,
+		                              unsigned(clock.bitmaps.size()), source.frames, 1 });
+		resources.effect_bitmaps.push_back(clock.bitmaps);
+		for (int bitmap : clock.bitmaps) {
+			if (strip_clock(bitmap, other)) throw std::runtime_error("POG: wall animation frames share a door or vclip clock");
+			auto entry = source;
+			entry.index = bitmap;
+			entry.wall_effect = 1;
+			const auto row = selected.emplace(bitmap, resources.entries.size());
+			if (row.second) resources.entries.push_back(entry);
+			else resources.entries[row.first->second] = entry;
+		}
+	}
+	resources.effect_definitions.assign(tables.effect_data, tables.effect_data + tables.effect_count);
+	resources.clip_definitions.assign(tables.clip_data, tables.clip_data + tables.clip_count);
 }

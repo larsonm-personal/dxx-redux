@@ -101,6 +101,10 @@ void ai_fire_laser_at_player(object *, vms_vector *, int, vms_vector *);
 #include "sprite_material_probe.h"
 #endif
 
+#if defined(DXX_XL_RUNTIME) && defined(OGL) && !defined(OGLES)
+#include "wall_effect_observation.h"
+#endif
+
 namespace
 {
 struct desktop_route_state {
@@ -125,6 +129,17 @@ bool write_readiness(const char *path, nlohmann::ordered_json &proof, const char
 
 int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 {
+#if defined(DXX_XL_RUNTIME) && defined(OGL) && !defined(OGLES)
+	const int option = startup_find_cmd_arg("-xl-readiness-wall-effect");
+	int effect = -1;
+	if (option) {
+		if (option + 1 >= Num_args) return 1;
+		char *end = nullptr;
+		const long id = std::strtol(Args[option + 1], &end, 10);
+		if (end == Args[option + 1] || *end || id < 0 || id >= Num_effects) return 1;
+		effect = int(id);
+	}
+#endif
 	proof["mission"] = Current_mission_filename;
 	proof["level"] = Current_level_num;
 	proof["level_file"] = Gamesave_current_filename;
@@ -145,6 +160,9 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 	if (!renderer || !Game_wind || route_confirmation_get_summary()->status != ROUTE_CONFIRMATION_IDLE || game_is_time_paused() || !write_readiness(path, proof, "loaded"))
 		return 1;
 	int remainder = 0;
+#if defined(DXX_XL_RUNTIME) && defined(OGL) && !defined(OGLES)
+	if (effect >= 0) proof["wall_effect_clock"].push_back({ 0, Effects[effect].frame_count, Effects[effect].time_left });
+#endif
 	for (int frame = 0; frame < 120; ++frame) {
 		remainder += F1_0;
 		FrameTime = remainder / ROUTE_CONFIRMATION_FIXED_HZ;
@@ -157,6 +175,15 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 		}
 		proof["frames"] = frame + 1;
 		game_render_frame_mono(0);
+#if defined(DXX_XL_RUNTIME) && defined(OGL) && !defined(OGLES)
+		if (effect >= 0) {
+			proof["wall_effect_clock"].push_back({ frame + 1, Effects[effect].frame_count, Effects[effect].time_left });
+			if (!observe_wall_effect(effect, proof["wall_effect_frames"])) {
+				write_readiness(path, proof, "wall_effect_observation_failed");
+				return 1;
+			}
+		}
+#endif
 		gr_flip();
 		const auto error = glGetError();
 		if (error != GL_NO_ERROR) {

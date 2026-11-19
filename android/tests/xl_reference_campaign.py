@@ -67,7 +67,10 @@ def main():
     )
     parser.add_argument("--work", required=True, type=Path, help="New output directory")
     parser.add_argument("--timeout", type=int, default=120)
+    parser.add_argument("--wall-bitmap", type=int, help="Read back every displayed frame of this original bitmap")
     args = parser.parse_args()
+    if args.wall_bitmap is not None and (args.wall_bitmap <= 0 or not args.level):
+        parser.error("A positive wall bitmap needs a gameplay ordinal")
     engine, install, work = (p.resolve() for p in (args.engine, args.installation, args.work))
     missions = install / "missions"
     descriptor = (missions / args.descriptor).resolve()
@@ -95,6 +98,7 @@ def main():
         XL_REFERENCE_LEVEL=str(args.level),
         XL_REFERENCE_OUT=str(receipt),
     )
+    env["XL_REFERENCE_WALL_BITMAP"] = str(args.wall_bitmap or 0)
     command = [
         engine,
         "-datadir",
@@ -140,9 +144,20 @@ def main():
         timed_out=code is None,
         receipt_sha256=digest(receipt) if receipt.exists() else None,
     )
+    if args.wall_bitmap:
+        samples = [list(map(int, event[1:])) for event in events if event[0] == "wall_texture"]
+        complete = (
+            bool(samples)
+            and all(
+                len(row) == 6 and row[0] == args.wall_bitmap and row[2] == len(samples) and row[3] > 0 and row[4] > 0
+                for row in samples
+            )
+            and sorted(row[1] for row in samples) == list(range(len(samples)))
+        )
+        result["wall_texture"] = {"bitmap": args.wall_bitmap, "complete": complete, "samples": samples}
     (work / "result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(outcome)
-    return 0 if outcome in ("started_and_ran", "mission_opened") else 1
+    return 0 if outcome in ("started_and_ran", "mission_opened") and (not args.wall_bitmap or complete) else 1
 
 
 if __name__ == "__main__":

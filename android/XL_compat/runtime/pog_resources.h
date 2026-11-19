@@ -17,12 +17,13 @@ struct xl_pog_bitmap {
 	unsigned rgb_opaque;
 	unsigned physics_height; /* TGA selection may expose the whole strip to physics */
 	unsigned scoped_texture;
+	unsigned wall_effect; /* Source wall effect owns frame selection for this POG alias */
 	unsigned side_frames; /* Immutable frame views selected by an XL side owner */
 	unsigned transparent_frames[4], super_frames[4];
 };
 struct xl_pog_effect {
 	int effect, frame_time, wall_texture;
-	unsigned source_frames, frames;
+	unsigned source_frames, frames, from_pog;
 };
 int xl_pog_effect_count(const struct xl_pog_resources *resources);
 const struct xl_pog_effect *xl_pog_effect_entry(const struct xl_pog_resources *resources, int row);
@@ -77,6 +78,7 @@ uint64_t xl_pog_owner_token(const struct xl_pog_resources *resources);
 int xl_pog_install_prepared(struct xl_pog_resources *resources);
 /* 0: unclocked static strip; 1: live animation clock; -1: invalid native table bounds */
 int xl_pog_strip_clock(unsigned bitmap);
+int xl_pog_non_effect_clock(unsigned bitmap);
 /* Diagnostic receipt for the live installed payload, not source-file metadata */
 int xl_pog_bitmap_receipt(const struct xl_pog_resources *resources, int bitmap, unsigned *bytes, unsigned *fnv1a);
 #ifdef __cplusplus
@@ -94,6 +96,7 @@ namespace xl_assets
 struct ObjectDependencies;
 }
 int xl_pog_target_strip_clock(unsigned bitmap, const xl_assets::ObjectDependencies &tables);
+void xl_pog_bind_wall_effects(xl_pog_resources &resources, const xl_assets::ObjectDependencies &tables, int bitmap_count);
 xl_pog_resources *xl_pog_prepare_scoped(const xl_compat::ScopedTextureResources &textures,
                                         const xl_assets::ObjectDependencies &tables, const xl_pog_resources *pog);
 #endif

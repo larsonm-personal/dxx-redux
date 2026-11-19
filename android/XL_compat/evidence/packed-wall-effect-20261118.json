@@ -1,0 +1,367 @@
+{
+    "schema": "xl-packed-wall-effect-20261118",
+    "baseline_revision": "285575c21b52309276cd65b10459aa0987d33f86",
+    "descriptor_sha256": "fd89030cc1a7cf40cdaf5730d14e0c19370b3bdd294af057c7f1fcd169f80d57",
+    "hog_sha256": "69d0d102c5551f164cefee6b7d79f576e5f0c314eb943e49902fe9dcb591f0e2",
+    "level_sha256": "3a471a5f9da591d8f97cec6685dfc46a07bdac659a8137a163c2eca20f23dbc8",
+    "source_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "source_engine_sha256": "995eddcf380421a8fe57e7eac56432b464b6fa678f2708f4c5b0443bbcb7ff91",
+    "source_receipt_sha256": "63eafab7b6e6bdfc29bf773cd14c688152775edb9e18a269c19b2db76c846c33",
+    "redux_headless_sha256": "5a16be46d50097ca1ac7bf26e12df69d205bb376c58cd793b4d357f2dad9efa5",
+    "redux_rendered_sha256": "1bdf1294b9d68e70216ab534b6810640344b5fa33c82a79d43d77cbf2ffe2db1",
+    "redux_rendered_receipt_sha256": "a68affaea290dcf82f0404a9a9d501d993ef45d14f8c16ba2d3f9878ea0fc4a9",
+    "clock": {
+        "effect": 84,
+        "wall_texture": 423,
+        "aliases": [2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035],
+        "authored_frame_time": 3276,
+        "frames": [
+            {
+                "frame": 0,
+                "reference_rgba_fnv1a": 3850729079,
+                "redux_gpu_rgba_fnv1a": 3850729079,
+                "redux_cpu_rgba_fnv1a": 3850729079,
+                "redux_physics_rgba_fnv1a": 3850729079,
+                "native_aliases": 8,
+                "resident_before_probe": true
+            },
+            {
+                "frame": 1,
+                "reference_rgba_fnv1a": 1204652987,
+                "redux_gpu_rgba_fnv1a": 1204652987,
+                "redux_cpu_rgba_fnv1a": 1204652987,
+                "redux_physics_rgba_fnv1a": 3850729079,
+                "native_aliases": 8,
+                "resident_before_probe": false
+            },
+            {
+                "frame": 2,
+                "reference_rgba_fnv1a": 4045285609,
+                "redux_gpu_rgba_fnv1a": 4045285609,
+                "redux_cpu_rgba_fnv1a": 4045285609,
+                "redux_physics_rgba_fnv1a": 3850729079,
+                "native_aliases": 8,
+                "resident_before_probe": false
+            },
+            {
+                "frame": 3,
+                "reference_rgba_fnv1a": 3609115056,
+                "redux_gpu_rgba_fnv1a": 3609115056,
+                "redux_cpu_rgba_fnv1a": 3609115056,
+                "redux_physics_rgba_fnv1a": 3850729079,
+                "native_aliases": 8,
+                "resident_before_probe": false
+            },
+            {
+                "frame": 4,
+                "reference_rgba_fnv1a": 1588377698,
+                "redux_gpu_rgba_fnv1a": 1588377698,
+                "redux_cpu_rgba_fnv1a": 1588377698,
+                "redux_physics_rgba_fnv1a": 3850729079,
+                "native_aliases": 8,
+                "resident_before_probe": false
+            },
+            {
+                "frame": 5,
+                "reference_rgba_fnv1a": 168255134,
+                "redux_gpu_rgba_fnv1a": 168255134,
+                "redux_cpu_rgba_fnv1a": 168255134,
+                "redux_physics_rgba_fnv1a": 3850729079,
+                "native_aliases": 8,
+                "resident_before_probe": false
+            }
+        ],
+        "fixed_steps_compared": 120,
+        "initial_phase": [0, 0, 3276]
+    },
+    "android": {
+        "apk_sha256": "b06934ef021cdcc8800f97a4ab410a3b7e32b810eb9e0581a54d471938b00a10",
+        "restored_apk_sha256": "fa034dc962c44d32f89b647a6d7e22467f2d3a8649e635175575519127ccac6a",
+        "steps": 66,
+        "samples_before_save": 25,
+        "samples_after_restore": 25,
+        "protected_files": 26,
+        "state_hash_list_sha256": "8017f471b5ab49291500017bcb80559e006cb6dccc06c4965d80209b12bc2e32",
+        "result_sha256": "121f5dcbe721b8fa13f4b936f4fe3f255549d41c30ee13964730a42187b96fc1"
+    },
+    "selected_first_blockers": [
+        {
+            "scope": "pinned",
+            "id": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "standoff.POG: POG: RGBA bitmap 2434 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "pinned",
+            "id": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "clminate.POG: POG: RGBA bitmap 2280 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "pinned",
+            "id": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:1",
+            "outcome": "loaded_ticked",
+            "frames": 120,
+            "reason": null
+        },
+        {
+            "scope": "pinned",
+            "id": "levelpack.7z/missions/diedel/ptech-d3.mn2:1",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "ptech-d3.POG: POG: RGBA bitmap 2329 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "pinned",
+            "id": "levelpack.7z/missions/diedel/styx-d3.mn2:1",
+            "outcome": "loaded_ticked",
+            "frames": 120,
+            "reason": null
+        },
+        {
+            "scope": "pinned",
+            "id": "levelpack.7z/missions/diedel/tankboy.mn2:1",
+            "outcome": "loaded_ticked",
+            "frames": 120,
+            "reason": null
+        },
+        {
+            "scope": "pinned",
+            "id": "levelpack.7z/missions/sirius/antholgy.mn2:1",
+            "outcome": "loaded_ticked",
+            "frames": 120,
+            "reason": null
+        },
+        {
+            "scope": "additional",
+            "id": "boilpnt.7z/missions/single/boilpnt.mn2:1",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "watrwrks.POG: POG: RGBA bitmap 2538 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "additional",
+            "id": "boilpnt.7z/missions/single/boilpnt.mn2:3",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "canyon.POG: POG: RGBA bitmap 2538 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "additional",
+            "id": "boilpnt.7z/missions/single/boilpnt.mn2:4",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "subzero.POG: POG: RGBA bitmap 2538 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "additional",
+            "id": "boilpnt.7z/missions/single/boilpnt.mn2:6",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "canyon2.POG: POG: RGBA bitmap 2538 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "additional",
+            "id": "boilpnt.7z/missions/single/boilpnt.mn2:7",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "control2.POG: POG: RGBA bitmap 2538 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "additional",
+            "id": "levels/lor-xl.7z/missions/single/lor-xl.mn2:1",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "lor-xl.POG: POG: RGBA bitmap 2230 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "additional",
+            "id": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:1",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "catalyst.POG: POG: RGBA bitmap 2538 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "additional",
+            "id": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:3",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "unbridle.POG: POG: RGBA bitmap 2538 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "additional",
+            "id": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "standoff.POG: POG: RGBA bitmap 2434 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "additional",
+            "id": "levels_multiplayer/cs-dust.7z/dust.mn2:1",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "cs-dust.POG: POG: RGBA bitmap 2265 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "additional",
+            "id": "levels_multiplayer/pyrotech.7z/missions/diedel/d3/ptech-d3.mn2:1",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "ptech-d3.POG: POG: RGBA bitmap 2329 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "additional",
+            "id": "levels_multiplayer/pyrotech.7z/ptech-d3.mn2:1",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "ptech-d3.POG: POG: RGBA bitmap 2329 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "additional",
+            "id": "levels_multiplayer/styx.7z/missions/diedel/d3/styx-d3.mn2:1",
+            "outcome": "loaded_ticked",
+            "frames": 120,
+            "reason": null
+        },
+        {
+            "scope": "additional",
+            "id": "levels_multiplayer/tankboy.7z/missions/diedel/d3/tnkboyd3.mn2:1",
+            "outcome": "loaded_ticked",
+            "frames": 120,
+            "reason": null
+        },
+        {
+            "scope": "additional",
+            "id": "levels_multiplayer/toxic.7z/missions/diedel/d3/toxic-d3.mn2:1",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "toxic-d3.POG: POG: RGBA bitmap 2157 has clocked animation frames without a wall effect"
+        },
+        {
+            "scope": "additional",
+            "id": "pmines_v11.7z/missions/single/pmines.mn2:1",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "Scoped replacement requires a qualified wall effect clock"
+        },
+        {
+            "scope": "additional",
+            "id": "pmines_v11.7z/missions/single/pmines.mn2:10",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "Scoped replacement requires a qualified wall effect clock"
+        },
+        {
+            "scope": "additional",
+            "id": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:2",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "mission declares custom robots, but no level HXM was found; install the complete mission package (other custom definition formats remain unqualified)"
+        },
+        {
+            "scope": "additional",
+            "id": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-1",
+            "outcome": "load_failed",
+            "frames": 0,
+            "reason": "mission declares custom robots, but no level HXM was found; install the complete mission package (other custom definition formats remain unqualified)"
+        }
+    ],
+    "replay": {
+        "levelpack.7z/missions/diedel/styx-d3.mn2:1": {
+            "capture_executable": "07a5095f0124eaa1eb19c8da4d25b8e6368c0ea1cd28f73ebb4cd571c24930e3",
+            "cold": 0,
+            "recording": "bda207020c878568f87445bc29c6e3b704547f5e1d99c154129391fee702f5fe",
+            "rendered_executable": "1bdf1294b9d68e70216ab534b6810640344b5fa33c82a79d43d77cbf2ffe2db1",
+            "warm": 1,
+            "source": "levelpack.7z/missions/diedel/styx-d3.mn2:1",
+            "frames": 120,
+            "trailer_equal": true,
+            "cold_result_sha256": "3a504ccccf47d8bac4a34ff4626cb7e62f3706fc4946898b56b1d85a569174ee",
+            "rng_sha256": [
+                "5c29469888a92d7a23e9108c71cbd70816f7de2dd3b6455605fb3360e86262d8",
+                "934104fdf862c3ffae5650d55fea1b138f8082db55cb1979f1bf7efb085f6087"
+            ],
+            "rng_bytes_equal": false,
+            "nonfx_equal": true,
+            "nonfx_events": [303, 303],
+            "fx_events": [48, 20784],
+            "native_saved_mission": "styx-d3",
+            "native_mission_field_size": 9,
+            "warm_completed": 1,
+            "warm_first_sim_calls": [14, 1],
+            "warm_first_sim_state": [2937909499, 1103527590]
+        },
+        "levelpack.7z/missions/diedel/tankboy.mn2:1": {
+            "capture_executable": "07a5095f0124eaa1eb19c8da4d25b8e6368c0ea1cd28f73ebb4cd571c24930e3",
+            "cold": 0,
+            "recording": "2e16d3ccac5ec4d11c6a58af6a9cd72ccd2445fd886a28027f00e2e7d24575da",
+            "rendered_executable": "1bdf1294b9d68e70216ab534b6810640344b5fa33c82a79d43d77cbf2ffe2db1",
+            "warm": 0,
+            "source": "levelpack.7z/missions/diedel/tankboy.mn2:1",
+            "frames": 120,
+            "trailer_equal": true,
+            "cold_result_sha256": "813591563d940e7c8a5bcda405e1a50c1dfd778efbf68a6806ac56b7fa3c4e4b",
+            "rng_sha256": [
+                "fa6b191d149522a021985f2854567946edbdd1a006502a2c98bf013fa5f5d427",
+                "908e72ec4955d1c180488a0db64179fa68e9f7a340417147024a3351f10f995e"
+            ],
+            "rng_bytes_equal": false,
+            "nonfx_equal": true,
+            "nonfx_events": [240, 240],
+            "fx_events": [944, 53864],
+            "native_saved_mission": "tankboy",
+            "native_mission_field_size": 9,
+            "warm_completed": 120,
+            "warm_raw_equal": false,
+            "warm_tick": [
+                {
+                    "count": 40,
+                    "step": 1,
+                    "timer": 32
+                },
+                {
+                    "count": 40,
+                    "step": 1,
+                    "timer": 32
+                }
+            ]
+        },
+        "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:1": {
+            "capture_executable": "07a5095f0124eaa1eb19c8da4d25b8e6368c0ea1cd28f73ebb4cd571c24930e3",
+            "cold": 0,
+            "recording": "e59dbfb38c162c0be54e7f18ac4d9d44089d9064549b22c1b35dc83643f57b67",
+            "rendered_executable": "1bdf1294b9d68e70216ab534b6810640344b5fa33c82a79d43d77cbf2ffe2db1",
+            "warm": 1,
+            "source": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:1",
+            "frames": 120,
+            "trailer_equal": true,
+            "cold_result_sha256": "e041e08f6df4c59d9ff8ff8ecd2342553b69de1e7c455776c032ec45e55a82f3",
+            "rng_sha256": [
+                "5cba1c416dfba631ec51d40f3c82062a3af8731d18c17ff0be35f78fde12404c",
+                "5cba1c416dfba631ec51d40f3c82062a3af8731d18c17ff0be35f78fde12404c"
+            ],
+            "rng_bytes_equal": true,
+            "nonfx_equal": true,
+            "nonfx_events": [120, 120],
+            "fx_events": [0, 0],
+            "native_saved_mission": null,
+            "native_mission_field_size": 0,
+            "warm_completed": 120,
+            "warm_raw_equal": false,
+            "warm_tick": [
+                {
+                    "count": 40,
+                    "step": 1,
+                    "timer": 32
+                },
+                {
+                    "count": 80,
+                    "step": 1,
+                    "timer": 64
+                }
+            ]
+        }
+    }
+}

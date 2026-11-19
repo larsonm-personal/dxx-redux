@@ -8,6 +8,39 @@
 
 static FILE *campaign_receipt;
 static int campaign_ordinal;
+static int campaign_bitmap;
+
+static void capture_wall_texture()
+{
+	if (campaign_bitmap <= 0 || campaign_bitmap >= gameData.pigData.tex.pBitmap.Length()) return;
+	CBitmap *strip = gameData.pigData.tex.pBitmap[campaign_bitmap].Override();
+	if (!strip || !strip->CurFrame() || !strip->CurFrame()->Texture()) return;
+	const int index = strip->FrameIndex(), count = strip->FrameCount();
+	static bool seen[128]{};
+	if (index < 0 || index >= count || count > 128 || seen[index]) return;
+	const int handle = strip->CurFrame()->Texture()->Handle();
+	if (handle <= 0) return;
+	GLint current = 0, width = 0, height = 0;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &current);
+	glBindTexture(GL_TEXTURE_2D, handle);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+	if (width > 0 && height > 0 && width <= 4096 && height <= 4096) {
+		const std::size_t size = std::size_t(width) * height * 4;
+		auto *rgba = static_cast<unsigned char *>(std::malloc(size));
+		if (rgba) {
+			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+			if (glGetError() == GL_NO_ERROR) {
+				unsigned hash = 2166136261u;
+				for (std::size_t i = 0; i < size; ++i) hash = (hash ^ rgba[i]) * 16777619u;
+				std::fprintf(campaign_receipt, "wall_texture\t%d\t%d\t%d\t%d\t%d\t%u\n", campaign_bitmap, index, count, width, height, hash);
+				seen[index] = true;
+			}
+			std::free(rgba);
+		}
+	}
+	glBindTexture(GL_TEXTURE_2D, current);
+}
 
 static bool campaign_requested()
 {
@@ -25,6 +58,7 @@ void xl_reference_descriptor(const char *directory, const char *name)
 void xl_reference_frame()
 {
 	if (!campaign_receipt) return;
+	capture_wall_texture();
 	static int frames = 0;
 	++frames;
 	const bool failed = gameStates.app.bPlayerIsDead || missionManager.nCurrentLevel != campaign_ordinal;
@@ -43,6 +77,7 @@ static int campaign_reference()
 	if (!folder || !path || !level || !descriptor || std::strlen(folder) >= sizeof(gameFolders.missions.szSubFolder)) return 80;
 	campaign_receipt = std::fopen(path, "w");
 	if (!campaign_receipt) return 80;
+	if (const char *bitmap = std::getenv("XL_REFERENCE_WALL_BITMAP")) campaign_bitmap = std::atoi(bitmap);
 	std::fprintf(campaign_receipt, "initialized\n");
 	std::fflush(campaign_receipt);
 	// This selects the same directory and entry as the game's mission browser.

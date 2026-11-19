@@ -4,6 +4,7 @@
 #include <android/log.h>
 #include "preview.h"
 #include "trigger_state.h"
+#include "pog_resources.h"
 #include "../hog_format.h"
 #include <array>
 #include <charconv>
@@ -23,6 +24,9 @@ extern "C" {
 #include "state_android_shared.h"
 #include "state.h"
 #include "android_meta_actions.h"
+#include "effects.h"
+#include "piggy.h"
+#include "textures.h"
 }
 namespace
 {
@@ -37,10 +41,43 @@ struct OriginalCheckpoint {
 } original_checkpoint;
 std::uint64_t identity;
 fix energy;
+unsigned vignette_frames;
 constexpr char member[] = "A-long-owned-resource-with-more-than-thirteen-characters.bin";
 void require(bool valid, const char *message)
 {
 	if (!valid) throw std::runtime_error(message);
+}
+
+void sample_vignette_effect(bool finish)
+{
+	require(Current_mission && !dxx_hog_name_compare(Current_mission->filename, "vignette-xl") && Current_level_num == 1 &&
+	            !dxx_hog_name_compare(Gamesave_current_filename, "standoff.rl2") && Num_effects > 84,
+	        "Expected original Vignette Standoff");
+	const auto &effect = Effects[84];
+	require(effect.changing_wall_texture == 423 && effect.vc.num_frames == 8 && effect.vc.frame_time == 3276 &&
+	            xl_pog_effect_frames(&effect) == 6 && effect.frame_count >= 0 && effect.frame_count < 6,
+	        "Standoff wall clock differs from the original");
+	const auto &display = GameBitmaps[Textures[423].index];
+	require(display.bm_type == BM_RGBA && display.bm_data && display.bm_w == 128 && display.bm_h == 128 && display.bm_rowsize == 512,
+	        "Standoff display dimensions differ from the original");
+	for (int frame = 0; frame < 8; ++frame) {
+		const int bitmap = effect.vc.frames[frame].index;
+		xl_pog_pixel_view physics{};
+		require(bitmap == 2028 + frame && xl_pog_physics_view(bitmap, &physics) && physics.width == 128 && physics.height == 128 &&
+		            GameBitmaps[bitmap].bm_data == display.bm_data,
+		        "Standoff lost a native effect alias");
+	}
+	// All six values were read back from the original D2X-XL GPU textures
+	constexpr unsigned expected[] = { 3850729079u, 1204652987u, 4045285609u, 3609115056u, 1588377698u, 168255134u };
+	unsigned hash = 2166136261u;
+	for (int byte = 0; byte < display.bm_rowsize * display.bm_h; ++byte) hash = (hash ^ display.bm_data[byte]) * 16777619u;
+	require(hash == expected[effect.frame_count], "Standoff displayed pixels differ from the original");
+	vignette_frames |= 1u << effect.frame_count;
+	__android_log_print(ANDROID_LOG_INFO, "DXX-Wall", "phase=%d pixels=%u observed=%u", effect.frame_count, hash, vignette_frames);
+	if (finish) {
+		require(vignette_frames == 63, "Standoff did not display all six original frames during sampling");
+		vignette_frames = 0;
+	}
 }
 // Exercise an advertised ordinal through the existing mission admission and level loader.
 void original_level(const char *request)
@@ -96,6 +133,8 @@ const char *xl_hog_probe(const char *operation)
 	try {
 		require(Game_wind && ConsoleObject && !(Game_mode & GM_MULTI), "HOG probe requires running singleplayer");
 		if (!std::strncmp(operation, "visit:", 6)) original_level(operation + 6);
+		else if (!std::strcmp(operation, "standoff_frame") || !std::strcmp(operation, "standoff_complete"))
+			sample_vignette_effect(!std::strcmp(operation, "standoff_complete"));
 		else if (!std::strcmp(operation, "lighting_vignette") || !std::strcmp(operation, "lighting_sample") ||
 		         !std::strcmp(operation, "lighting_off") || !std::strcmp(operation, "lighting_on"))
 			vignette_lighting(operation);

@@ -985,10 +985,7 @@ std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal, st
 	// Reconstruct the same retained source set as level entry, including scoped
 	// texture precedence and native HXM/bank dependencies, without installing it
 	XlPreparedResources resources(filename, &level, ordinal);
-	if (effect_frames && resources.scoped_texture_playback()) {
-		for (const auto &clock : resources.scoped_texture_playback()->effects)
-			effect_frames->emplace(clock.effect, int(resources.scoped_textures()->images.at(clock.image).bitmap.frames));
-	}
+	if (effect_frames) *effect_frames = resources.effect_frame_counts();
 	return resources.sources();
 }
 
@@ -1412,6 +1409,17 @@ const xl_compat::ScopedTexturePlayback *XlPreparedResources::scoped_texture_play
 	return state ? state->texture_playback.get() : nullptr;
 }
 
+std::map<int, int> XlPreparedResources::effect_frame_counts() const
+{
+	std::map<int, int> result;
+	const auto *pog = state ? state->pog.get() : nullptr;
+	for (int row = 0; row < xl_pog_effect_count(pog); ++row) {
+		const auto *effect = xl_pog_effect_entry(pog, row);
+		result.emplace(effect->effect, int(effect->frames));
+	}
+	return result;
+}
+
 bool XlPreparedResources::has_scoped_textures() const
 {
 	return state && state->scoped_textures && !state->scoped_textures->images.empty() &&
@@ -1684,17 +1692,13 @@ void XlPreparedResources::prepare_pog(PHYSFS_file *file)
 	if (state->installed) throw std::runtime_error("Cannot prepare POG after resource publication");
 	if (state->mission_definitions && !state->banks) throw std::runtime_error("Incoming POG requires prepared target banks");
 	char error[256]{};
-	std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)> prepared(xl_pog_prepare(file, state->banks ? state->banks->bitmap_count() : Num_bitmap_files, error, sizeof(error)), xl_pog_free);
+	const int bitmap_count = state->banks ? state->banks->bitmap_count() : Num_bitmap_files;
+	std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)> prepared(xl_pog_prepare(file, bitmap_count, error, sizeof(error)), xl_pog_free);
 	if (!prepared) throw std::runtime_error(std::string("POG: ") + error);
+	xl_pog_bind_wall_effects(*prepared, state->graph, bitmap_count);
 	for (int i = 0; i < xl_pog_count(prepared.get()); ++i) {
 		const auto *entry = xl_pog_entry(prepared.get(), i);
 		if (!entry->rgba) continue;
-		if (entry->frames > 1) {
-			const int clock = xl_pog_target_strip_clock(entry->index, state->graph);
-			if (clock < 0) throw std::runtime_error(std::string("POG: native bitmap animation tables exceed supported bounds"));
-			if (clock) throw std::runtime_error(std::string("POG: RGBA bitmap ") + std::to_string(entry->index) +
-				                                " has clocked animation frames; playback is not implemented");
-		}
 		bool cockpit = false;
 		for (const auto &bitmap : state->definitions.cockpits) cockpit = cockpit || bitmap.index == entry->index;
 		for (int gauge = 0; gauge < MAX_GAUGE_BMS; ++gauge)
