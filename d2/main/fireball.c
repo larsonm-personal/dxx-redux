@@ -1307,7 +1307,7 @@ static void mark_player_spew_objects(int start_net_create_loc, int rval)
 #ifdef DXX_XL_RUNTIME
 static int xl_inert_robot_contents(const object *objp)
 {
-	return objp->type == OBJ_ROBOT && objp->contains_type != OBJ_ROBOT && objp->contains_type != OBJ_POWERUP &&
+	return objp->type == OBJ_ROBOT && xl_unspawnable_robot_payload(objp->contains_type, objp->contains_id) &&
 		xl_level_extensions_active();
 }
 #endif

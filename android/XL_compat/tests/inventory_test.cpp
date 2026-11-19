@@ -123,6 +123,18 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 	return b;
 }
 
+void legacy_blocked_contract()
+{
+	for (int version : { 15, 17, 18, 19 }) {
+		const auto bytes = fixture(version, 0, 1, 12);
+		const auto probe = xl_compat::prepare_gameplay_probe(bytes);
+		check(probe.source.segments.at(0).function == 12 && xl_compat::segment_property_bits(version, probe.source.segments[0]) == xl_compat::segment_blocked, "Legacy blocked source identity lost");
+		const auto game = unsigned(probe.stock_level.at(12)) | (unsigned(probe.stock_level.at(13)) << 8);
+		check(probe.stock_level.at(game - 8) == 0, "Legacy blocked room leaked its old type to the native station table");
+		rejects([&] { xl_compat::prepare_gameplay_probe(fixture(version, 0, 1, 14)); });
+	}
+}
+
 void reactor_count_contract()
 {
 	for (int version : { 15, 17, 21, 23, 25, 27 }) {
@@ -338,7 +350,7 @@ void trigger_capacity_contract()
 
 void generator_assignment_contract(const char *directory = nullptr)
 {
-	for (int version : { 15, 17, 21, 23 }) {
+	for (int version : { 15, 17, 18, 19, 21, 23 }) {
 		auto bytes = fixture(version, 0, 5);
 		const auto base = xl_compat::inspect_level(bytes);
 		const auto properties = base.mine_offset + 5 + 8 * 12 + 5 * 176;
@@ -400,7 +412,7 @@ void generator_assignment_contract(const char *directory = nullptr)
 			rejects([&] { xl_compat::prepare_gameplay_probe(invalid); });
 		}
 	}
-	std::cout << "XL generator assignment: four layouts, source permutation, ignored authored links, station mapping and malformed controls passed\n";
+	std::cout << "XL generator assignment: six layouts, source permutation, ignored authored links, station mapping and malformed controls passed\n";
 }
 
 std::string feature_row(const std::string &json, const char *id)
@@ -1165,7 +1177,7 @@ void version_23_contract()
 			check(!xl_compat::prepare_gameplay_probe(combined).stock_level.empty(), "normal modern water combination translation failed");
 			for (int actor = 0; actor < 3; ++actor) {
 				auto water_actor = decoded;
-				if (actor == 2) water_actor.matcens.resize(1);
+				if (actor == 2) water_actor.segments.at(0).function = 4;
 				else {
 					xl_compat::Object object{};
 					if (actor == 0) object.type = 2;
@@ -1384,12 +1396,12 @@ void serialization_17_contract()
 		}
 		check(covered == unsigned(count), "17/36 light targets lost");
 		check(xl_compat::prepare_gameplay_probe(bytes).stock_level == out, "normal admission differs from qualified 17/36 translation");
-		bytes.at(source.mine_offset + 277) = 12;
+		bytes.at(source.mine_offset + 277) = 14;
 		rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
 		rejects([&] { xl_compat::prepare_serialization_probe_17_36(bytes); });
 	}
 	rejects([&] { xl_compat::prepare_serialization_probe_17_36(fixture()); });
-	std::cout << "17/36 layout qualification: normal admission, header removal, retained offsets, packed counts 0..8191; blocked-segment semantics remain rejected\n";
+	std::cout << "17/36 layout qualification: normal admission, header removal, retained offsets, packed counts 0..8191; legacy skybox remains rejected\n";
 }
 
 void segment_flags_contract()
@@ -1515,6 +1527,7 @@ void original_observatory(const char *path)
 int main(int argc, char **argv)
 {
 	try {
+		legacy_blocked_contract();
 		reactor_count_contract();
 		if (argc == 3 && std::string(argv[1]) == "--fire-qualification") {
 			original_fire_translation(argv[2]);
