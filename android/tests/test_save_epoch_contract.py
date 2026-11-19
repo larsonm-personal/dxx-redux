@@ -219,12 +219,13 @@ class SaveEpochContractTest(unittest.TestCase):
                     r"GameTime64 \+= input_demo_replay_checkpoint_start_gt\(\);\s*else if",
                 )
                 self.assertIn("GameTime64 = saved_epoch", selection)
-                expected_guard = (
-                    "version >= SAVE_EPOCH_D2_VERSION && !secret_restore"
-                    if game == "d2"
-                    else "version >= SAVE_EPOCH_D1_VERSION"
-                )
+                expected_guard = f"version >= SAVE_EPOCH_{game.upper()}_VERSION"
                 self.assertIn("else if (" + expected_guard + ")", selection)
+                if game == "d2":
+                    self.assertRegex(selection, r"if \(!secret_restore\)\s*GameTime64 = saved_epoch;")
+                    self.assertIn(
+                        "else if (!xl_secret_restore_clock(current_level, saved_epoch, &GameTime64))", selection
+                    )
                 # The header must reject before the restore marks the world replaced
                 self.assertLess(selection.index("!save_epoch_read"), selection.index("*world_changed = 1"))
 

@@ -624,7 +624,7 @@ int main(int argc, char **argv)
 			return xl_compat::Bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
 		};
 		if (std::filesystem::is_directory(argv[1])) {
-			for (int version : { 15, 17, 21, 22, 23, 25, 27 })
+			for (int version : { 15, 17, 18, 19, 21, 22, 23, 25, 27 })
 				for (int render : { 0, 8, 11, 12, 13 })
 					for (int profile = 0; profile < 5; ++profile) {
 						const auto name = "e" + std::to_string(version) + "r" + std::to_string(render) + "p" + std::to_string(profile) + ".rl2";

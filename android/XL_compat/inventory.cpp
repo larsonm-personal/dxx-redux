@@ -227,7 +227,7 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 	require(header.s32() == 0x504c564c, "not a PLVL level");
 	out.level_version = header.s32();
 	const bool classic = allow_classic && out.level_version == 7;
-	require(classic || out.level_version == 15 || out.level_version == 17 || modern_level_version(out.level_version), "unsupported level version " + std::to_string(out.level_version));
+	require(classic || out.level_version == 15 || (out.level_version >= 17 && out.level_version <= 19) || modern_level_version(out.level_version), "unsupported level version " + std::to_string(out.level_version));
 	out.mine_offset = header.s32();
 	out.game_offset = header.s32();
 	require(out.mine_offset >= 16 && out.game_offset > out.mine_offset && static_cast<std::size_t>(out.game_offset) < bytes.size(), "invalid mine/game offsets");
@@ -235,7 +235,7 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 	Reader game(bytes, out.game_offset, bytes.size());
 	require(game.u16() == 0x6705, "invalid game data signature");
 	out.game_version = game.u16();
-	require((classic && out.game_version == 31) || (out.level_version == 15 && (out.game_version == 33 || out.game_version == 34)) || (out.level_version == 17 && out.game_version == 36) || modern_runtime_layout(out),
+	require((classic && out.game_version == 31) || supported_xl_layout(out),
 	        "unsupported level/game version pair " + std::to_string(out.level_version) + "/" + std::to_string(out.game_version));
 	game.skip(31);
 	const char *section_names[] = { "objects", "walls", "doors", "triggers", "links", "reactor", "matcens", "light_indices", "delta_lights", "equipment" };

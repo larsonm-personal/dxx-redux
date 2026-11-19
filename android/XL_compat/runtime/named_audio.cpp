@@ -3,6 +3,7 @@
 #include "slow_motion_runtime.h"
 #include "named_audio_state.h"
 #include "classic_audio.h"
+#include "audio_source_identity.h"
 #include "shared_audio.h"
 #include "shared_audio_internal.h"
 #include "linked_audio.h"
@@ -60,7 +61,7 @@ struct AudioResources {
 		int id, repetitions;
 		unsigned sample;
 	};
-	std::string identity;
+	std::string identity, legacy_identity;
 	std::vector<WaveChannels> sources;
 	std::vector<std::string> names;
 	std::vector<unsigned> classic;
@@ -227,7 +228,8 @@ static std::shared_ptr<AudioResources> prepare_named_only(const char *level, con
 	name += ".snd";
 	const auto text = owned_bytes(name, 1024 * 1024, target);
 	const auto table = decode_level_text(text);
-	std::string identity = picosha2::hash256_hex_string(text);
+	AudioSourceIdentity identity;
+	identity.append(picosha2::hash256_hex_string(text));
 	std::size_t bytes = 0;
 	for (auto &[key, action] : resources->actions) {
 		(void) key;
@@ -247,7 +249,7 @@ static std::shared_ptr<AudioResources> prepare_named_only(const char *level, con
 			resources->unavailable_action.insert(action.sample);
 			resources->sources.emplace_back();
 			resources->names.push_back(filename);
-			identity += ":" + filename + ":absent-action-output";
+			identity.append(":" + filename + ":absent-action-output");
 			con_printf(CON_NORMAL, "XL named action output unavailable: %s; failed starts retain authored trigger timing and flags\n", filename.c_str());
 			continue;
 		}
@@ -264,9 +266,11 @@ static std::shared_ptr<AudioResources> prepare_named_only(const char *level, con
 		resources->external.emplace(filename, action.sample);
 		resources->sources.push_back(std::move(pcm));
 		resources->names.push_back(resource->path);
-		identity += ":" + resource->path + ":" + picosha2::hash256_hex_string(wav);
+		identity.append(":");
+		identity.append_path(resource->path);
+		identity.append(":" + picosha2::hash256_hex_string(wav));
 	}
-	resources->identity = picosha2::hash256_hex_string(identity);
+	identity.finish(resources->identity, resources->legacy_identity);
 	return resources;
 }
 
@@ -276,7 +280,7 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 	if (!resources) resources = std::make_shared<AudioResources>();
 	std::size_t bytes = 0;
 	for (const auto &pcm : resources->sources) bytes += pcm.samples.size() * sizeof(std::int16_t);
-	std::string external_identity;
+	AudioSourceIdentity external_identity;
 	enum class OutputKind { ambient,
 		                    transition };
 	std::vector<std::pair<std::string, OutputKind>> external_names;
@@ -319,12 +323,12 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 			resources->sources.emplace_back();
 			resources->names.push_back(name);
 			if (kind == OutputKind::ambient) {
-				external_identity += ":" + name + ":absent-ambient-output";
+				external_identity.append(":" + name + ":absent-ambient-output");
 				con_printf(CON_NORMAL, "XL ambient output unavailable: %s; authored object and linked lifetime retained\n", name.c_str());
 			} else {
 				// Source PlayWAV failure leaves the transition handle absent; clocks,
 				// energy and control consumption still follow the normal frame path
-				external_identity += ":" + name + ":absent-transition-output";
+				external_identity.append(":" + name + ":absent-transition-output");
 				con_printf(CON_NORMAL, "XL transition output unavailable: %s; time-equipment state retained\n", name.c_str());
 			}
 			continue;
@@ -340,7 +344,9 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 		resources->external.emplace(key, unsigned(resources->sources.size()));
 		resources->sources.push_back(std::move(pcm));
 		resources->names.push_back(resource->path);
-		external_identity += ":" + name + ":" + resource->path + ":" + picosha2::hash256_hex_string(resource->bytes);
+		external_identity.append(":" + name + ":");
+		external_identity.append_path(resource->path);
+		external_identity.append(":" + picosha2::hash256_hex_string(resource->bytes));
 	}
 	const auto replacements = prepare_classic_audio(level, ordinal, classic_audio_output_rate(), banks, target);
 	for (const auto &sample : replacements.samples) resources->classic_replacements.emplace(sample.name, sample.path);
@@ -359,7 +365,9 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 		resources->classic_names.push_back(sample.name);
 		resources->sources.push_back(std::move(sample.pcm));
 	}
-	resources->identity = picosha2::hash256_hex_string("xl-shared-audio-v2:" + resources->identity + external_identity + ":" + classic.identity);
+	const AudioSourceIdentity bank_identity{ "xl-shared-audio-v2:" + resources->identity + external_identity.portable + ":" + classic.identity,
+		                                     "xl-shared-audio-v2:" + resources->legacy_identity + external_identity.legacy + ":" + classic.legacy_identity };
+	bank_identity.finish(resources->identity, resources->legacy_identity);
 	resources->prepared_rate = output_rate;
 	// Reuse only immutable PCM. Authored actions and resource validation above
 	// remain fresh even when a different level selects the same sound content
@@ -746,10 +754,12 @@ bool restore_named_audio(const nlohmann::json &state, bool apply)
 {
 	try {
 		if (!state.is_object() || state.size() != 11 || !state.at("source").is_string() ||
-		    state.at("source").get<std::string>() != (bank ? bank->identity : "") ||
 		    !state.at("events").is_array() || state.at("events").size() != (bank ? bank->actions.size() : 0) ||
 		    !state.at("voices").is_array() || state.at("voices").size() > audio_voice_limit)
 			throw std::runtime_error("Named-audio save has different resources or layout");
+		const auto &source = state.at("source").get_ref<const std::string &>();
+		if (bank ? (source != bank->identity && source != bank->legacy_identity) : !source.empty())
+			throw std::runtime_error("Named-audio source differs from the incoming sound bank");
 		const auto rate = unsigned(integer(state.at("rate"), 8000, 192000));
 		const auto next = std::uint64_t(integer(state.at("next"), 1, INT64_MAX));
 		const auto cursor = unsigned(integer(state.at("cursor"), 0, audio_voice_limit - 1));
