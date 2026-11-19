@@ -108,6 +108,13 @@ def run(cmake):
         check("dead state", final_state={**state, "player_dead": True})
         check("wrong state destination", final_state={**state, "current_level_num": 9})
         check("cheat state", final_state={**state, "cheats_enabled": True})
+        single_transition = script.read_text()
+        script.write_text(single_transition.replace("control 7 8 3 1", "control 7 8 3 2"))
+        chain = [{"from": 7, "to": 9}, {"from": 9, "to": 8}]
+        check("connected transitions", receipt={**expected, "transitions": chain}, passes=True)
+        check("disconnected middle", receipt={**expected, "transitions": [chain[0], {"from": 7, "to": 8}]})
+        check("wrong final transition", receipt={**expected, "transitions": [chain[0], {"from": 9, "to": 10}]})
+        script.write_text(single_transition)
         engine.write_text("changed executable\n")
         check("executable changed during run")
         if os.name != "nt":

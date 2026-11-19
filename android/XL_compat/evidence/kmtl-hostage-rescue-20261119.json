@@ -1,0 +1,162 @@
+{
+    "test": "xl_kmtl_hostage_rescue",
+    "seconds": 185.78,
+    "steps": 113,
+    "mission": {
+        "descriptor_sha256": "4c37b4ddf86f7ba788aaebdabb370d104ca54f6f63dd4ce05ce24b63eff9138b",
+        "filename": "kmtl-xl",
+        "hog_sha256": "e39edcd6340c56f50d584d31c7ca799005461a362eebba19d1da50d216b34022"
+    },
+    "platform": "Windows x86 Debug, unrendered, Trainee, 60 Hz",
+    "native_source": "69843b88e9baf6e8e4da04e74a35a4acd10d02fc",
+    "native_sha256": "fbc2cf5f085d22b8dd65f429e7ef5268c896ea3373afe3d877976a29db21322b",
+    "position_assist_events": 0,
+    "fixed_view_aim_events": 0,
+    "final_lives": 3,
+    "phases": [
+        {
+            "phase": "illusion",
+            "steps": 10,
+            "process": 167708,
+            "plan_sha256": "f93abf9451fc4e870b68a1d1ca9b1d2d0fe60e409e47d73769164a84dc7ee897",
+            "resume_sha256": "",
+            "save_sha256": "c460391e137c402daa0405358aa12391e3cd5e70642209f4b648daf23ebf30eb",
+            "segment": 300,
+            "hostages_on_board": 0,
+            "score": 0,
+            "shields": 100.0
+        },
+        {
+            "phase": "open_walls",
+            "steps": 3,
+            "process": 163220,
+            "plan_sha256": "cb1f22d0c31aefee345d114580031a9daeb84dc848c67d9b8dc88a331e227a3f",
+            "resume_sha256": "c460391e137c402daa0405358aa12391e3cd5e70642209f4b648daf23ebf30eb",
+            "save_sha256": "2f06a49569b95e2d82fd5eb40e6387aa645f6bb7ba8ff59221c7f03d49e1a7dc",
+            "segment": 300,
+            "hostages_on_board": 0,
+            "score": 0,
+            "shields": 100.0
+        },
+        {
+            "phase": "return_door",
+            "steps": 15,
+            "process": 165904,
+            "plan_sha256": "89a5b3c4c554cf174876abdde5b4f62695f48f99f367ffa6d785ee77121c0879",
+            "resume_sha256": "2f06a49569b95e2d82fd5eb40e6387aa645f6bb7ba8ff59221c7f03d49e1a7dc",
+            "save_sha256": "09de2476d66d441a68d7dccf82db5dbc9a290bc504256cea35d3252589ff8cf7",
+            "segment": 156,
+            "hostages_on_board": 0,
+            "score": 100,
+            "shields": 82.99797058105469
+        },
+        {
+            "phase": "unlock",
+            "steps": 5,
+            "process": 166180,
+            "plan_sha256": "e2a9da5fab115bf2d32a70827c61dc780ce4787469fef3b3df315e4bd384ca55",
+            "resume_sha256": "09de2476d66d441a68d7dccf82db5dbc9a290bc504256cea35d3252589ff8cf7",
+            "save_sha256": "64e58c14e2fc9b39e258e17c843f449cd025670617ae79eedfa54834cfe28d9e",
+            "segment": 145,
+            "hostages_on_board": 0,
+            "score": 100,
+            "shields": 81.98973083496094
+        },
+        {
+            "phase": "window",
+            "steps": 7,
+            "process": 103224,
+            "plan_sha256": "59ec4edca2da54beeab5ac358e7ed1656a9f4f8da7d8d69fde3049fef5d05e2f",
+            "resume_sha256": "64e58c14e2fc9b39e258e17c843f449cd025670617ae79eedfa54834cfe28d9e",
+            "save_sha256": "45a151b61b46795bcfe540102b4f283d15049a4f7af0794eceed6cf34cdb1ef5",
+            "segment": 376,
+            "hostages_on_board": 0,
+            "score": 100,
+            "shields": 79.98973083496094
+        },
+        {
+            "phase": "grille",
+            "steps": 6,
+            "process": 165996,
+            "plan_sha256": "a156cccc6419523bc25fd084120ea0267ea6610ecb0c82e5c48be5c6e561eef3",
+            "resume_sha256": "45a151b61b46795bcfe540102b4f283d15049a4f7af0794eceed6cf34cdb1ef5",
+            "save_sha256": "dc7cfa38567c605abccb6da894acdf59c1b2effb7f5cb9b7e90a17bf86ece0cc",
+            "segment": 271,
+            "hostages_on_board": 0,
+            "score": 100,
+            "shields": 77.96565246582031
+        },
+        {
+            "phase": "door",
+            "steps": 9,
+            "process": 162272,
+            "plan_sha256": "774b5722deb4dbaed426a4e22bce69abf82d296d25eb020100ed85f03c2aab52",
+            "resume_sha256": "dc7cfa38567c605abccb6da894acdf59c1b2effb7f5cb9b7e90a17bf86ece0cc",
+            "save_sha256": "83f802173391b00a79af2778393a575f892ae7238c54151a060762a8972f2e2b",
+            "segment": 384,
+            "hostages_on_board": 0,
+            "score": 100,
+            "shields": 75.92335510253906
+        },
+        {
+            "phase": "force_fields",
+            "steps": 20,
+            "process": 167776,
+            "plan_sha256": "6caff1985ca29413fed34fd3e6f03e4ab7bf492f921df4c358897a0c72b2324c",
+            "resume_sha256": "83f802173391b00a79af2778393a575f892ae7238c54151a060762a8972f2e2b",
+            "save_sha256": "001d71d54235acebb870a5954921dbdca789b3a60dd98109c625aef363755d24",
+            "segment": 244,
+            "hostages_on_board": 0,
+            "score": 200,
+            "shields": 72.92335510253906
+        },
+        {
+            "phase": "prison_entry",
+            "steps": 18,
+            "process": 161840,
+            "plan_sha256": "1d28f492408963c879224298dd4b6291352ae7a1d7d5edc29f3761045261c780",
+            "resume_sha256": "001d71d54235acebb870a5954921dbdca789b3a60dd98109c625aef363755d24",
+            "save_sha256": "978e85453f7bd7207493d2c11f4e78c5842a26fc4078451735b331621bc8f99a",
+            "segment": 234,
+            "hostages_on_board": 0,
+            "score": 300,
+            "shields": 62.995452880859375
+        },
+        {
+            "phase": "hostage_room",
+            "steps": 7,
+            "process": 167424,
+            "plan_sha256": "e40ad6b38e68eb5741cb50c9f4ec8a359749135052fb74ef9c98d6fc6e9421b7",
+            "resume_sha256": "978e85453f7bd7207493d2c11f4e78c5842a26fc4078451735b331621bc8f99a",
+            "save_sha256": "5ac47b5be3bb5e60900a62e01f4050f613b9279b97b6354dc1bc8f947ccac0fc",
+            "segment": 458,
+            "hostages_on_board": 0,
+            "score": 300,
+            "shields": 58.02479553222656
+        },
+        {
+            "phase": "rescue",
+            "steps": 5,
+            "process": 163740,
+            "plan_sha256": "b4219d303e10f5c33b18859716bf37ad60f30a8a8150e172554744d7c3337c26",
+            "resume_sha256": "5ac47b5be3bb5e60900a62e01f4050f613b9279b97b6354dc1bc8f947ccac0fc",
+            "save_sha256": "50a4f0282140ef8853e45e881b75aca61018f0a0f9e1f0f84582b66427e00060",
+            "segment": 458,
+            "hostages_on_board": 2,
+            "score": 2300,
+            "shields": 56.00225830078125
+        },
+        {
+            "phase": "continued",
+            "steps": 8,
+            "process": 143064,
+            "plan_sha256": "fdffdc2c4c4109e677b1fbc18361d09c88120c3b6c9849f78a2d268557a44b40",
+            "resume_sha256": "50a4f0282140ef8853e45e881b75aca61018f0a0f9e1f0f84582b66427e00060",
+            "save_sha256": "2d327cefb40a16d81853496555458e53c5a7b10ec00f503b88c3f9e7603209d0",
+            "segment": 461,
+            "hostages_on_board": 2,
+            "score": 2300,
+            "shields": 54.51971435546875
+        }
+    ]
+}

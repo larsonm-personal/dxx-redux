@@ -4470,7 +4470,7 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		const char *reason = !is_master_ip(game_addr) ? "full game info sender is not host" :
 		    android_net_udp_game_info_preflight(data, data_len, is_sync,
 		        is_sync || Netgame.protocol.udp.valid == 1, netgame_token, my_player_token,
-		        multi_who_is_master(), is_observer(), coop_world_visit_current());
+		        multi_who_is_master(), is_observer(), coop_world_visit_current(), NULL, NULL);
 		if (reason) {
 			drop_rx_packet(data, reason);
 			return 0;

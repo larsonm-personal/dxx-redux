@@ -1,0 +1,278 @@
+{
+    "parent": "002c377678bbfc386590aa5cbb4e27dbc0356c1d",
+    "native_source": "002152321d94c542515b0788347b2dc7c8cce3d8",
+    "parent_reproduction_engine": "19c09fb9906b209d6eb5bb7423e6680f7b26c33508c18e937ea551597b734c93",
+    "windows_engine": "56b7c4393068173c7a990139f59fc5e986ab96ee0cace4d2c70b3aa7fd193b6b",
+    "catalog_sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+    "original_archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+    "windows": [
+        {
+            "id": "levelpack.7z/missions/diedel/etombz.mn2:1",
+            "parent_phase": "Mission selection",
+            "original": "started_and_ran",
+            "result": "load_failed",
+            "phase": "level_load",
+            "level_file": "etombz.rl2",
+            "frames": 0,
+            "segments": null,
+            "proof_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f",
+            "next_blocker": "team segment functions 7 and 8"
+        },
+        {
+            "id": "levelpack.7z/missions/kruel/kmtl-xl.mn2:1",
+            "parent_phase": "Mission selection",
+            "original": "started_and_ran",
+            "result": "loaded_ticked",
+            "phase": "loaded_ticked",
+            "level_file": "kmtl-xl.rl2",
+            "frames": 120,
+            "segments": 703,
+            "proof_sha256": "de7628690fece328426826fda64f9de19f6490d2ba71bdca3a2c26d09d961e10",
+            "next_blocker": null
+        },
+        {
+            "id": "levelpack.7z/missions/single/pmlev1.mn2:1",
+            "parent_phase": "Mission selection",
+            "original": "started_and_ran",
+            "result": "unsupported_format",
+            "phase": "level_load",
+            "level_file": "pmlev1p.rl2",
+            "frames": 0,
+            "segments": null,
+            "proof_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f",
+            "next_blocker": "unsupported level/game version pair 17/35"
+        }
+    ],
+    "android": {
+        "device": "VignetteHost, Android 34 x86_64 read-only emulator",
+        "apk_sha256": "57ee99ef11a57839dc677470e3c1e07a110d98e9a4e9d983670169798ba07289",
+        "inputs": {
+            "files/imported/sets/default/d2x.hog": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+            "files/imported/sets/default/d2x-xl.hog": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+            "files/imported/sets/default/missions/kmtl-xl.mn2": "4c37b4ddf86f7ba788aaebdabb370d104ca54f6f63dd4ce05ce24b63eff9138b",
+            "files/imported/sets/default/missions/kmtl-xl.hog": "e39edcd6340c56f50d584d31c7ca799005461a362eebba19d1da50d216b34022",
+            "files/d2x-redux/.active_set_path": "1701f6a6b46175e144de24e16727c2227313c1c03d8aff591e7a8bbf6f0ba2c4"
+        },
+        "difficulty": "Hotshot",
+        "saved": {
+            "level": "Kritical Mass Testing Lab",
+            "ordinal": 1,
+            "alive": true,
+            "energy": 97.06005859375,
+            "shields": 100.0,
+            "segment": 288,
+            "z": 68.09176635742188,
+            "cheats": false
+        },
+        "restored_and_fired": {
+            "level": "Kritical Mass Testing Lab",
+            "ordinal": 1,
+            "alive": true,
+            "energy": 93.14013671875,
+            "shields": 100.0,
+            "segment": 288,
+            "z": 67.26547241210938,
+            "cheats": false
+        },
+        "save_sha256": "dd57962938e75c99a290fea150475f84ed685703f8bc91d5cb83f2ac762de274",
+        "processes": [6067, 6450],
+        "initial_script_steps": 19,
+        "restored_script_steps": 10,
+        "earned_controls": [
+            {
+                "action": "enter_game",
+                "game": "d2"
+            },
+            {
+                "action": "skip_intro",
+                "timeout_ms": 30000
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "title",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "New game",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "Kritical Mass Test Labs (",
+                "action": "select_mission"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "Hotshot",
+                "action": "select"
+            },
+            {
+                "action": "skip_briefing",
+                "timeout_ms": 30000
+            },
+            {
+                "expect": {
+                    "current_level_num": 1,
+                    "game_window_is_front": true,
+                    "in_game": true
+                },
+                "timeout_ms": 30000,
+                "action": "wait_for"
+            },
+            {
+                "action": "wait_ms",
+                "ms": 2500
+            },
+            {
+                "action": "assert",
+                "expect": {
+                    "player_dead": false,
+                    "cheats_enabled": false,
+                    "in_game": true
+                }
+            },
+            {
+                "action": "send_button",
+                "button": 100,
+                "held": 1
+            },
+            {
+                "action": "send_axis",
+                "axis": 1,
+                "axis_value": -0.7
+            },
+            {
+                "expect": {
+                    "player_dead": false,
+                    "player.energy": {
+                        "lt": 100.0
+                    },
+                    "position.z": {
+                        "gt": 48.0
+                    }
+                },
+                "action": "wait_for",
+                "timeout_ms": 7000
+            },
+            {
+                "action": "send_axis",
+                "axis": 1,
+                "axis_value": 0.0
+            },
+            {
+                "action": "send_button",
+                "button": 100,
+                "held": 0
+            },
+            {
+                "action": "wait_ms",
+                "ms": 350
+            },
+            {
+                "action": "assert",
+                "expect": {
+                    "current_level_name": "Kritical Mass Testing Lab",
+                    "player_dead": false,
+                    "cheats_enabled": false
+                }
+            },
+            {
+                "field": "android_game_request",
+                "action": "set_debug",
+                "value": "quick_save"
+            },
+            {
+                "action": "wait_ms",
+                "ms": 900
+            }
+        ],
+        "restore_controls": [
+            {
+                "action": "enter_game",
+                "game": "d2"
+            },
+            {
+                "action": "skip_intro",
+                "timeout_ms": 30000
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "title",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "Load Game",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "[quick] level 1",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 30000,
+                "expect": {
+                    "current_level_num": 1,
+                    "position.z": {
+                        "gt": 50
+                    },
+                    "player.energy": {
+                        "lt": 99
+                    },
+                    "current_level_name": "Kritical Mass Testing Lab",
+                    "cheats_enabled": false,
+                    "in_game": true,
+                    "player_dead": false
+                },
+                "action": "wait_for"
+            },
+            {
+                "held": 1,
+                "button": 100,
+                "action": "send_button"
+            },
+            {
+                "timeout_ms": 6000,
+                "expect": {
+                    "player.energy": {
+                        "lt": 95
+                    }
+                },
+                "action": "wait_for"
+            },
+            {
+                "held": 0,
+                "button": 100,
+                "action": "send_button"
+            },
+            {
+                "action": "assert",
+                "expect": {
+                    "player_dead": false,
+                    "in_game": true,
+                    "cheats_enabled": false
+                }
+            }
+        ],
+        "screenshot_sha256": "614cb70285f6c465b889a7dfceed4aeebfa6d29509657683eff0a023505dd13c",
+        "earned_snapshot_sha256": "3b18709a4967cf8df6f27d5b1c6678ab478ea563a75a350e0871dc51fa0af410",
+        "restored_snapshot_sha256": "079bf0a9c25da70143a6a1a9a5df8f9582500f1bc0e6e9ea5fc20e52e48c542b",
+        "scope": "New game, forward thrust and laser fire, native quicksave, process restart, menu load and continued fire. No position or view assists. The prepared data set, pilot and menus were automated. The saved snapshot was taken after the quicksave, with the ship decelerating.",
+        "setup_attempts": [
+            "The selected player profile did not exist on the isolated emulator.",
+            "The mixed-case LAN profile appeared in the list, but selecting it returned to pilot selection. A lowercase copy of the same profile worked."
+        ]
+    },
+    "fixed_windows": {
+        "complete": true,
+        "counts": {
+            "loaded_ticked": 8
+        },
+        "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+        "denominator": 8,
+        "passed": 8,
+        "readiness_percent": 100.0
+    }
+}

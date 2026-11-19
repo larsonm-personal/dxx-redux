@@ -131,6 +131,22 @@ static void mod_incoming_source_controls(const std::filesystem::path &root)
 		require(discarded->dependencies().robot_data[0].mass == robot.mass, "Target HXM resolved the outgoing source");
 	}
 	auto prepared = XlPreparedResources::prepare_mission(mission);
+	require(prepared->mission_replaces_robots(), "Decoded mission HXM lost its robot replacement");
+	{
+		// A valid empty HXM retains the same target HAM and Vertigo robot count
+		std::array<unsigned char, 28> empty{ 'H', 'M', 'X', '!', 1 };
+		const auto path = mods / "pmines.hxm";
+		{
+			std::ofstream file(path, std::ios::binary | std::ios::trunc);
+			file.write(reinterpret_cast<const char *>(empty.data()), empty.size());
+			require(bool(file), "Cannot write empty incoming mission HXM control");
+		}
+		const auto neutral = XlPreparedResources::prepare_mission(mission);
+		require(!neutral->mission_replaces_robots() && prepared->mission_replaces_robots() &&
+		            neutral->dependencies().robot_count == prepared->dependencies().robot_count,
+		        "Mission robot declaration leaked between independent retained owners");
+		std::filesystem::copy_file(root / "preview-user/incoming-owner.hxm", path, std::filesystem::copy_options::overwrite_existing);
+	}
 	require(prepared->dependencies().robot_count == N_robot_types &&
 	            prepared->dependencies().weapon_count == N_weapon_types &&
 	            prepared->dependencies().robot_data[0].mass == robot.mass &&

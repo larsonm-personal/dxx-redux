@@ -2640,6 +2640,10 @@ extern "C" char *game_introspect_get_state(void)
 			mp["game_name"] = std::string(Netgame.game_name);
 			mp["mission_title"] = std::string(Netgame.mission_title);
 			mp["mission_name"] = std::string(Netgame.mission_name);
+#ifdef DXX_BUILD_DESCENT_II
+			if (Current_mission)
+				mp["loaded_mission_filename"] = std::string(Current_mission_filename);
+#endif
 			mp["level_num"] = (int) Netgame.levelnum;
 			mp["gamemode"] = (int) Netgame.gamemode;
 #ifdef __ANDROID__

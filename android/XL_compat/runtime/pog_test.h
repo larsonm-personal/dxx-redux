@@ -1,5 +1,6 @@
 #include "pog_resources.h"
 #include "scoped_texture_playback.h"
+#include "retained_resource.h"
 #include "texture_pixels.h"
 #include "../pog.h"
 #include "prepared_ham.h"
@@ -502,6 +503,18 @@ static int pog_test(int argc, char **argv)
 		require(PHYSFS_removeFromSearchPath(root.string().c_str()), "Cannot unmount private POG controls");
 		if (const auto hog = find_arg_value(argc, argv, "-pumo-hog")) {
 			require(PHYSFS_addToSearchPath(hog, 0), "Cannot mount read-only original Pumo resources");
+			XlPhysicalArchive archive(hog);
+			const auto native_hub = read("pm-hub.rl2");
+			const auto retained_hub = archive.member("PM-HUB.RL2", native_hub.size());
+			require(retained_hub && *retained_hub == native_hub && !archive.member("absent.rl2", 1),
+			        "Large Pumo HOG member lookup differs from the native mount");
+			bool rejected = false;
+			try {
+				archive.member("pm-hub.rl2", native_hub.size() - 1);
+			} catch (const std::runtime_error &error) {
+				rejected = std::string(error.what()).find("member exceeds its bound") != std::string::npos;
+			}
+			require(rejected, "Large Pumo HOG bypassed the requested member limit");
 			unsigned count = 0;
 			for (const char *name : { "pmlev1.pog", "pmlev2.pog", "pmlev3.pog", "pm-hub.pog", "tulev2.pog" }) {
 				const unsigned expected = !std::strcmp(name, "pm-hub.pog") ? 6 : 5;

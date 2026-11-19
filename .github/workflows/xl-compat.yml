@@ -39,8 +39,7 @@ jobs:
         if: runner.os == 'Linux'
         timeout-minutes: 15
         run: |
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o APT::Update::Error-Mode=any update
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends \
+          bash .github/scripts/install_noble_packages.sh \
             libegl1-mesa-dev libgl1-mesa-dev libgl1-mesa-dri libglu1-mesa-dev libglew-dev \
             libsdl1.2-dev libsdl-mixer1.2-dev libphysfs-dev libpng-dev nlohmann-json3-dev=3.11.3-1
 
@@ -127,8 +126,7 @@ jobs:
         timeout-minutes: 15
         run: |
           python3 .github/scripts/prefer_ubuntu_archive.py
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o APT::Update::Error-Mode=any update
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends \
+          bash .github/scripts/install_noble_packages.sh \
             libegl1-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libglew-dev \
             libsdl1.2-dev libsdl-mixer1.2-dev libphysfs-dev libpng-dev zlib1g-dev
 
@@ -201,8 +199,7 @@ jobs:
         timeout-minutes: 15
         run: |
           python3 .github/scripts/prefer_ubuntu_archive.py
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o APT::Update::Error-Mode=any update
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends \
+          bash .github/scripts/install_noble_packages.sh \
             libegl1-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libglew-dev \
             libsdl1.2-dev libsdl-mixer1.2-dev libphysfs-dev libpng-dev zlib1g-dev
 
