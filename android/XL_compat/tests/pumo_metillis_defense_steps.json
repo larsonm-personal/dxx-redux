@@ -1,0 +1,167 @@
+[
+    {
+        "action": "fly_through_side",
+        "segment": 398,
+        "side": 1,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 740,
+        "side": 0,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 741,
+        "side": 4,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 745,
+        "side": 4,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 747,
+        "side": 4,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 748,
+        "side": 2,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 750,
+        "side": 1,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 751,
+        "side": 1,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 752,
+        "side": 1,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 755,
+        "side": 4,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 756,
+        "side": 4,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 761,
+        "side": 4,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 762,
+        "side": 4,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 765,
+        "side": 4,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 766,
+        "side": 4,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 781,
+        "side": 4,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 784,
+        "side": 4,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "fly_through_side",
+        "segment": 787,
+        "side": 4,
+        "max_frames": 700,
+        "fire_primary": true,
+        "engage_robots": true
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "position.segment": 790,
+            "cheats_enabled": false,
+            "player_dead": false,
+            "player.robots_killed_level": {
+                "gt": 15
+            },
+            "player.score": {
+                "gt": 24000
+            },
+            "player.lives": 3,
+            "player.has_blue_key": true
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save"
+    }
+]

@@ -59,8 +59,23 @@ void original_fire_translation(const char *path)
 void effect_layout_contract(const char *directory = nullptr)
 {
 	if (directory) std::filesystem::create_directories(directory);
+	// Header widths and legacy function semantics are independent in these releases.
+	for (int version : { 18, 19 }) {
+		const auto bytes = fixture(version);
+		const auto level = xl_compat::inspect_level(bytes);
+		check(xl_compat::supported_xl_layout(level) && !xl_compat::modern_runtime_layout(level) &&
+		          level.game_version == (version == 18 ? 36 : 40),
+		      "Audited legacy level lost its game-data layout");
+		for (int other : { 36, 37, 38, 39, 40 }) {
+			if (other == level.game_version) continue;
+			auto neighbor = level;
+			neighbor.game_version = other;
+			check(xl_compat::blocker_message(xl_compat::runtime_blockers(neighbor)).find("serialization") != std::string::npos,
+			      "Unaudited neighboring game-data version admitted");
+		}
+	}
 	int cases = 0, truncations = 0;
-	for (int version : { 15, 17, 21, 23, 25, 27 })
+	for (int version : { 15, 17, 18, 19, 21, 22, 23, 25, 27 })
 		for (int render : { 0, 8, 11, 12, 13 })
 			for (int profile = 0; profile < 5; ++profile) {
 				auto bytes = fixture(version);
@@ -69,7 +84,7 @@ void effect_layout_contract(const char *directory = nullptr)
 				patch(bytes, base.game_offset + 35, static_cast<unsigned>(start));
 				patch(bytes, base.game_offset + 39, 1);
 				patch(bytes, base.game_offset + 43, 264);
-				const int header = version >= 21 ? 80 : 79;
+				const int header = base.game_version > 37 ? 80 : 79;
 				const int id = profile == 1 ? 7 : profile == 2 ? 0
 				                              : profile == 4   ? 2
 				                              : render == 12   ? 1
@@ -82,7 +97,7 @@ void effect_layout_contract(const char *directory = nullptr)
 				object[2] = profile == 2 ? 17 : 0;
 				object[3] = profile == 3 ? 2 : 0;
 				object[4] = static_cast<unsigned char>(render);
-				const int shift = version >= 21;
+				const int shift = base.game_version > 37;
 				for (int i = 0; i < 9; ++i) patch(object, 20 + shift + i * 4, i % 4 == 0 ? 65536 : 0);
 				patch(object, 56 + shift, 65536);
 				patch(object, 60 + shift, 65536);
@@ -248,7 +263,7 @@ void effect_layout_contract(const char *directory = nullptr)
 			object[0] = 19;
 			object[2] = 13;
 			object[4] = supported ? 5 : 0;
-			const int shift = version >= 21;
+			const int shift = base.game_version > 37;
 			for (int i = 0; i < 9; ++i) patch(object, 20 + shift + i * 4, i % 4 == 0 ? 65536 : 0);
 			patch(object, 56 + shift, 65536);
 			patch(object, 60 + shift, 65536);
