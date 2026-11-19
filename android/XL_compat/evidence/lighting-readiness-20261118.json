@@ -1,0 +1,1392 @@
+{
+    "schema": "dxx-xl-lighting-readiness-v1",
+    "target": "4053540493d4610ac1cd48feb59a78701978e7bc",
+    "engine_sha256": "56a661052e0e8e059f343c8b3b598c8ed831406c1846b0b3f140fa0ec7323461",
+    "prior_target": "45e4c91c009b9dcd0bafe20c85fb4031ea5c0b0e",
+    "scopes": {
+        "pinned": {
+            "before": 1022,
+            "after": 1028,
+            "total": 1111,
+            "first_blockers": {
+                "Segment functions": 7,
+                "Animated replacement textures": 7,
+                "Replacement bitmap directory": 3,
+                "Unsupported level format": 4,
+                "Advertised level file missing": 31,
+                "Simulation stopped": 2,
+                "Mission selection": 3,
+                "Custom base definitions": 1,
+                "Robot definitions": 2,
+                "Wall types": 1,
+                "Object placement": 1,
+                "Reactor triggers": 1,
+                "Lightning effects": 1,
+                "Resolved level filename differs": 1,
+                "Light index bounds": 15,
+                "Object trigger actions": 1,
+                "Trigger targets": 1,
+                "Fluid behavior": 1
+            }
+        },
+        "additional": {
+            "before": 460,
+            "after": 464,
+            "total": 543,
+            "first_blockers": {
+                "Animated replacement textures": 19,
+                "Texture memory budget": 12,
+                "Unsupported level format": 10,
+                "Segment functions": 5,
+                "OOF model decoding": 4,
+                "Non-hexahedral geometry": 4,
+                "Reactor triggers": 4,
+                "Advertised level file missing": 3,
+                "ASE model rendering": 3,
+                "Simulation stopped": 2,
+                "Light index bounds": 1,
+                "Multiplayer-only objects": 1,
+                "Robot contents": 1,
+                "Custom base definitions": 1,
+                "Mission selection": 1,
+                "Lightning effects": 1,
+                "Wall types": 1,
+                "Particle effects": 1,
+                "Object placement": 1,
+                "Fluid behavior": 1,
+                "Robot definitions": 1,
+                "Replacement bitmap directory": 1,
+                "timeout": 1
+            }
+        }
+    },
+    "receipts": [
+        {
+            "name": "full-pinned-1",
+            "before_sha256": "409da678d110a1cda3b69b27881a70c420e5cc4ae37deb6b6473ceab33e879d2",
+            "results_sha256": "0edf67c3c6522371d9330cd91d160cc1b70b61faf1905427670c013ab2724c97",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "load_failed": 25,
+                    "loaded_ticked": 340,
+                    "simulation_failed": 3,
+                    "unsupported_format": 2
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 370,
+                "passed": 340,
+                "readiness_percent": 91.9
+            }
+        },
+        {
+            "name": "full-pinned-2",
+            "before_sha256": "8c0f9f65851ea569ba123cae86a6aa9959ffd00f893b26280773a21dea03c7dc",
+            "results_sha256": "68d72a6c87b470a3f46acf388e973aa261a708237bcb7f0366a7ca60590a88b3",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "load_failed": 43,
+                    "loaded_ticked": 327
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 370,
+                "passed": 327,
+                "readiness_percent": 88.4
+            }
+        },
+        {
+            "name": "full-pinned-3",
+            "before_sha256": "353ce2f37da715418931671b0562896b39348853a3d55846dea7211fef60bb78",
+            "results_sha256": "28abce5b32d665baa14be79cc4274d02d49de7559a6346cf0abe80bb6e83eacb",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "load_failed": 8,
+                    "loaded_ticked": 361,
+                    "unsupported_format": 2
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 371,
+                "passed": 361,
+                "readiness_percent": 97.3
+            }
+        },
+        {
+            "name": "full-additional-1",
+            "before_sha256": "ba090698f8dbfa9a326fdb6ad877a649b085c0829542cd3ad4daf3cc9acc378e",
+            "results_sha256": "9621d38236703b3a20115142d788bde1a5ddbb894deb1f3579569779aab57610",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "load_failed": 66,
+                    "loaded_ticked": 464,
+                    "simulation_failed": 2,
+                    "timeout": 1,
+                    "unsupported_format": 10
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 543,
+                "passed": 464,
+                "readiness_percent": 85.5
+            }
+        }
+    ],
+    "lighting": [
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:3",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": null
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "before": "load_failed",
+            "after": "load_failed",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+            "before": "load_failed",
+            "after": "load_failed",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:1",
+            "before": "load_failed",
+            "after": "load_failed",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:2",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": null
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:3",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": null
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:4",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": null
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:5",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": null
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:6",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": null
+        },
+        {
+            "case": "levels_multiplayer/bttlheat.zip/Bttlheat.mn2:1",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": null
+        },
+        {
+            "case": "levels_multiplayer/bttlhtur.zip/bttlhtur.mn2:1",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": null
+        },
+        {
+            "case": "levels_multiplayer/dogfight.zip/dogfight.mn2:1",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": null
+        },
+        {
+            "case": "levels_multiplayer/megazone.zip/megazone.mn2:1",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": null
+        }
+    ],
+    "original": [
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/chaothry.mn2:1",
+            "before": "loaded_ticked",
+            "after": "loaded_ticked",
+            "prior_blocker": null,
+            "first_blocker": null
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/chaothry.mn2:2",
+            "before": "loaded_ticked",
+            "after": "loaded_ticked",
+            "prior_blocker": null,
+            "first_blocker": null
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/chaothry.mn2:3",
+            "before": "loaded_ticked",
+            "after": "loaded_ticked",
+            "prior_blocker": null,
+            "first_blocker": null
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/chaothry.mn2:4",
+            "before": "loaded_ticked",
+            "after": "loaded_ticked",
+            "prior_blocker": null,
+            "first_blocker": null
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/chaothry.mn2:5",
+            "before": "loaded_ticked",
+            "after": "loaded_ticked",
+            "prior_blocker": null,
+            "first_blocker": null
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/chaothry.mn2:6",
+            "before": "loaded_ticked",
+            "after": "loaded_ticked",
+            "prior_blocker": null,
+            "first_blocker": null
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "before": "load_failed",
+            "after": "load_failed",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+            "before": "load_failed",
+            "after": "load_failed",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:1",
+            "before": "load_failed",
+            "after": "load_failed",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:6",
+            "before": "load_failed",
+            "after": "loaded_ticked",
+            "prior_blocker": "Companion lighting",
+            "first_blocker": null
+        },
+        {
+            "case": "BelialSystemXL.7z/missions/single/belialsxl.mn2:-2",
+            "before": "loaded_ticked",
+            "after": "loaded_ticked",
+            "prior_blocker": null,
+            "first_blocker": null
+        }
+    ],
+    "outside_changes": [],
+    "remaining_cases": [
+        {
+            "case": "levelpack.7z/missions/aus-red/mb-arena.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "case": "levelpack.7z/missions/d1fsxl/d1fs-xl.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "case": "levelpack.7z/missions/danwentz/dffusion.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/acat-xl.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Custom base definitions"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:2",
+            "scope": "pinned",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "scope": "pinned",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:5",
+            "scope": "pinned",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+            "scope": "pinned",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/wolfpak3.mn2:6",
+            "scope": "pinned",
+            "first_blocker": "Simulation stopped"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/biohzrd.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/dogfight.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Replacement bitmap directory"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/emtombz.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/etombz.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Mission selection"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/forest.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Robot definitions"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/g-house.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Wall types"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/playgdxl.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Object placement"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/ptech-d3.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/pyrotech.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Simulation stopped"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/qtoxic.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Replacement bitmap directory"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/speed.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Reactor triggers"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/steel-xl.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Lightning effects"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/styx-d3.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/tankboy.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/toxic-d3.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Replacement bitmap directory"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/wfc.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/wfc20.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "case": "levelpack.7z/missions/kruel/kmtl-xl.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Mission selection"
+        },
+        {
+            "case": "levelpack.7z/missions/lotw/bay32.msn:1",
+            "scope": "pinned",
+            "first_blocker": "Resolved level filename differs"
+        },
+        {
+            "case": "levelpack.7z/missions/sidewinder/picasso.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:2",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:3",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:4",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:5",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:7",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:8",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:9",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:10",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:11",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:12",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:13",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:14",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:15",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/boilpnt.mn2:2",
+            "scope": "pinned",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:2",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:3",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:4",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:5",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:6",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:7",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:8",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:9",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:10",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:11",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:12",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:13",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:14",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:15",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:16",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:17",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:18",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:19",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:20",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:21",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:22",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:23",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:24",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:25",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:26",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:27",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/pmlev1.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Mission selection"
+        },
+        {
+            "case": "levelpack.7z/missions/single/reflux.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levelpack.7z/missions/single/sphere.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Robot definitions"
+        },
+        {
+            "case": "levelpack.7z/missions/sirius/antho1-3.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Object trigger actions"
+        },
+        {
+            "case": "levelpack.7z/missions/sirius/antho1-3.mn2:3",
+            "scope": "pinned",
+            "first_blocker": "Trigger targets"
+        },
+        {
+            "case": "levelpack.7z/missions/sirius/antholgy.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levelpack.7z/missions/sirius/fv24b.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "case": "levelpack.7z/missions/sirius/sclairxl.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "case": "levelpack.7z/missions/spotlight/crownx.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "case": "levelpack.7z/missions/spotlight/rtarena.mn2:1",
+            "scope": "pinned",
+            "first_blocker": "Fluid behavior"
+        },
+        {
+            "case": "anthology(split).7z/missions/single/antho1-3.mn2:1",
+            "scope": "additional",
+            "first_blocker": "OOF model decoding"
+        },
+        {
+            "case": "anthology(split).7z/missions/single/antho1-3.mn2:2",
+            "scope": "additional",
+            "first_blocker": "OOF model decoding"
+        },
+        {
+            "case": "anthology(split).7z/missions/single/antho1-3.mn2:3",
+            "scope": "additional",
+            "first_blocker": "OOF model decoding"
+        },
+        {
+            "case": "anthology.7z/missions/sirius/antholgy.mn2:1",
+            "scope": "additional",
+            "first_blocker": "OOF model decoding"
+        },
+        {
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:2",
+            "scope": "additional",
+            "first_blocker": "Light index bounds"
+        },
+        {
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:3",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:4",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:6",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:7",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levels/amalthea.zip/amalthea/Amalthea.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Multiplayer-only objects"
+        },
+        {
+            "case": "levels/elitehunt.zip/elitehnt.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "case": "levels/kalisto.zip/kalisto/kalisto.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Non-hexahedral geometry"
+        },
+        {
+            "case": "levels/kore.zip/kore/kore.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Robot contents"
+        },
+        {
+            "case": "levels/lor-xl.7z/missions/single/lor-xl.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levels_multiplayer/acat-xl.7z/missions/acat-xl.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Custom base definitions"
+        },
+        {
+            "case": "levels_multiplayer/biohzrd.zip/biohzrd.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:2",
+            "scope": "additional",
+            "first_blocker": "Reactor triggers"
+        },
+        {
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:3",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:5",
+            "scope": "additional",
+            "first_blocker": "Reactor triggers"
+        },
+        {
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+            "scope": "additional",
+            "first_blocker": "Reactor triggers"
+        },
+        {
+            "case": "levels_multiplayer/code-yena-xl.7z/cdeyena2.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Non-hexahedral geometry"
+        },
+        {
+            "case": "levels_multiplayer/coordination-xl.7z/crdntion.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Non-hexahedral geometry"
+        },
+        {
+            "case": "levels_multiplayer/cs-dust.7z/dust.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levels_multiplayer/dmentia2.zip/DMENTIA2.MN2:2",
+            "scope": "additional",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levels_multiplayer/emtombz.zip/emtombz.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "case": "levels_multiplayer/etombz.zip/etombz.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Mission selection"
+        },
+        {
+            "case": "levels_multiplayer/firsteel.7z/steel-xl.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Lightning effects"
+        },
+        {
+            "case": "levels_multiplayer/fv24b.zip/fv24b.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "case": "levels_multiplayer/g-house.7z/missions/diedel/d3/g-house.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Wall types"
+        },
+        {
+            "case": "levels_multiplayer/mb-arena.7z/missions/spotlight/mb-arena.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "case": "levels_multiplayer/nocturnl.zip/d1nctrlnl.msn:1",
+            "scope": "additional",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levels_multiplayer/picasso.zip/Picasso.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Advertised level file missing"
+        },
+        {
+            "case": "levels_multiplayer/playgrnd.7z/missions/diedel/XL/playgdxl.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Particle effects"
+        },
+        {
+            "case": "levels_multiplayer/playgrnd.7z/playgdxl.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Object placement"
+        },
+        {
+            "case": "levels_multiplayer/pmanicd2.zip/pmanicd2.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "case": "levels_multiplayer/pyrotech.7z/missions/diedel/d3/ptech-d3.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levels_multiplayer/pyrotech.7z/missions/diedel/pyrotech.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Simulation stopped"
+        },
+        {
+            "case": "levels_multiplayer/pyrotech.7z/ptech-d3.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levels_multiplayer/pyrotech.7z/pyrotech.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Simulation stopped"
+        },
+        {
+            "case": "levels_multiplayer/rtarena.zip/RTARENA.MN2:1",
+            "scope": "additional",
+            "first_blocker": "Fluid behavior"
+        },
+        {
+            "case": "levels_multiplayer/speed.7z/missions/diedel/d3/speed.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Reactor triggers"
+        },
+        {
+            "case": "levels_multiplayer/styx.7z/missions/diedel/d3/styx-d3.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levels_multiplayer/subspace.7z/missions/diedel/d3/subspace.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Robot definitions"
+        },
+        {
+            "case": "levels_multiplayer/tankboy.7z/missions/diedel/d3/tnkboyd3.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levels_multiplayer/Temple Of Helix.zip/missions/tohelix.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Non-hexahedral geometry"
+        },
+        {
+            "case": "levels_multiplayer/toxic.7z/missions/diedel/d3/toxic-d3.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "levels_multiplayer/toxic.7z/missions/diedel/XL/qtoxic.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Replacement bitmap directory"
+        },
+        {
+            "case": "levels_multiplayer/wfc.7z/missions/diedel/d3/wfc-d3.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "case": "levels_multiplayer/wfc.7z/missions/diedel/wfc20.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Segment functions"
+        },
+        {
+            "case": "levels_multiplayer/zugzwang.7z/zugzwang.mn2:1",
+            "scope": "additional",
+            "first_blocker": "timeout"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:1",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:2",
+            "scope": "additional",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:3",
+            "scope": "additional",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:4",
+            "scope": "additional",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:5",
+            "scope": "additional",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:6",
+            "scope": "additional",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:7",
+            "scope": "additional",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:8",
+            "scope": "additional",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:9",
+            "scope": "additional",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:10",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:11",
+            "scope": "additional",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:12",
+            "scope": "additional",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:13",
+            "scope": "additional",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:14",
+            "scope": "additional",
+            "first_blocker": "Texture memory budget"
+        },
+        {
+            "case": "PMKartsal-3L-Demo-v1.0.rar/missions/kartsal.mn2:1",
+            "scope": "additional",
+            "first_blocker": "ASE model rendering"
+        },
+        {
+            "case": "PMKartsal-3L-Demo-v1.0.rar/missions/kartsal.mn2:2",
+            "scope": "additional",
+            "first_blocker": "ASE model rendering"
+        },
+        {
+            "case": "PMKartsal-3L-Demo-v1.0.rar/missions/kartsal.mn2:3",
+            "scope": "additional",
+            "first_blocker": "ASE model rendering"
+        },
+        {
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:1",
+            "scope": "additional",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:2",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:3",
+            "scope": "additional",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:4",
+            "scope": "additional",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:5",
+            "scope": "additional",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-1",
+            "scope": "additional",
+            "first_blocker": "Animated replacement textures"
+        },
+        {
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-2",
+            "scope": "additional",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-3",
+            "scope": "additional",
+            "first_blocker": "Unsupported level format"
+        },
+        {
+            "case": "sphere-1.51.7z/missions/single/sphere.mn2:3",
+            "scope": "additional",
+            "first_blocker": "Unsupported level format"
+        }
+    ],
+    "embedded_candidate": {
+        "target": "495d44bdedd4c0d75b42123ee2088be3e7da8fec",
+        "engine_sha256": "29d47f0027b041d93af6034ff469b31afcffd75f7b768c961f8ed375f2754188",
+        "scopes": {
+            "pinned": {
+                "before": 1022,
+                "after": 1027,
+                "total": 1111,
+                "first_blockers": {
+                    "Segment functions": 7,
+                    "Companion lighting": 4,
+                    "Replacement bitmap directory": 3,
+                    "Animated replacement textures": 4,
+                    "Unsupported level format": 4,
+                    "Advertised level file missing": 31,
+                    "Simulation stopped": 2,
+                    "Mission selection": 3,
+                    "Custom base definitions": 1,
+                    "Robot definitions": 2,
+                    "Wall types": 1,
+                    "Object placement": 1,
+                    "Reactor triggers": 1,
+                    "Lightning effects": 1,
+                    "Resolved level filename differs": 1,
+                    "Light index bounds": 15,
+                    "Object trigger actions": 1,
+                    "Trigger targets": 1,
+                    "Fluid behavior": 1
+                }
+            },
+            "additional": {
+                "before": 460,
+                "after": 464,
+                "total": 543,
+                "first_blockers": {
+                    "Animated replacement textures": 19,
+                    "Texture memory budget": 12,
+                    "Unsupported level format": 10,
+                    "Segment functions": 5,
+                    "OOF model decoding": 4,
+                    "Non-hexahedral geometry": 4,
+                    "Reactor triggers": 4,
+                    "Advertised level file missing": 3,
+                    "ASE model rendering": 3,
+                    "Simulation stopped": 2,
+                    "Light index bounds": 1,
+                    "Multiplayer-only objects": 1,
+                    "Robot contents": 1,
+                    "Custom base definitions": 1,
+                    "Mission selection": 1,
+                    "Lightning effects": 1,
+                    "Wall types": 1,
+                    "Particle effects": 1,
+                    "Object placement": 1,
+                    "Fluid behavior": 1,
+                    "Robot definitions": 1,
+                    "Replacement bitmap directory": 1,
+                    "timeout": 1
+                }
+            }
+        },
+        "receipts": [
+            {
+                "name": "full-pinned-1",
+                "before_sha256": "409da678d110a1cda3b69b27881a70c420e5cc4ae37deb6b6473ceab33e879d2",
+                "results_sha256": "0dde94ab285bfd76560d6684d7db337b9f059164f503f7a032981a05ba48e770",
+                "summary": {
+                    "complete": true,
+                    "counts": {
+                        "load_failed": 26,
+                        "loaded_ticked": 339,
+                        "simulation_failed": 3,
+                        "unsupported_format": 2
+                    },
+                    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                    "denominator": 370,
+                    "passed": 339,
+                    "readiness_percent": 91.6
+                }
+            },
+            {
+                "name": "full-pinned-2",
+                "before_sha256": "8c0f9f65851ea569ba123cae86a6aa9959ffd00f893b26280773a21dea03c7dc",
+                "results_sha256": "b3b1cf28a9656abb465d03d099aea3347dedf5b338be390ddca696f926587c6e",
+                "summary": {
+                    "complete": true,
+                    "counts": {
+                        "load_failed": 43,
+                        "loaded_ticked": 327
+                    },
+                    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                    "denominator": 370,
+                    "passed": 327,
+                    "readiness_percent": 88.4
+                }
+            },
+            {
+                "name": "full-pinned-3",
+                "before_sha256": "353ce2f37da715418931671b0562896b39348853a3d55846dea7211fef60bb78",
+                "results_sha256": "9bcf89ef3c34f0525e6c06a76d5946eb039509f7bb6c0ef75d2869b4acb63aa5",
+                "summary": {
+                    "complete": true,
+                    "counts": {
+                        "load_failed": 8,
+                        "loaded_ticked": 361,
+                        "unsupported_format": 2
+                    },
+                    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                    "denominator": 371,
+                    "passed": 361,
+                    "readiness_percent": 97.3
+                }
+            },
+            {
+                "name": "full-additional-1",
+                "before_sha256": "ba090698f8dbfa9a326fdb6ad877a649b085c0829542cd3ad4daf3cc9acc378e",
+                "results_sha256": "5a30ea7bef72d51ef3af552cebbdee6dafa723c7b83acd2310225bc43d6b94b8",
+                "summary": {
+                    "complete": true,
+                    "counts": {
+                        "load_failed": 66,
+                        "loaded_ticked": 464,
+                        "simulation_failed": 2,
+                        "timeout": 1,
+                        "unsupported_format": 10
+                    },
+                    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                    "denominator": 543,
+                    "passed": 464,
+                    "readiness_percent": 85.5
+                }
+            }
+        ],
+        "lighting": [
+            {
+                "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:3",
+                "before": "load_failed",
+                "after": "loaded_ticked",
+                "prior_blocker": "Companion lighting",
+                "first_blocker": null
+            },
+            {
+                "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+                "before": "load_failed",
+                "after": "load_failed",
+                "prior_blocker": "Companion lighting",
+                "first_blocker": "Companion lighting"
+            },
+            {
+                "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+                "before": "load_failed",
+                "after": "load_failed",
+                "prior_blocker": "Companion lighting",
+                "first_blocker": "Companion lighting"
+            },
+            {
+                "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:1",
+                "before": "load_failed",
+                "after": "load_failed",
+                "prior_blocker": "Companion lighting",
+                "first_blocker": "Companion lighting"
+            },
+            {
+                "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:2",
+                "before": "load_failed",
+                "after": "loaded_ticked",
+                "prior_blocker": "Companion lighting",
+                "first_blocker": null
+            },
+            {
+                "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:3",
+                "before": "load_failed",
+                "after": "loaded_ticked",
+                "prior_blocker": "Companion lighting",
+                "first_blocker": null
+            },
+            {
+                "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:4",
+                "before": "load_failed",
+                "after": "loaded_ticked",
+                "prior_blocker": "Companion lighting",
+                "first_blocker": null
+            },
+            {
+                "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:5",
+                "before": "load_failed",
+                "after": "loaded_ticked",
+                "prior_blocker": "Companion lighting",
+                "first_blocker": null
+            },
+            {
+                "case": "levelpack.7z/missions/darkflamewolf/vignette-xl.mn2:6",
+                "before": "load_failed",
+                "after": "load_failed",
+                "prior_blocker": "Companion lighting",
+                "first_blocker": "Companion lighting"
+            },
+            {
+                "case": "levels_multiplayer/bttlheat.zip/Bttlheat.mn2:1",
+                "before": "load_failed",
+                "after": "loaded_ticked",
+                "prior_blocker": "Companion lighting",
+                "first_blocker": null
+            },
+            {
+                "case": "levels_multiplayer/bttlhtur.zip/bttlhtur.mn2:1",
+                "before": "load_failed",
+                "after": "loaded_ticked",
+                "prior_blocker": "Companion lighting",
+                "first_blocker": null
+            },
+            {
+                "case": "levels_multiplayer/dogfight.zip/dogfight.mn2:1",
+                "before": "load_failed",
+                "after": "loaded_ticked",
+                "prior_blocker": "Companion lighting",
+                "first_blocker": null
+            },
+            {
+                "case": "levels_multiplayer/megazone.zip/megazone.mn2:1",
+                "before": "load_failed",
+                "after": "loaded_ticked",
+                "prior_blocker": "Companion lighting",
+                "first_blocker": null
+            }
+        ],
+        "outside_changes": []
+    },
+    "first_animated_strips": [
+        {
+            "mission": "ctheo-xl",
+            "ordinal": 4,
+            "mine": "standoff",
+            "bitmap": 2028,
+            "name": "new0038",
+            "width": 128,
+            "height": 768,
+            "frames": 6,
+            "flags": 128,
+            "entries": 40,
+            "pog_sha256": "78a4555f1eeac984a3cf2fe77b9a249569c33771d4b7ac073b4ff70596a2f52b",
+            "mine_sha256": "77c4d3929815a98e5534fc0a8c2b70a218730d6656442105b5231b93ffc6d6cb"
+        },
+        {
+            "mission": "ctheo-xl",
+            "ordinal": 6,
+            "mine": "clminate",
+            "bitmap": 2280,
+            "name": "new0038",
+            "width": 128,
+            "height": 1024,
+            "frames": 8,
+            "flags": 128,
+            "entries": 40,
+            "pog_sha256": "4211e68ef3471c5d2385fde3950692a15905494c4fb60a58e75b00effe1164ed",
+            "mine_sha256": "e7ade6c4fb0803c46573ee5265f815e8d3488951e8274729291812675522bf8e"
+        },
+        {
+            "mission": "vignette-xl",
+            "ordinal": 1,
+            "mine": "standoff",
+            "bitmap": 2028,
+            "name": "new0036",
+            "width": 128,
+            "height": 768,
+            "frames": 6,
+            "flags": 128,
+            "entries": 37,
+            "pog_sha256": "e57f841802b01c9d206bf9ad5b6fe5bb00e57d7a2def7bfcfc3634d833c532d4",
+            "mine_sha256": "3a471a5f9da591d8f97cec6685dfc46a07bdac659a8137a163c2eca20f23dbc8"
+        }
+    ]
+}
