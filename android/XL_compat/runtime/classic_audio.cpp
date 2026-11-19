@@ -1,6 +1,7 @@
 #include "classic_audio.h"
 #include "resource_banks.h"
 #include "audio_resource.h"
+#include "audio_source_identity.h"
 #include "../classic_sample.h"
 #include "../classic_bank.h"
 #include <map>
@@ -51,7 +52,7 @@ ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int 
 	ClassicAudioResources result;
 	auto scope = prepare_classic_audio_scope(level, ordinal, bank_rate, target);
 	if (!scope) return result;
-	std::string identity;
+	AudioSourceIdentity identity;
 	std::size_t storage = 0;
 	if (scope->selected_bank) {
 		const auto &resource = *scope->selected_bank;
@@ -70,7 +71,9 @@ ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int 
 				result.samples.push_back({ sample, names[unsigned(sample)], resource.path, hash, { 44100, 2, 16, std::move(pcm.stereo) } });
 			}
 			// Include the entire selected bank even when it replaces no native slots
-			result.identity = picosha2::hash256_hex_string(resource.path + ":" + hash + ":" + std::to_string(rate));
+			identity.append_path(resource.path);
+			identity.append(":" + hash + ":" + std::to_string(rate));
+			identity.finish(result.identity, result.legacy_identity);
 			return result;
 		} catch (const std::exception &error) {
 			throw std::runtime_error("Invalid XL mission sound bank " + resource.path + ": " + error.what());
@@ -89,10 +92,12 @@ ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int 
 		storage += pcm.samples.size() * sizeof(std::int16_t);
 		if (storage > 128 * 1024 * 1024) throw std::runtime_error("XL classic replacement bank exceeds 128 MiB of source storage");
 		const auto hash = picosha2::hash256_hex_string(resource->bytes);
-		identity += ":" + std::to_string(sample) + ":" + name + ":" + resource->path + ":" + hash;
+		identity.append(":" + std::to_string(sample) + ":" + name + ":");
+		identity.append_path(resource->path);
+		identity.append(":" + hash);
 		result.samples.push_back({ sample, name, resource->path, hash, std::move(pcm) });
 	}
-	if (!result.samples.empty()) result.identity = picosha2::hash256_hex_string(identity);
+	if (!result.samples.empty()) identity.finish(result.identity, result.legacy_identity);
 	return result;
 }
 ClassicAudioResources prepare_classic_playback(const ClassicAudioResources &replacements, const XlResourceBanks *banks)
@@ -107,8 +112,12 @@ ClassicAudioResources prepare_classic_playback(const ClassicAudioResources &repl
 	// the source identity each time, but retain one bounded canonical conversion
 	static ClassicAudioResources stock_cache;
 	ClassicAudioResources result;
-	std::string identity = "xl-classic-s16-44100-v1";
-	if (!replacements.identity.empty()) identity += ":" + replacements.identity;
+	AudioSourceIdentity identity;
+	identity.append("xl-classic-s16-44100-v1");
+	if (!replacements.identity.empty()) {
+		identity.portable += ":" + replacements.identity;
+		identity.legacy += ":" + replacements.legacy_identity;
+	}
 	std::size_t storage = 0;
 	for (int index = 0; const char *name = sample_name(banks, index); ++index) {
 		ClassicAudioSample sample;
@@ -125,23 +134,25 @@ ClassicAudioResources prepare_classic_playback(const ClassicAudioResources &repl
 			sample = { index, name, std::string("native:") + name, picosha2::hash256_hex_string(bytes), { 44100, 2, 16, {} } };
 			storage += std::size_t(native.length) * (44100u / unsigned(native.freq)) * 2 * sizeof(std::int16_t);
 			// Include the original bank rate: equal bytes can represent different durations
-			identity += ":" + std::to_string(native.freq);
+			identity.append(":" + std::to_string(native.freq));
 		}
 		storage += sample.pcm.samples.size() * sizeof(std::int16_t);
 		if (storage > 128 * 1024 * 1024)
 			throw std::runtime_error("XL complete classic bank exceeds 128 MiB of source storage");
-		identity += ":" + std::to_string(index) + ":" + sample.name + ":" + sample.path + ":" + sample.source_hash;
+		identity.append(":" + std::to_string(index) + ":" + sample.name + ":");
+		identity.append_path(sample.path);
+		identity.append(":" + sample.source_hash);
 		result.samples.push_back(std::move(sample));
 	}
 	if (result.samples.empty()) throw std::runtime_error("XL classic playback requires a populated native sample registry");
-	result.identity = picosha2::hash256_hex_string(identity);
-	if (selected.empty() && result.identity == stock_cache.identity) return stock_cache;
+	identity.finish(result.identity, result.legacy_identity);
+	if (replacements.identity.empty() && result.identity == stock_cache.identity && result.legacy_identity == stock_cache.legacy_identity) return stock_cache;
 	for (auto &sample : result.samples) {
 		if (selected.count(sample.sample)) continue;
 		const auto native = sample_source(banks, sample.sample);
 		sample.pcm.samples = prepare_classic_sample(native.data, std::size_t(native.length), unsigned(native.freq), 44100).stereo;
 	}
-	if (selected.empty()) stock_cache = result;
+	if (replacements.identity.empty()) stock_cache = result;
 	return result;
 }
 } // namespace xl_compat
