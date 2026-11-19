@@ -521,7 +521,7 @@ jobs:
             if [[ "$installed" != "$expected" ]]; then
               # This fixture needs only the signed Ubuntu archive. Keep the runner's other package lists
               apt_options=(
-                -o "Dir::Etc::sourcelist=$GITHUB_WORKSPACE/control/.github/ffmpeg-noble.sources"
+                -o "Dir::Etc::sourcelist=$GITHUB_WORKSPACE/control/.github/ubuntu-noble.sources"
                 -o Dir::Etc::sourceparts=-
                 -o APT::Get::List-Cleanup=0
                 -o Acquire::Retries=3
