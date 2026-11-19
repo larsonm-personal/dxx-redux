@@ -60,7 +60,7 @@ void effect_layout_contract(const char *directory = nullptr)
 {
 	if (directory) std::filesystem::create_directories(directory);
 	int cases = 0, truncations = 0;
-	for (int version : { 15, 17, 21, 23, 25, 27 })
+	for (int version : { 15, 17, 21, 22, 23, 25, 27 })
 		for (int render : { 0, 8, 11, 12, 13 })
 			for (int profile = 0; profile < 5; ++profile) {
 				auto bytes = fixture(version);

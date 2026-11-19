@@ -1063,7 +1063,7 @@ void version_21_contract()
 		truncated.resize(cut);
 		rejects([&] { xl_compat::inspect_level(truncated); });
 	}
-	for (int version : { 20, 22, 24 }) {
+	for (int version : { 20, 24 }) {
 		auto adjacent = bytes;
 		patch(adjacent, 4, version);
 		rejects([&] { xl_compat::inspect_level(adjacent); });

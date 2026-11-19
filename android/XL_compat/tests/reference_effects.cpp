@@ -624,12 +624,13 @@ int main(int argc, char **argv)
 			return xl_compat::Bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
 		};
 		if (std::filesystem::is_directory(argv[1])) {
-			for (const auto &entry : std::filesystem::directory_iterator(argv[1])) {
-				if (entry.path().extension() != ".rl2") continue;
-				compare_level(read(entry.path()), objects, effects);
-				++levels;
-			}
-			if (levels != 150) throw std::runtime_error("Missing effect reference profiles");
+			for (int version : { 15, 17, 21, 22, 23, 25, 27 })
+				for (int render : { 0, 8, 11, 12, 13 })
+					for (int profile = 0; profile < 5; ++profile) {
+						const auto name = "e" + std::to_string(version) + "r" + std::to_string(render) + "p" + std::to_string(profile) + ".rl2";
+						compare_level(read(std::filesystem::path(argv[1]) / name), objects, effects);
+						++levels;
+					}
 		} else {
 			std::ifstream input(argv[1], std::ios::binary | std::ios::ate);
 			if (!input || input.tellg() < 3) throw std::runtime_error("Cannot read original effect HOG");

@@ -350,7 +350,7 @@ int main(int argc, char **argv)
 				xl_test::layout_patch(fixture.bytes, fixture.corners[2] + 4, 0x8000 | base, 2);
 				compare(fixture.bytes);
 			}
-			for (int version : { 21, 23, 25, 26, 27 })
+			for (int version : { 21, 22, 23, 25, 26, 27 })
 				for (int owner : { -1, 0 })
 					for (int group : { -128, -1, 0, 1, 127 }) {
 						auto fixture = xl_test::layout_fixture(version);
@@ -359,13 +359,13 @@ int main(int argc, char **argv)
 						xl_test::layout_patch(fixture.bytes, start + 1, group, 1);
 						compare(fixture.bytes);
 					}
-			for (const int version : { 21, 23, 25, 26, 27 })
+			for (const int version : { 21, 22, 23, 25, 26, 27 })
 				for (int shape = 0; shape < (version < 25 ? 1 : 3); ++shape)
 					for (const int value : { -32768, -129, -128, -1, 0, 127, 128, 32767 }) {
 						if (version < 25 && (value < -128 || value > 127)) continue;
 						compare(xl_test::layout_fixture(version, shape, value, value).bytes);
 					}
-			for (int version : { 21, 23, 25, 26, 27 })
+			for (int version : { 21, 22, 23, 25, 26, 27 })
 				for (int count : { 0, 1, 9, 10, 11, 26, 32767 }) {
 					auto fixture = xl_test::layout_fixture(version);
 					auto &b = fixture.bytes;

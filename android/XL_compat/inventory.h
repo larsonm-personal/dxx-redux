@@ -151,7 +151,7 @@ struct Inventory {
 // Audited modern record layouts; individual geometry, feature and asset gates remain
 inline bool modern_level_version(int version)
 {
-	return version == 21 || version == 23 || (version >= 25 && version <= 27);
+	return (version >= 21 && version <= 23) || (version >= 25 && version <= 27);
 }
 inline bool modern_runtime_layout(const Inventory &level)
 {

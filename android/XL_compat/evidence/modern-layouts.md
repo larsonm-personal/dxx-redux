@@ -138,3 +138,21 @@ Receipts are under temp/xl-layout27-20261028, with build/test logs in temp/layou
 Unchanged regeneration preserves the checked-in inventory bytes and modification
 time. Both automation catalogs pass: 418 top-level entries, 474 support scripts,
 99 standalone JSON tests and 305 standalone PowerShell tests.
+
+## Sphere 1.51 and level 22
+
+Level 22 with game data 40 stores a lightning width byte and omits the
+four-byte waypoint. The pinned object reader supplies waypoint -1. Level 21
+defaults the width to 3, and level 23 stores both fields. The effect reader
+comparison exercises all three layouts, including a following object to detect
+a displaced read. The geometry comparison covers level 22 with the same
+segment and side readers.
+
+Sphere 1.51 advertises its 22/40 member as sp-03.rl2. The original engine reached
+120 iterations. Its light index table has 234 records and its delta table has
+32,769. The first index names segment -32768. Another names segment 3059 side
+4 and requests four deltas starting at 32768. The modern reader now reaches
+these data and rejects the level. The original loads and sorts indices before
+use. Its legacy lighting path checks the starting offset, then advances for
+the declared count. An original startup alone does not establish the effect of
+operating that light. Keep this entry a failed startup in the census.
