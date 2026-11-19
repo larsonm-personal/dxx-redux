@@ -18,6 +18,7 @@
 # Usage:
 #   .\test_lan.ps1
 #   .\test_lan.ps1 -Game d1
+#   .\test_lan.ps1 -Game d2 -ArenaJoin -MissionFile vignette-xl  # Install the same arena on both devices first
 #   .\test_lan.ps1 -Game d1 -D1FlyoutPlayers  # 20-second stagger and exterior waiting
 #   .\test_lan.ps1 -Game d2 -D1FlyoutPlayers -D1FlyoutCase near
 #   .\test_lan.ps1 -Game d2 -D1LevelTransition  # First Strike in the D2 engine
@@ -97,6 +98,7 @@ param(
     [string]$HostAvd = 'Nexus5X_Light_1',
     [string]$JoinAvd = 'Nexus5X_Light_2',
     [string]$MissionFile,
+    [switch]$ArenaJoin,
     [int]$InitialLevel = 1,
     [string]$HostCallsign = "LanHost",
     [string]$JoinCallsign = "LanJoin",
@@ -445,7 +447,10 @@ $MIGRATED_HOST_PORT = 42425
 
 # Mission filenames as used by the engine (not display names)
 $MISSION = if ($MissionFile) { $MissionFile } elseif ($Game -eq "d1") { "" } else { "d2" }
-$MODE = "coop"
+if ($ArenaJoin -and ($Game -ne 'd2' -or -not $MissionFile)) {
+    throw 'Arena join requires a D2 mission filename'
+}
+$MODE = if ($ArenaJoin) { 'anarchy' } else { 'coop' }
 
 $relayProc = $null
 $testPassed = $false
@@ -3655,6 +3660,24 @@ try {
     }
 
     Write-Status "Multiplayer sync completed" "Green"
+
+    if ($ArenaJoin) {
+        $slots = @(foreach ($serial in @($EMU1, $EMU2)) {
+                $peer = Get-GameIntrospection -Serial $serial -Fresh
+                if (-not $peer -or -not $peer.in_game -or -not $peer.is_network -or
+                    (Get-IntroNumConnected -Intro $peer) -ne 2 -or
+                    $peer.multiplayer.gamemode_name -ne 'anarchy' -or
+                    $peer.multiplayer.loaded_mission_filename -ne $MissionFile -or
+                    $peer.current_level_num -ne $InitialLevel) {
+                    throw "Peer $serial did not enter $MissionFile level $InitialLevel in two-player Anarchy"
+                }
+                [int]$peer.multiplayer.my_player_num
+            })
+        if (($slots | Sort-Object -Unique).Count -ne 2) { throw 'Arena peers reported the same player slot' }
+        Write-Status "Both players spawned in $MissionFile level $InitialLevel" "Green"
+        $testPassed = $true
+        exit 0
+    }
 
     if ($EMU1 -notmatch '^emulator-\d+$' -or $EMU2 -notmatch '^emulator-\d+$') {
         if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_device_network_controls.jsonc' `

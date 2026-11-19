@@ -1,5 +1,7 @@
 // Developer-only ordinary-player simulation; initial level and local poses are setup
 #include "texture_pixels.h"
+#include "powerup.h"
+#include "pilot_target.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #include "route_confirmation.h"
@@ -186,6 +188,7 @@ static Json combat_object_state(const TrackedCombatObject &tracked)
 static std::string file_hash(const std::filesystem::path &path)
 {
 	std::ifstream stream(path, std::ios::binary);
+	require(stream.is_open(), "native player could not read an input file");
 	const std::vector<unsigned char> bytes{ std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>() };
 	return picosha2::hash256_hex_string(bytes);
 }
@@ -208,6 +211,7 @@ static Json snapshot()
 		state["player_death_source"] = { { "object", player.killer_objnum }, { "type", killer.type }, { "id", killer.id }, { "segment", killer.segnum } };
 	}
 	state["player"] = { { "has_blue_key", bool(player.flags & PLAYER_FLAGS_BLUE_KEY) }, { "has_red_key", bool(player.flags & PLAYER_FLAGS_RED_KEY) }, { "has_gold_key", bool(player.flags & PLAYER_FLAGS_GOLD_KEY) }, { "invulnerable", bool(player.flags & PLAYER_FLAGS_INVULNERABLE) }, { "shields", double(player.shields) / F1_0 }, { "energy", double(player.energy) / F1_0 }, { "score", player.score }, { "lives", player.lives }, { "robots_killed_level", player.num_kills_level } };
+	state["player"]["hostages_on_board"] = int(player.hostages_on_board);
 	state["player"]["primary_weapon"] = player.primary_weapon;
 	state["player"]["secondary_weapon"] = int(player.secondary_weapon);
 	state["player"]["secondary_weapon_flags"] = int(player.secondary_weapon_flags);
@@ -485,15 +489,15 @@ static void pose(const Json &step)
 	ConsoleObject->mtype.phys_info.velocity = ConsoleObject->mtype.phys_info.rotvel = {};
 	ConsoleObject->mtype.phys_info.thrust = ConsoleObject->mtype.phys_info.rotthrust = {};
 }
-static int run(int argc, char **argv)
+static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 {
 	const auto *extra = find_arg_value(argc, argv, "-extra-dir");
 	if (!extra || !*extra) {
-		std::cerr << "Native Pumo player probe requires an isolated extra directory\n";
+		std::cerr << "Native player probe requires an isolated extra directory\n";
 		return 1;
 	}
 	const auto root = std::filesystem::path(extra);
-	const auto *resource_argument = find_arg_value(argc, argv, "-pumo-resource-root");
+	const auto *resource_argument = find_arg_value(argc, argv, pumo ? "-pumo-resource-root" : "-xl-player-resources");
 	const auto resources = resource_argument ? std::filesystem::path(resource_argument) : root;
 	std::ofstream trace(root / "player-trace.jsonl");
 	int completed = 0, view_aim_events = 0, position_assist_events = 0;
@@ -503,37 +507,54 @@ static int run(int argc, char **argv)
 	try {
 		tracked_combat_objects.clear();
 		combat_load_generation = 0;
-		const auto plan_path = std::filesystem::path(find_arg_value(argc, argv, "-pumo-player-test"));
+		const auto plan_path = std::filesystem::path(plan_argument);
 		const auto executable_path = std::filesystem::canonical(argv[0]);
 		require(std::filesystem::is_regular_file(plan_path) && std::filesystem::is_regular_file(executable_path) && std::filesystem::file_size(plan_path) > 0 && std::filesystem::file_size(executable_path) > 0, "native player requires readable nonempty plan and executable files");
 		plan_sha256 = file_hash(plan_path);
 		executable_sha256 = file_hash(executable_path);
-		for (const auto &[file, expected] : std::map<std::string, std::string>{
-		         { "missions/pmines.hog", "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043" },
-		         { "missions/pmines.mn2", "45b4138e0a0d49ab8ee09334b7cfa97c0ec75ac6c6b6406b21eba28ddaa19cfd" },
-		         { "mods/pmines/pmines.vham", "a623c7a909e6a7b546816f5082e57d33a19fc4b59f84bb3f8493df3ac86b6b05" } }) {
-			require(file_hash(resources / file) == expected, ("Native Pumo player requires original " + file).c_str());
+		std::ifstream input(plan_path);
+		Json plan;
+		input >> plan;
+		const std::string mission = pumo ? "pmines" : plan.at("mission").at("filename").get<std::string>();
+		if (pumo) {
+			for (const auto &[file, expected] : std::map<std::string, std::string>{
+			         { "missions/pmines.hog", "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043" },
+			         { "missions/pmines.mn2", "45b4138e0a0d49ab8ee09334b7cfa97c0ec75ac6c6b6406b21eba28ddaa19cfd" },
+			         { "mods/pmines/pmines.vham", "a623c7a909e6a7b546816f5082e57d33a19fc4b59f84bb3f8493df3ac86b6b05" } }) {
+				require(file_hash(resources / file) == expected, ("Native Pumo player requires original " + file).c_str());
+			}
+		} else {
+			require(!mission.empty() && mission != "." && mission != ".." && mission.find_first_of("/\\:") == std::string::npos, "native player requires a mission filename");
 		}
 		char error[256]{};
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error), true), error);
 		runtime_initialized = true;
 		require(mount_extra_dir(root.string().c_str(), error, sizeof(error)), error);
 		if (resources != root)
-			require(PHYSFS_addToSearchPath(resources.string().c_str(), 1), "cannot mount read-only original Pumo resource input");
+			require(PHYSFS_addToSearchPath(resources.string().c_str(), 1), "cannot mount the mission resource input");
 		require(load_base_mission("d2", error, sizeof(error)), error);
-		require(load_base_mission("pmines", error, sizeof(error)), error);
-		require(N_robot_types == 78 && N_weapon_types == 65 && Robot_info[68].model_num == 17 && xl_owned_oof_model(171), "native player requires full original Pumo definitions/models, not Vertigo");
-		const auto &sources = xl_resource_mod_sources();
-		for (const auto *file : { "mods/pmines/pmines.ham", "mods/pmines/pmines.hxm", "mods/pmines/pmines.vham", "mods/pmines/models/model171.oof" })
-			require(sources.count(file), "native player is missing original mission-owned resources");
-		std::ifstream input(plan_path);
-		Json plan;
-		input >> plan;
+		require(load_base_mission(mission.c_str(), error, sizeof(error)), error);
+		if (pumo) {
+			require(N_robot_types == 78 && N_weapon_types == 65 && Robot_info[68].model_num == 17 && xl_owned_oof_model(171), "native player requires full original Pumo definitions/models, not Vertigo");
+			const auto &sources = xl_resource_mod_sources();
+			for (const auto *file : { "mods/pmines/pmines.ham", "mods/pmines/pmines.hxm", "mods/pmines/pmines.vham", "mods/pmines/models/model171.oof" })
+				require(sources.count(file), "native player is missing original mission-owned resources");
+		} else {
+			const auto &identity = plan.at("mission");
+			const auto stem = resources / "missions" / mission;
+			require(Current_mission && Current_mission->enhanced == MISSION_ENHANCED_XL && mission == Current_mission_filename &&
+			            std::filesystem::equivalent(resources, mission_resource_directory()) &&
+			            std::filesystem::equivalent(stem.string() + ".hog", mission_resource_archive()),
+			        "native player loaded a different mission or archive");
+			require(file_hash(stem.string() + ".mn2") == identity.at("descriptor_sha256") &&
+			            file_hash(mission_resource_archive()) == identity.at("hog_sha256"),
+			        "native player mission inputs differ from the plan");
+		}
 		const bool extended_input_plan = plan.contains("steps") && plan.at("steps").is_array() &&
 		                                 std::any_of(plan.at("steps").begin(), plan.at("steps").end(), [](const Json &step) -> bool {
 			                                 if (!step.is_object() || !step.contains("action") || !step.at("action").is_string()) return false;
 			                                 const std::string action = step.at("action");
-			                                 if (action == "select_secondary" || action == "fly_through_side") return true;
+			                                 if (action == "select_secondary" || action == "fly_through_side" || action == "approach_side" || action == "shoot_wall_trigger" || action == "collect_pickup") return true;
 			                                 return (action == "send_axis" && step.contains("axis") && pumo_ordinary_input_validation::integer_in_range(step.at("axis"), 2, 4)) ||
 			                                        (action == "send_button" && step.contains("button") && pumo_ordinary_input_validation::integer_in_range(step.at("button"), 101, 101));
 		                                 });
@@ -577,7 +598,7 @@ static int run(int argc, char **argv)
 #endif
 		// Legacy direct Majha phases do not pass a nonce; the strict phase owner does
 		run_id = plan.value("receipt_run_id", std::string{});
-		std::strcpy(Players[Player_num].callsign, "PumoNat");
+		std::strcpy(Players[Player_num].callsign, pumo ? "PumoNat" : "XLPilot");
 		Difficulty_level = 0;
 		input_demo_set_skip_level_intro(1);
 		const int initial_level = plan.at("initial_level");
@@ -594,6 +615,7 @@ static int run(int argc, char **argv)
 			std::vector<char> name(file.begin(), file.end());
 			name.push_back(0);
 			require(state_restore_all_sub(name.data(), 0), "native earned checkpoint failed to restore");
+			require(Current_mission && mission == Current_mission_filename, "checkpoint restored a different mission");
 			++combat_load_generation;
 		}
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
@@ -805,6 +827,30 @@ static int run(int argc, char **argv)
 			}
 			observed_state = state_now;
 		};
+		auto steer = [&](const vms_vector &target, const vms_vector *sight_target, bool primary) {
+			vms_vector direction;
+			vm_vec_sub(&direction, &target, &ConsoleObject->pos);
+			const double distance = f2fl(vm_vec_normalize(&direction));
+			const auto &orient = ConsoleObject->orient;
+			const auto &physics = ConsoleObject->mtype.phys_info;
+			auto dot = [](const vms_vector &a, const vms_vector &b) { return double(vm_vec_dot(&a, &b)) / F1_0; };
+			const double x = dot(direction, orient.rvec), y = dot(direction, orient.uvec), z = dot(direction, orient.fvec);
+			auto axis = [](double value) { return std::clamp(value, -1.0, 1.0); };
+			const double speed = (std::min) (25.0, 2 * distance);
+			thrust = axis((z * speed - dot(physics.velocity, orient.fvec)) / 12);
+			sideways = axis((x * speed - dot(physics.velocity, orient.rvec)) / 12);
+			vertical = axis((y * speed - dot(physics.velocity, orient.uvec)) / 12);
+			vms_vector sight = direction;
+			if (sight_target) {
+				vm_vec_sub(&sight, sight_target, &ConsoleObject->pos);
+				vm_vec_normalize(&sight);
+			}
+			const double aim_x = dot(sight, orient.rvec), aim_y = dot(sight, orient.uvec), aim_z = dot(sight, orient.fvec);
+			heading = axis(8 * std::atan2(aim_x, aim_z) - 1.5 * f2fl(physics.rotvel.y));
+			pitch = axis(-16 * std::atan2(aim_y, std::hypot(aim_x, aim_z)) - 3 * f2fl(physics.rotvel.x));
+			firing = primary && aim_z > 0.95;
+			return sight_target && distance < 1 && aim_z > 0.998 && vm_vec_mag(&physics.velocity) < i2f(3);
+		};
 		for (const auto &step : plan.at("steps")) {
 			require_ordinary_secondary_input("before_step");
 			const std::string action = step.at("action");
@@ -818,44 +864,129 @@ static int run(int argc, char **argv)
 				pose(step);
 				++position_assist_events;
 				trace << Json{ { "event", "position_assist" }, { "action", action }, { "step", completed }, { "position", snapshot().at("position") } }.dump() << '\n';
-			} else if (action == "fly_through_side") {
-				const int level = Current_level_num, segment = step.at("segment"), side = step.at("side");
-				require(segment == ConsoleObject->segnum && segment >= 0 && segment < Num_segments && side >= 0 && side < 6,
-				        "Ordinary flight requires the current segment and a valid side");
-				const int child = Segments[segment].children[side];
-				require(child >= 0 && child < Num_segments, "Ordinary flight requires a connected portal");
-				vms_vector portal, center, inward, target;
-				compute_center_point_on_side(&portal, &Segments[segment], side);
-				compute_segment_center(&center, &Segments[child]);
-				vm_vec_sub(&inward, &center, &portal);
-				const fix depth = vm_vec_normalize(&inward);
-				vm_vec_scale_add(&target, &portal, &inward, (std::min) (depth, 2 * ConsoleObject->size));
+			} else if (action == "collect_pickup") {
+				const std::string kind = step.at("kind");
+				const bool hostage = kind == "hostage";
+				const std::map<std::string, int> powerups{ { "shields", POW_SHIELD_BOOST }, { "energy", POW_ENERGY }, { "blue_key", POW_KEY_BLUE }, { "red_key", POW_KEY_RED }, { "gold_key", POW_KEY_GOLD } };
+				const auto powerup = powerups.find(kind);
+				require(hostage || powerup != powerups.end(), "Unknown ordinary pickup objective");
+				require(pumo_ordinary_input_validation::integer_in_range(step.at("max_frames"), 1, 3600), "Invalid pickup flight duration");
+				const int segment = ConsoleObject->segnum, level = Current_level_num;
+				int target = -1;
+				fix nearest = 0;
+				for (int i = 0; i <= Highest_object_index; ++i) {
+					const auto &item = Objects[i];
+					if (item.segnum != segment || (item.flags & OF_SHOULD_BE_DEAD)) continue;
+					if (hostage ? item.type != OBJ_HOSTAGE : (item.type != OBJ_POWERUP || item.id != powerup->second)) continue;
+					const fix distance = vm_vec_dist(&item.pos, &ConsoleObject->pos);
+					if (target < 0 || distance < nearest) {
+						nearest = distance;
+						target = i;
+					}
+				}
+				require(target >= 0, "No matching live pickup in the player's segment");
+				const auto &item = Objects[target];
+				const TrackedCombatObject bound{ target, item.signature, item.type, item.id, level, combat_load_generation, int(item.shields) };
+				const auto &player = Players[Player_num];
+				auto pickup_state = [&]() -> int {
+					if (hostage) return player.hostages_on_board;
+					switch (powerup->second) {
+						case POW_SHIELD_BOOST: return player.shields;
+						case POW_ENERGY: return player.energy;
+						case POW_KEY_BLUE: return player.flags & PLAYER_FLAGS_BLUE_KEY;
+						case POW_KEY_RED: return player.flags & PLAYER_FLAGS_RED_KEY;
+						default: return player.flags & PLAYER_FLAGS_GOLD_KEY;
+					}
+				};
+				int before = pickup_state();
 				const int maximum = step.at("max_frames");
-				require(maximum > 0 && maximum <= 3600, "Invalid ordinary flight duration");
-				const bool primary = step.value("fire_primary", false);
-				for (int i = 0; i < maximum && Current_level_num == level && ConsoleObject->segnum == segment; ++i) {
-					vms_vector direction;
-					vm_vec_sub(&direction, &target, &ConsoleObject->pos);
-					const double distance = f2fl(vm_vec_normalize(&direction));
-					const auto &orient = ConsoleObject->orient;
-					const auto &physics = ConsoleObject->mtype.phys_info;
-					auto dot = [](const vms_vector &a, const vms_vector &b) { return double(vm_vec_dot(&a, &b)) / F1_0; };
-					const double x = dot(direction, orient.rvec), y = dot(direction, orient.uvec), z = dot(direction, orient.fvec);
-					auto axis = [](double value) { return std::clamp(value, -1.0, 1.0); };
-					const double speed = (std::min) (25.0, 2 * distance);
-					thrust = axis((z * speed - dot(physics.velocity, orient.fvec)) / 12);
-					sideways = axis((x * speed - dot(physics.velocity, orient.rvec)) / 12);
-					vertical = axis((y * speed - dot(physics.velocity, orient.uvec)) / 12);
-					heading = axis(8 * std::atan2(x, z) - 1.5 * f2fl(physics.rotvel.y));
-					pitch = axis(-16 * std::atan2(y, std::hypot(x, z)) - 3 * f2fl(physics.rotvel.x));
-					firing = primary && z > 0.95;
-					trace << Json{ { "flight_frame", frame_count }, { "segment", segment }, { "side", side }, { "controls", { thrust, sideways, vertical, heading, pitch, firing } } }.dump() << '\n';
+				auto present = [&] { return combat_object_matches(bound) && !(Objects[target].flags & OF_SHOULD_BE_DEAD); };
+				for (int i = 0; i < maximum && Current_level_num == level && ConsoleObject->segnum == segment && present(); ++i) {
+					before = pickup_state();
+					steer(Objects[target].pos, nullptr, false);
+					trace << Json{ { "flight_frame", frame_count }, { "segment", segment }, { "pickup_object", target }, { "signature", bound.signature }, { "controls", { thrust, sideways, vertical, heading, pitch, firing } } }.dump() << '\n';
 					tick();
 				}
 				thrust = sideways = vertical = heading = pitch = 0;
 				firing = false;
-				const bool reached = step.contains("destination_level") ? Current_level_num == step.at("destination_level").get<int>()
-				                                                        : Current_level_num == level && ConsoleObject->segnum == child;
+				require(Current_level_num == level && !present() && (hostage ? pickup_state() == before + 1 : pickup_state() > before),
+				        "The selected pickup did not produce its native player effect");
+			} else if (action == "shoot_wall_trigger") {
+				const int segment = step.at("segment"), side = step.at("side"), trigger = step.at("trigger");
+				require(segment == ConsoleObject->segnum && segment >= 0 && segment < Num_segments && side >= 0 && side < 6,
+				        "Wall trigger shot requires a side in the current segment");
+				const int wall = Segments[segment].sides[side].wall_num;
+				require(wall >= 0 && wall < Num_walls && trigger >= 0 && trigger < Num_triggers && Walls[wall].trigger == trigger,
+				        "Wall does not own the requested trigger");
+				const int maximum = step.at("max_frames");
+				require(maximum > 0 && maximum <= 3600, "Invalid wall trigger shot duration");
+				xl_trigger_state state{};
+				require(xl_wall_trigger_state(trigger, &state) && !state.operated, "Wall trigger must start unoperated");
+				const auto position = ConsoleObject->pos;
+				vms_vector target;
+				compute_center_point_on_side(&target, &Segments[segment], side);
+				const int level = Current_level_num;
+				for (int i = 0; i < maximum && Current_level_num == level && !state.operated; ++i) {
+					steer(position, &target, true);
+					tick();
+					if (Current_level_num == level)
+						require(xl_wall_trigger_state(trigger, &state), "Lost wall trigger during ordinary fire");
+				}
+				thrust = sideways = vertical = heading = pitch = 0;
+				firing = false;
+				require(Current_level_num == level && state.operated && state.shot && state.object == ConsoleObject - Objects,
+				        "Player fire did not operate the requested wall trigger");
+			} else if (action == "fly_through_side" || action == "approach_side") {
+				const bool approach = action == "approach_side";
+				const int level = Current_level_num, segment = step.at("segment"), side = step.at("side");
+				require(segment == ConsoleObject->segnum && segment >= 0 && segment < Num_segments && side >= 0 && side < 6,
+				        "Ordinary flight requires the current segment and a valid side");
+				const int child = Segments[segment].children[side];
+				require(approach || (child >= 0 && child < Num_segments), "Ordinary flight requires a connected portal");
+				vms_vector portal, center, inward, target;
+				compute_center_point_on_side(&portal, &Segments[segment], side);
+				vms_vector sight_target = portal;
+				if (step.contains("look_at_side")) {
+					const auto &look = step.at("look_at_side");
+					require(approach && pumo_ordinary_input_validation::integer_in_range(look.at("segment"), 0, Num_segments - 1) &&
+					            pumo_ordinary_input_validation::integer_in_range(look.at("side"), 0, 5),
+					        "Side approach requires a valid sight target");
+					compute_center_point_on_side(&sight_target, &Segments[look.at("segment").get<int>()], look.at("side").get<int>());
+				}
+				compute_segment_center(&center, &Segments[approach ? segment : child]);
+				vm_vec_sub(&inward, &center, &portal);
+				const fix depth = vm_vec_normalize(&inward);
+				fix offset = (std::min) (depth, 2 * ConsoleObject->size);
+				if (approach) {
+					require(pumo_ordinary_input_validation::integer_in_range(step.at("distance"), 1, 1024), "Invalid side approach distance");
+					offset = i2f(step.at("distance").get<int>());
+					require(offset < depth && !step.contains("destination_level"), "Ordinary approach must finish inside its starting segment");
+				}
+				vm_vec_scale_add(&target, &portal, &inward, offset);
+				bool aligned = false;
+				const int maximum = step.at("max_frames");
+				require(maximum > 0 && maximum <= 3600, "Invalid ordinary flight duration");
+				const bool primary = step.value("fire_primary", false);
+				const bool engage = step.value("engage_robots", false);
+				require(!engage || (!approach && primary), "Combat flight requires portal transit and primary fire");
+				for (int i = 0; i < maximum && Current_level_num == level && ConsoleObject->segnum == segment; ++i) {
+					const int robot = engage ? pilot_target::nearest_robot(80.0) : -1;
+					const auto *aim = robot >= 0 ? &Objects[robot].pos : approach ? &sight_target
+					                                                              : nullptr;
+					const bool shoot = primary && (!engage || robot >= 0 || Segments[segment].sides[side].wall_num >= 0);
+					if (steer(target, aim, shoot) && approach) {
+						aligned = true;
+						break;
+					}
+					Json sample{ { "flight_frame", frame_count }, { "segment", segment }, { "side", side }, { "controls", { thrust, sideways, vertical, heading, pitch, firing } } };
+					if (engage) sample["aim_robot"] = robot;
+					trace << sample.dump() << '\n';
+					tick();
+				}
+				thrust = sideways = vertical = heading = pitch = 0;
+				firing = false;
+				const bool reached = approach ? aligned : step.contains("destination_level") ? Current_level_num == step.at("destination_level").get<int>()
+				                                                                             : Current_level_num == level && ConsoleObject->segnum == child;
 				require(reached, ("Ordinary flight failed at segment " + std::to_string(segment) + " side " + std::to_string(side) +
 				                  ", ended in level " + std::to_string(Current_level_num) + " segment " + std::to_string(ConsoleObject->segnum))
 				                     .c_str());
@@ -923,12 +1054,14 @@ static int run(int argc, char **argv)
 			} else if (action == "set_debug") {
 				require(!secondary_press_pending, "native checkpoint requires a consumed secondary press");
 				require(step.at("field") == "android_game_request", "unsupported native player request");
-				char file[] = "pumo-player-quick.sav", description[] = "Ordinary Pumo checkpoint";
+				char file[32], description[32];
+				std::strcpy(file, pumo ? "pumo-player-quick.sav" : "xl-player-quick.sav");
+				std::strcpy(description, pumo ? "Ordinary Pumo checkpoint" : "Ordinary XL checkpoint");
 				if (step.at("value") == "quick_save") {
 					stop_time();
 					require(state_save_all_sub(file, description), "native player checkpoint save failed");
 					// Keep every same-level checkpoint, plus the existing latest-level alias
-					const auto prefix = "pumo-player-level" + std::to_string(Current_level_num);
+					const auto prefix = (pumo ? "pumo-player-level" : "xl-player-level") + std::to_string(Current_level_num);
 					const auto retained = prefix + ".sav";
 					const auto unique = prefix + "-" + checkpoint_tag + "-step" + std::to_string(completed) + ".sav";
 					std::filesystem::copy_file(root / "preview-user" / file, root / "preview-user" / unique);
@@ -936,10 +1069,19 @@ static int run(int argc, char **argv)
 					const auto state = snapshot();
 					const auto hash = file_hash(root / "preview-user" / unique);
 					checkpoint_history.push_back({ { "step", completed }, { "file", unique }, { "sha256", hash }, { "state", state } });
+					if (step.value("export_android", false)) {
+						require(Current_level_num > 0, "Android player slots require a positive level");
+						const auto android_save = unique + ".android.sav";
+						const auto path = root / "preview-user" / android_save;
+						std::filesystem::copy_file(root / "preview-user" / unique, path);
+						require(xl_checkpoint_finish_export(android_save.c_str()), "Cannot export Android checkpoint source definitions");
+						checkpoint_history.back()["android_export"] = { { "file", android_save }, { "sha256", file_hash(path) } };
+					}
 					checkpoints[std::to_string(Current_level_num)] = { { "file", retained }, { "sha256", hash }, { "state", state } };
 				} else {
 					require(step.at("value") == "quick_load", "unsupported native player save action");
 					require(state_restore_all_sub(file, 0), "native player checkpoint load failed");
+					require(Current_mission && mission == Current_mission_filename, "quicksave restored a different mission");
 					require_ordinary_secondary_input("after_quick_load");
 					secondary_press_pending = false;
 					// A load invalidates every prior target binding, even if its slot and signature recur
@@ -1019,7 +1161,7 @@ static int run(int argc, char **argv)
 #else
 		const int process = getpid();
 #endif
-		std::ofstream(root / "player-result.json") << Json{ { "result", "PASS" }, { "receipt_version", 2 }, { "run_id", run_id }, { "plan_sha256", plan_sha256 }, { "executable_sha256", executable_sha256 }, { "resume_sha256", resume_sha256 }, { "steps", completed }, { "process_id", process }, { "initial_level_setup", initial_level }, { "resumed_earned_checkpoint", plan.contains("resume_checkpoint") }, { "final_level", Current_level_num }, { "transitions", transitions }, { "checkpoints", checkpoints }, { "checkpoint_history", checkpoint_history }, { "rendered", bool{ false } }, { "fixed_view_aim_events", view_aim_events }, { "position_assist_events", position_assist_events }, { "operation_sequence", operation_sequence } }.dump(2) << '\n';
+		std::ofstream(root / "player-result.json") << Json{ { "result", "PASS" }, { "mission", mission }, { "receipt_version", 2 }, { "run_id", run_id }, { "plan_sha256", plan_sha256 }, { "executable_sha256", executable_sha256 }, { "resume_sha256", resume_sha256 }, { "steps", completed }, { "process_id", process }, { "initial_level_setup", initial_level }, { "resumed_earned_checkpoint", plan.contains("resume_checkpoint") }, { "final_level", Current_level_num }, { "transitions", transitions }, { "checkpoints", checkpoints }, { "checkpoint_history", checkpoint_history }, { "rendered", bool{ false } }, { "fixed_view_aim_events", view_aim_events }, { "position_assist_events", position_assist_events }, { "operation_sequence", operation_sequence } }.dump(2) << '\n';
 		xl_wall_trigger_set_operation_observer(nullptr);
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 		xl_weapon_wall_set_contact_observer(nullptr);
@@ -1033,7 +1175,7 @@ static int run(int argc, char **argv)
 		bound_player_fvi_enabled = false;
 		bound_player_fvi.reset();
 #endif
-		std::cout << "Original Pumo ordinary player controls passed: " << completed << " steps, initial level setup " << initial_level << " -> " << Current_level_num << "; unrendered\n";
+		std::cout << "Original " << (pumo ? "Pumo" : mission) << " ordinary player controls passed: " << completed << " steps, initial level setup " << initial_level << " -> " << Current_level_num << "; unrendered\n";
 		return 0;
 	} catch (const std::exception &error) {
 		xl_wall_trigger_set_operation_observer(nullptr);
@@ -1051,7 +1193,7 @@ static int run(int argc, char **argv)
 #endif
 		std::ofstream(root / "player-state.json") << (runtime_initialized ? snapshot() : Json::object()).dump(2) << '\n';
 		std::ofstream(root / "player-result.json") << Json{ { "result", "FAIL" }, { "steps", completed }, { "error", error.what() }, { "fixed_view_aim_events", view_aim_events }, { "position_assist_events", position_assist_events } }.dump(2) << '\n';
-		std::cerr << "Original Pumo player probe failed: " << error.what() << '\n';
+		std::cerr << "Original " << (pumo ? "Pumo" : "mission") << " player probe failed: " << error.what() << '\n';
 		return 1;
 	}
 }

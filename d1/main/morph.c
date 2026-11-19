@@ -311,8 +311,11 @@ void morph_start(object *obj)
 	for (i=0;i<MAX_VECS;i++)		//clear all points
 		md->morph_times[i] = 0;
 
-	for (i=1;i<MAX_SUBMODELS;i++)		//clear all parts
+	for (i=0;i<MAX_SUBMODELS;i++) {
 		md->submodel_active[i] = 0;
+		md->n_morphing_points[i] = 0;
+		md->submodel_startpoints[i] = 0;
+	}
 
 	md->submodel_active[0] = 1;		//1 means visible & animating
 

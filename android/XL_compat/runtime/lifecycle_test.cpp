@@ -1714,7 +1714,8 @@ extern "C" void flicker_lights(void);
 int main(int argc, char **argv)
 {
 	xl_install_crash_diagnostic();
-	if (find_arg_value(argc, argv, "-pumo-player-test")) return pumo_player_probe::run(argc, argv);
+	if (const auto *plan = find_arg_value(argc, argv, "-pumo-player-test")) return pumo_player_probe::run(argc, argv, plan, true);
+	if (const auto *plan = find_arg_value(argc, argv, "-xl-player-test")) return pumo_player_probe::run(argc, argv, plan, false);
 	if (find_arg_value(argc, argv, "-texture-action-test")) return texture_action_test(argc, argv);
 	if (find_arg_value(argc, argv, "-countdown-test")) return countdown_test(argc, argv);
 	if (find_arg_value(argc, argv, "-disarm-test")) return disarm_test(argc, argv);
