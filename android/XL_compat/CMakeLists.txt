@@ -911,6 +911,17 @@ if(BUILD_TESTING)
             set_tests_properties(xl_signed_boss27_native PROPERTIES TIMEOUT 270)
         endif()
     endif()
+    set(XL_KMTL_PLAYER_ROOT "" CACHE PATH "Original Kritical Mass Test Labs staged mission root")
+    if(XL_KMTL_PLAYER_ROOT AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        add_test(
+            NAME xl_kmtl_switch_flight
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_KMTL_PLAYER_ROOT}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/kmtl-switch-flight -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/kmtl_switch_flight.cmake)
+        set_tests_properties(xl_kmtl_switch_flight PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+    endif()
     set(XL_PUMO_PLAYER_ROOT ""
         CACHE PATH "Full original Pumo missions/mods/data for native player probes")
     if(XL_PUMO_PLAYER_ROOT AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
