@@ -1,4 +1,5 @@
 #include "retained_resource.h"
+#include "../hog.h"
 #include <cstdlib>
 #include <cstring>
 #include <memory>
@@ -157,20 +158,90 @@ std::vector<unsigned char> xl_retain_origin_resource(const std::string &origin, 
 		return bytes;
 	};
 	if (std::filesystem::is_directory(std::filesystem::u8path(origin))) return read_physical(std::filesystem::u8path(origin) / std::filesystem::u8path(member));
-	// Reuse the native archive reader under a private prefix; no resource basename
-	// is mounted into the active mission's namespace
-	auto archive = read_physical(std::filesystem::u8path(origin));
-	auto bytes = xl_find_archive_resource(archive, std::filesystem::path(origin).extension().string(), member, 64 * 1024 * 1024);
+	// Read from the recorded origin even if a live mission shadows this name
+	auto bytes = XlPhysicalArchive(origin).member(member, 64 * 1024 * 1024);
 	if (!bytes) throw std::runtime_error("Captured archive member is no longer available");
 	return std::move(*bytes);
 }
 
-std::optional<std::vector<unsigned char>> xl_find_archive_resource(const std::vector<unsigned char> &archive, const std::string &extension, const std::string &member, std::size_t limit)
+struct XlPhysicalArchive::State {
+	std::filesystem::path path;
+	std::ifstream file;
+	std::vector<unsigned char> snapshot;
+	std::vector<xl_compat::HogEntry> members;
+	std::filesystem::file_time_type modified;
+	std::uint64_t indexed_size = 0;
+
+	explicit State(const std::string &source) : path(std::filesystem::u8path(source)), file(path, std::ios::binary | std::ios::ate)
+	{
+		const auto end = file.tellg();
+		if (end < 0) throw std::runtime_error("Cannot open incoming archive " + path.filename().string());
+		const auto length = static_cast<std::uint64_t>(end);
+		constexpr std::size_t snapshot_limit = 64 * 1024 * 1024;
+		if (length <= snapshot_limit) {
+			snapshot.resize(static_cast<std::size_t>(length));
+			read(0, snapshot.data(), snapshot.size());
+			file.close();
+			return;
+		}
+		// Reuse the game's HOG header and duplicate-selection rules. Bound the
+		// indexed header bytes independently of the unrequested payloads.
+		modified = std::filesystem::last_write_time(path);
+		indexed_size = length;
+		std::size_t header_bytes = 0;
+		members = xl_compat::index_hog(length, [&](std::uint64_t offset, unsigned char *out, std::size_t count) {
+			if (count > snapshot_limit - header_bytes) throw std::runtime_error("Incoming HOG headers exceed their bound");
+			header_bytes += count;
+			read(offset, out, count);
+		});
+		check_source();
+	}
+
+	void read(std::uint64_t offset, unsigned char *out, std::size_t count)
+	{
+		if (!file.seekg(static_cast<std::streamoff>(offset)) || (count && !file.read(reinterpret_cast<char *>(out), count)))
+			throw std::runtime_error("Cannot read incoming archive " + path.filename().string());
+	}
+	void check_source() const
+	{
+		if (std::filesystem::last_write_time(path) != modified || std::filesystem::file_size(path) != indexed_size)
+			throw std::runtime_error("Incoming HOG changed during resource preparation: " + path.filename().string());
+	}
+};
+
+XlPhysicalArchive::XlPhysicalArchive(const std::string &path) : state(std::make_unique<State>(path)) {}
+XlPhysicalArchive::~XlPhysicalArchive() = default;
+
+static void validate_archive_member(const std::string &member)
 {
-	if (member.empty() || member.front() == '/' || member.find_first_of("\\:") != std::string::npos || extension.find_first_of("/\\:") != std::string::npos)
+	if (member.empty() || member.front() == '/' || member.find_first_of("\\:") != std::string::npos)
 		throw std::runtime_error("Invalid retained archive member identity");
 	for (const auto &part : std::filesystem::path(member))
 		if (part == "." || part == "..") throw std::runtime_error("Invalid retained archive member component");
+}
+
+std::optional<std::vector<unsigned char>> XlPhysicalArchive::member(const std::string &name, std::size_t limit)
+{
+	if (!state->file.is_open()) return xl_find_archive_resource(state->snapshot, state->path.extension().string(), name, limit);
+	validate_archive_member(name);
+	state->check_source();
+	const auto key = xl_compat::hog_key(name);
+	for (const auto &entry : state->members) {
+		if (xl_compat::hog_key(entry.name) != key) continue;
+		if (entry.size > limit) throw std::runtime_error("Incoming HOG member exceeds its bound: " + name);
+		std::vector<unsigned char> bytes(static_cast<std::size_t>(entry.size));
+		state->read(entry.offset, bytes.data(), bytes.size());
+		state->check_source();
+		return bytes;
+	}
+	return std::nullopt;
+}
+
+std::optional<std::vector<unsigned char>> xl_find_archive_resource(const std::vector<unsigned char> &archive, const std::string &extension, const std::string &member, std::size_t limit)
+{
+	validate_archive_member(member);
+	if (extension.find_first_of("/\\:") != std::string::npos)
+		throw std::runtime_error("Invalid retained archive member identity");
 	static unsigned long serial;
 	std::string name;
 	do {

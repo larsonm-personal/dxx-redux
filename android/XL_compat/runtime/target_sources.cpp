@@ -53,7 +53,7 @@ struct TargetSources::State {
 	std::string archive, directory, installation;
 	using Entries = std::map<std::string, std::vector<std::filesystem::path>>;
 	std::map<std::string, Entries> directories;
-	std::optional<std::vector<unsigned char>> installation_archive, mission_archive;
+	std::optional<XlPhysicalArchive> installation_archive, mission_archive;
 	std::filesystem::path locate(const std::string &root, const std::string &name)
 	{
 		validate_name(name);
@@ -126,8 +126,8 @@ std::optional<std::vector<unsigned char>> TargetSources::archive_bytes(const std
 {
 	validate_name(name);
 	if (state->archive.empty()) return std::nullopt;
-	if (!state->mission_archive) state->mission_archive = physical_bytes(std::filesystem::u8path(state->archive), 64 * 1024 * 1024);
-	return xl_find_archive_resource(*state->mission_archive, std::filesystem::path(state->archive).extension().string(), name, limit);
+	if (!state->mission_archive) state->mission_archive.emplace(state->archive);
+	return state->mission_archive->member(name, limit);
 }
 
 bool TargetSources::archive_contains(const std::string &name)
@@ -139,8 +139,8 @@ std::optional<std::vector<unsigned char>> TargetSources::directory_bytes(const s
 {
 	validate_name(name);
 	if (installation && !state->installation.empty() && std::filesystem::is_regular_file(std::filesystem::u8path(state->installation))) {
-		if (!state->installation_archive) state->installation_archive = physical_bytes(std::filesystem::u8path(state->installation), 64 * 1024 * 1024);
-		return xl_find_archive_resource(*state->installation_archive, std::filesystem::path(state->installation).extension().string(), name, limit);
+		if (!state->installation_archive) state->installation_archive.emplace(state->installation);
+		return state->installation_archive->member(name, limit);
 	}
 	const auto path = state->locate(installation ? state->installation : state->directory, name);
 	if (path.empty()) return std::nullopt;
