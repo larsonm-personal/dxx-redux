@@ -131,7 +131,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 		const auto &seg = v.segments[segment];
 		const int function = producer_function(seg);
 		// The runtime retains water in the source inventory, never in a stock enum
-		put(out, (v.level_version < 21 && ((water_segments && function == 7) || function == 13 || function == 11)) || (modern_layout && (function == 11 || function == 9 || function == 10)) ? 0 : function, 1);
+		put(out, (v.level_version < 21 && ((water_segments && function == 7) || function == 12 || function == 13 || function == 11)) || (modern_layout && (function == 11 || function == 9 || function == 10)) ? 0 : function, 1);
 		// Wide authored fields stay in the owned source. Only robot assignment enters
 		// the native shadow, after geometry-order initialization and capacity checks
 		// Both loaders rebuild station values; other functions never consume them
@@ -144,7 +144,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	}
 	require(out.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max()), "level size overflow");
 	const int new_game_offset = static_cast<int>(out.size());
-	const bool equipment_header = serialization_17_36 || modern_layout;
+	const bool equipment_header = v.level_version > 15;
 	const int removed_header = (equipment_header ? 12 : 0) + (v.level_version >= 27 ? 16 : 0);
 	if (equipment_header) {
 		require(v.sections.size() == 10 && v.sections[9].name == "equipment" && v.sections[9].count == static_cast<int>(v.equipment.size()), "equipment section does not match decoded records");
@@ -174,6 +174,8 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 		// XL initializes producers in geometry order, then reads row i for maker i
 		// Redux's native station list also includes reactors, requiring fresh links
 		patch(out, new_game_offset + 35 + 6 * 12, static_cast<int>(out.size()));
+		// ReadBotGenInfo consumes and discards trailing rows without an initialized maker
+		patch(out, new_game_offset + 39 + 6 * 12, static_cast<int>(producers.robots.size()));
 		patch(out, new_game_offset + 43 + 6 * 12, 20);
 		int station = 0;
 		for (std::size_t segment = 0; segment < v.segments.size(); ++segment) {
@@ -212,25 +214,25 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	}
 	const auto owned_effect = [&](const Object &object) { return ambient_sound_shape(object) || authored_particle_shape(object) || authored_lightning_shape(object); };
 	const bool owned_objects = std::any_of(v.objects.begin(), v.objects.end(), owned_effect);
-	if (modern_layout || owned_objects) {
+	if (v.game_version > 37 || owned_objects) {
 		// Stock uses explicit section offsets. Retain the original game payload as
 		// inert evidence, then point at records with the audited stock widths
 		require(out.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max()), "object table offset overflow");
 		patch(out, new_game_offset + 35, static_cast<int>(out.size()));
 		for (const auto &object : v.objects) {
-			const unsigned header = modern_layout ? 80 : 79;
+			const unsigned header = v.game_version > 37 ? 80 : 79;
 			require(object.multiplayer == 0 && object.source_end >= object.source_offset + header && object.source_end <= source.size(), "invalid object translation span");
 			const auto start = out.size();
 			out.insert(out.end(), source.begin() + object.source_offset, source.begin() + object.source_offset + 6);
 			const auto end = owned_effect(object) ? object.source_offset + header : object.source_end;
-			out.insert(out.end(), source.begin() + object.source_offset + (modern_layout ? 7 : 6), source.begin() + end);
+			out.insert(out.end(), source.begin() + object.source_offset + (v.game_version > 37 ? 7 : 6), source.begin() + end);
 			if (owned_effect(object)) {
 				patch(out, start + 1, object.reader_id, 1);
 				patch(out, start + 4, 0, 1); // Effect payload and enable state remain source-owned
 			}
 		}
 	}
-	if (modern_layout) {
+	if (v.game_version >= 37) {
 		require(out.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max()), "wall table offset overflow");
 		patch(out, new_game_offset + 47, static_cast<int>(out.size()));
 		patch(out, new_game_offset + 55, 24);

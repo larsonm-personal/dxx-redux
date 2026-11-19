@@ -52,7 +52,7 @@ void contract()
 		xl_test::layout_patch(fixture.bytes, index + 2, 0xc000 | 910, 2);
 		check(issue(xl_compat::inspect_level(fixture.bytes).unknown, "texture_id"), "Unqualified overlay bypassed admission");
 	}
-	for (int version : { 21, 23, 25, 26, 27 }) {
+	for (int version : { 21, 22, 23, 25, 26, 27 }) {
 		auto fixture = xl_test::layout_fixture(version);
 		auto &bytes = fixture.bytes;
 		bytes.resize(bytes.size() - 4);
@@ -67,7 +67,7 @@ void contract()
 		xl_test::layout_patch(bytes, fixture.game + 71, static_cast<unsigned>(bytes.size()));
 		rejects(bytes);
 	}
-	for (int version : { 21, 23, 25, 26, 27 }) {
+	for (int version : { 21, 22, 23, 25, 26, 27 }) {
 		auto fixture = xl_test::layout_fixture(version);
 		auto &bytes = fixture.bytes;
 		xl_compat::Bytes records(89 * 2 + 93, 0);
@@ -111,7 +111,7 @@ void contract()
 		}
 	}
 	int cases = 0;
-	for (int version : { 21, 23, 25, 26, 27 }) {
+	for (int version : { 21, 22, 23, 25, 26, 27 }) {
 		for (int producer : { -32768, -129, -128, -1, 0, 127, 128, 32767 }) {
 			if (version < 25 && (producer < -128 || producer > 127)) continue;
 			for (int shape = 0; shape < (version < 25 ? 1 : 3); ++shape) {
@@ -189,7 +189,7 @@ void contract()
 			xl_test::layout_patch(truncated, cut + 71, static_cast<std::uint32_t>(fixture.walls + 25 - fixture.game + cut));
 			rejects(truncated, "truncated section");
 		}
-		for (int invalid : { 20, 22, 24, 28 }) {
+		for (int invalid : { 20, 24, 28 }) {
 			auto bytes = fixture.bytes;
 			xl_test::layout_patch(bytes, 4, invalid);
 			rejects(bytes, "unsupported level version");

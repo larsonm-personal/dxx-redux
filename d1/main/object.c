@@ -437,15 +437,13 @@ void draw_polygon_object(object *obj)
 	}
 
 	if (obj->rtype.pobj_info.tmap_override != -1) {
-		polymodel *pm = &Polygon_models[obj->rtype.pobj_info.model_num];
-		bitmap_index bm_ptrs[10];
-
+		bitmap_index bm_ptrs[MAX_POLYOBJ_TEXTURES];
+		const bitmap_index override_bitmap = Textures[obj->rtype.pobj_info.tmap_override];
 		int i;
 
-		Assert(pm->n_textures<=10);
-
-		for (i=0;i<pm->n_textures;i++)
-			bm_ptrs[i] = Textures[obj->rtype.pobj_info.tmap_override];
+		// A simpler model selected at draw time can use additional texture slots
+		for (i=0; i<MAX_POLYOBJ_TEXTURES; i++)
+			bm_ptrs[i] = override_bitmap;
 
 		draw_polygon_model(&obj->pos,
 				   &obj->orient,

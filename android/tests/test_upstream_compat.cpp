@@ -9040,9 +9040,23 @@ static void test_custom_save_identity(const std::string &stem, int robot_slot)
 }
 #endif
 
+// Current single-player saves place a fixed64 epoch after the legacy zero clock.
+// Prior versions begin the player record at this offset.
+static void remove_checkpoint_epoch(bytes &save)
+{
+	const size_t offset = 8 + 20 + 100 * 50 * 3 + 4 + 9 + 12;
+	require(save.size() >= offset + sizeof(fix64), "locate native epoch in the current checkpoint");
+	save.erase(save.begin() + offset, save.begin() + offset + sizeof(fix64));
+}
+
 static void write_checkpoint_frame_trace(const char *directory, const char *checkpoints, bool custom, int level, bool dynamic = false)
 {
 	using nlohmann::json;
+	const auto save_checkpoint = [](char *name, char *description) {
+		// The native save subroutine resumes its caller's paused clock
+		stop_time();
+		return state_save_all_sub(name, description);
+	};
 	require((level == 1 || level == 7 || level == 27) && (!custom || level == 1), "select a supported checkpoint fixture level");
 	const std::string hog = std::string(directory) + "/DESCENT.HOG";
 	require(PHYSFS_mount(directory, nullptr, 1) && PHYSFS_mount(hog.c_str(), nullptr, 1), "mount original resources for restored robot frames");
@@ -9160,7 +9174,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 	};
 	const json fresh_assets = asset_snapshot();
 #ifndef DXX_BUILD_DESCENT_II
-	require(state_save_all_sub(baseline, description), "write actual native baseline checkpoint");
+	require(save_checkpoint(baseline, description), "write actual native baseline checkpoint");
 #endif
 	const auto texture_references = [] {
 		json result = json::array();
@@ -9249,7 +9263,8 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		// prepares all assets before the adapter applies checkpoint world state
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(start.current_level);
-		GameTime64 = start.game_time;
+		// Match the native single-player clock before applying relative AI records
+		GameTime64 = start.has_saved_epoch ? start.saved_epoch : start.game_time;
 		Difficulty_level = start.difficulty;
 		if (std::strcmp(filename, "route-0.sav") == 0) {
 			const std::vector<object> previous_objects(Objects, Objects + Highest_object_index + 1);
@@ -9286,6 +9301,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		if (dynamic && std::strcmp(filename, "route-0.sav") == 0) {
 			const json current = checkpoint_dynamic_state();
 			auto legacy = data;
+			remove_checkpoint_epoch(legacy);
 			legacy.resize(legacy.size() - 8 - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES);
 			set_int(legacy, 4, CADENCE_D1_SAVE_VERSION - 1);
 			d1_save_translate_checkpoint_start legacy_start = {};
@@ -9293,7 +9309,8 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			            d1_save_translate_apply_checkpoint_objects(legacy.data(), legacy.size(), &legacy_start),
 			        "import the prior native format without cadence clocks");
 			json legacy_expected = current;
-			legacy_expected["cadence_clock_deltas"] = { 0, 0, 0 };
+			// Legacy cadence records reset each absolute clock to zero
+			legacy_expected["cadence_clock_deltas"] = { -GameTime64, -GameTime64, -GameTime64 };
 			require(checkpoint_dynamic_state() == legacy_expected, "legacy native import resets missing cadence state without inheriting a prior session");
 			require(d1_save_translate_apply_checkpoint_objects(data.data(), data.size(), &start) && checkpoint_dynamic_state() == current,
 			        "current native import restores populated cadence state after a legacy save");
@@ -9316,6 +9333,15 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			set_int(morph_header, 20, morph.morph_vecs[0].z);
 			const size_t morph_offset = locate_record(morph_header);
 			const size_t active_offset = morph_offset + 12 + MAX_VECS * 28;
+			const int unused_part = Polygon_models[morph.obj->rtype.pobj_info.model_num].n_models;
+			require(unused_part < MAX_SUBMODELS, "morph checkpoint has an unused submodel slot");
+			auto reused_slot = data;
+			set_int(reused_slot, active_offset + 4 * (MAX_SUBMODELS + unused_part), 3);
+			set_int(reused_slot, active_offset + 4 * (2 * MAX_SUBMODELS + unused_part), 46);
+			require(d1_save_translate_apply_checkpoint_objects(reused_slot.data(), reused_slot.size(), &start) &&
+			            morph_objects[0].n_morphing_points[unused_part] == 0 && morph_objects[0].submodel_startpoints[unused_part] == 0,
+			        "D1 import discards bounded unused counters left by a previous morph");
+
 			// The native disk record has four physics vectors, three fix values
 			// and two shorts; the stuck registry follows the one active morph
 			const size_t stuck_offset = active_offset + MAX_SUBMODELS * 12 + 4 + 2 + 64;
@@ -9333,7 +9359,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			const size_t effect_offset = locate_record(effect_record);
 			const size_t secret_offset = data.size() - 8 - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES - 16 - SECRET_AREA_IDENTITY_SAVE_SIZE;
 			const std::pair<size_t, int> corruptions[] = {
-				{ morph_offset + 8, -1 }, { active_offset, 3 }, { stuck_offset + 8, -1 }, { effect_offset, Num_effects }, { effect_offset + 8, 9999 }, { effect_offset + 20, MAX_SIDES_PER_SEGMENT }, { secret_offset, 0 }, { secret_offset + 8, SECRET_AREA_MAX_GENERATED + 1 }
+				{ morph_offset + 8, -1 }, { active_offset, 3 }, { active_offset + 4 * unused_part, 1 }, { active_offset + 4 * (MAX_SUBMODELS + unused_part), MAX_VECS + 1 }, { stuck_offset + 8, -1 }, { effect_offset, Num_effects }, { effect_offset + 8, 9999 }, { effect_offset + 20, MAX_SIDES_PER_SEGMENT }, { secret_offset, 0 }, { secret_offset + 8, SECRET_AREA_MAX_GENERATED + 1 }
 			};
 			for (const auto &corruption : corruptions) {
 				auto damaged = data;
@@ -9533,7 +9559,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				}
 			}
 		}
-		require(state_save_all_sub(filename, description), "write native hide/follow checkpoint");
+		require(save_checkpoint(filename, description), "write native hide/follow checkpoint");
 		if (dynamic) {
 			// The real save thumbnail marks visible automap segments before writing
 			// Compare the state actually serialized by native D1, before any restore
@@ -9562,12 +9588,29 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			write_fixture((std::string(filename) + ".restored.json").c_str(), bytes(evidence.begin(), evidence.end()));
 			require(actual == json::parse(expected), "checkpoint preserves pre-save morph, stuck flare, effect, reactor and cadence state");
 			char roundtrip[] = "dynamic-roundtrip.sav", roundtrip_description[] = "Dynamic runtime";
-			require(state_save_all_sub(roundtrip, roundtrip_description), "save imported runtime state through the ordinary game serializer");
+			require(save_checkpoint(roundtrip, roundtrip_description), "save imported runtime state through the ordinary game serializer");
 			if (scenario == 0) {
+				auto &morph = morph_objects[0];
+				require(morph.obj, "native checkpoint contains an active morph");
+				const int unused_part = Polygon_models[morph.obj->rtype.pobj_info.model_num].n_models;
+				require(unused_part < MAX_SUBMODELS && !morph.submodel_active[unused_part], "native morph checkpoint has an unused part");
+				morph.n_morphing_points[unused_part] = 3;
+				morph.submodel_startpoints[unused_part] = 46;
+				char reused[] = "reused-morph.sav";
+				require(save_checkpoint(reused, roundtrip_description), "write an older-style reused morph slot");
+#ifdef DXX_BUILD_DESCENT_II
+				require(state_restore_all_sub(reused, 0), "restore a native D2 save with bounded stale morph counters");
+#else
+				require(state_restore_all_sub(reused), "restore a native D1 save with bounded stale morph counters");
+#endif
+				require(morph_objects[0].n_morphing_points[unused_part] == 0 && morph_objects[0].submodel_startpoints[unused_part] == 0 &&
+				            checkpoint_dynamic_state() == actual,
+				        "native restore canonicalizes only unused morph data");
 				PHYSFS_file *file = PHYSFS_openRead(roundtrip);
 				require(file != nullptr, "open current save for cadence legacy control");
 				bytes legacy(static_cast<size_t>(PHYSFS_fileLength(file)));
 				require(PHYSFS_readBytes(file, legacy.data(), legacy.size()) == static_cast<PHYSFS_sint64>(legacy.size()) && PHYSFS_close(file), "read complete cadence legacy control");
+				remove_checkpoint_epoch(legacy);
 #ifdef DXX_BUILD_DESCENT_II
 				remove_saved_asset_identity(legacy);
 				legacy.resize(legacy.size() - CADENCE_RUNTIME_DISK_BYTES - 4); // Guidebot mode follows cadence
@@ -9688,6 +9731,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				require(PHYSFS_readBytes(file, previous_format.data(), previous_format.size()) == static_cast<PHYSFS_sint64>(previous_format.size()) && PHYSFS_close(file),
 				        "read the complete current save");
 				// Version 38 uses the current object layout but has no asset identity
+				remove_checkpoint_epoch(previous_format);
 				remove_saved_asset_identity(previous_format);
 				set_int(previous_format, 4, 38);
 				char prior_path[] = "pre-identity-imported.sav";
@@ -9725,14 +9769,16 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 #ifdef DXX_BUILD_DESCENT_II
 		if (scenario == 0) {
 			char supported_path[] = "supported-identity-imported.sav", supported_description[] = "Save identity versions";
-			require(state_save_all_sub(supported_path, supported_description), "write imported identity version fixture");
+			require(save_checkpoint(supported_path, supported_description), "write imported identity version fixture");
 			const auto expected_state = checkpoint_dynamic_state();
 			PHYSFS_file *file = PHYSFS_openRead(supported_path);
 			require(file != nullptr, "open imported identity version fixture");
 			bytes supported_format(static_cast<size_t>(PHYSFS_fileLength(file)));
 			require(PHYSFS_readBytes(file, supported_format.data(), supported_format.size()) == static_cast<PHYSFS_sint64>(supported_format.size()) && PHYSFS_close(file),
 			        "read complete imported identity version fixture");
-			for (const int incompatible_version : { D1_IN_D2_SAVE_VERSION - 2, D1_IN_D2_SAVE_VERSION + 2 }) {
+			// Desktop saves from version 46 carry a supported asset identity
+			for (const int incompatible_version : { 38, D1_IN_D2_SAVE_VERSION + 2 }) {
+				require(!d1_in_d2_save_version_supported(incompatible_version), "fixture uses an unsupported imported save version");
 				set_int(supported_format, 4, incompatible_version);
 				write_fixture(supported_path, supported_format);
 				require(!state_restore_all_sub(supported_path, 0) && checkpoint_dynamic_state() == expected_state,
@@ -9785,7 +9831,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		for (int frame = 0; frame < 4; ++frame) {
 			if (frame == 2) {
 #ifndef DXX_BUILD_DESCENT_II
-				require(state_save_all_sub(resume, description), "write a native checkpoint during restored route execution");
+				require(save_checkpoint(resume, description), "write a native checkpoint during restored route execution");
 #endif
 				restore(resume);
 				require(asset_snapshot() == fresh_assets, "mid-route checkpoint reload uses the same custom assets");
@@ -9884,7 +9930,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				}
 				Objects[boss_slot].mtype.phys_info.mass += F1_0;
 				Objects[boss_slot].mtype.phys_info.drag += 1;
-				require(state_save_all_sub(filename, description), "write native boss health and physics checkpoint");
+				require(save_checkpoint(filename, description), "write native boss health and physics checkpoint");
 #endif
 				restore(filename);
 				const object &boss = Objects[boss_slot];
@@ -9901,7 +9947,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				};
 				const json expected_boss = boss_state();
 				char roundtrip[] = "boss-roundtrip.sav", roundtrip_description[21] = "Boss re-save";
-				require(state_save_all_sub(roundtrip, roundtrip_description), "re-save native boss state through the ordinary game serializer");
+				require(save_checkpoint(roundtrip, roundtrip_description), "re-save native boss state through the ordinary game serializer");
 				Objects[boss_slot].shields ^= 0x5a5a;
 #ifdef DXX_BUILD_DESCENT_II
 				require(state_restore_all_sub(roundtrip, 0), "reload native boss state through the ordinary D2 save path");
