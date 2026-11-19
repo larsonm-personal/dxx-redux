@@ -1,4 +1,5 @@
 #include "pog_resources.h"
+#include "scoped_texture_playback.h"
 #include "texture_pixels.h"
 #include "../pog.h"
 #include "prepared_ham.h"
@@ -13,6 +14,50 @@ int check_transparency(segment *, int);
 namespace pog_control
 {
 using Resources = std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)>;
+
+static void shared_wall_loops()
+{
+	std::array<eclip, 3> definitions{};
+	for (int i = 0; i < 3; ++i) {
+		auto &effect = definitions[i];
+		effect.changing_wall_texture = static_cast<short>(i);
+		effect.changing_object_texture = -1;
+		effect.crit_clip = effect.dest_eclip = -1;
+		effect.vc.frame_time = 6554;
+		effect.vc.num_frames = 2;
+		effect.vc.frames[0].index = 3;
+		effect.vc.frames[1].index = 4;
+	}
+	xl_assets::ObjectDependencies graph{};
+	graph.effect_data = definitions.data();
+	graph.effect_count = graph.texture_count = 3;
+	const auto prepare = [&]() {
+		std::map<int, int> owners;
+		return xl_compat::ScopedTexturePlayback::texture_effects(graph, 8, { { 3, 0 } }, {}, [](std::size_t) { return 32; }, owners);
+	};
+	const auto clocks = prepare();
+	require(clocks.size() == 3 && clocks[0].effect == 0 && clocks[1].effect == 1 && clocks[2].effect == 2 &&
+	            clocks[0].bitmaps == clocks[1].bitmaps && clocks[0].bitmaps == clocks[2].bitmaps,
+	        "Identical looping walls must keep all three clocks and the same image aliases");
+	const auto original = definitions;
+	const auto reject = [&](auto change) {
+		definitions = original;
+		change(definitions[1]);
+		try {
+			prepare();
+		} catch (const std::runtime_error &error) {
+			require(std::string(error.what()).find("conflicting effects") != std::string::npos, "Unexpected shared effect rejection");
+			return;
+		}
+		throw std::runtime_error("Independently mutable wall clocks shared a strip");
+	};
+	reject([](eclip &effect) { ++effect.vc.frame_time; });
+	reject([](eclip &effect) { ++effect.frame_count; });
+	reject([](eclip &effect) { effect.vc.frames[1].index = 5; });
+	reject([](eclip &effect) { effect.crit_clip = 2; });
+	reject([](eclip &effect) { effect.flags |= EF_STOPPED; });
+	reject([](eclip &effect) { effect.dest_eclip = 0; });
+}
 
 static xl_compat::Bytes read(const char *name)
 {
@@ -407,6 +452,7 @@ static int pog_test(int argc, char **argv)
 	std::setvbuf(stdout, nullptr, _IONBF, 0);
 	try {
 		using namespace pog_control;
+		shared_wall_loops();
 		char error[256]{};
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);

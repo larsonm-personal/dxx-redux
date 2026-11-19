@@ -21,7 +21,7 @@ def digest(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def classify(code, events, descriptor, advertised, ordinal):
+def classify(code, events, descriptor, advertised, ordinal, frames=120):
     def values(key):
         return [fields[1:] for fields in events if fields[0] == key]
 
@@ -46,7 +46,7 @@ def classify(code, events, descriptor, advertised, ordinal):
     start = values("starting")
     if len(start) != 1 or len(start[0]) != 2 or start[0][0] != requested or start[0][1].casefold() != expected:
         return "level_start_unverified"
-    if code == 0 and values("started") == [["1", requested]] and values("frames") == [["120", requested, "0"]]:
+    if code == 0 and values("started") == [["1", requested]] and values("frames") == [[str(frames), requested, "0"]]:
         return "started_and_ran"
     if member[0][2] == "0":
         return "advertised_member_lookup_empty"
@@ -76,8 +76,13 @@ def main():
     parser.add_argument(
         "--texture-quality", type=int, choices=range(4), help="Set the original texture quality before level load"
     )
+    parser.add_argument("--texture-observation-frames", type=int, help="Run a longer rendered bitmap observation")
     args = parser.parse_args()
     bitmap = args.object_bitmap if args.object_bitmap is not None else args.wall_bitmap
+    if args.texture_observation_frames is not None and (
+        bitmap is None or not 120 <= args.texture_observation_frames <= 3600
+    ):
+        parser.error("Texture observation duration requires a bitmap and 120 through 3600 frames")
     if bitmap is not None and (bitmap <= 0 or not args.level):
         parser.error("A positive bitmap needs a gameplay ordinal")
     engine, install, work = (p.resolve() for p in (args.engine, args.installation, args.work))
@@ -108,6 +113,9 @@ def main():
         XL_REFERENCE_OUT=str(receipt),
     )
     env["XL_REFERENCE_WALL_BITMAP"] = str(bitmap or 0)
+    env.pop("XL_REFERENCE_TEXTURE_FRAMES", None)
+    if args.texture_observation_frames is not None:
+        env["XL_REFERENCE_TEXTURE_FRAMES"] = str(args.texture_observation_frames)
     env.pop("XL_REFERENCE_TEXTURE_QUALITY", None)
     if args.texture_quality is not None:
         env["XL_REFERENCE_TEXTURE_QUALITY"] = str(args.texture_quality)
@@ -144,7 +152,7 @@ def main():
         else []
     )
     advertised = case["level_file"] if case else ""
-    outcome = classify(code, events, descriptor, advertised, args.level)
+    outcome = classify(code, events, descriptor, advertised, args.level, args.texture_observation_frames or 120)
     result = dict(
         schema="xl-original-campaign-probe-v1",
         reference_revision=REVISION,
@@ -159,6 +167,8 @@ def main():
         receipt_sha256=digest(receipt) if receipt.exists() else None,
     )
     if bitmap:
+        if args.texture_observation_frames is not None:
+            result["requested_texture_observation_frames"] = args.texture_observation_frames
         samples = [list(map(int, event[1:])) for event in events if event[0] == "wall_texture"]
         complete = (
             bool(samples)

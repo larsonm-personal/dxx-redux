@@ -198,7 +198,7 @@ xl_pog_resources *xl_pog_prepare_scoped(const xl_compat::ScopedTextureResources 
 	}
 	for (const auto &clock : playback.effects) {
 		result->effects.push_back({ clock.effect, clock.frame_time, tables.effect_data[clock.effect].changing_object_texture,
-		                            unsigned(clock.bitmaps.size()), textures.images[clock.image].bitmap.frames, 0 });
+		                            unsigned(clock.bitmaps.size()), textures.images[clock.image].bitmap.frames });
 		result->effect_bitmaps.push_back(clock.bitmaps);
 	}
 	result->scoped = true;
@@ -271,7 +271,8 @@ extern "C" int xl_pog_scope_matches_live(const xl_pog_resources *resources)
 	for (int id = 0; id < Num_effects; ++id) {
 		const auto &a = resources->effect_definitions[id], &b = Effects[id];
 		if (a.vc.num_frames != b.vc.num_frames || a.vc.frame_time != b.vc.frame_time ||
-		    a.changing_wall_texture != b.changing_wall_texture || a.changing_object_texture != b.changing_object_texture || a.crit_clip != b.crit_clip) return 0;
+		    a.changing_wall_texture != b.changing_wall_texture || a.changing_object_texture != b.changing_object_texture ||
+		    a.crit_clip != b.crit_clip || a.dest_eclip != b.dest_eclip || ((a.flags ^ b.flags) & EF_CRITICAL)) return 0;
 		// Native bmread marks unused effect slots with -1, not an empty clock
 		if (a.vc.num_frames == -1 && a.changing_wall_texture == -1 && a.changing_object_texture == -1) continue;
 		if (a.vc.num_frames < 0 || a.vc.num_frames > VCLIP_MAX_FRAMES) return 0;
@@ -415,7 +416,7 @@ void xl_pog_bind_texture_effects(xl_pog_resources &resources, const xl_assets::O
 	for (const auto &clock : effects) {
 		const auto source = resources.entries.at(clock.image);
 		resources.effects.push_back({ clock.effect, clock.frame_time, tables.effect_data[clock.effect].changing_object_texture,
-		                              unsigned(clock.bitmaps.size()), source.frames, 1 });
+		                              unsigned(clock.bitmaps.size()), source.frames });
 		resources.effect_bitmaps.push_back(clock.bitmaps);
 		for (int bitmap : clock.bitmaps) {
 			if (strip_clock(bitmap, other)) throw std::runtime_error("POG: texture effect frames share a door or vclip clock");

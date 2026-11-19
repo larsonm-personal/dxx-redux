@@ -129,6 +129,7 @@ bool write_readiness(const char *path, nlohmann::ordered_json &proof, const char
 
 int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 {
+	int observation_frames = 120;
 #if defined(DXX_XL_RUNTIME) && defined(OGL) && !defined(OGLES)
 	const int wall_option = startup_find_cmd_arg("-xl-readiness-wall-effect");
 	const int object_option = startup_find_cmd_arg("-xl-readiness-object-effect");
@@ -142,6 +143,15 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 		const long id = std::strtol(Args[option + 1], &end, 10);
 		if (end == Args[option + 1] || *end || id < 0 || id >= Num_effects) return 1;
 		effect = int(id);
+	}
+	const int duration_option = startup_find_cmd_arg("-xl-texture-observation-frames");
+	if (duration_option) {
+		if (effect < 0 || duration_option + 1 >= Num_args) return 1;
+		char *end = nullptr;
+		const long count = std::strtol(Args[duration_option + 1], &end, 10);
+		if (end == Args[duration_option + 1] || *end || count < 120 || count > 3600) return 1;
+		observation_frames = int(count);
+		proof["requested_texture_observation_frames"] = observation_frames;
 	}
 #endif
 	proof["mission"] = Current_mission_filename;
@@ -167,7 +177,7 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 #if defined(DXX_XL_RUNTIME) && defined(OGL) && !defined(OGLES)
 	if (effect >= 0) proof[clock_key].push_back({ 0, int(Effects[effect].frame_count), int(Effects[effect].time_left) });
 #endif
-	for (int frame = 0; frame < 120; ++frame) {
+	for (int frame = 0; frame < observation_frames; ++frame) {
 		remainder += F1_0;
 		FrameTime = remainder / ROUTE_CONFIRMATION_FIXED_HZ;
 		remainder %= ROUTE_CONFIRMATION_FIXED_HZ;

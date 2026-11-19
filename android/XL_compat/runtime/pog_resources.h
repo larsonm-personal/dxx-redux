@@ -23,7 +23,7 @@ struct xl_pog_bitmap {
 };
 struct xl_pog_effect {
 	int effect, frame_time, object_texture;
-	unsigned source_frames, frames, from_pog;
+	unsigned source_frames, frames;
 };
 size_t xl_pog_pixel_bytes(const struct xl_pog_resources *resources);
 int xl_pog_effect_count(const struct xl_pog_resources *resources);
