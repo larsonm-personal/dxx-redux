@@ -45,7 +45,11 @@ unsigned xl_compat::fireball_queue_raster_controls(const PogBitmap &strip)
 		glViewport(0, 0, 64, 64);
 		glDisable(GL_SCISSOR_TEST);
 		glDepthMask(GL_TRUE);
+#ifdef ANDROID
+		glClearDepthf(.75f);
+#else
 		glClearDepth(.75);
+#endif
 		glClearColor(0, 0, 0, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	};
