@@ -533,7 +533,7 @@ static int run(int argc, char **argv)
 		                                 std::any_of(plan.at("steps").begin(), plan.at("steps").end(), [](const Json &step) -> bool {
 			                                 if (!step.is_object() || !step.contains("action") || !step.at("action").is_string()) return false;
 			                                 const std::string action = step.at("action");
-			                                 if (action == "select_secondary" || action == "fly_through_side") return true;
+			                                 if (action == "select_secondary" || action == "fly_through_side" || action == "approach_side") return true;
 			                                 return (action == "send_axis" && step.contains("axis") && pumo_ordinary_input_validation::integer_in_range(step.at("axis"), 2, 4)) ||
 			                                        (action == "send_button" && step.contains("button") && pumo_ordinary_input_validation::integer_in_range(step.at("button"), 101, 101));
 		                                 });
@@ -818,18 +818,26 @@ static int run(int argc, char **argv)
 				pose(step);
 				++position_assist_events;
 				trace << Json{ { "event", "position_assist" }, { "action", action }, { "step", completed }, { "position", snapshot().at("position") } }.dump() << '\n';
-			} else if (action == "fly_through_side") {
+			} else if (action == "fly_through_side" || action == "approach_side") {
+				const bool approach = action == "approach_side";
 				const int level = Current_level_num, segment = step.at("segment"), side = step.at("side");
 				require(segment == ConsoleObject->segnum && segment >= 0 && segment < Num_segments && side >= 0 && side < 6,
 				        "Ordinary flight requires the current segment and a valid side");
 				const int child = Segments[segment].children[side];
-				require(child >= 0 && child < Num_segments, "Ordinary flight requires a connected portal");
+				require(approach || (child >= 0 && child < Num_segments), "Ordinary flight requires a connected portal");
 				vms_vector portal, center, inward, target;
 				compute_center_point_on_side(&portal, &Segments[segment], side);
-				compute_segment_center(&center, &Segments[child]);
+				compute_segment_center(&center, &Segments[approach ? segment : child]);
 				vm_vec_sub(&inward, &center, &portal);
 				const fix depth = vm_vec_normalize(&inward);
-				vm_vec_scale_add(&target, &portal, &inward, (std::min) (depth, 2 * ConsoleObject->size));
+				fix offset = (std::min) (depth, 2 * ConsoleObject->size);
+				if (approach) {
+					require(pumo_ordinary_input_validation::integer_in_range(step.at("distance"), 1, 1024), "Invalid side approach distance");
+					offset = i2f(step.at("distance").get<int>());
+					require(offset < depth && !step.contains("destination_level"), "Ordinary approach must finish inside its starting segment");
+				}
+				vm_vec_scale_add(&target, &portal, &inward, offset);
+				bool aligned = false;
 				const int maximum = step.at("max_frames");
 				require(maximum > 0 && maximum <= 3600, "Invalid ordinary flight duration");
 				const bool primary = step.value("fire_primary", false);
@@ -846,16 +854,26 @@ static int run(int argc, char **argv)
 					thrust = axis((z * speed - dot(physics.velocity, orient.fvec)) / 12);
 					sideways = axis((x * speed - dot(physics.velocity, orient.rvec)) / 12);
 					vertical = axis((y * speed - dot(physics.velocity, orient.uvec)) / 12);
-					heading = axis(8 * std::atan2(x, z) - 1.5 * f2fl(physics.rotvel.y));
-					pitch = axis(-16 * std::atan2(y, std::hypot(x, z)) - 3 * f2fl(physics.rotvel.x));
-					firing = primary && z > 0.95;
+					vms_vector sight = direction;
+					if (approach) {
+						vm_vec_sub(&sight, &portal, &ConsoleObject->pos);
+						vm_vec_normalize(&sight);
+					}
+					const double aim_x = dot(sight, orient.rvec), aim_y = dot(sight, orient.uvec), aim_z = dot(sight, orient.fvec);
+					if (approach && distance < 1 && aim_z > 0.998 && vm_vec_mag(&physics.velocity) < i2f(3)) {
+						aligned = true;
+						break;
+					}
+					heading = axis(8 * std::atan2(aim_x, aim_z) - 1.5 * f2fl(physics.rotvel.y));
+					pitch = axis(-16 * std::atan2(aim_y, std::hypot(aim_x, aim_z)) - 3 * f2fl(physics.rotvel.x));
+					firing = primary && aim_z > 0.95;
 					trace << Json{ { "flight_frame", frame_count }, { "segment", segment }, { "side", side }, { "controls", { thrust, sideways, vertical, heading, pitch, firing } } }.dump() << '\n';
 					tick();
 				}
 				thrust = sideways = vertical = heading = pitch = 0;
 				firing = false;
-				const bool reached = step.contains("destination_level") ? Current_level_num == step.at("destination_level").get<int>()
-				                                                        : Current_level_num == level && ConsoleObject->segnum == child;
+				const bool reached = approach ? aligned : step.contains("destination_level") ? Current_level_num == step.at("destination_level").get<int>()
+				                                                                             : Current_level_num == level && ConsoleObject->segnum == child;
 				require(reached, ("Ordinary flight failed at segment " + std::to_string(segment) + " side " + std::to_string(side) +
 				                  ", ended in level " + std::to_string(Current_level_num) + " segment " + std::to_string(ConsoleObject->segnum))
 				                     .c_str());
