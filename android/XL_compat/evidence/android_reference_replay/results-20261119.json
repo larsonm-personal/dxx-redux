@@ -1,5 +1,5 @@
 {
-    "schema": "dxx-xl-android-reference-render-v1",
+    "schema": "dxx-xl-android-reference-render-v2",
     "original_source": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
     "original_executable_sha256": "2fb2cc81a694a526638cf978d98133b932b9f4fe9c1086dc568e13dd8b4de1d3",
     "apitrace": "18cfd388ac47a9e00978b34d6c20341f3e2cdb56",
@@ -8,14 +8,14 @@
     "build_api": 28,
     "binaries": {
         "x86_64": {
-            "xl_trace_replay": "2051ca9cfbb7c577541c0b4dff5979b6993589838d62bd82c8af07df8e02da88",
-            "xl_known_draw": "644f9a099f7eec94360541b33716d68e9f35505a4ff6fb8124c9119881b62e05",
-            "libGL4ES.so": "068422ba94c42dc74db1ef9bb69658c9d41d36370d8c64dbbad1cc6c00f7251a"
+            "xl_trace_replay": "ccd5a3a088c8a3a491e9d368880fba4be92af42ef3d9dd124b4695a0095157e4",
+            "libGL4ES.so": "068422ba94c42dc74db1ef9bb69658c9d41d36370d8c64dbbad1cc6c00f7251a",
+            "xl_known_draw": "1f903ca8d603c1eb6a1e8c0da9e0a31dcae78468b4ac818dfa35ce1a8d3f85f0"
         },
         "arm64-v8a": {
-            "xl_trace_replay": "1c111893beb5f6cec88f43d13497e2e1a1263554965b6c44e41b18bb5f84f232",
-            "xl_known_draw": "f017144ddb92137f28f287b53bea68be1376ca1c6386d538f11bb7167fa54be9",
-            "libGL4ES.so": "e3421ea9a080d5dc74021dbefa06bab37a33f9d4c8ad97b01da57cbe805bcd26"
+            "xl_trace_replay": "3b19a9bd671a06c90ae250d7f763d9550c33f59bce11f6fe0de1579b92df6b07",
+            "libGL4ES.so": "e3421ea9a080d5dc74021dbefa06bab37a33f9d4c8ad97b01da57cbe805bcd26",
+            "xl_known_draw": "e0e5540e4d7ed430a3475d41443cac06b849b65315fea030d41f27590d113891"
         }
     },
     "device": "Android API 34 x86_64 emulator with SwiftShader",
@@ -25,14 +25,8 @@
             "desktop_file_sha256": "d0666cf3c410847f5ea49130395180f4992ef41bf4daefbe9dd95b075ee7723b",
             "android_file_sha256": "ab3e0fd4a8bb5106c197cde2accd2baffa31645d592ebdf4aecea3bd7bda8e86",
             "swap_call": 856103,
-            "binaries": {
-                "xl_trace_replay": "2051ca9cfbb7c577541c0b4dff5979b6993589838d62bd82c8af07df8e02da88",
-                "libGL4ES.so": "068422ba94c42dc74db1ef9bb69658c9d41d36370d8c64dbbad1cc6c00f7251a",
-                "xl_known_draw": "644f9a099f7eec94360541b33716d68e9f35505a4ff6fb8124c9119881b62e05"
-            },
-            "android_api": "34",
-            "android_abi": "x86_64",
-            "known_draw_passed": true,
+            "executable_abi": "x86_64",
+            "native_bridge": "libndk_translation.so",
             "comparison": {
                 "dimensions": [2880, 1800],
                 "android_rgb_sha256": "200b6887fe9f1c55f891320703742f9dd9a1cb914f1806180934e0e62cf2a14c",
@@ -48,14 +42,8 @@
             "desktop_file_sha256": "447928d043e7711aaf5568f5eaf3c9eb7b327678d3f65ca8718540b07975845d",
             "android_file_sha256": "98520c3b082e8d6063a58f0c9bfe393371fb12c3e64de915ddc93e79fc0a04c9",
             "swap_call": 1316127,
-            "binaries": {
-                "xl_trace_replay": "2051ca9cfbb7c577541c0b4dff5979b6993589838d62bd82c8af07df8e02da88",
-                "libGL4ES.so": "068422ba94c42dc74db1ef9bb69658c9d41d36370d8c64dbbad1cc6c00f7251a",
-                "xl_known_draw": "644f9a099f7eec94360541b33716d68e9f35505a4ff6fb8124c9119881b62e05"
-            },
-            "android_api": "34",
-            "android_abi": "x86_64",
-            "known_draw_passed": true,
+            "executable_abi": "x86_64",
+            "native_bridge": "libndk_translation.so",
             "comparison": {
                 "dimensions": [2880, 1800],
                 "android_rgb_sha256": "9b9be2bfc1495102d639c965760887251654180a30422ace9cfc6009663e1a95",
@@ -67,5 +55,43 @@
             }
         }
     },
-    "scope": "Private original Windows desktop WGL command streams replayed in an Android EGL pbuffer; each comparison covers one final recorded swap."
+    "scope": "Private original Windows desktop WGL command streams replayed in an Android EGL pbuffer; each comparison covers one final recorded swap.",
+    "runs": [
+        {
+            "android_api": "34",
+            "android_abi": "x86_64",
+            "executable_abi": "x86_64",
+            "native_bridge": "libndk_translation.so",
+            "known_draw_passed": true,
+            "android_file_sha256": "ab3e0fd4a8bb5106c197cde2accd2baffa31645d592ebdf4aecea3bd7bda8e86",
+            "scene": "standoff"
+        },
+        {
+            "android_api": "34",
+            "android_abi": "x86_64",
+            "executable_abi": "x86_64",
+            "native_bridge": "libndk_translation.so",
+            "known_draw_passed": true,
+            "android_file_sha256": "98520c3b082e8d6063a58f0c9bfe393371fb12c3e64de915ddc93e79fc0a04c9",
+            "scene": "pumo"
+        },
+        {
+            "android_api": "34",
+            "android_abi": "x86_64",
+            "executable_abi": "arm64-v8a",
+            "native_bridge": "libndk_translation.so",
+            "known_draw_passed": true,
+            "android_file_sha256": "ab3e0fd4a8bb5106c197cde2accd2baffa31645d592ebdf4aecea3bd7bda8e86",
+            "scene": "standoff"
+        },
+        {
+            "android_api": "34",
+            "android_abi": "x86_64",
+            "executable_abi": "arm64-v8a",
+            "native_bridge": "libndk_translation.so",
+            "known_draw_passed": true,
+            "android_file_sha256": "98520c3b082e8d6063a58f0c9bfe393371fb12c3e64de915ddc93e79fc0a04c9",
+            "scene": "pumo"
+        }
+    ]
 }
