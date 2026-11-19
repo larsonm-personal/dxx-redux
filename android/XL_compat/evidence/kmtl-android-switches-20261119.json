@@ -1,0 +1,1262 @@
+{
+    "mission": "Kritical Mass Test Labs",
+    "device": "VignetteHost isolated Android emulator",
+    "android_api": 34,
+    "abi": "x86_64",
+    "gpu": "swiftshader_indirect",
+    "apk_sha256": "57ee99ef11a57839dc677470e3c1e07a110d98e9a4e9d983670169798ba07289",
+    "apk_native_source": "002152321d94c542515b0788347b2dc7c8cce3d8",
+    "inputs": {
+        "files/imported/sets/default/d2x.hog": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+        "files/imported/sets/default/d2x-xl.hog": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+        "files/imported/sets/default/missions/kmtl-xl.mn2": "4c37b4ddf86f7ba788aaebdabb370d104ca54f6f63dd4ce05ce24b63eff9138b",
+        "files/imported/sets/default/missions/kmtl-xl.hog": "e39edcd6340c56f50d584d31c7ca799005461a362eebba19d1da50d216b34022"
+    },
+    "difficulty": "Hotshot",
+    "controllers": "Ordinary three-axis flight with geometry-derived waypoints. The defended run used the controller combat option to aim and fire at live enemies. Quick save used the Android game request. Restores used the normal Load Game menu after Android force-stop. Rendering was active.",
+    "route": "286 to 300 in seven portals, through wall 74, then 300 to 145 in sixteen portals on the defended continuation.",
+    "saves": {
+        "switch_8_sha256": "3063155d52be643b40719979b11f2dea2438db6ed519c1d5a70cee95c54c1ef5",
+        "three_switches_sha256": "cab25795f4bcba66b2fb5cb7ad276d9d87ab37aef0c7659bb3a2e305157e511c"
+    },
+    "phases": [
+        {
+            "plan": "switch-8",
+            "plan_sha256": "bfa4c4731d23e3c43586da52435bf20c4fc1fb0444c9b8a184d705284c809d31",
+            "automation": {
+                "result": "PASS",
+                "run_id": "f425c72359744f9890eb1895f0c31e01",
+                "steps_completed": 26,
+                "total_steps": 26,
+                "elapsed_ms": 57115
+            },
+            "game_pid": 4783,
+            "trace_sha256": "498b29283f9c5316d068c7ab03f160823366d77f892c881650765a03fda52024",
+            "state_sha256": "ebd6c8409d3202de3ffb802fafca2680c540b4a443a6cc338f2506445fc4bf4b",
+            "segment": 300,
+            "lives": 3,
+            "dead": false,
+            "score": 0,
+            "shields": 100.0,
+            "energy": 100.0,
+            "kills": 0,
+            "switch_operated": {
+                "2": false,
+                "8": true,
+                "21": false
+            },
+            "linked_wall_types": {
+                "77": 4,
+                "118": 4
+            },
+            "cheats": false
+        },
+        {
+            "plan": "cold",
+            "plan_sha256": "b42c8aa466a33495a30e268d5b42ee326a0653986ccddacbe48efff5453df957",
+            "automation": {
+                "result": "PASS",
+                "run_id": "df55b7473d1f469b9c4215992d9bbd6c",
+                "steps_completed": 10,
+                "total_steps": 10,
+                "elapsed_ms": 11313
+            },
+            "game_pid": 5430,
+            "trace_sha256": "634475b428ba2fa20706d09a187198721710de15e6daf85ca1e091c870d5f440",
+            "state_sha256": "53e58dce01b3455e442862f578eab4825eb2d39cc39c45f707051d2a64c997d4",
+            "segment": 300,
+            "lives": 3,
+            "dead": false,
+            "score": 0,
+            "shields": 100.0,
+            "energy": 93.14013671875,
+            "kills": 0,
+            "switch_operated": {
+                "2": false,
+                "8": true,
+                "21": false
+            },
+            "linked_wall_types": {
+                "77": 4,
+                "118": 4
+            },
+            "cheats": false
+        },
+        {
+            "plan": "unlock",
+            "plan_sha256": "168fe0673a97b282ced3107d940790d40e20896ac682a529e37b12f19d95dfc8",
+            "automation": {
+                "result": "FAIL",
+                "run_id": "5c6da85aae6c49a18d95c6b6074c25b1",
+                "steps_completed": 14,
+                "total_steps": 42,
+                "reason": "fly_to requires live foreground single-player gameplay",
+                "elapsed_ms": 30594
+            },
+            "game_pid": 5867,
+            "trace_sha256": "f7b5bd5bc815ab53d1abe4c27905268a7a8882d6872a6a9677d9518a6335245c",
+            "state_sha256": "6cb8c7b0fe321e741d93b0bc4f203a7eff829ac44266dd50f533fe477625c9c2",
+            "segment": 337,
+            "lives": 3,
+            "dead": true,
+            "score": 0,
+            "shields": -2.311126708984375,
+            "energy": 100.0,
+            "kills": 0,
+            "switch_operated": {
+                "2": false,
+                "8": true,
+                "21": false
+            },
+            "linked_wall_types": {
+                "77": 4,
+                "118": 4
+            },
+            "cheats": false
+        },
+        {
+            "plan": "defended",
+            "plan_sha256": "2e00a0b79bb345ca92c590d41ad7c4b8f913629b1c37df2a4905a3f753d4b2b9",
+            "automation": {
+                "result": "PASS",
+                "run_id": "75f8fa5bccd34248b62b05dcac44b2d0",
+                "steps_completed": 42,
+                "total_steps": 42,
+                "elapsed_ms": 109743
+            },
+            "game_pid": 6312,
+            "trace_sha256": "2ca6d72f6da2b9157e6c9f655b1c2b8a5f3da29c22906b51b9dd9b9df42082ca",
+            "state_sha256": "167d884adecba3e7a1684b5be88bda1f4cc2a2aecfa566fb77ef27991c6d5339",
+            "segment": 145,
+            "lives": 3,
+            "dead": false,
+            "score": 300,
+            "shields": 72.31277465820312,
+            "energy": 90.690185546875,
+            "kills": 3,
+            "switch_operated": {
+                "2": true,
+                "8": true,
+                "21": true
+            },
+            "linked_wall_types": {
+                "77": 4,
+                "118": 4
+            },
+            "cheats": false
+        },
+        {
+            "plan": "earned-cold",
+            "plan_sha256": "57412d284176bab4b79962a100fd86e6f727d3cd15f7ea5a9a0c30d556548a83",
+            "automation": {
+                "result": "PASS",
+                "run_id": "becc4aadbeea4677a171d2c8ddf20e42",
+                "steps_completed": 7,
+                "total_steps": 7,
+                "elapsed_ms": 7272
+            },
+            "game_pid": 7164,
+            "trace_sha256": "744eae31b9c386c466ccbe4a22a47c9f56d67078ed5ef0b3c267a386c52e58d5",
+            "state_sha256": "104397ba209f8d26bdf6d16df43707e4273a79863335041cd4f2dbddfec72ab3",
+            "segment": 145,
+            "lives": 3,
+            "dead": false,
+            "score": 300,
+            "shields": 72.31277465820312,
+            "energy": 90.690185546875,
+            "kills": 3,
+            "switch_operated": {
+                "2": true,
+                "8": true,
+                "21": true
+            },
+            "linked_wall_types": {
+                "77": 4,
+                "118": 4
+            },
+            "cheats": false
+        }
+    ],
+    "replay": "Stage the content hashes in inputs, create a lowercase title pilot in an isolated app profile and run each embedded game script via android/helpers/run_test.ps1 with the explicit device serial, -Game d2 -DataEdition retail -PreserveState -NoEmulatorRecovery -LeaveRunning. Force-stop the app between phases. The failed continuation and its successful retry both start at the first saved switch.",
+    "device_scripts": {
+        "switch-8": [
+            {
+                "_info": {
+                    "games": ["d2"]
+                }
+            },
+            {
+                "action": "enter_game",
+                "game": "d2"
+            },
+            {
+                "action": "skip_intro",
+                "timeout_ms": 30000
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "title",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "New game",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "Kritical Mass Test Labs (",
+                "action": "select_mission"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "Hotshot",
+                "action": "select"
+            },
+            {
+                "action": "skip_briefing",
+                "timeout_ms": 30000
+            },
+            {
+                "expect": {
+                    "current_level_num": 1,
+                    "game_window_is_front": true,
+                    "in_game": true
+                },
+                "timeout_ms": 30000,
+                "action": "wait_for"
+            },
+            {
+                "action": "assert",
+                "expect": {
+                    "xl_pilot.wall_triggers.8.operated": false
+                }
+            },
+            {
+                "action": "fly_to",
+                "segment": 286,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 46.5
+            },
+            {
+                "action": "fly_to",
+                "segment": 287,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 51.05
+            },
+            {
+                "action": "fly_to",
+                "segment": 287,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 54.95
+            },
+            {
+                "action": "fly_to",
+                "segment": 288,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 63.0
+            },
+            {
+                "action": "fly_to",
+                "segment": 288,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": 0.0,
+                "y": 6.5,
+                "z": 76.0
+            },
+            {
+                "action": "fly_to",
+                "segment": 293,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -2.6702880859375e-6,
+                "y": 13.5,
+                "z": 76.0
+            },
+            {
+                "action": "fly_to",
+                "segment": 293,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -7.62939453125e-6,
+                "y": 20.0,
+                "z": 89.0
+            },
+            {
+                "action": "fly_to",
+                "segment": 294,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -7.62939453125e-6,
+                "y": 20.0,
+                "z": 103.0
+            },
+            {
+                "action": "fly_to",
+                "segment": 294,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -6.500012588500977,
+                "y": 20.0,
+                "z": 116.0
+            },
+            {
+                "action": "fly_to",
+                "segment": 297,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -17.000012588500976,
+                "y": 19.99998664855957,
+                "z": 116.0
+            },
+            {
+                "action": "fly_to",
+                "segment": 297,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -43.00000267028808,
+                "y": 19.999937057495117,
+                "z": 116.0
+            },
+            {
+                "action": "fly_to",
+                "segment": 325,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -53.5,
+                "y": 20.17493438720703,
+                "z": 116.00013885498046
+            },
+            {
+                "action": "fly_to",
+                "segment": 325,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -66.5,
+                "y": 20.824974060058594,
+                "z": 116.00065460205079
+            },
+            {
+                "action": "fly_to",
+                "segment": 300,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -73.49999866485595,
+                "y": 20.999974060058594,
+                "z": 116.0008388519287
+            },
+            {
+                "action": "assert",
+                "expect": {
+                    "position.segment": 300,
+                    "xl_pilot.wall_triggers.8.operated": true,
+                    "player_dead": false,
+                    "cheats_enabled": false
+                }
+            },
+            {
+                "field": "android_game_request",
+                "action": "set_debug",
+                "value": "quick_save"
+            },
+            {
+                "action": "wait_ms",
+                "ms": 900
+            }
+        ],
+        "cold": [
+            {
+                "_info": {
+                    "games": ["d2"]
+                }
+            },
+            {
+                "action": "enter_game",
+                "game": "d2"
+            },
+            {
+                "action": "skip_intro",
+                "timeout_ms": 30000
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "title",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "Load Game",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "[quick] level 1",
+                "action": "select"
+            },
+            {
+                "action": "wait_for",
+                "expect": {
+                    "position.segment": 300,
+                    "xl_pilot.doorways.77.type": 4,
+                    "xl_pilot.doorways.118.type": 4,
+                    "current_level_num": 1,
+                    "cheats_enabled": false,
+                    "player_dead": false,
+                    "in_game": true
+                },
+                "timeout_ms": 30000
+            },
+            {
+                "action": "send_button",
+                "button": 100,
+                "held": 1
+            },
+            {
+                "action": "wait_for",
+                "timeout_ms": 6000,
+                "expect": {
+                    "player.energy": {
+                        "lt": 98
+                    }
+                }
+            },
+            {
+                "action": "send_button",
+                "button": 100,
+                "held": 0
+            },
+            {
+                "action": "assert",
+                "expect": {
+                    "position.segment": 300,
+                    "xl_pilot.doorways.77.type": 4,
+                    "xl_pilot.doorways.118.type": 4,
+                    "current_level_num": 1,
+                    "cheats_enabled": false,
+                    "player_dead": false,
+                    "in_game": true
+                }
+            }
+        ],
+        "unlock": [
+            {
+                "_info": {
+                    "games": ["d2"]
+                }
+            },
+            {
+                "action": "enter_game",
+                "game": "d2"
+            },
+            {
+                "action": "skip_intro",
+                "timeout_ms": 30000
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "title",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "Load Game",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "[quick] level 1",
+                "action": "select"
+            },
+            {
+                "action": "wait_for",
+                "expect": {
+                    "position.segment": 300,
+                    "xl_pilot.doorways.77.type": 4,
+                    "xl_pilot.doorways.118.type": 4,
+                    "current_level_num": 1,
+                    "cheats_enabled": false,
+                    "player_dead": false,
+                    "in_game": true
+                },
+                "timeout_ms": 30000
+            },
+            {
+                "action": "fly_to",
+                "segment": 300,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -86.49999370574952,
+                "y": 20.99993438720703,
+                "z": 116.00100746154786
+            },
+            {
+                "action": "fly_to",
+                "segment": 335,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -90.61248970031738,
+                "y": 20.999923706054688,
+                "z": 116.00049877166748
+            },
+            {
+                "action": "fly_to",
+                "segment": 335,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -92.88747978210449,
+                "y": 20.999923706054688,
+                "z": 115.99844074249268
+            },
+            {
+                "action": "fly_to",
+                "segment": 336,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -98.04999446868896,
+                "y": 24.849927711486817,
+                "z": 115.99844341278076
+            },
+            {
+                "action": "fly_to",
+                "segment": 336,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -114.95005893707275,
+                "y": 39.149942588806155,
+                "z": 116.00051136016846
+            },
+            {
+                "action": "fly_to",
+                "segment": 337,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -123.43070764541626,
+                "y": 42.99994659423828,
+                "z": 116.00104942321778
+            },
+            {
+                "action": "fly_to",
+                "segment": 337,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -130.73033876419066,
+                "y": 42.99994659423828,
+                "z": 110.15100975036621
+            },
+            {
+                "action": "fly_to",
+                "segment": 386,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -130.9524793624878,
+                "y": 42.999923896789554,
+                "z": 105.07620735168457
+            },
+            {
+                "action": "fly_to",
+                "segment": 386,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -131.77779865264893,
+                "y": 42.99983959197998,
+                "z": 97.92695121765136
+            },
+            {
+                "action": "fly_to",
+                "segment": 387,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -132.0010066986084,
+                "y": 42.99970874786377,
+                "z": 89.00016746520996
+            },
+            {
+                "action": "fly_to",
+                "segment": 387,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -132.00474586486817,
+                "y": 42.9993070602417,
+                "z": 62.992798233032225
+            },
+            {
+                "action": "fly_to",
+                "segment": 388,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -133.82697315216063,
+                "y": 42.9992015838623,
+                "z": 47.06803722381592
+            },
+            {
+                "action": "fly_to",
+                "segment": 388,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -140.59150676727296,
+                "y": 42.9992115020752,
+                "z": 13.926294136047362
+            },
+            {
+                "action": "fly_to",
+                "segment": 389,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -147.4949171066284,
+                "y": 42.99921283721924,
+                "z": -2.5448945999145502
+            },
+            {
+                "action": "fly_to",
+                "segment": 389,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -166.37162189483644,
+                "y": 42.99920787811279,
+                "z": -30.581852531433107
+            },
+            {
+                "action": "fly_to",
+                "segment": 390,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -179.04885063171386,
+                "y": 42.99920253753662,
+                "z": -43.14250316619873
+            },
+            {
+                "action": "fly_to",
+                "segment": 390,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -189.57239685058593,
+                "y": 42.99919757843018,
+                "z": -57.87485294342041
+            },
+            {
+                "action": "fly_to",
+                "segment": 144,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -185.71610097885133,
+                "y": 42.99919891357422,
+                "z": -63.71646862030029
+            },
+            {
+                "action": "fly_to",
+                "segment": 144,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -178.5557686805725,
+                "y": 42.99919891357422,
+                "z": -74.56608600616455
+            },
+            {
+                "action": "fly_to",
+                "segment": 157,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -173.2466591835022,
+                "y": 42.99921092987061,
+                "z": -82.59402008056641
+            },
+            {
+                "action": "fly_to",
+                "segment": 157,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -160.68744192123413,
+                "y": 42.99925556182861,
+                "z": -101.56244354248047
+            },
+            {
+                "action": "fly_to",
+                "segment": 159,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -155.43832778930664,
+                "y": 42.9994291305542,
+                "z": -109.51327104568482
+            },
+            {
+                "action": "fly_to",
+                "segment": 159,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -151.96957416534423,
+                "y": 36.49972915649414,
+                "z": -114.79488801956177
+            },
+            {
+                "action": "fly_to",
+                "segment": 158,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -151.97215299606324,
+                "y": 29.49980525970459,
+                "z": -114.80520935058594
+            },
+            {
+                "action": "fly_to",
+                "segment": 158,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -151.98174638748168,
+                "y": 16.500087928771972,
+                "z": -114.84353332519531
+            },
+            {
+                "action": "fly_to",
+                "segment": 156,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -151.98432388305665,
+                "y": 12.475164031982422,
+                "z": -114.85385732650757
+            },
+            {
+                "action": "assert",
+                "expect": {
+                    "position.segment": 156,
+                    "xl_pilot.wall_triggers.21.operated": true,
+                    "player_dead": false
+                }
+            },
+            {
+                "action": "fly_to",
+                "segment": 156,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -151.98430404663085,
+                "y": 10.525164031982422,
+                "z": -114.85387964248658
+            },
+            {
+                "action": "fly_to",
+                "segment": 147,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -151.9842960357666,
+                "y": 6.5001667022705085,
+                "z": -114.85388698577881
+            },
+            {
+                "action": "fly_to",
+                "segment": 147,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -155.46265296936036,
+                "y": 0.00015430450439453126,
+                "z": -109.61057910919189
+            },
+            {
+                "action": "fly_to",
+                "segment": 146,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -157.94881267547606,
+                "y": 0.00014362335205078124,
+                "z": -105.85830297470093
+            },
+            {
+                "action": "fly_to",
+                "segment": 146,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -160.2263963699341,
+                "y": 0.00013866424560546876,
+                "z": -102.40789804458618
+            },
+            {
+                "action": "fly_to",
+                "segment": 145,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -161.44478073120118,
+                "y": 0.000142669677734375,
+                "z": -100.54475126266479
+            },
+            {
+                "action": "assert",
+                "expect": {
+                    "position.segment": 145,
+                    "xl_pilot.wall_triggers.2.operated": true,
+                    "player_dead": false
+                }
+            },
+            {
+                "field": "android_game_request",
+                "action": "set_debug",
+                "value": "quick_save"
+            },
+            {
+                "action": "wait_ms",
+                "ms": 900
+            }
+        ],
+        "defended": [
+            {
+                "_info": {
+                    "games": ["d2"]
+                }
+            },
+            {
+                "action": "enter_game",
+                "game": "d2"
+            },
+            {
+                "action": "skip_intro",
+                "timeout_ms": 30000
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "title",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "Load Game",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "[quick] level 1",
+                "action": "select"
+            },
+            {
+                "action": "wait_for",
+                "expect": {
+                    "position.segment": 300,
+                    "xl_pilot.doorways.77.type": 4,
+                    "xl_pilot.doorways.118.type": 4,
+                    "current_level_num": 1,
+                    "cheats_enabled": false,
+                    "player_dead": false,
+                    "in_game": true
+                },
+                "timeout_ms": 30000
+            },
+            {
+                "action": "fly_to",
+                "segment": 300,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -86.49999370574952,
+                "y": 20.99993438720703,
+                "z": 116.00100746154786,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 335,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -90.61248970031738,
+                "y": 20.999923706054688,
+                "z": 116.00049877166748,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 335,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -92.88747978210449,
+                "y": 20.999923706054688,
+                "z": 115.99844074249268,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 336,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -98.04999446868896,
+                "y": 24.849927711486817,
+                "z": 115.99844341278076,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 336,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -114.95005893707275,
+                "y": 39.149942588806155,
+                "z": 116.00051136016846,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 337,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -123.43070764541626,
+                "y": 42.99994659423828,
+                "z": 116.00104942321778,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 337,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -130.73033876419066,
+                "y": 42.99994659423828,
+                "z": 110.15100975036621,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 386,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -130.9524793624878,
+                "y": 42.999923896789554,
+                "z": 105.07620735168457,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 386,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -131.77779865264893,
+                "y": 42.99983959197998,
+                "z": 97.92695121765136,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 387,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -132.0010066986084,
+                "y": 42.99970874786377,
+                "z": 89.00016746520996,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 387,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -132.00474586486817,
+                "y": 42.9993070602417,
+                "z": 62.992798233032225,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 388,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -133.82697315216063,
+                "y": 42.9992015838623,
+                "z": 47.06803722381592,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 388,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -140.59150676727296,
+                "y": 42.9992115020752,
+                "z": 13.926294136047362,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 389,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -147.4949171066284,
+                "y": 42.99921283721924,
+                "z": -2.5448945999145502,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 389,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -166.37162189483644,
+                "y": 42.99920787811279,
+                "z": -30.581852531433107,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 390,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -179.04885063171386,
+                "y": 42.99920253753662,
+                "z": -43.14250316619873,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 390,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -189.57239685058593,
+                "y": 42.99919757843018,
+                "z": -57.87485294342041,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 144,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -185.71610097885133,
+                "y": 42.99919891357422,
+                "z": -63.71646862030029,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 144,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -178.5557686805725,
+                "y": 42.99919891357422,
+                "z": -74.56608600616455,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 157,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -173.2466591835022,
+                "y": 42.99921092987061,
+                "z": -82.59402008056641,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 157,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -160.68744192123413,
+                "y": 42.99925556182861,
+                "z": -101.56244354248047,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 159,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -155.43832778930664,
+                "y": 42.9994291305542,
+                "z": -109.51327104568482,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 159,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -151.96957416534423,
+                "y": 36.49972915649414,
+                "z": -114.79488801956177,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 158,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -151.97215299606324,
+                "y": 29.49980525970459,
+                "z": -114.80520935058594,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 158,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -151.98174638748168,
+                "y": 16.500087928771972,
+                "z": -114.84353332519531,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 156,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -151.98432388305665,
+                "y": 12.475164031982422,
+                "z": -114.85385732650757,
+                "combat": true
+            },
+            {
+                "action": "assert",
+                "expect": {
+                    "position.segment": 156,
+                    "xl_pilot.wall_triggers.21.operated": true,
+                    "player_dead": false
+                }
+            },
+            {
+                "action": "fly_to",
+                "segment": 156,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -151.98430404663085,
+                "y": 10.525164031982422,
+                "z": -114.85387964248658,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 147,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -151.9842960357666,
+                "y": 6.5001667022705085,
+                "z": -114.85388698577881,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 147,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -155.46265296936036,
+                "y": 0.00015430450439453126,
+                "z": -109.61057910919189,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 146,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -157.94881267547606,
+                "y": 0.00014362335205078124,
+                "z": -105.85830297470093,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 146,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -160.2263963699341,
+                "y": 0.00013866424560546876,
+                "z": -102.40789804458618,
+                "combat": true
+            },
+            {
+                "action": "fly_to",
+                "segment": 145,
+                "timeout_ms": 25000,
+                "settle": true,
+                "x": -161.44478073120118,
+                "y": 0.000142669677734375,
+                "z": -100.54475126266479,
+                "combat": true
+            },
+            {
+                "action": "assert",
+                "expect": {
+                    "position.segment": 145,
+                    "xl_pilot.wall_triggers.2.operated": true,
+                    "player_dead": false
+                }
+            },
+            {
+                "field": "android_game_request",
+                "action": "set_debug",
+                "value": "quick_save"
+            },
+            {
+                "action": "wait_ms",
+                "ms": 900
+            }
+        ],
+        "earned-cold": [
+            {
+                "_info": {
+                    "games": ["d2"]
+                }
+            },
+            {
+                "action": "enter_game",
+                "game": "d2"
+            },
+            {
+                "action": "skip_intro",
+                "timeout_ms": 30000
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "title",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "Load Game",
+                "action": "select"
+            },
+            {
+                "timeout_ms": 15000,
+                "text": "[quick] level 1",
+                "action": "select"
+            },
+            {
+                "action": "wait_for",
+                "expect": {
+                    "position.segment": 145,
+                    "xl_pilot.doorways.77.type": 4,
+                    "xl_pilot.doorways.118.type": 4,
+                    "xl_pilot.wall_triggers.2.operated": true,
+                    "xl_pilot.wall_triggers.21.operated": true,
+                    "current_level_num": 1,
+                    "player.robots_killed_level": 3,
+                    "player.score": 300,
+                    "cheats_enabled": false,
+                    "player_dead": false,
+                    "in_game": true
+                },
+                "timeout_ms": 30000
+            },
+            {
+                "action": "assert",
+                "expect": {
+                    "position.segment": 145,
+                    "xl_pilot.doorways.77.type": 4,
+                    "xl_pilot.doorways.118.type": 4,
+                    "xl_pilot.wall_triggers.2.operated": true,
+                    "xl_pilot.wall_triggers.21.operated": true,
+                    "current_level_num": 1,
+                    "player.robots_killed_level": 3,
+                    "player.score": 300,
+                    "cheats_enabled": false,
+                    "player_dead": false,
+                    "in_game": true
+                }
+            }
+        ]
+    }
+}

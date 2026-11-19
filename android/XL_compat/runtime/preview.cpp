@@ -216,7 +216,7 @@ const char *option(const char *name)
 	return nullptr;
 }
 
-xl_compat::Bytes read_extended_level(const char *filename)
+std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> open_extended_level(const char *filename)
 {
 	std::string path = filename;
 	if (!PHYSFSX_exists(path.c_str(), 1)) path = std::string(MISSION_DIR) + filename;
@@ -225,7 +225,14 @@ xl_compat::Bytes read_extended_level(const char *filename)
 	unsigned char header[8];
 	if (PHYSFS_read(input.get(), header, 1, 8) != 8) throw std::runtime_error("level header is truncated");
 	const uint32_t version = uint32_t(header[4]) | uint32_t(header[5]) << 8 | uint32_t(header[6]) << 16 | uint32_t(header[7]) << 24;
-	if (std::memcmp(header, "LVLP", 4) || version <= 8) return {};
+	if (std::memcmp(header, "LVLP", 4) || version <= 8) input.reset();
+	return input;
+}
+
+xl_compat::Bytes read_extended_level(const char *filename)
+{
+	auto input = open_extended_level(filename);
+	if (!input) return {};
 	const auto size = PHYSFS_fileLength(input.get());
 	if (size < 8 || size > 64 * 1024 * 1024) throw std::runtime_error("XL level exceeds the supported 64 MiB limit");
 	xl_compat::Bytes bytes(static_cast<std::size_t>(size));
@@ -426,12 +433,15 @@ void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, b
 			throw std::runtime_error("object " + std::to_string(i) + ": " + error.what());
 		}
 	}
-	for (const auto &matcen : level.matcens)
+	const auto assigned_robots = xl_compat::producer_layout(level).robots.size();
+	for (std::size_t i = 0; i < assigned_robots && i < level.matcens.size(); ++i) {
+		const auto &matcen = level.matcens[i];
 		for (unsigned bit = 0; bit < 64; ++bit)
 			if (uint32_t(matcen[bit / 32]) & (uint32_t(1) << (bit % 32))) {
 				graph.robot(int(bit));
 			}
-	if (!level.matcens.empty()) {
+	}
+	if (assigned_robots) {
 		graph.clip(VCLIP_MORPHING_ROBOT);
 		graph.clip(VCLIP_PLAYER_HIT);
 		graph.sound(SOUND_PLAYER_GOT_HIT);
@@ -462,7 +472,7 @@ void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, b
 }
 
 void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot, xl_assets::ObjectDependencies &graph,
-                           mission_preparation *incoming = nullptr, xl_compat::TargetSources *target = nullptr, bool owned_scoped_textures = false)
+                           mission_preparation *incoming = nullptr, xl_compat::TargetSources *target = nullptr, bool owned_scoped_textures = false, bool mission_robot_replacements = false)
 {
 	const bool classic = level.level_version <= 8;
 	// Selected-mission admission also checks the currently installed native tables
@@ -532,8 +542,8 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 			}
 			return false;
 		};
-		if (custom_robots && !has_companion(".HXM"))
-			throw std::runtime_error("mission declares custom robots, but no level HXM was found; install the complete mission package (other custom definition formats remain unqualified)");
+		if (custom_robots && !mission_robot_replacements && !has_companion(".HXM"))
+			throw std::runtime_error("mission declares custom robots, but no level HXM or validated mission robot replacements were found");
 		if (custom_textures && !has_companion(".POG") && !owned_scoped_textures)
 			throw std::runtime_error("mission declares custom textures, but no level POG or qualified scoped TGA set was found; install the complete mission package (custom PIG replacements remain unqualified)");
 	}
@@ -565,7 +575,7 @@ std::unique_ptr<XlPreparedResources> prepare_classic_member(const char *filename
 	const auto level = xl_compat::inspect_mission_level(*bytes);
 	if (level.level_version > 8) throw std::runtime_error("Selected level and mission archive disagree on level format");
 	auto resources = std::make_unique<XlPreparedResources>(filename, &level, ordinal);
-	validate_requirements(level, multiplayer, false, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures());
+	validate_requirements(level, multiplayer, false, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures(), resources->mission_replaces_robots());
 	return resources;
 }
 } // namespace
@@ -578,10 +588,10 @@ void xl_collect_incoming_dependencies(const xl_compat::Inventory &level, bool wa
 }
 
 void xl_validate_incoming_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot,
-                                       xl_assets::ObjectDependencies &graph, mission_preparation *mission, xl_compat::TargetSources &sources, bool owned_scoped_textures)
+                                       xl_assets::ObjectDependencies &graph, mission_preparation *mission, xl_compat::TargetSources &sources, bool owned_scoped_textures, bool mission_robot_replacements)
 {
 	if (!mission) throw std::runtime_error("Incoming requirements need a retained mission descriptor");
-	validate_requirements(level, multiplayer, water_pilot, graph, mission, &sources, owned_scoped_textures);
+	validate_requirements(level, multiplayer, water_pilot, graph, mission, &sources, owned_scoped_textures, mission_robot_replacements);
 }
 
 #ifdef __ANDROID__
@@ -623,7 +633,7 @@ extern "C" int xl_level_supported_at(const char *filename, int multiplayer, int 
 		const bool arena = water_profile(bytes, multiplayer != 0);
 		const auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena);
 		XlPreparedResources resources(filename, &probe.source, ordinal);
-		validate_requirements(probe.source, multiplayer != 0, arena, resources.dependencies(), nullptr, nullptr, resources.has_scoped_textures());
+		validate_requirements(probe.source, multiplayer != 0, arena, resources.dependencies(), nullptr, nullptr, resources.has_scoped_textures(), resources.mission_replaces_robots());
 		return 1;
 	} catch (const std::exception &error) {
 		rejection = std::string(filename) + "\n" + error.what();
@@ -877,7 +887,7 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		const bool arena = water_profile(bytes, (Game_mode & GM_MULTI) != 0);
 		auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena);
 		auto resources = std::make_unique<XlPreparedResources>(filename, &probe.source, ordinal);
-		validate_requirements(probe.source, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures());
+		validate_requirements(probe.source, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures(), resources->mission_replaces_robots());
 		if (original) {
 			if (!PHYSFS_mkdir("xl_preview_cache")) throw std::runtime_error("cannot create private pilot translation directory");
 			std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> output(PHYSFS_openWrite(translated_path), PHYSFS_close);
@@ -1021,9 +1031,17 @@ extern "C" int32_t xl_preview_motion_time(int segment, int32_t time)
 	                                                                                                        : time;
 }
 
+extern "C" int xl_unspawnable_robot_payload(int type, int id)
+{
+	// DropPowerup receives an unsigned byte and uses the original MAX_WEAPON_ID
+	constexpr unsigned original_weapon_limit = 70;
+	return type != OBJ_ROBOT && (type != OBJ_POWERUP || static_cast<uint8_t>(id) >= original_weapon_limit);
+}
+
 extern "C" int xl_blocked_segment(int segment)
 {
-	return source && source->level_version >= 21 && !(Game_mode & GM_MULTI) && segment >= 0 && std::size_t(segment) < source->segments.size() && (source->segments[segment].properties & xl_compat::segment_blocked);
+	return source && !(Game_mode & GM_MULTI) && segment >= 0 && std::size_t(segment) < source->segments.size() &&
+	       (xl_compat::segment_property_bits(source->level_version, source->segments[segment]) & xl_compat::segment_blocked);
 }
 
 extern "C" int xl_segment_damage_rates(int segment, int16_t *shield, int16_t *energy)
@@ -1053,7 +1071,9 @@ extern "C" int xl_repair_segment(int segment)
 
 extern "C" int xl_blocked_map_segment(int segment)
 {
-	return xl_blocked_segment(segment) && source->segments[segment].function == 0;
+	if (!xl_blocked_segment(segment)) return 0;
+	const auto function = source->segments[segment].function;
+	return source->level_version < 21 ? function == 12 : function == 0;
 }
 
 extern "C" int xl_lava_segment(int segment)
@@ -1200,6 +1220,20 @@ extern "C" void xl_camera_controller_bind_level(void)
 extern "C" int xl_level_extensions_active(void)
 {
 	return source && !(Game_mode & GM_MULTI);
+}
+
+extern "C" int xl_secret_restore_clock(int ordinal, int64_t saved_epoch, int64_t *clock)
+{
+	if (!Current_mission || !ordinal || ordinal > Last_level || ordinal < Last_secret_level) return 0;
+	try {
+		const char *filename = ordinal > 0 ? Level_names[ordinal - 1] : Secret_level_names[-ordinal - 1];
+		// The incoming member owns the clock, including in mixed classic/XL campaigns
+		if (!(Game_mode & GM_MULTI) && open_extended_level(filename)) *clock = saved_epoch;
+		return 1;
+	} catch (const std::exception &error) {
+		con_printf(CON_URGENT, "XL secret restore: %s\n", error.what());
+		return 0;
+	}
 }
 
 extern "C" void xl_initialize_static_robot(int object_number, int behavior)

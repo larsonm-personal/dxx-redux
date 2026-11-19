@@ -54,10 +54,6 @@ runs:
         python3 control/android/tests/xl_readiness_expanded.py prepare --assets retail-input --catalog control/android/tests/xl_readiness_inventory.json --work survey-input --data retail-data --resources readiness-resources
         rm -rf retail-input
         rm -rf readiness-resources
-    - name: Install native runtime dependencies
-      shell: bash
-      run: |
-        bash control/.github/scripts/install_xl_survey_runtime.sh
     - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
       with:
         name: ${{ inputs.engine-artifact }}

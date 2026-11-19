@@ -97,6 +97,38 @@ jobs:
           XL_QUALIFICATION_RESULT: ${{ needs.smoke.result }}
         run: python3 control/android/tests/nightly_pr_candidate.py report --receipt receipt/results.json
 
+  readiness-runtime:
+    name: Prepare signed Ubuntu runtime packages without game assets
+    needs: admit
+    if: always() && (needs.admit.outputs.eligible == 'true' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      artifact: ${{ steps.identity.outputs.artifact }}
+      sha256: ${{ steps.identity.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - name: Download runtime and dependencies from the signed Noble archives
+        run: bash control/.github/scripts/install_xl_survey_runtime.sh prepare runtime.tar
+      - name: Identify the prepared runtime
+        id: identity
+        run: |
+          echo "artifact=xl-survey-runtime-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(sha256sum runtime.tar | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ${{ steps.identity.outputs.artifact }}
+          path: runtime.tar
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
   readiness-engine:
     name: Build ordinary D2 readiness engine without private inputs
     needs: admit
@@ -144,8 +176,8 @@ jobs:
 
   runtime-smoke:
     name: Start the ordinary engine with survey runtime packages
-    if: always() && github.event_name == 'workflow_dispatch' && needs.readiness-engine.result == 'success'
-    needs: readiness-engine
+    if: always() && github.event_name == 'workflow_dispatch' && needs.readiness-engine.result == 'success' && needs.readiness-runtime.result == 'success'
+    needs: [readiness-engine, readiness-runtime]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -153,10 +185,14 @@ jobs:
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.workflow_sha }}
+          path: control
           persist-credentials: false
-      - name: Install survey runtime
-        run: bash .github/scripts/install_xl_survey_runtime.sh
+      - name: Install the verified survey runtime
+        uses: ./control/.github/actions/xl-survey-runtime
+        with:
+          artifact: ${{ needs.readiness-runtime.outputs.artifact }}
+          sha256: ${{ needs.readiness-runtime.outputs.sha256 }}
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: ${{ needs.readiness-engine.outputs.artifact }}
@@ -175,7 +211,7 @@ jobs:
 
   readiness:
     name: Measure D2X readiness on fixed uploaded sample
-    needs: [admit, readiness-engine]
+    needs: [admit, readiness-engine, readiness-runtime]
     if: needs.admit.outputs.eligible == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -200,6 +236,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 -c 'import os,sys; sys.path.insert(0,"control/android/tests"); import nightly_pr_candidate as c; c.verify(os.environ["CANDIDATE_SHA"])'
+      - name: Install the verified survey runtime
+        uses: ./control/.github/actions/xl-survey-runtime
+        with:
+          artifact: ${{ needs.readiness-runtime.outputs.artifact }}
+          sha256: ${{ needs.readiness-runtime.outputs.sha256 }}
       - name: Check out pinned uploaded inventory and retail inputs
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
@@ -247,8 +288,6 @@ jobs:
           python3 control/android/tests/xl_readiness.py prepare --assets retail-input --catalog control/android/tests/xl_readiness_inventory.json --work survey-input --data retail-data --resources readiness-resources
           rm -rf retail-input
           rm -rf readiness-resources
-      - name: Install native runtime dependencies
-        run: bash control/.github/scripts/install_xl_survey_runtime.sh
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: ${{ needs.readiness-engine.outputs.artifact }}
@@ -304,7 +343,7 @@ jobs:
 
   readiness-expanded:
     name: Measure expanded 64-case D2X readiness
-    needs: [admit, readiness-engine]
+    needs: [admit, readiness-engine, readiness-runtime]
     if: needs.admit.outputs.eligible == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -331,6 +370,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 -c 'import os,sys; sys.path.insert(0,"control/android/tests"); import nightly_pr_candidate as c; c.verify(os.environ["CANDIDATE_SHA"])'
+      - name: Install the verified survey runtime
+        uses: ./control/.github/actions/xl-survey-runtime
+        with:
+          artifact: ${{ needs.readiness-runtime.outputs.artifact }}
+          sha256: ${{ needs.readiness-runtime.outputs.sha256 }}
       - name: Stage verified survey inputs and the admitted engine
         uses: ./control/.github/actions/xl-survey-inputs
         with:
@@ -384,7 +428,7 @@ jobs:
 
   readiness-full:
     name: Measure all pinned D2X levels on request
-    needs: [admit, readiness-engine]
+    needs: [admit, readiness-engine, readiness-runtime]
     if: needs.admit.outputs.eligible == 'true' && needs.admit.outputs.full_survey == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 180
@@ -409,6 +453,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 -c 'import os,sys; sys.path.insert(0,"control/android/tests"); import nightly_pr_candidate as c; c.verify(os.environ["CANDIDATE_SHA"])'
+      - name: Install the verified survey runtime
+        uses: ./control/.github/actions/xl-survey-runtime
+        with:
+          artifact: ${{ needs.readiness-runtime.outputs.artifact }}
+          sha256: ${{ needs.readiness-runtime.outputs.sha256 }}
       - name: Stage verified survey inputs and the admitted engine
         uses: ./control/.github/actions/xl-survey-inputs
         with:

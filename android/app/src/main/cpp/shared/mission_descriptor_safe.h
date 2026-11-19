@@ -33,12 +33,14 @@ static inline int mission_descriptor_copy_title(const char *value, char *output,
 {
 	const char *end;
 	size_t length;
-	if (!value || !output || !capacity) return 0;
+	if (!value || !output || capacity < 2) return 0;
 	while (*value && isspace((unsigned char) *value)) ++value;
 	for (end = value; *end && *end != ';'; ++end) {}
 	while (end > value && isspace((unsigned char) end[-1])) --end;
 	length = (size_t) (end - value);
-	if (!length || length >= capacity) return 0;
+	if (!length) return 0;
+	/* The original XL menu keeps the first MISSION_NAME_LEN display bytes */
+	if (length >= capacity) length = capacity - 1;
 	memcpy(output, value, length);
 	output[length] = 0;
 	return 1;
