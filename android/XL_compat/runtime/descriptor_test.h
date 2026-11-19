@@ -774,7 +774,32 @@ static int descriptor_test(int argc, char **argv)
 			};
 			select(nullptr);
 			select("xlblock.rl2");
+			const std::map<std::string, std::string> upper{ { "mods/Owner/OWNER.hxm", "first" }, { "mods/Owner/skin.tga", "second" } };
+			const std::map<std::string, std::string> lower{ { "mods/owner/OWNER.HXM", "first" }, { "mods/owner/SKIN.TGA", "second" } };
+			require(xl_resource_same_mod_sources(upper, lower) && xl_resource_same_mod_sources(lower, upper),
+			        "Host filesystem spelling changed an owned source identity");
+			auto changed = lower;
+			changed.begin()->second = "other";
+			require(!xl_resource_same_mod_sources(upper, changed), "Changed digest passed case-insensitive source comparison");
+			changed = lower;
+			changed.erase(changed.begin());
+			require(!xl_resource_same_mod_sources(upper, changed), "Missing source passed case-insensitive source comparison");
+			changed.emplace("mods/other/OWNER.HXM", "first");
+			require(!xl_resource_same_mod_sources(upper, changed), "Different owner passed case-insensitive source comparison");
+			const std::map<std::string, std::string> aliases{ { "mods/Owner/skin.tga", "second" }, { "mods/Owner/Skin.tga", "second" } };
+			const std::map<std::string, std::string> other_aliases{ { "mods/owner/SKIN.tga", "second" }, { "mods/owner/skin.TGA", "second" } };
+			require(!xl_resource_same_mod_sources(aliases, other_aliases) && !xl_resource_same_mod_sources(other_aliases, aliases),
+			        "Ambiguous source spelling passed case-insensitive source comparison");
+			const int64_t saved_epoch = (int64_t(1) << 34) + 91;
+			int64_t clock = 0;
+			require(xl_secret_restore_clock(-1, saved_epoch, &clock) && clock == saved_epoch,
+			        "Classic base selected the wrong clock for its incoming XL secret");
 			require(load_level("xlblock.rl2") == 0 && xl_blocked_segment(0), "listed legacy secret lost its blocked room");
+			clock = 0;
+			require(xl_secret_restore_clock(1, saved_epoch, &clock) && clock == 0,
+			        "XL secret selected its own clock for the incoming classic base");
+			require(!xl_secret_restore_clock(-2, saved_epoch, &clock) && clock == 0,
+			        "Unlisted secret selected a world clock");
 			select("xltail.rl2");
 			require(load_level("xltail.rl2") != 0, "mixed mission admitted unsupported secret-level semantics");
 			select(nullptr);

@@ -304,7 +304,8 @@ extern "C" int xl_wall_trigger_read(rewind_file *file)
 		require(xl_runtime::restore_weapon_clock(saved.at("weapon_clock"), false), "Invalid XL weapon clock");
 		require(xl_runtime::restore_slow_motion(saved.at("slow_motion"), false), "Invalid XL slow-motion state");
 		require(xl_compat::restore_mission_progress(saved.at("mission_progress"), false), "Invalid XL mission progression state");
-		require(xl_compat::restore_named_audio(saved.at("audio"), false), "Invalid XL named-audio resource or playback state");
+		if (!xl_compat::restore_named_audio(saved.at("audio"), false))
+			throw std::runtime_error(std::string("Invalid XL named-audio resource or playback state: ") + xl_named_audio_error());
 		require(xl_compat::restore_seismic_gameplay(saved.at("seismic"), false), "Invalid XL seismic state");
 		require(xl_compat::ambient_audio_matches(saved.at("audio")), "Saved ambient audio differs from the authored object resource");
 		require(xl_compat::lightning_audio_matches(saved.at("audio")), "Saved lightning audio differs from the authored object resource");
