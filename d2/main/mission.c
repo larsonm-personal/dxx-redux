@@ -463,7 +463,7 @@ int read_mission_file(mle *mission, char *filename, int location)
 			PHYSFSX_fseek(mfile,0,SEEK_SET);
 			if (PHYSFSX_fgets(line,sizeof(line),mfile) && strlen(line) < sizeof(line)-1 &&
 			    mission_descriptor_key_is(line,"d2x-name") &&
-			    mission_descriptor_copy_title(get_value(line),temp,MISSION_NAME_LEN+1))
+			    mission_descriptor_copy_title(get_value(line),temp,sizeof(temp)))
 				p = temp;
 		}
 

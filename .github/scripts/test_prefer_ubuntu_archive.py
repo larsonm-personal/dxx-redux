@@ -205,8 +205,19 @@ class MirrorTests(unittest.TestCase):
             self.assert_controller_before_apt(android, job_name)
         self.assertIn("expected='7:6.1.1-3ubuntu5'", android)
         smoke = (ROOT / ".github/workflows/engine-smoke.yml").read_text()
-        self.assertEqual(smoke.count("python3 .github/scripts/prefer_ubuntu_archive.py"), 2)
+        self.assertEqual(smoke.count("bash .github/scripts/install_noble_packages.sh"), 2)
+        self.assertNotIn("sudo apt-get", smoke)
         self.assertIn("python3 .github/scripts/test_prefer_ubuntu_archive.py", smoke)
+        xl = (ROOT / ".github/workflows/xl-compat.yml").read_text()
+        self.assertEqual(xl.count("bash .github/scripts/install_noble_packages.sh"), 3)
+        self.assertNotIn("sudo apt-get", xl)
+        for step in (
+            "Provision dual-lane master host prerequisites",
+            "Provision selected auto-level replay prerequisites",
+        ):
+            setup = android.split("- name: " + step, 1)[1].split("- name:", 1)[0]
+            self.assertIn("DXX_APT_SOURCES: ${{ github.workspace }}/control/.github/ubuntu-noble.sources", setup)
+            self.assertIn("get_linux_build_prereqs.sh", setup)
 
     def test_pumo_stage_controller_contract_rejects_missing_or_late_call(self):
         nightly = (ROOT / ".github/workflows/nightly-tooling-sweep.yml").read_text()

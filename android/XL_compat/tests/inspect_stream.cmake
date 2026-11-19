@@ -44,6 +44,36 @@ string(
     inventory
     status)
 string(JSON segments LENGTH "${features}" levels 0 inventory features)
+string(JSON wall_exits LENGTH "${features}" levels 0 inventory wall_exits)
+string(JSON object_exits LENGTH "${features}" levels 0 inventory object_exits)
+if(NOT wall_exits EQUAL 0 OR NOT object_exits EQUAL 0)
+    message(FATAL_ERROR "A wall without a trigger acquired a campaign exit")
+endif()
+execute_process(COMMAND "${INSPECT}" "${OUTPUT}/branch.rl2" "${OUTPUT}/branch.json"
+                        --mission-features COMMAND_ERROR_IS_FATAL ANY)
+file(READ "${OUTPUT}/branch.json" branch)
+string(JSON exit_count LENGTH "${branch}" levels 0 inventory wall_exits)
+string(
+    JSON
+    exit
+    GET
+    "${branch}"
+    levels
+    0
+    inventory
+    wall_exits
+    0)
+string(JSON value GET "${exit}" value)
+string(JSON type GET "${exit}" type)
+string(JSON segment GET "${exit}" segment)
+string(JSON side GET "${exit}" side)
+if(NOT exit_count EQUAL 1
+   OR NOT value EQUAL 917504
+   OR NOT type EQUAL 3
+   OR NOT segment EQUAL 0
+   OR NOT side EQUAL 0)
+    message(FATAL_ERROR "Compact inspection lost the authored branch or its wall")
+endif()
 if(NOT result EQUAL 0 OR NOT version EQUAL 27 OR NOT status STREQUAL "decoded" OR segments LESS 1)
     message(FATAL_ERROR "Compact feature inventory lost the source layout or feature records")
 endif()
