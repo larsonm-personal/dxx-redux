@@ -1,4 +1,5 @@
 #include "hog_probe.h"
+#include "hog_checkpoint_test.h"
 #include "preview.h"
 #include "trigger_state.h"
 #include "../hog_format.h"
@@ -18,11 +19,20 @@ extern "C" {
 #include "mission.h"
 #include "physfsx.h"
 #include "state_android_shared.h"
+#include "state.h"
 #include "android_meta_actions.h"
 }
 namespace
 {
 std::string failure;
+nlohmann::json saved_disk, saved_memory;
+struct OriginalCheckpoint {
+	rewind_memory_buffer bytes{};
+	~OriginalCheckpoint()
+	{
+		rewind_memory_buffer_discard(&bytes);
+	}
+} original_checkpoint;
 std::uint64_t identity;
 fix energy;
 constexpr char member[] = "A-long-owned-resource-with-more-than-thirteen-characters.bin";
@@ -31,7 +41,7 @@ void require(bool valid, const char *message)
 	if (!valid) throw std::runtime_error(message);
 }
 // Exercise an advertised ordinal through the existing mission admission and level loader.
-void original_level(const char *request, bool expect_rejection)
+void original_level(const char *request)
 {
 	const char *separator = std::strchr(request, ':');
 	require(separator && separator[1], "Expected a signed ordinal and level filename");
@@ -41,10 +51,6 @@ void original_level(const char *request, bool expect_rejection)
 	        "HOG probe ordinal outside the current mission");
 	const char *filename = ordinal < 0 ? Secret_level_names[-ordinal - 1] : Level_names[ordinal - 1];
 	require(!dxx_hog_name_compare(filename, separator + 1) && mission_owns_resource_archive(PHYSFS_getRealDir(filename)), "Advertised level or owning HOG differs");
-	if (expect_rejection) {
-		require(!xl_level_supported_at(filename, 0, ordinal) && std::strstr(xl_level_rejection(), "stock-format levels in XL descriptors"), "Expected stock-format rejection in an XL mission");
-		return;
-	}
 	require(!game_is_time_paused(), "Original HOG transition requires resumed gameplay");
 	require(xl_level_supported_at(filename, 0, ordinal), "Original HOG level failed admission");
 	if (Current_level_num != ordinal) StartNewLevelSub(ordinal, 1, 0);
@@ -65,9 +71,25 @@ const char *xl_hog_probe(const char *operation)
 {
 	try {
 		require(Game_wind && ConsoleObject && !(Game_mode & GM_MULTI), "HOG probe requires running singleplayer");
-		if (!std::strncmp(operation, "visit:", 6)) original_level(operation + 6, false);
-		else if (!std::strncmp(operation, "reject:", 7)) original_level(operation + 7, true);
-		else if (!std::strcmp(operation, "prepare")) {
+		if (!std::strncmp(operation, "visit:", 6)) original_level(operation + 6);
+		else if (!std::strcmp(operation, "remember_memory")) {
+			saved_memory = hog_checkpoint_observation();
+			rewind_memory_buffer_discard(&original_checkpoint.bytes);
+			stop_time();
+			require(state_save_to_memory(&original_checkpoint.bytes, "Original mission rewind", ANDROID_SAVE_META_KIND_MANUAL, 1), "Cannot capture original mission rewind");
+		} else if (!std::strcmp(operation, "restore_memory")) {
+			require(!saved_memory.empty() && Current_level_num != saved_memory.at("level").get<int>(), "Rewind control must start on a different ordinal");
+			require(state_restore_from_memory(&original_checkpoint.bytes) && saved_memory == hog_checkpoint_observation(), "Original mission rewind changed the saved level, assets or pilot");
+			rewind_memory_buffer_discard(&original_checkpoint.bytes);
+			saved_memory.clear();
+		} else if (!std::strcmp(operation, "remember_disk")) {
+			saved_disk = hog_checkpoint_observation();
+			require(state_android_save_to_slot(ANDROID_SAVE_META_SLOT_QUICK, "Original mission", ANDROID_SAVE_META_KIND_MANUAL) == 1, "Cannot quicksave original mission");
+		} else if (!std::strcmp(operation, "restore_disk")) {
+			require(!saved_disk.empty() && Current_level_num != saved_disk.at("level").get<int>(), "Quicksave control must start on a different ordinal");
+			require(state_android_restore_slot(ANDROID_SAVE_META_SLOT_QUICK) == 1 && saved_disk == hog_checkpoint_observation(), "Original mission quickload changed the saved level, assets or pilot");
+			saved_disk.clear();
+		} else if (!std::strcmp(operation, "prepare")) {
 			identity = xl_level_trigger_identity();
 			energy = Players[Player_num].energy;
 			verify();

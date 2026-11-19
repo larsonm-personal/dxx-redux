@@ -7,6 +7,8 @@
 #include "retained_resource.h"
 #include "level_requirements.h"
 #include "target_sources.h"
+#include "../tests/hog_fixture.h"
+#include "../tests/layout_fixture.h"
 #include "door_views_test.h"
 extern "C" {
 #include "gauges.h"
@@ -504,10 +506,16 @@ static void descriptor_incoming_live_controls(const std::filesystem::path &root,
 	std::filesystem::create_directories(mods);
 	{
 		std::ofstream descriptor(directory / "livetgt.mn2");
-		descriptor << "d2x-name = Live target control\nnum_levels = 1\nobsrv-xl.rl2\n";
+		descriptor << "d2x-name = Live target control\nnum_levels = 2\nobsrv-xl.rl2\nnative.rl2\n";
 		require(bool(descriptor), "Cannot write live target descriptor");
 	}
 	std::filesystem::copy_file(root / "missions/obsrv-xl.hog", directory / "livetgt.hog", std::filesystem::copy_options::overwrite_existing);
+	{
+		xl_compat::Bytes member;
+		xl_test::hog_member(member, "native.rl2", xl_test::layout_fixture(7).bytes, false);
+		std::ofstream archive(directory / "livetgt.hog", std::ios::binary | std::ios::app);
+		require(bool(archive.write(reinterpret_cast<const char *>(member.data()), member.size())), "Cannot append classic mine to incoming control");
+	}
 	{
 		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> ham(PHYSFS_openRead("descent2.ham"), PHYSFS_close);
 		write_bytes((mods / "livetgt.ham").string().c_str(), xl_retain_resource(ham.get()));
@@ -599,6 +607,12 @@ static void descriptor_incoming_live_controls(const std::filesystem::path &root,
 		require(incoming->dependencies().robot_count == N_robot_types && incoming->dependencies().robot_data[0].mass == robot.mass &&
 		            Robot_info[0].mass != robot.mass,
 		        "Live target did not retain different equal-count definitions");
+		if (expected_xl) {
+			auto native = XlPreparedResources::prepare_level(target, 2);
+			require(native->level_inventory().level_version == 7 && native->dependencies().robot_count == N_robot_types &&
+			            native->dependencies().robot_data[0].mass == robot.mass && Robot_info[0].mass != robot.mass,
+			        "Incoming classic mine borrowed the outgoing equal-count robot bank");
+		}
 		XlPreparedResources moved(std::move(*incoming));
 		incoming.reset();
 		moved.dependencies().weapon(CONCUSSION_ID);
@@ -694,7 +708,7 @@ static int descriptor_test(int argc, char **argv)
 				require(load_level(level) != 0 && reason == xl_level_rejection(), "loader and preflight descriptor reasons differ");
 			}
 			require(xl_level_supported("obsrv-xl.rl2", 0), xl_level_rejection());
-			require(load_level("d2leva-1.rl2") != 0, "XL descriptor admitted even a stock-format level");
+			require(load_level("d2leva-1.rl2") != 0, "XL descriptor admitted a foreign unlisted stock level");
 			require(d_rand_get_stream_state(D_RNG_SIM, &rng_after) && rng_after == rng_before &&
 			            d_rand_get_stream_call_count(D_RNG_SIM) == rng_calls && GameTime64 == before_time,
 			        "rejection changed SIM state, draw count or game time");

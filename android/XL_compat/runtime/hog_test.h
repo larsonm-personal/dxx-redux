@@ -1,6 +1,8 @@
 #include "../tests/hog_fixture.h"
 #include "../hog.h"
 #include "recorded_future_test.h"
+#include "hog_checkpoint_test.h"
+#include <charconv>
 static xl_compat::Bytes hog_test_read(const char *name)
 {
 	std::unique_ptr<PHYSFS_File, decltype(&PHYSFS_close)> file(PHYSFS_openRead(name), PHYSFS_close);
@@ -16,6 +18,28 @@ static int hog_test(int argc, char **argv)
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir"));
+		if (!std::strcmp(find_arg_value(argc, argv, "-hog-test"), "original-mixed")) {
+			require(load_base_mission("belialsxl", error, sizeof(error)), error);
+			new_player_config();
+			input_demo_set_skip_level_intro(1);
+			StartNewGame(1);
+			char disk[] = "mixed.sav", description[] = "Mixed original";
+			for (const int ordinal : { 1, -2 }) {
+				if (Current_level_num != ordinal) StartNewLevelSub(ordinal, 1, 0);
+				require(Current_level_num == ordinal && (xl_level_extensions_active() != 0) == (ordinal == 1), "Incorrect live mine format");
+				Players[Player_num].energy -= F1_0;
+				const auto before = hog_checkpoint_observation();
+				require(!xl_level_supported_at(Secret_level_names[1], 0, 1) && before == hog_checkpoint_observation(), "Wrong signed ordinal disturbed the running mine");
+				stop_time();
+				require(state_save_all_sub(disk, description), "Cannot save original mixed mission");
+				StartNewLevelSub(ordinal == 1 ? -2 : 1, 1, 0);
+				require(Current_level_num != ordinal && (xl_level_extensions_active() != 0) != (ordinal == 1), "Mixed mission failed to change geometry modes");
+				require(state_restore_all_sub(disk, 0) && hog_checkpoint_observation() == before, "Disk restore lost original mine, resource or player state");
+			}
+			require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_resource_texture_scope_enabled() && xl_resource_mod_sources().empty(), "Mixed mission resource ownership survived a stock change");
+			std::cout << "Original mixed mission passed both disk restore directions, signed ordinal rejection and stock retirement\n";
+			return 0;
+		}
 		if (!std::strcmp(find_arg_value(argc, argv, "-hog-test"), "original-replay")) {
 			const char *mission = find_arg_value(argc, argv, "-mission");
 			require(mission && load_base_mission(mission, error, sizeof(error)), "Cannot select original HOG mission");
@@ -24,8 +48,16 @@ static int hog_test(int argc, char **argv)
 			Difficulty_level = 2;
 			d_srand_stream(D_RNG_SIM, 1);
 			d_rand_reset_stream_call_count(D_RNG_SIM);
-			StartNewGame(1);
-			require(Current_level_num == 1 && !Game_suspended && !cheats.enabled && mission_owns_resource_archive(PHYSFS_getRealDir(Gamesave_current_filename)), "Original HOG replay requires an unassisted mission-owned start");
+			const char *selected = find_arg_value(argc, argv, "-original-level");
+			int ordinal = 1;
+			if (selected) {
+				const char *end = selected + std::strlen(selected);
+				const auto result = std::from_chars(selected, end, ordinal);
+				require(result.ec == std::errc() && result.ptr == end, "Invalid signed replay ordinal");
+			}
+			require(ordinal && ordinal >= Last_secret_level && ordinal <= Last_level, "Original replay ordinal outside the selected descriptor");
+			StartNewGame(ordinal);
+			require(Current_level_num == ordinal && !Game_suspended && !cheats.enabled && mission_owns_resource_archive(PHYSFS_getRealDir(Gamesave_current_filename)), "Original HOG replay requires an unassisted mission-owned start");
 			xl_recorded_future(root, "original-hog", true, xl_level_extensions_active() != 0);
 			return 0;
 		}

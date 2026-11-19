@@ -969,7 +969,7 @@ std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal, st
 	xl_compat::TargetSources target(startup_origin);
 	const auto bytes = target.archive_bytes(filename, 64 * 1024 * 1024);
 	if (!bytes) throw std::runtime_error("XL save source level is missing from its original archive");
-	const auto level = xl_compat::inspect_mission_level(*bytes);
+	const auto level = Current_mission->enhanced == MISSION_ENHANCED_XL ? xl_compat::inspect_mission_level(*bytes) : xl_compat::inspect_level(*bytes);
 	// Reconstruct the same retained source set as level entry, including scoped
 	// texture precedence and native HXM/bank dependencies, without installing it
 	XlPreparedResources resources(filename, &level, ordinal);
