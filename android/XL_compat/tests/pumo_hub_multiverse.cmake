@@ -74,27 +74,6 @@ foreach(trigger 1 6 0)
 endforeach()
 string(JSON checkpoint GET "${flight_receipt}" checkpoints "${destination}")
 file(READ "${CMAKE_CURRENT_LIST_DIR}/${cold_plan}" cold)
-function(write_resume_plan phase template checkpoint)
-    set(cold "${template}")
-    foreach(pair "file;resume_checkpoint" "sha256;resume_sha256")
-        list(GET pair 0 source)
-        list(GET pair 1 plan_field)
-        string(JSON value GET "${checkpoint}" ${source})
-        string(JSON cold SET "${cold}" ${plan_field} "\"${value}\"")
-    endforeach()
-    foreach(field position player)
-        string(JSON saved GET "${checkpoint}" state ${field})
-        string(
-            JSON
-            cold
-            SET
-            "${cold}"
-            checkpoint_expect
-            ${field}
-            "${saved}")
-    endforeach()
-    file(WRITE "${OUTPUT}/${phase}-plan.json" "${cold}\n")
-endfunction()
 write_resume_plan(cold "${cold}" "${checkpoint}")
 run_pumo_player_phase(cold ${destination} ${destination} ${cold_steps} 0)
 string(JSON cold_pid GET "${cold_receipt}" process_id)

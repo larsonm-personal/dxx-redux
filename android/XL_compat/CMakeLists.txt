@@ -956,7 +956,20 @@ if(BUILD_TESTING)
                 -DRESOURCES=${XL_PUMO_PLAYER_ROOT} -DMULTIVERSE_EXIT=ON -DMAJHA_EXIT=ON
                 -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-majha-exit-from-hub -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_hub_multiverse.cmake)
-        set_tests_properties(xl_pumo_majha_exit_from_hub PROPERTIES TIMEOUT 2400 RUN_SERIAL TRUE)
+        set_tests_properties(
+            xl_pumo_majha_exit_from_hub PROPERTIES TIMEOUT 2400 RUN_SERIAL TRUE FIXTURES_SETUP
+                                                   pumo_earned_level4_from_hub)
+        add_test(
+            NAME xl_pumo_metillis_blue_key
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/pumo-majha-exit-from-hub
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-metillis-blue-key -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_metillis_key.cmake)
+        set_tests_properties(
+            xl_pumo_metillis_blue_key PROPERTIES TIMEOUT 2400 RUN_SERIAL TRUE FIXTURES_REQUIRED
+                                                 pumo_earned_level4_from_hub)
         add_test(
             NAME xl_pumo_majha_player
             COMMAND
