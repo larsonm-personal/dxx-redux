@@ -987,10 +987,15 @@ static int descriptor_test(int argc, char **argv)
 		fixture("xlvtcrit", "d2x-name = XL title\nnum_levels = 1\nd2leva-1.rl2\n\v!ham = other.ham\n", false);
 		fixture("xldup", "d2x-name = First\n  d2x-name = Second\nnum_levels = 1\nd2leva-1.rl2\n", false);
 		const auto hidden_title = std::string("d2x-name = A") + std::string(80, ' ') + "B\nnum_levels = 1\nd2leva-1.rl2\n";
-		fixture("xlhidden", hidden_title.c_str(), false);
+		fixture("xlhidden", hidden_title, true);
+		require(Current_mission_longname == std::string("A") + std::string(MISSION_NAME_LEN - 1, ' ') &&
+		            !std::strcmp(Current_mission_filename, "xlhidden"),
+		        "XL title was trimmed a second time after truncation or replaced its filename");
 		const auto truncated_title = std::string("d2x-name = A;") + std::string(PATH_MAX, 'x') + "\nnum_levels = 1\nd2leva-1.rl2\n";
 		fixture("xltrunc", truncated_title.c_str(), false);
-		fixture("xllong", "d2x-name = Title exceeding the twenty five character native limit\nnum_levels = 1\nd2leva-1.rl2\n", false);
+		fixture("xllong", "d2x-name = Title exceeding the twenty five character native limit\nnum_levels = 1\nd2leva-1.rl2\n", true);
+		require(!std::strcmp(Current_mission_longname, "Title exceeding the twent") && !std::strcmp(Current_mission_filename, "xllong"),
+		        "Long XL title lost the original display prefix or full mission filename");
 		fixture("xlfile", "d2x-name = Long filename\nnum_levels = 1\ntoolongfilename.rl2\n", false);
 		fixture("xlsecrt", "d2x-name = Secret mapping\nnum_levels = 2\nd2leva-1.rl2\nd2leva-2.rl2\nnum_secrets = 1\nd2leva-s.rl2,2\n", true);
 		require(Last_level == 2 && Last_secret_level == -1 && Secret_level_table[0] == 2 &&
