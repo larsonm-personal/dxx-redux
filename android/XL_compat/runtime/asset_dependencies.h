@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include "resource_banks.h"
+#include "preview.h"
 extern "C" {
 #include "inferno.h"
 #include "object.h"
@@ -230,11 +231,11 @@ struct ObjectDependencies {
 	}
 	void placed_contents(int owner_type, int owner_id, int type, int id)
 	{
-		if (owner_type != OBJ_ROBOT || type == OBJ_ROBOT || type == OBJ_POWERUP) {
+		if (owner_type != OBJ_ROBOT || !xl_unspawnable_robot_payload(type, id)) {
 			contents(type, id);
 			return;
 		}
-		// XL CreateEgg returns on the first unspawnable type without reading the ID
+		// XL CreateEgg stops when the first attempted DropPowerup returns no object
 		asset_require(owner_id >= 0 && owner_id < robot_count, "placed contents require a robot definition");
 		const auto &definition = robot_data[owner_id];
 		asset_require(!definition.thief && !definition.companion &&

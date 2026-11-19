@@ -1,0 +1,524 @@
+{
+    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+    "current_source": "002152321d94c542515b0788347b2dc7c8cce3d8",
+    "engine_sha256": "56b7c4393068173c7a990139f59fc5e986ab96ee0cace4d2c70b3aa7fd193b6b",
+    "resource_identity": {
+        "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+        "files": [
+            {
+                "path": "d2x.hog",
+                "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                "size": 4371791,
+                "source": "descent_2_vertigo/d2x.hog"
+            },
+            {
+                "path": "d2x-xl.hog",
+                "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                "size": 3815963,
+                "source": "xl-resources/d2x-xl.hog"
+            }
+        ],
+        "profile": "authentic-vertigo-xl-v1",
+        "repository": "larsonm-personal/dxx-redux-test-assets"
+    },
+    "entries": 1654,
+    "counts": {
+        "load_failed": 120,
+        "loaded_ticked": 1513,
+        "simulation_failed": 5,
+        "timeout": 1,
+        "unsupported_format": 15
+    },
+    "prior_source": "474487e1db1f2c29fbfc3faff7984964c7fc1763",
+    "prior_counts": {
+        "load_failed": 136,
+        "loaded_ticked": 1498,
+        "simulation_failed": 5,
+        "timeout": 1,
+        "unsupported_format": 14
+    },
+    "changed": [
+        {
+            "case": "levelpack.7z/missions/kruel/kmtl-xl.mn2:1",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        },
+        {
+            "case": "levelpack.7z/missions/single/pmlev1.mn2:1",
+            "previous": "load_failed",
+            "current": "unsupported_format"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:1",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:10",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:11",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:12",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:13",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:14",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:2",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:3",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:4",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:5",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:6",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:7",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:8",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        },
+        {
+            "case": "pmines_v11.7z/missions/single/pmines.mn2:9",
+            "previous": "load_failed",
+            "current": "loaded_ticked"
+        }
+    ],
+    "individual_runs": {
+        "full-pinned-01": {
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "load_failed": 70,
+                    "loaded_ticked": 1033,
+                    "simulation_failed": 3,
+                    "unsupported_format": 5
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 1111,
+                "passed": 1033,
+                "readiness_percent": 93.0
+            },
+            "inventory_sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+            "archive_pin": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "survey_sha256": "c6351139f2b95414c79ac341b9f4e9cf0edaaeabb86ef24d20af0fcf2dc56a7c",
+            "results_sha256": "73f05295d3bcefb791bc6e81ce7f79f11339ef85e9a9ca6d93a832aee17b0b31",
+            "wall_seconds": 2933.22,
+            "seconds_source": "survey.json creation through completed results.json on the same Windows host"
+        },
+        "full-additional-01": {
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "load_failed": 50,
+                    "loaded_ticked": 480,
+                    "simulation_failed": 2,
+                    "timeout": 1,
+                    "unsupported_format": 10
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 543,
+                "passed": 480,
+                "readiness_percent": 88.4
+            },
+            "inventory_sha256": "e7d480aa401522d37f6ec75da01f6cec7c314c901728f1b291131e52a62818df",
+            "archive_pin": null,
+            "survey_sha256": "1648071961135df12260b46c2e736b0d12592f5e770fb7de1fde512f8d19ccbb",
+            "results_sha256": "e34bde4a67d698970180721bc4a2abd34710f023fb38b64249684bcb72bc9194",
+            "wall_seconds": 893.64,
+            "seconds_source": "survey.json creation through completed results.json on the same Windows host"
+        }
+    },
+    "hosted_pinned": {
+        "run": 44488471677,
+        "job": 135446315373,
+        "attempt": 1,
+        "target": "499b091513db147fe92ab82710814fd86981e34b",
+        "engine_sha256": "c3601dec63abb4a8f5600562c0dd4d380bcf7350c5588a0707c1c21024d2eb30",
+        "summary": {
+            "complete": true,
+            "counts": {
+                "load_failed": 70,
+                "loaded_ticked": 1033,
+                "simulation_failed": 3,
+                "unsupported_format": 5
+            },
+            "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+            "denominator": 1111,
+            "passed": 1033,
+            "readiness_percent": 93.0
+        },
+        "groups": {
+            "Advertised level file missing": 31,
+            "Animated replacement textures": 3,
+            "Custom base definitions": 1,
+            "Fluid behavior": 1,
+            "Light index bounds": 15,
+            "Lightning effects": 1,
+            "Object placement": 1,
+            "Object trigger actions": 1,
+            "Reactor triggers": 1,
+            "Replacement bitmap directory": 3,
+            "Resolved level filename differs": 1,
+            "Robot definitions": 2,
+            "Segment functions": 8,
+            "Simulation stopped": 2,
+            "Trigger targets": 1,
+            "Unsupported level format": 5,
+            "Wall types": 1
+        },
+        "artifact_sha256": "2abf245b2f6bced81ed9a3477a680f039b53fcdd03051098105ce5a05e7f4975",
+        "equal_windows_case_outcomes": true
+    },
+    "expanded": [
+        {
+            "platform": "GitHub Linux",
+            "run": "44483716097",
+            "target": "499b091513db147fe92ab82710814fd86981e34b",
+            "row_counts": {
+                "loaded_ticked": 64
+            },
+            "budget_seconds": 360.0,
+            "elapsed_seconds": 128.808,
+            "exhausted": false,
+            "receipt_sha256": "965f885e476132860d5a3d4c48d17156db3abee532377dfe4480d394f078a4fc"
+        },
+        {
+            "platform": "GitHub Linux",
+            "run": "44488471677",
+            "target": "499b091513db147fe92ab82710814fd86981e34b",
+            "row_counts": {
+                "loaded_ticked": 49,
+                "untested": 15
+            },
+            "budget_seconds": 165.0,
+            "elapsed_seconds": 120.726,
+            "exhausted": true,
+            "receipt_sha256": "54de4bac1521314e60d7f1c60e7ff0c20f9af49bd7212362dd2e1ca5680e5c9a"
+        },
+        {
+            "platform": "GitHub Linux",
+            "run": "44489082664",
+            "target": "69843b88e9baf6e8e4da04e74a35a4acd10d02fc",
+            "row_counts": {
+                "loaded_ticked": 64
+            },
+            "budget_seconds": 360.0,
+            "elapsed_seconds": 151.005,
+            "exhausted": false,
+            "receipt_sha256": "de381c1e3ec972956e33716a687d3bc8e4551e35866a38f33e5e86572936d6dd"
+        },
+        {
+            "platform": "GitHub Linux",
+            "run": "44491957576",
+            "target": "2b87f95fb0e29f4006d1273019fab1c8dcc5cee0",
+            "row_counts": {
+                "loaded_ticked": 64
+            },
+            "budget_seconds": 360.0,
+            "elapsed_seconds": 146.856,
+            "exhausted": false,
+            "receipt_sha256": "c1a6159a7bcbb86730065dcb77d5dfe6ad1bf6e2558bef82a335f98a3855bcb6"
+        },
+        {
+            "platform": "GitHub Linux",
+            "run": "44494107441",
+            "target": "7580ac2faff69c47848675d8bf2add1ac4c23d71",
+            "row_counts": {
+                "untested": 64
+            },
+            "budget_seconds": 2.0,
+            "elapsed_seconds": 0.006,
+            "exhausted": true,
+            "receipt_sha256": "1c4154afd3dabb94b448f70b7f47269bed07ed668d2c20f365d79646b7e665c9"
+        },
+        {
+            "platform": "GitHub Linux",
+            "run": "44501713284",
+            "target": "c6b1cdbf66e466dd7f7e9b0fa9d838b2b1db43ea",
+            "row_counts": {
+                "loaded_ticked": 64
+            },
+            "budget_seconds": 360.0,
+            "elapsed_seconds": 151.745,
+            "exhausted": false,
+            "receipt_sha256": "18bb0905a575fa5eef1b3803ca753bbddd28957a1a60a3697bc05d0d7b00ebb6"
+        },
+        {
+            "platform": "GitHub Linux",
+            "run": "44504393569",
+            "target": "fca6fc7f798de2c867f5ae3ccac0beb4fa105eb9",
+            "row_counts": {
+                "loaded_ticked": 64
+            },
+            "budget_seconds": 360.0,
+            "elapsed_seconds": 178.52,
+            "exhausted": false,
+            "receipt_sha256": "956141585e20f51e462194b8880d981e633330247ea1c346bb22eae814291faa"
+        },
+        {
+            "platform": "Windows",
+            "run": null,
+            "target": "002152321d94c542515b0788347b2dc7c8cce3d8",
+            "row_counts": {
+                "loaded_ticked": 64
+            },
+            "budget_seconds": 360.0,
+            "elapsed_seconds": 182.25,
+            "exhausted": false,
+            "receipt_sha256": "81a0c0de07c9eb859c99192f85a8a47a2397cb2066c846bffd695f2d8d6d6b31"
+        }
+    ],
+    "first_observed_blockers": {
+        "source": "Private Linux exact pinned diagnostics and the Windows additional distribution survey under the same executable source. Each case contributes its first observed blocker. Later blockers may coexist.",
+        "pinned_report_sha256": "2abf245b2f6bced81ed9a3477a680f039b53fcdd03051098105ce5a05e7f4975",
+        "additional_report_sha256": "54e9298ca0ae86de5e991733ebf316d9eafe9222e215a4b4e203f06bf63a5308",
+        "counts_by_family": {
+            "Advertised level file missing": {
+                "pinned": 31,
+                "additional": 3,
+                "combined": 34
+            },
+            "Animated replacement textures": {
+                "pinned": 3,
+                "additional": 13,
+                "combined": 16
+            },
+            "Light index bounds": {
+                "pinned": 15,
+                "additional": 1,
+                "combined": 16
+            },
+            "Unsupported level format": {
+                "pinned": 5,
+                "additional": 10,
+                "combined": 15
+            },
+            "Segment functions": {
+                "pinned": 8,
+                "additional": 6,
+                "combined": 14
+            },
+            "Reactor triggers": {
+                "pinned": 1,
+                "additional": 4,
+                "combined": 5
+            },
+            "Robot definitions": {
+                "pinned": 2,
+                "additional": 3,
+                "combined": 5
+            },
+            "Replacement bitmap directory": {
+                "pinned": 3,
+                "additional": 1,
+                "combined": 4
+            },
+            "Simulation stopped": {
+                "pinned": 2,
+                "additional": 2,
+                "combined": 4
+            },
+            "Non-hexahedral geometry": {
+                "pinned": 0,
+                "additional": 4,
+                "combined": 4
+            },
+            "OOF model decoding": {
+                "pinned": 0,
+                "additional": 4,
+                "combined": 4
+            },
+            "ASE model rendering": {
+                "pinned": 0,
+                "additional": 3,
+                "combined": 3
+            },
+            "Custom base definitions": {
+                "pinned": 1,
+                "additional": 1,
+                "combined": 2
+            },
+            "Fluid behavior": {
+                "pinned": 1,
+                "additional": 1,
+                "combined": 2
+            },
+            "Lightning effects": {
+                "pinned": 1,
+                "additional": 1,
+                "combined": 2
+            },
+            "Object placement": {
+                "pinned": 1,
+                "additional": 1,
+                "combined": 2
+            },
+            "Wall types": {
+                "pinned": 1,
+                "additional": 1,
+                "combined": 2
+            },
+            "Object trigger actions": {
+                "pinned": 1,
+                "additional": 0,
+                "combined": 1
+            },
+            "Resolved level filename differs": {
+                "pinned": 1,
+                "additional": 0,
+                "combined": 1
+            },
+            "Trigger targets": {
+                "pinned": 1,
+                "additional": 0,
+                "combined": 1
+            },
+            "Multiplayer-only objects": {
+                "pinned": 0,
+                "additional": 1,
+                "combined": 1
+            },
+            "Particle effects": {
+                "pinned": 0,
+                "additional": 1,
+                "combined": 1
+            },
+            "Robot contents": {
+                "pinned": 0,
+                "additional": 1,
+                "combined": 1
+            },
+            "timeout": {
+                "pinned": 0,
+                "additional": 1,
+                "combined": 1
+            }
+        }
+    },
+    "observatory_candidate": {
+        "source": "c6b1cdbf66e466dd7f7e9b0fa9d838b2b1db43ea",
+        "engine_sha256": "a576199a54f4409403957468de6da23a9c544d6acd8e90a005d329abf13a8381",
+        "debug_preview_sha256": "c3e17226120b8a02d67a266abedd915b1e8d10abb92c5e21e0f3b1ab82a93b60",
+        "fixed": {
+            "complete": true,
+            "counts": {
+                "loaded_ticked": 8
+            },
+            "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+            "denominator": 8,
+            "passed": 8,
+            "readiness_percent": 100.0
+        },
+        "expanded": {
+            "complete": true,
+            "counts": {
+                "loaded_ticked": 64
+            },
+            "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+            "denominator": 64,
+            "passed": 64,
+            "readiness_percent": 100.0
+        },
+        "expanded_seconds": 186.204,
+        "expanded_results_sha256": "ce72543850d436f501dc3ae0bc60ea2d6fa1af6e585acb39ed95fddeab960684",
+        "fixed_results_sha256": "147a7ff6c67151890b8911aa2e24b8956b858bf74d4a114788fa46da1a3f533c",
+        "debug_reference_log_sha256": "e899b585967466b701187e18785b9a0def2bb2d6961126eeb40fa09949473fb3",
+        "full": {
+            "pinned": {
+                "summary": {
+                    "complete": true,
+                    "counts": {
+                        "load_failed": 70,
+                        "loaded_ticked": 1033,
+                        "simulation_failed": 3,
+                        "unsupported_format": 5
+                    },
+                    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                    "denominator": 1111,
+                    "passed": 1033,
+                    "readiness_percent": 93.0
+                },
+                "results_sha256": "bd81b6f9ead8e926636e5c7285b53396cba2591c7ca10a338e751442f1cbb3fa",
+                "outcome_changes": {}
+            },
+            "additional": {
+                "summary": {
+                    "complete": true,
+                    "counts": {
+                        "load_failed": 50,
+                        "loaded_ticked": 480,
+                        "simulation_failed": 2,
+                        "timeout": 1,
+                        "unsupported_format": 10
+                    },
+                    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                    "denominator": 543,
+                    "passed": 480,
+                    "readiness_percent": 88.4
+                },
+                "results_sha256": "8683f5cef254b5ec047554d4c2815c41f443bbb1323f9e35f5887cbeb1033898",
+                "outcome_changes": {}
+            }
+        },
+        "hosted_full_pinned": {
+            "workflow_run": 44501713284,
+            "job": 135497329088,
+            "started_utc": "2026-11-19T10:29:25Z",
+            "completed_utc": "2026-11-19T11:12:13Z",
+            "job_seconds": 2568,
+            "group_receipt_sha256": "a6a73a87e92988e217175ee6ceea6760fa9dd9b7c1288e09249c1ab83d56ac6d",
+            "engine_sha256": "1c7ad307b0652f577f1143eade23ccecc61633bc99f9a052df31225968bc5276",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "load_failed": 70,
+                    "loaded_ticked": 1033,
+                    "simulation_failed": 3,
+                    "unsupported_format": 5
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 1111,
+                "passed": 1033,
+                "readiness_percent": 93.0
+            },
+            "same_78_failure_ids_and_outcomes_as_windows": true,
+            "conclusion": "failure because 78 measured compatibility deficits remain"
+        }
+    }
+}
