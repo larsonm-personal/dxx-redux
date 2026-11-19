@@ -1,6 +1,7 @@
 // Desktop diagnostic: read the texture selected by the ordinary effect clock
 #include "pog_resources.h"
 extern "C" {
+#include "bm.h"
 #include "effects.h"
 #include "ogl_init.h"
 #include "piggy.h"
@@ -15,16 +16,17 @@ static unsigned wall_pixel_hash(const unsigned char *pixels, std::size_t count)
 	return value;
 }
 
-static bool observe_wall_effect(int id, nlohmann::ordered_json &rows)
+static bool observe_texture_effect(int id, bool object, nlohmann::ordered_json &rows)
 {
 	if (id < 0 || id >= Num_effects) return false;
 	const auto &effect = Effects[id];
 	const int count = xl_pog_effect_frames(&effect);
-	if (effect.changing_wall_texture < 0 || effect.changing_wall_texture >= NumTextures || effect.vc.num_frames < 1 ||
+	const int slot = object ? effect.changing_object_texture : effect.changing_wall_texture;
+	if (slot < 0 || slot >= (object ? N_ObjBitmaps : NumTextures) || effect.vc.num_frames < 1 ||
 	    effect.vc.num_frames > VCLIP_MAX_FRAMES || effect.frame_count < 0 || effect.frame_count >= count) return false;
 	const auto key = std::to_string(effect.frame_count);
 	if (rows.contains(key)) return true;
-	const int bitmap = Textures[effect.changing_wall_texture].index;
+	const int bitmap = (object ? ObjBitmaps[slot] : Textures[slot]).index;
 	if (bitmap < 0 || bitmap >= Num_bitmap_files) return false;
 	auto &view = GameBitmaps[bitmap];
 	if (view.bm_type != BM_RGBA || !view.bm_data || view.bm_w <= 0 || view.bm_h <= 0 || view.bm_w > 4096 || view.bm_h > 4096 ||
@@ -54,6 +56,6 @@ static bool observe_wall_effect(int id, nlohmann::ordered_json &rows)
 	}
 	glBindTexture(GL_TEXTURE_2D, previous);
 	if (!full_texture || glGetError() != GL_NO_ERROR) return false;
-	rows[key] = { { "wall_texture", effect.changing_wall_texture }, { "bitmap", bitmap }, { "aliases", aliases }, { "frames", count }, { "frame_time", effect.vc.frame_time }, { "width", width }, { "height", height }, { "resident_before_probe", resident }, { "cpu_rgba_fnv1a", wall_pixel_hash(view.bm_data, size) }, { "gpu_rgba_fnv1a", wall_pixel_hash(gpu.data(), size) }, { "physics_height", physics.height }, { "physics_width", physics.width }, { "physics_rgba_fnv1a", wall_pixel_hash(physics.pixels, std::size_t(physics.row_size) * physics.height) } };
+	rows[key] = { { object ? "object_texture" : "wall_texture", slot }, { "bitmap", bitmap }, { "aliases", aliases }, { "frames", count }, { "frame_time", effect.vc.frame_time }, { "width", width }, { "height", height }, { "resident_before_probe", resident }, { "cpu_rgba_fnv1a", wall_pixel_hash(view.bm_data, size) }, { "gpu_rgba_fnv1a", wall_pixel_hash(gpu.data(), size) }, { "physics_height", physics.height }, { "physics_width", physics.width }, { "physics_rgba_fnv1a", wall_pixel_hash(physics.pixels, std::size_t(physics.row_size) * physics.height) } };
 	return true;
 }

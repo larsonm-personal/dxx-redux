@@ -67,10 +67,19 @@ def main():
     )
     parser.add_argument("--work", required=True, type=Path, help="New output directory")
     parser.add_argument("--timeout", type=int, default=120)
-    parser.add_argument("--wall-bitmap", type=int, help="Read back every displayed frame of this original bitmap")
+    bitmaps = parser.add_mutually_exclusive_group()
+    bitmaps.add_argument("--wall-bitmap", type=int, help="Read back every displayed frame of this wall bitmap")
+    bitmaps.add_argument("--object-bitmap", type=int, help="Read back every displayed frame of this object bitmap")
+    parser.add_argument(
+        "--hires-textures", action="store_true", help="Enable D2X-XL's original high-resolution texture option"
+    )
+    parser.add_argument(
+        "--texture-quality", type=int, choices=range(4), help="Set the original texture quality before level load"
+    )
     args = parser.parse_args()
-    if args.wall_bitmap is not None and (args.wall_bitmap <= 0 or not args.level):
-        parser.error("A positive wall bitmap needs a gameplay ordinal")
+    bitmap = args.object_bitmap if args.object_bitmap is not None else args.wall_bitmap
+    if bitmap is not None and (bitmap <= 0 or not args.level):
+        parser.error("A positive bitmap needs a gameplay ordinal")
     engine, install, work = (p.resolve() for p in (args.engine, args.installation, args.work))
     missions = install / "missions"
     descriptor = (missions / args.descriptor).resolve()
@@ -98,7 +107,10 @@ def main():
         XL_REFERENCE_LEVEL=str(args.level),
         XL_REFERENCE_OUT=str(receipt),
     )
-    env["XL_REFERENCE_WALL_BITMAP"] = str(args.wall_bitmap or 0)
+    env["XL_REFERENCE_WALL_BITMAP"] = str(bitmap or 0)
+    env.pop("XL_REFERENCE_TEXTURE_QUALITY", None)
+    if args.texture_quality is not None:
+        env["XL_REFERENCE_TEXTURE_QUALITY"] = str(args.texture_quality)
     command = [
         engine,
         "-datadir",
@@ -117,6 +129,8 @@ def main():
         "-progress_bars",
         "0",
     ]
+    if args.hires_textures:
+        command.extend(["-hires_textures", "1"])
     with (work / "console.log").open("wb") as log:
         try:
             code = subprocess.run(
@@ -144,20 +158,32 @@ def main():
         timed_out=code is None,
         receipt_sha256=digest(receipt) if receipt.exists() else None,
     )
-    if args.wall_bitmap:
+    if bitmap:
         samples = [list(map(int, event[1:])) for event in events if event[0] == "wall_texture"]
         complete = (
             bool(samples)
             and all(
-                len(row) == 6 and row[0] == args.wall_bitmap and row[2] == len(samples) and row[3] > 0 and row[4] > 0
+                len(row) == 6 and row[0] == bitmap and row[2] == len(samples) and row[3] > 0 and row[4] > 0
                 for row in samples
             )
             and sorted(row[1] for row in samples) == list(range(len(samples)))
         )
-        result["wall_texture"] = {"bitmap": args.wall_bitmap, "complete": complete, "samples": samples}
+        result["object_texture" if args.object_bitmap is not None else "wall_texture"] = {
+            "bitmap": bitmap,
+            "complete": complete,
+            "samples": samples,
+        }
+    if args.hires_textures:
+        result["hires_textures_requested"] = True
+    quality = [row[1:] for row in events if row[0] == "texture_quality"]
+    if len(quality) == 1:
+        result["texture_quality"], result["maximum_texture_quality"] = map(int, quality[0])
+    if args.texture_quality is not None and result.get("texture_quality") != args.texture_quality:
+        result["observation"] = "requested_texture_quality_unverified"
+        outcome = result["observation"]
     (work / "result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(outcome)
-    return 0 if outcome in ("started_and_ran", "mission_opened") and (not args.wall_bitmap or complete) else 1
+    return 0 if outcome in ("started_and_ran", "mission_opened") and (not bitmap or complete) else 1
 
 
 if __name__ == "__main__":

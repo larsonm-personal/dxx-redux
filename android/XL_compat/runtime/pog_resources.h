@@ -17,12 +17,12 @@ struct xl_pog_bitmap {
 	unsigned rgb_opaque;
 	unsigned physics_height; /* TGA selection may expose the whole strip to physics */
 	unsigned scoped_texture;
-	unsigned wall_effect; /* Source wall effect owns frame selection for this POG alias */
-	unsigned side_frames; /* Immutable frame views selected by an XL side owner */
+	unsigned effect_clock; /* Source texture effect owns frame selection for this POG alias */
+	unsigned side_frames;  /* Immutable frame views selected by an XL side owner */
 	unsigned transparent_frames[4], super_frames[4];
 };
 struct xl_pog_effect {
-	int effect, frame_time, wall_texture;
+	int effect, frame_time, object_texture;
 	unsigned source_frames, frames, from_pog;
 };
 int xl_pog_effect_count(const struct xl_pog_resources *resources);
@@ -96,7 +96,7 @@ namespace xl_assets
 struct ObjectDependencies;
 }
 int xl_pog_target_strip_clock(unsigned bitmap, const xl_assets::ObjectDependencies &tables);
-void xl_pog_bind_wall_effects(xl_pog_resources &resources, const xl_assets::ObjectDependencies &tables, int bitmap_count);
+void xl_pog_bind_texture_effects(xl_pog_resources &resources, const xl_assets::ObjectDependencies &tables, int bitmap_count);
 xl_pog_resources *xl_pog_prepare_scoped(const xl_compat::ScopedTextureResources &textures,
                                         const xl_assets::ObjectDependencies &tables, const xl_pog_resources *pog);
 #endif

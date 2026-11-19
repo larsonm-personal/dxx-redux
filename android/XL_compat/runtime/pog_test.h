@@ -285,11 +285,11 @@ static void incoming(const std::filesystem::path &root)
 		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFSX_openReadBuffered("incoming.pog"), PHYSFS_close);
 		resources.prepare_pog(file.get());
 	};
-	{
+	for (const bool object_clock : { false, true }) {
 		auto target = ham();
 		auto &effect = target.tables().Effects[0];
-		effect.changing_wall_texture = 1;
-		effect.changing_object_texture = -1;
+		effect.changing_wall_texture = object_clock ? -1 : 1;
+		effect.changing_object_texture = object_clock ? 1 : -1;
 		effect.vc.frame_time = F1_0 / 8;
 		effect.vc.num_frames = 1;
 		effect.vc.frames[0].index = unclocked;
@@ -301,14 +301,14 @@ static void incoming(const std::filesystem::path &root)
 		incoming.prepare_banks(Current_level_palette);
 		prepare(incoming);
 		XlPreparedResources moved(std::move(incoming));
-		require(moved.effect_frame_counts().at(0) == 2, "Incoming save validation lost the packed wall strip");
+		require(moved.effect_frame_counts().at(0) == 2, "Incoming save validation lost the packed effect strip");
 		bool rejected = false;
 		try {
 			moved.install_pog();
 		} catch (const std::runtime_error &) {
 			rejected = true;
 		}
-		require(rejected, "POG published a wall clock against different live definitions");
+		require(rejected, "POG published a texture clock against different live definitions");
 		unchanged();
 	}
 	for (int mode = 0; mode < 4; ++mode) {

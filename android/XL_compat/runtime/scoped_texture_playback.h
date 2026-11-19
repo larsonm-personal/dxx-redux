@@ -28,9 +28,9 @@ struct ScopedTexturePlayback {
 	std::vector<ScopedTextureClip> clips;
 	std::vector<ScopedTextureDoor> doors;
 	template <typename FrameCount>
-	static std::vector<ScopedTextureEffect> wall_effects(const xl_assets::ObjectDependencies &graph, int bitmap_count,
-	                                                     const std::map<int, std::size_t> &selected, const std::set<int> &protected_bitmaps,
-	                                                     FrameCount frames, std::map<int, int> &clock_owner)
+	static std::vector<ScopedTextureEffect> texture_effects(const xl_assets::ObjectDependencies &graph, int bitmap_count,
+	                                                        const std::map<int, std::size_t> &selected, const std::set<int> &protected_bitmaps,
+	                                                        FrameCount frames, std::map<int, int> &clock_owner)
 	{
 		std::vector<ScopedTextureEffect> effects;
 		// Source effects run globally; inspect every effect that references a loaded image
@@ -44,8 +44,11 @@ struct ScopedTexturePlayback {
 			for (int frame = 0; frame < effect.vc.num_frames && first == selected.end(); ++frame)
 				first = selected.find(effect.vc.frames[frame].index);
 			if (first == selected.end() || frames(first->second) < 2) continue;
-			if (effect.changing_object_texture >= 0 || effect.changing_wall_texture >= graph.texture_count || effect.vc.frame_time <= 0)
-				throw std::runtime_error("Scoped replacement requires a qualified wall effect clock");
+			// XL advances wall and object effects in separate passes; a dual target ticks twice
+			if ((effect.changing_object_texture >= 0 && effect.changing_wall_texture >= 0) ||
+			    effect.changing_wall_texture >= graph.texture_count || effect.changing_object_texture >= graph.object_bitmap_count ||
+			    effect.changing_object_texture < -1 || effect.changing_wall_texture < -1 || effect.vc.frame_time <= 0)
+				throw std::runtime_error("Replacement animation effect " + std::to_string(id) + " uses wall slot " + std::to_string(effect.changing_wall_texture) + " and object slot " + std::to_string(effect.changing_object_texture) + " at frame time " + std::to_string(effect.vc.frame_time));
 			ScopedTextureEffect clock;
 			clock.effect = id;
 			clock.frame_time = effect.vc.frame_time;
@@ -80,7 +83,7 @@ struct ScopedTexturePlayback {
 	{
 		if (!graph.require_owned_banks || !graph.resource_banks || graph.effect_count < 0 || graph.effect_count > MAX_EFFECTS ||
 		    graph.clip_count < 0 || graph.clip_count > VCLIP_MAXNUM || graph.wall_clip_count < 0 || graph.wall_clip_count > MAX_WALL_ANIMS ||
-		    graph.texture_count < 0 || graph.texture_count > MAX_TEXTURES)
+		    graph.texture_count < 0 || graph.texture_count > MAX_TEXTURES || graph.object_bitmap_count < 0 || graph.object_bitmap_count > MAX_OBJ_BITMAPS)
 			throw std::runtime_error("Scoped playback requires bounded retained definitions");
 		std::map<int, std::size_t> selected;
 		for (const auto &binding : resources.bindings) {
@@ -90,7 +93,7 @@ struct ScopedTexturePlayback {
 		}
 		ScopedTexturePlayback result;
 		std::map<int, int> clock_owner;
-		result.effects = wall_effects(graph, graph.resource_banks->bitmap_count(), selected, resources.pog_indices, [&](std::size_t i) { return resources.images[i].bitmap.frames; }, clock_owner);
+		result.effects = texture_effects(graph, graph.resource_banks->bitmap_count(), selected, resources.pog_indices, [&](std::size_t i) { return resources.images[i].bitmap.frames; }, clock_owner);
 		for (const auto &clock : result.effects)
 			for (int bitmap : clock.bitmaps) selected[bitmap] = clock.image;
 		const auto has_strip = [&](int bitmap) {

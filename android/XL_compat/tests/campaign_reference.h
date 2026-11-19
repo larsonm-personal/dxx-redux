@@ -113,9 +113,14 @@ static int campaign_reference()
 	if (!campaign_ordinal) return 0;
 	if (campaign_ordinal > missionManager.LastLevel() || campaign_ordinal < missionManager.LastSecretLevel()) return 24;
 	gameStates.app.nDifficultyLevel = 2;
+	if (const char *quality = std::getenv("XL_REFERENCE_TEXTURE_QUALITY")) {
+		if (std::strlen(quality) != 1 || *quality < '0' || *quality > '3') return 80;
+		gameOpts->render.textures.nQuality = *quality - '0';
+	}
 	std::fprintf(campaign_receipt, "starting\t%d\t%s\n", campaign_ordinal, LevelName(campaign_ordinal));
 	std::fflush(campaign_receipt);
 	const int started = StartNewGame(campaign_ordinal);
+	std::fprintf(campaign_receipt, "texture_quality\t%d\t%d\n", int(gameOpts->render.textures.nQuality), int(gameStates.render.nMaxTextureQuality));
 	std::fprintf(campaign_receipt, "started\t%d\t%d\n", started, missionManager.nCurrentLevel);
 	std::fflush(campaign_receipt);
 	if (!started) return 22;

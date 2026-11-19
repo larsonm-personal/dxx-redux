@@ -1695,7 +1695,7 @@ void XlPreparedResources::prepare_pog(PHYSFS_file *file)
 	const int bitmap_count = state->banks ? state->banks->bitmap_count() : Num_bitmap_files;
 	std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)> prepared(xl_pog_prepare(file, bitmap_count, error, sizeof(error)), xl_pog_free);
 	if (!prepared) throw std::runtime_error(std::string("POG: ") + error);
-	xl_pog_bind_wall_effects(*prepared, state->graph, bitmap_count);
+	xl_pog_bind_texture_effects(*prepared, state->graph, bitmap_count);
 	for (int i = 0; i < xl_pog_count(prepared.get()); ++i) {
 		const auto *entry = xl_pog_entry(prepared.get(), i);
 		if (!entry->rgba) continue;

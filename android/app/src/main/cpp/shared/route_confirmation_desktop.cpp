@@ -130,7 +130,11 @@ bool write_readiness(const char *path, nlohmann::ordered_json &proof, const char
 int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 {
 #if defined(DXX_XL_RUNTIME) && defined(OGL) && !defined(OGLES)
-	const int option = startup_find_cmd_arg("-xl-readiness-wall-effect");
+	const int wall_option = startup_find_cmd_arg("-xl-readiness-wall-effect");
+	const int object_option = startup_find_cmd_arg("-xl-readiness-object-effect");
+	if (wall_option && object_option) return 1;
+	const int option = object_option ? object_option : wall_option;
+	const char *clock_key = object_option ? "object_effect_clock" : "wall_effect_clock";
 	int effect = -1;
 	if (option) {
 		if (option + 1 >= Num_args) return 1;
@@ -161,7 +165,7 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 		return 1;
 	int remainder = 0;
 #if defined(DXX_XL_RUNTIME) && defined(OGL) && !defined(OGLES)
-	if (effect >= 0) proof["wall_effect_clock"].push_back({ 0, int(Effects[effect].frame_count), int(Effects[effect].time_left) });
+	if (effect >= 0) proof[clock_key].push_back({ 0, int(Effects[effect].frame_count), int(Effects[effect].time_left) });
 #endif
 	for (int frame = 0; frame < 120; ++frame) {
 		remainder += F1_0;
@@ -177,9 +181,9 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 		game_render_frame_mono(0);
 #if defined(DXX_XL_RUNTIME) && defined(OGL) && !defined(OGLES)
 		if (effect >= 0) {
-			proof["wall_effect_clock"].push_back({ frame + 1, int(Effects[effect].frame_count), int(Effects[effect].time_left) });
-			if (!observe_wall_effect(effect, proof["wall_effect_frames"])) {
-				write_readiness(path, proof, "wall_effect_observation_failed");
+			proof[clock_key].push_back({ frame + 1, int(Effects[effect].frame_count), int(Effects[effect].time_left) });
+			if (!observe_texture_effect(effect, object_option != 0, proof[object_option ? "object_effect_frames" : "wall_effect_frames"])) {
+				write_readiness(path, proof, object_option ? "object_effect_observation_failed" : "wall_effect_observation_failed");
 				return 1;
 			}
 		}
