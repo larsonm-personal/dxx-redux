@@ -22,6 +22,31 @@ string(JSON count LENGTH "${report}" levels)
 if(NOT version EQUAL 27 OR NOT count EQUAL 1)
     message(FATAL_ERROR "Large nonlevel payload prevented complete level inspection")
 endif()
+execute_process(COMMAND "${INSPECT}" "${OUTPUT}/stream.hog" "${OUTPUT}/features.json"
+                        --mission-features RESULT_VARIABLE result)
+file(READ "${OUTPUT}/features.json" features)
+string(
+    JSON
+    version
+    GET
+    "${features}"
+    levels
+    0
+    inventory
+    level_version)
+string(
+    JSON
+    status
+    GET
+    "${features}"
+    levels
+    0
+    inventory
+    status)
+string(JSON segments LENGTH "${features}" levels 0 inventory features)
+if(NOT result EQUAL 0 OR NOT version EQUAL 27 OR NOT status STREQUAL "decoded" OR segments LESS 1)
+    message(FATAL_ERROR "Compact feature inventory lost the source layout or feature records")
+endif()
 execute_process(COMMAND "${FIXTURE}" --age "${OUTPUT}/report.json" RESULT_VARIABLE result)
 if(NOT result EQUAL 0)
     message(FATAL_ERROR "Cannot age stable-report control")
