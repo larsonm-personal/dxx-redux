@@ -156,3 +156,33 @@ these data and rejects the level. The original loads and sorts indices before
 use. Its legacy lighting path checks the starting offset, then advances for
 the declared count. An original startup alone does not establish the effect of
 operating that light. Keep this entry a failed startup in the census.
+
+## Black Prophecy 1.31 beta
+
+The mission descriptor declares custom robots. Its mission HXM contains 33 robot replacements and its HOG has no level-specific HXM. Redux now retains whether the validated mission HXM actually replaced a robot. Incoming and live mission owners preserve their own result across preparation, discard and publication. The negative control substituted a valid zero-robot HXM with the original package otherwise intact. Phoenix then failed at the custom-robot declaration.
+
+All eight original level files agreed with the pinned original geometry reader across 5,625 segments, 33,750 sides and 17,570 vertex brightness maxima. The 18/36 and 19/40 formats retain legacy segment functions. Game-data version selects the wall and object header widths. The reference effect comparison covers 225 serialized objects, including the two newly observed version pairs. The Redux controls reject 6,010 truncated payloads. Where the original validates a CLR companion and replaces its colors from geometry, the retained implementation follows the same order.
+
+| Original members                             | Windows ordinary result at 120 frames                                       |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| Phoenix (2), BPS1 (-1), BPS2 (-2), BPS3 (-3) | All four passed after failing on the parent                                 |
+| Aqunia (1)                                   | Experimental water physics and legacy blocked segments                      |
+| Auora1 (3)                                   | Legacy repair centers and a lightning style outside the implemented profile |
+| Delta (4)                                    | Six robotmaker segments and seven serialized rows                           |
+| Hyperion (5)                                 | Three legacy blocked segments, nine robotmakers and eleven serialized rows  |
+
+A separate directly selected Phoenix developer run flew nine portals to segment 16, killed one robot and earned 700 points. A new process restored the save and fired again with all three lives. These runs use a fixed clock, automated navigation, trainee difficulty and disabled presentation. The four ordinary startup passes used the developer-OFF engine, a living player and no assists. The archive and the eight ordinals stayed the same across both ordinary runs.
+
+The Windows ordinary executable SHA-256 was `610e9b4b72797ec832c0a0574b766a840e21c41fe0eef6ca0d3070c1e6f8b448`. The original HOG SHA-256 was `aead9b792e3dc6ff13cd53b68e727d8cd814e1b6480ea83f5e5c9843caf23880` and the mission HXM SHA-256 was `b2931a99d7a1c6cbe9c861947e3c44647f316d7c8df6ce649e2a4fe8287df04d`. The valid empty HXM SHA-256 was `99bdee432162d97189f08e9d4e029d60ab1f104a29963088905433da90743dff`.
+
+### Black Prophecy generators, robot drops and blocked passages
+
+Delta and Hyperion each loaded and ran 120 ordinary simulation frames at 60 Hz with the original mission HXM. Black Prophecy now passes that check on levels 2, 4, 5 and all three secret levels. Aqunia still stops on the experimental water profile and Auora1 on repair centers and lightning style. The ordinary Windows executable SHA-256 was `802fbdb14289caa6d41098f44e068f7389341f12d647bf7415b5172d83ebd74b`.
+
+The original generator reader consumes every disk row. It assigns the first rows to robotmakers in geometry order and drops trailing rows with no owner. Delta has six robotmakers and seven records. Hyperion has nine robotmakers and eleven records. Redux retained the assigned rows and rebuilt links to native stations. The pinned reader and Redux agreed on disk extent, active count, masks and station links in 144 cases across six layouts. A missing row for an initialized maker remains a rejection.
+
+Delta robot 93 has a positive payload count and an authored powerup ID of -1. The original passes the ID to DropPowerup as an unsigned byte and rejects values of 70 or greater before allocating an object or drawing random numbers. The existing secondary robot-loot path retained its source probabilities. Native death controls checked the resulting pickups and SIM draws for both ordinary and unspawnable contents.
+
+Hyperion has three legacy type-12 rooms. Original Upgrade maps these to an ordinary function with the blocked property. The gameplay probe in the original level verified the directional player restriction between rooms 449 and 721, the automap classification, and the independent closed wall 209. The existing blocked fixture passed its physical crossing controls and 2,304 original-reference doorway samples. Legacy skybox type 14 remains separately gated.
+
+In Phoenix, the developer pilot fired the ordinary primary weapon at the switch on side 2 of room 605. It observed trigger 10 operate with the player as the firing actor. The room is too shallow to place the ship at the previous test's requested standoff distance.

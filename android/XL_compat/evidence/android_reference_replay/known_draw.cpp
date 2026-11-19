@@ -14,7 +14,7 @@ int main()
 	EGLSurface s = eglCreatePbufferSurface(d, config, size);
 	EGLContext c = eglCreateContext(d, config, EGL_NO_CONTEXT, version);
 	if (!eglMakeCurrent(d, s, s, c)) return 3;
-	void *lib = dlopen("libGL4ES.so", RTLD_NOW | RTLD_LOCAL);
+	void *lib = dlopen("./libGL4ES.so", RTLD_NOW | RTLD_LOCAL);
 	if (!lib) {
 		puts(dlerror());
 		return 4;

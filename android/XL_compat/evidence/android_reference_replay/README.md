@@ -1,6 +1,6 @@
 # Original XL rendering on Android
 
-An isolated Android executable replayed original desktop D2X-XL rendering for Standoff and the Pumo hub. At each selected swap it read the default framebuffer from GLES, compared all RGB pixels with a desktop replay of the same trace, and exited. The inputs were recorded after 120 original game iterations. Both runs used an API 34 x86_64 emulator with SwiftShader. The same build script produced arm64-v8a binaries. Arm64 execution and physical-device performance remain unmeasured.
+An isolated Android executable replayed original desktop D2X-XL rendering for Standoff and the Pumo hub. At each selected swap it read the default framebuffer from GLES, compared all RGB pixels with a desktop replay of the same trace, and exited. The inputs were recorded after 120 original game iterations. Both the native x86_64 executable and the arm64-v8a executable ran on the same API 34 x86_64 emulator with SwiftShader. The latter ran through Android's libndk_translation native bridge. Both executables passed the triangle control, and their full framebuffer bytes matched for each scene. Physical arm64 device performance remains unmeasured.
 
 | Original scene | WGL swap call | Identical RGB pixels / 5,184,000 | Pixels within 8 in every channel | Mean absolute error R / G / B (0-255) |
 | -------------- | ------------: | -------------------------------: | -------------------------------: | ------------------------------------- |

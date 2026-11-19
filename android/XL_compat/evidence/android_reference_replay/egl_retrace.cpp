@@ -33,7 +33,7 @@ void *resolve(const char *name)
 		const auto current_context = eglGetCurrentContext();
 		const auto draw = eglGetCurrentSurface(EGL_DRAW);
 		const auto read = eglGetCurrentSurface(EGL_READ);
-		void *library = dlopen("libGL4ES.so", RTLD_NOW | RTLD_LOCAL);
+		void *library = dlopen("./libGL4ES.so", RTLD_NOW | RTLD_LOCAL);
 		if (!library) {
 			std::fprintf(stderr, "Opening GL4ES failed: %s\n", dlerror());
 			std::abort();
