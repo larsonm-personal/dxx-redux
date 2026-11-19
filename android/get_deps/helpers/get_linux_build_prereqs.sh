@@ -166,6 +166,14 @@ if [[ "${ID:-}" == "ubuntu" || "${ID:-}" == "debian" || " ${ID_LIKE:-} " == *" u
         esac
     done
     apt_options=(-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
+    # Hosted callers can choose their signed Noble sources for these transactions
+    if [[ -n "${DXX_APT_SOURCES:-}" ]]; then
+        [[ -f "$DXX_APT_SOURCES" ]] || {
+            echo "Missing apt sources: $DXX_APT_SOURCES" >&2
+            exit 1
+        }
+        apt_options+=(-o "Dir::Etc::sourcelist=$DXX_APT_SOURCES" -o Dir::Etc::sourceparts=- -o APT::Get::List-Cleanup=0)
+    fi
     install_with_privilege apt-get "${apt_options[@]}" -o APT::Update::Error-Mode=any update
     install_with_privilege apt-get "${apt_options[@]}" install -y "${packages[@]}"
     if [[ "$DRY_RUN" -eq 0 ]]; then "$SCRIPT_DIR/get_rust.sh"; fi
