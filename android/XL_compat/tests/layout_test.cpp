@@ -1,4 +1,5 @@
 #include "layout_fixture.h"
+#include "trigger_capacity_fixture.h"
 #include "runtime_layout_fixture.h"
 #include "../admission.h"
 #include "../compatibility.h"
@@ -232,6 +233,13 @@ void write_fixture(const std::filesystem::path &directory)
 		check(bool(out), "Cannot write layout CLI fixture");
 	};
 	write(directory / "layout.rl2", fixture.bytes);
+	// A positive ordinal can be a secret detour encoded as an ordinary exit
+	auto branch = xl_test::expand_triggers(fixture.bytes, 1);
+	const auto table = xl_compat::inspect_level(branch).sections[3].offset;
+	branch.at(fixture.walls + 20) = 0;
+	branch.at(table) = 3;
+	xl_test::layout_patch(branch, table + 4, 14 * 65536);
+	write(directory / "branch.rl2", branch);
 	constexpr std::uint32_t padding = 65 * 1024 * 1024;
 	for (const bool oversized_level : { false, true }) {
 		xl_compat::Bytes header{ 'D', '2', 'X' };
