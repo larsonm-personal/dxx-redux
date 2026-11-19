@@ -6,6 +6,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/* Original DropPowerup rejects unspawnable robot payloads before consuming SIM RNG */
+int xl_unspawnable_robot_payload(int type, int id);
 int xl_preview_water_segment(int segment);
 int xl_preview_no_damage_segment(int segment);
 int xl_preview_outdoors_segment(int segment);
@@ -37,6 +39,7 @@ int xl_classic_legacy_fans_active(void);
 void xl_preview_clear_mission(void);
 int xl_level_supported(const char *filename, int multiplayer);
 int xl_level_supported_at(const char *filename, int multiplayer, int ordinal);
+int xl_secret_restore_clock(int ordinal, int64_t saved_epoch, int64_t *clock);
 int xl_level_segment_group(int segment);
 /* Authored owner identity; -1 when no XL source segment is retained */
 int xl_level_segment_owner(int segment);

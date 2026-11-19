@@ -260,9 +260,16 @@ struct {
 } gameData;
 struct {
 	struct {
-		int count = 0;
+		int count = 0, offset = -1;
 	} botGen, equipGen;
 } gameFileInfo;
+struct {
+	int fileinfoVersion = 0;
+} gameTopFileInfo;
+void Error(const char *message)
+{
+	throw std::runtime_error(message);
+}
 void PrintLog(int, const char *, ...)
 {
 	throw std::runtime_error("Unexpected producer diagnostic");
@@ -282,6 +289,12 @@ void CreateExplosion(int, const CFixVector &, fix, int) {}
 struct CFile {
 	const xl_compat::Bytes &bytes;
 	std::size_t position;
+	int Seek(int offset, int origin)
+	{
+		if (origin != SEEK_SET || offset < 0 || static_cast<std::size_t>(offset) > bytes.size()) return -1;
+		position = static_cast<std::size_t>(offset);
+		return 0;
+	}
 	int ReadInt()
 	{
 		std::uint32_t result = 0;
@@ -470,60 +483,64 @@ int main(int argc, char **argv)
 		}
 		check(argc == 2, "requires generated fixture directory");
 		int cases = 0;
-		for (int version : { 15, 17, 21, 23 }) {
+		for (int version : { 15, 17, 18, 19, 21, 23 }) {
 			std::ifstream input(std::filesystem::path(argv[1]) / ("generators-" + std::to_string(version) + ".rl2"), std::ios::binary);
 			xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
 			const auto original = xl_compat::inspect_level(bytes);
 			const auto properties = original.mine_offset + 5 + 8 * 12 + 5 * 176;
-			std::array<int, 3> order{ 0, 1, 2 };
-			do {
-				for (int i = 0; i < 3; ++i) bytes.at(properties + (i ? i + 1 : 0) * (version >= 21 ? 13 : 8) + 1) = static_cast<unsigned char>(order[i]);
-				const auto source = xl_compat::inspect_level(bytes);
-				gameData = {};
-				gameData.segData.nSegments = static_cast<int>(source.segments.size());
-				segments.clear();
-				for (std::size_t i = 0; i < source.segments.size(); ++i) {
-					const auto &segment = source.segments[i];
-					segments.push_back({ segment.function, segment.producer, segment.value });
-					segments.back().index = static_cast<int>(i);
-				}
-				gameFileInfo.botGen.count = static_cast<int>(source.matcens.size());
-				gameFileInfo.equipGen.count = static_cast<int>(source.equipment.size());
-				// LoadExtSegmentsCompiled calls these in geometry order before reading
-				// the producer rows. Assignment-only tests previously omitted this stage
-				for (auto &segment : segments) segment.CreateGenerator(segment.m_function);
-				const auto production = xl_compat::producer_layout(source);
-				check(production.robots.size() == std::size_t(gameData.producerData.nRobotMakers) && production.equipment.size() == std::size_t(gameData.producerData.nEquipmentMakers) && production.stations.size() == std::size_t(gameData.producerData.nProducers), "Initialized producer counts differ");
-				for (std::size_t i = 0; i < segments.size(); ++i) {
-					check(xl_compat::producer_function(source.segments[i]) == segments[i].m_function, "Initialized producer function differs");
-					if (segments[i].m_function == 4) check(production.robot_index[i] == segments[i].m_nObjProducer, "Initialized robot row selection differs");
-				}
-				const auto section = std::find_if(source.sections.begin(), source.sections.end(), [](const auto &entry) { return entry.name == "matcens"; });
-				CFile file{ bytes, static_cast<std::size_t>(section->offset) };
-				for (int i = 0; i < section->count; ++i) {
-					tObjectProducerInfo row;
-					ReadObjectProducerInfo(&row, file, false);
-					check(AssignProducer(row, i, SEGMENT_FUNC_ROBOTMAKER, 1) == i, "reference failed valid source assignment");
-				}
-				check(file.position == std::size_t(section->offset + section->count * 20), "reference disk extent differs");
-				const auto translated = xl_compat::prepare_gameplay_probe(bytes).stock_level;
-				CFile header{ translated, 12 };
-				const auto game = header.ReadInt();
-				header.position = game + 35 + 6 * 12;
-				CFile native{ translated, static_cast<std::size_t>(header.ReadInt()) };
-				for (std::size_t i = 0; i < segments.size(); ++i) {
-					const auto &segment = segments[i];
-					if (segment.m_function != SEGMENT_FUNC_ROBOTMAKER) continue;
-					tObjectProducerInfo row;
-					ReadObjectProducerInfo(&row, native, false);
-					const auto &expected = gameData.producerData.robotMakers[segment.m_nObjProducer];
-					check(row.objFlags[0] == expected.objFlags[0] && row.objFlags[1] == expected.objFlags[1], "translated selection differs from extracted XL assignment");
-					check(row.nSegment == expected.nSegment && row.nProducer == expected.nProducer, "translated links differ from extracted XL assignment");
-				}
-				++cases;
-			} while (std::next_permutation(order.begin(), order.end()));
+			const int stride = version >= 21 ? 13 : 8;
+			for (int active = 0; active <= 3; ++active) {
+				for (int i = 0; i < 3; ++i) bytes.at(properties + (i ? i + 1 : 0) * stride) = i < active ? SEGMENT_FUNC_ROBOTMAKER : SEGMENT_FUNC_NONE;
+				std::array<int, 3> order{ 0, 1, 2 };
+				do {
+					for (int i = 0; i < 3; ++i) bytes.at(properties + (i ? i + 1 : 0) * stride + 1) = static_cast<unsigned char>(order[i]);
+					const auto source = xl_compat::inspect_level(bytes);
+					gameData = {};
+					gameData.segData.nSegments = static_cast<int>(source.segments.size());
+					segments.clear();
+					for (std::size_t i = 0; i < source.segments.size(); ++i) {
+						const auto &segment = source.segments[i];
+						segments.push_back({ segment.function, segment.producer, segment.value });
+						segments.back().index = static_cast<int>(i);
+					}
+					gameFileInfo.botGen.count = static_cast<int>(source.matcens.size());
+					gameFileInfo.equipGen.count = static_cast<int>(source.equipment.size());
+					// LoadExtSegmentsCompiled calls these in geometry order before reading
+					// the producer rows. Assignment-only tests previously omitted this stage
+					for (auto &segment : segments) segment.CreateGenerator(segment.m_function);
+					const auto production = xl_compat::producer_layout(source);
+					check(production.robots.size() == std::size_t(gameData.producerData.nRobotMakers) && production.equipment.size() == std::size_t(gameData.producerData.nEquipmentMakers) && production.stations.size() == std::size_t(gameData.producerData.nProducers), "Initialized producer counts differ");
+					for (std::size_t i = 0; i < segments.size(); ++i) {
+						check(xl_compat::producer_function(source.segments[i]) == segments[i].m_function, "Initialized producer function differs");
+						if (segments[i].m_function == 4) check(production.robot_index[i] == segments[i].m_nObjProducer, "Initialized robot row selection differs");
+					}
+					const auto section = std::find_if(source.sections.begin(), source.sections.end(), [](const auto &entry) { return entry.name == "matcens"; });
+					gameTopFileInfo.fileinfoVersion = source.game_version;
+					gameFileInfo.botGen.offset = section->offset;
+					CFile file{ bytes, 0 };
+					check(ReadBotGenInfo(file) == 0, "Original generator reader failed");
+					check(gameFileInfo.botGen.count == active, "Original generator reader retained an unowned row");
+					check(file.position == std::size_t(section->offset + section->count * 20), "reference disk extent differs");
+					const auto translated = xl_compat::prepare_gameplay_probe(bytes).stock_level;
+					CFile header{ translated, 12 };
+					const auto game = header.ReadInt();
+					header.position = game + 35 + 6 * 12;
+					CFile native{ translated, static_cast<std::size_t>(header.ReadInt()) };
+					check(header.ReadInt() == gameFileInfo.botGen.count, "Native active row count differs from the original reader");
+					for (std::size_t i = 0; i < segments.size(); ++i) {
+						const auto &segment = segments[i];
+						if (segment.m_function != SEGMENT_FUNC_ROBOTMAKER) continue;
+						tObjectProducerInfo row;
+						ReadObjectProducerInfo(&row, native, false);
+						const auto &expected = gameData.producerData.robotMakers[segment.m_nObjProducer];
+						check(row.objFlags[0] == expected.objFlags[0] && row.objFlags[1] == expected.objFlags[1], "translated selection differs from extracted XL assignment");
+						check(row.nSegment == expected.nSegment && row.nProducer == expected.nProducer, "translated links differ from extracted XL assignment");
+					}
+					++cases;
+				} while (std::next_permutation(order.begin(), order.end()));
+			}
 		}
-		std::cout << "Pinned generator initialization and assignment: " << cases << " four-layout/permutation cases matched\n";
+		std::cout << "Pinned generator initialization and assignment: " << cases << " layout, permutation and trailing-row cases matched\n";
 		return 0;
 	} catch (const std::exception &error) {
 		std::cerr << error.what() << '\n';
