@@ -921,6 +921,14 @@ if(BUILD_TESTING)
                 -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/kmtl-switch-flight -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/kmtl_switch_flight.cmake)
         set_tests_properties(xl_kmtl_switch_flight PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+        add_test(
+            NAME xl_kmtl_hostage_rescue
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_KMTL_PLAYER_ROOT} -DKMTL_RESCUE=ON
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/kmtl-hostage-rescue -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/kmtl_switch_flight.cmake)
+        set_tests_properties(xl_kmtl_hostage_rescue PROPERTIES TIMEOUT 1200 RUN_SERIAL TRUE)
     endif()
     set(XL_PUMO_PLAYER_ROOT ""
         CACHE PATH "Full original Pumo missions/mods/data for native player probes")
