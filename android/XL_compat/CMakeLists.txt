@@ -911,6 +911,25 @@ if(BUILD_TESTING)
             set_tests_properties(xl_signed_boss27_native PROPERTIES TIMEOUT 270)
         endif()
     endif()
+    set(XL_PHOENIX_PLAYER_ROOT "" CACHE PATH "Original Black Prophecy staged mission root")
+    if(XL_PHOENIX_PLAYER_ROOT AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        foreach(stage approach return)
+            add_test(
+                NAME xl_phoenix_secret_${stage}
+                COMMAND
+                    ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                    -DRESOURCES=${XL_PHOENIX_PLAYER_ROOT} -DSTAGE=${stage}
+                    -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/phoenix-secret-approach
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/phoenix-secret-${stage} -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/phoenix_secret.cmake)
+        endforeach()
+        set_tests_properties(
+            xl_phoenix_secret_approach PROPERTIES TIMEOUT 7200 RUN_SERIAL TRUE FIXTURES_SETUP
+                                                  phoenix_earned_secret_door)
+        set_tests_properties(
+            xl_phoenix_secret_return PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE FIXTURES_REQUIRED
+                                                phoenix_earned_secret_door)
+    endif()
     set(XL_KMTL_PLAYER_ROOT "" CACHE PATH "Original Kritical Mass Test Labs staged mission root")
     if(XL_KMTL_PLAYER_ROOT AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
         add_test(
@@ -956,7 +975,20 @@ if(BUILD_TESTING)
                 -DRESOURCES=${XL_PUMO_PLAYER_ROOT} -DMULTIVERSE_EXIT=ON -DMAJHA_EXIT=ON
                 -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-majha-exit-from-hub -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_hub_multiverse.cmake)
-        set_tests_properties(xl_pumo_majha_exit_from_hub PROPERTIES TIMEOUT 2400 RUN_SERIAL TRUE)
+        set_tests_properties(
+            xl_pumo_majha_exit_from_hub PROPERTIES TIMEOUT 2400 RUN_SERIAL TRUE FIXTURES_SETUP
+                                                   pumo_earned_level4_from_hub)
+        add_test(
+            NAME xl_pumo_metillis_blue_key
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/pumo-majha-exit-from-hub
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-metillis-blue-key -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_metillis_key.cmake)
+        set_tests_properties(
+            xl_pumo_metillis_blue_key PROPERTIES TIMEOUT 2400 RUN_SERIAL TRUE FIXTURES_REQUIRED
+                                                 pumo_earned_level4_from_hub)
         add_test(
             NAME xl_pumo_majha_player
             COMMAND

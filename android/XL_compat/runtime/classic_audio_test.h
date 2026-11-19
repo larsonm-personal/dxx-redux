@@ -161,7 +161,8 @@ static void classic_audio_controls(const std::filesystem::path &root)
 	std::filesystem::rename(preferred, temporary);
 	std::filesystem::rename(temporary, upper_path);
 	const auto case_corrected = prepare_classic_audio("scope23.rl2", 2, 44100);
-	require(case_corrected.samples.size() == 1 && !SDL_strcasecmp(case_corrected.samples[0].path.c_str(), ("mods/xscope/sounds/level02/" + uppercase).c_str()) &&
+	require(case_corrected.identity == partial.identity && prepare_classic_playback(case_corrected).identity == partial_baseline.identity &&
+	            case_corrected.samples.size() == 1 && !SDL_strcasecmp(case_corrected.samples[0].path.c_str(), ("mods/xscope/sounds/level02/" + uppercase).c_str()) &&
 	            case_corrected.samples[0].pcm.samples[0] == -3000 && case_corrected.samples[0].pcm.samples[1] == 9000,
 	        "Classic folder inventory lost a differently cased preferred replacement");
 	std::filesystem::rename(upper_path, temporary);
