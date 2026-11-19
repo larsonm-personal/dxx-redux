@@ -1,7 +1,9 @@
 #include "target_sources.h"
 #include "retained_resource.h"
 #include <SDL.h>
+#include <algorithm>
 #include <cctype>
+#include <limits>
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -33,12 +35,12 @@ void validate_name(const std::string &name)
 		begin = end + 1;
 	}
 }
-std::vector<unsigned char> physical_bytes(const std::filesystem::path &path, std::size_t limit)
+std::vector<unsigned char> physical_bytes(const std::filesystem::path &path, std::size_t limit, std::size_t prefix = (std::numeric_limits<std::size_t>::max)())
 {
 	std::ifstream file(path, std::ios::binary | std::ios::ate);
 	const auto length = file ? file.tellg() : std::streampos(-1);
 	if (length < 0 || static_cast<std::uintmax_t>(length) > limit) throw std::runtime_error("Incoming physical resource exceeds its bound: " + path.string());
-	std::vector<unsigned char> bytes(static_cast<std::size_t>(length));
+	std::vector<unsigned char> bytes((std::min) (static_cast<std::size_t>(length), prefix));
 	file.seekg(0);
 	if (!file.read(reinterpret_cast<char *>(bytes.data()), bytes.size())) throw std::runtime_error("Incomplete incoming physical resource: " + path.string());
 	return bytes;
@@ -144,6 +146,14 @@ std::optional<std::vector<unsigned char>> TargetSources::directory_bytes(const s
 	if (path.empty()) return std::nullopt;
 	if (!std::filesystem::is_regular_file(path)) throw std::runtime_error("Incoming resource is not a regular file: " + name);
 	return physical_bytes(path, limit);
+}
+
+std::optional<std::vector<unsigned char>> TargetSources::directory_prefix(const std::string &name, std::size_t length, std::size_t file_limit)
+{
+	const auto path = state->locate(state->directory, name);
+	if (path.empty()) return std::nullopt;
+	if (!std::filesystem::is_regular_file(path)) throw std::runtime_error("Incoming resource is not a regular file: " + name);
+	return physical_bytes(path, file_limit, length);
 }
 
 bool TargetSources::directory_exists(const std::string &name)

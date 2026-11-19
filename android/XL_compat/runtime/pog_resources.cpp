@@ -224,6 +224,10 @@ extern "C" const xl_pog_clip *xl_pog_clip_entry(const xl_pog_resources *resource
 {
 	return resources && row >= 0 && std::size_t(row) < resources->clips.size() ? &resources->clips[row] : nullptr;
 }
+extern "C" size_t xl_pog_pixel_bytes(const xl_pog_resources *resources)
+{
+	return resources ? resources->pixels.size() : 0;
+}
 extern "C" int xl_pog_effect_count(const xl_pog_resources *resources)
 {
 	return resources ? int(resources->effects.size()) : 0;

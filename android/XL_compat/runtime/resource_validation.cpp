@@ -1353,6 +1353,8 @@ void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &le
 	xl_collect_incoming_dependencies(level, false, dependencies);
 	auto textures = std::make_unique<const xl_compat::ScopedTextureResources>(
 	    xl_compat::ScopedTextureResources::prepare(target, dependencies, ordinal, state->pog.get()));
+	if (textures->texture_target)
+		con_printf(CON_NORMAL, "XL scoped textures: selected %u pixel target for %zu authored images\n", textures->texture_target, textures->images.size());
 	for (const auto &image : textures->images) state->owned_models.sources.emplace(image.path, image.hash);
 	state->texture_playback = std::make_unique<const xl_compat::ScopedTexturePlayback>(
 	    xl_compat::ScopedTexturePlayback::prepare(*textures, dependencies));

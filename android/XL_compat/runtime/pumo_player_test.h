@@ -533,7 +533,7 @@ static int run(int argc, char **argv)
 		                                 std::any_of(plan.at("steps").begin(), plan.at("steps").end(), [](const Json &step) -> bool {
 			                                 if (!step.is_object() || !step.contains("action") || !step.at("action").is_string()) return false;
 			                                 const std::string action = step.at("action");
-			                                 if (action == "select_secondary") return true;
+			                                 if (action == "select_secondary" || action == "fly_through_side") return true;
 			                                 return (action == "send_axis" && step.contains("axis") && pumo_ordinary_input_validation::integer_in_range(step.at("axis"), 2, 4)) ||
 			                                        (action == "send_button" && step.contains("button") && pumo_ordinary_input_validation::integer_in_range(step.at("button"), 101, 101));
 		                                 });
@@ -695,7 +695,7 @@ static int run(int argc, char **argv)
 			const bool restored = expectations(snapshot(), plan.at("checkpoint_expect"), failure);
 			require(restored, ("native earned checkpoint: " + failure).c_str());
 		}
-		double thrust = 0, sideways = 0, heading = 0, pitch = 0, bank = 0;
+		double thrust = 0, sideways = 0, vertical = 0, heading = 0, pitch = 0, bank = 0;
 		bool firing = false, firing_secondary = false, secondary_press_pending = false;
 		int remainder = 0, fps = plan.value("simulation_fps", 60), frame_count = 0;
 		bool weapon_rays_used = false;
@@ -729,6 +729,7 @@ static int run(int argc, char **argv)
 			Controls = {};
 			Controls.forward_thrust_time = static_cast<fix>(thrust * FrameTime);
 			Controls.sideways_thrust_time = static_cast<fix>(sideways * FrameTime);
+			Controls.vertical_thrust_time = static_cast<fix>(vertical * FrameTime);
 			Controls.heading_time = static_cast<fix>(heading * FrameTime);
 			Controls.pitch_time = static_cast<fix>(pitch * (FrameTime / 2));
 			Controls.bank_time = static_cast<fix>(bank * FrameTime);
@@ -817,6 +818,47 @@ static int run(int argc, char **argv)
 				pose(step);
 				++position_assist_events;
 				trace << Json{ { "event", "position_assist" }, { "action", action }, { "step", completed }, { "position", snapshot().at("position") } }.dump() << '\n';
+			} else if (action == "fly_through_side") {
+				const int level = Current_level_num, segment = step.at("segment"), side = step.at("side");
+				require(segment == ConsoleObject->segnum && segment >= 0 && segment < Num_segments && side >= 0 && side < 6,
+				        "Ordinary flight requires the current segment and a valid side");
+				const int child = Segments[segment].children[side];
+				require(child >= 0 && child < Num_segments, "Ordinary flight requires a connected portal");
+				vms_vector portal, center, inward, target;
+				compute_center_point_on_side(&portal, &Segments[segment], side);
+				compute_segment_center(&center, &Segments[child]);
+				vm_vec_sub(&inward, &center, &portal);
+				const fix depth = vm_vec_normalize(&inward);
+				vm_vec_scale_add(&target, &portal, &inward, (std::min) (depth, 2 * ConsoleObject->size));
+				const int maximum = step.at("max_frames");
+				require(maximum > 0 && maximum <= 3600, "Invalid ordinary flight duration");
+				const bool primary = step.value("fire_primary", false);
+				for (int i = 0; i < maximum && Current_level_num == level && ConsoleObject->segnum == segment; ++i) {
+					vms_vector direction;
+					vm_vec_sub(&direction, &target, &ConsoleObject->pos);
+					const double distance = f2fl(vm_vec_normalize(&direction));
+					const auto &orient = ConsoleObject->orient;
+					const auto &physics = ConsoleObject->mtype.phys_info;
+					auto dot = [](const vms_vector &a, const vms_vector &b) { return double(vm_vec_dot(&a, &b)) / F1_0; };
+					const double x = dot(direction, orient.rvec), y = dot(direction, orient.uvec), z = dot(direction, orient.fvec);
+					auto axis = [](double value) { return std::clamp(value, -1.0, 1.0); };
+					const double speed = (std::min) (25.0, 2 * distance);
+					thrust = axis((z * speed - dot(physics.velocity, orient.fvec)) / 12);
+					sideways = axis((x * speed - dot(physics.velocity, orient.rvec)) / 12);
+					vertical = axis((y * speed - dot(physics.velocity, orient.uvec)) / 12);
+					heading = axis(8 * std::atan2(x, z) - 1.5 * f2fl(physics.rotvel.y));
+					pitch = axis(-16 * std::atan2(y, std::hypot(x, z)) - 3 * f2fl(physics.rotvel.x));
+					firing = primary && z > 0.95;
+					trace << Json{ { "flight_frame", frame_count }, { "segment", segment }, { "side", side }, { "controls", { thrust, sideways, vertical, heading, pitch, firing } } }.dump() << '\n';
+					tick();
+				}
+				thrust = sideways = vertical = heading = pitch = 0;
+				firing = false;
+				const bool reached = step.contains("destination_level") ? Current_level_num == step.at("destination_level").get<int>()
+				                                                        : Current_level_num == level && ConsoleObject->segnum == child;
+				require(reached, ("Ordinary flight failed at segment " + std::to_string(segment) + " side " + std::to_string(side) +
+				                  ", ended in level " + std::to_string(Current_level_num) + " segment " + std::to_string(ConsoleObject->segnum))
+				                     .c_str());
 			} else if (action == "send_axis") {
 				require(pumo_ordinary_input_validation::integer_in_range(step.at("axis"), 0, 4), "native player probe supports sideways/forward thrust and heading/pitch/bank axes");
 				const int axis = step.at("axis");

@@ -915,6 +915,14 @@ if(BUILD_TESTING)
         CACHE PATH "Full original Pumo missions/mods/data for native player probes")
     if(XL_PUMO_PLAYER_ROOT AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
         add_test(
+            NAME xl_pumo_hub_multiverse_player
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_PUMO_PLAYER_ROOT}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/pumo-hub-multiverse -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/pumo_hub_multiverse.cmake)
+        set_tests_properties(xl_pumo_hub_multiverse_player PROPERTIES TIMEOUT 750 RUN_SERIAL TRUE)
+        add_test(
             NAME xl_pumo_majha_player
             COMMAND
                 ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}

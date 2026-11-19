@@ -203,6 +203,9 @@ function(validate_pumo_player_receipt name initial destination step_count transi
 endfunction()
 
 function(run_pumo_player_phase name initial destination step_count transition_count)
+    if(NOT DEFINED PUMO_PHASE_TIMEOUT)
+        set(PUMO_PHASE_TIMEOUT 150)
+    endif()
     file(READ "${OUTPUT}/${name}-plan.json" plan)
     string(RANDOM LENGTH 32 ALPHABET 0123456789abcdef expected_run_id)
     string(JSON plan SET "${plan}" receipt_run_id "\"${expected_run_id}\"")
@@ -245,7 +248,7 @@ function(run_pumo_player_phase name initial destination step_count transition_co
         RESULT_VARIABLE exit_code
         OUTPUT_VARIABLE stdout
         ERROR_VARIABLE stderr
-        TIMEOUT 150)
+        TIMEOUT ${PUMO_PHASE_TIMEOUT})
     file(WRITE "${OUTPUT}/${name}-controls.log" "${stdout}${stderr}")
     if(NOT "${exit_code}" STREQUAL "0")
         message(FATAL_ERROR "Pumo ${name} failed (${exit_code}): ${stdout}${stderr}")

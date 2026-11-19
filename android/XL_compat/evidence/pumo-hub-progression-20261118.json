@@ -1,0 +1,214 @@
+{
+    "parent": "a74fda678c71076adb25c4fc6fb75758b8ef844e",
+    "archive_sha256": "82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf",
+    "descriptor_sha256": "45b4138e0a0d49ab8ee09334b7cfa97c0ec75ac6c6b6406b21eba28ddaa19cfd",
+    "hog_sha256": "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043",
+    "scope": "Windows. Ordinary 120-frame starts use a full mission and mod. The connected flight uses a Debug developer executable, starts on Trainee in the hub, skips menus and briefings, and steers from live geometry through a specified portal sequence. Sound and rendering are disabled for the flight. The render probe explicitly binds effect 49.",
+    "ordinary_engine_sha256": "4ed38bf2fe048b152ca1cb9f96f6a1c05c4ef78e79f3fd9d75c210ad69c737fd",
+    "ordinary_starts": [
+        {
+            "level": 1,
+            "code": 0,
+            "phase": "loaded_ticked",
+            "frames": 120,
+            "profile": "",
+            "reason": ""
+        },
+        {
+            "level": 2,
+            "code": 0,
+            "phase": "loaded_ticked",
+            "frames": 120,
+            "profile": "XL scoped textures: selected 128 pixel target for 144 authored images",
+            "reason": ""
+        },
+        {
+            "level": 3,
+            "code": 0,
+            "phase": "loaded_ticked",
+            "frames": 120,
+            "profile": "XL scoped textures: selected 128 pixel target for 172 authored images",
+            "reason": ""
+        },
+        {
+            "level": 4,
+            "code": 0,
+            "phase": "loaded_ticked",
+            "frames": 120,
+            "profile": "XL scoped textures: selected 128 pixel target for 235 authored images",
+            "reason": ""
+        },
+        {
+            "level": 5,
+            "code": 0,
+            "phase": "loaded_ticked",
+            "frames": 120,
+            "profile": "XL scoped textures: selected 128 pixel target for 239 authored images",
+            "reason": ""
+        },
+        {
+            "level": 6,
+            "code": 0,
+            "phase": "loaded_ticked",
+            "frames": 120,
+            "profile": "XL scoped textures: selected 128 pixel target for 238 authored images",
+            "reason": ""
+        },
+        {
+            "level": 7,
+            "code": 0,
+            "phase": "loaded_ticked",
+            "frames": 120,
+            "profile": "XL scoped textures: selected 128 pixel target for 252 authored images",
+            "reason": ""
+        },
+        {
+            "level": 8,
+            "code": 1,
+            "phase": "level_load",
+            "frames": null,
+            "profile": "XL scoped textures: selected 128 pixel target for 307 authored images",
+            "reason": "Scoped bitmap is driven by conflicting effect clocks"
+        },
+        {
+            "level": 9,
+            "code": 1,
+            "phase": "level_load",
+            "frames": null,
+            "profile": "XL scoped textures: selected 128 pixel target for 276 authored images",
+            "reason": "Scoped bitmap is driven by conflicting effect clocks"
+        },
+        {
+            "level": 10,
+            "code": 0,
+            "phase": "loaded_ticked",
+            "frames": 120,
+            "profile": "",
+            "reason": ""
+        },
+        {
+            "level": 11,
+            "code": 0,
+            "phase": "loaded_ticked",
+            "frames": 120,
+            "profile": "XL scoped textures: selected 128 pixel target for 181 authored images",
+            "reason": ""
+        },
+        {
+            "level": 12,
+            "code": 1,
+            "phase": "level_load",
+            "frames": null,
+            "profile": "XL scoped textures: selected 128 pixel target for 214 authored images",
+            "reason": "Scoped bitmap is driven by conflicting effect clocks"
+        },
+        {
+            "level": 13,
+            "code": 1,
+            "phase": "level_load",
+            "frames": null,
+            "profile": "XL scoped textures: selected 128 pixel target for 313 authored images",
+            "reason": "Scoped bitmap is driven by conflicting effect clocks"
+        },
+        {
+            "level": 14,
+            "code": 1,
+            "phase": "level_load",
+            "frames": null,
+            "profile": "XL scoped textures: selected 128 pixel target for 216 authored images",
+            "reason": "Scoped bitmap is driven by conflicting effect clocks"
+        }
+    ],
+    "flight": {
+        "result": "PASS",
+        "process_id": 27772,
+        "steps": 16,
+        "initial_level_setup": 1,
+        "final_level": 2,
+        "executable_sha256": "184c7f29df8c158969008435b670380b13549010f25ad1935bb99078ad1ae20e",
+        "plan_sha256": "df665baff203b68299e93076cda45edf0505cb5ef14d0ce28558ca986e3cb178",
+        "resume_sha256": "",
+        "resumed_earned_checkpoint": false,
+        "rendered": false,
+        "position_assist_events": 0,
+        "fixed_view_aim_events": 0,
+        "receipt_sha256": "f4d44968670820ab7f1b29623a2c199c95291db8b35064d2769a66557b4b8060",
+        "frames_with_flight_controls": 884,
+        "wall_operations": [1, 6, 0],
+        "transitions": [[1, 2]]
+    },
+    "cold": {
+        "result": "PASS",
+        "process_id": 26504,
+        "steps": 8,
+        "initial_level_setup": 2,
+        "final_level": 2,
+        "executable_sha256": "184c7f29df8c158969008435b670380b13549010f25ad1935bb99078ad1ae20e",
+        "plan_sha256": "cdb1e888ef002f31bde59f8d0e683d5c759bca01587f54804e70552ebc956b9f",
+        "resume_sha256": "35262f36a611f4028ece2896cf25e508cd8c8ad9a55716a9e51fd01eb5e3d243",
+        "resumed_earned_checkpoint": true,
+        "rendered": false,
+        "position_assist_events": 0,
+        "fixed_view_aim_events": 0,
+        "receipt_sha256": "1d73b8369a78653827d9d6891d7e27f8903bcc20c569fa501de5d0c14da965e7",
+        "frames_with_flight_controls": 0,
+        "wall_operations": [],
+        "transitions": []
+    },
+    "checkpoint_sha256": "35262f36a611f4028ece2896cf25e508cd8c8ad9a55716a9e51fd01eb5e3d243",
+    "cold_state": {
+        "segment": 109,
+        "score": 650,
+        "energy": 98.530029296875,
+        "game_time_raw": 131072
+    },
+    "private_ctest_seconds": 408.3,
+    "reference_render": {
+        "level": 2,
+        "original_quality": 1,
+        "original_executable": "ab79abbf36aac303be8babd55255f2d21a20f42cbf0d8b13059801f07f7fb23a",
+        "original_receipt": "ae8e0852e9326444232f9089e51d5659a3826633e7ec576a84b8fdb3cdb9ecde",
+        "redux_executable": "1e55907295d157ee741ac94f6ef3cd2b1ad989cbb09f6b8c3c118ab3f43eff50",
+        "redux_receipt": "49bde45daf775d59b1bdf37091a184f50c95a57cd2432d0ed668559ad85164da",
+        "width": 128,
+        "height": 128,
+        "frame_rgba_fnv1a": [
+            4034480499, 217901637, 3642335036, 2335958821, 467280729, 3837727159, 2484992682, 580167221, 399932478,
+            1325512667, 1050665581
+        ]
+    },
+    "remaining_level8_reference": {
+        "schema": "xl-original-campaign-probe-v1",
+        "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+        "engine_sha256": "ab79abbf36aac303be8babd55255f2d21a20f42cbf0d8b13059801f07f7fb23a",
+        "descriptor": "single/pmines.mn2",
+        "descriptor_sha256": "45b4138e0a0d49ab8ee09334b7cfa97c0ec75ac6c6b6406b21eba28ddaa19cfd",
+        "ordinal": 8,
+        "advertised_file": "tulev2.rl2",
+        "exit_code": 0,
+        "observation": "started_and_ran",
+        "timed_out": false,
+        "receipt_sha256": "3739c997fe8fb1d3a3af28fa9e5471341001c61264c3249177ff851ea9acde65",
+        "hires_textures_requested": true,
+        "texture_quality": 1,
+        "maximum_texture_quality": 3
+    },
+    "pmc_hub_exit": {
+        "result": "PASS",
+        "process_id": 157868,
+        "steps": 16,
+        "initial_level_setup": 1,
+        "final_level": 11,
+        "executable_sha256": "184c7f29df8c158969008435b670380b13549010f25ad1935bb99078ad1ae20e",
+        "plan_sha256": "1d5d6e84e4e2a328d4f4881ad0210849258b57c80ecf6a9af5548ecbb5b82e6f",
+        "resume_sha256": "",
+        "resumed_earned_checkpoint": false,
+        "rendered": false,
+        "position_assist_events": 0,
+        "fixed_view_aim_events": 0,
+        "receipt_sha256": "dac0b1a60daf510299ab96104f6b87666d763576f23b350b6f866bfd29503a9a",
+        "frames_with_flight_controls": 884,
+        "wall_operations": [2, 7, 3],
+        "transitions": [[1, 11]]
+    }
+}

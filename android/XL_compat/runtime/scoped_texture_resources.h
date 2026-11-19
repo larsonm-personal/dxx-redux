@@ -29,6 +29,7 @@ struct ScopedTextureResources {
 	std::vector<ScopedTextureImage> images;
 	std::vector<ScopedTextureBinding> bindings;
 	std::set<int> pog_indices;
+	unsigned texture_target = 0;
 	static ScopedTextureResources prepare(TargetSources &sources, const xl_assets::ObjectDependencies &graph,
 	                                      int ordinal, const xl_pog_resources *pog = nullptr)
 	{
@@ -38,7 +39,13 @@ struct ScopedTextureResources {
 		std::map<std::string, std::size_t> retained;
 		auto &pog_indices = result.pog_indices;
 		for (int row = 0; row < xl_pog_count(pog); ++row) pog_indices.insert(int(xl_pog_entry(pog, row)->index));
-		std::size_t total = 0;
+		// Read only headers until the complete incoming level has a fitting source
+		// resolution. Bindings sharing one file occupy one image in the arena.
+		struct Source {
+			std::string path;
+			unsigned width, height;
+		};
+		std::vector<Source> inputs;
 		char level[32];
 		std::snprintf(level, sizeof(level), "%s%02d/", ordinal < 0 ? "slevel" : "level", ordinal < 0 ? -ordinal : ordinal);
 		for (int id : graph.bitmaps) {
@@ -60,19 +67,15 @@ struct ScopedTextureResources {
 				for (const auto &path : { level_path, mission_path }) {
 					auto entry = retained.find(path);
 					if (entry == retained.end()) {
-						const auto bytes = sources.directory_bytes(path, pog_file_limit + 65536);
-						if (!bytes) continue;
-						PogBitmap image;
-						try {
-							image = read_scoped_texture_image(bytes->data(), bytes->size());
-						} catch (const std::exception &error) {
-							throw std::runtime_error("XL scoped texture decode failed for " + path + ": " + error.what());
-						}
-						if (image.pixels.size() > 2 * pog_file_limit - total)
-							throw std::runtime_error("Scoped texture decoded pixels exceed the resource bound");
-						total += image.pixels.size();
-						const auto index = result.images.size();
-						result.images.push_back({ path, picosha2::hash256_hex_string(*bytes), std::move(image) });
+						const auto header = sources.directory_prefix(path, 18, pog_file_limit + 65536);
+						if (!header) continue;
+						if (header->size() != 18) throw std::runtime_error("XL scoped texture header truncated: " + path);
+						const unsigned width = (*header)[12] | unsigned((*header)[13]) << 8;
+						const unsigned height = (*header)[14] | unsigned((*header)[15]) << 8;
+						if (!width || width > 4096 || !height || height > 32767 || std::uint64_t(width) * height * 4 > pog_file_limit)
+							throw std::runtime_error("XL scoped texture dimensions exceed their bound: " + path);
+						const auto index = inputs.size();
+						inputs.push_back({ path, width, height });
 						entry = retained.emplace(path, index).first;
 					}
 					result.bindings.push_back({ id, entry->second });
@@ -81,6 +84,32 @@ struct ScopedTextureResources {
 				}
 				if (found) break;
 			}
+		}
+		for (const unsigned target : { 0u, 256u, 128u, 64u }) {
+			std::uint64_t total = xl_pog_pixel_bytes(pog);
+			for (const auto &source : inputs) {
+				const unsigned factor = scoped_texture_factor(source.width, source.height, target);
+				total += std::uint64_t(source.width / factor) * (source.height / factor) * 4;
+			}
+			if (total <= 2 * pog_file_limit) {
+				result.texture_target = target;
+				break;
+			}
+			if (target == 64) throw std::runtime_error("Scoped texture decoded pixels exceed the resource bound");
+		}
+		for (const auto &source : inputs) {
+			const auto bytes = sources.directory_bytes(source.path, pog_file_limit + 65536);
+			if (!bytes) throw std::runtime_error("Incoming scoped texture disappeared: " + source.path);
+			PogBitmap image;
+			try {
+				image = read_scoped_texture_image(bytes->data(), bytes->size());
+				if (image.width != source.width || image.height != source.height)
+					throw std::runtime_error("Source dimensions changed after size selection");
+				shrink_scoped_texture(image, scoped_texture_factor(image.width, image.height, result.texture_target));
+			} catch (const std::exception &error) {
+				throw std::runtime_error("XL scoped texture decode failed for " + source.path + ": " + error.what());
+			}
+			result.images.push_back({ source.path, picosha2::hash256_hex_string(*bytes), std::move(image) });
 		}
 		return result;
 	}
