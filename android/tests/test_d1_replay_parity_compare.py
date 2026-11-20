@@ -930,6 +930,30 @@ class ParityTests(unittest.TestCase):
                     with self.subTest(engine=engine, tags=tags, field=field), self.assertRaises(parity.EvidenceError):
                         parity.validate_object(damaged, engine, "$.object")
 
+    def test_xl_afterburner_fireball_requires_explosion_and_vclip(self):
+        obj = {
+            **schema_example(parity.OBJECT_SCHEMA),
+            "type": 1,
+            "control_type": 2,
+            "render_type": 8,
+            "explosion": dict.fromkeys(
+                "spawn_time delete_time delete_objnum attach_parent prev_attach next_attach".split(), 0
+            ),
+            "vclip": {"vclip_num": 0, "frametime": 9828, "framenum": 0},
+        }
+        parity.validate_object(obj, "d2", "$.object", xl=True)
+        for engine, xl in (("d1", False), ("d1", True), ("d2", False)):
+            with self.subTest(engine=engine, xl=xl), self.assertRaises(parity.EvidenceError):
+                parity.validate_object(obj, engine, "$.object", xl=xl)
+        for field in ("vclip", "explosion"):
+            damaged = obj.copy()
+            del damaged[field]
+            with self.subTest(field=field), self.assertRaises(parity.EvidenceError):
+                parity.validate_object(damaged, "d2", "$.object", xl=True)
+        for override in ({"type": 2}, {"control_type": 0}, {"render_type": 9}):
+            with self.subTest(override=override), self.assertRaises(parity.EvidenceError):
+                parity.validate_object({**obj, **override}, "d2", "$.object", xl=True)
+
     def test_rng_labels_are_mapped_but_order_values_and_counts_are_not(self):
         a, b = self.rng("a"), self.rng("b")
         self.mutate(b, lambda rows: rows[1].update(file="imported.c", func="ported", line=22, stream=0))

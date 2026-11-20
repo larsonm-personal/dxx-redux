@@ -1,0 +1,111 @@
+{
+    "android_owner": {
+        "original_apk": "93d3d2afdf1b5a4450cb24bd742978b18712b6c449a8412d893dc0327c319bc5",
+        "apk": "9f978db9543e5da1088a13d546309ed123c8468eeec78c4037504d3028cb1437",
+        "export": "07f903e689d471c90834e7489d2885864abc9eb40a0c5a0ef5047638e381d1c7",
+        "written": "99e40e99c5e634ba511b791a411295c07019b7739ad1e4be3b5a65d6e422f665",
+        "assets": [
+            {
+                "path": "files/imported/sets/default/missions/sphere.hog",
+                "sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/missions/sphere.mn2",
+                "sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x.hog",
+                "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x-xl.hog",
+                "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                "added": true
+            }
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "in_game": true,
+            "cheats_enabled": false,
+            "player.lives": 3,
+            "player.score": 24200,
+            "player.has_gold_key": true,
+            "position.segment": 1245
+        },
+        "logs": {
+            "write": "2d234ace044753d531c889f503fc9773cbd3dbc4583c096d76b676218d593e0c",
+            "cold": "880c8f581f2a84310f871ea350c043ee4acfd9c643199c944ebf5ffd00f98116"
+        }
+    },
+    "private_root": "temp/xl-sphere-campaign-20261119",
+    "capture": "continuation-gold-capture",
+    "capture_apk_sha256": "37c614eb865cfd8f9caa0e51dd4c5a526decb6fdbcd6154c50658bdf1e7c556a",
+    "capture_run": "05032e253d8e4bca8a9e2f067f47fe2d",
+    "capture_result": "FAIL: after recording stopped, pilot was dead",
+    "files": [
+        {
+            "file": "d2_sphere_level2_20261120_003200.dximdemo",
+            "remote": "files/d2x-redux/input_demo_recordings/new/d2_sphere_level2_20261120_003200.dximdemo",
+            "bytes": 3366979,
+            "sha256": "5c7669e4d82cf7a07299fc1e3fca3d34ddb9ecb9f187a0fcea024f2d8a5eb30e"
+        },
+        {
+            "file": "d2_sphere_level2_20261120_003200.dximdemo.rngtrace.jsonl",
+            "remote": "files/d2x-redux/input_demo_recordings/new/d2_sphere_level2_20261120_003200.dximdemo.rngtrace.jsonl",
+            "bytes": 22244831,
+            "sha256": "98fe1c4c5056bd0db815ecab5d9656d724ec54c2d3144754df5b833df4b5a421"
+        },
+        {
+            "file": "live-15112.jsonl.gz",
+            "remote": "files/d2x-redux/xl_capture_traces/live-15112.jsonl.gz",
+            "bytes": 4506400,
+            "sha256": "ee0ee78d67c0c43754d423ba05b7a8455286e059084151ed23772b208ba45b7a"
+        }
+    ],
+    "profile_sha256": {
+        "spgold.plr": "2f707e49c0f535c519cf351e953c5c7516228716ef6ded66600a31564e6aacf7",
+        "spgold.plx": "5835e77249d75e186db54a115231777a1c277710d7dde2bac45f4092ae33ea80",
+        "descent.cfg": "eeffcb6c1da15d2fa2f915dc1596c22f35c24e79053d45c74f75a4cc433bddf8"
+    },
+    "clean_playback": "continuation-gold-profile-verified",
+    "binary": "95e8a35efd2496c2fc130ae2ccec344180d4c6efadcef41f0fe8a014e0a27dc8",
+    "comparison_sha256": "ca5b381b7bcdcccbddc4a57a06535476195da15940efdfbf760b53307f7d07ec",
+    "frames": 25,
+    "objects": {
+        "status": "pass",
+        "frames_compared": 25,
+        "first_field_differences": {}
+    },
+    "world_records": 29,
+    "world_status": "fail",
+    "world_difference_count": 296,
+    "first_world_difference": {
+        "frame": 3,
+        "path": "$.state.morphs.0.points[14][0][0]",
+        "expected": 20105,
+        "actual": 0
+    },
+    "sim_rng": {
+        "status": "pass",
+        "simulation_events_compared": 67669,
+        "first_difference": null,
+        "first_value_difference": null
+    },
+    "fx_rng": {
+        "status": "pass",
+        "effects_events_compared": 35,
+        "first_difference": null,
+        "first_value_difference": null
+    },
+    "trailer": {
+        "status": "pass"
+    },
+    "prior_reader": {
+        "status": "unavailable",
+        "reason": "Unsupported object union discriminator: $.slots.594"
+    },
+    "profileless_failed": "continuation-gold-clean-replay"
+}
