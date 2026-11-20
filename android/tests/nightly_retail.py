@@ -375,6 +375,9 @@ MASTER_DIAGNOSTIC_SOURCES = {
     "test_vertigo_level_metadata": "android/game_scripts/test_vertigo_level_metadata.jsonc",
     "test_obsidian_level1_objective_markers": "android/game_scripts/test_obsidian_level1_objective_markers.jsonc",
     "test_obsidian_level4_post_reactor_keys": "android/game_scripts/test_obsidian_level4_post_reactor_keys.jsonc",
+    "test_demo_import_public_basic_use": "android/tests/test_demo_import.ps1",
+    "test_demo_import_public_first_play": "android/tests/test_demo_import.ps1",
+    "test_graphics_lifecycle": "android/game_scripts/test_graphics_lifecycle.jsonc",
     "test_idle_screen_saver": "android/game_scripts/test_idle_screen_saver.jsonc",
     "test_mp_coop_d2_initial_fallback": "android/tests/test_mp.ps1",
     "test_mp_public_shareware": "android/tests/test_mp.ps1",
@@ -395,6 +398,10 @@ ANDROID_FAILURE_PATTERNS = {
     "launcher-handoff": r"FAIL: Launcher handoff did not complete",
     "launcher-recovery": r"FAIL: SetupActivity (?:recovery could not restore launcher prerequisites|not responding)",
     "script-staging": r"FAIL: Could not stage test script on device:",
+    "demo-import-disposable-emulator": r"Public first-play requires a disposable emulator|Could not clear disposable emulator app state",
+    "demo-import-picker": r"Import chooser did not open the system DocumentsUI|Neither the exact import chooser nor the system picker became visible",
+    "demo-import-publication": r"lacks fresh production publication|Public mission lacks fresh production import",
+    "demo-import-automation": r"First-play [^\r\n]{1,100} (?:automation failed \(exit [0-9]+\)|lacks a fresh complete durable PASS)",
 }
 
 # Fixed literals in test_xl_original_assets.ps1, never evidence of completion

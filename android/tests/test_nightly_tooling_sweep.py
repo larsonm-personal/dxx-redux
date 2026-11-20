@@ -3920,6 +3920,48 @@ class RefillNightlyTests(unittest.TestCase):
             updated, _ = sample.reconcile_sample(plan, policy, state, [receipt])
             self.assertEqual(len(updated["done"]), 1)
 
+    def test_display_retains_safe_current_failure_and_fixture_reason(self):
+        import hashlib
+        import nightly_sample as sample
+
+        source = "android/tests/test_demo_import.ps1"
+        source_digest = hashlib.sha256((Path(__file__).resolve().parents[2] / source).read_bytes()).hexdigest()
+        ident = "master:test_demo_import_public_first_play"
+        with tempfile.TemporaryDirectory() as temporary:
+            log = Path(temporary) / "test.log"
+            log.write_text("Import chooser did not open the system DocumentsUI\nprivate-path-never-published\n")
+            row = {
+                "name": ident.split(":")[1],
+                "status": "FAIL",
+                "phase": "tests",
+                "exit_code": 1,
+                "source": source,
+                "source_sha256": source_digest,
+                "reason": "private-path-never-published",
+                "log": str(log),
+            }
+            row["master_diagnostics"] = sweep.retail.master_failure_diagnostics(row, temporary)
+            detail = sample.display_failure(ident, row)
+            self.assertEqual(detail["failure_categories"], ["demo-import-picker"])
+            self.assertEqual(detail["exit_code"], 1)
+            self.assertNotIn("private-path-never-published", str(detail))
+            row["source_sha256"] = "0" * 64
+            row["master_diagnostics"] = sweep.retail.master_failure_diagnostics(row, temporary)
+            self.assertNotIn("failure_categories", sample.display_failure(ident, row))
+
+        summary = {
+            "sample_status_ids": {"excluded": ["fresh"], "blocked": ["unavailable"], "pending": ["deadline"]},
+            "sample_excluded_not_coverage": {
+                "fresh": {"reason": "Ambiguous corpus variants have distinct payloads"},
+                "historical": {"reason": "Ambiguous corpus variants have distinct payloads"},
+            },
+            "sample_blocked_not_coverage": {"unavailable": {"reason": "private-path-never-published"}},
+        }
+        self.assertEqual(
+            sample.display_block_reasons(summary),
+            {"Ambiguous corpus variants have distinct payloads": 1, "Infrastructure/setup blocked": 1},
+        )
+
     def test_large_reservation_display_is_bounded_without_discarding_evidence(self):
         import nightly_sample as sample
 

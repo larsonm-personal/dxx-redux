@@ -795,6 +795,39 @@ def sample_status_ids(plan, coverage):
     return groups
 
 
+def display_failure(ident, row):
+    # Report fixed tokens and source locations only. Retail lane logs can contain private inputs.
+    clean = retail.public_diagnostics(row).get("master_diagnostics", {})
+    detail = {"id": ident[:160]}
+    if row.get("status") in ("FAIL", "TIMEOUT"):
+        detail["status"] = row["status"]
+    if row.get("phase") in ("preflight", "setup", "tests"):
+        detail["phase"] = row["phase"]
+    if type(row.get("exit_code")) is int:
+        detail["exit_code"] = row["exit_code"]
+    for key in ("failure_categories", "failed_step", "source_matches", "last_observed_stage", "powershell_exception"):
+        if clean.get(key):
+            detail[key] = clean[key]
+    if not detail.keys() - {"id", "status", "phase", "exit_code"}:
+        detail["diagnostic"] = "No specific failure detail was retained"
+    return detail
+
+
+def display_block_reasons(summary):
+    counts = {}
+    groups = (
+        ("blocked", "sample_blocked_not_coverage"),
+        ("excluded", "sample_excluded_not_coverage"),
+    )
+    for group, field in groups:
+        for ident in summary["sample_status_ids"].get(group, []):
+            reason = summary.get(field, {}).get(ident, {}).get("reason")
+            if not isinstance(reason, str) or reason not in retail.PUBLIC_REASONS:
+                reason = "Infrastructure/setup blocked" if group == "blocked" else "Target/fixture excluded"
+            counts[reason] = counts.get(reason, 0) + 1
+    return dict(sorted(counts.items(), key=lambda pair: (-pair[1], pair[0]))[:8])
+
+
 def display_summary(summary):
     # The complete evidence remains in the artifact, outside GitHub's step-summary cap
     display = {
@@ -819,6 +852,12 @@ def display_summary(summary):
     for field in ("sample_admitted_ids", "sample_unadmitted_ids"):
         if field in summary:
             display[field.removesuffix("_ids") + "_count"] = len(summary[field])
+    if summary["failures"]:
+        records = summary.get("current_sha_records", {})
+        display["failure_details"] = [display_failure(ident, records.get(ident, {})) for ident in summary["failures"][:8]]
+        display["additional_failures_in_artifact"] = max(0, len(summary["failures"]) - 8)
+    if reasons := display_block_reasons(summary):
+        display["sample_block_and_exclusion_reasons"] = reasons
     return display
 
 
@@ -955,6 +994,7 @@ def main():
         "sample_pending": statuses["pending"],
         "sample_status_ids": statuses,
         "sample_blocked_not_coverage": coverage.get("retryable", {}),
+        "sample_excluded_not_coverage": coverage.get("excluded", {}),
         "unavailable": plan["unavailable"],
         "excluded": plan["exclusions"],
         "historical_failures_not_current_sha_coverage": state["failures"],
