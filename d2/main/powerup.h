@@ -109,6 +109,12 @@ void draw_powerup(object *obj);
 
 //returns true if powerup consumed
 int do_powerup(object *obj);
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+#ifdef __cplusplus
+extern "C"
+#endif
+void xl_set_invulnerability_pickup_observer(void (*observer)(const object *));
+#endif
 
 //process (animate) a powerup for one frame
 void do_powerup_frame(object *obj);
