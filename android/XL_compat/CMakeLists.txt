@@ -913,7 +913,51 @@ if(BUILD_TESTING)
     endif()
     set(XL_SPHERE_PLAYER_ROOT "" CACHE PATH "Original Sphere 1.51 staged mission root")
     set(XL_SPHERE_RESPAWN_SAVE "" CACHE FILEPATH "Earned Sphere 1.51 Android respawn DGSS")
+    set(XL_SPHERE_LEVEL3_SAVE "" CACHE FILEPATH
+                                       "Earned Sphere 1.51 Android post-reactor level 3 DGSS")
     if(XL_SPHERE_PLAYER_ROOT AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        if(XL_SPHERE_LEVEL3_SAVE)
+            add_test(
+                NAME xl_sphere_level3_supply
+                COMMAND
+                    ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                    -DRESOURCES=${XL_SPHERE_PLAYER_ROOT} -DLEVEL3_SAVE=${XL_SPHERE_LEVEL3_SAVE}
+                    -DSTAGE=level3_supply -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-level3-supply
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+            set_tests_properties(
+                xl_sphere_level3_supply PROPERTIES TIMEOUT 1800 RUN_SERIAL TRUE FIXTURES_SETUP
+                                                   sphere_level3_supply)
+            add_test(
+                NAME xl_sphere_level3_approach
+                COMMAND
+                    ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                    -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                    -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-level3-supply
+                    -DSTAGE=level3_approach
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-level3-approach -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+            set_tests_properties(
+                xl_sphere_level3_approach
+                PROPERTIES TIMEOUT
+                           1800
+                           RUN_SERIAL
+                           TRUE
+                           FIXTURES_REQUIRED
+                           sphere_level3_supply
+                           FIXTURES_SETUP
+                           sphere_level3_approach)
+            add_test(
+                NAME xl_sphere_level3_blue
+                COMMAND
+                    ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                    -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                    -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-level3-approach -DSTAGE=level3_blue
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-level3-blue -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+            set_tests_properties(
+                xl_sphere_level3_blue PROPERTIES TIMEOUT 1800 RUN_SERIAL TRUE FIXTURES_REQUIRED
+                                                 sphere_level3_approach)
+        endif()
         if(XL_SPHERE_RESPAWN_SAVE)
             add_test(
                 NAME xl_sphere_respawn_extra_life
