@@ -1,0 +1,242 @@
+{
+    "engine_source": "5f2039b1d9fe9ca196abf84296a654c704fc6575",
+    "ordinary_android": {
+        "original_apk": "93d3d2afdf1b5a4450cb24bd742978b18712b6c449a8412d893dc0327c319bc5",
+        "apk": "7e2d4da6be7e3845e872633fa5ddb17391b06b9b0265d3b9e35855c457cfda20",
+        "export": "63da9fc0b103473630ce46106049995f608746022bf99f8e8b844160c96f8ff7",
+        "written": "352aa5201db2267badb7c4b537b4ba62d93196b94cce6e24490d9b1a746f86b5",
+        "assets": [
+            {
+                "path": "files/imported/sets/default/missions/sphere.hog",
+                "sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/missions/sphere.mn2",
+                "sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x.hog",
+                "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x-xl.hog",
+                "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                "added": true
+            }
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "in_game": true,
+            "cheats_enabled": false,
+            "player.lives": 4,
+            "player.score": 68850,
+            "player.has_gold_key": false,
+            "player.has_red_key": false,
+            "player_dead": false,
+            "player.primary_weapon_flags": 9,
+            "position.segment": 991
+        },
+        "logs": {
+            "write": "4c941d07f4235c284e0fe2fa907b9a26d004e274f3a7bfd1331336b3377f9479",
+            "cold": "2d45dc2777431df408eb8b84ae91e4a9a0df1a60f02a81691158c7b6b317bbae"
+        }
+    },
+    "scope": "After a living assisted reactor escape, ordinary Android loads the four-life ship, writes its own quicksave and cold loads that slot. A developer capture records two button bursts and a coast. Clean ordinary playback independently compares the recording.",
+    "states": {
+        "write": {
+            "fixture": {
+                "path": "sphere_living_level3_android.jsonc",
+                "fixture_sha256": "39c9e6b0447e6fbbb5f4fe86d86bae5da79931e218904ebc5b7bc441864c2755",
+                "executed_plan_sha256": "d2bc4597e3dcc0ca5c1c6a9c7125834d56c14e1aa31e11d6bd145905bcbdd16e"
+            },
+            "segment": 991,
+            "player": {
+                "score": 68850,
+                "lives": 4,
+                "energy": 100.0,
+                "shields": 100.0,
+                "primary_weapon_flags": 9,
+                "robots_killed_level": 0,
+                "secondary_ammo": [7, 1, 8, 0, 0, 0, 0, 0, 0, 0],
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            }
+        },
+        "cold": {
+            "fixture": {
+                "path": "sphere_living_level3_android_cold.jsonc",
+                "fixture_sha256": "2b64bf07864b0a63c8bbe30b4237ed011885cc21ba707c4df3556b56bc6e56c9",
+                "executed_plan_sha256": "c3bd14d2db0797d5e50a32d53b0847d55846bbdb6781f3b9756adde25f35c442"
+            },
+            "segment": 991,
+            "player": {
+                "score": 68850,
+                "lives": 4,
+                "energy": 100.0,
+                "shields": 100.0,
+                "primary_weapon_flags": 9,
+                "robots_killed_level": 0,
+                "secondary_ammo": [7, 1, 8, 0, 0, 0, 0, 0, 0, 0],
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            }
+        }
+    },
+    "native_import": {
+        "source": "27a340e72e7e927cb7eaec73c3def936cf52845a",
+        "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+        "incoming": "352aa5201db2267badb7c4b537b4ba62d93196b94cce6e24490d9b1a746f86b5",
+        "outgoing": "62e882d646e3b3ac730af594b7ca3fd34de92cbb83e279a7086e2d0c7c0c9e3e",
+        "plan": "6f95bf0a48ec3b0dc6d0dd9fbb016a37edcd1ff98e987acaad512a907219d6a9",
+        "result": "5e1760cc50146d023ab3f86421d8e46e13fe6cc421d35fbaa27ced222dec1d95"
+    },
+    "capture": {
+        "apk": "e6e6ea8c3c6d7e19a132468c3b3ee9198931f1f9eac243c5f0053429098105f1",
+        "fixture": {
+            "path": "sphere_living_capture_android.jsonc",
+            "fixture_sha256": "264dd121518c274ef044bcffc77c528f32d1e769f6be6faa6579fa15c2ca7eb8",
+            "executed_plan_sha256": "73eedd8a3def94a6d91fa596aecac53fe3e7c28aef22c406102945e931101673"
+        },
+        "files": [
+            {
+                "file": "d2_sphere_level3_20261120_061244.dximdemo",
+                "bytes": 7419133,
+                "sha256": "3bb0910d1a7d5702849b9ea7305bf3c769167240ae556ff590bf05df9f172340"
+            },
+            {
+                "file": "d2_sphere_level3_20261120_061244.dximdemo.rngtrace.jsonl",
+                "bytes": 3248260,
+                "sha256": "3b4b8f140529e9cd60da808e5bb6cee9d5c372c312b1548916ccd8a692ec8a63"
+            },
+            {
+                "file": "live-13855.jsonl.gz",
+                "bytes": 15486917,
+                "sha256": "16378b171730fe0e8c5494d9e99f024aab1201ebf133b239271aeca00e777d62"
+            }
+        ],
+        "log": "7023c81ae31075ff27616d200e92c996c110d98f25fad7e2d26c6fee1ebef075",
+        "profile": {
+            "spalive.plr": "5cd431c61100c3564dd61fdb852d1ca492d60714d8aab70d5d36d8fe62d0a4dc",
+            "spalive.plx": "5835e77249d75e186db54a115231777a1c277710d7dde2bac45f4092ae33ea80",
+            "descent.cfg": "9e8aa63c6ef254aac002015306b98b3d263ab200e24c8196ecc401c02fa07f21"
+        }
+    },
+    "playback": {
+        "windows": {
+            "source": "d93dbe6e701b1131c3a46bfc181345f8a9380a5f",
+            "binary": "e8aa8eaed3ee217d0258de7b3dbd4a426e6ea6a49a2351e22eb72ce0a0ec64a3",
+            "results": {
+                "receipt.json": "2110bc6498380bea1df4146b480dc2952e8c64d8c760515739f481d79a78b014",
+                "comparison.json": "5261c79fc67a0543cac40984f4baed380adbcfefebc9f8b56e36d43e1d48c1e1",
+                "actual.json": "9597a57d5b12a31e6c42ee382a778d7bd63099f67f6166c35bb07d19b0e53147",
+                "state.jsonl.gz": "41b8531b8c5af66dfcfba7502754e02910ff52dc1661580849583f764ebcc816",
+                "rng.jsonl": "29d694df3fb0d1aa2ddcfb7f7e32b8b23c3e8ad629ba53cf1ea269bdf90c3095"
+            },
+            "owners": {
+                "frames": {
+                    "frames_compared": 182,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 182
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 186
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 1331
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            }
+        },
+        "linux": {
+            "source": "d93dbe6e701b1131c3a46bfc181345f8a9380a5f",
+            "binary": "2ab9c897449e8ca63593aecf7d9bf17838a85928f45048e32f8b0b8afaadfa72",
+            "results": {
+                "receipt.json": "ad1fc9631b8686780fb1a5dcf3d9c764553f9a9c6414012a7f0dde1c077533f0",
+                "comparison.json": "6a8abb3667ada970d71c20efe20ef37a5dff6ee085869f4182a3163f84ad52eb",
+                "actual.json": "9597a57d5b12a31e6c42ee382a778d7bd63099f67f6166c35bb07d19b0e53147",
+                "state.jsonl.gz": "c831a15db3a56c68391fa8bb887f822c6fa86d0af2772843c404d7a4fe230b25",
+                "rng.jsonl": "f71c5c4051bff03d34c22cd4d44dd8df69b5217e438e2e7e77ef5dd1ca1e69bc"
+            },
+            "owners": {
+                "frames": {
+                    "frames_compared": 182,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 182
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 186
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 1331
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            }
+        }
+    },
+    "preserved_failed_attempts": [
+        {
+            "attempt": "01",
+            "outcome": "timeout",
+            "step": 9,
+            "requested_frames": 180,
+            "observed_frames": 93,
+            "timeout_ms": 12000,
+            "log": "971456e304448477e272cb1900d7df0301309c898f8037a71c407789d3cc5b9b",
+            "plan": "2861c33409abb535ee1eb72748c3fafa4a240acb460a297e57b8811e7599e5a7",
+            "partial_files": [
+                {
+                    "file": "live-14648.jsonl.gz",
+                    "remote": "files/d2x-redux/xl_capture_traces/live-14648.jsonl.gz",
+                    "bytes": 10385828,
+                    "sha256": "22a3b5c7c6c2948c05a684085ecf2fc83de010059c731f952b5455098e66236b"
+                }
+            ]
+        },
+        {
+            "attempt": "02",
+            "outcome": "timeout",
+            "step": 12,
+            "requested_frames": 180,
+            "observed_frames": 118,
+            "timeout_ms": 14000,
+            "log": "2d38b43c382e252fbad944025a817cd7a8e7b8349bad2246ee740f7cd5caae73",
+            "plan": "824d2c214852ce7e7b3205b0bdc6db363b8b6b2b36a8b074905495fc05da9b90",
+            "partial_files": [
+                {
+                    "file": "live-14089.jsonl.gz",
+                    "remote": "files/d2x-redux/xl_capture_traces/live-14089.jsonl.gz",
+                    "bytes": 11978616,
+                    "sha256": "a4581bda6757f529a98b169443dbd2fab7bbb29a5a3b78b150210b33aaeba1da"
+                }
+            ]
+        }
+    ],
+    "historical_android_startup_fx": "The separate startup comparison has 1,500 additional Android starfield FX draws. The living checkpoint recording has zero FX draws."
+}
