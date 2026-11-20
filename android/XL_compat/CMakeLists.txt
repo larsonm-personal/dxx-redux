@@ -969,6 +969,42 @@ if(BUILD_TESTING)
         set_tests_properties(xl_sphere_earned_cloak PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE
                                                                FIXTURES_REQUIRED sphere_storage)
         add_test(
+            NAME xl_sphere_carrier_supply
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-shaft -DSTAGE=carrier_supply
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-carrier-supply -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+        set_tests_properties(
+            xl_sphere_carrier_supply
+            PROPERTIES TIMEOUT
+                       1200
+                       RUN_SERIAL
+                       TRUE
+                       FIXTURES_REQUIRED
+                       sphere_storage_entrance
+                       FIXTURES_SETUP
+                       sphere_carrier_supply)
+        add_test(
+            NAME xl_sphere_earned_gold_key
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-carrier-supply -DSTAGE=carrier_key
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-carrier-key -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+        set_tests_properties(
+            xl_sphere_earned_gold_key
+            PROPERTIES TIMEOUT
+                       1200
+                       RUN_SERIAL
+                       TRUE
+                       FIXTURES_REQUIRED
+                       sphere_carrier_supply
+                       FIXTURES_SETUP
+                       sphere_gold_key)
+        add_test(
             NAME xl_sphere_level_three_flicker
             COMMAND
                 ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}

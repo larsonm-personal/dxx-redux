@@ -11,9 +11,12 @@ file(READ "${CMAKE_CURRENT_LIST_DIR}/sphere_red_key.json" base)
 if(STAGE STREQUAL "shaft")
     set(initial 1)
     set(entry_receipt flight-result.json)
-elseif(STAGE STREQUAL "storage")
+elseif(STAGE STREQUAL "storage" OR STAGE STREQUAL "carrier_supply")
     set(initial 2)
     set(entry_receipt shaft-3-result.json)
+elseif(STAGE STREQUAL "carrier_key")
+    set(initial 2)
+    set(entry_receipt carrier_supply-17-result.json)
 elseif(STAGE STREQUAL "cloak")
     set(initial 2)
     set(entry_receipt storage-1-result.json)
@@ -38,30 +41,53 @@ math(EXPR last "${phases} - 1")
 foreach(i RANGE 0 ${last} 1)
     string(JSON phase GET "${route}" ${i})
     set(steps)
-    string(JSON portals LENGTH "${phase}" portals)
-    math(EXPR final_portal "${portals} - 1")
-    foreach(j RANGE 0 ${final_portal} 1)
-        string(
-            JSON
-            room
-            GET
-            "${phase}"
-            portals
-            ${j}
-            0)
-        string(
-            JSON
-            side
-            GET
-            "${phase}"
-            portals
-            ${j}
-            1)
-        list(
-            APPEND
-            steps
-            "{\"action\":\"fly_through_side\",\"segment\":${room},\"side\":${side},\"max_frames\":800,\"fire_primary\":true,\"engage_robots\":false}"
+    string(
+        JSON
+        controls
+        ERROR_VARIABLE
+        legacy_phase
+        GET
+        "${phase}"
+        inputs)
+    if(legacy_phase)
+        string(JSON controls GET "${phase}" portals)
+    endif()
+    string(
+        JSON
+        flight
+        ERROR_VARIABLE
+        default_flight
+        GET
+        "${phase}"
+        flight)
+    if(default_flight)
+        set(flight
+            [=[{"action":"fly_through_side","max_frames":800,"fire_primary":true,"engage_robots":false}]=]
         )
+    endif()
+    string(JSON count LENGTH "${controls}")
+    math(EXPR last_control "${count} - 1")
+    foreach(j RANGE 0 ${last_control} 1)
+        string(JSON input GET "${controls}" ${j})
+        string(JSON type TYPE "${input}")
+        if(type STREQUAL "ARRAY")
+            string(JSON room GET "${input}" 0)
+            string(JSON side GET "${input}" 1)
+            string(JSON step SET "${flight}" segment ${room})
+            string(JSON step SET "${step}" side ${side})
+            string(JSON arity LENGTH "${input}")
+            if(arity EQUAL 3)
+                string(JSON fire GET "${input}" 2)
+                if(fire)
+                    string(JSON step SET "${step}" fire_primary true)
+                else()
+                    string(JSON step SET "${step}" fire_primary false)
+                endif()
+            endif()
+        else()
+            set(step "${input}")
+        endif()
+        list(APPEND steps "${step}")
     endforeach()
     set(transitions 0)
     string(

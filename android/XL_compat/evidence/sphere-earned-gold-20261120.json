@@ -1,0 +1,366 @@
+{
+    "private_root": "temp/xl-sphere-campaign-20261119",
+    "fixture_owners": {
+        "Windows": {
+            "result_path": "continuation-gold-contracts/sphere-carrier-key/carrier_key-15-result.json",
+            "result_sha256": "fb3cb812fc63f2707706d1fa3ec2ee254c81568ce27a48e9f3219f559243bce3",
+            "state_sha256": "94eb128437c41b917893668847687adeb9213dffd89231b758abf770e09a1fdd",
+            "trace_sha256": "deae38944e8370c5c87ab452b83d82c20b0bedf85df8deeeec242a540b9037b0",
+            "binary": "23125081f33a81b399ced45c61856e366a4b02e6a6365fa152131863e7279d41",
+            "plan": "4817bfb557ea74d183c406104791fd8ba03ea5b66a8c8448e482b5482e3ad3ad",
+            "save": "08f0a85ab5a61f3992bcd88cde18d27d03fa3747f6f1d7361f374bc63f882a67",
+            "segment": 1245,
+            "shields": 53.03251647949219,
+            "energy": 52.9752197265625,
+            "score": 24200
+        },
+        "Linux": {
+            "result_path": "continuation-linux-key-fixture/carrier_key-15-result.json",
+            "result_sha256": "376a89fbdc6be9d281f13cc4b3de8d51281e2837fc1e2b7b33e03d11621e5e76",
+            "state_sha256": "7aaa4cac9441ced671ddad8f71c805277b75bc334b44999d9cda267671dbe6a5",
+            "trace_sha256": "5c2a7133f5f8ed8e95d8eb09f0d0cf8270abe84ed0b3c0eaee3ba2cfc928d5f3",
+            "binary": "a3fed13f56f8dfdfd430b58447702876987851347160e71f3e588cd82bbf89ef",
+            "plan": "7e1d6a9db8babdfde259b2b3a9bb9b3eacf8e8c16f4da6ee5aeb25ed30278a4d",
+            "save": "e63b62aaa27dda6fa8ea70529c073151feda8699f32aa0b7bdb3593d71be5916",
+            "segment": 1245,
+            "shields": 53.03251647949219,
+            "energy": 52.9752197265625,
+            "score": 24200
+        }
+    },
+    "windows_ctest_seconds": 1630.6,
+    "windows_ctest_log": "d01672fabe3b856d799e9f4fee6cea306c58a028bdbd08bada0d13383d9b6652",
+    "mission": {
+        "filename": "sphere",
+        "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+        "hog_sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253"
+    },
+    "android_drop": {
+        "original_apk": "93d3d2afdf1b5a4450cb24bd742978b18712b6c449a8412d893dc0327c319bc5",
+        "apk": "9f978db9543e5da1088a13d546309ed123c8468eeec78c4037504d3028cb1437",
+        "export": "a69a4c5eacb59ff1316d928442d5badf8e526825039728068f571438edeac23f",
+        "written": "2b36f153e553f2e398342179523329cd7b858fe080d2de78e911662ef74516ee",
+        "assets": [
+            {
+                "path": "files/imported/sets/default/missions/sphere.hog",
+                "sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/missions/sphere.mn2",
+                "sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x.hog",
+                "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x-xl.hog",
+                "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                "added": true
+            }
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "in_game": true,
+            "cheats_enabled": false,
+            "player.lives": 3,
+            "player.score": 24950,
+            "player.has_gold_key": false,
+            "position.segment": 1492
+        },
+        "logs": {
+            "write": "20d21b224c89b8a557ff5f47461e5502a9c0c783e34de34648f699ee9f4347e1",
+            "cold": "f87024a96412676c68738dfe4c368deed7eeb1e92ac13cd1e42e242ac3776f92"
+        }
+    },
+    "android_gold": {
+        "original_apk": "93d3d2afdf1b5a4450cb24bd742978b18712b6c449a8412d893dc0327c319bc5",
+        "apk": "9f978db9543e5da1088a13d546309ed123c8468eeec78c4037504d3028cb1437",
+        "export": "07f903e689d471c90834e7489d2885864abc9eb40a0c5a0ef5047638e381d1c7",
+        "written": "99e40e99c5e634ba511b791a411295c07019b7739ad1e4be3b5a65d6e422f665",
+        "assets": [
+            {
+                "path": "files/imported/sets/default/missions/sphere.hog",
+                "sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/missions/sphere.mn2",
+                "sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x.hog",
+                "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x-xl.hog",
+                "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                "added": true
+            }
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "in_game": true,
+            "cheats_enabled": false,
+            "player.lives": 3,
+            "player.score": 24200,
+            "player.has_gold_key": true,
+            "position.segment": 1245
+        },
+        "logs": {
+            "write": "2d234ace044753d531c889f503fc9773cbd3dbc4583c096d76b676218d593e0c",
+            "cold": "880c8f581f2a84310f871ea350c043ee4acfd9c643199c944ebf5ffd00f98116"
+        }
+    },
+    "canonical_gold_door_to_gauss": [
+        {
+            "case": "continuation-stores-to-gold-collect-04",
+            "parent": "b3f2dc1c7b6d7a721ea1b3e74803df7f1bd2874928eaf6ce77e0ba23892d15fc",
+            "save": "13616dcb90feddbaa2a2760e337fae83576083962baf0f99733133d411b9b7ce",
+            "plan": "c8021527726d99c34dd6db10ef1f326a49f512f979d5d2978edc706c218fa6e3",
+            "segment": 1245,
+            "shields": 53.03251647949219,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-gold-door-00",
+            "parent": "13616dcb90feddbaa2a2760e337fae83576083962baf0f99733133d411b9b7ce",
+            "save": "73666ad1247f6074a1fde31e2ae05cd04f6714f2c7a798b4f01e66914a88c001",
+            "plan": "dd7f6caa3cc96a3bc7e621353b4e62fd88c632134d3430d8fa7d78b28b266a81",
+            "segment": 961,
+            "shields": 49.906646728515625,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-gold-door-01",
+            "parent": "73666ad1247f6074a1fde31e2ae05cd04f6714f2c7a798b4f01e66914a88c001",
+            "save": "f6956c822d13fb38243196fb4e6d221b7d6559a3f2b1ca3134bc2bbe98b474c0",
+            "plan": "8afbaf1c819fe6d8eed09a2d72cfdfe9b578ff17a2c1046469dae00ee942edec",
+            "segment": 1118,
+            "shields": 45.69001770019531,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-gold-door-02",
+            "parent": "f6956c822d13fb38243196fb4e6d221b7d6559a3f2b1ca3134bc2bbe98b474c0",
+            "save": "13ec241c8493a299a20b90c6eae4e13a6e4d046e91fe9a93ecefa6bfc8ff6a9e",
+            "plan": "eb111fbbabd3181595ebb8bc5d8ea2d41bd43108cae59b17ac056ba77c747715",
+            "segment": 1181,
+            "shields": 45.69001770019531,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-gold-door-03",
+            "parent": "13ec241c8493a299a20b90c6eae4e13a6e4d046e91fe9a93ecefa6bfc8ff6a9e",
+            "save": "e9b8ee488328f0243ac8f82bc89f010de7a4de13a173f9970831142303ac216c",
+            "plan": "a4cab663eec3ea945901e13d21a55b7cd8d72401d6728965c071d2c44083006d",
+            "segment": 1135,
+            "shields": 42.69001770019531,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-gold-door-04",
+            "parent": "e9b8ee488328f0243ac8f82bc89f010de7a4de13a173f9970831142303ac216c",
+            "save": "5cdb29043f95fd90ec19feccf2c6839dbdfc83c72f6a9dc83d5c0dc424c6b3d2",
+            "plan": "edcbfeef9507866762159f0fe0d2cbc88111f70d3cabf07e370c44bf2ab4dd8d",
+            "segment": 3663,
+            "shields": 42.69001770019531,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-gold-door-05",
+            "parent": "5cdb29043f95fd90ec19feccf2c6839dbdfc83c72f6a9dc83d5c0dc424c6b3d2",
+            "save": "093eaaeed3a81bcfd0ccc93c32db7beadc2653086fc16af1999d7d10e2c7031a",
+            "plan": "734b9e1b31fcbdc7718497f3c03b978ec06a9986a0191780fe5f38ed70b5aa1e",
+            "segment": 3659,
+            "shields": 38.72010803222656,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-gold-door-06",
+            "parent": "093eaaeed3a81bcfd0ccc93c32db7beadc2653086fc16af1999d7d10e2c7031a",
+            "save": "ec990851ecfece2986b5ec0e0ecba4d082f53661568cc10cc128292ff32a02d2",
+            "plan": "a20afa49dd605267e77ecd8c9521cb03d16d3b23642d70b2f84fbf2b3e24c895",
+            "segment": 2025,
+            "shields": 38.06663513183594,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-door-flank-00",
+            "parent": "ec990851ecfece2986b5ec0e0ecba4d082f53661568cc10cc128292ff32a02d2",
+            "save": "ff61dc07c3f1d4a3fe6484dbd3ccfda2d9db5240b3092568280e9bca4a811613",
+            "plan": "c5601d90e37fae69ae24f1e300aabbf3cb114f7e78489989647320fa1692f71a",
+            "segment": 2022,
+            "shields": 38.06663513183594,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-door-flank-01",
+            "parent": "ff61dc07c3f1d4a3fe6484dbd3ccfda2d9db5240b3092568280e9bca4a811613",
+            "save": "a205bc6d6dd1691e4f5e3fdfc941718dabe65a2ffd3be4d22254476dc8e249f7",
+            "plan": "be9307aa1ea5db22d4d61fc04238b6f3f394a9bdaa4ea4804786faa12a4eeb6c",
+            "segment": 2042,
+            "shields": 38.06663513183594,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-door-flank-02",
+            "parent": "a205bc6d6dd1691e4f5e3fdfc941718dabe65a2ffd3be4d22254476dc8e249f7",
+            "save": "b6e9e506732a0e546f79a3ea814f97d5d491d9c1d32fb396de49529c0314cfbd",
+            "plan": "43967d822c3376f06b228f9854cf9dab7321f813aaf21bf11427ab9aa397e0f4",
+            "segment": 2039,
+            "shields": 38.06663513183594,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-door-flank-03",
+            "parent": "b6e9e506732a0e546f79a3ea814f97d5d491d9c1d32fb396de49529c0314cfbd",
+            "save": "2f5e029306c95fdfb72e30a88bd475a6c19b086192d8ca283c402a3d017d5a8a",
+            "plan": "0380383bb8ae444c31d13ef4e96a7f2022c9bc03b86d17b0e548a39d7eec8d78",
+            "segment": 2207,
+            "shields": 38.06663513183594,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-earnt-door-cross-00",
+            "parent": "2f5e029306c95fdfb72e30a88bd475a6c19b086192d8ca283c402a3d017d5a8a",
+            "save": "8063b01454f075886d4c4f5e883adae3a8bfc6fb5d3a1b742ee7f2442ec73e56",
+            "plan": "3405cceec03c481f78cd974bd16edf78acf1c0c342d1000e3646c07958766751",
+            "segment": 2265,
+            "shields": 38.06663513183594,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-red-approach-00",
+            "parent": "8063b01454f075886d4c4f5e883adae3a8bfc6fb5d3a1b742ee7f2442ec73e56",
+            "save": "6f2dd65af2750d7630b330b923221a4d6ef24d211363887ea4a6fd6343a77f58",
+            "plan": "1756ea6db41e09adca9aed19ca372f4a88f053141af1ce292e05c05a7e96ba30",
+            "segment": 3377,
+            "shields": 38.06663513183594,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-red-flank-00",
+            "parent": "6f2dd65af2750d7630b330b923221a4d6ef24d211363887ea4a6fd6343a77f58",
+            "save": "eac13e29be9b8916f8b226d030799f67c08fadc20ab7efe66ed2b58ee46e1265",
+            "plan": "71b723b6bdf4c96dc9a00b38b999b30e4ee8df3870d811c81579cc38aaed4a19",
+            "segment": 3381,
+            "shields": 38.06663513183594,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-red-flank-01",
+            "parent": "eac13e29be9b8916f8b226d030799f67c08fadc20ab7efe66ed2b58ee46e1265",
+            "save": "87c846f49d23273ea17bdf2409e7de7e699e1d584dc3eaf41b7974e4271da6e1",
+            "plan": "f844711d0631d3b0f243def90d1e59d8298618ced8ddf21d17a467b11708a740",
+            "segment": 2606,
+            "shields": 38.06663513183594,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-red-flank-02",
+            "parent": "87c846f49d23273ea17bdf2409e7de7e699e1d584dc3eaf41b7974e4271da6e1",
+            "save": "72eeb592fc855c96fff75e7415e91ffbb9ece94fb3c4176cfc6febfc7abbe3ec",
+            "plan": "920cc34af5870d2781d2383036051a90e3cc76a8bed6f04a3bef50595dc8eddc",
+            "segment": 2590,
+            "shields": 38.06663513183594,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-red-flank-03",
+            "parent": "72eeb592fc855c96fff75e7415e91ffbb9ece94fb3c4176cfc6febfc7abbe3ec",
+            "save": "00ce18141a249df04808c7458285c5de4e8937c96e4f87fcf533ef4a375467e0",
+            "plan": "ffc4e9ef68ff279aa0f1466436381aa972f0120af5c86ac254302ec5b1ff8d64",
+            "segment": 2275,
+            "shields": 38.06663513183594,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-red-gauss-00",
+            "parent": "00ce18141a249df04808c7458285c5de4e8937c96e4f87fcf533ef4a375467e0",
+            "save": "c4cb50e056d0360ae332fe5c61a768077cfc0a13d4e705950fc797dc004b3152",
+            "plan": "f4b7fb1c474afdd31f62024b2a34064cc9107f0db515d7d03f5d5d6f22a63c4f",
+            "segment": 2598,
+            "shields": 33.06663513183594,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-red-gauss-01",
+            "parent": "c4cb50e056d0360ae332fe5c61a768077cfc0a13d4e705950fc797dc004b3152",
+            "save": "56f15e3b8ef53fe7637d748fb7086c480343e7f43ffa66330f9344da3da2300c",
+            "plan": "214cb8eb7733d3d536b09690eee63bb7c9df308b18ef1ddddd84f215fcca3f21",
+            "segment": 2605,
+            "shields": 25.760299682617188,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-red-gauss-02",
+            "parent": "56f15e3b8ef53fe7637d748fb7086c480343e7f43ffa66330f9344da3da2300c",
+            "save": "c8472474aab48adb30edaed98bddb809af93bac67d0fddb95b2d0f147b8e85d2",
+            "plan": "1261c235662b5c16228e64b49c0abc945107e2152a0cf37e5c017012ea9167e8",
+            "segment": 2741,
+            "shields": 25.760299682617188,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-red-gauss-03",
+            "parent": "c8472474aab48adb30edaed98bddb809af93bac67d0fddb95b2d0f147b8e85d2",
+            "save": "22ceb70c2095b9da530bae2dcc4906a624771da615c3a94e58ea99c67b139059",
+            "plan": "ff76381c30af9b54ac46c65e1fe1abfc6442aca3dd93d045114df31c04921581",
+            "segment": 2836,
+            "shields": 25.274978637695312,
+            "gauss": false,
+            "vulcan_ammo": 0
+        },
+        {
+            "case": "continuation-red-gauss-04",
+            "parent": "22ceb70c2095b9da530bae2dcc4906a624771da615c3a94e58ea99c67b139059",
+            "save": "46cb3da90516a1b526e6736e0acf29cc1226f3aba4568521ea8dfc7698e38c53",
+            "plan": "148879ea7878a10546bf708bfcef976454ee0bdf4e39d7e7e35778e4b94c9cd3",
+            "segment": 2842,
+            "shields": 24.789657592773438,
+            "gauss": true,
+            "vulcan_ammo": 294
+        },
+        {
+            "case": "continuation-red-stores-2843-00",
+            "parent": "46cb3da90516a1b526e6736e0acf29cc1226f3aba4568521ea8dfc7698e38c53",
+            "save": "4336b83e343fc73a60dcc5b16cb47f60416dc90767c6d21017ef884e9ba99e78",
+            "plan": "fdf43c56dac594bc7619400b4173b3681bbb0e12183c02b30f2692ff18bc09da",
+            "segment": 2843,
+            "shields": 24.789657592773438,
+            "gauss": true,
+            "vulcan_ammo": 392
+        }
+    ],
+    "reference": {
+        "continuation-boss-group-owner": "1e0424b45d1a7d1a4f28c1cfcfad713e4bc301ef448982e4b5481c906aac23ea",
+        "continuation-boss-route-owner": "bb84de2cc62e457b5c68df25e199502fef1e1a1759b9788188299899c43a55c5"
+    }
+}
