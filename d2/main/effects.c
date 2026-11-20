@@ -56,7 +56,7 @@ void reset_special_effects()
 	int i;
 
 	for (i=0;i<Num_effects;i++) {
-		Effects[i].segnum = -1;					//clear any active one-shots
+		Effects[i].segnum = Effects[i].sidenum = -1;		//clear any active one-shots
 		Effects[i].flags &= ~(EF_STOPPED|EF_ONE_SHOT);		//restart any stopped effects
 
 		//reset bitmap, which could have been changed by a crit_clip
@@ -98,7 +98,7 @@ void do_special_effects()
 					Assert(ec->dest_bm_num!=0 && Segments[ec->segnum].sides[ec->sidenum].tmap_num2!=0);
 					Segments[ec->segnum].sides[ec->sidenum].tmap_num2 = ec->dest_bm_num | (Segments[ec->segnum].sides[ec->sidenum].tmap_num2&0xc000);		//replace with destoyed
 					ec->flags &= ~EF_ONE_SHOT;
-					ec->segnum = -1;		//done with this
+					ec->segnum = ec->sidenum = -1;		//done with this
 				}
 
 				ec->frame_count = 0;

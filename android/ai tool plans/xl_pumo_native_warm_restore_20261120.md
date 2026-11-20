@@ -1,0 +1,9 @@
+# Pumo levels 8 and 14 after native restore
+
+The second run of the same 120 captured frames now ends with identical JSON values for the detailed objects, world, native XL state, SIM seed and SIM call count on both Windows levels. The comparison uses the original complete snapshots. Before the change, 149 and 57 polygon objects respectively changed their unbound alternate-texture value from zero to minus one. Inactive effect sides changed on 46 and 39 effects, and the unset guidebot cache deadline changed in both copies of the route snapshot.
+
+The D2 restore owner now clears session-specific alternate texture bindings only on decoded polygon, morph and polygon-backed ghost objects, preserving the native zero sentinel. The effect owner clears the side together with its segment on reset and retirement. The guidebot owner restores an expired host deadline as zero and retains the standard relative-clock encoding for a future deadline. These changes require no new save format.
+
+The independent ordinary Windows process matched the recorded terminal result on both levels. SIM and effects RNG streams matched on both. The XL presentation stream on level 8 had 781,824 events during capture and 289,862 during rendered playback. Level 14 matched all three streams. The independent Linux level-eight capture also matched the full warm state. The Windows and Linux native suites each passed all three selected tests, including upstream compatibility, the classic trigger demo and mixed-rate sound. The ordinary frozen eight still have four load failures. The authenticated eight pass on Windows and Linux. The historical Android startup FX difference, broader G6 coverage and unassisted campaign play remain open.
+
+[Source, inputs and comparison receipts](../XL_compat/evidence/pumo-native-warm-restore-20261120.json)

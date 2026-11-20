@@ -1,0 +1,265 @@
+{
+    "source": "d93dbe6e701b1131c3a46bfc181345f8a9380a5f",
+    "predecessor": "b96bf50c32b540c26a01affa76fbf4ac1d75c5aa",
+    "baseline_runtime_source": "f508ae9108b5afb88d4fffa34c768ea8cb444cc5",
+    "windows": {
+        "8": {
+            "baseline": {
+                "capture_executable": "ea8783e9ecb9d87295dcdb2545a78ac9e4f7365cef75746cc68d8f30cb060859",
+                "cold": 0,
+                "recording": "91510ed024975510628075043e4163be98a76698924fb7dab5a4808c73081ff4",
+                "rendered_executable": "6a55ec35e092a3a7786008518cf5ad01ebdd11169239bb76a60e397b4ba6a0fb",
+                "warm": 0
+            },
+            "baseline_differences": {
+                ".native_before.route.Escort_route_cache_poll_time": {
+                    "count": 1,
+                    "first": [
+                        "0",
+                        "1699021"
+                    ]
+                },
+                ".objects[].polyobj.alt_textures": {
+                    "count": 149,
+                    "first": [
+                        "0",
+                        "-1"
+                    ]
+                },
+                ".world_before.effects[].sidenum": {
+                    "count": 46,
+                    "first": [
+                        "0",
+                        "-1"
+                    ]
+                },
+                ".world_before.xl_native.route.Escort_route_cache_poll_time": {
+                    "count": 1,
+                    "first": [
+                        "0",
+                        "1699021"
+                    ]
+                }
+            },
+            "baseline_future": "29e0dea845b72b1ab2f82c24d07ec42a0a64e4ff4194c894473fa2bbeaf9bb48",
+            "current": {
+                "capture_executable": "b8730b8a9c00f167429d653782c01ca79100c56ac5baf9e46e636834f86ecbbd",
+                "cold": 0,
+                "recording": "216969e2a6d216ff41108aa9c28b273dbdc6d40c3a78c992c0dd8df98dda45f8",
+                "rendered_executable": "e8aa8eaed3ee217d0258de7b3dbd4a426e6ea6a49a2351e22eb72ce0a0ec64a3",
+                "warm": 0
+            },
+            "current_differences": {},
+            "current_future": "5a7a17bc16e1de37f2c298cb94737c5c5ea5c49d8bb259130f10a713b5b35e03",
+            "current_cold": {
+                "recording": "216969e2a6d216ff41108aa9c28b273dbdc6d40c3a78c992c0dd8df98dda45f8",
+                "cold_terminal": "dee1e4ce711574d69d7f67307b1c388bddd43e90da1aadce7a864cf3dd68312a",
+                "terminal_equal": true,
+                "frames": 120,
+                "capture_rng": [
+                    {
+                        "stream": 0,
+                        "count": 0,
+                        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    },
+                    {
+                        "stream": 1,
+                        "count": 120,
+                        "sha256": "955354ca49e2a8642d774405ebd0e8364793799cf92854340659fe1cf42b70a4"
+                    },
+                    {
+                        "stream": 2,
+                        "count": 781824,
+                        "sha256": "a71b09704d714f5a007608a312591abbbc0bf0d820409c37b3b4e36e6b2d04fe"
+                    }
+                ],
+                "cold_rng": [
+                    {
+                        "stream": 0,
+                        "count": 0,
+                        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    },
+                    {
+                        "stream": 1,
+                        "count": 120,
+                        "sha256": "955354ca49e2a8642d774405ebd0e8364793799cf92854340659fe1cf42b70a4"
+                    },
+                    {
+                        "stream": 2,
+                        "count": 289862,
+                        "sha256": "9eb89ce8b49d0bb6bc1a673495c1158e1dff38f60846895efab6895296f503cb"
+                    }
+                ],
+                "exact_rng_by_stream": [
+                    true,
+                    true,
+                    false
+                ]
+            },
+            "raw_equal": true
+        },
+        "14": {
+            "baseline": {
+                "capture_executable": "ea8783e9ecb9d87295dcdb2545a78ac9e4f7365cef75746cc68d8f30cb060859",
+                "cold": 0,
+                "recording": "80be2ade877e18617c9a84b94302b449370fc51e29a196649a912fab28707dfe",
+                "rendered_executable": "6a55ec35e092a3a7786008518cf5ad01ebdd11169239bb76a60e397b4ba6a0fb",
+                "warm": 0
+            },
+            "baseline_differences": {
+                ".native_before.route.Escort_route_cache_poll_time": {
+                    "count": 1,
+                    "first": [
+                        "0",
+                        "3032089"
+                    ]
+                },
+                ".objects[].polyobj.alt_textures": {
+                    "count": 57,
+                    "first": [
+                        "0",
+                        "-1"
+                    ]
+                },
+                ".world_before.effects[].sidenum": {
+                    "count": 39,
+                    "first": [
+                        "0",
+                        "-1"
+                    ]
+                },
+                ".world_before.xl_native.route.Escort_route_cache_poll_time": {
+                    "count": 1,
+                    "first": [
+                        "0",
+                        "3032089"
+                    ]
+                }
+            },
+            "baseline_future": "5248f6f4e955c682f0604ac819abc3ab5ca16fa4661a2c6b3651c02118a5433b",
+            "current": {
+                "capture_executable": "b8730b8a9c00f167429d653782c01ca79100c56ac5baf9e46e636834f86ecbbd",
+                "cold": 0,
+                "recording": "5b58ce31fe21888a413ceacfb752e417e8c65b6ae8fd7a8a341300bd9d0c169e",
+                "rendered_executable": "e8aa8eaed3ee217d0258de7b3dbd4a426e6ea6a49a2351e22eb72ce0a0ec64a3",
+                "warm": 0
+            },
+            "current_differences": {},
+            "current_future": "8a9c8dec60f00f0d155b97270277784ce9e81faae4e97062fc98f9d63e62dbe8",
+            "current_cold": {
+                "recording": "5b58ce31fe21888a413ceacfb752e417e8c65b6ae8fd7a8a341300bd9d0c169e",
+                "cold_terminal": "d48f7cd010995a8f6025bc0b3a4d84f4804d02fd0a24e299c06174dddfe9870a",
+                "terminal_equal": true,
+                "frames": 120,
+                "capture_rng": [
+                    {
+                        "stream": 0,
+                        "count": 1746,
+                        "sha256": "e8b2e53869315f215a80d6ac1176fd4b3af3c83d8fae1b0f682863ed8b7e885a"
+                    },
+                    {
+                        "stream": 1,
+                        "count": 123,
+                        "sha256": "415e04e37dedab7a3e23ca0cc872ae7530abe3704bca55424e53904903fb3031"
+                    },
+                    {
+                        "stream": 2,
+                        "count": 0,
+                        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    }
+                ],
+                "cold_rng": [
+                    {
+                        "stream": 0,
+                        "count": 1746,
+                        "sha256": "e8b2e53869315f215a80d6ac1176fd4b3af3c83d8fae1b0f682863ed8b7e885a"
+                    },
+                    {
+                        "stream": 1,
+                        "count": 123,
+                        "sha256": "415e04e37dedab7a3e23ca0cc872ae7530abe3704bca55424e53904903fb3031"
+                    },
+                    {
+                        "stream": 2,
+                        "count": 0,
+                        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    }
+                ],
+                "exact_rng_by_stream": [
+                    true,
+                    true,
+                    true
+                ]
+            },
+            "raw_equal": true
+        }
+    },
+    "linux": {
+        "8": {
+            "raw_equal": true,
+            "warm_future": "8a0dad549836b97705218540e35c4dbc26a0adc4b262281330e54cd921101956",
+            "level": 8,
+            "capture": 0,
+            "cold": 0,
+            "source": "d93dbe6e701b1131c3a46bfc181345f8a9380a5f",
+            "debug": "91c6043ad50451a6e728a1bb1304dc5f139a7c507c93521119dc5f823974efc3",
+            "ordinary": "2ab9c897449e8ca63593aecf7d9bf17838a85928f45048e32f8b0b8afaadfa72",
+            "recording": "c3819fd990e436368e849d044c665ee237b01ef6139e089de7b6afbc3071478c",
+            "future": "8a0dad549836b97705218540e35c4dbc26a0adc4b262281330e54cd921101956"
+        }
+    },
+    "cohorts": {
+        "frozen": {
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "target_sha": "d93dbe6e701b1131c3a46bfc181345f8a9380a5f",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "load_failed": 4,
+                    "loaded_ticked": 4
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 4,
+                "readiness_percent": 50.0
+            },
+            "selection_seed": "d2x-readiness-cohort-v1",
+            "receipt": "d5aa249a3d482341c64522d46faf48a34b548c6533abde2a04fa0a1c07799bb8"
+        },
+        "auth": {
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "target_sha": "d93dbe6e701b1131c3a46bfc181345f8a9380a5f",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 8
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 8,
+                "readiness_percent": 100.0
+            },
+            "selection_seed": "d2x-readiness-cohort-v1",
+            "receipt": "8dbb60da08848b358563a704144c5f8c6a0b3357c8d4355559890cbc3a3ea773"
+        }
+    },
+    "windows_ordinary_route": "922979a6138435cd35935567cf1672c967b4a23528b2333ac94e9149963dca48",
+    "inputs": {
+        "count": 2669,
+        "manifest": "70d67999bb6caf0d417ee85b3749932c63063d44cdaa34f2c63584dc38445025",
+        "missions": {
+            "missions/pmines.hog": "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043",
+            "missions/pmines.mn2": "45b4138e0a0d49ab8ee09334b7cfa97c0ec75ac6c6b6406b21eba28ddaa19cfd"
+        }
+    },
+    "native_contracts": {
+        "linux": {
+            "passed": 3,
+            "receipt": "e63f84884d652b0f5dce3a71e466c7751d5f9891bc75f33aa56bf6bd0e3f580e"
+        },
+        "win": {
+            "passed": 3,
+            "receipt": "c5e30edeb9759a8ac070e46f4cf40dc621225c50f08bcb16065d9417a7f51131"
+        }
+    }
+}

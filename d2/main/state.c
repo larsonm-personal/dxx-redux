@@ -2024,7 +2024,6 @@ static void state_relink_objects_by_index(void)
 
 	for (i=0; i<=Highest_object_index; i++ ) {
 		obj = &Objects[i];
-		obj->rtype.pobj_info.alt_textures = -1;
 		segnum = obj->segnum;
 		obj->next = obj->prev = obj->segnum = -1;
 		if ( obj->type != OBJ_NONE )
@@ -2099,8 +2098,6 @@ static int state_restore_segment_object_links(void)
 		if (Objects[i].type != OBJ_NONE && !seen[i])
 			return 0;
 
-	for (i=0; i<=Highest_object_index; i++)
-		Objects[i].rtype.pobj_info.alt_textures = -1;
 	for (segnum=0; segnum <= Highest_segment_index; segnum++)
 		Segments[segnum].objects = segment_heads[segnum];
 
@@ -3710,6 +3707,12 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			PHYSFS_close(fp);
 			return 0;
 		}
+		/* Multiplayer texture bindings belong to the old session. Zero is a native unbound value. */
+		object *obj = &Objects[i];
+		if ((obj->render_type == RT_POLYOBJ || obj->render_type == RT_MORPH ||
+		     (obj->render_type == RT_NONE && obj->type == OBJ_GHOST)) &&
+		    obj->rtype.pobj_info.alt_textures != 0)
+			obj->rtype.pobj_info.alt_textures = -1;
 	}
 
 #ifdef __ANDROID__
