@@ -1005,6 +1005,24 @@ if(BUILD_TESTING)
                        FIXTURES_SETUP
                        sphere_gold_key)
         add_test(
+            NAME xl_sphere_gold_door_gauss
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-carrier-key -DSTAGE=gauss_supply
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-gauss-supply -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+        set_tests_properties(
+            xl_sphere_gold_door_gauss
+            PROPERTIES TIMEOUT
+                       1800
+                       RUN_SERIAL
+                       TRUE
+                       FIXTURES_REQUIRED
+                       sphere_gold_key
+                       FIXTURES_SETUP
+                       sphere_gauss_supply)
+        add_test(
             NAME xl_sphere_sparse_morph_restore
             COMMAND
                 ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
