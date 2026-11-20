@@ -8,14 +8,49 @@
 #include <filesystem>
 #include <iostream>
 #include <iterator>
+#include <map>
 #include <sstream>
 #include <stdexcept>
+
+// Summarize authored data without emitting per-vertex or per-object payloads
+static std::string mission_features(const xl_compat::Inventory &level)
+{
+	std::map<std::string, unsigned> counts;
+	auto count_type = [&](const std::string &group, int id) { ++counts[group + "/" + std::to_string(id)]; };
+	for (const auto &object : level.objects) count_type("object", object.type);
+	for (const auto &wall : level.walls) count_type("wall", wall.type);
+	for (const auto &trigger : level.triggers) count_type("trigger", trigger.type);
+	for (const auto &trigger : level.object_trigger_records) count_type("object_trigger", trigger.action.type);
+	for (const auto &segment : level.segments) {
+		count_type("segment_function", segment.function);
+		count_type("segment_properties", xl_compat::segment_property_bits(level.level_version, segment));
+	}
+	for (const auto &entry : level.unknown) ++counts["unknown/" + entry.feature];
+	for (const auto &entry : level.unsupported) ++counts["unsupported/" + entry.feature];
+	for (const auto &entry : level.observations) ++counts["observation/" + entry.feature];
+	if (level.level_version > 8)
+		for (const auto &entry : xl_compat::runtime_blockers(level)) ++counts["xl_layout_gate/" + entry.feature];
+	std::ostringstream out;
+	out << "{\"status\":\"decoded\",\"level_version\":" << level.level_version << ",\"game_version\":" << level.game_version
+	    << ",\"reactor_targets\":" << level.reactor_targets.size() << ",\"light_indices\":" << level.light_indices.size()
+	    << ",\"delta_lights\":" << level.delta_lights.size() << ",\"flicker_lights\":" << level.flicker_lights.size()
+	    << ",\"equipment\":" << level.equipment.size() << ",\"matcens\":" << level.matcens.size() << ",\"features\":{";
+	bool first = true;
+	for (const auto &entry : counts) {
+		if (!first) out << ',';
+		first = false;
+		out << xl_compat::json_string(entry.first) << ':' << entry.second;
+	}
+	out << "}}";
+	return out.str();
+}
 
 int main(int argc, char **argv)
 {
 	const bool archive_only = argc == 4 && std::string(argv[3]) == "--archive-only";
-	if (argc != 3 && !archive_only) {
-		std::cerr << "Usage: xl_inspect input.rl2|input.hog report.json [--archive-only]\nInspection only; does not authorize gameplay\n";
+	const bool features = argc == 4 && std::string(argv[3]) == "--mission-features";
+	if (argc != 3 && !archive_only && !features) {
+		std::cerr << "Usage: xl_inspect input.rl2|input.hog report.json [--archive-only|--mission-features]\nInspection only; does not authorize gameplay\n";
 		return 2;
 	}
 	try {
@@ -40,7 +75,7 @@ int main(int argc, char **argv)
 		if (size >= 3 && xl_compat::hog_signature(signature)) members = xl_compat::index_hog(static_cast<std::uint64_t>(size), read);
 		else {
 			if (size > 64 * 1024 * 1024) throw std::runtime_error("input exceeds 64 MiB inspection limit");
-			members.push_back({ "input.rl2", 0, static_cast<std::uint64_t>(size), false });
+			members.push_back({ features ? std::filesystem::path(argv[1]).filename().string() : "input.rl2", 0, static_cast<std::uint64_t>(size), false });
 		}
 		std::ostringstream report;
 		report << "{\n  \"schema\": 1,\n  \"status\": \"inspection_only\",\n  \"playable\": false,\n  \"members\": [";
@@ -62,6 +97,10 @@ int main(int argc, char **argv)
 				if (m.size > 64 * 1024 * 1024) throw std::runtime_error("level exceeds 64 MiB inspection limit");
 				xl_compat::Bytes bytes(static_cast<std::size_t>(m.size));
 				read(m.offset, bytes.data(), bytes.size());
+				if (features) {
+					report << mission_features(xl_compat::inspect_mission_level(bytes)) << '}';
+					continue;
+				}
 				const auto inventory = xl_compat::inspect_level(bytes);
 				const auto blockers = xl_compat::runtime_blockers(inventory);
 				std::ostringstream level_report;
@@ -81,7 +120,7 @@ int main(int argc, char **argv)
 			report << '}';
 		}
 		report << "\n  ]\n}\n";
-		if (!levels && !archive_only) throw std::runtime_error("no RL2 levels found");
+		if (!levels && !archive_only && !features) throw std::runtime_error("no RL2 levels found");
 		const auto result = report.str();
 		// Identical reports preserve bytes and modification time
 		std::ifstream previous(argv[2], std::ios::binary);
