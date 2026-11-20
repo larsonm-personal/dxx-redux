@@ -106,12 +106,38 @@ foreach(i RANGE 0 ${last} 1)
         set(transitions 1)
     endif()
     string(JSON expect GET "${phase}" expect)
+    if(STAGE STREQUAL "morph" AND i EQUAL 1)
+        # Compare the exact identities earned on this run, both at restore and after flight.
+        string(JSON saved_slots GET "${checkpoint}" state morph_slots)
+        string(
+            JSON
+            base
+            SET
+            "${base}"
+            checkpoint_expect
+            morph_slots
+            "${saved_slots}")
+        file(READ "${OUTPUT}/morph-0-state.json" warm)
+        string(JSON warm_slots GET "${warm}" morph_slots)
+        string(JSON expect SET "${expect}" morph_slots "${warm_slots}")
+    endif()
     list(
         APPEND
         steps
         "{\"action\":\"assert\",\"expect\":${expect}}"
         [=[{"action":"set_debug","field":"android_game_request","value":"quick_save","export_android":true}]=]
     )
+    if(STAGE STREQUAL "morph" AND i EQUAL 0)
+        string(
+            JSON
+            continuation
+            GET
+            "${route}"
+            1
+            inputs
+            0)
+        list(APPEND steps "${continuation}")
+    endif()
     list(LENGTH steps count)
     list(JOIN steps "," controls)
     string(JSON plan SET "${base}" steps "[${controls}]")

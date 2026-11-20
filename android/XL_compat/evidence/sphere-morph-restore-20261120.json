@@ -1,0 +1,734 @@
+{
+    "code_commit": "76c3543e27743bd0168f7cab7c8f477737e435c1",
+    "parent": "0b315b048163b3498c3eb07049166c194c01fc99",
+    "pull_request": 666,
+    "stack": 471,
+    "private_root": "temp/xl-sphere-campaign-20261119",
+    "reproductions": {
+        "reused_points": {
+            "comparison": {
+                "private_path": "continuation-gold-profile-verified/comparison.json",
+                "sha256": "ca5b381b7bcdcccbddc4a57a06535476195da15940efdfbf760b53307f7d07ec"
+            },
+            "world_field_paths": 296,
+            "first_path": "world_state:frame:$.state.morphs.0.points[14][0][0]",
+            "outcomes": {
+                "frames": "pass",
+                "objects": "pass",
+                "world": "fail",
+                "sim_rng": "pass",
+                "fx_rng": "pass",
+                "trailer": "pass"
+            }
+        },
+        "sparse_slots_windows": {
+            "comparison": {
+                "private_path": "continuation-morph-clean-01/comparison.json",
+                "sha256": "22bb73dccdd5b8aa7ec46499f30f311c7654341680d176f9aca6603d62b0565b"
+            },
+            "world_field_paths": 4,
+            "first_path": "world_boundary:restored:$.state.morphs.0",
+            "outcomes": {
+                "frames": "pass",
+                "objects": "pass",
+                "world": "fail",
+                "sim_rng": "pass",
+                "fx_rng": "pass",
+                "trailer": "pass"
+            }
+        },
+        "sparse_slots_linux": {
+            "comparison": {
+                "private_path": "continuation-morph-linux-replay-02/comparison.json",
+                "sha256": "a0afb68ef18ab87b6f8924e64e5078da5cf330eb41478f705c90aff570830756"
+            },
+            "world_field_paths": 4,
+            "first_path": "world_boundary:restored:$.state.morphs.0",
+            "outcomes": {
+                "frames": "pass",
+                "objects": "pass",
+                "world": "fail",
+                "sim_rng": "pass",
+                "fx_rng": "pass",
+                "trailer": "pass"
+            }
+        }
+    },
+    "natural_morph": {
+        "warm": {
+            "result": {
+                "private_path": "continuation-sparse-gold-owner/player-result.json",
+                "sha256": "05b9a9a7dfac8e37d6e665dbf4d89b1017ff2d108a728699014a2fec34fefc98"
+            },
+            "state": {
+                "private_path": "continuation-sparse-gold-owner/player-state.json",
+                "sha256": "1c9c758ca3c7c3d4c69fb62d4ea47b7d12c903a76fc2675f966e2c1377d2611a"
+            },
+            "trace": {
+                "private_path": "continuation-sparse-gold-owner/player-trace.jsonl",
+                "sha256": "93d7427f687b392b20d2b18ac2986255a09b8811cf5ce0e717cf37b3ada9af2b"
+            },
+            "native_save": "2c7fe30d8faffb1132a491c0dceecd393875147f864235d4b218736972ac3da7",
+            "slots": [
+                [
+                    1,
+                    560,
+                    3577
+                ]
+            ],
+            "score": 24200,
+            "segment": 1245
+        },
+        "cold": {
+            "result": {
+                "private_path": "continuation-sparse-gold-owner-cold/player-result.json",
+                "sha256": "adbc22d8560a79f2cefb7fb95f6476549e6d93df4705103dd9a37de874366dfc"
+            },
+            "state": {
+                "private_path": "continuation-sparse-gold-owner-cold/player-state.json",
+                "sha256": "e239a58c3d7bda7b4d919fffb4e88933ab037a71d18d703c5d62797432577ff2"
+            },
+            "trace": {
+                "private_path": "continuation-sparse-gold-owner-cold/player-trace.jsonl",
+                "sha256": "619696c3b776ab0038f0d72ecc2087379d2787da0250258897e5254dcd9c0f9e"
+            },
+            "native_save": "aa7853cdcd946c40c8a77279021e19c79f00a656fbc3b69a89b4d5d18cb13596",
+            "slots": [
+                [
+                    1,
+                    560,
+                    3577
+                ]
+            ],
+            "score": 24200,
+            "segment": 1245
+        },
+        "linux_registered": {
+            "result": {
+                "private_path": "continuation-linux-sparse-fixture/player-result.json",
+                "sha256": "25498053fe77d40bbe1c7f755f7e043b3513966323de0c39bf8f21efae807d5f"
+            },
+            "state": {
+                "private_path": "continuation-linux-sparse-fixture/player-state.json",
+                "sha256": "ca95d3cc119bf0e562e91bedfcf33f5b60d09aa225dbb4c69bf8f84944a33454"
+            },
+            "trace": {
+                "private_path": "continuation-linux-sparse-fixture/player-trace.jsonl",
+                "sha256": "d7531aea7d873b59b7c768ca38852ccb80ac6087f8ea3a43840dcf4f8c05c58f"
+            },
+            "native_save": "afff6055128d9798db4def3efa34a9ec931aafa66d5cc6f33e68a8beaea653ba",
+            "slots": [
+                [
+                    1,
+                    560,
+                    3577
+                ]
+            ],
+            "score": 24200,
+            "segment": 1245
+        },
+        "windows_bound_fixture": {
+            "warm": {
+                "private_path": "continuation-morph-bound-windows/morph-0-state.json",
+                "sha256": "c82fec1bb5955dec1ece6e3220b5baa9e7d5ddb474e516a3e5c4160c60969d94"
+            },
+            "cold": {
+                "private_path": "continuation-morph-bound-windows/morph-1-state.json",
+                "sha256": "c82fec1bb5955dec1ece6e3220b5baa9e7d5ddb474e516a3e5c4160c60969d94"
+            },
+            "before": [
+                [
+                    1,
+                    575,
+                    3378
+                ]
+            ],
+            "warm_after_100ms": [
+                [
+                    1,
+                    575,
+                    3378
+                ]
+            ],
+            "cold_after_100ms": [
+                [
+                    1,
+                    575,
+                    3378
+                ]
+            ],
+            "warm_sim_matches_cold": true,
+            "other_differing_state_keys": []
+        },
+        "linux_bound_fixture": {
+            "warm": {
+                "private_path": "continuation-morph-bound-linux/morph-0-state.json",
+                "sha256": "e4ffd8a5fc6aed73ff81925e2cb2d5db52efc10f8dac3356f72be86096016ee4"
+            },
+            "cold": {
+                "private_path": "continuation-morph-bound-linux/morph-1-state.json",
+                "sha256": "ca95d3cc119bf0e562e91bedfcf33f5b60d09aa225dbb4c69bf8f84944a33454"
+            },
+            "before": [
+                [
+                    1,
+                    560,
+                    3577
+                ]
+            ],
+            "warm_after_100ms": [
+                [
+                    1,
+                    560,
+                    3577
+                ]
+            ],
+            "cold_after_100ms": [
+                [
+                    1,
+                    560,
+                    3577
+                ]
+            ],
+            "warm_sim_matches_cold": true,
+            "other_differing_state_keys": [
+                "level_scene",
+                "position"
+            ]
+        }
+    },
+    "layout_controls": {
+        "log": {
+            "private_path": "continuation-layout-controls.log",
+            "sha256": "6390c675e223278dcc60c7de5877cacbae51c249471542f5b3ebd3ba6513757f"
+        },
+        "driver": {
+            "private_path": "continuation_layout_controls.cpp",
+            "sha256": "3fb367cfeb8dd17aaeed7d8a890a56a30d5830c1cbb7c445172290b251cf9902"
+        },
+        "negative": 17,
+        "positive_bound_owners": 2
+    },
+    "captures": {
+        "intermediate": {
+            "capture": {
+                "assets": [
+                    {
+                        "file": "d2_sphere_level2_20261120_012452.dximdemo",
+                        "remote": "files/d2x-redux/input_demo_recordings/new/d2_sphere_level2_20261120_012452.dximdemo",
+                        "bytes": 3126141,
+                        "sha256": "6b41ba3ac409bab8f8f80a40afab7e5fd3d4a3eea94faf18bd3b3c6903a49677"
+                    },
+                    {
+                        "file": "d2_sphere_level2_20261120_012452.dximdemo.rngtrace.jsonl",
+                        "remote": "files/d2x-redux/input_demo_recordings/new/d2_sphere_level2_20261120_012452.dximdemo.rngtrace.jsonl",
+                        "bytes": 20024392,
+                        "sha256": "fb162ae9939749d6e7c6916ac683101dfe9c8b7434350db29d35fc03ddf7a217"
+                    },
+                    {
+                        "file": "live-14323.jsonl.gz",
+                        "remote": "files/d2x-redux/xl_capture_traces/live-14323.jsonl.gz",
+                        "bytes": 4525742,
+                        "sha256": "c0706ce2326283dfd045eda4105fa325c82a39674cbdef1c8367ec86dd920cab"
+                    }
+                ],
+                "automation": {
+                    "private_path": "continuation-slots-capture-01/android.log",
+                    "sha256": "f9aa5187f65c0486494c6928580ccfadc6171de08ba16d8b1d596c7d839e7874"
+                },
+                "outcome": "Recorded real pilot death. End-of-script survival assertion failed."
+            },
+            "windows_ordinary": {
+                "binary_sha256": "6a55ec35e092a3a7786008518cf5ad01ebdd11169239bb76a60e397b4ba6a0fb",
+                "comparison": {
+                    "private_path": "continuation-slots-final-clean-windows/comparison.json",
+                    "sha256": "4a8d77429c44178721162e300077fbf334f9f7ce7db3eb35f72d3d0874454cc6"
+                },
+                "outcomes": {
+                    "frames": {
+                        "frames_compared": 25,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 25
+                    },
+                    "world": {
+                        "status": "pass",
+                        "records_compared": 29
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 59657
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 30
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "terminal": {
+                    "private_path": "continuation-slots-final-clean-windows/actual.json",
+                    "sha256": "3917050c7c3a5c7a4e75160fc06afc3516001bf20683afd3ca438a86e7381b87"
+                },
+                "shields": -2
+            },
+            "linux_debug": {
+                "binary_sha256": "93c0f9647e028a07068c16516ca9669f6f19b456e7a80a0f50cf5489f2094bdd",
+                "comparison": {
+                    "private_path": "continuation-slots-final-linux-replay/comparison.json",
+                    "sha256": "5c09427da551fdbee4badac9c9f361a0f6c3b8b5e939ca835a1990c48fbb423f"
+                },
+                "outcomes": {
+                    "frames": {
+                        "frames_compared": 25,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 25
+                    },
+                    "world": {
+                        "status": "pass",
+                        "records_compared": 29
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 59657
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 30
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "terminal": {
+                    "private_path": "continuation-slots-final-linux-replay/actual.json",
+                    "sha256": "3917050c7c3a5c7a4e75160fc06afc3516001bf20683afd3ca438a86e7381b87"
+                },
+                "shields": -2
+            },
+            "active_morphs_at_restored_boundary": 0
+        },
+        "final": {
+            "capture": {
+                "assets": [
+                    {
+                        "file": "d2_sphere_level2_20261120_014033.dximdemo",
+                        "remote": "files/d2x-redux/input_demo_recordings/new/d2_sphere_level2_20261120_014033.dximdemo",
+                        "bytes": 3138163,
+                        "sha256": "d113d5b0ef4f55b2fcb3aa45412a54309ada8881d3d63260230dcc5e36ac5015"
+                    },
+                    {
+                        "file": "d2_sphere_level2_20261120_014033.dximdemo.rngtrace.jsonl",
+                        "remote": "files/d2x-redux/input_demo_recordings/new/d2_sphere_level2_20261120_014033.dximdemo.rngtrace.jsonl",
+                        "bytes": 17709447,
+                        "sha256": "73e2b5575e028680c178c313cc9fc06671c1429b4dd58000333fb5823b7114e2"
+                    },
+                    {
+                        "file": "live-19013.jsonl.gz",
+                        "remote": "files/d2x-redux/xl_capture_traces/live-19013.jsonl.gz",
+                        "bytes": 4490752,
+                        "sha256": "9c1cf2105ce2cebd2ee6368c75509acc06bca74e7da3aba475dceedafedfa8fb"
+                    }
+                ],
+                "automation": {
+                    "private_path": "continuation-final-sparse-capture/android.log",
+                    "sha256": "a82533a96a67970d93728c607d2556d212fbad7bffbb5fad807af7d5009c3569"
+                },
+                "outcome": "Recorded real pilot death. End-of-script survival assertion failed."
+            },
+            "windows_ordinary": {
+                "binary_sha256": "6a55ec35e092a3a7786008518cf5ad01ebdd11169239bb76a60e397b4ba6a0fb",
+                "comparison": {
+                    "private_path": "continuation-final-device-windows/comparison.json",
+                    "sha256": "7380c55198d2c8129fdea5ebd444e109c4da4761d8eb9f5f90f4815ba48c85db"
+                },
+                "outcomes": {
+                    "frames": {
+                        "frames_compared": 25,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 25
+                    },
+                    "world": {
+                        "status": "pass",
+                        "records_compared": 29
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 52210
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 31
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "terminal": {
+                    "private_path": "continuation-final-device-windows/actual.json",
+                    "sha256": "c26c5d8657549e77809a1b5b03caf7817257b59a796b961e7ef0ada943a9b015"
+                },
+                "shields": -3
+            },
+            "linux_debug": {
+                "binary_sha256": "93c0f9647e028a07068c16516ca9669f6f19b456e7a80a0f50cf5489f2094bdd",
+                "comparison": {
+                    "private_path": "continuation-final-device-linux/comparison.json",
+                    "sha256": "6031a2e6660b1d4d3812ffd2ef360f8a5675dfbfacbac139af848acbb0b79772"
+                },
+                "outcomes": {
+                    "frames": {
+                        "frames_compared": 25,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 25
+                    },
+                    "world": {
+                        "status": "pass",
+                        "records_compared": 29
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 52210
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 31
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "terminal": {
+                    "private_path": "continuation-final-device-linux/actual.json",
+                    "sha256": "c26c5d8657549e77809a1b5b03caf7817257b59a796b961e7ef0ada943a9b015"
+                },
+                "shields": -3
+            },
+            "active_morphs_at_restored_boundary": 0,
+            "linux_ordinary": {
+                "binary_sha256": "07517f2e963ab53ae8cacfb767ae2b30f5dd5c9c107b4f42246b4835bcda75a6",
+                "comparison": {
+                    "private_path": "continuation-final-device-linux-ordinary/comparison.json",
+                    "sha256": "6031a2e6660b1d4d3812ffd2ef360f8a5675dfbfacbac139af848acbb0b79772"
+                },
+                "outcomes": {
+                    "frames": {
+                        "frames_compared": 25,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 25
+                    },
+                    "world": {
+                        "status": "pass",
+                        "records_compared": 29
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 52210
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 31
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "terminal": {
+                    "private_path": "continuation-final-device-linux-ordinary/actual.json",
+                    "sha256": "c26c5d8657549e77809a1b5b03caf7817257b59a796b961e7ef0ada943a9b015"
+                },
+                "shields": -3
+            }
+        },
+        "direct_export": {
+            "capture": {
+                "assets": [
+                    {
+                        "file": "d2_sphere_level2_20261120_015834.dximdemo",
+                        "remote": "files/d2x-redux/input_demo_recordings/new/d2_sphere_level2_20261120_015834.dximdemo",
+                        "bytes": 3332034,
+                        "sha256": "6b45ff0752bab03f025dde866a1b851ec4c7611fced1036c15db97758d3070ea"
+                    },
+                    {
+                        "file": "d2_sphere_level2_20261120_015834.dximdemo.rngtrace.jsonl",
+                        "remote": "files/d2x-redux/input_demo_recordings/new/d2_sphere_level2_20261120_015834.dximdemo.rngtrace.jsonl",
+                        "bytes": 22255977,
+                        "sha256": "80e1a1ee3ae1051553585e41a126ab32f5990d67c76cc4cf55c679376ff1dff0"
+                    },
+                    {
+                        "file": "live-20390.jsonl.gz",
+                        "remote": "files/d2x-redux/xl_capture_traces/live-20390.jsonl.gz",
+                        "bytes": 4517000,
+                        "sha256": "88aefac9380d0640048111e8d3aaf02b82f0a009762fb3bc37fd46d6203ea2ea"
+                    }
+                ],
+                "automation": {
+                    "private_path": "continuation-direct-sparse-capture/android.log",
+                    "sha256": "c5692d44242092c03f758aabad90d1e0fc915655e5063f53e4b8ac7323c34f0b"
+                },
+                "outcome": "Recorded real pilot death. End-of-script survival assertion failed."
+            },
+            "windows_ordinary": {
+                "binary_sha256": "6a55ec35e092a3a7786008518cf5ad01ebdd11169239bb76a60e397b4ba6a0fb",
+                "comparison": {
+                    "private_path": "continuation-direct-sparse-windows/comparison.json",
+                    "sha256": "76f660290f89db8843f9bb2589fc8e9d4093747e452256c592ea511c5b041baa"
+                },
+                "outcomes": {
+                    "frames": {
+                        "frames_compared": 25,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 25
+                    },
+                    "world": {
+                        "status": "pass",
+                        "records_compared": 29
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 68457
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 35
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "terminal": {
+                    "private_path": "continuation-direct-sparse-windows/actual.json",
+                    "sha256": "8f9072ccc5942de65035daf04c454a52b4dde3d91b31236d32e5592c91085b8a"
+                },
+                "shields": -1
+            },
+            "linux_ordinary": {
+                "binary_sha256": "07517f2e963ab53ae8cacfb767ae2b30f5dd5c9c107b4f42246b4835bcda75a6",
+                "comparison": {
+                    "private_path": "continuation-direct-sparse-linux/comparison.json",
+                    "sha256": "91dd2af4e0daeecde530ff828f3e5334d89f99eea1156ce5049edd464dd99d39"
+                },
+                "outcomes": {
+                    "frames": {
+                        "frames_compared": 25,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 25
+                    },
+                    "world": {
+                        "status": "pass",
+                        "records_compared": 29
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 68457
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 35
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "terminal": {
+                    "private_path": "continuation-direct-sparse-linux/actual.json",
+                    "sha256": "8f9072ccc5942de65035daf04c454a52b4dde3d91b31236d32e5592c91085b8a"
+                },
+                "shields": -1
+            },
+            "active_morphs_at_restored_boundary": 0
+        }
+    },
+    "source_inputs": {
+        "alien1.pig": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+        "alien2.pig": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+        "d2x-xl.hog": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+        "d2x.hog": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+        "descent.hog": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052",
+        "descent.pig": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe",
+        "descent2.ham": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+        "descent2.hog": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+        "descent2.s22": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+        "fire.pig": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+        "groupa.pig": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+        "ice.pig": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+        "water.pig": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1",
+        "missions/sphere.hog": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+        "missions/sphere.mn2": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b"
+    },
+    "android_ordinary_write_and_cold_load": {
+        "original_apk": "93d3d2afdf1b5a4450cb24bd742978b18712b6c449a8412d893dc0327c319bc5",
+        "apk": "edbdab16fb0592d2fcec8f03d96fc08219f4bc1d9c32f4dc7b6750cb24b2f664",
+        "export": "11015fd99cf415802030036907759d05234e6bb0aea4fa14e50418d14889b46e",
+        "written": "d3c679b574bd1f4da13ebcbee25b2358e6b5ca01b0a799025e72b9236b7caf94",
+        "assets": [
+            {
+                "path": "files/imported/sets/default/missions/sphere.hog",
+                "sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/missions/sphere.mn2",
+                "sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x.hog",
+                "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x-xl.hog",
+                "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                "added": true
+            }
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "in_game": true,
+            "cheats_enabled": false,
+            "player.lives": 3,
+            "player.score": 24200,
+            "player.has_gold_key": true,
+            "position.segment": 1245
+        },
+        "logs": {
+            "write": "4115259ada2a6b2a8df2c513e2c7e6528b8a8701794005b40f33031da501df06",
+            "cold": "bf6ab889f0f0d34f3442ea54ddc91a538ded73c08e5a82629d80fea799763851"
+        }
+    },
+    "source_profiles": {
+        "windows_debug_lifecycle": "4516166b2c83f0009ab9764b5ecc42a6c1e87f0b90b25c7edfe5061f19333d37",
+        "windows_ordinary_headless": "6dcc57e07db319f96663cb4ca4c0107bcd40e5b8cb74fe865b6e3884b05fbb3e",
+        "linux_debug_lifecycle": "cef401aa7a4536347d09bc237396e1510c1c9b9d7c93066f29cc620916e610c8",
+        "android_debug_developer": "a8b00f0831d066c390fedd14281962eb5a8124c5a7b7f89be5154149a78eca26",
+        "android_debug_ordinary": "edbdab16fb0592d2fcec8f03d96fc08219f4bc1d9c32f4dc7b6750cb24b2f664"
+    },
+    "readiness": {
+        "frozen": {
+            "receipt": {
+                "private_path": "continuation-morph-frozen-eight/results.json",
+                "sha256": "ad669497f37cdfce4ad2e753d1d2d69df24ed250a816ba8e05e81d5bbb32fe96"
+            },
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "load_failed": 4,
+                    "loaded_ticked": 4
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 4,
+                "readiness_percent": 50.0
+            },
+            "target_sha": "76c3543e27743bd0168f7cab7c8f477737e435c1",
+            "failed_private_diagnostics": [
+                {
+                    "private_path": "continuation-morph-frozen-eight/0/engine.log",
+                    "sha256": "4d9a16ea43e025fb0d3e258af37904fb24ed590c7dd77aacf32dbab989fb2cc7"
+                },
+                {
+                    "private_path": "continuation-morph-frozen-eight/2/engine.log",
+                    "sha256": "152f75bb3d6a95f99d3185518c9931ad15b1ac861187ddf2b6ed2051f52bba1d"
+                },
+                {
+                    "private_path": "continuation-morph-frozen-eight/6/engine.log",
+                    "sha256": "87754c76ff08cccdc003e89ef1b2b8463fd84e8aca5f7b104d5999f8c68636cb"
+                },
+                {
+                    "private_path": "continuation-morph-frozen-eight/7/engine.log",
+                    "sha256": "162a45e12272e2ae1e965502ef928b57850cc379814040c2925b0a64abdfffc8"
+                }
+            ]
+        },
+        "authenticated": {
+            "receipt": {
+                "private_path": "continuation-morph-auth-eight-02/results.json",
+                "sha256": "04286ec0523f62966047be13619addd0753782409e4f0c1e16b51f601004437e"
+            },
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 8
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 8,
+                "readiness_percent": 100.0
+            },
+            "target_sha": "76c3543e27743bd0168f7cab7c8f477737e435c1",
+            "failed_private_diagnostics": []
+        },
+        "expanded": {
+            "receipt": {
+                "private_path": "continuation-morph-auth-64/results.json",
+                "sha256": "45a8854ff77ed3f5313f4c7d50a5bdc44cbdb92bfc31ad9ef617cc9bc2d8b585"
+            },
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 64
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 64,
+                "passed": 64,
+                "readiness_percent": 100.0
+            },
+            "target_sha": "76c3543e27743bd0168f7cab7c8f477737e435c1",
+            "failed_private_diagnostics": []
+        },
+        "linux_authenticated": {
+            "receipt": {
+                "private_path": "continuation-linux-morph-auth-eight.json",
+                "sha256": "8996126abeac5956683700574671995bdc3202cb714eecfc72ec2b8d1d86cf5c"
+            },
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 8
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 8,
+                "readiness_percent": 100.0
+            },
+            "target_sha": "76c3543e27743bd0168f7cab7c8f477737e435c1",
+            "binary": "b7ba9ad85d7d9faba3e24abeee7a102c7ea9dfdf52bf1f5ff5918877a476f8a8"
+        }
+    },
+    "registered_windows_original_failure": {
+        "private_path": "continuation-slots-regression.log",
+        "sha256": "8e9cbc6bfced6362acf6e5466b7392e3f98e4e6aa338bfeafc43a1732e52bf39"
+    },
+    "pr_at_initial_publication": {
+        "number": 666,
+        "base": "0b315b048163b3498c3eb07049166c194c01fc99",
+        "head": "76c3543e27743bd0168f7cab7c8f477737e435c1",
+        "merge": "105c41d79dea6898237e759e63768a3be91e5b9e",
+        "snapshot": {
+            "private_path": "continuation-stack-666-publication.json",
+            "sha256": "e7cafb8c423e1a004964c34d7e3ee55c7733f947d81bf1753a447e376e8d537c"
+        }
+    }
+}

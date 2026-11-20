@@ -17,26 +17,11 @@
             "player.score": 24200,
             "player_dead": false,
             "cheats_enabled": false,
-            "morph_slots_sparse": true,
-            "morph_slots": [[1, 560, 3577]]
+            "morph_slots_sparse": true
         }
     },
     {
         "inputs": [
-            {
-                "action": "assert",
-                "expect": {
-                    "current_level_num": 2,
-                    "position.segment": 1245,
-                    "player.has_gold_key": true,
-                    "player.lives": 3,
-                    "player.score": 24200,
-                    "player_dead": false,
-                    "cheats_enabled": false,
-                    "morph_slots_sparse": true,
-                    "morph_slots": [[1, 560, 3577]]
-                }
-            },
             {
                 "action": "wait_ms",
                 "ms": 100
@@ -49,9 +34,7 @@
             "player.lives": 3,
             "player.score": 24200,
             "player_dead": false,
-            "cheats_enabled": false,
-            "morph_slots_sparse": true,
-            "morph_slots": [[1, 560, 3577]]
+            "cheats_enabled": false
         }
     }
 ]
