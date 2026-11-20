@@ -1069,6 +1069,14 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 					const auto state = snapshot();
 					const auto hash = file_hash(root / "preview-user" / unique);
 					checkpoint_history.push_back({ { "step", completed }, { "file", unique }, { "sha256", hash }, { "state", state } });
+					if (step.value("export_android", false)) {
+						require(Current_level_num > 0, "Android player slots require a positive level");
+						const auto android_save = unique + ".android.sav";
+						const auto path = root / "preview-user" / android_save;
+						std::filesystem::copy_file(root / "preview-user" / unique, path);
+						require(xl_checkpoint_finish_export(android_save.c_str()), "Cannot export Android checkpoint source definitions");
+						checkpoint_history.back()["android_export"] = { { "file", android_save }, { "sha256", file_hash(path) } };
+					}
 					checkpoints[std::to_string(Current_level_num)] = { { "file", retained }, { "sha256", hash }, { "state", state } };
 				} else {
 					require(step.at("value") == "quick_load", "unsupported native player save action");
