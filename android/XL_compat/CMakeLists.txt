@@ -951,6 +951,14 @@ if(BUILD_TESTING)
         set_tests_properties(
             xl_sphere_storage_approach PROPERTIES TIMEOUT 1200 RUN_SERIAL TRUE FIXTURES_REQUIRED
                                                   sphere_storage_entrance)
+        add_test(
+            NAME xl_sphere_level_three_flicker
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-flicker -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_flicker.cmake)
+        set_tests_properties(xl_sphere_level_three_flicker PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
     endif()
     set(XL_PHOENIX_PLAYER_ROOT "" CACHE PATH "Original Black Prophecy staged mission root")
     if(XL_PHOENIX_PLAYER_ROOT AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)

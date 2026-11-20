@@ -879,6 +879,26 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 			if (action == "assert") {
 				const bool passed = expectations(snapshot(), step.at("expect"), failed);
 				require(passed, failed.c_str());
+			} else if (action == "observe_flicker") {
+				const int segment = step.at("segment"), side = step.at("side"), maximum = step.at("max_frames");
+				require(segment == ConsoleObject->segnum && side >= 0 && side < 6 && maximum > 0 && maximum <= 600 &&
+				            xl_flicker_has_source(segment, side),
+				        "Flicker observation requires an authored light in the current room");
+				const int level = Current_level_num;
+				bool saw_on = false, saw_off = false;
+				for (int i = 0; i < maximum && !(saw_on && saw_off); ++i) {
+					const int before = Light_subtracted[segment] & (1 << side);
+					const auto light = Segment2s[segment].static_light;
+					tick();
+					require(Current_level_num == level && ConsoleObject->segnum == segment, "Pilot left the observed flicker");
+					const int after = Light_subtracted[segment] & (1 << side);
+					const auto next = Segment2s[segment].static_light;
+					if (before == after) continue;
+					saw_off |= after != 0 && next < light;
+					saw_on |= after == 0 && next > light;
+					trace << Json{ { "event", "flicker_change" }, { "segment", segment }, { "side", side }, { "frame", frame_count }, { "subtracted", after != 0 }, { "ambient_before", light }, { "ambient_after", next } }.dump() << '\n';
+				}
+				require(saw_on && saw_off, "Authored flicker did not darken and brighten the occupied room");
 			} else if (action == "face_view" || action == "pose_view") {
 				pose(step);
 				++position_assist_events;

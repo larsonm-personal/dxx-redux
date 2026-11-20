@@ -44,7 +44,7 @@ void rejects(const std::function<void()> &action)
 	}
 	check(rejected, "malformed input accepted");
 }
-Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, int segment_function = 0)
+Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, int segment_function = 0, bool connect_pair = false)
 {
 	Bytes b;
 	put(b, 0x504c564c, 4);
@@ -65,12 +65,15 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 	for (int segment = 0; segment < segment_count; ++segment) {
 		put(b, 255, 1);
 		put(b, 255, 1);
-		put(b, 0, 1);
+		const int portal = connect_pair ? segment : -1;
+		put(b, connect_pair ? 1 << portal : 0, 1);
+		if (connect_pair) put(b, 1 - segment, 2);
 		for (int i = 0; i < 8; ++i) put(b, i, 2);
 		put(b, 0, 1);
 		for (int side = 0; side < 6; ++side) {
 			if (version >= 25)
 				for (const int corner : xl_compat::classic_side_corners[side]) put(b, corner, 1);
+			if (side == portal) continue;
 			put(b, side + 1, 2);
 			for (int i = 0; i < 12; ++i) put(b, i, 2);
 		}
@@ -1202,6 +1205,20 @@ void version_23_contract()
 
 void invalid_light_row_contract()
 {
+	const auto rooms = fixture(22, 0, 2, 0, true);
+	const std::vector<std::array<int, 7>> delta{ { 1, 2, 0, 1, 2, 3, 4 } };
+	const auto tables = [&](const Bytes &base) {
+		return xl_test::changing_light_tables(base, { { -32768, 0, 0, 35 }, { 0, 0, 4, 0 }, { 0, 2, 1, 0 } }, delta);
+	};
+	const auto filtered = xl_compat::prepare_source_runtime_probe(tables(rooms)).source;
+	check(filtered.light_indices == std::vector<std::array<int, 4>>{ { 0, 2, 1, 0 } } && filtered.delta_lights == delta,
+	      "Inert portal sources reached playback or changed the valid source");
+	check(std::count_if(filtered.observations.begin(), filtered.observations.end(), [](const auto &row) { return row.feature == "inert_light_index"; }) == 2,
+	      "Missing inert light source diagnostics");
+	rejects([&] { xl_compat::prepare_gameplay_probe(tables(rooms)); });
+	rejects([&] { xl_compat::inspect_level(tables(fixture(22))); });
+	for (const auto &target : { std::array<int, 5>{ 0, 0, 1, 0, 32 }, { 1, 1, 1, 0, 32 } })
+		rejects([&] { xl_compat::inspect_level(tables(xl_test::flicker_table(rooms, { target }))); });
 	const std::vector<std::array<int, 4>> indices{ { 0, 0, 4, 0 }, { 0, 0, 4, 1 } };
 	const std::vector<std::array<int, 7>> deltas{ { -1, 0, 219, 1, 2, 3, 4 }, { 0, 0, 9, 0, 127, 128, 255 }, { 0, 6, 0, 5, 6, 7, 8 }, { 0, 5, 128, 10, 20, 30, 40 }, { 1, 255, 255, 11, 12, 13, 14 } };
 	for (int version : { 15, 17, 21, 23, 25, 27 }) {
