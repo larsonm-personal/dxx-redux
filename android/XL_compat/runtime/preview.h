@@ -6,6 +6,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/* Original DropPowerup rejects unspawnable robot payloads before consuming SIM RNG */
+int xl_unspawnable_robot_payload(int type, int id);
 int xl_preview_water_segment(int segment);
 int xl_preview_no_damage_segment(int segment);
 int xl_preview_outdoors_segment(int segment);

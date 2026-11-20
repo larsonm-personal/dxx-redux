@@ -554,7 +554,7 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 		                                 std::any_of(plan.at("steps").begin(), plan.at("steps").end(), [](const Json &step) -> bool {
 			                                 if (!step.is_object() || !step.contains("action") || !step.at("action").is_string()) return false;
 			                                 const std::string action = step.at("action");
-			                                 if (action == "select_secondary" || action == "fly_through_side" || action == "approach_side" || action == "collect_pickup") return true;
+			                                 if (action == "select_secondary" || action == "fly_through_side" || action == "approach_side" || action == "shoot_wall_trigger" || action == "collect_pickup") return true;
 			                                 return (action == "send_axis" && step.contains("axis") && pumo_ordinary_input_validation::integer_in_range(step.at("axis"), 2, 4)) ||
 			                                        (action == "send_button" && step.contains("button") && pumo_ordinary_input_validation::integer_in_range(step.at("button"), 101, 101));
 		                                 });
@@ -911,6 +911,31 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 				firing = false;
 				require(Current_level_num == level && !present() && (hostage ? pickup_state() == before + 1 : pickup_state() > before),
 				        "The selected pickup did not produce its native player effect");
+			} else if (action == "shoot_wall_trigger") {
+				const int segment = step.at("segment"), side = step.at("side"), trigger = step.at("trigger");
+				require(segment == ConsoleObject->segnum && segment >= 0 && segment < Num_segments && side >= 0 && side < 6,
+				        "Wall trigger shot requires a side in the current segment");
+				const int wall = Segments[segment].sides[side].wall_num;
+				require(wall >= 0 && wall < Num_walls && trigger >= 0 && trigger < Num_triggers && Walls[wall].trigger == trigger,
+				        "Wall does not own the requested trigger");
+				const int maximum = step.at("max_frames");
+				require(maximum > 0 && maximum <= 3600, "Invalid wall trigger shot duration");
+				xl_trigger_state state{};
+				require(xl_wall_trigger_state(trigger, &state) && !state.operated, "Wall trigger must start unoperated");
+				const auto position = ConsoleObject->pos;
+				vms_vector target;
+				compute_center_point_on_side(&target, &Segments[segment], side);
+				const int level = Current_level_num;
+				for (int i = 0; i < maximum && Current_level_num == level && !state.operated; ++i) {
+					steer(position, &target, true);
+					tick();
+					if (Current_level_num == level)
+						require(xl_wall_trigger_state(trigger, &state), "Lost wall trigger during ordinary fire");
+				}
+				thrust = sideways = vertical = heading = pitch = 0;
+				firing = false;
+				require(Current_level_num == level && state.operated && state.shot && state.object == ConsoleObject - Objects,
+				        "Player fire did not operate the requested wall trigger");
 			} else if (action == "fly_through_side" || action == "approach_side") {
 				const bool approach = action == "approach_side";
 				const int level = Current_level_num, segment = step.at("segment"), side = step.at("side");

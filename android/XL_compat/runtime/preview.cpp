@@ -426,12 +426,15 @@ void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, b
 			throw std::runtime_error("object " + std::to_string(i) + ": " + error.what());
 		}
 	}
-	for (const auto &matcen : level.matcens)
+	const auto assigned_robots = xl_compat::producer_layout(level).robots.size();
+	for (std::size_t i = 0; i < assigned_robots && i < level.matcens.size(); ++i) {
+		const auto &matcen = level.matcens[i];
 		for (unsigned bit = 0; bit < 64; ++bit)
 			if (uint32_t(matcen[bit / 32]) & (uint32_t(1) << (bit % 32))) {
 				graph.robot(int(bit));
 			}
-	if (!level.matcens.empty()) {
+	}
+	if (assigned_robots) {
 		graph.clip(VCLIP_MORPHING_ROBOT);
 		graph.clip(VCLIP_PLAYER_HIT);
 		graph.sound(SOUND_PLAYER_GOT_HIT);
@@ -1021,9 +1024,17 @@ extern "C" int32_t xl_preview_motion_time(int segment, int32_t time)
 	                                                                                                        : time;
 }
 
+extern "C" int xl_unspawnable_robot_payload(int type, int id)
+{
+	// DropPowerup receives an unsigned byte and uses the original MAX_WEAPON_ID
+	constexpr unsigned original_weapon_limit = 70;
+	return type != OBJ_ROBOT && (type != OBJ_POWERUP || static_cast<uint8_t>(id) >= original_weapon_limit);
+}
+
 extern "C" int xl_blocked_segment(int segment)
 {
-	return source && source->level_version >= 21 && !(Game_mode & GM_MULTI) && segment >= 0 && std::size_t(segment) < source->segments.size() && (source->segments[segment].properties & xl_compat::segment_blocked);
+	return source && !(Game_mode & GM_MULTI) && segment >= 0 && std::size_t(segment) < source->segments.size() &&
+	       (xl_compat::segment_property_bits(source->level_version, source->segments[segment]) & xl_compat::segment_blocked);
 }
 
 extern "C" int xl_segment_damage_rates(int segment, int16_t *shield, int16_t *energy)
@@ -1053,7 +1064,9 @@ extern "C" int xl_repair_segment(int segment)
 
 extern "C" int xl_blocked_map_segment(int segment)
 {
-	return xl_blocked_segment(segment) && source->segments[segment].function == 0;
+	if (!xl_blocked_segment(segment)) return 0;
+	const auto function = source->segments[segment].function;
+	return source->level_version < 21 ? function == 12 : function == 0;
 }
 
 extern "C" int xl_lava_segment(int segment)

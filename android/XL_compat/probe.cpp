@@ -131,7 +131,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 		const auto &seg = v.segments[segment];
 		const int function = producer_function(seg);
 		// The runtime retains water in the source inventory, never in a stock enum
-		put(out, (v.level_version < 21 && ((water_segments && function == 7) || function == 13 || function == 11)) || (modern_layout && (function == 11 || function == 9 || function == 10)) ? 0 : function, 1);
+		put(out, (v.level_version < 21 && ((water_segments && function == 7) || function == 12 || function == 13 || function == 11)) || (modern_layout && (function == 11 || function == 9 || function == 10)) ? 0 : function, 1);
 		// Wide authored fields stay in the owned source. Only robot assignment enters
 		// the native shadow, after geometry-order initialization and capacity checks
 		// Both loaders rebuild station values; other functions never consume them
@@ -174,6 +174,8 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 		// XL initializes producers in geometry order, then reads row i for maker i
 		// Redux's native station list also includes reactors, requiring fresh links
 		patch(out, new_game_offset + 35 + 6 * 12, static_cast<int>(out.size()));
+		// ReadBotGenInfo consumes and discards trailing rows without an initialized maker
+		patch(out, new_game_offset + 39 + 6 * 12, static_cast<int>(producers.robots.size()));
 		patch(out, new_game_offset + 43 + 6 * 12, 20);
 		int station = 0;
 		for (std::size_t segment = 0; segment < v.segments.size(); ++segment) {
