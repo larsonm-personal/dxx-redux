@@ -1,0 +1,538 @@
+{
+    "fixture_source": "83514622d6414a84f6e2ea64018bc9552c612a7d",
+    "executable_source": "9b12673efee1214714f186d69a1489b298836c97",
+    "setup": "Earned two-key extra-life checkpoint from the respawn campaign owner. All portal controls, normal plasma fire, physical collisions and native damage ran with live combat.",
+    "windows_registered": {
+        "platform": "Windows",
+        "executable": "573c9e3515b4c24a837423f7a57158facb35e6aa2162c8fee978ef786ffb31ff",
+        "route_sha256": "45320718d192faea1a34dfbb1c69ba8309fc3b8bdc44450da4b9ed5ef7a583d6",
+        "entry": "5718234b116d184735f0b1e50522e9f0fd38fd9d6b3bae9857b1dbf751e882bc",
+        "terminal": "7e94f138d0e50f90105939c93f51f51955d74264b35bf5d26ecff9fa063fed71",
+        "phases": [
+            {
+                "phase": "earned_reactor-0",
+                "segment": 2910,
+                "score": 51250,
+                "lives": 3,
+                "primary": 3,
+                "shields": 78.39752197265625,
+                "energy": 77.85009765625,
+                "kills": 38,
+                "reactor_shields": 300.0,
+                "countdown": {
+                    "active": false,
+                    "timer": 0,
+                    "total_seconds": 0
+                },
+                "resume": "5718234b116d184735f0b1e50522e9f0fd38fd9d6b3bae9857b1dbf751e882bc",
+                "save": "496f030bab9195b384b099d60db8f789e645c50afaddba5c38d3a09e1a46a21d",
+                "plan": "75d6569c0e680f1d05d08e626fc8e4487d8d42c2db148f8aeb5729a38b4ac360",
+                "result": "512a8f80ff108d629ade0b8ffaae52e283407cc8bcecaf14ec6d446c31bb8eb3",
+                "state": "aef6abe56431410a3b1221425911e2f9161445ba5dad20b5e2f92afc0356a144",
+                "trace": "31b2c95e736449e3c0405c09e155c936a48709d15495badd316a3184f96c0371"
+            },
+            {
+                "phase": "earned_reactor-1",
+                "segment": 3119,
+                "score": 51250,
+                "lives": 3,
+                "primary": 3,
+                "shields": 78.39752197265625,
+                "energy": 77.85009765625,
+                "kills": 38,
+                "reactor_shields": 300.0,
+                "countdown": {
+                    "active": false,
+                    "timer": 0,
+                    "total_seconds": 0
+                },
+                "resume": "496f030bab9195b384b099d60db8f789e645c50afaddba5c38d3a09e1a46a21d",
+                "save": "f8cec07806837b5bc90e9168b35edb761136dfc5a5e720a9be447e07ee257cf0",
+                "plan": "7f8a07270e0ecd4b1d50732774d097a3cd284212105074946c8b5ebaca8d9cd6",
+                "result": "9a5e606f576471b593144d39c703af470d49288d52271061d7dbbd0b60b8e497",
+                "state": "8a455b064d87d3708499bf377dadb69db86bcb3e022b825b29a964e2bb82994b",
+                "trace": "77d93db78654a4e3fb9772dd9b83d94eb752cd30cee57018c1982b891548bc8b"
+            },
+            {
+                "phase": "earned_reactor-2",
+                "segment": 3117,
+                "score": 53950,
+                "lives": 3,
+                "primary": 3,
+                "shields": 68.63427734375,
+                "energy": 67.10009765625,
+                "kills": 42,
+                "reactor_shields": 300.0,
+                "countdown": {
+                    "active": false,
+                    "timer": 0,
+                    "total_seconds": 0
+                },
+                "resume": "f8cec07806837b5bc90e9168b35edb761136dfc5a5e720a9be447e07ee257cf0",
+                "save": "6e8e769c9103a7fe07ad714c11e6b522f135d0599c053caa61242116b1daec87",
+                "plan": "104a127cea56ee86be4cea6cb2e8e14059204a12ad647d3df26b679227495c43",
+                "result": "701fc67277e83b16ce2aaad4f490643f1deb37b35bf1e1106eaa7ff957373d49",
+                "state": "5b7bb5b6caffa4f79a6adcde005b7bfd27cd8cd8af9575ab0ebc2d690550e107",
+                "trace": "5326e0b3b94ab9c3b1e4fcccf952d167a40fe194b431422c7a9d157f19d46f2a"
+            },
+            {
+                "phase": "earned_reactor-3",
+                "segment": 2924,
+                "score": 54300,
+                "lives": 3,
+                "primary": 3,
+                "shields": 68.63427734375,
+                "energy": 64.85009765625,
+                "kills": 43,
+                "reactor_shields": 300.0,
+                "countdown": {
+                    "active": false,
+                    "timer": 0,
+                    "total_seconds": 0
+                },
+                "resume": "6e8e769c9103a7fe07ad714c11e6b522f135d0599c053caa61242116b1daec87",
+                "save": "127ccd768adaf433e8ada8033040254cf51372fd39a9a6d1f6ac6ce697bacf9a",
+                "plan": "3f22f712d688e683396556ac961518a21a2599502056ee1d9c06ce1713b1225c",
+                "result": "06dc3bdce2474c15a6fd7f39c5a8e58d908262c61345f7e49c74f5aad9ab3b62",
+                "state": "8f5a0edfa170c42b22fb1b6e47ce5b5636e4c3a84bc9b9307c91806bd61f035d",
+                "trace": "821a6bd47dd00c04c48230cb40113f289fe61d62896b58f18fd34808998694e6"
+            },
+            {
+                "phase": "earned_reactor-4",
+                "segment": 2936,
+                "score": 54300,
+                "lives": 3,
+                "primary": 3,
+                "shields": 66.98786926269531,
+                "energy": 61.35009765625,
+                "kills": 43,
+                "reactor_shields": 300.0,
+                "countdown": {
+                    "active": false,
+                    "timer": 0,
+                    "total_seconds": 0
+                },
+                "resume": "127ccd768adaf433e8ada8033040254cf51372fd39a9a6d1f6ac6ce697bacf9a",
+                "save": "da0ef1c45b32e1db1eae84f4bc2b2e115204d4d0e9505d221cab1b620d6a0ed6",
+                "plan": "098a5fcd5c849294df190d04551d79d683a8f6bcb3054b95ad6f8702f56dfc6c",
+                "result": "12ba80b76a3fa08d78dab25b8d529fa949cd1a6b484cbeeae00249826d0dd1ac",
+                "state": "5e07a082d5a919b2d89f55a61a9cce5e3ec636b05c7b3c9518f41644dbeac1f3",
+                "trace": "882f0486253334dc2444ab59947a993af46cfd0ad2a821a3a06150878c09d762"
+            },
+            {
+                "phase": "earned_reactor-5",
+                "segment": 3127,
+                "score": 55300,
+                "lives": 3,
+                "primary": 3,
+                "shields": 63.63386535644531,
+                "energy": 58.60009765625,
+                "kills": 44,
+                "reactor_shields": 300.0,
+                "countdown": {
+                    "active": false,
+                    "timer": 0,
+                    "total_seconds": 0
+                },
+                "resume": "da0ef1c45b32e1db1eae84f4bc2b2e115204d4d0e9505d221cab1b620d6a0ed6",
+                "save": "9923a7dc3264ca5eb6e77409a196195de07ae13452a8cd192d505c2847d95306",
+                "plan": "79508d9efc2d7cb39103b16dd0dea2ce0ecbf7d343197fd091a2ac0a41e15328",
+                "result": "bf5a571c19332b55b77164a5dd2d95d99160aa860bc03dabf75eab9a5d761885",
+                "state": "d1f05d6eb7cad5a4f1ed9ad41eaa7b598b3e486d5e89d7c3424e8209967d7c89",
+                "trace": "91db375027976f19d6d77841d134af0eb2f9803e73b144dd910284e292c05405"
+            },
+            {
+                "phase": "earned_reactor-6",
+                "segment": 2956,
+                "score": 56800,
+                "lives": 3,
+                "primary": 3,
+                "shields": 49.4298095703125,
+                "energy": 54.35009765625,
+                "kills": 46,
+                "reactor_shields": 278.0,
+                "countdown": {
+                    "active": false,
+                    "timer": 0,
+                    "total_seconds": 0
+                },
+                "resume": "9923a7dc3264ca5eb6e77409a196195de07ae13452a8cd192d505c2847d95306",
+                "save": "e0fb81c9d6ec6e45f0845c3ccef2e430715082f41a45b11f8e77e6eef545fed7",
+                "plan": "5e9fa9a1fe3c54d8e873d891567cae2badfa84ea9ab8ddafd7d3660a9c97b601",
+                "result": "24eae7a5f4edf2f6f41a2dab4727e8412daf4e99454c46e38c61c9e43e3c5e6a",
+                "state": "5c7ab6c02fa99f961ad0abd306eef01cc7ddeea878f61be3ac102d39f1fffd75",
+                "trace": "4759ad314fceaa42be0d22a66b0f11ddc87b3c58dd1eb00e938950a084dbd421"
+            },
+            {
+                "phase": "earned_reactor-7",
+                "segment": 2956,
+                "score": 56800,
+                "lives": 3,
+                "primary": 3,
+                "shields": 49.4298095703125,
+                "energy": 53.10009765625,
+                "kills": 46,
+                "reactor_shields": 234.0,
+                "countdown": {
+                    "active": false,
+                    "timer": 0,
+                    "total_seconds": 0
+                },
+                "resume": "e0fb81c9d6ec6e45f0845c3ccef2e430715082f41a45b11f8e77e6eef545fed7",
+                "save": "a92cb3844c07bde1f6cf19267f32e6047cdde7ce8f91ff3604304f2e317ecd35",
+                "plan": "0dd9ec771b14364ee61e13273cb3918d1b3a0f7c13111c23f10fc620ea34096e",
+                "result": "8725662afa37708564cec9889c97f321374aa0f817280acc4d95b5031cc8fe81",
+                "state": "cef10603a75b69f562071934037fb3cd9bfdaf9ff003d121b7b511cd3344f2ad",
+                "trace": "7cc73237f3e5a0b952f6e563e241ac93b197bcf4e97064e668be22c491d762bf"
+            },
+            {
+                "phase": "earned_reactor-8",
+                "segment": 2952,
+                "score": 61800,
+                "lives": 3,
+                "primary": 3,
+                "shields": 27.668121337890625,
+                "energy": 49.85009765625,
+                "kills": 46,
+                "reactor_shields": -8.0,
+                "countdown": {
+                    "active": true,
+                    "timer": 1966080,
+                    "total_seconds": 30
+                },
+                "resume": "a92cb3844c07bde1f6cf19267f32e6047cdde7ce8f91ff3604304f2e317ecd35",
+                "save": "7e94f138d0e50f90105939c93f51f51955d74264b35bf5d26ecff9fa063fed71",
+                "plan": "809c1ca61489fdd2e78c797a1e4b6f554ef56402b5cfda0c997e76c1394a783a",
+                "result": "177b8b50cb9b3e17db00b998a6c27b5181366eea8fddc156c29d5d41df6f3674",
+                "state": "c03e92f51028c29da4638d2d167bb1d65f9c758b476c279574b019028977820e",
+                "trace": "5a15766c6d0f38b6fa7136df5a3ef860bec35fdcbc76f2bfef94e8d3605a4f5c"
+            }
+        ]
+    },
+    "windows_registered_seconds": 420.44,
+    "volleys": {
+        "windows": [
+            {
+                "result": "PASS",
+                "room": 2956,
+                "level": 2,
+                "score": 56800,
+                "lives": 3,
+                "shields": 49.4298095703125,
+                "energy": 53.10009765625,
+                "countdown": {
+                    "active": false,
+                    "timer": 0,
+                    "total_seconds": 0
+                },
+                "reactor": [
+                    {
+                        "id": 1,
+                        "object": 433,
+                        "signature": 434,
+                        "segment": 2957,
+                        "shields": 234.0
+                    }
+                ],
+                "pose": 0,
+                "fixed_view": 0,
+                "incoming": "cd2e13fa3fb0b62ad02572befda772e5570fa93c84d69c4606cfb9d7f6a7c0c3",
+                "plan": "96013fdf5e502bc588557fe46f42dbdd0e6a538b57d3528e7ad3b3fb4a8b367c",
+                "proof": "36640758399d2df5e8e6dc2bdde567c3864067f42d1d7b5ac5ddf12943da616e",
+                "state": "cef10603a75b69f562071934037fb3cd9bfdaf9ff003d121b7b511cd3344f2ad",
+                "trace": "7cc73237f3e5a0b952f6e563e241ac93b197bcf4e97064e668be22c491d762bf",
+                "executable": "573c9e3515b4c24a837423f7a57158facb35e6aa2162c8fee978ef786ffb31ff",
+                "outgoing": "b7fa4927b0012d35bf024636bf5c00262da7cd6e261b65a165b3caef6a26f358"
+            },
+            {
+                "result": "PASS",
+                "room": 2952,
+                "level": 2,
+                "score": 61800,
+                "lives": 3,
+                "shields": 27.668121337890625,
+                "energy": 49.85009765625,
+                "countdown": {
+                    "active": true,
+                    "timer": 1966080,
+                    "total_seconds": 30
+                },
+                "reactor": [
+                    {
+                        "id": 1,
+                        "object": 433,
+                        "signature": 434,
+                        "segment": 2957,
+                        "shields": -8.0
+                    }
+                ],
+                "pose": 0,
+                "fixed_view": 0,
+                "incoming": "b7fa4927b0012d35bf024636bf5c00262da7cd6e261b65a165b3caef6a26f358",
+                "plan": "61017c6e6e5d4db33588ea465ef4acd94dc06cde491cb265dcc559b0afb91041",
+                "proof": "2ade7c4947e86e8c513a8debbeaa75236f7438dc392049a6a069345c02e947e2",
+                "state": "c03e92f51028c29da4638d2d167bb1d65f9c758b476c279574b019028977820e",
+                "trace": "5a15766c6d0f38b6fa7136df5a3ef860bec35fdcbc76f2bfef94e8d3605a4f5c",
+                "executable": "573c9e3515b4c24a837423f7a57158facb35e6aa2162c8fee978ef786ffb31ff",
+                "outgoing": "802852a34cf83a866a3ea0133f9a032a209fe1a3f948ddcd9f301f507456e33d"
+            }
+        ],
+        "linux": [
+            {
+                "result": "PASS",
+                "room": 2956,
+                "level": 2,
+                "score": 56800,
+                "lives": 3,
+                "shields": 49.4298095703125,
+                "energy": 53.10009765625,
+                "countdown": {
+                    "active": false,
+                    "timer": 0,
+                    "total_seconds": 0
+                },
+                "reactor": [
+                    {
+                        "id": 1,
+                        "object": 433,
+                        "signature": 434,
+                        "segment": 2957,
+                        "shields": 234.0
+                    }
+                ],
+                "pose": 0,
+                "fixed_view": 0,
+                "incoming": "cd2e13fa3fb0b62ad02572befda772e5570fa93c84d69c4606cfb9d7f6a7c0c3",
+                "plan": "84c17e4cdafba484919749e3266f658331a5697e8b8918321240c7cbc4616131",
+                "proof": "e4dbff4f6279742f88bcbbea104f97074aa9c68f009ef7e385fc19c1aaeb149a",
+                "state": "e685ffb9e1f8b31acdbfe14daffbf19248b610e496907c482803f5193e387529",
+                "trace": "c5c1a80874d5b8da5a51720119c3b4c468d47dd63402830a3564e937ed3d6079",
+                "executable": "aa27d4ed735997470813954ee9e6fa084fee3d080273835c50696e5e72cf9dd3",
+                "outgoing": "a82f244b4749f9ca1d6055da54fcbc21695b6c2c151e3e87ce5e5eab4af1d960"
+            },
+            {
+                "result": "PASS",
+                "room": 2952,
+                "level": 2,
+                "score": 61800,
+                "lives": 3,
+                "shields": 27.668121337890625,
+                "energy": 49.85009765625,
+                "countdown": {
+                    "active": true,
+                    "timer": 1966080,
+                    "total_seconds": 30
+                },
+                "reactor": [
+                    {
+                        "id": 1,
+                        "object": 433,
+                        "signature": 434,
+                        "segment": 2957,
+                        "shields": -8.0
+                    }
+                ],
+                "pose": 0,
+                "fixed_view": 0,
+                "incoming": "a82f244b4749f9ca1d6055da54fcbc21695b6c2c151e3e87ce5e5eab4af1d960",
+                "plan": "8752323a934e6aebf6bcc657004c8778ded536f69fbbffa1857ef61f8ad9861e",
+                "proof": "d2446ccc58a0b4cdfc389ff2fe98478368a6eb6b42ec31019ec244c3b424e355",
+                "state": "1701b8df355c1cd8278d50bb917aaf8280bf83f12e7d7748188f3cfbf43ff917",
+                "trace": "939e06a7edeca4ebcee2c76612e3bfe36d1910226126e565f048c16fcb914649",
+                "executable": "aa27d4ed735997470813954ee9e6fa084fee3d080273835c50696e5e72cf9dd3",
+                "outgoing": "c587923d117d9f1ff6ab8da56059795e3aa1f03e7fb2e79ed0eae970169aa6ae"
+            }
+        ]
+    },
+    "escape_attempts": [
+        {
+            "name": "earned-reactor-continuous-escape-01",
+            "result": "FAIL",
+            "room": 2952,
+            "level": 2,
+            "score": 61800,
+            "lives": 3,
+            "shields": -0.331878662109375,
+            "energy": 49.85009765625,
+            "countdown": {
+                "active": true,
+                "timer": 1950789,
+                "total_seconds": 30
+            },
+            "reactor": [
+                {
+                    "id": 1,
+                    "object": 433,
+                    "signature": 434,
+                    "segment": 2957,
+                    "shields": -8.0
+                }
+            ],
+            "pose": 0,
+            "fixed_view": 0,
+            "incoming": "802852a34cf83a866a3ea0133f9a032a209fe1a3f948ddcd9f301f507456e33d",
+            "plan": "87ed1082fca2452731043965c658bdb4d05cb402fcd09229e39be6e1a5a8dba9",
+            "proof": "e9fe8b72e26b3199211c4a1acd55f81ec5c983d4b70583d8af8af920e9a499c8",
+            "state": "bac82f4949be054eec83ab5e3bff54e50e9c027c0681e718564cb2b64be70347",
+            "trace": "39537344bcbce3a7cc2805d75854a3ae3616bc7932ec202afa4f4b97fe0bbcf1",
+            "error": "ordinary player probe died or acquired assisted combat",
+            "steps": 1
+        },
+        {
+            "name": "resupplied-reactor-continuous-escape-01",
+            "result": "FAIL",
+            "room": 3118,
+            "level": 2,
+            "score": 68000,
+            "lives": 3,
+            "shields": 12.628646850585938,
+            "energy": 30.60009765625,
+            "countdown": {
+                "active": true,
+                "timer": 83013,
+                "total_seconds": 30
+            },
+            "reactor": [
+                {
+                    "id": 1,
+                    "object": 433,
+                    "signature": 434,
+                    "segment": 2957,
+                    "shields": -8.0
+                }
+            ],
+            "pose": 0,
+            "fixed_view": 0,
+            "incoming": "5a68fa242e5993c7cf8c32171a55e84fc8b8b435491b632413bbd732d7d7d9b4",
+            "plan": "4c9732b79feee6f7872ded42c3454ce91972bc9a0d08c56c49341d16f5acc984",
+            "proof": "e643e76121a165c975cf9ffe6d074088bcc339f77d906bf83331c61e6cdcdf72",
+            "state": "78f296b36762d99ba7e9f4a344edfe2e01240cf9c28c23aa8ab3c1a2c6708cd2",
+            "trace": "b39fbb7973cb2df473a2cac479548b6f326f7fdd7ccec4214b0234f4de23f4f2",
+            "error": "Ordinary flight failed at segment 3118 side 0, ended in level 2 segment 3118",
+            "steps": 16
+        },
+        {
+            "name": "resupplied-reactor-continuous-escape-02",
+            "result": "FAIL",
+            "room": 991,
+            "level": 3,
+            "score": 68000,
+            "lives": 2,
+            "shields": 100.0,
+            "energy": 100.0,
+            "countdown": {
+                "active": false,
+                "timer": -262144,
+                "total_seconds": 30
+            },
+            "reactor": [],
+            "pose": 0,
+            "fixed_view": 0,
+            "incoming": "5a68fa242e5993c7cf8c32171a55e84fc8b8b435491b632413bbd732d7d7d9b4",
+            "plan": "6a806bd404d19fc14682203954e256c541cad7b80d5ba586b054a67d010e6f99",
+            "proof": "5c291ef59c03b2c8cd3dcece906225c0a6109b4d5fcc16cc90b7785b1e2260ba",
+            "state": "83b897f6d425ff3e0952b0faf7cbceae524c71766567e084061c3bd24dda2841",
+            "trace": "470885fbbcb04c07aad8a407ac01a37b77b61591b18bb4097aa25163b65b0407",
+            "error": "Ordinary flight failed at segment 981 side 5, ended in level 3 segment 991",
+            "steps": 42
+        }
+    ],
+    "shortcut": {
+        "reactor-escape-extra-life-pickup": {
+            "result": "PASS",
+            "room": 2961,
+            "level": 2,
+            "score": 63000,
+            "lives": 4,
+            "shields": 61.739013671875,
+            "energy": 33.10009765625,
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "reactor": [
+                {
+                    "id": 1,
+                    "object": 433,
+                    "signature": 434,
+                    "segment": 2957,
+                    "shields": 289.0
+                }
+            ],
+            "pose": 0,
+            "fixed_view": 0,
+            "incoming": "e8665097c94012ac7144dde43921ce5fe702dc6c50c478eff3c1ec1e0728e1a9",
+            "plan": "1049ba2ed3341ccb79b60d098734408e4e2d5a757027f2ad45dd6ba987cafc9b",
+            "proof": "8927ad7a1024e844cab3930f6f62e1a693dedfbb10b5c008feb30c96472fdaf7",
+            "state": "bc2945faef32b32bee01e68a4d80d5c390adf2b7835df24ae841520eef9df926",
+            "trace": "17ef6c5210833158460b02acbc122014ab3f56b08133fdc1136cbb1fa29bb02d",
+            "executable": "573c9e3515b4c24a837423f7a57158facb35e6aa2162c8fee978ef786ffb31ff",
+            "outgoing": "159312025cc8162c295b04839ebfa1444e915b4ffd92072e8f047d065a95e59c"
+        },
+        "reactor-escape-shortcut-switch6": {
+            "result": "PASS",
+            "room": 2961,
+            "level": 2,
+            "score": 63000,
+            "lives": 4,
+            "shields": 61.739013671875,
+            "energy": 32.85009765625,
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "reactor": [
+                {
+                    "id": 1,
+                    "object": 433,
+                    "signature": 434,
+                    "segment": 2957,
+                    "shields": 289.0
+                }
+            ],
+            "pose": 0,
+            "fixed_view": 0,
+            "incoming": "159312025cc8162c295b04839ebfa1444e915b4ffd92072e8f047d065a95e59c",
+            "plan": "84c0519165a71867060e6f13d7dfdd3a9a1b5bd2aea28efdd177d2f46ae561df",
+            "proof": "aaa910242d64d46f04d8c5140f4dda454f85b904ea9f8c188cb4a74bc47b5073",
+            "state": "58f9b9ec07f8acb7543f06ae88907d6fbc08d50611ff149be07f4dbd0b914e7a",
+            "trace": "b513393b34a8ea1c89e64d15fc8a7cb1aa1bc382020849226115ca751f2d1941",
+            "executable": "573c9e3515b4c24a837423f7a57158facb35e6aa2162c8fee978ef786ffb31ff",
+            "outgoing": "ea25bc6148ca0240b765da1ef007425624d65ddc8d0a6f739cea001a5ec6e820"
+        },
+        "shortcut-open-reactor-plasma": {
+            "result": "PASS",
+            "room": 3122,
+            "level": 2,
+            "score": 68500,
+            "lives": 4,
+            "shields": 3.6447906494140625,
+            "energy": 28.60009765625,
+            "countdown": {
+                "active": true,
+                "timer": 1966080,
+                "total_seconds": 30
+            },
+            "reactor": [
+                {
+                    "id": 1,
+                    "object": 433,
+                    "signature": 434,
+                    "segment": 2957,
+                    "shields": -8.0
+                }
+            ],
+            "pose": 0,
+            "fixed_view": 0,
+            "incoming": "cf40c4b7a238684a8760f43a9fe27582a0eebb6b2f4261d2264bed16bfa3027d",
+            "plan": "48a2399c00fe728a4b214f4ea86f544bbd510e0616573c73767d681244a79665",
+            "proof": "31715dbd15b1e66689d0563c34aeea89961e722ec9f9822aeb2f91b722ad1ece",
+            "state": "428dbd09b02db9c96b76508662fd98accc906dfc54ff5faa3836a62b71f47505",
+            "trace": "0793d1934550e2be8b31b2985848c03c7a4e19442041c423fa9fde41f4fbd6cc",
+            "executable": "573c9e3515b4c24a837423f7a57158facb35e6aa2162c8fee978ef786ffb31ff",
+            "outgoing": "6d34762036070e9600c4bbce7a43daad8184e8d18570defd5cc852468e7b3304"
+        }
+    }
+}
