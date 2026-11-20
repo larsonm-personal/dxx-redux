@@ -597,6 +597,8 @@ def reconcile(plan, policy, state, receipts):
                 phase=row.get("phase", "tests"),
                 **core_diagnostics(row, ident),
             )
+            if row["status"] in ("FAIL", "TIMEOUT") and type(row.get("exit_code")) is int:
+                compact["exit_code"] = row["exit_code"]
             diagnostics = retail.public_diagnostics(row)
             if diagnostics.get("master_diagnostics"):
                 compact["master_diagnostics"] = diagnostics["master_diagnostics"]
