@@ -72,12 +72,12 @@ class PilotPickupObservation
 	}
 };
 #endif
-static bool pilot_protection_is_earned()
+static bool pilot_protection_is_earned(int position_assists)
 {
 	if (!(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE)) return true;
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 	const auto &pickup = pilot_invulnerability_pickup;
-	return pickup && pickup->generation == combat_load_generation && pickup->level == Current_level_num &&
+	return pickup && !position_assists && pickup->generation == combat_load_generation && pickup->level == Current_level_num &&
 	       pickup->player_slot == Players[Player_num].objnum && ConsoleObject && pickup->player_signature == ConsoleObject->signature &&
 	       pickup->time == Players[Player_num].invulnerable_time && GameTime64 >= pickup->time && GameTime64 - pickup->time <= INVULNERABLE_TIME_MAX;
 #else
@@ -823,7 +823,7 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 			require_ordinary_secondary_input("before_frame");
 			const auto frame_started = std::chrono::steady_clock::now();
 			timer_update();
-			require(!Player_is_dead && !cheats.enabled && !cheats.ghostphysics && !cheats.monsterdamage && !cheats.robotfiringsuspended && pilot_protection_is_earned(), "ordinary player probe died or acquired assisted combat");
+			require(!Player_is_dead && !cheats.enabled && !cheats.ghostphysics && !cheats.monsterdamage && !cheats.robotfiringsuspended && pilot_protection_is_earned(position_assist_events), "ordinary player probe died or acquired assisted combat");
 			remainder += F1_0;
 			FrameTime = remainder / fps;
 			remainder %= fps;
@@ -868,7 +868,7 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 			GameProcessFrame();
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 			if (!previously_protected && (Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE)) {
-				require(pilot_protection_is_earned() && !position_assist_events, "Protection requires a native pickup in unassisted flight");
+				require(pilot_protection_is_earned(position_assist_events), "Protection requires a native pickup in unassisted flight");
 				const auto &pickup = *pilot_invulnerability_pickup;
 				trace << Json{ { "event", "native_invulnerability_pickup" }, { "frame", frame_count + 1 }, { "object", pickup.slot }, { "signature", pickup.signature }, { "player", pickup.player_slot }, { "player_signature", pickup.player_signature }, { "level", pickup.level }, { "generation", pickup.generation }, { "game_time_raw", pickup.time } }.dump() << '\n';
 			}
