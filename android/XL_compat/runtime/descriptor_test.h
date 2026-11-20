@@ -774,7 +774,16 @@ static int descriptor_test(int argc, char **argv)
 			};
 			select(nullptr);
 			select("xlblock.rl2");
+			const int64_t saved_epoch = (int64_t(1) << 34) + 91;
+			int64_t clock = 0;
+			require(xl_secret_restore_clock(-1, saved_epoch, &clock) && clock == saved_epoch,
+			        "Classic base selected the wrong clock for its incoming XL secret");
 			require(load_level("xlblock.rl2") == 0 && xl_blocked_segment(0), "listed legacy secret lost its blocked room");
+			clock = 0;
+			require(xl_secret_restore_clock(1, saved_epoch, &clock) && clock == 0,
+			        "XL secret selected its own clock for the incoming classic base");
+			require(!xl_secret_restore_clock(-2, saved_epoch, &clock) && clock == 0,
+			        "Unlisted secret selected a world clock");
 			select("xltail.rl2");
 			require(load_level("xltail.rl2") != 0, "mixed mission admitted unsupported secret-level semantics");
 			select(nullptr);
