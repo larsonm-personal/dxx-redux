@@ -920,7 +920,7 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 			}
 			observed_state = state_now;
 		};
-		auto steer = [&](const vms_vector &target, const vms_vector *sight_target, bool primary, double cruise_speed = 25.0) {
+		auto steer = [&](const vms_vector &target, const vms_vector *sight_target, bool primary, double cruise_speed = 25.0, bool maintain_cruise = false) {
 			vms_vector direction;
 			vm_vec_sub(&direction, &target, &ConsoleObject->pos);
 			const double distance = f2fl(vm_vec_normalize(&direction));
@@ -929,7 +929,7 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 			auto dot = [](const vms_vector &a, const vms_vector &b) { return double(vm_vec_dot(&a, &b)) / F1_0; };
 			const double x = dot(direction, orient.rvec), y = dot(direction, orient.uvec), z = dot(direction, orient.fvec);
 			auto axis = [](double value) { return std::clamp(value, -1.0, 1.0); };
-			const double speed = (std::min) (cruise_speed, 2 * distance);
+			const double speed = maintain_cruise ? cruise_speed : (std::min) (cruise_speed, 2 * distance);
 			thrust = axis((z * speed - dot(physics.velocity, orient.fvec)) / 12);
 			sideways = axis((x * speed - dot(physics.velocity, orient.rvec)) / 12);
 			vertical = axis((y * speed - dot(physics.velocity, orient.uvec)) / 12);
@@ -1123,13 +1123,16 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 					require(!approach && pumo_ordinary_input_validation::integer_in_range(step.at("cruise_speed"), 1, 100),
 					        "Portal cruise speed must be an integer from 1 to 100");
 				const int cruise_speed = step.value("cruise_speed", 25);
+				if (step.contains("maintain_cruise"))
+					require(!approach && step.at("maintain_cruise").is_boolean(), "Maintaining cruise speed requires a portal transit and a boolean");
+				const bool maintain_cruise = step.value("maintain_cruise", false);
 				require(!engage || (!approach && primary), "Combat flight requires portal transit and primary fire");
 				for (int i = 0; i < maximum && Current_level_num == level && ConsoleObject->segnum == segment; ++i) {
 					const int robot = engage ? pilot_target::nearest_robot(80.0) : -1;
 					const auto *aim = robot >= 0 ? &Objects[robot].pos : approach ? &sight_target
 					                                                              : nullptr;
 					const bool shoot = primary && (!engage || robot >= 0 || Segments[segment].sides[side].wall_num >= 0);
-					if (steer(target, aim, shoot, cruise_speed) && approach) {
+					if (steer(target, aim, shoot, cruise_speed, maintain_cruise) && approach) {
 						aligned = true;
 						break;
 					}
