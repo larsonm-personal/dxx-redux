@@ -1,0 +1,615 @@
+[
+    {
+        "track_objects": [314],
+        "inputs": [
+            {
+                "action": "assert",
+                "expect": {
+                    "current_level_num": 2,
+                    "player.has_gold_key": true,
+                    "player.lives": 3
+                }
+            }
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2666,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 34300,
+            "player.robots_killed_level": 27,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "not_contains_object": {
+                    "id": 5
+                }
+            },
+            "combat_observation.tracked_objects": {
+                "contains_object": {
+                    "object": 314,
+                    "expected_signature": 315,
+                    "expected_id": 45,
+                    "exists": true,
+                    "actor_state": {
+                        "segment": 2647,
+                        "shields_raw": 44620574
+                    }
+                }
+            }
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 70,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "track_objects": [314],
+        "inputs": [
+            [2666, 2],
+            [2662, 5]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2661,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 34300,
+            "player.robots_killed_level": 27,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "not_contains_object": {
+                    "id": 5
+                }
+            },
+            "combat_observation.tracked_objects": {
+                "contains_object": {
+                    "object": 314,
+                    "expected_signature": 315,
+                    "expected_id": 45,
+                    "exists": true,
+                    "actor_state": {
+                        "segment": 2647,
+                        "shields_raw": 44620574
+                    }
+                }
+            }
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 70,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "track_objects": [314],
+        "inputs": [
+            [2661, 2],
+            [2660, 5]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2425,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 34300,
+            "player.robots_killed_level": 27,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "not_contains_object": {
+                    "id": 5
+                }
+            },
+            "combat_observation.tracked_objects": {
+                "contains_object": {
+                    "object": 314,
+                    "expected_signature": 315,
+                    "expected_id": 45,
+                    "exists": true,
+                    "actor_state": {
+                        "segment": 2647,
+                        "shields_raw": 44620574
+                    }
+                }
+            }
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 70,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "track_objects": [314],
+        "inputs": [
+            [2425, 0],
+            [2482, 3]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2483,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 34300,
+            "player.robots_killed_level": 27,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "not_contains_object": {
+                    "id": 5
+                }
+            },
+            "combat_observation.tracked_objects": {
+                "contains_object": {
+                    "object": 314,
+                    "expected_signature": 315,
+                    "expected_id": 45,
+                    "exists": true,
+                    "actor_state": {
+                        "segment": 2433,
+                        "shields_raw": 44620574
+                    }
+                }
+            }
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 70,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "track_objects": [314],
+        "inputs": [
+            [2483, 3],
+            [2484, 3]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2501,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 34300,
+            "player.robots_killed_level": 27,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "not_contains_object": {
+                    "id": 5
+                }
+            },
+            "combat_observation.tracked_objects": {
+                "contains_object": {
+                    "object": 314,
+                    "expected_signature": 315,
+                    "expected_id": 45,
+                    "exists": true,
+                    "actor_state": {
+                        "segment": 2432,
+                        "shields_raw": 44620574
+                    }
+                }
+            }
+        }
+    },
+    {
+        "track_objects": [314],
+        "inputs": [
+            {
+                "action": "engage_visible_robot",
+                "object": 314,
+                "robot_id": 45,
+                "strafe": 0,
+                "max_frames": 90
+            }
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2501,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 34300,
+            "player.robots_killed_level": 27,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "not_contains_object": {
+                    "id": 5
+                }
+            },
+            "combat_observation.tracked_objects": {
+                "contains_object": {
+                    "object": 314,
+                    "expected_signature": 315,
+                    "expected_id": 45,
+                    "exists": true,
+                    "actor_state": {
+                        "segment": 2432,
+                        "shields_raw": 39199969
+                    }
+                }
+            }
+        }
+    },
+    {
+        "track_objects": [314],
+        "inputs": [
+            {
+                "action": "assert",
+                "expect": {
+                    "player.secondary_weapon": 4,
+                    "player.primary_weapon": 6
+                }
+            },
+            {
+                "action": "send_button",
+                "button": 101,
+                "held": 1
+            },
+            {
+                "action": "engage_visible_robot",
+                "object": 314,
+                "robot_id": 45,
+                "strafe": -1,
+                "max_frames": 35
+            },
+            {
+                "action": "send_button",
+                "button": 101,
+                "held": 0
+            }
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2484,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 34300,
+            "player.robots_killed_level": 27,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "not_contains_object": {
+                    "id": 5
+                }
+            },
+            "combat_observation.tracked_objects": {
+                "contains_object": {
+                    "object": 314,
+                    "expected_signature": 315,
+                    "expected_id": 45,
+                    "exists": true,
+                    "actor_state": {
+                        "segment": 2432,
+                        "shields_raw": 10682734
+                    }
+                }
+            }
+        }
+    },
+    {
+        "track_objects": [314],
+        "inputs": [
+            {
+                "action": "select_secondary",
+                "slot": 3
+            },
+            {
+                "action": "assert",
+                "expect": {
+                    "player.secondary_weapon": 8
+                }
+            },
+            {
+                "action": "send_button",
+                "button": 101,
+                "held": 1
+            },
+            {
+                "action": "engage_visible_robot",
+                "object": 314,
+                "robot_id": 45,
+                "strafe": -1,
+                "max_frames": 60
+            },
+            {
+                "action": "send_button",
+                "button": 101,
+                "held": 0
+            }
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2550,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 34300,
+            "player.robots_killed_level": 27,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "not_contains_object": {
+                    "id": 5
+                }
+            },
+            "combat_observation.tracked_objects": {
+                "contains_object": {
+                    "object": 314,
+                    "expected_signature": 315,
+                    "expected_id": 45,
+                    "exists": true,
+                    "actor_state": {
+                        "segment": 2432,
+                        "shields_raw": 8786314
+                    }
+                }
+            }
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 70,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "track_objects": [314],
+        "inputs": [
+            [2550, 2],
+            [2552, 2]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2501,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 34300,
+            "player.robots_killed_level": 27,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "not_contains_object": {
+                    "id": 5
+                }
+            },
+            "combat_observation.tracked_objects": {
+                "contains_object": {
+                    "object": 314,
+                    "expected_signature": 315,
+                    "expected_id": 45,
+                    "exists": true,
+                    "actor_state": {
+                        "segment": 2493,
+                        "shields_raw": 1788444
+                    }
+                }
+            }
+        }
+    },
+    {
+        "track_objects": [314],
+        "inputs": [
+            {
+                "action": "assert",
+                "expect": {
+                    "player.primary_weapon": 6
+                }
+            },
+            {
+                "action": "engage_visible_robot",
+                "object": 314,
+                "robot_id": 45,
+                "strafe": 1,
+                "max_frames": 110
+            }
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2642,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 44300,
+            "player.robots_killed_level": 28,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "not_contains_object": {
+                    "id": 5
+                }
+            },
+            "combat_observation.tracked_objects": {
+                "contains_object": {
+                    "object": 314,
+                    "expected_signature": 315,
+                    "expected_id": 45,
+                    "exists": true,
+                    "actor_state": {
+                        "segment": 2501,
+                        "shields_raw": -1488356
+                    }
+                }
+            }
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 100,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": false
+        },
+        "inputs": [[2642, 5]],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2582,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 44300,
+            "player.robots_killed_level": 28,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "not_contains_object": {
+                    "id": 5
+                }
+            }
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 100,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": false
+        },
+        "inputs": [
+            [2582, 0],
+            [2480, 5]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2486,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 44300,
+            "player.robots_killed_level": 28,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "not_contains_object": {
+                    "id": 5
+                }
+            }
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 100,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": false
+        },
+        "inputs": [
+            [2486, 0],
+            [2456, 4]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2454,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 44300,
+            "player.robots_killed_level": 28,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "not_contains_object": {
+                    "id": 5
+                }
+            }
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 100,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": false
+        },
+        "inputs": [
+            [2454, 3],
+            [2746, 3]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2460,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 44300,
+            "player.robots_killed_level": 28,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "not_contains_object": {
+                    "id": 5
+                }
+            }
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 100,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": false
+        },
+        "inputs": [
+            [2460, 4],
+            [2765, 4]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 2767,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "player.lives": 3,
+            "player.score": 45150,
+            "player.robots_killed_level": 29,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "reactor_countdown.active": false,
+            "level_scene.powerups": {
+                "contains_object": {
+                    "id": 5,
+                    "object": 640,
+                    "segment": 2501
+                }
+            }
+        }
+    }
+]

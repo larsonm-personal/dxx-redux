@@ -1023,6 +1023,60 @@ if(BUILD_TESTING)
                        FIXTURES_SETUP
                        sphere_gauss_supply)
         add_test(
+            NAME xl_sphere_red_resupply
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-gauss-supply -DSTAGE=red_resupply
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-red-resupply -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+        set_tests_properties(
+            xl_sphere_red_resupply
+            PROPERTIES TIMEOUT
+                       1800
+                       RUN_SERIAL
+                       TRUE
+                       FIXTURES_REQUIRED
+                       sphere_gauss_supply
+                       FIXTURES_SETUP
+                       sphere_red_resupply)
+        add_test(
+            NAME xl_sphere_red_carrier
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-red-resupply -DSTAGE=red_carrier
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-red-carrier -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+        set_tests_properties(
+            xl_sphere_red_carrier
+            PROPERTIES TIMEOUT
+                       1800
+                       RUN_SERIAL
+                       TRUE
+                       FIXTURES_REQUIRED
+                       sphere_red_resupply
+                       FIXTURES_SETUP
+                       sphere_red_carrier)
+        add_test(
+            NAME xl_sphere_red_recovery
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-red-carrier -DSTAGE=red_recovery
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-red-recovery -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+        set_tests_properties(
+            xl_sphere_red_recovery
+            PROPERTIES TIMEOUT
+                       1800
+                       RUN_SERIAL
+                       TRUE
+                       FIXTURES_REQUIRED
+                       sphere_red_carrier
+                       FIXTURES_SETUP
+                       sphere_red_recovery)
+        add_test(
             NAME xl_sphere_sparse_morph_restore
             COMMAND
                 ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
