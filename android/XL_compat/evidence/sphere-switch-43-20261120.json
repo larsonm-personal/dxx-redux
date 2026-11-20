@@ -1,0 +1,141 @@
+{
+    "native_source": "ad7ccabd6b2371f7cb684b5f27bacdad982dc42f",
+    "origin": "b40243892bbafdfaf6e684f7dcf164fee8af8e7bad6c6ff1006fc2fab0f2dfac",
+    "mission": {
+        "filename": "sphere",
+        "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+        "hog_sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253"
+    },
+    "device": {
+        "original_apk": "93d3d2afdf1b5a4450cb24bd742978b18712b6c449a8412d893dc0327c319bc5",
+        "apk": "8bbd671696f9b0d16b4a606464afa12fd605e80e09215619e0bf930af036c181",
+        "export": "3e32e349bb57051fae425e30dddee503efd1bdca4c8538a3f70bf220cca403f1",
+        "written": "fc1f108c0042154bb46672957fe19a1148af921c1aada326aa85904d28e18d0f",
+        "assets": [
+            {
+                "path": "files/imported/sets/default/missions/sphere.hog",
+                "sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/missions/sphere.mn2",
+                "sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x.hog",
+                "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x-xl.hog",
+                "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                "added": true
+            }
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "in_game": true,
+            "cheats_enabled": false,
+            "player.lives": 6,
+            "player.score": 81250,
+            "player.has_gold_key": false,
+            "player.has_red_key": false,
+            "player_dead": false,
+            "player.primary_weapon_flags": 143,
+            "position.segment": 408
+        },
+        "logs": {
+            "write": "22f49aff2b7bacb135e905fee5b4ae5b8d3a03a3c56d204a015f3e3d127c8d60",
+            "cold": "289b9c059d8e872bf96b036f28272466c0b8b38dea92532ca5d2905bd831820b"
+        }
+    },
+    "capture": [
+        {
+            "file": "d2_sphere_level3_20261120_121140.dximdemo",
+            "remote": "files/d2x-redux/input_demo_recordings/new/d2_sphere_level3_20261120_121140.dximdemo",
+            "bytes": 9928074,
+            "sha256": "79f1a89026ba7a74a0fab9e3dcf99046b40d98afd3f3820779024133a419e907"
+        },
+        {
+            "file": "d2_sphere_level3_20261120_121140.dximdemo.rngtrace.jsonl",
+            "remote": "files/d2x-redux/input_demo_recordings/new/d2_sphere_level3_20261120_121140.dximdemo.rngtrace.jsonl",
+            "bytes": 25235937,
+            "sha256": "9d2c779cf6188a0267aa00d5466c7fca17f07f1f90f3faeb99685fe1a85caa39"
+        },
+        {
+            "file": "live-9571.jsonl.gz",
+            "remote": "files/d2x-redux/xl_capture_traces/live-9571.jsonl.gz",
+            "bytes": 20614054,
+            "sha256": "6de752089e437254ec9f95f19ccb0fb8bd6654fba279f26f5e6300df96d79fdd"
+        }
+    ],
+    "platforms": {
+        "windows": {
+            "debug_engine_sha256": "2c2fb01976556573176c712e0ea4c33aaf241459abb6ad1f77b74f26154ab462",
+            "playback_engine_sha256": "ca6daa369096986d6f94640999634879abb8752dcd134e8f57c3ebf4da94b2b0",
+            "crossing_state_sha256": "3be83fa983fbc5b5b5b230a093b10853b82f2393e5c2563dba7546212d6d3109",
+            "position_assist_events": 0,
+            "android_export": "3e32e349bb57051fae425e30dddee503efd1bdca4c8538a3f70bf220cca403f1",
+            "device_slot_import": "PASS",
+            "comparison": {
+                "frames": {
+                    "frames_compared": 182,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 182
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 186
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 88895
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 10
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            }
+        },
+        "linux": {
+            "debug_engine_sha256": "7f3f253965d691934391539c2c8468725b05f477236f89e2724c6608dc54fe0d",
+            "playback_engine_sha256": "890e5220d559368d3519d4bc9e87c823799fc7b689cc07e2ed221ee05a33332b",
+            "crossing_state_sha256": "71592e6e4dec0549b462d84c9959cff9dda5261d8770b1d3a7808c4f7269527d",
+            "position_assist_events": 0,
+            "android_export": "7fc5272508eac7f99bb4f2924d135ab2fcac745ec645171b228f76dc5f1577d5",
+            "device_slot_import": "PASS",
+            "comparison": {
+                "frames": {
+                    "frames_compared": 182,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 182
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 186
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 88895
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 10
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            }
+        }
+    }
+}

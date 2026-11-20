@@ -1,0 +1,283 @@
+{
+    "new_pilot_defaults": true,
+    "mission": {
+        "filename": "sphere",
+        "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+        "hog_sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253"
+    },
+    "initial_level": 3,
+    "simulation_fps": 60,
+    "resume_checkpoint": "six.sav",
+    "resume_sha256": "b40243892bbafdfaf6e684f7dcf164fee8af8e7bad6c6ff1006fc2fab0f2dfac",
+    "checkpoint_expect": {
+        "current_level_num": 3,
+        "cheats_enabled": false,
+        "player.lives": 6,
+        "player.score": 79250,
+        "player.has_gold_key": false,
+        "player.has_red_key": false,
+        "player_dead": false,
+        "player.primary_weapon_flags": 143,
+        "position.segment": 1419
+    },
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 3,
+                "cheats_enabled": false,
+                "player.lives": 6,
+                "player.score": 79250,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player_dead": false,
+                "player.primary_weapon_flags": 143,
+                "position.segment": 1419
+            }
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1419,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1416,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1415,
+            "side": 4,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 3046,
+            "side": 4,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 3045,
+            "side": 4,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 3044,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 3043,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 3047,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1412,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 474,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 470,
+            "side": 5,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 468,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 467,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 466,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 383,
+            "side": 5,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 379,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 377,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 375,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 373,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 2734,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 372,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 370,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 3170,
+            "side": 2,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 3166,
+            "side": 4,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 409,
+            "side": 4,
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 408,
+                "current_level_num": 3,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "xl_pilot.wall_triggers.4.operated": true,
+                "player.lives": 6,
+                "player.score": 81250,
+                "xl_pilot.doorways.43.state": 2
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save",
+            "export_android": true
+        }
+    ]
+}
