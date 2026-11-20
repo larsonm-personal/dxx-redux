@@ -1,0 +1,495 @@
+{
+    "parent": "a0b889e5e326642f350d002e1e407ba91b8e3850",
+    "mission": {
+        "filename": "sphere",
+        "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+        "hog_sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253"
+    },
+    "resources": {
+        "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+        "files": [
+            {
+                "path": "d2x.hog",
+                "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                "size": 4371791,
+                "source": "descent_2_vertigo/d2x.hog"
+            },
+            {
+                "path": "d2x-xl.hog",
+                "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                "size": 3815963,
+                "source": "xl-resources/d2x-xl.hog"
+            }
+        ],
+        "profile": "authentic-vertigo-xl-v1",
+        "repository": "larsonm-personal/dxx-redux-test-assets"
+    },
+    "private_root": "temp/xl-sphere-campaign-20261119",
+    "windows_sha256": "23125081f33a81b399ced45c61856e366a4b02e6a6365fa152131863e7279d41",
+    "linux_sha256": "a3fed13f56f8dfdfd430b58447702876987851347160e71f3e588cd82bbf89ef",
+    "stationary_prototype_windows_sha256": "dfb2e989e5a64f0812f871ca14705eafc17062d0a50e3eb7233fad1d0fc7f15b",
+    "canonical": [
+        {
+            "case": "continuation-supplied-attack-03",
+            "result": "PASS",
+            "plan": "43683dac37cb0f64a6e20da3c305b68ee8ae8ae0e3e81078e24809eb694ab8ef",
+            "trace": "d220b59dfc1b43e76b3c9737f4d511e109c295f9979441fdcd1b5a59e8fac707",
+            "state": "2ff3964bf1462b6529dcf6a98032e08f0960c7fccb22a7446dab61c98cb81572",
+            "result_file": "7f775cb91ffaf20c05bb169336f93d2b514676356915ac4bcf3956f1a839cf04",
+            "parent": "8113c39b41c8cc9ca269f3e9a71af53c2ef0ef28624d04700f4d502f29844038",
+            "segment": 1251,
+            "shields": 97.91903686523438,
+            "energy": 70.9752197265625,
+            "lives": 3,
+            "gold": false,
+            "carrier": {
+                "boss": 27,
+                "id": 75,
+                "object": 432,
+                "position_fixed": [-11894875, 5670641, 13313529],
+                "segment": 974,
+                "shields": 750.0
+            },
+            "gold_drops": [],
+            "reactor": [[433, 300.0]],
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "fixed_view": 0,
+            "position_assists": 0,
+            "save": "03fb8a988d692c1e7d77421c690eaa0ddd3ec3988e21898341285c3199bd94c9"
+        },
+        {
+            "case": "continuation-visible-ranged-00",
+            "result": "PASS",
+            "plan": "80c84793571f86dc77ba309f480af3723e4d0d0b4a2a7a2abfe8ba2377d6d7c0",
+            "trace": "80d3cce4ba278a5bbf38a3af15a425f6ceb432b1a2184c0d5e07a415e6f214d0",
+            "state": "b078e03cfa68d648cf96dd367c96dc129c1c9952d416eb8cd8d3344451024043",
+            "result_file": "523c524adbe48141cd3617326690539e5ccd0d91a61f3cd25b66a206b426a09a",
+            "parent": "03fb8a988d692c1e7d77421c690eaa0ddd3ec3988e21898341285c3199bd94c9",
+            "segment": 960,
+            "shields": 97.91903686523438,
+            "energy": 69.9752197265625,
+            "lives": 3,
+            "gold": false,
+            "carrier": {
+                "boss": 27,
+                "id": 75,
+                "object": 432,
+                "position_fixed": [-12097481, 6763965, 11925723],
+                "segment": 1293,
+                "shields": 662.0
+            },
+            "gold_drops": [],
+            "reactor": [[433, 300.0]],
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "fixed_view": 0,
+            "position_assists": 0,
+            "save": "9a90b26312d8858bcef7f72d9c5c8aae74d9ffe98e558069659989b800704828"
+        },
+        {
+            "case": "continuation-visible-orbit-01",
+            "result": "PASS",
+            "plan": "c646f8281609db8cc8a6e312d634ef940b44363cca3fa156883adf8a3e5be012",
+            "trace": "74527f99beda790e7171cfcb20611cf97ae6fa18baca33b82aa480398b838288",
+            "state": "d97a450f518557b729fa2e6b020cff700baf8e75ddf7bbbd367599946d47070f",
+            "result_file": "6bc163aabd2af26f73e2abd569a0ad931ccc3b38fb73e7116f6248e6e0086d2b",
+            "parent": "9a90b26312d8858bcef7f72d9c5c8aae74d9ffe98e558069659989b800704828",
+            "segment": 970,
+            "shields": 97.91903686523438,
+            "energy": 66.4752197265625,
+            "lives": 3,
+            "gold": false,
+            "carrier": {
+                "boss": 27,
+                "id": 75,
+                "object": 432,
+                "position_fixed": [-12372467, 5837054, 12126146],
+                "segment": 965,
+                "shields": 398.0
+            },
+            "gold_drops": [],
+            "reactor": [[433, 300.0]],
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "fixed_view": 0,
+            "position_assists": 0,
+            "save": "268527d139a32ef5e8fecf8a38202e4fd5f7bbdbd318111090cdc39c53439b17"
+        },
+        {
+            "case": "continuation-visible-orbit-02",
+            "result": "PASS",
+            "plan": "8fd98af3b5aaf64096df66e04fb882c924ecf6be44de64019a134d1accabe9ae",
+            "trace": "77901a6f83333bbc7e1bf596c9272e4c7000dd9757b966f2ca87d80c3f3d3311",
+            "state": "224e91901420de096e27f8c99ea5ff65e3017f0fc749c3e1e1385cd537df5bf4",
+            "result_file": "d330fb8cb4baaa3b34164884f8b3b0d8e776d1a9a60b6c4506f0d8433c202d29",
+            "parent": "268527d139a32ef5e8fecf8a38202e4fd5f7bbdbd318111090cdc39c53439b17",
+            "segment": 1232,
+            "shields": 96.0899658203125,
+            "energy": 63.2252197265625,
+            "lives": 3,
+            "gold": false,
+            "carrier": {
+                "boss": 27,
+                "id": 75,
+                "object": 432,
+                "position_fixed": [-12226684, 7398370, 13815944],
+                "segment": 1294,
+                "shields": 189.0
+            },
+            "gold_drops": [],
+            "reactor": [[433, 300.0]],
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "fixed_view": 0,
+            "position_assists": 0,
+            "save": "0f4f245564f5435221b16fed1820d8e28e6bbad204b467b9c41d764a063e571f"
+        },
+        {
+            "case": "continuation-visible-orbit-03",
+            "result": "PASS",
+            "plan": "b05a2c6b4f4f1222a0061835f9177a714cd87bf037eca073d92fcb8bf690aa1d",
+            "trace": "e836945c8d297dc9e39cab6c9859b2aa4f52b6984fa17ff6b92033cd34c34334",
+            "state": "813c832894d828de0755084697e0d76ad83767ec419f8cd14351f614e1cc2b27",
+            "result_file": "22cfa32af6f4dcb28f4688c1cefd7d6b85723df58de30fbdca805b3f6cfa237f",
+            "parent": "0f4f245564f5435221b16fed1820d8e28e6bbad204b467b9c41d764a063e571f",
+            "segment": 1495,
+            "shields": 95.71260070800781,
+            "energy": 60.7252197265625,
+            "lives": 3,
+            "gold": false,
+            "carrier": {
+                "boss": 27,
+                "id": 75,
+                "object": 432,
+                "position_fixed": [-12249152, 7661583, 13377450],
+                "segment": 1294,
+                "shields": -9.0
+            },
+            "gold_drops": [],
+            "reactor": [[433, 300.0]],
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "fixed_view": 0,
+            "position_assists": 0,
+            "save": "5c6e4e2eb3a791fc98bda159612334b14e96b5ba4483cf34d7a7ca300b146eaf"
+        },
+        {
+            "case": "continuation-carrier-death-roll-00",
+            "result": "PASS",
+            "plan": "270f789fc7bcfb360e36b3e72cc79b21bcb801dba86ab561d5ef32caa4c1442c",
+            "trace": "18e7f85047b4969868286041ad78c3446a84f9dda9c0e7a252cb4b097757faae",
+            "state": "6cb311788bccef7996965add537c380ad866a5f6c97364c56dafc55f9414940b",
+            "result_file": "15fdd3ab1bb8c6b2e71ce0206bc7c893d3caf140d82d90190c4122fce1360edb",
+            "parent": "5c6e4e2eb3a791fc98bda159612334b14e96b5ba4483cf34d7a7ca300b146eaf",
+            "segment": 1492,
+            "shields": 24.45849609375,
+            "energy": 60.7252197265625,
+            "lives": 3,
+            "gold": false,
+            "carrier": null,
+            "gold_drops": [
+                {
+                    "id": 6,
+                    "object": 633,
+                    "segment": 1292
+                }
+            ],
+            "reactor": [[433, 300.0]],
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "fixed_view": 0,
+            "position_assists": 0,
+            "save": "f58a73fd705dc545590d5537b3f8d5ecb8a4cd424e7db43ae600ad5512013702"
+        }
+    ],
+    "controls": [
+        {
+            "case": "continuation-carrier-flank-00",
+            "result": "PASS",
+            "plan": "8a39f44ffaab85d5a1ea41f5ced9c6e62dc1c7441189c8f3de473e65426dff51",
+            "trace": "9d7d11f781f2f1cc23910b7bcc9ee8adff54e651d342e266fca07a6e4c401aaf",
+            "state": "58dfcf700fabd455ade566644875ec9ad4bb4790fa379452a73fde9ad80c6a22",
+            "result_file": "66ef471e1919325c99f4012879cf8c1f9c9eac1609d9714a48c6b743d6a8d300",
+            "parent": "a2dc753c7611624e60c29f7922aa7ade0da45efbac15fa9c66480544da0959a5",
+            "segment": 1287,
+            "shields": 77.81538391113281,
+            "energy": 94.2252197265625,
+            "lives": 3,
+            "gold": false,
+            "carrier": {
+                "boss": 27,
+                "id": 75,
+                "object": 432,
+                "position_fixed": [-12817647, 12406874, 11865171],
+                "segment": 1285,
+                "shields": 739.0
+            },
+            "gold_drops": [],
+            "reactor": [[433, 300.0]],
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "fixed_view": 0,
+            "position_assists": 0,
+            "save": "2d1a4c0828ff2d82d07402b27fa99505839b04d0c8778c12c74e13131bbea079"
+        },
+        {
+            "case": "continuation-visible-carrier-00",
+            "result": "FAIL",
+            "plan": "5741131891fce08c710b25951d8cd085d6d89cb5f4e9c95e79031f63d8c57b10",
+            "trace": "984b611cafbf994be22f6347e0488b8c7a8f071fed1a6480b6872c2afdd1fadc",
+            "state": "e0ee76e38ca3f6f88b539254ac4e16e057bc48bf77cd648df9a92e4715d95ca2",
+            "result_file": "e1eb3325e81c02d355974901031296821c592efafb4991029701617ddc494515",
+            "parent": "2d1a4c0828ff2d82d07402b27fa99505839b04d0c8778c12c74e13131bbea079",
+            "segment": 1287,
+            "shields": -34.58204650878906,
+            "energy": 93.7252197265625,
+            "lives": 3,
+            "gold": false,
+            "carrier": {
+                "boss": 27,
+                "id": 75,
+                "object": 432,
+                "position_fixed": [-12832068, 11771477, 11965237],
+                "segment": 1285,
+                "shields": 717.0
+            },
+            "gold_drops": [],
+            "reactor": [[433, 300.0]],
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "fixed_view": 0,
+            "position_assists": 0,
+            "error": "native player checkpoint save failed"
+        },
+        {
+            "case": "continuation-visible-right-00",
+            "result": "PASS",
+            "plan": "1b94d77e3a92b192947b3f64f627469d193a5373905fbb057a583c83c1383f51",
+            "trace": "77382c1fc231723cb1a887d745fbc1376a7ff9d3465a6c3c9a612cd02aab5a5e",
+            "state": "3b8e8171e7c5ddc5367beac2fb4485ed0da2b78725977db6952700eb232e9d7a",
+            "result_file": "736b05b334106f76e717d7e25178828bf6f5ff3ac77e6ab1b3b65dfc4d5e60a8",
+            "parent": "2d1a4c0828ff2d82d07402b27fa99505839b04d0c8778c12c74e13131bbea079",
+            "segment": 1262,
+            "shields": 77.4832763671875,
+            "energy": 93.7252197265625,
+            "lives": 3,
+            "gold": false,
+            "carrier": {
+                "boss": 27,
+                "id": 75,
+                "object": 432,
+                "position_fixed": [-12834098, 12118237, 11894272],
+                "segment": 1285,
+                "shields": 695.0
+            },
+            "gold_drops": [],
+            "reactor": [[433, 300.0]],
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "fixed_view": 0,
+            "position_assists": 0,
+            "save": "fff7bfd77e837ebae11d37ebf5078e9230bc6f33f26fd5c2e0377832cb7fcf26"
+        },
+        {
+            "case": "continuation-linux-visible-right-00",
+            "result": "PASS",
+            "plan": "c4fd1f86a737e7c6d643976dd0e4a34a4c1d078ab9f27050b5b74f21bc7d0df8",
+            "trace": "4b184f120d9ae5a8b6f85b6e1630f95899e8c3fc0ffb077bcf5c8d10040cef2b",
+            "state": "cc5c5332c59842e9104fc6e487e2445738aec85b405a7146ed8e89fe29653063",
+            "result_file": "d1fadece555d0a47ecf46ebef8cc2e537edcb2262f3912b6d6211413bf3a9512",
+            "parent": "2d1a4c0828ff2d82d07402b27fa99505839b04d0c8778c12c74e13131bbea079",
+            "segment": 1262,
+            "shields": 77.4832763671875,
+            "energy": 93.7252197265625,
+            "lives": 3,
+            "gold": false,
+            "carrier": {
+                "boss": 27,
+                "id": 75,
+                "object": 432,
+                "position_fixed": [-12834098, 12118237, 11894272],
+                "segment": 1285,
+                "shields": 695.0
+            },
+            "gold_drops": [],
+            "reactor": [[433, 300.0]],
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "fixed_view": 0,
+            "position_assists": 0,
+            "save": "0df79c458f38f9aa785c621a80866b95e19b993d8b7c2b246df770cea1c4f446"
+        },
+        {
+            "case": "continuation-visible-right-01",
+            "result": "FAIL",
+            "plan": "951b2dfbe7655dfe5dc112baa9fa6f33a34015e8c048d0f75a1ac5a8e8ad2669",
+            "trace": "fb04762b1abdf683ff61e28f63226f4e577afdc6fc0a3233797d1f8d81533ff0",
+            "state": "0ce3bed51923eeeced37f7d6c26f4a3c88bd6abcde760fa138d1103c651be6f2",
+            "result_file": "542c55f264e1b39ffaf303ba29ea8e963dc9785cadb3bee227026136abbbd674",
+            "parent": "fff7bfd77e837ebae11d37ebf5078e9230bc6f33f26fd5c2e0377832cb7fcf26",
+            "segment": 1262,
+            "shields": -32.2869873046875,
+            "energy": 92.7252197265625,
+            "lives": 3,
+            "gold": false,
+            "carrier": {
+                "boss": 27,
+                "id": 75,
+                "object": 432,
+                "position_fixed": [-12860126, 11788866, 11994959],
+                "segment": 1285,
+                "shields": 629.0
+            },
+            "gold_drops": [],
+            "reactor": [[433, 300.0]],
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "fixed_view": 0,
+            "position_assists": 0,
+            "error": "Pilot died while engaging the visible robot"
+        },
+        {
+            "case": "continuation-linux-visible-wrong-id",
+            "result": "FAIL",
+            "plan": "19898cb35af26b21107e5c5a2745acd7de8ac8bb6f8ec4df397150fbe014573b",
+            "trace": "7261cb715063a2053babfa14129be9b1457da34ff75f60bc6b6d73185d53ac29",
+            "state": "6afea14043d7c85e989baf0756e27327a08e3dbffddd2030c23563ee77faf632",
+            "result_file": "90e9db20a9b73e41d43b8d7c655b21cda58622fe340de8a992a26a4b73155d61",
+            "parent": "2d1a4c0828ff2d82d07402b27fa99505839b04d0c8778c12c74e13131bbea079",
+            "segment": 1287,
+            "shields": 77.81538391113281,
+            "energy": 94.2252197265625,
+            "lives": 3,
+            "gold": false,
+            "carrier": {
+                "boss": 27,
+                "id": 75,
+                "object": 432,
+                "position_fixed": [-12817647, 12406874, 11865171],
+                "segment": 1285,
+                "shields": 739.0
+            },
+            "gold_drops": [],
+            "reactor": [[433, 300.0]],
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "fixed_view": 0,
+            "position_assists": 0,
+            "error": "Combat flight requires the requested hostile robot"
+        },
+        {
+            "case": "continuation-linux-visible-strafe-bounds",
+            "result": "FAIL",
+            "plan": "4d66c7faddcd7a6421e8b6e6a641363222cf727dcd050c36d76068a966759956",
+            "trace": "7261cb715063a2053babfa14129be9b1457da34ff75f60bc6b6d73185d53ac29",
+            "state": "6afea14043d7c85e989baf0756e27327a08e3dbffddd2030c23563ee77faf632",
+            "result_file": "97394d1b63a3a0ac7d153f6d7780df48df43f86b850ef0eeb4a0e136ad9d443a",
+            "parent": "2d1a4c0828ff2d82d07402b27fa99505839b04d0c8778c12c74e13131bbea079",
+            "segment": 1287,
+            "shields": 77.81538391113281,
+            "energy": 94.2252197265625,
+            "lives": 3,
+            "gold": false,
+            "carrier": {
+                "boss": 27,
+                "id": 75,
+                "object": 432,
+                "position_fixed": [-12817647, 12406874, 11865171],
+                "segment": 1285,
+                "shields": 739.0
+            },
+            "gold_drops": [],
+            "reactor": [[433, 300.0]],
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "fixed_view": 0,
+            "position_assists": 0,
+            "error": "Combat strafe must be -1, 0 or 1"
+        },
+        {
+            "case": "continuation-linux-visible-frame-bounds",
+            "result": "FAIL",
+            "plan": "f976f84c97a09f5ee73163a56fecd2e21e1a903701aa65dbb1d332c66ffb530f",
+            "trace": "7261cb715063a2053babfa14129be9b1457da34ff75f60bc6b6d73185d53ac29",
+            "state": "6afea14043d7c85e989baf0756e27327a08e3dbffddd2030c23563ee77faf632",
+            "result_file": "e3aaa4d5ad10fe893dd3ed98ef72e54c9b139da627f0749627e68be4b1456548",
+            "parent": "2d1a4c0828ff2d82d07402b27fa99505839b04d0c8778c12c74e13131bbea079",
+            "segment": 1287,
+            "shields": 77.81538391113281,
+            "energy": 94.2252197265625,
+            "lives": 3,
+            "gold": false,
+            "carrier": {
+                "boss": 27,
+                "id": 75,
+                "object": 432,
+                "position_fixed": [-12817647, 12406874, 11865171],
+                "segment": 1285,
+                "shields": 739.0
+            },
+            "gold_drops": [],
+            "reactor": [[433, 300.0]],
+            "countdown": {
+                "active": false,
+                "timer": 0,
+                "total_seconds": 0
+            },
+            "fixed_view": 0,
+            "position_assists": 0,
+            "error": "Combat flight requires a valid object and frame limit"
+        }
+    ],
+    "matched_terminal_state": true,
+    "matched_target_shields_and_fire_frames": 40,
+    "max_analog_control_difference": 2.220446049250313e-16,
+    "replay": {
+        "binary_sha256": "95e8a35efd2496c2fc130ae2ccec344180d4c6efadcef41f0fe8a014e0a27dc8",
+        "demo_sha256": "697a60f616c72299f087c455bff1a18d7264e4f9df5b6bf938e16c2ecfa03370",
+        "live_state_sha256": "2d8ba853477d23c3585516d371ade5bf86bd3ead3cc9c0575a41a5fb58d08eff",
+        "comparison_sha256": "990f03d7e7e657df817418447fa9e76b13f8a5e150f08103ab84aaf4babc873d"
+    },
+    "readiness": {
+        "continuation-auth-eight": "41b240fd8f05ee8a99138879815d1dcd01bc561c687ab86e9b57d25eabd43d98",
+        "continuation-auth-64": "37e603422d4e9599dee77484e02eb2472124259d0fc2077215a688aefab81813"
+    }
+}
