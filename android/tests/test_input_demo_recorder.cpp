@@ -2377,7 +2377,7 @@ int main(void)
 	for (size_t i = 0; i < checkpoint.size(); ++i) checkpoint[i] = static_cast<unsigned char>(i);
 	std::string hash, hash_error;
 	if (!input_demo_sha256_hex(checkpoint.data(), checkpoint.size(), &hash, &hash_error) ||
-	    hash != "91d3beb88a9b2f778a6c44a1c53b63d3c79931845a9aef84b3fb414610bd1938")
+	    hash != "f6dd7fec8584ad00219a447071c1fa368a1caee4d9c146083d233713ddccd2c0")
 		return report_failure("bounded checkpoint SHA-256 differs");
 	if (expect_environment_recording()) return 1;
 	if (expect_ordered_input_codec()) return 1;

@@ -173,7 +173,8 @@ so viewing a divergent recording can end with a nonzero test result
 
 The shared reader accepts recordings up to 1 GiB and reads bounded JSON lines
 (8 MiB per record), avoiding whole-file text copies. The decoded checkpoint
-limit remains 2 MiB. Parsed frame data still occupies memory until replay setup
+limit is 3 MiB to accommodate Sphere 1.51's level-two save. A full-size
+uncompressed checkpoint occupies 4 MiB after base64 encoding. Parsed frame data still occupies memory until replay setup
 finishes; this is not a constant-memory replay engine
 
 Replay RNG tracing spools fixed-size events beside the requested trace as

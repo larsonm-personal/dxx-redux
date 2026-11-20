@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define INPUT_DEMO_CHECKPOINT_MAX_BYTES         (2u * 1024u * 1024u)
+#define INPUT_DEMO_CHECKPOINT_MAX_BYTES         (3u * 1024u * 1024u)
 #define INPUT_DEMO_CHECKPOINT_MAX_ENCODED_BYTES ((((INPUT_DEMO_CHECKPOINT_MAX_BYTES) + 2u) / 3u) * 4u)
 #define INPUT_DEMO_CHECKPOINT_MAX_EXPANSION     1024u
 /* Full-level diagnostic recordings are read one bounded record at a time */
