@@ -1,0 +1,1768 @@
+{
+    "fixture_source": "068c007c5ead5cf5a21bedb00817dc62236b6996",
+    "native_source": "27a340e72e7e927cb7eaec73c3def936cf52845a",
+    "android_build": [
+        {
+            "source": "068c007c5ead5cf5a21bedb00817dc62236b6996",
+            "apk": "E:/dxx-redux-builds/xl-gameplay-window-20261120/level3-068c007c5-false.apk",
+            "sha256": "8bbd671696f9b0d16b4a606464afa12fd605e80e09215619e0bf930af036c181",
+            "abi": "x86_64",
+            "developer_tests": "false",
+            "log": "aa705cf577f541ab2157abcfee0dc350ace4b6fc83fa2f9b4e7651a31dddaee4"
+        },
+        {
+            "source": "068c007c5ead5cf5a21bedb00817dc62236b6996",
+            "apk": "E:/dxx-redux-builds/xl-gameplay-window-20261120/level3-068c007c5-true.apk",
+            "sha256": "e4152171a65bb380a88d4996a7d1822767fd51aabb077999589bcf1b476af297",
+            "abi": "x86_64",
+            "developer_tests": "true",
+            "log": "57cfb6c8acb7c42a828b41a2ddd4e54aeecac78ed4c18cba8c5b3e49ae9cca67"
+        }
+    ],
+    "origin": "352aa5201db2267badb7c4b537b4ba62d93196b94cce6e24490d9b1a746f86b5",
+    "phases": [
+        {
+            "phase": "native-android-living-level3",
+            "incoming": "352aa5201db2267badb7c4b537b4ba62d93196b94cce6e24490d9b1a746f86b5",
+            "outgoing": "62e882d646e3b3ac730af594b7ca3fd34de92cbb83e279a7086e2d0c7c0c9e3e",
+            "android": "8c8a1f1d149e80c7ac0a5e893c3a9f887fbcdaf2d38442a920e9715623e865fa",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 991,
+            "player": {
+                "lives": 4,
+                "score": 68850,
+                "shields": 100.0,
+                "energy": 100.0,
+                "primary_weapon_flags": 9,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": ["assert", "set_debug"],
+            "receipts": {
+                "plan.json": "6f95bf0a48ec3b0dc6d0dd9fbb016a37edcd1ff98e987acaad512a907219d6a9",
+                "player-result.json": "5e1760cc50146d023ab3f86421d8e46e13fe6cc421d35fbaa27ced222dec1d95",
+                "player-state.json": "f071b49ae29e70a7b960298bb498fa51c8417319299b7181149fd471d93a75ba",
+                "player-trace.jsonl": "4021b6914a98dcc5d05b15715633ce9ba0672f0a22ae785ad1e3b4fe71a1a859"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-laser/leg-000",
+            "incoming": "62e882d646e3b3ac730af594b7ca3fd34de92cbb83e279a7086e2d0c7c0c9e3e",
+            "outgoing": "b77ad99c0ae23891dc20a8b8fd0b686bc6cf08e311419523579bbe12fa024dee",
+            "android": "fba4361f23da7fc9d6daa216df269ea4300366de874e9610372a72bfa067314e",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 989,
+            "player": {
+                "lives": 4,
+                "score": 68850,
+                "shields": 100.0,
+                "energy": 100.0,
+                "primary_weapon_flags": 9,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": ["fly_through_side", "assert", "set_debug"],
+            "receipts": {
+                "plan.json": "e13094e7f1d05a759fa0dde600ec4e342cb61857ebc62b7c521bd5fcacd708ef",
+                "player-result.json": "a9dde12089065ef36fa476f757abf3623708669f4ab8cc7f996d434ccad7d3ad",
+                "player-state.json": "aa0d9d4b954bb8e52d6b0fee89d772e97a493abd94d4f3b4802f707e3f27ed07",
+                "player-trace.jsonl": "6e14b72f8eb342ad677838ebc4629c9e4ac38e710f639165ea5545d27b096241"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-vulcan/leg-000",
+            "incoming": "b77ad99c0ae23891dc20a8b8fd0b686bc6cf08e311419523579bbe12fa024dee",
+            "outgoing": "883e445d1563bd3e3dd2086c3a22867696dcb54304cd34189fd519bf89699cdd",
+            "android": "d7614e709b0cb556c6043784310cc1f94797db74958774af2f5e29ea3a0e7757",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 1013,
+            "player": {
+                "lives": 4,
+                "score": 69350,
+                "shields": 96.91526794433594,
+                "energy": 98.5,
+                "primary_weapon_flags": 9,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "827a2957db5ea842ef9a60d8aed5aeba6487d89676dcf33097619f538f40800a",
+                "player-result.json": "cdd84674e8c1bea4e7821572de88fd74b520ce24a7a79a4b050b20dd11b9e71e",
+                "player-state.json": "4f540d0af0e3d3f2a7162f094a4d4c618b855097a11a348d1d2602d1a4d7b641",
+                "player-trace.jsonl": "13e8e65f2b6dcf030ae3466c7a43df1ead7e8884925275823910c1e4b36bd7bc"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-vulcan/leg-001",
+            "incoming": "883e445d1563bd3e3dd2086c3a22867696dcb54304cd34189fd519bf89699cdd",
+            "outgoing": "2fc60485723e4010ec29f3d534a3b46eb7137cea03ca66674e9e7c4f27cfe331",
+            "android": "61572c746131e847d1448a46be8204dc9d74b9a4d1f19abddc9a4d0c04dab593",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 1012,
+            "player": {
+                "lives": 4,
+                "score": 69350,
+                "shields": 96.91526794433594,
+                "energy": 98.5,
+                "primary_weapon_flags": 11,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": ["fly_through_side", "assert", "set_debug"],
+            "receipts": {
+                "plan.json": "e2a83b93e699098eda5ca13ff8f23a650c90cb9754956f2d2cb26ad19fd4d8aa",
+                "player-result.json": "15b8b4a57bf6af7497b0e6886ee339848a40b5dfe175f5afe93bd4eb95520b8d",
+                "player-state.json": "793d32d99ea948ba50ec7c46a09fdedb1c0e953807613755e0b1380515e8db5b",
+                "player-trace.jsonl": "ad5dfca84fe2eb4d5275dc9408c0db621ba15109ad9d82928a7a1ed206c1291b"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-spreadfire/leg-000",
+            "incoming": "2fc60485723e4010ec29f3d534a3b46eb7137cea03ca66674e9e7c4f27cfe331",
+            "outgoing": "499b4f71e3a03f01bd4ba74e7379ab9c6244bb7c0f9fad98533750aefff6cc4f",
+            "android": "9e6c48e48ec91e01f2d48e7e125bd1800d1e906f321960cc38cc03396a69500c",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 1015,
+            "player": {
+                "lives": 4,
+                "score": 69350,
+                "shields": 96.91526794433594,
+                "energy": 98.5,
+                "primary_weapon_flags": 15,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": ["fly_through_side", "assert", "set_debug"],
+            "receipts": {
+                "plan.json": "22a5f7797ada1fffa04f717f7b5398a20c7953cf00a7b726f2159a18f3172eef",
+                "player-result.json": "cfcd99ad3d2c263ad3c9a437e009a0e786b79b90459d0aaf4f5febee9560d8db",
+                "player-state.json": "75711215d63030e6edaf91b80016482b7307aa6c4ac0168c451b823cf6955373",
+                "player-trace.jsonl": "007dfceb623f3bc5295f0a90cf88c2e65b5b84c5ca84dc7c3f8b65ab6e548f22"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-shield11/leg-000",
+            "incoming": "499b4f71e3a03f01bd4ba74e7379ab9c6244bb7c0f9fad98533750aefff6cc4f",
+            "outgoing": "1c1f6ea9ca5a88bea0b1b047a489c0f3458f76b94930654b76b6abe98bc6cfd2",
+            "android": "2db93b0fec15b19a5784ed9062dcf80d51e15e7db132b12e65c45ef6bc335f41",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 333,
+            "player": {
+                "lives": 4,
+                "score": 69350,
+                "shields": 96.91526794433594,
+                "energy": 98.5,
+                "primary_weapon_flags": 15,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "142e0a3338a5651f9a0fc52860af2e58ed66725c456e4dd415e01a57a3e6e256",
+                "player-result.json": "bcb4366e459df853fe71233ef63e58695384f3327ce683809bdddda4e9bbeb35",
+                "player-state.json": "bf430edce3801c754fbdbfe24d2795d707b8d70d66283f724ad3b859ac96f51d",
+                "player-trace.jsonl": "27e974a2ef8612ebbdc280309b06aa1e70dc2d5afaae5f559bfa2baf1944ae20"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-shield11/leg-001",
+            "incoming": "1c1f6ea9ca5a88bea0b1b047a489c0f3458f76b94930654b76b6abe98bc6cfd2",
+            "outgoing": "635decbac8f7d993b83095fa513c89b8f94ca18c121ed486176b8429b1ed8508",
+            "android": "95e8fc557642edf622df108b4acea7203b9d2e6f04c03f51546db633646e53b2",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 11,
+            "player": {
+                "lives": 4,
+                "score": 69650,
+                "shields": 123.91526794433594,
+                "energy": 95.5,
+                "primary_weapon_flags": 15,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "d8183eceaf93a26f3c1f4a1373b73262fb7775ae363b27fc875e8d6a4e3ea5d4",
+                "player-result.json": "ab141ac9bae8418635819b138414031a4529c9f31e7d8025e69f27225943647d",
+                "player-state.json": "bf5ab089880a52886d2ee8a8257ec49a085283b8eac65fc8b41dc336fba39983",
+                "player-trace.jsonl": "35071705769a3e05f35435f9e6755b438b9670a216d75c49cc8c0813b44d71ea"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-shield16/leg-000",
+            "incoming": "635decbac8f7d993b83095fa513c89b8f94ca18c121ed486176b8429b1ed8508",
+            "outgoing": "4f989499571632e6659d6266f240cd25677ddf28891121017c57c6576eac8d18",
+            "android": "76a92e2882ec8c601726de1f62ebbcbdd2a10c35a34735020f0018615c9d16a8",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 17,
+            "player": {
+                "lives": 4,
+                "score": 69650,
+                "shields": 123.91526794433594,
+                "energy": 95.25,
+                "primary_weapon_flags": 15,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "555e3bc7a110f55c09f85c0f1d74bd02d4814cd5c9f96641d0d8a399ddcd03f5",
+                "player-result.json": "4a3992b56f4d2f465d525dc7dc33ea92263e5c94dc53ecf0bd9980248ec44798",
+                "player-state.json": "b9c83493ecc25aa9f7bf5b66fe230f103eb78b8841600f3f39679e182351d8a5",
+                "player-trace.jsonl": "c505c584a7ec7375a213b243d25af9c36673eda2e1a2610f86f428bcbaca4d4c"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-shield16/leg-001",
+            "incoming": "4f989499571632e6659d6266f240cd25677ddf28891121017c57c6576eac8d18",
+            "outgoing": "c5ec933dde66923c2fd2b1be0705634ea90ab256eee0fe90849a1e4f6cef054e",
+            "android": "4d1a65023965a9161cabead5f51a920e9d049795fe475bad8b287203078b135b",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 16,
+            "player": {
+                "lives": 4,
+                "score": 69650,
+                "shields": 150.0141143798828,
+                "energy": 95.25,
+                "primary_weapon_flags": 15,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": ["fly_through_side", "assert", "set_debug"],
+            "receipts": {
+                "plan.json": "31f2bb60ec7d9889aaaec49c7e7978675e2ecabec147cbed77bc8309e28677f3",
+                "player-result.json": "ffed28d66794e24cdfc5a69158f042f408938c25b922ea2a3fcaad840716aa04",
+                "player-state.json": "67ce18c4f688724313ed0ffd2d492f55bfe3aea07c965fae18c759beb76941e7",
+                "player-trace.jsonl": "de553ad1c866d0511c466b801522769cb2a8eb7c22f72c6226a82327f866dd56"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-switch27/leg-000",
+            "incoming": "c5ec933dde66923c2fd2b1be0705634ea90ab256eee0fe90849a1e4f6cef054e",
+            "outgoing": "9acd9eb6cc8da72436e3677bf5c416a3950d55310f315d8554885c4dea3728d0",
+            "android": "55d1931c4ce11d743ecbf7f6b5765047544dc1863ebe5500d15503481e8cdc67",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 36,
+            "player": {
+                "lives": 4,
+                "score": 69950,
+                "shields": 145.3194580078125,
+                "energy": 94.5,
+                "primary_weapon_flags": 15,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "3ce7b3c3c5243dd7981e798f4fbba7a08e33b322af9d29081d17dc4ec475320d",
+                "player-result.json": "bc6cc20b91d2314884c2cace2b3f01d0bf08c8b95b8e72cf41ecf5e38e89bd30",
+                "player-state.json": "8cd8cf8e511df2f00469afea9d635e02d75aafe6276fee8bc28b2e53f7eefbf6",
+                "player-trace.jsonl": "90bfe6451aca758335429d8517ee55c186d0484cdbe387af37f17454b6eb11c6"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-switch27/leg-001",
+            "incoming": "9acd9eb6cc8da72436e3677bf5c416a3950d55310f315d8554885c4dea3728d0",
+            "outgoing": "a0d04b170225f3b17dd72f735bedc8ef05d36fcd2745c172df069a0990e2fc15",
+            "android": "dd782bca3b3c21e5ed84e0f38756fc15bfeae4b39c1abe0ecf95a2978bbca6ee",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 64,
+            "player": {
+                "lives": 4,
+                "score": 69950,
+                "shields": 145.3194580078125,
+                "energy": 93.25,
+                "primary_weapon_flags": 15,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "a4b5f4eae4dc664cf77422cc00ee65f0113d254782288a679af0b1df74196fb5",
+                "player-result.json": "ceb4d22234abf24f0792a296775e3f5f6e6221086910335e6bf3ffaa91ce6cf1",
+                "player-state.json": "93dc837f4fe3dec3ee36f7044ff4ffdd67ee7b0cbeef27539e64ec66d93ca7a6",
+                "player-trace.jsonl": "7ca82fdf2b1dccd6639f4978e13d0ce1bbd63b058adbb6fd0203134b4b406d05"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-switch27/leg-002",
+            "incoming": "a0d04b170225f3b17dd72f735bedc8ef05d36fcd2745c172df069a0990e2fc15",
+            "outgoing": "4d39bc0ecb96c926e47b4af6457626b5beb0fdbef8d38cc3e5f478c9bfa9d0d5",
+            "android": "c7e73d89a2f5071f62d8b7cb426f0ae851c2389da41f895737a1eb864950d060",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 115,
+            "player": {
+                "lives": 4,
+                "score": 70450,
+                "shields": 138.98074340820312,
+                "energy": 90.25,
+                "primary_weapon_flags": 15,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "902f4aa37ea408fae3c18b443d041b17164870cd2ea5610ef4a80a808b732b80",
+                "player-result.json": "aa124b2c02fc3b6c19e9c329a297405ddb7567209559c85ece12fa269d99e300",
+                "player-state.json": "848831cd47667c825b869389c2550a170ed81b9859b25c3171f8f8b58fc2d15f",
+                "player-trace.jsonl": "9cc83d95f1c47a339296b72bcb78b256517388dfd8db4fd4e578be2a3b2c5162"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-switch27/leg-003",
+            "incoming": "4d39bc0ecb96c926e47b4af6457626b5beb0fdbef8d38cc3e5f478c9bfa9d0d5",
+            "outgoing": "d2fb6d8dded691233f030029128ae9b2e3d3300ecc4a05ef675de7b917989cae",
+            "android": "84182ca9f21dc5bf21e022f99b067233ab94fbf7e50554c9f098236bb73c70d5",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 119,
+            "player": {
+                "lives": 4,
+                "score": 71550,
+                "shields": 138.98074340820312,
+                "energy": 115.5,
+                "primary_weapon_flags": 15,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "bc27ba52572684c5a2400d77fc00a33628effd244e406e11d5761efe2d4f97bf",
+                "player-result.json": "74df51d4cfe9a1c03b7540fc4d2cf7e440b31a95da0d1231bfec44048efd69b0",
+                "player-state.json": "3d743557bdfe0e11b4ea8a2d2b04eb9aa6a0ddedab7b08666a9987b35f17b68b",
+                "player-trace.jsonl": "78f40b08bca45d2b6a6cbc2d454085f75901c53a226c8679105bac845c7573e4"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-switch27/leg-004",
+            "incoming": "d2fb6d8dded691233f030029128ae9b2e3d3300ecc4a05ef675de7b917989cae",
+            "outgoing": "e5f87c7fa3fe7512ce8277bb1a53296d11be7bf7e664675c8d63ad95b49699f9",
+            "android": "88f371a6b8ad74a6784c1bc4c63b73c0642743983be0e0063f4fd3351fdba214",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 92,
+            "player": {
+                "lives": 4,
+                "score": 71550,
+                "shields": 108.98074340820312,
+                "energy": 111.75,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "43a37f39d9391cdffbe65603d6691de7d37b9aec1a3e1a12204fad138df8f475",
+                "player-result.json": "3c89c482f4bcab7ff2558f87b76036e117a15d30123ae785a8fdf779315dfad1",
+                "player-state.json": "7f2479154bc2d8e9f22a63ba5f9e5239082418ce97e6e2f9cf68f5b3a70d2293",
+                "player-trace.jsonl": "065e84682b051d53510e8ece0d1a1c7afb5aaf45b97e41f0d3a27e67d2505436"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-switch27/leg-005",
+            "incoming": "e5f87c7fa3fe7512ce8277bb1a53296d11be7bf7e664675c8d63ad95b49699f9",
+            "outgoing": "a3bd226099ce0d23ee3dc7f4b269f3663566051cdf0f905480ac27f1b9ef48ca",
+            "android": "e27f7460b08d0f58a978460b54ba141847f522be08699947815493dd01e87c4e",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 138,
+            "player": {
+                "lives": 4,
+                "score": 72050,
+                "shields": 108.98074340820312,
+                "energy": 110.25,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "b0b4632ff1186a2414df4c43a1aba3234d55b392c6e9754c50c9b93be2b5be25",
+                "player-result.json": "8e1718fd57f2bdfc44a91b654337133c2e2697593785469394d7ba296bab9e6e",
+                "player-state.json": "151f13c7b3ca208da32b48e9fae563cb1582f94e1251e4d3aab1cf875af073dd",
+                "player-trace.jsonl": "e970ae64b69478e9086ffcb7d51fe32b26c93cec213696ca841d46f6f612ca73"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-switch27/leg-006",
+            "incoming": "a3bd226099ce0d23ee3dc7f4b269f3663566051cdf0f905480ac27f1b9ef48ca",
+            "outgoing": "09e5423530db727218bd5fcea51b9394801cccb0834dc978b830ec86647e4860",
+            "android": "81b86d6dba9ad695dae87b6569d4ce3447747ddb0de3bca26beb42d0dfa3a827",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 167,
+            "player": {
+                "lives": 4,
+                "score": 73150,
+                "shields": 108.98074340820312,
+                "energy": 106.5,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "b2e129d36787b2c616be2a71bc8436410bea055862e408bfd2d2b48a453d7a48",
+                "player-result.json": "d8970e4c542331c68b2d2b114ff20c2f206f9a65112893c321e1d839588b649e",
+                "player-state.json": "8e9c2fb9c3d89d6a3352453f52f4b9e3d1cf9ca6e69a8130842645a47c7b4e83",
+                "player-trace.jsonl": "5d84e9b04920c42e35106da14c7ed8f8129f55c518206d45c4702012bac2a957"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-switch27/leg-007",
+            "incoming": "09e5423530db727218bd5fcea51b9394801cccb0834dc978b830ec86647e4860",
+            "outgoing": "33495f5d5717014e35932f3a61833d1290c158605527f338a252056801905d3b",
+            "android": "d4b26ad07c22217952b9cbfa1b86fa5e3e446bb6184ae1cd3a3df013b80b07eb",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 206,
+            "player": {
+                "lives": 4,
+                "score": 73150,
+                "shields": 108.98074340820312,
+                "energy": 103.875,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "2f872197ec1f57f2aa4523d9ad7d7a1c488ac693027304c79341508c27e7658b",
+                "player-result.json": "834bb5b55ff406205a8a7d9a7e0980dd214bda93474181f5e9059549221c66c8",
+                "player-state.json": "a0ed143b19c25401cde2c854a0847459c85ae6a2f0c07222811b98d50b3c2e19",
+                "player-trace.jsonl": "af4adb9bc8e38a99e9506cb5a45773eee38415042865b7e6180877933c1d1ffa"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-switch27/leg-008",
+            "incoming": "33495f5d5717014e35932f3a61833d1290c158605527f338a252056801905d3b",
+            "outgoing": "5944568e309627f1690759618bb310d7ff4c0e4bb5ea3594f1357e2e650ced8a",
+            "android": "92379a2b37d6f356cd85051f9881a61095df232a1a161f9e073e44be75ba27ae",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 255,
+            "player": {
+                "lives": 4,
+                "score": 73150,
+                "shields": 108.98074340820312,
+                "energy": 103.875,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "abe609034cc82be66cb0d8aedf88c8da40c78d10f1e3151087c10b2b57aadccc",
+                "player-result.json": "0689298dc494051b8d17524b3394eb28c6e7fabfc5c4fac80d29a4f6eba51da9",
+                "player-state.json": "dcea8a1eeae5a2791a51570f40c3d5a7c7771618f4157940c6ad2c81bbeae9b7",
+                "player-trace.jsonl": "bd4ff7b513a5daae2f8ee23cb3a9c7bc65f19687357b3d4e59fe1baa041bb90c"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-switch27/leg-009",
+            "incoming": "5944568e309627f1690759618bb310d7ff4c0e4bb5ea3594f1357e2e650ced8a",
+            "outgoing": "af1f7138ba21922ce5c71fc0040e24b96af835cb397e7f5b7152ba093a9644ac",
+            "android": "f3af04e30b4ac7eafe1acbe7ea82d7cf98f49060fe373dc0a70abf4bbf055545",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 573,
+            "player": {
+                "lives": 4,
+                "score": 73150,
+                "shields": 108.98074340820312,
+                "energy": 103.875,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "343669886996f4d9e916167b91e3c5da5f9a9bdc0f7f8cd44536637ca5b8ca8c",
+                "player-result.json": "a09e0a30bc7882346e5372cd1798cd1d5deaf4d1a9f7af8bb92d42fdfc730600",
+                "player-state.json": "47cfecd8431e94184d7c99a9fce7d4315ee26f84273a4981b29cb68a72b09fbd",
+                "player-trace.jsonl": "fc00ff512934659b50ebf83523e6e933515efcae258262d9c596429fecf0ae63"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-switch27/leg-010",
+            "incoming": "af1f7138ba21922ce5c71fc0040e24b96af835cb397e7f5b7152ba093a9644ac",
+            "outgoing": "40eda576f122f872219fa0bc657453b5fc4ae2b1021fbb120f1017586f1c6a03",
+            "android": "8266cd99bd5ab6873d5aee82b5c4b3813fde4e8d4c6734402096088cc86b948a",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 1067,
+            "player": {
+                "lives": 4,
+                "score": 73150,
+                "shields": 108.98074340820312,
+                "energy": 103.875,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "5a1ec2d9aa7a0989f404c8c179293acc9ac6025eb9c12cb8ff281b7a648ed8d1",
+                "player-result.json": "e684dac41ee42b68335ce3b0a34286cb07cc96dc296f8ccc9288dfcb3edd1800",
+                "player-state.json": "981be276a7acba76adcb0643d3c8c8129d7806f6336744ac4654c1cdd23d3ff5",
+                "player-trace.jsonl": "bcd80820cc54cf8d030fdbc74465f6510225d6be7d0ad250a236de07ffbb01f6"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-switch27/leg-011",
+            "incoming": "40eda576f122f872219fa0bc657453b5fc4ae2b1021fbb120f1017586f1c6a03",
+            "outgoing": "01f8241c26525dd2f4972bf9bbf41079ce9cc265b7d1c17ed202695513a9ca2c",
+            "android": "26be1c9da2805a00f573ebc2abc26bd2fe78b52aa59c84087546583fb04fa05f",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 1066,
+            "player": {
+                "lives": 4,
+                "score": 73450,
+                "shields": 102.36859130859375,
+                "energy": 100.125,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "6ebcf8777270301d79886a6a0d057b8ef5a4f14deda966eb66f084cb248b2b44",
+                "player-result.json": "c7574c9dbba1b88f855cf094c0d251237304bbb33bdd872d65be9a66b4db0827",
+                "player-state.json": "a617c980ec52322ac057a7e40c82bab35995714ebb8b2877a149e1ffc0bcb226",
+                "player-trace.jsonl": "f06bf2488b70c288afcb55a2e1f748bcadb767538d9dcc191ef8baae51011b6a"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-switch27/leg-012",
+            "incoming": "01f8241c26525dd2f4972bf9bbf41079ce9cc265b7d1c17ed202695513a9ca2c",
+            "outgoing": "2afb16a4d344f65c144efa2f3a3fdfa0cc042ce8cf6b46b8b5f424fd97ddc3ff",
+            "android": "7376438d5a9c54718c2114315b4f44cb359dbdf7450859e89f72fb4c3da9fc39",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 1265,
+            "player": {
+                "lives": 4,
+                "score": 75100,
+                "shields": 113.13652038574219,
+                "energy": 96.75,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "6d383aa2f963ff34ffe01382f03ff5339e4791afc37721edba471dad8be6b46c",
+                "player-result.json": "5a7c05dc0f47d84b21fb9561b11dcd155bb5170ba162b85e143aeee2145d6076",
+                "player-state.json": "6f7825488328087c1ed347504044d639b88a585095b6aeffbfb820449d075f8d",
+                "player-trace.jsonl": "464530b27564ae24af13c06a15fd6de09786b3d14f5053c9bfc43413761f6cf4"
+            }
+        },
+        {
+            "phase": "living-level3-unlock-switch27/leg-013",
+            "incoming": "2afb16a4d344f65c144efa2f3a3fdfa0cc042ce8cf6b46b8b5f424fd97ddc3ff",
+            "outgoing": "8cff07bf28b8eb12a46f64390003a5f3fd508d56c2b391e06376c9f047e0f021",
+            "android": "b5bcecea050ba3c639d3ffb9eccf3c545c5e762352ba5fb5b88916327cf401e0",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 1266,
+            "player": {
+                "lives": 4,
+                "score": 75100,
+                "shields": 103.65333557128906,
+                "energy": 96.75,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": ["fly_through_side", "fly_through_side", "assert", "set_debug"],
+            "receipts": {
+                "plan.json": "c536676087e3a63709372be9d43e19d8f2319e02b511d9d0a50cca4ac8f50034",
+                "player-result.json": "f1f0db968ba34ba00182fd82f4c5b02f14c428f034ca2b654c05406ead2455b6",
+                "player-state.json": "a75eb3c5a441d5a1df337002afc6cccaaafe38fee6eef2bf33c40f9a52b46954",
+                "player-trace.jsonl": "35a1a06998488c913215490f131de2760f740042972e8a98f0355bc375490be1"
+            }
+        },
+        {
+            "phase": "living-level3-fire-switch-27",
+            "incoming": "8cff07bf28b8eb12a46f64390003a5f3fd508d56c2b391e06376c9f047e0f021",
+            "outgoing": "7b45afd0807746034ae0c3c9a7f328c4db9712c3769ec262d30dcb661c4b34b7",
+            "android": "9eeb3bcea1c735042c96ac2b7cbdbdaa6cb90300b9955132678feaa396020a48",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 1266,
+            "player": {
+                "lives": 4,
+                "score": 75100,
+                "shields": 100.65333557128906,
+                "energy": 96.0,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": ["shoot_wall_trigger", "assert", "set_debug"],
+            "receipts": {
+                "plan.json": "40de1ba01a66be2450ca9e762bce6e4345155d5db1c2a82ee8fb28f1dc7a0aa9",
+                "player-result.json": "8884db221bed6662012bd4d0428fe29c3df9c4db79eb4e164ed63e30a935f319",
+                "player-state.json": "e9163f262e75f2b5a317c6898f965ab6ce7e37c8c30ae29d674a66967aa0abab",
+                "player-trace.jsonl": "72b38712481aae015ecf3e68a02eda732e1a8c65f9f75f699fe0c7e61d3bf7fd"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-000",
+            "incoming": "7b45afd0807746034ae0c3c9a7f328c4db9712c3769ec262d30dcb661c4b34b7",
+            "outgoing": "65ae52a7c6a316c6454ca02eeaeffaa7f3a32038acfaadbec5b4f1685b831b35",
+            "android": "4035aae55a18cbcc9403688b5a807437b324ac5df6886290a6d20f992034173b",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 904,
+            "player": {
+                "lives": 4,
+                "score": 75850,
+                "shields": 87.61564636230469,
+                "energy": 93.375,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "b15e171654a1f04832b2ad38c680136ea0ead670aba199162dbe5864d480c0d1",
+                "player-result.json": "f4a9e10ee40e23c4ba1e0e49142108ca3c58d37c77de4447cd962c6e0f935e3e",
+                "player-state.json": "60f70207053612e7da9b26257a59bc58b88f54414245dfcd7cbf9afd54616152",
+                "player-trace.jsonl": "88206f8a0808579098364ada57c336cabb344ed8003cf40898741f0b6c78fb5b"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-001",
+            "incoming": "65ae52a7c6a316c6454ca02eeaeffaa7f3a32038acfaadbec5b4f1685b831b35",
+            "outgoing": "e7e345015848126dcb79c6a20457289043a5d7430b2e2d8279f07cb631c32587",
+            "android": "e2fc96156177b33e60d9423b9e3dbb5b43fd246dca8d35da84158373fac372a4",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 1924,
+            "player": {
+                "lives": 4,
+                "score": 76600,
+                "shields": 87.61564636230469,
+                "energy": 88.875,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "3fd704b684245403ee32a7032a16520da10ce59dbba2ada622b7842ec117b807",
+                "player-result.json": "bb582d0674099ee487fbf9a478400848d7610cf019bf9a0cea62b94fe473e500",
+                "player-state.json": "c6cf544b21670c0cbfcd92f4ad0bd68a80cae4f7561ea2c3f18a6058b4043d4d",
+                "player-trace.jsonl": "2287cbaa5d3dc6bd751b2fd309c009ac60e302b8166f95a585a0ffb3683d3932"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-002",
+            "incoming": "e7e345015848126dcb79c6a20457289043a5d7430b2e2d8279f07cb631c32587",
+            "outgoing": "7797166237786fc803557d9f9ab1b5e8a5479588523c9459dd76187ec84e3cc1",
+            "android": "e3e3a2295a7fab23e1964d3f72e8b548dda4f45dc10cef9a8705679fb90756d1",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 549,
+            "player": {
+                "lives": 4,
+                "score": 76600,
+                "shields": 87.61564636230469,
+                "energy": 86.25,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "7e9a6fb8b8fc7485b558eb4a208fbde2bc232fd0a1d1231df066e85421ff168b",
+                "player-result.json": "f7894770827034cf9dadae5914bd2687a08ff5da1e8bc11ee3ad09a42b145ff8",
+                "player-state.json": "f71bd0eb799e2b1ffc36cca8da87cd290d1e61a44dc3c2eec681f9e4394161d6",
+                "player-trace.jsonl": "06c47622f10f61797f3c96bc8893f5e62afdc1814dd9670bf19fd550a8a14428"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-003",
+            "incoming": "7797166237786fc803557d9f9ab1b5e8a5479588523c9459dd76187ec84e3cc1",
+            "outgoing": "20d2af9d7bb2348c7dc910ddb5c55ff300cefca28697c94fc453269fe222c484",
+            "android": "e23054c6f6ea25d3ee25e7ebc77ef14937702ae64fa1859764be5f067ab578bd",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 571,
+            "player": {
+                "lives": 4,
+                "score": 76600,
+                "shields": 87.61564636230469,
+                "energy": 86.25,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "b6c04e3cfdcb5032c12f00f443f93739287baad30ce68fdbb97031ad7cca0025",
+                "player-result.json": "4120dceabbffd01e939c34ec22b3d87d66b6c7b544a804bd54d43fcbc569897e",
+                "player-state.json": "bd6989ee76e0909d530b11025d98d07e8e761fee085f43379d88b04d89dbdd6a",
+                "player-trace.jsonl": "4629c0c4f0aae9be8120bdcb0361ec60f4b2a9053f4d6ca2f66a597e45f68849"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-004",
+            "incoming": "20d2af9d7bb2348c7dc910ddb5c55ff300cefca28697c94fc453269fe222c484",
+            "outgoing": "8f904fe268e192fe8381bea1ac2611638620f7fabea7c3e31a5bd8e15fff7c76",
+            "android": "6a1cdd663de140a37ed871b9211099d52a536dd4bdd2b9ce06e9cb2f764dff0c",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 1183,
+            "player": {
+                "lives": 4,
+                "score": 76600,
+                "shields": 87.61564636230469,
+                "energy": 86.25,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "0ed7c50a472ee6d486c7f7f82c2b0451cedae8879371469c7d9778662ec14c19",
+                "player-result.json": "9148d3629665144a38ed039b798eca6198a1a19ba1f2b3fbeec5b91bf22fc571",
+                "player-state.json": "048862c2b6e42aa7eafe70edac28e74a1f8d282651c05688f77658cf7fe62359",
+                "player-trace.jsonl": "f09931a66dfab6500c5d502d7054b990c60494172e426924c716e0293b7dd2d3"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-005",
+            "incoming": "8f904fe268e192fe8381bea1ac2611638620f7fabea7c3e31a5bd8e15fff7c76",
+            "outgoing": "9ccd8f97b0ef73500856be2347e230ced1cfed3d38bb73cd76f9b7ea1ba75ae0",
+            "android": "a07d8b3c81f9147eff9c06ee5bc206adb0054c8c2c2118d1d4df70be3e66ca69",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 199,
+            "player": {
+                "lives": 4,
+                "score": 76600,
+                "shields": 87.61564636230469,
+                "energy": 84.0,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "3b51429e03ee979ee983828507aa7c076fd4f5056d7164b9d13fa39f56385d51",
+                "player-result.json": "6020c55b2183007340464f3f94198121d100f3c81287f7b3c753af17384d4fdd",
+                "player-state.json": "845f9cf08d782833eb4f569100ffa5692e4c5c7fc21d685a2b5d457d2644b60f",
+                "player-trace.jsonl": "719f6de20896f73b1115fd7157d650b04605a12131cfce267a835f2703182555"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-006",
+            "incoming": "9ccd8f97b0ef73500856be2347e230ced1cfed3d38bb73cd76f9b7ea1ba75ae0",
+            "outgoing": "c629fb5ae7cc144eccf231b2a1a8349b9694de3d32ef5521e2f3187085795da3",
+            "android": "0293ed63126c67549f43b8f7643caad51b73f173ea05a0b9a56b165c7330a1c0",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 161,
+            "player": {
+                "lives": 4,
+                "score": 77300,
+                "shields": 53.20753479003906,
+                "energy": 77.625,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "41b5ecae1990e670dd2bd8872bbee98ec11ecdde50f36cb5198b135f2100521c",
+                "player-result.json": "bfa0103bd9450525e16e2db9ec2e3833da02f5fd39c9da1775f3d232271d7fdf",
+                "player-state.json": "e79d269af25a1df2cb65754713ced328f550dbb3b6547f9e6b63fec5c407acec",
+                "player-trace.jsonl": "534a1947549528617a3fd3538d0b4650870b9ad3a7841f62925b90fa877d1284"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/prefix-007",
+            "incoming": "c629fb5ae7cc144eccf231b2a1a8349b9694de3d32ef5521e2f3187085795da3",
+            "outgoing": "c1038e8104dbc3c59c934242508fd74516bf46c46759ff544662f246a27ee097",
+            "android": "25d696b7b9da05c67e504324a9f092deee0daf25974d723dc1ca00cc30180fd8",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 2754,
+            "player": {
+                "lives": 4,
+                "score": 77300,
+                "shields": 23.207534790039062,
+                "energy": 73.875,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": ["fly_through_side", "fly_through_side", "assert", "set_debug"],
+            "receipts": {
+                "plan.json": "77b9359022bdeb12f948da62dbd189fbc50de5610171591f0b66d708a6f48ec9",
+                "player-result.json": "9a20ca33e329c3d6ce0e2991b4dff1b9fefc3b13d069c2b6ab4772a76b5efae0",
+                "player-state.json": "7a4b4ea54471715f7e381e8252bfbd3ee7cb3ea5a4178e09c0168dc8b1761e53",
+                "player-trace.jsonl": "1be155828814e8478768a5725f9d39c72959623f38457ed2ec39bf3c5a286107"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-009",
+            "incoming": "c1038e8104dbc3c59c934242508fd74516bf46c46759ff544662f246a27ee097",
+            "outgoing": "4d394f97438c35843072e136364a58864598dd1892b4884035f04832a223bb07",
+            "android": "e0065f0584007711e715db2a8dbc82f2d2a6a3b7d425b4588e98b43f5e26b801",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 538,
+            "player": {
+                "lives": 4,
+                "score": 79000,
+                "shields": 23.207534790039062,
+                "energy": 69.0,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "20235033d886f4fc8b3cd11f2181cbb058ba58073b000750b481b7e4a8029cf0",
+                "player-result.json": "b27c04fe510904f7c882c9b162aff4d374b023dd9add46557dec8325cb6eb22d",
+                "player-state.json": "eda1efe9dd410d167e530df3187bd38e16f081d8498c302f36671d2dfc27b173",
+                "player-trace.jsonl": "287a1bf1aa0a51a290294adb4993cf8484ea34bfb86a61b6afb094ec8159c569"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/prefix-010",
+            "incoming": "4d394f97438c35843072e136364a58864598dd1892b4884035f04832a223bb07",
+            "outgoing": "c422ef1e6010f088efcd720e9b33bfa3515e15004969bc94c8cfde68abd9a22c",
+            "android": "5bec3286530234dd8e7696b39a98ac9561290364593cb0c65233b6224d9f37d3",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 534,
+            "player": {
+                "lives": 4,
+                "score": 79000,
+                "shields": 23.207534790039062,
+                "energy": 69.0,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": ["fly_through_side", "assert", "set_debug"],
+            "receipts": {
+                "plan.json": "8f7acf30873b6ac5ac43866542687d93a824f6b0b85e7a0b3a45a84b6535c029",
+                "player-result.json": "c8bd58eff28a1925458861288fe45021747755c92c430c632922b0241cde9a1d",
+                "player-state.json": "f09a53339107d69b9151b7b7da4dda4a8ad91ac42868e9732719863a1e59615d",
+                "player-trace.jsonl": "6fa4503779b4128100bd3c32b0b7e55d9824a7e9c39460862bd4f0476617a5cb"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-013",
+            "incoming": "c422ef1e6010f088efcd720e9b33bfa3515e15004969bc94c8cfde68abd9a22c",
+            "outgoing": "2cb51aec4bdbcce5ec4a4d347bf68ac35070c568cec23985f6a906024cd52aa8",
+            "android": "0632be8c4fc6e9ae30cee965046450db3e837a5ce1ff89a0f134af4c003665bf",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 181,
+            "player": {
+                "lives": 4,
+                "score": 79000,
+                "shields": 21.00347900390625,
+                "energy": 64.875,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "b00c9607297941a9e038b35f9fc8951f2de394cfc358a8a68a4550d5db9416f8",
+                "player-result.json": "0ed83b7230f93f6f86445bad8355839ef1357fc99fde1f6c07c06a021203cff0",
+                "player-state.json": "260edf6384fd5941eb9cb4d3c90c7f7a77119f7ae01a22688d5fe6f53d508414",
+                "player-trace.jsonl": "04b37fec6fecc7de0ab461c5cf2c5b12eb8c67214cac31df9afa6592c000523e"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-014",
+            "incoming": "2cb51aec4bdbcce5ec4a4d347bf68ac35070c568cec23985f6a906024cd52aa8",
+            "outgoing": "3df3fecb2fd31250015a28a5d71692ae5da9e18c65a4eedb87e49d3e8c1d3eef",
+            "android": "fe1658d9c2d55a40e33e42d33a1c15597bf42baeebe2af662ba10c6f8d78fb0e",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 109,
+            "player": {
+                "lives": 4,
+                "score": 79000,
+                "shields": 18.799423217773438,
+                "energy": 64.875,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "7cfe72bbd0e2ba5ca5317a2344417db790d8326b9f0e8cf0bba5e2240f198623",
+                "player-result.json": "3e806fff77ad5a701e87c4018c686bb1ed7f0035a6dee54e2dd39355d2dd9a12",
+                "player-state.json": "c819aafc16306910fd892156b496894fc2bcd56ce7dd5883016ead6406344d55",
+                "player-trace.jsonl": "ffdff8104d49e5efbc05aacb91b1780046b2057d2ab3a916061d43f8e7ad2e9c"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-015",
+            "incoming": "3df3fecb2fd31250015a28a5d71692ae5da9e18c65a4eedb87e49d3e8c1d3eef",
+            "outgoing": "8e697cce48a94dd86ce54637fc63585ba3e2de5d82b50dc332549ba03919778e",
+            "android": "609b01e1be999d99bb13fb379f27de26d2940ddaf393b108d36159624dd2524c",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 3168,
+            "player": {
+                "lives": 4,
+                "score": 79000,
+                "shields": 18.799423217773438,
+                "energy": 61.5,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "6f9c1e830bc56e9f2a58600d51a0f66748ff20e788ef2357305477ad2ed3b36e",
+                "player-result.json": "f98c79be2be5626a8543f5f16e1120b7dbb0e6830824f35865ed47655bdac95c",
+                "player-state.json": "596c182ab0bb21dfe8186ac70aa70592da0c64740cfbb56d50336fdf919ca35d",
+                "player-trace.jsonl": "4a4a86d91508516cd9521b3050fadf098346b52e3ca16958a6ddc3138d3f3bf6"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-016",
+            "incoming": "8e697cce48a94dd86ce54637fc63585ba3e2de5d82b50dc332549ba03919778e",
+            "outgoing": "b4b7ed9e97ca1bff80d7f1e3fe8591ec7f3c5371351090450ee432017329768e",
+            "android": "ca24791492c6b430308fb7760dec452e6df5dd8db7c71149ef9a21e994204c9b",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 372,
+            "player": {
+                "lives": 4,
+                "score": 79000,
+                "shields": 45.79942321777344,
+                "energy": 61.5,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "903f46170e554a5b8886a04c27d385290aa0986487f3dbf643d4c416706af6eb",
+                "player-result.json": "b16d23e1db6e56bed02c38048d73d11247e4de704e013d270486249a84cb57c2",
+                "player-state.json": "b51f2f0020dffdc01e0cd207c935d699829c7b8709e327a525ce1bbda8887c27",
+                "player-trace.jsonl": "5dd326fe6e15ff84cf6dbebf80bc78959b65a8f76dea7793aba2f629aaf14016"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-017",
+            "incoming": "b4b7ed9e97ca1bff80d7f1e3fe8591ec7f3c5371351090450ee432017329768e",
+            "outgoing": "ff5a50e4e936ed5d155329328ba031f4da07b24f7a5aedf37ee639af24703964",
+            "android": "f4dc639c12f549271af66180a9ac6b9fae0d70ed99cde70f55ebe2f21d6a2d3f",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 377,
+            "player": {
+                "lives": 4,
+                "score": 79000,
+                "shields": 45.79942321777344,
+                "energy": 61.5,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "9bcd63f0a9647219cc3e23ac1fa922ce2cdc24205de05ea62b05a81008156354",
+                "player-result.json": "472e036fb6f22f57d78389b5c0c5a8daffba26cfa8efccba9bfee65f1747cdd6",
+                "player-state.json": "af1cf51cec86cc7d4a730a88b2835abcaf8906843e26281ce6eeef4155696ea9",
+                "player-trace.jsonl": "a0d41567852781326993b68fa19e3d6dbad8d40056f28234d2c741828383c887"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-018",
+            "incoming": "ff5a50e4e936ed5d155329328ba031f4da07b24f7a5aedf37ee639af24703964",
+            "outgoing": "841010c3a10d411d3748f1c4aee7d951bd0b7118412b99456ef49d860d295c4a",
+            "android": "fb8bab71dacfa77f748c86ca36307e6780491ed69e60a74b546f73318a541632",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 467,
+            "player": {
+                "lives": 4,
+                "score": 79000,
+                "shields": 45.79942321777344,
+                "energy": 60.75,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "b5c6a89024524b8a799a332504f2594f0ade4deb1ef4141af255d5b2af1fc954",
+                "player-result.json": "6adb4c00d8bf82bac020303856e6520bfe2186468f43ca516eac2582c30ccb04",
+                "player-state.json": "5e805cb2d051df5a8eec28910586276e5c37dcf0a1759cc89518333761b5119b",
+                "player-trace.jsonl": "bec77fe1c16200a2b6dee88d1a24dbc26ca9f8ca7bc805ce40bccc42074db5f8"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-019",
+            "incoming": "841010c3a10d411d3748f1c4aee7d951bd0b7118412b99456ef49d860d295c4a",
+            "outgoing": "8938a9144ce5085ebabd00c9b56f392ba82f1e5fad1f5066436f7f2a65dfd64e",
+            "android": "b4494581f9b2fd51cce510ae5d92c83f16a1a532275977d581c8dd830b420e9a",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 479,
+            "player": {
+                "lives": 4,
+                "score": 79250,
+                "shields": 45.79942321777344,
+                "energy": 59.625,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "9773101df57798da76e894fd2cc28bef1d4851382bad5cbd60f9f1ceb01aa36d",
+                "player-result.json": "fdc5344124db44319ea1b0b9fca03b7f53c79e9ea3b3513aa7acb70a5cb1ed18",
+                "player-state.json": "ed574a70f12e2200e40163544ee7cf43b7e7be09e821f098208aa213da96e551",
+                "player-trace.jsonl": "bab3e9572c84e1e676a2b0319e73161641a0c6c7a433515e4f9715d61a3d521f"
+            }
+        },
+        {
+            "phase": "living-level3-master55-approach/leg-020",
+            "incoming": "8938a9144ce5085ebabd00c9b56f392ba82f1e5fad1f5066436f7f2a65dfd64e",
+            "outgoing": "70014488f36989d5551e8e27becd81acff5fa76b41e235421798797311de98b8",
+            "android": "8017b369de421b52845629ae6df24188aeb6d3fe418a740036053fc6031cf9ac",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 3050,
+            "player": {
+                "lives": 4,
+                "score": 79250,
+                "shields": 45.79942321777344,
+                "energy": 58.875,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": ["fly_through_side", "assert", "set_debug"],
+            "receipts": {
+                "plan.json": "282cec64a4a15a0392802873e9c1aab4d906d3718ebd45551eb56fdc6fcfbd78",
+                "player-result.json": "525199440d19f3b4ed184fbf372cb4a0917f61ce8e8bed763b79a3e90dd1fd22",
+                "player-state.json": "4370fc6f1099d6ed5bc243da6bf706f63c9fca0be99fb1bb71086a4c5f392281",
+                "player-trace.jsonl": "9424c17700b6ed9bc4eb53d93087d6f5eb5b2ff6a16b1abc252e1b787380c32e"
+            }
+        },
+        {
+            "phase": "living-level3-master55-cross",
+            "incoming": "70014488f36989d5551e8e27becd81acff5fa76b41e235421798797311de98b8",
+            "outgoing": "5159a08a551814e89e509e5b3b69b15363b60a831be80aab6839ba125145763b",
+            "android": "6152266a0803a0e1198a833b56dfb8e6cb46db24c3ed070c13c071efa75b671b",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 1413,
+            "player": {
+                "lives": 4,
+                "score": 79250,
+                "shields": 45.79942321777344,
+                "energy": 58.875,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": ["fly_through_side", "assert", "set_debug"],
+            "receipts": {
+                "plan.json": "2c7e0d211bd5bbad022fae99232aaade01848573f960df4b64828b36d99bc9aa",
+                "player-result.json": "d162ff5759c6110eca5a8b3212831442c9db5e16747f6d8279569ed4bfbf3911",
+                "player-state.json": "395d23633e4ed17ae130befaa84cf5d3c3dcdabbba978b684d5b9a91254bd133",
+                "player-trace.jsonl": "06e9b41342ab08479d1fa46c0ffe664f73d36b62abec18660f29ca5b624ae613"
+            }
+        },
+        {
+            "phase": "living-level3-master55-double-extra-life",
+            "incoming": "5159a08a551814e89e509e5b3b69b15363b60a831be80aab6839ba125145763b",
+            "outgoing": "61c06155070b7d625be6e8cadd667f192980c3ebfde41706a23b395def012947",
+            "android": "e8067d43481d76889a9d989bcb94b4ef01d192552557db96fe1e72bd2c1fe3d7",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 1419,
+            "player": {
+                "lives": 6,
+                "score": 79250,
+                "shields": 45.79942321777344,
+                "energy": 58.125,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": [
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "fly_through_side",
+                "assert",
+                "assert",
+                "assert",
+                "set_debug"
+            ],
+            "receipts": {
+                "plan.json": "eac4fed87a4780c36dd63e2eb591373dc7b5147d88dc0237c9a0321294fb0a64",
+                "player-result.json": "7fe779770f18133c081466b76b45c219a995445d305d38e5995c3caf8ea5c5a2",
+                "player-state.json": "019c7803264bf547549bbd870b0df7b85969fc5da0ea37210a1a16dab9f4cc8b",
+                "player-trace.jsonl": "b3027d64760e9ff404e355034a836213f3fe5806ae250769eb507b7f215ad469"
+            }
+        },
+        {
+            "phase": "living-level3-six-life-switch4",
+            "incoming": "61c06155070b7d625be6e8cadd667f192980c3ebfde41706a23b395def012947",
+            "outgoing": "3edd62af2884954335ff26e2d373ea6543709a79200707b8246d5dfc633fda2b",
+            "android": "ecbfa670711aabe7d8d12c18dec1297f4f8911bb4ac37ee91083007226e39a35",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "room": 1419,
+            "player": {
+                "lives": 6,
+                "score": 79250,
+                "shields": 45.79942321777344,
+                "energy": 57.75,
+                "primary_weapon_flags": 143,
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            },
+            "actions": ["shoot_wall_trigger", "assert", "set_debug"],
+            "receipts": {
+                "plan.json": "278814397408707b37f9d3d34120e0a1df9a54e8c7096c65bae39f984c1019b6",
+                "player-result.json": "3e6de393342e25202221b8b76e31a3d543c4afc2acb4b70d7ed9cc78e37afef2",
+                "player-state.json": "bf78e10f436b03b300fa6c9695c71853c83b4448a14049c317c13f948c3c5531",
+                "player-trace.jsonl": "32d45d138052f9883cffeb318acd06e77f13bb02eb061684cb5a1795f2eebeef"
+            }
+        }
+    ],
+    "three_phase_linux_comparison": [
+        {
+            "phase": "living-level3-master55-cross",
+            "segment": 1413,
+            "lives": 4,
+            "score": 79250,
+            "windows": {
+                "plan.json": "2c7e0d211bd5bbad022fae99232aaade01848573f960df4b64828b36d99bc9aa",
+                "player-result.json": "d162ff5759c6110eca5a8b3212831442c9db5e16747f6d8279569ed4bfbf3911",
+                "player-state.json": "395d23633e4ed17ae130befaa84cf5d3c3dcdabbba978b684d5b9a91254bd133",
+                "player-trace.jsonl": "06e9b41342ab08479d1fa46c0ffe664f73d36b62abec18660f29ca5b624ae613"
+            },
+            "linux": {
+                "plan.json": "18a54b612b0b3c7d31be1f05e2781b2257a9fd8a71564b1d8a107bb8c49b2a31",
+                "player-result.json": "5f0c8edbb02aa591151ca5ec93ecfedc1246a25ec2fef15fd8a60b9dcb62ad4e",
+                "player-state.json": "7a4904c713c4b1992ef8ebf9ea01e8791e8df54d8063f70413352d6252e2be21",
+                "player-trace.jsonl": "adfa4e7af1572e4e0d182abf8d5541915e1638f82f9ac3b2d9d665ba1ef905ea"
+            },
+            "linux_incoming": "70014488f36989d5551e8e27becd81acff5fa76b41e235421798797311de98b8",
+            "linux_outgoing": "8f24d71ef5dfab907ea1afc5eb748790c6538b98ae2e03f91eac305a2bcd977e"
+        },
+        {
+            "phase": "living-level3-master55-double-extra-life",
+            "segment": 1419,
+            "lives": 6,
+            "score": 79250,
+            "windows": {
+                "plan.json": "eac4fed87a4780c36dd63e2eb591373dc7b5147d88dc0237c9a0321294fb0a64",
+                "player-result.json": "7fe779770f18133c081466b76b45c219a995445d305d38e5995c3caf8ea5c5a2",
+                "player-state.json": "019c7803264bf547549bbd870b0df7b85969fc5da0ea37210a1a16dab9f4cc8b",
+                "player-trace.jsonl": "b3027d64760e9ff404e355034a836213f3fe5806ae250769eb507b7f215ad469"
+            },
+            "linux": {
+                "plan.json": "a523e9d03be636d29990192dc4be48102fa0b87575f6fc6a38839ce23d7cf873",
+                "player-result.json": "7e0c4b3c00fcedf7cf3c29002ad88b61d95409990495d2c1421c413a87da4bff",
+                "player-state.json": "f58d4c1f96add4c12ce352457186a5bc55b3e65563b53bab8a0362557e57e9e0",
+                "player-trace.jsonl": "33747476af012d4e7d4df4c3255b45c7d0e04996979a93f78f247ed14d658e4d"
+            },
+            "linux_incoming": "8f24d71ef5dfab907ea1afc5eb748790c6538b98ae2e03f91eac305a2bcd977e",
+            "linux_outgoing": "f71a14a1517e243ffebf5c345d75fbb6a96d8e06bade14dcfb215c617e17c06c"
+        },
+        {
+            "phase": "living-level3-six-life-switch4",
+            "segment": 1419,
+            "lives": 6,
+            "score": 79250,
+            "windows": {
+                "plan.json": "278814397408707b37f9d3d34120e0a1df9a54e8c7096c65bae39f984c1019b6",
+                "player-result.json": "3e6de393342e25202221b8b76e31a3d543c4afc2acb4b70d7ed9cc78e37afef2",
+                "player-state.json": "bf78e10f436b03b300fa6c9695c71853c83b4448a14049c317c13f948c3c5531",
+                "player-trace.jsonl": "32d45d138052f9883cffeb318acd06e77f13bb02eb061684cb5a1795f2eebeef"
+            },
+            "linux": {
+                "plan.json": "3fd6dda722b895e20b21674f4b3e9bf0f8fb44565440a6b789a70ee9c9522421",
+                "player-result.json": "6216c9b0377c4b2cf1e29b348e7bc1c4312dc5e8256b0254396a29515ae0443d",
+                "player-state.json": "075617006c4487818192dd001d67cb5f6a6e5acd773ff689ff5c1fc48c288f58",
+                "player-trace.jsonl": "3a6dc770d85a4bf2f43fcea4fc68dd79cb6715d3215a9bf1d2050b23062d1789"
+            },
+            "linux_incoming": "f71a14a1517e243ffebf5c345d75fbb6a96d8e06bade14dcfb215c617e17c06c",
+            "linux_outgoing": "9203cf09769f3f04cbd68a305757f966c8ccb53aa72bf18a369f407486d27cfe"
+        }
+    ],
+    "four_life": {
+        "device": {
+            "original_apk": "8bbd671696f9b0d16b4a606464afa12fd605e80e09215619e0bf930af036c181",
+            "apk": "8bbd671696f9b0d16b4a606464afa12fd605e80e09215619e0bf930af036c181",
+            "export": "63da9fc0b103473630ce46106049995f608746022bf99f8e8b844160c96f8ff7",
+            "written": "9192c0010065f729d415215070161ff92f968ba4de78eff707303a4a7217ec4e",
+            "assets": [
+                {
+                    "path": "files/imported/sets/default/missions/sphere.hog",
+                    "sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+                    "added": false
+                },
+                {
+                    "path": "files/imported/sets/default/missions/sphere.mn2",
+                    "sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+                    "added": false
+                },
+                {
+                    "path": "files/imported/sets/default/d2x.hog",
+                    "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                    "added": false
+                },
+                {
+                    "path": "files/imported/sets/default/d2x-xl.hog",
+                    "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                    "added": false
+                }
+            ],
+            "expect": {
+                "current_level_num": 3,
+                "in_game": true,
+                "cheats_enabled": false,
+                "player.lives": 4,
+                "player.score": 68850,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player_dead": false,
+                "player.primary_weapon_flags": 9,
+                "position.segment": 991
+            },
+            "logs": {
+                "write": "14f43309713fd73d0792b998d22817f03f967eca01d0e97a197bb7da8c1358e4",
+                "cold": "1aad93931c3df85bf8d735931bca1619f0e57333d6e22387b1a7e7a2b6508c89"
+            }
+        },
+        "capture": {
+            "android.log": "82d0a39ce74c098a727e866e9394679197d7b88c46b835e97c18417b89dae0e7",
+            "before.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "d2_sphere_level3_20261120_065849.dximdemo": "d0ddd14ca0e90d2c635ec081176c10501fe96353ff7f5f5c485d90d361a6e8b6",
+            "d2_sphere_level3_20261120_065849.dximdemo.rngtrace.jsonl": "a6c0d72db7d5607b43ab0e32e3ba73a5445b8d70b3f9e4ac3fa8c6b1655ab9f3",
+            "descent.cfg": "eba6faa1de32822a47f7bfe1ec46d933cd87e35c10d9a7b22e8bd0e235884ea2",
+            "files.json": "6367b9021e33608aed6fdf74423001d364c2fba5ca8882402bc354b9befd61da",
+            "live-15855.jsonl.gz": "0269de8126e0ffeb5cb921ac2147cde0cb05969a2f135f8795c06aa7a9d284f9",
+            "plan.jsonc": "9ad1839e0cedb7676a4af77d58f3ebc1a9e3cdb53afce70b2fa159d993fb72a6",
+            "splive2.plr": "5cd431c61100c3564dd61fdb852d1ca492d60714d8aab70d5d36d8fe62d0a4dc",
+            "splive2.plx": "5835e77249d75e186db54a115231777a1c277710d7dde2bac45f4092ae33ea80"
+        },
+        "replay": {
+            "windows": {
+                "binary": "ca6daa369096986d6f94640999634879abb8752dcd134e8f57c3ebf4da94b2b0",
+                "compared": {
+                    "frames": {
+                        "frames_compared": 182,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 182
+                    },
+                    "world": {
+                        "status": "pass",
+                        "records_compared": 186
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 1241
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 0
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "receipts": {
+                    "receipt.json": "5586d55d3ab2f16d186e76f1a7fc553064677441603db4b176a134c5cb6baf2a",
+                    "actual.json": "ff9f755f73c26169e2c2aad840964b1c5f86665a9edec00523c0e60488fae28f",
+                    "comparison.json": "a1902493ad60b7f0a421b8c74d0ba3e6f9f79d36bd9dd96724af45bc01b7aa45",
+                    "rng.jsonl": "122b44d1ffca3bb38fc6d12d44cd0361856626fae91bbb33d935ff2cc3e992f3",
+                    "state.jsonl.gz": "7ae6ab4d56684b00b4e587a1f9db5759c7378ddedc3a49e1ff55d8d697ffc254"
+                }
+            },
+            "linux": {
+                "binary": "890e5220d559368d3519d4bc9e87c823799fc7b689cc07e2ed221ee05a33332b",
+                "compared": {
+                    "frames": {
+                        "frames_compared": 182,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 182
+                    },
+                    "world": {
+                        "status": "pass",
+                        "records_compared": 186
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 1241
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 0
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "receipts": {
+                    "receipt.json": "5a33a3850ec5039c985cebfaa7e7b2ed6d59234705e324d77363c57d3d07feaa",
+                    "actual.json": "ff9f755f73c26169e2c2aad840964b1c5f86665a9edec00523c0e60488fae28f",
+                    "comparison.json": "9c45649eb1af2aa57d08c530545bfdcd47b34cf44f8ec199195a73536d50bdab",
+                    "rng.jsonl": "63168f9c5a681c2f072aab890ef6b39e0b6a6f6ec8fb738265710ed49f8e3814",
+                    "state.jsonl.gz": "c54e462e2b007abceac398676e155b340c91f36e5a3dda1a68ee81ef76bae2bc"
+                }
+            }
+        }
+    },
+    "six_life": {
+        "device": {
+            "original_apk": "e4152171a65bb380a88d4996a7d1822767fd51aabb077999589bcf1b476af297",
+            "apk": "8bbd671696f9b0d16b4a606464afa12fd605e80e09215619e0bf930af036c181",
+            "export": "ecbfa670711aabe7d8d12c18dec1297f4f8911bb4ac37ee91083007226e39a35",
+            "written": "b40243892bbafdfaf6e684f7dcf164fee8af8e7bad6c6ff1006fc2fab0f2dfac",
+            "assets": [
+                {
+                    "path": "files/imported/sets/default/missions/sphere.hog",
+                    "sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+                    "added": true
+                },
+                {
+                    "path": "files/imported/sets/default/missions/sphere.mn2",
+                    "sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+                    "added": true
+                },
+                {
+                    "path": "files/imported/sets/default/d2x.hog",
+                    "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                    "added": true
+                },
+                {
+                    "path": "files/imported/sets/default/d2x-xl.hog",
+                    "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                    "added": true
+                }
+            ],
+            "expect": {
+                "current_level_num": 3,
+                "in_game": true,
+                "cheats_enabled": false,
+                "player.lives": 6,
+                "player.score": 79250,
+                "player.has_gold_key": false,
+                "player.has_red_key": false,
+                "player_dead": false,
+                "player.primary_weapon_flags": 143,
+                "position.segment": 1419
+            },
+            "logs": {
+                "write": "7d0c878401a8cbc0419945a604c74b7169aae56992c3de1dc1a73bbab0df6b8b",
+                "cold": "21202d879769a81e136d048578498db5ba23f226e3aca79f064762ed59b6c184"
+            }
+        },
+        "capture": {
+            "android.log": "198093d6852349d0fef2377bdbe1cd16bcebe66a7911959065a81afb02a0ff59",
+            "before.json": "510488f0003cbc87e0ddd0b0d9945cc99e66520a5387a63345ba5d49eada5969",
+            "d2_sphere_level3_20261120_071805.dximdemo": "0ef8ffa7144245958c3e7db5f64bb395a4398726383d237958d72a7855943a39",
+            "d2_sphere_level3_20261120_071805.dximdemo.rngtrace.jsonl": "dfb9bd7faa6e9dcd1ad2de6f44ca48a9aac51e2bdadd7ddcb2bf08cd57cbd12b",
+            "descent.cfg": "07cbca7f3be15b53fd6db6e782484d58cae5b4c5a6f0d38cb31e7eef96eb2267",
+            "files.json": "8b719197c2719795022dffda61dcc6b0ac3ae3f2b37038c8f482a9334a9e4d8c",
+            "live-13756.jsonl.gz": "d481b0bec5a4b7fe71bcbc26774cb6335e913eb426647dcb6978880fdca0848f",
+            "plan.jsonc": "8c4fcf073a4685cc33ff6d59398bc2188effd22d8c8d35941deaf65c31cd704a",
+            "spsix.plr": "5cd431c61100c3564dd61fdb852d1ca492d60714d8aab70d5d36d8fe62d0a4dc",
+            "spsix.plx": "5835e77249d75e186db54a115231777a1c277710d7dde2bac45f4092ae33ea80"
+        },
+        "replay": {
+            "windows": {
+                "binary": "ca6daa369096986d6f94640999634879abb8752dcd134e8f57c3ebf4da94b2b0",
+                "compared": {
+                    "frames": {
+                        "frames_compared": 182,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 182
+                    },
+                    "world": {
+                        "status": "pass",
+                        "records_compared": 186
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 58839
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 2
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "receipts": {
+                    "receipt.json": "3d148bb7f623cadf4daeff823f31b217ce67a4fc864229258ab6ee6cfa6ce52f",
+                    "actual.json": "e28c1a5d5d3420a94d503e09fbd2968497990f54bfa5accdb1c23d794aa69e7b",
+                    "comparison.json": "a4cd58680c88930dea052704a27109d08985ae4e5b907ef47e6df55fa86df351",
+                    "rng.jsonl": "ac974fb901e20fe5610137e1a6fb4b4f03f0c122aaba55d90cc3724b770fb8df",
+                    "state.jsonl.gz": "1dd703b732590e73ea96b7e9a16adc88b1ad5b96be41e61d2ea1e435f325966a"
+                }
+            },
+            "linux": {
+                "binary": "890e5220d559368d3519d4bc9e87c823799fc7b689cc07e2ed221ee05a33332b",
+                "compared": {
+                    "frames": {
+                        "frames_compared": 182,
+                        "status": "pass"
+                    },
+                    "objects": {
+                        "status": "pass",
+                        "frames_compared": 182
+                    },
+                    "world": {
+                        "status": "pass",
+                        "records_compared": 186
+                    },
+                    "sim_rng": {
+                        "status": "pass",
+                        "simulation_events_compared": 58839
+                    },
+                    "fx_rng": {
+                        "status": "pass",
+                        "effects_events_compared": 2
+                    },
+                    "trailer": {
+                        "status": "pass"
+                    }
+                },
+                "receipts": {
+                    "receipt.json": "2805f8c43bcba8573453bb72cf53e5aa906a220c70cbc469d539d84fde66a9e3",
+                    "actual.json": "e28c1a5d5d3420a94d503e09fbd2968497990f54bfa5accdb1c23d794aa69e7b",
+                    "comparison.json": "26c5648906e366ae19bc24b36b9f00983ef3480b898daaa4941c91f847f05aa5",
+                    "rng.jsonl": "dc068a7129b530537eb2fd5a1d286bc35d4f757614238f83c4475b3568c91239",
+                    "state.jsonl.gz": "0ccb80f0905afa405bff3988e54e920741f16b7ab36365084eeddc50c8064cdf"
+                }
+            }
+        }
+    },
+    "scope": "Trainee developer-assisted steering and targeting. The ordinary device imported the earned native export, wrote a quick slot, cold-loaded it and captured actual controls. Linux replayed the last three native phases from the earned Windows checkpoint.",
+    "pickups": [
+        {
+            "id": 0,
+            "object": 19,
+            "segment": 1415
+        },
+        {
+            "id": 0,
+            "object": 21,
+            "segment": 1416
+        }
+    ],
+    "door_flags": {
+        "before": {
+            "43": {
+                "clip": 12,
+                "flags": 24,
+                "keys": 1,
+                "state": 0,
+                "type": 2
+            },
+            "730": {
+                "clip": 12,
+                "flags": 24,
+                "keys": 1,
+                "state": 0,
+                "type": 2
+            }
+        },
+        "after": {
+            "43": {
+                "clip": 12,
+                "flags": 16,
+                "keys": 1,
+                "state": 0,
+                "type": 2
+            },
+            "730": {
+                "clip": 12,
+                "flags": 16,
+                "keys": 1,
+                "state": 0,
+                "type": 2
+            }
+        }
+    },
+    "earlier_four_life_assertion": {
+        "reason": {
+            "error": "player.lives actual=6 expected=4",
+            "fixed_view_aim_events": 0,
+            "position_assist_events": 0,
+            "result": "FAIL",
+            "steps": 4
+        },
+        "receipts": {
+            "plan.json": "6c1200cb38bc3dd263883bf7ce9a2b928f0181fa64598b8c201f99d9440b52b8",
+            "player-result.json": "27e5597149090abf29a43bfbd380f5a7fdabf80e43301d1a7fc872c3ec42cd7b",
+            "player-state.json": "019c7803264bf547549bbd870b0df7b85969fc5da0ea37210a1a16dab9f4cc8b",
+            "player-trace.jsonl": "bcabcefaf2652ad8ebd9749773f82da579d1fe0eb564448d0254ea6f24b60e9a"
+        }
+    },
+    "private_manifest_sha256": "c978b345b0887bf51ea3adb7a093d5848ae7628c05901ee32552f8173d4c77f5"
+}
