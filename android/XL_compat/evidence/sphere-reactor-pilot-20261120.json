@@ -1,0 +1,579 @@
+{
+  "target_source": "5e52098ba69849baf8ddeb908869d17b48b80085",
+  "living_guard_source": "9b12673efee1214714f186d69a1489b298836c97",
+  "fixture_source": "beb4ef61b2254bbd8e15e48e70001356a3121889",
+  "original_lethal_receipt": {
+    "result": "PASS",
+    "executable_sha256": "b787a257d31ca028b99a08cd19b589930117877ae201cbf8f5a5a047a2688e07",
+    "resume_sha256": "bb6067654419008e29082ec1abe1d072a60325ceee6c3f59fbe3c52f88eea8c3",
+    "plan_sha256": "9939562737fb9d672f4f6f3e5950baa20d5e1de092bf714b170162728d8cc5cd",
+    "position_assist_events": 0,
+    "fixed_view_aim_events": 0,
+    "hashes": {
+      "plan.json": "9939562737fb9d672f4f6f3e5950baa20d5e1de092bf714b170162728d8cc5cd",
+      "engine.log": "c6a0a751e744b31191daebcbebf99825024eaa91e444d4d002f6bc2731647e35",
+      "player-result.json": "a937dcb406ee88fab399b0ed83efbe7bbbe0ae37f1b2c34dba7f0b531c71eb4a",
+      "player-state.json": "50a06557414a5bcb04daed58e4744263903234f9d87cc954b438d3f35d8b6987",
+      "player-trace.jsonl": "43d591ac4318899b2032994fe0c12c83420408dfbd3d4f54dfad2eb784bc2368"
+    },
+    "pilot": {
+      "segment": 3110,
+      "dead": false,
+      "lives": 2,
+      "score": 46850,
+      "shields": -1.51434326171875,
+      "energy": 95.3450927734375,
+      "has_gold_key": true,
+      "has_red_key": true
+    },
+    "reactors": [
+      {
+        "object": 433,
+        "id": 1,
+        "signature": 434,
+        "segment": 2957,
+        "shields": 300.0
+      }
+    ]
+  },
+  "owners": {
+    "windows": {
+      "positioned_control": {
+        "result": "PASS",
+        "executable_sha256": "573c9e3515b4c24a837423f7a57158facb35e6aa2162c8fee978ef786ffb31ff",
+        "resume_sha256": "",
+        "plan_sha256": "f0d79e999f44152e95fdeb40d72a95c2432549ac7b06e80d4e04a7b5d5f4c9dc",
+        "position_assist_events": 1,
+        "fixed_view_aim_events": 0,
+        "hashes": {
+          "aim-plan.json": "f0d79e999f44152e95fdeb40d72a95c2432549ac7b06e80d4e04a7b5d5f4c9dc",
+          "aim-controls.log": "146f7172367fc0aec9cba2129af9e3c8b56b2e44b2e374016dd86895553fa1f9",
+          "player-result.json": "81a03ac43e8914e9123d6c649a9e26d320f4eb7b09a0fe7870331e48927d5481",
+          "player-state.json": "7a63757e4864c35e6ebe92edf55ce367cc8e9c94b78f51d10bb505667a0758a0",
+          "player-trace.jsonl": "4862e82e00d045aae66d3d7578e03fd925186ff2f787b2a21b6a061408a472f3"
+        },
+        "pilot": {
+          "segment": 2956,
+          "dead": false,
+          "lives": 3,
+          "score": 0,
+          "shields": 100.0,
+          "energy": 98.7750244140625,
+          "has_gold_key": false,
+          "has_red_key": false
+        },
+        "reactors": [
+          {
+            "object": 433,
+            "id": 1,
+            "signature": 434,
+            "segment": 2957,
+            "shields": 246.0
+          }
+        ]
+      },
+      "native_controls": {
+        "reject-lethal-flight": {
+          "result": "FAIL",
+          "error": "ordinary player probe died or sustained lethal damage",
+          "position_assist_events": 0,
+          "fixed_view_aim_events": 0,
+          "hashes": {
+            "plan.json": "613ea884bfe4482ac9991f19303fa8a7de2108402dc48d21dd210c420a239217",
+            "engine.log": "cad4c5636d47f807bab68404deb9dc3dc514c216a81c8c821da41f74ad9d2af6",
+            "player-result.json": "ca5b1a0aff1cb33382b20782ae156845b28036dfb4873de0c470fad3001c8fe4",
+            "player-state.json": "50a06557414a5bcb04daed58e4744263903234f9d87cc954b438d3f35d8b6987",
+            "player-trace.jsonl": "c94521de3d781d7c66c1831a00406a11e419eb520ff7abff36ec5b3aa5edb521"
+          },
+          "pilot": {
+            "segment": 3110,
+            "dead": false,
+            "lives": 2,
+            "score": 46850,
+            "shields": -1.51434326171875,
+            "energy": 95.3450927734375,
+            "has_gold_key": true,
+            "has_red_key": true
+          },
+          "reactors": [
+            {
+              "object": 433,
+              "id": 1,
+              "signature": 434,
+              "segment": 2957,
+              "shields": 300.0
+            }
+          ]
+        },
+        "reject-lethal-save": {
+          "result": "FAIL",
+          "error": "ordinary player probe died or sustained lethal damage",
+          "position_assist_events": 0,
+          "fixed_view_aim_events": 0,
+          "hashes": {
+            "plan.json": "631e63887a2633f1d6b15dd9d04ec0ee304a67f852649bf93911fd2dbc6cc751",
+            "engine.log": "05b00112fffeb19fc1286ea8bce93d93b8629fa3c6f028c65b13c5b099dc0d23",
+            "player-result.json": "264ea7b842fe6a05b7c3596d2fa88f4ce91b8d880804530d79d31beb375e232e",
+            "player-state.json": "50a06557414a5bcb04daed58e4744263903234f9d87cc954b438d3f35d8b6987",
+            "player-trace.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "pilot": {
+            "segment": 3110,
+            "dead": false,
+            "lives": 2,
+            "score": 46850,
+            "shields": -1.51434326171875,
+            "energy": 95.3450927734375,
+            "has_gold_key": true,
+            "has_red_key": true
+          },
+          "reactors": [
+            {
+              "object": 433,
+              "id": 1,
+              "signature": 434,
+              "segment": 2957,
+              "shields": 300.0
+            }
+          ]
+        },
+        "reject-range": {
+          "result": "FAIL",
+          "error": "Combat flight requires a visible reactor within range",
+          "position_assist_events": 0,
+          "fixed_view_aim_events": 0,
+          "hashes": {
+            "plan.json": "1ef41a3475c4d16c1a397f7c30aba1594bb516c0ffcc80de3f6f71eca65a6336",
+            "engine.log": "e376b1494f6868c96ef5725cb72c51599c87437c8a61eacaa30dff0192e43c60",
+            "player-result.json": "8bb55ff9ffdb5c59b63b1b3b9033426d291af04e1a080cf84e6a3f5a612710d3",
+            "player-state.json": "3900e312cdcbb055a20db7e00a27463df3a0a8ffa11c5c84870f611853e1fc34",
+            "player-trace.jsonl": "bb92759eb37906746ce5a44d15a9035bc855d978a5e3256455f705ca0e7588b5"
+          },
+          "pilot": {
+            "segment": 754,
+            "dead": false,
+            "lives": 2,
+            "score": 46850,
+            "shields": 70.0,
+            "energy": 95.3450927734375,
+            "has_gold_key": true,
+            "has_red_key": true
+          },
+          "reactors": [
+            {
+              "object": 433,
+              "id": 1,
+              "signature": 434,
+              "segment": 2957,
+              "shields": 300.0
+            }
+          ]
+        },
+        "reject-signature": {
+          "result": "FAIL",
+          "error": "Combat flight requires the requested live reactor",
+          "position_assist_events": 0,
+          "fixed_view_aim_events": 0,
+          "hashes": {
+            "plan.json": "55c1fc3564c39578f3361e45c825470fe7d1f10b40cfb0c5bc8a537a2c6aef68",
+            "engine.log": "2ed623bd3cd2e1201b455f292b7e30fc31fa4d02755e38e2472c726bed968623",
+            "player-result.json": "5aa49ac861b7cd5922edb98ce34495bfcf3eadeb325239c3fcdadc147c6a5330",
+            "player-state.json": "3900e312cdcbb055a20db7e00a27463df3a0a8ffa11c5c84870f611853e1fc34",
+            "player-trace.jsonl": "bb92759eb37906746ce5a44d15a9035bc855d978a5e3256455f705ca0e7588b5"
+          },
+          "pilot": {
+            "segment": 754,
+            "dead": false,
+            "lives": 2,
+            "score": 46850,
+            "shields": 70.0,
+            "energy": 95.3450927734375,
+            "has_gold_key": true,
+            "has_red_key": true
+          },
+          "reactors": [
+            {
+              "object": 433,
+              "id": 1,
+              "signature": 434,
+              "segment": 2957,
+              "shields": 300.0
+            }
+          ]
+        },
+        "reject-object": {
+          "result": "FAIL",
+          "error": "Combat flight requires the requested live reactor",
+          "position_assist_events": 0,
+          "fixed_view_aim_events": 0,
+          "hashes": {
+            "plan.json": "39db5c82834a62157bd0a452dd99280f2925cc9afb2740b0400c779279a2a0e4",
+            "engine.log": "2ed623bd3cd2e1201b455f292b7e30fc31fa4d02755e38e2472c726bed968623",
+            "player-result.json": "5aa49ac861b7cd5922edb98ce34495bfcf3eadeb325239c3fcdadc147c6a5330",
+            "player-state.json": "3900e312cdcbb055a20db7e00a27463df3a0a8ffa11c5c84870f611853e1fc34",
+            "player-trace.jsonl": "bb92759eb37906746ce5a44d15a9035bc855d978a5e3256455f705ca0e7588b5"
+          },
+          "pilot": {
+            "segment": 754,
+            "dead": false,
+            "lives": 2,
+            "score": 46850,
+            "shields": 70.0,
+            "energy": 95.3450927734375,
+            "has_gold_key": true,
+            "has_red_key": true
+          },
+          "reactors": [
+            {
+              "object": 433,
+              "id": 1,
+              "signature": 434,
+              "segment": 2957,
+              "shields": 300.0
+            }
+          ]
+        },
+        "red-door": {
+          "result": "PASS",
+          "executable_sha256": "573c9e3515b4c24a837423f7a57158facb35e6aa2162c8fee978ef786ffb31ff",
+          "resume_sha256": "da1e2b23e612cd6fb454704f836e62df0b30e3010e753347c80e2904d66fdce6",
+          "plan_sha256": "b99ff4b95da20d6ca2ca6b63093e12ac9ea1c0068c7d3d3fd9284357ef5b6bab",
+          "position_assist_events": 0,
+          "fixed_view_aim_events": 0,
+          "hashes": {
+            "plan.json": "b99ff4b95da20d6ca2ca6b63093e12ac9ea1c0068c7d3d3fd9284357ef5b6bab",
+            "engine.log": "17a11f029058fb4ca7a3bbb316ff4362df6fb34bdd621b3f2b6cca2f41da2df8",
+            "player-result.json": "631120ae4116bc533aa5360628d6110071af674d0892afc5fab43e38ab0f0ca1",
+            "player-state.json": "20ad609e34301074f422d8021c918ec5f44db7bab7a9520e6b55bcae2cc7fa7f",
+            "player-trace.jsonl": "bc7fdde6c8eaa1111c722d348e55977abba5ca3fa17047da075bf6fc39195b2b"
+          },
+          "pilot": {
+            "segment": 754,
+            "dead": false,
+            "lives": 2,
+            "score": 46850,
+            "shields": 70.0,
+            "energy": 95.3450927734375,
+            "has_gold_key": true,
+            "has_red_key": true
+          },
+          "reactors": [
+            {
+              "object": 433,
+              "id": 1,
+              "signature": 434,
+              "segment": 2957,
+              "shields": 300.0
+            }
+          ]
+        },
+        "robot": {
+          "result": "PASS",
+          "executable_sha256": "573c9e3515b4c24a837423f7a57158facb35e6aa2162c8fee978ef786ffb31ff",
+          "resume_sha256": "8bf24249e6f437a54436ac78eeb09eb547f5df583ae464d4b5c3f5b0f51114e0",
+          "plan_sha256": "64ac7e532bc5642102f219bc5f77ed57d0865b9d33c520ee95781b574c487c18",
+          "position_assist_events": 0,
+          "fixed_view_aim_events": 0,
+          "hashes": {
+            "plan.json": "64ac7e532bc5642102f219bc5f77ed57d0865b9d33c520ee95781b574c487c18",
+            "engine.log": "10f65df0a6c5aa783116e54ef2ec29995807cb106528a10a0786cf5bf0587cfd",
+            "player-result.json": "5b7ff31bf7599fba37f706c90a6215600f70927a89db3c703a29537a907ad2bd",
+            "player-state.json": "9d95e31669bd3f5d5191b8ff2903261332d2ed05d671f153959475d9e7acb0d0",
+            "player-trace.jsonl": "a3dbb8c8792106378be6124c4372172e17eaee594502d38b72085ee8834a0842"
+          },
+          "pilot": {
+            "segment": 3338,
+            "dead": false,
+            "lives": 3,
+            "score": 48650,
+            "shields": 21.864791870117188,
+            "energy": 174.4752197265625,
+            "has_gold_key": true,
+            "has_red_key": true
+          },
+          "reactors": [
+            {
+              "object": 433,
+              "id": 1,
+              "signature": 434,
+              "segment": 2957,
+              "shields": 300.0
+            }
+          ]
+        }
+      },
+      "ctest_log_sha256": "9acbf310cdd9f3cea4ddcecb84fc1d7db2f4bd5de2c9e94325eb86f0d0c6f7dc"
+    },
+    "linux": {
+      "positioned_control": {
+        "result": "PASS",
+        "executable_sha256": "aa27d4ed735997470813954ee9e6fa084fee3d080273835c50696e5e72cf9dd3",
+        "resume_sha256": "",
+        "plan_sha256": "e8b1de096b1d06cb577c7e1895fc9bf8dbf843bac7a2abfa60e438d1352d346f",
+        "position_assist_events": 1,
+        "fixed_view_aim_events": 0,
+        "hashes": {
+          "aim-plan.json": "e8b1de096b1d06cb577c7e1895fc9bf8dbf843bac7a2abfa60e438d1352d346f",
+          "aim-controls.log": "01ecbdbac4f413132926dbc88ead21c8b2524dec63235da48b4dd0a269926823",
+          "player-result.json": "59cbb452749221a1c27933d306893285c80c3bf3b335945ee265aa623a2441ea",
+          "player-state.json": "00ffaec6ec5809433886e7f11ecb4be938e066f4bb63ce917a5b61a478ceaf73",
+          "player-trace.jsonl": "310114be072a069d2d3a46123fa4cdc6ffdaf0264ec92c4c33ba1ede33c3fc7c"
+        },
+        "pilot": {
+          "segment": 2956,
+          "dead": false,
+          "lives": 3,
+          "score": 0,
+          "shields": 100.0,
+          "energy": 98.7750244140625,
+          "has_gold_key": false,
+          "has_red_key": false
+        },
+        "reactors": [
+          {
+            "object": 433,
+            "id": 1,
+            "signature": 434,
+            "segment": 2957,
+            "shields": 246.0
+          }
+        ]
+      },
+      "native_controls": {
+        "reject-lethal-flight": {
+          "result": "FAIL",
+          "error": "ordinary player probe died or sustained lethal damage",
+          "position_assist_events": 0,
+          "fixed_view_aim_events": 0,
+          "hashes": {
+            "plan.json": "801ae864a786cfa0d7c3527f18adb18202dea20873304370e5730afee4cc72ac",
+            "engine.log": "39f38431499109865d534eb852e06750586929618e9d1ad91c3c2e4ac5d69112",
+            "player-result.json": "362a245bf78c7ec8cc9ba5b7392c620a9d911db94ca673d6426b9343228026da",
+            "player-state.json": "4652ee749dc668ed4ec1bca38a52dc953ea83f7e998de611b616e0196470724c",
+            "player-trace.jsonl": "be34f0464942fc0e005e97b725d429b956b7dee0aeca03e587968a1f2e9f58f6"
+          },
+          "pilot": {
+            "segment": 3110,
+            "dead": false,
+            "lives": 2,
+            "score": 46850,
+            "shields": -1.51434326171875,
+            "energy": 95.3450927734375,
+            "has_gold_key": true,
+            "has_red_key": true
+          },
+          "reactors": [
+            {
+              "object": 433,
+              "id": 1,
+              "signature": 434,
+              "segment": 2957,
+              "shields": 300.0
+            }
+          ]
+        },
+        "reject-lethal-save": {
+          "result": "FAIL",
+          "error": "ordinary player probe died or sustained lethal damage",
+          "position_assist_events": 0,
+          "fixed_view_aim_events": 0,
+          "hashes": {
+            "plan.json": "8500fd29c852597b5f24d29601135229b359bc33ce91c116cde208516c881acf",
+            "engine.log": "5a8b24c315ddc43bb21711d6ee77d9ab3f53d15f1954f6248b7a0957cc0e57f3",
+            "player-result.json": "f300148d85b30edeb1d62704d895aebb90f4c886598450596bbbe45679a828df",
+            "player-state.json": "4652ee749dc668ed4ec1bca38a52dc953ea83f7e998de611b616e0196470724c",
+            "player-trace.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "pilot": {
+            "segment": 3110,
+            "dead": false,
+            "lives": 2,
+            "score": 46850,
+            "shields": -1.51434326171875,
+            "energy": 95.3450927734375,
+            "has_gold_key": true,
+            "has_red_key": true
+          },
+          "reactors": [
+            {
+              "object": 433,
+              "id": 1,
+              "signature": 434,
+              "segment": 2957,
+              "shields": 300.0
+            }
+          ]
+        },
+        "reject-range": {
+          "result": "FAIL",
+          "error": "Combat flight requires a visible reactor within range",
+          "position_assist_events": 0,
+          "fixed_view_aim_events": 0,
+          "hashes": {
+            "plan.json": "7c835f11b89539ab1dc29fd20c691768fde8682d90c172e930b83a974dd327fe",
+            "engine.log": "bf5d898f388c4bb587b4ddc719a82ce66ff4fb86cc3244dc9c63a643a0dc3057",
+            "player-result.json": "e9330d34f13681a5a4244700c7f570b41c0abfe9db408892394659384ec786d2",
+            "player-state.json": "06c32fb2ffc182c69ad92cb8b81e86c35e6c4839a232133e2491bdb5d8d9e690",
+            "player-trace.jsonl": "a4f3d4e53cbdf5226f1ff43d49bdf0be859cc141139a5cf97a7680a54b2d7098"
+          },
+          "pilot": {
+            "segment": 754,
+            "dead": false,
+            "lives": 2,
+            "score": 46850,
+            "shields": 70.0,
+            "energy": 95.3450927734375,
+            "has_gold_key": true,
+            "has_red_key": true
+          },
+          "reactors": [
+            {
+              "object": 433,
+              "id": 1,
+              "signature": 434,
+              "segment": 2957,
+              "shields": 300.0
+            }
+          ]
+        },
+        "reject-signature": {
+          "result": "FAIL",
+          "error": "Combat flight requires the requested live reactor",
+          "position_assist_events": 0,
+          "fixed_view_aim_events": 0,
+          "hashes": {
+            "plan.json": "3afb972303a270ef2810ac3dbf74a2952ca0ad5e99e9710f0fdf1c5d7c40fbc3",
+            "engine.log": "214d399619f2340265dc78dcb1575f9ab813195de3efbe764edc2066159913b1",
+            "player-result.json": "cc5223dd68176a7b814af1db6d9a1b19901fd70c622a705aa77d1ec121944661",
+            "player-state.json": "06c32fb2ffc182c69ad92cb8b81e86c35e6c4839a232133e2491bdb5d8d9e690",
+            "player-trace.jsonl": "a4f3d4e53cbdf5226f1ff43d49bdf0be859cc141139a5cf97a7680a54b2d7098"
+          },
+          "pilot": {
+            "segment": 754,
+            "dead": false,
+            "lives": 2,
+            "score": 46850,
+            "shields": 70.0,
+            "energy": 95.3450927734375,
+            "has_gold_key": true,
+            "has_red_key": true
+          },
+          "reactors": [
+            {
+              "object": 433,
+              "id": 1,
+              "signature": 434,
+              "segment": 2957,
+              "shields": 300.0
+            }
+          ]
+        },
+        "reject-object": {
+          "result": "FAIL",
+          "error": "Combat flight requires the requested live reactor",
+          "position_assist_events": 0,
+          "fixed_view_aim_events": 0,
+          "hashes": {
+            "plan.json": "35cd4f9da1469b5034907d7d2ae3a1345ffcc4de083c00982eef2ce15d7c1ad3",
+            "engine.log": "214d399619f2340265dc78dcb1575f9ab813195de3efbe764edc2066159913b1",
+            "player-result.json": "cc5223dd68176a7b814af1db6d9a1b19901fd70c622a705aa77d1ec121944661",
+            "player-state.json": "06c32fb2ffc182c69ad92cb8b81e86c35e6c4839a232133e2491bdb5d8d9e690",
+            "player-trace.jsonl": "a4f3d4e53cbdf5226f1ff43d49bdf0be859cc141139a5cf97a7680a54b2d7098"
+          },
+          "pilot": {
+            "segment": 754,
+            "dead": false,
+            "lives": 2,
+            "score": 46850,
+            "shields": 70.0,
+            "energy": 95.3450927734375,
+            "has_gold_key": true,
+            "has_red_key": true
+          },
+          "reactors": [
+            {
+              "object": 433,
+              "id": 1,
+              "signature": 434,
+              "segment": 2957,
+              "shields": 300.0
+            }
+          ]
+        },
+        "red-door": {
+          "result": "PASS",
+          "executable_sha256": "aa27d4ed735997470813954ee9e6fa084fee3d080273835c50696e5e72cf9dd3",
+          "resume_sha256": "da1e2b23e612cd6fb454704f836e62df0b30e3010e753347c80e2904d66fdce6",
+          "plan_sha256": "3f2a221fbf44f81be1a9c810464470e11614adda3c9b401c02f903ea6f14d6d0",
+          "position_assist_events": 0,
+          "fixed_view_aim_events": 0,
+          "hashes": {
+            "plan.json": "3f2a221fbf44f81be1a9c810464470e11614adda3c9b401c02f903ea6f14d6d0",
+            "engine.log": "c2c885226ee399b3cbe96827cd8fce6c509ae03fae88de8bdc33255b865f0a97",
+            "player-result.json": "6bae6b895ae8953fa0918aa6658d69079a85f293cde58abf0962b87c8cf689e3",
+            "player-state.json": "e1934f26eff90e04de5a1dc14d3aceab7614538628b65e000c18b71f771592fa",
+            "player-trace.jsonl": "8cf88c951b1748f88b52f61c206682bba696ff248706f88eea736afab6dae4ee"
+          },
+          "pilot": {
+            "segment": 754,
+            "dead": false,
+            "lives": 2,
+            "score": 46850,
+            "shields": 70.0,
+            "energy": 95.3450927734375,
+            "has_gold_key": true,
+            "has_red_key": true
+          },
+          "reactors": [
+            {
+              "object": 433,
+              "id": 1,
+              "signature": 434,
+              "segment": 2957,
+              "shields": 300.0
+            }
+          ]
+        },
+        "robot": {
+          "result": "PASS",
+          "executable_sha256": "aa27d4ed735997470813954ee9e6fa084fee3d080273835c50696e5e72cf9dd3",
+          "resume_sha256": "8bf24249e6f437a54436ac78eeb09eb547f5df583ae464d4b5c3f5b0f51114e0",
+          "plan_sha256": "ce7200ed932b7543530c1f1fb8bf3c525b6b4695cd895756ac225b8812d287d6",
+          "position_assist_events": 0,
+          "fixed_view_aim_events": 0,
+          "hashes": {
+            "plan.json": "ce7200ed932b7543530c1f1fb8bf3c525b6b4695cd895756ac225b8812d287d6",
+            "engine.log": "d3f785b5fa9ca1f3aa2c106eced307302338237903dd412a50c4ba470839c970",
+            "player-result.json": "a98a0418e20213c225d1e23b8dfdb281aa6206de99db3c84c944aea37a1b3eed",
+            "player-state.json": "56b8df5ff0e4191b96874e1f35d8d6e836b36b51dbbc87237dbf61e371b855b7",
+            "player-trace.jsonl": "6422c88c26cbc12da73eb36a94d4a47f3fc1b8aea510d23ae2b25e3cc4fbaf7e"
+          },
+          "pilot": {
+            "segment": 3338,
+            "dead": false,
+            "lives": 3,
+            "score": 48650,
+            "shields": 21.864791870117188,
+            "energy": 174.4752197265625,
+            "has_gold_key": true,
+            "has_red_key": true
+          },
+          "reactors": [
+            {
+              "object": 433,
+              "id": 1,
+              "signature": 434,
+              "segment": 2957,
+              "shields": 300.0
+            }
+          ]
+        }
+      },
+      "ctest_log_sha256": "414772f788ebb1ed67cc203a59314fd8360234ab70a5669cf41bb759bd84f034"
+    }
+  },
+  "mission_inputs": {
+    "sphere.hog": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+    "sphere.mn2": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b"
+  }
+}
