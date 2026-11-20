@@ -212,6 +212,7 @@ void escort_route_save_runtime(guidebot_save_stream *s)
         const int64_t epoch = s->epoch; \
         s->epoch = timer_query(); \
         GB_FIELD(s, source, kind); \
+        if (!s->writing && s->apply && s->ok && source <= s->epoch) source = 0; \
         s->epoch = epoch; \
     }
 #include "guidebot_route_state_members.h"
