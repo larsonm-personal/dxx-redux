@@ -599,6 +599,7 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 		// Legacy direct Majha phases do not pass a nonce; the strict phase owner does
 		run_id = plan.value("receipt_run_id", std::string{});
 		std::strcpy(Players[Player_num].callsign, pumo ? "PumoNat" : "XLPilot");
+		new_player_config();
 		Difficulty_level = 0;
 		input_demo_set_skip_level_intro(1);
 		const int initial_level = plan.at("initial_level");

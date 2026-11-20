@@ -911,6 +911,17 @@ if(BUILD_TESTING)
             set_tests_properties(xl_signed_boss27_native PROPERTIES TIMEOUT 270)
         endif()
     endif()
+    set(XL_SPHERE_PLAYER_ROOT "" CACHE PATH "Original Sphere 1.51 staged mission root")
+    if(XL_SPHERE_PLAYER_ROOT AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        add_test(
+            NAME xl_sphere_red_key
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-red-key -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_red_key.cmake)
+        set_tests_properties(xl_sphere_red_key PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+    endif()
     set(XL_PHOENIX_PLAYER_ROOT "" CACHE PATH "Original Black Prophecy staged mission root")
     if(XL_PHOENIX_PLAYER_ROOT AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
         foreach(stage approach return)
