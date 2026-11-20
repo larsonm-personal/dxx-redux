@@ -24,5 +24,9 @@ class ReferenceCampaignTests(unittest.TestCase):
         self.assertEqual(self.result(None, []), "reference_startup_unverified")
         ran = opened + [["started", "1", "-1"], ["frames", "120", "-1", "0"]]
         self.assertEqual(self.result(0, ran), "started_and_ran")
+        self.assertNotEqual(classify(0, ran, self.descriptor, "secret.rl2", -1, 900), "started_and_ran")
+        extended = ran[:-1] + [["frames", "900", "-1", "0"]]
+        self.assertEqual(classify(0, extended, self.descriptor, "secret.rl2", -1, 900), "started_and_ran")
+        self.assertNotEqual(self.result(0, extended), "started_and_ran")
         ran[-1] = ["frames", "120", "1", "0"]
         self.assertNotEqual(self.result(0, ran), "started_and_ran")

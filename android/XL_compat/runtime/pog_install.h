@@ -143,10 +143,9 @@ int xl_pog_install_prepared(struct xl_pog_resources *resources)
 		unsigned frame;
 		xl_pog_live_effects[clock->effect].frames = clock->frames;
 		xl_pog_live_effects[clock->effect].count = clock->source_frames;
-		if (clock->from_pog || clock->object_texture >= 0) {
-			Effects[clock->effect].frame_count = 0;
-			Effects[clock->effect].time_left = clock->frame_time;
-		}
+		/* InitSpecialEffects starts each new wall or object clock at its full period */
+		Effects[clock->effect].frame_count = 0;
+		Effects[clock->effect].time_left = clock->frame_time;
 		for (frame = 0; frame < clock->source_frames; ++frame)
 			xl_pog_live_effects[clock->effect].bitmaps[frame] = xl_pog_effect_bitmap(resources, i, frame);
 	}

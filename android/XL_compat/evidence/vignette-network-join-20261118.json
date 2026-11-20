@@ -1,0 +1,62 @@
+{
+    "parent": "d85b955ae86fd3736cc798151eb9bf1816d1b33e",
+    "baseline_apk_sha256": "b7a0ceac999d93352f2cb874c435fc99f727bb58322f81e561a6afc4f9294cc5",
+    "candidate_apk_sha256": "93d3d2afdf1b5a4450cb24bd742978b18712b6c449a8412d893dc0327c319bc5",
+    "devices": {
+        "host": "Android 34 x86_64 emulator-5584",
+        "client": "Android 34 x86_64 emulator-5582"
+    },
+    "vignette": {
+        "descriptor_sha256": "fd89030cc1a7cf40cdaf5730d14e0c19370b3bdd294af057c7f1fcd169f80d57",
+        "hog_sha256": "69d0d102c5551f164cefee6b7d79f576e5f0c314eb943e49902fe9dcb591f0e2",
+        "matching_input_files": 16,
+        "baseline": {
+            "advertised_name": "vignette",
+            "result": "mission not installed",
+            "joiner_state_sha256": "e3d905e8212313f6f2ad944099f26787487e42e24a6b3fdd885f70ca50370806"
+        },
+        "candidate": {
+            "selected_mission": "vignette-xl",
+            "join_event": "join_mission_end",
+            "first_level": "standoff.rl2",
+            "outcome": "rejected at level load",
+            "reason": "multiplayer: XL synchronization is not implemented; use singleplayer",
+            "joiner_log_sha256": "40bb8a4c66afa21ffa476313ffa4698ecf543a6bb81dfd1c606309f5087e5291"
+        }
+    },
+    "classic_control": {
+        "mode": "anarchy",
+        "packages": {
+            "arenaqual-one": {
+                "title": "Arena Qualification",
+                "level": "d2leva-1.rl2",
+                "descriptor_sha256": "f19c1319ef49e1eff33f6175cc4628135f9b9a2a5fd834b279c8da660e05be5c",
+                "hog_sha256": "052e6c450ce7a89ffe0673424588c4c8f924d721e64df9d2fc3d3b2d55f0cc77"
+            },
+            "arenaqual-two": {
+                "title": "Arena Qualification",
+                "level": "d2leva-2.rl2",
+                "descriptor_sha256": "fcf952e241270c45909b6d7c7cfd7359a6331b61315db3a19320b1502a462194",
+                "hog_sha256": "c72c0e7c60aed2c5b78e9df4fa09e17f2876f874e106e3b6c460667e02c23213"
+            }
+        },
+        "peers": [
+            {
+                "serial": "emulator-5584",
+                "slot": 0,
+                "connected": 2,
+                "mission": "arenaqual-two",
+                "level": "Turnabout Bore",
+                "snapshot_sha256": "1f88d0368c5ebb73f84ac79cfc5bc9dece05a8241d3c80955d4b5ce68ff0d09f"
+            },
+            {
+                "serial": "emulator-5582",
+                "slot": 1,
+                "connected": 2,
+                "mission": "arenaqual-two",
+                "level": "Turnabout Bore",
+                "snapshot_sha256": "0f18d7361a9eaf152f27fb05bb65af0c520e0c2699cf9417b3c5292c12449bba"
+            }
+        ]
+    }
+}

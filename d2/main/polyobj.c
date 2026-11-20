@@ -346,6 +346,11 @@ void draw_polygon_model(vms_vector *pos,vms_matrix *orient,vms_angvec *anim_angl
 					po = &Polygon_models[po->simpler_model-1];
 			}
 
+	if (po->n_textures > MAX_POLYOBJ_TEXTURES) {
+		Assert(po->n_textures <= MAX_POLYOBJ_TEXTURES);
+		return;
+	}
+
 	if (alt_textures)
    {
 		for (i=0;i<po->n_textures;i++)	{

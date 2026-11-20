@@ -1,0 +1,229 @@
+{
+    "starting_point": "Earned Majha checkpoint from the Pumo hub and Multiverse route in PR 618",
+    "starting_sha256": "b33e8cd810eaef2a04916d5422a277bbe2d597fb0b6210897693af9a0eb36807",
+    "platform": "Windows x86 Debug, fixed 60 Hz, unrendered, Trainee",
+    "control_method": "Geometry-guided movement and weapon buttons, fresh-process checkpoint restores",
+    "phases": [
+        {
+            "phase": "blue_key",
+            "from": 3,
+            "to": 3,
+            "steps": 92,
+            "plan_sha256": "d5e3c25b954c81ca0f3f580b7c8f25b890db46d1d1cf4f186f47202c05a80016",
+            "executable_sha256": "2ad9f07e18c051b0862e2cac7442d6f245f3ba91c6a8d307eea0ab6a0ace9c9f",
+            "receipt_sha256": "66b98d83b51b9f8c2b60dcfe44117f7a36a30ffe33b7cc1137d42a1b036b4961",
+            "loaded_save_sha256": "b33e8cd810eaef2a04916d5422a277bbe2d597fb0b6210897693af9a0eb36807",
+            "saved_sha256": "43ac4de261ab742745cb79975dd4360f736f5c3f8161e804c1a6912fa5ac39b1",
+            "segment": 513,
+            "lives": 3,
+            "shields": 60.60618591308594,
+            "energy": 24.051513671875,
+            "reactor_timer": {
+                "active": false,
+                "timer": 6206259,
+                "total_seconds": 99
+            },
+            "position_assists": 0,
+            "fixed_view_assists": 0
+        },
+        {
+            "phase": "vulcan_and_shields",
+            "from": 3,
+            "to": 3,
+            "steps": 74,
+            "plan_sha256": "7fd33f03ce5a8f7b3fd0039463c8e212f81b19fa07417f942b1cb4388ab8730f",
+            "executable_sha256": "2ad9f07e18c051b0862e2cac7442d6f245f3ba91c6a8d307eea0ab6a0ace9c9f",
+            "receipt_sha256": "a1c4568f2db18f519f047454bb4a48e0b8f0b981150a95b5ddd528ea52898ce7",
+            "loaded_save_sha256": "43ac4de261ab742745cb79975dd4360f736f5c3f8161e804c1a6912fa5ac39b1",
+            "saved_sha256": "af2355602ef8029cd9598e6cf0e8b19132b61070dbe7102f4e9fcb2e95ee6f45",
+            "segment": 201,
+            "lives": 3,
+            "shields": 69.11614990234375,
+            "energy": 42.4766845703125,
+            "reactor_timer": {
+                "active": false,
+                "timer": 6206259,
+                "total_seconds": 99
+            },
+            "position_assists": 0,
+            "fixed_view_assists": 0
+        },
+        {
+            "phase": "red_key",
+            "from": 3,
+            "to": 3,
+            "steps": 88,
+            "plan_sha256": "71e927edcba613304998acf3e3a95923603dc680e14aefff4e02f2dca36b6b32",
+            "executable_sha256": "2ad9f07e18c051b0862e2cac7442d6f245f3ba91c6a8d307eea0ab6a0ace9c9f",
+            "receipt_sha256": "976df74b3a70990a687037b87ed79a284312c7e57cdd6caebe7ed7a1f45c820e",
+            "loaded_save_sha256": "af2355602ef8029cd9598e6cf0e8b19132b61070dbe7102f4e9fcb2e95ee6f45",
+            "saved_sha256": "861e126d4dbba01c9006f90b5d457be7f140d37ab8ddd45a77651ba6a3974862",
+            "segment": 150,
+            "lives": 3,
+            "shields": 73.83070373535156,
+            "energy": 91.6435546875,
+            "reactor_timer": {
+                "active": false,
+                "timer": 6206259,
+                "total_seconds": 99
+            },
+            "position_assists": 0,
+            "fixed_view_assists": 0
+        },
+        {
+            "phase": "resupply_and_reactor_approach",
+            "from": 3,
+            "to": 3,
+            "steps": 168,
+            "plan_sha256": "43c56e246dc1f5125e86b4b8da46641070ad727173c46d3c0a566e4fef6526e1",
+            "executable_sha256": "27dc2015da570c4ba583260f37c402d5d856a15762d5a318e2035e5cf1547f7a",
+            "receipt_sha256": "7229b55bbd863b2c55c537ff67a6b97bd5565f9adc68a04eb9ac131e2eb1ae0c",
+            "loaded_save_sha256": "861e126d4dbba01c9006f90b5d457be7f140d37ab8ddd45a77651ba6a3974862",
+            "saved_sha256": "b1db2a9bec1cee71ed3b79f9d0b3bfa90a68a34aa4688c7048b0f3f87ee113c8",
+            "segment": 794,
+            "lives": 3,
+            "shields": 64.59060668945312,
+            "energy": 106.6654052734375,
+            "reactor_timer": {
+                "active": false,
+                "timer": 6206259,
+                "total_seconds": 99
+            },
+            "position_assists": 0,
+            "fixed_view_assists": 0
+        },
+        {
+            "phase": "reactor",
+            "from": 3,
+            "to": 3,
+            "steps": 9,
+            "plan_sha256": "bb6d3f7002d09a5e036411d57af17928ddec1e65d7ef9599f24d97a96b4a130e",
+            "executable_sha256": "27dc2015da570c4ba583260f37c402d5d856a15762d5a318e2035e5cf1547f7a",
+            "receipt_sha256": "76794c5fb066855d556ddd48da0cf3a629886900916ae39ea4e20968d87f85f9",
+            "loaded_save_sha256": "b1db2a9bec1cee71ed3b79f9d0b3bfa90a68a34aa4688c7048b0f3f87ee113c8",
+            "saved_sha256": "0d8f1b41a7bd02c9a476c3947bbe16cbaa8a98f175ecf0db32a373746f1c1a3d",
+            "segment": 794,
+            "lives": 3,
+            "shields": 49.872344970703125,
+            "energy": 106.6654052734375,
+            "reactor_timer": {
+                "active": true,
+                "timer": 5898240,
+                "total_seconds": 90
+            },
+            "position_assists": 0,
+            "fixed_view_assists": 0
+        },
+        {
+            "phase": "escape",
+            "from": 3,
+            "to": 4,
+            "steps": 39,
+            "plan_sha256": "4b99fd15eeef9bf52caaa449396e55f4f631470fbdc65993f6bbf41fbbfa2a83",
+            "executable_sha256": "27dc2015da570c4ba583260f37c402d5d856a15762d5a318e2035e5cf1547f7a",
+            "receipt_sha256": "de3db9cc150e81dda59f2bced510a2fe100fd42a7f53e23a52b1a00a5ec83b70",
+            "loaded_save_sha256": "0d8f1b41a7bd02c9a476c3947bbe16cbaa8a98f175ecf0db32a373746f1c1a3d",
+            "saved_sha256": "f8e0e8ea81428e383711d2dd25233184ec530ddcee32aa1e56b5afc5c3c93e4b",
+            "segment": 126,
+            "lives": 3,
+            "shields": 100.0,
+            "energy": 100.0,
+            "reactor_timer": {
+                "active": false,
+                "timer": 6160384,
+                "total_seconds": 99
+            },
+            "position_assists": 0,
+            "fixed_view_assists": 0
+        }
+    ],
+    "retained_comparisons": {
+        "laser_reactor": "Reached countdown at 9.62 shields. The subsequent escape attempt died.",
+        "vulcan_reactor": "Reached countdown at 49.87 shields and escaped the mine.",
+        "shutdown": "The Debug build reported 230 allocated blocks at shutdown."
+    },
+    "ctest": {
+        "name": "xl_pumo_majha_exit_from_hub",
+        "result": "PASS",
+        "elapsed_seconds": 1027.63,
+        "scripted_steps": 617,
+        "native_processes": 9,
+        "executable_sha256": "cf79b47ee4d2a33a1ca1568815d4113fd7f7c3a95d4b43f7a7a368f470d12192",
+        "earned_level_4_save_sha256": "b34f10821868601bc78927912c3813191cffff9a46b5267ad3e6a1695cbf1202",
+        "ctest_log_sha256": "ff9b0ef27c7024778339369882733d4a317d315e945edb2b092bac233c7fdbc0",
+        "phases": [
+            {
+                "phase": "flight",
+                "steps": 135,
+                "start": 1,
+                "end": 3,
+                "resume_sha256": "",
+                "receipt_sha256": "3ea94eb943d377aa41836fd919446d5a7fab9df10ca11b27a6c3edc8cb04cba2"
+            },
+            {
+                "phase": "cold",
+                "steps": 6,
+                "start": 3,
+                "end": 3,
+                "resume_sha256": "d0d2d00e4788d98fa71d9b03deb26cba766d7d28cb3240e8fcf00555733fb10f",
+                "receipt_sha256": "9aefad4be63c8e7950d11762d7ef5d79335ce64133256b67aa34ce75d9940abc"
+            },
+            {
+                "phase": "blue_key",
+                "steps": 92,
+                "start": 3,
+                "end": 3,
+                "resume_sha256": "d0d2d00e4788d98fa71d9b03deb26cba766d7d28cb3240e8fcf00555733fb10f",
+                "receipt_sha256": "91168c03a82b499a185898066699927cc47206673e83bba4d409a418b2fc016b"
+            },
+            {
+                "phase": "supplies",
+                "steps": 74,
+                "start": 3,
+                "end": 3,
+                "resume_sha256": "3bb48859b48e3c9ce0869b54f381726ac526ea00787e92cff813fa38eb01bf0d",
+                "receipt_sha256": "d24ee6ec40e141747369a171a31e3d4f7a7126718604b222549335bfb6e5cc46"
+            },
+            {
+                "phase": "red_key",
+                "steps": 88,
+                "start": 3,
+                "end": 3,
+                "resume_sha256": "7b3dbb8ff41caca25b87e2e0242b7525f0b7481d41a8f313aa8281a51e9565c7",
+                "receipt_sha256": "680c012c08bb0562c88cfa5acb30866aee68f1810af319dc5d6b9f3081d07cc5"
+            },
+            {
+                "phase": "reactor_approach",
+                "steps": 168,
+                "start": 3,
+                "end": 3,
+                "resume_sha256": "fdfdc5a32f9f30fc382a1e2ee51f9f0c5ef22d201ebbac1debc0d5974ae6b9bd",
+                "receipt_sha256": "8c7baa916039f5732b45f1dc36ffaca33359bf053e0662d292c2bd7315fee68d"
+            },
+            {
+                "phase": "reactor",
+                "steps": 9,
+                "start": 3,
+                "end": 3,
+                "resume_sha256": "11ac09171cb193b4534d5a2a8e1ace296dbf46aa4dcd295990a6af4b6082e153",
+                "receipt_sha256": "8527765e7f868927b1c90d433a70307fc1e8c9ba97e508d2bd69521a5fb55801"
+            },
+            {
+                "phase": "escape",
+                "steps": 39,
+                "start": 3,
+                "end": 4,
+                "resume_sha256": "d81b1bb9e632a0e591df73cf8d831fc3fbb79b34e55e9351caf6a0b3cfa4f052",
+                "receipt_sha256": "e23f7b9d9cd554a85ea5baf0bc4010137f69bd0e3a0921c58aa3ec5aa87cda9a"
+            },
+            {
+                "phase": "continue_play",
+                "steps": 6,
+                "start": 4,
+                "end": 4,
+                "resume_sha256": "b34f10821868601bc78927912c3813191cffff9a46b5267ad3e6a1695cbf1202",
+                "receipt_sha256": "ded5a20b047b47b54d57c2ad3f4e317ad95790a7f8fbe19b61889850edaf0cdb"
+            }
+        ]
+    }
+}

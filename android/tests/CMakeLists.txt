@@ -400,6 +400,9 @@ add_executable(test_online_admission test_online_admission.c)
 target_include_directories(test_online_admission PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/net")
 add_executable(test_net_udp_startup_faults test_net_udp_startup_faults.c)
 target_include_directories(test_net_udp_startup_faults PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/net")
+add_executable(test_net_udp_mission_filename test_net_udp_mission_filename.c)
+target_include_directories(test_net_udp_mission_filename
+                           PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/net")
 
 add_executable(test_net_udp_initial_sync_retry test_net_udp_initial_sync_retry.c)
 target_include_directories(test_net_udp_initial_sync_retry
@@ -669,6 +672,7 @@ set(DXX_HOST_TEST_TARGETS
     test_android_slowdown_detector
     test_net_udp_reconnect_auth
     test_net_udp_startup_faults
+    test_net_udp_mission_filename
     test_online_admission
     test_net_udp_initial_sync_retry
     test_coop_host_migration_policy

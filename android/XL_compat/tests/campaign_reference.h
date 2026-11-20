@@ -9,6 +9,7 @@
 static FILE *campaign_receipt;
 static int campaign_ordinal;
 static int campaign_bitmap;
+static int campaign_frames = 120;
 
 static void capture_wall_texture()
 {
@@ -62,7 +63,7 @@ void xl_reference_frame()
 	static int frames = 0;
 	++frames;
 	const bool failed = gameStates.app.bPlayerIsDead || missionManager.nCurrentLevel != campaign_ordinal;
-	if (!failed && frames < 120) return;
+	if (!failed && frames < campaign_frames) return;
 	std::fprintf(campaign_receipt, "frames\t%d\t%d\t%d\n", frames, missionManager.nCurrentLevel, int(gameStates.app.bPlayerIsDead));
 	std::fclose(campaign_receipt);
 	std::exit(failed ? 23 : 0);
@@ -74,6 +75,12 @@ static int campaign_reference()
 	const char *path = std::getenv("XL_REFERENCE_OUT");
 	const char *level = std::getenv("XL_REFERENCE_LEVEL");
 	const char *descriptor = std::getenv("XL_REFERENCE_DESCRIPTOR");
+	if (const char *duration = std::getenv("XL_REFERENCE_TEXTURE_FRAMES")) {
+		char *end = nullptr;
+		const long frames = std::strtol(duration, &end, 10);
+		if (end == duration || *end || frames < 120 || frames > 3600) return 80;
+		campaign_frames = int(frames);
+	}
 	if (!folder || !path || !level || !descriptor || std::strlen(folder) >= sizeof(gameFolders.missions.szSubFolder)) return 80;
 	campaign_receipt = std::fopen(path, "w");
 	if (!campaign_receipt) return 80;
