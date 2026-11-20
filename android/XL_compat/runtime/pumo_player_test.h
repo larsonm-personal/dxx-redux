@@ -20,6 +20,7 @@ extern "C" {
 #include <cmath>
 #include <chrono>
 #include <numeric>
+#include <optional>
 #include <thread>
 #ifdef _WIN32
 #include <process.h>
@@ -41,6 +42,48 @@ struct TrackedCombatObject {
 };
 static std::vector<TrackedCombatObject> tracked_combat_objects;
 static unsigned combat_load_generation = 0;
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+// A native pickup binds this protection to one player and one uninterrupted world.
+struct PilotInvulnerabilityPickup {
+	int slot, signature, player_slot, player_signature, level;
+	unsigned generation;
+	fix64 time;
+};
+static std::optional<PilotInvulnerabilityPickup> pilot_invulnerability_pickup;
+static void observe_invulnerability_pickup(const object *item)
+{
+	pilot_invulnerability_pickup = PilotInvulnerabilityPickup{
+		int(item - Objects), item->signature, Players[Player_num].objnum, ConsoleObject->signature,
+		Current_level_num, combat_load_generation, Players[Player_num].invulnerable_time
+	};
+}
+class PilotPickupObservation
+{
+  public:
+	PilotPickupObservation()
+	{
+		pilot_invulnerability_pickup.reset();
+		xl_set_invulnerability_pickup_observer(observe_invulnerability_pickup);
+	}
+	~PilotPickupObservation()
+	{
+		xl_set_invulnerability_pickup_observer(nullptr);
+		pilot_invulnerability_pickup.reset();
+	}
+};
+#endif
+static bool pilot_protection_is_earned(int position_assists)
+{
+	if (!(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE)) return true;
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+	const auto &pickup = pilot_invulnerability_pickup;
+	return pickup && !position_assists && pickup->generation == combat_load_generation && pickup->level == Current_level_num &&
+	       pickup->player_slot == Players[Player_num].objnum && ConsoleObject && pickup->player_signature == ConsoleObject->signature &&
+	       pickup->time == Players[Player_num].invulnerable_time && GameTime64 >= pickup->time && GameTime64 - pickup->time <= INVULNERABLE_TIME_MAX;
+#else
+	return false;
+#endif
+}
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
 static std::array<xl_player_fvi_sample, 4> player_fvi_first{}, player_fvi_last{};
 static unsigned player_fvi_count = 0;
@@ -773,11 +816,14 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 			trace << Json{ { "event", "weapon_lifecycle_source" }, { "state", weapon_lifecycle_identity_snapshot() } }.dump() << '\n';
 #endif
 		auto observed_state = trigger_observation();
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+		const PilotPickupObservation observe_pickups;
+#endif
 		const auto tick = [&] {
 			require_ordinary_secondary_input("before_frame");
 			const auto frame_started = std::chrono::steady_clock::now();
 			timer_update();
-			require(!Player_is_dead && !cheats.enabled && !cheats.ghostphysics && !cheats.monsterdamage && !cheats.robotfiringsuspended && !(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE), "ordinary player probe died or acquired assisted combat");
+			require(!Player_is_dead && !cheats.enabled && !cheats.ghostphysics && !cheats.monsterdamage && !cheats.robotfiringsuspended && pilot_protection_is_earned(position_assist_events), "ordinary player probe died or acquired assisted combat");
 			remainder += F1_0;
 			FrameTime = remainder / fps;
 			remainder %= fps;
@@ -815,8 +861,17 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 			input_demo_set_skip_level_intro(1);
 			const int before_level = Current_level_num;
 			operation_frame_source = before_level;
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+			const bool previously_protected = (Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE) != 0;
+			if (!previously_protected) pilot_invulnerability_pickup.reset();
+#endif
 			GameProcessFrame();
 #ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+			if (!previously_protected && (Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE)) {
+				require(pilot_protection_is_earned(position_assist_events), "Protection requires a native pickup in unassisted flight");
+				const auto &pickup = *pilot_invulnerability_pickup;
+				trace << Json{ { "event", "native_invulnerability_pickup" }, { "frame", frame_count + 1 }, { "object", pickup.slot }, { "signature", pickup.signature }, { "player", pickup.player_slot }, { "player_signature", pickup.player_signature }, { "level", pickup.level }, { "generation", pickup.generation }, { "game_time_raw", pickup.time } }.dump() << '\n';
+			}
 			if (bound_player_fvi_enabled) bound_player_fvi.end_frame();
 			if (bound_weapon_lifecycle_enabled) bound_weapon_lifecycle.end_frame(GameTime64);
 			if (bound_robot_damage_enabled) bound_robot_damage.end_frame();

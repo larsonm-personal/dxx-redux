@@ -70,6 +70,13 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 int N_powerup_types = 0;
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+static void (*invulnerability_pickup_observer)(const object *);
+void xl_set_invulnerability_pickup_observer(void (*observer)(const object *))
+{
+	invulnerability_pickup_observer = observer;
+}
+#endif
 powerup_type_info Powerup_info[MAX_POWERUP_TYPES];
 
 //process this powerup for this frame
@@ -659,6 +666,10 @@ int do_powerup(object *obj)
 				#endif
 				powerup_basic(7, 14, 21, INVULNERABILITY_SCORE, "%s!",TXT_INVULNERABILITY);
 				used = 1;
+#ifdef DXX_PUMO_CONTACT_DEVELOPER_PROBE
+				if (invulnerability_pickup_observer)
+					invulnerability_pickup_observer(obj);
+#endif
 
 				if (Game_mode & GM_MULTI)
 					multi_send_ship_status();
