@@ -5,6 +5,7 @@
         "hog_sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253"
     },
     "initial_level": 1,
+    "new_pilot_defaults": true,
     "simulation_fps": 60,
     "checkpoint_expect": {},
     "steps": [

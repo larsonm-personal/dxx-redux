@@ -633,7 +633,7 @@ int maybe_start_input_demo_recording(int is_autorecord)
 	int started;
 
 	if (!input_demo_prepare_recorder_settings(&settings, error, sizeof(error))) {
-		if (!is_autorecord)
+		if (!is_autorecord || input_demo_android_quick_recording)
 			con_printf(CON_NORMAL, "Input demo recording skipped: %s\n", error);
 		return 0;
 	}
