@@ -1,0 +1,113 @@
+[
+    {
+        "portals": [
+            [1600, 4],
+            [1537, 4],
+            [1536, 4],
+            [1551, 4],
+            [1552, 4]
+        ],
+        "expect": {
+            "current_level_num": 1,
+            "position.segment": 1553,
+            "player.lives": 3,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.has_red_key": true
+        }
+    },
+    {
+        "portals": [
+            [1553, 2],
+            [1550, 2],
+            [1547, 2],
+            [1544, 2],
+            [1542, 3],
+            [1562, 5],
+            [1561, 5],
+            [1558, 2],
+            [1608, 5],
+            [1607, 5],
+            [1606, 5],
+            [1192, 5],
+            [934, 2],
+            [935, 3],
+            [909, 5],
+            [918, 5],
+            [913, 5],
+            [984, 5],
+            [986, 5],
+            [987, 5],
+            [988, 5],
+            [1294, 5],
+            [1293, 4],
+            [1043, 2],
+            [1042, 2],
+            [1041, 2],
+            [1040, 2],
+            [1039, 5],
+            [1316, 5],
+            [1317, 2],
+            [1320, 0],
+            [972, 0],
+            [982, 1],
+            [978, 0]
+        ],
+        "expect": {
+            "current_level_num": 1,
+            "position.segment": 979,
+            "player.lives": 3,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.has_red_key": true
+        }
+    },
+    {
+        "portals": [[979, 5]],
+        "acknowledge_messages": [
+            {
+                "id": 5,
+                "level": 1,
+                "text": "....Message Received....\n\nSubject: secured shaft\n\n          This path leads to the exit, but you must disable the security          \n system before proceeding down this shaft\nControls are located in the Blue Access area."
+            }
+        ],
+        "expect": {
+            "current_level_num": 1,
+            "position.segment": 1120,
+            "player.lives": 3,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.has_red_key": true,
+            "xl_pilot.wall_triggers.24.operated": true
+        }
+    },
+    {
+        "portals": [
+            [1120, 5],
+            [1121, 3],
+            [1122, 3],
+            [1124, 3],
+            [1125, 3],
+            [1126, 3],
+            [1127, 3],
+            [1128, 3],
+            [1129, 3],
+            [1130, 3]
+        ],
+        "exit": {
+            "action": "fly_through_side",
+            "segment": 1131,
+            "side": 3,
+            "max_frames": 900,
+            "fire_primary": true,
+            "destination_level": 2
+        },
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 0,
+            "player.lives": 3,
+            "player_dead": false,
+            "cheats_enabled": false
+        }
+    }
+]

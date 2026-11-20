@@ -30,6 +30,14 @@ int xl_message_drawn_id(void);
 float xl_message_drawn_alpha(void);
 #ifdef __cplusplus
 }
+#if defined(DXX_XL_DEVELOPER_PROBE) && defined(DXX_HEADLESS_CONSOLE)
+#include <functional>
+#include <string>
+namespace xl_compat
+{
+void set_player_message_acknowledgement(std::function<void(int, const std::string &)> acknowledge);
+}
+#endif
 #include <memory>
 namespace xl_compat
 {

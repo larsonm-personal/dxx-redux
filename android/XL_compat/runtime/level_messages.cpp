@@ -36,6 +36,9 @@ extern "C" {
 
 namespace
 {
+#if defined(DXX_XL_DEVELOPER_PROBE) && defined(DXX_HEADLESS_CONSOLE)
+std::function<void(int, const std::string &)> player_message_acknowledgement;
+#endif
 std::shared_ptr<const xl_compat::MessageResources> bank;
 int message_id = 0, duration = 0;
 std::int64_t started = 0;
@@ -160,8 +163,13 @@ extern "C" int xl_message_action(const trigger *action)
 				return 0;
 			};
 			// MSG text is owned and bounded; avoid the fixed messagebox printf buffer
-			newmenu_do(nullptr, text.data(), 1, &close,
-			           input_demo_replay_environment_running() ? +acknowledge : nullptr, &drawn);
+#if defined(DXX_XL_DEVELOPER_PROBE) && defined(DXX_HEADLESS_CONSOLE)
+			if (player_message_acknowledgement)
+				player_message_acknowledgement(id, text);
+			else
+#endif
+				newmenu_do(nullptr, text.data(), 1, &close,
+				           input_demo_replay_environment_running() ? +acknowledge : nullptr, &drawn);
 		}
 		// A nested modal can advance real clocks and render counts before more SIM
 		input_demo_environment_clock clock{};
@@ -173,6 +181,13 @@ extern "C" int xl_message_action(const trigger *action)
 	}
 	return 1;
 }
+
+#if defined(DXX_XL_DEVELOPER_PROBE) && defined(DXX_HEADLESS_CONSOLE)
+void xl_compat::set_player_message_acknowledgement(std::function<void(int, const std::string &)> acknowledge)
+{
+	player_message_acknowledgement = std::move(acknowledge);
+}
+#endif
 
 extern "C" const char *xl_message_identity(void)
 {
