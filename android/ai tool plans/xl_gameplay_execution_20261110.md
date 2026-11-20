@@ -6217,3 +6217,7 @@ The ordinary survey reached 1,513 of 1,654. A connected Pumo flight earned level
 ## November 20 Sphere campaign
 
 The pilot earned the second-level gold and red keys in connected assisted flight. Windows and Linux reproduced the gold door and Gauss supply. The ordinary Android pilot loaded the red save and died before its quick slot was written. Frozen readiness remains 4/8. The authentic profile reached 8/8 on both desktop owners and 64/64 on Windows. [Dated report](xl_gameplay_what_was_done_20261120.md), [execution ledger](xl_gameplay_execution_20261120.json), [next window](xl_gameplay_next_window_20261120.md) and [replacement kickoff](xl_gameplay_kickoff_20261120.md).
+
+## November 20 living exit and level-three continuation
+
+The Sphere pilot exited level 2 alive after destroying the reactor, then earned two extra lives in level 3. Ordinary Android wrote and cold-loaded the six-life slot. Clean Windows and Linux playback matched 182 frames, 186 detailed world records and 58,839 SIM draws. A separate post-destruction respawn earned a third-level blue key and crossed its locked door. Both routes used developer steering and aim. Full Windows and Linux census outcomes matched case by case at 1,524/1,654, with frozen readiness still 4/8. The [dated report](xl_gameplay_what_was_done_20261120.md), [execution ledger](xl_gameplay_execution_20261120.json), [next-window plan](xl_gameplay_next_window_20261120.md) and [replacement kickoff](xl_gameplay_kickoff_20261120.md) preserve the two pilot histories and open gates.
