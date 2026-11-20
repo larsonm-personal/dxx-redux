@@ -1,0 +1,560 @@
+[
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [2787, 5],
+            [2788, 5],
+            [2789, 5],
+            [2790, 2]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 2802,
+            "player.score": 66600,
+            "player.shields": 111.79866027832031,
+            "player.energy": 104.530029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 10,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [2802, 2],
+            [2766, 4],
+            [2762, 2],
+            [236, 4]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 129,
+            "player.score": 66900,
+            "player.shields": 111.79866027832031,
+            "player.energy": 104.280029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 11,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [129, 2],
+            [352, 3],
+            [355, 2],
+            [354, 2]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 169,
+            "player.score": 66900,
+            "player.shields": 100.03852844238281,
+            "player.energy": 104.280029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 11,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [169, 4],
+            [167, 2],
+            [168, 2],
+            [199, 2]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 204,
+            "player.score": 66900,
+            "player.shields": 100.03852844238281,
+            "player.energy": 103.280029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 11,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [204, 2],
+            [206, 2],
+            [253, 4],
+            [1183, 2]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 257,
+            "player.score": 66900,
+            "player.shields": 100.03852844238281,
+            "player.energy": 101.280029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 11,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [257, 2],
+            [255, 2],
+            [256, 2],
+            [571, 2]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 572,
+            "player.score": 66900,
+            "player.shields": 100.03852844238281,
+            "player.energy": 101.280029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 11,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [572, 2],
+            [573, 2],
+            [574, 2],
+            [549, 2]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 570,
+            "player.score": 66900,
+            "player.shields": 100.03852844238281,
+            "player.energy": 101.280029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 11,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [570, 2],
+            [1067, 2],
+            [1925, 2],
+            [1924, 2]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 1911,
+            "player.score": 66900,
+            "player.shields": 100.03852844238281,
+            "player.energy": 99.530029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 11,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [1911, 2],
+            [1066, 5],
+            [903, 5],
+            [904, 1]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 1263,
+            "player.score": 66900,
+            "player.shields": 100.03852844238281,
+            "player.energy": 98.030029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 11,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [1263, 5],
+            [1265, 0],
+            [1264, 5],
+            [1266, 5]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 1278,
+            "player.score": 66900,
+            "player.shields": 92.38018798828125,
+            "player.energy": 97.530029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 11,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [1278, 2],
+            [1277, 5],
+            [1276, 2],
+            [1280, 5]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 1284,
+            "player.score": 67900,
+            "player.shields": 86.38018798828125,
+            "player.energy": 94.030029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 12,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [1284, 5],
+            [1283, 2],
+            [1282, 5],
+            [1301, 5]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 1302,
+            "player.score": 68650,
+            "player.shields": 80.38018798828125,
+            "player.energy": 93.280029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 13,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [1302, 2],
+            [1303, 5],
+            [1290, 3],
+            [1246, 5]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 1245,
+            "player.score": 69650,
+            "player.shields": 80.38018798828125,
+            "player.energy": 90.280029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 14,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [1245, 5],
+            [1207, 0],
+            [1201, 0],
+            [883, 3]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 874,
+            "player.score": 70400,
+            "player.shields": 69.33529663085938,
+            "player.energy": 87.780029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 15,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [874, 3],
+            [869, 3],
+            [606, 3],
+            [608, 3]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 615,
+            "player.score": 71150,
+            "player.shields": 166.71531677246094,
+            "player.energy": 86.530029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 16,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [615, 5],
+            [617, 3],
+            [1493, 3],
+            [1547, 3]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 1539,
+            "player.score": 71150,
+            "player.shields": 166.71531677246094,
+            "player.energy": 86.530029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 16,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [1539, 0],
+            [1545, 0],
+            [1542, 5],
+            [1541, 0]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 1558,
+            "player.score": 71150,
+            "player.shields": 165.33692932128906,
+            "player.energy": 86.280029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 16,
+            "player.has_blue_key": false
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [1558, 3],
+            [1769, 1],
+            [1768, 1],
+            [1767, 0]
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "player.has_red_key": false,
+            "player.has_gold_key": false,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "position.segment": 1772,
+            "player.score": 71150,
+            "player.shields": 191.59225463867188,
+            "player.energy": 86.280029296875,
+            "player.laser_level": 3,
+            "player.primary_weapon_flags": 7,
+            "player.robots_killed_level": 16,
+            "player.has_blue_key": false
+        }
+    }
+]
