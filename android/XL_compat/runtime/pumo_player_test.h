@@ -19,6 +19,7 @@ extern "C" {
 #include <limits>
 #include <cmath>
 #include <chrono>
+#include <numeric>
 #include <thread>
 #ifdef _WIN32
 #include <process.h>
@@ -745,6 +746,15 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 		int remainder = 0, fps = plan.value("simulation_fps", 60), frame_count = 0;
 		bool weapon_rays_used = false;
 		require(fps >= 1 && fps <= 120, "native player simulation rate out of range");
+		if (plan.contains("resume_input_clock")) {
+			const auto &clock = plan.at("resume_input_clock");
+			require(plan.contains("resume_checkpoint") && clock.is_object() && clock.size() == 3 &&
+			            clock.at("sha256") == resume_sha256 && pumo_ordinary_input_validation::integer_in_range(clock.at("fps"), fps, fps) &&
+			            pumo_ordinary_input_validation::integer_in_range(clock.at("remainder"), 0, fps - 1),
+			        "native input clock must match the earned checkpoint and simulation rate");
+			remainder = clock.at("remainder").get<int>();
+			require(remainder % std::gcd(fps, int(F1_0)) == 0, "native input clock remainder is unreachable at this simulation rate");
+		}
 		operation_counts.fill(0);
 		operation_sequence = 0;
 		operation_count_level = Current_level_num;
@@ -1146,6 +1156,7 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 					const auto state = snapshot();
 					const auto hash = file_hash(root / "preview-user" / unique);
 					checkpoint_history.push_back({ { "step", completed }, { "file", unique }, { "sha256", hash }, { "state", state } });
+					checkpoint_history.back()["input_clock"] = { { "sha256", hash }, { "fps", fps }, { "remainder", remainder } };
 					if (step.value("export_android", false)) {
 						require(Current_level_num > 0, "Android player slots require a positive level");
 						const auto android_save = unique + ".android.sav";
