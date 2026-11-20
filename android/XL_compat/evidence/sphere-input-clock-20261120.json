@@ -1,0 +1,274 @@
+{
+    "code_commit": "a2ae456b09daa5c9db7f1b8b0be9add2d88d717f",
+    "parent": "bf0efd8aa77de3c0863c32d546db50d792d9b48e",
+    "private_root": "temp/xl-sphere-campaign-20261119",
+    "source_inputs": {
+        "alien1.pig": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+        "alien2.pig": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+        "d2x-xl.hog": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+        "d2x.hog": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+        "descent.hog": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052",
+        "descent.pig": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe",
+        "descent2.ham": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+        "descent2.hog": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+        "descent2.s22": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+        "fire.pig": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+        "groupa.pig": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+        "ice.pig": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+        "water.pig": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1",
+        "missions/sphere.hog": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+        "missions/sphere.mn2": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b"
+    },
+    "fixture": {
+        "windows": {
+            "binary": "ea8783e9ecb9d87295dcdb2545a78ac9e4f7365cef75746cc68d8f30cb060859",
+            "warm": {
+                "private_path": "continuation-clock-windows-fixture-02/warm-result.json",
+                "sha256": "c7010e64b6a3a9823c20ff2ed455df2424600fa2553dbbfa2cd3dd831f548eba"
+            },
+            "cold": {
+                "private_path": "continuation-clock-windows-fixture-02/cold-result.json",
+                "sha256": "00d8cd255200b582afc354adf426e143a772f99ff3e228bf3f6b16d645715c40"
+            },
+            "warm_plan": {
+                "private_path": "continuation-clock-windows-fixture-02/warm-executed-plan.json",
+                "sha256": "f5759b40c5664280f19e9f6550e0d4a54ea39978ccdb32a245617b49fd5358fe"
+            },
+            "cold_plan": {
+                "private_path": "continuation-clock-windows-fixture-02/cold-executed-plan.json",
+                "sha256": "927488d2236964c6701f9b4b56e743f8394cbae29581315f8da9bfda9083e1e0"
+            },
+            "entry": "dace30ab690a2f6f57785567220d249b212ede858c775ab1524367ac1292fcce",
+            "input_clock": {
+                "fps": 60,
+                "remainder": 16,
+                "sha256": "3e13d7bf817e5323e380b56714c65b31702933d2e57a755edc5e7ab8cce51ae5"
+            },
+            "warm_state": {
+                "private_path": "continuation-clock-windows-fixture-02/warm-state.json",
+                "sha256": "bab520c16bf0f208fcd6c73613b7d41c0dcfd4acf0bab26c0aa74b529cb3a48a"
+            },
+            "cold_state": {
+                "private_path": "continuation-clock-windows-fixture-02/cold-state.json",
+                "sha256": "bab520c16bf0f208fcd6c73613b7d41c0dcfd4acf0bab26c0aa74b529cb3a48a"
+            }
+        },
+        "linux": {
+            "binary": "00c84e1127b6650d5d24bffd12a87b6ceb92f9781d57ae3f04f65d186811d779",
+            "warm": {
+                "private_path": "continuation-clock-linux-fixture-02/warm-result.json",
+                "sha256": "3859c0bc0f2afe8882879b46200c51bd7f9db3c84a7cf1a99c9ac43c97a6b183"
+            },
+            "cold": {
+                "private_path": "continuation-clock-linux-fixture-02/cold-result.json",
+                "sha256": "fc94490d202fc5c1bf3b189d0f6519e9279fdefef4bb8b44c2c3ca454cd5af3d"
+            },
+            "warm_plan": {
+                "private_path": "continuation-clock-linux-fixture-02/warm-executed-plan.json",
+                "sha256": "67b249a58d0194ec6321f7f61949942063b47990b482a2e252f9c106feb37425"
+            },
+            "cold_plan": {
+                "private_path": "continuation-clock-linux-fixture-02/cold-executed-plan.json",
+                "sha256": "14679ad36a1001df1d7f716390dd926c1c9f145061b9ebbafdd99a0da2ac77d1"
+            },
+            "entry": "dace30ab690a2f6f57785567220d249b212ede858c775ab1524367ac1292fcce",
+            "input_clock": {
+                "fps": 60,
+                "remainder": 16,
+                "sha256": "5aa98a573d92cebab91c2cc97474e5736f9b186350e0b0a1829762ea82d98a3d"
+            },
+            "warm_state": {
+                "private_path": "continuation-clock-linux-fixture-02/warm-state.json",
+                "sha256": "8b502c6fe957fe049b00bd6474f93de78333c4292b6a1391abf2f8d55506434d"
+            },
+            "cold_state": {
+                "private_path": "continuation-clock-linux-fixture-02/cold-state.json",
+                "sha256": "8b502c6fe957fe049b00bd6474f93de78333c4292b6a1391abf2f8d55506434d"
+            }
+        }
+    },
+    "comparisons": {
+        "windows": {
+            "source": "continuation-morph-bound-linux",
+            "binary": "ea8783e9ecb9d87295dcdb2545a78ac9e4f7365cef75746cc68d8f30cb060859",
+            "input_clock": {
+                "fps": 60,
+                "remainder": 12,
+                "sha256": "c38fb5ef01435ff86a5d4fa5af12177d3747af15425cf7eac70948d30ff75ef1"
+            },
+            "compared_fields": [
+                "cheats_enabled",
+                "combat_observation",
+                "current_level_num",
+                "game_time_raw",
+                "level_scene",
+                "morph_slots",
+                "morph_slots_sparse",
+                "player",
+                "player_dead",
+                "position",
+                "primary_fire",
+                "reactor_countdown",
+                "secondary_fire",
+                "secondary_weapon_definition",
+                "simulation_rng",
+                "slow_motion",
+                "weapon_definitions",
+                "xl_pilot"
+            ],
+            "differences": {
+                "legacy": [
+                    "level_scene",
+                    "position"
+                ],
+                "continued": []
+            },
+            "negative_controls": {
+                "wrong-hash": "native input clock must match the earned checkpoint and simulation rate",
+                "mismatched-rate": "native input clock must match the earned checkpoint and simulation rate",
+                "negative": "native input clock must match the earned checkpoint and simulation rate",
+                "out-of-range": "native input clock must match the earned checkpoint and simulation rate",
+                "boolean": "native input clock must match the earned checkpoint and simulation rate",
+                "unreachable": "native input clock remainder is unreachable at this simulation rate"
+            },
+            "warm_state": "0f150d36d56c0affa4566409abeadb07702a4f3bdf5b9a4d65ab48399bbef306",
+            "cold_state": "0f150d36d56c0affa4566409abeadb07702a4f3bdf5b9a4d65ab48399bbef306",
+            "receipt": {
+                "private_path": "continuation-final-clock-windows-ab/receipt.json",
+                "sha256": "09443d2ec3b9f1abec340ce46c3e1c8e0f02ca7b0dc233401026f331432ff87f"
+            },
+            "legacy": {
+                "private_path": "continuation-final-clock-windows-ab/legacy-reset/player-state.json",
+                "sha256": "e239a58c3d7bda7b4d919fffb4e88933ab037a71d18d703c5d62797432577ff2"
+            },
+            "negative_results": {
+                "wrong-hash": {
+                    "private_path": "continuation-final-clock-windows-ab/wrong-hash/player-result.json",
+                    "sha256": "84880cab59febae312b9559723a6a5c1502115aaf5754a55c29a078efb73b394"
+                },
+                "mismatched-rate": {
+                    "private_path": "continuation-final-clock-windows-ab/mismatched-rate/player-result.json",
+                    "sha256": "84880cab59febae312b9559723a6a5c1502115aaf5754a55c29a078efb73b394"
+                },
+                "negative": {
+                    "private_path": "continuation-final-clock-windows-ab/negative/player-result.json",
+                    "sha256": "84880cab59febae312b9559723a6a5c1502115aaf5754a55c29a078efb73b394"
+                },
+                "out-of-range": {
+                    "private_path": "continuation-final-clock-windows-ab/out-of-range/player-result.json",
+                    "sha256": "84880cab59febae312b9559723a6a5c1502115aaf5754a55c29a078efb73b394"
+                },
+                "boolean": {
+                    "private_path": "continuation-final-clock-windows-ab/boolean/player-result.json",
+                    "sha256": "84880cab59febae312b9559723a6a5c1502115aaf5754a55c29a078efb73b394"
+                },
+                "unreachable": {
+                    "private_path": "continuation-final-clock-windows-ab/unreachable/player-result.json",
+                    "sha256": "17f2a0aae9bc4e125e30bed77af1209e2b9ee426e655ab6162d79959ca5eb5bb"
+                }
+            }
+        },
+        "linux": {
+            "source": "continuation-morph-bound-linux",
+            "binary": "00c84e1127b6650d5d24bffd12a87b6ceb92f9781d57ae3f04f65d186811d779",
+            "input_clock": {
+                "fps": 60,
+                "remainder": 12,
+                "sha256": "e15f40ceaf1071812b5a346235a2b1e42d5967e825654e078421e5ff39b50fc5"
+            },
+            "compared_fields": [
+                "cheats_enabled",
+                "combat_observation",
+                "current_level_num",
+                "game_time_raw",
+                "level_scene",
+                "morph_slots",
+                "morph_slots_sparse",
+                "player",
+                "player_dead",
+                "position",
+                "primary_fire",
+                "reactor_countdown",
+                "secondary_fire",
+                "secondary_weapon_definition",
+                "simulation_rng",
+                "slow_motion",
+                "weapon_definitions",
+                "xl_pilot"
+            ],
+            "differences": {
+                "legacy": [
+                    "level_scene",
+                    "position"
+                ],
+                "continued": []
+            },
+            "negative_controls": {
+                "wrong-hash": "native input clock must match the earned checkpoint and simulation rate",
+                "mismatched-rate": "native input clock must match the earned checkpoint and simulation rate",
+                "negative": "native input clock must match the earned checkpoint and simulation rate",
+                "out-of-range": "native input clock must match the earned checkpoint and simulation rate",
+                "boolean": "native input clock must match the earned checkpoint and simulation rate",
+                "unreachable": "native input clock remainder is unreachable at this simulation rate"
+            },
+            "warm_state": "e4ffd8a5fc6aed73ff81925e2cb2d5db52efc10f8dac3356f72be86096016ee4",
+            "cold_state": "e4ffd8a5fc6aed73ff81925e2cb2d5db52efc10f8dac3356f72be86096016ee4",
+            "receipt": {
+                "private_path": "continuation-final-clock-linux-ab/receipt.json",
+                "sha256": "547cfce982d6729428df207d828fa527106b4dc0dd4f0bed06ccb743f6c86e79"
+            },
+            "legacy": {
+                "private_path": "continuation-final-clock-linux-ab/legacy-reset/player-state.json",
+                "sha256": "ca95d3cc119bf0e562e91bedfcf33f5b60d09aa225dbb4c69bf8f84944a33454"
+            },
+            "negative_results": {
+                "wrong-hash": {
+                    "private_path": "continuation-final-clock-linux-ab/wrong-hash/player-result.json",
+                    "sha256": "b33b1bcf897d88fe913c8d6d9ca3f4000014108d529c1ba170976d09b6421cd7"
+                },
+                "mismatched-rate": {
+                    "private_path": "continuation-final-clock-linux-ab/mismatched-rate/player-result.json",
+                    "sha256": "b33b1bcf897d88fe913c8d6d9ca3f4000014108d529c1ba170976d09b6421cd7"
+                },
+                "negative": {
+                    "private_path": "continuation-final-clock-linux-ab/negative/player-result.json",
+                    "sha256": "b33b1bcf897d88fe913c8d6d9ca3f4000014108d529c1ba170976d09b6421cd7"
+                },
+                "out-of-range": {
+                    "private_path": "continuation-final-clock-linux-ab/out-of-range/player-result.json",
+                    "sha256": "b33b1bcf897d88fe913c8d6d9ca3f4000014108d529c1ba170976d09b6421cd7"
+                },
+                "boolean": {
+                    "private_path": "continuation-final-clock-linux-ab/boolean/player-result.json",
+                    "sha256": "b33b1bcf897d88fe913c8d6d9ca3f4000014108d529c1ba170976d09b6421cd7"
+                },
+                "unreachable": {
+                    "private_path": "continuation-final-clock-linux-ab/unreachable/player-result.json",
+                    "sha256": "9b39aab2d525a85375f2a957a9dd08e7f8190762cfb9fb9baadc299a33fc6107"
+                }
+            }
+        }
+    },
+    "android_profiles": {
+        "true": {
+            "apk": {
+                "private_path": "continuation-input-clock-android-true.apk",
+                "sha256": "8bae835947bf31032d6c8ae3de91075caae43278d23001d589270d798eea7d91"
+            },
+            "build": {
+                "private_path": "continuation-input-clock-android-true.log",
+                "sha256": "3da2b3b459b6d74fe61f6719f0bdb118f80152c3527164927d57b16b46d08a27"
+            }
+        },
+        "false": {
+            "apk": {
+                "private_path": "continuation-input-clock-android-false.apk",
+                "sha256": "b4828dfe44753c44e801c6de981cdb8827f13779e0d57e4b8660574d220a3228"
+            },
+            "build": {
+                "private_path": "continuation-input-clock-android-false.log",
+                "sha256": "04358833fa19c78454c1a11e200f4a8cef59d0ec5af22fdaa628736a0cda0d40"
+            }
+        }
+    }
+}
