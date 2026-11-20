@@ -83,6 +83,11 @@ void controls_reset_wiggle_phase(void)
 
 void read_flying_controls( object * obj )
 {
+#ifdef DXX_XL_RUNTIME
+	/* A modal acknowledgement can resume the frame with no simulated time. */
+	if (FrameTime == 0 && xl_level_extensions_active())
+		return;
+#endif
 #ifdef ANDROID
 	/* Android capture: actual per-physics-frame commands, after input event processing */
 	debug_log(DLOG_TOUCH_INPUT, "consume game=d2 game_time=%lld frame=%d pitch=%d yaw=%d sideways=%d vertical=%d bank=%d forward=%d",
