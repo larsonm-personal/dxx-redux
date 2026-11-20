@@ -289,6 +289,8 @@ void morph_start(object *obj)
 		return;
 
 	md = &morph_objects[i];
+	// A new owner starts with empty point storage, including inactive submodels.
+	memset(md, 0, sizeof(*md));
 
 	Assert(obj->render_type == RT_POLYOBJ);
 
@@ -314,15 +316,6 @@ void morph_start(object *obj)
 	box_size.x = max(-pmmin.x,pmmax.x) / 2;
 	box_size.y = max(-pmmin.y,pmmax.y) / 2;
 	box_size.z = max(-pmmin.z,pmmax.z) / 2;
-
-	for (i=0;i<MAX_VECS;i++)		//clear all points
-		md->morph_times[i] = 0;
-
-	for (i=0;i<MAX_SUBMODELS;i++) {
-		md->submodel_active[i] = 0;
-		md->n_morphing_points[i] = 0;
-		md->submodel_startpoints[i] = 0;
-	}
 
 	md->submodel_active[0] = 1;		//1 means visible & animating
 

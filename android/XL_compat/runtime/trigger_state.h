@@ -22,6 +22,10 @@ int xl_wall_trigger_restore(const xl_trigger_state *states, int count);
 int xl_wall_trigger_restore_mode(const xl_trigger_state *states, int count, int apply);
 int xl_wall_trigger_write(rewind_file *file);
 int xl_wall_trigger_read(rewind_file *file);
+struct morph_slot_layout;
+struct xl_saved_trigger_input;
+int xl_prepare_saved_trigger_input(rewind_file *file, int64_t offset, struct morph_slot_layout *layout, struct xl_saved_trigger_input **input);
+int xl_apply_saved_trigger_input(rewind_file *file, struct xl_saved_trigger_input *input);
 int xl_level_trigger_state_required(void);
 uint64_t xl_level_trigger_identity(void);
 #ifdef __cplusplus

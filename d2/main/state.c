@@ -605,18 +605,13 @@ static void state_read_weapon_fidelity_state(PHYSFS_file *fp, int swap, int appl
 	}
 }
 
-static int state_morph_slot_is_active(morph_data *md)
-{
-	return md->obj != NULL && md->obj->type != OBJ_NONE && md->obj->signature == md->Morph_sig;
-}
-
 static void state_write_morph_state(PHYSFS_file *fp)
 {
 	int active_morphs = 0;
 	int i, j;
 
 	for (i = 0; i < MAX_MORPH_OBJECTS; i++)
-		if (state_morph_slot_is_active(&morph_objects[i]))
+		if (morph_slot_is_active(&morph_objects[i]))
 			active_morphs++;
 
 	PHYSFS_write(fp, &active_morphs, sizeof(active_morphs), 1);
@@ -624,7 +619,7 @@ static void state_write_morph_state(PHYSFS_file *fp)
 		int objnum;
 		morph_data *md;
 
-		if (!state_morph_slot_is_active(&morph_objects[i]))
+		if (!morph_slot_is_active(&morph_objects[i]))
 			continue;
 
 		md = &morph_objects[i];
@@ -650,7 +645,7 @@ static void state_write_morph_state(PHYSFS_file *fp)
 	}
 }
 
-static void state_read_morph_state(PHYSFS_file *fp, int swap, int apply)
+static void state_read_morph_state(PHYSFS_file *fp, int swap, int apply, const morph_slot_layout *layout)
 {
 	int active_morphs = PHYSFSX_readSXE32(fp, swap);
 	int next_slot = 0;
@@ -665,7 +660,7 @@ static void state_read_morph_state(PHYSFS_file *fp, int swap, int apply)
 		if (apply && next_slot < MAX_MORPH_OBJECTS && objnum >= 0 && objnum <= Highest_object_index &&
 			Objects[objnum].type != OBJ_NONE && Objects[objnum].signature == morph_sig &&
 			Objects[objnum].render_type == RT_MORPH) {
-			md = &morph_objects[next_slot++];
+			md = &morph_objects[layout->slots[next_slot++]];
 			memset(md, 0, sizeof(*md));
 			md->obj = &Objects[objnum];
 			md->Morph_sig = morph_sig;
@@ -1000,7 +995,7 @@ static int state_runtime_control_type_valid(unsigned char value)
 	       value == CT_REMOTE || value == CT_CNTRLCEN;
 }
 
-static int state_validate_morph_runtime_state(PHYSFS_file *fp, int swap)
+static int state_validate_morph_runtime_state(PHYSFS_file *fp, int swap, morph_slot_layout *layout)
 {
 	ubyte seen[MAX_OBJECTS];
 	int active_morphs, i, j;
@@ -1009,6 +1004,7 @@ static int state_validate_morph_runtime_state(PHYSFS_file *fp, int swap)
 	if (!state_runtime_read_s32(fp, swap, &active_morphs) ||
 	    active_morphs < 0 || active_morphs > MAX_MORPH_OBJECTS)
 		return 0;
+	layout->count = active_morphs;
 	for (i = 0; i < active_morphs; i++) {
 		int active_count = 0;
 		int model_num, morph_sig, n_submodels_active, objnum;
@@ -1021,6 +1017,9 @@ static int state_validate_morph_runtime_state(PHYSFS_file *fp, int swap)
 		    Objects[objnum].type == OBJ_NONE || Objects[objnum].signature != morph_sig ||
 		    Objects[objnum].render_type != RT_MORPH)
 			return 0;
+		layout->objects[i] = objnum;
+		layout->signatures[i] = morph_sig;
+		layout->slots[i] = i;
 		seen[objnum] = 1;
 		model_num = Objects[objnum].rtype.pobj_info.model_num;
 		if (model_num < 0 || model_num >= N_polygon_models ||
@@ -1134,7 +1133,7 @@ static int state_validate_effect_runtime_state(PHYSFS_file *fp, int swap, int ve
 	return 1;
 }
 
-static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version, fix64 saved_epoch)
+static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version, fix64 saved_epoch, morph_slot_layout *layout, PHYSFS_sint64 *runtime_end)
 {
 	PHYSFS_sint64 start = PHYSFS_tell(fp);
 	const char *validation_stage = "header";
@@ -1199,7 +1198,7 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version, 
 			    !state_runtime_skip(fp, sizeof(int) + DXX_CLASSIC_MAX_OBJECTS))
 				goto done;
 		validation_stage = "morph";
-		if (!state_validate_morph_runtime_state(fp, swap))
+		if (!state_validate_morph_runtime_state(fp, swap, layout))
 			goto done;
 		validation_stage = "stuck objects";
 		if (!state_validate_stuck_runtime_state(fp, swap))
@@ -1277,7 +1276,8 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version, 
 	    (!seismic_runtime_read(fp, swap, 0, saved_epoch, GameTime64) ||
 	     !save_timer_active_read(fp, swap, NULL)))
 		goto done;
-	valid = 1;
+	*runtime_end = PHYSFS_tell(fp);
+	valid = *runtime_end >= start;
 done:
 #ifdef __ANDROID__
 	if (!valid)
@@ -1294,7 +1294,7 @@ done:
 	return valid;
 }
 
-static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_restore, int version, int *saved_guidebot_mode, const state_guided_owner owners[MAX_PLAYERS], fix64 saved_epoch)
+static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_restore, int version, int *saved_guidebot_mode, const state_guided_owner owners[MAX_PLAYERS], fix64 saved_epoch, const morph_slot_layout *layout)
 {
 	object_runtime_state object_state;
 	ai_path_runtime_state ai_path_state;
@@ -1350,7 +1350,7 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	laser_state.last_omega_fire_time = GameTime64 + state_read_time_delta(fp, swap);
 	if (version >= STATE_FIDELITY_VERSION) {
 		state_read_weapon_fidelity_state(fp, swap, apply_runtime_state);
-		state_read_morph_state(fp, swap, apply_runtime_state);
+		state_read_morph_state(fp, swap, apply_runtime_state, layout);
 		state_read_stuck_object_state(fp, swap, apply_runtime_state);
 		state_read_controlcen_runtime_state(fp, swap, apply_runtime_state);
 		state_read_afterburner_runtime_state(fp, swap, apply_runtime_state);
@@ -3277,6 +3277,9 @@ int state_restore_all_sub(char *filename, int secret_restore)
 {
 	int version,i, j, segnum, coop_player_got[MAX_PLAYERS], coop_org_objnum = Players[Player_num].objnum;
 	int saved_guidebot_mode = -1;
+#ifdef DXX_XL_RUNTIME
+	struct xl_saved_trigger_input *incoming_xl = NULL;
+#endif
 	d2_object_decode_context decode_context;
 	state_guided_owner guided_owners[MAX_PLAYERS];
 	object * obj;
@@ -4218,11 +4221,19 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	}
 
 	if (version >= STATE_RUNTIME_VERSION) {
-		if (!state_validate_runtime_state(fp, swap, version, saved_epoch)) {
+		morph_slot_layout layout = { 0 };
+		PHYSFS_sint64 runtime_end;
+		if (!state_validate_runtime_state(fp, swap, version, saved_epoch, &layout, &runtime_end)) {
 			PHYSFS_close(fp);
 			return 0;
 		}
-		state_read_runtime_state(fp, swap, secret_restore, version, &saved_guidebot_mode, guided_owners, saved_epoch);
+#ifdef DXX_XL_RUNTIME
+		if (xl_level_extensions_active() && !xl_prepare_saved_trigger_input(fp, runtime_end, &layout, &incoming_xl)) {
+			PHYSFS_close(fp);
+			return 0;
+		}
+#endif
+		state_read_runtime_state(fp, swap, secret_restore, version, &saved_guidebot_mode, guided_owners, saved_epoch, &layout);
 	} else if (!secret_restore)
 		guidebot_routing_restore_mode(guidebot_routing_default());
 	if (version < WIGGLE_PHASE_D2_SAVE_VERSION || secret_restore)
@@ -4231,7 +4242,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		cadence_runtime_reset();
 	state_log_checkpoint_ai_restore_state();
 #ifdef DXX_XL_RUNTIME
-	if (!xl_wall_trigger_read(fp)) {
+	if (!xl_apply_saved_trigger_input(fp, incoming_xl)) {
 		PHYSFS_close(fp);
 		return 0;
 	}

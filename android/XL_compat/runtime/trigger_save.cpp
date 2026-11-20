@@ -3,10 +3,12 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
 #include "trigger_state.h"
+#include "morph_save.h"
 #include "slow_motion_save.h"
 #include "slow_motion_runtime.h"
 #include "mission_progress.h"
@@ -44,6 +46,7 @@ extern "C" {
 #include "switch.h"
 #include "segment.h"
 #include "object.h"
+#include "morph.h"
 #include "console.h"
 #include "rng_shared.h"
 extern int Do_appearance_effect;
@@ -90,7 +93,98 @@ std::uint32_t read_u32(rewind_file *file)
 	require(xl_read(file, bytes, 1, 4) == 4, "Truncated XL trigger state header");
 	return std::uint32_t(bytes[0]) | (std::uint32_t(bytes[1]) << 8) | (std::uint32_t(bytes[2]) << 16) | (std::uint32_t(bytes[3]) << 24);
 }
+bool read_block(rewind_file *file, json &saved)
+{
+	const auto position = xl_tell(file);
+	char saved_tag[8];
+	const auto bytes = xl_read(file, saved_tag, 1, sizeof(saved_tag));
+	if (bytes != sizeof(saved_tag) || std::memcmp(saved_tag, tag, sizeof(tag))) {
+		require(!xl_level_trigger_state_required(), "Save lacks required XL runtime state");
+		require(xl_seek(file, position), "Cannot restore save trailer position");
+		return false;
+	}
+	const auto size = read_u32(file), expected = read_u32(file);
+	require(size > 0 && size <= maximum, "Invalid XL trigger state size");
+	std::string payload(size, '\0');
+	require(xl_read(file, payload.data(), 1, size) == size && checksum(payload) == expected, "Corrupt XL trigger state payload");
+	saved = json::parse(payload);
+	return true;
+}
+
+// Schema 43 stores active morph payloads in native record order. Schema 44 also
+// identifies each physical slot when those records leave holes in the pool.
+void read_morph_layout(const json &rows, morph_slot_layout *native)
+{
+	require(rows.is_array() && !rows.empty() && rows.size() <= MAX_MORPH_OBJECTS, "Invalid XL morph slot count");
+	if (native) require(rows.size() == static_cast<unsigned>(native->count), "XL morph count differs from native records");
+	int previous = -1;
+	std::array<int, MAX_MORPH_OBJECTS> objects{};
+	for (std::size_t i = 0; i < rows.size(); ++i) {
+		const auto &row = rows[i];
+		require(row.is_array() && row.size() == 3 && row[0].is_number_unsigned() && row[0].get<std::uint64_t>() < MAX_MORPH_OBJECTS &&
+		            row[1].is_number_unsigned() && row[1].get<std::uint64_t>() < MAX_OBJECTS && row[2].is_number_integer() &&
+		            (row[2].is_number_unsigned() ? row[2].get<std::uint64_t>() <= INT32_MAX : row[2] >= INT32_MIN && row[2] <= INT32_MAX),
+		        "Invalid XL morph binding");
+		const int slot = row[0], object = row[1], signature = row[2];
+		require(slot > previous, "Unordered XL morph slots");
+		for (std::size_t j = 0; j < i; ++j) require(objects[j] != object, "Duplicate XL morph object");
+		objects[i] = object;
+		previous = slot;
+		if (native) {
+			require(native->objects[i] == object && native->signatures[i] == signature, "XL morph owner differs from native record");
+			native->slots[i] = slot;
+		}
+	}
+	require(previous + 1 > static_cast<int>(rows.size()), "XL sparse morph layout has no gap");
+}
 } // namespace
+
+json xl_morph_slot_snapshot(bool &sparse)
+{
+	json rows = json::array();
+	int last_slot = -1;
+	for (int i = 0; i < MAX_MORPH_OBJECTS; ++i) {
+		const auto &morph = morph_objects[i];
+		if (!morph_slot_is_active(&morph)) continue;
+		rows.push_back({ i, static_cast<int>(morph.obj - Objects), morph.Morph_sig });
+		last_slot = i;
+	}
+	sparse = last_slot + 1 > static_cast<int>(rows.size());
+	return rows;
+}
+
+struct xl_saved_trigger_input {
+	int64_t start, end;
+	json block;
+	bool present;
+};
+
+extern "C" int xl_prepare_saved_trigger_input(rewind_file *file, int64_t offset, morph_slot_layout *layout, xl_saved_trigger_input **input)
+{
+	try {
+		auto incoming = std::make_unique<xl_saved_trigger_input>();
+		const auto runtime_start = xl_tell(file);
+		require(runtime_start >= 0 && offset >= runtime_start && xl_seek(file, offset), "Invalid native runtime boundary");
+		incoming->start = offset;
+		incoming->present = read_block(file, incoming->block);
+		incoming->end = xl_tell(file);
+		require(incoming->end >= offset && xl_seek(file, runtime_start), "Cannot restore native runtime position");
+		if (incoming->present) {
+			const auto &schema = incoming->block.at("schema");
+			require(schema == 43 || schema == 44, "Unsupported XL saved state schema");
+			if (schema == 44) {
+				const auto &source = incoming->block.at("source");
+				require(source.is_number_unsigned() && source.get<std::uint64_t>() == xl_level_trigger_identity(), "XL morph layout belongs to a different level");
+				read_morph_layout(incoming->block.at("morph_slots"), layout);
+			}
+		}
+		*input = incoming.release();
+		return 1;
+	} catch (const std::exception &error) {
+		con_printf(CON_CRITICAL, "XL saved runtime rejected: %s", error.what());
+		return 0;
+	}
+}
 
 extern "C" int xl_wall_trigger_write(rewind_file *file)
 {
@@ -141,6 +235,12 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 			for (const auto &route : xl_compat::boss_routes()) block["boss_routes"].push_back({ route.home, route.segments });
 		}
 		block["schema"] = 43;
+		bool sparse_morphs;
+		auto morph_rows = xl_morph_slot_snapshot(sparse_morphs);
+		if (sparse_morphs) {
+			block["schema"] = 44;
+			block["morph_slots"] = std::move(morph_rows);
+		}
 		block["door_phases"] = xl_door_phases_snapshot();
 		require(xl_door_phases_restore(block["door_phases"], false), "Cannot capture XL side animation phases");
 		block["afterburner_animation"] = xl_afterburner_animation_snapshot();
@@ -256,27 +356,34 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 
 extern "C" int xl_wall_trigger_read(rewind_file *file)
 {
-	if (!xl_level_extensions_active()) return 1;
+	return xl_apply_saved_trigger_input(file, nullptr);
+}
+
+extern "C" int xl_apply_saved_trigger_input(rewind_file *file, xl_saved_trigger_input *input)
+{
+	std::unique_ptr<xl_saved_trigger_input> incoming(input);
+	if (!xl_level_extensions_active()) return !incoming;
 	try {
-		const auto position = xl_tell(file);
-		char saved_tag[8];
-		const auto bytes = xl_read(file, saved_tag, 1, sizeof(saved_tag));
-		if (bytes != sizeof(saved_tag) || std::memcmp(saved_tag, tag, sizeof(tag))) {
-			require(!xl_level_trigger_state_required(), "Save lacks required XL runtime state");
-			require(xl_seek(file, position), "Cannot restore save trailer position");
+		json saved;
+		bool present;
+		if (incoming) {
+			require(xl_tell(file) == incoming->start && xl_seek(file, incoming->end), "Native runtime restore ended at a different XL boundary");
+			present = incoming->present;
+			saved = std::move(incoming->block);
+		} else {
+			present = read_block(file, saved);
+		}
+		if (!present) {
 			xl_wall_trigger_reset();
 			return 1;
 		}
-		const auto size = read_u32(file), expected = read_u32(file);
-		require(size > 0 && size <= maximum, "Invalid XL trigger state size");
-		std::string payload(size, '\0');
-		require(xl_read(file, payload.data(), 1, size) == size && checksum(payload) == expected, "Corrupt XL trigger state payload");
-		const auto saved = json::parse(payload);
 		require(xl_boss_restore_robotmakers(), "Cannot rebind saved robotmaker bosses");
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
 		const bool equipment = xl_equipment_count() != 0;
-		require(saved.is_object() && saved.size() == 34u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) && saved.at("schema") == 43 &&
+		const bool sparse_morphs = saved.at("schema") == 44;
+		if (sparse_morphs) read_morph_layout(saved.at("morph_slots"), nullptr);
+		require(saved.is_object() && saved.size() == 34u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) + unsigned(sparse_morphs) && (sparse_morphs || saved.at("schema") == 43) &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
 		require(xl_door_phases_restore(saved.at("door_phases"), false), "Invalid XL side animation phases");

@@ -1005,6 +1005,17 @@ if(BUILD_TESTING)
                        FIXTURES_SETUP
                        sphere_gold_key)
         add_test(
+            NAME xl_sphere_sparse_morph_restore
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-carrier-key -DSTAGE=morph
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-morph -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+        set_tests_properties(
+            xl_sphere_sparse_morph_restore PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE FIXTURES_REQUIRED
+                                                      sphere_gold_key)
+        add_test(
             NAME xl_sphere_level_three_flicker
             COMMAND
                 ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
