@@ -1,0 +1,3192 @@
+{
+    "schema": "xl-sphere-stack-execution-v1",
+    "captured_utc": "2026-11-20T10:57:40.173101+00:00",
+    "repository": "larsonm-personal/dxx-redux",
+    "cmake": "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+    "stack": 471,
+    "actions_url_prefix": "https://github.com/larsonm-personal/dxx-redux/actions/runs/",
+    "public_columns": ["workflow", "check", "outcome", "url_suffix_or_external_url"],
+    "public_run_columns": ["workflow_head", "attempt", "event", "workflow", "outcome"],
+    "private_job_columns": ["job", "outcome", "job_id", "failed_steps_if_present"],
+    "public_run_metadata": {
+        "44666491466": ["9fd491f866cd941916f681a52f388d9ce1c601a6", 1, "pull_request", "Engine smoke", "success"],
+        "44666491483": [
+            "9fd491f866cd941916f681a52f388d9ce1c601a6",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "success"
+        ],
+        "44666491484": ["9fd491f866cd941916f681a52f388d9ce1c601a6", 1, "pull_request", "Public LAN smoke", "success"],
+        "44666491497": [
+            "9fd491f866cd941916f681a52f388d9ce1c601a6",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "success"
+        ],
+        "44666491521": [
+            "9fd491f866cd941916f681a52f388d9ce1c601a6",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "success"
+        ],
+        "44666491533": [
+            "9fd491f866cd941916f681a52f388d9ce1c601a6",
+            3,
+            "pull_request",
+            "PR #661 test sample",
+            "success"
+        ],
+        "44666491747": [
+            "9fd491f866cd941916f681a52f388d9ce1c601a6",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "success"
+        ],
+        "44666491782": ["9fd491f866cd941916f681a52f388d9ce1c601a6", 1, "pull_request", "Server Rust checks", "success"],
+        "44678133041": [
+            "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+            1,
+            "workflow_run",
+            "XL qualification for 9fd491f866cd941916f681a52f388d9ce1c601a6",
+            "success"
+        ],
+        "44697379961": [
+            "a0b889e5e326642f350d002e1e407ba91b8e3850",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "success"
+        ],
+        "44697379980": ["a0b889e5e326642f350d002e1e407ba91b8e3850", 1, "pull_request", "Server Rust checks", "success"],
+        "44697380009": [
+            "a0b889e5e326642f350d002e1e407ba91b8e3850",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "success"
+        ],
+        "44697380013": ["a0b889e5e326642f350d002e1e407ba91b8e3850", 1, "pull_request", "Engine smoke", "success"],
+        "44697380014": ["a0b889e5e326642f350d002e1e407ba91b8e3850", 1, "pull_request", "Public LAN smoke", "success"],
+        "44697380018": [
+            "a0b889e5e326642f350d002e1e407ba91b8e3850",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "success"
+        ],
+        "44697380079": [
+            "a0b889e5e326642f350d002e1e407ba91b8e3850",
+            1,
+            "pull_request",
+            "PR #662 test sample",
+            "success"
+        ],
+        "44697380099": [
+            "a0b889e5e326642f350d002e1e407ba91b8e3850",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "success"
+        ],
+        "44701928629": [
+            "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+            1,
+            "workflow_run",
+            "XL qualification for a0b889e5e326642f350d002e1e407ba91b8e3850",
+            "success"
+        ],
+        "44700831971": [
+            "fb4b00c8a4ba6ac52bae08d77dc23a39501c1dcc",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "success"
+        ],
+        "44700832047": ["fb4b00c8a4ba6ac52bae08d77dc23a39501c1dcc", 1, "pull_request", "Public LAN smoke", "success"],
+        "44700832059": [
+            "fb4b00c8a4ba6ac52bae08d77dc23a39501c1dcc",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "success"
+        ],
+        "44700832085": ["fb4b00c8a4ba6ac52bae08d77dc23a39501c1dcc", 1, "pull_request", "Server Rust checks", "success"],
+        "44700832090": [
+            "fb4b00c8a4ba6ac52bae08d77dc23a39501c1dcc",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "success"
+        ],
+        "44700832102": [
+            "fb4b00c8a4ba6ac52bae08d77dc23a39501c1dcc",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "success"
+        ],
+        "44700832168": ["fb4b00c8a4ba6ac52bae08d77dc23a39501c1dcc", 1, "pull_request", "Engine smoke", "success"],
+        "44700832326": [
+            "fb4b00c8a4ba6ac52bae08d77dc23a39501c1dcc",
+            1,
+            "pull_request",
+            "PR #663 test sample",
+            "success"
+        ],
+        "44704442040": [
+            "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+            1,
+            "workflow_run",
+            "XL qualification for fb4b00c8a4ba6ac52bae08d77dc23a39501c1dcc",
+            "success"
+        ],
+        "44704491669": [
+            "370a5e0faa24dbb2c62380ee32f3f5b353fb9f5f",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "success"
+        ],
+        "44704491710": [
+            "370a5e0faa24dbb2c62380ee32f3f5b353fb9f5f",
+            2,
+            "pull_request",
+            "PR #664 test sample",
+            "success"
+        ],
+        "44704491715": ["370a5e0faa24dbb2c62380ee32f3f5b353fb9f5f", 1, "pull_request", "Public LAN smoke", "success"],
+        "44704491734": ["370a5e0faa24dbb2c62380ee32f3f5b353fb9f5f", 1, "pull_request", "Engine smoke", "success"],
+        "44704491761": [
+            "370a5e0faa24dbb2c62380ee32f3f5b353fb9f5f",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "success"
+        ],
+        "44704491798": ["370a5e0faa24dbb2c62380ee32f3f5b353fb9f5f", 1, "pull_request", "Server Rust checks", "success"],
+        "44704491820": [
+            "370a5e0faa24dbb2c62380ee32f3f5b353fb9f5f",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "success"
+        ],
+        "44704491849": [
+            "370a5e0faa24dbb2c62380ee32f3f5b353fb9f5f",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "success"
+        ],
+        "44707936240": [
+            "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+            1,
+            "workflow_run",
+            "XL qualification for 370a5e0faa24dbb2c62380ee32f3f5b353fb9f5f",
+            "success"
+        ],
+        "44706780610": [
+            "0b315b048163b3498c3eb07049166c194c01fc99",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "success"
+        ],
+        "44706780655": [
+            "0b315b048163b3498c3eb07049166c194c01fc99",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "success"
+        ],
+        "44706780658": ["0b315b048163b3498c3eb07049166c194c01fc99", 1, "pull_request", "Engine smoke", "success"],
+        "44706780704": [
+            "0b315b048163b3498c3eb07049166c194c01fc99",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "success"
+        ],
+        "44706780713": ["0b315b048163b3498c3eb07049166c194c01fc99", 1, "pull_request", "Server Rust checks", "success"],
+        "44706780760": [
+            "0b315b048163b3498c3eb07049166c194c01fc99",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "success"
+        ],
+        "44706780852": ["0b315b048163b3498c3eb07049166c194c01fc99", 1, "pull_request", "Public LAN smoke", "success"],
+        "44706780948": [
+            "0b315b048163b3498c3eb07049166c194c01fc99",
+            2,
+            "pull_request",
+            "PR #665 test sample",
+            "success"
+        ],
+        "44707691429": [
+            "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+            1,
+            "workflow_run",
+            "XL qualification for 0b315b048163b3498c3eb07049166c194c01fc99",
+            "success"
+        ],
+        "44715822342": [
+            "bf0efd8aa77de3c0863c32d546db50d792d9b48e",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "in_progress"
+        ],
+        "44715822356": [
+            "bf0efd8aa77de3c0863c32d546db50d792d9b48e",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "success"
+        ],
+        "44715822363": [
+            "bf0efd8aa77de3c0863c32d546db50d792d9b48e",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "success"
+        ],
+        "44715822379": ["bf0efd8aa77de3c0863c32d546db50d792d9b48e", 1, "pull_request", "Public LAN smoke", "success"],
+        "44715822448": [
+            "bf0efd8aa77de3c0863c32d546db50d792d9b48e",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "success"
+        ],
+        "44715822525": ["bf0efd8aa77de3c0863c32d546db50d792d9b48e", 1, "pull_request", "Server Rust checks", "success"],
+        "44715822534": [
+            "bf0efd8aa77de3c0863c32d546db50d792d9b48e",
+            1,
+            "pull_request",
+            "PR #666 test sample",
+            "failure"
+        ],
+        "44715822557": ["bf0efd8aa77de3c0863c32d546db50d792d9b48e", 1, "pull_request", "Engine smoke", "success"],
+        "44716662777": [
+            "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+            1,
+            "workflow_run",
+            "XL qualification for bf0efd8aa77de3c0863c32d546db50d792d9b48e",
+            "success"
+        ],
+        "44719152075": ["f508ae9108b5afb88d4fffa34c768ea8cb444cc5", 1, "pull_request", "Engine smoke", "success"],
+        "44719152086": ["f508ae9108b5afb88d4fffa34c768ea8cb444cc5", 1, "pull_request", "Server Rust checks", "success"],
+        "44719152104": [
+            "f508ae9108b5afb88d4fffa34c768ea8cb444cc5",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "success"
+        ],
+        "44719152127": [
+            "f508ae9108b5afb88d4fffa34c768ea8cb444cc5",
+            1,
+            "pull_request",
+            "PR #667 test sample",
+            "success"
+        ],
+        "44719152157": ["f508ae9108b5afb88d4fffa34c768ea8cb444cc5", 1, "pull_request", "Public LAN smoke", "success"],
+        "44719152177": [
+            "f508ae9108b5afb88d4fffa34c768ea8cb444cc5",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "success"
+        ],
+        "44719152318": [
+            "f508ae9108b5afb88d4fffa34c768ea8cb444cc5",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "in_progress"
+        ],
+        "44719152351": [
+            "f508ae9108b5afb88d4fffa34c768ea8cb444cc5",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "success"
+        ],
+        "44719260923": [
+            "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+            1,
+            "workflow_run",
+            "XL qualification for f508ae9108b5afb88d4fffa34c768ea8cb444cc5",
+            "success"
+        ],
+        "44723422451": [
+            "10870fc793da94348b41897cc9ac2fc7ca2c9228",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "in_progress"
+        ],
+        "44723422454": ["10870fc793da94348b41897cc9ac2fc7ca2c9228", 1, "pull_request", "PR #668 test sample", "queued"],
+        "44723422485": [
+            "10870fc793da94348b41897cc9ac2fc7ca2c9228",
+            1,
+            "pull_request",
+            "Server Rust checks",
+            "in_progress"
+        ],
+        "44723422523": ["10870fc793da94348b41897cc9ac2fc7ca2c9228", 1, "pull_request", "Engine smoke", "in_progress"],
+        "44723422669": [
+            "10870fc793da94348b41897cc9ac2fc7ca2c9228",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "in_progress"
+        ],
+        "44723422716": [
+            "10870fc793da94348b41897cc9ac2fc7ca2c9228",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "success"
+        ],
+        "44723422831": [
+            "10870fc793da94348b41897cc9ac2fc7ca2c9228",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "success"
+        ],
+        "44723422853": [
+            "10870fc793da94348b41897cc9ac2fc7ca2c9228",
+            1,
+            "pull_request",
+            "Public LAN smoke",
+            "in_progress"
+        ],
+        "44723452661": [
+            "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+            1,
+            "workflow_run",
+            "XL qualification for 10870fc793da94348b41897cc9ac2fc7ca2c9228",
+            "in_progress"
+        ]
+    },
+    "candidates": [
+        {
+            "pr": 661,
+            "head": "9fd491f866cd941916f681a52f388d9ce1c601a6",
+            "merge": "422972f80818376ded876d2645784b5792831993",
+            "base_sha": "7317685f246ddd16560d79ef59fd7c5a20f5155e",
+            "branch": "xl_sphere_handoff_20261119",
+            "immediate_base": "xl_sphere_light_sources_20261119",
+            "state": "OPEN",
+            "public": [
+                ["", "D2X readiness (expanded 64 load/tick)", "SUCCESS", "44678133041"],
+                ["", "D2X readiness (sampled load/tick)", "SUCCESS", "44678133041"],
+                ["", "XL asset smoke (private assets)", "SUCCESS", "44678133041"],
+                ["Engine smoke", "CI policy and runner checks", "SUCCESS", "44666491466/job/136056933141"],
+                ["Engine smoke", "Linux d1 build and tests", "SUCCESS", "44666491466/job/136094230374"],
+                ["Engine smoke", "Linux d2 build and tests", "SUCCESS", "44666491466/job/136094230401"],
+                ["Engine smoke", "Linux public ASan runtime", "SUCCESS", "44666491466/job/136094230400"],
+                ["Engine smoke", "stack / check", "SUCCESS", "44666491466/job/136056933440"],
+                [
+                    "Extended test suite",
+                    "Android tests / Run selected tests",
+                    "SUCCESS",
+                    "44666491533/job/136224557617"
+                ],
+                ["Extended test suite", "Check results", "SUCCESS", "44666491533/job/136229951756"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44666491533/job/136224620981"],
+                ["Extended test suite", "JVM tests / Run selected tests", "SUCCESS", "44666491533/job/136224556448"],
+                ["Extended test suite", "Linux tests", "SUCCESS", "44666491533/job/136224553974"],
+                [
+                    "Extended test suite",
+                    "Nightly XL developer Release compile",
+                    "SKIPPED",
+                    "44666491533/job/136224555537"
+                ],
+                [
+                    "Extended test suite",
+                    "Save nightly progress (scheduled/manual only)",
+                    "SKIPPED",
+                    "44666491533/job/136230520633"
+                ],
+                ["Extended test suite", "Select tests", "SUCCESS", "44666491533/job/136224615219"],
+                ["Extended test suite", "Verify pinned Pumo staging", "SKIPPED", "44666491533/job/136224556121"],
+                ["Extended test suite", "execution-stack / check", "SUCCESS", "44666491533/job/136224555908"],
+                ["Extended test suite", "stack / check", "SUCCESS", "44666491533/job/136224554455"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public build and save integrity",
+                    "SUCCESS",
+                    "44666491497/job/136119340240"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public headed replay parity",
+                    "SUCCESS",
+                    "44666491497/job/136159134219"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public native save and replay integrity",
+                    "SUCCESS",
+                    "44666491497/job/136159134187"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Public replay admission controls",
+                    "SUCCESS",
+                    "44666491497/job/136119340295"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "replay-stack / check",
+                    "SUCCESS",
+                    "44666491497/job/136149251561"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "SUCCESS",
+                    "44666491497/job/136056934782"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44666491484/job/136056934700"],
+                ["Public LAN smoke", "Require public LAN pass", "SUCCESS", "44666491484/job/136145680379"],
+                ["Public LAN smoke", "Select public LAN smoke", "SUCCESS", "44666491484/job/136056932341"],
+                [
+                    "Public LAN smoke",
+                    "Two-player lobby to game / Run selected tests",
+                    "SUCCESS",
+                    "44666491484/job/136097030242"
+                ],
+                ["Server Rust checks", "server", "SKIPPED", "44666491782/job/136115404859"],
+                ["Server Rust checks", "stack / check", "SUCCESS", "44666491782/job/136056934525"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "SUCCESS",
+                    "44666491747/job/136056928415"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (ubuntu-24.04)",
+                    "SUCCESS",
+                    "44666491483/job/136095752137"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (windows-2022)",
+                    "SUCCESS",
+                    "44666491483/job/136095752077"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer Release source compile (no game assets)",
+                    "SKIPPED",
+                    "44666491483/job/136095754429"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (Windows x86)",
+                    "SUCCESS",
+                    "44666491483/job/136095752055"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (no game assets)",
+                    "SUCCESS",
+                    "44666491483/job/136095752119"
+                ],
+                ["XL compatibility contracts", "stack / check", "SUCCESS", "44666491483/job/136056934402"],
+                ["scripts and ci tests", "Automation catalogs", "SUCCESS", "44666491521/job/136056935376"],
+                ["scripts and ci tests", "Workflow syntax", "SUCCESS", "44666491521/job/136056934953"],
+                [
+                    "scripts and ci tests",
+                    "scripts and ci tests (ubuntu-24.04)",
+                    "SUCCESS",
+                    "44666491521/job/136139173810"
+                ],
+                [
+                    "scripts and ci tests",
+                    "scripts and ci tests (windows-2022)",
+                    "SUCCESS",
+                    "44666491521/job/136139173908"
+                ],
+                ["scripts and ci tests", "stack / check", "SUCCESS", "44666491521/job/136056935167"]
+            ],
+            "private": [
+                {
+                    "run": 44678133041,
+                    "controller": "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+                    "state": "success",
+                    "attempts": [
+                        {
+                            "attempt": 1,
+                            "jobs": [
+                                ["Verify owned PR and pin exact head", "success", 136162464424],
+                                ["Prepare signed Ubuntu runtime packages without game assets", "success", 136190967259],
+                                ["Build ordinary D2 readiness engine without private inputs", "success", 136190967262],
+                                ["Original XL asset load and navigation / stack / check", "success", 136190967945],
+                                [
+                                    "Original XL asset load and navigation / Inspect retained online receipt",
+                                    "skipped",
+                                    136190970305
+                                ],
+                                ["Original XL asset load and navigation / Select tests", "success", 136195380548],
+                                [
+                                    "Original XL asset load and navigation / execution-stack / check",
+                                    "success",
+                                    136203673606
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Verify pinned Pumo staging",
+                                    "skipped",
+                                    136203674991
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Nightly XL developer Release compile",
+                                    "skipped",
+                                    136203675144
+                                ],
+                                ["Original XL asset load and navigation / Linux tests", "success", 136211634803],
+                                [
+                                    "Original XL asset load and navigation / matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests'",
+                                    "skipped",
+                                    136211637117
+                                ],
+                                ["Measure D2X readiness on fixed uploaded sample", "success", 136212307937],
+                                ["Measure expanded 64-case D2X readiness", "success", 136212308073],
+                                ["Measure all pinned D2X levels on request", "skipped", 136212309986],
+                                ["Start the ordinary engine with survey runtime packages", "skipped", 136212310391],
+                                ["Original XL asset load and navigation / Check results", "success", 136222035162],
+                                ["D2X readiness percentage (sampled load/tick)", "success", 136222835765],
+                                ["Expanded D2X measurement and distinct compatibility status", "success", 136223837724],
+                                ["Publish exact-head XL asset result", "success", 136224593366],
+                                [
+                                    "Original XL asset load and navigation / Save nightly progress (scheduled/manual only)",
+                                    "skipped",
+                                    136224594963
+                                ]
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "public_runs": [
+                44666491466, 44666491483, 44666491484, 44666491497, 44666491521, 44666491533, 44666491747, 44666491782,
+                44678133041
+            ]
+        },
+        {
+            "pr": 662,
+            "head": "a0b889e5e326642f350d002e1e407ba91b8e3850",
+            "merge": "8aacbdadda5b232be10a999b0c023f6ba16da8e1",
+            "base_sha": "9fd491f866cd941916f681a52f388d9ce1c601a6",
+            "branch": "xl_sphere_carrier_flight_20261120",
+            "immediate_base": "xl_sphere_handoff_20261119",
+            "state": "OPEN",
+            "public": [
+                ["", "D2X readiness (expanded 64 load/tick)", "SUCCESS", "44701928629"],
+                ["", "D2X readiness (sampled load/tick)", "SUCCESS", "44701928629"],
+                ["", "XL asset smoke (private assets)", "SUCCESS", "44701928629"],
+                ["Engine smoke", "CI policy and runner checks", "SUCCESS", "44697380013/job/136157272622"],
+                ["Engine smoke", "Linux d1 build and tests", "SUCCESS", "44697380013/job/136201370617"],
+                ["Engine smoke", "Linux d2 build and tests", "SUCCESS", "44697380013/job/136201370456"],
+                ["Engine smoke", "Linux public ASan runtime", "SUCCESS", "44697380013/job/136201370467"],
+                ["Engine smoke", "stack / check", "SUCCESS", "44697380013/job/136157272951"],
+                [
+                    "Extended test suite",
+                    "Android tests / Run selected tests",
+                    "SUCCESS",
+                    "44697380079/job/136201981303"
+                ],
+                ["Extended test suite", "Check results", "SUCCESS", "44697380079/job/136217616681"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44697380079/job/136157274810"],
+                ["Extended test suite", "JVM tests / Run selected tests", "SUCCESS", "44697380079/job/136201981227"],
+                ["Extended test suite", "Linux tests", "SUCCESS", "44697380079/job/136201980829"],
+                [
+                    "Extended test suite",
+                    "Nightly XL developer Release compile",
+                    "SKIPPED",
+                    "44697380079/job/136200009027"
+                ],
+                [
+                    "Extended test suite",
+                    "Save nightly progress (scheduled/manual only)",
+                    "SKIPPED",
+                    "44697380079/job/136217868133"
+                ],
+                ["Extended test suite", "Select tests", "SUCCESS", "44697380079/job/136194090815"],
+                ["Extended test suite", "Verify pinned Pumo staging", "SKIPPED", "44697380079/job/136200008985"],
+                ["Extended test suite", "execution-stack / check", "SUCCESS", "44697380079/job/136200006950"],
+                ["Extended test suite", "stack / check", "SUCCESS", "44697380079/job/136157272643"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public build and save integrity",
+                    "SUCCESS",
+                    "44697380018/job/136172415841"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public headed replay parity",
+                    "SUCCESS",
+                    "44697380018/job/136202110239"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public native save and replay integrity",
+                    "SUCCESS",
+                    "44697380018/job/136202110177"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Public replay admission controls",
+                    "SUCCESS",
+                    "44697380018/job/136172415750"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "replay-stack / check",
+                    "SUCCESS",
+                    "44697380018/job/136198304480"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "SUCCESS",
+                    "44697380018/job/136157271964"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44697380014/job/136157273776"],
+                ["Public LAN smoke", "Require public LAN pass", "SUCCESS", "44697380014/job/136183151143"],
+                ["Public LAN smoke", "Select public LAN smoke", "SUCCESS", "44697380014/job/136157272082"],
+                [
+                    "Public LAN smoke",
+                    "Two-player lobby to game / Run selected tests",
+                    "SUCCESS",
+                    "44697380014/job/136166841810"
+                ],
+                ["Server Rust checks", "server", "SKIPPED", "44697379980/job/136191005769"],
+                ["Server Rust checks", "stack / check", "SUCCESS", "44697379980/job/136157271836"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "SUCCESS",
+                    "44697379961/job/136157271078"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (ubuntu-24.04)",
+                    "SUCCESS",
+                    "44697380099/job/136194033248"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (windows-2022)",
+                    "SUCCESS",
+                    "44697380099/job/136194033212"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer Release source compile (no game assets)",
+                    "SKIPPED",
+                    "44697380099/job/136194035100"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (Windows x86)",
+                    "SUCCESS",
+                    "44697380099/job/136194033100"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (no game assets)",
+                    "SUCCESS",
+                    "44697380099/job/136194033039"
+                ],
+                ["XL compatibility contracts", "stack / check", "SUCCESS", "44697380099/job/136157272433"],
+                ["scripts and ci tests", "Automation catalogs", "SUCCESS", "44697380009/job/136157271990"],
+                ["scripts and ci tests", "Workflow syntax", "SUCCESS", "44697380009/job/136157271787"],
+                [
+                    "scripts and ci tests",
+                    "scripts and ci tests (${{ matrix.os }})",
+                    "SKIPPED",
+                    "44697380009/job/136193298489"
+                ],
+                ["scripts and ci tests", "stack / check", "SUCCESS", "44697380009/job/136157272154"]
+            ],
+            "private": [
+                {
+                    "run": 44701928629,
+                    "controller": "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+                    "state": "success",
+                    "attempts": [
+                        {
+                            "attempt": 1,
+                            "jobs": [
+                                ["Verify owned PR and pin exact head", "success", 136172131857],
+                                ["Prepare signed Ubuntu runtime packages without game assets", "success", 136201888572],
+                                ["Build ordinary D2 readiness engine without private inputs", "success", 136201888576],
+                                ["Original XL asset load and navigation / stack / check", "success", 136201889132],
+                                [
+                                    "Original XL asset load and navigation / Inspect retained online receipt",
+                                    "skipped",
+                                    136201891236
+                                ],
+                                ["Original XL asset load and navigation / Select tests", "success", 136205980646],
+                                [
+                                    "Original XL asset load and navigation / execution-stack / check",
+                                    "success",
+                                    136212369743
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Nightly XL developer Release compile",
+                                    "skipped",
+                                    136212371678
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Verify pinned Pumo staging",
+                                    "skipped",
+                                    136212372613
+                                ],
+                                ["Original XL asset load and navigation / Linux tests", "success", 136213166047],
+                                [
+                                    "Original XL asset load and navigation / matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests'",
+                                    "skipped",
+                                    136213168466
+                                ],
+                                ["Measure expanded 64-case D2X readiness", "success", 136221281659],
+                                ["Measure D2X readiness on fixed uploaded sample", "success", 136221281710],
+                                ["Start the ordinary engine with survey runtime packages", "skipped", 136221283581],
+                                ["Measure all pinned D2X levels on request", "skipped", 136221283754],
+                                ["Original XL asset load and navigation / Check results", "success", 136223711856],
+                                ["Publish exact-head XL asset result", "success", 136224784409],
+                                [
+                                    "Original XL asset load and navigation / Save nightly progress (scheduled/manual only)",
+                                    "skipped",
+                                    136224785405
+                                ],
+                                ["D2X readiness percentage (sampled load/tick)", "success", 136225420202],
+                                ["Expanded D2X measurement and distinct compatibility status", "success", 136226645410]
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "public_runs": [
+                44697379961, 44697379980, 44697380009, 44697380013, 44697380014, 44697380018, 44697380079, 44697380099,
+                44701928629
+            ]
+        },
+        {
+            "pr": 663,
+            "head": "fb4b00c8a4ba6ac52bae08d77dc23a39501c1dcc",
+            "merge": "4f3ed3630166a31f7b727e7dc0fec0257914d278",
+            "base_sha": "a0b889e5e326642f350d002e1e407ba91b8e3850",
+            "branch": "xl_visible_carrier_combat_20261120",
+            "immediate_base": "xl_sphere_carrier_flight_20261120",
+            "state": "OPEN",
+            "public": [
+                ["", "D2X readiness (expanded 64 load/tick)", "SUCCESS", "44704442040"],
+                ["", "D2X readiness (sampled load/tick)", "SUCCESS", "44704442040"],
+                ["", "XL asset smoke (private assets)", "SUCCESS", "44704442040"],
+                ["Engine smoke", "CI policy and runner checks", "SUCCESS", "44700832168/job/136168530504"],
+                ["Engine smoke", "Linux d1 build and tests", "SUCCESS", "44700832168/job/136191295275"],
+                ["Engine smoke", "Linux d2 build and tests", "SUCCESS", "44700832168/job/136191295312"],
+                ["Engine smoke", "Linux public ASan runtime", "SUCCESS", "44700832168/job/136191295171"],
+                ["Engine smoke", "stack / check", "SUCCESS", "44700832168/job/136168530840"],
+                [
+                    "Extended test suite",
+                    "Android tests / Run selected tests",
+                    "SUCCESS",
+                    "44700832326/job/136200628875"
+                ],
+                ["Extended test suite", "Check results", "SUCCESS", "44700832326/job/136214059299"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44700832326/job/136168533743"],
+                ["Extended test suite", "JVM tests / Run selected tests", "SUCCESS", "44700832326/job/136200628801"],
+                ["Extended test suite", "Linux tests", "SUCCESS", "44700832326/job/136200628421"],
+                [
+                    "Extended test suite",
+                    "Nightly XL developer Release compile",
+                    "SKIPPED",
+                    "44700832326/job/136199407091"
+                ],
+                [
+                    "Extended test suite",
+                    "Save nightly progress (scheduled/manual only)",
+                    "SKIPPED",
+                    "44700832326/job/136216492609"
+                ],
+                ["Extended test suite", "Select tests", "SUCCESS", "44700832326/job/136192667052"],
+                ["Extended test suite", "Verify pinned Pumo staging", "SKIPPED", "44700832326/job/136199406192"],
+                ["Extended test suite", "execution-stack / check", "SUCCESS", "44700832326/job/136199404256"],
+                ["Extended test suite", "stack / check", "SUCCESS", "44700832326/job/136168532527"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public build and save integrity",
+                    "SUCCESS",
+                    "44700832102/job/136191288066"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public headed replay parity",
+                    "SUCCESS",
+                    "44700832102/job/136209470218"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public native save and replay integrity",
+                    "SUCCESS",
+                    "44700832102/job/136209470285"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Public replay admission controls",
+                    "SUCCESS",
+                    "44700832102/job/136191288164"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "replay-stack / check",
+                    "SUCCESS",
+                    "44700832102/job/136208926820"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "SUCCESS",
+                    "44700832102/job/136168530483"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44700832047/job/136168532876"],
+                ["Public LAN smoke", "Require public LAN pass", "SUCCESS", "44700832047/job/136193944972"],
+                ["Public LAN smoke", "Select public LAN smoke", "SUCCESS", "44700832047/job/136168530226"],
+                [
+                    "Public LAN smoke",
+                    "Two-player lobby to game / Run selected tests",
+                    "SUCCESS",
+                    "44700832047/job/136186544409"
+                ],
+                ["Server Rust checks", "server", "SKIPPED", "44700832085/job/136183528578"],
+                ["Server Rust checks", "stack / check", "SUCCESS", "44700832085/job/136168530149"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "SUCCESS",
+                    "44700832059/job/136168529498"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (ubuntu-24.04)",
+                    "SUCCESS",
+                    "44700831971/job/136186146264"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (windows-2022)",
+                    "SUCCESS",
+                    "44700831971/job/136186146096"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer Release source compile (no game assets)",
+                    "SKIPPED",
+                    "44700831971/job/136186148210"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (Windows x86)",
+                    "SUCCESS",
+                    "44700831971/job/136186146015"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (no game assets)",
+                    "SUCCESS",
+                    "44700831971/job/136186146399"
+                ],
+                ["XL compatibility contracts", "stack / check", "SUCCESS", "44700831971/job/136168530195"],
+                ["scripts and ci tests", "Automation catalogs", "SUCCESS", "44700832090/job/136168529980"],
+                ["scripts and ci tests", "Workflow syntax", "SUCCESS", "44700832090/job/136168530288"],
+                [
+                    "scripts and ci tests",
+                    "scripts and ci tests (${{ matrix.os }})",
+                    "SKIPPED",
+                    "44700832090/job/136181472841"
+                ],
+                ["scripts and ci tests", "stack / check", "SUCCESS", "44700832090/job/136168530138"]
+            ],
+            "private": [
+                {
+                    "run": 44704442040,
+                    "controller": "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+                    "state": "success",
+                    "attempts": [
+                        {
+                            "attempt": 1,
+                            "jobs": [
+                                ["Verify owned PR and pin exact head", "success", 136180406809],
+                                ["Prepare signed Ubuntu runtime packages without game assets", "success", 136203423591],
+                                ["Build ordinary D2 readiness engine without private inputs", "success", 136203423690],
+                                ["Original XL asset load and navigation / stack / check", "success", 136203425078],
+                                [
+                                    "Original XL asset load and navigation / Inspect retained online receipt",
+                                    "skipped",
+                                    136203427398
+                                ],
+                                ["Original XL asset load and navigation / Select tests", "success", 136209562108],
+                                [
+                                    "Original XL asset load and navigation / execution-stack / check",
+                                    "success",
+                                    136212734478
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Nightly XL developer Release compile",
+                                    "skipped",
+                                    136212736969
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Verify pinned Pumo staging",
+                                    "skipped",
+                                    136212737381
+                                ],
+                                ["Original XL asset load and navigation / Linux tests", "success", 136213392775],
+                                [
+                                    "Original XL asset load and navigation / matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests'",
+                                    "skipped",
+                                    136213395598
+                                ],
+                                ["Measure D2X readiness on fixed uploaded sample", "success", 136221580301],
+                                ["Measure expanded 64-case D2X readiness", "success", 136221580316],
+                                ["Start the ordinary engine with survey runtime packages", "skipped", 136221583574],
+                                ["Measure all pinned D2X levels on request", "skipped", 136221583590],
+                                ["D2X readiness percentage (sampled load/tick)", "success", 136226212561],
+                                ["Original XL asset load and navigation / Check results", "success", 136226676164],
+                                ["Expanded D2X measurement and distinct compatibility status", "success", 136227183609],
+                                [
+                                    "Original XL asset load and navigation / Save nightly progress (scheduled/manual only)",
+                                    "skipped",
+                                    136227613774
+                                ],
+                                ["Publish exact-head XL asset result", "success", 136227614129]
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "public_runs": [
+                44700831971, 44700832047, 44700832059, 44700832085, 44700832090, 44700832102, 44700832168, 44700832326,
+                44704442040
+            ]
+        },
+        {
+            "pr": 664,
+            "head": "370a5e0faa24dbb2c62380ee32f3f5b353fb9f5f",
+            "merge": "6646bf06fffe0240df40361d6625481880f20424",
+            "base_sha": "fb4b00c8a4ba6ac52bae08d77dc23a39501c1dcc",
+            "branch": "xl_thruster_trace_20261120",
+            "immediate_base": "xl_visible_carrier_combat_20261120",
+            "state": "OPEN",
+            "public": [
+                ["", "D2X readiness (expanded 64 load/tick)", "SUCCESS", "44707936240"],
+                ["", "D2X readiness (sampled load/tick)", "SUCCESS", "44707936240"],
+                ["", "XL asset smoke (private assets)", "SUCCESS", "44707936240"],
+                ["Engine smoke", "CI policy and runner checks", "SUCCESS", "44704491734/job/136180576576"],
+                ["Engine smoke", "Linux d1 build and tests", "SUCCESS", "44704491734/job/136195548919"],
+                ["Engine smoke", "Linux d2 build and tests", "SUCCESS", "44704491734/job/136195548804"],
+                ["Engine smoke", "Linux public ASan runtime", "SUCCESS", "44704491734/job/136195548773"],
+                ["Engine smoke", "stack / check", "SUCCESS", "44704491734/job/136180577245"],
+                [
+                    "Extended test suite",
+                    "Android tests / Run selected tests",
+                    "SUCCESS",
+                    "44704491710/job/136214205870"
+                ],
+                ["Extended test suite", "Check results", "SUCCESS", "44704491710/job/136227646042"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44704491710/job/136214205175"],
+                ["Extended test suite", "JVM tests / Run selected tests", "SUCCESS", "44704491710/job/136214208049"],
+                ["Extended test suite", "Linux tests", "SUCCESS", "44704491710/job/136214208909"],
+                [
+                    "Extended test suite",
+                    "Nightly XL developer Release compile",
+                    "SKIPPED",
+                    "44704491710/job/136214206658"
+                ],
+                [
+                    "Extended test suite",
+                    "Save nightly progress (scheduled/manual only)",
+                    "SKIPPED",
+                    "44704491710/job/136228044208"
+                ],
+                ["Extended test suite", "Select tests", "SUCCESS", "44704491710/job/136214205885"],
+                ["Extended test suite", "Verify pinned Pumo staging", "SKIPPED", "44704491710/job/136214205844"],
+                ["Extended test suite", "execution-stack / check", "SUCCESS", "44704491710/job/136214205939"],
+                ["Extended test suite", "stack / check", "SUCCESS", "44704491710/job/136214204322"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public build and save integrity",
+                    "SUCCESS",
+                    "44704491761/job/136190204549"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public headed replay parity",
+                    "SUCCESS",
+                    "44704491761/job/136210289697"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public native save and replay integrity",
+                    "SUCCESS",
+                    "44704491761/job/136210289708"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Public replay admission controls",
+                    "SUCCESS",
+                    "44704491761/job/136190204514"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "replay-stack / check",
+                    "SUCCESS",
+                    "44704491761/job/136209297093"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "SUCCESS",
+                    "44704491761/job/136180577046"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44704491715/job/136180579084"],
+                ["Public LAN smoke", "Require public LAN pass", "SUCCESS", "44704491715/job/136200446847"],
+                ["Public LAN smoke", "Select public LAN smoke", "SUCCESS", "44704491715/job/136180577420"],
+                [
+                    "Public LAN smoke",
+                    "Two-player lobby to game / Run selected tests",
+                    "SUCCESS",
+                    "44704491715/job/136189857942"
+                ],
+                ["Server Rust checks", "server", "SKIPPED", "44704491798/job/136198610156"],
+                ["Server Rust checks", "stack / check", "SUCCESS", "44704491798/job/136180577859"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "SUCCESS",
+                    "44704491669/job/136180575754"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (ubuntu-24.04)",
+                    "SUCCESS",
+                    "44704491820/job/136193183559"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (windows-2022)",
+                    "SUCCESS",
+                    "44704491820/job/136193183442"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer Release source compile (no game assets)",
+                    "SKIPPED",
+                    "44704491820/job/136193185590"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (Windows x86)",
+                    "SUCCESS",
+                    "44704491820/job/136193183498"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (no game assets)",
+                    "SUCCESS",
+                    "44704491820/job/136193183469"
+                ],
+                ["XL compatibility contracts", "stack / check", "SUCCESS", "44704491820/job/136180577336"],
+                ["scripts and ci tests", "Automation catalogs", "SUCCESS", "44704491849/job/136180577285"],
+                ["scripts and ci tests", "Workflow syntax", "SUCCESS", "44704491849/job/136180576933"],
+                [
+                    "scripts and ci tests",
+                    "scripts and ci tests (ubuntu-24.04)",
+                    "SUCCESS",
+                    "44704491849/job/136195621125"
+                ],
+                [
+                    "scripts and ci tests",
+                    "scripts and ci tests (windows-2022)",
+                    "SUCCESS",
+                    "44704491849/job/136195621209"
+                ],
+                ["scripts and ci tests", "stack / check", "SUCCESS", "44704491849/job/136180577477"]
+            ],
+            "private": [
+                {
+                    "run": 44707936240,
+                    "controller": "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+                    "state": "success",
+                    "attempts": [
+                        {
+                            "attempt": 1,
+                            "jobs": [
+                                ["Verify owned PR and pin exact head", "success", 136192087572],
+                                ["Build ordinary D2 readiness engine without private inputs", "success", 136213692116],
+                                ["Prepare signed Ubuntu runtime packages without game assets", "success", 136213692289],
+                                ["Original XL asset load and navigation / stack / check", "success", 136213693058],
+                                [
+                                    "Original XL asset load and navigation / Inspect retained online receipt",
+                                    "skipped",
+                                    136213694653
+                                ],
+                                ["Original XL asset load and navigation / Select tests", "success", 136217116298],
+                                [
+                                    "Original XL asset load and navigation / execution-stack / check",
+                                    "success",
+                                    136220659208
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Nightly XL developer Release compile",
+                                    "skipped",
+                                    136220660804
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Verify pinned Pumo staging",
+                                    "skipped",
+                                    136220661426
+                                ],
+                                ["Original XL asset load and navigation / Linux tests", "success", 136221710213],
+                                [
+                                    "Original XL asset load and navigation / matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests'",
+                                    "skipped",
+                                    136221711787
+                                ],
+                                ["Measure D2X readiness on fixed uploaded sample", "success", 136224761552],
+                                ["Measure expanded 64-case D2X readiness", "success", 136224761672],
+                                ["Start the ordinary engine with survey runtime packages", "skipped", 136224763426],
+                                ["Measure all pinned D2X levels on request", "skipped", 136224764986],
+                                ["D2X readiness percentage (sampled load/tick)", "success", 136227322922],
+                                ["Expanded D2X measurement and distinct compatibility status", "success", 136228523927],
+                                ["Original XL asset load and navigation / Check results", "success", 136231985148],
+                                ["Publish exact-head XL asset result", "success", 136232387959],
+                                [
+                                    "Original XL asset load and navigation / Save nightly progress (scheduled/manual only)",
+                                    "skipped",
+                                    136232389157
+                                ]
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "public_runs": [
+                44704491669, 44704491710, 44704491715, 44704491734, 44704491761, 44704491798, 44704491820, 44704491849,
+                44707936240
+            ]
+        },
+        {
+            "pr": 665,
+            "head": "0b315b048163b3498c3eb07049166c194c01fc99",
+            "merge": "d9cc3c6d7e44de1e7b803cb7db7a29cabd2ff779",
+            "base_sha": "370a5e0faa24dbb2c62380ee32f3f5b353fb9f5f",
+            "branch": "xl_sphere_gold_fixture_20261120",
+            "immediate_base": "xl_thruster_trace_20261120",
+            "state": "OPEN",
+            "public": [
+                ["", "D2X readiness (expanded 64 load/tick)", "SUCCESS", "44707691429"],
+                ["", "D2X readiness (sampled load/tick)", "SUCCESS", "44707691429"],
+                ["", "XL asset smoke (private assets)", "SUCCESS", "44707691429"],
+                ["Engine smoke", "CI policy and runner checks", "SUCCESS", "44706780658/job/136188250302"],
+                ["Engine smoke", "Linux d1 build and tests", "SUCCESS", "44706780658/job/136189290470"],
+                ["Engine smoke", "Linux d2 build and tests", "SUCCESS", "44706780658/job/136189290577"],
+                ["Engine smoke", "Linux public ASan runtime", "SUCCESS", "44706780658/job/136189290550"],
+                ["Engine smoke", "stack / check", "SUCCESS", "44706780658/job/136188250406"],
+                [
+                    "Extended test suite",
+                    "Android tests / Run selected tests",
+                    "SUCCESS",
+                    "44706780948/job/136219460436"
+                ],
+                ["Extended test suite", "Check results", "SUCCESS", "44706780948/job/136225277367"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44706780948/job/136219457674"],
+                ["Extended test suite", "JVM tests / Run selected tests", "SUCCESS", "44706780948/job/136219460492"],
+                ["Extended test suite", "Linux tests", "SUCCESS", "44706780948/job/136219458275"],
+                [
+                    "Extended test suite",
+                    "Nightly XL developer Release compile",
+                    "SKIPPED",
+                    "44706780948/job/136219459258"
+                ],
+                [
+                    "Extended test suite",
+                    "Save nightly progress (scheduled/manual only)",
+                    "SKIPPED",
+                    "44706780948/job/136225583755"
+                ],
+                ["Extended test suite", "Select tests", "SUCCESS", "44706780948/job/136219459692"],
+                ["Extended test suite", "Verify pinned Pumo staging", "SKIPPED", "44706780948/job/136219459546"],
+                ["Extended test suite", "execution-stack / check", "SUCCESS", "44706780948/job/136219459600"],
+                ["Extended test suite", "stack / check", "SUCCESS", "44706780948/job/136219458472"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public build and save integrity",
+                    "SUCCESS",
+                    "44706780655/job/136193963456"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public headed replay parity",
+                    "SUCCESS",
+                    "44706780655/job/136219500960"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public native save and replay integrity",
+                    "SUCCESS",
+                    "44706780655/job/136219500877"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Public replay admission controls",
+                    "SUCCESS",
+                    "44706780655/job/136193963492"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "replay-stack / check",
+                    "SUCCESS",
+                    "44706780655/job/136216258220"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "SUCCESS",
+                    "44706780655/job/136188250504"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44706780852/job/136188252764"],
+                ["Public LAN smoke", "Require public LAN pass", "SUCCESS", "44706780852/job/136201673350"],
+                ["Public LAN smoke", "Select public LAN smoke", "SUCCESS", "44706780852/job/136188251104"],
+                [
+                    "Public LAN smoke",
+                    "Two-player lobby to game / Run selected tests",
+                    "SUCCESS",
+                    "44706780852/job/136191126230"
+                ],
+                ["Server Rust checks", "server", "SKIPPED", "44706780713/job/136194859665"],
+                ["Server Rust checks", "stack / check", "SUCCESS", "44706780713/job/136188250890"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "SUCCESS",
+                    "44706780610/job/136188249804"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (ubuntu-24.04)",
+                    "SUCCESS",
+                    "44706780704/job/136193869718"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (windows-2022)",
+                    "SUCCESS",
+                    "44706780704/job/136193869693"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer Release source compile (no game assets)",
+                    "SKIPPED",
+                    "44706780704/job/136193871977"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (Windows x86)",
+                    "SUCCESS",
+                    "44706780704/job/136193869657"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (no game assets)",
+                    "SUCCESS",
+                    "44706780704/job/136193869676"
+                ],
+                ["XL compatibility contracts", "stack / check", "SUCCESS", "44706780704/job/136188250690"],
+                ["scripts and ci tests", "Automation catalogs", "SUCCESS", "44706780760/job/136188250933"],
+                ["scripts and ci tests", "Workflow syntax", "SUCCESS", "44706780760/job/136188251576"],
+                [
+                    "scripts and ci tests",
+                    "scripts and ci tests (${{ matrix.os }})",
+                    "SKIPPED",
+                    "44706780760/job/136198679311"
+                ],
+                ["scripts and ci tests", "stack / check", "SUCCESS", "44706780760/job/136188251350"]
+            ],
+            "private": [
+                {
+                    "run": 44707691429,
+                    "controller": "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+                    "state": "success",
+                    "attempts": [
+                        {
+                            "attempt": 1,
+                            "jobs": [
+                                ["Verify owned PR and pin exact head", "success", 136191276497],
+                                ["Build ordinary D2 readiness engine without private inputs", "success", 136213366796],
+                                ["Prepare signed Ubuntu runtime packages without game assets", "success", 136213366848],
+                                ["Original XL asset load and navigation / stack / check", "success", 136213367394],
+                                [
+                                    "Original XL asset load and navigation / Inspect retained online receipt",
+                                    "skipped",
+                                    136213369375
+                                ],
+                                ["Original XL asset load and navigation / Select tests", "success", 136213788138],
+                                [
+                                    "Original XL asset load and navigation / execution-stack / check",
+                                    "success",
+                                    136219298483
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Verify pinned Pumo staging",
+                                    "skipped",
+                                    136219300458
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Nightly XL developer Release compile",
+                                    "skipped",
+                                    136219301156
+                                ],
+                                ["Original XL asset load and navigation / Linux tests", "success", 136219445596],
+                                [
+                                    "Original XL asset load and navigation / matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests'",
+                                    "skipped",
+                                    136219447470
+                                ],
+                                ["Measure D2X readiness on fixed uploaded sample", "success", 136224381894],
+                                ["Measure expanded 64-case D2X readiness", "success", 136224381939],
+                                ["Measure all pinned D2X levels on request", "skipped", 136224383752],
+                                ["Start the ordinary engine with survey runtime packages", "skipped", 136224384241],
+                                ["D2X readiness percentage (sampled load/tick)", "success", 136227062558],
+                                ["Expanded D2X measurement and distinct compatibility status", "success", 136228334686],
+                                ["Original XL asset load and navigation / Check results", "success", 136230016207],
+                                ["Publish exact-head XL asset result", "success", 136230394536],
+                                [
+                                    "Original XL asset load and navigation / Save nightly progress (scheduled/manual only)",
+                                    "skipped",
+                                    136230395682
+                                ]
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "public_runs": [
+                44706780610, 44706780655, 44706780658, 44706780704, 44706780713, 44706780760, 44706780852, 44706780948,
+                44707691429
+            ]
+        },
+        {
+            "pr": 666,
+            "head": "bf0efd8aa77de3c0863c32d546db50d792d9b48e",
+            "merge": "4881862dc74a26bb36f5f3f4c4ebc83ca0b3e038",
+            "base_sha": "0b315b048163b3498c3eb07049166c194c01fc99",
+            "branch": "xl_morph_slot_state_20261120",
+            "immediate_base": "xl_sphere_gold_fixture_20261120",
+            "state": "OPEN",
+            "public": [
+                ["", "D2X readiness (expanded 64 load/tick)", "SUCCESS", "44716662777"],
+                ["", "D2X readiness (sampled load/tick)", "SUCCESS", "44716662777"],
+                ["", "XL asset smoke (private assets)", "SUCCESS", "44716662777"],
+                ["Engine smoke", "CI policy and runner checks", "SUCCESS", "44715822557/job/136218980098"],
+                ["Engine smoke", "Linux d1 build and tests", "SUCCESS", "44715822557/job/136221691039"],
+                ["Engine smoke", "Linux d2 build and tests", "SUCCESS", "44715822557/job/136221691017"],
+                ["Engine smoke", "Linux public ASan runtime", "SUCCESS", "44715822557/job/136221690892"],
+                ["Engine smoke", "stack / check", "SUCCESS", "44715822557/job/136218980640"],
+                [
+                    "Extended test suite",
+                    "Android tests / Run selected tests",
+                    "SUCCESS",
+                    "44715822534/job/136228598387"
+                ],
+                ["Extended test suite", "Check results", "FAILURE", "44715822534/job/136241473340"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44715822534/job/136227983317"],
+                ["Extended test suite", "JVM tests / Run selected tests", "SUCCESS", "44715822534/job/136228598397"],
+                ["Extended test suite", "Linux tests", "FAILURE", "44715822534/job/136228598073"],
+                [
+                    "Extended test suite",
+                    "Nightly XL developer Release compile",
+                    "SKIPPED",
+                    "44715822534/job/136228372469"
+                ],
+                [
+                    "Extended test suite",
+                    "Save nightly progress (scheduled/manual only)",
+                    "SKIPPED",
+                    "44715822534/job/136241638890"
+                ],
+                ["Extended test suite", "Select tests", "SUCCESS", "44715822534/job/136228062035"],
+                ["Extended test suite", "Verify pinned Pumo staging", "SKIPPED", "44715822534/job/136228373409"],
+                ["Extended test suite", "execution-stack / check", "SUCCESS", "44715822534/job/136228369034"],
+                ["Extended test suite", "stack / check", "SUCCESS", "44715822534/job/136227980828"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public build and save integrity",
+                    "SUCCESS",
+                    "44715822342/job/136221281024"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public headed replay parity",
+                    "IN_PROGRESS",
+                    "44715822342/job/136235785796"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public native save and replay integrity",
+                    "IN_PROGRESS",
+                    "44715822342/job/136235785704"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Public replay admission controls",
+                    "SUCCESS",
+                    "44715822342/job/136221281072"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "replay-stack / check",
+                    "SUCCESS",
+                    "44715822342/job/136235727033"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "SUCCESS",
+                    "44715822342/job/136218838873"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44715822379/job/136221668428"],
+                ["Public LAN smoke", "Require public LAN pass", "SUCCESS", "44715822379/job/136234283513"],
+                ["Public LAN smoke", "Select public LAN smoke", "SUCCESS", "44715822379/job/136221666382"],
+                [
+                    "Public LAN smoke",
+                    "Two-player lobby to game / Run selected tests",
+                    "SUCCESS",
+                    "44715822379/job/136222010471"
+                ],
+                ["Server Rust checks", "server", "SUCCESS", "44715822525/job/136219385275"],
+                ["Server Rust checks", "stack / check", "SUCCESS", "44715822525/job/136218833018"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "SUCCESS",
+                    "44715822448/job/136218832557"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (ubuntu-24.04)",
+                    "SUCCESS",
+                    "44715822363/job/136221529616"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (windows-2022)",
+                    "SUCCESS",
+                    "44715822363/job/136221529545"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer Release source compile (no game assets)",
+                    "SKIPPED",
+                    "44715822363/job/136221532104"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (Windows x86)",
+                    "SUCCESS",
+                    "44715822363/job/136221529613"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (no game assets)",
+                    "SUCCESS",
+                    "44715822363/job/136221529448"
+                ],
+                ["XL compatibility contracts", "stack / check", "SUCCESS", "44715822363/job/136218899930"],
+                ["scripts and ci tests", "Automation catalogs", "SUCCESS", "44715822356/job/136218834158"],
+                ["scripts and ci tests", "Workflow syntax", "SUCCESS", "44715822356/job/136218834672"],
+                [
+                    "scripts and ci tests",
+                    "scripts and ci tests (${{ matrix.os }})",
+                    "SKIPPED",
+                    "44715822356/job/136220490740"
+                ],
+                ["scripts and ci tests", "stack / check", "SUCCESS", "44715822356/job/136218834591"]
+            ],
+            "private": [
+                {
+                    "run": 44716662777,
+                    "controller": "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+                    "state": "success",
+                    "attempts": [
+                        {
+                            "attempt": 1,
+                            "jobs": [
+                                ["Verify owned PR and pin exact head", "success", 136222282417],
+                                ["Build ordinary D2 readiness engine without private inputs", "success", 136225915992],
+                                ["Prepare signed Ubuntu runtime packages without game assets", "success", 136225916026],
+                                ["Original XL asset load and navigation / stack / check", "success", 136225916869],
+                                [
+                                    "Original XL asset load and navigation / Inspect retained online receipt",
+                                    "skipped",
+                                    136225918724
+                                ],
+                                ["Original XL asset load and navigation / Select tests", "success", 136226356170],
+                                [
+                                    "Original XL asset load and navigation / execution-stack / check",
+                                    "success",
+                                    136226930224
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Nightly XL developer Release compile",
+                                    "skipped",
+                                    136226931532
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Verify pinned Pumo staging",
+                                    "skipped",
+                                    136226932338
+                                ],
+                                ["Original XL asset load and navigation / Linux tests", "success", 136227246767],
+                                [
+                                    "Original XL asset load and navigation / matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests'",
+                                    "skipped",
+                                    136227248732
+                                ],
+                                ["Measure expanded 64-case D2X readiness", "success", 136229134404],
+                                ["Measure D2X readiness on fixed uploaded sample", "success", 136229134491],
+                                ["Measure all pinned D2X levels on request", "skipped", 136229136310],
+                                ["Start the ordinary engine with survey runtime packages", "skipped", 136229136579],
+                                ["D2X readiness percentage (sampled load/tick)", "success", 136230811981],
+                                ["Expanded D2X measurement and distinct compatibility status", "success", 136232228666],
+                                ["Original XL asset load and navigation / Check results", "success", 136235346349],
+                                ["Publish exact-head XL asset result", "success", 136235468031],
+                                [
+                                    "Original XL asset load and navigation / Save nightly progress (scheduled/manual only)",
+                                    "skipped",
+                                    136235469355
+                                ]
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "public_runs": [
+                44715822342, 44715822356, 44715822363, 44715822379, 44715822448, 44715822525, 44715822534, 44715822557,
+                44716662777
+            ]
+        },
+        {
+            "pr": 667,
+            "head": "f508ae9108b5afb88d4fffa34c768ea8cb444cc5",
+            "merge": "a3c5cf7e36950a371965a8f4401276e3ce3edcd0",
+            "base_sha": "bf0efd8aa77de3c0863c32d546db50d792d9b48e",
+            "branch": "xl_campaign_clock_phase_20261120",
+            "immediate_base": "xl_morph_slot_state_20261120",
+            "state": "OPEN",
+            "public": [
+                ["", "D2X readiness (expanded 64 load/tick)", "SUCCESS", "44719260923"],
+                ["", "D2X readiness (sampled load/tick)", "SUCCESS", "44719260923"],
+                ["", "XL asset smoke (private assets)", "SUCCESS", "44719260923"],
+                ["Engine smoke", "CI policy and runner checks", "SUCCESS", "44719152075/job/136230099484"],
+                ["Engine smoke", "Linux d1 build and tests", "SUCCESS", "44719152075/job/136230627852"],
+                ["Engine smoke", "Linux d2 build and tests", "SUCCESS", "44719152075/job/136230627841"],
+                ["Engine smoke", "Linux public ASan runtime", "SUCCESS", "44719152075/job/136230627851"],
+                ["Engine smoke", "stack / check", "SUCCESS", "44719152075/job/136230099872"],
+                [
+                    "Extended test suite",
+                    "Android tests / Run selected tests",
+                    "SUCCESS",
+                    "44719152127/job/136232752023"
+                ],
+                ["Extended test suite", "Check results", "SUCCESS", "44719152127/job/136242266258"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44719152127/job/136230107036"],
+                ["Extended test suite", "JVM tests / Run selected tests", "SUCCESS", "44719152127/job/136232752119"],
+                ["Extended test suite", "Linux tests", "SUCCESS", "44719152127/job/136232751537"],
+                [
+                    "Extended test suite",
+                    "Nightly XL developer Release compile",
+                    "SKIPPED",
+                    "44719152127/job/136232382718"
+                ],
+                [
+                    "Extended test suite",
+                    "Save nightly progress (scheduled/manual only)",
+                    "SKIPPED",
+                    "44719152127/job/136242417205"
+                ],
+                ["Extended test suite", "Select tests", "SUCCESS", "44719152127/job/136230934329"],
+                ["Extended test suite", "Verify pinned Pumo staging", "SKIPPED", "44719152127/job/136232383285"],
+                ["Extended test suite", "execution-stack / check", "SUCCESS", "44719152127/job/136232381575"],
+                ["Extended test suite", "stack / check", "SUCCESS", "44719152127/job/136230104337"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public build and save integrity",
+                    "SUCCESS",
+                    "44719152318/job/136230684733"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public headed replay parity",
+                    "IN_PROGRESS",
+                    "44719152318/job/136242568352"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public native save and replay integrity",
+                    "IN_PROGRESS",
+                    "44719152318/job/136242568361"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Public replay admission controls",
+                    "SUCCESS",
+                    "44719152318/job/136230684726"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "replay-stack / check",
+                    "SUCCESS",
+                    "44719152318/job/136242514577"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "SUCCESS",
+                    "44719152318/job/136230100564"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44719152157/job/136230102324"],
+                ["Public LAN smoke", "Require public LAN pass", "SUCCESS", "44719152157/job/136238623297"],
+                ["Public LAN smoke", "Select public LAN smoke", "SUCCESS", "44719152157/job/136230100254"],
+                [
+                    "Public LAN smoke",
+                    "Two-player lobby to game / Run selected tests",
+                    "SUCCESS",
+                    "44719152157/job/136230628302"
+                ],
+                ["Server Rust checks", "server", "SKIPPED", "44719152086/job/136230512175"],
+                ["Server Rust checks", "stack / check", "SUCCESS", "44719152086/job/136230099798"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "SUCCESS",
+                    "44719152104/job/136230099670"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (ubuntu-24.04)",
+                    "SUCCESS",
+                    "44719152351/job/136230810702"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (windows-2022)",
+                    "SUCCESS",
+                    "44719152351/job/136230810720"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer Release source compile (no game assets)",
+                    "SKIPPED",
+                    "44719152351/job/136230812654"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (Windows x86)",
+                    "SUCCESS",
+                    "44719152351/job/136230810768"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (no game assets)",
+                    "SUCCESS",
+                    "44719152351/job/136230811112"
+                ],
+                ["XL compatibility contracts", "stack / check", "SUCCESS", "44719152351/job/136230101066"],
+                ["scripts and ci tests", "Automation catalogs", "SUCCESS", "44719152177/job/136230100716"],
+                ["scripts and ci tests", "Workflow syntax", "SUCCESS", "44719152177/job/136230100490"],
+                [
+                    "scripts and ci tests",
+                    "scripts and ci tests (${{ matrix.os }})",
+                    "SKIPPED",
+                    "44719152177/job/136230771393"
+                ],
+                ["scripts and ci tests", "stack / check", "SUCCESS", "44719152177/job/136230100973"]
+            ],
+            "private": [
+                {
+                    "run": 44719260923,
+                    "controller": "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+                    "state": "success",
+                    "attempts": [
+                        {
+                            "attempt": 1,
+                            "jobs": [
+                                ["Verify owned PR and pin exact head", "success", 136230475530],
+                                ["Prepare signed Ubuntu runtime packages without game assets", "success", 136231045067],
+                                ["Build ordinary D2 readiness engine without private inputs", "success", 136231045255],
+                                ["Original XL asset load and navigation / stack / check", "success", 136231045789],
+                                [
+                                    "Original XL asset load and navigation / Inspect retained online receipt",
+                                    "skipped",
+                                    136231047179
+                                ],
+                                ["Original XL asset load and navigation / Select tests", "success", 136232456796],
+                                [
+                                    "Original XL asset load and navigation / execution-stack / check",
+                                    "success",
+                                    136232959485
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Verify pinned Pumo staging",
+                                    "skipped",
+                                    136232961832
+                                ],
+                                [
+                                    "Original XL asset load and navigation / Nightly XL developer Release compile",
+                                    "skipped",
+                                    136232962693
+                                ],
+                                ["Original XL asset load and navigation / Linux tests", "success", 136233068175],
+                                [
+                                    "Original XL asset load and navigation / matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Multi-device tests' || 'Android tests'",
+                                    "skipped",
+                                    136233071091
+                                ],
+                                ["Measure expanded 64-case D2X readiness", "success", 136234161135],
+                                ["Measure D2X readiness on fixed uploaded sample", "success", 136234161140],
+                                ["Start the ordinary engine with survey runtime packages", "skipped", 136234162854],
+                                ["Measure all pinned D2X levels on request", "skipped", 136234163597],
+                                ["D2X readiness percentage (sampled load/tick)", "success", 136235104509],
+                                ["Expanded D2X measurement and distinct compatibility status", "success", 136235956985],
+                                ["Original XL asset load and navigation / Check results", "success", 136241295382],
+                                ["Publish exact-head XL asset result", "success", 136241426957],
+                                [
+                                    "Original XL asset load and navigation / Save nightly progress (scheduled/manual only)",
+                                    "skipped",
+                                    136241427708
+                                ]
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "public_runs": [
+                44719152075, 44719152086, 44719152104, 44719152127, 44719152157, 44719152177, 44719152318, 44719152351,
+                44719260923
+            ]
+        },
+        {
+            "pr": 668,
+            "head": "10870fc793da94348b41897cc9ac2fc7ca2c9228",
+            "merge": "abbbbe36e9461ca397ec13c5ad49bfcf3abe1608",
+            "base_sha": "f508ae9108b5afb88d4fffa34c768ea8cb444cc5",
+            "branch": "xl_sphere_gold_loadout_20261120",
+            "immediate_base": "xl_campaign_clock_phase_20261120",
+            "state": "OPEN",
+            "public": [
+                ["", "XL asset smoke (private assets)", "PENDING", "44723452661"],
+                ["Engine smoke", "CI policy and runner checks", "SUCCESS", "44723422523/job/136244697060"],
+                ["Engine smoke", "Linux d1 build and tests", "IN_PROGRESS", "44723422523/job/136244787064"],
+                ["Engine smoke", "Linux d2 build and tests", "IN_PROGRESS", "44723422523/job/136244786912"],
+                ["Engine smoke", "Linux public ASan runtime", "IN_PROGRESS", "44723422523/job/136244786829"],
+                ["Engine smoke", "stack / check", "SUCCESS", "44723422523/job/136244697308"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44723422454/job/136244700542"],
+                [
+                    "Extended test suite",
+                    "Nightly XL developer Release compile",
+                    "SKIPPED",
+                    "44723422454/job/136244973840"
+                ],
+                ["Extended test suite", "Select tests", "SUCCESS", "44723422454/job/136244765226"],
+                ["Extended test suite", "Verify pinned Pumo staging", "SKIPPED", "44723422454/job/136244974439"],
+                ["Extended test suite", "execution-stack / check", "IN_PROGRESS", "44723422454/job/136244971925"],
+                ["Extended test suite", "stack / check", "SUCCESS", "44723422454/job/136244698691"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Linux public build and save integrity",
+                    "IN_PROGRESS",
+                    "44723422451/job/136244781005"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "Public replay admission controls",
+                    "IN_PROGRESS",
+                    "44723422451/job/136244781094"
+                ],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "SUCCESS",
+                    "44723422451/job/136244696823"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44723422853/job/136244701167"],
+                ["Public LAN smoke", "Select public LAN smoke", "SUCCESS", "44723422853/job/136244698926"],
+                [
+                    "Public LAN smoke",
+                    "Two-player lobby to game / Run selected tests",
+                    "IN_PROGRESS",
+                    "44723422853/job/136245037158"
+                ],
+                ["Server Rust checks", "server", "IN_PROGRESS", "44723422485/job/136244790242"],
+                ["Server Rust checks", "stack / check", "SUCCESS", "44723422485/job/136244696888"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "SUCCESS",
+                    "44723422831/job/136244697764"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (ubuntu-24.04)",
+                    "IN_PROGRESS",
+                    "44723422669/job/136244818145"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "Asset-free XL checks (windows-2022)",
+                    "IN_PROGRESS",
+                    "44723422669/job/136244818074"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer Release source compile (no game assets)",
+                    "SKIPPED",
+                    "44723422669/job/136244820213"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (Windows x86)",
+                    "IN_PROGRESS",
+                    "44723422669/job/136244818113"
+                ],
+                [
+                    "XL compatibility contracts",
+                    "XL developer source compile (no game assets)",
+                    "IN_PROGRESS",
+                    "44723422669/job/136244818137"
+                ],
+                ["XL compatibility contracts", "stack / check", "SUCCESS", "44723422669/job/136244698093"],
+                ["scripts and ci tests", "Automation catalogs", "SUCCESS", "44723422716/job/136244698243"],
+                ["scripts and ci tests", "Workflow syntax", "SUCCESS", "44723422716/job/136244698296"],
+                [
+                    "scripts and ci tests",
+                    "scripts and ci tests (${{ matrix.os }})",
+                    "SKIPPED",
+                    "44723422716/job/136244780174"
+                ],
+                ["scripts and ci tests", "stack / check", "SUCCESS", "44723422716/job/136244698326"]
+            ],
+            "private": [
+                {
+                    "run": 44723452661,
+                    "controller": "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+                    "state": "queued",
+                    "attempts": [
+                        {
+                            "attempt": 1,
+                            "jobs": [
+                                ["Verify owned PR and pin exact head", "success", 136244803797],
+                                ["Prepare signed Ubuntu runtime packages without game assets", "success", 136244952791],
+                                [
+                                    "Build ordinary D2 readiness engine without private inputs",
+                                    "in_progress",
+                                    136244952802
+                                ],
+                                ["Original XL asset load and navigation / stack / check", "success", 136244953411],
+                                [
+                                    "Original XL asset load and navigation / Inspect retained online receipt",
+                                    "skipped",
+                                    136244955670
+                                ],
+                                ["Original XL asset load and navigation / Select tests", "in_progress", 136245107252]
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "public_runs": [
+                44723422451, 44723422454, 44723422485, 44723422523, 44723422669, 44723422716, 44723422831, 44723422853,
+                44723452661
+            ]
+        }
+    ],
+    "checkpoint_parent": "10870fc793da94348b41897cc9ac2fc7ca2c9228",
+    "cohorts": {
+        "frozen_eight": {
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "target_sha": "76c3543e27743bd0168f7cab7c8f477737e435c1",
+            "selection_seed": "d2x-readiness-cohort-v1",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "load_failed": 4,
+                    "loaded_ticked": 4
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 4,
+                "readiness_percent": 50.0
+            },
+            "receipt": "ad669497f37cdfce4ad2e753d1d2d69df24ed250a816ba8e05e81d5bbb32fe96",
+            "cases": [
+                ["BoilingPoint-XL.zip/missions/boilpnt.mn2:7", "load_failed", 0],
+                ["diehard.7z/missions/single/diehard.mn2:17", "loaded_ticked", 120],
+                ["dinter-1.5.7z/missions/single/dinter.mn2:1", "load_failed", 0],
+                ["ironstar.7z/missions/geld/ironstar.msn:6", "loaded_ticked", 120],
+                ["orionneb.7z/orionneb.msn:4", "loaded_ticked", 120],
+                ["phobos-e.7z/missions/single/phobos-e.mn2:4", "loaded_ticked", 120],
+                ["sphere-1.6.zip/missions/single/sphere.mn2:2", "load_failed", 0],
+                ["wshock20.7z/missions/single/wshock20.mn2:6", "load_failed", 0]
+            ]
+        },
+        "auth_eight": {
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "target_sha": "76c3543e27743bd0168f7cab7c8f477737e435c1",
+            "selection_seed": "d2x-readiness-cohort-v1",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 8
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 8,
+                "readiness_percent": 100.0
+            },
+            "resources": {
+                "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+                "files": [
+                    {
+                        "path": "d2x.hog",
+                        "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                        "size": 4371791,
+                        "source": "descent_2_vertigo/d2x.hog"
+                    },
+                    {
+                        "path": "d2x-xl.hog",
+                        "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                        "size": 3815963,
+                        "source": "xl-resources/d2x-xl.hog"
+                    }
+                ],
+                "profile": "authentic-vertigo-xl-v1",
+                "repository": "larsonm-personal/dxx-redux-test-assets"
+            },
+            "receipt": "04286ec0523f62966047be13619addd0753782409e4f0c1e16b51f601004437e",
+            "cases": [
+                ["BoilingPoint-XL.zip/missions/boilpnt.mn2:7", "loaded_ticked", 120],
+                ["diehard.7z/missions/single/diehard.mn2:17", "loaded_ticked", 120],
+                ["dinter-1.5.7z/missions/single/dinter.mn2:1", "loaded_ticked", 120],
+                ["ironstar.7z/missions/geld/ironstar.msn:6", "loaded_ticked", 120],
+                ["orionneb.7z/orionneb.msn:4", "loaded_ticked", 120],
+                ["phobos-e.7z/missions/single/phobos-e.mn2:4", "loaded_ticked", 120],
+                ["sphere-1.6.zip/missions/single/sphere.mn2:2", "loaded_ticked", 120],
+                ["wshock20.7z/missions/single/wshock20.mn2:6", "loaded_ticked", 120]
+            ]
+        },
+        "auth_64": {
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "target_sha": "76c3543e27743bd0168f7cab7c8f477737e435c1",
+            "selection_seed": "d2x-readiness-expanded-v1",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 64
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 64,
+                "passed": 64,
+                "readiness_percent": 100.0
+            },
+            "resources": {
+                "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+                "files": [
+                    {
+                        "path": "d2x.hog",
+                        "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                        "size": 4371791,
+                        "source": "descent_2_vertigo/d2x.hog"
+                    },
+                    {
+                        "path": "d2x-xl.hog",
+                        "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                        "size": 3815963,
+                        "source": "xl-resources/d2x-xl.hog"
+                    }
+                ],
+                "profile": "authentic-vertigo-xl-v1",
+                "repository": "larsonm-personal/dxx-redux-test-assets"
+            },
+            "cohort_sha256": "3cae87cc870ba5594c7da1f55db2619e565645c91e8de5c1b86a8d2e4dfb1e05",
+            "elapsed_seconds": 284.515,
+            "receipt": "45a8854ff77ed3f5313f4c7d50a5bdc44cbdb92bfc31ad9ef617cc9bc2d8b585",
+            "cases": [
+                ["BoilingPoint-XL.zip/missions/boilpnt.mn2:7", "loaded_ticked", 120],
+                ["diehard.7z/missions/single/diehard.mn2:17", "loaded_ticked", 120],
+                ["dinter-1.5.7z/missions/single/dinter.mn2:1", "loaded_ticked", 120],
+                ["ironstar.7z/missions/geld/ironstar.msn:6", "loaded_ticked", 120],
+                ["orionneb.7z/orionneb.msn:4", "loaded_ticked", 120],
+                ["phobos-e.7z/missions/single/phobos-e.mn2:4", "loaded_ticked", 120],
+                ["sphere-1.6.zip/missions/single/sphere.mn2:2", "loaded_ticked", 120],
+                ["wshock20.7z/missions/single/wshock20.mn2:6", "loaded_ticked", 120],
+                ["BoilingPoint-XL.zip/missions/boilpnt.mn2:1", "loaded_ticked", 120],
+                ["BoilingPoint-XL.zip/missions/boilpnt.mn2:2", "loaded_ticked", 120],
+                ["BoilingPoint-XL.zip/missions/boilpnt.mn2:3", "loaded_ticked", 120],
+                ["BoilingPoint-XL.zip/missions/boilpnt.mn2:4", "loaded_ticked", 120],
+                ["BoilingPoint-XL.zip/missions/boilpnt.mn2:5", "loaded_ticked", 120],
+                ["BoilingPoint-XL.zip/missions/boilpnt.mn2:6", "loaded_ticked", 120],
+                ["sphere-1.6.zip/missions/single/sphere.mn2:1", "loaded_ticked", 120],
+                ["sphere-1.6.zip/missions/single/sphere.mn2:3", "loaded_ticked", 120],
+                ["sphere-1.6.zip/missions/single/sphere.mn2:4", "loaded_ticked", 120],
+                ["sphere-1.6.zip/missions/single/sphere.mn2:5", "loaded_ticked", 120],
+                ["wshock20.7z/missions/single/wshock20.mn2:1", "loaded_ticked", 120],
+                ["wshock20.7z/missions/single/wshock20.mn2:2", "loaded_ticked", 120],
+                ["wshock20.7z/missions/single/wshock20.mn2:3", "loaded_ticked", 120],
+                ["wshock20.7z/missions/single/wshock20.mn2:4", "loaded_ticked", 120],
+                ["wshock20.7z/missions/single/wshock20.mn2:5", "loaded_ticked", 120],
+                ["wshock20.7z/missions/single/wshock20.mn2:-1", "loaded_ticked", 120],
+                ["D1-levelpack.7z/arakian.msn:1", "loaded_ticked", 120],
+                ["bahagad.7z/missions/single/bahagad.mn2:6", "loaded_ticked", 120],
+                ["eaf.7z/missions/single/eaf.mn2:3", "loaded_ticked", 120],
+                ["eaf2.7z/missions/single/eaf2.mn2:2", "loaded_ticked", 120],
+                ["entropy.7z/entropy.mn2:1", "loaded_ticked", 120],
+                ["harqyjia.7z/harqyjia.MN2:2", "loaded_ticked", 120],
+                ["ironblade.7z/missions/geld/ironblad.msn:-1", "loaded_ticked", 120],
+                ["levelpack.7z/missions/single/lostlvls.mn2:11", "loaded_ticked", 120],
+                ["maximum.7z/missions/single/maximum.mn2:18", "loaded_ticked", 120],
+                ["norep.7z/missions/single/norep.mn2:1", "loaded_ticked", 120],
+                ["po2.7z/missions/single/pluton2.mn2:-1", "loaded_ticked", 120],
+                ["revodrav.7z/missions/single/revodrav.msn:14", "loaded_ticked", 120],
+                ["saturn.7z/SATURN_E.MN2:1", "loaded_ticked", 120],
+                ["tt.7z/TT.MN2:1", "loaded_ticked", 120],
+                ["vignettes.7z/missions/single/vignette.msn:20", "loaded_ticked", 120],
+                ["levelpack.7z/missions/pumo/tu.mn2:-2", "loaded_ticked", 120],
+                ["levelpack.7z/missions/single/ewithin.mn2:-4", "loaded_ticked", 120],
+                ["revodrav.7z/missions/single/revodrav.msn:-3", "loaded_ticked", 120],
+                ["levelpack.7z/missions/single/pluton2.mn2:-1", "loaded_ticked", 120],
+                ["revodrav.7z/missions/single/revodrav.msn:-5", "loaded_ticked", 120],
+                ["levelpack.7z/missions/single/sphere.mn2:-1", "loaded_ticked", 120],
+                ["levelpack.7z/missions/pumo/tu.mn2:-1", "loaded_ticked", 120],
+                ["levelpack.7z/missions/kruel/kkr.mn2:-1", "loaded_ticked", 120],
+                ["levelpack.7z/missions/single/d1/vignette.msn:-2", "loaded_ticked", 120],
+                ["levelpack.7z/missions/single/wshock20.mn2:-1", "loaded_ticked", 120],
+                ["phobos-e.7z/missions/single/phobos-e.mn2:-2", "loaded_ticked", 120],
+                ["levelpack.7z/missions/single/maximum.mn2:-4", "loaded_ticked", 120],
+                ["po2.7z/missions/single/pluton2.mn2:1", "loaded_ticked", 120],
+                ["bahagad.7z/missions/single/bahaeasy.mn2:1", "loaded_ticked", 120],
+                ["maximum.7z/missions/single/maxlink.mn2:1", "loaded_ticked", 120],
+                ["saturn.7z/SATURN_E.MN2:4", "loaded_ticked", 120],
+                ["harqyjia.7z/harqyjia.MN2:4", "loaded_ticked", 120],
+                ["revodrav.7z/missions/single/revodrav.msn:20", "loaded_ticked", 120],
+                ["diehard.7z/missions/single/diehard.mn2:4", "loaded_ticked", 120],
+                ["levelpack.7z/missions/single/alioth.mn2:1", "loaded_ticked", 120],
+                ["levelpack.7z/missions/kruel/complexo.mn2:1", "loaded_ticked", 120],
+                ["levelpack.7z/missions/cp5670/lsrbase3.mn2:1", "loaded_ticked", 120],
+                ["levelpack.7z/missions/single/ewithin.mn2:4", "loaded_ticked", 120],
+                ["levelpack.7z/missions/single/ewithin.mn2:-2", "loaded_ticked", 120],
+                ["ironblade.7z/missions/geld/ironblad.msn:2", "loaded_ticked", 120]
+            ]
+        },
+        "linux_auth_eight": {
+            "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+            "target_sha": "76c3543e27743bd0168f7cab7c8f477737e435c1",
+            "selection_seed": "d2x-readiness-cohort-v1",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 8
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 8,
+                "readiness_percent": 100.0
+            },
+            "resources": {
+                "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+                "files": [
+                    {
+                        "path": "d2x.hog",
+                        "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                        "size": 4371791,
+                        "source": "descent_2_vertigo/d2x.hog"
+                    },
+                    {
+                        "path": "d2x-xl.hog",
+                        "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                        "size": 3815963,
+                        "source": "xl-resources/d2x-xl.hog"
+                    }
+                ],
+                "profile": "authentic-vertigo-xl-v1",
+                "repository": "larsonm-personal/dxx-redux-test-assets"
+            },
+            "receipt": "8996126abeac5956683700574671995bdc3202cb714eecfc72ec2b8d1d86cf5c",
+            "cases": [
+                ["BoilingPoint-XL.zip/missions/boilpnt.mn2:7", "loaded_ticked", 120],
+                ["diehard.7z/missions/single/diehard.mn2:17", "loaded_ticked", 120],
+                ["dinter-1.5.7z/missions/single/dinter.mn2:1", "loaded_ticked", 120],
+                ["ironstar.7z/missions/geld/ironstar.msn:6", "loaded_ticked", 120],
+                ["orionneb.7z/orionneb.msn:4", "loaded_ticked", 120],
+                ["phobos-e.7z/missions/single/phobos-e.mn2:4", "loaded_ticked", 120],
+                ["sphere-1.6.zip/missions/single/sphere.mn2:2", "loaded_ticked", 120],
+                ["wshock20.7z/missions/single/wshock20.mn2:6", "loaded_ticked", 120]
+            ]
+        }
+    },
+    "frozen_private_engine_logs": {
+        "0": "4d9a16ea43e025fb0d3e258af37904fb24ed590c7dd77aacf32dbab989fb2cc7",
+        "2": "152f75bb3d6a95f99d3185518c9931ad15b1ac861187ddf2b6ed2051f52bba1d",
+        "6": "87754c76ff08cccdc003e89ef1b2b8463fd84e8aca5f7b104d5999f8c68636cb",
+        "7": "162a45e12272e2ae1e965502ef928b57850cc379814040c2925b0a64abdfffc8"
+    },
+    "sphere_red_key": {
+        "ancestor": "continuation-stores-to-gold-collect-04",
+        "phases": [
+            {
+                "phase": "continuation-gold-door-00",
+                "source": "13616dcb90feddbaa2a2760e337fae83576083962baf0f99733133d411b9b7ce",
+                "native_save": "73666ad1247f6074a1fde31e2ae05cd04f6714f2c7a798b4f01e66914a88c001",
+                "plan": "dd7f6caa3cc96a3bc7e621353b4e62fd88c632134d3430d8fa7d78b28b266a81",
+                "result": "52394c0f300060d97894456282452527d4535832f6993643a407b3892bc2633f",
+                "trace": "c821209e99c3636c3fdd41cf879c731648c0399d513112452b53ec75279e43d3",
+                "state": "a2c8fc04ecafaa3413efdb805662f118116c3e084487db55a9f62bd08bae0f48",
+                "score": 24950,
+                "segment": 961,
+                "shields": 49.906646728515625
+            },
+            {
+                "phase": "continuation-gold-door-01",
+                "source": "73666ad1247f6074a1fde31e2ae05cd04f6714f2c7a798b4f01e66914a88c001",
+                "native_save": "f6956c822d13fb38243196fb4e6d221b7d6559a3f2b1ca3134bc2bbe98b474c0",
+                "plan": "8afbaf1c819fe6d8eed09a2d72cfdfe9b578ff17a2c1046469dae00ee942edec",
+                "result": "2b701272eeaf48d918f512a322d4bca342ce402b3398c86f5160a6e97d67f7e9",
+                "trace": "e9f141194ea87ccab4136435edf1edfa582d3a9dee395760fa76448368df5183",
+                "state": "8ad38a7c2d776c64f922e5652218034274bc785f4e68176863e6168dfad0865a",
+                "score": 25600,
+                "segment": 1118,
+                "shields": 45.69001770019531
+            },
+            {
+                "phase": "continuation-gold-door-02",
+                "source": "f6956c822d13fb38243196fb4e6d221b7d6559a3f2b1ca3134bc2bbe98b474c0",
+                "native_save": "13ec241c8493a299a20b90c6eae4e13a6e4d046e91fe9a93ecefa6bfc8ff6a9e",
+                "plan": "eb111fbbabd3181595ebb8bc5d8ea2d41bd43108cae59b17ac056ba77c747715",
+                "result": "90ce5300998db284621c947e36915e5d786e061dc1fafb98c69df7a4b05e7270",
+                "trace": "e4031a802bc0f51ea6711fcc9619472da3cc06f2c00aa304bc7c821deaad1cef",
+                "state": "0f34f81c0658579c22252be99d939da321976c28f493fc848b19496c17c41e92",
+                "score": 25600,
+                "segment": 1181,
+                "shields": 45.69001770019531
+            },
+            {
+                "phase": "continuation-gold-door-03",
+                "source": "13ec241c8493a299a20b90c6eae4e13a6e4d046e91fe9a93ecefa6bfc8ff6a9e",
+                "native_save": "e9b8ee488328f0243ac8f82bc89f010de7a4de13a173f9970831142303ac216c",
+                "plan": "a4cab663eec3ea945901e13d21a55b7cd8d72401d6728965c071d2c44083006d",
+                "result": "e7af9d9bb505a05b3d154f3516447fb1f5f72b772f530581db352e433ded1a72",
+                "trace": "8dedce066538cf3651e835fd94603ffb169851dde80b58eb2cb322ea9ec44171",
+                "state": "fe6439e658a1095ba89f9b3797ccc0b74f8ba2d536848b58d4c93edeb8f00d2f",
+                "score": 25600,
+                "segment": 1135,
+                "shields": 42.69001770019531
+            },
+            {
+                "phase": "continuation-gold-door-04",
+                "source": "e9b8ee488328f0243ac8f82bc89f010de7a4de13a173f9970831142303ac216c",
+                "native_save": "5cdb29043f95fd90ec19feccf2c6839dbdfc83c72f6a9dc83d5c0dc424c6b3d2",
+                "plan": "edcbfeef9507866762159f0fe0d2cbc88111f70d3cabf07e370c44bf2ab4dd8d",
+                "result": "476facc42d3a5b3afeaf7873e0f92e9ebcabe7ec3e94f1cfb8fd64132cca0260",
+                "trace": "324f486d57b353523dfccab8a3631a1859553c070aaf1813d47f27456e1df975",
+                "state": "4d4c9725df9928cbf5b790ef02e363ff4d2cd8de8fab1052bea0b54f3bec3cd4",
+                "score": 25600,
+                "segment": 3663,
+                "shields": 42.69001770019531
+            },
+            {
+                "phase": "continuation-gold-door-05",
+                "source": "5cdb29043f95fd90ec19feccf2c6839dbdfc83c72f6a9dc83d5c0dc424c6b3d2",
+                "native_save": "093eaaeed3a81bcfd0ccc93c32db7beadc2653086fc16af1999d7d10e2c7031a",
+                "plan": "734b9e1b31fcbdc7718497f3c03b978ec06a9986a0191780fe5f38ed70b5aa1e",
+                "result": "73eb327120144fd1033ee4298c6428140b5abf971538d19b1f1d7c43895991b7",
+                "trace": "9c78ceeb7200a3a06940c5effe787dd67dbc3bf94edd552d4f53ddf4b66abfcd",
+                "state": "2563bb8d7f73e97068b363a26172d87bb4588da404a419544245f516e6769b0c",
+                "score": 26050,
+                "segment": 3659,
+                "shields": 38.72010803222656
+            },
+            {
+                "phase": "continuation-gold-door-06",
+                "source": "093eaaeed3a81bcfd0ccc93c32db7beadc2653086fc16af1999d7d10e2c7031a",
+                "native_save": "ec990851ecfece2986b5ec0e0ecba4d082f53661568cc10cc128292ff32a02d2",
+                "plan": "a20afa49dd605267e77ecd8c9521cb03d16d3b23642d70b2f84fbf2b3e24c895",
+                "result": "e212a827aa7f061450f01a57846f842c3571714c9d67cac926304842698c0dfa",
+                "trace": "a1980f202b081142a5e4c80d1514a8c39940123a86717e86b6050289a08d8572",
+                "state": "d51dc031411871665d1c99f4d0e51ee32413b7625afb3ad101987f5d2150d6e1",
+                "score": 26500,
+                "segment": 2025,
+                "shields": 38.06663513183594
+            },
+            {
+                "phase": "continuation-door-flank-00",
+                "source": "ec990851ecfece2986b5ec0e0ecba4d082f53661568cc10cc128292ff32a02d2",
+                "native_save": "ff61dc07c3f1d4a3fe6484dbd3ccfda2d9db5240b3092568280e9bca4a811613",
+                "plan": "c5601d90e37fae69ae24f1e300aabbf3cb114f7e78489989647320fa1692f71a",
+                "result": "9c9759299bf52b7d22faf4921fe9626324b6330bd5867d63354fe42b185d9ef6",
+                "trace": "9bcba22b3391495f4991f44e2cc4f50278206be3478d861ee2ec9a5e3e62387e",
+                "state": "5d4778699816992c718bdfe93c8985fc5aafa3b234fc5bc550f5788246fe6849",
+                "score": 26500,
+                "segment": 2022,
+                "shields": 38.06663513183594
+            },
+            {
+                "phase": "continuation-door-flank-01",
+                "source": "ff61dc07c3f1d4a3fe6484dbd3ccfda2d9db5240b3092568280e9bca4a811613",
+                "native_save": "a205bc6d6dd1691e4f5e3fdfc941718dabe65a2ffd3be4d22254476dc8e249f7",
+                "plan": "be9307aa1ea5db22d4d61fc04238b6f3f394a9bdaa4ea4804786faa12a4eeb6c",
+                "result": "1ce5fb6694fcd94fe87969ca2185b6e4833cba4727abd4fd332389c8091d32ba",
+                "trace": "4ea7aa06c2ec2e618c5438ae7f120e56bbcf5c57eb6ccd7bd40990a983830254",
+                "state": "19504061ffa2bf2e67c7c66c51aea61b2e0cb0e47861db4da432fe7a12c92b11",
+                "score": 26500,
+                "segment": 2042,
+                "shields": 38.06663513183594
+            },
+            {
+                "phase": "continuation-door-flank-02",
+                "source": "a205bc6d6dd1691e4f5e3fdfc941718dabe65a2ffd3be4d22254476dc8e249f7",
+                "native_save": "b6e9e506732a0e546f79a3ea814f97d5d491d9c1d32fb396de49529c0314cfbd",
+                "plan": "43967d822c3376f06b228f9854cf9dab7321f813aaf21bf11427ab9aa397e0f4",
+                "result": "0241feca33c83435aa5fba7be8eb11c5ab60e5703bb773f8b6c71dbec666b5db",
+                "trace": "3da863b8c5ed442d358d606dd9bc874a6628dbf851d679590601c4391abf00eb",
+                "state": "478b8d0dc900e151589b36939d3e36b6e2901110d825ea32d33ef2734c3749f0",
+                "score": 27250,
+                "segment": 2039,
+                "shields": 38.06663513183594
+            },
+            {
+                "phase": "continuation-door-flank-03",
+                "source": "b6e9e506732a0e546f79a3ea814f97d5d491d9c1d32fb396de49529c0314cfbd",
+                "native_save": "2f5e029306c95fdfb72e30a88bd475a6c19b086192d8ca283c402a3d017d5a8a",
+                "plan": "0380383bb8ae444c31d13ef4e96a7f2022c9bc03b86d17b0e548a39d7eec8d78",
+                "result": "22d3d48745fba33824d6df13dea7c9074d43aca4957988d44a523ced31534743",
+                "trace": "426a78305c5baf2a48e08438388e21eb2d6bb434931d7cc40dfe19a226f5f19d",
+                "state": "e5f4e9832cd4a5c19e3938d6d85830fe3a7c684628990e552f4d1f57737bf767",
+                "score": 27250,
+                "segment": 2207,
+                "shields": 38.06663513183594
+            },
+            {
+                "phase": "continuation-earnt-door-cross-00",
+                "source": "2f5e029306c95fdfb72e30a88bd475a6c19b086192d8ca283c402a3d017d5a8a",
+                "native_save": "8063b01454f075886d4c4f5e883adae3a8bfc6fb5d3a1b742ee7f2442ec73e56",
+                "plan": "3405cceec03c481f78cd974bd16edf78acf1c0c342d1000e3646c07958766751",
+                "result": "cba643a09eac5b5c519cce13dcc6ae6fe49af7808e8adb3c3149f5e7f98e5a55",
+                "trace": "0d68c36107d6159c0a02a041a075377ac9351d8e152c9e2afc7aeae4ac65cb9e",
+                "state": "c6b79e9f4cc1b1df19b96b6b26d050faf734196173ac18f0a8a372c71f203024",
+                "score": 27250,
+                "segment": 2265,
+                "shields": 38.06663513183594
+            },
+            {
+                "phase": "continuation-red-approach-00",
+                "source": "8063b01454f075886d4c4f5e883adae3a8bfc6fb5d3a1b742ee7f2442ec73e56",
+                "native_save": "6f2dd65af2750d7630b330b923221a4d6ef24d211363887ea4a6fd6343a77f58",
+                "plan": "1756ea6db41e09adca9aed19ca372f4a88f053141af1ce292e05c05a7e96ba30",
+                "result": "89c13217fcc5224c2b7bb21290b3495fbf09724ee7165c5a45ea690de1fac55e",
+                "trace": "0d0317df98c5684011da1bca00df4f4805279add226739a0fe83b0c66fa62ceb",
+                "state": "600773f5289c182fd448cdb88bf25ea153d5d7d01451676f8b4288dfef425039",
+                "score": 27250,
+                "segment": 3377,
+                "shields": 38.06663513183594
+            },
+            {
+                "phase": "continuation-red-flank-00",
+                "source": "6f2dd65af2750d7630b330b923221a4d6ef24d211363887ea4a6fd6343a77f58",
+                "native_save": "eac13e29be9b8916f8b226d030799f67c08fadc20ab7efe66ed2b58ee46e1265",
+                "plan": "71b723b6bdf4c96dc9a00b38b999b30e4ee8df3870d811c81579cc38aaed4a19",
+                "result": "7d7c3d0702cd9b0f551fe5f33b53323957a55bfc53cea20c7cb8fe26edb3e2c4",
+                "trace": "6530cf673826dddb22e6bdd21a32470e87e794c2f84b1f4d4ff633a7f89cdb8f",
+                "state": "d40af5f2d9b5744cb540b81b6355462dee438ef4fb2bfc423037951895837ce7",
+                "score": 27250,
+                "segment": 3381,
+                "shields": 38.06663513183594
+            },
+            {
+                "phase": "continuation-red-flank-01",
+                "source": "eac13e29be9b8916f8b226d030799f67c08fadc20ab7efe66ed2b58ee46e1265",
+                "native_save": "87c846f49d23273ea17bdf2409e7de7e699e1d584dc3eaf41b7974e4271da6e1",
+                "plan": "f844711d0631d3b0f243def90d1e59d8298618ced8ddf21d17a467b11708a740",
+                "result": "87134412f4d8f13fbc7c387f2ce191855dbba33ba86d778a8df8bb2809200dab",
+                "trace": "b78e3d4a1fd9bf30154d9ff34c15dfd6e2148b001d5859a5b904c067974b3e10",
+                "state": "7f2d0993d1dfb1f03d294240d59846e73fafbc8f900434a160ed81564c349729",
+                "score": 28000,
+                "segment": 2606,
+                "shields": 38.06663513183594
+            },
+            {
+                "phase": "continuation-red-flank-02",
+                "source": "87c846f49d23273ea17bdf2409e7de7e699e1d584dc3eaf41b7974e4271da6e1",
+                "native_save": "72eeb592fc855c96fff75e7415e91ffbb9ece94fb3c4176cfc6febfc7abbe3ec",
+                "plan": "920cc34af5870d2781d2383036051a90e3cc76a8bed6f04a3bef50595dc8eddc",
+                "result": "0d194860ddc5af4ee40f717b357ca35bc23144b492493242b20471490ad7797d",
+                "trace": "b0e864149b760faa65da6594ab47acb687b75159001c2be9c8c1a3a6e7f3e1d1",
+                "state": "16d027ebd783548127748df56f5637f55742c0df1407379ca06ad2a98fd6e47d",
+                "score": 28000,
+                "segment": 2590,
+                "shields": 38.06663513183594
+            },
+            {
+                "phase": "continuation-red-flank-03",
+                "source": "72eeb592fc855c96fff75e7415e91ffbb9ece94fb3c4176cfc6febfc7abbe3ec",
+                "native_save": "00ce18141a249df04808c7458285c5de4e8937c96e4f87fcf533ef4a375467e0",
+                "plan": "ffc4e9ef68ff279aa0f1466436381aa972f0120af5c86ac254302ec5b1ff8d64",
+                "result": "8f85556b67edde6bfd569d2484eb66e98287e6f619aec55991a7b6c1238a9086",
+                "trace": "13d3e1d7bffbb1620e0b4e9b156a145668ce5b4e9bcc4e8d5519170f708f370f",
+                "state": "af06642582cc8c7465405747fad1c9d4c6cd08cb1dcd20ab54d8d53cd71c0b76",
+                "score": 28000,
+                "segment": 2275,
+                "shields": 38.06663513183594
+            },
+            {
+                "phase": "continuation-red-gauss-00",
+                "source": "00ce18141a249df04808c7458285c5de4e8937c96e4f87fcf533ef4a375467e0",
+                "native_save": "c4cb50e056d0360ae332fe5c61a768077cfc0a13d4e705950fc797dc004b3152",
+                "plan": "f4b7fb1c474afdd31f62024b2a34064cc9107f0db515d7d03f5d5d6f22a63c4f",
+                "result": "9152b37bd80e81e30d102d7d30a3f195ba7fdea577934568c7e1e73562c728a4",
+                "trace": "ee734aa5b4a75d70fafee363e7917d7b30d8780e8181b885f652bb5d897d7e36",
+                "state": "809ff8faef48e7b5f425f4ad0391d1f7c2e4129a5b00774d48f0c87552eefd98",
+                "score": 28000,
+                "segment": 2598,
+                "shields": 33.06663513183594
+            },
+            {
+                "phase": "continuation-red-gauss-01",
+                "source": "c4cb50e056d0360ae332fe5c61a768077cfc0a13d4e705950fc797dc004b3152",
+                "native_save": "56f15e3b8ef53fe7637d748fb7086c480343e7f43ffa66330f9344da3da2300c",
+                "plan": "214cb8eb7733d3d536b09690eee63bb7c9df308b18ef1ddddd84f215fcca3f21",
+                "result": "194622674fddad0a5f0bcef542d45cf3ebaf18f0764d62a5a6ef5569f3b4731c",
+                "trace": "c51e3af49ca899ad6b13dc853eb08f65f9c15fc21b62d89332ef432ba80cd12b",
+                "state": "7df685b1d313a611c691fbd9e4379e3170acd5586c4dac577c0249757dcc4f94",
+                "score": 28500,
+                "segment": 2605,
+                "shields": 25.760299682617188
+            },
+            {
+                "phase": "continuation-red-gauss-02",
+                "source": "56f15e3b8ef53fe7637d748fb7086c480343e7f43ffa66330f9344da3da2300c",
+                "native_save": "c8472474aab48adb30edaed98bddb809af93bac67d0fddb95b2d0f147b8e85d2",
+                "plan": "1261c235662b5c16228e64b49c0abc945107e2152a0cf37e5c017012ea9167e8",
+                "result": "8446861482c8a58990827f0755858eebfab1a5b0f066f86ef51789af0fa11228",
+                "trace": "7f26636437c631645f41a81eaab8d43a5e91389a08ba0508bfe81e163e463013",
+                "state": "fc0d845a1468c616d17347a2c3358436d4b347c8b62548b29ebc590fffa3c5d9",
+                "score": 28500,
+                "segment": 2741,
+                "shields": 25.760299682617188
+            },
+            {
+                "phase": "continuation-red-gauss-03",
+                "source": "c8472474aab48adb30edaed98bddb809af93bac67d0fddb95b2d0f147b8e85d2",
+                "native_save": "22ceb70c2095b9da530bae2dcc4906a624771da615c3a94e58ea99c67b139059",
+                "plan": "ff76381c30af9b54ac46c65e1fe1abfc6442aca3dd93d045114df31c04921581",
+                "result": "c707a021e2e62b8b03f3305b44995ad415552c238b000dbbdae5dc41b95533ad",
+                "trace": "f01efac48d7b892e87b7166461b3e16847c86fa3a983910e03c7484ad9c1a81d",
+                "state": "89783d0a685c8eaafea62d982fa3351398c637d9db0c06c2c8c32295d935a3ff",
+                "score": 28500,
+                "segment": 2836,
+                "shields": 25.274978637695312
+            },
+            {
+                "phase": "continuation-red-gauss-04",
+                "source": "22ceb70c2095b9da530bae2dcc4906a624771da615c3a94e58ea99c67b139059",
+                "native_save": "46cb3da90516a1b526e6736e0acf29cc1226f3aba4568521ea8dfc7698e38c53",
+                "plan": "148879ea7878a10546bf708bfcef976454ee0bdf4e39d7e7e35778e4b94c9cd3",
+                "result": "0f6fe7203fe904aca08a02db5c56099991f5ec5e01cebe2af8fd5587df3e900a",
+                "trace": "9b01f94717e0611cf5a3e24e44b9524e8a5757f6d9135211722d8494e41d640d",
+                "state": "a7a937cf65e71725f45c6dccade8b252dd6eeb0c712c17a8ae643488333ea4f3",
+                "score": 28500,
+                "segment": 2842,
+                "shields": 24.789657592773438
+            },
+            {
+                "phase": "continuation-red-stores-2843-00",
+                "source": "46cb3da90516a1b526e6736e0acf29cc1226f3aba4568521ea8dfc7698e38c53",
+                "native_save": "4336b83e343fc73a60dcc5b16cb47f60416dc90767c6d21017ef884e9ba99e78",
+                "plan": "fdf43c56dac594bc7619400b4173b3681bbb0e12183c02b30f2692ff18bc09da",
+                "result": "ea39c653e8662685c23148768e41697d71e0aa5b8df60f464a64c95c8c992f22",
+                "trace": "5b65ddb95b9420bb6c6890cbd1a773e4992260d2fcbfe1fff4597232a7cfeb3f",
+                "state": "c331b56a9ac97fa266c0d203d76bdca127909b1c2b561e84873339322c6dfc92",
+                "score": 29500,
+                "segment": 2843,
+                "shields": 24.789657592773438
+            },
+            {
+                "phase": "continuation-gauss-shields-flank-00",
+                "source": "4336b83e343fc73a60dcc5b16cb47f60416dc90767c6d21017ef884e9ba99e78",
+                "native_save": "89b35478dadfa49dcd1710810330697f6103b4f9955805851c6aaa78767ccc90",
+                "plan": "6ad37d47137b02ec7fd99996087a07688644a35545edf5b5a554a1b8118b0f74",
+                "result": "83483f0cc1af76333d512cceb245d1b7b7680a34ab10cdcf91435d1f451eb6d7",
+                "trace": "def8274c1b5a4a6bf91c9814fa1445e2fb165ef6e2a993a10ee9c09aa5641e47",
+                "state": "99942ddae0be3bbd43718628e7e128b8ef2244829a571e027d45b59e25b4467e",
+                "score": 29500,
+                "segment": 2836,
+                "shields": 24.789657592773438
+            },
+            {
+                "phase": "continuation-gauss-shields-flank-01",
+                "source": "89b35478dadfa49dcd1710810330697f6103b4f9955805851c6aaa78767ccc90",
+                "native_save": "d6488d05c642fa6cd52ab8e0d0b8092ec5421c1eb07025b887212d0dd76bcb72",
+                "plan": "ba3426c7b17ce8d67a9314c8664368961fa099ce1c128267a4b7f6e7792dab37",
+                "result": "8cb2c459ec53728a34067e066ebd93d5c485f26099a50d578d31b90971f989db",
+                "trace": "1ffccb8a914fae252c983cd3cc4b0234c8549a914ec93eb5a02a73220d34da21",
+                "state": "78e93ab3a19576b4dd326f9262e971a301808514aba4ef51206cc8caaaee06bd",
+                "score": 31100,
+                "segment": 2741,
+                "shields": 24.789657592773438
+            },
+            {
+                "phase": "continuation-gauss-shields-flank-02",
+                "source": "d6488d05c642fa6cd52ab8e0d0b8092ec5421c1eb07025b887212d0dd76bcb72",
+                "native_save": "b11e3634caebe838aa5e65250dcbc89287a397395f5f6737064b8e12e2e83572",
+                "plan": "b166f93fb7a1164b37691f85be402c819c750d62c139167da77eb86184e7fa22",
+                "result": "f1085310ba4e790e5ac343ac6749b8c18555ab0064fe98df71e3f59a7bfb8c25",
+                "trace": "8063943f4dd9c5456339caf94ae454c04672db751b9fdc473e950e9d2edc095a",
+                "state": "8460ec4c53670374da0645c109169e8950486d60acb9e4ceecaa36286bb9ea70",
+                "score": 31100,
+                "segment": 3332,
+                "shields": 24.789657592773438
+            },
+            {
+                "phase": "continuation-gauss-shields-flank-03",
+                "source": "b11e3634caebe838aa5e65250dcbc89287a397395f5f6737064b8e12e2e83572",
+                "native_save": "7e86fee8339959e791d7605bb8e057303774b68d6470e82758f00ca48f579360",
+                "plan": "860b8c1359d1234ea72d1921d5efaa1d60e44f851b89b0f6892c08de981caf61",
+                "result": "a5ecfbe163f87bb5dbe23d43122171cd6f88fb6e1c061afe27ba66f6fab1d910",
+                "trace": "d63402b68c7744227130038797e00e982b06055d69d779f6678bdcbb29585936",
+                "state": "b0d6dd7e99507c8b537ab0ddc3006eedba3921c1258bb56f0fd7d07c3d8072b6",
+                "score": 31100,
+                "segment": 2854,
+                "shields": 24.567947387695312
+            },
+            {
+                "phase": "continuation-gauss-shields-flank-04",
+                "source": "7e86fee8339959e791d7605bb8e057303774b68d6470e82758f00ca48f579360",
+                "native_save": "05dea2b27bcd6561b7aab50b6b38aa4f0cf90317630ec392fd40661ced25aa45",
+                "plan": "e233715d0d1bba9678d9ecb8eb21e11a01c500791db162330b0cbf400adcb4bc",
+                "result": "c8325d617820c29fe8a161990fa374d6d6eee19c6b145053945770e8e4811760",
+                "trace": "42cfe30c7076e573771e78ec47d20ea3e6c47f9750a15bc437c4dd6df21be921",
+                "state": "54fc1129db40643039f4f3c553ba2c3d6dd0e660faff1304f1d9ffd98b643899",
+                "score": 32300,
+                "segment": 2857,
+                "shields": 36.15718078613281
+            },
+            {
+                "phase": "continuation-gauss-resupply-2877-00",
+                "source": "05dea2b27bcd6561b7aab50b6b38aa4f0cf90317630ec392fd40661ced25aa45",
+                "native_save": "0be624ef31bb3888343be5c63462f7bfdb2378993294e6f98545ad1f9630d497",
+                "plan": "8ea5f394b41c598916630f13465d8dabe52c28c20db6d096eb24ff8102e950c3",
+                "result": "9f4ee191ede79fdbe4d4b41807d4ebc349650a7a6a720a8441eccddb807bc237",
+                "trace": "78e387c160c05e48ef8e0544e28b5b106384a15e5672bd29f8f80c47d5de4dad",
+                "state": "566c86067b3067bb135f8a2c4b27109eda3bc823391204aad1e11a5c6e7d7537",
+                "score": 32300,
+                "segment": 2869,
+                "shields": 32.15718078613281
+            },
+            {
+                "phase": "continuation-gauss-resupply-2877-01",
+                "source": "0be624ef31bb3888343be5c63462f7bfdb2378993294e6f98545ad1f9630d497",
+                "native_save": "d6ff88b6a48f07818cf5923265bda835abc8ecff9c99542e3d3bd391b13219ab",
+                "plan": "9e95cb73e00b999461ff99c3e641b538b48a267485acc603684704c65b5faf2c",
+                "result": "58aecec8a04e5f50aadd1d168561022d4d102fc2360b4645dbca5ba2e2913028",
+                "trace": "f3db99be77157b11ad3a6c565598a75455be13179ac56b5977eb037582a8d64b",
+                "state": "5b6bb499e75b0a374a6369bf6643da3cd39a98b2cd776cf9674fcb3a8c3825d7",
+                "score": 32900,
+                "segment": 2877,
+                "shields": 59.15718078613281
+            },
+            {
+                "phase": "continuation-gauss-resupply-2893-00",
+                "source": "d6ff88b6a48f07818cf5923265bda835abc8ecff9c99542e3d3bd391b13219ab",
+                "native_save": "68d32bb9f239ad87abddaa8a2c701b891feb82ea7421693a64bb34d77160b25d",
+                "plan": "75f87168435be5f866d5add4af26cda4c2b479578a034a244fd66f2dec31b69d",
+                "result": "28313c1e687891fcd00bb74187b7e1d520978e058e886e488b34fb5f433cc8c0",
+                "trace": "8857558028227aba956f19424cc3ea858e50a67e92c6de53d0a3266df8a169e5",
+                "state": "99d2d088ce7f2d82b596a86eab02094db9e47b9234fbd00fdd9dbad411c687c3",
+                "score": 32900,
+                "segment": 2880,
+                "shields": 59.15718078613281
+            },
+            {
+                "phase": "continuation-gauss-resupply-2893-01",
+                "source": "68d32bb9f239ad87abddaa8a2c701b891feb82ea7421693a64bb34d77160b25d",
+                "native_save": "3bd8038014708ca2f825683f9736ea41fd79a68aea0ca6f8add9bdfd8e0dc2bc",
+                "plan": "0440256ef38cc68dd7c00d3324fe923810f31f6d895e07e3752a8241aeb22b67",
+                "result": "af00ad909091c67389beb43a594222fe3165b99374580530700c7914093e1985",
+                "trace": "ee2bd214c9f62bfa3c2b7d51ae162d1598094254f0e6fc5beb69d228155b1afe",
+                "state": "49d81c25cd3fc502e3af89cbcaefaa0e6a52267a80c5dacb363efe89680e45f9",
+                "score": 32900,
+                "segment": 2888,
+                "shields": 59.15718078613281
+            },
+            {
+                "phase": "continuation-gauss-resupply-2893-02",
+                "source": "3bd8038014708ca2f825683f9736ea41fd79a68aea0ca6f8add9bdfd8e0dc2bc",
+                "native_save": "1c15011ec4e702d790a2e3d3a39f3fb3c1c1a9987d92b8771ecc023244045a20",
+                "plan": "2116edfc44e8fbc107f9e11b552129c76ee73f2a330ce3a397c06ca601ba630e",
+                "result": "2edb2842ed0b15dfa98a930bba8ea577acc6120eb67b4af396dd0e57f3ab5a81",
+                "trace": "eb757b87837f33c0974c9653c1d828197f144d6d7d5a3ce65c0f3579a434362a",
+                "state": "1103f2616d1944edb2416fe68114e459a9eae04dfea32f6293f9526b270e5753",
+                "score": 33600,
+                "segment": 2893,
+                "shields": 59.15718078613281
+            },
+            {
+                "phase": "continuation-gauss-extra-shields-00",
+                "source": "1c15011ec4e702d790a2e3d3a39f3fb3c1c1a9987d92b8771ecc023244045a20",
+                "native_save": "c2e2f3e7b67d3b1d3f66f1e4a188f3b7744797fed0b6aceabc4710c02c3ecfcb",
+                "plan": "4535216ebb8b9a378dd2a9e0e8c71d6f66afa2cda3e8743a392023101e0c8b82",
+                "result": "ce3d84b055c3271a36f5227f9dc7e928cc83a2614ff782a95ecbf3567e472caf",
+                "trace": "1996992a1d32888fa190bc97c25b5b3f750cf095673053215cc851c4ab6692af",
+                "state": "6b2b41311b40a0bda69f59fb2020b38612f58ed1260dd5d2a6db572245212f46",
+                "score": 33600,
+                "segment": 2859,
+                "shields": 59.15718078613281
+            },
+            {
+                "phase": "continuation-gauss-extra-shields-01",
+                "source": "c2e2f3e7b67d3b1d3f66f1e4a188f3b7744797fed0b6aceabc4710c02c3ecfcb",
+                "native_save": "5fd2976468ce8dc9fb7951e6558d80991a822951443e1713d3101f33b07550a9",
+                "plan": "e2e0540b8dfe513663a64977ed9e59f0f6ae7ad3218db82ca4f1d65bce07b892",
+                "result": "204c4497c8724e2647afa7a1660eb83b5b0bb1e8d0b31209ffc4ec039343dc3c",
+                "trace": "9a52b634016a0651ab4c160cbedcf6cbe2dc35d0ceda13acc2369d2895d2d567",
+                "state": "617e692782c2f067bf36d959a938ad5d20103d2d33f432c8a5266634c4155ad9",
+                "score": 33600,
+                "segment": 2865,
+                "shields": 59.15718078613281
+            },
+            {
+                "phase": "continuation-gauss-extra-shield-pickup",
+                "source": "5fd2976468ce8dc9fb7951e6558d80991a822951443e1713d3101f33b07550a9",
+                "native_save": "00d85c149d4688cb673f22de6eb0b7a38f1a35012cf4d9a7f1f8ffb782a7c686",
+                "plan": "20887f65d92974dc3b2996c54bcea0f68219da5bffda00d471698b1711e200b5",
+                "result": "06b9ce1a69a04698e07a61cde4d9980d465071228e9f0fe8c2af55a7fc0f140c",
+                "trace": "06f27043fc55476f9aeee4033d02b9da19759e655ab4954762a92882a619dc8f",
+                "state": "9cd7966c12eb83b6573849a1c60dce6804ea2b9a626bc38deb24193c3669daee",
+                "score": 33600,
+                "segment": 2865,
+                "shields": 86.15718078613281
+            },
+            {
+                "phase": "continuation-red-armed-fly-00",
+                "source": "00d85c149d4688cb673f22de6eb0b7a38f1a35012cf4d9a7f1f8ffb782a7c686",
+                "native_save": "64cec1ad91b17d160ccdf0d8843c9aa98efbb4925d656f9ae2182f82e6beda7a",
+                "plan": "e4fdcd9ee55a4ce514cc55262f09b9c5bf9164fd33cfe393515be00aac378b62",
+                "result": "1e17c3436bf7f3f73604414e1c3c79bd813a27c08ebd05f7d45064d3ed56181d",
+                "trace": "49176d25e192b5daa59de088a2eebd7f4c1cfea1c15db480f593c287c63db743",
+                "state": "408af50c0622cd7528d126cd3f93db1fde150d7b57ff234b1e7e5b784b7e89d4",
+                "score": 33600,
+                "segment": 2896,
+                "shields": 86.15718078613281
+            },
+            {
+                "phase": "continuation-red-armed-fly-01",
+                "source": "64cec1ad91b17d160ccdf0d8843c9aa98efbb4925d656f9ae2182f82e6beda7a",
+                "native_save": "5467c6469f28fbec64660ed60686e55cb57deeaf8288896df28f70ca850a48a7",
+                "plan": "4eb23ac73f222a2f9a096854e988cfcf9438c2c227ffcf7f9127057accde3fce",
+                "result": "89c46089fb73cb3b1a3c713f990a30cea0561deb35a0ae4b9d3c55d965a30331",
+                "trace": "9af865d65a696a610ce9704b5fa3fbdf95b74a54845886cbd1192def323fed13",
+                "state": "6c13eabdabbf42aec06d51ccb179cb6b5d43e372add40ca723411d4ba26dcdbd",
+                "score": 33600,
+                "segment": 3068,
+                "shields": 86.15718078613281
+            },
+            {
+                "phase": "continuation-red-armed-fly-02",
+                "source": "5467c6469f28fbec64660ed60686e55cb57deeaf8288896df28f70ca850a48a7",
+                "native_save": "c8778ace42ca0b3a2cd56021a2fc21b9ea882c9e5aa96ebbd700230486decad0",
+                "plan": "5a110596c5b5a6aa2bc1b88aad38ad0889e309bd1cdec9ab6c9e621952b8a683",
+                "result": "919c44701812eff29553febd954214045aa7dbf50e1c68441e01423490b76ba9",
+                "trace": "06e5d769d62fb426edc38118852e51233782bb6d51b234b663fa0de71f3cb227",
+                "state": "82a4051368f54bca88ecc2a61de90cd590be937e140e45ec8175b11b50ddbf5f",
+                "score": 34300,
+                "segment": 2907,
+                "shields": 82.33403015136719
+            },
+            {
+                "phase": "continuation-red-armed-fly-03",
+                "source": "c8778ace42ca0b3a2cd56021a2fc21b9ea882c9e5aa96ebbd700230486decad0",
+                "native_save": "7c37df798a1fbfa790462816ca18aeefb057587667e285cde369d9904f47406d",
+                "plan": "51223ce9f008e1fee91cc86f046ec8308686a85804184d436cbf122c70dc9055",
+                "result": "a718d690ba6bd8456171ebffdaad8b6cc7c130a2af30dfe37f25acead07f29b5",
+                "trace": "7482ef21592893f7e206cec9c3ac6b1da9111456aea3a6e8cf41945ed641b54f",
+                "state": "3fce48ff21e9d839b746de170f4562864564e608ffd31ed6c58c02da69d24c7d",
+                "score": 34300,
+                "segment": 2666,
+                "shields": 82.33403015136719
+            },
+            {
+                "phase": "continuation-red-carrier-location",
+                "source": "7c37df798a1fbfa790462816ca18aeefb057587667e285cde369d9904f47406d",
+                "native_save": "5360863dbe64ac89055afacf5d2bd46e6a16d911e41276582085b62f55c8fb37",
+                "plan": "900160e655c5858d01302429dc6322d6f1c8e794821ad99755fc9c78b39c78d5",
+                "result": "8f1eb9f27cbb9830fa7e0e34d14e59df051c2ab7fadac9fb6d1fd950fc7b7e4d",
+                "trace": "24ebffc90c0292a3bb05e2d8beaf3fe9e87dce4fa3ec6cda8af2c688d8fdd9eb",
+                "state": "e563b62698d1a6267271aa8a3c70d502a949fa228d56b3e8e044a57ed2745c60",
+                "score": 34300,
+                "segment": 2666,
+                "shields": 82.33403015136719
+            },
+            {
+                "phase": "continuation-red-target-fly-00",
+                "source": "5360863dbe64ac89055afacf5d2bd46e6a16d911e41276582085b62f55c8fb37",
+                "native_save": "efd2577c9300ac83a7b8eed04e259d16e70768de864e595f4438758000d56ec9",
+                "plan": "6ff03cf2cac7d2538d95d7fe0f810ff3794e9b5c18d4ef8ff0ea2462cfefd5e7",
+                "result": "04f40b97c22b041ba336697f258380b11c6040037e800b05508847bb273ee616",
+                "trace": "ad4a4d7511e050dc55ba4d90dba708ab20011e0afc5ca933a2585ff1d302b843",
+                "state": "96cf78b05a6ec33864150f5085ac936f0c9e79ce2fe9ca958e74960a46fe2d90",
+                "score": 34300,
+                "segment": 2661,
+                "shields": 80.62702941894531
+            },
+            {
+                "phase": "continuation-red-target-fly-01",
+                "source": "efd2577c9300ac83a7b8eed04e259d16e70768de864e595f4438758000d56ec9",
+                "native_save": "632ef76e6407c5dc936e6aedc8f83075610984486f939b578acf0a096c4283ad",
+                "plan": "967f9ca3ac967186642b24d01cf231ffee2b79a292ec42d3476c8b271f10edf2",
+                "result": "bef66a35d61224cf2765e86f1390dff2060c2ddf55eeb740fc4b052f6a593c38",
+                "trace": "acd4c9939c13f222804fd633d439d818bbb8b8818bbae781e2b06af23d1f058c",
+                "state": "77921f1060f2174e5d4a255d5509f86d1e557fc34e7da90377a7488f7e1af857",
+                "score": 34300,
+                "segment": 2425,
+                "shields": 80.62702941894531
+            },
+            {
+                "phase": "continuation-red-target-fly-02",
+                "source": "632ef76e6407c5dc936e6aedc8f83075610984486f939b578acf0a096c4283ad",
+                "native_save": "ac50a32c610a169b6316b10d67c54c90194804d9883fefe4bc73f7b8241ff1b4",
+                "plan": "5b699853d6cf93bb7e2db630648756c53dee1148249b743740504516200946d6",
+                "result": "ebbe6bea710fef15e20e189ba516e7fded3d49a9b9eec5b426d1f360bd852467",
+                "trace": "4bf8305b369fe9458326414deec71394170acc99efad04b6cd7daad8e834f583",
+                "state": "cffb9160580fd26e1898325b69f43ff4ef1db3c5b3e459faa4be11250fcb7718",
+                "score": 34300,
+                "segment": 2483,
+                "shields": 63.517059326171875
+            },
+            {
+                "phase": "continuation-red-target-fly-03",
+                "source": "ac50a32c610a169b6316b10d67c54c90194804d9883fefe4bc73f7b8241ff1b4",
+                "native_save": "80e1cee534c4e793285977c61959f5c775120eaa7e6c5be49becb4bccd11e64d",
+                "plan": "161a868b61a5f63111a9bc1e17ddba1473495ecb0cadf4bc993a9c02314e4869",
+                "result": "a0ae0debccb13b21e7d189e6752fa8203eccc0e9b05bd061c2560ad1c755f2c5",
+                "trace": "bee35c10b918b60bacd8523de41e09364e898d9d26b6837f1629ac1c41a660f7",
+                "state": "c2930ba52b07ad45edaa60d2cae666a976dbad3cfc7016082a3594050329e4a7",
+                "score": 34300,
+                "segment": 2501,
+                "shields": 51.756927490234375
+            },
+            {
+                "phase": "continuation-red-station-fire-00",
+                "source": "80e1cee534c4e793285977c61959f5c775120eaa7e6c5be49becb4bccd11e64d",
+                "native_save": "a177a6dd2c7e13671ac5112c66407b0412b6b3c0237d43e0e0fb1e9238373b26",
+                "plan": "51dd77585a8b69398586ea5b9073af1fbf2714c88d1f28b584c08965a8e81de4",
+                "result": "49df52908b844c78799c49a69cf15a077edf21e32c696ecbe47a317adf1be1bc",
+                "trace": "e1dee54438be471ee113055f20c177da270a36483242cb8c0bb7d0ae07024cfc",
+                "state": "6d672f14571ae979648d6ec6c02db72fc714775e6aafd706022a710660c4b93e",
+                "score": 34300,
+                "segment": 2501,
+                "shields": 45.11051940917969
+            },
+            {
+                "phase": "continuation-red-kinetic-salvo",
+                "source": "a177a6dd2c7e13671ac5112c66407b0412b6b3c0237d43e0e0fb1e9238373b26",
+                "native_save": "ec19cbef96bcf7c42fc8f6a2327d200fa4198481588d15f7b8f3c91779a33f5d",
+                "plan": "86a1a140a9ac310017b2bbbbaf324bbf814ec4096c033d67832a1c4167146ed1",
+                "result": "85c387021e1a91f26ceefbf3a8d5dd7ac556615c434c724e123058119fa7c84b",
+                "trace": "bcdea2dc19d3b58648d8c574c7e1812d196c27929bc461a1b616c03dff954402",
+                "state": "57e81446f80ff30ccb2167434591f2b269bc5cbaf8bd32f54f91df1862397a54",
+                "score": 34300,
+                "segment": 2484,
+                "shields": 20.005630493164062
+            },
+            {
+                "phase": "continuation-red-mercury-follow",
+                "source": "ec19cbef96bcf7c42fc8f6a2327d200fa4198481588d15f7b8f3c91779a33f5d",
+                "native_save": "157d344b1900def3901ea34cf05af39de3ce6640c1af4af10689f614dbaecac1",
+                "plan": "67de33beff7fd322fa01cc692d962856a8759c8063c5c4de4b6b367eac6b960e",
+                "result": "9c54c75e5c3c35e431e6a971f52f1eda5e75d8777961997bfdf34f0eeeae9bd0",
+                "trace": "678dca605d8a30dff56b333e0c39f526da7d6d839f281813ae7e6e58f748e0cf",
+                "state": "1a3bf67dffd449813967c2845d95099b55572f8aa75d1351b01161e21e43a07c",
+                "score": 34300,
+                "segment": 2550,
+                "shields": 20.005630493164062
+            },
+            {
+                "phase": "continuation-red-mercury-chase-fly-00",
+                "source": "157d344b1900def3901ea34cf05af39de3ce6640c1af4af10689f614dbaecac1",
+                "native_save": "51ed6cd7527b579a4407a964974e4da2140cc7986a45593ec533791be4e1f823",
+                "plan": "4f75232f0dd153e6d746cdd4a2fa15900c7e1c75be7f375fd4704a7b3a1c16b8",
+                "result": "f4309fee177f5b1133dc18e81b3b18756ce9dd8dedac214fb5b3613db63a8cc6",
+                "trace": "ebc2bc207bb24060cda24bf290ca0c6a83599ffe9c04e839e1ce57187e867a13",
+                "state": "e1f33d81cb4a943bb8865c76bc5482d492411522cf8072e5e3b12aaf7a32b8eb",
+                "score": 34300,
+                "segment": 2501,
+                "shields": 15.005630493164062
+            },
+            {
+                "phase": "continuation-red-mercury-chase-fire-01",
+                "source": "51ed6cd7527b579a4407a964974e4da2140cc7986a45593ec533791be4e1f823",
+                "native_save": "31f75d43784e0b29171476db2ae5f5ea7a1c10b1cf501cf42bd20e449d424c58",
+                "plan": "b10966cf77977d6a01a119ad9d1dc10f27991ae950e60f3fc60dfac8df8d20bd",
+                "result": "a76c96d789458d1839c1641105a945a0fab38a48969f15254782f1f00faba3a7",
+                "trace": "a033383473c27b275cc4142f433171149302386851b81ede22cfe4a1daa6931c",
+                "state": "7f3b57ac2dfa1704d45b81ed71fc9c1501eb2fea393f04afbb78667706f029ed",
+                "score": 44300,
+                "segment": 2642,
+                "shields": 15.005630493164062
+            },
+            {
+                "phase": "continuation-red-roll-escape",
+                "source": "31f75d43784e0b29171476db2ae5f5ea7a1c10b1cf501cf42bd20e449d424c58",
+                "native_save": "d0d8175b38f9eb3f62a91a190f3dd670232b1cf26d32853c801cfc31979249fe",
+                "plan": "d621d9f0480caa69ee89906dc0da663b5309f0052dd4d8878831d9004f86db9d",
+                "result": "9fe607abacb4a87a60abc571685773fcfdbaf2564b3af6291d280175042dcd03",
+                "trace": "4cc6c38c902aa6a0e86ce7096e08fa21ef7cfe579d11b480e6924f003b453f34",
+                "state": "0a32530f38f4c28712c650a027c1f813cde46927d22b91f033ab7c8e1f2e36a6",
+                "score": 44300,
+                "segment": 2582,
+                "shields": 15.005630493164062
+            },
+            {
+                "phase": "continuation-red-roll-shelter-00",
+                "source": "d0d8175b38f9eb3f62a91a190f3dd670232b1cf26d32853c801cfc31979249fe",
+                "native_save": "885a83787207d04b29e3a8716c1acf2a00bf9e7573d156ef85ccb4f22c352517",
+                "plan": "104196eeb27bafb46d5b523c6750751fcdc4494047934c6e8708955c072f934b",
+                "result": "8d371e8e6309746fc67f6fbadfe0933cff51d6f90d48ea64d452a80720070e42",
+                "trace": "a7a80a0843e342d6946ec0cdff13314323b74d61910c63bd9b56273fa6f21575",
+                "state": "e5074bab1bc36dc58c39fb2f728534ebc1e43b7ad7f36abd25ee2e08a991d4b1",
+                "score": 44300,
+                "segment": 2486,
+                "shields": 3.2454986572265625
+            },
+            {
+                "phase": "continuation-red-roll-shelter-01",
+                "source": "885a83787207d04b29e3a8716c1acf2a00bf9e7573d156ef85ccb4f22c352517",
+                "native_save": "34f0852a922744f64c50bbc8559f2f5663b253d6dc69f897fd3e347fbb585df9",
+                "plan": "a6b1a03b838d9d47d232e6daba02e0b0178be3daf18aaef434062032cabf90ca",
+                "result": "a0231d49df6f0b7eea2c40f86667b14a0194074825f3a44a575cece9334b4c3e",
+                "trace": "e2e2a6c5cac96d715b339e220e18d1f1db0ac23e3a3d91d57976b461b8d1d154",
+                "state": "f8a62307b63845fba109bd07f270ef4282ac8ca4f8f163d24bd70ef30cc0e832",
+                "score": 44300,
+                "segment": 2454,
+                "shields": 3.2454986572265625
+            },
+            {
+                "phase": "continuation-red-roll-shelter-02",
+                "source": "34f0852a922744f64c50bbc8559f2f5663b253d6dc69f897fd3e347fbb585df9",
+                "native_save": "f969eb793fe14c4677009e46329e907bd74c7b95190a167656c7ed77028eae43",
+                "plan": "cbb85527f2825fd0e44afe0e634b0500b61d19bb76b8a4365026680b6c4f19a0",
+                "result": "cac277853754851002e486150e496116286b8ae2e11e1a191d92c18f11ac2cb5",
+                "trace": "56f44b192dab32d36e0874c55b8340ddbdf3d07eaba3e67234c8a27a3facb1dd",
+                "state": "d4d283f99c7a5e7e65a0f0b8e45ee9c852515aaf7a8d9cc381c2f3358f55b982",
+                "score": 44300,
+                "segment": 2460,
+                "shields": 1.599090576171875
+            },
+            {
+                "phase": "continuation-red-roll-shelter-03",
+                "source": "f969eb793fe14c4677009e46329e907bd74c7b95190a167656c7ed77028eae43",
+                "native_save": "e82b83a08dae6fa48988e09fca8b8e511f39bfa8136a68e5694ba551ee6b868f",
+                "plan": "8849f4ef9c6b2fc4fc83fa0436b02054fcf096d6dd77edf9b97ec648e803a9af",
+                "result": "b61c515c777e7bb136881b1ace1c723d9240f52977a7f33adeff87017ec547d9",
+                "trace": "18507a70e46bdb3f343c9f617efe513208ce30dc30ece7e49ef1654ddbedfb3b",
+                "state": "e90cf4549d526420e08ce41377eb2a75e2e32bda34d7535b89027c5d1bb0e4db",
+                "score": 45150,
+                "segment": 2767,
+                "shields": 1.599090576171875
+            },
+            {
+                "phase": "continuation-red-resupply-3310-00",
+                "source": "e82b83a08dae6fa48988e09fca8b8e511f39bfa8136a68e5694ba551ee6b868f",
+                "native_save": "012eff403167366cb579b2635607f9abc2cf3aa9d0bd6c8f251ee02ce6aa4f0c",
+                "plan": "de90b1ef225e3919409ba2239addd24a96bf3d12ae04a929deba6ca9dd5c00d2",
+                "result": "d233026bb2231af90789c2477ce753b62246e79bf46282750dee8bf96147bad2",
+                "trace": "c2973df6be1583ef877f26f65c10419510fee9504e84020aebf1eeff50990270",
+                "state": "45db283d720013564ae941981c8b1776e69c7ac014065a4a77a9a391947db953",
+                "score": 45150,
+                "segment": 2781,
+                "shields": 28.599090576171875
+            },
+            {
+                "phase": "continuation-red-resupply-3310-01",
+                "source": "012eff403167366cb579b2635607f9abc2cf3aa9d0bd6c8f251ee02ce6aa4f0c",
+                "native_save": "0e3ff45e0d00fd0e7aa50c390332515bb61424aa41fc1a6cc0b08d7048531b3e",
+                "plan": "eade81b48782b65558d75dfef3ea974d8df67c5b16c32c3d94ffe921f80d741b",
+                "result": "5750b640779b3be2ad2306b811d5402182ab268e3a2116afcd69f1981f23d05e",
+                "trace": "679bd32d0bb4e577a98c59ad532ae6ab729470e24cfd932bd471f6361cfba312",
+                "state": "cf39909353366d535835f8a1e3b0c88bc488f50dca3887baa59a5b438363a5d5",
+                "score": 45150,
+                "segment": 3298,
+                "shields": 18.599090576171875
+            },
+            {
+                "phase": "continuation-red-resupply-3310-02",
+                "source": "0e3ff45e0d00fd0e7aa50c390332515bb61424aa41fc1a6cc0b08d7048531b3e",
+                "native_save": "76b072cac4c287ca033b8a75b0b90b4d2894a448af7ec880841d91e622b867b3",
+                "plan": "68e0e76640a6a70e221d1134c3572279c242e2740765ad7f99df87e054b78518",
+                "result": "4578548b0161b9d73692a09058b62708ae1ff3e9bc64a0c990bf5887a9a48e6c",
+                "trace": "5c4bc524de5133f31e65c15542df876f3b92f2faf923e96a0140053efc413e72",
+                "state": "c8def504db77552e7a3af189493b93dca808b51e6b5d6e51c03883241aad53ca",
+                "score": 45150,
+                "segment": 3300,
+                "shields": 13.599090576171875
+            },
+            {
+                "phase": "continuation-red-resupply-3310-03",
+                "source": "76b072cac4c287ca033b8a75b0b90b4d2894a448af7ec880841d91e622b867b3",
+                "native_save": "e221db87884efb98010606028a410b6c2efc0809387694fed2f10b231790c3d8",
+                "plan": "6f1f31420c53364134998d7b1da1aa371643f86bf7099a70124bf1743b0b1e4c",
+                "result": "e8f3559d5418125c52757292e4adbdb127c616717d00ea29b95272d369b027b1",
+                "trace": "e6f30c0122b9b3234a60590c2f7d1456ee73c0534f813dc1fd5e4c21e8456466",
+                "state": "94672a9e6cfe1031437fdbd242ad4ca892c09cf80495f34962385f3ee4ebd10b",
+                "score": 45150,
+                "segment": 3309,
+                "shields": 8.599090576171875
+            },
+            {
+                "phase": "continuation-red-resupply-3310-04",
+                "source": "e221db87884efb98010606028a410b6c2efc0809387694fed2f10b231790c3d8",
+                "native_save": "1d449fb91a17a061cad57a1ea00e08192178c87bd6c7659a64abde297ffb93c1",
+                "plan": "f1b91652f8e41b9a14a56d2369ac92dfc44299f0ee7972355c85f7b48e525ad6",
+                "result": "84e04f97c8f199d6963fa7671051d30e19f1743863fc52333d8216794806795a",
+                "trace": "67e037c98c3140530fee0f8aa8b7d8329d426b02c9f41745053e14e5f4108271",
+                "state": "9efafa864e4eb19072c0c5ead8bab8b4e2215b94bb8a68cc061fe9d8bfab0dda",
+                "score": 45150,
+                "segment": 3310,
+                "shields": 35.599090576171875
+            },
+            {
+                "phase": "continuation-red-resupply-3312-00",
+                "source": "1d449fb91a17a061cad57a1ea00e08192178c87bd6c7659a64abde297ffb93c1",
+                "native_save": "44958b503534b66b89a19b775c0cc8e366f197591184fece59d8949cf435eec9",
+                "plan": "a903626174161168e93241f85abad2b47f0d38348c23da4f998cbb3e164d6ed4",
+                "result": "63095359475eac7cb99e13d082ae850d14e55c5f7d12190ee9b97e7ce1b7ac3d",
+                "trace": "8b891ffd2ba26431c9a939a461d3ed92d326af13ce86b74212912a012d45183e",
+                "state": "2b07f50c871bf325f3488e2196dabd6bbb09a23a9421af449d6422d164074e04",
+                "score": 45150,
+                "segment": 3312,
+                "shields": 55.20195007324219
+            },
+            {
+                "phase": "continuation-earned-red-fly-00",
+                "source": "44958b503534b66b89a19b775c0cc8e366f197591184fece59d8949cf435eec9",
+                "native_save": "da590037986250778ed750c4234d0082335b76f14885afd7780101b0153b5119",
+                "plan": "2bd694943ce2bbb9ad0bf5c87532eec796e3c75d0596724616c3c23825800717",
+                "result": "48b0248430e4722e339fa04c8eee27dcb8566413813d43d9d8b71e8fbe32734f",
+                "trace": "e73c612a949cc7bfc35dd3bdae6968c9b25c1c25ebb8af7d9783e556eb0853df",
+                "state": "948834e0df90b74b1e6b2b883d2f62ed41bd2e3b4b000ea0897ff7bc29fb1869",
+                "score": 45150,
+                "segment": 3303,
+                "shields": 54.20195007324219
+            },
+            {
+                "phase": "continuation-earned-red-fly-01",
+                "source": "da590037986250778ed750c4234d0082335b76f14885afd7780101b0153b5119",
+                "native_save": "5a45c0074a3723d18c46704443b4ba37568f5e4b8c33977ee98b2ce38b25f123",
+                "plan": "d739cce9e520e7c0f5c308bef813edcbcc4b5f4a09c9cf7b96a7c8e4a08f84bd",
+                "result": "f6a78e3a509acbf43aaca42a7cd9d80bf81e9cf267f345748c2f803f97fd12cd",
+                "trace": "ca318a12b52ec6f8e7fdf3459498d9bad18c56841ecc03e62926f8cf1f4e968b",
+                "state": "0d4582b749e066fe908cf61285f9b48f347a8dee9e1fd3e18097f388740c9e6d",
+                "score": 45550,
+                "segment": 3301,
+                "shields": 53.67463684082031
+            },
+            {
+                "phase": "continuation-earned-red-fly-02",
+                "source": "5a45c0074a3723d18c46704443b4ba37568f5e4b8c33977ee98b2ce38b25f123",
+                "native_save": "48bf82e8f45a694d9a59ba953fd0ee7e340851b5009baa417bcacb698cae9163",
+                "plan": "a6b2a67c1c8e10b018f7517356dcf76cfc145661e49733de5b52a31fef5e7412",
+                "result": "a7107d40f27829b32e4997f7ea72c8ecfba670281742d0c02f0a6d075cd0f49a",
+                "trace": "6d77398afd1236382534b245ff89a98891fa31b630e905432f0492173f830a1d",
+                "state": "ade519e55ba1c2f246f85ef8491a297ac97ff7302672aea29e83c7f10467b724",
+                "score": 45550,
+                "segment": 3299,
+                "shields": 53.67463684082031
+            },
+            {
+                "phase": "continuation-earned-red-fly-03",
+                "source": "48bf82e8f45a694d9a59ba953fd0ee7e340851b5009baa417bcacb698cae9163",
+                "native_save": "4e0db3df9e97f35cba0a4ff41bdb229f4f032b1fe26a0107bf1fc39eab4123d1",
+                "plan": "47a88562e172ebc727e52be43794ebbf00b90bd351aa60dffdc0ecdfd8347a27",
+                "result": "799826a61d8e1aebbc0bde71f7b5e79c334d02d0fe0e4a6895749870805181cd",
+                "trace": "a886aa06e99da4dbb1ec56a37434cd16f08d22091a6aeeee7821f0f788f3d84a",
+                "state": "f994c0ba4079219af208be63d0fd18a8b327a6e47a4456e8e6f2e0c69b40ea1c",
+                "score": 46400,
+                "segment": 2782,
+                "shields": 50.67463684082031
+            },
+            {
+                "phase": "continuation-earned-red-fly-04",
+                "source": "4e0db3df9e97f35cba0a4ff41bdb229f4f032b1fe26a0107bf1fc39eab4123d1",
+                "native_save": "eb08f5a01645ad5b945474b268d26abdc142b2138b7fc3e65ce003916a5a5317",
+                "plan": "b36509cff894f8b3a73e5a946112e96e8ef8119a725384eda474ba92e37ad2b5",
+                "result": "00a55fc11b685bb280ff601e29c60eee5cbe364a311d2481bd46843eca9487cc",
+                "trace": "4145d629a987912ae6cefaba4e6b036bfb4d81fc7df5f6e319f7864df2132c2d",
+                "state": "3c7b077ac9b57f10b883f6df17278648891bd0d761ed2bd06d724b14d0bde4fc",
+                "score": 46400,
+                "segment": 2780,
+                "shields": 48.111602783203125
+            },
+            {
+                "phase": "continuation-red-outer-ring-fly-00",
+                "source": "eb08f5a01645ad5b945474b268d26abdc142b2138b7fc3e65ce003916a5a5317",
+                "native_save": "3d8f86c05a8dcd2c99b0a318f0433f0ab6fd087a1e22dd045ef19ea1104d554a",
+                "plan": "342b3e2bdc5443fd51f989f254aa1f6ad40b559dbb74896c6dd56b6f6b39c391",
+                "result": "4742937d41bbd06550eea461af4f69d5ff14a0c13ab8a32c0f505e12cd133d4c",
+                "trace": "3376b0cc6bf0cf9fa93caba6dd2fda94b77b95364723b579cb10fdf17dfeafe4",
+                "state": "51dc8842d2c8d5219101c896e51d18df8fdf5cfece6648e9f5e98860753ccb31",
+                "score": 46850,
+                "segment": 2778,
+                "shields": 46.111602783203125
+            },
+            {
+                "phase": "continuation-red-outer-ring-fly-01",
+                "source": "3d8f86c05a8dcd2c99b0a318f0433f0ab6fd087a1e22dd045ef19ea1104d554a",
+                "native_save": "6852f5c9bcd44093d3f8d905fb86ae7097364966f4928b074fe41bb0d8c0c257",
+                "plan": "c53f03eabc3e39fdd0f352065d4d06475c1b6b3f405af6878bc6985ff7f4ba5e",
+                "result": "f1cd56223f71f4416259d13fc419fb5b47b7685dc43b2a3b29a194f25cc19ce9",
+                "trace": "dec868dfe80edca717b48f603fc1aa2f719f2a9350b514d4f62940f8e90c5d23",
+                "state": "56157b5e3770372a40a34a0ba25ccd4c655bb949492226be7c108515295ba88d",
+                "score": 46850,
+                "segment": 2802,
+                "shields": 46.111602783203125
+            },
+            {
+                "phase": "continuation-red-outer-ring-fly-02",
+                "source": "6852f5c9bcd44093d3f8d905fb86ae7097364966f4928b074fe41bb0d8c0c257",
+                "native_save": "7ba7a1805c51c698c0b8f29f0765df0add178fdc69b5f84463db733d66be9131",
+                "plan": "8aaa404749a7f5a34c47b10aa6c2bbee93972f1eb338df3d1c1a8dde3738126d",
+                "result": "89d4eb755e4c548e729442e7c521a66f60118a097bef4140e41c54f95f196f54",
+                "trace": "5aa3f9b294f1f4cbbbe0b20ab06f4b43fa36a88d2fee79b2537fbe82f8e2d562",
+                "state": "86a0142a47a63f2fe63beee84b3a449494252d17abf935d4109bf20ec46bd99a",
+                "score": 46850,
+                "segment": 2808,
+                "shields": 46.111602783203125
+            },
+            {
+                "phase": "continuation-red-side-gallery-00",
+                "source": "7ba7a1805c51c698c0b8f29f0765df0add178fdc69b5f84463db733d66be9131",
+                "native_save": "03db70e225c66626b20b5a1d31cd2646d00042e8c605f17b9f2a3ec1508456f0",
+                "plan": "b54ede8f7e2e42a729850760b9f40e25df2b3934db09f55e5be282ed0506bf36",
+                "result": "a4c746507d2bd7abbacda418ef219309aaafca9e151771fd062b8851960a72b7",
+                "trace": "868f7bcc3005de3c7646f7d3339df0dfa1c381d9a2f7c18c7e79fad6592755e9",
+                "state": "8f473c2984e95ef4d669450150c51c6db2f25ca404531a57d4f423478fa6ac6f",
+                "score": 46850,
+                "segment": 2810,
+                "shields": 44.07469177246094
+            },
+            {
+                "phase": "continuation-red-side-gallery-01",
+                "source": "03db70e225c66626b20b5a1d31cd2646d00042e8c605f17b9f2a3ec1508456f0",
+                "native_save": "5759c7233769e0b972db08635327245092b93259d6100b5c8687786348ef6762",
+                "plan": "9312847299e28ad31d3fc6991bc3262c19b27481983abd7929d6690796b9d82d",
+                "result": "c0384919b1374207a5c17f74ffd33a2f7027d21b83c8539ac10e621c003924cf",
+                "trace": "5808cdfc1911c4cbb1487977c634cf39c89d3a48a13af36819ab8c590bb84940",
+                "state": "1bc2fc265abeb19762dedc2e184dbb46de7fcd30477b10f10a192b694dd38fdc",
+                "score": 46850,
+                "segment": 3064,
+                "shields": 40.42594909667969
+            },
+            {
+                "phase": "continuation-red-side-gallery-02",
+                "source": "5759c7233769e0b972db08635327245092b93259d6100b5c8687786348ef6762",
+                "native_save": "775767208edbada4875908582ee31f35791ff7bd3302c3d80eeef5bf15eb468f",
+                "plan": "1933dedc5a7e734ab17a3fa60f57ec614a32d382483bfbdad66d42b3ddb23d11",
+                "result": "0e60601a8f4bd4c91a200c661af51298c0fbd0b956bc98657d1d40882bcfb22e",
+                "trace": "ab24f8f39da4a6f67fb34d33566a4b6e3f08ae8d5c6bc02c096e0e0e8138e4f1",
+                "state": "05ca2a1d5b23b2911d66a23113a0f3d27c5f858389df2dffbe36a00635105358",
+                "score": 46850,
+                "segment": 2807,
+                "shields": 27.866302490234375
+            },
+            {
+                "phase": "continuation-red-side-gallery-03",
+                "source": "775767208edbada4875908582ee31f35791ff7bd3302c3d80eeef5bf15eb468f",
+                "native_save": "87f4d7314e83aa11731f8284155cbf169d4afe7057a4e36cb07163c982400123",
+                "plan": "b70a4411671176fea9da7895d4d547133af0e2e7084a714521656a0901c28a9c",
+                "result": "5d9acb73b5c2db3e0507496edaa920936c18c3a4c9ba751229c8109fe1bea954",
+                "trace": "72adceb5faf3cfdf9d02970115c947b8d0e915065d40a82b3758aae4f9806a83",
+                "state": "4023f5628a7f8ef9e416b642a906bd43756f9c6c6029b7a4f5ba06b423b133f6",
+                "score": 46850,
+                "segment": 2798,
+                "shields": 25.864791870117188
+            },
+            {
+                "phase": "continuation-red-side-gallery-04",
+                "source": "87f4d7314e83aa11731f8284155cbf169d4afe7057a4e36cb07163c982400123",
+                "native_save": "c8e6d8074eb6c8f5560549f85a9e7d26bbab0674ef9ce3e7f5ace9a0ae552dbc",
+                "plan": "9d4ae57e2d4943adb757ac2b4ce4f927179afa53ca4b7f6187ec4bfd79e2d854",
+                "result": "0da7253955a309372112ed0678db6e6c3bf568edeea4756c1a44fef184d6a85d",
+                "trace": "3ff8b20b6e50b6d2ae97f87e905ba58fab04e7bd9e3e666fbd5ae758c72ec709",
+                "state": "5f0f922e780dd5cf41ca562873a2d8040f8a7ff59fb48f8a78ee04e770ed129b",
+                "score": 46850,
+                "segment": 2784,
+                "shields": 25.864791870117188
+            },
+            {
+                "phase": "continuation-red-side-gallery-05",
+                "source": "c8e6d8074eb6c8f5560549f85a9e7d26bbab0674ef9ce3e7f5ace9a0ae552dbc",
+                "native_save": "9362406dd67c2cc93ea1ba942f9cc7c4109316fb3c36735f3eb83778abc98e89",
+                "plan": "092b82370cf54200d0a9464eeefefd32ac73a987d714766048fb567a632aee33",
+                "result": "6e8073a79eb3e8e6ea30145fd8b82efe921e10b5310b56397ceeb28267ad02b1",
+                "trace": "78703bab7ac7fd402cc80238ec44be6682db1f9808bcb681ec7c436538b57b65",
+                "state": "0143bed6128a0786d938726c1f1b24c423995fd4f107f361402ff8615043fdf7",
+                "score": 46850,
+                "segment": 2766,
+                "shields": 25.864791870117188
+            },
+            {
+                "phase": "continuation-red-side-gallery-06",
+                "source": "9362406dd67c2cc93ea1ba942f9cc7c4109316fb3c36735f3eb83778abc98e89",
+                "native_save": "efe22a1a17b315f79373c5446f8e9e00da4fcff12af8fa7910293a5f17b01572",
+                "plan": "bb1261157300711d65aae8014d9233abf141997133ec37022842e9ed356f1a0c",
+                "result": "44157a9167a4fa64268ab990c55d1673e0814e9ceaca16226d8b73e9f2288590",
+                "trace": "6cb022684246bbeb64f285931aa43d4e8da251c12916244cce85c588f9c940b6",
+                "state": "1466135b4f415d9f60207d17ceb0d5fb6a1c84abcd601016de2bc4e7f27ac681",
+                "score": 46850,
+                "segment": 2625,
+                "shields": 25.864791870117188
+            },
+            {
+                "phase": "continuation-red-side-gallery-07",
+                "source": "efe22a1a17b315f79373c5446f8e9e00da4fcff12af8fa7910293a5f17b01572",
+                "native_save": "e74dc24a332cba1ef0a48d80877c47e3bf3aec7ec6990a3330faa964809e16d1",
+                "plan": "d921e8a29ca27ce6d23cbc7d0a90f9bd640d3b292988dfb1e5ad8f3c943e68f8",
+                "result": "c6bd453afee3e41891daf1d0bbaa60ebfdd941999b69db8f96e32c8ffaf73f04",
+                "trace": "18b6ca9d012b06e3e5d4887dd5c6ea09c4e4aa0c7921bce49776c589e4ea7706",
+                "state": "822edcf3d75e2f36598611abfa4b770e98539ab716687144edb6a7af5cd7fdea",
+                "score": 46850,
+                "segment": 2583,
+                "shields": 25.864791870117188
+            },
+            {
+                "phase": "continuation-red-side-gallery-08",
+                "source": "e74dc24a332cba1ef0a48d80877c47e3bf3aec7ec6990a3330faa964809e16d1",
+                "native_save": "acbfc633cc1ddd843de388a023ce224be2e96dd4402b0ac158e7dab9fc9a879c",
+                "plan": "e396ab459f674546822e997d128773df2ca8a36627f4166be6c28f166355c9d8",
+                "result": "d25dc23973a11f5ca1b5bac010bbd48446163308bbb8e756717584260630d26b",
+                "trace": "fdac7ce04dcdfb6a7f299833b99a122c311c518b26f58a527f4687d022d8fc18",
+                "state": "fe4ceeb944e9ad97bf7cb2df3d1010a081152a00bda71a136d83e4a4246b96ee",
+                "score": 46850,
+                "segment": 2538,
+                "shields": 25.864791870117188
+            },
+            {
+                "phase": "continuation-red-side-gallery-09",
+                "source": "acbfc633cc1ddd843de388a023ce224be2e96dd4402b0ac158e7dab9fc9a879c",
+                "native_save": "7e6c51512d9a2158d9d0a00099f15566d0733cd369813e5fef8e121d389f29cb",
+                "plan": "bd2fe69a8e1f9b1ee3291434b6c5f3a9463dcf13460e7f7e3fc7aa490b746cb6",
+                "result": "1f9926126babfad811d705f817d0ccb164a58d4dfafca294e67dec0e1ef7f7fa",
+                "trace": "4492227946f8f4be14313fd7608e020177e5a6eb8e7c2801326d1c6ab49f0379",
+                "state": "fceaab9db3912b6ac78b4f99f2455e7f5455140bf43dc14d0aa61fb1ab6d7bc5",
+                "score": 46850,
+                "segment": 2500,
+                "shields": 25.864791870117188
+            },
+            {
+                "phase": "continuation-red-side-gallery-10",
+                "source": "7e6c51512d9a2158d9d0a00099f15566d0733cd369813e5fef8e121d389f29cb",
+                "native_save": "87b22b6a873f4c0262cce42dd47a9c9c18e17efa4257c5d460bc1e9975d45bfd",
+                "plan": "5160183006093c0f93be975dab7a8192fb34a7082053deda9ece07d1f9ce51dc",
+                "result": "a2b6157ebc06200aab3ee1336b779429c0a7c4ac8a9d6d25788f52e25ce9afd4",
+                "trace": "33ab3cbe0a7e29936b118125604ebeb14cfe3c25d8971e6a19f354bba9e614ec",
+                "state": "7e7a8a45ac1a7bd411526be9184fcf0c0deaf5fe4b7fba76f8bb6a0aeecf8e93",
+                "score": 46850,
+                "segment": 2500,
+                "shields": 25.864791870117188
+            }
+        ],
+        "binaries": ["23125081f33a81b399ced45c61856e366a4b02e6a6365fa152131863e7279d41"],
+        "actions": {
+            "fly_through_side": 193,
+            "set_debug": 80,
+            "assert": 6,
+            "collect_pickup": 2,
+            "engage_visible_robot": 4,
+            "send_button": 4,
+            "select_secondary": 1
+        },
+        "fixed_view_aim_events": 0,
+        "position_assist_events": 0,
+        "terminal": {
+            "score": 46850,
+            "lives": 3,
+            "shields": 25.864791870117188,
+            "energy": 151.4752197265625,
+            "has_gold_key": true,
+            "has_red_key": true,
+            "vulcan_ammo": 26
+        },
+        "android_export": "230955f389c956f14de3621117c42aedf0e0d1df1059915e362882d2c419af13"
+    },
+    "red_reference": {
+        "schema": "xl-original-campaign-probe-v1",
+        "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+        "engine_sha256": "2fb2cc81a694a526638cf978d98133b932b9f4fe9c1086dc568e13dd8b4de1d3",
+        "descriptor": "single/sphere.mn2",
+        "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+        "ordinal": 2,
+        "advertised_file": "sp-02.rl2",
+        "exit_code": 0,
+        "observation": "started_and_ran",
+        "timed_out": false,
+        "receipt_sha256": "b1e7afce2c5d36ee5ef187f8296a1158c382a134afcc0acb461089c4fbf11fe1",
+        "texture_quality": 0,
+        "maximum_texture_quality": 3
+    },
+    "red_android": {
+        "ordinary_apk": "b4828dfe44753c44e801c6de981cdb8827f13779e0d57e4b8660574d220a3228",
+        "pilot": "spred",
+        "score": 46850,
+        "shields_at_end": -2.1352081298828125,
+        "player_dead_at_end": true,
+        "write_log": "de02d5d02d805a2ac36fa42239b709569c0be49be465bc43a31c27daf86416c0",
+        "cold_log": "60e7c3b2cb46b3b6feca6eafea1dc44ed3140e4d1198861facf8ee0249352b37",
+        "device_save_produced": false
+    },
+    "pumo": {
+        "8": {
+            "capture_executable": "ea8783e9ecb9d87295dcdb2545a78ac9e4f7365cef75746cc68d8f30cb060859",
+            "cold": 0,
+            "recording": "91510ed024975510628075043e4163be98a76698924fb7dab5a4808c73081ff4",
+            "rendered_executable": "6a55ec35e092a3a7786008518cf5ad01ebdd11169239bb76a60e397b4ba6a0fb",
+            "warm": 0
+        },
+        "14": {
+            "capture_executable": "ea8783e9ecb9d87295dcdb2545a78ac9e4f7365cef75746cc68d8f30cb060859",
+            "cold": 0,
+            "recording": "80be2ade877e18617c9a84b94302b449370fc51e29a196649a912fab28707dfe",
+            "rendered_executable": "6a55ec35e092a3a7786008518cf5ad01ebdd11169239bb76a60e397b4ba6a0fb",
+            "warm": 0
+        }
+    },
+    "fork_ci_recovery": {
+        "44715822534": {
+            "first_linux_job": 136228598073,
+            "first_attempt_log": "73e4463e6a7ba9cc54b9adb353a29260c360342b56953f1f8657361bcda5f410",
+            "verified_bom_sha256": "70b071dc4074995076c97c749792ebcff69f10e636d1e2f2c68de0de023e0239",
+            "same_source_retry": "requested after snapshot"
+        }
+    }
+}

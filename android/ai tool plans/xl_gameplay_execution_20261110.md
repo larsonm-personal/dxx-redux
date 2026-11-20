@@ -6213,3 +6213,7 @@ The ordinary census reached 1,475 of 1,654. All five distributions now resolve t
 ## November 19 campaign and architecture tranche
 
 The ordinary survey reached 1,513 of 1,654. A connected Pumo flight earned level 4, and a rendered Android Kritical Mass flight activated an authored switch and preserved both open walls through a fresh-process load. The original-engine Android trial reached the desktop GL dependency during NDK configuration. The [dated outcome](xl_gameplay_what_was_done_20261119.md), [exact CI execution ledger](xl_gameplay_execution_20261119.json), [next window](xl_gameplay_next_window_20261119.md) and [replacement kickoff](xl_gameplay_kickoff_20261119.md) record the evidence and remaining work.
+
+## November 20 Sphere campaign
+
+The pilot earned the second-level gold and red keys in connected assisted flight. Windows and Linux reproduced the gold door and Gauss supply. The ordinary Android pilot loaded the red save and died before its quick slot was written. Frozen readiness remains 4/8. The authentic profile reached 8/8 on both desktop owners and 64/64 on Windows. [Dated report](xl_gameplay_what_was_done_20261120.md), [execution ledger](xl_gameplay_execution_20261120.json), [next window](xl_gameplay_next_window_20261120.md) and [replacement kickoff](xl_gameplay_kickoff_20261120.md).
