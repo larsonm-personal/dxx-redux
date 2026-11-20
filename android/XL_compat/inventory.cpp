@@ -118,6 +118,41 @@ void issue(std::vector<Issue> &list, const std::string &feature, int record, con
 	list.push_back({ feature, record, detail });
 }
 
+using LightFaces = std::set<std::array<int, 2>>;
+
+LightFaces authored_light_targets(const Inventory &level)
+{
+	LightFaces faces(level.reactor_targets.begin(), level.reactor_targets.end());
+	for (const auto &flicker : level.flicker_lights) faces.insert({ flicker[0], flicker[1] });
+	for (const auto &trigger : level.triggers) faces.insert(trigger.targets.begin(), trigger.targets.end());
+	for (const auto &record : level.object_trigger_records)
+		faces.insert(record.action.targets.begin(), record.action.targets.end());
+	return faces;
+}
+
+bool inert_light_source(const Inventory &level, const LightFaces &targets, int segment, int side)
+{
+	// ChangeLight only visits rows matching the requested geometry face.
+	if (segment < 0 || static_cast<std::size_t>(segment) >= level.segments.size() || side < 0 || side >= 6) return true;
+	const auto &room = level.segments[segment];
+	const int child = room.children[side];
+	if (child < 0 || static_cast<std::size_t>(child) >= level.segments.size()) return false;
+	auto open = [&](int n, int s) {
+		const auto &face = level.segments[n].sides[s];
+		return face.wall == -1 && face.texture == -1 && face.overlay == -1 && !targets.count({ n, s });
+	};
+	if (!open(segment, side)) return false;
+	// A two-sided, untextured open portal has no destructible overlay or wall.
+	const auto &other = level.segments[child];
+	int connections = 0;
+	for (int s = 0; s < 6; ++s)
+		if (other.children[s] == segment) {
+			if (!open(child, s)) return false;
+			++connections;
+		}
+	return connections == 1;
+}
+
 void read_colors(Reader &r, std::vector<Color> &colors, std::size_t count, bool floating)
 {
 	colors.reserve(count);
@@ -604,6 +639,8 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 	}
 	if (indices.count) {
 		auto r = section_reader(bytes, out, indices, 6);
+		const bool allows_inert_light_indices = out.level_version == 22 && out.game_version == 40;
+		const auto targets = allows_inert_light_indices ? authored_light_targets(out) : LightFaces{};
 		for (int i = 0; i < indices.count; ++i) {
 			std::array<int, 4> values{ r.s16(), r.u8(), r.u8(), r.u16() };
 			if (out.game_version >= 34) {
@@ -612,7 +649,14 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 				values[2] = (values[2] << 5) | (values[1] >> 3);
 				values[1] &= 7;
 			}
-			require(values[0] >= 0 && values[0] < segment_count && values[1] < 6 && values[3] <= deltas.count && values[2] <= deltas.count - values[3], (out.game_version >= 34 ? "invalid packed light index " : "invalid light index ") + std::to_string(i) + " in " + std::to_string(out.level_version) + "/" + std::to_string(out.game_version) + ": segment=" + std::to_string(values[0]) + " side=" + std::to_string(values[1]) + " count=" + std::to_string(values[2]) + " first=" + std::to_string(values[3]) + " available=" + std::to_string(deltas.count));
+			if (!(values[0] >= 0 && values[0] < segment_count && values[1] < 6 && values[3] <= deltas.count && values[2] <= deltas.count - values[3])) {
+				const auto detail = "segment=" + std::to_string(values[0]) + " side=" + std::to_string(values[1]) + " count=" + std::to_string(values[2]) + " first=" + std::to_string(values[3]) + " available=" + std::to_string(deltas.count);
+				if (allows_inert_light_indices && inert_light_source(out, targets, values[0], values[1])) {
+					issue(out.observations, "inert_light_index", i, detail);
+					continue;
+				}
+				throw std::runtime_error((out.game_version >= 34 ? "invalid packed light index " : "invalid light index ") + std::to_string(i) + " in " + std::to_string(out.level_version) + "/" + std::to_string(out.game_version) + ": " + detail);
+			}
 			out.light_indices.push_back(values);
 		}
 	}
