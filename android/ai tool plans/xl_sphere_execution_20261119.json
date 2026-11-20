@@ -1,0 +1,435 @@
+{
+    "schema": "xl-sphere-stack-execution-v1",
+    "captured_utc": "2026-11-20T01:40:52.875690+00:00",
+    "repository": "larsonm-personal/dxx-redux",
+    "cmake": "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+    "stack": 471,
+    "actions_url_prefix": "https://github.com/larsonm-personal/dxx-redux/actions/runs/",
+    "public_columns": ["workflow", "check", "outcome", "url_suffix_or_external_url"],
+    "public_run_columns": ["workflow_head", "attempt", "event", "workflow", "outcome"],
+    "private_job_columns": ["job", "outcome", "job_id", "failed_steps_if_present"],
+    "public_run_metadata": {
+        "44646329278": [
+            "5a8b6d723cdfa4692585df4c35849654afe11460",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "queued"
+        ],
+        "44646329282": ["5a8b6d723cdfa4692585df4c35849654afe11460", 1, "pull_request", "Engine smoke", "queued"],
+        "44646329285": ["5a8b6d723cdfa4692585df4c35849654afe11460", 1, "pull_request", "PR #655 test sample", "queued"],
+        "44646329292": ["5a8b6d723cdfa4692585df4c35849654afe11460", 1, "pull_request", "Server Rust checks", "queued"],
+        "44646329340": [
+            "5a8b6d723cdfa4692585df4c35849654afe11460",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "queued"
+        ],
+        "44646329343": [
+            "5a8b6d723cdfa4692585df4c35849654afe11460",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "queued"
+        ],
+        "44646329349": [
+            "5a8b6d723cdfa4692585df4c35849654afe11460",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "queued"
+        ],
+        "44646329399": ["5a8b6d723cdfa4692585df4c35849654afe11460", 1, "pull_request", "Public LAN smoke", "queued"],
+        "44648655408": [
+            "3aa328caec5dc2d7f0ade81a8d9727b69c2817ff",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "queued"
+        ],
+        "44648655414": [
+            "3aa328caec5dc2d7f0ade81a8d9727b69c2817ff",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "queued"
+        ],
+        "44648655415": ["3aa328caec5dc2d7f0ade81a8d9727b69c2817ff", 1, "pull_request", "Public LAN smoke", "queued"],
+        "44648655462": [
+            "3aa328caec5dc2d7f0ade81a8d9727b69c2817ff",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "queued"
+        ],
+        "44648655498": ["3aa328caec5dc2d7f0ade81a8d9727b69c2817ff", 1, "pull_request", "Engine smoke", "queued"],
+        "44648655514": [
+            "3aa328caec5dc2d7f0ade81a8d9727b69c2817ff",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "queued"
+        ],
+        "44648655531": ["3aa328caec5dc2d7f0ade81a8d9727b69c2817ff", 1, "pull_request", "PR #656 test sample", "queued"],
+        "44648655557": ["3aa328caec5dc2d7f0ade81a8d9727b69c2817ff", 1, "pull_request", "Server Rust checks", "queued"],
+        "44651438613": [
+            "9a5b0e5ef8cdd81a4d2cad1c65f5903d19efa8f6",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "queued"
+        ],
+        "44651438673": [
+            "9a5b0e5ef8cdd81a4d2cad1c65f5903d19efa8f6",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "queued"
+        ],
+        "44651438690": [
+            "9a5b0e5ef8cdd81a4d2cad1c65f5903d19efa8f6",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "queued"
+        ],
+        "44651438701": ["9a5b0e5ef8cdd81a4d2cad1c65f5903d19efa8f6", 1, "pull_request", "Engine smoke", "queued"],
+        "44651438773": ["9a5b0e5ef8cdd81a4d2cad1c65f5903d19efa8f6", 1, "pull_request", "Public LAN smoke", "queued"],
+        "44651438790": ["9a5b0e5ef8cdd81a4d2cad1c65f5903d19efa8f6", 1, "pull_request", "PR #657 test sample", "queued"],
+        "44651438811": [
+            "9a5b0e5ef8cdd81a4d2cad1c65f5903d19efa8f6",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "queued"
+        ],
+        "44651438830": ["9a5b0e5ef8cdd81a4d2cad1c65f5903d19efa8f6", 1, "pull_request", "Server Rust checks", "queued"],
+        "44652357185": [
+            "a60b4c986b308e9997c933b0f4c328d4a034ed70",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "queued"
+        ],
+        "44652357204": ["a60b4c986b308e9997c933b0f4c328d4a034ed70", 1, "pull_request", "Server Rust checks", "queued"],
+        "44652357205": ["a60b4c986b308e9997c933b0f4c328d4a034ed70", 1, "pull_request", "Engine smoke", "queued"],
+        "44652357250": [
+            "a60b4c986b308e9997c933b0f4c328d4a034ed70",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "queued"
+        ],
+        "44652357365": [
+            "a60b4c986b308e9997c933b0f4c328d4a034ed70",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "queued"
+        ],
+        "44652357366": [
+            "a60b4c986b308e9997c933b0f4c328d4a034ed70",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "queued"
+        ],
+        "44652357409": ["a60b4c986b308e9997c933b0f4c328d4a034ed70", 1, "pull_request", "PR #658 test sample", "queued"],
+        "44652357415": ["a60b4c986b308e9997c933b0f4c328d4a034ed70", 1, "pull_request", "Public LAN smoke", "queued"],
+        "44653896558": [
+            "f40da62fc3b32bdb9fc95f8f50081539050205ab",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "queued"
+        ],
+        "44653896590": [
+            "f40da62fc3b32bdb9fc95f8f50081539050205ab",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "queued"
+        ],
+        "44653896627": ["f40da62fc3b32bdb9fc95f8f50081539050205ab", 1, "pull_request", "Public LAN smoke", "queued"],
+        "44653896636": [
+            "f40da62fc3b32bdb9fc95f8f50081539050205ab",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "queued"
+        ],
+        "44653896646": ["f40da62fc3b32bdb9fc95f8f50081539050205ab", 1, "pull_request", "Server Rust checks", "queued"],
+        "44653896697": [
+            "f40da62fc3b32bdb9fc95f8f50081539050205ab",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "queued"
+        ],
+        "44653896741": ["f40da62fc3b32bdb9fc95f8f50081539050205ab", 1, "pull_request", "Engine smoke", "queued"],
+        "44653896790": ["f40da62fc3b32bdb9fc95f8f50081539050205ab", 1, "pull_request", "PR #659 test sample", "queued"],
+        "44654932617": [
+            "7317685f246ddd16560d79ef59fd7c5a20f5155e",
+            1,
+            "pull_request",
+            "scripts and ci tests",
+            "queued"
+        ],
+        "44654932643": [
+            "7317685f246ddd16560d79ef59fd7c5a20f5155e",
+            1,
+            "pull_request",
+            "XL asset smoke request",
+            "queued"
+        ],
+        "44654932660": [
+            "7317685f246ddd16560d79ef59fd7c5a20f5155e",
+            1,
+            "pull_request",
+            "Linux shareware gameplay, saves & replays",
+            "queued"
+        ],
+        "44654932735": [
+            "7317685f246ddd16560d79ef59fd7c5a20f5155e",
+            1,
+            "pull_request",
+            "XL compatibility contracts",
+            "queued"
+        ],
+        "44654932763": ["7317685f246ddd16560d79ef59fd7c5a20f5155e", 1, "pull_request", "Engine smoke", "queued"],
+        "44654932778": ["7317685f246ddd16560d79ef59fd7c5a20f5155e", 1, "pull_request", "PR #660 test sample", "queued"],
+        "44654932880": ["7317685f246ddd16560d79ef59fd7c5a20f5155e", 1, "pull_request", "Server Rust checks", "queued"],
+        "44654932961": ["7317685f246ddd16560d79ef59fd7c5a20f5155e", 1, "pull_request", "Public LAN smoke", "queued"]
+    },
+    "candidates": [
+        {
+            "pr": 655,
+            "head": "5a8b6d723cdfa4692585df4c35849654afe11460",
+            "merge": "1c13442630a569202853307c39c45c44baf2beb1",
+            "base_sha": "4ea81bfedd3731fc1f2a9c14fb9cf4a82dbf3466",
+            "branch": "xl_sphere_campaign_20261119",
+            "immediate_base": "cmake",
+            "state": "OPEN",
+            "public": [
+                ["Engine smoke", "CI policy and runner checks", "QUEUED", "44646329282/job/135989750153"],
+                ["Engine smoke", "stack / check", "QUEUED", "44646329282/job/135989750729"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44646329285/job/135989753563"],
+                ["Extended test suite", "stack / check", "QUEUED", "44646329285/job/135989751396"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "QUEUED",
+                    "44646329340/job/135989750674"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44646329399/job/135989752303"],
+                ["Public LAN smoke", "Select public LAN smoke", "QUEUED", "44646329399/job/135989750850"],
+                ["Server Rust checks", "stack / check", "QUEUED", "44646329292/job/135989749746"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "QUEUED",
+                    "44646329278/job/135989749650"
+                ],
+                ["XL compatibility contracts", "stack / check", "QUEUED", "44646329349/job/135989750658"],
+                ["scripts and ci tests", "Automation catalogs", "QUEUED", "44646329343/job/135989750061"],
+                ["scripts and ci tests", "Workflow syntax", "QUEUED", "44646329343/job/135989749794"],
+                ["scripts and ci tests", "stack / check", "QUEUED", "44646329343/job/135989750253"]
+            ],
+            "private": [],
+            "public_runs": [
+                44646329278, 44646329282, 44646329285, 44646329292, 44646329340, 44646329343, 44646329349, 44646329399
+            ]
+        },
+        {
+            "pr": 656,
+            "head": "3aa328caec5dc2d7f0ade81a8d9727b69c2817ff",
+            "merge": "758c51dd65f0149ed238c5fb094303f32c5cbfc5",
+            "base_sha": "5a8b6d723cdfa4692585df4c35849654afe11460",
+            "branch": "xl_sphere_shaft_20261119",
+            "immediate_base": "xl_sphere_campaign_20261119",
+            "state": "OPEN",
+            "public": [
+                ["Engine smoke", "CI policy and runner checks", "QUEUED", "44648655498/job/135997659604"],
+                ["Engine smoke", "stack / check", "QUEUED", "44648655498/job/135997660136"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44648655531/job/135997663740"],
+                ["Extended test suite", "stack / check", "QUEUED", "44648655531/job/135997661578"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "QUEUED",
+                    "44648655462/job/135997660108"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44648655415/job/135997662492"],
+                ["Public LAN smoke", "Select public LAN smoke", "QUEUED", "44648655415/job/135997659721"],
+                ["Server Rust checks", "stack / check", "QUEUED", "44648655557/job/135997659591"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "QUEUED",
+                    "44648655514/job/135997659754"
+                ],
+                ["XL compatibility contracts", "stack / check", "QUEUED", "44648655408/job/135997659008"],
+                ["scripts and ci tests", "Automation catalogs", "QUEUED", "44648655414/job/135997659822"],
+                ["scripts and ci tests", "Workflow syntax", "QUEUED", "44648655414/job/135997659708"],
+                ["scripts and ci tests", "stack / check", "QUEUED", "44648655414/job/135997659811"]
+            ],
+            "private": [],
+            "public_runs": [
+                44648655408, 44648655414, 44648655415, 44648655462, 44648655498, 44648655514, 44648655531, 44648655557
+            ]
+        },
+        {
+            "pr": 657,
+            "head": "9a5b0e5ef8cdd81a4d2cad1c65f5903d19efa8f6",
+            "merge": "4a508a93f6c534d0bcfc323f36b33226f818721d",
+            "base_sha": "3aa328caec5dc2d7f0ade81a8d9727b69c2817ff",
+            "branch": "xl_sphere_qualification_20261119",
+            "immediate_base": "xl_sphere_shaft_20261119",
+            "state": "OPEN",
+            "public": [
+                ["Engine smoke", "CI policy and runner checks", "QUEUED", "44651438701/job/136007032568"],
+                ["Engine smoke", "stack / check", "QUEUED", "44651438701/job/136007032848"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44651438790/job/136007035845"],
+                ["Extended test suite", "stack / check", "QUEUED", "44651438790/job/136007034089"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "QUEUED",
+                    "44651438673/job/136007032334"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44651438773/job/136007035386"],
+                ["Public LAN smoke", "Select public LAN smoke", "QUEUED", "44651438773/job/136007033049"],
+                ["Server Rust checks", "stack / check", "QUEUED", "44651438830/job/136007046259"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "QUEUED",
+                    "44651438690/job/136007032179"
+                ],
+                ["XL compatibility contracts", "stack / check", "QUEUED", "44651438613/job/136007032495"],
+                ["scripts and ci tests", "Automation catalogs", "QUEUED", "44651438811/job/136007032881"],
+                ["scripts and ci tests", "Workflow syntax", "QUEUED", "44651438811/job/136007032496"],
+                ["scripts and ci tests", "stack / check", "QUEUED", "44651438811/job/136007033006"]
+            ],
+            "private": [],
+            "public_runs": [
+                44651438613, 44651438673, 44651438690, 44651438701, 44651438773, 44651438790, 44651438811, 44651438830
+            ]
+        },
+        {
+            "pr": 658,
+            "head": "a60b4c986b308e9997c933b0f4c328d4a034ed70",
+            "merge": "e8692e3e86767446acf0481a4f4fdb488d3620c3",
+            "base_sha": "9a5b0e5ef8cdd81a4d2cad1c65f5903d19efa8f6",
+            "branch": "xl_sphere_modal_controls_20261119",
+            "immediate_base": "xl_sphere_qualification_20261119",
+            "state": "OPEN",
+            "public": [
+                ["Engine smoke", "CI policy and runner checks", "QUEUED", "44652357205/job/136010087573"],
+                ["Engine smoke", "stack / check", "QUEUED", "44652357205/job/136010088066"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44652357409/job/136010092553"],
+                ["Extended test suite", "stack / check", "QUEUED", "44652357409/job/136010089867"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "QUEUED",
+                    "44652357366/job/136010088933"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44652357415/job/136010090870"],
+                ["Public LAN smoke", "Select public LAN smoke", "QUEUED", "44652357415/job/136010088747"],
+                ["Server Rust checks", "stack / check", "QUEUED", "44652357204/job/136010087669"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "QUEUED",
+                    "44652357250/job/136010087667"
+                ],
+                ["XL compatibility contracts", "stack / check", "QUEUED", "44652357185/job/136010088398"],
+                ["scripts and ci tests", "Automation catalogs", "QUEUED", "44652357365/job/136010088803"],
+                ["scripts and ci tests", "Workflow syntax", "QUEUED", "44652357365/job/136010088243"],
+                ["scripts and ci tests", "stack / check", "QUEUED", "44652357365/job/136010088911"]
+            ],
+            "private": [],
+            "public_runs": [
+                44652357185, 44652357204, 44652357205, 44652357250, 44652357365, 44652357366, 44652357409, 44652357415
+            ]
+        },
+        {
+            "pr": 659,
+            "head": "f40da62fc3b32bdb9fc95f8f50081539050205ab",
+            "merge": "4c677db36f78cfd0bd96f2c81ea9308130aedfbb",
+            "base_sha": "a60b4c986b308e9997c933b0f4c328d4a034ed70",
+            "branch": "xl_sphere_storage_20261119",
+            "immediate_base": "xl_sphere_modal_controls_20261119",
+            "state": "OPEN",
+            "public": [
+                ["Engine smoke", "CI policy and runner checks", "QUEUED", "44653896741/job/136015301206"],
+                ["Engine smoke", "stack / check", "QUEUED", "44653896741/job/136015301661"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44653896790/job/136015305417"],
+                ["Extended test suite", "stack / check", "QUEUED", "44653896790/job/136015302866"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "QUEUED",
+                    "44653896636/job/136015300998"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44653896627/job/136015303000"],
+                ["Public LAN smoke", "Select public LAN smoke", "QUEUED", "44653896627/job/136015301173"],
+                ["Server Rust checks", "stack / check", "QUEUED", "44653896646/job/136015301257"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "QUEUED",
+                    "44653896558/job/136015300114"
+                ],
+                ["XL compatibility contracts", "stack / check", "QUEUED", "44653896590/job/136015300773"],
+                ["scripts and ci tests", "Automation catalogs", "QUEUED", "44653896697/job/136015301620"],
+                ["scripts and ci tests", "Workflow syntax", "QUEUED", "44653896697/job/136015301092"],
+                ["scripts and ci tests", "stack / check", "QUEUED", "44653896697/job/136015301511"]
+            ],
+            "private": [],
+            "public_runs": [
+                44653896558, 44653896590, 44653896627, 44653896636, 44653896646, 44653896697, 44653896741, 44653896790
+            ]
+        },
+        {
+            "pr": 660,
+            "head": "7317685f246ddd16560d79ef59fd7c5a20f5155e",
+            "merge": "040de195d5eeb39797af2b90100984c9f939e9e9",
+            "base_sha": "f40da62fc3b32bdb9fc95f8f50081539050205ab",
+            "branch": "xl_sphere_light_sources_20261119",
+            "immediate_base": "xl_sphere_storage_20261119",
+            "state": "OPEN",
+            "public": [
+                ["Engine smoke", "CI policy and runner checks", "QUEUED", "44654932763/job/136018703371"],
+                ["Engine smoke", "stack / check", "QUEUED", "44654932763/job/136018703750"],
+                ["Extended test suite", "Inspect retained online receipt", "SKIPPED", "44654932778/job/136018707509"],
+                ["Extended test suite", "stack / check", "QUEUED", "44654932778/job/136018705059"],
+                [
+                    "Linux shareware gameplay, saves & replays",
+                    "stack / check",
+                    "QUEUED",
+                    "44654932660/job/136018703307"
+                ],
+                ["Public LAN smoke", "Export public timing evidence", "SKIPPED", "44654932961/job/136018706928"],
+                ["Public LAN smoke", "Select public LAN smoke", "QUEUED", "44654932961/job/136018704507"],
+                ["Server Rust checks", "stack / check", "QUEUED", "44654932880/job/136018704335"],
+                [
+                    "XL asset smoke request",
+                    "Signal exact PR head for trusted XL qualification",
+                    "QUEUED",
+                    "44654932643/job/136018702799"
+                ],
+                ["XL compatibility contracts", "stack / check", "QUEUED", "44654932735/job/136018703399"],
+                ["scripts and ci tests", "Automation catalogs", "QUEUED", "44654932617/job/136018703745"],
+                ["scripts and ci tests", "Workflow syntax", "QUEUED", "44654932617/job/136018703753"],
+                ["scripts and ci tests", "stack / check", "QUEUED", "44654932617/job/136018703233"]
+            ],
+            "private": [],
+            "public_runs": [
+                44654932617, 44654932643, 44654932660, 44654932735, 44654932763, 44654932778, 44654932880, 44654932961
+            ]
+        }
+    ]
+}

@@ -1,0 +1,739 @@
+{
+    "schema": "xl-sphere-campaign-v1",
+    "release": "Yokelassence, Sphere 1.51 (standalone 7z)",
+    "archive_sha256": "06be9a76428b15676fceaaac76de32ff356c264c22d4b29c86a3af9719f65c2d",
+    "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+    "hog_sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+    "members": {
+        "sp-01.rl2": "1d2da5bd3bee188a0bc9d8b1c10d32533377410dbfd59537e66eea61bc61340c",
+        "sp-02.rl2": "5be985bb7aec1a75612b1dea2db19d235a09f19c744e403fab9aab73bd3f6517",
+        "sp-03.rl2": "edea8a6c7c006459739d272665b19a377fd8a091ab8d3c8f456595f5d75c29a2",
+        "sp-04.rl2": "d685bc168450e78024af589bd3ebbfa026d149b7f741530a3a7aad43ebd4cb39",
+        "sp-s.rl2": "5c85057bcba6393ee31cd31fb03b9c4135105a7dcba3d593a7d6ec8ec14f6521"
+    },
+    "original": [
+        {
+            "schema": "xl-original-campaign-probe-v1",
+            "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "engine_sha256": "2fb2cc81a694a526638cf978d98133b932b9f4fe9c1086dc568e13dd8b4de1d3",
+            "descriptor": "single/sphere.mn2",
+            "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+            "ordinal": 1,
+            "advertised_file": "sp-01.rl2",
+            "exit_code": 0,
+            "observation": "started_and_ran",
+            "timed_out": false,
+            "receipt_sha256": "d26c180f48e9ff3833692c0cafec7e8e8919a5d4b270115f599b66feab185a5f",
+            "texture_quality": 0,
+            "maximum_texture_quality": 3
+        },
+        {
+            "schema": "xl-original-campaign-probe-v1",
+            "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "engine_sha256": "2fb2cc81a694a526638cf978d98133b932b9f4fe9c1086dc568e13dd8b4de1d3",
+            "descriptor": "single/sphere.mn2",
+            "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+            "ordinal": 2,
+            "advertised_file": "sp-02.rl2",
+            "exit_code": 0,
+            "observation": "started_and_ran",
+            "timed_out": false,
+            "receipt_sha256": "b1e7afce2c5d36ee5ef187f8296a1158c382a134afcc0acb461089c4fbf11fe1",
+            "texture_quality": 0,
+            "maximum_texture_quality": 3
+        },
+        {
+            "schema": "xl-original-campaign-probe-v1",
+            "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "engine_sha256": "2fb2cc81a694a526638cf978d98133b932b9f4fe9c1086dc568e13dd8b4de1d3",
+            "descriptor": "single/sphere.mn2",
+            "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+            "ordinal": 3,
+            "advertised_file": "sp-03.rl2",
+            "exit_code": 0,
+            "observation": "started_and_ran",
+            "timed_out": false,
+            "receipt_sha256": "7e574ec7e4b4adc13852b09092f03c36e899ef5668d74d467f5d26695069a6ba",
+            "texture_quality": 0,
+            "maximum_texture_quality": 3
+        },
+        {
+            "schema": "xl-original-campaign-probe-v1",
+            "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "engine_sha256": "2fb2cc81a694a526638cf978d98133b932b9f4fe9c1086dc568e13dd8b4de1d3",
+            "descriptor": "single/sphere.mn2",
+            "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+            "ordinal": -1,
+            "advertised_file": "sp-s.rl2",
+            "exit_code": null,
+            "observation": "simulation_unverified",
+            "timed_out": true,
+            "receipt_sha256": "460b1d22065b8ecc7386b7516a01cb46c9ee198b2870ea3a0d0e15a6c38fb4d6"
+        }
+    ],
+    "native": {
+        "red_key": {
+            "receipt_sha256": "f1d1f499e9c1129ce333efb128317e074b8661ff7cdc01b5f4dd4826aa51c463",
+            "exe": "140d85215f46ffb94037e46a7274f352bdcfb4a7306bfc728d0678da3d03c841",
+            "plan": "d8d79944f83cbf94d7a5169d09becbda8f8b76b004bcc6386e0d6bc91545e911",
+            "steps": 37,
+            "position_assists": 0,
+            "fixed_view_aim": 0,
+            "resume": "",
+            "save": "b6106f2ba6c5823dd32f7093291970d7b5de7be3694f86ace80999c39de4673a",
+            "export": "460239911d1ec9f477939d4bb0160c38f5b8ec64e1e0721b5e0f4b5676006f65",
+            "segment": 1600,
+            "level": 1,
+            "player": {
+                "lives": 3,
+                "score": 2200,
+                "energy": 110.0953369140625,
+                "shields": 71.54852294921875,
+                "has_red_key": true,
+                "has_gold_key": false,
+                "has_blue_key": false,
+                "hostages_on_board": 0
+            },
+            "transitions": [],
+            "result": "PASS"
+        },
+        "shaft": [
+            {
+                "receipt_sha256": "f611c9601a6f1a0ea69ffca5e629f24c0477a2f29fa310b65607e1727209f6cc",
+                "exe": "c71fff1ea0f8a932ac61706c04030a5838df1ca43a06e9bb0dfa25197cd3fac4",
+                "plan": "4c74cd50158e870b664e86cb1fc2809d89fec1f1dd574c54f241b2e6f0401503",
+                "steps": 7,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "b6106f2ba6c5823dd32f7093291970d7b5de7be3694f86ace80999c39de4673a",
+                "save": "209d79a54aed8066d411632e12451735318dd9bc3951203766ddbee8d4d559b8",
+                "export": "83445b601e30ee8c460b32ac64f07612a2c81fd7b1e701b59790ee5364791c13",
+                "segment": 1553,
+                "level": 1,
+                "player": {
+                    "lives": 3,
+                    "score": 4000,
+                    "energy": 100.2955322265625,
+                    "shields": 139.7974090576172,
+                    "has_red_key": true,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "0c85b0ccd59f6bf4fc05e4119b6b514dfbe450da6ea2178688b9ee08e0d86f7f",
+                "exe": "c71fff1ea0f8a932ac61706c04030a5838df1ca43a06e9bb0dfa25197cd3fac4",
+                "plan": "37736e71e33d08d5d950ef6fd86f3c550f35c6a8e73a0fa4b2be12ded5dcedb2",
+                "steps": 36,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "209d79a54aed8066d411632e12451735318dd9bc3951203766ddbee8d4d559b8",
+                "save": "164bbd5bfa1b4b149d1e240455c286b52a1d89c250749a77b7a7fa9d40265214",
+                "export": "7719e1f6021947a73d5bb93af281305482769f353743e71bd35d2c76a4f1bb66",
+                "segment": 979,
+                "level": 1,
+                "player": {
+                    "lives": 3,
+                    "score": 7250,
+                    "energy": 76.0455322265625,
+                    "shields": 3.163818359375,
+                    "has_red_key": true,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "ad81551e7f21cb8274e04d4fe46c1d2b99a0460437e54beacf5a519776cd8613",
+                "exe": "c71fff1ea0f8a932ac61706c04030a5838df1ca43a06e9bb0dfa25197cd3fac4",
+                "plan": "d581ec1b49e6859a315fcabe5b47212884235402d1127085b348d522435506cd",
+                "steps": 3,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "164bbd5bfa1b4b149d1e240455c286b52a1d89c250749a77b7a7fa9d40265214",
+                "save": "0b84e82788bc9ea129f73e558fda8c281180f4aaeafd2f712353817f8d7aef46",
+                "export": "01a609e1f24e1dd4a3ccd0549d17e3edfeb2b8fec0cdb54c9667572a8854c89f",
+                "segment": 1120,
+                "level": 1,
+                "player": {
+                    "lives": 3,
+                    "score": 7250,
+                    "energy": 75.5455322265625,
+                    "shields": 0.9597625732421875,
+                    "has_red_key": true,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "56246d26d6297ea1d4265b70bd2bf34b412d5f9cfdba82dd7d2c285aee782663",
+                "exe": "c71fff1ea0f8a932ac61706c04030a5838df1ca43a06e9bb0dfa25197cd3fac4",
+                "plan": "c86ede64036bf148b34d3116f9c7adc448181865def3da791e0a3c7b534c1494",
+                "steps": 13,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "0b84e82788bc9ea129f73e558fda8c281180f4aaeafd2f712353817f8d7aef46",
+                "save": "46a1c6600126a8821c6d8bb1c7085f8d0300490b37e7f5abe10cfa71fe34faa2",
+                "export": "0328e8319fbcfc881b507ddff6118a0fb36a7679c91a4a0fbff4eb083338e49a",
+                "segment": 0,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 7300,
+                    "energy": 100.0,
+                    "shields": 100.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [[1, 2]],
+                "result": "PASS"
+            }
+        ],
+        "modal": [
+            {
+                "id": 5,
+                "level": 1,
+                "text": "....Message Received....\n\nSubject: secured shaft\n\n          This path leads to the exit, but you must disable the security          \n system before proceeding down this shaft\nControls are located in the Blue Access area."
+            }
+        ],
+        "shafts_entry_requires": "b6106f2ba6c5823dd32f7093291970d7b5de7be3694f86ace80999c39de4673a",
+        "storage": [
+            {
+                "receipt_sha256": "be56d6e48ab0ab8c23f6034fc456710cfdb0ed3b271a433a205991ec29064b35",
+                "exe": "ffedd2d5f1e2f5052a5864cc9dd0fdb5e79d50db8ccb1a6286e88df1acf7e14f",
+                "plan": "6f0b4c4c2d674ef181afbda125a1ed4d57179845e19bfbb85f788d39ae91bbde",
+                "steps": 12,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "4df7cdd214a652ca6761b59fed25a56c21dd2b630d1f4eb736f463b70c9d4a24",
+                "save": "b4e391bb7354d996cfacd9a8892262fe242c2e8a96dd9df4845bff9a2e568c6f",
+                "export": "fce7d2081c91affd7b2d07945300b0efeeaf3558667bdaf3b073d39d8cef8c87",
+                "segment": 173,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 7300,
+                    "energy": 86.75,
+                    "shields": 100.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "c02d577e2101e2db7be9c2a7ef83ac9b8870492562015f7b0f4062c906b820a8",
+                "exe": "ffedd2d5f1e2f5052a5864cc9dd0fdb5e79d50db8ccb1a6286e88df1acf7e14f",
+                "plan": "1ea6ef8264f6ed8e07e8f5c65e546876d68b41ca7c6901ca3c7238c5fd51381a",
+                "steps": 12,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "b4e391bb7354d996cfacd9a8892262fe242c2e8a96dd9df4845bff9a2e568c6f",
+                "save": "c7aec91e54ec3fc7710cc61250c7686d4e3edcefb07408b64d348f3eaee42dcd",
+                "export": "37b48a1e60e1442e7e66060bc3bb8fefe94b6698d7cd831d20a853ca0bdc8432",
+                "segment": 66,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 7300,
+                    "energy": 72.0,
+                    "shields": 121.97682189941406,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "2c3d855093cc9810976379e7cc0cf4399339d8ea23da729d2fa03fe0bf45c5b7",
+                "exe": "ffedd2d5f1e2f5052a5864cc9dd0fdb5e79d50db8ccb1a6286e88df1acf7e14f",
+                "plan": "0aa54b4dfdc3f2aa9106d0af849b08450323f8542aecd704215ceca0150dc00f",
+                "steps": 12,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "c7aec91e54ec3fc7710cc61250c7686d4e3edcefb07408b64d348f3eaee42dcd",
+                "save": "2fb538522bab05874568934f9cddf40479c3c1287dbdbe90d963083e107ac5df",
+                "export": "eb9e3d5832b2cdde5d7bc91086cda55b4b724d5da9548d5758755fc0eb3c11e1",
+                "segment": 638,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 9300,
+                    "energy": 58.5,
+                    "shields": 105.70869445800781,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "b511286d9f2f44d394b253d555d1d1c371052c965ef3919e9bbc699b5fe151fa",
+                "exe": "ffedd2d5f1e2f5052a5864cc9dd0fdb5e79d50db8ccb1a6286e88df1acf7e14f",
+                "plan": "38ac5703483d70a04c5a6a61033d0dec962921d176176f343de7f58fb0f2b2ea",
+                "steps": 12,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "2fb538522bab05874568934f9cddf40479c3c1287dbdbe90d963083e107ac5df",
+                "save": "4559e26bd0d17577c82457fd045dce41df212b8ad3adc7a59406f8b29fe3aae0",
+                "export": "66b1a33e4e6e1b2d3e22d58b0eee4acedb224cdd02f15330cbf7a6b32c1f00fd",
+                "segment": 704,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 9300,
+                    "energy": 44.0,
+                    "shields": 105.70869445800781,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "6237470a9364659b8a105d4510d4ce2bb3fa1e618b71a34622dc4f46cda91c04",
+                "exe": "ffedd2d5f1e2f5052a5864cc9dd0fdb5e79d50db8ccb1a6286e88df1acf7e14f",
+                "plan": "179991fae60da628723f6258971005788992f9b6c1b2f97a29a035216de3a199",
+                "steps": 12,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "4559e26bd0d17577c82457fd045dce41df212b8ad3adc7a59406f8b29fe3aae0",
+                "save": "4887662b7c2bc39c276c1fbeb89bc2221ff68fe7cf62b6d591d1e98f68186176",
+                "export": "d637a9c3ed949ab7bac05ba786799e4fd23d1f0e546086fd5b2fe18c7310bd49",
+                "segment": 840,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 9300,
+                    "energy": 34.75,
+                    "shields": 105.70869445800781,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "6841df52f643029b52e2dadd484fa63be03ae27380d5dff2ddc16366e327af99",
+                "exe": "ffedd2d5f1e2f5052a5864cc9dd0fdb5e79d50db8ccb1a6286e88df1acf7e14f",
+                "plan": "96e01eb06c8526efaab8ccbc021091c773ec0586f2df08044df14cf02e419fdc",
+                "steps": 12,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "4887662b7c2bc39c276c1fbeb89bc2221ff68fe7cf62b6d591d1e98f68186176",
+                "save": "0ba88e79381c80bbc304156e62cb30ff2629bbec260a733bb92de5a0b1ff1d65",
+                "export": "d9ed44315bd207eb0717e8de1a4ac5b65069b3306e44a34774cc426ad7f5e777",
+                "segment": 954,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 9300,
+                    "energy": 18.75,
+                    "shields": 90.70869445800781,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            }
+        ]
+    },
+    "android": {
+        "target": "VignetteHost x86_64 emulator",
+        "assets": [
+            {
+                "path": "files/imported/sets/default/missions/sphere.hog",
+                "sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/missions/sphere.mn2",
+                "sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x.hog",
+                "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x-xl.hog",
+                "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                "added": true
+            }
+        ],
+        "red_written": "8cc608d88b187bc72aac54a4025d0c446e295d2bd3703ba72d571e89e8c0b3df",
+        "arrival_written": "e1d5698fb96c366f1efbf166756311b1acc4dea68230dd056f337aaf238f9ee8",
+        "arrival_export_bytes": 2674686,
+        "arrival_written_bytes": 2739681,
+        "checks": {
+            "device-write2.log": "590dbfa2964afa85d66c1da36e28c17c5dba706c4b42a8a51443d6215cf38c21",
+            "device-cold.log": "dedd87094392cd9f7a92cd3864a9e36b2f502b6078968a90ebfef67724f719c3",
+            "device-level2-write.log": "985e27372aa7b69b89c2405f3c14b503af7d95d02d41d1db12b5aaad34c7ffb7",
+            "level2-cold-final.log": "a1ec859ea17da375acfa48b36fa670d48735d140290ac661bcb62c98005f662e",
+            "capture-diagnostic.log": "8e4a8bb67fc49245e1c0772eaf0a892f295a678a19b0cd3ef0c781a21b17b11c",
+            "capture-limit.log": "b678cf1c8e4f22f9c301734f77cb4e9d41663ee19fe17692c88e6c4c85cfc1f8"
+        },
+        "recording": [
+            {
+                "file": "d2_sphere_level2_20261119_170421.dximdemo",
+                "remote": "files/d2x-redux/input_demo_recordings/new/d2_sphere_level2_20261119_170421.dximdemo",
+                "bytes": 1371102,
+                "sha256": "697a60f616c72299f087c455bff1a18d7264e4f9df5b6bf938e16c2ecfa03370"
+            },
+            {
+                "file": "d2_sphere_level2_20261119_170421.dximdemo.rngtrace.jsonl",
+                "remote": "files/d2x-redux/input_demo_recordings/new/d2_sphere_level2_20261119_170421.dximdemo.rngtrace.jsonl",
+                "bytes": 3780146,
+                "sha256": "31727d37513b1bf9f3419a6f8955df5530cbac4d8a7de2bb13046a37206056ef"
+            },
+            {
+                "file": "live-10856.jsonl.gz",
+                "remote": "files/d2x-redux/xl_capture_traces/live-10856.jsonl.gz",
+                "bytes": 3303303,
+                "sha256": "2d8ba853477d23c3585516d371ade5bf86bd3ead3cc9c0575a41a5fb58d08eff"
+            }
+        ],
+        "developer_apk_sha256": "37c614eb865cfd8f9caa0e51dd4c5a526decb6fdbcd6154c50658bdf1e7c556a",
+        "windows_before_controls": {
+            "binary": "88cd1ae14061c9c0d445443251386919d382abccfa3e7a923d2cc4bff0499d0c",
+            "exit": 0,
+            "seconds": 42.796,
+            "checks": {
+                "frames": {
+                    "frames_compared": 25,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 25
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 29
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 1261,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "comparison_sha256": "990f03d7e7e657df817418447fa9e76b13f8a5e150f08103ab84aaf4babc873d"
+        },
+        "windows_after_controls": {
+            "binary": "3da80a76df1a1f10ef89e4c14336651d534420a970a4d5ff8c1f50dde26e0b07",
+            "exit": 0,
+            "seconds": 38.562,
+            "checks": {
+                "frames": {
+                    "frames_compared": 25,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 25
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 29
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 1261,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0,
+                    "first_difference": null,
+                    "first_value_difference": null
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "comparison_sha256": "990f03d7e7e657df817418447fa9e76b13f8a5e150f08103ab84aaf4babc873d"
+        }
+    },
+    "message_clock": {
+        "passed": true,
+        "exit_code": 0,
+        "elapsed_seconds": 14.202999999979511,
+        "proof": {
+            "schema": "xl-message-clock-v1",
+            "derived": true,
+            "complete": true,
+            "mission": "xmodal",
+            "level": 1,
+            "xl_active": true,
+            "renderer": "Intel(R) Arc(TM) 140T GPU (16GB)",
+            "rejected_profiles": 22,
+            "modal_count": 1,
+            "resumed_frame_time": 0,
+            "resumed_heading": 0,
+            "message_id": 3,
+            "message_elapsed": 0,
+            "post_frame_cached_ms": 7893,
+            "recorded_frames": 60,
+            "terminal_message": 0
+        },
+        "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+        "reference_hashes": {
+            "main/textdata.cpp": "d6172ffd9c3e94162358228ce168dd005d03feba231f45165b97f9b4ff1c0c5c",
+            "main/gamecntl.cpp": "53f7dc5dbb4e325e6f7ef12b48398fb4d27cbfcfc8bb90a61f7842f915f49d20",
+            "main/gametime.cpp": "758b4a92b3800c0407c659f2829792e64cdabba7a818b27a64e6e267446d269b",
+            "menus/menu.cpp": "7d622b4dbcbe6bf0d725c89e6df5265d64227b14a439cac93d98e303fd2244e1",
+            "render/renderframe.cpp": "56f059e9f02903cece0da2b95acbb2469bd65c9046d0a8539ee0708c632e3bbf",
+            "render/automap.cpp": "19b7128b48dadea220a085018e0fd3a2ff31d59fa04d60fce78d4bb1f5877be8",
+            "weapons/omega.cpp": "76f003622dcbac54dbd533fd4dfa8537c7ceceed0c75c5310c83b7b075cfb61d",
+            "gameio/loadgame.cpp": "5d7ff36d6121411e0250be94353bbe3268bdd02b9bd35c6161951d879fcecc55"
+        },
+        "engine_sha256": "3da80a76df1a1f10ef89e4c14336651d534420a970a4d5ff8c1f50dde26e0b07",
+        "official_readiness_status_updated": false,
+        "recordings": [
+            {
+                "sha256": "036d5962b2df288fa5f9eab06eee15a920c03822d848b790feb24c1de35b6814",
+                "frame_count": 60,
+                "live_replay_qualified": false
+            }
+        ]
+    },
+    "startup": {
+        "fixed": {
+            "sha256": "bbd697c0b0ed1b7afc2c4819bb726a618e82c2b5f2a4c4ee5bcf75c8fb523e58",
+            "target": "3aa328caec5dc2d7f0ade81a8d9727b69c2817ff",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 8
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 8,
+                "readiness_percent": 100.0
+            }
+        },
+        "expanded-all-inputs": {
+            "sha256": "6d04fdd5ec661ab9d2307aa0c31bdb21498d6407b0b2ed197d85180eb41d8fe9",
+            "target": "3aa328caec5dc2d7f0ade81a8d9727b69c2817ff",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 64
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 64,
+                "passed": 64,
+                "readiness_percent": 100.0
+            }
+        },
+        "tip-ordinary-fixed": {
+            "sha256": "9074ba2fafb63366326ca6861fb00d170240aa8b9cc9106d293d1d9cf76b174c",
+            "target": "a60b4c986b308e9997c933b0f4c328d4a034ed70",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 8
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 8,
+                "readiness_percent": 100.0
+            }
+        },
+        "tip-ordinary-expanded": {
+            "sha256": "74ed40bf474d64b3d99aeef2ed3831811ca0ff5a69bbc358168ad32051d63d4a",
+            "target": "a60b4c986b308e9997c933b0f4c328d4a034ed70",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 64
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 64,
+                "passed": 64,
+                "readiness_percent": 100.0
+            }
+        },
+        "light-fixed": {
+            "sha256": "3a59109093e296c7beec8b1a653625ca2e59db5277037b11d216e957c8f0687b",
+            "target": "7317685f246ddd16560d79ef59fd7c5a20f5155e",
+            "summary": {
+                "complete": true,
+                "counts": {
+                    "loaded_ticked": 8
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 8,
+                "passed": 8,
+                "readiness_percent": 100.0
+            }
+        },
+        "light-expanded": {
+            "sha256": "eab239ade8a83c57e6ca03d89607cb4a7a93c045bc23d5c1851ad893e1970635",
+            "target": "7317685f246ddd16560d79ef59fd7c5a20f5155e",
+            "summary": {
+                "complete": false,
+                "counts": {
+                    "loaded_ticked": 15,
+                    "untested": 49
+                },
+                "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                "denominator": 64,
+                "passed": 15,
+                "readiness_percent": null
+            }
+        }
+    },
+    "light_sources": {
+        "ordinary": [
+            {
+                "schema": "dxx-xl-load-tick-v1",
+                "phase": "loaded_ticked",
+                "mission": "sphere",
+                "level": 3,
+                "level_file": "sp-03.rl2",
+                "segments": 3219,
+                "xl_active": true,
+                "level_version": 22,
+                "frames": 120,
+                "fixed_hz": 60,
+                "seed": 1,
+                "assisted": false
+            },
+            {
+                "schema": "dxx-xl-load-tick-v1",
+                "phase": "loaded_ticked",
+                "mission": "sphere",
+                "level": -1,
+                "level_file": "sp-s.rl2",
+                "segments": 1967,
+                "xl_active": true,
+                "level_version": 21,
+                "frames": 120,
+                "fixed_hz": 60,
+                "seed": 1,
+                "assisted": false
+            }
+        ],
+        "native": {
+            "start": {
+                "result": "PASS",
+                "receipt_sha256": "564088df22be1f2930843ce70ebf9273478cfa3557ed4d86b05de8673243bb9e",
+                "executable": "f12cbe927dcbddcefeae842e7154ca89f0ae24056bf73ecb24b20594eb8d12f2",
+                "plan": "d8492efc3e61b1d82a782170cb7b464e24caec13f4c982f07da026f0b21d66d5",
+                "resume": "",
+                "save": ["ac2a0fd617b4d8a64388c66a64c4b4aa80ebd52eeb40b758d532e862a67d2be2"],
+                "position_assists": 0,
+                "flicker_changes": []
+            },
+            "flight": {
+                "result": "PASS",
+                "receipt_sha256": "f1f2bc64fc0b1a0b012f8eab3c5985ae01768355cb46377084f2b18da15179ee",
+                "executable": "f12cbe927dcbddcefeae842e7154ca89f0ae24056bf73ecb24b20594eb8d12f2",
+                "plan": "32020c21cfffdcd28a9ebddb13f7f288d0df5bd3fbc8e750d022926ccccae78a",
+                "resume": "ac2a0fd617b4d8a64388c66a64c4b4aa80ebd52eeb40b758d532e862a67d2be2",
+                "save": ["823caeb732930cedd5da2b0bfded3eb4b197fbf1272a2603c5324c9e3559728a"],
+                "position_assists": 0,
+                "flicker_changes": [
+                    {
+                        "ambient_after": 0,
+                        "ambient_before": 65535,
+                        "event": "flicker_change",
+                        "frame": 633,
+                        "segment": 2,
+                        "side": 1,
+                        "subtracted": true
+                    },
+                    {
+                        "ambient_after": 65535,
+                        "ambient_before": 0,
+                        "event": "flicker_change",
+                        "frame": 651,
+                        "segment": 2,
+                        "side": 1,
+                        "subtracted": false
+                    }
+                ]
+            },
+            "cold": {
+                "result": "PASS",
+                "receipt_sha256": "e7d229ed8284c0134c1a579000ca786773bd939779c96dac6f15699a3adb1939",
+                "executable": "f12cbe927dcbddcefeae842e7154ca89f0ae24056bf73ecb24b20594eb8d12f2",
+                "plan": "a5f5f08d55b6494ef4085d867cfab685a83fbe5f499a6c72b9e4787fef975fd3",
+                "resume": "823caeb732930cedd5da2b0bfded3eb4b197fbf1272a2603c5324c9e3559728a",
+                "save": [],
+                "position_assists": 0,
+                "flicker_changes": [
+                    {
+                        "ambient_after": 0,
+                        "ambient_before": 65535,
+                        "event": "flicker_change",
+                        "frame": 6,
+                        "segment": 2,
+                        "side": 1,
+                        "subtracted": true
+                    },
+                    {
+                        "ambient_after": 65535,
+                        "ambient_before": 0,
+                        "event": "flicker_change",
+                        "frame": 18,
+                        "segment": 2,
+                        "side": 1,
+                        "subtracted": false
+                    }
+                ]
+            }
+        },
+        "neptune": {
+            "dispatch": {
+                "log_sha256": "90867d5fdac785be4cf84966d6c011f07029809d84bf33c5240ac92eddcff20e",
+                "observations": [
+                    "1280 pinned delta-reader validity and raw-payload controls passed",
+                    "524 source UVL and 56 segment attenuation samples matched"
+                ]
+            },
+            "validity": {
+                "log_sha256": "90867d5fdac785be4cf84966d6c011f07029809d84bf33c5240ac92eddcff20e",
+                "observations": [
+                    "1280 pinned delta-reader validity and raw-payload controls passed",
+                    "524 source UVL and 56 segment attenuation samples matched"
+                ]
+            }
+        }
+    }
+}
