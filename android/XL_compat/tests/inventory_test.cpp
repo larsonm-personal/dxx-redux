@@ -141,7 +141,7 @@ void legacy_blocked_contract()
 void reactor_count_contract()
 {
 	for (int version : { 15, 17, 21, 23, 25, 27 }) {
-		for (int count : { 0, 1, 9, 10, 11, 26, 32767 }) {
+		for (int count : { -32768, -1, 0, 1, 9, 10, 11, 26, 32767 }) {
 			auto bytes = fixture(version);
 			const auto source = xl_compat::inspect_level(bytes);
 			const auto offset = bytes.size();
@@ -151,23 +151,21 @@ void reactor_count_contract()
 			put(bytes, count, 2);
 			for (int i = 0; i < 10; ++i) put(bytes, 0, 2);
 			for (int i = 0; i < 10; ++i) put(bytes, i % 6, 2);
-			if (version < 21 && count > 10) {
+			if (version < 21 && (count < 0 || count > 10)) {
 				rejects([&] { xl_compat::inspect_level(bytes); });
 				continue;
 			}
 			const auto decoded = xl_compat::inspect_level(bytes);
-			check(decoded.reactor_authored_count == count && decoded.reactor_targets.size() == std::size_t(std::min(count, 10)), "Reactor raw/effective count differs");
+			check(decoded.reactor_authored_count == count && decoded.reactor_targets.size() == std::size_t(std::clamp(count, 0, 10)), "Reactor raw/effective count differs");
 			const auto probe = xl_compat::prepare_gameplay_probe(bytes);
 			const auto read32 = [&](std::size_t at) { unsigned n=0; for(int i=0;i<4;++i)n|=unsigned(probe.stock_level.at(at+i))<<(8*i); return n; };
 			const auto stock_at = read32(read32(12) + 95);
-			check(probe.stock_level.at(stock_at) == std::min(count, 10) && probe.stock_level.at(stock_at + 1) == 0, "Unsafe reactor count reached classic shadow");
+			check(probe.stock_level.at(stock_at) == std::clamp(count, 0, 10) && probe.stock_level.at(stock_at + 1) == 0, "Unsafe reactor count reached classic shadow");
 			check(std::equal(bytes.begin() + offset + 2, bytes.end(), probe.stock_level.begin() + stock_at + 2), "Reactor slot order or duplicates changed");
 			check(bytes[offset] == (count & 255), "Original reactor input mutated");
 			check(xl_compat::inventory_json(decoded).find("\"reactor_authored_count\": " + std::to_string(count)) != std::string::npos, "Authored reactor count hidden");
 			auto bad = bytes;
-			patch(bad, offset, 65535, 2);
-			rejects([&] { xl_compat::inspect_level(bad); });
-			if (count)
+			if (count > 0)
 				for (int slot : { 0, std::min(count, 10) - 1 }) {
 					bad = bytes;
 					patch(bad, offset + 2 + slot * 2, 1, 2);

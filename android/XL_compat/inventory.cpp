@@ -613,9 +613,9 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 	if (reactor.count) {
 		auto r = section_reader(bytes, out, reactor, 42);
 		const auto authored_count = out.reactor_authored_count = r.s16();
-		require(authored_count >= 0 && (modern_runtime_layout(out) || authored_count <= 10), "invalid reactor trigger count");
-		// Pinned CTriggerTargets::Read calls Check, which caps the fixed ten slots
-		const auto count = std::min(authored_count, 10);
+		require(modern_runtime_layout(out) || (authored_count >= 0 && authored_count <= 10), "invalid reactor trigger count");
+		// CTriggerTargets::Check visits up to ten slots and visits none for a negative count
+		const auto count = std::clamp(authored_count, 0, 10);
 		std::array<int, 10> segments{}, sides{};
 		for (auto &v : segments) v = r.s16();
 		for (auto &v : sides) v = r.s16();
