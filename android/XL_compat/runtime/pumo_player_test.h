@@ -72,6 +72,11 @@ class PilotPickupObservation
 	}
 };
 #endif
+static bool pilot_is_alive()
+{
+	// Lethal collision damage marks the ship before the next frame starts its death sequence.
+	return ConsoleObject && !Player_is_dead && Players[Player_num].shields >= 0 && !(ConsoleObject->flags & OF_SHOULD_BE_DEAD);
+}
 static bool pilot_protection_is_earned(int position_assists)
 {
 	if (!(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE)) return true;
@@ -823,7 +828,7 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 			require_ordinary_secondary_input("before_frame");
 			const auto frame_started = std::chrono::steady_clock::now();
 			timer_update();
-			require(!Player_is_dead && !cheats.enabled && !cheats.ghostphysics && !cheats.monsterdamage && !cheats.robotfiringsuspended && pilot_protection_is_earned(position_assist_events), "ordinary player probe died or acquired assisted combat");
+			require(pilot_is_alive() && !cheats.enabled && !cheats.ghostphysics && !cheats.monsterdamage && !cheats.robotfiringsuspended && pilot_protection_is_earned(position_assist_events), "ordinary player probe died or acquired assisted combat");
 			remainder += F1_0;
 			FrameTime = remainder / fps;
 			remainder %= fps;
@@ -939,6 +944,7 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 			firing = primary && aim_z > 0.95;
 			return sight_target && distance < 1 && aim_z > 0.998 && vm_vec_mag(&physics.velocity) < i2f(3);
 		};
+		require(pilot_is_alive(), "ordinary player probe died or sustained lethal damage");
 		for (const auto &step : plan.at("steps")) {
 			require_ordinary_secondary_input("before_step");
 			const std::string action = step.at("action");
@@ -1283,6 +1289,7 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 				require(fps >= 1 && fps <= 120, "native player simulation rate out of range");
 				remainder = 0;
 			} else require(action == "introspect", "unsupported native player action");
+			require(pilot_is_alive(), "ordinary player probe died or sustained lethal damage");
 			++completed;
 		}
 		std::ofstream(root / "player-state.json") << snapshot().dump(2) << '\n';
