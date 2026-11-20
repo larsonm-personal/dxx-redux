@@ -441,6 +441,54 @@ jobs:
             ${{ steps.public_tool_cache.outputs.python }}
             ${{ steps.public_tool_cache.outputs.sevenzip }}
           key: native-public-tools-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('control/android/get_deps/tool_versions.conf') }}
+      # Seed only from reviewed public controller inputs, before private assets or target execution
+      - name: Select host metadata CLI provisioning
+        id: metadata_cli_selection
+        env:
+          VALIDATE_METADATA_CLI: ${{ github.event_name == 'pull_request' }}
+          CONTROL_INPUTS: ${{ hashFiles('control/android/settings.gradle', 'control/android/host-jvm.gradle', 'control/android/gradle.properties', 'control/android/mission-metadata-*/build.gradle', 'control/android/proxy-tests/build.gradle', 'control/android/get_deps/tool_versions.conf') }}
+          TARGET_INPUTS: ${{ hashFiles('target/android/settings.gradle', 'target/android/host-jvm.gradle', 'target/android/gradle.properties', 'target/android/mission-metadata-*/build.gradle', 'target/android/proxy-tests/build.gradle', 'target/android/get_deps/tool_versions.conf') }}
+        run: |
+          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then exit 0; fi
+          if [[ "$VALIDATE_METADATA_CLI" != true ]] && ! python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-corpus' for e in p['tests']))"; then
+            exit 0
+          fi
+          echo 'needed=true' >> "$GITHUB_OUTPUT"
+          if [[ "$PUBLIC_TOOL_CACHE_TRUSTED" == true && -n "$CONTROL_INPUTS" && "$CONTROL_INPUTS" == "$TARGET_INPUTS" ]]; then
+            echo "key=nightly-host-gradle-modules-v1-$RUNNER_OS-$RUNNER_ARCH-$CONTROL_INPUTS" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Restore trusted host Gradle dependencies
+        id: host_gradle_restore
+        if: steps.metadata_cli_selection.outputs.key != ''
+        continue-on-error: true
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ runner.temp }}/dxx-host-gradle/caches/modules-2
+          key: ${{ steps.metadata_cli_selection.outputs.key }}
+      - name: Warm host Gradle dependencies from the trusted controller
+        id: host_gradle_warm
+        if: steps.metadata_cli_selection.outputs.key != '' && steps.host_gradle_restore.outputs.cache-hit != 'true'
+        continue-on-error: true
+        timeout-minutes: 6
+        env:
+          GRADLE_USER_HOME: ${{ runner.temp }}/dxx-host-gradle
+        run: |
+          # Drop any incomplete restore. This is a hosted, disposable cache directory
+          rm -rf -- "$GRADLE_USER_HOME/caches/modules-2"
+          bash control/android/get_deps/helpers/get_jdk.sh
+          export JAVA_HOME="$RUNNER_TEMP/dxx-nightly-deps/jdk-21"
+          bash control/android/get_deps/helpers/get_gradle_wrapper.sh
+          gradle=(bash control/android/gradlew -p control/android -PhostJvmOnly=true :mission-metadata-cli:installDist --console=plain --no-daemon)
+          "${gradle[@]}"
+          "${gradle[@]}" --offline
+      - name: Save verified public host Gradle dependencies
+        if: steps.metadata_cli_selection.outputs.key != '' && steps.host_gradle_warm.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ runner.temp }}/dxx-host-gradle/caches/modules-2
+          key: ${{ steps.metadata_cli_selection.outputs.key }}
       - name: Verify trusted retail checkout boundary
         id: retail_gate
         env:
@@ -547,19 +595,25 @@ jobs:
       - name: Prepare asset-free metadata CLI
         id: metadata_cli_prerequisites
         timeout-minutes: 15
+        if: steps.metadata_cli_selection.outputs.needed == 'true'
         env:
-          VALIDATE_METADATA_CLI: ${{ github.event_name == 'pull_request' }}
+          HOST_GRADLE_CACHE_READY: ${{ steps.host_gradle_restore.outputs.cache-hit == 'true' || steps.host_gradle_warm.outcome == 'success' }}
         run: |
-          if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then exit 0; fi
-          if [[ "$VALIDATE_METADATA_CLI" != true ]] && ! python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-corpus' for e in p['tests']))"; then
-            exit 0
-          fi
           bash target/android/get_deps/helpers/get_jdk.sh
           export JAVA_HOME="$RUNNER_TEMP/dxx-nightly-deps/jdk-21"
           echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
           # The wrapper JAR and properties are generated, not tracked
           bash target/android/get_deps/helpers/get_gradle_wrapper.sh
-          bash target/android/gradlew -p target/android -PhostJvmOnly=true :mission-metadata-cli:installDist --console=plain
+          gradle=(bash target/android/gradlew -p target/android -PhostJvmOnly=true :mission-metadata-cli:installDist --console=plain --no-daemon)
+          if [[ "$HOST_GRADLE_CACHE_READY" != true ]]; then
+            "${gradle[@]}"
+          else
+            export GRADLE_USER_HOME="$RUNNER_TEMP/dxx-host-gradle"
+            if ! "${gradle[@]}" --offline; then
+              echo 'Host metadata CLI offline attempt failed; retrying online once'
+              "${gradle[@]}"
+            fi
+          fi
           test -x target/android/mission-metadata-cli/build/install/mission-metadata-cli/bin/mission-metadata-cli
       - name: Prepare locked formatter dependencies
         id: formatter_prerequisites
@@ -583,7 +637,7 @@ jobs:
       - name: Recover completed receipts after failure or interruption
         if: always()
         env:
-          SETUP_FAILED: ${{ (steps.prerequisites.outcome == 'failure' || steps.public_tool_cache.outcome == 'failure' || steps.public_tool_verification.outcome == 'failure' || steps.public_prerequisites.outcome == 'failure' || steps.metadata_cli_prerequisites.outcome == 'failure' || steps.formatter_prerequisites.outcome == 'failure' || steps.retail_stage.outcome == 'failure' || steps.retail_gate.outcome == 'failure' || steps.retail_checkout.outcome == 'failure') && steps.execute.outcome == 'skipped' }}
+          SETUP_FAILED: ${{ (steps.prerequisites.outcome == 'failure' || steps.public_tool_cache.outcome == 'failure' || steps.public_tool_verification.outcome == 'failure' || steps.public_prerequisites.outcome == 'failure' || steps.metadata_cli_selection.outcome == 'failure' || steps.metadata_cli_prerequisites.outcome == 'failure' || steps.formatter_prerequisites.outcome == 'failure' || steps.retail_stage.outcome == 'failure' || steps.retail_gate.outcome == 'failure' || steps.retail_checkout.outcome == 'failure') && steps.execute.outcome == 'skipped' }}
         run: |
           blocked=()
           if [[ "$SETUP_FAILED" == true ]]; then blocked=(--blocked-reason 'host lane provisioning failed; inspect setup logs'); fi
