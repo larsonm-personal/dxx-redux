@@ -1,0 +1,9 @@
+# Replacement kickoff after the Sphere campaign tranche
+
+On explicit invocation, use the user's new time window or completion target. Ask for one if none was supplied. Reserve the closing third of a bounded window for validation, final-head CI and the handoff. Read AGENTS.md, .github/copilot-instructions.md, the [dated report](xl_sphere_what_was_done_20261119.md), [execution ledger](xl_sphere_execution_20261119.json), [ordered plan](xl_sphere_next_window_20261119.md) and the previous G2–G7 acceptance records.
+
+Work sequentially in C:/local/dxx-redux. Fetch the fork's cmake, inspect open stacks, worktrees and stashes, and start from the merged cmake tree or the tested immediate parent of the open stack. Publish non-draft, immediate-parent PRs on larsonm-personal/dxx-redux linked to #471. Leave merging to the maintainer.
+
+Fly the authentic standalone Sphere 1.51 from the registered segment 954 checkpoint in level two. The red key, authored shaft message, normal exit, Android-written cold save and clean Windows replay are regression anchors. Keep the direct level-three flicker and direct signed-secret startup separate from campaign-earned entry. Keep release identity, ordinary inputs, all navigation assistance, state and save ancestry visible. Compare with the pinned original on matching assets. Protect authentic inputs, failed observations and other pilots. Follow android/CLEANUP.md and register active scratch for retention.
+
+Re-run affected Windows and Linux assertions, the authenticated 8 and fixed 64 at 120 frames, and the relevant original and Android controls. Preserve 4/8 as the frozen baseline and 1,654 as the full denominator. Track current public and trusted private runs by exact head, controller, merge revision and attempt. Diagnose failures, publish checked changes, monitor the final push, and commit the next dated report, ledger, ordered plan and replacement kickoff.
