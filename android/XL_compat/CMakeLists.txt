@@ -940,6 +940,14 @@ if(BUILD_TESTING)
                                                     sphere_respawn_extra_life)
         endif()
         add_test(
+            NAME xl_sphere_portal_cruise
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-portal-cruise -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_portal_cruise.cmake)
+        set_tests_properties(xl_sphere_portal_cruise PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
+        add_test(
             NAME xl_sphere_reactor_aim
             COMMAND
                 ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
