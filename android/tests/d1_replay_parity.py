@@ -904,10 +904,11 @@ def validate_object(value, engine, path, xl=False, capacity=1000):
         raise EvidenceError(f"Unsupported live object type: {path}")
     movement, control, render = (value[key] for key in ("movement_type", "control_type", "render_type"))
     camera = xl and engine == "d2" and value["type"] == 16 and control == 18
+    thruster = xl and engine == "d2" and value["type"] == 1 and control == 2 and render == 8
     if (
         movement not in (0, 1, 3)
         or (control not in (0, 1, 2, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15, 16) and not camera)
-        or not 0 <= render <= 7
+        or (not 0 <= render <= 7 and not thruster)
     ):
         raise EvidenceError(f"Unsupported object union discriminator: {path}")
     required = {}
@@ -946,7 +947,7 @@ def validate_object(value, engine, path, xl=False, capacity=1000):
         required["polyobj"] = integer_fields(
             "model_num subobj_flags tmap_override alt_textures", anim_angles=(VECTOR_SCHEMA,) * 10
         )
-    elif render in (2, 4, 5, 7):
+    elif render in (2, 4, 5, 7) or thruster:
         required["vclip"] = integer_fields("vclip_num frametime framenum")
     if value["type"] == 2:
         required["ai_local"] = AI_LOCAL_SCHEMA
