@@ -5,6 +5,51 @@
 
 namespace xl_compat
 {
+// D2X-XL BestShrinkFactor for the full, 256, 128 and 64 pixel texture profiles
+inline unsigned scoped_texture_factor(unsigned width, unsigned height, unsigned target)
+{
+	if (!target || !width || !height || (width & (width - 1)) || ((height & (height - 1)) && height % width)) return 1;
+	const unsigned maximum = (std::min) (512u / target, (3 * width / 2) / target);
+	unsigned factor = 1;
+	while (factor * 2 <= maximum && factor * 2 <= height) factor *= 2;
+	return factor;
+}
+
+// CTGA::Shrink averages RGB and RGBA separately and preserves the authored
+// super-transparent key when it occupies at least half of a source block
+inline void shrink_scoped_texture(PogBitmap &image, unsigned factor)
+{
+	if (factor == 1) return;
+	const unsigned width = image.width / factor, height = image.height / factor, count = factor * factor;
+	std::vector<unsigned char> pixels(std::size_t(width) * height * 4);
+	for (unsigned y = 0; y < height; ++y)
+		for (unsigned x = 0; x < width; ++x) {
+			unsigned sums[4]{}, keyed = 0;
+			for (unsigned dy = 0; dy < factor; ++dy) {
+				auto *pixel = image.pixels.data() + 4 * (std::size_t(y * factor + dy) * image.width + x * factor);
+				for (unsigned dx = 0; dx < factor; ++dx, pixel += 4) {
+					if (!image.rgb_opaque && pixel[0] == 120 && pixel[1] == 88 && pixel[2] == 128) ++keyed;
+					else
+						for (unsigned c = 0; c < 4; ++c) sums[c] += pixel[c];
+				}
+			}
+			auto *dest = pixels.data() + 4 * (std::size_t(y) * width + x);
+			if (keyed >= count / 2) {
+				dest[0] = 120;
+				dest[1] = 88;
+				dest[2] = 128;
+				dest[3] = 0;
+			} else {
+				for (unsigned c = 0; c < 4; ++c) dest[c] = static_cast<unsigned char>(sums[c] / (count - keyed));
+				if (!image.rgb_opaque && !(image.flags & pog_super) && dest[0] == 120 && dest[1] == 88 && dest[2] == 128)
+					std::fill_n(dest, 4, 0);
+			}
+		}
+	image.pixels.swap(pixels);
+	image.width = width;
+	image.height = height;
+}
+
 // Explicit compatibility extension for authored scoped textures. The pinned
 // CTGA raw reader does not decode type 10; ordinary particle images keep its policy
 inline PogBitmap read_scoped_texture_image(const unsigned char *data, std::size_t size)

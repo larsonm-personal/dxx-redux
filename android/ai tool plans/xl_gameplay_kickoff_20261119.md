@@ -1,0 +1,9 @@
+# Replacement kickoff for an explicitly requested XL tranche
+
+Start only on a fresh invocation. Use the user's completion target and reserve the final third for validation, CI and handoff. Work sequentially without agents. Read AGENTS.md, .github/copilot-instructions.md, the [November 19 outcome](xl_gameplay_what_was_done_20261119.md), [ordered plan](xl_gameplay_next_window_20261119.md), [execution ledger](xl_gameplay_execution_20261119.json) and the latest G2–G7 acceptance notes.
+
+Refresh the fork's cmake head, current worktree, stashes, open stack and trusted controller. Branch from the updated cmake after a maintainer merge, or from the tested immediate parent when the stack is open. Publish tested non-draft immediate-parent PRs on the fork, link stack 471 and leave merging to the maintainer.
+
+Use the genuine private Vertigo and XL addon inputs and original distributions with their exact hashes. Preserve the historical 4/8 environment, provisioned 8/8 environment, 64-case cohort and 120-frame criterion. Start the Android backend trial and the earned Pumo, Sphere and two-peer routes in the ordered plan. Use the original-engine results for all 141 startup misses. Prioritize the 100 entries that the original ran, track the 34 missing advertised files by distribution, and reproduce the seven unresolved cases in their intended environments. Keep saves and sessions with their owning engine. Use an isolated emulator or device, protect existing profiles and input assets, and follow repository retention and cleanup procedures.
+
+Compare original play, ordinary developer-OFF starts, assertion builds, Android playback and device lifecycle. Record source, binary, archive, descriptor, mine, save and CI identities. Keep assisted setup, warm detailed-state divergence, the G2 corrupt-trailer recovery and the Android 1,500 startup FX draws visible. Inspect CI on the final pushed revision and publish the next dated outcome and kickoff.

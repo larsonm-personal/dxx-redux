@@ -1,0 +1,1362 @@
+[
+    [
+        {
+            "action": "fly_through_side",
+            "segment": 126,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 127,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 129,
+            "side": 3,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 132,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 138,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 158,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 168,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 179,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 199,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 200,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 202,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 203,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 204,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 205,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 206,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 207,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 201,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 210,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 213,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 218,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "cheats_enabled": false,
+                "player_dead": false,
+                "position.segment": 223,
+                "player.has_blue_key": false,
+                "player.lives": 3
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ],
+    [
+        {
+            "action": "fly_through_side",
+            "segment": 223,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 265,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 304,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 340,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 341,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 353,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 356,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 357,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 358,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 362,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 363,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 364,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 377,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 380,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 394,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 395,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 396,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 397,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 399,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 400,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "cheats_enabled": false,
+                "player_dead": false,
+                "position.segment": 401,
+                "player.has_blue_key": false,
+                "player.lives": 3
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ],
+    [
+        {
+            "action": "fly_through_side",
+            "segment": 401,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 402,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 403,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 409,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 412,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 416,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 421,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 422,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 446,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 448,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 450,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 452,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 454,
+            "side": 2,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 455,
+            "side": 2,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 456,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 504,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 505,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 506,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 509,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 531,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "cheats_enabled": false,
+                "player_dead": false,
+                "position.segment": 534,
+                "player.has_blue_key": false,
+                "player.lives": 3
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ],
+    [
+        {
+            "action": "fly_through_side",
+            "segment": 534,
+            "side": 3,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 541,
+            "side": 3,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 542,
+            "side": 3,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 593,
+            "side": 4,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 595,
+            "side": 4,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 602,
+            "side": 4,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 603,
+            "side": 2,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 687,
+            "side": 2,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 700,
+            "side": 2,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 698,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 699,
+            "side": 1,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 701,
+            "side": 1,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 702,
+            "side": 1,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 703,
+            "side": 1,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 684,
+            "side": 1,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 683,
+            "side": 1,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 681,
+            "side": 0,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 666,
+            "side": 0,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 583,
+                "player.has_blue_key": false,
+                "player.lives": 3,
+                "cheats_enabled": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ],
+    [
+        {
+            "action": "fly_through_side",
+            "segment": 583,
+            "side": 2,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 666,
+                "player.has_blue_key": false,
+                "player.lives": 3,
+                "cheats_enabled": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ],
+    [
+        {
+            "action": "fly_through_side",
+            "segment": 666,
+            "side": 0,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 583,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 667,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 769,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 770,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 774,
+            "side": 1,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 777,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 779,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 780,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 823,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 820,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 817,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 814,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 811,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 808,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 805,
+            "side": 5,
+            "fire_primary": true,
+            "max_frames": 700
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 802,
+                "player.has_blue_key": false,
+                "player.lives": 3,
+                "cheats_enabled": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ],
+    [
+        {
+            "action": "fly_through_side",
+            "segment": 802,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 804,
+            "side": 3,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 827,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 829,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.energy": {
+                    "gt": 20
+                }
+            }
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 829,
+            "side": 2,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 827,
+            "side": 2,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 826,
+            "side": 2,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 828,
+            "side": 2,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 830,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 46.4569
+                }
+            }
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 830,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 828,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 826,
+            "side": 1,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 802,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 799,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 796,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 793,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 790,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 787,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 784,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 781,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.has_blue_key": false,
+                "player.lives": 3,
+                "player.energy": {
+                    "gt": 20
+                },
+                "player.shields": {
+                    "gt": 60
+                }
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ],
+    [
+        {
+            "action": "select_secondary",
+            "slot": 1
+        },
+        {
+            "action": "send_button",
+            "button": 101,
+            "held": 1
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 781,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 766,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 765,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 762,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 761,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 756,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 755,
+            "side": 3,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 752,
+            "side": 3,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 751,
+            "side": 3,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "send_button",
+            "button": 101,
+            "held": 0
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 750,
+                "cheats_enabled": false,
+                "player_dead": false,
+                "player.has_blue_key": false,
+                "player.lives": 3
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ],
+    [
+        {
+            "action": "fly_through_side",
+            "segment": 750,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 748,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 747,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 745,
+            "side": 2,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 742,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 740,
+            "side": 3,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 398,
+                "cheats_enabled": false,
+                "player_dead": false,
+                "player.has_blue_key": true,
+                "player.lives": 3
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ],
+    [
+        {
+            "action": "fly_through_side",
+            "segment": 398,
+            "side": 1,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 740,
+            "side": 0,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 741,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 745,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 747,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 748,
+            "side": 2,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 750,
+            "side": 1,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 751,
+            "side": 1,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 752,
+            "side": 1,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 755,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 756,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 761,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 762,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 765,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 766,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 781,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 784,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 787,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 790,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 793,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 796,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 799,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 802,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 805,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 808,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 811,
+            "side": 4,
+            "max_frames": 700,
+            "fire_primary": true
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 814,
+                "cheats_enabled": false,
+                "player_dead": false,
+                "player.has_blue_key": true,
+                "player.lives": 3
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ],
+    [
+        {
+            "action": "fly_through_side",
+            "segment": 814,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": false
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 811,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": false
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 808,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": false
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 805,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": false
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 802,
+            "side": 5,
+            "max_frames": 700,
+            "fire_primary": false
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 799,
+                "player.has_blue_key": true,
+                "player.lives": 3,
+                "cheats_enabled": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ],
+    [
+        {
+            "action": "collect_pickup",
+            "kind": "energy",
+            "max_frames": 600
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 799,
+                "player.has_blue_key": true,
+                "player.lives": 3,
+                "cheats_enabled": false,
+                "player_dead": false,
+                "player.energy": {
+                    "gt": 49
+                }
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        }
+    ]
+]

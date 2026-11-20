@@ -10,7 +10,7 @@ extern "C" {
 #include "digi.h"
 #include "sounds.h"
 #include "newdemo.h"
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 #include "guidebot_extensions.h"
 #endif
 }
@@ -36,7 +36,7 @@ int connected_wall(int segment_index, int side)
 }
 void notify_wall(int index)
 {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	if (index >= 0) escort_route_notify_wall_changed(index);
 #else
 	(void) index;
